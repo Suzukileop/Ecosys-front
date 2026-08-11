@@ -1,0 +1,652 @@
+'use client';
+
+import { useMemo, useRef, useState } from 'react';
+import type { Control, UseFormSetValue } from 'react-hook-form';
+import { useWatch } from 'react-hook-form';
+import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
+import {
+  CREATOR_TOOL_PRESETS,
+  findCreatorToolPreset,
+  getCreatorToolCategories,
+  type CreatorToolPreset,
+} from '@/components/creator/studio/creator-profile-tools-catalog';
+import type {
+  ProfileFormValues,
+  StrengthFormItem,
+  StrengthToolLevel,
+} from '@/components/creator/studio/profile-form-schema';
+import {
+  profileFormInputClass,
+  profileSectionEmptyClass,
+  profileSectionMutedTextClass,
+  profileSectionSubheadingClass,
+} from '@/components/creator/studio/profile-section-ui';
+import { getSkillUsageDescription } from '@/components/portfolio/skill-usage-descriptions';
+import { uploadContentMedia } from '@/lib/marketplace-api';
+import { getApiErrorMessage } from '@/lib/api-error';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+
+type ToolCategoryId = CreatorToolPreset['category'];
+
+const MAX_STRENGTHS = 12;
+const MAX_DESCRIPTION = 280;
+const MAX_USE_CASES = 8;
+
+const LEVEL_OPTIONS: { value: StrengthToolLevel; label: string }[] = [
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+  { value: 'expert', label: 'Expert' },
+];
+
+type ProfileStrengthsFieldProps = {
+  control: Control<ProfileFormValues>;
+  setValue: UseFormSetValue<ProfileFormValues>;
+  readOnly?: boolean;
+  values?: StrengthFormItem[];
+};
+
+function emptyStrengthItem(value: string, category = ''): StrengthFormItem {
+  return {
+    value,
+    description: '',
+    category,
+    level: null,
+    useCases: [],
+    experienceYears: null,
+    experienceLabel: '',
+    currentlyUsed: null,
+    iconUrl: null,
+  };
+}
+
+function normalizeSelected(values: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const raw of values) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(trimmed);
+  }
+  return result;
+}
+
+function CategoryChevron({ expanded }: { expanded: boolean }) {
+  return (
+    <svg
+      className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden
+    >
+      <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function PresetToolButton({
+  preset,
+  selected,
+  disabled,
+  onToggle,
+}: {
+  preset: CreatorToolPreset;
+  selected: boolean;
+  disabled: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onToggle}
+      className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-40 ${
+        selected
+          ? 'border-orange-400 bg-orange-50 ring-1 ring-orange-300 dark:border-orange-500/50 dark:bg-orange-500/10 dark:ring-orange-500/30'
+          : 'border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950 dark:hover:border-neutral-600 dark:hover:bg-neutral-900'
+      }`}
+    >
+      <CreatorToolLogo label={preset.name} preset={preset} size={24} />
+      <span className="min-w-0 flex-1 text-xs font-medium leading-snug text-neutral-800 dark:text-neutral-100">
+        {preset.name}
+      </span>
+      {selected ? (
+        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-orange-600 dark:text-orange-400">
+          Ajouté
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function levelLabel(level: StrengthToolLevel | null | undefined): string {
+  if (!level) return '';
+  return LEVEL_OPTIONS.find((option) => option.value === level)?.label ?? level;
+}
+
+export function ProfileStrengthsField({
+  control,
+  setValue,
+  readOnly = false,
+  values = [],
+}: ProfileStrengthsFieldProps) {
+  const watchedStrengths = useWatch({ control, name: 'strengthsTools' });
+  const [customDraft, setCustomDraft] = useState('');
+  const [customIconUrl, setCustomIconUrl] = useState<string | null>(null);
+  const [uploadingIcon, setUploadingIcon] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const iconInputRef = useRef<HTMLInputElement>(null);
+  const [useCaseDraftByLabel, setUseCaseDraftByLabel] = useState<Record<string, string>>({});
+  const [expandedCategories, setExpandedCategories] = useState<Set<ToolCategoryId>>(() => new Set());
+
+  const formItems = useMemo((): StrengthFormItem[] => {
+    if (readOnly) return values;
+    return watchedStrengths ?? [];
+  }, [readOnly, values, watchedStrengths]);
+
+  const selectedValues = useMemo(
+    () => normalizeSelected(formItems.map((item) => item.value)),
+    [formItems]
+  );
+
+  const selectedKeys = useMemo(
+    () => new Set(selectedValues.map((value) => value.toLowerCase())),
+    [selectedValues]
+  );
+
+  const itemByLabel = useMemo(() => {
+    const map = new Map<string, StrengthFormItem>();
+    for (const item of formItems) {
+      map.set(item.value.toLowerCase(), item);
+    }
+    return map;
+  }, [formItems]);
+
+  const syncSelectedValues = (
+    nextValues: string[],
+    seedCategoryByValue?: Map<string, string>,
+    seedIconByValue?: Map<string, string | null>
+  ) => {
+    const previous = new Map(
+      (watchedStrengths ?? []).map((item) => [item.value.toLowerCase(), item] as const)
+    );
+    setValue(
+      'strengthsTools',
+      normalizeSelected(nextValues).map((value) => {
+        const existing = previous.get(value.toLowerCase());
+        if (existing) return existing;
+        const category = seedCategoryByValue?.get(value.toLowerCase()) ?? '';
+        const created = emptyStrengthItem(value, category);
+        const iconUrl = seedIconByValue?.get(value.toLowerCase());
+        return iconUrl ? { ...created, iconUrl } : created;
+      }),
+      { shouldDirty: true, shouldValidate: true }
+    );
+  };
+
+  const updateItem = (label: string, patch: Partial<StrengthFormItem>) => {
+    const next = (watchedStrengths ?? []).map((item) =>
+      item.value === label ? { ...item, ...patch } : item
+    );
+    setValue('strengthsTools', next, { shouldDirty: true, shouldValidate: true });
+  };
+
+  const isPresetSelected = (preset: CreatorToolPreset): boolean =>
+    selectedKeys.has(preset.name.toLowerCase()) ||
+    (preset.aliases?.some((alias) => selectedKeys.has(alias.toLowerCase())) ?? false);
+
+  const togglePreset = (preset: CreatorToolPreset) => {
+    if (isPresetSelected(preset)) {
+      const next = selectedValues.filter((value) => {
+        const presetMatch = findCreatorToolPreset(value);
+        return presetMatch?.id !== preset.id;
+      });
+      syncSelectedValues(next);
+      return;
+    }
+    if (selectedValues.length >= MAX_STRENGTHS) return;
+    const seeds = new Map([[preset.name.toLowerCase(), preset.category]]);
+    syncSelectedValues([...selectedValues, preset.name], seeds);
+  };
+
+  const addCustomTool = () => {
+    const trimmed = customDraft.trim();
+    if (!trimmed) return;
+    if (selectedValues.some((value) => value.toLowerCase() === trimmed.toLowerCase())) {
+      setCustomDraft('');
+      setCustomIconUrl(null);
+      return;
+    }
+    if (selectedValues.length >= MAX_STRENGTHS) return;
+    const preset = findCreatorToolPreset(trimmed);
+    const seeds = preset ? new Map([[trimmed.toLowerCase(), preset.category]]) : undefined;
+    const iconSeeds = customIconUrl
+      ? new Map([[trimmed.toLowerCase(), customIconUrl]])
+      : undefined;
+    syncSelectedValues([...selectedValues, trimmed], seeds, iconSeeds);
+    setCustomDraft('');
+    setCustomIconUrl(null);
+    setUploadError(null);
+  };
+
+  const onIconFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setUploadingIcon(true);
+    setUploadError(null);
+    try {
+      const uploaded = await uploadContentMedia(file);
+      setCustomIconUrl(uploaded);
+    } catch (e) {
+      setUploadError(getApiErrorMessage(e, 'Unable to upload logo.'));
+    } finally {
+      setUploadingIcon(false);
+    }
+  };
+
+  const toggleCategory = (categoryId: ToolCategoryId) => {
+    setExpandedCategories((current) => {
+      const next = new Set(current);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  };
+
+  const countSelectedInCategory = (categoryId: ToolCategoryId) =>
+    CREATOR_TOOL_PRESETS.filter((preset) => preset.category === categoryId && isPresetSelected(preset))
+      .length;
+
+  const addUseCase = (label: string) => {
+    const draft = (useCaseDraftByLabel[label] ?? '').trim();
+    if (!draft) return;
+    const item = itemByLabel.get(label.toLowerCase());
+    const current = item?.useCases ?? [];
+    if (current.length >= MAX_USE_CASES) return;
+    if (current.some((entry) => entry.toLowerCase() === draft.toLowerCase())) {
+      setUseCaseDraftByLabel((prev) => ({ ...prev, [label]: '' }));
+      return;
+    }
+    updateItem(label, { useCases: [...current, draft.slice(0, 60)] });
+    setUseCaseDraftByLabel((prev) => ({ ...prev, [label]: '' }));
+  };
+
+  const removeUseCase = (label: string, useCase: string) => {
+    const item = itemByLabel.get(label.toLowerCase());
+    updateItem(label, {
+      useCases: (item?.useCases ?? []).filter((entry) => entry !== useCase),
+    });
+  };
+
+  if (readOnly) {
+    if (selectedValues.length === 0) {
+      return <p className={profileSectionEmptyClass}>Aucun outil ajouté pour le moment.</p>;
+    }
+    return (
+      <div className="space-y-3">
+        {selectedValues.map((item) => {
+          const data = itemByLabel.get(item.toLowerCase());
+          const custom = data?.description?.trim() ?? '';
+          const body = custom || getSkillUsageDescription(item);
+          const level = levelLabel(data?.level ?? null);
+          const meta = [level, data?.category?.trim()].filter(Boolean).join(' · ');
+          return (
+            <div
+              key={item}
+              className="rounded-2xl border border-neutral-200 bg-white px-3.5 py-3 dark:border-neutral-700 dark:bg-neutral-950"
+            >
+              <div className="flex items-center gap-2.5">
+                <CreatorToolLogo label={item} iconUrl={data?.iconUrl} size={28} />
+                <div className="min-w-0">
+                  <p className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">{item}</p>
+                  {meta ? (
+                    <p className={`mt-0.5 text-xs ${profileSectionMutedTextClass}`}>{meta}</p>
+                  ) : null}
+                </div>
+              </div>
+              <p className={`mt-2 text-sm leading-relaxed ${profileSectionMutedTextClass}`}>{body}</p>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  const categories = getCreatorToolCategories();
+
+  return (
+    <div className="space-y-5">
+      {selectedValues.length > 0 && (
+        <div className="space-y-3">
+          <div>
+            <p className={`mb-1 ${profileSectionSubheadingClass}`}>Sélection</p>
+            <p className={profileSectionMutedTextClass}>
+              Affinez chaque outil : catégorie, niveau, cas d&apos;usage et expérience. Laissez la
+              description vide pour garder le texte automatique.
+            </p>
+          </div>
+          {selectedValues.map((label) => {
+            const item = itemByLabel.get(label.toLowerCase()) ?? emptyStrengthItem(label);
+            const description = item.description ?? '';
+            const autoPreview = getSkillUsageDescription(label);
+            const useCases = item.useCases ?? [];
+            const useCaseDraft = useCaseDraftByLabel[label] ?? '';
+            return (
+              <div
+                key={label}
+                className="rounded-2xl border border-neutral-200 bg-white p-3.5 dark:border-neutral-700 dark:bg-neutral-950"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <CreatorToolLogo label={label} iconUrl={item.iconUrl} size={28} />
+                    <p className="truncate text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">
+                      {label}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      syncSelectedValues(selectedValues.filter((value) => value !== label))
+                    }
+                    className="shrink-0 rounded-full px-2 text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400"
+                  >
+                    Retirer
+                  </button>
+                </div>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+                      Catégorie
+                    </span>
+                    <input
+                      list={`strength-category-${label}`}
+                      value={item.category ?? ''}
+                      onChange={(event) => updateItem(label, { category: event.target.value })}
+                      placeholder="Ex. Vidéo, Design…"
+                      className={`mt-1.5 ${profileFormInputClass}`}
+                    />
+                    <datalist id={`strength-category-${label}`}>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.label}
+                        </option>
+                      ))}
+                    </datalist>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+                      Niveau
+                    </span>
+                    <select
+                      value={item.level ?? ''}
+                      onChange={(event) =>
+                        updateItem(label, {
+                          level: (event.target.value || null) as StrengthToolLevel | null,
+                        })
+                      }
+                      className={`mt-1.5 ${profileFormInputClass}`}
+                    >
+                      <option value="">Non renseigné</option>
+                      {LEVEL_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <label className="mt-3 block">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+                    Description
+                  </span>
+                  <textarea
+                    rows={2}
+                    maxLength={MAX_DESCRIPTION}
+                    value={description}
+                    onChange={(event) => updateItem(label, { description: event.target.value })}
+                    placeholder={autoPreview}
+                    className={`mt-1.5 ${profileFormInputClass} min-h-[4.5rem] resize-y`}
+                  />
+                </label>
+                <p className={`mt-1.5 text-xs ${profileSectionMutedTextClass}`}>
+                  {description.trim()
+                    ? `${description.trim().length}/${MAX_DESCRIPTION}`
+                    : `Auto : ${autoPreview}`}
+                </p>
+
+                <div className="mt-3">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+                    Cas d&apos;usage
+                  </span>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {useCases.map((useCase) => (
+                      <span
+                        key={useCase}
+                        className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-xs font-medium text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                      >
+                        {useCase}
+                        <button
+                          type="button"
+                          onClick={() => removeUseCase(label, useCase)}
+                          className="text-neutral-400 hover:text-red-500"
+                          aria-label={`Retirer ${useCase}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="text"
+                      value={useCaseDraft}
+                      maxLength={60}
+                      disabled={useCases.length >= MAX_USE_CASES}
+                      onChange={(event) =>
+                        setUseCaseDraftByLabel((prev) => ({
+                          ...prev,
+                          [label]: event.target.value,
+                        }))
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          addUseCase(label);
+                        }
+                      }}
+                      placeholder={
+                        useCases.length >= MAX_USE_CASES
+                          ? 'Maximum 8 cas d’usage'
+                          : 'Ajouter un cas d’usage'
+                      }
+                      className={profileFormInputClass}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => addUseCase(label)}
+                      disabled={!useCaseDraft.trim() || useCases.length >= MAX_USE_CASES}
+                      className="rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900"
+                    >
+                      Ajouter
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid items-end gap-3 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+                      Experience
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={40}
+                      value={item.experienceYears ?? ''}
+                      onChange={(event) => {
+                        const raw = event.target.value;
+                        updateItem(label, {
+                          experienceYears: raw === '' ? null : Math.max(0, Math.min(40, Number(raw))),
+                        });
+                      }}
+                      placeholder="Years, e.g. 3"
+                      className={`mt-1.5 ${profileFormInputClass}`}
+                    />
+                  </label>
+                  <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-neutral-200 px-3 py-2.5 dark:border-neutral-700">
+                    <span>
+                      <span className="block text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+                        Currently used
+                      </span>
+                      <span className={`mt-0.5 block text-xs ${profileSectionMutedTextClass}`}>
+                        Shown in the Tool inspector design.
+                      </span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={item.currentlyUsed === true}
+                      onChange={(event) =>
+                        updateItem(label, {
+                          currentlyUsed: event.target.checked ? true : null,
+                        })
+                      }
+                      className="h-4 w-4 rounded border-neutral-300 text-orange-500"
+                    />
+                  </label>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="space-y-4">
+        <div>
+          <p className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">
+            Outils populaires
+          </p>
+          <p className={`mt-1 ${profileSectionMutedTextClass}`}>
+            Touchez pour ajouter ou retirer. {selectedValues.length}/{MAX_STRENGTHS} sélectionnés.
+          </p>
+        </div>
+
+        {categories.map((category) => {
+          const expanded = expandedCategories.has(category.id);
+          const presets = CREATOR_TOOL_PRESETS.filter((preset) => preset.category === category.id);
+          const selectedCount = countSelectedInCategory(category.id);
+
+          return (
+            <div
+              key={category.id}
+              className="overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700"
+            >
+              <button
+                type="button"
+                onClick={() => toggleCategory(category.id)}
+                aria-expanded={expanded}
+                className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition hover:bg-neutral-50 dark:hover:bg-neutral-900/60"
+              >
+                <CategoryChevron expanded={expanded} />
+                <span className={profileSectionSubheadingClass}>{category.label}</span>
+                <span className={`ml-auto ${profileSectionMutedTextClass}`}>
+                  {selectedCount > 0 ? `${selectedCount} ajoutés · ` : ''}
+                  {presets.length} outils
+                </span>
+              </button>
+              {expanded ? (
+                <div className="grid grid-cols-1 gap-2 border-t border-neutral-200 p-3 dark:border-neutral-700 sm:grid-cols-2 xl:grid-cols-3">
+                  {presets.map((preset) => (
+                    <PresetToolButton
+                      key={preset.id}
+                      preset={preset}
+                      selected={isPresetSelected(preset)}
+                      disabled={!isPresetSelected(preset) && selectedValues.length >= MAX_STRENGTHS}
+                      onToggle={() => togglePreset(preset)}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="rounded-2xl border border-dashed border-neutral-200 p-4 dark:border-neutral-700">
+        <p className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">
+          Outil personnalisé
+        </p>
+        <p className={`mt-1 ${profileSectionMutedTextClass}`}>
+          Ajoutez tout outil absent de la liste ci-dessus. Optionnel : ajoutez un petit logo.
+        </p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input
+            ref={iconInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+            className="sr-only"
+            onChange={(event) => void onIconFileChange(event)}
+          />
+          <button
+            type="button"
+            disabled={uploadingIcon || selectedValues.length >= MAX_STRENGTHS}
+            onClick={() => iconInputRef.current?.click()}
+            title="Upload logo"
+            aria-label="Upload logo"
+            className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-neutral-100 transition hover:bg-neutral-200 disabled:opacity-40 dark:bg-white/[0.06] dark:hover:bg-white/[0.1]"
+          >
+            {uploadingIcon ? (
+              <LoadingSpinner size="sm" />
+            ) : customIconUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={customIconUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <CreatorToolLogo label={customDraft || '?'} size={20} />
+            )}
+          </button>
+          <input
+            type="text"
+            value={customDraft}
+            onChange={(event) => setCustomDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                addCustomTool();
+              }
+            }}
+            placeholder="Nom de l’outil"
+            className={profileFormInputClass}
+          />
+          <button
+            type="button"
+            onClick={addCustomTool}
+            disabled={!customDraft.trim() || selectedValues.length >= MAX_STRENGTHS}
+            className="rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Ajouter
+          </button>
+        </div>
+        {customIconUrl ? (
+          <button
+            type="button"
+            onClick={() => setCustomIconUrl(null)}
+            className="mt-2 text-xs font-medium text-neutral-500 hover:text-neutral-700 dark:text-neutral-400"
+          >
+            Retirer le logo
+          </button>
+        ) : null}
+        {uploadError ? <p className="mt-2 text-xs text-red-600 dark:text-red-400">{uploadError}</p> : null}
+      </div>
+    </div>
+  );
+}

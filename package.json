@@ -1,0 +1,54 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:lan": "next dev -H 0.0.0.0",
+    "lan:setup": "powershell -ExecutionPolicy Bypass -File ./scripts/lan-setup.ps1",
+    "lan:reset": "powershell -ExecutionPolicy Bypass -File ./scripts/lan-reset.ps1",
+    "dev:webpack": "next dev --webpack",
+    "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev",
+    "build": "next build",
+    "build:webpack": "next build --webpack",
+    "build:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.3.1",
+    "@fortawesome/free-regular-svg-icons": "^7.3.1",
+    "@fortawesome/free-solid-svg-icons": "^7.3.1",
+    "@fortawesome/react-fontawesome": "^3.5.0",
+    "@hookform/resolvers": "^5.2.2",
+    "@lottiefiles/dotlottie-react": "^0.19.4",
+    "@stomp/stompjs": "^7.0.0",
+    "axios": "^1.16.0",
+    "framer-motion": "^12.40.0",
+    "lucide-react": "^1.28.0",
+    "next": "16.2.12",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-hook-form": "^7.75.0",
+    "react-markdown": "^10.1.0",
+    "recharts": "^2.15.4",
+    "sockjs-client": "^1.6.1",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.13"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@types/sockjs-client": "^1.5.4",
+    "eslint": "10.8.0",
+    "eslint-config-next": "16.2.12",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  },
+  "overrides": {
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3"
+  }
+}
