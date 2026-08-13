@@ -18,10 +18,3 @@ export async function uploadUserAvatar(file: File): Promise<User> {
   const res = await api.post<User>('/api/user/profile/avatar', form);
   return res.data;
 }
-
-export async function uploadCreatorCover(file: File): Promise<CreatorProfileDto> {
-  const form = new FormData();
-  form.append('file', file);
-  const res = await api.post<CreatorProfileDto>('/api/creator/profile/cover', form);
-  return res.data;
-}

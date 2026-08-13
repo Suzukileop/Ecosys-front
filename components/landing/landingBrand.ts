@@ -18,9 +18,14 @@ export const brandGradientBg =
 export const landingSectionShellClass =
   'mx-auto w-full max-w-[96rem] px-4 sm:px-6 md:px-10 lg:px-14 xl:px-20';
 
+/** Shared landing corner radius — matches Hero “Start for free”. */
+export const brandRadiusClass = 'rounded-lg';
+export const brandButtonRadiusClass = brandRadiusClass;
+export const brandFrameRadiusClass = brandRadiusClass;
+
 /** Boutons CTA landing — orange uni + léger lift au survol */
 export const brandCtaClass =
-  'bg-[#FF6B00] text-white transition-all hover:-translate-y-0.5 hover:bg-[#EA580C]';
+  `${brandButtonRadiusClass} bg-[#FF6B00] text-white transition-all hover:-translate-y-0.5 hover:bg-[#EA580C]`;
 
 /** Boutons dashboard / UI — orange uni (sans dégradé) */
 export const brandSolidBg = 'bg-[#FF6B00] hover:bg-[#EA580C]';

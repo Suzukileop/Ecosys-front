@@ -48,9 +48,6 @@ export default async function MarketplaceProductDetailPage({
     : null;
   const typeLabel = PRODUCT_TYPE_LABELS[product.type] ?? product.type;
   const productUrl = `/marketplace/products/${product.id}`;
-  const deliveryLabel = product.deliveryMode.replace(/_/g, ' ');
-  const licenseLabel = product.licenseType.replace(/_/g, ' ');
-  const salesCount = product.salesCount ?? 0;
   const reviewCount = product.reviewCount ?? 0;
 
   return (
@@ -84,7 +81,6 @@ export default async function MarketplaceProductDetailPage({
                 productId={product.id}
                 initialViews={product.views}
                 initialLikes={product.likes}
-                salesCount={salesCount}
               />
             </div>
 
@@ -205,8 +201,6 @@ export default async function MarketplaceProductDetailPage({
       <div className="mt-12 border-t border-gray-200 pt-10 dark:border-neutral-800">
         <ProductDetailBottom
           product={product}
-          deliveryLabel={deliveryLabel}
-          licenseLabel={licenseLabel}
           reviewCount={reviewCount}
           loginRedirect={productUrl}
           purchaseCta={{

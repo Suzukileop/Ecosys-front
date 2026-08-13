@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { FooterFeedbackForm } from '@/components/landing/FooterFeedbackForm';
-import { landingSectionShellClass } from '@/components/landing/landingBrand';
+import { brandFrameRadiusClass, landingSectionShellClass } from '@/components/landing/landingBrand';
 
 const columns = [
   {
@@ -59,7 +59,7 @@ export function Footer() {
         <div className="mb-12 grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div className="flex flex-col gap-4">
             <Link href="/" className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FF6B00] text-sm font-bold text-white">
+              <div className={`flex h-9 w-9 items-center justify-center bg-[#FF6B00] text-sm font-bold text-white ${brandFrameRadiusClass}`}>
                 NP
               </div>
               <span className="text-lg font-bold lp-text">NoProbleme</span>
@@ -73,7 +73,7 @@ export function Footer() {
                   key={s.label}
                   href={s.href}
                   aria-label={s.label}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/8 bg-white lp-muted transition-all hover:border-[#F97316]/30 hover:text-[#F97316] dark:border-white/10 dark:bg-neutral-900"
+                  className={`flex h-9 w-9 items-center justify-center border border-black/8 bg-white lp-muted transition-all hover:border-[#F97316]/30 hover:text-[#F97316] dark:border-white/10 dark:bg-neutral-900 ${brandFrameRadiusClass}`}
                 >
                   {s.icon}
                 </a>

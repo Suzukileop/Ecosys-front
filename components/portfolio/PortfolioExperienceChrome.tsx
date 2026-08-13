@@ -11,17 +11,21 @@ import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import { CreatorToolsPicker } from '@/components/creator/studio/CreatorToolsPicker';
 import {
   createEmptyExperienceProofLink,
+  getHttpUrlFieldError,
   inferProfileMediaType,
+  toAbsoluteHttpUrl,
   type ProfileMediaBlockForm,
 } from '@/components/creator/studio/profile-form-schema';
 import { PortfolioFlatField } from '@/components/portfolio/PortfolioInformationChrome';
 import {
   PortfolioEntryPager,
+  portfolioFieldErrorTextClass,
   portfolioInlineInputClass,
+  portfolioInlineInputErrorClass,
 } from '@/components/portfolio/portfolio-section-shared';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { ContactVisibilityLevel } from '@/lib/contact-visibility';
-import { ProfileSectionLimitUpgradeHint } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 
 export const MAX_EXPERIENCE_ENTRIES = 3;
 
@@ -301,14 +305,35 @@ function normalizeTools(
 
 function normalizeLinks(links: PortfolioExperienceProofLink[]): PortfolioExperienceProofLink[] {
   return links
-    .map((link, index) => ({
-      id: link.id,
-      label: link.label.trim(),
-      url: link.url.trim(),
-      platform: link.platform,
-      sortOrder: index,
-    }))
+    .map((link, index) => {
+      const raw = link.url.trim();
+      return {
+        id: link.id,
+        label: link.label.trim(),
+        url: toAbsoluteHttpUrl(raw) ?? raw,
+        platform: link.platform,
+        sortOrder: index,
+      };
+    })
     .filter((link) => link.label.length > 0 || link.url.length > 0);
+}
+
+function collectProofLinkUrlErrors(
+  links: PortfolioExperienceProofLink[]
+): Record<string, string> {
+  const errors: Record<string, string> = {};
+  for (const link of links) {
+    const url = link.url.trim();
+    const label = link.label.trim();
+    if (!url && !label) continue;
+    if (!url) {
+      errors[link.id] = 'URL is required.';
+      continue;
+    }
+    const message = getHttpUrlFieldError(url);
+    if (message) errors[link.id] = message;
+  }
+  return errors;
 }
 
 function cleanDraft(draft: PortfolioExperienceBlockDraft): PortfolioExperienceBlockDraft {
@@ -499,55 +524,66 @@ function ProofLinksEditor({
   links,
   onChange,
   disabled,
+  urlErrors = {},
 }: {
   links: PortfolioExperienceProofLink[];
   onChange: (next: PortfolioExperienceProofLink[]) => void;
   disabled?: boolean;
+  urlErrors?: Record<string, string>;
 }) {
   return (
     <div className="space-y-3">
-      {links.map((link, index) => (
-        <div key={link.id} className="space-y-2">
-          <input
-            type="text"
-            value={link.label}
-            onChange={(event) =>
-              onChange(
-                links.map((entry, entryIndex) =>
-                  entryIndex === index ? { ...entry, label: event.target.value } : entry
-                )
-              )
-            }
-            placeholder="Label"
-            className={portfolioInlineInputClass}
-            disabled={disabled}
-          />
-          <div className="flex items-center gap-2">
+      {links.map((link, index) => {
+        const urlError = urlErrors[link.id];
+        return (
+          <div key={link.id} className="space-y-2">
             <input
-              type="url"
-              value={link.url}
+              type="text"
+              value={link.label}
               onChange={(event) =>
                 onChange(
                   links.map((entry, entryIndex) =>
-                    entryIndex === index ? { ...entry, url: event.target.value } : entry
+                    entryIndex === index ? { ...entry, label: event.target.value } : entry
                   )
                 )
               }
-              placeholder="https://…"
-              className={`${portfolioInlineInputClass} min-w-0 flex-1`}
+              placeholder="Label"
+              className={portfolioInlineInputClass}
               disabled={disabled}
             />
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onChange(links.filter((_, entryIndex) => entryIndex !== index))}
-              className="shrink-0 text-xs font-semibold text-red-600 hover:text-red-700 disabled:opacity-50 dark:text-red-400"
-            >
-              Remove
-            </button>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  inputMode="url"
+                  autoComplete="url"
+                  value={link.url}
+                  onChange={(event) =>
+                    onChange(
+                      links.map((entry, entryIndex) =>
+                        entryIndex === index ? { ...entry, url: event.target.value } : entry
+                      )
+                    )
+                  }
+                  placeholder="https://…"
+                  aria-invalid={urlError ? true : undefined}
+                  className={`${urlError ? portfolioInlineInputErrorClass : portfolioInlineInputClass} min-w-0 flex-1`}
+                  disabled={disabled}
+                />
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => onChange(links.filter((_, entryIndex) => entryIndex !== index))}
+                  className="shrink-0 text-xs font-semibold text-red-600 hover:text-red-700 disabled:opacity-50 dark:text-red-400"
+                >
+                  Remove
+                </button>
+              </div>
+              {urlError ? <p className={portfolioFieldErrorTextClass}>{urlError}</p> : null}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
       <button
         type="button"
         disabled={disabled || links.length >= 5}
@@ -606,6 +642,7 @@ function ExperienceEntryFields({
   fieldHasChanges,
   onDraftChange,
   onRemove,
+  linkUrlErrors = {},
 }: {
   block: PortfolioExperienceBlock;
   draft: PortfolioExperienceBlockDraft;
@@ -620,6 +657,7 @@ function ExperienceEntryFields({
   fieldHasChanges: boolean;
   onDraftChange: (next: PortfolioExperienceBlockDraft) => void;
   onRemove?: () => void;
+  linkUrlErrors?: Record<string, string>;
 }) {
   const display = editing ? draft : toDraft(block);
   const confirming = fieldSaving && editing && !isGlobal;
@@ -863,6 +901,7 @@ function ExperienceEntryFields({
             links={display.links}
             onChange={(links) => patch({ links })}
             disabled={fieldSaving}
+            urlErrors={linkUrlErrors}
           />
         }
       >
@@ -1015,6 +1054,7 @@ export function PortfolioExperienceReadOnly({
   );
   const [activeSlot, setActiveSlot] = useState(0);
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
+  const [linkUrlErrors, setLinkUrlErrors] = useState<Record<string, string>>({});
   const prevVisibleCountRef = useRef(0);
 
   const syncYearsDraft = () => {
@@ -1126,6 +1166,7 @@ export function PortfolioExperienceReadOnly({
 
   const startFieldEdit = (index: number, field: ExperienceFieldKey) => {
     syncDraftsFromBlocks();
+    setLinkUrlErrors({});
     setEditing({ kind: 'field', index, field });
   };
 
@@ -1134,6 +1175,7 @@ export function PortfolioExperienceReadOnly({
     const original = blocks[editingIndex];
     const wasEmpty = original ? !blockHasContent(original) : true;
     setEditing(null);
+    setLinkUrlErrors({});
     syncDraftsFromBlocks();
     if (wasEmpty && onRemoveBlock) {
       await onRemoveBlock(editingIndex);
@@ -1141,6 +1183,14 @@ export function PortfolioExperienceReadOnly({
   };
 
   const updateDraft = (index: number, next: PortfolioExperienceBlockDraft) => {
+    setLinkUrlErrors((prev) => {
+      if (Object.keys(prev).length === 0) return prev;
+      const nextErrors = { ...prev };
+      for (const link of next.links) {
+        delete nextErrors[link.id];
+      }
+      return nextErrors;
+    });
     setDrafts((prev) => prev.map((item, itemIndex) => (itemIndex === index ? next : item)));
   };
 
@@ -1148,6 +1198,15 @@ export function PortfolioExperienceReadOnly({
     if (editingIndex == null || !onBlockSave || fieldSaving) return;
     const draft = drafts[editingIndex];
     if (!draft) return;
+    const nextLinkErrors = collectProofLinkUrlErrors(draft.links);
+    if (Object.keys(nextLinkErrors).length > 0) {
+      setLinkUrlErrors(nextLinkErrors);
+      if (editingField !== 'links') {
+        setEditing({ kind: 'field', index: editingIndex, field: 'links' });
+      }
+      return;
+    }
+    setLinkUrlErrors({});
     const cleaned = cleanDraft(draft);
     if (!blockHasContent(cleaned)) {
       setEditing(null);
@@ -1166,6 +1225,15 @@ export function PortfolioExperienceReadOnly({
   const confirmGlobal = async () => {
     if (!onExperienceSave || fieldSaving) return;
     const nextYears = parseYearsDraft(draftYears);
+    const allLinkErrors: Record<string, string> = {};
+    for (const draft of drafts) {
+      Object.assign(allLinkErrors, collectProofLinkUrlErrors(draft.links));
+    }
+    if (Object.keys(allLinkErrors).length > 0) {
+      setLinkUrlErrors(allLinkErrors);
+      return;
+    }
+    setLinkUrlErrors({});
     const cleaned = drafts.map(cleanDraft).filter((item) => blockHasContent(item));
     const currentFilled = blocks.map(toDraft).map(cleanDraft).filter((item) => blockHasContent(item));
     const blocksUnchanged =
@@ -1233,7 +1301,8 @@ export function PortfolioExperienceReadOnly({
   if (!actionsVisible && yearsOfExperience == null && !hasVisibleBlocks) {
     return (
       <div className="space-y-4 py-5">
-        <ProfileSectionLimitUpgradeHint
+        <ProfileSectionItemCount
+          count={0}
           limit={MAX_EXPERIENCE_ENTRIES}
           unit="experiences"
           className="mb-2"
@@ -1247,7 +1316,12 @@ export function PortfolioExperienceReadOnly({
 
   return (
     <div className="space-y-2">
-      <ProfileSectionLimitUpgradeHint limit={MAX_EXPERIENCE_ENTRIES} unit="experiences" className="mb-3" />
+      <ProfileSectionItemCount
+        count={visibleEntries.length}
+        limit={MAX_EXPERIENCE_ENTRIES}
+        unit="experiences"
+        className="mb-3"
+      />
       {visibleEntries.length > 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200/50 pb-3 dark:border-white/[0.06]">
           {deleteMode && onRemoveBlock && activeEntry ? (
@@ -1433,6 +1507,7 @@ export function PortfolioExperienceReadOnly({
             fieldHasChanges={fieldHasChanges}
             onDraftChange={(next) => updateDraft(activeBlockIndex, next)}
             onRemove={undefined}
+            linkUrlErrors={linkUrlErrors}
           />
         </div>
       ) : null}

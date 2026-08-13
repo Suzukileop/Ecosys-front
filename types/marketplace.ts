@@ -50,8 +50,6 @@ export interface MarketplaceCreatorPublicProfile {
   id: string;
   fullName: string;
   avatarUrl: string | null;
-  coverUrl?: string | null;
-  coverObjectPositionY?: number | null;
   specialite: string | null;
   bio: string | null;
   isVerified: boolean;
@@ -174,6 +172,7 @@ export type ProductType =
   | 'SOFTWARE'
   | 'IMAGE_PACK'
   | 'FONT'
+  | 'PHYSICAL'
   | 'OTHER';
 
 export type DemoType = 'NONE' | 'IMAGE' | 'VIDEO' | 'FILE_EXTRACT';
@@ -181,14 +180,14 @@ export type DemoType = 'NONE' | 'IMAGE' | 'VIDEO' | 'FILE_EXTRACT';
 export interface ProductWhyBlock {
   id: string;
   sortOrder: number;
-  mediaUrl: string;
+  /** media = photo/video + captions; text = text catalog only */
+  kind?: 'media' | 'text';
+  mediaUrl?: string | null;
   mediaType?: 'IMAGE' | 'VIDEO' | null;
   opinions: string[];
 }
 
 export type DeliveryMode = 'STREAM_ONLY' | 'DOWNLOAD' | 'BOTH';
-
-export type LicenseType = 'PERSONAL' | 'COMMERCIAL' | 'EXTENDED';
 
 export interface MarketplaceProductSummary {
   id: string;
@@ -205,7 +204,6 @@ export interface MarketplaceProductSummary {
   creatorName: string | null;
   creatorAvatarUrl: string | null;
   isPublished: boolean;
-  hasMainFile?: boolean;
   views: number;
   likes: number;
   salesCount?: number;
@@ -215,7 +213,7 @@ export interface MarketplaceProductSummary {
   videoResolution?: string | null;
   isBestseller?: boolean;
   tags?: string[];
-  licenseType?: LicenseType;
+  galleryImageUrls?: string[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -227,7 +225,6 @@ export interface MarketplaceProductDetail extends MarketplaceProductSummary {
   demoSubtitles?: string[];
   whyProductBlocks?: ProductWhyBlock[];
   deliveryMode: DeliveryMode;
-  licenseType: LicenseType;
   compatibleTools: string[];
   fileFormat: string | null;
   fileSizeMb: number | null;
@@ -235,7 +232,7 @@ export interface MarketplaceProductDetail extends MarketplaceProductSummary {
   version: string | null;
   tags: string[];
   bundleId: string | null;
-  hasMainFile: boolean;
+  galleryImageUrls?: string[];
 }
 
 export type MarketplaceProductsPage = PagedResponse<MarketplaceProductSummary>;
@@ -255,9 +252,7 @@ export interface MarketplaceProductRequest {
   demoDescription?: string;
   demoSubtitles?: string[];
   whyProductBlocks?: ProductWhyBlock[];
-  mainFileR2Key?: string;
   deliveryMode?: DeliveryMode;
-  licenseType?: LicenseType;
   compatibleTools?: string[];
   fileFormat?: string;
   fileSizeMb?: number;
@@ -268,6 +263,7 @@ export interface MarketplaceProductRequest {
   videoResolution?: string | null;
   isBestseller?: boolean;
   isPublished?: boolean;
+  galleryImageUrls?: string[];
 }
 
 export interface ProductReview {

@@ -18,8 +18,17 @@ function isCreatorStudioPath(pathname: string): boolean {
   return true;
 }
 
+/** Product consult / edit / new — same hub motif as My Product. */
+function isCreatorProductsWorkspacePath(pathname: string): boolean {
+  return pathname.startsWith('/dashboard/creator/products');
+}
+
 function isNewsFeedPath(pathname: string): boolean {
   return pathname === '/dashboard/home' || pathname.startsWith('/dashboard/home/');
+}
+
+function isMyProductPath(pathname: string): boolean {
+  return pathname === '/dashboard/products' || pathname.startsWith('/dashboard/products/');
 }
 
 function SessionErrorScreen({ onRetry }: { onRetry: () => void }) {
@@ -60,12 +69,24 @@ export function DashboardShell({
   const { isLoading, user, sessionStatus, restoreSession } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const creatorStudioPattern = isCreatorStudioPath(pathname);
+  const creatorProductsPattern = isCreatorProductsWorkspacePath(pathname);
   const newsFeedPattern = isNewsFeedPath(pathname);
+  const myProductPattern = isMyProductPath(pathname);
   const contentCreatorsPattern = isContentCreatorsPath(pathname);
   const usePatternBackground =
-    transparentContent || creatorStudioPattern || newsFeedPattern || contentCreatorsPattern;
+    transparentContent ||
+    creatorStudioPattern ||
+    creatorProductsPattern ||
+    newsFeedPattern ||
+    myProductPattern ||
+    contentCreatorsPattern;
   const useTransparentHeader =
-    transparentHeader || creatorStudioPattern || newsFeedPattern || contentCreatorsPattern;
+    transparentHeader ||
+    creatorStudioPattern ||
+    creatorProductsPattern ||
+    newsFeedPattern ||
+    myProductPattern ||
+    contentCreatorsPattern;
   const compactContentTop = isMarketplaceCreatorProfilePath(pathname);
   const discussionsLayout = pathname.startsWith('/dashboard/discussions');
 
@@ -105,11 +126,15 @@ export function DashboardShell({
 
   return (
     <>
-      {(creatorStudioPattern || newsFeedPattern) && (
+      {(creatorStudioPattern ||
+        creatorProductsPattern ||
+        newsFeedPattern ||
+        myProductPattern ||
+        contentCreatorsPattern) && (
         <MarketplacePatternBackground variant="hub" />
       )}
       <div
-        className={`flex min-h-screen ${shellBg}`}
+        className={`flex min-h-screen transition-[--dash-sidebar-w] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${shellBg}`}
         style={{ '--dash-sidebar-w': sidebarCollapsed ? '4.5rem' : '16rem' } as CSSProperties}
       >
       <DashboardSidebar

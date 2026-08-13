@@ -7,7 +7,7 @@ import { faMoon, faSun } from '@fortawesome/free-solid-svg-icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLandingEntrance } from '@/components/landing/LandingEntranceContext';
 import { useTheme } from './ThemeProvider';
-import { brandCtaClass } from '@/components/landing/landingBrand';
+import { brandButtonRadiusClass, brandCtaClass } from '@/components/landing/landingBrand';
 
 const navLinks = [
   { href: '#features', label: 'Features' },
@@ -127,7 +127,7 @@ export function Navbar({ brand = false, mono = false }: { brand?: boolean; mono?
             <ThemeToggle />
             <Link
               href="/login"
-              className={`rounded-lg border border-transparent px-4 py-2 text-sm transition-colors duration-200 ${
+              className={`${brandButtonRadiusClass} border border-transparent px-4 py-2 text-sm transition-colors duration-200 ${
                 isBrand
                   ? 'lp-muted hover:lp-text hover:border-neutral-300 dark:hover:border-neutral-600'
                   : 'text-gray-600 hover:border-black/10 hover:text-gray-900 dark:text-[#9CA3AF] dark:hover:border-white/10 dark:hover:text-white'
@@ -137,10 +137,10 @@ export function Navbar({ brand = false, mono = false }: { brand?: boolean; mono?
             </Link>
             <Link
               href="/register"
-              className={`rounded-xl px-5 py-2 text-sm font-semibold ${
+              className={`px-5 py-2 text-sm font-semibold ${
                 isBrand
                   ? brandCtaClass
-                  : 'bg-gradient-to-r from-[#7C3AED] to-[#2563EB] text-white shadow-[0_0_20px_rgba(124,58,237,0.4)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_40px_rgba(124,58,237,0.7)]'
+                  : `${brandButtonRadiusClass} bg-gradient-to-r from-[#7C3AED] to-[#2563EB] text-white shadow-[0_0_20px_rgba(124,58,237,0.4)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_40px_rgba(124,58,237,0.7)]`
               }`}
             >
               Sign up
@@ -199,22 +199,22 @@ export function Navbar({ brand = false, mono = false }: { brand?: boolean; mono?
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="px-4 py-3 dark:text-[#9CA3AF] text-gray-600 dark:hover:text-white hover:text-gray-900 dark:hover:bg-white/5 hover:bg-gray-50 rounded-xl transition-all"
+                    className={`px-4 py-3 dark:text-[#9CA3AF] text-gray-600 dark:hover:text-white hover:text-gray-900 dark:hover:bg-white/5 hover:bg-gray-50 ${brandButtonRadiusClass} transition-all`}
                   >
                     {link.label}
                   </a>
                 ))}
               </nav>
               <div className="mt-auto flex flex-col gap-3">
-                <Link href="/login" className="w-full text-center px-4 py-3 text-sm dark:text-white text-gray-800 dark:border-white/10 border border-gray-200 rounded-xl dark:hover:bg-white/5 hover:bg-gray-50 transition-all">
+                <Link href="/login" className={`w-full text-center px-4 py-3 text-sm dark:text-white text-gray-800 dark:border-white/10 border border-gray-200 ${brandButtonRadiusClass} dark:hover:bg-white/5 hover:bg-gray-50 transition-all`}>
                   Log in
                 </Link>
                 <Link
                   href="/register"
-                  className={`w-full rounded-xl px-4 py-3 text-center text-sm font-semibold ${
+                  className={`w-full px-4 py-3 text-center text-sm font-semibold ${
                     isBrand
                       ? brandCtaClass
-                      : 'bg-gradient-to-r from-[#7C3AED] to-[#2563EB] text-white shadow-[0_0_20px_rgba(124,58,237,0.4)]'
+                      : `${brandButtonRadiusClass} bg-gradient-to-r from-[#7C3AED] to-[#2563EB] text-white shadow-[0_0_20px_rgba(124,58,237,0.4)]`
                   }`}
                 >
                   Sign up

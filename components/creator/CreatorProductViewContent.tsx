@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   getCreatorProduct,
   PRODUCT_TYPE_LABELS,
@@ -11,6 +11,11 @@ import {
 } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { creatorProductsRedirectAfterAction } from '@/lib/creator-product-feedback';
+import {
+  creatorProductBackNav,
+  creatorProductViewPath,
+  parseCreatorProductNavFrom,
+} from '@/lib/creator-product-nav';
 import { CreatorProductDeleteZone } from '@/components/creator/CreatorProductDeleteZone';
 import { CreatorProductDetailBottom } from '@/components/creator/CreatorProductDetailBottom';
 import { CreatorProductManagePanel } from '@/components/creator/CreatorProductManagePanel';
@@ -29,6 +34,9 @@ type CreatorProductViewContentProps = {
 
 export function CreatorProductViewContent({ productId }: CreatorProductViewContentProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const navFrom = parseCreatorProductNavFrom(searchParams.get('from'));
+  const backNav = creatorProductBackNav(navFrom);
   const [product, setProduct] = useState<MarketplaceProductDetail | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -87,10 +95,8 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
   }
 
   const typeLabel = PRODUCT_TYPE_LABELS[product.type] ?? product.type;
-  const deliveryLabel = product.deliveryMode.replace(/_/g, ' ');
-  const licenseLabel = product.licenseType.replace(/_/g, ' ');
   const reviewCount = product.reviewCount ?? 0;
-  const consultUrl = `/dashboard/creator/products/${product.id}`;
+  const consultUrl = creatorProductViewPath(product.id, navFrom);
 
   const handleDeleted = () => {
     router.replace(creatorProductsRedirectAfterAction('deleted', product.title));
@@ -118,10 +124,10 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
     <div className="mx-auto max-w-7xl space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
-          href="/dashboard/creator?tab=products"
+          href={backNav.href}
           className="text-sm font-medium text-orange-600 transition hover:text-orange-700 dark:text-orange-400"
         >
-          ← My products
+          {backNav.label}
         </Link>
         {!product.isPublished && (
           <span className="rounded-full border border-amber-200/80 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
@@ -152,7 +158,6 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
               productId={product.id}
               initialViews={product.views}
               initialLikes={product.likes}
-              salesCount={product.salesCount ?? 0}
             />
           </div>
         </div>
@@ -239,6 +244,7 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
               product={product}
               publishing={publishing}
               onTogglePublish={() => void togglePublish()}
+              from={navFrom}
             />
           </div>
         </div>
@@ -248,8 +254,6 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
         <div className="mt-10 border-t border-neutral-200 pt-10 dark:border-neutral-800">
           <CreatorProductDetailBottom
             product={product}
-            deliveryLabel={deliveryLabel}
-            licenseLabel={licenseLabel}
             reviewCount={reviewCount}
             loginRedirect={consultUrl}
             onDeleted={handleDeleted}
@@ -267,14 +271,6 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
           <div className="rounded-2xl border border-neutral-200 bg-neutral-50/50 p-5 text-sm text-neutral-600 dark:border-neutral-800 dark:bg-neutral-950/40 dark:text-neutral-400">
             <p className="font-semibold text-neutral-900 dark:text-white">Product details</p>
             <dl className="mt-3 grid gap-2 sm:grid-cols-2">
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-neutral-500">Delivery</dt>
-                <dd className="font-medium capitalize text-neutral-800 dark:text-neutral-200">{deliveryLabel}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-neutral-500">License</dt>
-                <dd className="font-medium capitalize text-neutral-800 dark:text-neutral-200">{licenseLabel}</dd>
-              </div>
               {product.fileFormat && (
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-neutral-500">Format</dt>
@@ -285,6 +281,18 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-neutral-500">Size</dt>
                   <dd className="font-medium text-neutral-800 dark:text-neutral-200">{product.fileSizeMb} MB</dd>
+                </div>
+              )}
+              {product.language && (
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-neutral-500">Language</dt>
+                  <dd className="font-medium text-neutral-800 dark:text-neutral-200">{product.language}</dd>
+                </div>
+              )}
+              {product.version && (
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-neutral-500">Version</dt>
+                  <dd className="font-medium text-neutral-800 dark:text-neutral-200">{product.version}</dd>
                 </div>
               )}
             </dl>

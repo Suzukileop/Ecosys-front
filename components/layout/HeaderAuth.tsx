@@ -101,7 +101,7 @@ export function HeaderAuth() {
             {navLink('/dashboard', 'Accueil')}
             {navLink('/marketplace', 'Marketplace')}
             {hasRole('ROLE_AGENT') && navLink('/dashboard/agent', 'File agent')}
-            {hasRole('ROLE_CREATOR') && navLink('/dashboard/creator', 'My Store')}
+            {hasRole('ROLE_CREATOR') && navLink('/dashboard/creator', 'My Profile')}
             {hasRole('ROLE_ADMIN') && navLink('/admin/users', 'Admin')}
           </nav>
         </div>

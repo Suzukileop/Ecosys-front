@@ -141,6 +141,33 @@ export function CreatorStudioVisitorsTabSkeleton() {
   );
 }
 
+export function CreatorStudioImagesTabSkeleton() {
+  return (
+    <div className="space-y-10" aria-busy="true" aria-label="Loading images">
+      <div className="space-y-2">
+        <SkeletonLine className="h-7 w-28" />
+        <SkeletonLine className="h-4 w-80 max-w-full" />
+      </div>
+      <div className="space-y-3">
+        <SkeletonLine className="h-5 w-36" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className={`aspect-square rounded-2xl ${block}`} />
+          ))}
+        </div>
+      </div>
+      <div className="space-y-3">
+        <SkeletonLine className="h-5 w-36" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }, (_, i) => (
+            <div key={i} className={`aspect-[16/9] rounded-2xl ${block}`} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function CreatorStudioSubscribersTabSkeleton() {
   return (
     <div className="space-y-4" aria-busy="true" aria-label="Loading subscribers">
@@ -218,6 +245,8 @@ export function CreatorStudioTabPanelSkeleton({ tab }: { tab: CreatorStudioTab }
       return <CreatorStudioContentTabSkeleton />;
     case 'products':
       return <CreatorStudioProductsTabSkeleton />;
+    case 'images':
+      return <CreatorStudioImagesTabSkeleton />;
     case 'visitors':
       return <CreatorStudioVisitorsTabSkeleton />;
     case 'subscribers':

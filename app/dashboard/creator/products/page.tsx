@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function CreatorProductsRedirect() {
-  redirect('/dashboard/creator?tab=products');
+  redirect('/dashboard/products');
 }

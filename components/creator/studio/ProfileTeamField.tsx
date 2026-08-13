@@ -2,6 +2,7 @@
 
 import {
   useFieldArray,
+  useFormState,
   type Control,
   type FieldArrayWithId,
   type UseFormRegister,
@@ -24,7 +25,7 @@ import {
   profileFormLabelClass,
   profileSectionEmptyClass,
 } from '@/components/creator/studio/profile-section-ui';
-import { ProfileSectionLimitUpgradeHint } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 
 export const MAX_TEAM = 3;
 const MAX_SOCIAL_LINKS = 6;
@@ -66,6 +67,8 @@ function TeamMemberCard({
   remove: (index: number) => void;
 }) {
   const imageUrl = watch(`teamMembers.${index}.imageUrl`) ?? '';
+  const { errors } = useFormState({ control, name: `teamMembers.${index}` as const });
+  const memberErrors = errors.teamMembers?.[index];
   const {
     fields: socialFields,
     append: appendSocial,
@@ -202,8 +205,11 @@ function TeamMemberCard({
                   <input
                     id={`team-url-${socialField.id}`}
                     type="text"
+                    inputMode="url"
+                    autoComplete="url"
                     className={profileFormInputClass}
                     placeholder="https://… ou email"
+                    aria-invalid={memberErrors?.socialLinks?.[socialIndex]?.url ? true : undefined}
                     {...register(`teamMembers.${index}.socialLinks.${socialIndex}.url`, {
                       onChange: (event) => {
                         const url = event.target.value as string;
@@ -215,6 +221,11 @@ function TeamMemberCard({
                       },
                     })}
                   />
+                  {memberErrors?.socialLinks?.[socialIndex]?.url?.message ? (
+                    <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+                      {memberErrors.socialLinks[socialIndex]?.url?.message}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex items-end gap-1">
                   <button
@@ -328,7 +339,7 @@ export function ProfileTeamField({
 
   return (
     <div className="space-y-4">
-      <ProfileSectionLimitUpgradeHint limit={MAX_TEAM} unit="team members" />
+      <ProfileSectionItemCount count={fields.length} limit={MAX_TEAM} unit="team members" />
 
       {fields.length === 0 ? (
         <p className={profileSectionEmptyClass}>Aucun membre d&apos;équipe ajouté.</p>

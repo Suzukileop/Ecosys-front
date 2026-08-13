@@ -101,7 +101,7 @@ export function HomeNewsFeedSkeleton({
       {Array.from({ length: count }, (_, index) => (
         <section
           key={index}
-          className="flex min-h-0 snap-center snap-always scroll-mt-6 items-center justify-center pb-10 pt-2 lg:h-[80vh] lg:min-h-[80vh]"
+          className="flex min-h-0 snap-center snap-always scroll-mt-6 items-center justify-center pb-10 pt-2"
         >
           <HomeNewsPostCardSkeleton split={split} />
         </section>

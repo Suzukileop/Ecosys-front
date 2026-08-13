@@ -9,14 +9,12 @@ type ProductDetailMediaEngagementProps = {
   productId: string;
   initialViews: number;
   initialLikes: number;
-  salesCount?: number;
 };
 
 export function ProductDetailMediaEngagement({
   productId,
   initialViews,
   initialLikes,
-  salesCount = 0,
 }: ProductDetailMediaEngagementProps) {
   const [views, setViews] = useState(initialViews);
   const [likes, setLikes] = useState(initialLikes);
@@ -40,8 +38,6 @@ export function ProductDetailMediaEngagement({
         productId={productId}
         initialLikes={likes}
         views={views}
-        salesCount={salesCount}
-        showSales={salesCount > 0}
         showLikeButton={false}
       />
     </div>

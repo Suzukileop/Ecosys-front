@@ -72,16 +72,18 @@ export function CreatorStudioContentTab({ contentHeadline, specialite }: Creator
       {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
 
       <div className="space-y-4">
-        <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
-          {resolveStudioContentHeadline(contentHeadline)}
-        </h1>
-        <button
-          type="button"
-          onClick={() => setPublishOpen(true)}
-          className="inline-flex items-center justify-center rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600"
-        >
-          + Publish content
-        </button>
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+          <h1 className="max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
+            {resolveStudioContentHeadline(contentHeadline)}
+          </h1>
+          <button
+            type="button"
+            onClick={() => setPublishOpen(true)}
+            className="inline-flex shrink-0 items-center justify-center rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600"
+          >
+            + Publish content
+          </button>
+        </div>
 
         <div className="flex flex-wrap gap-2 border-b border-neutral-200 dark:border-neutral-800">
           {BUCKETS.map((entry) => {
@@ -126,7 +128,7 @@ export function CreatorStudioContentTab({ contentHeadline, specialite }: Creator
           {items.map((post) => (
             <section
               key={post.id}
-              className="flex min-h-0 snap-center snap-always scroll-mt-6 items-center justify-center pb-10 pt-2 lg:h-[80vh] lg:min-h-[80vh]"
+              className="flex min-h-0 snap-center snap-always scroll-mt-6 items-center justify-center pb-10 pt-2"
             >
               <CreatorContentPostCard
                 post={post}

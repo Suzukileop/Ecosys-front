@@ -14,13 +14,13 @@ import {
   updateCuratedProductIds,
 } from '@/lib/creator-profile-api';
 import { getApiErrorMessage } from '@/lib/api-error';
-import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
+import { pushFlashFeedback, pushInsertionLimitFeedback } from '@/stores/flashFeedbackStore';
 import type { MarketplaceProductSummary } from '@/types/marketplace';
 import {
   profileSectionEmptyClass,
   profileSectionMutedTextClass,
 } from '@/components/creator/studio/profile-section-ui';
-import { ProfileSectionLimitUpgradeHint } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 
 export const MAX_PORTFOLIO_PRODUCTS = 3;
 
@@ -238,7 +238,14 @@ export function ProfileProductsPicker({
   );
 
   const addProduct = async (id: string) => {
-    if (selectedIds.includes(id) || !canAddMore) return;
+    if (selectedIds.includes(id)) return;
+    if (!canAddMore) {
+      pushInsertionLimitFeedback({
+        limit: MAX_PORTFOLIO_PRODUCTS,
+        unit: 'products',
+      });
+      return;
+    }
     const next = [...selectedIds, id].slice(0, MAX_PORTFOLIO_PRODUCTS);
     setPickerOpen(false);
     try {
@@ -294,7 +301,11 @@ export function ProfileProductsPicker({
 
   return (
     <div className="space-y-5">
-      <ProfileSectionLimitUpgradeHint limit={MAX_PORTFOLIO_PRODUCTS} unit="products" />
+      <ProfileSectionItemCount
+        count={selectedIds.length}
+        limit={MAX_PORTFOLIO_PRODUCTS}
+        unit="products"
+      />
 
       {error ? <ErrorAlert message={error} onDismiss={() => setError(null)} /> : null}
 
@@ -336,7 +347,7 @@ export function ProfileProductsPicker({
               </button>
             ) : (
               <Link
-                href="/dashboard/creator?tab=products"
+                href="/dashboard/products"
                 className="mt-4 inline-flex rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
               >
                 Create a product

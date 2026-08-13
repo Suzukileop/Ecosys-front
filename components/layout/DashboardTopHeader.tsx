@@ -2,23 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar } from '@/components/ui/Avatar';
 import { NotificationBell } from '@/components/NotificationBell';
 import { ProfileDropdown } from '@/components/layout/ProfileDropdown';
 import { DashboardHeaderSearch } from '@/components/layout/DashboardHeaderSearch';
-import { getPageTitle } from '@/components/layout/dashboard/navConfig';
+import { getPageTitle, isDashboardHomePath } from '@/components/layout/dashboard/navConfig';
 import { isMarketplaceCreatorProfilePath } from '@/lib/marketplace-nav';
 
 export function DashboardTopHeader({ transparent = false }: { transparent?: boolean }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const pageTitle = getPageTitle(pathname);
+  const pageTitle = getPageTitle(pathname, searchParams.toString());
   const showCreatorsBack = isMarketplaceCreatorProfilePath(pathname);
   const isDiscussionsPage = pathname.startsWith('/dashboard/discussions');
+  const isHomeActive = isDashboardHomePath(pathname);
 
   const showSolidBg = !transparent || scrolled;
 
@@ -57,7 +59,7 @@ export function DashboardTopHeader({ transparent = false }: { transparent?: bool
     >
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-4">
         <div className="flex min-w-0 items-center gap-2 justify-self-start">
-          {showCreatorsBack && (
+          {showCreatorsBack ? (
             <Link
               href="/marketplace/creators"
               aria-label="Retour aux créateurs"
@@ -68,8 +70,26 @@ export function DashboardTopHeader({ transparent = false }: { transparent?: bool
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
+          ) : (
+            <Link
+              href="/dashboard/home"
+              aria-label="News feed"
+              title="News"
+              className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition ${
+                isHomeActive
+                  ? 'bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400'
+                  : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white'
+              }`}
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25} aria-hidden>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
+              </svg>
+            </Link>
           )}
-          <DashboardHeaderSearch />
         </div>
 
         <h1 className="max-w-[40vw] truncate text-center text-xl font-bold tracking-tight text-neutral-900 dark:text-white sm:max-w-none">
@@ -77,6 +97,7 @@ export function DashboardTopHeader({ transparent = false }: { transparent?: bool
         </h1>
 
         <div className="flex h-9 shrink-0 items-center justify-end gap-2 justify-self-end">
+          <DashboardHeaderSearch compact />
           <NotificationBell compact />
 
           {user && (

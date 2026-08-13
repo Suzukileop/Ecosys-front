@@ -15,10 +15,10 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { listMyContent, updateCreatorContent } from '@/lib/creator-content-api';
 import { getCreatorPortfolio, updateCreatorPortfolio } from '@/lib/creator-profile-api';
 import { getApiErrorMessage } from '@/lib/api-error';
-import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
+import { pushFlashFeedback, pushInsertionLimitFeedback } from '@/stores/flashFeedbackStore';
 import type { CreatorContentCreateBody, CreatorContentItemDto } from '@/types/creator-content';
 import { MAX_PORTFOLIO_PICKS } from '@/components/creator/studio/ProfilePortfolioPicker';
-import { ProfileSectionLimitUpgradeHint } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 import { portfolioInlineInputClass } from '@/components/portfolio/portfolio-section-shared';
 
 type ContentEditDraft = {
@@ -275,10 +275,9 @@ export function PortfolioShowcaseChrome({
   const addPost = async (id: string) => {
     if (selectedIds.includes(id)) return;
     if (!canAddMore) {
-      pushFlashFeedback({
-        variant: 'error',
-        title: 'Limit reached',
-        description: `You can showcase up to ${MAX_PORTFOLIO_PICKS} posts. Upgrade your plan for unlimited insertion.`,
+      pushInsertionLimitFeedback({
+        limit: MAX_PORTFOLIO_PICKS,
+        unit: 'portfolio posts',
       });
       return;
     }
@@ -617,7 +616,8 @@ export function PortfolioShowcaseChrome({
   if (!showInteractiveShell && selectedPosts.length === 0) {
     return (
       <div className={`${shellClass} py-5`}>
-        <ProfileSectionLimitUpgradeHint
+        <ProfileSectionItemCount
+          count={0}
           limit={MAX_PORTFOLIO_PICKS}
           unit="portfolio posts"
           className="mb-6"
@@ -633,7 +633,8 @@ export function PortfolioShowcaseChrome({
   if (!showInteractiveShell) {
     return (
       <div className={shellClass}>
-        <ProfileSectionLimitUpgradeHint
+        <ProfileSectionItemCount
+          count={selectedIds.length}
           limit={MAX_PORTFOLIO_PICKS}
           unit="portfolio posts"
           className="mb-4"
@@ -645,7 +646,8 @@ export function PortfolioShowcaseChrome({
 
   return (
     <div className={shellClass}>
-      <ProfileSectionLimitUpgradeHint
+      <ProfileSectionItemCount
+        count={selectedIds.length}
         limit={MAX_PORTFOLIO_PICKS}
         unit="portfolio posts"
         className="mb-4"

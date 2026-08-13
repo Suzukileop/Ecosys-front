@@ -71,8 +71,6 @@ export function PublicCreatorProfileShell({
           fullName={profile.fullName}
           handle=""
           avatarUrl={profile.avatarUrl}
-          coverUrl={profile.coverUrl ?? null}
-          coverObjectPositionY={profile.coverObjectPositionY ?? 50}
           headerContentStyle={headerContentStyle}
           bio={profile.bio}
           specialite={profile.specialite}

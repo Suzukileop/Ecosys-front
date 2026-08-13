@@ -10,8 +10,6 @@ import type { MarketplaceProductDetail } from '@/types/marketplace';
 
 type CreatorProductDetailBottomProps = {
   product: MarketplaceProductDetail;
-  deliveryLabel: string;
-  licenseLabel: string;
   reviewCount: number;
   loginRedirect: string;
   onDeleted: () => void;
@@ -20,8 +18,6 @@ type CreatorProductDetailBottomProps = {
 
 export function CreatorProductDetailBottom({
   product,
-  deliveryLabel,
-  licenseLabel,
   reviewCount,
   loginRedirect,
   onDeleted,
@@ -38,8 +34,6 @@ export function CreatorProductDetailBottom({
     <div className={productDetailSectionGapClass}>
       <ProductDetailInfoTabs
         product={product}
-        deliveryLabel={deliveryLabel}
-        licenseLabel={licenseLabel}
         reviewCount={reviewCount}
         onReviewSubmitted={handleReviewSubmitted}
       />

@@ -26,7 +26,7 @@ export function FinalCTA() {
 
           <Link
             href="/register"
-            className={`inline-flex items-center rounded-xl px-8 py-4 text-base font-semibold sm:text-lg ${brandCtaClass}`}
+            className={`inline-flex items-center px-8 py-4 text-base font-semibold sm:text-lg ${brandCtaClass}`}
           >
             Get started now →
           </Link>

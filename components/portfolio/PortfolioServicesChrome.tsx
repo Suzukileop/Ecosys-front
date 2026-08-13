@@ -10,7 +10,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { portfolioInlineInputClass } from '@/components/portfolio/portfolio-section-shared';
-import { ProfileSectionLimitUpgradeHint } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 import { MAX_SERVICES } from '@/components/creator/studio/ProfileServicesField';
 
 export type PortfolioServiceItem = {
@@ -423,7 +423,12 @@ export function PortfolioServicesReadOnly({
   if (orderedEntries.length === 0 && !composeAdd) {
     return (
       <div className="-mx-5 -mb-1 -mt-5 rounded-none px-5 py-5 sm:-mx-6 sm:-mt-6 sm:px-6 sm:py-6">
-        <ProfileSectionLimitUpgradeHint limit={MAX_SERVICES} unit="services" className="mb-6" />
+        <ProfileSectionItemCount
+          count={items.filter((item) => item.title.trim()).length}
+          limit={MAX_SERVICES}
+          unit="services"
+          className="mb-6"
+        />
         <p className="text-center text-sm italic text-neutral-500 dark:text-neutral-400">
           No services yet. Click Add service to create one.
         </p>
@@ -433,7 +438,12 @@ export function PortfolioServicesReadOnly({
 
   return (
     <div className="-mx-5 -mb-1 -mt-5 px-5 pb-8 pt-5 sm:-mx-6 sm:-mt-6 sm:px-6 sm:pb-10 sm:pt-6">
-      <ProfileSectionLimitUpgradeHint limit={MAX_SERVICES} unit="services" className="mb-5" />
+      <ProfileSectionItemCount
+        count={items.filter((item) => item.title.trim()).length}
+        limit={MAX_SERVICES}
+        unit="services"
+        className="mb-5"
+      />
       <div className="grid gap-5 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-6">
         {orderedEntries.map(({ item, index }) => {
           const draft = drafts[index] ?? toDraft(item);

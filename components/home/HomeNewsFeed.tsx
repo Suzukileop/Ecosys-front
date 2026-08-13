@@ -219,7 +219,7 @@ export function HomeNewsFeed() {
         {items.map((post) => (
           <section
             key={post.id}
-            className="flex min-h-0 snap-center snap-always scroll-mt-6 items-center justify-center pb-10 pt-2 lg:h-[80vh] lg:min-h-[80vh]"
+            className="flex min-h-0 snap-center snap-always scroll-mt-6 items-center justify-center pb-10 pt-2"
           >
             <PublicContentPostCard
               post={post}

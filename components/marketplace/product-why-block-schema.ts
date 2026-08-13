@@ -9,6 +9,8 @@ export const opinionItemSchema = z.object({
 export const productWhyBlockSchema = z.object({
   id: z.string().uuid(),
   sortOrder: z.number().int().min(0),
+  /** media = photo/video + captions; text = text catalog only */
+  kind: z.enum(['media', 'text']),
   mediaUrl: z.string().optional().or(z.literal('')),
   mediaType: z.enum(['IMAGE', 'VIDEO']).nullable().optional(),
   opinions: z.array(opinionItemSchema).max(10),
@@ -16,13 +18,17 @@ export const productWhyBlockSchema = z.object({
 
 export type ProductWhyBlockForm = z.infer<typeof productWhyBlockSchema>;
 
-export function createEmptyProductWhyBlock(sortOrder: number): ProductWhyBlockForm {
+export function createEmptyProductWhyBlock(
+  sortOrder: number,
+  kind: 'media' | 'text' = 'media'
+): ProductWhyBlockForm {
   return {
     id: crypto.randomUUID(),
     sortOrder,
+    kind,
     mediaUrl: '',
     mediaType: null,
-    opinions: [],
+    opinions: [{ value: '' }],
   };
 }
 
@@ -68,10 +74,14 @@ export function parseProductWhyBlocks(raw: unknown): ProductWhyBlockForm[] {
     const mediaUrl = block.mediaUrl != null ? String(block.mediaUrl) : '';
     const mediaTypeRaw = block.mediaType != null ? String(block.mediaType).toUpperCase() : null;
     const mediaType = mediaTypeRaw === 'VIDEO' ? 'VIDEO' : mediaTypeRaw === 'IMAGE' ? 'IMAGE' : null;
+    const kindRaw = block.kind != null ? String(block.kind).toLowerCase() : null;
+    const kind: 'media' | 'text' =
+      kindRaw === 'text' ? 'text' : kindRaw === 'media' ? 'media' : mediaUrl.trim() ? 'media' : 'text';
 
     blocks.push({
       id: block.id != null ? String(block.id) : crypto.randomUUID(),
       sortOrder: typeof block.sortOrder === 'number' ? block.sortOrder : index,
+      kind,
       mediaUrl,
       mediaType: mediaUrl ? mediaType ?? inferProfileMediaType(mediaUrl) : null,
       opinions: mergeLegacyIntoOpinions(block),
@@ -83,19 +93,30 @@ export function parseProductWhyBlocks(raw: unknown): ProductWhyBlockForm[] {
 
 export function serializeProductWhyBlocks(blocks: ProductWhyBlockForm[]): ProductWhyBlock[] {
   return blocks
-    .filter((block) => {
-      const mediaUrl = block.mediaUrl?.trim();
+    .map((block) => {
       const opinions = block.opinions.map((item) => item.value.trim()).filter(Boolean);
-      return Boolean(mediaUrl) && opinions.length > 0;
-    })
-    .map((block, index) => {
-      const mediaUrl = block.mediaUrl!.trim();
+      const mediaUrl = block.mediaUrl?.trim() ?? '';
+      const kind = block.kind === 'text' || !mediaUrl ? 'text' : 'media';
+
+      if (opinions.length === 0) return null;
+      if (kind === 'media' && !mediaUrl) return null;
+
+      if (kind === 'text') {
+        return {
+          id: block.id,
+          sortOrder: 0,
+          opinions,
+        } satisfies ProductWhyBlock;
+      }
+
       return {
         id: block.id,
-        sortOrder: index,
+        sortOrder: 0,
         mediaUrl,
         mediaType: block.mediaType ?? inferProfileMediaType(mediaUrl),
-        opinions: block.opinions.map((item) => item.value.trim()).filter(Boolean),
-      };
-    });
+        opinions,
+      } satisfies ProductWhyBlock;
+    })
+    .filter((block): block is ProductWhyBlock => block != null)
+    .map((block, index) => ({ ...block, sortOrder: index }));
 }

@@ -72,18 +72,18 @@ export function PublicContentPostCard({
           openLightbox();
         }
       }}
-      className="relative flex min-h-[min(60vw,20rem)] flex-1 cursor-pointer items-center justify-center bg-neutral-100 dark:bg-neutral-950 lg:min-h-0"
+      className="relative w-full cursor-pointer bg-neutral-100 dark:bg-neutral-950"
     >
       {post.mediaUrl ? (
-        <div className="pointer-events-none h-full w-full">
+        <div className="pointer-events-none w-full">
           <ContentPostFeedMediaFrame
             mediaUrl={post.mediaUrl}
             mediaType={post.mediaType}
-            layout="fill"
+            layout="feed"
           />
         </div>
       ) : (
-        <div className="flex h-full min-h-[12rem] items-center justify-center text-xs text-neutral-400">
+        <div className="flex min-h-[12rem] items-center justify-center text-xs text-neutral-400">
           No preview
         </div>
       )}
@@ -102,9 +102,9 @@ export function PublicContentPostCard({
   if (isSplit) {
     return (
       <div
-        className={`mx-auto flex h-full min-h-0 w-full max-w-[min(100%,88rem)] flex-col gap-4 px-1 sm:px-2 lg:flex-row lg:items-stretch lg:gap-5 ${className}`}
+        className={`mx-auto flex w-full max-w-[min(100%,88rem)] flex-col gap-4 px-1 sm:px-2 lg:flex-row lg:items-stretch lg:gap-5 ${className}`}
       >
-        <article className="flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 lg:h-full lg:w-[calc((100%-1.5rem)/2)] lg:max-w-[calc((100%-1.5rem)/2)]">
+        <article className="flex w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 lg:w-[calc((100%-1.5rem)/2)] lg:max-w-[calc((100%-1.5rem)/2)]">
           <div className="relative shrink-0 p-4">
             <ContentPostStudioHeader
               creatorName={post.creator.fullName}
@@ -139,7 +139,7 @@ export function PublicContentPostCard({
           onCountChange={setCommentCount}
           loginRedirect="/login?redirect=/dashboard/home"
           isAuthenticated={isAuthenticated}
-          className="min-h-0 flex-1 lg:h-full"
+          className="min-h-0 w-full flex-1 lg:h-auto lg:min-h-full"
         />
 
         {lightbox}
@@ -148,8 +148,8 @@ export function PublicContentPostCard({
   }
 
   return (
-    <div className={`flex h-full min-h-0 w-full items-center justify-center ${className}`}>
-      <article className="flex min-h-0 w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 lg:h-full xl:max-w-2xl">
+    <div className={`flex w-full items-center justify-center ${className}`}>
+      <article className="flex w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 xl:max-w-2xl">
         <div className="relative shrink-0 space-y-3 p-4">
           <ContentPostStudioHeader
             creatorName={post.creator.fullName}

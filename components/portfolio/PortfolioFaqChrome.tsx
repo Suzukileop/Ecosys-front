@@ -9,6 +9,8 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { MAX_FAQ } from '@/components/creator/studio/ProfileFaqField';
 
 const inlineInputClass =
   'w-full bg-transparent px-0 py-0 text-[15px] font-semibold leading-snug text-neutral-900 outline-none placeholder:italic placeholder:font-normal placeholder:text-neutral-400 dark:text-white sm:text-base';
@@ -283,14 +285,26 @@ export function PortfolioFaqReadOnly({
 
   if (visibleEntries.length === 0 && !composeAdd) {
     return (
-      <p className="py-10 text-center text-sm italic text-neutral-500 dark:text-neutral-400">
-        No FAQ items yet. Click Add FAQ to create one.
-      </p>
+      <div className="space-y-4 py-5">
+        <ProfileSectionItemCount
+          count={items.filter((item) => item.question.trim() && item.answer.trim()).length}
+          limit={MAX_FAQ}
+          unit="FAQ items"
+        />
+        <p className="py-6 text-center text-sm italic text-neutral-500 dark:text-neutral-400">
+          No FAQ items yet. Click Add FAQ to create one.
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      <ProfileSectionItemCount
+        count={items.filter((item) => item.question.trim() && item.answer.trim()).length}
+        limit={MAX_FAQ}
+        unit="FAQ items"
+      />
       {visibleEntries.map(({ item, index }) => {
         const draft = drafts[index] ?? toDraft(item);
         const editing = Boolean(canEdit && editingIndex === index);

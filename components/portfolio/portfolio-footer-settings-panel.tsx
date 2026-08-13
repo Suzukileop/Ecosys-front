@@ -1085,7 +1085,9 @@ export function FooterSettingsPanel({
                       Logo image URL (optional)
                     </span>
                     <input
-                      type="url"
+                      type="text"
+                      inputMode="url"
+                      autoComplete="url"
                       value={footer.centeredCustomLogoUrl ?? ''}
                       onChange={(event) => onChange({ centeredCustomLogoUrl: event.target.value })}
                       placeholder="https://…/logo.svg"

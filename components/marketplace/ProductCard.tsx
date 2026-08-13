@@ -16,8 +16,6 @@ type ProductCardProps = {
   product: MarketplaceProductSummary;
   href?: string;
   showCreator?: boolean;
-  /** Creator-only: show sales in the thumbnail engagement strip. */
-  showSales?: boolean;
   initialFavorited?: boolean;
   onFavoritedChange?: (productId: string, favorited: boolean) => void;
   initialLiked?: boolean;
@@ -35,7 +33,6 @@ export function ProductCard({
   product,
   href,
   showCreator = true,
-  showSales = false,
   initialFavorited,
   onFavoritedChange,
   initialLiked,
@@ -116,8 +113,6 @@ export function ProductCard({
           initialLiked={initialLiked}
           onLikedChange={(liked) => onLikedChange?.(product.id, liked)}
           views={product.views ?? 0}
-          salesCount={product.salesCount ?? 0}
-          showSales={showSales}
         />
       </div>
 

@@ -1,11 +1,15 @@
 'use client';
 
 import { use, useCallback, useEffect, useLayoutEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { getCreatorProduct, updateProduct } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
-import { creatorProductsRedirectAfterAction } from '@/lib/creator-product-feedback';
+import { showCreatorProductFeedback } from '@/lib/creator-product-feedback';
+import {
+  creatorProductViewPath,
+  parseCreatorProductNavFrom,
+} from '@/lib/creator-product-nav';
 import { DashboardHomeShell } from '@/components/DashboardHomeShell';
 import { ProductEditorForm } from '@/components/marketplace/ProductEditorForm';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
@@ -20,6 +24,9 @@ export default function EditCreatorProductPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const navFrom = parseCreatorProductNavFrom(searchParams.get('from'));
+  const consultHref = creatorProductViewPath(id, navFrom);
   const { hasRole } = useAuth();
   const [product, setProduct] = useState<MarketplaceProductDetail | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -65,7 +72,8 @@ export default function EditCreatorProductPage({
     setSubmitError(null);
     try {
       await updateProduct(id, body);
-      router.replace(creatorProductsRedirectAfterAction('updated', body.title));
+      showCreatorProductFeedback('updated', body.title);
+      router.replace(consultHref);
       router.refresh();
     } catch (e) {
       setSubmitError(getApiErrorMessage(e, 'Update failed.'));
@@ -73,16 +81,16 @@ export default function EditCreatorProductPage({
   };
 
   return (
-    <DashboardHomeShell>
-      <div className="mx-auto max-w-4xl space-y-6">
+    <DashboardHomeShell fullWidth>
+      <div className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 sm:py-8">
         <div>
           <Link
-            href="/dashboard/creator?tab=products"
-            className="text-sm font-medium text-orange-600 transition hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+            href={consultHref}
+            className="inline-flex items-center text-sm font-medium text-neutral-500 transition hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
           >
-            ← My products
+            {'< back'}
           </Link>
-          <h1 className="mt-3 text-2xl font-bold text-gray-900 dark:text-white">Edit product</h1>
+          <h1 className="mt-3 text-2xl font-bold text-neutral-900 dark:text-white">Edit product</h1>
         </div>
 
         {loadError && <ErrorAlert message={loadError} onDismiss={() => setLoadError(null)} />}
@@ -95,7 +103,7 @@ export default function EditCreatorProductPage({
             <ProductEditorForm
               initial={product}
               submitLabel="Save changes"
-              cancelHref="/dashboard/creator?tab=products"
+              cancelHref={consultHref}
               onSubmit={onSubmit}
             />
           )

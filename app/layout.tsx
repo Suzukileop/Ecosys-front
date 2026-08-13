@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" suppressHydrationWarning data-scroll-behavior="smooth" className={aeonik.variable}>
+    <html lang="fr" suppressHydrationWarning className={aeonik.variable}>
       <head>
         {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
         <script dangerouslySetInnerHTML={{ __html: initThemeScript }} />

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { brandCtaClass, brandGradientBg, brandGradientText, brandSolidBg } from '@/components/landing/landingBrand';
+import { brandCtaClass, brandFrameRadiusClass, brandGradientBg, brandGradientText, brandSolidBg } from '@/components/landing/landingBrand';
 
 const ORANGE = '#F97316';
 const ORANGE_RGB = '249,115,22';
@@ -92,7 +92,7 @@ const steps = [
     description:
       'Upload a file or paste a TikTok, Instagram, or YouTube URL. Our AI takes over instantly.',
     illustration: (
-      <div className="rounded-xl border border-black/5 bg-neutral-50 p-3 dark:border-white/5 dark:bg-neutral-900">
+      <div className={`border border-black/5 bg-neutral-50 p-3 dark:border-white/5 dark:bg-neutral-900 ${brandFrameRadiusClass}`}>
         <div className="mb-2 flex gap-2">
           <span className="rounded-md border border-[#F97316]/30 bg-[#F97316]/10 px-2.5 py-1 text-xs font-semibold text-[#F97316]">
             Upload
@@ -116,7 +116,7 @@ const steps = [
     description:
       'Multiple dimensions analyzed per sequence: hooks, transitions, pacing, text, emotion, color, structure.',
     illustration: (
-      <div className="rounded-xl border border-black/5 bg-neutral-50 p-3 dark:border-white/5 dark:bg-neutral-900">
+      <div className={`border border-black/5 bg-neutral-50 p-3 dark:border-white/5 dark:bg-neutral-900 ${brandFrameRadiusClass}`}>
         <div className="mb-2 flex items-center gap-2">
           <span className="rounded-full border border-[#F97316]/30 bg-[#F97316]/10 px-2 py-0.5 text-xs font-bold text-[#F97316]">
             AI
@@ -144,7 +144,7 @@ const steps = [
     description:
       'From analyzed dimensions: backgrounds, text, transitions, reusable audio URLs, and transition cues for every sequence.',
     illustration: (
-      <div className="rounded-xl border border-black/5 bg-neutral-50 p-3 dark:border-white/5 dark:bg-neutral-900">
+      <div className={`border border-black/5 bg-neutral-50 p-3 dark:border-white/5 dark:bg-neutral-900 ${brandFrameRadiusClass}`}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {[
             { label: 'Background', tone: 0.35 },
@@ -176,7 +176,7 @@ const steps = [
     description:
       'Intuitive timeline, layers, transitions, and effects. Export directly to TikTok, Instagram, or YouTube.',
     illustration: (
-      <div className="rounded-xl border border-black/5 bg-neutral-50 p-3 dark:border-white/5 dark:bg-neutral-900">
+      <div className={`border border-black/5 bg-neutral-50 p-3 dark:border-white/5 dark:bg-neutral-900 ${brandFrameRadiusClass}`}>
         <div className="space-y-1.5">
           {['Video', 'Audio', 'Text'].map((track, i) => (
             <div key={track} className="flex items-center gap-2">
@@ -267,7 +267,7 @@ function StepCarouselCard({
       }}
     >
       <div
-        className={`relative rounded-2xl border bg-white p-5 transition-shadow dark:bg-neutral-900 sm:p-6 ${
+        className={`relative border bg-white p-5 transition-shadow dark:bg-neutral-900 sm:p-6 ${brandFrameRadiusClass} ${
           isCenter
             ? 'border-[#F97316]/30 shadow-[0_28px_70px_rgba(249,115,22,0.22)] dark:border-[#F97316]/40'
             : isSide
@@ -279,7 +279,7 @@ function StepCarouselCard({
         {isSide && (
           <>
             <div
-              className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-white/55 via-transparent to-neutral-200/25 dark:from-white/6 dark:to-neutral-800/35"
+              className={`pointer-events-none absolute inset-0 bg-gradient-to-b from-white/55 via-transparent to-neutral-200/25 dark:from-white/6 dark:to-neutral-800/35 ${brandFrameRadiusClass}`}
               aria-hidden="true"
             />
             <div
@@ -475,7 +475,7 @@ export function HowItWorks({ snapViewport = false }: HowItWorksProps) {
 
             <Link
               href="/register"
-              className={`inline-flex items-center justify-center rounded-full px-6 py-2.5 text-sm font-semibold ${brandCtaClass}`}
+              className={`inline-flex items-center justify-center px-6 py-2.5 text-sm font-semibold ${brandCtaClass}`}
             >
               Get started free
             </Link>

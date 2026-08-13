@@ -7,7 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { landingSectionShellClass } from '@/components/landing/landingBrand';
+import { brandButtonRadiusClass, brandFrameRadiusClass, landingSectionShellClass } from '@/components/landing/landingBrand';
 
 const AUTOPLAY_MS = 5000;
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -130,7 +130,7 @@ function FeatureCopy({ feature }: { feature: Feature }) {
       </ul>
       <Link
         href="/register"
-        className="mt-8 inline-flex w-fit items-center gap-2.5 rounded-full bg-neutral-950 px-8 py-3.5 text-sm font-semibold uppercase tracking-wider text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200 sm:px-9 sm:py-4 sm:text-base"
+        className={`mt-8 inline-flex w-fit items-center gap-2.5 bg-neutral-950 px-8 py-3.5 text-sm font-semibold uppercase tracking-wider text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200 sm:px-9 sm:py-4 sm:text-base ${brandButtonRadiusClass}`}
       >
         <span>Get started</span>
         <span aria-hidden="true">→</span>
@@ -154,7 +154,7 @@ function FeaturePanel({
         initial={false}
         animate={playEntrance ? { opacity: 1, x: 0 } : { opacity: 0, x: -72 }}
         transition={{ duration: 0.7, ease: EASE }}
-        className="flex flex-col justify-center rounded-3xl bg-neutral-50/80 px-6 py-8 dark:bg-neutral-900 sm:px-8 sm:py-10 lg:rounded-none lg:rounded-l-3xl lg:px-10 lg:py-12 xl:px-14 xl:py-16"
+        className={`flex flex-col justify-center bg-neutral-50/80 px-6 py-8 dark:bg-neutral-900 sm:px-8 sm:py-10 lg:rounded-none lg:rounded-l-lg lg:px-10 lg:py-12 xl:px-14 xl:py-16 ${brandFrameRadiusClass}`}
       >
         <AnimatePresence mode="wait">
           <motion.div
@@ -174,7 +174,7 @@ function FeaturePanel({
         initial={false}
         animate={playEntrance ? { opacity: 1, x: 0 } : { opacity: 0, x: 72 }}
         transition={{ duration: 0.7, ease: EASE, delay: playEntrance ? 0.06 : 0 }}
-        className="overflow-hidden rounded-3xl lg:rounded-none lg:rounded-r-3xl"
+        className={`overflow-hidden lg:rounded-none lg:rounded-r-lg ${brandFrameRadiusClass}`}
       >
         <AnimatePresence mode="wait">
           <motion.div

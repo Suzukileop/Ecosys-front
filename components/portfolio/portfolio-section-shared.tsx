@@ -13,6 +13,11 @@ import {
 export const portfolioInlineInputClass =
   'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-[15px] font-semibold text-neutral-900 outline-none transition focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white';
 
+export const portfolioInlineInputErrorClass =
+  'w-full rounded-lg border border-red-400 bg-white px-3 py-2 text-[15px] font-semibold text-neutral-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:border-red-500/70 dark:bg-neutral-900 dark:text-white';
+
+export const portfolioFieldErrorTextClass = 'mt-1 text-xs font-medium text-red-600 dark:text-red-400';
+
 export function PortfolioSectionIconButton({
   label,
   onClick,

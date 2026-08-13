@@ -1,54 +1,77 @@
 import type { ProductType } from '@/types/marketplace';
 
-export const PRODUCT_EDITOR_STEPS = [
+export type ProductFormat = 'virtual' | 'physical';
+
+export const PRODUCT_EDITOR_STEPS_VIRTUAL = [
   {
-    id: 'file',
-    label: 'Product file',
-    description: 'Upload the file buyers receive after purchase.',
-  },
-  {
-    id: 'details',
-    label: 'Product details',
-    description: 'Title, type, genre and description shown on your public profile.',
-  },
-  {
-    id: 'pricing',
-    label: 'Pricing',
-    description: 'Set a sale price, mark as free, or show a discount.',
+    id: 'basics',
+    label: 'Basics',
+    description: '',
   },
   {
     id: 'media',
-    label: 'Media & demo',
-    description: 'Thumbnail, demo media and product highlights.',
+    label: 'Thumbnail & demo',
+    description: '',
+  },
+  {
+    id: 'highlights',
+    label: 'Why your product',
+    description: '',
   },
   {
     id: 'settings',
-    label: 'Delivery & publish',
-    description: 'License, delivery mode, tags and catalog visibility.',
+    label: 'Details',
+    description: '',
   },
 ] as const;
 
-export type ProductEditorStepId = (typeof PRODUCT_EDITOR_STEPS)[number]['id'];
+export const PRODUCT_EDITOR_STEPS_PHYSICAL = [
+  {
+    id: 'basics',
+    label: 'Basics',
+    description: '',
+  },
+  {
+    id: 'media',
+    label: 'Photos',
+    description: '',
+  },
+] as const;
 
-const STEP_FIELDS: Record<ProductEditorStepId, readonly string[]> = {
-  file: [],
-  details: ['title', 'type', 'genre', 'description'],
-  pricing: ['priceAmount', 'currency', 'compareAtPriceAmount'],
-  media: ['thumbnailUrl', 'demoUrl', 'demoSubtitles', 'whyProductBlocks', 'videoDuration', 'videoResolution'],
-  settings: [
-    'deliveryMode',
-    'licenseType',
-    'fileFormat',
-    'fileSizeMb',
-    'language',
-    'version',
-    'isBestseller',
-    'isPublished',
-  ],
+export const PRODUCT_EDITOR_STEPS = PRODUCT_EDITOR_STEPS_VIRTUAL;
+
+export type ProductEditorStepId =
+  | (typeof PRODUCT_EDITOR_STEPS_VIRTUAL)[number]['id']
+  | (typeof PRODUCT_EDITOR_STEPS_PHYSICAL)[number]['id'];
+
+export function stepsForFormat(format: ProductFormat) {
+  return format === 'physical' ? PRODUCT_EDITOR_STEPS_PHYSICAL : PRODUCT_EDITOR_STEPS_VIRTUAL;
+}
+
+const STEP_FIELDS_VIRTUAL: Record<ProductEditorStepId, readonly string[]> = {
+  basics: ['title', 'type', 'genre', 'description', 'priceAmount', 'currency', 'compareAtPriceAmount'],
+  media: ['thumbnailUrl', 'demoUrl', 'demoSubtitles', 'videoDuration', 'videoResolution'],
+  highlights: ['whyProductBlocks'],
+  settings: ['fileFormat', 'fileSizeMb', 'language', 'version'],
 };
 
-export function fieldsForStep(stepId: ProductEditorStepId, productType: ProductType): readonly string[] {
-  const fields = STEP_FIELDS[stepId];
+const STEP_FIELDS_PHYSICAL: Record<'basics' | 'media', readonly string[]> = {
+  basics: ['title', 'description', 'priceAmount', 'currency', 'compareAtPriceAmount'],
+  media: ['thumbnailUrl', 'galleryImages'],
+};
+
+export function fieldsForStep(
+  stepId: ProductEditorStepId,
+  productType: ProductType,
+  format: ProductFormat = 'virtual'
+): readonly string[] {
+  if (format === 'physical') {
+    if (stepId === 'basics' || stepId === 'media') {
+      return STEP_FIELDS_PHYSICAL[stepId];
+    }
+    return [];
+  }
+  const fields = STEP_FIELDS_VIRTUAL[stepId] ?? [];
   if (stepId === 'media' && productType !== 'VIDEO') {
     return fields.filter((f) => f !== 'videoDuration' && f !== 'videoResolution');
   }

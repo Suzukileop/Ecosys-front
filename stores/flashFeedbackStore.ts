@@ -35,3 +35,19 @@ export const useFlashFeedbackStore = create<FlashFeedbackState>((set) => ({
 export function pushFlashFeedback(toast: Omit<FlashToast, 'id'>): string {
   return useFlashFeedbackStore.getState().push(toast);
 }
+
+/** Bottom-center toast when a free-plan insertion cap is hit. */
+export function pushInsertionLimitFeedback(params: {
+  limit: number;
+  unit: string;
+}): string {
+  return pushFlashFeedback({
+    variant: 'error',
+    title: 'Insertion limit reached',
+    description: `Choose up to ${params.limit} ${params.unit}. Upgrade your plan for unlimited insertion.`,
+    placement: 'bottom',
+    actionHref: '/upgrade',
+    actionLabel: 'Upgrade',
+    durationMs: 5500,
+  });
+}

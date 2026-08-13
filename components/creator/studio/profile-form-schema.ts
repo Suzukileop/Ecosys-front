@@ -16,13 +16,55 @@ export const platformEnum = z.enum([
 
 export const linkTypeEnum = z.enum(['WEBSITE', 'CTA', 'CUSTOM', 'SOCIAL']);
 
-function isHttpUrl(value: string): boolean {
+/** Accepts absolute http(s) URLs, or bare hostnames / paths (normalized with https://). */
+export function toAbsoluteHttpUrl(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (/\s/.test(trimmed)) return null;
   try {
-    const parsed = new URL(value);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    const hasProtocol = /^https?:\/\//i.test(trimmed);
+    if (!hasProtocol) {
+      const hostPart = trimmed.split(/[/?#]/)[0] ?? '';
+      const isLocalhost = /^localhost(:\d+)?$/i.test(hostPart);
+      if (!isLocalhost && !hostPart.includes('.')) return null;
+    }
+    const withProtocol = hasProtocol ? trimmed : `https://${trimmed}`;
+    const parsed = new URL(withProtocol);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    if (!parsed.hostname) return null;
+    return withProtocol;
   } catch {
-    return false;
+    return null;
   }
+}
+
+function isHttpUrl(value: string): boolean {
+  return toAbsoluteHttpUrl(value) != null;
+}
+
+/** Field-level message for optional HTTP URLs (empty is valid). */
+export function getHttpUrlFieldError(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (!isHttpUrl(trimmed)) return 'Invalid URL.';
+  return null;
+}
+
+/** Field-level message for team social rows (empty is valid). */
+export function getTeamSocialUrlFieldError(value: string, platform?: string | null): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const isEmail =
+    platform === 'EMAIL' ||
+    trimmed.toLowerCase().startsWith('mailto:') ||
+    (!trimmed.includes('://') && trimmed.includes('@'));
+  if (isEmail) {
+    if (trimmed.toLowerCase().startsWith('mailto:')) {
+      return trimmed.length > 'mailto:'.length ? null : 'Invalid email.';
+    }
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) ? null : 'Invalid email.';
+  }
+  return getHttpUrlFieldError(trimmed);
 }
 
 /** Hostname (or "Link") used when the UI no longer collects a label. */
@@ -153,18 +195,6 @@ export function inferTeamSocialPlatform(
   return 'WEBSITE';
 }
 
-function isTeamSocialUrl(value: string, platform: z.infer<typeof teamSocialPlatformEnum>): boolean {
-  const trimmed = value.trim();
-  if (!trimmed) return false;
-  if (platform === 'EMAIL') {
-    if (trimmed.toLowerCase().startsWith('mailto:')) {
-      return trimmed.length > 'mailto:'.length;
-    }
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
-  }
-  return isHttpUrl(trimmed);
-}
-
 export const teamSocialLinkSchema = z
   .object({
     id: z.string().uuid(),
@@ -178,11 +208,14 @@ export const teamSocialLinkSchema = z
     const label = data.label?.trim() ?? '';
     if (!url && !label) return;
     if (!url) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'URL requise.', path: ['url'] });
-    } else if (!isTeamSocialUrl(url, data.platform)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'URL is required.', path: ['url'] });
+      return;
+    }
+    const fieldError = getTeamSocialUrlFieldError(url, data.platform);
+    if (fieldError) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: data.platform === 'EMAIL' ? 'Email invalide.' : 'URL invalide.',
+        message: fieldError,
         path: ['url'],
       });
     }
@@ -295,13 +328,27 @@ export const experienceProofPlatformEnum = z.enum([
   'OTHER',
 ]);
 
-export const experienceProofLinkSchema = z.object({
-  id: z.string().uuid(),
-  label: z.string().max(100),
-  url: z.string().max(500),
-  platform: experienceProofPlatformEnum.nullable().optional(),
-  sortOrder: z.number().int().min(0),
-});
+export const experienceProofLinkSchema = z
+  .object({
+    id: z.string().uuid(),
+    label: z.string().max(100),
+    url: z.string().max(500),
+    platform: experienceProofPlatformEnum.nullable().optional(),
+    sortOrder: z.number().int().min(0),
+  })
+  .superRefine((data, ctx) => {
+    const url = data.url.trim();
+    const label = data.label.trim();
+    if (!url && !label) return;
+    if (!url) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'URL is required.', path: ['url'] });
+      return;
+    }
+    const fieldError = getHttpUrlFieldError(url);
+    if (fieldError) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: fieldError, path: ['url'] });
+    }
+  });
 
 export const profileMediaBlockSchema = z
   .object({
@@ -380,7 +427,7 @@ export const profileSchema = z
     isAvailable: z.boolean(),
     profileLinks: z.array(profileLinkSchema).max(10),
     serviceOffers: z.array(profileServiceSchema).max(8),
-    faqItems: z.array(faqItemSchema).max(5),
+    faqItems: z.array(faqItemSchema).max(8),
     teamMembers: z.array(teamMemberSchema).max(12),
     galleryItems: z.array(galleryItemSchema).max(24),
     whyMeBlocks: z.array(profileMediaBlockSchema).max(50),
@@ -1169,13 +1216,16 @@ export function serializeProfileBlocks(
             .filter((item): item is { name: string; iconUrl?: string } => item != null) ?? [],
         links: (block.links ?? [])
           .filter((link) => link.url.trim().length > 0 && link.label.trim().length > 0)
-          .map((link, linkIndex) => ({
-            id: link.id,
-            label: link.label.trim(),
-            url: link.url.trim(),
-            platform: link.platform ?? null,
-            sortOrder: linkIndex,
-          })),
+          .map((link, linkIndex) => {
+            const raw = link.url.trim();
+            return {
+              id: link.id,
+              label: link.label.trim(),
+              url: toAbsoluteHttpUrl(raw) ?? raw,
+              platform: link.platform ?? null,
+              sortOrder: linkIndex,
+            };
+          }),
         remarks,
         location,
         employmentType: block.employmentType ?? null,
@@ -1187,7 +1237,7 @@ export function serializeProfileLinks(links: ProfileLinkForm[]) {
   return links
     .filter((link) => link.url.trim().length > 0)
     .map((link, index) => {
-      const url = link.url.trim();
+      const url = toAbsoluteHttpUrl(link.url) ?? link.url.trim();
       const label = link.label.trim() || deriveProfileLinkLabel(url);
       return {
         id: link.id,
@@ -1239,10 +1289,15 @@ export function serializeTeamMembers(members: TeamMemberForm[]) {
         socialLinks: (member.socialLinks ?? [])
           .filter((link) => link.url.trim().length > 0)
           .map((link, linkIndex) => {
-            const url = link.url.trim();
+            const raw = link.url.trim();
+            const platform = inferTeamSocialPlatform(raw);
+            const url =
+              platform === 'EMAIL' || raw.includes('@')
+                ? raw
+                : (toAbsoluteHttpUrl(raw) ?? raw);
             return {
               id: link.id,
-              platform: inferTeamSocialPlatform(url),
+              platform,
               label: link.label?.trim() ? link.label.trim() : null,
               url,
               sortOrder: linkIndex,

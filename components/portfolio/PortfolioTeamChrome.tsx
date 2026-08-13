@@ -12,12 +12,18 @@ import {
 import { useContentMediaUpload } from '@/components/creator/creator-content-media';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { SocialPlatformIcon } from '@/components/marketplace/creator-profile-social-icons';
-import { portfolioInlineInputClass } from '@/components/portfolio/portfolio-section-shared';
 import {
+  portfolioFieldErrorTextClass,
+  portfolioInlineInputClass,
+  portfolioInlineInputErrorClass,
+} from '@/components/portfolio/portfolio-section-shared';
+import {
+  getTeamSocialUrlFieldError,
   inferTeamSocialPlatform,
+  toAbsoluteHttpUrl,
   type TeamSocialLinkForm,
 } from '@/components/creator/studio/profile-form-schema';
-import { ProfileSectionLimitUpgradeHint } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 import { MAX_TEAM } from '@/components/creator/studio/ProfileTeamField';
 
 export type PortfolioTeamSocialLink = {
@@ -93,10 +99,13 @@ function normalizeDraft(draft: PortfolioTeamDraft): PortfolioTeamDraft {
     socialLinks: draft.socialLinks
       .filter((link) => link.url.trim().length > 0)
       .map((link, index) => {
-        const url = link.url.trim();
+        const raw = link.url.trim();
+        const platform = inferTeamSocialPlatform(raw);
+        const url =
+          platform === 'EMAIL' || raw.includes('@') ? raw : (toAbsoluteHttpUrl(raw) ?? raw);
         return {
           id: link.id,
-          platform: inferTeamSocialPlatform(url),
+          platform,
           label: link.label?.trim() ?? '',
           url,
           sortOrder: index,
@@ -338,51 +347,60 @@ function TeamSocialLinksEditor({
   links,
   onChange,
   disabled,
+  urlErrors = {},
 }: {
   links: PortfolioTeamSocialLink[];
   onChange: (next: PortfolioTeamSocialLink[]) => void;
   disabled?: boolean;
+  urlErrors?: Record<string, string>;
 }) {
   return (
     <div className="space-y-3">
       {links.map((link, linkIndex) => {
         const detectedPlatform = inferTeamSocialPlatform(link.url);
+        const urlError = urlErrors[link.id];
         return (
-          <div key={link.id} className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
-            <span
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
-              title={platformLabel(detectedPlatform)}
-              aria-label={platformLabel(detectedPlatform)}
-            >
-              <TeamSocialGlyph platform={detectedPlatform} className="h-5 w-5" />
-            </span>
-            <input
-              type="text"
-              value={link.url}
-              onChange={(event) => {
-                const url = event.target.value;
-                onChange(
-                  links.map((item, index) =>
-                    index === linkIndex
-                      ? { ...item, url, platform: inferTeamSocialPlatform(url) }
-                      : item
-                  )
-                );
-              }}
-              placeholder="https://… or email"
-              className={`${portfolioInlineInputClass} min-w-0 flex-1 font-medium`}
-              disabled={disabled}
-            />
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onChange(links.filter((_, index) => index !== linkIndex))}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:text-neutral-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
-              aria-label="Remove social link"
-              title="Remove"
-            >
-              <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" fixedWidth />
-            </button>
+          <div key={link.id} className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+              <span
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
+                title={platformLabel(detectedPlatform)}
+                aria-label={platformLabel(detectedPlatform)}
+              >
+                <TeamSocialGlyph platform={detectedPlatform} className="h-5 w-5" />
+              </span>
+              <input
+                type="text"
+                inputMode="url"
+                autoComplete="url"
+                value={link.url}
+                aria-invalid={urlError ? true : undefined}
+                onChange={(event) => {
+                  const url = event.target.value;
+                  onChange(
+                    links.map((item, index) =>
+                      index === linkIndex
+                        ? { ...item, url, platform: inferTeamSocialPlatform(url) }
+                        : item
+                    )
+                  );
+                }}
+                placeholder="https://… or email"
+                className={`${urlError ? portfolioInlineInputErrorClass : portfolioInlineInputClass} min-w-0 flex-1 font-medium`}
+                disabled={disabled}
+              />
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => onChange(links.filter((_, index) => index !== linkIndex))}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:text-neutral-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                aria-label="Remove social link"
+                title="Remove"
+              >
+                <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" fixedWidth />
+              </button>
+            </div>
+            {urlError ? <p className={`${portfolioFieldErrorTextClass} pl-12`}>{urlError}</p> : null}
           </div>
         );
       })}
@@ -464,6 +482,7 @@ export function PortfolioTeamReadOnly({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<PortfolioTeamDraft[]>(() => items.map(toDraft));
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
+  const [socialUrlErrors, setSocialUrlErrors] = useState<Record<string, string>>({});
   const previousCountRef = useRef(items.length);
   const editingCardRef = useRef<HTMLElement | null>(null);
   const cancelEditRef = useRef<() => Promise<void>>(async () => undefined);
@@ -547,6 +566,7 @@ export function PortfolioTeamReadOnly({
   const startEdit = (index: number) => {
     if (!canEdit || fieldSaving) return;
     setPendingDeleteIndex(null);
+    setSocialUrlErrors({});
     syncDraftsFromItems();
     setEditingIndex(index);
   };
@@ -556,6 +576,7 @@ export function PortfolioTeamReadOnly({
     const original = items[editingIndex];
     const wasEmpty = original ? isTeamEmpty(toDraft(original)) : true;
     setEditingIndex(null);
+    setSocialUrlErrors({});
     syncDraftsFromItems();
     if (wasEmpty) {
       onCancelNewItem?.();
@@ -576,6 +597,15 @@ export function PortfolioTeamReadOnly({
   }, [composing]);
 
   const updateDraft = (index: number, patch: Partial<PortfolioTeamDraft>) => {
+    if (patch.socialLinks) {
+      setSocialUrlErrors((prev) => {
+        const next = { ...prev };
+        for (const link of patch.socialLinks ?? []) {
+          delete next[link.id];
+        }
+        return next;
+      });
+    }
     setDrafts((prev) =>
       prev.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item))
     );
@@ -585,6 +615,16 @@ export function PortfolioTeamReadOnly({
     if (editingIndex == null || !onItemSave || fieldSaving) return;
     const draft = drafts[editingIndex];
     if (!draft) return;
+    const nextUrlErrors: Record<string, string> = {};
+    for (const link of draft.socialLinks) {
+      const message = getTeamSocialUrlFieldError(link.url, inferTeamSocialPlatform(link.url));
+      if (message) nextUrlErrors[link.id] = message;
+    }
+    if (Object.keys(nextUrlErrors).length > 0) {
+      setSocialUrlErrors(nextUrlErrors);
+      return;
+    }
+    setSocialUrlErrors({});
     const normalized = normalizeDraft(draft);
     const cardHasChanges = !draftsEqual(draft, toDraft(items[editingIndex]));
     if (isTeamIncomplete(draft)) {
@@ -623,7 +663,12 @@ export function PortfolioTeamReadOnly({
   if (visibleEntries.length === 0 && !composeAdd) {
     return (
       <div className={`${shellClass} py-5`}>
-        <ProfileSectionLimitUpgradeHint limit={MAX_TEAM} unit="team members" className="mb-6" />
+        <ProfileSectionItemCount
+          count={items.filter((item) => item.name.trim() && item.responsibility.trim()).length}
+          limit={MAX_TEAM}
+          unit="team members"
+          className="mb-6"
+        />
         <p className="text-center text-sm italic text-neutral-500 dark:text-neutral-400">
           No team members yet. Click Add member to create one.
         </p>
@@ -633,7 +678,12 @@ export function PortfolioTeamReadOnly({
 
   return (
     <div className={shellClass}>
-      <ProfileSectionLimitUpgradeHint limit={MAX_TEAM} unit="team members" className="mb-4" />
+      <ProfileSectionItemCount
+        count={items.filter((item) => item.name.trim() && item.responsibility.trim()).length}
+        limit={MAX_TEAM}
+        unit="team members"
+        className="mb-4"
+      />
       <div className="grid gap-4 sm:grid-cols-2">
         {visibleEntries.map(({ item, index }) => {
           const draft = drafts[index] ?? toDraft(item);
@@ -795,6 +845,7 @@ export function PortfolioTeamReadOnly({
                           links={draft.socialLinks}
                           onChange={(socialLinks) => updateDraft(index, { socialLinks })}
                           disabled={fieldSaving}
+                          urlErrors={socialUrlErrors}
                         />
                       </div>
                     </div>

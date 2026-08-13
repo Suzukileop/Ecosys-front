@@ -1,17 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { getCreatorFollowStats, listCreatorProducts } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { formatLocationLabel } from '@/lib/geolocation';
-import { normalizeCoverObjectPositionY } from '@/lib/creator-profile-cover';
 import { DashboardHomeShell } from '@/components/DashboardHomeShell';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { CreatorStudioHubSkeleton, CreatorStudioTabPanelSkeleton } from '@/components/creator/studio/CreatorStudioSkeleton';
-import { uploadCreatorCover, uploadUserAvatar } from '@/lib/user-profile-api';
+import { uploadUserAvatar } from '@/lib/user-profile-api';
 import { usePendingNavigation } from '@/hooks/usePendingNavigation';
 import { CreatorStudioShell, type CreatorStudioHeaderData } from './CreatorStudioShell';
 import { parseCreatorStudioHeaderLayout, type CreatorStudioHeaderLayout } from './creator-studio-header';
@@ -21,11 +20,12 @@ import {
 } from './creator-studio-header-content';
 import { parseCreatorStudioTabNavAlign, type CreatorStudioTabNavAlign } from './creator-studio-layout';
 import { CreatorStudioContentTab } from './CreatorStudioContentTab';
-import { CreatorStudioProductsTab } from './CreatorStudioProductsTab';
+import { CreatorStudioProductsReadonlyTab } from './CreatorStudioProductsReadonlyTab';
 import { CreatorStudioProfileTab } from './CreatorStudioProfileTab';
 import { STORE_INFORMATION_SECTION_IDS } from './profile-section-nav';
 import { CreatorStudioVisitorsTab } from './CreatorStudioVisitorsTab';
 import { CreatorStudioSubscribersTab } from './CreatorStudioSubscribersTab';
+import { CreatorStudioImagesTab } from './CreatorStudioImagesTab';
 import { parseCreatorStudioTab, type CreatorStudioTab } from './types';
 import type { CreatorProfileDto } from '@/types/ecosystem';
 
@@ -37,9 +37,14 @@ function CreatorStudioPageInner() {
   const { isTransitioning: isTabTransitioning, startTransition: startTabTransition, preview: previewTab } =
     usePendingNavigation(tab);
 
+  // Create flow lives in My Product — redirect legacy ?create=1 from profile.
+  useEffect(() => {
+    if (searchParams.get('tab') !== 'products' || searchParams.get('create') !== '1') return;
+    router.replace('/dashboard/products?create=1');
+  }, [router, searchParams]);
+
   const [headerLoading, setHeaderLoading] = useState(true);
   const [header, setHeader] = useState<CreatorStudioHeaderData | null>(null);
-  const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [layoutError, setLayoutError] = useState<string | null>(null);
@@ -47,7 +52,6 @@ function CreatorStudioPageInner() {
   const [savingHeaderContentStyle, setSavingHeaderContentStyle] = useState(false);
   const [savingTabNavAlign, setSavingTabNavAlign] = useState(false);
   const [savingContentHeadline, setSavingContentHeadline] = useState(false);
-  const coverPositionSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadHeader = useCallback(async (options?: { silent?: boolean }) => {
     if (!user) return;
@@ -62,13 +66,12 @@ function CreatorStudioPageInner() {
       ]);
 
       const profile = profileRes.data;
+      const nextAvatar = profile.avatarUrl ?? user.avatarUrl ?? null;
 
       setHeader({
         fullName: profile.fullName ?? user.fullName,
         email: user.email,
-        avatarUrl: profile.avatarUrl ?? user.avatarUrl ?? null,
-        coverUrl: profile.coverUrl ?? null,
-        coverObjectPositionY: normalizeCoverObjectPositionY(profile.coverObjectPositionY),
+        avatarUrl: nextAvatar,
         bio: profile.bio ?? null,
         specialite: profile.specialite ?? null,
         followerCount: followStatsRes.followerCount ?? 0,
@@ -82,13 +85,16 @@ function CreatorStudioPageInner() {
         tabNavAlign: parseCreatorStudioTabNavAlign(profile.studioTabNavAlign),
         contentHeadline: profile.studioContentHeadline ?? null,
       });
+      // Only sync auth when the avatar actually changes — unconditional updateUser
+      // recreates the user object and retriggers this load (header flicker loop).
+      if (nextAvatar && nextAvatar !== user.avatarUrl) {
+        updateUser({ avatarUrl: nextAvatar });
+      }
     } catch {
       setHeader({
         fullName: user.fullName,
         email: user.email,
         avatarUrl: user.avatarUrl ?? null,
-        coverUrl: null,
-        coverObjectPositionY: 50,
         bio: null,
         specialite: null,
         followerCount: 0,
@@ -103,13 +109,14 @@ function CreatorStudioPageInner() {
     } finally {
       setHeaderLoading(false);
     }
-  }, [user]);
+  }, [user, updateUser]);
 
   useEffect(() => {
-    if (!isLoading && user && hasRole('ROLE_CREATOR')) {
-      void loadHeader();
-    }
-  }, [isLoading, user, hasRole, loadHeader]);
+    if (isLoading || !user || !hasRole('ROLE_CREATOR')) return;
+    void loadHeader();
+    // Only boot once per creator session — loadHeader identity must not re-run this effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- prevent store header flicker loop
+  }, [isLoading, user?.id]);
 
   useEffect(() => {
     if (!isLoading && user && !hasRole('ROLE_CREATOR')) {
@@ -121,19 +128,6 @@ function CreatorStudioPageInner() {
     if (next === tab) return;
     startTabTransition(next);
     router.replace(`/dashboard/creator?tab=${next}`, { scroll: false });
-  };
-
-  const onCoverSelect = async (file: File) => {
-    setImageError(null);
-    setUploadingCover(true);
-    try {
-      await uploadCreatorCover(file);
-      await loadHeader();
-    } catch (e) {
-      setImageError(getApiErrorMessage(e, 'Unable to upload cover image.'));
-    } finally {
-      setUploadingCover(false);
-    }
   };
 
   const onAvatarSelect = async (file: File) => {
@@ -149,37 +143,6 @@ function CreatorStudioPageInner() {
       setUploadingAvatar(false);
     }
   };
-
-  useEffect(() => {
-    return () => {
-      if (coverPositionSaveTimerRef.current) {
-        clearTimeout(coverPositionSaveTimerRef.current);
-      }
-    };
-  }, []);
-
-  const saveCoverObjectPositionY = useCallback(async (y: number) => {
-    setLayoutError(null);
-    try {
-      await api.put('/api/creator/profile', { coverObjectPositionY: y });
-    } catch (e) {
-      setLayoutError(getApiErrorMessage(e, 'Unable to save cover position.'));
-    }
-  }, []);
-
-  const onCoverObjectPositionYChange = useCallback(
-    (y: number) => {
-      const normalized = normalizeCoverObjectPositionY(y);
-      setHeader((current) => (current ? { ...current, coverObjectPositionY: normalized } : current));
-      if (coverPositionSaveTimerRef.current) {
-        clearTimeout(coverPositionSaveTimerRef.current);
-      }
-      coverPositionSaveTimerRef.current = setTimeout(() => {
-        void saveCoverObjectPositionY(normalized);
-      }, 350);
-    },
-    [saveCoverObjectPositionY],
-  );
 
   const saveHeaderLayout = async (layout: CreatorStudioHeaderLayout) => {
     if (!header || layout === header.headerLayout || savingHeaderLayout) return;
@@ -260,9 +223,7 @@ function CreatorStudioPageInner() {
         tab={isTabTransitioning ? previewTab : tab}
         onTabChange={setTab}
         header={header}
-        uploadingCover={uploadingCover}
         uploadingAvatar={uploadingAvatar}
-        onCoverSelect={onCoverSelect}
         onAvatarSelect={onAvatarSelect}
         savingHeaderLayout={savingHeaderLayout}
         savingHeaderContentStyle={savingHeaderContentStyle}
@@ -274,7 +235,6 @@ function CreatorStudioPageInner() {
         onHeaderContentStyleChange={saveHeaderContentStyle}
         onTabNavAlignChange={saveTabNavAlign}
         onContentHeadlineChange={saveContentHeadline}
-        onCoverObjectPositionYChange={onCoverObjectPositionYChange}
       >
       {isTabTransitioning ? (
         <CreatorStudioTabPanelSkeleton tab={previewTab} />
@@ -286,7 +246,10 @@ function CreatorStudioPageInner() {
               specialite={header.specialite}
             />
           )}
-          {tab === 'products' && <CreatorStudioProductsTab />}
+          {tab === 'products' && <CreatorStudioProductsReadonlyTab />}
+          {tab === 'images' && (
+            <CreatorStudioImagesTab onImagesUpdated={() => void loadHeader({ silent: true })} />
+          )}
           {tab === 'visitors' && <CreatorStudioVisitorsTab />}
           {tab === 'subscribers' && <CreatorStudioSubscribersTab />}
           {tab === 'profile' && (

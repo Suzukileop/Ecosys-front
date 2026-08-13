@@ -404,8 +404,6 @@ export interface CreatorProfileDto {
   userId?: string;
   fullName?: string | null;
   avatarUrl?: string | null;
-  coverUrl?: string | null;
-  coverObjectPositionY?: number | null;
   bio: string | null;
   specialite: string | null;
   websiteUrl: string | null;
@@ -489,7 +487,6 @@ export interface CreatorProfileUpdateBody {
   studioHeaderContentStyle?: string;
   studioTabNavAlign?: string;
   studioContentHeadline?: string | null;
-  coverObjectPositionY?: number;
   whyMeBlocks?: ProfileMediaBlock[];
   experienceBlocks?: ProfileMediaBlock[];
   yearsOfExperience?: number | null;

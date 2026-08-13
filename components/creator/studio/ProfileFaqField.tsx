@@ -9,10 +9,10 @@ import {
   profileFormInputClass,
   profileFormLabelClass,
   profileSectionEmptyClass,
-  profileSectionMutedTextClass,
 } from '@/components/creator/studio/profile-section-ui';
+import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 
-const MAX_FAQ = 5;
+export const MAX_FAQ = 8;
 
 type ProfileFaqFieldProps = {
   control: Control<ProfileFormValues>;
@@ -60,7 +60,7 @@ export function ProfileFaqField({
 
   return (
     <div className="space-y-4">
-      <p className={profileSectionMutedTextClass}>Ajoutez jusqu&apos;à {MAX_FAQ} questions fréquentes.</p>
+      <ProfileSectionItemCount count={fields.length} limit={MAX_FAQ} unit="FAQ items" />
 
       {fields.length === 0 ? (
         <p className={profileSectionEmptyClass}>Aucune question ajoutée.</p>

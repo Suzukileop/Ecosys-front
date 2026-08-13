@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { landingSectionShellClass } from '@/components/landing/landingBrand';
+import { brandFrameRadiusClass, landingSectionShellClass } from '@/components/landing/landingBrand';
 
 const testimonials = [
   {
@@ -71,7 +71,7 @@ export function Testimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08, duration: 0.5 }}
-              className="flex h-full flex-col rounded-xl border border-neutral-200 bg-neutral-50 p-6 sm:p-7 dark:border-[#262626] dark:bg-[#161616]"
+              className={`flex h-full flex-col border border-neutral-200 bg-neutral-50 p-6 sm:p-7 dark:border-[#262626] dark:bg-[#161616] ${brandFrameRadiusClass}`}
             >
               <p className="flex-1 text-[15px] leading-relaxed text-neutral-600 sm:text-base dark:text-[#d1d1d1]">
                 <span aria-hidden="true">&ldquo;</span>

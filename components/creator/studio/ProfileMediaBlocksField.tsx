@@ -1,7 +1,7 @@
 'use client';
 
 import type { Control, FieldArrayWithId, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
-import { useFieldArray, Controller, useWatch } from 'react-hook-form';
+import { useFieldArray, Controller, useFormState, useWatch } from 'react-hook-form';
 import {
   ContentMediaPreview,
   useContentMediaUpload,
@@ -88,6 +88,11 @@ function ProfileMediaBlockRow({
   const mediaUrl = allowMedia ? watch(`${name}.${index}.mediaUrl`) ?? '' : '';
   const mediaType = allowMedia ? watch(`${name}.${index}.mediaType`) : null;
   const status = watch(`${name}.${index}.status`);
+  const { errors } = useFormState({ control });
+  const blockLinkErrors =
+    name === 'experienceBlocks'
+      ? errors.experienceBlocks?.[index]?.links
+      : errors.whyMeBlocks?.[index]?.links;
   const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
     control,
     name: `${name}.${index}.subtitles`,
@@ -361,22 +366,33 @@ function ProfileMediaBlockRow({
                       className={`${profileFormInputClass} mt-0 ${readOnlyClass}`}
                       {...register(`${name}.${index}.links.${linkIndex}.label`)}
                     />
-                    <div className="flex items-center gap-2">
-                      <input
-                        readOnly={readOnly}
-                        placeholder="https://…"
-                        className={`${profileFormInputClass} mt-0 min-w-0 flex-1 ${readOnlyClass}`}
-                        {...register(`${name}.${index}.links.${linkIndex}.url`)}
-                      />
-                      {!readOnly && (
-                        <button
-                          type="button"
-                          onClick={() => removeLink(linkIndex)}
-                          className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400"
-                        >
-                          Remove
-                        </button>
-                      )}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          readOnly={readOnly}
+                          type="text"
+                          inputMode="url"
+                          autoComplete="url"
+                          placeholder="https://…"
+                          className={`${profileFormInputClass} mt-0 min-w-0 flex-1 ${readOnlyClass}`}
+                          aria-invalid={blockLinkErrors?.[linkIndex]?.url ? true : undefined}
+                          {...register(`${name}.${index}.links.${linkIndex}.url`)}
+                        />
+                        {!readOnly && (
+                          <button
+                            type="button"
+                            onClick={() => removeLink(linkIndex)}
+                            className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      {blockLinkErrors?.[linkIndex]?.url?.message ? (
+                        <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                          {blockLinkErrors[linkIndex]?.url?.message}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 ))}

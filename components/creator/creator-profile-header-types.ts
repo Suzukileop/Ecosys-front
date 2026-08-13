@@ -10,8 +10,6 @@ export type CreatorProfileHeaderProps = {
   fullName: string;
   handle: string;
   avatarUrl: string | null;
-  coverUrl: string | null;
-  coverObjectPositionY?: number;
   headerContentStyle?: CreatorStudioHeaderContentStyle;
   bio: string | null;
   specialite: string | null;
@@ -24,11 +22,7 @@ export type CreatorProfileHeaderProps = {
   locationLabel?: string | null;
   isVerified?: boolean;
   editable?: boolean;
-  uploadingCover?: boolean;
   uploadingAvatar?: boolean;
-  onCoverPick?: () => void;
   onAvatarPick?: () => void;
-  coverPositionAdjustable?: boolean;
-  onCoverObjectPositionYChange?: (value: number) => void;
   trailingActions?: ReactNode;
 };

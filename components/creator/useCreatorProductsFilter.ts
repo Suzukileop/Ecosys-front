@@ -6,19 +6,21 @@ import type { MarketplaceProductSummary, ProductType } from '@/types/marketplace
 
 export type CreatorProductStatusFilter = 'all' | 'published' | 'draft';
 
+export type CreatorProductFormatFilter = 'all' | 'virtual' | 'physical';
+
 export type CreatorProductSort =
   | 'newest'
   | 'oldest'
   | 'title'
   | 'price_asc'
   | 'price_desc'
-  | 'views'
-  | 'sales';
+  | 'views';
 
 export function useCreatorProductsFilter(products: MarketplaceProductSummary[]) {
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
-  const [status, setStatus] = useState<CreatorProductStatusFilter>('all');
+  const [status, setStatus] = useState<CreatorProductStatusFilter>('published');
+  const [format, setFormat] = useState<CreatorProductFormatFilter>('all');
   const [type, setType] = useState<ProductType | ''>('');
   const [sort, setSort] = useState<CreatorProductSort>('newest');
 
@@ -33,6 +35,8 @@ export function useCreatorProductsFilter(products: MarketplaceProductSummary[]) 
     let list = products.filter((product) => {
       if (status === 'published' && !product.isPublished) return false;
       if (status === 'draft' && product.isPublished) return false;
+      if (format === 'physical' && product.type !== 'PHYSICAL') return false;
+      if (format === 'virtual' && product.type === 'PHYSICAL') return false;
       if (type && product.type !== type) return false;
 
       if (!needle) return true;
@@ -64,8 +68,6 @@ export function useCreatorProductsFilter(products: MarketplaceProductSummary[]) 
           return b.priceCents - a.priceCents;
         case 'views':
           return (b.views ?? 0) - (a.views ?? 0);
-        case 'sales':
-          return (b.salesCount ?? 0) - (a.salesCount ?? 0);
         case 'newest':
         default:
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -73,14 +75,17 @@ export function useCreatorProductsFilter(products: MarketplaceProductSummary[]) 
     });
 
     return list;
-  }, [products, query, status, type, sort]);
+  }, [products, query, status, format, type, sort]);
 
-  const hasActiveFilters = query !== '' || status !== 'all' || type !== '' || sort !== 'newest';
+  // Default view is published — only draft (and other non-default filters) count as active.
+  const hasActiveFilters =
+    query !== '' || status === 'draft' || format !== 'all' || type !== '' || sort !== 'newest';
 
   const resetFilters = () => {
     setQueryInput('');
     setQuery('');
-    setStatus('all');
+    setStatus('published');
+    setFormat('all');
     setType('');
     setSort('newest');
   };
@@ -90,6 +95,8 @@ export function useCreatorProductsFilter(products: MarketplaceProductSummary[]) 
     setQuery: setQueryInput,
     status,
     setStatus,
+    format,
+    setFormat,
     type,
     setType,
     sort,

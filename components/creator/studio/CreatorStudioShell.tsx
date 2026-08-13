@@ -15,8 +15,6 @@ export type CreatorStudioHeaderData = {
   fullName: string;
   email: string;
   avatarUrl: string | null;
-  coverUrl: string | null;
-  coverObjectPositionY: number;
   bio: string | null;
   specialite: string | null;
   followerCount: number;
@@ -36,9 +34,7 @@ type CreatorStudioShellProps = {
   onTabChange: (tab: CreatorStudioTab) => void;
   header: CreatorStudioHeaderData;
   children: ReactNode;
-  uploadingCover?: boolean;
   uploadingAvatar?: boolean;
-  onCoverSelect?: (file: File) => void | Promise<void>;
   onAvatarSelect?: (file: File) => void | Promise<void>;
   savingHeaderLayout?: boolean;
   savingHeaderContentStyle?: boolean;
@@ -50,7 +46,6 @@ type CreatorStudioShellProps = {
   onHeaderContentStyleChange: (style: CreatorStudioHeaderContentStyle) => void | Promise<void>;
   onTabNavAlignChange: (align: CreatorStudioTabNavAlign) => void | Promise<void>;
   onContentHeadlineChange: (headline: string) => void | Promise<void>;
-  onCoverObjectPositionYChange: (value: number) => void;
 };
 
 function LayoutSettingsIcon() {
@@ -71,9 +66,7 @@ export function CreatorStudioShell({
   onTabChange,
   header,
   children,
-  uploadingCover = false,
   uploadingAvatar = false,
-  onCoverSelect,
   onAvatarSelect,
   savingHeaderLayout = false,
   savingHeaderContentStyle = false,
@@ -85,30 +78,15 @@ export function CreatorStudioShell({
   onHeaderContentStyleChange,
   onTabNavAlignChange,
   onContentHeadlineChange,
-  onCoverObjectPositionYChange,
 }: CreatorStudioShellProps) {
-  const coverInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [layoutPanelOpen, setLayoutPanelOpen] = useState(false);
 
   const handle = header.email;
-
-  const pickCover = () => coverInputRef.current?.click();
   const pickAvatar = () => avatarInputRef.current?.click();
 
   return (
     <div className="mx-auto w-full max-w-[1280px]">
-      <input
-        ref={coverInputRef}
-        type="file"
-        accept={CREATOR_PROFILE_IMAGE_ACCEPT}
-        className="sr-only"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) void onCoverSelect?.(file);
-          e.target.value = '';
-        }}
-      />
       <input
         ref={avatarInputRef}
         type="file"
@@ -127,8 +105,6 @@ export function CreatorStudioShell({
           fullName={header.fullName}
           handle={handle}
           avatarUrl={header.avatarUrl}
-          coverUrl={header.coverUrl}
-          coverObjectPositionY={header.coverObjectPositionY}
           headerContentStyle={header.headerContentStyle}
           bio={header.bio}
           specialite={header.specialite}
@@ -140,12 +116,8 @@ export function CreatorStudioShell({
           averageRating={header.averageRating}
           locationLabel={header.locationLabel}
           editable
-          uploadingCover={uploadingCover}
           uploadingAvatar={uploadingAvatar}
-          onCoverPick={pickCover}
           onAvatarPick={pickAvatar}
-          coverPositionAdjustable={layoutPanelOpen && Boolean(header.coverUrl)}
-          onCoverObjectPositionYChange={onCoverObjectPositionYChange}
         />
       </div>
 

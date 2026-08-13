@@ -17,7 +17,7 @@ import {
   profileFormLabelClass,
   profileSectionEmptyClass,
 } from '@/components/creator/studio/profile-section-ui';
-import { ProfileSectionLimitUpgradeHint } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 
 export const MAX_SERVICES = 3;
 const MAX_TASKS_PER_SERVICE = 12;
@@ -305,7 +305,7 @@ export function ProfileServicesField({
 
   return (
     <div className="space-y-4">
-      <ProfileSectionLimitUpgradeHint limit={MAX_SERVICES} unit="services" />
+      <ProfileSectionItemCount count={fields.length} limit={MAX_SERVICES} unit="services" />
 
       {fields.length === 0 ? (
         <p className={profileSectionEmptyClass}>No services added yet.</p>

@@ -359,9 +359,9 @@ export function CreatorContentPostCard({
 
   return (
     <div
-      className={`flex h-full min-h-0 flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-6 ${className}`}
+      className={`flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-6 ${className}`}
     >
-      <article className="flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 lg:h-full lg:w-[calc((100%-1.5rem)/2)] lg:max-w-[calc((100%-1.5rem)/2)]">
+      <article className="flex w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 lg:w-[calc((100%-1.5rem)/2)] lg:max-w-[calc((100%-1.5rem)/2)]">
         <div className="relative shrink-0 p-4">
           <div className="absolute right-3 top-3">{cardControls}</div>
           <div className="pr-24">
@@ -393,20 +393,20 @@ export function CreatorContentPostCard({
               setLightboxOpen(true);
             }
           }}
-          className={`relative flex min-h-[min(60vw,20rem)] flex-1 items-center justify-center bg-neutral-100 dark:bg-neutral-950 lg:min-h-0 ${
+          className={`relative w-full bg-neutral-100 dark:bg-neutral-950 ${
             editing ? 'cursor-default' : 'cursor-pointer'
           }`}
         >
           {post.mediaUrl ? (
-            <div className="pointer-events-none h-full w-full">
+            <div className="pointer-events-none w-full">
               <ContentPostFeedMediaFrame
                 mediaUrl={post.mediaUrl}
                 mediaType={post.mediaType}
-                layout="fill"
+                layout="feed"
               />
             </div>
           ) : (
-            <div className="flex h-full min-h-[12rem] items-center justify-center bg-neutral-100 text-xs text-neutral-400 dark:bg-neutral-900">
+            <div className="flex min-h-[12rem] items-center justify-center bg-neutral-100 text-xs text-neutral-400 dark:bg-neutral-900">
               No preview
             </div>
           )}
@@ -446,7 +446,7 @@ export function CreatorContentPostCard({
         onCountChange={setCommentCount}
         loginRedirect="/dashboard/creator?tab=content"
         isAuthenticated
-        className="min-h-0 flex-1 lg:h-full"
+        className="min-h-0 w-full flex-1 lg:h-auto lg:min-h-full"
         editing={editing}
         editDraft={editDraft}
         onEditDraftChange={setEditDraft}

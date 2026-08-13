@@ -24,7 +24,7 @@ import {
   profileFormLabelClass,
   profileSectionEmptyClass,
 } from '@/components/creator/studio/profile-section-ui';
-import { ProfileSectionLimitUpgradeHint } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 
 export const MAX_GALLERY = 3;
 
@@ -116,7 +116,7 @@ export function ProfileGalleryField({
 
   return (
     <div className="space-y-4">
-      <ProfileSectionLimitUpgradeHint limit={MAX_GALLERY} unit="gallery items" />
+      <ProfileSectionItemCount count={fields.length} limit={MAX_GALLERY} unit="gallery items" />
 
       {fields.length === 0 ? (
         <p className={profileSectionEmptyClass}>Aucun média dans la galerie.</p>

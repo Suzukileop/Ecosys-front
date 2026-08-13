@@ -11,8 +11,6 @@ import type { MarketplaceProductDetail } from '@/types/marketplace';
 
 type ProductDetailBottomProps = {
   product: MarketplaceProductDetail;
-  deliveryLabel: string;
-  licenseLabel: string;
   reviewCount: number;
   loginRedirect: string;
   middle?: ReactNode;
@@ -26,8 +24,6 @@ type ProductDetailBottomProps = {
 
 export function ProductDetailBottom({
   product,
-  deliveryLabel,
-  licenseLabel,
   reviewCount,
   loginRedirect,
   middle,
@@ -44,8 +40,6 @@ export function ProductDetailBottom({
     <div className={productDetailSectionGapClass}>
       <ProductDetailInfoTabs
         product={product}
-        deliveryLabel={deliveryLabel}
-        licenseLabel={licenseLabel}
         reviewCount={reviewCount}
         onReviewSubmitted={handleReviewSubmitted}
       />

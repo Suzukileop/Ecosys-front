@@ -336,9 +336,6 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     id: userId,
     fullName: String(raw.fullName ?? 'Creator'),
     avatarUrl: raw.avatarUrl != null ? String(raw.avatarUrl) : null,
-    coverUrl: raw.coverUrl != null ? String(raw.coverUrl) : null,
-    coverObjectPositionY:
-      raw.coverObjectPositionY != null ? Number(raw.coverObjectPositionY) : 50,
     specialite:
       (raw.specialite ?? raw.niche) != null ? String(raw.specialite ?? raw.niche) : null,
     bio: raw.bio != null ? String(raw.bio) : null,
@@ -785,17 +782,6 @@ export async function uploadProductThumbnail(file: File): Promise<string> {
   return res.data.url;
 }
 
-export async function uploadProductMainFile(file: File): Promise<string> {
-  const form = new FormData();
-  form.append('file', file);
-  const res = await api.post<{ objectKey: string }>(
-    '/api/creator/marketplace/uploads/main-file',
-    form,
-    { headers: { 'Content-Type': 'multipart/form-data' } }
-  );
-  return res.data.objectKey;
-}
-
 export function normalizeMarketplaceProduct(
   raw: MarketplaceProductSummary & Partial<Pick<MarketplaceProductDetail, 'whyProductBlocks'>>
 ): MarketplaceProductSummary {
@@ -814,6 +800,11 @@ export function normalizeMarketplaceProduct(
     genre: raw.genre?.trim() || null,
     specialite: (legacy.specialite ?? legacy.niche)?.trim() || null,
     tags,
+    galleryImageUrls: Array.isArray((raw as MarketplaceProductDetail).galleryImageUrls)
+      ? ((raw as MarketplaceProductDetail).galleryImageUrls ?? [])
+          .map((url) => String(url).trim())
+          .filter((url) => url.length > 0)
+      : [],
     ...(whyProductBlocks !== undefined ? { whyProductBlocks } : {}),
   };
 }
@@ -1395,5 +1386,6 @@ export const PRODUCT_TYPE_LABELS: Record<string, string> = {
   SOFTWARE: 'Software',
   IMAGE_PACK: 'Image pack',
   FONT: 'Font',
+  PHYSICAL: 'Physical',
   OTHER: 'Other',
 };

@@ -8,8 +8,6 @@ type ProductCardEngagementStripProps = {
   initialLiked?: boolean;
   onLikedChange?: (liked: boolean) => void;
   views: number;
-  salesCount?: number;
-  showSales?: boolean;
   variant?: 'default' | 'onImage';
   /** Pass false on the product detail page — the purchase panel already has a like button */
   showLikeButton?: boolean;
@@ -25,17 +23,12 @@ export function ProductCardEngagementStrip({
   initialLiked,
   onLikedChange,
   views,
-  salesCount = 0,
-  showSales = false,
   variant = 'default',
   showLikeButton = true,
 }: ProductCardEngagementStripProps) {
   const onImage = variant === 'onImage';
   const mutedClass = onImage ? 'text-white/80' : 'text-gray-500 dark:text-gray-400';
   const iconClass = onImage ? 'text-white/70' : 'text-gray-400';
-  const salesClass = onImage
-    ? 'border-white/20 text-white/90'
-    : 'border-gray-200 text-gray-800 dark:border-neutral-700 dark:text-gray-200';
 
   return (
     <div
@@ -84,18 +77,6 @@ export function ProductCardEngagementStrip({
         </svg>
         {formatCount(views)}
       </span>
-      {showSales && (
-        <span className={`inline-flex items-center gap-1 border-l pl-3 text-xs font-semibold ${salesClass}`}>
-          <svg className="h-3.5 w-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-            />
-          </svg>
-          {formatCount(salesCount)}
-        </span>
-      )}
     </div>
   );
 }

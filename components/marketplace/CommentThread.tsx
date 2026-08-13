@@ -496,17 +496,14 @@ export function CommentThread({
     defaultValues: { comment: '' },
   });
 
-  const notifyCount = useCallback(
-    (next: MarketplaceComment[]) => {
-      onCountChange?.(countAllComments(next.filter((c) => !c.hidden)));
-    },
-    [onCountChange]
-  );
+  useEffect(() => {
+    if (loading) return;
+    onCountChange?.(countAllComments(comments.filter((c) => !c.hidden)));
+  }, [comments, loading, onCountChange]);
 
   const load = useCallback(async () => {
     if (!commentsEnabled) {
       setComments([]);
-      notifyCount([]);
       setLoading(false);
       return;
     }
@@ -515,14 +512,13 @@ export function CommentThread({
       setLoading(true);
       const page = await listComments(targetType, targetId, 0, 50, moderationMode);
       setComments(page.content);
-      notifyCount(page.content);
     } catch (e) {
       setError(getApiErrorMessage(e, 'Impossible de charger les commentaires.'));
       setComments([]);
     } finally {
       setLoading(false);
     }
-  }, [commentsEnabled, moderationMode, notifyCount, targetId, targetType]);
+  }, [commentsEnabled, moderationMode, targetId, targetType]);
 
   useEffect(() => {
     void load();
@@ -534,11 +530,7 @@ export function CommentThread({
     setError(null);
     try {
       const created = await postComment(targetType, targetId, data.comment.trim());
-      setComments((prev) => {
-        const next = [created, ...prev];
-        notifyCount(next);
-        return next;
-      });
+      setComments((prev) => [created, ...prev]);
       reset();
     } catch (e) {
       setError(getApiErrorMessage(e, 'Impossible de publier le commentaire.'));
@@ -553,11 +545,7 @@ export function CommentThread({
     setError(null);
     try {
       const created = await postComment(targetType, targetId, text, parentId);
-      setComments((prev) => {
-        const next = appendReply(prev, parentId, created);
-        notifyCount(next);
-        return next;
-      });
+      setComments((prev) => appendReply(prev, parentId, created));
       setReplyingTo(null);
     } catch (e) {
       setError(getApiErrorMessage(e, 'Impossible de publier la réponse.'));
@@ -587,11 +575,7 @@ export function CommentThread({
     setError(null);
     try {
       await deleteComment(commentId);
-      setComments((prev) => {
-        const next = removeCommentTree(prev, commentId);
-        notifyCount(next);
-        return next;
-      });
+      setComments((prev) => removeCommentTree(prev, commentId));
     } catch (e) {
       setError(getApiErrorMessage(e, 'Impossible de supprimer le commentaire.'));
     }

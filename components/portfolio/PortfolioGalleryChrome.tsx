@@ -10,12 +10,16 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { ContentMediaPreview } from '@/components/creator/creator-content-media';
-import { inferProfileMediaType } from '@/components/creator/studio/profile-form-schema';
-import { portfolioInlineInputClass } from '@/components/portfolio/portfolio-section-shared';
+import { getHttpUrlFieldError, inferProfileMediaType, toAbsoluteHttpUrl } from '@/components/creator/studio/profile-form-schema';
+import {
+  portfolioFieldErrorTextClass,
+  portfolioInlineInputClass,
+  portfolioInlineInputErrorClass,
+} from '@/components/portfolio/portfolio-section-shared';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { uploadContentMedia } from '@/lib/marketplace-api';
-import { ProfileSectionLimitUpgradeHint } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 import { MAX_GALLERY } from '@/components/creator/studio/ProfileGalleryField';
 
 export type PortfolioGalleryItem = {
@@ -56,7 +60,8 @@ function toDraft(item: PortfolioGalleryItem): PortfolioGalleryItemDraft {
 }
 
 function normalizeDraft(draft: PortfolioGalleryItemDraft): PortfolioGalleryItemDraft {
-  const mediaUrl = draft.mediaUrl.trim();
+  const raw = draft.mediaUrl.trim();
+  const mediaUrl = toAbsoluteHttpUrl(raw) ?? raw;
   return {
     title: draft.title.trim(),
     mediaUrl,
@@ -128,11 +133,13 @@ function GalleryMediaEditor({
   draft,
   onChange,
   disabled,
+  mediaUrlError,
 }: {
   draft: PortfolioGalleryItemDraft;
   onChange: (next: PortfolioGalleryItemDraft) => void;
   disabled?: boolean;
   autoFocus?: boolean;
+  mediaUrlError?: string | null;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -214,7 +221,9 @@ function GalleryMediaEditor({
           Or paste media URL
         </p>
         <input
-          type="url"
+          type="text"
+          inputMode="url"
+          autoComplete="url"
           value={draft.mediaUrl}
           onChange={(event) => {
             const mediaUrl = event.target.value;
@@ -225,9 +234,11 @@ function GalleryMediaEditor({
             });
           }}
           placeholder="https://"
-          className={`${portfolioInlineInputClass} font-medium`}
+          aria-invalid={mediaUrlError ? true : undefined}
+          className={`${mediaUrlError ? portfolioInlineInputErrorClass : portfolioInlineInputClass} font-medium`}
           disabled={disabled || uploading}
         />
+        {mediaUrlError ? <p className={portfolioFieldErrorTextClass}>{mediaUrlError}</p> : null}
         {hasMedia ? (
           <button
             type="button"
@@ -317,6 +328,7 @@ export function PortfolioGalleryReadOnly({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<PortfolioGalleryItemDraft[]>(() => items.map(toDraft));
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
+  const [mediaUrlError, setMediaUrlError] = useState<string | null>(null);
   const prevItemsLengthRef = useRef(items.length);
   const editingCardRef = useRef<HTMLElement | null>(null);
   const cancelEditRef = useRef<() => Promise<void>>(async () => undefined);
@@ -381,6 +393,7 @@ export function PortfolioGalleryReadOnly({
   const startEdit = (index: number) => {
     if (!canEdit || fieldSaving) return;
     setPendingDeleteIndex(null);
+    setMediaUrlError(null);
     syncDraftsFromItems();
     setEditingIndex(index);
   };
@@ -390,6 +403,7 @@ export function PortfolioGalleryReadOnly({
     const original = items[editingIndex];
     const wasEmpty = original ? isGalleryEmpty(toDraft(original)) : true;
     setEditingIndex(null);
+    setMediaUrlError(null);
     syncDraftsFromItems();
     if (wasEmpty) {
       onCancelNewItem?.();
@@ -410,6 +424,7 @@ export function PortfolioGalleryReadOnly({
   }, [composing]);
 
   const updateDraft = (index: number, next: PortfolioGalleryItemDraft) => {
+    setMediaUrlError(null);
     setDrafts((prev) => prev.map((item, itemIndex) => (itemIndex === index ? next : item)));
   };
 
@@ -425,6 +440,7 @@ export function PortfolioGalleryReadOnly({
     if (!draft) return;
     if (isGalleryIncomplete(draft)) {
       setEditingIndex(null);
+      setMediaUrlError(null);
       if (isGalleryEmpty(draft)) {
         onCancelNewItem?.();
         return;
@@ -432,6 +448,12 @@ export function PortfolioGalleryReadOnly({
       if (onRemoveItem) await onRemoveItem(editingIndex);
       return;
     }
+    const invalidMedia = getHttpUrlFieldError(draft.mediaUrl);
+    if (invalidMedia) {
+      setMediaUrlError(invalidMedia);
+      return;
+    }
+    setMediaUrlError(null);
     const normalized = normalizeDraft(draft);
     const originalEmpty = isGalleryEmpty(toDraft(items[editingIndex]));
     if (!fieldHasChanges && !originalEmpty) {
@@ -458,7 +480,12 @@ export function PortfolioGalleryReadOnly({
   if (visibleEntries.length === 0 && !composeAdd) {
     return (
       <div className={`${shellClass} py-5`}>
-        <ProfileSectionLimitUpgradeHint limit={MAX_GALLERY} unit="gallery items" className="mb-6" />
+        <ProfileSectionItemCount
+          count={items.filter((item) => (item.mediaUrl ?? '').trim().length > 0).length}
+          limit={MAX_GALLERY}
+          unit="gallery items"
+          className="mb-6"
+        />
         <p className="text-center text-sm italic text-neutral-500 dark:text-neutral-400">
           No gallery media yet. Click Add media to create one.
         </p>
@@ -468,7 +495,12 @@ export function PortfolioGalleryReadOnly({
 
   return (
     <div className={shellClass}>
-      <ProfileSectionLimitUpgradeHint limit={MAX_GALLERY} unit="gallery items" className="mb-4" />
+      <ProfileSectionItemCount
+        count={items.filter((item) => (item.mediaUrl ?? '').trim().length > 0).length}
+        limit={MAX_GALLERY}
+        unit="gallery items"
+        className="mb-4"
+      />
       <div className="grid gap-4 sm:grid-cols-2">
         {visibleEntries.map(({ item, index }) => {
           const draft = drafts[index] ?? toDraft(item);
@@ -586,6 +618,7 @@ export function PortfolioGalleryReadOnly({
                     draft={draft}
                     onChange={(next) => updateDraft(index, next)}
                     disabled={fieldSaving}
+                    mediaUrlError={mediaUrlError}
                   />
                 ) : (
                   <GalleryMediaDisplay

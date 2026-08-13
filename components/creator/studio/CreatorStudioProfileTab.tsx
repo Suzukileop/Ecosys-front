@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { ZodError } from 'zod';
 import { formatLocationLabel, requestDetectedLocation } from '@/lib/geolocation';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -40,11 +41,12 @@ import { ProfileTeamField } from '@/components/creator/studio/ProfileTeamField';
 import { ProfileGalleryField } from '@/components/creator/studio/ProfileGalleryField';
 import { ProfileLinksField } from '@/components/creator/studio/ProfileLinksField';
 import { ProfileProductsPicker, MAX_PORTFOLIO_PRODUCTS } from '@/components/creator/studio/ProfileProductsPicker';
-import { ProfileSectionLimitUpgradeHint } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 import { ProfilePortfolioPicker, MAX_PORTFOLIO_PICKS } from '@/components/creator/studio/ProfilePortfolioPicker';
 import { MAX_SERVICES } from '@/components/creator/studio/ProfileServicesField';
 import { MAX_TEAM } from '@/components/creator/studio/ProfileTeamField';
 import { MAX_GALLERY } from '@/components/creator/studio/ProfileGalleryField';
+import { MAX_FAQ } from '@/components/creator/studio/ProfileFaqField';
 import {
   MAX_EXPERIENCE_ENTRIES,
 } from '@/components/portfolio/PortfolioExperienceChrome';
@@ -87,7 +89,7 @@ import {
 } from '@/components/creator/studio/profile-form-schema';
 import { formatPhoneDisplay, toStoredPhoneNumber } from '@/lib/phone';
 import { updateUserProfile } from '@/lib/user-profile-api';
-import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
+import { pushFlashFeedback, pushInsertionLimitFeedback } from '@/stores/flashFeedbackStore';
 import { TYPICAL_RESPONSE_TIME_OPTIONS } from '@/lib/typical-response-time';
 import {
   getProfileSection,
@@ -96,6 +98,7 @@ import {
   ProfileSectionNavIcon,
   type ProfileSectionId,
 } from '@/components/creator/studio/profile-section-nav';
+import type { FieldPath, UseFormReturn } from 'react-hook-form';
 import {
   profileFormInputClass,
   profileFormLabelClass,
@@ -140,6 +143,31 @@ import {
   type PortfolioContactLists,
 } from '@/components/portfolio/PortfolioContactChrome';
 import { PORTFOLIO_CHROME_SECTIONS } from '@/components/portfolio/portfolio-section-shared';
+
+/** Surface Zod validation on form fields; never promote field issues to the section banner. */
+function applyZodIssuesToProfileForm(
+  form: UseFormReturn<ProfileFormValues>,
+  error: ZodError
+) {
+  for (const issue of error.issues) {
+    if (!issue.path.length) continue;
+    const path = issue.path.join('.') as FieldPath<ProfileFormValues>;
+    form.setError(path, { type: 'manual', message: issue.message });
+  }
+}
+
+function setSectionSaveError(
+  e: unknown,
+  form: UseFormReturn<ProfileFormValues>,
+  setSubmitError: (message: string | null) => void,
+  fallback: string
+) {
+  if (e instanceof ZodError) {
+    applyZodIssuesToProfileForm(form, e);
+    return;
+  }
+  setSubmitError(getApiErrorMessage(e, fallback));
+}
 
 const PORTFOLIO_DUAL_EDIT_SECTIONS = [
   'about',
@@ -1427,7 +1455,7 @@ export function CreatorStudioProfileTab({
         title: `${sectionLabel} saved`,
       });
     } catch (e) {
-      setSubmitError(getApiErrorMessage(e, 'Save failed.'));
+      setSectionSaveError(e, form, setSubmitError, 'Save failed.');
     } finally {
       setSaving(false);
     }
@@ -1436,19 +1464,11 @@ export function CreatorStudioProfileTab({
   const onInvalidSubmit = (errors: Record<string, unknown>) => {
     const first = firstProfileErrorMessage(errors);
     if (!first) {
-      setSubmitError('Please fix the highlighted fields before saving.');
       return;
     }
     const section = profileErrorPathToSection(first.path);
     setActiveSection(section);
-    const sectionLabel = getProfileSection(section).label;
-    const message = `${first.message} (section: ${sectionLabel})`;
-    setSubmitError(message);
-    pushFlashFeedback({
-      variant: 'error',
-      title: 'Cannot save yet',
-      description: message,
-    });
+    // Keep errors on the invalid fields — do not show a section-level banner.
   };
 
   if (!user) return null;
@@ -1769,7 +1789,7 @@ export function CreatorStudioProfileTab({
         });
       } catch (e) {
         setContactVisibility(savedContactVisibility.current);
-        setSubmitError(getApiErrorMessage(e, 'Unable to update visibility.'));
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update visibility.');
       } finally {
         setSaving(false);
       }
@@ -1846,8 +1866,7 @@ export function CreatorStudioProfileTab({
           title: ABOUT_FIELD_TOAST_TITLES[field] ?? 'About updated',
         });
       } catch (e) {
-        const message = getApiErrorMessage(e, 'Unable to update this field.');
-        setSubmitError(message);
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update this field.');
         throw e;
       } finally {
         setSaving(false);
@@ -1913,8 +1932,7 @@ export function CreatorStudioProfileTab({
           title: 'About updated',
         });
       } catch (e) {
-        const message = getApiErrorMessage(e, 'Unable to update profile.');
-        setSubmitError(message);
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update profile.');
         throw e;
       } finally {
         setSaving(false);
@@ -1976,8 +1994,7 @@ export function CreatorStudioProfileTab({
           }),
         });
       } catch (e) {
-        const message = getApiErrorMessage(e, 'Unable to update this section.');
-        setSubmitError(message);
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
         throw e;
       } finally {
         setSaving(false);
@@ -2061,8 +2078,7 @@ export function CreatorStudioProfileTab({
           }),
         });
       } catch (e) {
-        const message = getApiErrorMessage(e, 'Unable to update this section.');
-        setSubmitError(message);
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
         throw e;
       } finally {
         setSaving(false);
@@ -2128,8 +2144,7 @@ export function CreatorStudioProfileTab({
           }),
         });
       } catch (e) {
-        const message = getApiErrorMessage(e, 'Unable to update this section.');
-        setSubmitError(message);
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
         throw e;
       } finally {
         setSaving(false);
@@ -2250,8 +2265,7 @@ export function CreatorStudioProfileTab({
           }),
         });
       } catch (e) {
-        const message = getApiErrorMessage(e, 'Unable to update this section.');
-        setSubmitError(message);
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
         throw e;
       } finally {
         setSaving(false);
@@ -2433,8 +2447,7 @@ export function CreatorStudioProfileTab({
               }),
         });
       } catch (e) {
-        const message = getApiErrorMessage(e, 'Unable to update this section.');
-        setSubmitError(message);
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
         throw e;
       } finally {
         setSaving(false);
@@ -2521,8 +2534,7 @@ export function CreatorStudioProfileTab({
           }),
         });
       } catch (e) {
-        const message = getApiErrorMessage(e, 'Unable to update this section.');
-        setSubmitError(message);
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
         throw e;
       } finally {
         setSaving(false);
@@ -2636,8 +2648,7 @@ export function CreatorStudioProfileTab({
           }),
         });
       } catch (e) {
-        const message = getApiErrorMessage(e, 'Unable to update this section.');
-        setSubmitError(message);
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
         throw e;
       } finally {
         setSaving(false);
@@ -2761,8 +2772,7 @@ export function CreatorStudioProfileTab({
           }),
         });
       } catch (e) {
-        const message = getApiErrorMessage(e, 'Unable to update this section.');
-        setSubmitError(message);
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
         throw e;
       } finally {
         setSaving(false);
@@ -2820,11 +2830,11 @@ export function CreatorStudioProfileTab({
           title: 'Location updated',
         });
       } catch (e) {
-        const message =
-          e instanceof Error && e.message.includes('Enable device location')
-            ? e.message
-            : getApiErrorMessage(e, 'Unable to update location.');
-        setSubmitError(message);
+        if (e instanceof Error && e.message.includes('Enable device location')) {
+          setSubmitError(e.message);
+        } else {
+          setSectionSaveError(e, form, setSubmitError, 'Unable to update location.');
+        }
         throw e;
       } finally {
         setSaving(false);
@@ -2940,8 +2950,7 @@ export function CreatorStudioProfileTab({
         });
         setContactAddingKind(null);
       } catch (e) {
-        const message = getApiErrorMessage(e, 'Unable to update contact.');
-        setSubmitError(message);
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update contact.');
         throw e;
       } finally {
         setSaving(false);
@@ -3404,10 +3413,9 @@ export function CreatorStudioProfileTab({
               }}
               onAddBlock={() => {
                 if (values.experienceBlocks.length >= MAX_EXPERIENCE_ENTRIES) {
-                  pushFlashFeedback({
-                    variant: 'error',
-                    title: 'Limit reached',
-                    description: `You can add up to ${MAX_EXPERIENCE_ENTRIES} experiences. Upgrade your plan for unlimited insertion.`,
+                  pushInsertionLimitFeedback({
+                    limit: MAX_EXPERIENCE_ENTRIES,
+                    unit: 'experiences',
                   });
                   return;
                 }
@@ -3468,7 +3476,11 @@ export function CreatorStudioProfileTab({
         }
         return (
           <div className="space-y-4">
-            <ProfileSectionLimitUpgradeHint limit={MAX_EXPERIENCE_ENTRIES} unit="experiences" />
+            <ProfileSectionItemCount
+              count={experienceFields.length}
+              limit={MAX_EXPERIENCE_ENTRIES}
+              unit="experiences"
+            />
             <div>
               <label htmlFor="yearsOfExperience" className={profileFormLabelClass}>
                 Years of experience
@@ -4078,6 +4090,7 @@ export function CreatorStudioProfileTab({
               remove={removeLink}
               move={moveLink}
               register={form.register}
+              errors={form.formState.errors.profileLinks}
             />
             <ContactVisibilitySelect
               id="visibility-links"
@@ -4812,10 +4825,9 @@ export function CreatorStudioProfileTab({
                                   setExperienceDeleteMode(false);
                                   const current = form.getValues('experienceBlocks');
                                   if (current.length >= MAX_EXPERIENCE_ENTRIES) {
-                                    pushFlashFeedback({
-                                      variant: 'error',
-                                      title: 'Limit reached',
-                                      description: `You can add up to ${MAX_EXPERIENCE_ENTRIES} experiences. Upgrade your plan for unlimited insertion.`,
+                                    pushInsertionLimitFeedback({
+                                      limit: MAX_EXPERIENCE_ENTRIES,
+                                      unit: 'experiences',
                                     });
                                     return;
                                   }
@@ -4869,10 +4881,9 @@ export function CreatorStudioProfileTab({
                                   setServicesDeleteMode(false);
                                   const current = form.getValues('serviceOffers');
                                   if (current.length >= MAX_SERVICES) {
-                                    pushFlashFeedback({
-                                      variant: 'error',
-                                      title: 'Limit reached',
-                                      description: `You can add up to ${MAX_SERVICES} services. Upgrade your plan for unlimited insertion.`,
+                                    pushInsertionLimitFeedback({
+                                      limit: MAX_SERVICES,
+                                      unit: 'services',
                                     });
                                     return;
                                   }
@@ -4895,10 +4906,9 @@ export function CreatorStudioProfileTab({
                                 onAddEntry: () => {
                                   if (portfolioAddingItem) return;
                                   if (portfolioItemCount >= MAX_PORTFOLIO_PICKS) {
-                                    pushFlashFeedback({
-                                      variant: 'error',
-                                      title: 'Limit reached',
-                                      description: `You can showcase up to ${MAX_PORTFOLIO_PICKS} posts. Upgrade your plan for unlimited insertion.`,
+                                    pushInsertionLimitFeedback({
+                                      limit: MAX_PORTFOLIO_PICKS,
+                                      unit: 'portfolio posts',
                                     });
                                     return;
                                   }
@@ -4918,10 +4928,9 @@ export function CreatorStudioProfileTab({
                                       onAddEntry: () => {
                                         if (productsAddingItem) return;
                                         if (productsItemCount >= MAX_PORTFOLIO_PRODUCTS) {
-                                          pushFlashFeedback({
-                                            variant: 'error',
-                                            title: 'Limit reached',
-                                            description: `You can feature up to ${MAX_PORTFOLIO_PRODUCTS} products. Upgrade your plan for unlimited insertion.`,
+                                          pushInsertionLimitFeedback({
+                                            limit: MAX_PORTFOLIO_PRODUCTS,
+                                            unit: 'products',
                                           });
                                           return;
                                         }
@@ -4945,6 +4954,13 @@ export function CreatorStudioProfileTab({
                                   if (faqAddingItem) return;
                                   setFaqDeleteMode(false);
                                   const current = form.getValues('faqItems');
+                                  if (current.length >= MAX_FAQ) {
+                                    pushInsertionLimitFeedback({
+                                      limit: MAX_FAQ,
+                                      unit: 'FAQ items',
+                                    });
+                                    return;
+                                  }
                                   appendFaq(createEmptyFaqItem(current.length));
                                   setFaqAddingItem(true);
                                 },
@@ -4965,10 +4981,9 @@ export function CreatorStudioProfileTab({
                                   setTeamDeleteMode(false);
                                   const current = form.getValues('teamMembers');
                                   if (current.length >= MAX_TEAM) {
-                                    pushFlashFeedback({
-                                      variant: 'error',
-                                      title: 'Limit reached',
-                                      description: `You can add up to ${MAX_TEAM} team members. Upgrade your plan for unlimited insertion.`,
+                                    pushInsertionLimitFeedback({
+                                      limit: MAX_TEAM,
+                                      unit: 'team members',
                                     });
                                     return;
                                   }
@@ -4992,10 +5007,9 @@ export function CreatorStudioProfileTab({
                                   setGalleryDeleteMode(false);
                                   const current = form.getValues('galleryItems');
                                   if (current.length >= MAX_GALLERY) {
-                                    pushFlashFeedback({
-                                      variant: 'error',
-                                      title: 'Limit reached',
-                                      description: `You can add up to ${MAX_GALLERY} gallery items. Upgrade your plan for unlimited insertion.`,
+                                    pushInsertionLimitFeedback({
+                                      limit: MAX_GALLERY,
+                                      unit: 'gallery items',
                                     });
                                     return;
                                   }

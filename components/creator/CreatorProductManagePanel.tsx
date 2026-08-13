@@ -2,6 +2,10 @@
 
 import Link from 'next/link';
 import { formatPrice, isFreeProduct } from '@/lib/marketplace-api';
+import {
+  creatorProductEditPath,
+  type CreatorProductNavFrom,
+} from '@/lib/creator-product-nav';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { MarketplaceProductDetail } from '@/types/marketplace';
 
@@ -9,12 +13,15 @@ type CreatorProductManagePanelProps = {
   product: MarketplaceProductDetail;
   publishing: boolean;
   onTogglePublish: () => void;
+  /** Keeps edit → back navigation in the same section (Profile vs My Product). */
+  from?: CreatorProductNavFrom;
 };
 
 export function CreatorProductManagePanel({
   product,
   publishing,
   onTogglePublish,
+  from = 'products',
 }: CreatorProductManagePanelProps) {
   const hasDiscount =
     !isFreeProduct(product.priceCents) &&
@@ -68,7 +75,7 @@ export function CreatorProductManagePanel({
 
       <div className="grid gap-2 border-t border-neutral-100 pt-4 dark:border-neutral-800">
         <Link
-          href={`/dashboard/creator/products/${product.id}/edit`}
+          href={creatorProductEditPath(product.id, from)}
           className="inline-flex w-full items-center justify-center rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
         >
           Edit product
@@ -96,10 +103,6 @@ export function CreatorProductManagePanel({
         <div className="flex justify-between gap-2">
           <dt>Likes</dt>
           <dd className="font-semibold text-neutral-900 dark:text-white">{product.likes ?? 0}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>Sales</dt>
-          <dd className="font-semibold text-neutral-900 dark:text-white">{product.salesCount ?? 0}</dd>
         </div>
       </dl>
     </div>

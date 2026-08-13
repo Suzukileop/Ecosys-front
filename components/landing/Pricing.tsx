@@ -3,7 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { brandCtaClass, brandSolidBg, landingSectionShellClass } from '@/components/landing/landingBrand';
+import {
+  brandButtonRadiusClass,
+  brandCtaClass,
+  brandFrameRadiusClass,
+  brandSolidBg,
+  landingSectionShellClass,
+} from '@/components/landing/landingBrand';
 
 const plans = [
   {
@@ -89,7 +95,7 @@ export function Pricing() {
             Boost your portfolio or get the source code for your interfaces in one click.
           </p>
 
-          <div className="inline-flex items-center rounded-xl border border-neutral-200 bg-neutral-100 p-1 dark:border-neutral-700 dark:bg-neutral-900">
+          <div className={`inline-flex items-center border border-neutral-200 bg-neutral-100 p-1 dark:border-neutral-700 dark:bg-neutral-900 ${brandFrameRadiusClass}`}>
             <button
               type="button"
               onClick={() => setAnnual(false)}
@@ -123,7 +129,7 @@ export function Pricing() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.15, duration: 0.5 }}
-              className={`relative flex min-h-[510px] flex-col rounded-2xl border lp-bg-card p-7 transition-all duration-300 lg:p-8 ${
+              className={`relative flex min-h-[510px] flex-col border lp-bg-card p-7 transition-all duration-300 lg:p-8 ${brandFrameRadiusClass} ${
                 plan.highlighted
                   ? 'border-[#F97316]/70 shadow-[0_0_14px_rgba(249,115,22,0.06)]'
                   : 'border-[var(--lp-border)] hover:border-[#F97316]/30'
@@ -167,7 +173,7 @@ export function Pricing() {
 
               <Link
                 href="/register"
-                className={`w-full rounded-xl py-3.5 text-center text-xs font-bold uppercase ${
+                className={`w-full py-3.5 text-center text-xs font-bold uppercase ${brandButtonRadiusClass} ${
                   plan.highlighted
                     ? brandCtaClass
                     : 'border border-[var(--lp-border)] lp-text transition-all hover:border-[#F97316]/40 hover:bg-[var(--lp-surface)]'

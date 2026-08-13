@@ -8,12 +8,16 @@ import {
   faTrash,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import { deriveProfileLinkLabel } from '@/components/creator/studio/profile-form-schema';
+import { deriveProfileLinkLabel, getHttpUrlFieldError, toAbsoluteHttpUrl } from '@/components/creator/studio/profile-form-schema';
 import {
   SocialPlatformIcon,
   socialPlatformBrandClass,
 } from '@/components/marketplace/creator-profile-social-icons';
-import { portfolioInlineInputClass } from '@/components/portfolio/portfolio-section-shared';
+import {
+  portfolioFieldErrorTextClass,
+  portfolioInlineInputClass,
+  portfolioInlineInputErrorClass,
+} from '@/components/portfolio/portfolio-section-shared';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export type PortfolioLinkItem = {
@@ -40,7 +44,8 @@ function toDraft(link: PortfolioLinkItem): PortfolioLinkDraft {
 }
 
 function normalizeDraft(draft: PortfolioLinkDraft): PortfolioLinkDraft {
-  return { url: draft.url.trim() };
+  const trimmed = draft.url.trim();
+  return { url: toAbsoluteHttpUrl(trimmed) ?? trimmed };
 }
 
 function draftsEqual(left: PortfolioLinkDraft, right: PortfolioLinkDraft): boolean {
@@ -265,6 +270,7 @@ export function PortfolioLinksReadOnly({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<PortfolioLinkDraft[]>(() => links.map(toDraft));
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
+  const [urlError, setUrlError] = useState<string | null>(null);
   const prevItemsLengthRef = useRef(links.length);
   const editingCardRef = useRef<HTMLDivElement | null>(null);
   const cancelEditRef = useRef<() => Promise<void>>(async () => undefined);
@@ -329,6 +335,7 @@ export function PortfolioLinksReadOnly({
   const startEdit = (index: number) => {
     if (!canEdit || fieldSaving) return;
     setPendingDeleteIndex(null);
+    setUrlError(null);
     syncDraftsFromItems();
     setEditingIndex(index);
   };
@@ -338,6 +345,7 @@ export function PortfolioLinksReadOnly({
     const original = links[editingIndex];
     const wasEmpty = original ? isLinkEmpty(toDraft(original)) : true;
     setEditingIndex(null);
+    setUrlError(null);
     syncDraftsFromItems();
     if (wasEmpty) {
       onCancelNewItem?.();
@@ -358,6 +366,7 @@ export function PortfolioLinksReadOnly({
   }, [composing]);
 
   const updateDraft = (index: number, patch: Partial<PortfolioLinkDraft>) => {
+    if (patch.url !== undefined) setUrlError(null);
     setDrafts((prev) =>
       prev.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item))
     );
@@ -375,6 +384,7 @@ export function PortfolioLinksReadOnly({
     if (!draft) return;
     if (isLinkIncomplete(draft)) {
       setEditingIndex(null);
+      setUrlError(null);
       if (isLinkEmpty(draft)) {
         onCancelNewItem?.();
         return;
@@ -382,6 +392,12 @@ export function PortfolioLinksReadOnly({
       if (onRemoveLink) await onRemoveLink(editingIndex);
       return;
     }
+    const invalid = getHttpUrlFieldError(draft.url);
+    if (invalid) {
+      setUrlError(invalid);
+      return;
+    }
+    setUrlError(null);
     if (!fieldHasChanges) {
       setEditingIndex(null);
       return;
@@ -535,14 +551,18 @@ export function PortfolioLinksReadOnly({
                       URL
                     </label>
                     <input
-                      type="url"
+                      type="text"
+                      inputMode="url"
+                      autoComplete="url"
                       value={draft.url}
                       onChange={(event) => updateDraft(index, { url: event.target.value })}
                       placeholder="https://"
-                      className={`${portfolioInlineInputClass} min-w-0 flex-1 font-medium`}
+                      aria-invalid={urlError ? true : undefined}
+                      className={`${urlError ? portfolioInlineInputErrorClass : portfolioInlineInputClass} min-w-0 flex-1 font-medium`}
                       autoFocus={editingIndex === index}
                       disabled={fieldSaving}
                     />
+                    {urlError ? <p className={portfolioFieldErrorTextClass}>{urlError}</p> : null}
                     {draft.url.trim() ? (
                       <div className="flex items-center gap-3 pt-1">
                         <LinkBrandIcon url={draft.url} platform={item.platform} />

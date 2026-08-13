@@ -17,6 +17,7 @@ import { toEntranceRect } from '@/components/landing/landingEntranceTypes';
 import {
   BRAND_ORANGE,
   brandCtaClass,
+  brandFrameRadiusClass,
 } from '@/components/landing/landingBrand';
 const WORD_INTERVAL_MS = 2500;
 const WORDS = ['CODE?', 'PORTFOLIO?', 'PROBLEM'] as const;
@@ -105,7 +106,7 @@ function HeroInteractiveGallery() {
       {/* Large image · same size language as before · catalog hangs right, vertically centered */}
       <div className="relative flex w-full justify-center overflow-x-clip lg:overflow-x-visible">
         <div className="relative w-full min-w-0 max-w-none flex-1 lg:max-w-[min(100%,64rem)] xl:max-w-[70rem] 2xl:max-w-[76rem]">
-          <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-900 sm:aspect-[19/10] sm:rounded-3xl">
+          <div className={`relative aspect-[16/10] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900 sm:aspect-[19/10] ${brandFrameRadiusClass}`}>
             <AnimatePresence mode="sync" initial={false}>
               <motion.div
                 key={active.src}
@@ -173,7 +174,7 @@ function HeroInteractiveGallery() {
                 </p>
                 <Link
                   href="/register"
-                  className={`inline-flex items-center justify-center rounded-lg px-7 py-2.5 text-sm font-semibold sm:px-8 sm:py-3 sm:text-base ${brandCtaClass}`}
+                  className={`inline-flex items-center justify-center px-7 py-2.5 text-sm font-semibold sm:px-8 sm:py-3 sm:text-base ${brandCtaClass}`}
                 >
                   Start for free
                 </Link>
@@ -196,7 +197,7 @@ function HeroInteractiveGallery() {
               </p>
               <Link
                 href="/register"
-                className={`inline-flex items-center justify-center rounded-lg px-7 py-2.5 text-sm font-semibold ${brandCtaClass}`}
+                className={`inline-flex items-center justify-center px-7 py-2.5 text-sm font-semibold ${brandCtaClass}`}
               >
                 Start for free
               </Link>

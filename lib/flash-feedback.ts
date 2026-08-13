@@ -6,6 +6,11 @@ export type FlashToast = {
   title: string;
   description?: string;
   durationMs?: number;
+  /** Toast position. Default is top center. */
+  placement?: 'top' | 'bottom';
+  /** Optional CTA (e.g. upgrade). */
+  actionHref?: string;
+  actionLabel?: string;
 };
 
 export const CREATOR_PRODUCT_FLASH = {
@@ -49,7 +54,8 @@ export function buildCreatorProductFlash(
   const trimmed = productTitle?.trim();
   return {
     variant: 'success',
-    title: trimmed ? `${copy.title}: ${trimmed}` : copy.title,
+    title: copy.title,
+    description: copy.description(trimmed),
     durationMs: 5000,
   };
 }
@@ -58,7 +64,7 @@ export function creatorProductsListPath(options?: {
   flash?: CreatorProductFlashKey;
   productTitle?: string;
 }): string {
-  const params = new URLSearchParams({ tab: 'products' });
+  const params = new URLSearchParams();
   if (options?.flash) {
     params.set('flash', CREATOR_PRODUCT_FLASH[options.flash]);
   }
@@ -66,7 +72,8 @@ export function creatorProductsListPath(options?: {
   if (title) {
     params.set('flashTitle', title);
   }
-  return `/dashboard/creator?${params.toString()}`;
+  const qs = params.toString();
+  return qs ? `/dashboard/products?${qs}` : '/dashboard/products';
 }
 
 export function parseCreatorProductFlash(

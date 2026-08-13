@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { landingSectionShellClass } from '@/components/landing/landingBrand';
+import { brandFrameRadiusClass, landingSectionShellClass } from '@/components/landing/landingBrand';
 
 const faqs = [
   {
@@ -53,7 +53,7 @@ export function FAQ() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.05, duration: 0.4 }}
-              className="overflow-hidden rounded-xl border border-neutral-200 transition-colors hover:border-[#F97316]/25 dark:border-neutral-700"
+              className={`overflow-hidden border border-neutral-200 transition-colors hover:border-[#F97316]/25 dark:border-neutral-700 ${brandFrameRadiusClass}`}
             >
               <button
                 type="button"

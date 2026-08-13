@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { brandGradientBg, brandGradientText, brandShadow } from '@/components/landing/landingBrand';
+import { brandFrameRadiusClass, brandGradientBg, brandGradientText, brandShadow } from '@/components/landing/landingBrand';
 
 const demoStats = [
   { value: '< 3 min', label: 'Average analysis time' },
@@ -32,7 +32,7 @@ export function DemoSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="relative mx-auto mb-8 aspect-video max-w-5xl overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900"
+          className={`relative mx-auto mb-8 aspect-video max-w-5xl overflow-hidden border border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 ${brandFrameRadiusClass}`}
         >
           {!playing ? (
             <>
@@ -42,7 +42,7 @@ export function DemoSection() {
                     {[...Array(8)].map((_, i) => (
                       <div
                         key={i}
-                        className="rounded-xl border border-neutral-200/80 bg-white/60 dark:border-neutral-700 dark:bg-neutral-800/50"
+                        className={`border border-neutral-200/80 bg-white/60 dark:border-neutral-700 dark:bg-neutral-800/50 ${brandFrameRadiusClass}`}
                       />
                     ))}
                   </div>

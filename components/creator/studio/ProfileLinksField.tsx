@@ -1,6 +1,11 @@
 'use client';
 
-import type { Control, FieldArrayWithId, UseFormRegister } from 'react-hook-form';
+import type {
+  Control,
+  FieldArrayWithId,
+  FieldErrors,
+  UseFormRegister,
+} from 'react-hook-form';
 import {
   createEmptyProfileLink,
   deriveProfileLinkLabel,
@@ -22,6 +27,7 @@ type ProfileLinksFieldProps = {
   remove: (index: number) => void;
   move: (from: number, to: number) => void;
   register: UseFormRegister<ProfileFormValues>;
+  errors?: FieldErrors<ProfileFormValues>['profileLinks'];
   readOnly?: boolean;
   values?: ProfileFormValues['profileLinks'];
 };
@@ -32,6 +38,7 @@ export function ProfileLinksField({
   remove,
   move,
   register,
+  errors,
   readOnly = false,
   values = [],
 }: ProfileLinksFieldProps) {
@@ -121,11 +128,19 @@ export function ProfileLinksField({
               </label>
               <input
                 id={`link-url-${field.id}`}
-                type="url"
+                type="text"
+                inputMode="url"
+                autoComplete="url"
                 placeholder="https://"
                 className={profileFormInputClass}
+                aria-invalid={errors?.[index]?.url ? true : undefined}
                 {...register(`profileLinks.${index}.url`)}
               />
+              {errors?.[index]?.url?.message ? (
+                <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+                  {errors[index]?.url?.message}
+                </p>
+              ) : null}
             </div>
           </div>
         ))

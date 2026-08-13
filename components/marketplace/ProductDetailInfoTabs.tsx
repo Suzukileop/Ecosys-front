@@ -8,8 +8,6 @@ import type { MarketplaceProductDetail } from '@/types/marketplace';
 
 type ProductDetailInfoTabsProps = {
   product: MarketplaceProductDetail;
-  deliveryLabel: string;
-  licenseLabel: string;
   reviewCount: number;
   onReviewSubmitted?: () => void;
 };
@@ -26,15 +24,14 @@ function formatProductDate(value: string): string {
 
 export function ProductDetailInfoTabs({
   product,
-  deliveryLabel,
-  licenseLabel,
   reviewCount,
   onReviewSubmitted,
 }: ProductDetailInfoTabsProps) {
   const [tab, setTab] = useState<TabId>('specs');
   const [likes, setLikes] = useState(product.likes);
-  const salesCount = product.salesCount ?? 0;
   const lastUpdated = product.updatedAt ?? product.createdAt;
+  const typeLabel = PRODUCT_TYPE_LABELS[product.type] ?? product.type;
+  const typeSuffix = product.type === 'PHYSICAL' ? 'physical product' : 'digital product';
 
   useEffect(() => {
     setLikes(product.likes);
@@ -76,13 +73,8 @@ export function ProductDetailInfoTabs({
         <div className={tab === 'specs' ? 'block' : 'hidden'}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
             <dl className="w-full shrink-0 lg:max-w-sm">
-              <DetailRow
-                label="Type"
-                value={`${PRODUCT_TYPE_LABELS[product.type] ?? product.type} digital product`}
-              />
+              <DetailRow label="Type" value={`${typeLabel} ${typeSuffix}`} />
               {product.fileFormat && <DetailRow label="Format" value={product.fileFormat} />}
-              <DetailRow label="License" value={licenseLabel} />
-              <DetailRow label="Delivery" value={deliveryLabel} />
               {product.language && <DetailRow label="Language" value={product.language} />}
               {product.fileSizeMb != null && (
                 <DetailRow label="Size" value={`${product.fileSizeMb} MB`} />
@@ -92,10 +84,6 @@ export function ProductDetailInfoTabs({
 
             <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
               <InsightCard label="Last update" value={formatProductDate(lastUpdated)} />
-              <InsightCard
-                label="Copies sold"
-                value={salesCount === 1 ? '1 copy' : `${salesCount.toLocaleString()} copies`}
-              />
               <InsightCard label="Listed on" value={formatProductDate(product.createdAt)} />
               <InsightCard
                 label="Customer reviews"
