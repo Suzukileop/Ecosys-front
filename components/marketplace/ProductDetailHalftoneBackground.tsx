@@ -29,7 +29,7 @@ export function MarketplacePatternBackground({
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-white dark:bg-neutral-950"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-neutral-100 dark:bg-neutral-900"
       style={{ perspective: '1400px' }}
     >
       <div

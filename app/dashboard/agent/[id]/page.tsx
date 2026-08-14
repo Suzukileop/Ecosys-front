@@ -62,7 +62,7 @@ export default function AgentNicheDetailPage() {
 
   useEffect(() => {
     if (!isLoading && user && !hasRole('ROLE_AGENT')) {
-      router.replace('/dashboard');
+      router.replace('/dashboard/home');
     }
   }, [isLoading, user, hasRole, router]);
 

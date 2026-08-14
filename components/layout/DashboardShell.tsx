@@ -10,6 +10,7 @@ import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { DashboardTopHeader } from '@/components/layout/DashboardTopHeader';
 import { MarketplacePatternBackground } from '@/components/marketplace/ProductDetailHalftoneBackground';
 import { isContentCreatorsPath, isMarketplaceCreatorProfilePath } from '@/lib/marketplace-nav';
+import { DASHBOARD_MAIN_BG } from '@/components/landing/landingBrand';
 
 function isCreatorStudioPath(pathname: string): boolean {
   if (!pathname.startsWith('/dashboard/creator')) return false;
@@ -89,6 +90,7 @@ export function DashboardShell({
     contentCreatorsPattern;
   const compactContentTop = isMarketplaceCreatorProfilePath(pathname);
   const discussionsLayout = pathname.startsWith('/dashboard/discussions');
+  const fillMainLayout = discussionsLayout || myProductPattern;
 
   // Only redirect to /login when the session is definitively gone.
   // 'error' (rate-limit / network) must NOT trigger a redirect because
@@ -118,11 +120,7 @@ export function DashboardShell({
     );
   }
 
-  const shellBg = usePatternBackground
-    ? 'bg-transparent'
-    : discussionsLayout
-      ? 'bg-white dark:bg-black'
-      : 'bg-white dark:bg-neutral-950';
+  const shellBg = usePatternBackground ? 'bg-transparent' : DASHBOARD_MAIN_BG;
 
   return (
     <>
@@ -134,8 +132,10 @@ export function DashboardShell({
         <MarketplacePatternBackground variant="hub" />
       )}
       <div
-        className={`flex min-h-screen transition-[--dash-sidebar-w] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${shellBg}`}
-        style={{ '--dash-sidebar-w': sidebarCollapsed ? '4.5rem' : '16rem' } as CSSProperties}
+        className={`flex transition-[--dash-sidebar-w] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          fillMainLayout ? 'h-screen overflow-hidden' : 'min-h-screen'
+        } ${shellBg}`}
+        style={{ '--dash-sidebar-w': sidebarCollapsed ? '4.5rem' : '18rem' } as CSSProperties}
       >
       <DashboardSidebar
         collapsed={sidebarCollapsed}
@@ -143,13 +143,13 @@ export function DashboardShell({
       />
       <div
         data-dashboard-main
-        className={`flex min-w-0 flex-1 flex-col ${discussionsLayout ? 'h-screen max-h-screen overflow-hidden' : ''} ${shellBg}`}
+        className={`flex min-w-0 flex-1 flex-col ${fillMainLayout ? 'h-screen max-h-screen overflow-hidden' : ''} ${shellBg}`}
       >
         <DashboardTopHeader transparent={useTransparentHeader} />
         <div
           data-dashboard-content
           className={`relative z-10 min-w-0 flex-1 ${
-            discussionsLayout
+            fillMainLayout
               ? 'flex min-h-0 flex-col overflow-hidden px-6 pb-4 pt-4'
               : `overflow-x-clip pb-6 ${compactContentTop ? 'pt-2' : 'pt-6'} ${
                   newsFeedPattern ? 'px-4 sm:px-5' : 'px-6'

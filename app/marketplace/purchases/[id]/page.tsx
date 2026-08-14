@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function MarketplacePurchaseDetailRedirect() {
-  redirect('/marketplace?tab=purchases');
+  redirect('/marketplace/purchases');
 }

@@ -80,9 +80,10 @@ function PasswordField({
 function resolvePostAuthDest(searchParams: URLSearchParams): string {
   const redirectTo = searchParams.get('redirect');
   if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+    if (redirectTo === '/dashboard') return '/dashboard/home';
     return redirectTo;
   }
-  return '/dashboard';
+  return '/dashboard/home';
 }
 
 function LoginForm() {

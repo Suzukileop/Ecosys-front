@@ -118,7 +118,7 @@ function RegisterForm() {
         password: data.password,
         role: 'CREATOR',
       });
-      window.location.assign('/dashboard');
+      window.location.assign('/dashboard/home');
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
       if (axiosError.response?.status === 429) {

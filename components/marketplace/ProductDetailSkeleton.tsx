@@ -2,7 +2,7 @@ const block = 'animate-pulse rounded bg-gray-200 dark:bg-neutral-700';
 
 function PurchasePanelSkeleton() {
   return (
-    <aside className="rounded-2xl border border-stone-200 bg-stone-50 p-5 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+    <aside className="rounded-2xl border border-stone-200 bg-stone-50 p-5 shadow-sm dark:border-neutral-800 dark:bg-[#0F0F0F]">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-2">
           <div className={`h-9 w-28 ${block}`} />
@@ -42,7 +42,7 @@ function CharacteristicsTabSkeleton() {
         <div className={`h-10 w-28 rounded-xl ${block}`} />
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-900">
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-neutral-800 dark:bg-[#0F0F0F]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
           <dl className="w-full shrink-0 space-y-0 lg:max-w-sm">
             {Array.from({ length: 5 }, (_, index) => (
@@ -149,7 +149,7 @@ export function ProductDetailSkeleton() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-neutral-700 dark:bg-neutral-900">
+            <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-neutral-800 dark:bg-[#0F0F0F]">
               <div className={`h-14 w-14 shrink-0 rounded-full ${block}`} />
               <div className="space-y-2">
                 <div className={`h-3 w-16 ${block}`} />

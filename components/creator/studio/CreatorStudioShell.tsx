@@ -10,6 +10,7 @@ import type { CreatorStudioHeaderLayout } from './creator-studio-header';
 import type { CreatorStudioHeaderContentStyle } from './creator-studio-header-content';
 import { creatorHeaderNeedsInset } from './creator-studio-header';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
+import { normalizeCreatorAppRole } from '@/lib/creator-app-role';
 
 export type CreatorStudioHeaderData = {
   fullName: string;
@@ -23,6 +24,8 @@ export type CreatorStudioHeaderData = {
   isAvailable: boolean;
   averageRating?: number | null;
   locationLabel?: string | null;
+  /** App role — drives avatar status ring color. */
+  appRole?: string | null;
   headerLayout: CreatorStudioHeaderLayout;
   headerContentStyle: CreatorStudioHeaderContentStyle;
   tabNavAlign: CreatorStudioTabNavAlign;
@@ -105,6 +108,7 @@ export function CreatorStudioShell({
           fullName={header.fullName}
           handle={handle}
           avatarUrl={header.avatarUrl}
+          appRole={normalizeCreatorAppRole(header.appRole)}
           headerContentStyle={header.headerContentStyle}
           bio={header.bio}
           specialite={header.specialite}

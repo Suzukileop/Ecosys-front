@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { ContactVisibilitySettings } from '@/lib/contact-visibility';
 import { dedupeSpokenLanguages } from '@/lib/spoken-languages';
 import { CREATOR_GENDER_VALUES } from '@/lib/creator-gender';
+import { CREATOR_APP_ROLE_VALUES, DEFAULT_CREATOR_APP_ROLE } from '@/lib/creator-app-role';
 import { toStoredPhoneNumber } from '@/lib/phone';
 
 export const platformEnum = z.enum([
@@ -411,6 +412,7 @@ export const profileSchema = z
     bio: z.string().max(8000).optional(),
     specialite: z.string().max(150).optional(),
     gender: z.enum(CREATOR_GENDER_VALUES).optional().or(z.literal('')),
+    appRole: z.enum(CREATOR_APP_ROLE_VALUES).default(DEFAULT_CREATOR_APP_ROLE),
     spokenLanguages: z.array(spokenLanguageSchema).max(10),
     locationCity: z.string().optional(),
     locationCountry: z.string().optional(),
@@ -482,6 +484,7 @@ export const profileSchema = z
 
 /** Map a react-hook-form error path to the Information sidebar section. */
 export function profileErrorPathToSection(path: string): ProfileSectionIdForErrors {
+  if (path === 'appRole') return 'myRole';
   if (path.startsWith('faqItems')) return 'faq';
   if (path.startsWith('teamMembers')) return 'team';
   if (path.startsWith('galleryItems')) return 'gallery';
@@ -512,6 +515,7 @@ export function profileErrorPathToSection(path: string): ProfileSectionIdForErro
 
 export type ProfileSectionIdForErrors =
   | 'about'
+  | 'myRole'
   | 'whyMe'
   | 'experience'
   | 'strengths'
@@ -1332,6 +1336,7 @@ function normalizeProfileComparable(values: ProfileFormValues, availabilityHours
     bio: trimOptional(values.bio),
     specialite: trimOptional(values.specialite),
     gender: trimOptional(values.gender),
+    appRole: values.appRole ?? DEFAULT_CREATOR_APP_ROLE,
     spokenLanguages: dedupeSpokenLanguages(
       values.spokenLanguages.map((item) => trimOptional(item.value)).filter(Boolean)
     ).sort(),

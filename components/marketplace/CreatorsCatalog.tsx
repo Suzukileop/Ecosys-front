@@ -111,7 +111,7 @@ function CreatorsCatalogContent() {
         ),
       });
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to load creators.'));
+      setError(getApiErrorMessage(e, 'Unable to load service providers.'));
       setPageData(null);
     } finally {
       setLoading(false);
@@ -130,7 +130,7 @@ function CreatorsCatalogContent() {
   const emptyState = useMemo(
     () => (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">No creators found</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">No service providers found</h2>
         <p className="mt-2 max-w-md text-sm text-gray-600 dark:text-gray-400">
           Try a different keyword or broaden your filters.
         </p>
@@ -138,7 +138,7 @@ function CreatorsCatalogContent() {
           href="/marketplace/creators"
           className="mt-8 inline-flex rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
         >
-          Browse creators
+          Browse service providers
         </Link>
       </div>
     ),
@@ -153,9 +153,9 @@ function CreatorsCatalogContent() {
   return (
     <main className="mx-auto max-w-7xl space-y-8 px-4 py-10">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Content creators</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Service providers</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-          Discover world-class creators, explore their portfolios, and contact them for custom work.
+          Discover professionals who offer services, explore their profiles, and contact them for custom work.
         </p>
       </div>
 
@@ -228,7 +228,7 @@ function CreatorsCatalogContent() {
         emptyState
       ) : (
         <>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 lg:grid-cols-2">
             {creators.map((c) => (
               <CreatorCard
                 key={c.id ?? c.userId ?? c.fullName}
@@ -237,10 +237,10 @@ function CreatorsCatalogContent() {
                 fullName={c.fullName}
                 avatarUrl={c.avatarUrl}
                 specialite={c.specialite}
+                bio={c.bio}
                 isVerified={c.isVerified}
                 isAvailable={c.isAvailable}
-                portfolioCount={c.portfolioCount}
-                productCount={c.productCount}
+                serviceCount={c.serviceCount}
                 averageRating={c.averageRating}
               />
             ))}

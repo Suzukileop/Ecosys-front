@@ -242,7 +242,7 @@ export function MyPortfolioWorkspace() {
         <p className="text-sm text-neutral-600 dark:text-neutral-400">
           A creator account is required to manage your portfolio.
         </p>
-        <Link href="/dashboard" className="mt-4 inline-flex text-sm font-medium text-[#EA580C] hover:text-[#F97316]">
+        <Link href="/dashboard/home" className="mt-4 inline-flex text-sm font-medium text-[#EA580C] hover:text-[#F97316]">
           Back to Dashboard
         </Link>
       </div>

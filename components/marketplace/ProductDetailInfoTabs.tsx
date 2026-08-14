@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ProductReviewComposer } from '@/components/marketplace/ProductReviewComposer';
+import { ProductPhysicalCompanionGallery } from '@/components/marketplace/ProductPhysicalCompanionGallery';
 import { PRODUCT_TYPE_LABELS } from '@/lib/marketplace-api';
 import { subscribeProductLikesUpdated } from '@/lib/productLikesBus';
+import { useAuth } from '@/context/AuthContext';
 import type { MarketplaceProductDetail } from '@/types/marketplace';
 
 type ProductDetailInfoTabsProps = {
@@ -27,15 +29,30 @@ export function ProductDetailInfoTabs({
   reviewCount,
   onReviewSubmitted,
 }: ProductDetailInfoTabsProps) {
+  const { user } = useAuth();
   const [tab, setTab] = useState<TabId>('specs');
   const [likes, setLikes] = useState(product.likes);
   const lastUpdated = product.updatedAt ?? product.createdAt;
   const typeLabel = PRODUCT_TYPE_LABELS[product.type] ?? product.type;
   const typeSuffix = product.type === 'PHYSICAL' ? 'physical product' : 'digital product';
+  const isOwner = Boolean(user?.id && user.id === product.creatorId);
+  const hasPhysicalMedia = useMemo(() => {
+    if (product.type !== 'PHYSICAL') return false;
+    return (product.galleryImageUrls ?? []).some((url) => {
+      const trimmed = url.trim();
+      return trimmed.length > 0 && trimmed !== (product.thumbnailUrl?.trim() || '');
+    });
+  }, [product.type, product.thumbnailUrl, product.galleryImageUrls]);
 
   useEffect(() => {
     setLikes(product.likes);
   }, [product.id, product.likes]);
+
+  useEffect(() => {
+    if (isOwner && tab === 'reviews') {
+      setTab('specs');
+    }
+  }, [isOwner, tab]);
 
   useEffect(() => {
     return subscribeProductLikesUpdated(({ productId: id, likes: count }) => {
@@ -47,21 +64,29 @@ export function ProductDetailInfoTabs({
 
   const tabs: { id: TabId; label: string }[] = [
     { id: 'specs', label: 'Characteristics' },
-    { id: 'reviews', label: `Reviews (${reviewCount})` },
+    ...(!isOwner ? [{ id: 'reviews' as const, label: `Reviews (${reviewCount})` }] : []),
   ];
 
   return (
     <section className="space-y-4">
+      {hasPhysicalMedia ? (
+        <ProductPhysicalCompanionGallery
+          title={product.title}
+          thumbnailUrl={product.thumbnailUrl}
+          galleryImageUrls={product.galleryImageUrls}
+        />
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         {tabs.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setTab(item.id)}
-            className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
               tab === item.id
-                ? 'border-orange-200 bg-orange-50 text-orange-900 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-100'
-                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-300 dark:hover:border-neutral-600'
+                ? 'border-2 border-orange-500 bg-transparent text-gray-900 dark:text-white'
+                : 'border-2 border-transparent bg-transparent text-gray-700 dark:text-gray-300'
             }`}
           >
             {item.label}
@@ -69,7 +94,7 @@ export function ProductDetailInfoTabs({
         ))}
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-900">
+      <div className="rounded-2xl bg-white p-5 dark:bg-[#0F0F0F]">
         <div className={tab === 'specs' ? 'block' : 'hidden'}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
             <dl className="w-full shrink-0 lg:max-w-sm">
@@ -95,7 +120,7 @@ export function ProductDetailInfoTabs({
           </div>
         </div>
 
-        <div className={tab === 'reviews' ? 'block' : 'hidden'}>
+        <div className={tab === 'reviews' && !isOwner ? 'block' : 'hidden'}>
           <ProductReviewComposer productId={product.id} onSubmitted={onReviewSubmitted} />
         </div>
       </div>
@@ -105,7 +130,7 @@ export function ProductDetailInfoTabs({
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4 border-b border-gray-100 py-3 text-sm last:border-b-0 dark:border-neutral-800">
+    <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4 py-3 text-sm">
       <dt className="text-gray-500 dark:text-gray-400">{label}</dt>
       <dd className="font-medium capitalize text-gray-900 dark:text-white">{value}</dd>
     </div>
@@ -114,7 +139,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 function InsightCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3.5 dark:border-neutral-800 dark:bg-neutral-800/50">
+    <div className="rounded-xl bg-white px-4 py-3.5 dark:bg-[#1F1F1F]">
       <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
         {label}
       </p>

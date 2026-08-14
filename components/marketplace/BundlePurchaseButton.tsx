@@ -57,7 +57,7 @@ export function BundlePurchaseButton({
           Bundle purchased! All included products are now in your library.
         </p>
         <Link
-          href="/marketplace?tab=purchases"
+          href="/marketplace/purchases"
           className="inline-flex items-center justify-center rounded-xl border border-orange-300 px-6 py-3 text-sm font-semibold text-orange-700 hover:bg-orange-50"
         >
           View my library

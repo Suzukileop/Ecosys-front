@@ -1,8 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faComment, faCrown, faThumbtack } from '@fortawesome/free-solid-svg-icons';
 import { collectProductLabels, formatPrice, formatVideoDuration, isFreeProduct } from '@/lib/marketplace-api';
 import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
+import { useAuth } from '@/context/AuthContext';
 import { ProductCardEngagementStrip } from '@/components/marketplace/ProductCardEngagementStrip';
 import { ProductFavoriteButton } from '@/components/marketplace/ProductFavoriteButton';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
@@ -22,13 +25,6 @@ type ProductCardProps = {
   onLikedChange?: (productId: string, liked: boolean) => void;
 };
 
-function creatorInitials(name: string) {
-  const p = name.trim().split(/\s+/).filter(Boolean);
-  if (p.length === 0) return '?';
-  if (p.length === 1) return p[0].slice(0, 2).toUpperCase();
-  return (p[0][0] + p[p.length - 1][0]).toUpperCase();
-}
-
 export function ProductCard({
   product,
   href,
@@ -38,11 +34,19 @@ export function ProductCard({
   initialLiked,
   onLikedChange,
 }: ProductCardProps) {
+  const { user } = useAuth();
   const targetHref = href ?? `/marketplace/products/${product.id}`;
   const isVideo = product.type === 'VIDEO';
   const hasVideoThumbnail = isVideoThumbnailUrl(product.thumbnailUrl);
   const { genre, tags } = collectProductLabels(product);
   const hasLabels = Boolean(genre) || tags.length > 0;
+  const shopName = product.shopName?.trim() || null;
+  const authorName = product.creatorName?.trim() || null;
+
+  const messageHref = user
+    ? `/dashboard/discussions?user=${encodeURIComponent(product.creatorId)}`
+    : `/login?redirect=${encodeURIComponent(`/dashboard/discussions?user=${encodeURIComponent(product.creatorId)}`)}`;
+  const messageLabel = authorName ? `Message ${authorName}` : 'Message creator';
 
   const hasDiscount =
     !isFreeProduct(product.priceCents) &&
@@ -55,7 +59,7 @@ export function ProductCard({
     product.videoDurationSeconds > 0;
 
   return (
-    <article className="group flex w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:hover:shadow-neutral-900/50">
+    <article className="group flex w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-lg dark:border-neutral-800 dark:bg-[#1F1F1F] dark:hover:shadow-neutral-900/50">
       <Link href={targetHref} className="relative block h-52 w-full shrink-0 overflow-hidden bg-gray-100 dark:bg-neutral-800">
           {product.thumbnailUrl ? (
             <ProductThumbnailMedia
@@ -79,7 +83,27 @@ export function ProductCard({
             )}
           </div>
 
-          <div className="absolute right-3 top-3" onClick={(e) => e.preventDefault()}>
+          <div className="absolute right-3 top-3 flex items-start gap-1.5" onClick={(e) => e.preventDefault()}>
+            {(product.isPinned || product.isBestseller) && (
+              <div className="flex flex-row items-center gap-1.5">
+                {product.isPinned ? (
+                  <span
+                    title="Pinned"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 text-white shadow-sm"
+                  >
+                    <FontAwesomeIcon icon={faThumbtack} className="h-3 w-3" />
+                  </span>
+                ) : null}
+                {product.isBestseller ? (
+                  <span
+                    title="Bestseller"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm"
+                  >
+                    <FontAwesomeIcon icon={faCrown} className="h-3 w-3" />
+                  </span>
+                ) : null}
+              </div>
+            )}
             <ProductFavoriteButton
               productId={product.id}
               initialFavorited={initialFavorited}
@@ -90,11 +114,6 @@ export function ProductCard({
           </div>
 
           <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5">
-            {product.isBestseller && (
-              <span className="rounded-md bg-emerald-100 px-2.5 py-1 text-xs font-semibold lowercase text-emerald-800">
-                bestseller
-              </span>
-            )}
             {showDuration && (
               <span className="flex items-center gap-1 rounded-md bg-gray-900/80 px-2.5 py-1 text-xs font-medium text-white">
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -126,27 +145,24 @@ export function ProductCard({
             {product.title}
           </Link>
 
-          {showCreator && product.creatorName && (
-            <Link
-              href={`/marketplace/${product.creatorId}`}
-              className="flex items-center gap-2.5"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {product.creatorAvatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={product.creatorAvatarUrl}
-                  alt=""
-                  className="h-8 w-8 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-xs font-semibold text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">
-                  {creatorInitials(product.creatorName)}
-                </div>
-              )}
-              <span className="truncate text-sm text-gray-700 dark:text-gray-300">{product.creatorName}</span>
-            </Link>
-          )}
+          {showCreator && (authorName || shopName) ? (
+            <div className="space-y-1">
+              {authorName ? (
+                <Link
+                  href={`/marketplace/${product.creatorId}`}
+                  className="block truncate text-sm font-medium text-gray-800 hover:text-orange-600 dark:text-gray-200 dark:hover:text-orange-400"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {authorName}
+                </Link>
+              ) : null}
+              {shopName ? (
+                <p className="truncate text-xs text-neutral-500 dark:text-neutral-400" title={shopName}>
+                  {shopName}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           {hasLabels && (
             <div className="flex flex-wrap gap-2 pt-1">
@@ -179,10 +195,13 @@ export function ProductCard({
             </p>
           </div>
           <Link
-            href={targetHref}
-            className="shrink-0 rounded-full bg-gray-900 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+            href={messageHref}
+            onClick={(e) => e.stopPropagation()}
+            title={messageLabel}
+            aria-label={messageLabel}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-900 text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
           >
-            {isFreeProduct(product.priceCents) ? 'Get' : 'Buy'}
+            <FontAwesomeIcon icon={faComment} className="h-4 w-4" />
           </Link>
         </div>
       </div>

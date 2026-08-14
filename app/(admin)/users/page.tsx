@@ -66,7 +66,7 @@ export default function AdminUsersPage() {
   useEffect(() => {
     if (!authLoading) {
       if (!currentUser || !hasRole('ROLE_ADMIN')) {
-        router.push('/dashboard');
+        router.push('/dashboard/home');
         return;
       }
       fetchUsers(currentPage);
@@ -155,7 +155,7 @@ export default function AdminUsersPage() {
               NP
             </div>
             <nav className="flex items-center gap-2 text-sm text-gray-500">
-              <a href="/dashboard" className="hover:text-gray-900 transition">Dashboard</a>
+              <a href="/dashboard/home" className="hover:text-gray-900 transition">Dashboard</a>
               <span>/</span>
               <span className="text-gray-900 font-medium">Utilisateurs</span>
             </nav>

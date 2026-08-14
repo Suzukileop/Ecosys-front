@@ -17,10 +17,12 @@ import {
   faShareFromSquare,
   faStar,
   faThumbsUp,
+  faUser,
 } from '@fortawesome/free-regular-svg-icons';
 
 export type ProfileSectionId =
   | 'about'
+  | 'myRole'
   | 'whyMe'
   | 'experience'
   | 'strengths'
@@ -46,6 +48,11 @@ export const PROFILE_SECTIONS: ProfileSection[] = [
     id: 'about',
     label: 'About',
     description: 'Explain your value proposition, gender, working languages, and location.',
+  },
+  {
+    id: 'myRole',
+    label: 'My Role',
+    description: 'Choose your role in the app to improve your experience.',
   },
   {
     id: 'whyMe',
@@ -116,7 +123,7 @@ export const PROFILE_SECTIONS: ProfileSection[] = [
 
 /** Sidebar order: presentation → offers & showcase → reach & contact → reputation last */
 export const PROFILE_SECTION_GROUPS: ProfileSectionId[][] = [
-  ['about', 'whyMe', 'experience', 'strengths'],
+  ['about', 'myRole', 'whyMe', 'experience', 'strengths'],
   ['services', 'products', 'portfolio', 'faq', 'team', 'gallery', 'links'],
   ['contact', 'reputation'],
 ];
@@ -124,8 +131,12 @@ export const PROFILE_SECTION_GROUPS: ProfileSectionId[][] = [
 /** Store “Information” tab: only identity / contact / trust sections. */
 export const STORE_INFORMATION_SECTION_IDS: ProfileSectionId[] = [
   'about',
+  'myRole',
+  'whyMe',
+  'strengths',
   'links',
   'contact',
+  'faq',
   'reputation',
 ];
 
@@ -144,6 +155,7 @@ const PROFILE_SECTION_BY_ID = new Map(PROFILE_SECTIONS.map((section) => [section
 
 const PROFILE_SECTION_ICONS: Record<ProfileSectionId, IconDefinition> = {
   about: faAddressCard,
+  myRole: faUser,
   whyMe: faStar,
   experience: faIdBadge,
   strengths: faPenToSquare,

@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const DASHBOARD_HOME = '/dashboard/home';
+
 function safeRedirectPath(value: string | null): string | null {
   if (!value || !value.startsWith('/') || value.startsWith('//')) {
     return null;
+  }
+  // Overview hub is hidden — never land on bare /dashboard.
+  if (value === '/dashboard') {
+    return DASHBOARD_HOME;
   }
   return value;
 }
@@ -13,12 +19,16 @@ export function proxy(request: NextRequest) {
 
   if (refreshToken) {
     if (pathname === '/') {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+      return NextResponse.redirect(new URL(DASHBOARD_HOME, request.url));
+    }
+
+    if (pathname === '/dashboard') {
+      return NextResponse.redirect(new URL(DASHBOARD_HOME, request.url));
     }
 
     if (pathname === '/login' || pathname === '/register') {
       const redirectTo =
-        safeRedirectPath(request.nextUrl.searchParams.get('redirect')) ?? '/dashboard';
+        safeRedirectPath(request.nextUrl.searchParams.get('redirect')) ?? DASHBOARD_HOME;
       return NextResponse.redirect(new URL(redirectTo, request.url));
     }
   }
@@ -55,6 +65,7 @@ export const config = {
     '/',
     '/login',
     '/register',
+    '/dashboard',
     '/dashboard/:path*',
     '/admin/:path*',
     '/marketplace/favorites',

@@ -1,31 +1,27 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { usePendingNavigation } from '@/hooks/usePendingNavigation';
 import { MarketplaceCatalogSection } from '@/components/marketplace/MarketplaceCatalogSection';
-import { PurchasesPanel } from '@/components/marketplace/PurchasesLibrary';
+import { ProductFormatToggle } from '@/components/marketplace/ProductFormatToggle';
 import {
   MarketplaceCatalogSkeleton,
   MarketplaceHubSkeleton,
-  MarketplacePurchasesSkeleton,
 } from '@/components/marketplace/MarketplaceSkeleton';
+import { useMarketplaceCatalogParams } from '@/components/marketplace/useMarketplaceCatalogParams';
 
-export type MarketplaceTab = 'products' | 'favorites' | 'purchases';
+export type MarketplaceTab = 'products' | 'favorites';
 
 const TAB_COPY: Record<MarketplaceTab, { title: string; description: string }> = {
   products: {
     title: 'Products',
-    description: 'Browse digital products published by creators.',
+    description: 'Browse products published by creators.',
   },
   favorites: {
     title: 'Favorites',
     description: 'Your saved products — same catalog view with search and filters.',
-  },
-  purchases: {
-    title: 'Purchases',
-    description: 'Your digital library. Download your files securely anytime.',
   },
 };
 
@@ -79,33 +75,32 @@ function MarketplaceTabContent({
     );
   }
 
-  if (tab === 'products' || tab === 'favorites') {
-    return <MarketplaceCatalogSection favoritesOnly={tab === 'favorites'} />;
-  }
-
-  return <PurchasesPanel />;
+  return <MarketplaceCatalogSection favoritesOnly={tab === 'favorites'} />;
 }
 
 function MarketplaceHubContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { hasRole, user, isLoading: authLoading } = useAuth();
+  const { format, pushParams } = useMarketplaceCatalogParams();
 
   const rawTab = searchParams.get('tab') ?? 'products';
-  const tab: MarketplaceTab =
-    rawTab === 'favorites' || rawTab === 'purchases' ? rawTab : 'products';
+  const tab: MarketplaceTab = rawTab === 'favorites' ? 'favorites' : 'products';
   const { isTransitioning: isTabTransitioning, startTransition: startTabTransition, preview: previewTab } =
     usePendingNavigation(tab);
+
+  useEffect(() => {
+    if (rawTab !== 'purchases') return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('tab');
+    const qs = params.toString();
+    router.replace(qs ? `/marketplace?${qs}` : '/marketplace');
+  }, [rawTab, router, searchParams]);
 
   const clientTabs = hasRole('ROLE_CREATOR');
   const tabs: { id: MarketplaceTab; label: string }[] = [
     { id: 'products', label: 'Products' },
-    ...(clientTabs
-      ? [
-          { id: 'favorites' as const, label: 'Favorites' },
-          { id: 'purchases' as const, label: 'Purchases' },
-        ]
-      : []),
+    ...(clientTabs ? [{ id: 'favorites' as const, label: 'Favorites' }] : []),
   ];
 
   const setTab = (next: MarketplaceTab) => {
@@ -121,9 +116,18 @@ function MarketplaceHubContent() {
     router.replace(qs ? `/marketplace?${qs}` : '/marketplace');
   };
 
-  const needsAuth = (tab === 'favorites' || tab === 'purchases') && !user;
+  const needsAuth = tab === 'favorites' && !user;
   const copy = TAB_COPY[tab];
   const showTabSkeleton = authLoading || isTabTransitioning;
+
+  const setFormat = (next: typeof format) => {
+    if (next === format) return;
+    pushParams({
+      format: next === 'virtual' ? undefined : next,
+      ...(next === 'physical' ? { type: undefined, genre: undefined } : {}),
+      page: '0',
+    });
+  };
 
   return (
     <main className="w-full min-w-0 max-w-full space-y-6 overflow-hidden">
@@ -133,20 +137,22 @@ function MarketplaceHubContent() {
         <p className="text-sm text-gray-600 dark:text-gray-400">{copy.description}</p>
       )}
 
-      {authLoading ? (
-        <div className="flex flex-wrap gap-2" aria-hidden>
-          <div className="h-9 w-24 animate-pulse rounded-full bg-gray-200 dark:bg-neutral-700" />
-          <div className="h-9 w-24 animate-pulse rounded-full bg-gray-200 dark:bg-neutral-700" />
-          <div className="h-9 w-28 animate-pulse rounded-full bg-gray-200 dark:bg-neutral-700" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {authLoading ? (
+          <div className="flex flex-wrap gap-2" aria-hidden>
+            <div className="h-9 w-24 animate-pulse rounded-full bg-gray-200 dark:bg-neutral-700" />
+            <div className="h-9 w-24 animate-pulse rounded-full bg-gray-200 dark:bg-neutral-700" />
+          </div>
+        ) : (
+          <MarketplaceTabNav tabs={tabs} tab={isTabTransitioning ? previewTab : tab} onSelect={setTab} />
+        )}
+        <div className="ml-auto shrink-0">
+          <ProductFormatToggle value={format} onChange={setFormat} />
         </div>
-      ) : (
-        <MarketplaceTabNav tabs={tabs} tab={isTabTransitioning ? previewTab : tab} onSelect={setTab} />
-      )}
+      </div>
 
-      {authLoading ? (
-        tab === 'purchases' ? <MarketplacePurchasesSkeleton /> : <MarketplaceCatalogSkeleton />
-      ) : showTabSkeleton ? (
-        previewTab === 'purchases' ? <MarketplacePurchasesSkeleton /> : <MarketplaceCatalogSkeleton />
+      {authLoading || showTabSkeleton ? (
+        <MarketplaceCatalogSkeleton />
       ) : (
         <MarketplaceTabContent tab={tab} needsAuth={needsAuth} />
       )}

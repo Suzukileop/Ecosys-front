@@ -41,7 +41,7 @@ export default function AdminReportsPage() {
 
   useEffect(() => {
     if (!isLoading && user && !hasRole('ROLE_ADMIN')) {
-      router.replace('/dashboard');
+      router.replace('/dashboard/home');
     }
   }, [isLoading, user, hasRole, router]);
 

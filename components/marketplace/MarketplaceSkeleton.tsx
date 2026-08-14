@@ -38,45 +38,14 @@ export function MarketplaceProductGridSkeleton({ count = 8 }: { count?: number }
 export function MarketplaceCatalogToolbarSkeleton() {
   return (
     <div
-      className="space-y-5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900"
+      className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
       aria-hidden
     >
-      <div className="flex flex-col gap-3 lg:flex-row">
-        <div className={`h-11 flex-1 rounded-xl ${skeletonBlock}`} />
-        <div className={`h-11 w-full rounded-xl sm:w-36 ${skeletonBlock}`} />
-        <div className={`h-11 w-full rounded-xl sm:w-40 ${skeletonBlock}`} />
-      </div>
-
-      <div>
-        <div className={`mb-2.5 h-3 w-20 ${skeletonBlock}`} />
-        <div className="flex flex-wrap gap-2">
-          {Array.from({ length: 7 }, (_, index) => (
-            <div key={index} className={`h-8 w-16 rounded-full ${skeletonBlock}`} />
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className={`mb-2.5 h-3 w-14 ${skeletonBlock}`} />
-          <div className="flex flex-wrap gap-2">
-            {Array.from({ length: 3 }, (_, index) => (
-              <div key={index} className={`h-8 w-24 rounded-full ${skeletonBlock}`} />
-            ))}
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <div className={`h-8 w-8 rounded-lg ${skeletonBlock}`} />
-          <div className={`h-8 w-8 rounded-lg ${skeletonBlock}`} />
-        </div>
-      </div>
-
-      <div>
-        <div className={`mb-2.5 h-3 w-12 ${skeletonBlock}`} />
-        <div className="flex flex-wrap gap-2">
-          {Array.from({ length: 6 }, (_, index) => (
-            <div key={index} className={`h-8 w-20 rounded-lg ${skeletonBlock}`} />
-          ))}
+      <div className="flex flex-col gap-3 border-b border-gray-100 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5 dark:border-neutral-800">
+        <div className={`h-10 w-full rounded-xl sm:max-w-lg sm:shrink-0 ${skeletonBlock}`} />
+        <div className="flex flex-wrap items-center justify-end gap-3 sm:ml-auto">
+          <div className={`h-10 w-[9.5rem] rounded-xl ${skeletonBlock}`} />
+          <div className={`h-10 w-[10.5rem] rounded-xl ${skeletonBlock}`} />
         </div>
       </div>
     </div>
@@ -136,10 +105,15 @@ export function MarketplacePurchasesSkeleton({ count = 8 }: { count?: number }) 
 
 function TabNavSkeleton() {
   return (
-    <div className="flex flex-wrap gap-2" aria-hidden>
-      {Array.from({ length: 3 }, (_, index) => (
-        <div key={index} className={`h-9 w-24 rounded-full ${skeletonBlock}`} />
-      ))}
+    <div className="flex flex-wrap items-center justify-between gap-3" aria-hidden>
+      <div className="flex flex-wrap gap-2">
+        <div className={`h-9 w-24 rounded-full ${skeletonBlock}`} />
+        <div className={`h-9 w-24 rounded-full ${skeletonBlock}`} />
+      </div>
+      <div className="flex gap-2">
+        <div className={`h-[3.75rem] w-[9.5rem] rounded-xl ${skeletonBlock}`} />
+        <div className={`h-[3.75rem] w-[9.5rem] rounded-xl ${skeletonBlock}`} />
+      </div>
     </div>
   );
 }

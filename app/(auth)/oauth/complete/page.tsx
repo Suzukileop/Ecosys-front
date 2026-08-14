@@ -50,7 +50,7 @@ function OAuthCompleteContent() {
       await clearRefreshCookie();
       const authResponse = await completeOAuthRegistration(code, 'CREATOR');
       await applyAuthResponse(authResponse);
-      window.location.replace('/dashboard');
+      window.location.replace('/dashboard/home');
     } catch {
       setError('Unable to complete registration. Please try again.');
       setIsSubmitting(false);

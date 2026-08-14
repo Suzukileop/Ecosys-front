@@ -3,24 +3,81 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { Avatar } from '@/components/ui/Avatar';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMoon, faSun, faExpand, faCompress } from '@fortawesome/free-solid-svg-icons';
 import { NotificationBell } from '@/components/NotificationBell';
-import { ProfileDropdown } from '@/components/layout/ProfileDropdown';
 import { DashboardHeaderSearch } from '@/components/layout/DashboardHeaderSearch';
-import { getPageTitle, isDashboardHomePath } from '@/components/layout/dashboard/navConfig';
+import { getPageTitle } from '@/components/layout/dashboard/navConfig';
 import { isMarketplaceCreatorProfilePath } from '@/lib/marketplace-nav';
+import { brandSolidBg } from '@/components/landing/landingBrand';
+import { useTheme } from '@/components/landing/ThemeProvider';
+import { enterBrowserFullscreen, exitBrowserFullscreen } from '@/lib/browser-fullscreen';
+
+const headerIconClass =
+  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white';
+
+function HeaderThemeToggle() {
+  const { theme, toggle } = useTheme();
+  const isDark = theme === 'dark';
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className={headerIconClass}
+    >
+      <FontAwesomeIcon icon={isDark ? faMoon : faSun} className="h-4 w-4" />
+    </button>
+  );
+}
+
+function HeaderFocusToggle() {
+  const [focusActive, setFocusActive] = useState(false);
+
+  useEffect(() => {
+    const sync = () => setFocusActive(Boolean(document.fullscreenElement));
+    sync();
+    document.addEventListener('fullscreenchange', sync);
+    return () => document.removeEventListener('fullscreenchange', sync);
+  }, []);
+
+  const toggleFocus = async () => {
+    try {
+      if (focusActive || document.fullscreenElement) {
+        await exitBrowserFullscreen();
+        setFocusActive(false);
+      } else {
+        await enterBrowserFullscreen();
+        setFocusActive(true);
+      }
+    } catch {
+      setFocusActive(Boolean(document.fullscreenElement));
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => void toggleFocus()}
+      title={focusActive ? 'Exit focus' : 'Focus'}
+      aria-label={focusActive ? 'Exit focus' : 'Focus'}
+      aria-pressed={focusActive}
+      className={headerIconClass}
+    >
+      <FontAwesomeIcon icon={focusActive ? faCompress : faExpand} className="h-4 w-4" />
+    </button>
+  );
+}
 
 export function DashboardTopHeader({ transparent = false }: { transparent?: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
-  const [profileOpen, setProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pageTitle = getPageTitle(pathname, searchParams.toString());
   const showCreatorsBack = isMarketplaceCreatorProfilePath(pathname);
   const isDiscussionsPage = pathname.startsWith('/dashboard/discussions');
-  const isHomeActive = isDashboardHomePath(pathname);
 
   const showSolidBg = !transparent || scrolled;
 
@@ -73,21 +130,15 @@ export function DashboardTopHeader({ transparent = false }: { transparent?: bool
           ) : (
             <Link
               href="/dashboard/home"
-              aria-label="News feed"
-              title="News"
-              className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition ${
-                isHomeActive
-                  ? 'bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400'
-                  : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white'
-              }`}
+              aria-label="NoProbleme"
+              title="NoProbleme"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25} aria-hidden>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                />
-              </svg>
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-xs font-bold text-white ${brandSolidBg}`}
+              >
+                NP
+              </span>
             </Link>
           )}
         </div>
@@ -99,22 +150,8 @@ export function DashboardTopHeader({ transparent = false }: { transparent?: bool
         <div className="flex h-9 shrink-0 items-center justify-end gap-2 justify-self-end">
           <DashboardHeaderSearch compact />
           <NotificationBell compact />
-
-          {user && (
-            <div className="relative flex h-9 items-center">
-              <button
-                type="button"
-                onClick={() => setProfileOpen((open) => !open)}
-                className="rounded-full ring-2 ring-transparent transition hover:ring-gray-200 focus:outline-none focus:ring-gray-300 dark:hover:ring-neutral-700 dark:focus:ring-neutral-600"
-                aria-expanded={profileOpen}
-                aria-haspopup="menu"
-                aria-label="Open profile menu"
-              >
-                <Avatar name={user.fullName} avatarUrl={user.avatarUrl} size="xs" tone="muted" />
-              </button>
-              <ProfileDropdown open={profileOpen} onClose={() => setProfileOpen(false)} />
-            </div>
-          )}
+          <HeaderThemeToggle />
+          <HeaderFocusToggle />
         </div>
       </div>
     </header>

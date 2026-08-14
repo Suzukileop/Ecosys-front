@@ -65,10 +65,10 @@ type CreatorCardProps = {
   fullName?: string;
   avatarUrl?: string | null;
   specialite: string | null;
+  bio?: string | null;
   isVerified: boolean;
   isAvailable?: boolean;
-  portfolioCount?: number;
-  productCount?: number;
+  serviceCount?: number;
   averageRating?: number | null;
 };
 
@@ -78,21 +78,21 @@ export function CreatorCard({
   fullName,
   avatarUrl,
   specialite,
+  bio,
   isVerified,
   isAvailable = true,
-  portfolioCount,
-  productCount,
+  serviceCount,
   averageRating,
 }: CreatorCardProps) {
   const resolvedId = (id ?? userId ?? '').trim();
   const hue = hueFromId(resolvedId || 'unknown');
-  const portfolios = portfolioCount ?? 0;
-  const products = productCount ?? 0;
+  const services = serviceCount ?? 0;
   const hasRating = averageRating !== null && averageRating !== undefined;
-  const isNew = !hasRating && !isVerified && portfolios === 0;
+  const isNew = !hasRating && !isVerified && services === 0;
+  const bioText = bio?.trim() || '';
 
   const cardClassName =
-    `group flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:shadow-md dark:bg-neutral-900 ${
+    `group flex min-h-[168px] overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:shadow-md dark:bg-neutral-900 ${
       isAvailable
         ? 'border-gray-100 hover:border-orange-200 dark:border-neutral-800 dark:hover:border-orange-500/30'
         : 'border-gray-100 opacity-90 hover:border-gray-200 dark:border-neutral-800'
@@ -100,67 +100,60 @@ export function CreatorCard({
 
   const body = (
     <>
-      <div className="flex items-start gap-3 p-5 pb-4">
+      <div className="relative w-36 shrink-0 self-stretch sm:w-44">
         {avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={avatarUrl}
             alt=""
-            className="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-gray-100 dark:ring-neutral-700"
+            className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
           <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white ring-1 ring-black/5"
+            className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-white"
             style={{ backgroundColor: `hsl(${hue} 55% 42%)` }}
             aria-hidden
           >
             {initialsFromName(fullName ?? '')}
           </div>
         )}
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="truncate text-base font-bold text-gray-900 group-hover:text-orange-600 dark:text-white dark:group-hover:text-orange-400">
-                {fullName ?? 'Creator'}
-              </p>
-              {specialite && (
-                <p className="mt-0.5 truncate text-sm text-gray-500 dark:text-gray-400">{specialite}</p>
-              )}
-            </div>
-            {hasRating ? (
-              <RatingBadge rating={averageRating} />
-            ) : isVerified ? (
-              <VerifiedBadge />
-            ) : isNew ? (
-              <NewBadge />
-            ) : null}
-          </div>
-        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 px-5 pb-4">
-        <CreatorAvailabilityBadge isAvailable={isAvailable} />
-        {specialite && (
-          <span className="rounded-md bg-gray-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-gray-600 dark:bg-neutral-800 dark:text-gray-400">
-            {specialite}
-          </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-3 p-5">
+        <div className="flex items-start justify-between gap-3">
+          <p className="truncate text-lg font-bold text-gray-900 group-hover:text-orange-600 dark:text-white dark:group-hover:text-orange-400">
+            {fullName ?? 'Creator'}
+          </p>
+          {hasRating ? (
+            <RatingBadge rating={averageRating} />
+          ) : isVerified ? (
+            <VerifiedBadge />
+          ) : isNew ? (
+            <NewBadge />
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {specialite ? (
+            <span className="text-sm text-gray-500 dark:text-gray-400">{specialite}</span>
+          ) : null}
+          <CreatorAvailabilityBadge isAvailable={isAvailable} />
+        </div>
+
+        <div>
+          <p className="text-xl font-bold text-gray-900 dark:text-white">{services}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            Services
+          </p>
+        </div>
+
+        {bioText ? (
+          <p className="mt-auto line-clamp-3 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+            {bioText}
+          </p>
+        ) : (
+          <div className="mt-auto" />
         )}
-      </div>
-
-      <div className="mt-auto grid grid-cols-2 divide-x divide-gray-100 border-t border-gray-100 dark:divide-neutral-800 dark:border-neutral-800">
-        <div className="px-5 py-4 text-center">
-          <p className="text-lg font-bold text-gray-900 dark:text-white">{portfolios}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-            Portfolios
-          </p>
-        </div>
-        <div className="px-5 py-4 text-center">
-          <p className="text-lg font-bold text-gray-900 dark:text-white">{products}</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-            Products
-          </p>
-        </div>
       </div>
     </>
   );

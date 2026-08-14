@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { PRODUCT_TYPE_LABELS } from '@/lib/marketplace-api';
-import type { MarketplaceSort } from '@/components/marketplace/useMarketplaceCatalogParams';
+import type { MarketplaceProductFormat, MarketplaceSort } from '@/components/marketplace/useMarketplaceCatalogParams';
 import type { ProductType } from '@/types/marketplace';
+import { useOutOfViewSticky } from '@/hooks/useOutOfViewSticky';
 
 const GENRES = ['', 'Tech', 'Lifestyle', 'Business', 'Art', 'Sport', 'Music'];
 
@@ -388,6 +389,7 @@ type MarketplaceCatalogStickyBarProps = {
   onSearch: (query: string) => void;
   genre: string;
   type: string;
+  format: MarketplaceProductFormat;
   minPrice: string;
   maxPrice: string;
   sort: MarketplaceSort;
@@ -410,6 +412,7 @@ function MarketplaceCatalogStickyBar({
   onSearch,
   genre,
   type,
+  format,
   sort,
   genreOptions,
   typeOptions,
@@ -423,8 +426,10 @@ function MarketplaceCatalogStickyBar({
 }: MarketplaceCatalogStickyBarProps) {
   return (
     <div
-      className={`fixed right-0 z-30 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur-md transition-all duration-200 dark:border-neutral-800 dark:bg-neutral-950/95 ${
-        visible ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-full opacity-0'
+      className={`fixed right-0 z-30 border-b border-white/50 shadow-[0_8px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl backdrop-saturate-150 transition-all duration-200 dark:border-white/10 dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${
+        visible
+          ? 'translate-y-0 bg-white/70 opacity-100 dark:bg-neutral-950/75'
+          : 'pointer-events-none -translate-y-full bg-white/70 opacity-0 dark:bg-neutral-950/75'
       }`}
       style={{ top: stickyTop, left: 'var(--dash-sidebar-w, 0)' }}
       aria-hidden={!visible}
@@ -446,21 +451,23 @@ function MarketplaceCatalogStickyBar({
               id="marketplace-search-sticky"
               value={localQ}
               onChange={(e) => onLocalQChange(e.target.value)}
-              placeholder="Search by title or tag…"
+              placeholder="Search by title, shop name, or author…"
               className="min-w-0 flex-1 border-0 bg-transparent text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder:text-gray-500"
             />
           </div>
         </form>
 
         <div className="flex flex-wrap items-center gap-2 xl:ml-auto xl:shrink-0">
-        <FilterSelect
-          id="sticky-filter-type"
-          label="Type"
-          value={type}
-          onChange={(value) => onTypeChange(value)}
-          options={typeOptions}
-          compact
-        />
+        {format !== 'physical' ? (
+          <FilterSelect
+            id="sticky-filter-type"
+            label="Type"
+            value={type}
+            onChange={(value) => onTypeChange(value)}
+            options={typeOptions}
+            compact
+          />
+        ) : null}
         <FilterSelect
           id="sticky-filter-sort"
           label="Sort by"
@@ -470,14 +477,16 @@ function MarketplaceCatalogStickyBar({
           compact
           activeOverride={sort !== 'popular'}
         />
-        <FilterSelect
-          id="sticky-filter-genre"
-          label="Genre"
-          value={genre}
-          onChange={(value) => onGenreChange(value)}
-          options={genreOptions}
-          compact
-        />
+        {format !== 'physical' ? (
+          <FilterSelect
+            id="sticky-filter-genre"
+            label="Genre"
+            value={genre}
+            onChange={(value) => onGenreChange(value)}
+            options={genreOptions}
+            compact
+          />
+        ) : null}
         <FilterSelect
           id="sticky-filter-budget"
           label="Budget"
@@ -507,6 +516,7 @@ type MarketplaceCatalogToolbarProps = {
   q: string;
   genre: string;
   type: string;
+  format: MarketplaceProductFormat;
   minPrice: string;
   maxPrice: string;
   sort: MarketplaceSort;
@@ -523,6 +533,7 @@ export function MarketplaceCatalogToolbar({
   q,
   genre,
   type,
+  format,
   minPrice,
   maxPrice,
   sort,
@@ -537,10 +548,10 @@ export function MarketplaceCatalogToolbar({
   const pathname = usePathname();
   const toolbarRef = useRef<HTMLDivElement>(null);
   const onSearchRef = useRef(onSearch);
-  const [showStickyBar, setShowStickyBar] = useState(false);
+  const showStickyBar = useOutOfViewSticky(toolbarRef, 72, true);
   const [stickyTop, setStickyTop] = useState('4.25rem');
   const [localQ, setLocalQ] = useState(q);
-  const [advancedOpen, setAdvancedOpen] = useState(true);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   onSearchRef.current = onSearch;
 
@@ -572,18 +583,6 @@ export function MarketplaceCatalogToolbar({
     const inDashboard = Boolean(document.querySelector('[data-dashboard-main]'));
     setStickyTop(inDashboard ? '4.25rem' : '3.5rem');
   }, [pathname]);
-
-  useEffect(() => {
-    const el = toolbarRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setShowStickyBar(!entry.isIntersecting),
-      { threshold: 0, rootMargin: '-72px 0px 0px 0px' }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   const handleReset = () => {
     setLocalQ('');
@@ -623,6 +622,7 @@ export function MarketplaceCatalogToolbar({
         onSearch={onSearch}
         genre={genre}
         type={type}
+        format={format}
         minPrice={minPrice}
         maxPrice={maxPrice}
         sort={sort}
@@ -668,7 +668,7 @@ export function MarketplaceCatalogToolbar({
               id="marketplace-search"
               value={localQ}
               onChange={(e) => handleSearchInputChange(e.target.value)}
-              placeholder="Search by title or tag…"
+              placeholder="Search by title, shop name, or author…"
               className="min-w-0 flex-1 border-0 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0 dark:text-gray-100 dark:placeholder:text-gray-500"
             />
           </div>
@@ -685,13 +685,15 @@ export function MarketplaceCatalogToolbar({
             </button>
           )}
 
-          <FilterSelect
-            id="filter-genre"
-            label="Genre"
-            value={genre}
-            onChange={(value) => onGenreChange(value)}
-            options={genreOptions}
-          />
+          {format !== 'physical' ? (
+            <FilterSelect
+              id="filter-genre"
+              label="Genre"
+              value={genre}
+              onChange={(value) => onGenreChange(value)}
+              options={genreOptions}
+            />
+          ) : null}
 
           <button
             type="button"
@@ -724,24 +726,35 @@ export function MarketplaceCatalogToolbar({
         <div className="space-y-4">
           <section className="p-3.5 sm:p-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="min-w-0 flex-1">
-                <SectionLabel>Product type</SectionLabel>
-                <div className="flex flex-wrap gap-1.5">
-                  <button type="button" onClick={() => onTypeChange('')} className={pillClass(!type)}>
-                    All
-                  </button>
-                  {PRODUCT_TYPES.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() => onTypeChange(type === item ? '' : item)}
-                      className={pillClass(type === item)}
-                    >
-                      {PRODUCT_TYPE_LABELS[item] ?? item}
+              {format !== 'physical' ? (
+                <div className="min-w-0 flex-1">
+                  <SectionLabel>Product type</SectionLabel>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button type="button" onClick={() => onTypeChange('')} className={pillClass(!type)}>
+                      All
                     </button>
-                  ))}
+                    {PRODUCT_TYPES.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => onTypeChange(type === item ? '' : item)}
+                        className={pillClass(type === item)}
+                      >
+                        {PRODUCT_TYPE_LABELS[item] ?? item}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="min-w-0 flex-1">
+                  <SectionLabel>Budget</SectionLabel>
+                  <BudgetFilter
+                    minPrice={minPrice}
+                    maxPrice={maxPrice}
+                    onApply={onPriceRangeApply}
+                  />
+                </div>
+              )}
 
               <div className="shrink-0 lg:ml-auto lg:pl-6">
                 <SectionLabel>Sort by</SectionLabel>
@@ -750,14 +763,16 @@ export function MarketplaceCatalogToolbar({
             </div>
           </section>
 
-          <section className="p-3.5 sm:p-4">
-            <SectionLabel>Budget</SectionLabel>
-            <BudgetFilter
-              minPrice={minPrice}
-              maxPrice={maxPrice}
-              onApply={onPriceRangeApply}
-            />
-          </section>
+          {format !== 'physical' ? (
+            <section className="p-3.5 sm:p-4">
+              <SectionLabel>Budget</SectionLabel>
+              <BudgetFilter
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                onApply={onPriceRangeApply}
+              />
+            </section>
+          ) : null}
         </div>
       </div>
       )}

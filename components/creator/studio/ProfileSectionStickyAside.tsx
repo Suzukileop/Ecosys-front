@@ -155,7 +155,7 @@ export function ProfileSectionStickyAside({ children, className = '' }: ProfileS
     >
       <aside
         ref={asideRef}
-        className="flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-100 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+        className="flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-100 shadow-sm dark:border-neutral-800 dark:bg-[#0F0F0F]"
       >
         {children}
       </aside>

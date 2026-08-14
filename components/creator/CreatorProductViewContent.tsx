@@ -146,6 +146,8 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
             videoDurationSeconds={product.videoDurationSeconds}
             videoResolution={product.videoResolution}
             isBestseller={product.isBestseller}
+            galleryImageUrls={product.galleryImageUrls}
+            enableLightbox={product.type === 'PHYSICAL'}
           />
 
           <div className="mt-4 flex items-end justify-between gap-4">

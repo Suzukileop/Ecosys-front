@@ -23,12 +23,6 @@ const PRODUCT_TYPES: ProductType[] = [
   'OTHER',
 ];
 
-const FORMAT_OPTIONS: { value: CreatorProductFormatFilter; label: string }[] = [
-  { value: 'all', label: 'All formats' },
-  { value: 'virtual', label: 'Virtual' },
-  { value: 'physical', label: 'Physical' },
-];
-
 const SORT_OPTIONS: { value: CreatorProductSort; label: string }[] = [
   { value: 'newest', label: 'Most recent' },
   { value: 'oldest', label: 'Oldest' },
@@ -36,22 +30,33 @@ const SORT_OPTIONS: { value: CreatorProductSort; label: string }[] = [
   { value: 'price_asc', label: 'Price: low to high' },
   { value: 'price_desc', label: 'Price: high to low' },
   { value: 'views', label: 'Most viewed' },
+  { value: 'bestseller', label: 'Best sellers' },
+];
+
+const FORMAT_OPTIONS: { id: CreatorProductFormatFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'physical', label: 'Physical' },
+  { id: 'virtual', label: 'Virtual' },
 ];
 
 type CreatorProductsToolbarProps = {
   query: string;
   status: CreatorProductStatusFilter;
-  format: CreatorProductFormatFilter;
   type: ProductType | '';
   sort: CreatorProductSort;
+  format: CreatorProductFormatFilter;
+  formatCounts: Record<CreatorProductFormatFilter, number>;
+  groupActive?: boolean;
   resultCount: number;
   totalCount: number;
   hasActiveFilters: boolean;
+  /** Hide Draft / Published toggle (public shop). */
+  hideStatusToggle?: boolean;
   onSearch: (query: string) => void;
   onStatusChange: (status: CreatorProductStatusFilter) => void;
-  onFormatChange: (format: CreatorProductFormatFilter) => void;
   onTypeChange: (type: ProductType | '') => void;
   onSortChange: (sort: CreatorProductSort) => void;
+  onFormatChange: (format: CreatorProductFormatFilter) => void;
 };
 
 function FilterSelect({
@@ -99,50 +104,34 @@ function StatusToggle({
   status: CreatorProductStatusFilter;
   onStatusChange: (status: CreatorProductStatusFilter) => void;
 }) {
-  const isDraft = status === 'draft';
-  const isPublished = !isDraft;
-
   return (
-    <div className="inline-flex shrink-0 items-center gap-2" role="group" aria-label="Filter by status">
-      <button
-        type="button"
-        onClick={() => onStatusChange('draft')}
-        className={`text-sm font-semibold transition ${
-          isDraft
-            ? 'text-orange-600 dark:text-orange-400'
-            : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
-        }`}
-      >
-        Draft
-      </button>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={isPublished}
-        aria-label={isPublished ? 'Showing published products' : 'Showing draft products'}
-        onClick={() => onStatusChange(isPublished ? 'draft' : 'published')}
-        className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 ${
-          isPublished ? 'bg-orange-500' : 'bg-neutral-400 dark:bg-neutral-600'
-        }`}
-      >
-        <span
-          aria-hidden
-          className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${
-            isPublished ? 'translate-x-5' : 'translate-x-0'
-          }`}
-        />
-      </button>
-      <button
-        type="button"
-        onClick={() => onStatusChange('published')}
-        className={`text-sm font-semibold transition ${
-          isPublished
-            ? 'text-orange-600 dark:text-orange-400'
-            : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
-        }`}
-      >
-        Published
-      </button>
+    <div
+      className="inline-flex shrink-0 items-center rounded-full bg-neutral-100 p-1 dark:bg-neutral-800"
+      role="group"
+      aria-label="Draft or published"
+    >
+      {(
+        [
+          { id: 'draft' as const, label: 'Draft' },
+          { id: 'published' as const, label: 'Published' },
+        ] as const
+      ).map((option) => {
+        const active = status === option.id;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => onStatusChange(option.id)}
+            className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
+              active
+                ? 'bg-orange-500 text-white shadow-sm'
+                : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white'
+            }`}
+          >
+            {option.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -150,20 +139,23 @@ function StatusToggle({
 export function CreatorProductsToolbar({
   query,
   status,
-  format,
   type,
   sort,
+  format,
+  formatCounts,
+  groupActive = false,
   resultCount,
   totalCount,
   hasActiveFilters,
+  hideStatusToggle = false,
   onSearch,
   onStatusChange,
-  onFormatChange,
   onTypeChange,
   onSortChange,
+  onFormatChange,
 }: CreatorProductsToolbarProps) {
   return (
-    <div className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-transparent dark:bg-neutral-900/70 sm:p-5">
+    <div className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-[#0F0F0F] sm:p-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="min-w-0 flex-1">
           <label htmlFor="creator-products-search" className="sr-only">
@@ -191,7 +183,7 @@ export function CreatorProductsToolbar({
               placeholder="Search by title or tag…"
               className="min-w-0 flex-1 border-0 bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0 dark:text-neutral-100 dark:placeholder:text-neutral-500"
             />
-            {query && (
+            {query ? (
               <button
                 type="button"
                 onClick={() => onSearch('')}
@@ -202,21 +194,10 @@ export function CreatorProductsToolbar({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-            )}
+            ) : null}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 lg:gap-3">
-          <FilterSelect
-            value={format}
-            onChange={(v) => onFormatChange(v as CreatorProductFormatFilter)}
-            aria-label="Filter by format"
-          >
-            {FORMAT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </FilterSelect>
           <FilterSelect
             value={type}
             onChange={(v) => onTypeChange((v || '') as ProductType | '')}
@@ -240,8 +221,34 @@ export function CreatorProductsToolbar({
               </option>
             ))}
           </FilterSelect>
-          <StatusToggle status={status} onStatusChange={onStatusChange} />
+          {!hideStatusToggle ? (
+            <StatusToggle status={status} onStatusChange={onStatusChange} />
+          ) : null}
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Filter by format">
+        {FORMAT_OPTIONS.map((option) => {
+          const selected = format === option.id && !groupActive;
+          const count = formatCounts[option.id];
+          return (
+            <button
+              key={option.id}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onFormatChange(option.id)}
+              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm transition ${
+                selected
+                  ? 'bg-neutral-200 font-semibold text-neutral-900 dark:bg-neutral-700 dark:text-white'
+                  : 'bg-neutral-100 font-medium text-neutral-700 hover:bg-neutral-200/80 dark:bg-neutral-800/60 dark:text-neutral-200 dark:hover:bg-neutral-700/70'
+              }`}
+            >
+              <span>{option.label}</span>
+              <span className="text-xs tabular-nums text-neutral-500 dark:text-neutral-400">{count}</span>
+            </button>
+          );
+        })}
       </div>
 
       <p className="text-sm text-gray-600 dark:text-gray-400">

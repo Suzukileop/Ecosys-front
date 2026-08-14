@@ -49,7 +49,7 @@ export default function AgentQueuePage() {
 
   useEffect(() => {
     if (!isLoading && user && !hasRole('ROLE_AGENT')) {
-      router.replace('/dashboard');
+      router.replace('/dashboard/home');
     }
   }, [isLoading, user, hasRole, router]);
 
@@ -103,7 +103,7 @@ export default function AgentQueuePage() {
     <DashboardHomeShell>
       <div className="space-y-8">
         <div>
-          <Link href="/dashboard" className="text-sm text-[#EA580C] hover:text-[#F97316] dark:text-[#FB923C]">
+          <Link href="/dashboard/home" className="text-sm text-[#EA580C] hover:text-[#F97316] dark:text-[#FB923C]">
             ← Dashboard
           </Link>
           <h1 className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">Agent queue</h1>

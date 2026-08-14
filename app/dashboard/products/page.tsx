@@ -14,7 +14,7 @@ function MyProductsPageInner() {
 
   useEffect(() => {
     if (!isLoading && user && !hasRole('ROLE_CREATOR')) {
-      router.replace('/dashboard');
+      router.replace('/dashboard/home');
     }
   }, [isLoading, user, hasRole, router]);
 
@@ -33,8 +33,8 @@ function MyProductsPageInner() {
 
 export default function MyProductsPage() {
   return (
-    <DashboardHomeShell fullWidth>
-      <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8">
+    <DashboardHomeShell fullWidth fillViewport>
+      <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col overflow-hidden px-4 sm:px-6">
         <Suspense fallback={<CreatorStudioProductsTabSkeleton />}>
           <MyProductsPageInner />
         </Suspense>

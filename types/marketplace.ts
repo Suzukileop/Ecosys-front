@@ -22,6 +22,7 @@ export interface MarketplaceCreatorSummary {
   isAvailable?: boolean;
   portfolioCount?: number;
   productCount?: number;
+  serviceCount?: number;
   averageRating: number | null;
   followerCount?: number;
   isFollowing?: boolean;
@@ -104,6 +105,10 @@ export interface MarketplaceCreatorPublicProfile {
   portfolioPosts?: MarketplaceContentItem[];
   /** Public portfolio presentation settings (theme, layout, motion, etc.). */
   portfolioSettings?: Record<string, unknown> | null;
+  shopName?: string | null;
+  shopSellingFocus?: string | null;
+  shopDescription?: string | null;
+  shopCoverUrl?: string | null;
 }
 
 export interface MarketplaceContentCreator {
@@ -203,6 +208,8 @@ export interface MarketplaceProductSummary {
   creatorId: string;
   creatorName: string | null;
   creatorAvatarUrl: string | null;
+  /** Public boutique / shop name (Explore search + display). */
+  shopName?: string | null;
   isPublished: boolean;
   views: number;
   likes: number;
@@ -212,6 +219,7 @@ export interface MarketplaceProductSummary {
   videoDurationSeconds?: number | null;
   videoResolution?: string | null;
   isBestseller?: boolean;
+  isPinned?: boolean;
   tags?: string[];
   galleryImageUrls?: string[];
   createdAt: string;
@@ -262,6 +270,7 @@ export interface MarketplaceProductRequest {
   videoDurationSeconds?: number | null;
   videoResolution?: string | null;
   isBestseller?: boolean;
+  isPinned?: boolean;
   isPublished?: boolean;
   galleryImageUrls?: string[];
 }
@@ -325,6 +334,24 @@ export interface MarketplaceBundleRequest {
   discountPercent?: number;
   productIds: string[];
   isPublished?: boolean;
+}
+
+/** Named organizational group of creator products (not a sellable bundle). */
+export interface MarketplaceProductGroup {
+  id: string;
+  creatorId: string;
+  name: string;
+  sortOrder: number;
+  productCount: number;
+  productIds: string[];
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+export interface MarketplaceProductGroupRequest {
+  name: string;
+  productIds?: string[];
+  sortOrder?: number;
 }
 
 /** Raw shape from GET /api/marketplace/purchases/me */

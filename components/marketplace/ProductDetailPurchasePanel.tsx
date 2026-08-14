@@ -5,23 +5,24 @@ import Link from 'next/link';
 import {
   addFavorite,
   getProductInit,
-  isFreeProduct,
   removeFavorite,
   removeReaction,
   setReaction,
-  simulateProductPurchase,
 } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { emitProductLikesUpdated } from '@/lib/productLikesBus';
 import { PurchaseAccessActions } from '@/components/marketplace/PurchaseAccessButton';
 import { ShareButtons } from '@/components/marketplace/ShareButtons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faComment } from '@fortawesome/free-solid-svg-icons';
+import { useAuth } from '@/context/AuthContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useRouter } from 'next/navigation';
 import type { DeliveryMode, ProductOwnership, SocialTargetType } from '@/types/marketplace';
 
 type ProductDetailPurchasePanelProps = {
   productId: string;
-  priceCents: number;
+  creatorId: string;
+  creatorName?: string | null;
   priceLabel: string;
   comparePriceLabel?: string | null;
   discountPercent?: number | null;
@@ -35,7 +36,8 @@ type ProductDetailPurchasePanelProps = {
 
 export function ProductDetailPurchasePanel({
   productId,
-  priceCents,
+  creatorId,
+  creatorName,
   priceLabel,
   comparePriceLabel,
   discountPercent,
@@ -46,8 +48,8 @@ export function ProductDetailPurchasePanel({
   shareTitle,
   targetType,
 }: ProductDetailPurchasePanelProps) {
-  const router = useRouter();
-  const free = isFreeProduct(priceCents);
+  const { user } = useAuth();
+  const isOwner = Boolean(user?.id && user.id === creatorId);
 
   const [likes, setLikes] = useState(0);
   const [userLiked, setUserLiked] = useState(false);
@@ -55,8 +57,6 @@ export function ProductDetailPurchasePanel({
   const [ownership, setOwnership] = useState<ProductOwnership | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [purchasing, setPurchasing] = useState(false);
-  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const owned = ownership?.owned ?? false;
@@ -132,34 +132,14 @@ export function ProductDetailPurchasePanel({
     }
   };
 
-  const onPurchase = async () => {
-    if (!isAuthenticated) return;
-    setPurchasing(true);
-    setError(null);
-    try {
-      const result = await simulateProductPurchase(productId);
-      setPurchaseSuccess(true);
-      setOwnership({
-        owned: true,
-        purchaseId: result.id,
-        downloadCount: result.downloadCount,
-        maxDownloads: null,
-      });
-      router.refresh();
-    } catch (e) {
-      setError(
-        getApiErrorMessage(e, free ? 'Unable to claim this product.' : 'Purchase failed. Please try again.')
-      );
-    } finally {
-      setPurchasing(false);
-    }
-  };
-
-  const buyLabel = free ? `Get for free — ${priceLabel}` : `Buy — ${priceLabel}`;
   const signInHref = `/login?redirect=${encodeURIComponent(loginRedirect)}`;
+  const messageHref = isAuthenticated
+    ? `/dashboard/discussions?user=${encodeURIComponent(creatorId)}`
+    : `/login?redirect=${encodeURIComponent(`/dashboard/discussions?user=${encodeURIComponent(creatorId)}`)}`;
+  const messageLabel = creatorName?.trim() ? `Message ${creatorName.trim()}` : 'Message creator';
 
   return (
-    <aside className="rounded-2xl border border-stone-200 bg-stone-50 p-5 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+    <aside className="rounded-2xl bg-white p-5 dark:bg-[#0F0F0F]">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">{priceLabel}</p>
@@ -174,13 +154,6 @@ export function ProductDetailPurchasePanel({
         )}
       </div>
 
-      <dl className="mt-4 flex justify-between gap-4 text-sm">
-        <dt className="text-gray-500 dark:text-gray-400">Access</dt>
-        <dd className="font-semibold text-gray-900 dark:text-white">
-          {owned ? 'In your library' : 'Instant download'}
-        </dd>
-      </dl>
-
       {owned && ownership?.purchaseId ? (
         <div className="mt-5 space-y-3">
           <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
@@ -191,60 +164,23 @@ export function ProductDetailPurchasePanel({
             deliveryMode={deliveryMode}
           />
           <Link
-            href="/marketplace?tab=purchases"
-            className="flex w-full items-center justify-center rounded-xl border border-orange-300 bg-white px-4 py-3 text-sm font-semibold text-orange-800 transition hover:bg-orange-50 dark:border-orange-500/40 dark:bg-neutral-800 dark:text-orange-200 dark:hover:bg-orange-500/10"
+            href="/marketplace/purchases"
+            className="flex w-full items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-semibold text-orange-800 transition hover:bg-orange-50 dark:bg-neutral-800 dark:text-orange-200 dark:hover:bg-orange-500/10"
           >
             View in my library
           </Link>
         </div>
-      ) : purchaseSuccess && ownership?.purchaseId ? (
-        <div className="mt-5 space-y-3">
-          <p className="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800 dark:bg-green-500/10 dark:text-green-200">
-            {free
-              ? 'Added to your library! You can download it right away.'
-              : 'Purchase complete! Your download is ready.'}
-          </p>
-          <PurchaseAccessActions
-            purchaseId={ownership.purchaseId}
-            deliveryMode={deliveryMode}
-          />
-          <Link
-            href="/marketplace?tab=purchases"
-            className="flex w-full items-center justify-center rounded-xl border border-orange-300 bg-white px-4 py-3 text-sm font-semibold text-orange-800 hover:bg-orange-50 dark:border-orange-500/40 dark:bg-neutral-800 dark:text-orange-200"
-          >
-            View my library
-          </Link>
-        </div>
-      ) : !isAuthenticated ? (
+      ) : !isOwner ? (
         <Link
-          href={signInHref}
-          className="mt-5 flex w-full items-center justify-center rounded-xl bg-orange-200 px-4 py-3.5 text-sm font-bold text-orange-950 transition hover:bg-orange-300 dark:bg-orange-500 dark:text-white dark:hover:bg-orange-600"
+          href={messageHref}
+          title={messageLabel}
+          aria-label={messageLabel}
+          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-orange-600"
         >
-          {free ? `Sign in to get — ${priceLabel}` : `Sign in to buy — ${priceLabel}`}
+          <FontAwesomeIcon icon={faComment} className="h-3.5 w-3.5" />
+          Discuss
         </Link>
-      ) : (
-        <button
-          type="button"
-          onClick={() => void onPurchase()}
-          disabled={purchasing}
-          className="mt-5 flex w-full items-center justify-center rounded-xl bg-orange-200 px-4 py-3.5 text-sm font-bold text-orange-950 transition hover:bg-orange-300 disabled:opacity-60 dark:bg-orange-500 dark:text-white dark:hover:bg-orange-600"
-        >
-          {purchasing ? (
-            <>
-              <LoadingSpinner size="sm" />
-              <span className="ml-2">Processing…</span>
-            </>
-          ) : (
-            buyLabel
-          )}
-        </button>
-      )}
-
-      {!owned && !purchaseSuccess && (
-        <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
-          {free ? 'Simulated claim — no payment required.' : 'Simulated purchase — no real payment charged.'}
-        </p>
-      )}
+      ) : null}
 
       <div className="mt-4">
         {loading ? (
@@ -264,10 +200,10 @@ export function ProductDetailPurchasePanel({
               type="button"
               disabled={busy}
               onClick={() => void onLike()}
-              className={`flex items-center justify-center gap-1.5 rounded-xl border bg-white px-3 py-2.5 text-sm font-medium transition dark:bg-neutral-800 ${
+              className={`flex items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2.5 text-sm font-medium transition dark:bg-neutral-800 ${
                 userLiked
-                  ? 'border-orange-200 text-orange-800 dark:border-orange-500/30 dark:text-orange-200'
-                  : 'border-stone-200 text-gray-700 hover:border-orange-200 dark:border-neutral-600 dark:text-gray-200'
+                  ? 'text-orange-800 dark:text-orange-200'
+                  : 'text-gray-700 dark:text-gray-200'
               }`}
             >
               <HeartIcon filled={userLiked} />
@@ -277,10 +213,10 @@ export function ProductDetailPurchasePanel({
               type="button"
               disabled={busy}
               onClick={() => void onFavorite()}
-              className={`flex items-center justify-center gap-1.5 rounded-xl border bg-white px-3 py-2.5 text-sm font-medium transition dark:bg-neutral-800 ${
+              className={`flex items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2.5 text-sm font-medium transition dark:bg-neutral-800 ${
                 favorited
-                  ? 'border-amber-200 text-amber-900 dark:border-amber-500/30 dark:text-amber-200'
-                  : 'border-stone-200 text-gray-700 hover:border-orange-200 dark:border-neutral-600 dark:text-gray-200'
+                  ? 'text-amber-900 dark:text-amber-200'
+                  : 'text-gray-700 dark:text-gray-200'
               }`}
             >
               <BookmarkIcon filled={favorited} />
@@ -298,8 +234,16 @@ export function ProductDetailPurchasePanel({
           shareUrl={shareUrl}
           shareTitle={shareTitle}
           isAuthenticated={isAuthenticated}
+          size="lg"
         />
       </div>
+
+      <Link
+        href={`/marketplace/${encodeURIComponent(creatorId)}/shop`}
+        className="mt-5 flex w-full items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-900 transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:hover:border-orange-500/40 dark:hover:bg-orange-500/10 dark:hover:text-orange-200"
+      >
+        Visit my shop
+      </Link>
 
       {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
     </aside>

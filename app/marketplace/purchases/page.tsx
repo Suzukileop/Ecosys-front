@@ -1,5 +1,7 @@
-import { redirect } from 'next/navigation';
+'use client';
 
-export default function MarketplacePurchasesRedirect() {
-  redirect('/marketplace?tab=purchases');
+import { PurchasesLibrary } from '@/components/marketplace/PurchasesLibrary';
+
+export default function MarketplacePurchasesPage() {
+  return <PurchasesLibrary />;
 }

@@ -76,6 +76,8 @@ type ContentMediaPreviewProps = {
   /** Natural height — no inner scroll; image scales up to max height. */
   fluid?: boolean;
   fit?: 'contain' | 'cover';
+  /** No card chrome (border / fill) — media sits on the page background. */
+  unframed?: boolean;
 };
 
 /** Fixed landscape preview for create-content modal — never grows with media aspect. */
@@ -238,6 +240,7 @@ export function ContentMediaPreview({
   compact = false,
   fluid = false,
   fit = 'contain',
+  unframed = false,
 }: ContentMediaPreviewProps) {
   if (!mediaUrl && hideWhenEmpty) return null;
 
@@ -266,9 +269,11 @@ export function ContentMediaPreview({
   const mediaMaxClass =
     fluid && fit === 'cover'
       ? 'h-full w-full object-cover'
-      : fluid
-        ? 'max-h-[min(72dvh,640px)] w-full object-contain'
-        : '';
+      : fluid && unframed
+        ? 'max-h-[min(72dvh,640px)] h-auto w-auto max-w-full object-contain'
+        : fluid
+          ? 'max-h-[min(72dvh,640px)] w-full object-contain'
+          : '';
 
   if (!mediaUrl) {
     return (
@@ -293,9 +298,11 @@ export function ContentMediaPreview({
 
   return (
     <div
-      className={`overflow-hidden rounded-xl border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 ${
-        fluid && fit === 'cover' ? 'h-full w-full' : fluid ? 'w-full' : frameClass
-      }`}
+      className={`${
+        unframed
+          ? 'flex justify-center bg-transparent'
+          : 'overflow-hidden rounded-xl border border-neutral-200/80 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900'
+      } ${fluid && fit === 'cover' ? 'h-full w-full' : fluid ? 'w-full' : frameClass}`}
     >
       {kind === 'video' ? (
         <video

@@ -68,6 +68,8 @@ export default async function MarketplaceProductDetailPage({
             videoDurationSeconds={product.videoDurationSeconds}
             videoResolution={product.videoResolution}
             isBestseller={product.isBestseller}
+            galleryImageUrls={product.galleryImageUrls}
+            enableLightbox={product.type === 'PHYSICAL'}
           />
 
           <div className="mt-4 space-y-4">
@@ -89,6 +91,7 @@ export default async function MarketplaceProductDetailPage({
                 creatorId={product.creatorId}
                 creatorName={product.creatorName}
                 creatorAvatarUrl={product.creatorAvatarUrl}
+                specialite={product.specialite}
               />
             )}
           </div>
@@ -142,7 +145,7 @@ export default async function MarketplaceProductDetailPage({
                       {product.compatibleTools.map((tool) => (
                         <li
                           key={tool}
-                          className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-300"
+                          className="rounded-full bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700 dark:bg-neutral-800 dark:text-gray-300"
                         >
                           {tool}
                         </li>
@@ -179,7 +182,8 @@ export default async function MarketplaceProductDetailPage({
           <div id={PRODUCT_PURCHASE_ANCHOR_ID} className="scroll-mt-28 lg:sticky lg:top-24">
             <ProductDetailPurchasePanel
               productId={product.id}
-              priceCents={product.priceCents}
+              creatorId={product.creatorId}
+              creatorName={product.creatorName}
               priceLabel={priceLabel}
               comparePriceLabel={
                 hasDiscount
@@ -198,16 +202,15 @@ export default async function MarketplaceProductDetailPage({
         </div>
       </div>
 
-      <div className="mt-12 border-t border-gray-200 pt-10 dark:border-neutral-800">
+      <div className="mt-12 pt-10">
         <ProductDetailBottom
           product={product}
           reviewCount={reviewCount}
           loginRedirect={productUrl}
           purchaseCta={{
-            priceCents: product.priceCents,
-            priceLabel,
             isAuthenticated,
-            productTitle: product.title,
+            creatorId: product.creatorId,
+            creatorName: product.creatorName,
           }}
           middle={
             <>
@@ -236,15 +239,18 @@ function ProductDetailCreatorCard({
   creatorId,
   creatorName,
   creatorAvatarUrl,
+  specialite,
 }: {
   creatorId: string;
   creatorName: string;
   creatorAvatarUrl: string | null;
+  specialite?: string | null;
 }) {
+  const specialty = specialite?.trim() || null;
   return (
     <Link
       href={`/marketplace/${creatorId}`}
-      className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-orange-200 hover:bg-orange-50/40 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-orange-500/40 dark:hover:bg-orange-500/5"
+      className="flex items-center gap-4 rounded-2xl bg-white p-4 transition hover:bg-orange-50/40 dark:bg-[#0F0F0F] dark:hover:bg-orange-500/5"
     >
       {creatorAvatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -259,9 +265,11 @@ function ProductDetailCreatorCard({
         </div>
       )}
       <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-          Creator
-        </p>
+        {specialty ? (
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            {specialty}
+          </p>
+        ) : null}
         <p className="text-base font-semibold text-gray-900 dark:text-white">{creatorName}</p>
       </div>
     </Link>

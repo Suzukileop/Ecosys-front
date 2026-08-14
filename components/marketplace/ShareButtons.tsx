@@ -9,6 +9,7 @@ type ShareButtonsProps = {
   shareUrl: string;
   shareTitle: string;
   isAuthenticated: boolean;
+  size?: 'md' | 'lg';
 };
 
 function IconX({ className }: { className?: string }) {
@@ -29,6 +30,8 @@ function IconFacebook({ className }: { className?: string }) {
 
 const shareButtonClassName =
   'inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 dark:border-neutral-600 dark:bg-neutral-800 dark:text-gray-200 dark:hover:border-orange-500/40 dark:hover:bg-orange-500/10 dark:hover:text-orange-200';
+const shareButtonLgClassName =
+  'inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-orange-50 hover:text-orange-700 dark:bg-neutral-800 dark:text-gray-200 dark:hover:bg-orange-500/10 dark:hover:text-orange-200';
 
 export function ShareButtons({
   targetType,
@@ -36,7 +39,12 @@ export function ShareButtons({
   shareUrl,
   shareTitle,
   isAuthenticated,
+  size = 'md',
 }: ShareButtonsProps) {
+  const large = size === 'lg';
+  const buttonClass = large ? shareButtonLgClassName : shareButtonClassName;
+  const iconButtonClass = large ? `${shareButtonLgClassName} h-14 w-14 px-0` : `${shareButtonClassName} h-9 w-9 px-0`;
+  const iconClass = large ? 'h-8 w-8' : 'h-5 w-5';
   const trackShare = (platform: string) => {
     if (!isAuthenticated) return;
     void recordShare(targetType, targetId, platform).catch(() => undefined);
@@ -68,25 +76,25 @@ export function ShareButtons({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <button type="button" onClick={() => void onShare('copy')} className={shareButtonClassName}>
+    <div className={`flex flex-wrap items-center ${large ? 'gap-3' : 'gap-2'}`}>
+      <button type="button" onClick={() => void onShare('copy')} className={buttonClass}>
         Copy link
       </button>
       <button
         type="button"
         onClick={() => void onShare('twitter')}
-        className={`${shareButtonClassName} h-9 w-9 px-0`}
+        className={iconButtonClass}
         aria-label="Share on X"
       >
-        <IconX className="h-5 w-5" />
+        <IconX className={iconClass} />
       </button>
       <button
         type="button"
         onClick={() => void onShare('facebook')}
-        className={`${shareButtonClassName} h-9 w-9 px-0`}
+        className={iconButtonClass}
         aria-label="Share on Facebook"
       >
-        <IconFacebook className="h-5 w-5" />
+        <IconFacebook className={iconClass} />
       </button>
     </div>
   );

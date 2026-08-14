@@ -14,7 +14,8 @@ export type CreatorProductSort =
   | 'title'
   | 'price_asc'
   | 'price_desc'
-  | 'views';
+  | 'views'
+  | 'bestseller';
 
 export function useCreatorProductsFilter(products: MarketplaceProductSummary[]) {
   const [queryInput, setQueryInput] = useState('');
@@ -38,6 +39,7 @@ export function useCreatorProductsFilter(products: MarketplaceProductSummary[]) 
       if (format === 'physical' && product.type !== 'PHYSICAL') return false;
       if (format === 'virtual' && product.type === 'PHYSICAL') return false;
       if (type && product.type !== type) return false;
+      if (sort === 'bestseller' && !product.isBestseller) return false;
 
       if (!needle) return true;
 
@@ -57,6 +59,14 @@ export function useCreatorProductsFilter(products: MarketplaceProductSummary[]) 
     });
 
     list = [...list].sort((a, b) => {
+      const rank = (product: MarketplaceProductSummary) => {
+        if (product.isPinned) return 0;
+        if (product.isBestseller) return 1;
+        return 2;
+      };
+      const rankDiff = rank(a) - rank(b);
+      if (rankDiff !== 0) return rankDiff;
+
       switch (sort) {
         case 'oldest':
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -68,6 +78,9 @@ export function useCreatorProductsFilter(products: MarketplaceProductSummary[]) 
           return b.priceCents - a.priceCents;
         case 'views':
           return (b.views ?? 0) - (a.views ?? 0);
+        case 'bestseller':
+          return (b.salesCount ?? 0) - (a.salesCount ?? 0) ||
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         case 'newest':
         default:
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();

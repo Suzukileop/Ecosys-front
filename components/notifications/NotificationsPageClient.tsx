@@ -92,7 +92,7 @@ export function NotificationsPageClient() {
       <div className="mx-auto max-w-2xl space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <Link href="/dashboard" className="text-sm text-[#EA580C] hover:text-[#F97316] dark:text-[#FB923C]">
+            <Link href="/dashboard/home" className="text-sm text-[#EA580C] hover:text-[#F97316] dark:text-[#FB923C]">
               ← Dashboard
             </Link>
             <h1 className="mt-2 text-2xl font-bold text-neutral-900 dark:text-white">Notifications</h1>

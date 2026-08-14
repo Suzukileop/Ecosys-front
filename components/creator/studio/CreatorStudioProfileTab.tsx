@@ -23,8 +23,14 @@ import {
   type ContactVisibilitySettings,
 } from '@/lib/contact-visibility';
 import { CREATOR_GENDER_VALUES, normalizeCreatorGender } from '@/lib/creator-gender';
+import {
+  DEFAULT_CREATOR_APP_ROLE,
+  normalizeCreatorAppRole,
+  type CreatorAppRole,
+} from '@/lib/creator-app-role';
 import { CreatorProfileDto } from '@/types/ecosystem';
 import { updateCreatorProfile } from '@/lib/creator-profile-api';
+import { ProfileAppRoleField } from '@/components/creator/studio/ProfileAppRoleField';
 import {
   defaultSchedule,
   formatAvailabilityHours,
@@ -294,6 +300,7 @@ function portfolioSectionItemCountLabel(
     case 'reputation':
       return formatItemCountLabel(reviewCount, 'review');
     case 'about':
+    case 'myRole':
     case 'location':
       return null;
     default:
@@ -520,6 +527,7 @@ export function CreatorStudioProfileTab({
       bio: '',
       specialite: '',
       gender: '',
+      appRole: DEFAULT_CREATOR_APP_ROLE,
       spokenLanguages: [],
       locationCity: '',
       locationCountry: '',
@@ -1227,6 +1235,7 @@ export function CreatorStudioProfileTab({
         bio: p.bio ?? '',
         specialite: p.specialite ?? '',
         gender: normalizeCreatorGender(p.gender) ?? '',
+        appRole: normalizeCreatorAppRole(p.appRole),
         spokenLanguages: parseSpokenLanguages(p.spokenLanguages, p.languages),
         locationCity: p.locationCity ?? '',
         locationCountry: p.locationCountry ?? '',
@@ -1398,6 +1407,7 @@ export function CreatorStudioProfileTab({
         bio: parsed.bio?.trim() ? parsed.bio.trim() : undefined,
         specialite: parsed.specialite?.trim() ? parsed.specialite.trim() : undefined,
         gender: parsed.gender?.trim() ? parsed.gender.trim() : undefined,
+        appRole: parsed.appRole ?? DEFAULT_CREATOR_APP_ROLE,
         spokenLanguages: parsed.spokenLanguages.map((item) => item.value.trim()).filter(Boolean),
         ...(hasCompleteLocation
           ? {
@@ -1479,7 +1489,7 @@ export function CreatorStudioProfileTab({
   const timezoneId = values.timezoneId;
   const hasLocation = Boolean(values.locationLat != null && values.locationLng != null && timezoneId);
   const currentSection = getProfileSection(activeSection);
-  const isFormSection = activeSection !== 'reputation';
+  const isFormSection = activeSection !== 'reputation' && activeSection !== 'myRole';
   const availabilityHoursForCompare = formatAvailabilityHours(availabilitySchedule, timezoneId);
   const hasUnsavedChanges =
     savedSnapshot.current != null &&
@@ -1558,7 +1568,7 @@ export function CreatorStudioProfileTab({
       return (
         <div className={`flex min-h-0 flex-col ${iconsOnly ? 'items-center' : ''}`}>
           <div
-            className={`flex h-12 shrink-0 items-center bg-neutral-100 dark:bg-neutral-900 ${
+            className={`flex h-12 shrink-0 items-center bg-neutral-100 dark:bg-[#0F0F0F] ${
               iconsOnly ? 'justify-center px-0' : 'justify-between gap-2 px-3'
             }`}
           >
@@ -1712,6 +1722,7 @@ export function CreatorStudioProfileTab({
         bio: parsed.bio?.trim() ? parsed.bio.trim() : undefined,
         specialite: parsed.specialite?.trim() ? parsed.specialite.trim() : undefined,
         gender: parsed.gender?.trim() ? parsed.gender.trim() : undefined,
+        appRole: parsed.appRole ?? DEFAULT_CREATOR_APP_ROLE,
         spokenLanguages: parsed.spokenLanguages.map((item) => item.value.trim()).filter(Boolean),
         ...(hasCompleteLocation
           ? {
@@ -2966,6 +2977,36 @@ export function CreatorStudioProfileTab({
     ]
   );
 
+  const persistAppRole = useCallback(
+    async (nextRole: CreatorAppRole) => {
+      const current = normalizeCreatorAppRole(form.getValues('appRole'));
+      if (current === nextRole) return;
+
+      form.setValue('appRole', nextRole, { shouldDirty: true });
+      setSaving(true);
+      setSubmitError(null);
+      try {
+        await updateCreatorProfile({ appRole: nextRole });
+        const snapshot = savedSnapshot.current;
+        if (snapshot) {
+          savedSnapshot.current = { ...snapshot, appRole: nextRole };
+        }
+        form.reset({ ...form.getValues(), appRole: nextRole });
+        onProfileUpdated?.();
+        pushFlashFeedback({
+          variant: 'success',
+          title: 'Role updated',
+        });
+      } catch (e) {
+        form.setValue('appRole', current, { shouldDirty: false });
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update your role.');
+      } finally {
+        setSaving(false);
+      }
+    },
+    [form, onProfileUpdated]
+  );
+
   const renderSectionContent = () => {
     const fieldVariant = isPortfolioLayout ? 'flat' : 'boxed';
 
@@ -2982,6 +3023,14 @@ export function CreatorStudioProfileTab({
           );
         }
         return <CreatorReputationPanel reputation={reputation} showHeader={false} />;
+      case 'myRole':
+        return (
+          <ProfileAppRoleField
+            value={normalizeCreatorAppRole(values.appRole)}
+            disabled={saving}
+            onChange={(role) => void persistAppRole(role)}
+          />
+        );
       case 'portfolio':
         if (isPortfolioLayout) {
           return (
@@ -5155,7 +5204,9 @@ export function CreatorStudioProfileTab({
                   {renderSectionContent()}
                 </div>
 
-                {isFormSection || (isPortfolioLayout && activeSection === 'reputation') ? (
+                {isFormSection ||
+                (isPortfolioLayout &&
+                  (activeSection === 'reputation' || activeSection === 'myRole')) ? (
                   isPortfolioLayout ? (
                     <PortfolioEditorFooter
                       lastUpdatedLabel={formatLastUpdatedLabel(profileUpdatedAt)}
@@ -5170,7 +5221,11 @@ export function CreatorStudioProfileTab({
                       saving={saving}
                       hasUnsavedChanges={hasUnsavedChanges}
                       onCancel={cancelEdit}
-                      hidePrimaryActions={isPortfolioChromeSection || activeSection === 'reputation'}
+                      hidePrimaryActions={
+                        isPortfolioChromeSection ||
+                        activeSection === 'reputation' ||
+                        activeSection === 'myRole'
+                      }
                       hideTopBorder={
                         activeSection === 'whyMe' ||
                         activeSection === 'experience' ||
@@ -5183,7 +5238,8 @@ export function CreatorStudioProfileTab({
                         activeSection === 'gallery' ||
                         activeSection === 'links' ||
                         activeSection === 'contact' ||
-                        activeSection === 'reputation'
+                        activeSection === 'reputation' ||
+                        activeSection === 'myRole'
                       }
                       onEdit={beginPortfolioEdit}
                     />

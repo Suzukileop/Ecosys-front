@@ -88,7 +88,7 @@ export function HeaderAuth() {
     <AuthHeaderShell collapsed={collapseHeader}>
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2">
-          <Link href="/dashboard" className="flex shrink-0 items-center gap-2">
+          <Link href="/dashboard/home" className="flex shrink-0 items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
               NP
             </div>
@@ -98,7 +98,7 @@ export function HeaderAuth() {
             className="flex max-w-full flex-wrap items-center gap-1 overflow-x-auto md:gap-2"
             aria-label="Navigation connectée"
           >
-            {navLink('/dashboard', 'Accueil')}
+            {navLink('/dashboard/home', 'Accueil')}
             {navLink('/marketplace', 'Marketplace')}
             {hasRole('ROLE_AGENT') && navLink('/dashboard/agent', 'File agent')}
             {hasRole('ROLE_CREATOR') && navLink('/dashboard/creator', 'My Profile')}
@@ -110,7 +110,7 @@ export function HeaderAuth() {
           <CreditBadge />
           <NotificationBell />
           <div className="hidden items-center gap-2 sm:flex">
-            <Link href="/dashboard" className="flex items-center gap-2 rounded-lg hover:bg-gray-50">
+            <Link href="/dashboard/home" className="flex items-center gap-2 rounded-lg hover:bg-gray-50">
               <Avatar name={user.fullName} avatarUrl={user.avatarUrl} size="sm" />
               <span className="max-w-[9rem] truncate text-sm text-gray-700">{user.fullName}</span>
             </Link>

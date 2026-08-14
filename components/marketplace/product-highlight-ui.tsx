@@ -16,9 +16,7 @@ export function ProductHighlightTitle({ children }: { children: ReactNode }) {
     <h2
       className={`product-why-title ${productHighlightTitleGapClass} text-center text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl`}
     >
-      <span className="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 bg-clip-text text-transparent dark:from-orange-400 dark:via-orange-300 dark:to-amber-300">
-        {children}
-      </span>
+      <span className="text-orange-500 dark:text-orange-400">{children}</span>
     </h2>
   );
 }
@@ -26,15 +24,15 @@ export function ProductHighlightTitle({ children }: { children: ReactNode }) {
 function HighlightLineIcon({ variant }: { variant: 'star' | 'play' }) {
   return (
     <span
-      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-500/10 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400"
+      className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-500/10 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400"
       aria-hidden
     >
       {variant === 'play' ? (
-        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
           <path d="M8 5v14l11-7L8 5z" />
         </svg>
       ) : (
-        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z" />
         </svg>
       )}
@@ -67,7 +65,7 @@ export function ProductHighlightLines({
           style={{ animationDelay: `${120 + index * 70}ms` }}
         >
           <HighlightLineIcon variant={icon} />
-          <p className="min-w-0 flex-1 text-left text-sm leading-relaxed text-neutral-700 sm:text-[0.9375rem] dark:text-neutral-300">
+          <p className="min-w-0 flex-1 text-left text-base leading-relaxed text-neutral-700 sm:text-lg dark:text-neutral-300">
             {line}
           </p>
         </li>
@@ -78,12 +76,13 @@ export function ProductHighlightLines({
 
 type ProductHighlightMediaProps = {
   mediaUrl: string;
+  unframed?: boolean;
 };
 
-export function ProductHighlightMedia({ mediaUrl }: ProductHighlightMediaProps) {
+export function ProductHighlightMedia({ mediaUrl, unframed = false }: ProductHighlightMediaProps) {
   return (
-    <div className="min-w-0 w-full flex-1 overflow-hidden rounded-2xl">
-      <ContentMediaPreview locale="en" mediaUrl={mediaUrl} mediaType="FILE" large fluid />
+    <div className={`min-w-0 w-full flex-1 ${unframed ? '' : 'overflow-hidden rounded-2xl'}`}>
+      <ContentMediaPreview locale="en" mediaUrl={mediaUrl} mediaType="FILE" large fluid unframed={unframed} />
     </div>
   );
 }

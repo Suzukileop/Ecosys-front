@@ -50,7 +50,9 @@ export function ProductFormatToggle({
             role="radio"
             aria-checked={selected}
             disabled={disabled || hideInactive}
-            onClick={() => onChange(option.id)}
+            onClick={() => {
+              if (!selected) onChange(option.id);
+            }}
             className={`min-w-[9.5rem] flex-1 rounded-xl border bg-transparent px-3.5 py-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2 disabled:cursor-default dark:focus-visible:ring-offset-neutral-900 sm:flex-none ${
               selected
                 ? 'border-orange-500 dark:border-orange-400'

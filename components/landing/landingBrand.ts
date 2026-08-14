@@ -3,10 +3,12 @@ export const BRAND_ORANGE = '#F97316';
 export const BRAND_ORANGE_DARK = '#EA580C';
 export const BRAND_ORANGE_LIGHT = '#FB923C';
 
-/** Dashboard surfaces — alignés sur le fond motif (gris neutre, sans bleu) */
-export const DASHBOARD_SIDEBAR_BG =
-  'bg-neutral-50 dark:bg-neutral-950';
-export const DASHBOARD_MAIN_BG = 'bg-white';
+/** Dashboard sidebar — blanc pur / anthracite YouTube (#0F0F0F) en sombre */
+export const DASHBOARD_SIDEBAR_BG = 'bg-white dark:bg-[#0F0F0F]';
+/** Surfaces alignées sur le fond sidebar (filtres, cartes, catalogues) */
+export const DASHBOARD_SIDEBAR_SURFACE = 'bg-white dark:bg-[#0F0F0F]';
+/** Dashboard main canvas — gris visible, contrasté avec le sidebar */
+export const DASHBOARD_MAIN_BG = 'bg-neutral-100 dark:bg-neutral-900';
 
 export const brandGradientText =
   'bg-gradient-to-r from-[#F97316] via-[#FB923C] to-[#EA580C] bg-clip-text text-transparent';

@@ -17,7 +17,7 @@ function OAuthCallbackContent() {
 
   useEffect(() => {
     if (user) {
-      window.location.replace('/dashboard');
+      window.location.replace('/dashboard/home');
       return;
     }
 
@@ -35,14 +35,14 @@ function OAuthCallbackContent() {
     }
 
     if (sessionStorage.getItem(OAUTH_DONE_KEY) === code) {
-      window.location.replace('/dashboard');
+      window.location.replace('/dashboard/home');
       return;
     }
 
     completeOAuthCallback(code, applyAuthResponse)
       .then(() => {
         sessionStorage.setItem(OAUTH_DONE_KEY, code);
-        window.location.replace('/dashboard');
+        window.location.replace('/dashboard/home');
       })
       .catch(() => {
         setError('Unable to complete social sign-in. Please try again.');

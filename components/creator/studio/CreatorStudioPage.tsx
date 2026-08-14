@@ -80,6 +80,7 @@ function CreatorStudioPageInner() {
         isAvailable: profile.isAvailable ?? true,
         averageRating: profile.reputation?.averageRating ?? null,
         locationLabel: formatLocationLabel(profile.locationCity, profile.locationCountry),
+        appRole: profile.appRole ?? null,
         headerLayout: parseCreatorStudioHeaderLayout(profile.studioHeaderLayout),
         headerContentStyle: parseCreatorStudioHeaderContentStyle(profile.studioHeaderContentStyle),
         tabNavAlign: parseCreatorStudioTabNavAlign(profile.studioTabNavAlign),
@@ -101,6 +102,7 @@ function CreatorStudioPageInner() {
         productCount: 0,
         profileVisits: 0,
         isAvailable: true,
+        appRole: null,
         headerLayout: 'BANNER',
         headerContentStyle: 'DEFAULT',
         tabNavAlign: 'LEFT',
@@ -120,7 +122,7 @@ function CreatorStudioPageInner() {
 
   useEffect(() => {
     if (!isLoading && user && !hasRole('ROLE_CREATOR')) {
-      router.replace('/dashboard');
+      router.replace('/dashboard/home');
     }
   }, [isLoading, user, hasRole, router]);
 

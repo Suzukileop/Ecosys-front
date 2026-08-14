@@ -14,6 +14,8 @@ import type {
   MarketplaceBundleDetail,
   MarketplaceBundleRequest,
   MarketplaceBundleSummary,
+  MarketplaceProductGroup,
+  MarketplaceProductGroupRequest,
   MarketplaceComment,
   MarketplaceContentDetail,
   MarketplaceContentItem,
@@ -135,6 +137,12 @@ export function normalizeCreatorSummary(raw: RawRecord): MarketplaceCreatorSumma
     isAvailable: raw.isAvailable == null ? true : Boolean(raw.isAvailable),
     portfolioCount: typeof raw.portfolioCount === 'number' ? raw.portfolioCount : Number(raw.portfolioCount ?? 0),
     productCount: typeof raw.productCount === 'number' ? raw.productCount : Number(raw.productCount ?? 0),
+    serviceCount: typeof raw.serviceCount === 'number'
+      ? raw.serviceCount
+      : Number(
+          raw.serviceCount ??
+            (Array.isArray(raw.profileServices) ? raw.profileServices.length : 0)
+        ),
     averageRating: raw.averageRating != null ? Number(raw.averageRating) : null,
     followerCount: typeof raw.followerCount === 'number' ? raw.followerCount : Number(raw.followerCount ?? 0),
     isFollowing: Boolean(raw.isFollowing),
@@ -506,6 +514,12 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
       !Array.isArray(raw.portfolioSettings)
         ? (raw.portfolioSettings as Record<string, unknown>)
         : null,
+    shopName: raw.shopName != null ? String(raw.shopName).trim() || null : null,
+    shopSellingFocus:
+      raw.shopSellingFocus != null ? String(raw.shopSellingFocus).trim() || null : null,
+    shopDescription:
+      raw.shopDescription != null ? String(raw.shopDescription).trim() || null : null,
+    shopCoverUrl: raw.shopCoverUrl != null ? String(raw.shopCoverUrl).trim() || null : null,
   };
 }
 
@@ -773,10 +787,47 @@ export async function unpublishProduct(id: string): Promise<MarketplaceProductDe
   return res.data;
 }
 
+export async function pinProduct(id: string): Promise<MarketplaceProductDetail> {
+  const res = await api.patch<MarketplaceProductDetail>(
+    `/api/creator/products/${encodeURIComponent(id)}/pin`
+  );
+  return res.data;
+}
+
+export async function unpinProduct(id: string): Promise<MarketplaceProductDetail> {
+  const res = await api.patch<MarketplaceProductDetail>(
+    `/api/creator/products/${encodeURIComponent(id)}/unpin`
+  );
+  return res.data;
+}
+
+export async function markProductBestseller(id: string): Promise<MarketplaceProductDetail> {
+  const res = await api.patch<MarketplaceProductDetail>(
+    `/api/creator/products/${encodeURIComponent(id)}/bestseller`
+  );
+  return res.data;
+}
+
+export async function unmarkProductBestseller(id: string): Promise<MarketplaceProductDetail> {
+  const res = await api.patch<MarketplaceProductDetail>(
+    `/api/creator/products/${encodeURIComponent(id)}/unbestseller`
+  );
+  return res.data;
+}
+
 export async function uploadProductThumbnail(file: File): Promise<string> {
   const form = new FormData();
   form.append('file', file);
   const res = await api.post<{ url: string }>('/api/creator/marketplace/uploads/thumbnail', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data.url;
+}
+
+export async function uploadShopCover(file: File): Promise<string> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await api.post<{ url: string }>('/api/creator/marketplace/uploads/shop-cover', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return res.data.url;
@@ -800,6 +851,8 @@ export function normalizeMarketplaceProduct(
     genre: raw.genre?.trim() || null,
     specialite: (legacy.specialite ?? legacy.niche)?.trim() || null,
     tags,
+    isBestseller: Boolean(raw.isBestseller),
+    isPinned: Boolean(raw.isPinned),
     galleryImageUrls: Array.isArray((raw as MarketplaceProductDetail).galleryImageUrls)
       ? ((raw as MarketplaceProductDetail).galleryImageUrls ?? [])
           .map((url) => String(url).trim())
@@ -838,6 +891,7 @@ export async function listPublicProducts(
     q?: string;
     creatorId?: string;
     type?: string;
+    format?: 'virtual' | 'physical';
     minPriceCents?: number;
     maxPriceCents?: number;
     sort?: string;
@@ -854,6 +908,7 @@ export async function listPublicProducts(
       ...(params?.q ? { q: params.q } : {}),
       ...(params?.creatorId ? { creatorId: params.creatorId } : {}),
       ...(params?.type ? { type: params.type } : {}),
+      ...(params?.format ? { format: params.format } : {}),
       ...(params?.minPriceCents != null ? { minPriceCents: params.minPriceCents } : {}),
       ...(params?.maxPriceCents != null ? { maxPriceCents: params.maxPriceCents } : {}),
       ...(params?.sort ? { sort: params.sort } : {}),
@@ -1105,6 +1160,59 @@ export async function simulateBundlePurchase(bundleId: string): Promise<Marketpl
     `/api/marketplace/bundles/${encodeURIComponent(bundleId)}/purchase`
   );
   return res.data;
+}
+
+// --- Product groups (creator, organizational) ---
+
+export async function listCreatorProductGroups(
+  page = 0,
+  size = 50
+): Promise<PagedResponse<MarketplaceProductGroup>> {
+  const res = await api.get<SpringPageRaw<MarketplaceProductGroup>>('/api/creator/product-groups', {
+    params: { page, size },
+  });
+  return normalizeSpringPage(res.data);
+}
+
+export async function listPublicCreatorProductGroups(
+  creatorId: string,
+  page = 0,
+  size = 50
+): Promise<PagedResponse<MarketplaceProductGroup>> {
+  const res = await api.get<SpringPageRaw<MarketplaceProductGroup>>(
+    `/api/marketplace/creators/${encodeURIComponent(creatorId)}/product-groups`,
+    { params: { page, size } }
+  );
+  return normalizeSpringPage(res.data);
+}
+
+export async function getCreatorProductGroup(id: string): Promise<MarketplaceProductGroup> {
+  const res = await api.get<MarketplaceProductGroup>(
+    `/api/creator/product-groups/${encodeURIComponent(id)}`
+  );
+  return res.data;
+}
+
+export async function createProductGroup(
+  body: MarketplaceProductGroupRequest
+): Promise<MarketplaceProductGroup> {
+  const res = await api.post<MarketplaceProductGroup>('/api/creator/product-groups', body);
+  return res.data;
+}
+
+export async function updateProductGroup(
+  id: string,
+  body: MarketplaceProductGroupRequest
+): Promise<MarketplaceProductGroup> {
+  const res = await api.put<MarketplaceProductGroup>(
+    `/api/creator/product-groups/${encodeURIComponent(id)}`,
+    body
+  );
+  return res.data;
+}
+
+export async function deleteProductGroup(id: string): Promise<void> {
+  await api.delete(`/api/creator/product-groups/${encodeURIComponent(id)}`);
 }
 
 // --- Social ---

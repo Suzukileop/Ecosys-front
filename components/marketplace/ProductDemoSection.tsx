@@ -37,7 +37,7 @@ export function ProductDemoSection({
     <section className={className}>
       <ProductHighlightTitle>{PRODUCT_DEMO_SECTION_TITLE}</ProductHighlightTitle>
       <article className="flex flex-col items-stretch gap-6 sm:flex-row sm:items-start sm:gap-8 lg:gap-10">
-        <ProductHighlightMedia mediaUrl={demoUrl} />
+        <ProductHighlightMedia mediaUrl={demoUrl} unframed />
         {lines.length > 0 ? (
           <ProductHighlightLines lines={lines} idPrefix="demo" icon="play" animationClass="product-demo-opinion" />
         ) : null}

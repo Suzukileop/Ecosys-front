@@ -83,7 +83,7 @@ export function ProductPurchaseButton({
             : 'Purchase complete! Open your library to stream or download your content.'}
         </p>
         <Link
-          href="/marketplace?tab=purchases"
+          href="/marketplace/purchases"
           className={`inline-flex ${widthClass} items-center justify-center rounded-xl border border-orange-300 px-6 py-3 text-sm font-semibold text-orange-700 hover:bg-orange-50 dark:border-orange-500/40 dark:text-orange-300 dark:hover:bg-orange-500/10`}
         >
           View my library

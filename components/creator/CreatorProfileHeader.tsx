@@ -7,6 +7,10 @@ import {
   type CreatorProfileHeaderProps,
 } from '@/components/creator/creator-profile-header-types';
 import { ProfileVisitStat } from '@/components/creator/ProfileVisitStat';
+import {
+  creatorAppRoleRingClass,
+  type CreatorAppRole,
+} from '@/lib/creator-app-role';
 
 export type { CreatorProfileHeaderProps } from '@/components/creator/creator-profile-header-types';
 
@@ -44,18 +48,29 @@ function PinIcon({ className }: { className?: string }) {
 function ProfileAvatar({
   fullName,
   avatarUrl,
+  appRole,
   editable,
   uploadingAvatar,
   onAvatarPick,
 }: {
   fullName: string;
   avatarUrl: string | null;
+  appRole?: CreatorAppRole | null;
   editable?: boolean;
   uploadingAvatar?: boolean;
   onAvatarPick?: () => void;
 }) {
-  const frameClass =
-    'h-full w-full overflow-hidden rounded-2xl border-4 border-white bg-neutral-100 shadow-md dark:border-neutral-800';
+  const ringColorClass = creatorAppRoleRingClass(appRole);
+  const ringShellClass = [
+    'aspect-square w-full rounded-2xl',
+    'ring-2 ring-offset-4',
+    'ring-offset-white dark:ring-offset-[#0F0F0F]',
+    'transition-all duration-200',
+    ringColorClass,
+  ].join(' ');
+
+  const mediaClass =
+    'h-full w-full overflow-hidden rounded-xl bg-neutral-100 shadow-sm dark:bg-neutral-800';
 
   const avatarInner = avatarUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
@@ -67,7 +82,11 @@ function ProfileAvatar({
   );
 
   if (!editable) {
-    return <div className={`aspect-square ${frameClass}`}>{avatarInner}</div>;
+    return (
+      <div className={ringShellClass}>
+        <div className={mediaClass}>{avatarInner}</div>
+      </div>
+    );
   }
 
   return (
@@ -75,18 +94,20 @@ function ProfileAvatar({
       type="button"
       onClick={onAvatarPick}
       disabled={uploadingAvatar}
-      className="group relative aspect-square w-full rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950"
+      className={`group relative ${ringShellClass} focus:outline-none focus-visible:ring-orange-500`}
       aria-label="Change profile photo"
     >
-      <div className={frameClass}>{avatarInner}</div>
-      <span className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/0 transition group-hover:bg-black/45">
-        <CameraIcon className="h-7 w-7 text-white opacity-0 transition group-hover:opacity-100" />
-      </span>
-      {uploadingAvatar && (
-        <span className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50">
-          <LoadingSpinner size="sm" />
+      <div className={`relative ${mediaClass}`}>
+        {avatarInner}
+        <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/0 transition group-hover:bg-black/45">
+          <CameraIcon className="h-7 w-7 text-white opacity-0 transition group-hover:opacity-100" />
         </span>
-      )}
+        {uploadingAvatar ? (
+          <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/50">
+            <LoadingSpinner size="sm" />
+          </span>
+        ) : null}
+      </div>
     </button>
   );
 }
@@ -127,12 +148,13 @@ function HorizontalProfileHeader(props: CreatorProfileHeaderProps) {
   );
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-6">
+    <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-[#0F0F0F] sm:p-6">
       <div className="flex flex-row items-stretch gap-5 sm:gap-7">
         <div className="w-40 shrink-0 sm:w-48 md:w-56 lg:w-64">
           <ProfileAvatar
             fullName={props.fullName}
             avatarUrl={props.avatarUrl}
+            appRole={props.appRole}
             editable={props.editable}
             uploadingAvatar={props.uploadingAvatar}
             onAvatarPick={props.onAvatarPick}
@@ -181,7 +203,7 @@ function HorizontalProfileHeader(props: CreatorProfileHeaderProps) {
         </div>
 
         <aside
-          className="hidden w-[7.5rem] shrink-0 self-stretch border-l border-neutral-200 pl-4 dark:border-neutral-700 sm:block sm:w-32 md:w-36 md:pl-5"
+          className="hidden w-[7.5rem] shrink-0 self-stretch pl-4 sm:block sm:w-32 md:w-36 md:pl-5"
           aria-label="Profile stats"
         >
           {stats}

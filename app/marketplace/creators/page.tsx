@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { CreatorsCatalog } from '@/components/marketplace/CreatorsCatalog';
+import { ServiceProviderCatalogGate } from '@/components/marketplace/ServiceProviderCatalogGate';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function MarketplaceCreatorsPage() {
@@ -11,7 +11,7 @@ export default function MarketplaceCreatorsPage() {
         </div>
       }
     >
-      <CreatorsCatalog />
+      <ServiceProviderCatalogGate />
     </Suspense>
   );
 }

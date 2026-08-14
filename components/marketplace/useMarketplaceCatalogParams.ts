@@ -2,9 +2,11 @@
 
 import { useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import type { ProductFormat } from '@/components/marketplace/product-editor-steps';
 import type { ProductType } from '@/types/marketplace';
 
 export type MarketplaceSort = 'newest' | 'popular' | 'views' | 'price_asc' | 'price_desc';
+export type MarketplaceProductFormat = ProductFormat;
 
 export const MARKETPLACE_PAGE_SIZE_OPTIONS = [10, 50, 100, 200, 500, 1000] as const;
 export const MARKETPLACE_DEFAULT_PAGE_SIZE = MARKETPLACE_PAGE_SIZE_OPTIONS[0];
@@ -13,6 +15,7 @@ export type MarketplaceCatalogParams = {
   q: string;
   genre: string;
   type: string;
+  format: MarketplaceProductFormat;
   minPrice: string;
   maxPrice: string;
   sort: MarketplaceSort;
@@ -40,6 +43,10 @@ function parseSort(value: string | null): MarketplaceSort {
   return 'popular';
 }
 
+function parseFormat(value: string | null): MarketplaceProductFormat {
+  return value === 'physical' ? 'physical' : 'virtual';
+}
+
 function parsePageSize(value: string | null): number {
   const parsed = Number(value);
   if (
@@ -59,6 +66,7 @@ export function useMarketplaceCatalogParams(basePath = '/marketplace') {
   const q = searchParams.get('q') ?? '';
   const genre = searchParams.get('genre') ?? '';
   const type = searchParams.get('type') ?? '';
+  const format = parseFormat(searchParams.get('format'));
   const minPrice = searchParams.get('minPrice') ?? '';
   const maxPrice = searchParams.get('maxPrice') ?? '';
   const sort = parseSort(searchParams.get('sort'));
@@ -78,8 +86,11 @@ export function useMarketplaceCatalogParams(basePath = '/marketplace') {
   const resetFilters = () => {
     const tab = searchParams.get('tab');
     const params = new URLSearchParams();
-    if (tab === 'favorites' || tab === 'purchases') {
+    if (tab === 'favorites') {
       params.set('tab', tab);
+    }
+    if (format === 'physical') {
+      params.set('format', 'physical');
     }
     const qs = params.toString();
     router.replace(qs ? `${basePath}?${qs}` : basePath);
@@ -88,25 +99,27 @@ export function useMarketplaceCatalogParams(basePath = '/marketplace') {
   const apiParams = useMemo(
     () => ({
       q: q.trim() || undefined,
-      genre: genre || undefined,
-      type: (type || undefined) as ProductType | undefined,
+      genre: format === 'physical' ? undefined : genre || undefined,
+      type: format === 'physical' ? undefined : ((type || undefined) as ProductType | undefined),
+      format,
       minPriceCents: parseEuroToCents(minPrice),
       maxPriceCents: parseEuroToCents(maxPrice),
       sort: sort === 'popular' ? undefined : sort,
       page,
       size,
     }),
-    [q, genre, type, minPrice, maxPrice, sort, page, size]
+    [q, genre, type, format, minPrice, maxPrice, sort, page, size]
   );
 
   const hasActiveFilters = Boolean(
-    q.trim() || genre || type || minPrice || maxPrice || sort !== 'popular'
+    q.trim() || (format !== 'physical' && genre) || (format !== 'physical' && type) || minPrice || maxPrice || sort !== 'popular'
   );
 
   return {
     q,
     genre,
     type,
+    format,
     minPrice,
     maxPrice,
     sort,

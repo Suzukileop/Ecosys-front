@@ -15,10 +15,9 @@ type ProductDetailBottomProps = {
   loginRedirect: string;
   middle?: ReactNode;
   purchaseCta?: {
-    priceCents: number;
-    priceLabel: string;
     isAuthenticated: boolean;
-    productTitle: string;
+    creatorId: string;
+    creatorName?: string | null;
   };
 };
 
@@ -48,15 +47,13 @@ export function ProductDetailBottom({
 
       {purchaseCta ? (
         <ProductDetailPurchaseCta
-          priceCents={purchaseCta.priceCents}
-          priceLabel={purchaseCta.priceLabel}
           isAuthenticated={purchaseCta.isAuthenticated}
-          loginRedirect={loginRedirect}
-          productTitle={purchaseCta.productTitle}
+          creatorId={purchaseCta.creatorId}
+          creatorName={purchaseCta.creatorName}
         />
       ) : null}
 
-      <section className="border-t border-gray-200 pt-10 dark:border-neutral-800">
+      <section className="pt-10">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
           <ProductReviewsList
             productId={product.id}

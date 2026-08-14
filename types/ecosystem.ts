@@ -433,6 +433,12 @@ export interface CreatorProfileDto {
   studioTabNavAlign?: string | null;
   /** Custom content-tab headline (null/empty = default). */
   studioContentHeadline?: string | null;
+  /** Public boutique / shop name for all products (Explore search + display). */
+  shopName?: string | null;
+  /** Short answer to "Que vendez-vous ?" */
+  shopSellingFocus?: string | null;
+  shopDescription?: string | null;
+  shopCoverUrl?: string | null;
   whyMeBlocks?: ProfileMediaBlock[];
   experienceBlocks?: ProfileMediaBlock[];
   yearsOfExperience?: number | null;
@@ -440,6 +446,8 @@ export interface CreatorProfileDto {
   reputation?: CreatorReputationDto | null;
   profileVisits?: number;
   gender?: string | null;
+  /** App UX role: GENERAL_MEMBER | SERVICE_PROVIDER | FREELANCER_STUDENT | JOB_SEEKER | RH_RECRUITER */
+  appRole?: string | null;
   spokenLanguages?: string[];
   profileServices?: ProfileServiceItem[];
   faqItems?: FaqItem[];
@@ -462,6 +470,8 @@ export interface CreatorProfileUpdateBody {
   ctaLabel?: string;
   ctaUrl?: string;
   gender?: string;
+  /** App UX role: GENERAL_MEMBER | SERVICE_PROVIDER | FREELANCER_STUDENT | JOB_SEEKER | RH_RECRUITER */
+  appRole?: string;
   spokenLanguages?: string[];
   profileServices?: ProfileServiceItem[];
   faqItems?: FaqItem[];
@@ -487,6 +497,10 @@ export interface CreatorProfileUpdateBody {
   studioHeaderContentStyle?: string;
   studioTabNavAlign?: string;
   studioContentHeadline?: string | null;
+  shopName?: string | null;
+  shopSellingFocus?: string | null;
+  shopDescription?: string | null;
+  shopCoverUrl?: string | null;
   whyMeBlocks?: ProfileMediaBlock[];
   experienceBlocks?: ProfileMediaBlock[];
   yearsOfExperience?: number | null;
