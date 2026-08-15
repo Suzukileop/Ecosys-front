@@ -2,6 +2,7 @@ import api from '@/lib/api';
 import { normalizeSpringPage } from '@/lib/ecosystem';
 import { dedupeSpokenLanguages } from '@/lib/spoken-languages';
 import { normalizeCreatorGender } from '@/lib/creator-gender';
+import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
 import {
   parseProductWhyBlocks,
   serializeProductWhyBlocks,
@@ -125,13 +126,16 @@ export function normalizeContentItem(raw: RawRecord): MarketplaceContentItem {
 
 export function normalizeCreatorSummary(raw: RawRecord): MarketplaceCreatorSummary {
   const userId = raw.userId != null ? String(raw.userId) : raw.id != null ? String(raw.id) : undefined;
+  const resolvedAvatar = resolveStorageMediaUrl(raw.avatarUrl != null ? String(raw.avatarUrl) : null);
   return {
     id: userId,
     userId,
     fullName: String(raw.fullName ?? 'Creator'),
-    avatarUrl: raw.avatarUrl != null ? String(raw.avatarUrl) : null,
+    avatarUrl: resolvedAvatar || null,
     specialite:
       (raw.specialite ?? raw.niche) != null ? String(raw.specialite ?? raw.niche) : null,
+    specialties: Array.isArray(raw.specialties) ? raw.specialties.map((item) => String(item)) : [],
+    specialtyTags: Array.isArray(raw.specialtyTags) ? raw.specialtyTags.map((item) => String(item)) : [],
     bio: raw.bio != null ? String(raw.bio) : null,
     isVerified: Boolean(raw.isVerified),
     isAvailable: raw.isAvailable == null ? true : Boolean(raw.isAvailable),
@@ -146,6 +150,12 @@ export function normalizeCreatorSummary(raw: RawRecord): MarketplaceCreatorSumma
     averageRating: raw.averageRating != null ? Number(raw.averageRating) : null,
     followerCount: typeof raw.followerCount === 'number' ? raw.followerCount : Number(raw.followerCount ?? 0),
     isFollowing: Boolean(raw.isFollowing),
+    nationality: raw.nationality != null ? String(raw.nationality) : null,
+    yearsOfExperience:
+      raw.yearsOfExperience != null && !Number.isNaN(Number(raw.yearsOfExperience))
+        ? Number(raw.yearsOfExperience)
+        : null,
+    distanceKm: raw.distanceKm != null ? Number(raw.distanceKm) : null,
   };
 }
 
@@ -205,6 +215,9 @@ function mapProfileServiceItem(raw: RawRecord, index: number) {
         .map((task) => (task != null ? String(task).trim() : ''))
         .filter(Boolean)
     : [];
+  const tags = Array.isArray(raw.tags)
+    ? raw.tags.map((tag) => (tag != null ? String(tag).trim() : '')).filter(Boolean)
+    : [];
   return {
     id: raw.id != null ? String(raw.id) : `service-${index}`,
     sortOrder: typeof raw.sortOrder === 'number' ? raw.sortOrder : index,
@@ -213,6 +226,14 @@ function mapProfileServiceItem(raw: RawRecord, index: number) {
     basePriceCents: raw.basePriceCents != null ? Number(raw.basePriceCents) : null,
     deadline: raw.deadline != null ? String(raw.deadline) : null,
     tasks,
+    specialty: raw.specialty != null ? String(raw.specialty) : null,
+    pricingType: raw.pricingType != null ? String(raw.pricingType) : null,
+    coverImageUrl: raw.coverImageUrl != null ? String(raw.coverImageUrl) : null,
+    status: raw.status != null ? String(raw.status) : 'ACTIVE',
+    tags,
+    currency: raw.currency != null ? String(raw.currency) : 'EUR',
+    deliveryValue: raw.deliveryValue != null ? Number(raw.deliveryValue) : null,
+    deliveryUnit: raw.deliveryUnit != null ? String(raw.deliveryUnit) : null,
   };
 }
 
@@ -346,6 +367,8 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     avatarUrl: raw.avatarUrl != null ? String(raw.avatarUrl) : null,
     specialite:
       (raw.specialite ?? raw.niche) != null ? String(raw.specialite ?? raw.niche) : null,
+    specialties: Array.isArray(raw.specialties) ? raw.specialties.map((item) => String(item)) : [],
+    specialtyTags: Array.isArray(raw.specialtyTags) ? raw.specialtyTags.map((item) => String(item)) : [],
     bio: raw.bio != null ? String(raw.bio) : null,
     isVerified: Boolean(raw.isVerified),
     portfolioCount: typeof raw.portfolioCount === 'number' ? raw.portfolioCount : Number(raw.portfolioCount ?? 0),
@@ -473,6 +496,7 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     profileVisits:
       typeof raw.profileVisits === 'number' ? raw.profileVisits : Number(raw.profileVisits ?? 0),
     gender: normalizeCreatorGender(raw.gender ?? raw.pronouns),
+    nationality: raw.nationality != null ? String(raw.nationality) : null,
     spokenLanguages: dedupeSpokenLanguages(
       Array.isArray(raw.spokenLanguages)
         ? raw.spokenLanguages.map((item) => String(item)).filter(Boolean)

@@ -16,6 +16,8 @@ export type CreatorProfileHeaderProps = {
   headerContentStyle?: CreatorStudioHeaderContentStyle;
   bio: string | null;
   specialite: string | null;
+  specialties?: string[];
+  specialtyTags?: string[];
   followerCount: number;
   productCount: number;
   profileVisits: number;

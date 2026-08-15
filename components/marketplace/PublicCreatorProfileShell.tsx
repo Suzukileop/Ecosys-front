@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CreatorProfileHeader } from '@/components/creator/CreatorProfileHeader';
 import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
@@ -20,17 +20,38 @@ import { CreatorProfileTrustStrip } from '@/components/marketplace/CreatorProfil
 import { CreatorFollowButton } from '@/components/marketplace/CreatorFollowButton';
 import { OrderCreatorCta } from '@/components/marketplace/OrderCreatorCta';
 import { CreatorProfileViewTracker } from '@/components/marketplace/CreatorProfileViewTracker';
+import { CreatorProfileServicesTab } from '@/components/marketplace/CreatorProfileServicesTab';
 import { ProductCard, marketplaceProductGridClassName } from '@/components/marketplace/ProductCard';
 import type { MarketplaceCreatorPublicProfile, MarketplaceProductSummary } from '@/types/marketplace';
+import { filterActiveServices } from '@/lib/profile-services';
 
-export type PublicCreatorProfileTab = 'content' | 'products' | 'reviews' | 'info';
+export type PublicCreatorProfileTab = 'content' | 'products' | 'reviews' | 'info' | 'services';
 
 const PUBLIC_CREATOR_TABS: { id: PublicCreatorProfileTab; label: string }[] = [
   { id: 'info', label: 'Info' },
+  { id: 'services', label: 'Services' },
   { id: 'reviews', label: 'Avis' },
   { id: 'content', label: 'Contenu' },
   { id: 'products', label: 'Produits' },
 ];
+
+function parsePublicTab(value: string | null): PublicCreatorProfileTab {
+  if (
+    value === 'content' ||
+    value === 'products' ||
+    value === 'reviews' ||
+    value === 'info' ||
+    value === 'services'
+  ) {
+    return value;
+  }
+  return 'info';
+}
+
+function readTabFromLocation(): PublicCreatorProfileTab {
+  if (typeof window === 'undefined') return 'info';
+  return parsePublicTab(new URLSearchParams(window.location.search).get('tab'));
+}
 
 type PublicCreatorProfileShellProps = {
   creatorId: string;
@@ -53,14 +74,28 @@ export function PublicCreatorProfileShell({
   headerContentStyle,
   tabNavAlign,
 }: PublicCreatorProfileShellProps) {
-  const defaultTab: PublicCreatorProfileTab = 'info';
-  const [tab, setTab] = useState<PublicCreatorProfileTab>(defaultTab);
+  const [tab, setTab] = useState<PublicCreatorProfileTab>('info');
   const [profileVisits, setProfileVisits] = useState(profile.profileVisits ?? 0);
+  const activeServiceCount = filterActiveServices(profile.profileServices ?? []).length;
+
+  useEffect(() => {
+    setTab(readTabFromLocation());
+  }, []);
 
   const headerInset = creatorHeaderNeedsInset(headerLayout);
   const primaryLink = profile.profileLinks?.[0];
   const ctaHref = primaryLink?.url?.trim() || profile.ctaUrl?.trim() || null;
   const ctaLabel = primaryLink?.label?.trim() || profile.ctaLabel?.trim() || 'En savoir plus';
+
+  const selectTab = (next: PublicCreatorProfileTab) => {
+    setTab(next);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (next === 'info') url.searchParams.delete('tab');
+      else url.searchParams.set('tab', next);
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    }
+  };
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-[1280px] overflow-x-hidden">
@@ -74,6 +109,8 @@ export function PublicCreatorProfileShell({
           headerContentStyle={headerContentStyle}
           bio={profile.bio}
           specialite={profile.specialite}
+          specialties={profile.specialties}
+          specialtyTags={profile.specialtyTags}
           followerCount={profile.followerCount ?? 0}
           productCount={profile.productCount ?? 0}
           profileVisits={profileVisits}
@@ -135,12 +172,14 @@ export function PublicCreatorProfileShell({
               const badge =
                 item.id === 'reviews' && profile.averageRating != null
                   ? ` ${profile.averageRating.toFixed(1)}★`
-                  : '';
+                  : item.id === 'services' && activeServiceCount > 0
+                    ? ` ${activeServiceCount}`
+                    : '';
               return (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setTab(item.id)}
+                  onClick={() => selectTab(item.id)}
                   className={`relative shrink-0 px-4 py-3 text-sm font-semibold tracking-wide transition ${
                     active
                       ? 'text-neutral-900 dark:text-white'
@@ -189,6 +228,10 @@ export function PublicCreatorProfileShell({
 
         {tab === 'reviews' && (
           <CreatorProfileReviewsTab creatorId={creatorId} creatorName={profile.fullName} />
+        )}
+
+        {tab === 'services' && (
+          <CreatorProfileServicesTab creatorId={creatorId} profile={profile} />
         )}
 
         {tab === 'info' && (

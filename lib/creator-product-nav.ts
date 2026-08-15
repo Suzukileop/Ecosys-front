@@ -32,7 +32,7 @@ export function creatorProductBackNav(from: CreatorProductNavFrom): {
     };
   }
   return {
-    href: '/dashboard/products',
+    href: '/marketplace/my-products',
     label: '← My products',
   };
 }

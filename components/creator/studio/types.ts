@@ -4,10 +4,12 @@ export type CreatorStudioTab =
   | 'images'
   | 'visitors'
   | 'subscribers'
-  | 'profile';
+  | 'profile'
+  | 'services';
 
 export const CREATOR_STUDIO_TABS: { id: CreatorStudioTab; label: string }[] = [
   { id: 'content', label: 'Content' },
+  { id: 'services', label: 'Services' },
   { id: 'products', label: 'Products' },
   { id: 'images', label: 'Images' },
   { id: 'visitors', label: 'Visitors' },
@@ -21,7 +23,8 @@ export function parseCreatorStudioTab(value: string | null): CreatorStudioTab {
     value === 'images' ||
     value === 'visitors' ||
     value === 'subscribers' ||
-    value === 'profile'
+    value === 'profile' ||
+    value === 'services'
   ) {
     return value;
   }

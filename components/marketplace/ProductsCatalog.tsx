@@ -199,7 +199,7 @@ export function ProductsCatalog({
             <>
               Only published products appear here. Creators publish from{' '}
               <Link
-                href="/dashboard/products"
+                href="/marketplace/my-products"
                 className="font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
               >
                 Creator studio → Products

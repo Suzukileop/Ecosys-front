@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { CREATOR_PROFILE_SUBSCRIBERS_LABEL, CREATOR_PROFILE_VISITS_LABEL, type CreatorProfileHeaderProps } from '@/components/creator/creator-profile-header-types';
 import { ProfileVisitStat, ProfileVisitStatGridItem } from '@/components/creator/ProfileVisitStat';
+import { ProfileHeaderSpecialtyBlock } from '@/components/creator/CreatorProfileHeader';
 import type { CreatorStudioHeaderContentStyle } from '@/components/creator/studio/creator-studio-header-content';
 
 type BannerProfileContentProps = CreatorProfileHeaderProps & {
@@ -43,14 +44,6 @@ function StatsInline(props: CreatorProfileHeaderProps) {
         <>
           <span aria-hidden>·</span>
           <span>{props.locationLabel}</span>
-        </>
-      )}
-      {props.specialite && (
-        <>
-          <span aria-hidden>·</span>
-          <span className="rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-300">
-            {props.specialite}
-          </span>
         </>
       )}
     </div>
@@ -115,6 +108,11 @@ export function BannerProfileContent({
           <div className="flex w-full justify-center">
             <StatsInline {...props} />
           </div>
+          <ProfileHeaderSpecialtyBlock
+            specialties={props.specialties}
+            specialite={props.specialite}
+            specialtyTags={props.specialtyTags}
+          />
           {bioPreview && (
             <p className="max-w-xl text-sm text-neutral-600 dark:text-neutral-400">{bioPreview}</p>
           )}
@@ -149,11 +147,11 @@ export function BannerProfileContent({
                   layout="inline"
                 />
               </div>
-              {props.specialite && (
-                <span className="mt-1.5 inline-block rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-300">
-                  {props.specialite}
-                </span>
-              )}
+              <ProfileHeaderSpecialtyBlock
+                specialties={props.specialties}
+                specialite={props.specialite}
+                specialtyTags={props.specialtyTags}
+              />
             </div>
           </div>
           <div className="flex flex-wrap gap-2 pb-0.5">{props.trailingActions}</div>
@@ -171,6 +169,13 @@ export function BannerProfileContent({
             <div className="min-w-0">
               <NameBlock props={props} />
               <StatsGrid {...props} />
+              <div className="mt-2">
+                <ProfileHeaderSpecialtyBlock
+                  specialties={props.specialties}
+                  specialite={props.specialite}
+                  specialtyTags={props.specialtyTags}
+                />
+              </div>
               {bioPreview && (
                 <p className="mt-2 max-w-2xl text-sm text-neutral-600 dark:text-neutral-400">{bioPreview}</p>
               )}
@@ -190,6 +195,13 @@ export function BannerProfileContent({
           <div className="min-w-0 pb-1">
             <NameBlock props={props} />
             <StatsInline {...props} />
+            <div className="mt-2">
+              <ProfileHeaderSpecialtyBlock
+                specialties={props.specialties}
+                specialite={props.specialite}
+                specialtyTags={props.specialtyTags}
+              />
+            </div>
             {bioPreview && (
               <p className="mt-2 line-clamp-2 max-w-2xl text-sm text-neutral-600 dark:text-neutral-400">{bioPreview}</p>
             )}

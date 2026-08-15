@@ -10,7 +10,15 @@ export function isMarketplaceHubPath(pathname: string): boolean {
   return false;
 }
 
-const MARKETPLACE_PRODUCT_SECTIONS = new Set(['favorites', 'purchases', 'products', 'portfolio', 'creators']);
+const MARKETPLACE_PRODUCT_SECTIONS = new Set([
+  'favorites',
+  'purchases',
+  'products',
+  'portfolio',
+  'creators',
+  'my-services',
+  'my-products',
+]);
 
 /** Public creator profile: /marketplace/{creatorId} (not list, not content post). */
 export function isMarketplaceCreatorProfilePath(pathname: string): boolean {
@@ -18,6 +26,11 @@ export function isMarketplaceCreatorProfilePath(pathname: string): boolean {
   const segment = pathname.slice('/marketplace/'.length).split('/')[0];
   if (!segment || pathname.slice('/marketplace/'.length).includes('/')) return false;
   return !MARKETPLACE_PRODUCT_SECTIONS.has(segment) && segment !== 'content';
+}
+
+/** Service Provider directory (not a single creator profile). */
+export function isServiceProvidersCatalogPath(pathname: string): boolean {
+  return pathname === '/marketplace/creators' || pathname.startsWith('/marketplace/creators/');
 }
 
 /** Client-facing creator browse: directory, profiles, portfolio posts. */

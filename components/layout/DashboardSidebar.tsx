@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { SidebarHelpButton } from '@/components/layout/SidebarHelpButton';
 import { SidebarUserProfile } from '@/components/layout/SidebarUserProfile';
+import { DashboardHeaderSearch } from '@/components/layout/DashboardHeaderSearch';
 import { DASHBOARD_SIDEBAR_BG } from '@/components/landing/landingBrand';
 import { dashboardNavItems } from '@/components/layout/dashboard/navConfig';
 import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
@@ -24,6 +25,19 @@ function matchesAppRoles(
   if (!required || required.length === 0) return true;
   if (!appRoleReady) return false;
   return appRole != null && required.includes(appRole);
+}
+
+function isHiddenForAppRole(
+  hidden: CreatorAppRole[] | undefined,
+  appRole: CreatorAppRole | null,
+  appRoleReady: boolean
+) {
+  if (!hidden || hidden.length === 0) return false;
+  // While the creator role loads, keep gated items hidden to avoid a forbidden-menu flash.
+  if (!appRoleReady) return true;
+  // Non-creators (null role) keep full explore access.
+  if (appRole == null) return false;
+  return hidden.includes(appRole);
 }
 
 /** Expanded rail width — matches `w-72` / Tailwind 18rem. */
@@ -63,17 +77,17 @@ function NavChevron({ open, show }: { open: boolean; show: boolean }) {
   );
 }
 
-function SidebarCollapseIcon({ collapsed }: { collapsed: boolean }) {
+function SidebarToggleIcon() {
   return (
     <svg
-      className={`h-5 w-5 transition-transform ${SIDEBAR_EASE} ${collapsed ? 'rotate-180' : ''}`}
+      className="h-5 w-5"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={2}
+      strokeWidth={2.25}
       aria-hidden
     >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h16" />
     </svg>
   );
 }
@@ -139,12 +153,14 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
     }
     if (!matchesRoles(item.roles, hasRole)) return false;
     if (!matchesAppRoles(item.appRoles, appRole, appRoleReady)) return false;
+    if (isHiddenForAppRole(item.hiddenForAppRoles, appRole, appRoleReady)) return false;
 
     if (item.children?.length) {
       const visibleChildren = item.children.filter(
         (child) =>
           matchesRoles(child.roles, hasRole) &&
-          matchesAppRoles(child.appRoles, appRole, appRoleReady)
+          matchesAppRoles(child.appRoles, appRole, appRoleReady) &&
+          !isHiddenForAppRole(child.hiddenForAppRoles, appRole, appRoleReady)
       );
       return visibleChildren.length > 0;
     }
@@ -163,24 +179,29 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
         Icons keep the same X/Y — only labels are clipped, no vertical reflow.
       */}
       <div className="flex h-full shrink-0 flex-col" style={{ width: SIDEBAR_EXPANDED_WIDTH }}>
-        <div className="relative h-[4.5rem] w-full shrink-0">
+        <div className="relative flex h-[4.5rem] w-full shrink-0 items-center px-3">
           <button
             type="button"
             onClick={onToggle}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             aria-expanded={!collapsed}
-            className={`${collapseButtonClass} absolute top-1/2 -translate-y-1/2 ${SIDEBAR_EASE} transition-[left,right] ${
-              collapsed ? 'left-4' : 'right-3 left-auto'
-            }`}
+            className={collapseButtonClass}
           >
-            <SidebarCollapseIcon collapsed={collapsed} />
+            <SidebarToggleIcon />
           </button>
+          <SidebarLabel show={!collapsed} className="ml-2 text-base font-bold tracking-tight text-neutral-900 dark:text-white">
+            Noproble
+          </SidebarLabel>
         </div>
 
         <SidebarUserProfile collapsed={collapsed} />
 
         <div className="mb-2 mt-5 shrink-0 px-3">
           <hr className="border-neutral-200 dark:border-neutral-800" />
+        </div>
+
+        <div className="mb-3 shrink-0 px-3">
+          <DashboardHeaderSearch variant="sidebar" collapsed={collapsed} />
         </div>
 
         <nav
@@ -191,7 +212,8 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
             const visibleChildren = (item.children ?? []).filter(
               (child) =>
                 matchesRoles(child.roles, hasRole) &&
-                matchesAppRoles(child.appRoles, appRole, appRoleReady)
+                matchesAppRoles(child.appRoles, appRole, appRoleReady) &&
+                !isHiddenForAppRole(child.hiddenForAppRoles, appRole, appRoleReady)
             );
             const childActive = visibleChildren.some((child) =>
               child.activeWhen ? child.activeWhen(pathname, search) : isActive(pathname, child.href)

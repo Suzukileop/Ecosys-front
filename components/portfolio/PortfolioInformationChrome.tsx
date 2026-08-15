@@ -10,6 +10,12 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { AvailabilityHoursInput } from '@/components/ui/AvailabilityHoursInput';
 import { CREATOR_GENDER_VALUES } from '@/lib/creator-gender';
 import {
+  NATIONALITY_SELECT_OPTIONS,
+  nationalityFlag,
+  nationalityLabel,
+  normalizeNationalityCode,
+} from '@/lib/countries';
+import {
   CONTACT_VISIBILITY_OPTIONS,
   type ContactVisibilityLevel,
 } from '@/lib/contact-visibility';
@@ -21,6 +27,8 @@ import {
 } from '@/lib/availabilityHours';
 import { SPOKEN_LANGUAGE_PRESETS, dedupeSpokenLanguages, spokenLanguageMatchKey } from '@/lib/spoken-languages';
 import { TYPICAL_RESPONSE_TIME_OPTIONS } from '@/lib/typical-response-time';
+import { SpecialtyMultiSelect } from '@/components/creator/studio/SpecialtyMultiSelect';
+import { parseSpecialtyList, parseSpecialtyTags } from '@/lib/specialties';
 import { PortfolioLocationReadOnly } from '@/components/portfolio/PortfolioLocationChrome';
 import { PORTFOLIO_UPGRADE_PATH } from '@/components/portfolio/portfolio-pricing-upgrade-panel';
 import { brandCtaClass } from '@/components/landing/landingBrand';
@@ -776,7 +784,10 @@ export type PortfolioAboutFieldKey =
   | 'fullName'
   | 'bio'
   | 'specialite'
+  | 'specialtySet'
   | 'gender'
+  | 'nationality'
+  | 'yearsOfExperience'
   | 'spokenLanguages'
   | 'isAvailable'
   | 'availabilityHours'
@@ -786,7 +797,10 @@ export type PortfolioAboutFieldValue = {
   fullName: string;
   bio: string;
   specialite: string;
+  specialtySet: { specialties: string[]; specialtyTags: string[] };
   gender: string;
+  nationality: string;
+  yearsOfExperience: number | null;
   spokenLanguages: string[];
   isAvailable: boolean;
   availabilityHours: string;
@@ -797,7 +811,11 @@ export function PortfolioAboutReadOnly({
   fullName,
   bio,
   specialite,
+  specialties = [],
+  specialtyTags = [],
   gender,
+  nationality = '',
+  yearsOfExperience = null,
   languages,
   isAvailable,
   availabilityHours,
@@ -825,7 +843,11 @@ export function PortfolioAboutReadOnly({
   fullName: string;
   bio: string;
   specialite: string;
+  specialties?: string[];
+  specialtyTags?: string[];
   gender: string;
+  nationality?: string;
+  yearsOfExperience?: number | null;
   languages: string[];
   isAvailable: boolean;
   availabilityHours: string | null;
@@ -846,9 +868,16 @@ export function PortfolioAboutReadOnly({
     availability: ContactVisibilityLevel;
     responseTime: ContactVisibilityLevel;
     location?: ContactVisibilityLevel;
+    yearsOfExperience?: ContactVisibilityLevel;
   };
   onVisibilityChange?: (
-    key: 'gender' | 'spokenLanguages' | 'availability' | 'responseTime' | 'location',
+    key:
+      | 'gender'
+      | 'spokenLanguages'
+      | 'availability'
+      | 'responseTime'
+      | 'location'
+      | 'yearsOfExperience',
     value: ContactVisibilityLevel
   ) => void;
   onFieldSave?: (field: PortfolioAboutFieldKey, value: PortfolioAboutFieldValue[PortfolioAboutFieldKey]) => Promise<void>;
@@ -865,8 +894,15 @@ export function PortfolioAboutReadOnly({
   const [editingField, setEditingField] = useState<PortfolioAboutFieldKey | null>(null);
   const [draftName, setDraftName] = useState(fullName);
   const [draftBio, setDraftBio] = useState(bio);
-  const [draftSpecialty, setDraftSpecialty] = useState(specialite);
+  const [draftSpecialties, setDraftSpecialties] = useState(() =>
+    parseSpecialtyList(specialties, specialite)
+  );
+  const [draftSpecialtyTags, setDraftSpecialtyTags] = useState(() => parseSpecialtyTags(specialtyTags));
   const [draftGender, setDraftGender] = useState(gender);
+  const [draftNationality, setDraftNationality] = useState(nationality);
+  const [draftYearsOfExperience, setDraftYearsOfExperience] = useState(
+    yearsOfExperience != null ? String(yearsOfExperience) : ''
+  );
   const [draftLanguages, setDraftLanguages] = useState(languages);
   const [draftAvailable, setDraftAvailable] = useState(isAvailable);
   const [draftTypicalResponseTime, setDraftTypicalResponseTime] = useState(typicalResponseTime);
@@ -879,8 +915,11 @@ export function PortfolioAboutReadOnly({
   const resetDrafts = () => {
     setDraftName(fullName);
     setDraftBio(bio);
-    setDraftSpecialty(specialite);
+    setDraftSpecialties(parseSpecialtyList(specialties, specialite));
+    setDraftSpecialtyTags(parseSpecialtyTags(specialtyTags));
     setDraftGender(gender);
+    setDraftNationality(nationality);
+    setDraftYearsOfExperience(yearsOfExperience != null ? String(yearsOfExperience) : '');
     setDraftLanguages(languages);
     setDraftAvailable(isAvailable);
     setDraftTypicalResponseTime(typicalResponseTime);
@@ -909,7 +948,7 @@ export function PortfolioAboutReadOnly({
     if (isGlobal) return;
     resetDrafts();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keep drafts in sync when not editing
-  }, [fullName, bio, specialite, gender, languages, isAvailable, rawAvailabilityHours, availabilityHours, typicalResponseTime]);
+  }, [fullName, bio, specialite, specialties, specialtyTags, gender, nationality, yearsOfExperience, languages, isAvailable, rawAvailabilityHours, availabilityHours, typicalResponseTime]);
 
   const startEdit = (field: PortfolioAboutFieldKey) => {
     resetDrafts();
@@ -939,6 +978,12 @@ export function PortfolioAboutReadOnly({
     availabilityTimezone ?? undefined
   );
 
+  const sameList = (left: string[], right: string[]) =>
+    left.length === right.length && left.every((item, index) => item === right[index]);
+
+  const savedSpecialties = parseSpecialtyList(specialties, specialite);
+  const savedTags = parseSpecialtyTags(specialtyTags);
+
   const fieldHasChanges = (() => {
     switch (editingField) {
       case 'fullName':
@@ -946,9 +991,17 @@ export function PortfolioAboutReadOnly({
       case 'bio':
         return draftBio.trim() !== bio.trim();
       case 'specialite':
-        return draftSpecialty.trim() !== specialite.trim();
+      case 'specialtySet':
+        return !sameList(draftSpecialties, savedSpecialties) || !sameList(draftSpecialtyTags, savedTags);
       case 'gender':
         return draftGender.trim() !== gender.trim();
+      case 'nationality':
+        return draftNationality.trim() !== nationality.trim();
+      case 'yearsOfExperience': {
+        const draft =
+          draftYearsOfExperience.trim() === '' ? null : Number.parseInt(draftYearsOfExperience, 10);
+        return (Number.isNaN(draft as number) ? null : draft) !== (yearsOfExperience ?? null);
+      }
       case 'spokenLanguages':
         return !sameLanguages(draftLanguages, languages);
       case 'isAvailable':
@@ -965,8 +1018,18 @@ export function PortfolioAboutReadOnly({
   const globalHasChanges =
     draftName.trim() !== fullName.trim() ||
     draftBio.trim() !== bio.trim() ||
-    draftSpecialty.trim() !== specialite.trim() ||
+    !sameList(draftSpecialties, savedSpecialties) ||
+    !sameList(draftSpecialtyTags, savedTags) ||
     draftGender.trim() !== gender.trim() ||
+    draftNationality.trim() !== nationality.trim() ||
+    (() => {
+      const draft =
+        draftYearsOfExperience.trim() === ''
+          ? null
+          : Number.parseInt(draftYearsOfExperience, 10);
+      const normalized = draft == null || Number.isNaN(draft) ? null : draft;
+      return normalized !== (yearsOfExperience ?? null);
+    })() ||
     !sameLanguages(draftLanguages, languages) ||
     draftAvailable !== isAvailable ||
     draftAvailabilityHours !== originalAvailabilityHours ||
@@ -987,11 +1050,29 @@ export function PortfolioAboutReadOnly({
           await onFieldSave('bio', draftBio);
           break;
         case 'specialite':
-          await onFieldSave('specialite', draftSpecialty.trim());
+        case 'specialtySet':
+          await onFieldSave('specialtySet', {
+            specialties: draftSpecialties,
+            specialtyTags: draftSpecialtyTags,
+          });
           break;
         case 'gender':
           await onFieldSave('gender', draftGender);
           break;
+        case 'nationality':
+          await onFieldSave('nationality', draftNationality);
+          break;
+        case 'yearsOfExperience': {
+          const parsed =
+            draftYearsOfExperience.trim() === ''
+              ? null
+              : Number.parseInt(draftYearsOfExperience, 10);
+          await onFieldSave(
+            'yearsOfExperience',
+            parsed == null || Number.isNaN(parsed) ? null : parsed,
+          );
+          break;
+        }
         case 'spokenLanguages':
           await onFieldSave('spokenLanguages', dedupeSpokenLanguages(draftLanguages));
           break;
@@ -1017,8 +1098,17 @@ export function PortfolioAboutReadOnly({
       await onGlobalSave({
         fullName: draftName.trim(),
         bio: draftBio,
-        specialite: draftSpecialty.trim(),
+        specialite: draftSpecialties[0] ?? '',
+        specialtySet: { specialties: draftSpecialties, specialtyTags: draftSpecialtyTags },
         gender: draftGender,
+        nationality: draftNationality,
+        yearsOfExperience: (() => {
+          const parsed =
+            draftYearsOfExperience.trim() === ''
+              ? null
+              : Number.parseInt(draftYearsOfExperience, 10);
+          return parsed == null || Number.isNaN(parsed) ? null : parsed;
+        })(),
         spokenLanguages: dedupeSpokenLanguages(draftLanguages),
         isAvailable: draftAvailable,
         availabilityHours: draftAvailabilityHours,
@@ -1100,24 +1190,56 @@ export function PortfolioAboutReadOnly({
       <div className="grid items-start gap-x-8 sm:grid-cols-2">
         <PortfolioFlatField
           label="Specialty"
-          value={specialite}
           editing={fieldEditing('specialite')}
           onEdit={fieldOnEdit('specialite')}
           onConfirm={fieldOnConfirm}
           onCancelEdit={fieldOnCancel}
-          confirming={confirming && editingField === 'specialite'}
+          confirming={confirming && (editingField === 'specialite' || editingField === 'specialtySet')}
           canConfirm={fieldHasChanges}
           editControl={
-            <input
-              type="text"
-              value={draftSpecialty}
-              onChange={(event) => setDraftSpecialty(event.target.value)}
-              className={inlineInputClass}
-              autoFocus={editingField === 'specialite'}
+            <SpecialtyMultiSelect
+              specialties={draftSpecialties}
+              tags={draftSpecialtyTags}
+              onSpecialtiesChange={setDraftSpecialties}
+              onTagsChange={setDraftSpecialtyTags}
               disabled={confirming}
             />
           }
-        />
+        >
+          {savedSpecialties.length > 0 ? (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {savedSpecialties.map((item, index) => {
+                  const isPrimary = index === 0;
+                  return (
+                    <span
+                      key={item}
+                      className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold sm:text-sm ${
+                        isPrimary
+                          ? 'border-orange-500 bg-orange-500 text-white'
+                          : 'border-neutral-300 bg-transparent text-neutral-700 dark:border-neutral-700 dark:text-neutral-200'
+                      }`}
+                    >
+                      {item}
+                    </span>
+                  );
+                })}
+              </div>
+              {savedTags.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {savedTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-xs font-medium text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : undefined}
+        </PortfolioFlatField>
         <PortfolioFlatField
           label="Working Languages"
           editing={fieldEditing('spokenLanguages')}
@@ -1167,6 +1289,80 @@ export function PortfolioAboutReadOnly({
                 </option>
               ))}
             </select>
+          }
+        />
+        <PortfolioFlatField
+          label="Nationality"
+          value={
+            nationality
+              ? `${nationalityFlag(nationality)} ${nationalityLabel(nationality)}`.trim()
+              : ''
+          }
+          emptyLabel="Not set"
+          editing={fieldEditing('nationality')}
+          onEdit={fieldOnEdit('nationality')}
+          onConfirm={fieldOnConfirm}
+          onCancelEdit={fieldOnCancel}
+          confirming={confirming && editingField === 'nationality'}
+          canConfirm={fieldHasChanges}
+          editControl={
+            <select
+              value={draftNationality}
+              onChange={(event) => setDraftNationality(event.target.value)}
+              className={`${inlineInputClass} dark:[color-scheme:dark]`}
+              autoFocus={editingField === 'nationality'}
+              disabled={confirming}
+            >
+              <option value="" className="bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+                Not set
+              </option>
+              {NATIONALITY_SELECT_OPTIONS.map((option) => (
+                <option
+                  key={option.code}
+                  value={option.code}
+                  className="bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+                >
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          }
+        />
+        <PortfolioFlatField
+          label="Years of experience"
+          value={
+            yearsOfExperience != null
+              ? yearsOfExperience === 1
+                ? '1 year'
+                : `${yearsOfExperience} years`
+              : ''
+          }
+          emptyLabel="Not set"
+          editing={fieldEditing('yearsOfExperience')}
+          onEdit={fieldOnEdit('yearsOfExperience')}
+          onConfirm={fieldOnConfirm}
+          onCancelEdit={fieldOnCancel}
+          confirming={confirming && editingField === 'yearsOfExperience'}
+          canConfirm={fieldHasChanges}
+          showVisibility={visibilityEnabled && Boolean(visibility?.yearsOfExperience)}
+          visibility={visibility?.yearsOfExperience}
+          onVisibilityChange={
+            onVisibilityChange
+              ? (value) => onVisibilityChange('yearsOfExperience', value)
+              : undefined
+          }
+          editControl={
+            <input
+              type="number"
+              min={0}
+              max={80}
+              value={draftYearsOfExperience}
+              onChange={(event) => setDraftYearsOfExperience(event.target.value)}
+              className={inlineInputClass}
+              autoFocus={editingField === 'yearsOfExperience'}
+              disabled={confirming}
+              placeholder="e.g. 5"
+            />
           }
         />
         <PortfolioFlatField label="Status">

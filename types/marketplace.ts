@@ -17,6 +17,8 @@ export interface MarketplaceCreatorSummary {
   fullName: string;
   avatarUrl: string | null;
   specialite: string | null;
+  specialties?: string[];
+  specialtyTags?: string[];
   bio?: string | null;
   isVerified: boolean;
   isAvailable?: boolean;
@@ -26,6 +28,9 @@ export interface MarketplaceCreatorSummary {
   averageRating: number | null;
   followerCount?: number;
   isFollowing?: boolean;
+  nationality?: string | null;
+  yearsOfExperience?: number | null;
+  distanceKm?: number | null;
 }
 
 export type MarketplaceCreatorsPage = PagedResponse<MarketplaceCreatorSummary>;
@@ -52,6 +57,8 @@ export interface MarketplaceCreatorPublicProfile {
   fullName: string;
   avatarUrl: string | null;
   specialite: string | null;
+  specialties?: string[];
+  specialtyTags?: string[];
   bio: string | null;
   isVerified: boolean;
   isAvailable?: boolean;
@@ -69,6 +76,7 @@ export interface MarketplaceCreatorPublicProfile {
   studioTabNavAlign?: string | null;
   locationCity?: string | null;
   locationCountry?: string | null;
+  nationality?: string | null;
   portfolio?: MarketplaceContentItem[];
   contents?: MarketplaceContentItem[];
   followerCount?: number;

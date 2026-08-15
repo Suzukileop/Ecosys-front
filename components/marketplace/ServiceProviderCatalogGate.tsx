@@ -4,27 +4,21 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreatorsCatalog } from '@/components/marketplace/CreatorsCatalog';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
 import { useAuth } from '@/context/AuthContext';
 
-/** Members directory — available only to Service Provider app role. */
+/** Service providers directory — visible to all authenticated members. */
 export function ServiceProviderCatalogGate() {
   const router = useRouter();
   const { isLoading: authLoading, user } = useAuth();
-  const { appRole, ready } = useCreatorAppRole();
 
   useEffect(() => {
-    if (authLoading || !ready) return;
+    if (authLoading) return;
     if (!user) {
       router.replace('/login');
-      return;
     }
-    if (appRole !== 'SERVICE_PROVIDER') {
-      router.replace('/dashboard/services');
-    }
-  }, [authLoading, ready, user, appRole, router]);
+  }, [authLoading, user, router]);
 
-  if (authLoading || !ready || !user || appRole !== 'SERVICE_PROVIDER') {
+  if (authLoading || !user) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center px-4 py-20">
         <LoadingSpinner size="lg" />

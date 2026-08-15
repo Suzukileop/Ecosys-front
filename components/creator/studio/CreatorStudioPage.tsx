@@ -20,6 +20,7 @@ import {
 } from './creator-studio-header-content';
 import { parseCreatorStudioTabNavAlign, type CreatorStudioTabNavAlign } from './creator-studio-layout';
 import { CreatorStudioContentTab } from './CreatorStudioContentTab';
+import { CreatorStudioServicesTab } from './CreatorStudioServicesTab';
 import { CreatorStudioProductsReadonlyTab } from './CreatorStudioProductsReadonlyTab';
 import { CreatorStudioProfileTab } from './CreatorStudioProfileTab';
 import { STORE_INFORMATION_SECTION_IDS } from './profile-section-nav';
@@ -28,6 +29,13 @@ import { CreatorStudioSubscribersTab } from './CreatorStudioSubscribersTab';
 import { CreatorStudioImagesTab } from './CreatorStudioImagesTab';
 import { parseCreatorStudioTab, type CreatorStudioTab } from './types';
 import type { CreatorProfileDto } from '@/types/ecosystem';
+import { parseSpecialtyList, parseSpecialtyTags } from '@/lib/specialties';
+import {
+  creatorCanAccessMyProducts,
+  creatorCanAccessProfileProducts,
+  creatorCanAccessProfileServices,
+  normalizeCreatorAppRole,
+} from '@/lib/creator-app-role';
 
 function CreatorStudioPageInner() {
   const router = useRouter();
@@ -36,12 +44,6 @@ function CreatorStudioPageInner() {
   const tab = parseCreatorStudioTab(searchParams.get('tab'));
   const { isTransitioning: isTabTransitioning, startTransition: startTabTransition, preview: previewTab } =
     usePendingNavigation(tab);
-
-  // Create flow lives in My Product — redirect legacy ?create=1 from profile.
-  useEffect(() => {
-    if (searchParams.get('tab') !== 'products' || searchParams.get('create') !== '1') return;
-    router.replace('/dashboard/products?create=1');
-  }, [router, searchParams]);
 
   const [headerLoading, setHeaderLoading] = useState(true);
   const [header, setHeader] = useState<CreatorStudioHeaderData | null>(null);
@@ -52,6 +54,30 @@ function CreatorStudioPageInner() {
   const [savingHeaderContentStyle, setSavingHeaderContentStyle] = useState(false);
   const [savingTabNavAlign, setSavingTabNavAlign] = useState(false);
   const [savingContentHeadline, setSavingContentHeadline] = useState(false);
+
+  // Create flow lives in My Product — redirect legacy ?create=1 from profile.
+  useEffect(() => {
+    if (searchParams.get('tab') !== 'products' || searchParams.get('create') !== '1') return;
+    if (header && !creatorCanAccessMyProducts(normalizeCreatorAppRole(header.appRole))) {
+      router.replace('/dashboard/creator?tab=content', { scroll: false });
+      return;
+    }
+    if (!header) return;
+    router.replace('/marketplace/my-products?create=1');
+  }, [header, router, searchParams]);
+
+  // Role-gated studio tabs: bounce away from Products / Services when hidden.
+  useEffect(() => {
+    if (!header) return;
+    const role = normalizeCreatorAppRole(header.appRole);
+    if (tab === 'products' && !creatorCanAccessProfileProducts(role)) {
+      router.replace('/dashboard/creator?tab=content', { scroll: false });
+      return;
+    }
+    if (tab === 'services' && !creatorCanAccessProfileServices(role)) {
+      router.replace('/dashboard/creator?tab=content', { scroll: false });
+    }
+  }, [header, router, tab]);
 
   const loadHeader = useCallback(async (options?: { silent?: boolean }) => {
     if (!user) return;
@@ -74,6 +100,8 @@ function CreatorStudioPageInner() {
         avatarUrl: nextAvatar,
         bio: profile.bio ?? null,
         specialite: profile.specialite ?? null,
+        specialties: parseSpecialtyList(profile.specialties, profile.specialite),
+        specialtyTags: parseSpecialtyTags(profile.specialtyTags),
         followerCount: followStatsRes.followerCount ?? 0,
         productCount: productsRes.totalElements ?? productsRes.content.length,
         profileVisits: profile.profileVisits ?? 0,
@@ -98,6 +126,8 @@ function CreatorStudioPageInner() {
         avatarUrl: user.avatarUrl ?? null,
         bio: null,
         specialite: null,
+        specialties: [],
+        specialtyTags: [],
         followerCount: 0,
         productCount: 0,
         profileVisits: 0,
@@ -248,6 +278,7 @@ function CreatorStudioPageInner() {
               specialite={header.specialite}
             />
           )}
+          {tab === 'services' && <CreatorStudioServicesTab />}
           {tab === 'products' && <CreatorStudioProductsReadonlyTab />}
           {tab === 'images' && (
             <CreatorStudioImagesTab onImagesUpdated={() => void loadHeader({ silent: true })} />

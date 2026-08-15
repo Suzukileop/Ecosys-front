@@ -2,14 +2,7 @@
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import {
-  faBriefcase,
-  faCheck,
-  faGraduationCap,
-  faStore,
-  faUser,
-  faUserTie,
-} from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faGraduationCap, faStore, faTags, faUser, faUserTie } from '@fortawesome/free-solid-svg-icons';
 import {
   CREATOR_APP_ROLE_OPTIONS,
   type CreatorAppRole,
@@ -19,7 +12,7 @@ const ROLE_ICONS: Record<CreatorAppRole, IconDefinition> = {
   GENERAL_MEMBER: faUser,
   SERVICE_PROVIDER: faStore,
   FREELANCER_STUDENT: faGraduationCap,
-  JOB_SEEKER: faBriefcase,
+  SELLER: faTags,
   RH_RECRUITER: faUserTie,
 };
 
@@ -44,6 +37,9 @@ export function ProfileAppRoleField({ value, disabled, onChange }: ProfileAppRol
       >
         {CREATOR_APP_ROLE_OPTIONS.map((option) => {
           const selected = value === option.value;
+          const descriptionLines = Array.isArray(option.description)
+            ? option.description
+            : [option.description];
           return (
             <button
               key={option.value}
@@ -100,15 +96,29 @@ export function ProfileAppRoleField({ value, disabled, onChange }: ProfileAppRol
                 </span>
               ) : null}
 
-              <span
-                className={`mt-2 text-xs leading-relaxed ${
-                  selected
-                    ? 'text-neutral-600 dark:text-neutral-300'
-                    : 'text-neutral-500 dark:text-neutral-400'
-                }`}
-              >
-                {option.description}
-              </span>
+              {descriptionLines.length > 1 ? (
+                <ul
+                  className={`mt-2 list-disc space-y-1.5 pl-4 text-xs leading-relaxed ${
+                    selected
+                      ? 'text-neutral-600 dark:text-neutral-300'
+                      : 'text-neutral-500 dark:text-neutral-400'
+                  }`}
+                >
+                  {descriptionLines.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              ) : (
+                <span
+                  className={`mt-2 text-xs leading-relaxed ${
+                    selected
+                      ? 'text-neutral-600 dark:text-neutral-300'
+                      : 'text-neutral-500 dark:text-neutral-400'
+                  }`}
+                >
+                  {descriptionLines[0]}
+                </span>
+              )}
             </button>
           );
         })}

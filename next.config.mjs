@@ -10,6 +10,10 @@ function buildImageRemotePatterns() {
     },
     {
       protocol: 'https',
+      hostname: 'flagcdn.com',
+    },
+    {
+      protocol: 'https',
       hostname: '**.r2.dev',
     },
     {
@@ -56,6 +60,9 @@ const nextConfig = {
     // Dev: backend media is on localhost — Next 16 blocks private IPs by default (SSRF guard).
     dangerouslyAllowLocalIP: process.env.NODE_ENV === 'development',
     remotePatterns: buildImageRemotePatterns(),
+  },
+  async redirects() {
+    return [];
   },
 };
 

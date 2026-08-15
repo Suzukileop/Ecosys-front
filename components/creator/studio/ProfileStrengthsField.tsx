@@ -15,6 +15,7 @@ import type {
   StrengthFormItem,
   StrengthToolLevel,
 } from '@/components/creator/studio/profile-form-schema';
+import { matchSpecialtyOption, specialtyGroupLabel } from '@/lib/specialties';
 import {
   profileFormInputClass,
   profileSectionEmptyClass,
@@ -44,6 +45,7 @@ type ProfileStrengthsFieldProps = {
   setValue: UseFormSetValue<ProfileFormValues>;
   readOnly?: boolean;
   values?: StrengthFormItem[];
+  allowedSpecialties?: string[];
 };
 
 function emptyStrengthItem(value: string, category = ''): StrengthFormItem {
@@ -134,6 +136,7 @@ export function ProfileStrengthsField({
   setValue,
   readOnly = false,
   values = [],
+  allowedSpecialties = [],
 }: ProfileStrengthsFieldProps) {
   const watchedStrengths = useWatch({ control, name: 'strengthsTools' });
   const [customDraft, setCustomDraft] = useState('');
@@ -210,7 +213,8 @@ export function ProfileStrengthsField({
       return;
     }
     if (selectedValues.length >= MAX_STRENGTHS) return;
-    const seeds = new Map([[preset.name.toLowerCase(), preset.category]]);
+    const defaultCategory = allowedSpecialties[0] ?? '';
+    const seeds = new Map([[preset.name.toLowerCase(), defaultCategory]]);
     syncSelectedValues([...selectedValues, preset.name], seeds);
   };
 
@@ -223,8 +227,8 @@ export function ProfileStrengthsField({
       return;
     }
     if (selectedValues.length >= MAX_STRENGTHS) return;
-    const preset = findCreatorToolPreset(trimmed);
-    const seeds = preset ? new Map([[trimmed.toLowerCase(), preset.category]]) : undefined;
+    const defaultCategory = allowedSpecialties[0] ?? '';
+    const seeds = new Map([[trimmed.toLowerCase(), defaultCategory]]);
     const iconSeeds = customIconUrl
       ? new Map([[trimmed.toLowerCase(), customIconUrl]])
       : undefined;
@@ -291,14 +295,28 @@ export function ProfileStrengthsField({
     if (selectedValues.length === 0) {
       return <p className={profileSectionEmptyClass}>Aucun outil ajouté pour le moment.</p>;
     }
+    const grouped = new Map<string, string[]>();
+    for (const item of selectedValues) {
+      const data = itemByLabel.get(item.toLowerCase());
+      const group = specialtyGroupLabel(data?.category ?? '', allowedSpecialties);
+      const current = grouped.get(group) ?? [];
+      current.push(item);
+      grouped.set(group, current);
+    }
+    const groupOrder = [
+      ...allowedSpecialties.filter((specialty) => grouped.has(specialty)),
+      ...[...grouped.keys()].filter((key) => !allowedSpecialties.includes(key)),
+    ];
     return (
-      <div className="space-y-3">
-        {selectedValues.map((item) => {
+      <div className="space-y-5">
+        {groupOrder.map((group) => (
+          <div key={group} className="space-y-3">
+            <p className={profileSectionSubheadingClass}>{group}</p>
+            {(grouped.get(group) ?? []).map((item) => {
           const data = itemByLabel.get(item.toLowerCase());
           const custom = data?.description?.trim() ?? '';
           const body = custom || getSkillUsageDescription(item);
           const level = levelLabel(data?.level ?? null);
-          const meta = [level, data?.category?.trim()].filter(Boolean).join(' · ');
           return (
             <div
               key={item}
@@ -308,15 +326,17 @@ export function ProfileStrengthsField({
                 <CreatorToolLogo label={item} iconUrl={data?.iconUrl} size={28} />
                 <div className="min-w-0">
                   <p className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">{item}</p>
-                  {meta ? (
-                    <p className={`mt-0.5 text-xs ${profileSectionMutedTextClass}`}>{meta}</p>
+                  {level ? (
+                    <p className={`mt-0.5 text-xs ${profileSectionMutedTextClass}`}>{level}</p>
                   ) : null}
                 </div>
               </div>
               <p className={`mt-2 text-sm leading-relaxed ${profileSectionMutedTextClass}`}>{body}</p>
             </div>
           );
-        })}
+            })}
+          </div>
+        ))}
       </div>
     );
   }
@@ -368,20 +388,23 @@ export function ProfileStrengthsField({
                     <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
                       Catégorie
                     </span>
-                    <input
-                      list={`strength-category-${label}`}
-                      value={item.category ?? ''}
+                    <select
+                      value={matchSpecialtyOption(item.category ?? '', allowedSpecialties)}
                       onChange={(event) => updateItem(label, { category: event.target.value })}
-                      placeholder="Ex. Vidéo, Design…"
+                      disabled={allowedSpecialties.length === 0}
                       className={`mt-1.5 ${profileFormInputClass}`}
-                    />
-                    <datalist id={`strength-category-${label}`}>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.label}
+                    >
+                      <option value="">
+                        {allowedSpecialties.length === 0
+                          ? 'Add specialties in About first'
+                          : 'Choose specialty'}
+                      </option>
+                      {allowedSpecialties.map((specialty) => (
+                        <option key={specialty} value={specialty}>
+                          {specialty}
                         </option>
                       ))}
-                    </datalist>
+                    </select>
                   </label>
 
                   <label className="block">

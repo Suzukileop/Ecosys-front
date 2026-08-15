@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { isContentCreatorsPath } from '@/lib/marketplace-nav';
+import { isContentCreatorsPath, isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import { MarketplacePublicNav } from '@/components/marketplace/MarketplacePublicNav';
 import { MarketplacePatternBackground } from '@/components/marketplace/ProductDetailHalftoneBackground';
@@ -21,6 +21,7 @@ function isMarketplaceHubPath(pathname: string): boolean {
 
 function getPatternVariant(pathname: string): 'hub' | 'product' | null {
   if (isProductDetailPath(pathname)) return 'product';
+  if (isServiceProvidersCatalogPath(pathname)) return null;
   if (isMarketplaceHubPath(pathname) || isContentCreatorsPath(pathname)) return 'hub';
   return null;
 }

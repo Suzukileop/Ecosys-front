@@ -1,23 +1,9 @@
 'use client';
 
-/** Interests shown in the News discover rail (max 15). */
-export const NEWS_INTERESTS = [
-  'Developer',
-  'Design',
-  'Data science',
-  'Marketing',
-  'Video editor',
-  'Photography',
-  'UI / UX',
-  'Branding',
-  'Motion',
-  'Music',
-  'Writing',
-  'Business',
-  'Illustration',
-  '3D',
-  'Animation',
-] as const;
+import { PROFILE_SPECIALTIES } from '@/lib/specialties';
+
+/** Interests shown in the News discover rail (2-column grid, 12 items). */
+export const NEWS_INTERESTS = PROFILE_SPECIALTIES;
 
 export type NewsInterest = (typeof NEWS_INTERESTS)[number];
 
@@ -28,19 +14,23 @@ const COLLAPSED_COUNT = 5;
 
 /** Same footprint for every catalogue chip (expanded grid + folded list). */
 const CHIP_BASE =
-  'flex h-11 w-full shrink-0 items-center justify-center rounded-xl px-2 text-center text-xs font-semibold leading-snug transition sm:h-12 sm:text-sm';
+  'flex h-10 w-full max-w-[8.25rem] shrink-0 items-center justify-center rounded-xl border px-2 text-center text-xs font-semibold leading-snug transition';
+
+const CHIP_BASE_EXPANDED = `${CHIP_BASE} justify-self-center`;
 
 function chipTone(active: boolean) {
   return active
-    ? 'bg-orange-500 text-white shadow-sm'
-    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800';
+    ? 'border-orange-500 bg-orange-500 text-white shadow-sm'
+    : 'border-neutral-300 bg-transparent text-neutral-700 hover:border-neutral-400 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-neutral-500';
 }
 
 type NewsDiscoverRailProps = {
   selected: string | null;
   onSelect: (value: string | null) => void;
-  search: string;
-  onSearchChange: (value: string) => void;
+  search?: string;
+  onSearchChange?: (value: string) => void;
+  /** Bottom search field — hidden on Service Provider catalog. */
+  showSearch?: boolean;
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
   className?: string;
@@ -49,8 +39,9 @@ type NewsDiscoverRailProps = {
 export function NewsDiscoverRail({
   selected,
   onSelect,
-  search,
+  search = '',
   onSearchChange,
+  showSearch = true,
   expanded,
   onExpandedChange,
   className = '',
@@ -61,7 +52,7 @@ export function NewsDiscoverRail({
     <aside
       className={`flex min-h-0 flex-col transition-[width,max-width,min-width] duration-300 ease-out ${
         expanded
-          ? 'w-full xl:w-[min(32rem,36vw)] xl:min-w-[24rem] xl:max-w-[36rem]'
+          ? 'w-full xl:w-[19rem] xl:min-w-[19rem] xl:max-w-[19rem]'
           : 'w-full xl:w-[11rem] xl:min-w-[11rem] xl:max-w-[11rem]'
       } xl:shrink-0 ${className}`}
       aria-label="Discover"
@@ -143,7 +134,7 @@ export function NewsDiscoverRail({
             <div
               className={
                 expanded
-                  ? 'grid grid-cols-3 gap-2.5 sm:gap-3'
+                  ? 'grid grid-cols-2 gap-x-4 gap-y-2.5 px-1'
                   : 'mx-auto flex w-[calc(100%-0.35rem)] max-w-[9.5rem] flex-col gap-2.5 pr-1 sm:gap-3'
               }
             >
@@ -156,7 +147,7 @@ export function NewsDiscoverRail({
                     onClick={() => onSelect(active ? null : label)}
                     aria-pressed={active}
                     title={label}
-                    className={`${CHIP_BASE} ${chipTone(active)}`}
+                    className={`${expanded ? CHIP_BASE_EXPANDED : CHIP_BASE} ${chipTone(active)}`}
                   >
                     <span className="line-clamp-2 px-0.5">{label}</span>
                   </button>
@@ -165,7 +156,7 @@ export function NewsDiscoverRail({
             </div>
           </div>
 
-          {expanded ? (
+          {expanded && showSearch ? (
             <div className="mt-3 shrink-0 pb-3">
               <label htmlFor="news-discover-search" className="sr-only">
                 Search content
@@ -189,7 +180,7 @@ export function NewsDiscoverRail({
                   id="news-discover-search"
                   type="search"
                   value={search}
-                  onChange={(e) => onSearchChange(e.target.value)}
+                  onChange={(e) => onSearchChange?.(e.target.value)}
                   placeholder="Search content…"
                   autoComplete="off"
                   className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-100 py-2 pl-10 pr-3 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-orange-500/60"

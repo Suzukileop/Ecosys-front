@@ -10,13 +10,13 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
-import { getCreatorToolCategories } from '@/components/creator/studio/creator-profile-tools-catalog';
 import type { StrengthToolLevel } from '@/components/creator/studio/profile-form-schema';
 import {
   PortfolioFlatField,
   PortfolioLanguageChips,
 } from '@/components/portfolio/PortfolioInformationChrome';
 import { getSkillUsageDescription } from '@/components/portfolio/skill-usage-descriptions';
+import { matchSpecialtyOption, specialtyGroupLabel } from '@/lib/specialties';
 import { portfolioInlineInputClass } from '@/components/portfolio/portfolio-section-shared';
 import { uploadContentMedia } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
@@ -259,6 +259,7 @@ function UseCasesEditor({
 
 export function PortfolioStrengthsReadOnly({
   items,
+  allowedSpecialties = [],
   onItemSave,
   onItemsSave,
   onRemoveItem,
@@ -273,6 +274,7 @@ export function PortfolioStrengthsReadOnly({
   onRegisterGlobalConfirm,
 }: {
   items: PortfolioStrengthItem[];
+  allowedSpecialties?: string[];
   onItemSave?: (index: number, next: PortfolioStrengthDraft) => Promise<void>;
   onItemsSave?: (next: PortfolioStrengthDraft[]) => Promise<void>;
   onRemoveItem?: (index: number) => Promise<void> | void;
@@ -292,7 +294,7 @@ export function PortfolioStrengthsReadOnly({
   const editSession = Boolean(actionsVisible && !deleteMode);
   const showFieldActions = Boolean((editSession || composeAdd) && !deleteMode);
   const isGlobal = false;
-  const categories = getCreatorToolCategories();
+  const specialtyOptions = allowedSpecialties.filter(Boolean);
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<PortfolioStrengthDraft[]>(() => items.map(toDraft));
@@ -490,7 +492,16 @@ export function PortfolioStrengthsReadOnly({
     .filter(
       ({ item, index }) =>
         actionsVisible || index === editingIndex || item.value.trim()
-    );
+    )
+    .sort((a, b) => {
+      const rank = (category: string) => {
+        const matched = matchSpecialtyOption(category, specialtyOptions);
+        if (!matched) return 999;
+        const index = specialtyOptions.indexOf(matched);
+        return index === -1 ? 998 : index;
+      };
+      return rank(a.item.category) - rank(b.item.category);
+    });
 
   useEffect(() => {
     if (openIndex == null) return;
@@ -525,7 +536,13 @@ export function PortfolioStrengthsReadOnly({
   return (
     <div className="space-y-3 pb-2">
       <div className="flex flex-col gap-3.5 pb-5">
-        {visibleEntries.map(({ item, index }) => {
+        {visibleEntries.map(({ item, index }, position) => {
+          const groupLabel = specialtyGroupLabel(item.category, specialtyOptions);
+          const previousLabel =
+            position > 0
+              ? specialtyGroupLabel(visibleEntries[position - 1].item.category, specialtyOptions)
+              : null;
+          const showGroupHeading = groupLabel !== previousLabel;
           const draft = drafts[index] ?? toDraft(item);
           const editing = !deleteMode && Boolean(showFieldActions && editingIndex === index);
           const open = openIndex === index || editing;
@@ -562,6 +579,12 @@ export function PortfolioStrengthsReadOnly({
           };
 
           return (
+            <div key={item.id} className="space-y-2">
+              {showGroupHeading ? (
+                <h3 className="pt-2 text-xs font-bold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
+                  {groupLabel}
+                </h3>
+              ) : null}
             <article
               key={item.id}
               ref={editing ? editingCardRef : undefined}
@@ -637,23 +660,21 @@ export function PortfolioStrengthsReadOnly({
                 <div className="hidden min-w-0 items-center gap-2 sm:inline-flex">
                   {editing ? (
                     <>
-                      <input
-                        list={`portfolio-strength-category-${item.id}`}
-                        value={draft.category}
+                      <select
+                        value={matchSpecialtyOption(draft.category, specialtyOptions)}
                         onChange={(event) =>
                           updateDraft(index, { ...draft, category: event.target.value })
                         }
-                        placeholder="Category"
-                        className={`${portfolioInlineInputClass} w-[7.5rem] py-1.5 text-sm`}
-                        disabled={fieldSaving}
-                      />
-                      <datalist id={`portfolio-strength-category-${item.id}`}>
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.label}
+                        className={`${portfolioInlineInputClass} w-[9.5rem] py-1.5 text-sm`}
+                        disabled={fieldSaving || specialtyOptions.length === 0}
+                      >
+                        <option value="">{specialtyOptions.length === 0 ? 'Add specialties first' : 'Specialty'}</option>
+                        {specialtyOptions.map((specialty) => (
+                          <option key={specialty} value={specialty}>
+                            {specialty}
                           </option>
                         ))}
-                      </datalist>
+                      </select>
                       <select
                         value={draft.level ?? ''}
                         onChange={(event) =>
@@ -916,6 +937,7 @@ export function PortfolioStrengthsReadOnly({
                 </div>
               ) : null}
             </article>
+            </div>
           );
         })}
       </div>

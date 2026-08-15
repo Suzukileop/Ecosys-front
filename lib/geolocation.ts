@@ -60,6 +60,28 @@ export async function detectUserLocation(): Promise<DetectedLocation> {
   return { lat, lng, timezoneId, city, country };
 }
 
+/** Viewer coordinates only — no reverse geocode (used for closest-first catalog sort). */
+export async function detectUserCoordinates(): Promise<{ lat: number; lng: number }> {
+  if (typeof window === 'undefined' || !navigator.geolocation) {
+    throw new Error('Geolocation is not supported by your browser.');
+  }
+
+  const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: false,
+      timeout: 12_000,
+      maximumAge: 5 * 60_000,
+    });
+  }).catch((err) => {
+    if (err instanceof GeolocationPositionError) {
+      throw new Error(geolocationErrorMessage(err.code));
+    }
+    throw err instanceof Error ? err : new Error('Unable to detect your location.');
+  });
+
+  return { lat: position.coords.latitude, lng: position.coords.longitude };
+}
+
 export function formatLocationLabel(city: string | null | undefined, country: string | null | undefined): string {
   const parts = [city, country].filter((p) => p && p.trim().length > 0);
   return parts.length > 0 ? parts.join(', ') : 'Location not set';

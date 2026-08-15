@@ -16,6 +16,55 @@ export type { CreatorProfileHeaderProps } from '@/components/creator/creator-pro
 
 export const CREATOR_PROFILE_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp';
 
+function headerSpecialties(props: Pick<CreatorProfileHeaderProps, 'specialties' | 'specialite'>): string[] {
+  if (props.specialties && props.specialties.length > 0) {
+    return props.specialties;
+  }
+  const primary = props.specialite?.trim();
+  return primary ? [primary] : [];
+}
+
+export function ProfileHeaderSpecialtyBlock(
+  props: Pick<CreatorProfileHeaderProps, 'specialties' | 'specialite' | 'specialtyTags'>
+) {
+  const specialties = headerSpecialties(props);
+  const tags = (props.specialtyTags ?? []).filter((tag) => tag.trim());
+  if (specialties.length === 0 && tags.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      {specialties.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {specialties.map((label, index) => (
+              <span
+                key={label}
+                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide ${
+                  index === 0
+                    ? 'bg-orange-50 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300'
+                    : 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200'
+                }`}
+              >
+                {label}
+              </span>
+          ))}
+        </div>
+      ) : null}
+      {tags.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[11px] font-medium text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '?';
@@ -62,15 +111,15 @@ function ProfileAvatar({
 }) {
   const ringColorClass = creatorAppRoleRingClass(appRole);
   const ringShellClass = [
-    'aspect-square w-full rounded-2xl',
-    'ring-2 ring-offset-4',
+    'aspect-square w-full rounded-full',
+    'ring-4 ring-offset-4',
     'ring-offset-white dark:ring-offset-[#0F0F0F]',
     'transition-all duration-200',
     ringColorClass,
   ].join(' ');
 
   const mediaClass =
-    'h-full w-full overflow-hidden rounded-xl bg-neutral-100 shadow-sm dark:bg-neutral-800';
+    'h-full w-full overflow-hidden rounded-full bg-neutral-100 shadow-sm dark:bg-neutral-800';
 
   const avatarInner = avatarUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
@@ -99,11 +148,11 @@ function ProfileAvatar({
     >
       <div className={`relative ${mediaClass}`}>
         {avatarInner}
-        <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/0 transition group-hover:bg-black/45">
+        <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 transition group-hover:bg-black/45">
           <CameraIcon className="h-7 w-7 text-white opacity-0 transition group-hover:opacity-100" />
         </span>
         {uploadingAvatar ? (
-          <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/50">
+          <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
             <LoadingSpinner size="sm" />
           </span>
         ) : null}
@@ -185,11 +234,11 @@ function HorizontalProfileHeader(props: CreatorProfileHeaderProps) {
             </p>
           ) : null}
 
-          {props.specialite ? (
-            <span className="inline-flex w-fit rounded-full bg-orange-50 px-3 py-1 text-xs font-medium uppercase tracking-wide text-orange-800 dark:bg-orange-500/10 dark:text-orange-300">
-              {props.specialite}
-            </span>
-          ) : null}
+          <ProfileHeaderSpecialtyBlock
+            specialties={props.specialties}
+            specialite={props.specialite}
+            specialtyTags={props.specialtyTags}
+          />
 
           {bioPreview ? (
             <p className="max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">

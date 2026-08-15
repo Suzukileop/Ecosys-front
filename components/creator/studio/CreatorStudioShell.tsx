@@ -10,7 +10,11 @@ import type { CreatorStudioHeaderLayout } from './creator-studio-header';
 import type { CreatorStudioHeaderContentStyle } from './creator-studio-header-content';
 import { creatorHeaderNeedsInset } from './creator-studio-header';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { normalizeCreatorAppRole } from '@/lib/creator-app-role';
+import {
+  creatorCanAccessProfileProducts,
+  creatorCanAccessProfileServices,
+  normalizeCreatorAppRole,
+} from '@/lib/creator-app-role';
 
 export type CreatorStudioHeaderData = {
   fullName: string;
@@ -18,6 +22,8 @@ export type CreatorStudioHeaderData = {
   avatarUrl: string | null;
   bio: string | null;
   specialite: string | null;
+  specialties?: string[];
+  specialtyTags?: string[];
   followerCount: number;
   productCount: number;
   profileVisits: number;
@@ -87,6 +93,12 @@ export function CreatorStudioShell({
 
   const handle = header.email;
   const pickAvatar = () => avatarInputRef.current?.click();
+  const appRole = normalizeCreatorAppRole(header.appRole);
+  const visibleTabs = CREATOR_STUDIO_TABS.filter((item) => {
+    if (item.id === 'products') return creatorCanAccessProfileProducts(appRole);
+    if (item.id === 'services') return creatorCanAccessProfileServices(appRole);
+    return true;
+  });
 
   return (
     <div className="mx-auto w-full max-w-[1280px]">
@@ -108,10 +120,12 @@ export function CreatorStudioShell({
           fullName={header.fullName}
           handle={handle}
           avatarUrl={header.avatarUrl}
-          appRole={normalizeCreatorAppRole(header.appRole)}
+          appRole={appRole}
           headerContentStyle={header.headerContentStyle}
           bio={header.bio}
           specialite={header.specialite}
+          specialties={header.specialties}
+          specialtyTags={header.specialtyTags}
           followerCount={header.followerCount}
           productCount={header.productCount}
           profileVisits={header.profileVisits}
@@ -131,7 +145,7 @@ export function CreatorStudioShell({
             className={`flex min-w-0 flex-1 gap-1 overflow-x-auto ${creatorStudioTabNavAlignClass(header.tabNavAlign)}`}
             aria-label="Creator studio sections"
           >
-            {CREATOR_STUDIO_TABS.map((item) => {
+            {visibleTabs.map((item) => {
               const active = tab === item.id;
               return (
                 <button

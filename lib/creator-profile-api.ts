@@ -93,3 +93,10 @@ export async function updateCreatorProfile(body: CreatorProfileUpdateBody): Prom
   const res = await api.put<CreatorProfileDto>('/api/creator/profile', body);
   return res.data;
 }
+
+export async function suggestSpecialties(q: string): Promise<string[]> {
+  const query = q.trim();
+  if (!query) return [];
+  const res = await api.get<string[]>('/api/marketplace/creators/specialties', { params: { q: query } });
+  return Array.isArray(res.data) ? res.data.filter((item) => typeof item === 'string' && item.trim()) : [];
+}

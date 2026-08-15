@@ -28,6 +28,7 @@ import { CreatorProductsStatsPanel } from '@/components/creator/CreatorProductsS
 import { CreatorProductGroupsExplorePanel } from '@/components/creator/CreatorProductGroupsExplorePanel';
 import { CreatorStudioNewProductPanel } from '@/components/creator/studio/CreatorStudioNewProductPanel';
 import { CreatorProductsEmptyGuide } from '@/components/creator/studio/CreatorProductsEmptyGuide';
+import { ProfileReadinessWarning } from '@/components/creator/studio/ProfileReadinessWarning';
 import { ProductFormatToggle } from '@/components/marketplace/ProductFormatToggle';
 import type { ProductFormat } from '@/components/marketplace/product-editor-steps';
 import { useCreatorProductsFilter } from '@/components/creator/useCreatorProductsFilter';
@@ -35,6 +36,12 @@ import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { CreatorStudioProductsTabSkeleton } from '@/components/creator/studio/CreatorStudioSkeleton';
 import { useAuth } from '@/context/AuthContext';
 import { useOutOfViewSticky } from '@/hooks/useOutOfViewSticky';
+import api from '@/lib/api';
+import {
+  getMissingProfileReadinessFields,
+  type ProfileReadinessField,
+} from '@/lib/creator-profile-readiness';
+import type { CreatorProfileDto } from '@/types/ecosystem';
 import type {
   MarketplaceBundleSummary,
   MarketplaceProductGroup,
@@ -77,6 +84,7 @@ export function CreatorStudioProductsTab() {
   const [view, setView] = useState<ProductsView>(searchParams.get('create') === '1' ? 'create' : 'list');
   const [productFormat, setProductFormat] = useState<ProductFormat>('virtual');
   const [sectionOrder, setSectionOrder] = useState<FormatSectionOrder>('physical-first');
+  const [missingProfileFields, setMissingProfileFields] = useState<ProfileReadinessField[]>([]);
 
   const showStickySearch = useOutOfViewSticky(
     toolbarRef,
@@ -179,15 +187,17 @@ export function CreatorStudioProductsTab() {
     try {
       setError(null);
       setLoading(true);
-      const [productsPage, bundlesPage, groupsPage] = await Promise.all([
+      const [productsPage, bundlesPage, groupsPage, profileRes] = await Promise.all([
         listCreatorProducts(0, 50),
         listCreatorBundles(0, 50),
         listCreatorProductGroups(0, 50),
+        api.get<CreatorProfileDto>('/api/creator/profile'),
       ]);
       if (seq !== loadSeq.current) return;
       setItems(productsPage.content);
       setBundles(bundlesPage.content);
       setGroups(groupsPage.content);
+      setMissingProfileFields(getMissingProfileReadinessFields(profileRes.data));
       setSelectedGroupId((current) =>
         current && groupsPage.content.some((group) => group.id === current) ? current : null
       );
@@ -209,17 +219,24 @@ export function CreatorStudioProductsTab() {
   }, [load]);
 
   useEffect(() => {
-    setView(searchParams.get('create') === '1' ? 'create' : 'list');
-  }, [searchParams]);
+    const wantsCreate = searchParams.get('create') === '1';
+    if (wantsCreate && missingProfileFields.length > 0) {
+      setView('list');
+      router.replace('/marketplace/my-products', { scroll: false });
+      return;
+    }
+    setView(wantsCreate ? 'create' : 'list');
+  }, [searchParams, missingProfileFields.length, router]);
 
   const setProductsView = (next: ProductsView) => {
     if (next === view) return;
+    if (next === 'create' && missingProfileFields.length > 0) return;
     setView(next);
     if (next === 'create') {
       setProductFormat('virtual');
     }
     router.replace(
-      next === 'create' ? '/dashboard/products?create=1' : '/dashboard/products',
+      next === 'create' ? '/marketplace/my-products?create=1' : '/marketplace/my-products',
       { scroll: false }
     );
     // Returning to the list used to set loading=true without refetching → stuck skeleton.
@@ -354,10 +371,18 @@ export function CreatorStudioProductsTab() {
     <div
       className={
         isEmptyGuide
-          ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
-          : 'min-h-0 flex-1 space-y-6 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+          ? 'relative flex min-h-0 flex-1 flex-col overflow-hidden'
+          : 'relative min-h-0 flex-1 space-y-6 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
       }
     >
+      {!isCreateView && missingProfileFields.length > 0 ? (
+        <ProfileReadinessWarning
+          missingFields={missingProfileFields}
+          title="Complete your profile first"
+          description="Add a real profile photo (not the auto-generated avatar), plus address, phone, email, nationality, link, name, role, and location before you can create a product. Don't worry — it's a mark of trust for your clients."
+        />
+      ) : null}
+
       {isCreateView ? (
         <div className="space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -412,7 +437,8 @@ export function CreatorStudioProductsTab() {
                   <button
                     type="button"
                     onClick={() => setProductsView('create')}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
+                    disabled={missingProfileFields.length > 0}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <svg
                       className="h-4 w-4 shrink-0"
@@ -437,7 +463,10 @@ export function CreatorStudioProductsTab() {
             <CreatorStudioProductsTabSkeleton />
           ) : items.length === 0 && bundles.length === 0 ? (
             <div className="flex min-h-0 flex-1 flex-col pt-2">
-              <CreatorProductsEmptyGuide onCreate={() => setProductsView('create')} />
+              <CreatorProductsEmptyGuide
+                onCreate={() => setProductsView('create')}
+                createDisabled={missingProfileFields.length > 0}
+              />
             </div>
           ) : (
         <>
@@ -459,7 +488,7 @@ export function CreatorStudioProductsTab() {
                     key={bundle.id}
                     bundle={bundle}
                     isAuthenticated={Boolean(user)}
-                    loginRedirect="/dashboard/products"
+                    loginRedirect="/marketplace/my-products"
                   />
                 ))}
               </div>
@@ -717,7 +746,8 @@ export function CreatorStudioProductsTab() {
                 <button
                   type="button"
                   onClick={() => setProductsView('create')}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
+                  disabled={missingProfileFields.length > 0}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <svg
                     className="h-4 w-4 shrink-0"

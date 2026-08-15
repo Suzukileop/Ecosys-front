@@ -6,12 +6,23 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMoon, faSun, faExpand, faCompress } from '@fortawesome/free-solid-svg-icons';
 import { NotificationBell } from '@/components/NotificationBell';
-import { DashboardHeaderSearch } from '@/components/layout/DashboardHeaderSearch';
-import { getPageTitle } from '@/components/layout/dashboard/navConfig';
+import {
+  getPageTitle,
+  isProductsHeaderTogglePath,
+  isServiceProviderHeaderTogglePath,
+} from '@/components/layout/dashboard/navConfig';
+import { ProductsHeaderToggle } from '@/components/layout/ProductsHeaderToggle';
+import { ServiceProviderHeaderToggle } from '@/components/layout/ServiceProviderHeaderToggle';
 import { isMarketplaceCreatorProfilePath } from '@/lib/marketplace-nav';
-import { brandSolidBg } from '@/components/landing/landingBrand';
 import { useTheme } from '@/components/landing/ThemeProvider';
 import { enterBrowserFullscreen, exitBrowserFullscreen } from '@/lib/browser-fullscreen';
+import { DASHBOARD_MAIN_BG } from '@/components/landing/landingBrand';
+import { useAuth } from '@/context/AuthContext';
+import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
+import {
+  creatorCanAccessProductsMenu,
+  creatorCanAccessServiceProviderMenu,
+} from '@/lib/creator-app-role';
 
 const headerIconClass =
   'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white';
@@ -71,13 +82,28 @@ function HeaderFocusToggle() {
   );
 }
 
-export function DashboardTopHeader({ transparent = false }: { transparent?: boolean }) {
+export function DashboardTopHeader({
+  transparent = false,
+}: {
+  transparent?: boolean;
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { hasRole } = useAuth();
+  const { appRole, ready: appRoleReady } = useCreatorAppRole();
   const [scrolled, setScrolled] = useState(false);
-  const pageTitle = getPageTitle(pathname, searchParams.toString());
+  const search = searchParams.toString();
+  const pageTitle = getPageTitle(pathname, search);
   const showCreatorsBack = isMarketplaceCreatorProfilePath(pathname);
   const isDiscussionsPage = pathname.startsWith('/dashboard/discussions');
+  const showProductsToggle =
+    hasRole('ROLE_CREATOR') &&
+    isProductsHeaderTogglePath(pathname, search) &&
+    (!appRoleReady || creatorCanAccessProductsMenu(appRole));
+  const showServiceProviderToggle =
+    hasRole('ROLE_CREATOR') &&
+    isServiceProviderHeaderTogglePath(pathname, search) &&
+    (!appRoleReady || creatorCanAccessServiceProviderMenu(appRole));
 
   const showSolidBg = !transparent || scrolled;
 
@@ -110,7 +136,7 @@ export function DashboardTopHeader({ transparent = false }: { transparent?: bool
         isDiscussionsPage ? '' : 'border-b'
       } ${
         showSolidBg
-          ? `${isDiscussionsPage ? '' : 'border-neutral-200 dark:border-neutral-800'} bg-white dark:bg-neutral-950`
+          ? `${isDiscussionsPage ? '' : 'border-neutral-200 dark:border-neutral-800'} ${DASHBOARD_MAIN_BG}`
           : `${isDiscussionsPage ? '' : 'border-neutral-200/70 dark:border-neutral-800/70'} bg-transparent`
       }`}
     >
@@ -127,20 +153,9 @@ export function DashboardTopHeader({ transparent = false }: { transparent?: bool
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-          ) : (
-            <Link
-              href="/dashboard/home"
-              aria-label="NoProbleme"
-              title="NoProbleme"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center"
-            >
-              <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-xs font-bold text-white ${brandSolidBg}`}
-              >
-                NP
-              </span>
-            </Link>
-          )}
+          ) : null}
+          {showProductsToggle ? <ProductsHeaderToggle /> : null}
+          {showServiceProviderToggle ? <ServiceProviderHeaderToggle /> : null}
         </div>
 
         <h1 className="max-w-[40vw] truncate text-center text-xl font-bold tracking-tight text-neutral-900 dark:text-white sm:max-w-none">
@@ -148,7 +163,6 @@ export function DashboardTopHeader({ transparent = false }: { transparent?: bool
         </h1>
 
         <div className="flex h-9 shrink-0 items-center justify-end gap-2 justify-self-end">
-          <DashboardHeaderSearch compact />
           <NotificationBell compact />
           <HeaderThemeToggle />
           <HeaderFocusToggle />

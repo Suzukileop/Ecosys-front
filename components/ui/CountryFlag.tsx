@@ -1,7 +1,6 @@
 'use client';
 
-import Image from 'next/image';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { countryFlagImageUrl } from '@/lib/countryDialCodes';
 
 type CountryFlagProps = {
@@ -11,36 +10,57 @@ type CountryFlagProps = {
 };
 
 const SIZES = {
-  sm: { w: 20, h: 15, className: 'h-[15px] w-5' },
+  sm: { w: 18, h: 13, className: 'h-[13px] w-[18px]' },
   md: { w: 24, h: 18, className: 'h-[18px] w-6' },
 } as const;
 
+function flagSources(iso2: string, width: number): string[] {
+  const code = iso2.trim().toLowerCase();
+  if (!code || code.length !== 2) return [];
+  return [
+    `https://flagcdn.com/${code}.svg`,
+    countryFlagImageUrl(code, width),
+    `https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/flags/4x3/${code}.svg`,
+  ];
+}
+
+/** Colored country flag image (not emoji — Windows shows ISO letters for emoji flags). */
 export function CountryFlag({ iso2, className = '', size = 'md' }: CountryFlagProps) {
-  const [failed, setFailed] = useState(false);
   const code = iso2?.trim().toUpperCase();
   const dim = SIZES[size];
+  const sources = useMemo(
+    () => (code && code.length === 2 ? flagSources(code, dim.w * 2) : []),
+    [code, dim.w]
+  );
+  const [sourceIndex, setSourceIndex] = useState(0);
+  const [exhausted, setExhausted] = useState(false);
 
-  if (!code || code.length !== 2 || failed) {
-    return (
-      <span
-        className={`inline-flex shrink-0 items-center justify-center rounded-sm bg-neutral-200 text-[9px] font-bold uppercase text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300 ${dim.className} ${className}`}
-        aria-hidden
-      >
-        {code?.slice(0, 2) ?? '?'}
-      </span>
-    );
-  }
+  const src = sources[sourceIndex];
+  if (!code || code.length !== 2 || exhausted || !src) return null;
 
   return (
-    <Image
-      src={countryFlagImageUrl(code, dim.w * 2)}
+    // Native img: avoids Next/Image issues and never falls back to ISO letters like "MG".
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      key={src}
+      src={src}
       width={dim.w}
       height={dim.h}
       alt=""
       loading="lazy"
-      unoptimized
-      className={`shrink-0 rounded-sm object-cover shadow-sm ring-1 ring-black/10 ${dim.className} ${className}`}
-      onError={() => setFailed(true)}
+      decoding="async"
+      referrerPolicy="no-referrer"
+      className={`inline-block shrink-0 rounded-[2px] object-cover shadow-sm ring-1 ring-black/15 ${dim.className} ${className}`}
+      onError={() => {
+        setSourceIndex((prev) => {
+          const next = prev + 1;
+          if (next >= sources.length) {
+            setExhausted(true);
+            return prev;
+          }
+          return next;
+        });
+      }}
     />
   );
 }

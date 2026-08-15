@@ -1,7 +1,11 @@
 import type { Role } from '@/types/auth';
 import type { ReactNode } from 'react';
-import { isContentCreatorsPath, isMarketplaceHubPath } from '@/lib/marketplace-nav';
-import type { CreatorAppRole } from '@/lib/creator-app-role';
+import { isContentCreatorsPath, isMarketplaceHubPath, isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
+import {
+  APP_ROLES_WITHOUT_PRODUCTS_MENU,
+  APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU,
+  type CreatorAppRole,
+} from '@/lib/creator-app-role';
 
 /** Default authenticated landing — overview `/dashboard` is hidden for now. */
 export const DASHBOARD_HOME_PATH = '/dashboard/home';
@@ -13,6 +17,8 @@ export type DashboardNavChild = {
   roles?: Role[];
   /** Creator app roles that may see this item (e.g. SERVICE_PROVIDER). */
   appRoles?: CreatorAppRole[];
+  /** Creator app roles that must not see this item. */
+  hiddenForAppRoles?: CreatorAppRole[];
   activeWhen?: (pathname: string, search?: string) => boolean;
 };
 
@@ -23,6 +29,7 @@ export type DashboardNavItem = {
   badge?: string;
   roles?: Role[];
   appRoles?: CreatorAppRole[];
+  hiddenForAppRoles?: CreatorAppRole[];
   comingSoon?: boolean;
   children?: DashboardNavChild[];
   /** Optional search string (e.g. `?from=profile`) for context-aware active state. */
@@ -80,55 +87,25 @@ export const dashboardNavItems: DashboardNavItem[] = [
     ),
   },
   {
-    href: '/dashboard/services',
-    label: 'Services',
-    roles: ['ROLE_CREATOR'],
-    activeWhen: isServicesNavPath,
+    href: '/marketplace/creators',
+    label: 'Service Provider',
+    hiddenForAppRoles: [...APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU],
+    activeWhen: (pathname, search = '') =>
+      isServiceProvidersCatalogPath(pathname) || isMyServiceNavPath(pathname, search),
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
         />
       </svg>
     ),
-    children: [
-      {
-        href: '/marketplace/creators',
-        label: 'Service Provider',
-        appRoles: ['SERVICE_PROVIDER'],
-        activeWhen: isContentCreatorsPath,
-        icon: (
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
-        ),
-      },
-      {
-        href: '/dashboard/services',
-        label: 'My Service',
-        roles: ['ROLE_CREATOR'],
-        activeWhen: isMyServiceNavPath,
-        icon: (
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-            />
-          </svg>
-        ),
-      },
-    ],
   },
   {
     href: '/marketplace',
     label: 'Products',
+    hiddenForAppRoles: [...APP_ROLES_WITHOUT_PRODUCTS_MENU],
     activeWhen: (pathname, search = '') =>
       isMarketplaceHubPath(pathname) || isMyProductNavPath(pathname, search),
     icon: (
@@ -140,37 +117,6 @@ export const dashboardNavItems: DashboardNavItem[] = [
         />
       </svg>
     ),
-    children: [
-      {
-        href: '/marketplace',
-        label: 'Explore',
-        activeWhen: isMarketplaceHubPath,
-        icon: (
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        ),
-      },
-      {
-        href: '/dashboard/products',
-        label: 'My Product',
-        roles: ['ROLE_CREATOR'],
-        activeWhen: isMyProductNavPath,
-        icon: (
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-            />
-          </svg>
-        ),
-      },
-    ],
   },
   {
     href: '/dashboard/discussions',
@@ -217,6 +163,9 @@ export const dashboardNavItems: DashboardNavItem[] = [
 ];
 
 export function isMyProductNavPath(pathname: string, search = ''): boolean {
+  if (pathname === '/marketplace/my-products' || pathname.startsWith('/marketplace/my-products/')) {
+    return true;
+  }
   if (pathname === '/dashboard/products' || pathname.startsWith('/dashboard/products/')) {
     return true;
   }
@@ -226,12 +175,27 @@ export function isMyProductNavPath(pathname: string, search = ''): boolean {
   );
 }
 
-export function isMyServiceNavPath(pathname: string): boolean {
-  return pathname === '/dashboard/services' || pathname.startsWith('/dashboard/services/');
+/** Products section where the header Explore / My Product toggle is shown. */
+export function isProductsHeaderTogglePath(pathname: string, search = ''): boolean {
+  return isMarketplaceHubPath(pathname) || isMyProductNavPath(pathname, search);
 }
 
-export function isServicesNavPath(pathname: string): boolean {
-  return isMyServiceNavPath(pathname) || isContentCreatorsPath(pathname);
+export function isMyServiceNavPath(pathname: string, _search = ''): boolean {
+  return (
+    pathname === '/marketplace/my-services' ||
+    pathname.startsWith('/marketplace/my-services/') ||
+    pathname === '/dashboard/services' ||
+    pathname.startsWith('/dashboard/services/')
+  );
+}
+
+/** Service Provider section where the header Explore / My Services toggle is shown. */
+export function isServiceProviderHeaderTogglePath(pathname: string, search = ''): boolean {
+  return isServiceProvidersCatalogPath(pathname) || isMyServiceNavPath(pathname, search);
+}
+
+export function isServiceProviderNavPath(pathname: string): boolean {
+  return isServiceProvidersCatalogPath(pathname) || isMyServiceNavPath(pathname);
 }
 
 export function isDashboardHomePath(pathname: string): boolean {
@@ -244,12 +208,16 @@ export function getPageTitle(pathname: string, search = ''): string {
   if (pathname.startsWith('/dashboard/credits')) return 'Credits';
   if (pathname.startsWith('/dashboard/discussions')) return 'Messages';
   if (pathname.startsWith('/dashboard/portfolio')) return 'My Portfolio';
-  if (pathname.startsWith('/dashboard/services')) return 'My Service';
   if (pathname.startsWith('/dashboard/search')) return 'Search';
   if (pathname.startsWith('/dashboard/scheduler')) return 'Scheduler';
   if (pathname.startsWith('/dashboard/agent/deliver')) return 'Deliver content';
   if (pathname.startsWith('/dashboard/agent')) return 'Agent queue';
-  if (pathname.startsWith('/dashboard/products')) return 'My Product';
+  if (pathname.startsWith('/marketplace/my-products') || pathname.startsWith('/dashboard/products')) {
+    return 'My Product';
+  }
+  if (pathname.startsWith('/marketplace/my-services') || pathname.startsWith('/dashboard/services')) {
+    return 'My Services';
+  }
   if (pathname.startsWith('/dashboard/creator/content/new')) return 'New content';
   if (pathname.startsWith('/dashboard/creator/content')) return 'My Profile';
   if (pathname.startsWith('/dashboard/creator/products/new')) return 'New product';
@@ -259,6 +227,7 @@ export function getPageTitle(pathname: string, search = ''): string {
   }
   if (pathname.startsWith('/dashboard/creator/profile')) return 'My Profile';
   if (pathname.startsWith('/dashboard/creator')) return 'My Profile';
+  if (isServiceProvidersCatalogPath(pathname)) return 'Service Provider';
   if (isContentCreatorsPath(pathname)) return 'Service Provider';
   if (/\/marketplace\/[^/]+\/shop\/?$/.test(pathname)) return 'Shop';
   if (isMarketplaceHubPath(pathname)) return 'Explore';

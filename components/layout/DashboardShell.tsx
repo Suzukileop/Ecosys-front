@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -9,8 +9,34 @@ import { FlashToastHost } from '@/components/ui/FlashToastHost';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { DashboardTopHeader } from '@/components/layout/DashboardTopHeader';
 import { MarketplacePatternBackground } from '@/components/marketplace/ProductDetailHalftoneBackground';
-import { isContentCreatorsPath, isMarketplaceCreatorProfilePath } from '@/lib/marketplace-nav';
+import { isContentCreatorsPath, isMarketplaceCreatorProfilePath, isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
 import { DASHBOARD_MAIN_BG } from '@/components/landing/landingBrand';
+import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
+import {
+  creatorCanAccessMyProducts,
+  creatorCanAccessMyServices,
+  creatorCanAccessProductsMenu,
+  creatorCanAccessServiceProviderMenu,
+} from '@/lib/creator-app-role';
+import { isMyProductNavPath, isMyServiceNavPath } from '@/components/layout/dashboard/navConfig';
+
+const SIDEBAR_COLLAPSED_STORAGE_KEY = 'noproble.dashboard.sidebar-collapsed';
+
+function readSidebarCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeSidebarCollapsed(collapsed: boolean) {
+  try {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0');
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
 
 function isCreatorStudioPath(pathname: string): boolean {
   if (!pathname.startsWith('/dashboard/creator')) return false;
@@ -29,7 +55,21 @@ function isNewsFeedPath(pathname: string): boolean {
 }
 
 function isMyProductPath(pathname: string): boolean {
-  return pathname === '/dashboard/products' || pathname.startsWith('/dashboard/products/');
+  return (
+    pathname === '/marketplace/my-products' ||
+    pathname.startsWith('/marketplace/my-products/') ||
+    pathname === '/dashboard/products' ||
+    pathname.startsWith('/dashboard/products/')
+  );
+}
+
+function isMyServicePath(pathname: string): boolean {
+  return (
+    pathname === '/marketplace/my-services' ||
+    pathname.startsWith('/marketplace/my-services/') ||
+    pathname === '/dashboard/services' ||
+    pathname.startsWith('/dashboard/services/')
+  );
 }
 
 function SessionErrorScreen({ onRetry }: { onRetry: () => void }) {
@@ -68,29 +108,44 @@ export function DashboardShell({
   const pathname = usePathname();
   const router = useRouter();
   const { isLoading, user, sessionStatus, restoreSession } = useAuth();
+  const { appRole, ready: appRoleReady } = useCreatorAppRole();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useLayoutEffect(() => {
+    setSidebarCollapsed(readSidebarCollapsed());
+  }, []);
+
+  const toggleSidebarCollapsed = useCallback(() => {
+    setSidebarCollapsed((value) => {
+      const next = !value;
+      writeSidebarCollapsed(next);
+      return next;
+    });
+  }, []);
+
   const creatorStudioPattern = isCreatorStudioPath(pathname);
   const creatorProductsPattern = isCreatorProductsWorkspacePath(pathname);
   const newsFeedPattern = isNewsFeedPath(pathname);
   const myProductPattern = isMyProductPath(pathname);
-  const contentCreatorsPattern = isContentCreatorsPath(pathname);
+  const myServicePattern = isMyServicePath(pathname);
+  const contentCreatorsPattern =
+    isContentCreatorsPath(pathname) && !isServiceProvidersCatalogPath(pathname);
+  const serviceProvidersCatalog = isServiceProvidersCatalogPath(pathname);
   const usePatternBackground =
     transparentContent ||
     creatorStudioPattern ||
     creatorProductsPattern ||
     newsFeedPattern ||
-    myProductPattern ||
     contentCreatorsPattern;
   const useTransparentHeader =
     transparentHeader ||
     creatorStudioPattern ||
     creatorProductsPattern ||
     newsFeedPattern ||
-    myProductPattern ||
     contentCreatorsPattern;
   const compactContentTop = isMarketplaceCreatorProfilePath(pathname);
   const discussionsLayout = pathname.startsWith('/dashboard/discussions');
-  const fillMainLayout = discussionsLayout || myProductPattern;
+  const fillMainLayout = discussionsLayout || myProductPattern || myServicePattern;
 
   // Only redirect to /login when the session is definitively gone.
   // 'error' (rate-limit / network) must NOT trigger a redirect because
@@ -101,6 +156,42 @@ export function DashboardShell({
     if (!pathname.startsWith('/dashboard')) return;
     router.replace('/login');
   }, [sessionStatus, pathname, router]);
+
+  // Keep creators off role-gated marketplace sections when deep-linking.
+  useEffect(() => {
+    if (!appRoleReady || !appRole) return;
+
+    const onMyProducts =
+      isMyProductNavPath(pathname) ||
+      pathname.startsWith('/dashboard/creator/products') ||
+      pathname.startsWith('/dashboard/products');
+    if (onMyProducts && !creatorCanAccessMyProducts(appRole)) {
+      router.replace('/dashboard/home');
+      return;
+    }
+
+    const onProductsExplore =
+      pathname === '/marketplace' ||
+      pathname.startsWith('/marketplace/favorites') ||
+      pathname.startsWith('/marketplace/purchases') ||
+      pathname.startsWith('/marketplace/products');
+    if (onProductsExplore && !creatorCanAccessProductsMenu(appRole)) {
+      router.replace('/dashboard/home');
+      return;
+    }
+
+    if (isMyServiceNavPath(pathname) && !creatorCanAccessMyServices(appRole)) {
+      router.replace('/dashboard/home');
+      return;
+    }
+
+    if (
+      isServiceProvidersCatalogPath(pathname) &&
+      !creatorCanAccessServiceProviderMenu(appRole)
+    ) {
+      router.replace('/dashboard/home');
+    }
+  }, [appRole, appRoleReady, pathname, router]);
 
   const handleRetry = useCallback(async () => {
     await restoreSession();
@@ -127,7 +218,6 @@ export function DashboardShell({
       {(creatorStudioPattern ||
         creatorProductsPattern ||
         newsFeedPattern ||
-        myProductPattern ||
         contentCreatorsPattern) && (
         <MarketplacePatternBackground variant="hub" />
       )}
@@ -136,23 +226,30 @@ export function DashboardShell({
           fillMainLayout ? 'h-screen overflow-hidden' : 'min-h-screen'
         } ${shellBg}`}
         style={{ '--dash-sidebar-w': sidebarCollapsed ? '4.5rem' : '18rem' } as CSSProperties}
+        data-sidebar-collapsed={sidebarCollapsed ? 'true' : 'false'}
       >
       <DashboardSidebar
         collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed((value) => !value)}
+        onToggle={toggleSidebarCollapsed}
       />
       <div
         data-dashboard-main
         className={`flex min-w-0 flex-1 flex-col ${fillMainLayout ? 'h-screen max-h-screen overflow-hidden' : ''} ${shellBg}`}
       >
-        <DashboardTopHeader transparent={useTransparentHeader} />
+        <DashboardTopHeader
+          transparent={useTransparentHeader}
+        />
         <div
           data-dashboard-content
           className={`relative z-10 min-w-0 flex-1 ${
             fillMainLayout
               ? 'flex min-h-0 flex-col overflow-hidden px-6 pb-4 pt-4'
               : `overflow-x-clip pb-6 ${compactContentTop ? 'pt-2' : 'pt-6'} ${
-                  newsFeedPattern ? 'px-4 sm:px-5' : 'px-6'
+                  serviceProvidersCatalog
+                    ? 'px-8 sm:px-10 lg:px-12 xl:px-14'
+                    : newsFeedPattern
+                      ? 'px-4 sm:px-5'
+                      : 'px-6'
                 }`
           } ${shellBg}`}
         >

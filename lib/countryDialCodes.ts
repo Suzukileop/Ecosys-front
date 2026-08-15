@@ -4,7 +4,10 @@ export type CountryDialCode = { iso2: string; name: string; dial: string };
 export function countryFlagImageUrl(iso2: string, width = 40): string {
   const code = iso2.trim().toLowerCase();
   if (!code || code.length !== 2) return '';
-  return `https://flagcdn.com/w${width}/${code}.png`;
+  // flagcdn only serves specific widths (20/40/80/160/320…). Odd sizes like 48 → 404.
+  const allowed = [20, 40, 80, 160, 320];
+  const w = allowed.find((size) => size >= width) ?? allowed[allowed.length - 1];
+  return `https://flagcdn.com/w${w}/${code}.png`;
 }
 
 /** @deprecated Prefer `<CountryFlag />` — emoji flags do not render on Windows. */

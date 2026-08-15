@@ -19,7 +19,7 @@ import {
 } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 
-export const MAX_SERVICES = 3;
+export const MAX_SERVICES = 8;
 const MAX_TASKS_PER_SERVICE = 12;
 
 type ProfileServicesFieldProps = {

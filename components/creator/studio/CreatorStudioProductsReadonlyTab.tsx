@@ -126,7 +126,7 @@ export function CreatorStudioProductsReadonlyTab() {
           <p className="mt-1 text-sm text-neutral-500">
             Preview of your catalog. Create or manage products in{' '}
             <Link
-              href="/dashboard/products"
+              href="/marketplace/my-products"
               className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
             >
               My Product
@@ -142,7 +142,7 @@ export function CreatorStudioProductsReadonlyTab() {
         <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-12 text-center dark:border-neutral-700 dark:bg-neutral-900">
           <p className="text-neutral-600 dark:text-neutral-400">No products listed yet.</p>
           <Link
-            href="/dashboard/products?create=1"
+            href="/marketplace/my-products?create=1"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-orange-500 px-6 py-3 text-sm font-semibold text-white hover:bg-orange-600"
           >
             Create a product

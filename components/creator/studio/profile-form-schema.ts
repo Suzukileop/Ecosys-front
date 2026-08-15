@@ -4,6 +4,13 @@ import { dedupeSpokenLanguages } from '@/lib/spoken-languages';
 import { CREATOR_GENDER_VALUES } from '@/lib/creator-gender';
 import { CREATOR_APP_ROLE_VALUES, DEFAULT_CREATOR_APP_ROLE } from '@/lib/creator-app-role';
 import { toStoredPhoneNumber } from '@/lib/phone';
+import {
+  MAX_PROFILE_SPECIALTIES,
+  MAX_SPECIALTY_LENGTH,
+  MAX_SPECIALTY_TAG_LENGTH,
+  MAX_SPECIALTY_TAGS,
+  parseSpecialtyList,
+} from '@/lib/specialties';
 
 export const platformEnum = z.enum([
   'INSTAGRAM',
@@ -108,6 +115,14 @@ export const profileServiceSchema = z
     basePriceCents: z.number().int().min(0).nullable().optional(),
     deadline: z.string().max(100).optional().or(z.literal('')).nullable(),
     tasks: z.array(z.object({ value: z.string().max(120) })).max(12),
+    specialty: z.string().max(80).optional().or(z.literal('')),
+    pricingType: z.enum(['FIXED', 'FROM', 'QUOTE']).optional(),
+    coverImageUrl: z.string().max(500).optional().or(z.literal('')).nullable(),
+    status: z.enum(['ACTIVE', 'PAUSED', 'ARCHIVED']).optional(),
+    tags: z.array(z.string().max(40)).max(8).optional(),
+    currency: z.string().max(8).optional().or(z.literal('')).nullable(),
+    deliveryValue: z.number().int().min(1).nullable().optional(),
+    deliveryUnit: z.enum(['DAYS', 'WEEKS']).nullable().optional(),
   })
   .superRefine((data, ctx) => {
     const title = data.title.trim();
@@ -115,9 +130,28 @@ export const profileServiceSchema = z
     const deadline = data.deadline?.trim() ?? '';
     const hasPrice = data.basePriceCents != null;
     const hasTasks = data.tasks?.some((item) => item.value.trim()) ?? false;
-    if (!title && !description && !deadline && !hasPrice && !hasTasks) return;
+    const specialty = data.specialty?.trim() ?? '';
+    const hasDelivery = data.deliveryValue != null;
+    if (!title && !description && !deadline && !hasPrice && !hasTasks && !specialty && !hasDelivery) {
+      return;
+    }
     if (!title) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Title is required.', path: ['title'] });
+    }
+    const pricingType = data.pricingType ?? (hasPrice ? 'FIXED' : 'QUOTE');
+    if (pricingType !== 'QUOTE' && data.basePriceCents == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Price is required unless pricing is Quote on request.',
+        path: ['basePriceCents'],
+      });
+    }
+    if (pricingType !== 'QUOTE' && !(data.currency ?? '').trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Currency is required.',
+        path: ['currency'],
+      });
     }
   });
 
@@ -411,8 +445,11 @@ export const profileSchema = z
     fullName: z.string().min(1, 'Name is required.').max(150),
     bio: z.string().max(8000).optional(),
     specialite: z.string().max(150).optional(),
+    specialties: z.array(z.string().max(MAX_SPECIALTY_LENGTH)).max(MAX_PROFILE_SPECIALTIES),
+    specialtyTags: z.array(z.string().max(MAX_SPECIALTY_TAG_LENGTH)).max(MAX_SPECIALTY_TAGS),
     gender: z.enum(CREATOR_GENDER_VALUES).optional().or(z.literal('')),
-    appRole: z.enum(CREATOR_APP_ROLE_VALUES).default(DEFAULT_CREATOR_APP_ROLE),
+    nationality: z.string().max(2).optional().or(z.literal('')),
+    appRole: z.enum(CREATOR_APP_ROLE_VALUES),
     spokenLanguages: z.array(spokenLanguageSchema).max(10),
     locationCity: z.string().optional(),
     locationCountry: z.string().optional(),
@@ -462,6 +499,14 @@ export const profileSchema = z
         });
       }
     });
+
+    if (data.specialties.length > MAX_PROFILE_SPECIALTIES) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Choose at most ${MAX_PROFILE_SPECIALTIES} specialties.`,
+        path: ['specialties'],
+      });
+    }
 
     data.contactPhones.forEach((entry, index) => {
       const stored = toStoredPhoneNumber(entry.value);
@@ -605,7 +650,10 @@ export function createEmptyProfileLink(sortOrder: number): ProfileLinkForm {
   };
 }
 
-export function createEmptyProfileService(sortOrder: number): ProfileServiceForm {
+export function createEmptyProfileService(
+  sortOrder: number,
+  specialty = ''
+): ProfileServiceForm {
   return {
     id: crypto.randomUUID(),
     sortOrder,
@@ -614,6 +662,14 @@ export function createEmptyProfileService(sortOrder: number): ProfileServiceForm
     basePriceCents: null,
     deadline: '',
     tasks: [],
+    specialty,
+    pricingType: 'FIXED',
+    coverImageUrl: '',
+    status: 'ACTIVE',
+    tags: [],
+    currency: 'EUR',
+    deliveryValue: null,
+    deliveryUnit: 'DAYS',
   };
 }
 
@@ -831,17 +887,65 @@ export function parseProfileServices(raw: unknown): ProfileServiceForm[] {
   raw.forEach((item, index) => {
     if (!item || typeof item !== 'object') return;
     const service = item as Record<string, unknown>;
+    const basePriceCents =
+      service.basePriceCents != null && service.basePriceCents !== ''
+        ? Number(service.basePriceCents)
+        : null;
+    const pricingRaw = service.pricingType != null ? String(service.pricingType) : '';
+    const pricingType =
+      pricingRaw.toUpperCase() === 'FROM' ||
+      pricingRaw.toUpperCase() === 'QUOTE' ||
+      pricingRaw.toUpperCase() === 'FIXED'
+        ? (pricingRaw.toUpperCase() as 'FIXED' | 'FROM' | 'QUOTE')
+        : basePriceCents != null
+          ? 'FIXED'
+          : 'QUOTE';
+    const statusRaw = service.status != null ? String(service.status).toUpperCase() : 'ACTIVE';
+    const status =
+      statusRaw === 'PAUSED' || statusRaw === 'ARCHIVED' || statusRaw === 'ACTIVE'
+        ? statusRaw
+        : 'ACTIVE';
+    const tags = Array.isArray(service.tags)
+      ? service.tags.map((tag) => String(tag).trim()).filter(Boolean).slice(0, 8)
+      : [];
+    const currencyRaw = service.currency != null ? String(service.currency).trim().toUpperCase() : '';
+    const currency = currencyRaw || 'EUR';
+    let deliveryValue =
+      service.deliveryValue != null && service.deliveryValue !== ''
+        ? Number(service.deliveryValue)
+        : null;
+    if (deliveryValue != null && (!Number.isFinite(deliveryValue) || deliveryValue < 1)) {
+      deliveryValue = null;
+    }
+    const deliveryUnitRaw =
+      service.deliveryUnit != null ? String(service.deliveryUnit).toUpperCase() : '';
+    let deliveryUnit: 'DAYS' | 'WEEKS' | null =
+      deliveryUnitRaw === 'WEEKS' || deliveryUnitRaw === 'DAYS' ? deliveryUnitRaw : null;
+    const deadline = service.deadline != null ? String(service.deadline) : '';
+    if (deliveryValue == null && deadline) {
+      const match = deadline.trim().match(/^(\d+)\s*(day|days|jour|jours|week|weeks|semaine|semaines)?$/i);
+      if (match) {
+        deliveryValue = Number(match[1]);
+        const unit = (match[2] ?? 'days').toLowerCase();
+        deliveryUnit = unit.startsWith('week') || unit.startsWith('semaine') ? 'WEEKS' : 'DAYS';
+      }
+    }
     services.push({
       id: service.id != null ? String(service.id) : crypto.randomUUID(),
       sortOrder: typeof service.sortOrder === 'number' ? service.sortOrder : index,
       title: service.title != null ? String(service.title) : '',
       description: service.description != null ? String(service.description) : '',
-      basePriceCents:
-        service.basePriceCents != null && service.basePriceCents !== ''
-          ? Number(service.basePriceCents)
-          : null,
-      deadline: service.deadline != null ? String(service.deadline) : '',
+      basePriceCents,
+      deadline,
       tasks: parseSubtitleItems(service.tasks),
+      specialty: service.specialty != null ? String(service.specialty) : '',
+      pricingType,
+      coverImageUrl: service.coverImageUrl != null ? String(service.coverImageUrl) : '',
+      status,
+      tags,
+      currency,
+      deliveryValue,
+      deliveryUnit: deliveryUnit ?? (deliveryValue != null ? 'DAYS' : null),
     });
   });
   return services.sort((a, b) => a.sortOrder - b.sortOrder);
@@ -1254,18 +1358,49 @@ export function serializeProfileLinks(links: ProfileLinkForm[]) {
     });
 }
 
-export function serializeProfileServices(services: ProfileServiceForm[]) {
+export function serializeProfileServices(
+  services: ProfileServiceForm[],
+  fallbackSpecialty = ''
+) {
   return services
     .filter((service) => service.title.trim().length > 0)
-    .map((service, index) => ({
-      id: service.id,
-      sortOrder: index,
-      title: service.title.trim(),
-      description: service.description?.trim() ?? '',
-      basePriceCents: service.basePriceCents ?? null,
-      deadline: service.deadline?.trim() ? service.deadline.trim() : null,
-      tasks: service.tasks?.map((item) => item.value.trim()).filter(Boolean) ?? [],
-    }));
+    .map((service, index) => {
+      const pricingType = service.pricingType ?? (service.basePriceCents != null ? 'FIXED' : 'QUOTE');
+      const currency = (service.currency ?? 'EUR').trim().toUpperCase() || 'EUR';
+      const deliveryValue = service.deliveryValue != null && service.deliveryValue > 0
+        ? service.deliveryValue
+        : null;
+      const deliveryUnit = deliveryValue != null
+        ? service.deliveryUnit === 'WEEKS'
+          ? 'WEEKS'
+          : 'DAYS'
+        : null;
+      let deadline: string | null = service.deadline?.trim() ? service.deadline.trim() : null;
+      if (deliveryValue != null && deliveryUnit) {
+        const singular = deliveryValue === 1;
+        deadline =
+          deliveryUnit === 'WEEKS'
+            ? `${deliveryValue} week${singular ? '' : 's'}`
+            : `${deliveryValue} day${singular ? '' : 's'}`;
+      }
+      return {
+        id: service.id,
+        sortOrder: index,
+        title: service.title.trim(),
+        description: service.description?.trim() ?? '',
+        basePriceCents: pricingType === 'QUOTE' ? null : service.basePriceCents ?? null,
+        deadline,
+        tasks: service.tasks?.map((item) => item.value.trim()).filter(Boolean) ?? [],
+        specialty: service.specialty?.trim() || fallbackSpecialty || null,
+        pricingType,
+        coverImageUrl: service.coverImageUrl?.trim() || null,
+        status: service.status ?? 'ACTIVE',
+        tags: (service.tags ?? []).map((tag) => tag.trim()).filter(Boolean).slice(0, 8),
+        currency: pricingType === 'QUOTE' ? currency : currency,
+        deliveryValue,
+        deliveryUnit,
+      };
+    });
 }
 
 export function serializeFaqItems(items: FaqItemForm[]) {
@@ -1334,8 +1469,11 @@ function normalizeProfileComparable(values: ProfileFormValues, availabilityHours
   return {
     fullName: trimOptional(values.fullName),
     bio: trimOptional(values.bio),
-    specialite: trimOptional(values.specialite),
+    specialite: trimOptional(values.specialties?.[0] ?? values.specialite),
+    specialties: parseSpecialtyList(values.specialties, values.specialite),
+    specialtyTags: (values.specialtyTags ?? []).map((item) => item.trim()).filter(Boolean),
     gender: trimOptional(values.gender),
+    nationality: trimOptional(values.nationality).toUpperCase(),
     appRole: values.appRole ?? DEFAULT_CREATOR_APP_ROLE,
     spokenLanguages: dedupeSpokenLanguages(
       values.spokenLanguages.map((item) => trimOptional(item.value)).filter(Boolean)
@@ -1354,7 +1492,7 @@ function normalizeProfileComparable(values: ProfileFormValues, availabilityHours
     availabilityHours: trimOptional(availabilityHours),
     isAvailable: values.isAvailable,
     profileLinks: serializeProfileLinks(values.profileLinks),
-    serviceOffers: serializeProfileServices(values.serviceOffers),
+    serviceOffers: serializeProfileServices(values.serviceOffers, values.specialties?.[0] ?? ''),
     faqItems: serializeFaqItems(values.faqItems),
     teamMembers: serializeTeamMembers(values.teamMembers),
     galleryItems: serializeGalleryItems(values.galleryItems),

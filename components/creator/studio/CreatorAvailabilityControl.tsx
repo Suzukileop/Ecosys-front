@@ -10,14 +10,14 @@ type CreatorAvailabilityControlProps = {
 export function CreatorAvailabilityBadge({ isAvailable }: { isAvailable: boolean }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold ${
         isAvailable
-          ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30'
+          ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30'
           : 'bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:ring-neutral-700'
       }`}
     >
       <span
-        className={`h-2 w-2 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-neutral-400 dark:bg-neutral-500'}`}
+        className={`h-2 w-2 rounded-full ${isAvailable ? 'bg-emerald-700' : 'bg-neutral-400 dark:bg-neutral-500'}`}
         aria-hidden
       />
       {isAvailable ? 'Available' : 'Unavailable'}

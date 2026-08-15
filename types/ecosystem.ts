@@ -315,6 +315,20 @@ export interface ProfileServiceItem {
   deadline: string | null;
   /** Included deliverables / tasks for this service offer. */
   tasks?: string[];
+  /** Must match one of the creator profile specialties. */
+  specialty?: string | null;
+  /** FIXED | FROM | QUOTE */
+  pricingType?: string | null;
+  coverImageUrl?: string | null;
+  /** ACTIVE | PAUSED | ARCHIVED */
+  status?: string | null;
+  tags?: string[];
+  /** Currency code (MGA, EUR, USD, or custom). Defaults to MGA. */
+  currency?: string | null;
+  /** Structured delivery quantity. */
+  deliveryValue?: number | null;
+  /** DAYS | WEEKS */
+  deliveryUnit?: string | null;
   /** Optional merchandising flag used by pricing-oriented portfolio layouts. */
   popular?: boolean;
 }
@@ -406,6 +420,8 @@ export interface CreatorProfileDto {
   avatarUrl?: string | null;
   bio: string | null;
   specialite: string | null;
+  specialties?: string[];
+  specialtyTags?: string[];
   websiteUrl: string | null;
   socialLinks: Record<string, string> | string | null;
   isVerified?: boolean | null;
@@ -446,7 +462,9 @@ export interface CreatorProfileDto {
   reputation?: CreatorReputationDto | null;
   profileVisits?: number;
   gender?: string | null;
-  /** App UX role: GENERAL_MEMBER | SERVICE_PROVIDER | FREELANCER_STUDENT | JOB_SEEKER | RH_RECRUITER */
+  /** ISO 3166-1 alpha-2 citizenship code. */
+  nationality?: string | null;
+  /** App UX role: GENERAL_MEMBER | SERVICE_PROVIDER | FREELANCER_STUDENT | SELLER | RH_RECRUITER */
   appRole?: string | null;
   spokenLanguages?: string[];
   profileServices?: ProfileServiceItem[];
@@ -464,13 +482,17 @@ export interface CreatorProfileDto {
 export interface CreatorProfileUpdateBody {
   bio?: string;
   specialite?: string;
+  specialties?: string[];
+  specialtyTags?: string[];
   websiteUrl?: string;
   socialLinks?: Record<string, string>;
   languages?: string;
   ctaLabel?: string;
   ctaUrl?: string;
   gender?: string;
-  /** App UX role: GENERAL_MEMBER | SERVICE_PROVIDER | FREELANCER_STUDENT | JOB_SEEKER | RH_RECRUITER */
+  /** ISO 3166-1 alpha-2 citizenship code. Empty string clears. */
+  nationality?: string;
+  /** App UX role: GENERAL_MEMBER | SERVICE_PROVIDER | FREELANCER_STUDENT | SELLER | RH_RECRUITER */
   appRole?: string;
   spokenLanguages?: string[];
   profileServices?: ProfileServiceItem[];

@@ -23,8 +23,11 @@ import {
   type ContactVisibilitySettings,
 } from '@/lib/contact-visibility';
 import { CREATOR_GENDER_VALUES, normalizeCreatorGender } from '@/lib/creator-gender';
+import { NATIONALITY_SELECT_OPTIONS, nationalityLabel, normalizeNationalityCode } from '@/lib/countries';
+import { parseSpecialtyList, parseSpecialtyTags } from '@/lib/specialties';
 import {
   DEFAULT_CREATOR_APP_ROLE,
+  dispatchCreatorAppRoleChanged,
   normalizeCreatorAppRole,
   type CreatorAppRole,
 } from '@/lib/creator-app-role';
@@ -40,6 +43,7 @@ import {
 } from '@/lib/availabilityHours';
 import { ProfileMediaBlocksField } from '@/components/creator/studio/ProfileMediaBlocksField';
 import { ProfileStrengthsField } from '@/components/creator/studio/ProfileStrengthsField';
+import { SpecialtyMultiSelect } from '@/components/creator/studio/SpecialtyMultiSelect';
 import { ProfileLanguagesField } from '@/components/creator/studio/ProfileLanguagesField';
 import { ProfileServicesField } from '@/components/creator/studio/ProfileServicesField';
 import { ProfileFaqField } from '@/components/creator/studio/ProfileFaqField';
@@ -345,7 +349,10 @@ const ABOUT_FIELD_TOAST_TITLES: Record<string, string> = {
   fullName: 'Name updated',
   bio: 'Bio updated',
   specialite: 'Specialty updated',
+  specialtySet: 'Specialty updated',
   gender: 'Gender updated',
+  nationality: 'Nationality updated',
+  yearsOfExperience: 'Years of experience updated',
   spokenLanguages: 'Languages updated',
   isAvailable: 'Status updated',
   availabilityHours: 'Availability hours updated',
@@ -526,7 +533,10 @@ export function CreatorStudioProfileTab({
       fullName: '',
       bio: '',
       specialite: '',
+      specialties: [],
+      specialtyTags: [],
       gender: '',
+      nationality: '',
       appRole: DEFAULT_CREATOR_APP_ROLE,
       spokenLanguages: [],
       locationCity: '',
@@ -1233,8 +1243,11 @@ export function CreatorStudioProfileTab({
       const resetValues: ProfileFormValues = {
         fullName: p.fullName?.trim() || user?.fullName?.trim() || '',
         bio: p.bio ?? '',
-        specialite: p.specialite ?? '',
+        specialite: parseSpecialtyList(p.specialties, p.specialite)[0] ?? p.specialite ?? '',
+        specialties: parseSpecialtyList(p.specialties, p.specialite),
+        specialtyTags: parseSpecialtyTags(p.specialtyTags),
         gender: normalizeCreatorGender(p.gender) ?? '',
+        nationality: normalizeNationalityCode(p.nationality) ?? '',
         appRole: normalizeCreatorAppRole(p.appRole),
         spokenLanguages: parseSpokenLanguages(p.spokenLanguages, p.languages),
         locationCity: p.locationCity ?? '',
@@ -1405,8 +1418,11 @@ export function CreatorStudioProfileTab({
 
       await updateCreatorProfile({
         bio: parsed.bio?.trim() ? parsed.bio.trim() : undefined,
-        specialite: parsed.specialite?.trim() ? parsed.specialite.trim() : undefined,
+        specialite: parseSpecialtyList(parsed.specialties, parsed.specialite)[0] ?? '',
+        specialties: parseSpecialtyList(parsed.specialties, parsed.specialite),
+        specialtyTags: parseSpecialtyTags(parsed.specialtyTags),
         gender: parsed.gender?.trim() ? parsed.gender.trim() : undefined,
+        nationality: parsed.nationality?.trim() ? parsed.nationality.trim().toUpperCase() : '',
         appRole: parsed.appRole ?? DEFAULT_CREATOR_APP_ROLE,
         spokenLanguages: parsed.spokenLanguages.map((item) => item.value.trim()).filter(Boolean),
         ...(hasCompleteLocation
@@ -1435,7 +1451,10 @@ export function CreatorStudioProfileTab({
         isAvailable: parsed.isAvailable,
         contactVisibility: JSON.stringify(contactVisibility),
         profileLinks: serializeProfileLinks(parsed.profileLinks),
-        profileServices: serializeProfileServices(parsed.serviceOffers),
+        profileServices: serializeProfileServices(
+          parsed.serviceOffers,
+          parsed.specialties?.[0] ?? ''
+        ),
         faqItems: serializeFaqItems(parsed.faqItems),
         teamMembers: serializeTeamMembers(parsed.teamMembers),
         galleryItems: serializeGalleryItems(parsed.galleryItems),
@@ -1720,8 +1739,11 @@ export function CreatorStudioProfileTab({
 
       return {
         bio: parsed.bio?.trim() ? parsed.bio.trim() : undefined,
-        specialite: parsed.specialite?.trim() ? parsed.specialite.trim() : undefined,
+        specialite: parseSpecialtyList(parsed.specialties, parsed.specialite)[0] ?? '',
+        specialties: parseSpecialtyList(parsed.specialties, parsed.specialite),
+        specialtyTags: parseSpecialtyTags(parsed.specialtyTags),
         gender: parsed.gender?.trim() ? parsed.gender.trim() : undefined,
+        nationality: parsed.nationality?.trim() ? parsed.nationality.trim().toUpperCase() : '',
         appRole: parsed.appRole ?? DEFAULT_CREATOR_APP_ROLE,
         spokenLanguages: parsed.spokenLanguages.map((item) => item.value.trim()).filter(Boolean),
         ...(hasCompleteLocation
@@ -1752,7 +1774,10 @@ export function CreatorStudioProfileTab({
         typicalResponseTime:
           responseTimeOverride !== undefined ? responseTimeOverride : typicalResponseTime,
         profileLinks: serializeProfileLinks(parsed.profileLinks),
-        profileServices: serializeProfileServices(parsed.serviceOffers),
+        profileServices: serializeProfileServices(
+          parsed.serviceOffers,
+          parsed.specialties?.[0] ?? ''
+        ),
         faqItems: serializeFaqItems(parsed.faqItems),
         teamMembers: serializeTeamMembers(parsed.teamMembers),
         galleryItems: serializeGalleryItems(parsed.galleryItems),
@@ -1830,9 +1855,29 @@ export function CreatorStudioProfileTab({
           form.setValue('bio', String(value), { shouldDirty: true });
         } else if (field === 'specialite') {
           form.setValue('specialite', String(value), { shouldDirty: true });
+        } else if (field === 'specialtySet') {
+          const payload = value as PortfolioAboutFieldValue['specialtySet'];
+          const specialties = parseSpecialtyList(payload.specialties);
+          form.setValue('specialties', specialties, { shouldDirty: true });
+          form.setValue('specialtyTags', parseSpecialtyTags(payload.specialtyTags), { shouldDirty: true });
+          form.setValue('specialite', specialties[0] ?? '', { shouldDirty: true });
         } else if (field === 'gender') {
           const nextGender = normalizeCreatorGender(value) ?? '';
           form.setValue('gender', nextGender, { shouldDirty: true });
+        } else if (field === 'nationality') {
+          form.setValue('nationality', normalizeNationalityCode(value) ?? '', { shouldDirty: true });
+        } else if (field === 'yearsOfExperience') {
+          const years =
+            value == null
+              ? null
+              : typeof value === 'number'
+                ? value
+                : Number.parseInt(String(value), 10);
+          form.setValue(
+            'yearsOfExperience',
+            years == null || Number.isNaN(years) ? null : years,
+            { shouldDirty: true }
+          );
         } else if (field === 'spokenLanguages') {
           const languages = (value as string[]).map((item) => ({ value: item }));
           form.setValue('spokenLanguages', languages, { shouldDirty: true });
@@ -1858,7 +1903,34 @@ export function CreatorStudioProfileTab({
           ...(field === 'fullName' ? { fullName: String(value).trim() } : {}),
           ...(field === 'bio' ? { bio: String(value) } : {}),
           ...(field === 'specialite' ? { specialite: String(value) } : {}),
+          ...(field === 'specialtySet'
+            ? {
+                specialties: parseSpecialtyList(
+                  (value as PortfolioAboutFieldValue['specialtySet']).specialties
+                ),
+                specialtyTags: parseSpecialtyTags(
+                  (value as PortfolioAboutFieldValue['specialtySet']).specialtyTags
+                ),
+                specialite:
+                  parseSpecialtyList(
+                    (value as PortfolioAboutFieldValue['specialtySet']).specialties
+                  )[0] ?? '',
+              }
+            : {}),
           ...(field === 'gender' ? { gender: normalizeCreatorGender(value) ?? '' } : {}),
+          ...(field === 'nationality'
+            ? { nationality: normalizeNationalityCode(value) ?? '' }
+            : {}),
+          ...(field === 'yearsOfExperience'
+            ? {
+                yearsOfExperience:
+                  value == null
+                    ? null
+                    : typeof value === 'number'
+                      ? value
+                      : Number.parseInt(String(value), 10),
+              }
+            : {}),
           ...(field === 'spokenLanguages'
             ? { spokenLanguages: (value as string[]).map((item) => ({ value: item })) }
             : {}),
@@ -1903,8 +1975,18 @@ export function CreatorStudioProfileTab({
         const trimmedName = values.fullName.trim();
         form.setValue('fullName', trimmedName, { shouldDirty: true });
         form.setValue('bio', values.bio, { shouldDirty: true });
-        form.setValue('specialite', values.specialite, { shouldDirty: true });
+        form.setValue('specialite', values.specialtySet?.specialties[0] ?? values.specialite, {
+          shouldDirty: true,
+        });
+        form.setValue('specialties', parseSpecialtyList(values.specialtySet?.specialties, values.specialite), {
+          shouldDirty: true,
+        });
+        form.setValue('specialtyTags', parseSpecialtyTags(values.specialtySet?.specialtyTags), {
+          shouldDirty: true,
+        });
         form.setValue('gender', normalizeCreatorGender(values.gender) ?? '', { shouldDirty: true });
+        form.setValue('nationality', normalizeNationalityCode(values.nationality) ?? '', { shouldDirty: true });
+        form.setValue('yearsOfExperience', values.yearsOfExperience ?? null, { shouldDirty: true });
         form.setValue(
           'spokenLanguages',
           values.spokenLanguages.map((item) => ({ value: item })),
@@ -1926,8 +2008,12 @@ export function CreatorStudioProfileTab({
           ...latest,
           fullName: trimmedName,
           bio: values.bio,
-          specialite: values.specialite,
+          specialite: values.specialtySet?.specialties[0] ?? values.specialite,
+          specialties: parseSpecialtyList(values.specialtySet?.specialties, values.specialite),
+          specialtyTags: parseSpecialtyTags(values.specialtySet?.specialtyTags),
           gender: normalizeCreatorGender(values.gender) ?? '',
+          nationality: normalizeNationalityCode(values.nationality) ?? '',
+          yearsOfExperience: values.yearsOfExperience ?? null,
           spokenLanguages: values.spokenLanguages.map((item) => ({ value: item })),
           isAvailable: values.isAvailable,
           availabilityHours: values.availabilityHours,
@@ -2034,30 +2120,38 @@ export function CreatorStudioProfileTab({
       setSaving(true);
       setSubmitError(null);
       try {
+        const fallbackSpecialty = form.getValues('specialties')?.[0] ?? '';
+        const previous = form.getValues('serviceOffers');
         const cleaned = nextServices
-          .map((service) => ({
-            title: service.title.trim(),
-            description: service.description?.trim() ?? '',
-            basePriceCents: service.basePriceCents ?? null,
-            deadline: service.deadline?.trim() ?? '',
-            tasks: (service.tasks ?? [])
-              .map((task) => ({ value: task.value.trim() }))
-              .filter((task) => task.value.length > 0),
-          }))
+          .map((service, index) => {
+            const prior = previous[index];
+            return {
+              ...createEmptyProfileService(index, prior?.specialty || fallbackSpecialty),
+              id: prior?.id ?? crypto.randomUUID(),
+              title: service.title.trim(),
+              description: service.description?.trim() ?? '',
+              basePriceCents: service.basePriceCents ?? null,
+              deadline: service.deadline?.trim() ?? '',
+              tasks: (service.tasks ?? [])
+                .map((task) => ({ value: task.value.trim() }))
+                .filter((task) => task.value.length > 0),
+              specialty: prior?.specialty || fallbackSpecialty,
+              pricingType:
+                prior?.pricingType ?? (service.basePriceCents != null ? 'FIXED' : 'QUOTE'),
+              coverImageUrl: prior?.coverImageUrl ?? '',
+              status: prior?.status ?? 'ACTIVE',
+              tags: prior?.tags ?? [],
+            };
+          })
           .filter((service) => service.title.length > 0);
-        const merged = cleaned.map((service, index) => ({
-          ...createEmptyProfileService(index),
-          title: service.title,
-          description: service.description,
-          basePriceCents: service.basePriceCents,
-          deadline: service.deadline,
-          tasks: service.tasks,
-        }));
+        const merged = cleaned;
         form.setValue('serviceOffers', merged, { shouldDirty: true });
 
         if (
-          JSON.stringify(serializeProfileServices(merged)) ===
-          JSON.stringify(serializeProfileServices(savedSnapshot.current?.serviceOffers ?? []))
+          JSON.stringify(serializeProfileServices(merged, fallbackSpecialty)) ===
+          JSON.stringify(
+            serializeProfileServices(savedSnapshot.current?.serviceOffers ?? [], fallbackSpecialty)
+          )
         ) {
           form.setValue('serviceOffers', merged, { shouldDirty: false });
           return;
@@ -2078,7 +2172,8 @@ export function CreatorStudioProfileTab({
         await loadProfile({ silent: true });
         onProfileUpdated?.();
         const previousCount = serializeProfileServices(
-          savedSnapshot.current?.serviceOffers ?? []
+          savedSnapshot.current?.serviceOffers ?? [],
+          form.getValues('specialties')?.[0] ?? ''
         ).length;
         pushFlashFeedback({
           variant: 'success',
@@ -2992,6 +3087,7 @@ export function CreatorStudioProfileTab({
           savedSnapshot.current = { ...snapshot, appRole: nextRole };
         }
         form.reset({ ...form.getValues(), appRole: nextRole });
+        dispatchCreatorAppRoleChanged(nextRole);
         onProfileUpdated?.();
         pushFlashFeedback({
           variant: 'success',
@@ -3065,7 +3161,11 @@ export function CreatorStudioProfileTab({
               fullName={values.fullName}
               bio={values.bio ?? ''}
               specialite={values.specialite ?? ''}
+              specialties={values.specialties ?? []}
+              specialtyTags={values.specialtyTags ?? []}
               gender={values.gender ?? ''}
+              nationality={values.nationality ?? ''}
+              yearsOfExperience={values.yearsOfExperience ?? null}
               languages={values.spokenLanguages.map((item) => item.value).filter(Boolean)}
               isAvailable={values.isAvailable}
               availabilityHours={hoursParts ? hoursParts.join(' · ') : null}
@@ -3106,6 +3206,7 @@ export function CreatorStudioProfileTab({
                 availability: contactVisibility.availability,
                 responseTime: contactVisibility.responseTime,
                 location: contactVisibility.location,
+                yearsOfExperience: contactVisibility.yearsOfExperience,
               }}
               onVisibilityChange={(key, level) => void persistPortfolioVisibility(key, level)}
               onFieldSave={persistPortfolioAboutField}
@@ -3128,8 +3229,31 @@ export function CreatorStudioProfileTab({
               <ProfileReadOnlyField label="Name" value={values.fullName} />
               <ProfileReadOnlyField label="Bio" value={values.bio} />
               <div className="grid gap-3 sm:grid-cols-2">
-                <ProfileReadOnlyField label="Spécialité" value={values.specialite} />
+                <ProfileReadOnlyField
+                  label="Specialty"
+                  value={
+                    (values.specialties ?? []).length > 0
+                      ? (values.specialties ?? []).join(' · ')
+                      : values.specialite
+                  }
+                />
                 <ProfileReadOnlyField label="Gender" value={values.gender} emptyLabel="Not set" />
+                <ProfileReadOnlyField
+                  label="Nationality"
+                  value={nationalityLabel(values.nationality)}
+                  emptyLabel="Not set"
+                />
+                <ProfileReadOnlyField
+                  label="Years of experience"
+                  value={
+                    values.yearsOfExperience != null
+                      ? values.yearsOfExperience === 1
+                        ? '1 year'
+                        : `${values.yearsOfExperience} years`
+                      : null
+                  }
+                  emptyLabel="Not set"
+                />
               </div>
               <div>
                 <p className={`mb-2 ${profileSectionMutedTextClass} font-semibold text-neutral-700 dark:text-neutral-300`}>
@@ -3218,16 +3342,16 @@ export function CreatorStudioProfileTab({
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="specialite" className={profileFormLabelClass}>
-                  Spécialité
-                </label>
-                <input
-                  id="specialite"
-                  type="text"
-                  placeholder="e.g. Technology, Code, Data Science"
-                  className={profileFormInputClass}
-                  {...form.register('specialite')}
+              <div className="sm:col-span-2">
+                <p className={profileFormLabelClass}>Specialty</p>
+                <SpecialtyMultiSelect
+                  specialties={values.specialties ?? []}
+                  tags={values.specialtyTags ?? []}
+                  onSpecialtiesChange={(next) => {
+                    form.setValue('specialties', next, { shouldDirty: true });
+                    form.setValue('specialite', next[0] ?? '', { shouldDirty: true });
+                  }}
+                  onTagsChange={(next) => form.setValue('specialtyTags', next, { shouldDirty: true })}
                 />
               </div>
               <div>
@@ -3242,6 +3366,48 @@ export function CreatorStudioProfileTab({
                     </option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label htmlFor="nationality" className={profileFormLabelClass}>
+                  Nationality
+                </label>
+                <select
+                  id="nationality"
+                  className={`${profileFormInputClass} dark:[color-scheme:dark]`}
+                  {...form.register('nationality')}
+                >
+                  <option value="" className="bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+                    Not set
+                  </option>
+                  {NATIONALITY_SELECT_OPTIONS.map((option) => (
+                    <option
+                      key={option.code}
+                      value={option.code}
+                      className="bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+                    >
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="about-yearsOfExperience" className={profileFormLabelClass}>
+                  Years of experience
+                </label>
+                <input
+                  id="about-yearsOfExperience"
+                  type="number"
+                  min={0}
+                  max={80}
+                  className={profileFormInputClass}
+                  {...form.register('yearsOfExperience', {
+                    setValueAs: (v) => {
+                      if (v === '' || v == null) return null;
+                      const n = Number(v);
+                      return Number.isNaN(n) ? null : n;
+                    },
+                  })}
+                />
               </div>
             </div>
             <ProfileLanguagesField control={form.control} setValue={form.setValue} />
@@ -3579,6 +3745,7 @@ export function CreatorStudioProfileTab({
         if (isPortfolioLayout) {
           return (
             <PortfolioStrengthsReadOnly
+              allowedSpecialties={values.specialties ?? []}
               items={values.strengthsTools.map((item, index) => ({
                 id: `strength-${index}-${item.value}`,
                 value: item.value ?? '',
@@ -3662,12 +3829,17 @@ export function CreatorStudioProfileTab({
               setValue={form.setValue}
               readOnly
               values={values.strengthsTools}
+              allowedSpecialties={values.specialties ?? []}
             />
           );
         }
         return (
           <div className="space-y-4">
-            <ProfileStrengthsField control={form.control} setValue={form.setValue} />
+            <ProfileStrengthsField
+              control={form.control}
+              setValue={form.setValue}
+              allowedSpecialties={values.specialties ?? []}
+            />
             <ContactVisibilitySelect
               id="visibility-strengths-edit"
               label="Public visibility (Skills & tools)"
@@ -5140,7 +5312,7 @@ export function CreatorStudioProfileTab({
                                       {
                                         value: '',
                                         description: '',
-                                        category: '',
+                                        category: form.getValues('specialties')[0] ?? '',
                                         level: null,
                                         useCases: [],
                                         experienceYears: null,

@@ -73,7 +73,7 @@ export function creatorProductsListPath(options?: {
     params.set('flashTitle', title);
   }
   const qs = params.toString();
-  return qs ? `/dashboard/products?${qs}` : '/dashboard/products';
+  return qs ? `/marketplace/my-products?${qs}` : '/marketplace/my-products';
 }
 
 export function parseCreatorProductFlash(

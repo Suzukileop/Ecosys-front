@@ -47,7 +47,7 @@ export const PROFILE_SECTIONS: ProfileSection[] = [
   {
     id: 'about',
     label: 'About',
-    description: 'Explain your value proposition, gender, working languages, and location.',
+    description: 'Explain your value proposition, gender, nationality, working languages, and location.',
   },
   {
     id: 'myRole',

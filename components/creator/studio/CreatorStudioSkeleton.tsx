@@ -7,38 +7,66 @@ function SkeletonLine({ className = '' }: { className?: string }) {
   return <div className={`${block} ${className}`} aria-hidden />;
 }
 
+/** Matches the horizontal profile card (avatar left · identity · stats). */
 export function CreatorStudioHeaderSkeleton() {
   return (
     <div className="mx-auto w-full max-w-[1280px]" aria-busy="true" aria-label="Loading creator studio">
-      <div className={`relative aspect-[4.5/1] min-h-[160px] w-full overflow-hidden rounded-2xl sm:min-h-[200px] md:min-h-[240px] ${block}`} />
-
       <div className="px-4 sm:px-6">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="-mt-12 shrink-0 sm:-mt-14">
-              <div className={`h-20 w-20 rounded-full border-4 border-white dark:border-neutral-950 sm:h-28 sm:w-28 ${block}`} />
+        <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-[#0F0F0F] sm:p-6">
+          <div className="flex flex-row items-stretch gap-5 sm:gap-7">
+            <div className="w-40 shrink-0 sm:w-48 md:w-56 lg:w-64">
+              <div
+                className={`aspect-square w-full rounded-full ring-4 ring-neutral-200 ring-offset-4 ring-offset-white dark:ring-neutral-700 dark:ring-offset-[#0F0F0F] ${block}`}
+              />
             </div>
-            <div className="min-w-0 space-y-2 pb-1">
-              <SkeletonLine className="h-7 w-48 sm:h-8" />
-              <SkeletonLine className="h-4 w-32" />
-              <div className="flex flex-wrap gap-2 pt-1">
-                <SkeletonLine className="h-4 w-20" />
-                <SkeletonLine className="h-4 w-20" />
-                <SkeletonLine className="h-4 w-16" />
+
+            <div className="min-w-0 flex-1 space-y-4 py-1">
+              <div className="space-y-2">
+                <SkeletonLine className="h-7 w-48 sm:h-8 sm:w-56" />
+                <SkeletonLine className="h-4 w-44" />
+              </div>
+              <SkeletonLine className="h-4 w-40" />
+              <div className="flex flex-wrap gap-2">
+                <SkeletonLine className="h-7 w-24 rounded-full" />
+                <SkeletonLine className="h-7 w-20 rounded-full" />
               </div>
               <SkeletonLine className="h-4 w-full max-w-md" />
             </div>
+
+            <aside className="hidden w-[7.5rem] shrink-0 self-stretch pl-4 sm:block sm:w-32 md:w-36 md:pl-5">
+              <div className="flex h-full min-h-[10rem] w-full flex-col items-center justify-center divide-y divide-neutral-200 dark:divide-neutral-700">
+                {Array.from({ length: 3 }, (_, i) => (
+                  <div
+                    key={i}
+                    className="flex w-full flex-1 flex-col items-center justify-center gap-2 px-3 py-3"
+                  >
+                    <SkeletonLine className="h-7 w-10" />
+                    <SkeletonLine className="h-3 w-16" />
+                  </div>
+                ))}
+              </div>
+            </aside>
           </div>
-          <div className="flex flex-wrap gap-2 pb-1">
-            <SkeletonLine className="h-10 w-36 rounded-full" />
-            <SkeletonLine className="h-10 w-32 rounded-full" />
+
+          <div className="mt-5 border-t border-neutral-200 pt-3 dark:border-neutral-700 sm:hidden">
+            <div className="grid grid-cols-3 gap-3">
+              {Array.from({ length: 3 }, (_, i) => (
+                <div key={i} className="flex flex-col items-center gap-2 py-2">
+                  <SkeletonLine className="h-6 w-8" />
+                  <SkeletonLine className="h-3 w-14" />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="mt-6 flex gap-4 border-b border-neutral-200 pb-3 dark:border-neutral-800">
-          {CREATOR_STUDIO_TABS.map((item) => (
-            <SkeletonLine key={item.id} className="h-4 w-20 shrink-0" />
-          ))}
+        <div className="mt-6 flex items-end gap-2">
+          <div className="flex min-w-0 flex-1 gap-1 overflow-hidden">
+            {CREATOR_STUDIO_TABS.map((item) => (
+              <SkeletonLine key={item.id} className="h-10 w-20 shrink-0 rounded-none sm:w-24" />
+            ))}
+          </div>
+          <SkeletonLine className="mb-1 h-10 w-10 shrink-0 rounded-xl" />
         </div>
       </div>
     </div>
@@ -48,27 +76,20 @@ export function CreatorStudioHeaderSkeleton() {
 export function CreatorStudioContentTabSkeleton() {
   return (
     <div className="min-w-0 space-y-6" aria-busy="true" aria-label="Loading content">
-      <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {Array.from({ length: 10 }, (_, i) => (
-          <article
-            key={i}
-            className="overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
-          >
-            <div className={`aspect-video w-full ${block} rounded-none`} />
-            <div className="space-y-3 p-4">
-              <SkeletonLine className="h-4 w-4/5" />
-              <div className="flex gap-2">
-                <SkeletonLine className="h-5 w-14 rounded-full" />
-                <SkeletonLine className="h-5 w-16 rounded-full" />
-              </div>
-              <SkeletonLine className="h-3 w-40" />
-              <div className="flex gap-4">
-                <SkeletonLine className="h-4 w-10" />
-                <SkeletonLine className="h-4 w-14" />
-              </div>
-            </div>
-          </article>
+      <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+        <SkeletonLine className="h-9 w-72 max-w-full rounded-lg sm:h-10 sm:w-[28rem]" />
+        <SkeletonLine className="h-10 w-40 rounded-full" />
+      </div>
+
+      <div className="flex flex-wrap gap-2 border-b border-neutral-200 pb-0 dark:border-neutral-800">
+        {['Published', 'Pinned', 'Archived', 'Trash'].map((label) => (
+          <SkeletonLine key={label} className="h-9 w-20 rounded-none" />
         ))}
+      </div>
+
+      <div className="flex min-h-[14rem] flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-neutral-300 px-6 py-12 dark:border-neutral-700">
+        <SkeletonLine className="h-5 w-52" />
+        <SkeletonLine className="h-10 w-48 rounded-full" />
       </div>
     </div>
   );
@@ -103,7 +124,7 @@ export function CreatorStudioProductsTabSkeleton() {
 
       <div className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
         <div className="flex flex-wrap gap-3">
-          <SkeletonLine className="h-10 flex-1 min-w-[10rem] rounded-xl" />
+          <SkeletonLine className="h-10 min-w-[10rem] flex-1 rounded-xl" />
           <SkeletonLine className="h-10 w-28 rounded-xl" />
           <SkeletonLine className="h-10 w-32 rounded-xl" />
         </div>
@@ -118,6 +139,32 @@ export function CreatorStudioProductsTabSkeleton() {
   );
 }
 
+export function CreatorStudioServicesTabSkeleton() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Loading services">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <SkeletonLine className="h-8 w-72 max-w-full" />
+        <SkeletonLine className="h-4 w-80 max-w-full" />
+      </div>
+      <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:items-center">
+        <div className="space-y-4 rounded-2xl bg-neutral-100/80 p-6 dark:bg-neutral-900/80">
+          <SkeletonLine className="h-6 w-56" />
+          <div className="space-y-3">
+            {Array.from({ length: 5 }, (_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <SkeletonLine className="h-8 w-8 rounded-full" />
+                <SkeletonLine className="h-4 flex-1" />
+              </div>
+            ))}
+          </div>
+          <SkeletonLine className="h-10 w-36 rounded-full" />
+        </div>
+        <SkeletonLine className="mx-auto aspect-square w-full max-w-xs rounded-2xl" />
+      </div>
+    </div>
+  );
+}
+
 export function CreatorStudioVisitorsTabSkeleton() {
   return (
     <div className="space-y-4" aria-busy="true" aria-label="Loading visitors">
@@ -127,7 +174,10 @@ export function CreatorStudioVisitorsTabSkeleton() {
       </div>
       <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
         {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="flex items-center gap-3 border-b border-neutral-200 px-5 py-4 last:border-b-0 dark:border-neutral-800">
+          <div
+            key={i}
+            className="flex items-center gap-3 border-b border-neutral-200 px-5 py-4 last:border-b-0 dark:border-neutral-800"
+          >
             <div className={`h-11 w-11 rounded-full ${block}`} />
             <div className="flex-1 space-y-2">
               <SkeletonLine className="h-4 w-40" />
@@ -177,7 +227,10 @@ export function CreatorStudioSubscribersTabSkeleton() {
       </div>
       <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
         {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="flex items-center gap-3 border-b border-neutral-200 px-5 py-4 last:border-b-0 dark:border-neutral-800">
+          <div
+            key={i}
+            className="flex items-center gap-3 border-b border-neutral-200 px-5 py-4 last:border-b-0 dark:border-neutral-800"
+          >
             <div className={`h-11 w-11 rounded-full ${block}`} />
             <div className="flex-1 space-y-2">
               <SkeletonLine className="h-4 w-40" />
@@ -221,7 +274,7 @@ export function CreatorStudioProfileTabSkeleton() {
       </div>
       <aside className="order-1 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:hidden">
         <div className="flex gap-1 overflow-x-auto">
-          {Array.from({ length: 9 }, (_, i) => (
+          {Array.from({ length: 7 }, (_, i) => (
             <SkeletonLine key={i} className="h-10 w-44 shrink-0 rounded-lg" />
           ))}
         </div>
@@ -229,7 +282,7 @@ export function CreatorStudioProfileTabSkeleton() {
       <div className="relative hidden w-60 md:col-start-2 md:row-start-1 md:block">
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
           <div className="flex flex-col gap-1">
-            {Array.from({ length: 9 }, (_, i) => (
+            {Array.from({ length: 7 }, (_, i) => (
               <SkeletonLine key={i} className="mx-2 h-10 w-[calc(100%-1rem)] rounded-lg" />
             ))}
           </div>
@@ -243,6 +296,8 @@ export function CreatorStudioTabPanelSkeleton({ tab }: { tab: CreatorStudioTab }
   switch (tab) {
     case 'content':
       return <CreatorStudioContentTabSkeleton />;
+    case 'services':
+      return <CreatorStudioServicesTabSkeleton />;
     case 'products':
       return <CreatorStudioProductsTabSkeleton />;
     case 'images':

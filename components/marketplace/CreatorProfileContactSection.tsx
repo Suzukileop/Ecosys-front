@@ -9,6 +9,7 @@ import {
 } from '@/components/marketplace/creator-profile-social-icons';
 import { formatAvailabilityDisplay } from '@/lib/availabilityHours';
 import { formatPhoneDisplay } from '@/lib/phone';
+import { formatServiceDelivery, formatServicePrice } from '@/lib/profile-services';
 import type { ProfileMediaBlock } from '@/types/ecosystem';
 import type { MarketplaceCreatorPublicProfile } from '@/types/marketplace';
 import { ContentMediaPreview } from '@/components/creator/creator-content-media';
@@ -86,12 +87,17 @@ function InfoPanel({ children }: { children: ReactNode }) {
 function InfoPanelSection({
   children,
   bordered = true,
+  id,
 }: {
   children: ReactNode;
   bordered?: boolean;
+  id?: string;
 }) {
   return (
-    <div className={`px-5 py-5 sm:px-6 sm:py-6 ${bordered ? 'border-t border-neutral-200 first:border-t-0 dark:border-neutral-800' : ''}`}>
+    <div
+      id={id}
+      className={`px-5 py-5 sm:px-6 sm:py-6 ${bordered ? 'border-t border-neutral-200 first:border-t-0 dark:border-neutral-800' : ''} ${id ? 'scroll-mt-24' : ''}`}
+    >
       {children}
     </div>
   );
@@ -443,7 +449,7 @@ export function CreatorProfileContactSection({
             ) : null}
 
             {hasServices ? (
-              <InfoPanelSection bordered={!hasWhyMe && !hasExperience}>
+              <InfoPanelSection id="services" bordered={!hasWhyMe && !hasExperience}>
                 <SectionHeading>Services</SectionHeading>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {services.map((service) => (
@@ -468,14 +474,10 @@ export function CreatorProfileContactSection({
                         </ul>
                       ) : null}
                       <div className="mt-3 flex flex-wrap gap-3 text-xs text-neutral-500">
-                        {service.basePriceCents != null ? (
-                          <span>
-                            {service.basePriceCents === 0
-                              ? 'Free'
-                              : `From ${(service.basePriceCents / 100).toFixed(2)} €`}
-                          </span>
+                        <span>{formatServicePrice(service)}</span>
+                        {formatServiceDelivery(service) ? (
+                          <span>{formatServiceDelivery(service)}</span>
                         ) : null}
-                        {service.deadline ? <span>{service.deadline}</span> : null}
                       </div>
                     </div>
                   ))}

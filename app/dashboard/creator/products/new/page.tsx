@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function CreatorNewProductRedirect() {
-  redirect('/dashboard/products?create=1');
+  redirect('/marketplace/my-products?create=1');
 }
