@@ -2,8 +2,8 @@
 
 import { PROFILE_SPECIALTIES } from '@/lib/specialties';
 
-/** Interests shown in the News discover rail (2-column grid, 12 items). */
-export const NEWS_INTERESTS = PROFILE_SPECIALTIES;
+/** Interests shown in the News discover rail (2-column grid). */
+export const NEWS_INTERESTS = PROFILE_SPECIALTIES.filter((tag) => tag !== 'DevOps');
 
 export type NewsInterest = (typeof NEWS_INTERESTS)[number];
 
@@ -11,10 +11,11 @@ export type NewsInterest = (typeof NEWS_INTERESTS)[number];
 export const NEWS_TOP_ROW_CLASS = 'flex min-h-[3.5rem] shrink-0 items-center';
 
 const COLLAPSED_COUNT = 5;
+const EASE = 'duration-300 ease-out';
 
 /** Same footprint for every catalogue chip (expanded grid + folded list). */
 const CHIP_BASE =
-  'flex h-10 w-full max-w-[8.25rem] shrink-0 items-center justify-center rounded-xl border px-2 text-center text-xs font-semibold leading-snug transition';
+  'flex h-11 w-full max-w-[10rem] shrink-0 items-center justify-center rounded-xl border px-2.5 text-center text-sm font-semibold leading-snug transition';
 
 const CHIP_BASE_EXPANDED = `${CHIP_BASE} justify-self-center`;
 
@@ -50,18 +51,18 @@ export function NewsDiscoverRail({
 
   return (
     <aside
-      className={`flex min-h-0 flex-col transition-[width,max-width,min-width] duration-300 ease-out ${
+      className={`flex min-h-0 flex-col overflow-hidden transition-[width,min-width,max-width] ${EASE} ${
         expanded
-          ? 'w-full xl:w-[19rem] xl:min-w-[19rem] xl:max-w-[19rem]'
+          ? 'w-full xl:w-[24rem] xl:min-w-[24rem] xl:max-w-[24rem]'
           : 'w-full xl:w-[11rem] xl:min-w-[11rem] xl:max-w-[11rem]'
       } xl:shrink-0 ${className}`}
       aria-label="Discover"
       data-expanded={expanded ? 'true' : 'false'}
     >
       <div
-        className={`flex min-h-0 flex-col overflow-hidden ${
+        className={`flex flex-col ${
           expanded
-            ? 'min-h-0 flex-1 basis-1/2 border-b border-neutral-200/80 dark:border-neutral-800'
+            ? 'shrink-0 border-b border-neutral-200/80 dark:border-neutral-800'
             : 'shrink-0 pr-1'
         }`}
       >
@@ -117,43 +118,29 @@ export function NewsDiscoverRail({
           </div>
         )}
 
-        <div
-          className={
-            expanded
-              ? 'mt-2 flex min-h-0 flex-1 flex-col'
-              : 'mt-1 shrink-0 pb-3'
-          }
-        >
+        <div className={expanded ? 'mt-2 flex flex-col' : 'mt-1 shrink-0 pb-3'}>
           <div
             className={
               expanded
-                ? 'min-h-0 flex-1 overflow-y-auto [scrollbar-width:thin]'
-                : ''
+                ? 'grid grid-cols-2 gap-x-5 gap-y-3 px-1'
+                : 'mx-auto flex w-[calc(100%-0.35rem)] max-w-[9.5rem] flex-col gap-2.5 pr-1 sm:gap-3'
             }
           >
-            <div
-              className={
-                expanded
-                  ? 'grid grid-cols-2 gap-x-4 gap-y-2.5 px-1'
-                  : 'mx-auto flex w-[calc(100%-0.35rem)] max-w-[9.5rem] flex-col gap-2.5 pr-1 sm:gap-3'
-              }
-            >
-              {visible.map((label) => {
-                const active = selected === label;
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => onSelect(active ? null : label)}
-                    aria-pressed={active}
-                    title={label}
-                    className={`${expanded ? CHIP_BASE_EXPANDED : CHIP_BASE} ${chipTone(active)}`}
-                  >
-                    <span className="line-clamp-2 px-0.5">{label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            {visible.map((label) => {
+              const active = selected === label;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => onSelect(active ? null : label)}
+                  aria-pressed={active}
+                  title={label}
+                  className={`${expanded ? CHIP_BASE_EXPANDED : CHIP_BASE} ${chipTone(active)}`}
+                >
+                  <span className="line-clamp-2 px-0.5">{label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {expanded && showSearch ? (
@@ -190,8 +177,6 @@ export function NewsDiscoverRail({
           ) : null}
         </div>
       </div>
-
-      {expanded ? <div className="min-h-0 flex-1 basis-1/2" aria-hidden /> : null}
     </aside>
   );
 }

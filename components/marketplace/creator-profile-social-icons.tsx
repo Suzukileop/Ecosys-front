@@ -7,6 +7,7 @@ export type SocialPlatformKey =
   | 'github'
   | 'instagram'
   | 'tiktok'
+  | 'facebook'
   | 'other';
 
 export type NeutralIconName = 'clock' | 'languages' | 'location' | 'address' | 'email' | 'phone' | 'website' | 'link';
@@ -87,12 +88,15 @@ export function NeutralIconBadge({
 
 export function normalizeSocialPlatformKey(platform: string): SocialPlatformKey {
   const key = platform.toLowerCase().replace(/[^a-z0-9]/g, '');
-  if (key.includes('youtube')) return 'youtube';
+  if (key.includes('youtube') || key === 'youtube') return 'youtube';
   if (key.includes('instagram')) return 'instagram';
   if (key.includes('tiktok')) return 'tiktok';
   if (key.includes('linkedin')) return 'linkedin';
   if (key.includes('github')) return 'github';
   if (key.includes('twitter') || key === 'x') return 'twitter';
+  if (key.includes('facebook') || key === 'fb' || key.includes('fbcom') || key.includes('fbme')) {
+    return 'facebook';
+  }
   return 'other';
 }
 
@@ -103,6 +107,7 @@ const BRAND_STYLES: Record<SocialPlatformKey, string> = {
   linkedin: 'bg-[#0A66C2] text-white',
   github: 'bg-[#24292F] text-white',
   twitter: 'bg-black text-white',
+  facebook: 'bg-[#1877F2] text-white',
   other: 'bg-neutral-800 text-white dark:bg-neutral-700',
 };
 
@@ -154,6 +159,12 @@ export function SocialPlatformIcon({
       return (
         <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+        </svg>
+      );
+    case 'facebook':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M13.7 21v-8h2.7l.4-3h-3.1V8.1c0-.9.3-1.5 1.6-1.5H17V3.9a22 22 0 0 0-2.5-.1c-2.5 0-4.2 1.5-4.2 4.2v2H7.5v3h2.8v8h3.4Z" />
         </svg>
       );
     default:

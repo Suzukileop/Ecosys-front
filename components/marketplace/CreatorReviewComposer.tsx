@@ -31,13 +31,13 @@ export function CreatorReviewComposer({
   const isSelf = user?.id === creatorId;
 
   if (authLoading) {
-    return <p className="text-sm text-gray-500">Chargement…</p>;
+    return <p className="text-sm text-gray-500">Loading…</p>;
   }
 
   if (!user) {
     return (
       <p className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
-        Connectez-vous pour laisser un avis sur {creatorName}.
+        Sign in to leave a review for {creatorName}.
       </p>
     );
   }
@@ -52,7 +52,7 @@ export function CreatorReviewComposer({
         className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
         role="status"
       >
-        Merci ! Votre avis a été publié.
+        Thanks! Your review has been published.
       </p>
     );
   }
@@ -60,7 +60,7 @@ export function CreatorReviewComposer({
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (rating < 1) {
-      setError('Veuillez sélectionner une note.');
+      setError('Please select a rating.');
       return;
     }
     try {
@@ -70,7 +70,7 @@ export function CreatorReviewComposer({
       setSubmitted(true);
       onSubmitted?.();
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Impossible de publier votre avis.'));
+      setError(getApiErrorMessage(err, 'Unable to publish your review.'));
     } finally {
       setSubmitting(false);
     }
@@ -78,15 +78,15 @@ export function CreatorReviewComposer({
 
   const formBody = (
     <>
-      {!embedded && <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Laisser un avis</h3>}
+      {!embedded && <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Leave a review</h3>}
       {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
       <div>
-        <p className="mb-2 text-sm text-gray-600 dark:text-neutral-400">Votre note</p>
+        <p className="mb-2 text-sm text-gray-600 dark:text-neutral-400">Your rating</p>
         <StarRatingInput value={rating} onChange={setRating} />
       </div>
       <div>
         <label htmlFor="creator-review-comment" className="mb-2 block text-sm text-gray-600 dark:text-neutral-400">
-          Commentaire (optionnel)
+          Comment (optional)
         </label>
         <textarea
           id="creator-review-comment"
@@ -95,7 +95,7 @@ export function CreatorReviewComposer({
           rows={3}
           maxLength={2000}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
-          placeholder={`Partagez votre expérience avec ${creatorName}…`}
+          placeholder={`Share your experience with ${creatorName}…`}
         />
       </div>
       <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-neutral-300">
@@ -105,14 +105,14 @@ export function CreatorReviewComposer({
           onChange={(e) => setWouldRecommend(e.target.checked)}
           className="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
         />
-        Je recommande ce créateur
+        I recommend this creator
       </label>
       <button
         type="submit"
         disabled={submitting}
         className="w-full rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50 sm:w-auto"
       >
-        {submitting ? 'Publication…' : 'Publier mon avis'}
+        {submitting ? 'Publishing…' : 'Publish review'}
       </button>
     </>
   );

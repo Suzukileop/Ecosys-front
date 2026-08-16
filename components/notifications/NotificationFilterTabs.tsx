@@ -17,7 +17,7 @@ export function NotificationFilterTabs({
   compact?: boolean;
 }) {
   return (
-    <div className={`flex gap-2 ${compact ? 'px-4 pb-3' : 'pb-4'}`}>
+    <div className={`flex gap-2 ${compact ? 'mt-3' : 'pb-4'}`}>
       {TABS.map((tab) => {
         const active = value === tab.id;
         return (
@@ -25,10 +25,8 @@ export function NotificationFilterTabs({
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
-            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
-              active
-                ? 'bg-[#F97316] text-white shadow-sm'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700'
+            className={`notification-filter-tab ${
+              active ? 'notification-filter-tab-active' : 'notification-filter-tab-idle'
             }`}
           >
             {tab.label}

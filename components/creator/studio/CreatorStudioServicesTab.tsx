@@ -316,7 +316,7 @@ export function CreatorStudioServicesTab() {
     try {
       const fallback = specialties[0] ?? '';
       await updateCreatorProfile({
-        profileServices: serializeProfileServices(next, fallback),
+        profileServices: serializeProfileServices(next, fallback, specialties),
       });
       setServices(next);
       setEditingId(null);
@@ -855,43 +855,35 @@ export function PublicServiceCard({ service, discussHref, discussLabel }: Public
           </div>
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <div>
-          <h3 className="font-semibold text-neutral-900 dark:text-white">{service.title}</h3>
+      <div className="flex flex-1 flex-col gap-4 p-5">
+        <div className="space-y-2">
+          <h3 className="text-base font-semibold leading-snug text-neutral-900 dark:text-white">
+            {service.title}
+          </h3>
           {service.specialty ? (
-            <span className="mt-1.5 inline-flex rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-300">
+            <span className="inline-flex rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-300">
               {service.specialty}
             </span>
           ) : null}
         </div>
         {service.description ? (
-          <p className="line-clamp-3 text-sm text-neutral-600 dark:text-neutral-400">
+          <p className="line-clamp-3 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
             {service.description}
           </p>
         ) : null}
-        <div className="mt-auto space-y-2">
-          <p className="text-sm font-semibold text-neutral-900 dark:text-white">
-            {formatServicePrice(service)}
-          </p>
-          {deliveryLabel ? (
-            <p className="text-xs text-neutral-500">{deliveryLabel}</p>
-          ) : null}
-          {(service.tags ?? []).length > 0 ? (
-            <div className="flex flex-wrap gap-1">
-              {(service.tags ?? []).map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-md border border-neutral-200 px-1.5 py-0.5 text-[10px] text-neutral-600 dark:border-neutral-700 dark:text-neutral-300"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          ) : null}
+        <div className="mt-auto space-y-3 pt-1">
+          <div className="space-y-1">
+            <p className="text-xl font-bold tracking-tight text-neutral-950 tabular-nums dark:text-white">
+              {formatServicePrice(service)}
+            </p>
+            {deliveryLabel ? (
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">{deliveryLabel}</p>
+            ) : null}
+          </div>
           {discussHref ? (
             <Link
               href={discussHref}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-3 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
             >
               <FontAwesomeIcon icon={faComment} className="h-3.5 w-3.5" />
               {discussLabel}

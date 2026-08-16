@@ -8,7 +8,6 @@ import type { CreatorStudioTabNavAlign } from '@/components/creator/studio/creat
 import { CREATOR_STUDIO_TABS, type CreatorStudioTab } from './types';
 import type { CreatorStudioHeaderLayout } from './creator-studio-header';
 import type { CreatorStudioHeaderContentStyle } from './creator-studio-header-content';
-import { creatorHeaderNeedsInset } from './creator-studio-header';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import {
   creatorCanAccessProfileProducts,
@@ -26,8 +25,10 @@ export type CreatorStudioHeaderData = {
   specialtyTags?: string[];
   followerCount: number;
   productCount: number;
+  serviceCount?: number;
   profileVisits: number;
   isAvailable: boolean;
+  availabilityLabel?: string | null;
   averageRating?: number | null;
   locationLabel?: string | null;
   /** App role — drives avatar status ring color. */
@@ -114,7 +115,7 @@ export function CreatorStudioShell({
         }}
       />
 
-      <div className={creatorHeaderNeedsInset(header.headerLayout) ? 'px-4 sm:px-6' : undefined}>
+      <div className="px-4 sm:px-6">
         <CreatorProfileHeader
           layout={header.headerLayout}
           fullName={header.fullName}
@@ -128,11 +129,15 @@ export function CreatorStudioShell({
           specialtyTags={header.specialtyTags}
           followerCount={header.followerCount}
           productCount={header.productCount}
+          serviceCount={header.serviceCount ?? 0}
+          showProductCount={creatorCanAccessProfileProducts(appRole)}
           profileVisits={header.profileVisits}
           profileVisitsHref="/dashboard/creator?tab=visitors"
           profileSubscribersHref="/dashboard/creator?tab=subscribers"
           averageRating={header.averageRating}
           locationLabel={header.locationLabel}
+          isAvailable={header.isAvailable}
+          availabilityLabel={header.availabilityLabel}
           editable
           uploadingAvatar={uploadingAvatar}
           onAvatarPick={pickAvatar}
@@ -140,55 +145,57 @@ export function CreatorStudioShell({
       </div>
 
       <div className="px-4 sm:px-6">
-        <div className="mt-6 flex items-end gap-2">
-          <nav
-            className={`flex min-w-0 flex-1 gap-1 overflow-x-auto ${creatorStudioTabNavAlignClass(header.tabNavAlign)}`}
-            aria-label="Creator studio sections"
-          >
-            {visibleTabs.map((item) => {
-              const active = tab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    setLayoutPanelOpen(false);
-                    onTabChange(item.id);
-                  }}
-                  className={`relative shrink-0 px-4 py-3 text-sm font-semibold tracking-wide transition ${
-                    active && !layoutPanelOpen
-                      ? 'text-neutral-900 dark:text-white'
-                      : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
-                  }`}
-                >
-                  {item.label}
-                  {active && !layoutPanelOpen && (
-                    <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-neutral-900 dark:bg-white" />
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-          <button
-            type="button"
-            onClick={() => setLayoutPanelOpen((open) => !open)}
-            aria-expanded={layoutPanelOpen}
-            aria-controls="creator-studio-layout-settings"
-            aria-label={layoutPanelOpen ? 'Close layout settings' : 'Layout settings'}
-            title={layoutPanelOpen ? 'Close layout' : 'Layout'}
-            className={`mb-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${
-              layoutPanelOpen
-                ? 'bg-neutral-100 text-neutral-900 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-white dark:ring-neutral-700'
-                : 'border border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:bg-neutral-900'
-            }`}
-          >
-            <LayoutSettingsIcon />
-          </button>
+        <div className="mt-8 border-b border-neutral-200/80 dark:border-neutral-700/50">
+          <div className="flex items-end gap-2">
+            <nav
+              className={`flex min-w-0 flex-1 gap-0.5 overflow-x-auto pb-px ${creatorStudioTabNavAlignClass(header.tabNavAlign)}`}
+              aria-label="Creator studio sections"
+            >
+              {visibleTabs.map((item) => {
+                const active = tab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setLayoutPanelOpen(false);
+                      onTabChange(item.id);
+                    }}
+                    className={`relative min-h-12 shrink-0 px-5 py-4 text-sm font-semibold tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 ${
+                      active && !layoutPanelOpen
+                        ? 'text-neutral-900 dark:text-white'
+                        : 'text-neutral-500 hover:bg-neutral-100/70 hover:text-neutral-800 dark:text-neutral-400 dark:hover:bg-white/[0.04] dark:hover:text-neutral-200'
+                    }`}
+                  >
+                    {item.label}
+                    {active && !layoutPanelOpen && (
+                      <span className="absolute inset-x-4 bottom-0 h-[2.5px] rounded-full bg-orange-500" />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+            <button
+              type="button"
+              onClick={() => setLayoutPanelOpen((open) => !open)}
+              aria-expanded={layoutPanelOpen}
+              aria-controls="creator-studio-layout-settings"
+              aria-label={layoutPanelOpen ? 'Close layout settings' : 'Layout settings'}
+              title={layoutPanelOpen ? 'Close layout' : 'Layout'}
+              className={`mb-2.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 ${
+                layoutPanelOpen
+                  ? 'bg-neutral-100 text-neutral-900 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-white dark:ring-neutral-600'
+                  : 'border border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:bg-neutral-900'
+              }`}
+            >
+              <LayoutSettingsIcon />
+            </button>
+          </div>
         </div>
 
         {layoutPanelOpen ? (
-          <div id="creator-studio-layout-settings" className="py-5">
-            <div className="rounded-xl border border-neutral-200/80 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900/80">
+          <div id="creator-studio-layout-settings" className="py-6">
+            <div className="rounded-2xl border border-neutral-200/80 bg-white p-4 shadow-sm dark:border-neutral-700/50 dark:bg-[#171717]">
               {layoutError ? (
                 <div className="mb-4">
                   <ErrorAlert message={layoutError} onDismiss={onDismissLayoutError} />
@@ -211,7 +218,7 @@ export function CreatorStudioShell({
             </div>
           </div>
         ) : (
-          <div className="py-8">{children}</div>
+          <div className="py-8 sm:py-10">{children}</div>
         )}
       </div>
     </div>

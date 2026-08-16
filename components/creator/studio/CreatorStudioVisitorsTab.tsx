@@ -5,7 +5,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { CREATOR_PROFILE_VISITS_LABEL } from '@/components/creator/creator-profile-header-types';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { PersonAvatar } from '@/components/ui/PersonAvatar';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { creatorAppRoleLabel, normalizeCreatorAppRole } from '@/lib/creator-app-role';
 import { listCreatorProfileVisits, type CreatorProfileVisitItem } from '@/lib/creator-profile-visits-api';
 
 const PAGE_SIZE = 20;
@@ -19,38 +21,39 @@ function formatVisitDate(iso: string): string {
   });
 }
 
-function visitorInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+function visitorRoleLabel(visit: CreatorProfileVisitItem): string {
+  if (visit.anonymous) return 'Guest';
+  if (visit.viewerAppRole) {
+    return creatorAppRoleLabel(normalizeCreatorAppRole(visit.viewerAppRole));
+  }
+  return 'Registered user';
+}
+
+function visitCountLabel(count: number): string {
+  const safe = Number.isFinite(count) && count > 0 ? count : 1;
+  return safe === 1 ? '1 visit' : `${safe.toLocaleString()} visits`;
 }
 
 function VisitorRow({ visit }: { visit: CreatorProfileVisitItem }) {
   const displayName = visit.anonymous ? 'Anonymous visitor' : (visit.viewerFullName ?? 'User');
   const avatarUrl = visit.anonymous ? null : visit.viewerAvatarUrl;
+  const role = visitorRoleLabel(visit);
+  const visits = visitCountLabel(visit.visitCount);
 
   const identity = (
     <div className="flex min-w-0 items-center gap-3">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-neutral-200 text-sm font-bold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-        ) : (
-          visitorInitials(displayName)
-        )}
-      </div>
+      <PersonAvatar name={displayName} avatarUrl={avatarUrl} size="lg" />
       <div className="min-w-0">
         <p className="truncate font-semibold text-neutral-900 dark:text-white">{displayName}</p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          {visit.anonymous ? 'Guest visit' : 'Registered user'}
+        <p className="text-xs text-neutral-500 dark:text-neutral-400 sm:hidden">
+          {role} · {visits}
         </p>
       </div>
     </div>
   );
 
   return (
-    <li className="flex flex-col gap-3 border-b border-neutral-200 px-4 py-4 last:border-b-0 dark:border-neutral-800 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+    <li className="flex flex-col gap-3 border-b border-neutral-200 px-4 py-4 last:border-b-0 dark:border-neutral-800 sm:grid sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.7fr)_auto] sm:items-center sm:gap-4 sm:px-5">
       {visit.anonymous || !visit.viewerUserId ? (
         identity
       ) : (
@@ -58,7 +61,11 @@ function VisitorRow({ visit }: { visit: CreatorProfileVisitItem }) {
           {identity}
         </Link>
       )}
-      <p className="shrink-0 text-sm text-neutral-500 dark:text-neutral-400">{formatVisitDate(visit.viewedAt)}</p>
+      <p className="hidden truncate text-sm font-medium text-neutral-700 dark:text-neutral-300 sm:block">{role}</p>
+      <p className="hidden text-sm text-neutral-600 dark:text-neutral-400 sm:block">{visits}</p>
+      <p className="shrink-0 text-sm text-neutral-500 dark:text-neutral-400 sm:text-right">
+        {formatVisitDate(visit.viewedAt)}
+      </p>
     </li>
   );
 }

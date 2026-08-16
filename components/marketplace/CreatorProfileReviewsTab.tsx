@@ -51,7 +51,7 @@ function ReviewCard({ review }: { review: CreatorReviewItem }) {
               {review.comment}
             </p>
           ) : (
-            <p className="mt-2 text-sm italic text-neutral-400">Avis sans commentaire.</p>
+            <p className="mt-2 text-sm italic text-neutral-400">No written comment.</p>
           )}
         </div>
       </div>
@@ -73,7 +73,7 @@ export function CreatorProfileReviewsTab({ creatorId, creatorName }: CreatorProf
       const data = await getCreatorReputation(creatorId);
       setReputation(data);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Impossible de charger les avis.'));
+      setError(getApiErrorMessage(e, 'Unable to load reviews.'));
     } finally {
       setLoading(false);
     }
@@ -104,19 +104,19 @@ export function CreatorProfileReviewsTab({ creatorId, creatorName }: CreatorProf
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-bold text-neutral-900 dark:text-white">Réputation & avis</h2>
+        <h2 className="text-lg font-bold text-neutral-900 dark:text-white">Reputation & reviews</h2>
         <p className="mt-1 text-sm text-neutral-500">
-          Indicateurs de confiance et retours des clients sur ce créateur.
+          Trust indicators and client feedback for this creator.
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 lg:col-span-2 dark:border-neutral-800 dark:bg-neutral-900">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">Synthèse</h3>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">Summary</h3>
             {reviewSubmitted ? (
               <p className="max-w-[9rem] text-right text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                Avis publié
+                Review published
               </p>
             ) : (
               <CreatorReviewTriggerButton
@@ -132,17 +132,17 @@ export function CreatorProfileReviewsTab({ creatorId, creatorName }: CreatorProf
               </p>
               <StarRating rating={reputation!.averageRating!} size="md" />
               <p className="text-sm text-neutral-500">
-                {formatFrenchCount(reviewCount)} avis client{reviewCount !== 1 ? 's' : ''}
+                {formatFrenchCount(reviewCount)} client review{reviewCount !== 1 ? 's' : ''}
               </p>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-neutral-500">Aucun avis pour le moment.</p>
+            <p className="mt-4 text-sm text-neutral-500">No reviews yet.</p>
           )}
 
           {totalDist > 0 && (
             <div className="mt-6 space-y-2">
               <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-                Répartition
+                Breakdown
               </p>
               {STAR_LEVELS.map((star) => {
                 const count = countForStar(distribution, star);
@@ -179,7 +179,7 @@ export function CreatorProfileReviewsTab({ creatorId, creatorName }: CreatorProf
 
         <div className="space-y-4 lg:col-span-3">
           <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
-            Avis récents
+            Recent reviews
             {reviewCount > 0 ? ` (${formatFrenchCount(reviewCount)})` : ''}
           </h3>
           {reviews.length > 0 ? (
@@ -190,7 +190,7 @@ export function CreatorProfileReviewsTab({ creatorId, creatorName }: CreatorProf
             </div>
           ) : (
             <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-8 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900/50">
-              Soyez le premier à laisser un avis sur {creatorName}.
+              Be the first to leave a review for {creatorName}.
             </p>
           )}
         </div>

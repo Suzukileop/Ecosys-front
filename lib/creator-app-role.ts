@@ -101,6 +101,67 @@ export function creatorAppRoleRingClass(role: CreatorAppRole | null | undefined)
   }
 }
 
+/** Border / accent classes for My Role cards (match avatar ring colors). */
+export type CreatorAppRoleAccent = {
+  border: string;
+  borderSelected: string;
+  iconIdle: string;
+  iconSelected: string;
+  check: string;
+  focusRing: string;
+};
+
+export function creatorAppRoleAccent(role: CreatorAppRole | null | undefined): CreatorAppRoleAccent {
+  switch (normalizeCreatorAppRole(role)) {
+    case 'SERVICE_PROVIDER':
+      return {
+        border: 'border-orange-400 dark:border-orange-500/70',
+        borderSelected: 'border-orange-500 dark:border-orange-400',
+        iconIdle: 'bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300',
+        iconSelected: 'bg-orange-500/15 text-orange-600 dark:bg-orange-400/20 dark:text-orange-300',
+        check: 'bg-orange-500 text-white dark:bg-orange-400 dark:text-neutral-950',
+        focusRing: 'focus-visible:ring-orange-500/40',
+      };
+    case 'FREELANCER_STUDENT':
+      return {
+        border: 'border-cyan-400 dark:border-cyan-500/70',
+        borderSelected: 'border-cyan-500 dark:border-cyan-400',
+        iconIdle: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-300',
+        iconSelected: 'bg-cyan-500/15 text-cyan-600 dark:bg-cyan-400/20 dark:text-cyan-300',
+        check: 'bg-cyan-500 text-white dark:bg-cyan-400 dark:text-neutral-950',
+        focusRing: 'focus-visible:ring-cyan-500/40',
+      };
+    case 'SELLER':
+      return {
+        border: 'border-violet-400 dark:border-violet-500/70',
+        borderSelected: 'border-violet-500 dark:border-violet-400',
+        iconIdle: 'bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300',
+        iconSelected: 'bg-violet-500/15 text-violet-600 dark:bg-violet-400/20 dark:text-violet-300',
+        check: 'bg-violet-500 text-white dark:bg-violet-400 dark:text-neutral-950',
+        focusRing: 'focus-visible:ring-violet-500/40',
+      };
+    case 'RH_RECRUITER':
+      return {
+        border: 'border-yellow-400 dark:border-yellow-500/70',
+        borderSelected: 'border-yellow-400 dark:border-yellow-300',
+        iconIdle: 'bg-yellow-50 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-300',
+        iconSelected: 'bg-yellow-500/15 text-yellow-700 dark:bg-yellow-400/20 dark:text-yellow-300',
+        check: 'bg-yellow-400 text-neutral-950 dark:bg-yellow-300 dark:text-neutral-950',
+        focusRing: 'focus-visible:ring-yellow-400/40',
+      };
+    case 'GENERAL_MEMBER':
+    default:
+      return {
+        border: 'border-neutral-400 dark:border-neutral-500',
+        borderSelected: 'border-neutral-500 dark:border-neutral-400',
+        iconIdle: 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300',
+        iconSelected: 'bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200',
+        check: 'bg-neutral-500 text-white dark:bg-neutral-400 dark:text-neutral-950',
+        focusRing: 'focus-visible:ring-neutral-500/40',
+      };
+  }
+}
+
 /** Hide Products sidebar (explore catalog). */
 export const APP_ROLES_WITHOUT_PRODUCTS_MENU: readonly CreatorAppRole[] = [
   'SERVICE_PROVIDER',
@@ -171,6 +232,14 @@ export function creatorCanAccessMyServices(role: CreatorAppRole | null | undefin
 
 export function creatorCanAccessProfileServices(role: CreatorAppRole | null | undefined): boolean {
   return !roleDenied(role, APP_ROLES_WITHOUT_PROFILE_SERVICES);
+}
+
+/**
+ * Service-provider About fields (specialty, years, availability status/hours, response time)
+ * and Information sections Why/Skills/FAQ — hidden for RH / Recruiter / Client.
+ */
+export function creatorShowsProviderAboutFields(role: CreatorAppRole | null | undefined): boolean {
+  return normalizeCreatorAppRole(role) !== 'RH_RECRUITER';
 }
 
 export function dispatchCreatorAppRoleChanged(role: CreatorAppRole): void {

@@ -1,26 +1,66 @@
-import type { ReactNode } from 'react';
+'use client';
+
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import {
-  ExternalLinkChevron,
   NeutralIconBadge,
   SocialPlatformIcon,
   socialPlatformBrandClass,
   type NeutralIconName,
 } from '@/components/marketplace/creator-profile-social-icons';
-import { formatAvailabilityDisplay } from '@/lib/availabilityHours';
+import { PublicSkillsToolsGrouped } from '@/components/marketplace/PublicSkillsToolsGrouped';
+import { geocodePlaceLabel, haversineKm, openStreetMapEmbedUrl, detectUserCoordinatesForDistance } from '@/lib/geolocation';
+import { formatDistanceAwayKm } from '@/lib/countries';
 import { formatPhoneDisplay } from '@/lib/phone';
-import { formatServiceDelivery, formatServicePrice } from '@/lib/profile-services';
 import type { ProfileMediaBlock } from '@/types/ecosystem';
 import type { MarketplaceCreatorPublicProfile } from '@/types/marketplace';
 import { ContentMediaPreview } from '@/components/creator/creator-content-media';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
+import { ProfileSectionStickyAside } from '@/components/creator/studio/ProfileSectionStickyAside';
+import {
+  ProfileSectionNavIcon,
+  getProfileSection,
+  type ProfileSectionId,
+} from '@/components/creator/studio/profile-section-nav';
+import {
+  profileNavButtonActiveClass,
+  profileNavButtonBaseClass,
+  profileNavButtonInactiveClass,
+} from '@/components/creator/studio/profile-section-ui';
 import { SOCIAL_PLATFORMS } from '@/types/ecosystem';
+import { creatorShowsProviderAboutFields, normalizeCreatorAppRole } from '@/lib/creator-app-role';
+
+type PublicInfoNavId = Extract<
+  ProfileSectionId,
+  'whyMe' | 'experience' | 'about' | 'strengths' | 'faq' | 'contact' | 'links'
+>;
+
+const PUBLIC_INFO_SECTION_DOM_ID: Record<PublicInfoNavId, string> = {
+  whyMe: 'public-info-why-me',
+  experience: 'public-info-experience',
+  about: 'public-info-about',
+  strengths: 'public-info-skills-tools',
+  faq: 'public-info-faq',
+  contact: 'public-info-contact',
+  links: 'public-info-links',
+};
+
+const PUBLIC_INFO_LABEL_OVERRIDES: Partial<Record<PublicInfoNavId, string>> = {
+  about: 'Profile',
+  strengths: 'Skills & tools',
+};
 
 type CreatorProfileContactSectionProps = {
   creatorId: string;
   profile: MarketplaceCreatorPublicProfile;
   isAuthenticated: boolean;
   locationLabel?: string | null;
+};
+
+type InfoRow = {
+  key: string;
+  label: string;
+  value: ReactNode;
 };
 
 function socialLabel(platform: string): string {
@@ -39,7 +79,7 @@ function formatMemberSince(value: string | null | undefined): string | null {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 }
 
 function resolveDisplayLinks(profile: MarketplaceCreatorPublicProfile) {
@@ -48,7 +88,7 @@ function resolveDisplayLinks(profile: MarketplaceCreatorPublicProfile) {
   }
   const legacy: Array<{ id: string; label: string; url: string; type: string; platform?: string | null }> = [];
   if (profile.websiteUrl?.trim()) {
-    legacy.push({ id: 'website', label: 'Site web', url: profile.websiteUrl.trim(), type: 'WEBSITE' });
+    legacy.push({ id: 'website', label: 'Website', url: profile.websiteUrl.trim(), type: 'WEBSITE' });
   }
   if (profile.ctaUrl?.trim()) {
     legacy.push({
@@ -78,7 +118,7 @@ function SectionHeading({ children }: { children: ReactNode }) {
 
 function InfoPanel({ children }: { children: ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900/80">
+    <div className="flex flex-col gap-20 overflow-hidden rounded-2xl border border-neutral-200 bg-white px-5 py-10 dark:border-neutral-800 dark:bg-neutral-900/80 sm:gap-24 sm:px-6 sm:py-12">
       {children}
     </div>
   );
@@ -86,7 +126,6 @@ function InfoPanel({ children }: { children: ReactNode }) {
 
 function InfoPanelSection({
   children,
-  bordered = true,
   id,
 }: {
   children: ReactNode;
@@ -94,51 +133,234 @@ function InfoPanelSection({
   id?: string;
 }) {
   return (
-    <div
-      id={id}
-      className={`px-5 py-5 sm:px-6 sm:py-6 ${bordered ? 'border-t border-neutral-200 first:border-t-0 dark:border-neutral-800' : ''} ${id ? 'scroll-mt-24' : ''}`}
-    >
+    <div id={id} className={id ? 'scroll-mt-24' : undefined}>
       {children}
     </div>
   );
 }
 
-function LocationFeaturedBlock({ children }: { children: ReactNode }) {
+function LocationFeaturedBlock({
+  label,
+  locationLat,
+  locationLng,
+}: {
+  label: string;
+  locationLat?: number | null;
+  locationLng?: number | null;
+}) {
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [distanceLabel, setDistanceLabel] = useState<string | null>(null);
+  const [distancePending, setDistancePending] = useState(false);
+  const [geoDenied, setGeoDenied] = useState(false);
+  const [mapImageFailed, setMapImageFailed] = useState(false);
+
+  const applyDistance = useCallback(
+    (place: { lat: number; lng: number }, viewer: { lat: number; lng: number }) => {
+      if (
+        !Number.isFinite(viewer.lat) ||
+        !Number.isFinite(viewer.lng) ||
+        !Number.isFinite(place.lat) ||
+        !Number.isFinite(place.lng)
+      ) {
+        return;
+      }
+      const km = haversineKm(viewer.lat, viewer.lng, place.lat, place.lng);
+      if (!Number.isFinite(km)) return;
+      setDistanceLabel(formatDistanceAwayKm(km));
+      setGeoDenied(false);
+      setDistancePending(false);
+    },
+    []
+  );
+
+  const resolveDistance = useCallback(
+    async (place: { lat: number; lng: number }, isCancelled?: () => boolean) => {
+      setDistancePending(true);
+      setGeoDenied(false);
+      try {
+        const viewer = await detectUserCoordinatesForDistance((next) => {
+          if (isCancelled?.()) return;
+          // Skip painting coarse network/IP guesses (they produce bogus km values).
+          if (next.accuracyM != null && next.accuracyM > 20_000) return;
+          applyDistance(place, next);
+        });
+        if (isCancelled?.()) return;
+        if (viewer.accuracyM != null && viewer.accuracyM > 20_000) {
+          setDistanceLabel(null);
+          setDistancePending(false);
+          setGeoDenied(true);
+          return;
+        }
+        applyDistance(place, viewer);
+      } catch {
+        if (isCancelled?.()) return;
+        setDistanceLabel(null);
+        setGeoDenied(true);
+        setDistancePending(false);
+      }
+    },
+    [applyDistance]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const isCancelled = () => cancelled;
+
+    setLoading(true);
+    setCoords(null);
+    setDistanceLabel(null);
+    setDistancePending(false);
+    setGeoDenied(false);
+    setMapImageFailed(false);
+
+    // Clear legacy coarse cache that poisoned distance on first paint.
+    try {
+      sessionStorage.removeItem('np_viewer_coords_v1');
+    } catch {
+      // ignore
+    }
+
+    const storedLat =
+      locationLat != null && Number.isFinite(locationLat) ? locationLat : null;
+    const storedLng =
+      locationLng != null && Number.isFinite(locationLng) ? locationLng : null;
+
+    void (async () => {
+      let place: { lat: number; lng: number } | null =
+        storedLat != null && storedLng != null
+          ? { lat: storedLat, lng: storedLng }
+          : null;
+
+      if (!place) {
+        const geocoded = await geocodePlaceLabel(label);
+        if (cancelled) return;
+        if (geocoded) {
+          place = { lat: geocoded.lat, lng: geocoded.lng };
+        }
+      }
+
+      if (cancelled) return;
+      if (place) {
+        setCoords(place);
+        if (!cancelled) setLoading(false);
+        await resolveDistance(place, isCancelled);
+        return;
+      }
+      if (!cancelled) setLoading(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [label, locationLat, locationLng, resolveDistance]);
+
+  if (!coords) {
+    return (
+      <div className="theme-accent-border flex items-center gap-3 rounded-2xl border border-orange-300/50 bg-orange-50/30 px-4 py-3 dark:border-orange-500/30 dark:bg-orange-500/5">
+        <NeutralIconBadge name="location" size="sm" accent />
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+            Location
+          </p>
+          <p className="mt-0.5 text-sm font-semibold leading-snug text-neutral-900 dark:text-neutral-100">
+            {label}
+          </p>
+          {loading ? (
+            <p className="mt-0.5 text-[11px] text-neutral-400 dark:text-neutral-500">Loading map…</p>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  const mapsHref = `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=11/${coords.lat}/${coords.lng}`;
+  const staticMapUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${coords.lat},${coords.lng}&zoom=11&size=960x480&maptype=mapnik&markers=${coords.lat},${coords.lng},red-pushpin`;
+
   return (
-    <div className="theme-accent-border flex h-full min-h-[11rem] flex-col justify-between rounded-2xl border border-orange-300/50 bg-orange-50/30 p-5 dark:border-orange-500/30 dark:bg-orange-500/5">
-      <NeutralIconBadge name="location" size="lg" accent />
-      <div className="min-w-0">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-          Localisation
-        </p>
-        <p className="mt-3 text-xl font-semibold leading-snug text-neutral-900 dark:text-neutral-100 sm:text-2xl">
-          {children}
-        </p>
+    <div className="overflow-hidden rounded-2xl border border-neutral-200/80 dark:border-neutral-800">
+      <div className="relative h-52 bg-neutral-100 dark:bg-neutral-900 sm:h-64 lg:h-72">
+        {!mapImageFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element -- external static map host
+          <img
+            src={staticMapUrl}
+            alt={`Map of ${label}`}
+            className="absolute inset-0 h-full w-full object-cover"
+            onError={() => setMapImageFailed(true)}
+          />
+        ) : (
+          <iframe
+            title={`Map of ${label}`}
+            src={openStreetMapEmbedUrl(coords.lat, coords.lng)}
+            className="absolute inset-0 h-full w-full border-0"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        )}
+        {distanceLabel ? (
+          <p className="absolute left-3 top-3 z-20 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 shadow-md dark:bg-neutral-950 dark:text-neutral-100">
+            {distanceLabel}
+          </p>
+        ) : distancePending ? (
+          <p className="absolute left-3 top-3 z-20 rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-neutral-500 shadow-md dark:bg-neutral-950/95 dark:text-neutral-400">
+            Measuring distance…
+          </p>
+        ) : geoDenied ? (
+          <button
+            type="button"
+            onClick={() => void resolveDistance(coords)}
+            className="absolute left-3 top-3 z-20 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-orange-600 shadow-md transition hover:bg-orange-50 dark:bg-neutral-950 dark:text-orange-400 dark:hover:bg-neutral-900"
+          >
+            Show distance from you
+          </button>
+        ) : null}
+      </div>
+      <div className="flex items-center justify-between gap-3 border-t border-neutral-200/80 px-3.5 py-2.5 dark:border-neutral-800">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+            Location
+            {distanceLabel ? (
+              <span className="ml-2 font-medium normal-case tracking-normal text-neutral-600 dark:text-neutral-300">
+                · {distanceLabel}
+              </span>
+            ) : null}
+          </p>
+          <p className="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">{label}</p>
+        </div>
+        <a
+          href={mapsHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 text-[11px] font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
+        >
+          Open map
+        </a>
       </div>
     </div>
   );
 }
 
-function CompactInfoRow({
-  icon,
-  label,
-  children,
-}: {
-  icon: NeutralIconName;
-  label: string;
-  children: ReactNode;
-}) {
+function ProfileFactCards({ rows }: { rows: InfoRow[] }) {
+  if (rows.length === 0) return null;
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-4">
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-          {label}
-        </p>
-        <p className="mt-1 text-sm font-medium leading-relaxed text-neutral-900 dark:text-neutral-100 sm:text-base">
-          {children}
-        </p>
-      </div>
-      <NeutralIconBadge name={icon} size="sm" />
+    <div
+      className={`grid gap-3 ${
+        rows.length === 1 ? 'sm:max-w-sm' : rows.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
+      }`}
+    >
+      {rows.map((row) => (
+        <div
+          key={row.key}
+          className="rounded-2xl border border-neutral-200/80 bg-neutral-50/50 px-4 py-4 dark:border-neutral-800 dark:bg-neutral-900/40"
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+            {row.label}
+          </p>
+          <p className="mt-2 text-sm font-semibold leading-snug text-neutral-900 dark:text-neutral-100 sm:text-base">
+            {row.value}
+          </p>
+        </div>
+      ))}
     </div>
   );
 }
@@ -179,23 +401,26 @@ function StoryBlockCard({
   block: ProfileMediaBlock;
   showMedia?: boolean;
 }) {
-  const tools: string[] = [];
-  const toolIcons: Record<string, string> = {};
+  const tools = Array.from(
+    new Set(
+      (block.tools ?? [])
+        .map((item) => {
+          if (typeof item === 'string') return item.trim();
+          if (item && typeof item === 'object') {
+            return String(item.name ?? item.value ?? '').trim();
+          }
+          return '';
+        })
+        .filter(Boolean)
+    )
+  ).slice(0, 8);
+
+  const toolIconByName = new Map<string, string>();
   for (const item of block.tools ?? []) {
-    let name = '';
-    let iconUrl: string | null = null;
-    if (typeof item === 'string') {
-      name = item.trim();
-    } else if (item && typeof item === 'object') {
-      name = String(item.name ?? item.value ?? '').trim();
-      iconUrl =
-        typeof item.iconUrl === 'string' && item.iconUrl.trim() ? item.iconUrl.trim() : null;
-    }
-    if (!name) continue;
-    if (tools.some((existing) => existing.toLowerCase() === name.toLowerCase())) continue;
-    tools.push(name);
-    if (iconUrl) toolIcons[name] = iconUrl;
-    if (tools.length >= 8) break;
+    if (typeof item === 'string' || !item || typeof item !== 'object') continue;
+    const name = String(item.name ?? item.value ?? '').trim();
+    const iconUrl = typeof item.iconUrl === 'string' ? item.iconUrl.trim() : '';
+    if (name && iconUrl) toolIconByName.set(name, iconUrl);
   }
 
   return (
@@ -211,10 +436,10 @@ function StoryBlockCard({
           {tools.map((tool) => (
             <span
               key={tool}
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white py-1 pl-1 pr-2.5 text-xs font-medium text-neutral-700 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200"
+              className="inline-flex items-center gap-2 rounded-full bg-neutral-100/80 py-1 pl-1 pr-2.5 text-xs font-medium text-neutral-700 dark:bg-white/[0.06] dark:text-neutral-200"
               title={tool}
             >
-              <CreatorToolLogo label={tool} iconUrl={toolIcons[tool] ?? null} size={20} />
+              <CreatorToolLogo label={tool} iconUrl={toolIconByName.get(tool)} size={20} />
               <span className="max-w-[8rem] truncate">{tool}</span>
             </span>
           ))}
@@ -229,43 +454,117 @@ function StoryBlockCard({
   );
 }
 
-function UnifiedLinkCard({
+function resolveLinkPlatform(link: {
+  label: string;
+  url: string;
+  type: string;
+  platform?: string | null;
+}): string {
+  const haystack = `${link.platform ?? ''} ${link.label} ${link.url}`.toLowerCase();
+  let host = '';
+  try {
+    const withProtocol = /^https?:\/\//i.test(link.url.trim())
+      ? link.url.trim()
+      : `https://${link.url.trim()}`;
+    host = new URL(withProtocol).hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    host = '';
+  }
+
+  if (
+    host.includes('facebook') ||
+    host.includes('fb.com') ||
+    host.includes('fb.me') ||
+    haystack.includes('facebook')
+  ) {
+    return 'FACEBOOK';
+  }
+  if (host.includes('youtube') || host === 'youtu.be' || haystack.includes('youtube')) {
+    return 'YOUTUBE';
+  }
+  if (host.includes('instagram') || haystack.includes('instagram')) return 'INSTAGRAM';
+  if (host.includes('tiktok') || haystack.includes('tiktok')) return 'TIKTOK';
+  if (host.includes('linkedin') || haystack.includes('linkedin')) return 'LINKEDIN';
+  if (host.includes('github') || haystack.includes('github')) return 'GITHUB';
+  if (
+    host.includes('twitter') ||
+    host === 'x.com' ||
+    host.endsWith('.x.com') ||
+    haystack.includes('twitter')
+  ) {
+    return 'TWITTER';
+  }
+
+  const stored = link.platform?.trim().toUpperCase() ?? '';
+  if (stored && stored !== 'OTHER') return stored;
+  if (link.type === 'WEBSITE') return 'WEBSITE';
+  return 'OTHER';
+}
+
+function linkDisplayLabel(
+  link: { label: string; url: string; platform?: string | null },
+  platform: string
+): string {
+  const key = platform.toUpperCase();
+  if (key === 'YOUTUBE') return 'YouTube';
+  if (key === 'FACEBOOK') return 'Facebook';
+  if (key === 'INSTAGRAM') return 'Instagram';
+  if (key === 'TIKTOK') return 'TikTok';
+  if (key === 'LINKEDIN') return 'LinkedIn';
+  if (key === 'GITHUB') return 'GitHub';
+  if (key === 'TWITTER' || key === 'X') return 'X';
+  if (key === 'WEBSITE') return 'Website';
+
+  const raw = link.label?.trim();
+  if (raw && !/^https?:\/\//i.test(raw) && !raw.includes('.')) return raw;
+  return websiteHostname(link.url) || 'Link';
+}
+
+function UnifiedLinkIcon({
   link,
-  index,
 }: {
   link: { id: string; label: string; url: string; type: string; platform?: string | null };
-  index: number;
 }) {
-  const isSocial = link.type === 'SOCIAL';
-  const platform = link.platform;
+  const platform = resolveLinkPlatform(link);
+  const label = linkDisplayLabel(link, platform);
+  const isBrand = !['OTHER', 'WEBSITE'].includes(platform.toUpperCase());
 
   return (
     <a
       href={link.url}
       target="_blank"
-      rel="noreferrer"
-      className="group flex items-center gap-3 rounded-2xl border border-neutral-200/80 bg-white p-4 transition hover:border-orange-300/60 hover:shadow-sm dark:border-neutral-800 dark:bg-neutral-900/40 dark:hover:border-orange-500/35"
+      rel="noopener noreferrer"
+      title={label}
+      className="group flex w-[5.5rem] flex-col items-center gap-2.5 sm:w-24"
     >
-      {isSocial && platform ? (
-        <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${socialPlatformBrandClass(platform)}`}
-        >
-          <SocialPlatformIcon platform={platform} className="h-6 w-6" />
-        </div>
-      ) : (
-        <NeutralIconBadge name="link" size="sm" />
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-400 dark:text-neutral-500">
-          {index === 0 ? 'Lien principal' : 'Lien'}
-        </p>
-        <p className="mt-1 truncate text-sm font-semibold text-neutral-900 dark:text-white sm:text-base">
-          {link.label}
-        </p>
-        <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">{websiteHostname(link.url)}</p>
-      </div>
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 transition group-hover:bg-orange-50 group-hover:text-orange-600 dark:bg-neutral-800 dark:group-hover:bg-orange-500/15 dark:group-hover:text-orange-400">
-        <ExternalLinkChevron className="h-4 w-4" />
+      <span
+        className={`flex h-14 w-14 items-center justify-center rounded-full transition group-hover:scale-105 sm:h-16 sm:w-16 ${
+          isBrand
+            ? socialPlatformBrandClass(platform)
+            : 'border border-neutral-200 bg-neutral-100 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200'
+        }`}
+      >
+        {isBrand ? (
+          <SocialPlatformIcon platform={platform} className="h-7 w-7 sm:h-8 sm:w-8" />
+        ) : (
+          <svg
+            className="h-7 w-7 sm:h-8 sm:w-8"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.75}
+            aria-hidden
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 0 1 9-9"
+            />
+          </svg>
+        )}
+      </span>
+      <span className="w-full truncate text-center text-xs font-medium text-neutral-700 dark:text-neutral-200">
+        {label}
       </span>
     </a>
   );
@@ -277,108 +576,72 @@ export function CreatorProfileContactSection({
   isAuthenticated,
   locationLabel,
 }: CreatorProfileContactSectionProps) {
-  const displayLinks = resolveDisplayLinks(profile);
-  const primaryLink = displayLinks[0] ?? null;
-  const contactPhone =
-    profile.contactPhones?.map((entry) => entry.value.trim()).find(Boolean) ||
-    profile.contactPhone?.trim() ||
-    profile.phone?.trim() ||
-    '';
-  const contactEmail =
-    profile.contactEmails?.map((entry) => entry.value.trim()).find(Boolean) ||
-    profile.contactEmail?.trim() ||
-    '';
-  const contactAddress =
-    profile.contactAddresses?.map((entry) => entry.value.trim()).find(Boolean) ||
-    profile.contactAddress?.trim() ||
-    '';
-  const hasPhone = Boolean(contactPhone);
+  const displayLinks = useMemo(() => resolveDisplayLinks(profile), [profile]);
+  const contactEmail = profile.contactEmail?.trim() ?? '';
+  const contactPhone = profile.contactPhone?.trim() ?? '';
   const hasEmail = Boolean(contactEmail);
-  const availabilityDisplay = formatAvailabilityDisplay(profile.availabilityHours, profile.timezoneId);
-  const hasAvailability = Boolean(availabilityDisplay);
-  const hasAddress = Boolean(contactAddress);
+  const hasPhone = Boolean(contactPhone);
   const spokenLanguages = profile.spokenLanguages ?? [];
   const legacyLanguages = profile.languages?.trim();
   const hasLanguages = spokenLanguages.length > 0 || Boolean(legacyLanguages);
   const hasLocation = Boolean(locationLabel?.trim());
   const memberSinceLabel = formatMemberSince(profile.memberSince);
   const hasGender = Boolean(profile.gender?.trim());
-  const hasResponseTime = Boolean(profile.responseTimeLabel?.trim());
+  const showProviderSections = creatorShowsProviderAboutFields(normalizeCreatorAppRole(profile.appRole));
 
   const whyMeBlocks = profile.whyMeBlocks ?? [];
   const experienceBlocks = profile.experienceBlocks ?? [];
-  const services = profile.profileServices ?? [];
   const faqItems = profile.faqItems ?? [];
-  const hasWhyMe = whyMeBlocks.length > 0;
-  const hasExperience = experienceBlocks.length > 0;
-  const hasYears = profile.yearsOfExperience != null;
+  const hasWhyMe = showProviderSections && whyMeBlocks.length > 0;
+  const hasYears = showProviderSections && profile.yearsOfExperience != null;
+  const hasExperienceBlocks = showProviderSections && experienceBlocks.length > 0;
+  const hasExperience = hasYears || hasExperienceBlocks;
   const strengths = profile.strengthsToolsMastered ?? [];
-  const hasStrengths = strengths.length > 0;
-  const hasServices = services.length > 0;
-  const hasFaq = faqItems.length > 0;
+  const skillTags = (profile.specialtyTags ?? []).map((tag) => tag.trim()).filter(Boolean);
+  const allowedSpecialties = (profile.specialties ?? []).map((item) => item.trim()).filter(Boolean);
+  const hasStrengths = showProviderSections && strengths.length > 0;
+  const hasSkillTags = showProviderSections && skillTags.length > 0;
+  const hasFaq = showProviderSections && faqItems.length > 0;
   const hasLinks = displayLinks.length > 0;
-  const hasAboutMeta = hasGender || hasLanguages || memberSinceLabel || hasResponseTime || hasAvailability;
-  const hasProfileInfo = hasAboutMeta || hasLocation || hasAddress || hasYears || hasStrengths;
+  const hasAboutMeta = hasGender || hasLanguages || memberSinceLabel;
+  const hasProfileInfo = hasAboutMeta || hasLocation || hasStrengths || hasSkillTags;
   const hasDirectContact = hasEmail || hasPhone;
   const hasAnyPublicInfo =
-    hasProfileInfo ||
-    hasDirectContact ||
-    hasLinks ||
-    hasWhyMe ||
-    hasExperience ||
-    hasServices ||
-    hasFaq;
+    hasProfileInfo || hasDirectContact || hasLinks || hasWhyMe || hasExperience || hasFaq;
   const showMembersHint = !isAuthenticated && profile.membersOnlyContactAvailable;
 
-  const profileDetailRows: Array<{ icon: NeutralIconName; label: string; value: ReactNode; key: string }> = [];
-  if (hasGender) {
-    profileDetailRows.push({ icon: 'languages', label: 'Genre', value: profile.gender, key: 'gender' });
-  }
-  if (hasLanguages) {
-    profileDetailRows.push({
-      icon: 'languages',
-      label: 'Langues de travail',
-      value: spokenLanguages.length > 0 ? spokenLanguages.join(', ') : legacyLanguages,
-      key: 'languages',
-    });
-  }
-  if (memberSinceLabel) {
-    profileDetailRows.push({ icon: 'clock', label: 'Membre depuis', value: memberSinceLabel, key: 'memberSince' });
-  }
-  if (hasResponseTime) {
-    profileDetailRows.push({
-      icon: 'clock',
-      label: 'Délai de réponse',
-      value: profile.responseTimeLabel,
-      key: 'responseTime',
-    });
-  }
-  if (hasAvailability) {
-    profileDetailRows.push({
-      icon: 'clock',
-      label: 'Disponibilité',
-      value: availabilityDisplay,
-      key: 'availability',
-    });
-  }
-  if (hasYears) {
-    profileDetailRows.push({
-      icon: 'clock',
-      label: 'Years of experience',
-      value: `${profile.yearsOfExperience} year${profile.yearsOfExperience === 1 ? '' : 's'}`,
-      key: 'years',
-    });
-  }
-  if (hasAddress) {
-    profileDetailRows.push({
-      icon: 'address',
-      label: 'Adresse',
-      value: <span className="whitespace-pre-line">{contactAddress}</span>,
-      key: 'address',
-    });
-  }
+  const profileFactRows = useMemo(() => {
+    const rows: InfoRow[] = [];
+    if (hasGender) {
+      rows.push({ key: 'gender', label: 'Gender', value: profile.gender });
+    }
+    if (hasLanguages) {
+      rows.push({
+        key: 'languages',
+        label: 'Working languages',
+        value: spokenLanguages.length > 0 ? spokenLanguages.join(', ') : legacyLanguages,
+      });
+    }
+    if (memberSinceLabel) {
+      rows.push({ key: 'memberSince', label: 'Member since', value: memberSinceLabel });
+    }
+    return rows;
+  }, [
+    hasGender,
+    hasLanguages,
+    memberSinceLabel,
+    profile.gender,
+    spokenLanguages,
+    legacyLanguages,
+  ]);
 
-  const directContacts: Array<{ key: string; href: string; icon: NeutralIconName; label: string; value: string }> = [];
+  const directContacts: Array<{
+    key: string;
+    href: string;
+    icon: NeutralIconName;
+    label: string;
+    value: string;
+  }> = [];
   if (hasEmail) {
     directContacts.push({
       key: 'email',
@@ -393,211 +656,292 @@ export function CreatorProfileContactSection({
       key: 'phone',
       href: `tel:${contactPhone}`,
       icon: 'phone',
-      label: 'Téléphone',
+      label: 'Phone',
       value: formatPhoneDisplay(contactPhone),
     });
   }
 
+  const hasAboutSection = hasProfileInfo || hasStrengths || hasSkillTags;
+
+  const navItems = useMemo(() => {
+    const items: PublicInfoNavId[] = [];
+    if (hasAboutSection) items.push('about');
+    if (hasExperience) items.push('experience');
+    if (hasWhyMe) items.push('whyMe');
+    if (hasFaq) items.push('faq');
+    if (hasDirectContact) items.push('contact');
+    if (hasLinks) items.push('links');
+    return items;
+  }, [hasAboutSection, hasExperience, hasWhyMe, hasFaq, hasDirectContact, hasLinks]);
+
+  const [activeSection, setActiveSection] = useState<PublicInfoNavId | null>(navItems[0] ?? null);
+
+  useEffect(() => {
+    if (navItems.length === 0) {
+      setActiveSection(null);
+      return;
+    }
+    if (!activeSection || !navItems.includes(activeSection)) {
+      setActiveSection(navItems[0]);
+    }
+  }, [navItems, activeSection]);
+
+  useEffect(() => {
+    if (navItems.length === 0) return;
+    const elements = navItems
+      .map((id) => document.getElementById(PUBLIC_INFO_SECTION_DOM_ID[id]))
+      .filter((el): el is HTMLElement => el != null);
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        const top = visible[0];
+        if (!top?.target?.id) return;
+        const matched = (
+          Object.entries(PUBLIC_INFO_SECTION_DOM_ID) as Array<[PublicInfoNavId, string]>
+        ).find(([, domId]) => domId === top.target.id);
+        if (matched) setActiveSection(matched[0]);
+      },
+      { rootMargin: '-20% 0px -55% 0px', threshold: [0.15, 0.35, 0.55] }
+    );
+
+    for (const el of elements) observer.observe(el);
+    return () => observer.disconnect();
+  }, [navItems]);
+
+  const selectSection = (sectionId: PublicInfoNavId) => {
+    setActiveSection(sectionId);
+    const el = document.getElementById(PUBLIC_INFO_SECTION_DOM_ID[sectionId]);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const renderNav = (layout: 'desktop' | 'mobile') => (
+    <nav
+      aria-label="Profile information sections"
+      className={
+        layout === 'desktop'
+          ? 'flex min-h-0 flex-col'
+          : 'flex gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+      }
+    >
+      {layout === 'desktop' ? (
+        <div className="flex h-12 shrink-0 items-center px-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-500">
+            Information
+          </p>
+        </div>
+      ) : null}
+      <div
+        className={
+          layout === 'desktop'
+            ? 'flex min-h-0 flex-col gap-1 overflow-y-auto px-2 pb-2 pt-0.5'
+            : 'flex gap-1'
+        }
+      >
+        {navItems.map((sectionId) => {
+          const active = activeSection === sectionId;
+          const label =
+            PUBLIC_INFO_LABEL_OVERRIDES[sectionId] ?? getProfileSection(sectionId).label;
+          return (
+            <button
+              key={sectionId}
+              type="button"
+              onClick={() => selectSection(sectionId)}
+              aria-current={active ? 'true' : undefined}
+              className={`${profileNavButtonBaseClass} ${
+                layout === 'desktop' ? 'w-full' : 'shrink-0'
+              } ${active ? profileNavButtonActiveClass : profileNavButtonInactiveClass}`}
+            >
+              <ProfileSectionNavIcon sectionId={sectionId} active={active} />
+              <span className="min-w-0 truncate">{label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+
   return (
     <section aria-labelledby="info-heading">
       <h2 id="info-heading" className="sr-only">
-        Informations publiques
+        Public information
       </h2>
-
-      {primaryLink ? (
-        <div className="mb-4">
-          <a
-            href={primaryLink.url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex w-full items-center justify-center rounded-2xl bg-orange-500 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-orange-600 sm:w-auto"
-          >
-            {primaryLink.label}
-          </a>
-        </div>
-      ) : null}
 
       {!hasAnyPublicInfo && !showMembersHint ? (
         <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-5 py-10 text-center dark:border-neutral-800 dark:bg-neutral-900/50">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            Aucune information publique pour le moment.
-          </p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">No public information yet.</p>
         </div>
       ) : (
         <div className="space-y-4">
-          <InfoPanel>
-            {hasWhyMe ? (
-              <InfoPanelSection bordered={false}>
-                <SectionHeading>Why choose me</SectionHeading>
-                <div className="space-y-3">
-                  {whyMeBlocks.map((block) => (
-                    <StoryBlockCard key={block.id} block={block} showMedia={false} />
-                  ))}
-                </div>
-              </InfoPanelSection>
-            ) : null}
+          {navItems.length > 0 ? (
+            <div className="md:hidden overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-100 p-2 shadow-sm dark:border-neutral-800 dark:bg-[#0F0F0F]">
+              {renderNav('mobile')}
+            </div>
+          ) : null}
 
-            {hasExperience ? (
-              <InfoPanelSection bordered={!hasWhyMe}>
-                <SectionHeading>Experience</SectionHeading>
-                <div className="space-y-3">
-                  {experienceBlocks.map((block) => (
-                    <StoryBlockCard key={block.id} block={block} />
-                  ))}
-                </div>
-              </InfoPanelSection>
-            ) : null}
-
-            {hasServices ? (
-              <InfoPanelSection id="services" bordered={!hasWhyMe && !hasExperience}>
-                <SectionHeading>Services</SectionHeading>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {services.map((service) => (
-                    <div
-                      key={service.id}
-                      className="rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/40"
-                    >
-                      <p className="font-semibold text-neutral-900 dark:text-white">{service.title}</p>
-                      {service.description ? (
-                        <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300">
-                          {service.description}
-                        </p>
-                      ) : null}
-                      {Array.isArray(service.tasks) && service.tasks.filter(Boolean).length > 0 ? (
-                        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-neutral-600 dark:text-neutral-300">
-                          {service.tasks
-                            .map((task) => task.trim())
-                            .filter(Boolean)
-                            .map((task) => (
-                              <li key={task}>{task}</li>
-                            ))}
-                        </ul>
-                      ) : null}
-                      <div className="mt-3 flex flex-wrap gap-3 text-xs text-neutral-500">
-                        <span>{formatServicePrice(service)}</span>
-                        {formatServiceDelivery(service) ? (
-                          <span>{formatServiceDelivery(service)}</span>
+          <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="order-2 min-w-0 space-y-4 md:order-none md:col-start-1 md:row-start-1">
+              <InfoPanel>
+                {hasAboutSection ? (
+                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.about}>
+                    <SectionHeading>Profile</SectionHeading>
+                    {hasSkillTags || hasStrengths ? (
+                      <div id={PUBLIC_INFO_SECTION_DOM_ID.strengths} className="mb-5 scroll-mt-24">
+                        <PublicSkillsToolsGrouped
+                          skillTags={skillTags}
+                          tools={strengths}
+                          allowedSpecialties={allowedSpecialties}
+                        />
+                      </div>
+                    ) : null}
+                    {(hasLocation || profileFactRows.length > 0) && (
+                      <div className="space-y-3">
+                        {hasLocation ? (
+                          <LocationFeaturedBlock
+                            label={locationLabel!.trim()}
+                            locationLat={profile.locationLat}
+                            locationLng={profile.locationLng}
+                          />
+                        ) : null}
+                        {profileFactRows.length > 0 ? (
+                          <ProfileFactCards rows={profileFactRows} />
                         ) : null}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </InfoPanelSection>
-            ) : null}
+                    )}
+                  </InfoPanelSection>
+                ) : null}
 
-            {(hasProfileInfo || hasStrengths) ? (
-              <InfoPanelSection bordered={!hasWhyMe && !hasExperience && !hasServices}>
-                <SectionHeading>Profil</SectionHeading>
-                {hasStrengths ? (
-                  <div className="mb-4">
-                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      Skills & tools
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {strengths.map((item) => {
-                        const label = typeof item === 'string' ? item : item.name;
+                {hasExperience ? (
+                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.experience}>
+                    <SectionHeading>Experience</SectionHeading>
+                    {hasYears ? (
+                      <p className="mb-4 text-sm font-medium text-neutral-700 dark:text-neutral-200">
+                        {profile.yearsOfExperience} year
+                        {profile.yearsOfExperience === 1 ? '' : 's'} of experience
+                      </p>
+                    ) : null}
+                    {hasExperienceBlocks ? (
+                      <div className="space-y-3">
+                        {experienceBlocks.map((block) => (
+                          <StoryBlockCard key={block.id} block={block} showMedia={false} />
+                        ))}
+                      </div>
+                    ) : null}
+                  </InfoPanelSection>
+                ) : null}
+
+                {hasWhyMe ? (
+                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.whyMe}>
+                    <SectionHeading>Why choose me</SectionHeading>
+                    <ul className="space-y-3 pl-1">
+                      {whyMeBlocks.map((block) => {
+                        const title = block.title?.trim() ?? '';
+                        const text = block.text?.trim() ?? '';
+                        if (!title && !text) return null;
                         return (
-                          <span
-                            key={label}
-                            className="inline-flex items-center gap-2.5 rounded-full border border-neutral-200 bg-neutral-50 py-2 pl-2 pr-3 text-sm font-medium text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                          <li
+                            key={block.id}
+                            className="relative pl-5 text-sm leading-relaxed text-neutral-900 dark:text-white sm:text-base"
                           >
-                            <CreatorToolLogo label={label} size={28} />
-                            {label}
-                          </span>
+                            <span
+                              className="absolute left-0 top-[0.55em] h-1.5 w-1.5 rounded-full bg-neutral-900 dark:bg-white"
+                              aria-hidden
+                            />
+                            {title ? (
+                              <span className="font-semibold">{title}</span>
+                            ) : null}
+                            {title && text ? <span className="mx-1.5 text-neutral-400">·</span> : null}
+                            {text ? (
+                              <span className={title ? 'font-normal text-neutral-700 dark:text-neutral-200' : undefined}>
+                                {text}
+                              </span>
+                            ) : null}
+                          </li>
                         );
                       })}
-                    </div>
-                  </div>
+                    </ul>
+                  </InfoPanelSection>
                 ) : null}
-                {(hasLocation || profileDetailRows.length > 0) && (
-                  <div className="grid gap-3 lg:grid-cols-5">
-                    {hasLocation ? (
-                      <div className="lg:col-span-2">
-                        <LocationFeaturedBlock>{locationLabel}</LocationFeaturedBlock>
-                      </div>
-                    ) : null}
 
-                    {profileDetailRows.length > 0 ? (
-                      <div className={hasLocation ? 'lg:col-span-3' : 'lg:col-span-5'}>
-                        <div className="h-full overflow-hidden rounded-2xl border border-neutral-200/80 dark:border-neutral-800">
-                          <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
-                            {profileDetailRows.map((row) => (
-                              <CompactInfoRow key={row.key} icon={row.icon} label={row.label}>
-                                {row.value}
-                              </CompactInfoRow>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-              </InfoPanelSection>
-            ) : null}
+                {hasFaq ? (
+                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.faq}>
+                    <SectionHeading>FAQ</SectionHeading>
+                    <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
+                      {faqItems.map((item) => (
+                        <details key={item.id} className="group py-3 first:pt-0 last:pb-0">
+                          <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-left [&::-webkit-details-marker]:hidden">
+                            <span className="text-sm font-semibold leading-snug text-neutral-900 dark:text-white sm:text-base">
+                              {item.question}
+                            </span>
+                            <span
+                              className="mt-0.5 shrink-0 text-lg leading-none text-neutral-400 transition group-open:rotate-45 dark:text-neutral-500"
+                              aria-hidden
+                            >
+                              +
+                            </span>
+                          </summary>
+                          <p className="mt-2 pr-8 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300">
+                            {item.answer}
+                          </p>
+                        </details>
+                      ))}
+                    </div>
+                  </InfoPanelSection>
+                ) : null}
 
-            {hasFaq ? (
-              <InfoPanelSection>
-                <SectionHeading>FAQ</SectionHeading>
-                <div className="space-y-3">
-                  {faqItems.map((item) => (
-                    <details
-                      key={item.id}
-                      className="rounded-2xl border border-neutral-200/80 bg-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-900/40"
+                {hasDirectContact ? (
+                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.contact}>
+                    <SectionHeading>Contact</SectionHeading>
+                    <div
+                      className={`grid gap-3 ${directContacts.length > 1 ? 'sm:grid-cols-2' : 'sm:max-w-md'}`}
                     >
-                      <summary className="cursor-pointer list-none px-4 py-3 font-semibold text-neutral-900 dark:text-white [&::-webkit-details-marker]:hidden">
-                        {item.question}
-                      </summary>
-                      <div className="border-t border-neutral-200 px-4 py-3 text-sm leading-relaxed text-neutral-600 dark:border-neutral-800 dark:text-neutral-300">
-                        {item.answer}
-                      </div>
-                    </details>
-                  ))}
-                </div>
-              </InfoPanelSection>
-            ) : null}
+                      {directContacts.map((item) => (
+                        <ContactDirectCard
+                          key={item.key}
+                          href={item.href}
+                          icon={item.icon}
+                          label={item.label}
+                          value={item.value}
+                        />
+                      ))}
+                    </div>
+                  </InfoPanelSection>
+                ) : null}
 
-            {hasDirectContact ? (
-              <InfoPanelSection>
-                <SectionHeading>Coordonnées</SectionHeading>
-                <div
-                  className={`grid gap-3 ${directContacts.length > 1 ? 'sm:grid-cols-2' : 'sm:max-w-md'}`}
-                >
-                  {directContacts.map((item) => (
-                    <ContactDirectCard
-                      key={item.key}
-                      href={item.href}
-                      icon={item.icon}
-                      label={item.label}
-                      value={item.value}
-                    />
-                  ))}
-                </div>
-              </InfoPanelSection>
-            ) : null}
+                {hasLinks ? (
+                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.links}>
+                    <SectionHeading>Links</SectionHeading>
+                    <div className="flex flex-wrap items-start justify-center gap-x-8 gap-y-6 sm:gap-x-10">
+                      {displayLinks.map((link) => (
+                        <UnifiedLinkIcon key={link.id} link={link} />
+                      ))}
+                    </div>
+                  </InfoPanelSection>
+                ) : null}
+              </InfoPanel>
 
-            {hasLinks ? (
-              <InfoPanelSection>
-                <SectionHeading>Liens</SectionHeading>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {displayLinks.map((link, index) => (
-                    <UnifiedLinkCard key={link.id} link={link} index={index} />
-                  ))}
-                </div>
-              </InfoPanelSection>
-            ) : null}
-          </InfoPanel>
+              {showMembersHint ? (
+                <p className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900/40 dark:text-neutral-400">
+                  <Link
+                    href={`/login?redirect=${encodeURIComponent(`/marketplace/${creatorId}`)}`}
+                    className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
+                  >
+                    Sign in
+                  </Link>{' '}
+                  to see additional member-only information.
+                </p>
+              ) : null}
+            </div>
 
-          {showMembersHint ? (
-            <p className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900/40 dark:text-neutral-400">
-              <Link
-                href={`/login?redirect=${encodeURIComponent(`/marketplace/${creatorId}`)}`}
-                className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
-              >
-                Connectez-vous
-              </Link>{' '}
-              pour voir d&apos;autres informations réservées aux membres.
-            </p>
-          ) : null}
+            {navItems.length > 0 ? (
+              <ProfileSectionStickyAside className="w-[15.5rem] md:col-start-2 md:row-start-1">
+                {renderNav('desktop')}
+              </ProfileSectionStickyAside>
+            ) : null}
+          </div>
         </div>
       )}
     </section>

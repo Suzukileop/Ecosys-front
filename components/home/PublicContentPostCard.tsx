@@ -10,6 +10,8 @@ import { listComments } from '@/lib/marketplace-api';
 import { useAuth } from '@/context/AuthContext';
 import type { PublicContentFeedItem } from '@/types/marketplace';
 
+const EASE = 'duration-300 ease-out';
+
 type PublicContentPostCardProps = {
   post: PublicContentFeedItem;
   className?: string;
@@ -90,66 +92,19 @@ export function PublicContentPostCard({
     </div>
   );
 
-  const lightbox = (
-    <ContentPostLightbox
-      post={post}
-      open={lightboxOpen}
-      onClose={() => setLightboxOpen(false)}
-      loginRedirect="/login?redirect=/dashboard/home"
-    />
-  );
-
-  if (isSplit) {
-    return (
-      <div
-        className={`mx-auto flex w-full max-w-[min(100%,88rem)] flex-col gap-4 px-1 sm:px-2 lg:flex-row lg:items-stretch lg:gap-5 ${className}`}
-      >
-        <article className="flex w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 lg:w-[calc((100%-1.5rem)/2)] lg:max-w-[calc((100%-1.5rem)/2)]">
-          <div className="relative shrink-0 p-4">
-            <ContentPostStudioHeader
-              creatorName={post.creator.fullName}
-              avatarUrl={post.creator.avatarUrl}
-              moodLabel={post.moodLabel}
-              moodEmoji={post.moodEmoji}
-              taggedUsers={post.taggedUsers}
-              profileHref={profileHref}
-            />
-          </div>
-
-          {mediaBlock}
-
-          <div className="shrink-0 p-4">
-            <ContentPostSocialBar
-              postId={post.id}
-              initialLikes={post.likes}
-              createdAt={post.createdAt}
-              commentsOpen={commentsOpen}
-              onCommentsToggle={setCommentsOpen}
-              commentCount={commentCount}
-              hideCommentsButton
-            />
-          </div>
-        </article>
-
-        <ContentPostSidePanel
-          post={post}
-          commentCount={commentCount}
-          commentsEnabled={post.commentsEnabled !== false}
-          onCommentsToggle={setCommentsOpen}
-          onCountChange={setCommentCount}
-          loginRedirect="/login?redirect=/dashboard/home"
-          isAuthenticated={isAuthenticated}
-          className="min-h-0 w-full flex-1 lg:h-auto lg:min-h-full"
-        />
-
-        {lightbox}
-      </div>
-    );
-  }
-
   return (
-    <div className={`flex w-full items-center justify-center ${className}`}>
-      <article className="flex w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 xl:max-w-2xl">
+    <div
+      className={`mx-auto flex w-full items-stretch transition-[max-width] ${EASE} ${
+        isSplit
+          ? 'max-w-[min(100%,88rem)] flex-col gap-4 px-1 sm:px-2 lg:flex-row lg:gap-5'
+          : 'max-w-xl flex-col justify-center xl:max-w-2xl'
+      } ${className}`}
+    >
+      <article
+        className={`flex w-full flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition-[flex-basis,max-width,width] ${EASE} dark:border-neutral-800 dark:bg-neutral-900 ${
+          isSplit ? 'lg:w-1/2 lg:shrink-0 lg:grow-0' : 'max-w-xl xl:max-w-2xl'
+        }`}
+      >
         <div className="relative shrink-0 space-y-3 p-4">
           <ContentPostStudioHeader
             creatorName={post.creator.fullName}
@@ -159,19 +114,21 @@ export function PublicContentPostCard({
             taggedUsers={post.taggedUsers}
             profileHref={profileHref}
           />
-          <div>
-            <h3
-              className="text-lg font-bold leading-tight text-neutral-900 dark:text-white"
-              style={post.textColor ? { color: post.textColor } : undefined}
-            >
-              {title}
-            </h3>
-            {genre ? (
-              <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
-                {genre}
-              </p>
-            ) : null}
-          </div>
+          {!isSplit ? (
+            <div>
+              <h3
+                className="text-lg font-bold leading-tight text-neutral-900 dark:text-white"
+                style={post.textColor ? { color: post.textColor } : undefined}
+              >
+                {title}
+              </h3>
+              {genre ? (
+                <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
+                  {genre}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         {mediaBlock}
@@ -181,14 +138,42 @@ export function PublicContentPostCard({
             postId={post.id}
             initialLikes={post.likes}
             createdAt={post.createdAt}
-            commentsOpen={false}
-            onCommentsToggle={() => openLightbox()}
+            commentsOpen={isSplit ? commentsOpen : false}
+            onCommentsToggle={isSplit ? setCommentsOpen : () => openLightbox()}
             commentCount={commentCount}
+            hideCommentsButton={isSplit}
           />
         </div>
       </article>
 
-      {lightbox}
+      <div
+        className={`overflow-hidden transition-[flex-basis,opacity,margin] ${EASE} ${
+          isSplit
+            ? 'w-full opacity-100 lg:w-1/2 lg:shrink-0 lg:grow-0'
+            : 'pointer-events-none max-h-0 w-0 opacity-0 lg:max-h-none'
+        }`}
+        aria-hidden={!isSplit}
+      >
+        {isSplit ? (
+          <ContentPostSidePanel
+            post={post}
+            commentCount={commentCount}
+            commentsEnabled={post.commentsEnabled !== false}
+            onCommentsToggle={setCommentsOpen}
+            onCountChange={setCommentCount}
+            loginRedirect="/login?redirect=/dashboard/home"
+            isAuthenticated={isAuthenticated}
+            className="min-h-0 h-full w-full"
+          />
+        ) : null}
+      </div>
+
+      <ContentPostLightbox
+        post={post}
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        loginRedirect="/login?redirect=/dashboard/home"
+      />
     </div>
   );
 }

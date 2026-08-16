@@ -20,30 +20,33 @@ function MessageIcon({ className }: { className?: string }) {
   );
 }
 
-const iconButtonClass =
-  'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800';
+/** Primary CTA — highest-intent action on a public creator profile. */
+const primaryButtonClass =
+  'inline-flex items-center justify-center gap-2 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
 
 export function OrderCreatorCta({ creatorId, creatorName, isAuthenticated }: OrderCreatorCtaProps) {
   const profileUrl = `/marketplace/${creatorId}`;
   const discussUrl = `/dashboard/discussions?user=${encodeURIComponent(creatorId)}`;
-  const label = creatorName ? `Discuter avec ${creatorName}` : 'Discuter avec le créateur';
+  const a11yLabel = creatorName ? `Discuss with ${creatorName}` : 'Discuss with creator';
 
   if (!isAuthenticated) {
     return (
       <Link
-        href={`/login?redirect=${encodeURIComponent(profileUrl)}`}
-        className={iconButtonClass}
-        title="Se connecter pour discuter"
-        aria-label="Se connecter pour discuter"
+        href={`/login?redirect=${encodeURIComponent(discussUrl)}`}
+        className={primaryButtonClass}
+        title="Sign in to discuss"
+        aria-label={a11yLabel}
       >
-        <MessageIcon className="h-5 w-5" />
+        <MessageIcon className="h-4 w-4" />
+        Discuss
       </Link>
     );
   }
 
   return (
-    <Link href={discussUrl} className={iconButtonClass} title={label} aria-label={label}>
-      <MessageIcon className="h-5 w-5" />
+    <Link href={discussUrl} className={primaryButtonClass} title={a11yLabel} aria-label={a11yLabel}>
+      <MessageIcon className="h-4 w-4" />
+      Discuss
     </Link>
   );
 }

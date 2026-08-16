@@ -27,6 +27,13 @@ import {
 } from '@/lib/availabilityHours';
 import { SPOKEN_LANGUAGE_PRESETS, dedupeSpokenLanguages, spokenLanguageMatchKey } from '@/lib/spoken-languages';
 import { TYPICAL_RESPONSE_TIME_OPTIONS } from '@/lib/typical-response-time';
+import {
+  AVAILABILITY_STATUS_OTHER_VALUE,
+  availabilityStatusSelectOptions,
+  isAvailabilityStatusPreset,
+  normalizeAvailabilityStatusSelectValue,
+  resolveAvailabilityStatusLabel,
+} from '@/lib/availability-status';
 import { SpecialtyMultiSelect } from '@/components/creator/studio/SpecialtyMultiSelect';
 import { parseSpecialtyList, parseSpecialtyTags } from '@/lib/specialties';
 import { PortfolioLocationReadOnly } from '@/components/portfolio/PortfolioLocationChrome';
@@ -428,6 +435,7 @@ export function PortfolioProfileHero({
   name,
   avatarUrl,
   isAvailable,
+  availabilityLabel,
   aboutChromeOpen,
   aboutEditMode,
   onAboutEditModeChange,
@@ -454,6 +462,7 @@ export function PortfolioProfileHero({
   name: string;
   avatarUrl?: string | null;
   isAvailable: boolean;
+  availabilityLabel?: string | null;
   aboutChromeOpen?: boolean;
   aboutEditMode?: 'individual' | 'global';
   onAboutEditModeChange?: (mode: 'individual' | 'global') => void;
@@ -629,7 +638,7 @@ export function PortfolioProfileHero({
 
   if (!showIdentity) {
     return (
-      <div className="flex items-center justify-end px-5 py-2 sm:px-6 sm:py-2.5">
+      <div className="flex items-center justify-end px-5 py-1.5 sm:px-6 sm:py-2">
         {actions}
       </div>
     );
@@ -643,8 +652,8 @@ export function PortfolioProfileHero({
             ? 'ring-emerald-500 dark:ring-emerald-500/50'
             : 'ring-neutral-400 dark:ring-neutral-500'
         }`}
-        title={isAvailable ? 'Available' : 'Unavailable'}
-        aria-label={isAvailable ? 'Available' : 'Unavailable'}
+        title={resolveAvailabilityStatusLabel(isAvailable, availabilityLabel) ?? 'Unavailable'}
+        aria-label={resolveAvailabilityStatusLabel(isAvailable, availabilityLabel) ?? 'Unavailable'}
       >
         {avatarUrl?.trim() ? (
           <div className="h-20 w-20 overflow-hidden rounded-full [&_img]:!h-20 [&_img]:!w-20">
@@ -790,6 +799,7 @@ export type PortfolioAboutFieldKey =
   | 'yearsOfExperience'
   | 'spokenLanguages'
   | 'isAvailable'
+  | 'availabilityLabel'
   | 'availabilityHours'
   | 'typicalResponseTime';
 
@@ -803,6 +813,7 @@ export type PortfolioAboutFieldValue = {
   yearsOfExperience: number | null;
   spokenLanguages: string[];
   isAvailable: boolean;
+  availabilityLabel: string;
   availabilityHours: string;
   typicalResponseTime: string;
 };
@@ -818,6 +829,7 @@ export function PortfolioAboutReadOnly({
   yearsOfExperience = null,
   languages,
   isAvailable,
+  availabilityLabel = '',
   availabilityHours,
   availabilityTimezone,
   rawAvailabilityHours,
@@ -839,6 +851,7 @@ export function PortfolioAboutReadOnly({
   editMode = 'individual',
   onGlobalHasChangesChange,
   onRegisterGlobalConfirm,
+  hideProviderFields = false,
 }: {
   fullName: string;
   bio: string;
@@ -850,12 +863,15 @@ export function PortfolioAboutReadOnly({
   yearsOfExperience?: number | null;
   languages: string[];
   isAvailable: boolean;
+  availabilityLabel?: string;
   availabilityHours: string | null;
   availabilityTimezone?: string | null;
   rawAvailabilityHours?: string | null;
   memberSince: string | null;
   responseTimeLabel: string | null;
   typicalResponseTime?: string;
+  /** Hide specialty, years, status, availability hours, typical response (RH / Recruiter). */
+  hideProviderFields?: boolean;
   locationCity?: string;
   locationCountry?: string;
   locationTimezone?: string;
@@ -905,6 +921,12 @@ export function PortfolioAboutReadOnly({
   );
   const [draftLanguages, setDraftLanguages] = useState(languages);
   const [draftAvailable, setDraftAvailable] = useState(isAvailable);
+  const [draftAvailabilityLabel, setDraftAvailabilityLabel] = useState(() =>
+    normalizeAvailabilityStatusSelectValue(availabilityLabel)
+  );
+  const [draftAvailabilityCustomMode, setDraftAvailabilityCustomMode] = useState(
+    () => !isAvailabilityStatusPreset(availabilityLabel)
+  );
   const [draftTypicalResponseTime, setDraftTypicalResponseTime] = useState(typicalResponseTime);
   const [draftSchedule, setDraftSchedule] = useState<AvailabilitySchedule>(() =>
     rawAvailabilityHours || availabilityHours
@@ -922,6 +944,8 @@ export function PortfolioAboutReadOnly({
     setDraftYearsOfExperience(yearsOfExperience != null ? String(yearsOfExperience) : '');
     setDraftLanguages(languages);
     setDraftAvailable(isAvailable);
+    setDraftAvailabilityLabel(normalizeAvailabilityStatusSelectValue(availabilityLabel));
+    setDraftAvailabilityCustomMode(!isAvailabilityStatusPreset(availabilityLabel));
     setDraftTypicalResponseTime(typicalResponseTime);
     setDraftSchedule(
       rawAvailabilityHours || availabilityHours
@@ -948,7 +972,7 @@ export function PortfolioAboutReadOnly({
     if (isGlobal) return;
     resetDrafts();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keep drafts in sync when not editing
-  }, [fullName, bio, specialite, specialties, specialtyTags, gender, nationality, yearsOfExperience, languages, isAvailable, rawAvailabilityHours, availabilityHours, typicalResponseTime]);
+  }, [fullName, bio, specialite, specialties, specialtyTags, gender, nationality, yearsOfExperience, languages, isAvailable, availabilityLabel, rawAvailabilityHours, availabilityHours, typicalResponseTime]);
 
   const startEdit = (field: PortfolioAboutFieldKey) => {
     resetDrafts();
@@ -1006,6 +1030,11 @@ export function PortfolioAboutReadOnly({
         return !sameLanguages(draftLanguages, languages);
       case 'isAvailable':
         return draftAvailable !== isAvailable;
+      case 'availabilityLabel':
+        return (
+          normalizeAvailabilityStatusSelectValue(draftAvailabilityLabel) !==
+          normalizeAvailabilityStatusSelectValue(availabilityLabel)
+        );
       case 'availabilityHours':
         return draftAvailabilityHours !== originalAvailabilityHours;
       case 'typicalResponseTime':
@@ -1018,22 +1047,26 @@ export function PortfolioAboutReadOnly({
   const globalHasChanges =
     draftName.trim() !== fullName.trim() ||
     draftBio.trim() !== bio.trim() ||
-    !sameList(draftSpecialties, savedSpecialties) ||
-    !sameList(draftSpecialtyTags, savedTags) ||
+    (!hideProviderFields &&
+      (!sameList(draftSpecialties, savedSpecialties) || !sameList(draftSpecialtyTags, savedTags))) ||
     draftGender.trim() !== gender.trim() ||
     draftNationality.trim() !== nationality.trim() ||
-    (() => {
-      const draft =
-        draftYearsOfExperience.trim() === ''
-          ? null
-          : Number.parseInt(draftYearsOfExperience, 10);
-      const normalized = draft == null || Number.isNaN(draft) ? null : draft;
-      return normalized !== (yearsOfExperience ?? null);
-    })() ||
+    (!hideProviderFields &&
+      (() => {
+        const draft =
+          draftYearsOfExperience.trim() === ''
+            ? null
+            : Number.parseInt(draftYearsOfExperience, 10);
+        const normalized = draft == null || Number.isNaN(draft) ? null : draft;
+        return normalized !== (yearsOfExperience ?? null);
+      })()) ||
     !sameLanguages(draftLanguages, languages) ||
-    draftAvailable !== isAvailable ||
-    draftAvailabilityHours !== originalAvailabilityHours ||
-    draftTypicalResponseTime !== (typicalResponseTime ?? '');
+    (!hideProviderFields &&
+      (draftAvailable !== isAvailable ||
+        normalizeAvailabilityStatusSelectValue(draftAvailabilityLabel) !==
+          normalizeAvailabilityStatusSelectValue(availabilityLabel) ||
+        draftAvailabilityHours !== originalAvailabilityHours ||
+        draftTypicalResponseTime !== (typicalResponseTime ?? '')));
 
   useEffect(() => {
     onGlobalHasChangesChange?.(isGlobal ? globalHasChanges : false);
@@ -1079,6 +1112,12 @@ export function PortfolioAboutReadOnly({
         case 'isAvailable':
           await onFieldSave('isAvailable', draftAvailable);
           break;
+        case 'availabilityLabel':
+          await onFieldSave(
+            'availabilityLabel',
+            normalizeAvailabilityStatusSelectValue(draftAvailabilityLabel)
+          );
+          break;
         case 'availabilityHours':
           await onFieldSave('availabilityHours', draftAvailabilityHours);
           break;
@@ -1111,6 +1150,7 @@ export function PortfolioAboutReadOnly({
         })(),
         spokenLanguages: dedupeSpokenLanguages(draftLanguages),
         isAvailable: draftAvailable,
+        availabilityLabel: normalizeAvailabilityStatusSelectValue(draftAvailabilityLabel),
         availabilityHours: draftAvailabilityHours,
         typicalResponseTime: draftTypicalResponseTime,
       });
@@ -1150,6 +1190,7 @@ export function PortfolioAboutReadOnly({
       <PortfolioFlatField
         label="Name"
         value={fullName}
+        className="!pt-3 !pb-5"
         editing={fieldEditing('fullName')}
         onEdit={fieldOnEdit('fullName')}
         onConfirm={fieldOnConfirm}
@@ -1170,6 +1211,7 @@ export function PortfolioAboutReadOnly({
       <PortfolioFlatField
         label="Bio"
         value={bio}
+        className="!py-5"
         editing={fieldEditing('bio')}
         onEdit={fieldOnEdit('bio')}
         onConfirm={fieldOnConfirm}
@@ -1188,26 +1230,27 @@ export function PortfolioAboutReadOnly({
         }
       />
       <div className="grid items-start gap-x-8 sm:grid-cols-2">
-        <PortfolioFlatField
-          label="Specialty"
-          editing={fieldEditing('specialite')}
-          onEdit={fieldOnEdit('specialite')}
-          onConfirm={fieldOnConfirm}
-          onCancelEdit={fieldOnCancel}
-          confirming={confirming && (editingField === 'specialite' || editingField === 'specialtySet')}
-          canConfirm={fieldHasChanges}
-          editControl={
-            <SpecialtyMultiSelect
-              specialties={draftSpecialties}
-              tags={draftSpecialtyTags}
-              onSpecialtiesChange={setDraftSpecialties}
-              onTagsChange={setDraftSpecialtyTags}
-              disabled={confirming}
-            />
-          }
-        >
-          {savedSpecialties.length > 0 ? (
-            <div className="space-y-2">
+        {!hideProviderFields ? (
+          <PortfolioFlatField
+            label="Specialty"
+            editing={fieldEditing('specialite')}
+            onEdit={fieldOnEdit('specialite')}
+            onConfirm={fieldOnConfirm}
+            onCancelEdit={fieldOnCancel}
+            confirming={confirming && (editingField === 'specialite' || editingField === 'specialtySet')}
+            canConfirm={fieldHasChanges}
+            editControl={
+              <SpecialtyMultiSelect
+                specialties={draftSpecialties}
+                tags={draftSpecialtyTags}
+                onSpecialtiesChange={setDraftSpecialties}
+                onTagsChange={setDraftSpecialtyTags}
+                disabled={confirming}
+                showTags={false}
+              />
+            }
+          >
+            {savedSpecialties.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {savedSpecialties.map((item, index) => {
                   const isPrimary = index === 0;
@@ -1225,21 +1268,9 @@ export function PortfolioAboutReadOnly({
                   );
                 })}
               </div>
-              {savedTags.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {savedTags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-xs font-medium text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ) : undefined}
-        </PortfolioFlatField>
+            ) : undefined}
+          </PortfolioFlatField>
+        ) : null}
         <PortfolioFlatField
           label="Working Languages"
           editing={fieldEditing('spokenLanguages')}
@@ -1328,77 +1359,138 @@ export function PortfolioAboutReadOnly({
             </select>
           }
         />
-        <PortfolioFlatField
-          label="Years of experience"
-          value={
-            yearsOfExperience != null
-              ? yearsOfExperience === 1
-                ? '1 year'
-                : `${yearsOfExperience} years`
-              : ''
-          }
-          emptyLabel="Not set"
-          editing={fieldEditing('yearsOfExperience')}
-          onEdit={fieldOnEdit('yearsOfExperience')}
-          onConfirm={fieldOnConfirm}
-          onCancelEdit={fieldOnCancel}
-          confirming={confirming && editingField === 'yearsOfExperience'}
-          canConfirm={fieldHasChanges}
-          showVisibility={visibilityEnabled && Boolean(visibility?.yearsOfExperience)}
-          visibility={visibility?.yearsOfExperience}
-          onVisibilityChange={
-            onVisibilityChange
-              ? (value) => onVisibilityChange('yearsOfExperience', value)
-              : undefined
-          }
-          editControl={
-            <input
-              type="number"
-              min={0}
-              max={80}
-              value={draftYearsOfExperience}
-              onChange={(event) => setDraftYearsOfExperience(event.target.value)}
-              className={inlineInputClass}
-              autoFocus={editingField === 'yearsOfExperience'}
-              disabled={confirming}
-              placeholder="e.g. 5"
+        {!hideProviderFields ? (
+          <>
+            <PortfolioFlatField
+              label="Years of experience"
+              value={
+                yearsOfExperience != null
+                  ? yearsOfExperience === 1
+                    ? '1 year'
+                    : `${yearsOfExperience} years`
+                  : ''
+              }
+              emptyLabel="Not set"
+              editing={fieldEditing('yearsOfExperience')}
+              onEdit={fieldOnEdit('yearsOfExperience')}
+              onConfirm={fieldOnConfirm}
+              onCancelEdit={fieldOnCancel}
+              confirming={confirming && editingField === 'yearsOfExperience'}
+              canConfirm={fieldHasChanges}
+              showVisibility={visibilityEnabled && Boolean(visibility?.yearsOfExperience)}
+              visibility={visibility?.yearsOfExperience}
+              onVisibilityChange={
+                onVisibilityChange
+                  ? (value) => onVisibilityChange('yearsOfExperience', value)
+                  : undefined
+              }
+              editControl={
+                <input
+                  type="number"
+                  min={0}
+                  max={80}
+                  value={draftYearsOfExperience}
+                  onChange={(event) => setDraftYearsOfExperience(event.target.value)}
+                  className={inlineInputClass}
+                  autoFocus={editingField === 'yearsOfExperience'}
+                  disabled={confirming}
+                  placeholder="e.g. 5"
+                />
+              }
             />
-          }
-        />
-        <PortfolioFlatField label="Status">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isAvailable}
-              aria-label={isAvailable ? 'Mark as unavailable' : 'Mark as available'}
-              disabled={!onFieldSave || fieldSaving || confirming}
-              onClick={() => {
-                if (!onFieldSave || fieldSaving || confirming) return;
-                void onFieldSave('isAvailable', !isAvailable);
-              }}
-              className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                isAvailable ? 'bg-emerald-500' : 'bg-neutral-300 dark:bg-neutral-600'
-              }`}
+            <PortfolioFlatField
+              label="Status"
+              value={resolveAvailabilityStatusLabel(isAvailable, availabilityLabel)}
+              emptyLabel="Available"
+              editing={fieldEditing('availabilityLabel')}
+              onEdit={fieldOnEdit('availabilityLabel')}
+              onConfirm={fieldOnConfirm}
+              onCancelEdit={fieldOnCancel}
+              confirming={confirming && editingField === 'availabilityLabel'}
+              canConfirm={fieldHasChanges}
+              editControl={
+                <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                  <select
+                    value={
+                      draftAvailabilityCustomMode
+                        ? AVAILABILITY_STATUS_OTHER_VALUE
+                        : normalizeAvailabilityStatusSelectValue(draftAvailabilityLabel)
+                    }
+                    onChange={(event) => {
+                      const next = event.target.value;
+                      if (next === AVAILABILITY_STATUS_OTHER_VALUE) {
+                        setDraftAvailabilityCustomMode(true);
+                        if (isAvailabilityStatusPreset(draftAvailabilityLabel)) {
+                          setDraftAvailabilityLabel('');
+                        }
+                        return;
+                      }
+                      setDraftAvailabilityCustomMode(false);
+                      setDraftAvailabilityLabel(next);
+                    }}
+                    className={`${inlineInputClass} sm:max-w-[14rem]`}
+                    autoFocus={editingField === 'availabilityLabel' && !draftAvailabilityCustomMode}
+                    disabled={confirming}
+                    aria-label="Availability status label"
+                  >
+                    {availabilityStatusSelectOptions().map((option) => (
+                      <option key={option.value || 'available'} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {draftAvailabilityCustomMode ? (
+                    <input
+                      type="text"
+                      value={draftAvailabilityLabel}
+                      onChange={(event) => setDraftAvailabilityLabel(event.target.value)}
+                      className={inlineInputClass}
+                      autoFocus={editingField === 'availabilityLabel'}
+                      disabled={confirming}
+                      maxLength={80}
+                      placeholder="Type your status…"
+                      aria-label="Custom availability status"
+                    />
+                  ) : null}
+                </div>
+              }
             >
-              <span
-                className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
-                  isAvailable ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-            <span
-              className={`text-sm font-semibold ${
-                isAvailable
-                  ? 'text-emerald-700 dark:text-emerald-300'
-                  : 'text-neutral-500 dark:text-neutral-400'
-              }`}
-            >
-              {isAvailable ? 'Available' : 'Unavailable'}
-            </span>
-          </div>
-        </PortfolioFlatField>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isAvailable}
+                  aria-label={isAvailable ? 'Mark as unavailable' : 'Mark as available'}
+                  disabled={!onFieldSave || fieldSaving || confirming}
+                  onClick={() => {
+                    if (!onFieldSave || fieldSaving || confirming) return;
+                    void onFieldSave('isAvailable', !isAvailable);
+                  }}
+                  className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                    isAvailable ? 'bg-emerald-500' : 'bg-neutral-300 dark:bg-neutral-600'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                      isAvailable ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <span
+                  className={`text-sm font-semibold ${
+                    isAvailable
+                      ? 'text-emerald-700 dark:text-emerald-300'
+                      : 'text-neutral-500 dark:text-neutral-400'
+                  }`}
+                >
+                  {resolveAvailabilityStatusLabel(isAvailable, availabilityLabel)}
+                </span>
+              </div>
+            </PortfolioFlatField>
+          </>
+        ) : null}
       </div>
+      {!hideProviderFields ? (
       <PortfolioFlatField
         label="Availability Hours"
         value={availabilityHours}
@@ -1424,8 +1516,10 @@ export function PortfolioAboutReadOnly({
           />
         }
       />
+      ) : null}
       <div className="grid items-start gap-x-8 sm:grid-cols-2">
         <PortfolioFlatField label="Member Since" value={memberSince} emptyLabel="Not available yet" />
+        {!hideProviderFields ? (
         <PortfolioFlatField
           label="Typical Response Time"
           value={responseTimeLabel}
@@ -1458,6 +1552,7 @@ export function PortfolioAboutReadOnly({
             </select>
           }
         />
+        ) : null}
       </div>
       <div className="py-6">
         <div className="mb-2.5 flex items-center justify-between gap-4">

@@ -28,3 +28,13 @@ export function togglePinnedMessage(conversationId: string, messageId: string): 
   window.dispatchEvent(new CustomEvent('discussion-pins-updated', { detail: { conversationId } }));
   return !pinned;
 }
+
+export function removePinnedMessage(conversationId: string, messageId: string): void {
+  const current = getPinnedMessageIds(conversationId);
+  if (!current.includes(messageId)) return;
+  window.localStorage.setItem(
+    storageKey(conversationId),
+    JSON.stringify(current.filter((id) => id !== messageId))
+  );
+  window.dispatchEvent(new CustomEvent('discussion-pins-updated', { detail: { conversationId } }));
+}

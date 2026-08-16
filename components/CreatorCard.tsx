@@ -4,10 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faComment } from '@fortawesome/free-solid-svg-icons';
-import { CreatorAvailabilityBadge } from '@/components/creator/studio/CreatorAvailabilityControl';
 import { useAuth } from '@/context/AuthContext';
 import { CountryFlag } from '@/components/ui/CountryFlag';
 import { formatDistanceAwayKm, nationalityLabel, normalizeNationalityCode } from '@/lib/countries';
+import { formatPlaceLabel } from '@/lib/geolocation';
 import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
 import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
 
@@ -37,6 +37,19 @@ function FolderIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
       <path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+    </svg>
+  );
+}
+
+function PinIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   );
 }
@@ -163,6 +176,8 @@ type CreatorCardProps = {
   nationality?: string | null;
   yearsOfExperience?: number | null;
   distanceKm?: number | null;
+  locationCity?: string | null;
+  locationCountry?: string | null;
 };
 
 export function CreatorCard({
@@ -181,6 +196,8 @@ export function CreatorCard({
   nationality,
   yearsOfExperience,
   distanceKm,
+  locationCity,
+  locationCountry,
 }: CreatorCardProps) {
   const { user } = useAuth();
   const resolvedId = (id ?? userId ?? '').trim();
@@ -191,6 +208,7 @@ export function CreatorCard({
   const isNew = !hasRating && !isVerified && services === 0;
   const bioText = bio?.trim() || '';
   const distanceLabel = formatDistanceAwayKm(distanceKm);
+  const placeLabel = formatPlaceLabel(locationCity, locationCountry, nationality);
   const profileHref = resolvedId ? `/marketplace/${resolvedId}` : null;
   const servicesHref = resolvedId ? `/marketplace/${resolvedId}?tab=services` : null;
   const discussHref =
@@ -268,7 +286,12 @@ export function CreatorCard({
                 <span>{servicesLabel}</span>
               </p>
             )}
-            <CreatorAvailabilityBadge isAvailable={isAvailable} />
+            {placeLabel ? (
+              <p className="inline-flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+                <PinIcon className="h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500" />
+                <span className="truncate">{placeLabel}</span>
+              </p>
+            ) : null}
           </div>
 
           <div className="mt-3 min-h-[4.5rem]">

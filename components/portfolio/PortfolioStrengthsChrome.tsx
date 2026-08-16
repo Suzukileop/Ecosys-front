@@ -10,13 +10,14 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
+import { SkillTagsEditor } from '@/components/creator/studio/SkillTagsEditor';
 import type { StrengthToolLevel } from '@/components/creator/studio/profile-form-schema';
 import {
   PortfolioFlatField,
   PortfolioLanguageChips,
 } from '@/components/portfolio/PortfolioInformationChrome';
 import { getSkillUsageDescription } from '@/components/portfolio/skill-usage-descriptions';
-import { matchSpecialtyOption, specialtyGroupLabel } from '@/lib/specialties';
+import { matchSpecialtyOption, parseSpecialtyTags, specialtyGroupLabel } from '@/lib/specialties';
 import { portfolioInlineInputClass } from '@/components/portfolio/portfolio-section-shared';
 import { uploadContentMedia } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
@@ -126,10 +127,11 @@ function skillHasContent(draft: PortfolioStrengthDraft): boolean {
 
 function isSkillEmpty(draft: PortfolioStrengthDraft): boolean {
   const cleaned = cleanDraft(draft);
+  // Category is often pre-filled from profile specialties when composing a new tool —
+  // treat "no name yet" as empty so Add (+) can open the compose form.
   return (
     !cleaned.value &&
     !cleaned.description &&
-    !cleaned.category &&
     cleaned.level == null &&
     cleaned.useCases.length === 0 &&
     cleaned.experienceYears == null &&
@@ -259,6 +261,8 @@ function UseCasesEditor({
 
 export function PortfolioStrengthsReadOnly({
   items,
+  skillTags = [],
+  onSkillTagsSave,
   allowedSpecialties = [],
   onItemSave,
   onItemsSave,
@@ -274,13 +278,16 @@ export function PortfolioStrengthsReadOnly({
   onRegisterGlobalConfirm,
 }: {
   items: PortfolioStrengthItem[];
+  /** Keyword tags for the Skills band (separate from Tools). */
+  skillTags?: string[];
+  onSkillTagsSave?: (next: string[]) => Promise<void>;
   allowedSpecialties?: string[];
   onItemSave?: (index: number, next: PortfolioStrengthDraft) => Promise<void>;
   onItemsSave?: (next: PortfolioStrengthDraft[]) => Promise<void>;
   onRemoveItem?: (index: number) => Promise<void> | void;
   fieldSaving?: boolean;
   actionsVisible?: boolean;
-  /** Add-skill compose without opening full Edit mode. */
+  /** Add-tool compose without opening full Edit mode. */
   composeAdd?: boolean;
   deleteMode?: boolean;
   onDeleteModeChange?: (active: boolean) => void;
@@ -290,11 +297,15 @@ export function PortfolioStrengthsReadOnly({
   onRegisterGlobalConfirm?: (confirm: (() => Promise<void>) | null) => void;
 }) {
   // Edit session: cards stay in preview; a pen icon opens fields for one item.
-  // Add skill: compose only the new item.
+  // Add tool: compose only the new item.
   const editSession = Boolean(actionsVisible && !deleteMode);
   const showFieldActions = Boolean((editSession || composeAdd) && !deleteMode);
   const isGlobal = false;
   const specialtyOptions = allowedSpecialties.filter(Boolean);
+
+  const [draftSkillTags, setDraftSkillTags] = useState(() => parseSpecialtyTags(skillTags));
+  const [savingSkillTags, setSavingSkillTags] = useState(false);
+  const [editingSkills, setEditingSkills] = useState(false);
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<PortfolioStrengthDraft[]>(() => items.map(toDraft));
@@ -306,6 +317,47 @@ export function PortfolioStrengthsReadOnly({
   const prevItemsLengthRef = useRef(items.length);
   const editingCardRef = useRef<HTMLElement | null>(null);
   const cancelEditRef = useRef<() => Promise<void>>(async () => undefined);
+
+  useEffect(() => {
+    if (editingSkills) return;
+    setDraftSkillTags(parseSpecialtyTags(skillTags));
+  }, [skillTags, editingSkills]);
+
+  useEffect(() => {
+    if (composeAdd || deleteMode) {
+      setEditingSkills(false);
+      setDraftSkillTags(parseSpecialtyTags(skillTags));
+    }
+  }, [composeAdd, deleteMode, skillTags]);
+
+  const persistSkillTags = async (next: string[]) => {
+    const cleaned = parseSpecialtyTags(next);
+    setDraftSkillTags(cleaned);
+    if (!onSkillTagsSave) return;
+    const current = parseSpecialtyTags(skillTags);
+    if (
+      cleaned.length === current.length &&
+      cleaned.every((tag, index) => tag === current[index])
+    ) {
+      return;
+    }
+    setSavingSkillTags(true);
+    try {
+      await onSkillTagsSave(cleaned);
+    } catch {
+      setDraftSkillTags(parseSpecialtyTags(skillTags));
+      throw new Error('skill-tags-save-failed');
+    } finally {
+      setSavingSkillTags(false);
+    }
+  };
+
+  const skillsHaveChanges = (() => {
+    const current = parseSpecialtyTags(skillTags);
+    const draft = parseSpecialtyTags(draftSkillTags);
+    if (current.length !== draft.length) return true;
+    return draft.some((tag, index) => tag !== current[index]);
+  })();
 
   const syncDraftsFromItems = () => {
     setDrafts(items.map(toDraft));
@@ -370,13 +422,22 @@ export function PortfolioStrengthsReadOnly({
     if (editingIndex != null) return;
     const lastIndex = items.length - 1;
     if (lastIndex < 0) return;
-    if (isSkillEmpty(toDraft(items[lastIndex]))) {
+    const last = toDraft(items[lastIndex]);
+    if (isSkillEmpty(last) || !last.value.trim()) {
       setDrafts(items.map(toDraft));
       setEditingIndex(lastIndex);
       setOpenIndex(lastIndex);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [composeAdd, items.length]);
+
+  useEffect(() => {
+    if (!composeAdd || editingIndex == null) return;
+    const frame = window.requestAnimationFrame(() => {
+      editingCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [composeAdd, editingIndex]);
 
   const startEdit = (index: number) => {
     if (!editSession || fieldSaving) return;
@@ -494,6 +555,11 @@ export function PortfolioStrengthsReadOnly({
         actionsVisible || index === editingIndex || item.value.trim()
     )
     .sort((a, b) => {
+      // Keep the tool being composed/edited at the top of Tools so the fields are obvious.
+      if (editingIndex != null) {
+        if (a.index === editingIndex) return -1;
+        if (b.index === editingIndex) return 1;
+      }
       const rank = (category: string) => {
         const matched = matchSpecialtyOption(category, specialtyOptions);
         if (!matched) return 999;
@@ -525,24 +591,89 @@ export function PortfolioStrengthsReadOnly({
     setUploadError(null);
   };
 
+  const skillsBlock = (
+    <PortfolioFlatField
+      label="Skills"
+      emptyLabel="No skill tags"
+      className="!py-3"
+      editing={editingSkills}
+      confirming={savingSkillTags}
+      canConfirm={skillsHaveChanges}
+      onEdit={
+        onSkillTagsSave
+          ? () => {
+              setDraftSkillTags(parseSpecialtyTags(skillTags));
+              setEditingSkills(true);
+            }
+          : undefined
+      }
+      onCancelEdit={() => {
+        setDraftSkillTags(parseSpecialtyTags(skillTags));
+        setEditingSkills(false);
+      }}
+      onConfirm={() => {
+        void (async () => {
+          try {
+            await persistSkillTags(draftSkillTags);
+            setEditingSkills(false);
+          } catch {
+            // Keep editor open; persistSkillTags already restored draft on failure.
+          }
+        })();
+      }}
+      editControl={
+        <SkillTagsEditor
+          tags={draftSkillTags}
+          onChange={setDraftSkillTags}
+          disabled={savingSkillTags}
+          editable
+        />
+      }
+    >
+      <SkillTagsEditor
+        tags={parseSpecialtyTags(skillTags)}
+        onChange={() => undefined}
+        editable={false}
+      />
+    </PortfolioFlatField>
+  );
+
   if (visibleEntries.length === 0 && !actionsVisible && !composeAdd) {
     return (
-      <p className="py-10 text-center text-sm italic text-neutral-500 dark:text-neutral-400">
-        No skills yet. Click Add skill to create one.
-      </p>
+      <div className="space-y-4 pb-2">
+        {skillsBlock}
+        <section className="space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
+            Tools
+          </h3>
+          <p className="py-6 text-center text-sm italic text-neutral-500 dark:text-neutral-400">
+            No tools yet. Click Add tool to create one.
+          </p>
+        </section>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-3 pb-2">
+    <div className="space-y-4 pb-2">
+      {skillsBlock}
+
+      <section className="space-y-2">
+        <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
+          Tools
+        </h3>
       <div className="flex flex-col gap-3.5 pb-5">
         {visibleEntries.map(({ item, index }, position) => {
+          const composingThis = composeAdd && editingIndex === index;
           const groupLabel = specialtyGroupLabel(item.category, specialtyOptions);
           const previousLabel =
             position > 0
               ? specialtyGroupLabel(visibleEntries[position - 1].item.category, specialtyOptions)
               : null;
-          const showGroupHeading = groupLabel !== previousLabel;
+          const showGroupHeading =
+            !composingThis &&
+            groupLabel !== previousLabel &&
+            !(position > 0 && composeAdd && visibleEntries[position - 1].index === editingIndex);
           const draft = drafts[index] ?? toDraft(item);
           const editing = !deleteMode && Boolean(showFieldActions && editingIndex === index);
           const open = openIndex === index || editing;
@@ -580,10 +711,14 @@ export function PortfolioStrengthsReadOnly({
 
           return (
             <div key={item.id} className="space-y-2">
-              {showGroupHeading ? (
-                <h3 className="pt-2 text-xs font-bold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
+              {composingThis ? (
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-orange-600 dark:text-orange-400">
+                  New tool
+                </p>
+              ) : showGroupHeading ? (
+                <h4 className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
                   {groupLabel}
-                </h3>
+                </h4>
               ) : null}
             <article
               key={item.id}
@@ -941,6 +1076,7 @@ export function PortfolioStrengthsReadOnly({
           );
         })}
       </div>
+      </section>
     </div>
   );
 }

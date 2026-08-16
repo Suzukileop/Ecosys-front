@@ -6,6 +6,8 @@ export type MessageStatusType = OutgoingMessageStatus | 'sending';
 type MessageStatusIndicatorProps = {
   status: MessageStatusType;
   variant?: 'inbox' | 'chat';
+  /** Use light checks on brand/orange bubbles. */
+  tone?: 'default' | 'onBrand';
 };
 
 function SingleCheck({ className }: { className?: string }) {
@@ -46,9 +48,9 @@ function DoubleCheck({ className }: { className?: string }) {
 function SendingDots({ className }: { className?: string }) {
   return (
     <span className={`inline-flex items-center gap-0.5 ${className ?? ''}`} aria-hidden>
-      <span className="h-1 w-1 animate-pulse rounded-full bg-current [animation-delay:0ms]" />
-      <span className="h-1 w-1 animate-pulse rounded-full bg-current [animation-delay:150ms]" />
-      <span className="h-1 w-1 animate-pulse rounded-full bg-current [animation-delay:300ms]" />
+      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current [animation-delay:0ms]" />
+      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current [animation-delay:150ms]" />
+      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current [animation-delay:300ms]" />
     </span>
   );
 }
@@ -58,37 +60,37 @@ function getAriaLabel(status: MessageStatusType): string {
   return getOutgoingStatusLabel(status);
 }
 
-export function MessageStatusIndicator({ status, variant = 'chat' }: MessageStatusIndicatorProps) {
+export function MessageStatusIndicator({
+  status,
+  variant = 'chat',
+  tone = 'default',
+}: MessageStatusIndicatorProps) {
   const isInbox = variant === 'inbox';
-  const iconClass = isInbox ? 'h-3.5 w-3.5' : 'h-3.5 w-3.5';
+  const onBrand = tone === 'onBrand';
+  const iconClass = isInbox ? 'h-4 w-4' : 'h-4 w-4';
   const ariaLabel = getAriaLabel(status);
+  const mutedClass = onBrand
+    ? 'text-white/80'
+    : isInbox
+      ? 'text-gray-400 dark:text-neutral-500'
+      : 'text-[var(--msg-muted,#737373)]';
+  const seenClass = onBrand
+    ? 'text-white'
+    : isInbox
+      ? 'text-gray-500 dark:text-neutral-400'
+      : 'text-[var(--msg-muted,#737373)]';
 
   if (status === 'sending') {
     return (
-      <span
-        className={`inline-flex shrink-0 items-center ${
-          isInbox
-            ? 'text-gray-400 dark:text-neutral-500'
-            : 'gap-1.5 text-[11px] text-gray-400 dark:text-neutral-500'
-        }`}
-        aria-label={ariaLabel}
-        title={ariaLabel}
-      >
+      <span className={`inline-flex shrink-0 items-center ${mutedClass}`} aria-label={ariaLabel} title={ariaLabel}>
         <SendingDots />
-        {!isInbox ? <span className="font-medium">Sending</span> : null}
       </span>
     );
   }
 
   if (status === 'seen') {
     return (
-      <span
-        className={`inline-flex shrink-0 items-center ${
-          isInbox ? 'text-gray-500 dark:text-neutral-400' : 'text-[#FDBA74]'
-        }`}
-        aria-label={ariaLabel}
-        title={ariaLabel}
-      >
+      <span className={`inline-flex shrink-0 items-center ${seenClass}`} aria-label={ariaLabel} title={ariaLabel}>
         <DoubleCheck className={iconClass} />
       </span>
     );
@@ -96,26 +98,14 @@ export function MessageStatusIndicator({ status, variant = 'chat' }: MessageStat
 
   if (status === 'delivered') {
     return (
-      <span
-        className={`inline-flex shrink-0 items-center ${
-          isInbox ? 'text-gray-400 dark:text-neutral-500' : 'text-white/70'
-        }`}
-        aria-label={ariaLabel}
-        title={ariaLabel}
-      >
+      <span className={`inline-flex shrink-0 items-center ${mutedClass}`} aria-label={ariaLabel} title={ariaLabel}>
         <DoubleCheck className={iconClass} />
       </span>
     );
   }
 
   return (
-    <span
-      className={`inline-flex shrink-0 items-center ${
-        isInbox ? 'text-gray-400 dark:text-neutral-500' : 'text-white/60'
-      }`}
-      aria-label={ariaLabel}
-      title={ariaLabel}
-    >
+    <span className={`inline-flex shrink-0 items-center ${mutedClass}`} aria-label={ariaLabel} title={ariaLabel}>
       <SingleCheck className={iconClass} />
     </span>
   );

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 type ChatShortVideoPlayerProps = {
   src: string;
   label: string;
-  onDownload: () => void;
+  onDownload?: () => void;
   className?: string;
 };
 
@@ -97,7 +97,7 @@ export function ChatShortVideoPlayer({ src, label, onDownload, className = '' }:
     'opacity-100 transition-opacity duration-200 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-hover/media:opacity-100';
 
   return (
-    <div className={`group/media relative bg-black ${className}`}>
+    <div className={`group/media relative bg-transparent ${className}`}>
       <video
         ref={videoRef}
         src={src}
@@ -169,16 +169,18 @@ export function ChatShortVideoPlayer({ src, label, onDownload, className = '' }:
               )}
             </button>
 
-            <button
-              type="button"
-              onClick={onDownload}
-              className="rounded-full p-1 hover:bg-white/15"
-              aria-label="Download video"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
-              </svg>
-            </button>
+            {onDownload ? (
+              <button
+                type="button"
+                onClick={onDownload}
+                className="rounded-full p-1 hover:bg-white/15"
+                aria-label="Download video"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                </svg>
+              </button>
+            ) : null}
 
             <button
               type="button"

@@ -1,3 +1,5 @@
+import { nationalityLabel } from '@/lib/countries';
+
 export type DetectedLocation = {
   lat: number;
   lng: number;
@@ -60,18 +62,46 @@ export async function detectUserLocation(): Promise<DetectedLocation> {
   return { lat, lng, timezoneId, city, country };
 }
 
-/** Viewer coordinates only — no reverse geocode (used for closest-first catalog sort). */
+/** Viewer coordinates for catalog sort / coarse uses. */
+export type ViewerCoordinates = {
+  lat: number;
+  lng: number;
+  /** Horizontal accuracy in meters when the browser reports it. */
+  accuracyM: number | null;
+};
+
+function getCurrentPosition(options: PositionOptions): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+  });
+}
+
+function toViewerCoordinates(position: GeolocationPosition): ViewerCoordinates {
+  const accuracy = position.coords.accuracy;
+  return {
+    lat: position.coords.latitude,
+    lng: position.coords.longitude,
+    accuracyM: Number.isFinite(accuracy) ? accuracy : null,
+  };
+}
+
+function isFiniteCoords(coords: { lat: number; lng: number }): boolean {
+  return Number.isFinite(coords.lat) && Number.isFinite(coords.lng);
+}
+
+/**
+ * Fast coarse coordinates for marketplace "closest first" sorting.
+ * Not suitable for profile distance badges (often network/IP, tens/hundreds of km off).
+ */
 export async function detectUserCoordinates(): Promise<{ lat: number; lng: number }> {
   if (typeof window === 'undefined' || !navigator.geolocation) {
     throw new Error('Geolocation is not supported by your browser.');
   }
 
-  const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: false,
-      timeout: 12_000,
-      maximumAge: 5 * 60_000,
-    });
+  const position = await getCurrentPosition({
+    enableHighAccuracy: false,
+    timeout: 12_000,
+    maximumAge: 5 * 60_000,
   }).catch((err) => {
     if (err instanceof GeolocationPositionError) {
       throw new Error(geolocationErrorMessage(err.code));
@@ -79,13 +109,169 @@ export async function detectUserCoordinates(): Promise<{ lat: number; lng: numbe
     throw err instanceof Error ? err : new Error('Unable to detect your location.');
   });
 
-  return { lat: position.coords.latitude, lng: position.coords.longitude };
+  const coords = toViewerCoordinates(position);
+  if (!isFiniteCoords(coords)) {
+    throw new Error('Unable to detect your location.');
+  }
+  return { lat: coords.lat, lng: coords.lng };
 }
 
-export function formatLocationLabel(city: string | null | undefined, country: string | null | undefined): string {
-  const parts = [city, country].filter((p) => p && p.trim().length > 0);
-  return parts.length > 0 ? parts.join(', ') : 'Location not set';
+/**
+ * Max accepted GPS accuracy (meters) for showing distance on a profile.
+ * Coarse IP/network fixes often report 20–100+ km accuracy and produce bogus distances.
+ */
+export const DISTANCE_MAX_ACCURACY_M = 20_000;
+
+/**
+ * Resolve a GPS fix accurate enough for profile distance.
+ * Prefers high-accuracy readings and keeps watching briefly until accuracy improves.
+ * Calls {@code onUpdate} each time a better fix arrives (so UI can refine without refresh).
+ */
+export async function detectUserCoordinatesForDistance(
+  onUpdate?: (coords: ViewerCoordinates) => void,
+  options?: { timeoutMs?: number; maxAccuracyM?: number }
+): Promise<ViewerCoordinates> {
+  if (typeof window === 'undefined' || !navigator.geolocation) {
+    throw new Error('Geolocation is not supported by your browser.');
+  }
+
+  const timeoutMs = options?.timeoutMs ?? 12_000;
+  const maxAccuracyM = options?.maxAccuracyM ?? DISTANCE_MAX_ACCURACY_M;
+
+  const emit = (coords: ViewerCoordinates) => {
+    if (!isFiniteCoords(coords)) return;
+    onUpdate?.(coords);
+  };
+
+  // Fresh high-accuracy attempt first (ignore stale network cache).
+  try {
+    const precise = toViewerCoordinates(
+      await getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: Math.min(8_000, timeoutMs),
+        maximumAge: 0,
+      })
+    );
+    if (isFiniteCoords(precise)) {
+      emit(precise);
+      if (precise.accuracyM == null || precise.accuracyM <= maxAccuracyM) {
+        return precise;
+      }
+    }
+  } catch {
+    // Fall through to watch / coarse.
+  }
+
+  return await new Promise<ViewerCoordinates>((resolve, reject) => {
+    let best: ViewerCoordinates | null = null;
+    let settled = false;
+
+    const finish = (coords: ViewerCoordinates | null, error?: Error) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      if (watchId != null) navigator.geolocation.clearWatch(watchId);
+      if (coords && isFiniteCoords(coords)) {
+        emit(coords);
+        resolve(coords);
+        return;
+      }
+      reject(error ?? new Error('Unable to detect your location.'));
+    };
+
+    const consider = (position: GeolocationPosition) => {
+      const next = toViewerCoordinates(position);
+      if (!isFiniteCoords(next)) return;
+
+      const better =
+        !best ||
+        (next.accuracyM != null &&
+          (best.accuracyM == null || next.accuracyM < best.accuracyM));
+      if (better) {
+        best = next;
+        emit(next);
+      }
+
+      if (next.accuracyM != null && next.accuracyM <= Math.min(5_000, maxAccuracyM)) {
+        finish(next);
+      }
+    };
+
+    const timer = window.setTimeout(() => {
+      if (best && (best.accuracyM == null || best.accuracyM <= maxAccuracyM)) {
+        finish(best);
+        return;
+      }
+      // Last resort: one coarse reading — still gated by maxAccuracyM when reported.
+      void getCurrentPosition({
+        enableHighAccuracy: false,
+        timeout: 4_000,
+        maximumAge: 60_000,
+      })
+        .then((position) => {
+          const coarse = toViewerCoordinates(position);
+          if (!isFiniteCoords(coarse)) {
+            finish(best, new Error('Unable to detect your location.'));
+            return;
+          }
+          if (coarse.accuracyM != null && coarse.accuracyM > maxAccuracyM) {
+            finish(best, new Error('Location accuracy is too low to show distance.'));
+            return;
+          }
+          finish(coarse);
+        })
+        .catch((err) => {
+          finish(
+            best,
+            err instanceof GeolocationPositionError
+              ? new Error(geolocationErrorMessage(err.code))
+              : err instanceof Error
+                ? err
+                : new Error('Unable to detect your location.')
+          );
+        });
+    }, timeoutMs);
+
+    const watchId = navigator.geolocation.watchPosition(
+      consider,
+      () => {
+        // Keep waiting until timeout; watch errors are common when refining.
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: timeoutMs,
+      }
+    );
+  });
 }
+
+export function formatLocationLabel(
+  city: string | null | undefined,
+  country: string | null | undefined,
+  nationality?: string | null
+): string {
+  const place = formatPlaceLabel(city, country, nationality);
+  return place ?? 'Location not set';
+}
+
+/** City + country/nation for public UI. Returns null when nothing useful is set. */
+export function formatPlaceLabel(
+  city: string | null | undefined,
+  country: string | null | undefined,
+  nationality?: string | null
+): string | null {
+  const cityPart = typeof city === 'string' ? city.trim() : '';
+  const countryPart = typeof country === 'string' ? country.trim() : '';
+  const nationFromNationality = nationalityLabel(nationality) || (typeof nationality === 'string' ? nationality.trim() : '');
+  const nationPart = countryPart || nationFromNationality;
+
+  const parts: string[] = [];
+  if (cityPart) parts.push(cityPart);
+  if (nationPart && nationPart.toLowerCase() !== cityPart.toLowerCase()) parts.push(nationPart);
+  return parts.length > 0 ? parts.join(', ') : null;
+}
+
 
 export async function requestDetectedLocation(): Promise<DetectedLocation> {
   try {
@@ -96,4 +282,88 @@ export async function requestDetectedLocation(): Promise<DetectedLocation> {
     }
     throw err instanceof Error ? err : new Error('Unable to detect your location.');
   }
+}
+
+export type GeocodedPlace = {
+  lat: number;
+  lng: number;
+  displayName: string;
+};
+
+/** Forward-geocode a city/zone label for static map previews (city-level only). */
+const geocodeCache = new Map<string, GeocodedPlace | null>();
+const geocodeInflight = new Map<string, Promise<GeocodedPlace | null>>();
+
+export async function geocodePlaceLabel(query: string): Promise<GeocodedPlace | null> {
+  const q = query.trim();
+  if (!q) return null;
+  const cacheKey = q.toLowerCase();
+  if (geocodeCache.has(cacheKey)) {
+    return geocodeCache.get(cacheKey) ?? null;
+  }
+  const pending = geocodeInflight.get(cacheKey);
+  if (pending) return pending;
+
+  const request = (async (): Promise<GeocodedPlace | null> => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      if (!res.ok) return null;
+      const data = (await res.json()) as Array<{
+        lat?: string;
+        lon?: string;
+        display_name?: string;
+      }>;
+      const hit = data[0];
+      const lat = hit?.lat != null ? Number(hit.lat) : NaN;
+      const lng = hit?.lon != null ? Number(hit.lon) : NaN;
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      return {
+        lat,
+        lng,
+        displayName: hit.display_name?.trim() || q,
+      };
+    } catch {
+      return null;
+    }
+  })().then((result) => {
+    geocodeCache.set(cacheKey, result);
+    geocodeInflight.delete(cacheKey);
+    return result;
+  });
+
+  geocodeInflight.set(cacheKey, request);
+  return request;
+}
+
+/** OpenStreetMap embed URL centered on coordinates (city zoom). */
+export function openStreetMapEmbedUrl(lat: number, lng: number, delta = 0.12): string {
+  const west = lng - delta;
+  const south = lat - delta * 0.65;
+  const east = lng + delta;
+  const north = lat + delta * 0.65;
+  const bbox = [west, south, east, north].join('%2C');
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
+}
+
+/** Great-circle distance in km (Haversine). */
+export function haversineKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const earthRadiusKm = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(earthRadiusKm * c * 10) / 10;
 }

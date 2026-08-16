@@ -183,6 +183,12 @@ export async function sendTextMessage(conversationId: string, content: string): 
   return normalizeMessage(res.data);
 }
 
+export async function deleteConversationMessage(conversationId: string, messageId: string): Promise<void> {
+  await api.delete(
+    `/api/messaging/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`
+  );
+}
+
 export async function markConversationRead(conversationId: string): Promise<void> {
   await api.post(`/api/messaging/conversations/${encodeURIComponent(conversationId)}/read`);
 }

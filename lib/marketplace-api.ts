@@ -139,6 +139,7 @@ export function normalizeCreatorSummary(raw: RawRecord): MarketplaceCreatorSumma
     bio: raw.bio != null ? String(raw.bio) : null,
     isVerified: Boolean(raw.isVerified),
     isAvailable: raw.isAvailable == null ? true : Boolean(raw.isAvailable),
+    availabilityLabel: raw.availabilityLabel != null ? String(raw.availabilityLabel) : null,
     portfolioCount: typeof raw.portfolioCount === 'number' ? raw.portfolioCount : Number(raw.portfolioCount ?? 0),
     productCount: typeof raw.productCount === 'number' ? raw.productCount : Number(raw.productCount ?? 0),
     serviceCount: typeof raw.serviceCount === 'number'
@@ -151,6 +152,8 @@ export function normalizeCreatorSummary(raw: RawRecord): MarketplaceCreatorSumma
     followerCount: typeof raw.followerCount === 'number' ? raw.followerCount : Number(raw.followerCount ?? 0),
     isFollowing: Boolean(raw.isFollowing),
     nationality: raw.nationality != null ? String(raw.nationality) : null,
+    locationCity: raw.locationCity != null ? String(raw.locationCity) : null,
+    locationCountry: raw.locationCountry != null ? String(raw.locationCountry) : null,
     yearsOfExperience:
       raw.yearsOfExperience != null && !Number.isNaN(Number(raw.yearsOfExperience))
         ? Number(raw.yearsOfExperience)
@@ -374,6 +377,7 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     portfolioCount: typeof raw.portfolioCount === 'number' ? raw.portfolioCount : Number(raw.portfolioCount ?? 0),
     contentCount: typeof raw.contentCount === 'number' ? raw.contentCount : Number(raw.contentCount ?? 0),
     productCount: typeof raw.productCount === 'number' ? raw.productCount : Number(raw.productCount ?? 0),
+    serviceCount: typeof raw.serviceCount === 'number' ? raw.serviceCount : Number(raw.serviceCount ?? 0),
     averageRating: raw.averageRating != null ? Number(raw.averageRating) : null,
     socialLinks,
     studioHeaderLayout: raw.studioHeaderLayout != null ? String(raw.studioHeaderLayout) : 'BANNER',
@@ -382,6 +386,14 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     studioTabNavAlign: raw.studioTabNavAlign != null ? String(raw.studioTabNavAlign) : 'LEFT',
     locationCity: raw.locationCity != null ? String(raw.locationCity) : null,
     locationCountry: raw.locationCountry != null ? String(raw.locationCountry) : null,
+    locationLat:
+      raw.locationLat != null && Number.isFinite(Number(raw.locationLat))
+        ? Number(raw.locationLat)
+        : null,
+    locationLng:
+      raw.locationLng != null && Number.isFinite(Number(raw.locationLng))
+        ? Number(raw.locationLng)
+        : null,
     portfolio,
     recentPosts: portfolio,
     followerCount: typeof raw.followerCount === 'number' ? raw.followerCount : Number(raw.followerCount ?? 0),
@@ -419,6 +431,7 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     })(),
     availabilityHours: raw.availabilityHours != null ? String(raw.availabilityHours) : null,
     isAvailable: raw.isAvailable == null ? true : Boolean(raw.isAvailable),
+    availabilityLabel: raw.availabilityLabel != null ? String(raw.availabilityLabel) : null,
     contactAddress: (() => {
       const legacy = raw.contactAddress != null ? String(raw.contactAddress) : null;
       const fromList = Array.isArray(raw.contactAddresses)
@@ -497,6 +510,7 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
       typeof raw.profileVisits === 'number' ? raw.profileVisits : Number(raw.profileVisits ?? 0),
     gender: normalizeCreatorGender(raw.gender ?? raw.pronouns),
     nationality: raw.nationality != null ? String(raw.nationality) : null,
+    appRole: raw.appRole != null ? String(raw.appRole) : null,
     spokenLanguages: dedupeSpokenLanguages(
       Array.isArray(raw.spokenLanguages)
         ? raw.spokenLanguages.map((item) => String(item)).filter(Boolean)
@@ -1377,12 +1391,27 @@ export async function getCreatorFollowStats(creatorId: string): Promise<CreatorF
   return res.data;
 }
 
-export async function followCreator(creatorId: string): Promise<void> {
-  await api.post(`/api/marketplace/creators/${encodeURIComponent(creatorId)}/follow`);
+export async function followCreator(creatorId: string): Promise<CreatorFollowStats | null> {
+  const res = await api.post<CreatorFollowStats>(
+    `/api/marketplace/creators/${encodeURIComponent(creatorId)}/follow`,
+    {}
+  );
+  if (!res.data || typeof res.data.followerCount !== 'number') return null;
+  return {
+    followerCount: Number(res.data.followerCount),
+    isFollowing: Boolean(res.data.isFollowing ?? true),
+  };
 }
 
-export async function unfollowCreator(creatorId: string): Promise<void> {
-  await api.delete(`/api/marketplace/creators/${encodeURIComponent(creatorId)}/follow`);
+export async function unfollowCreator(creatorId: string): Promise<CreatorFollowStats | null> {
+  const res = await api.delete<CreatorFollowStats>(
+    `/api/marketplace/creators/${encodeURIComponent(creatorId)}/follow`
+  );
+  if (!res.data || typeof res.data.followerCount !== 'number') return null;
+  return {
+    followerCount: Number(res.data.followerCount),
+    isFollowing: Boolean(res.data.isFollowing ?? false),
+  };
 }
 
 export async function getCreatorReputation(creatorId: string): Promise<CreatorReputationDto> {
@@ -1393,6 +1422,15 @@ export async function getCreatorReputation(creatorId: string): Promise<CreatorRe
   return {
     ...data,
     ratingDistribution: data.ratingDistribution ?? {},
+    completedMissionsCount:
+      typeof data.completedMissionsCount === 'number'
+        ? data.completedMissionsCount
+        : Number(data.reviewCount ?? 0),
+    responseRatePercent:
+      data.responseRatePercent == null ? null : Number(data.responseRatePercent),
+    inboundConversationCount: Number(data.inboundConversationCount ?? 0),
+    typicallyRepliesWithinLabel:
+      data.typicallyRepliesWithinLabel != null ? String(data.typicallyRepliesWithinLabel) : null,
   };
 }
 

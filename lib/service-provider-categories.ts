@@ -5,7 +5,9 @@
 
 import { PROFILE_SPECIALTIES } from '@/lib/specialties';
 
-export const SERVICE_PROVIDER_POPULAR_TAGS = PROFILE_SPECIALTIES;
+export const SERVICE_PROVIDER_POPULAR_TAGS = PROFILE_SPECIALTIES.filter(
+  (tag) => tag !== 'Writing'
+);
 
 export type ServiceProviderPopularTag = (typeof SERVICE_PROVIDER_POPULAR_TAGS)[number];
 

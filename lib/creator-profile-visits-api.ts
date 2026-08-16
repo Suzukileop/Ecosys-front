@@ -8,6 +8,8 @@ export interface CreatorProfileVisitItem {
   viewerUserId: string | null;
   viewerFullName: string | null;
   viewerAvatarUrl: string | null;
+  viewerAppRole: string | null;
+  visitCount: number;
 }
 
 export async function listCreatorProfileVisits(
@@ -17,5 +19,14 @@ export async function listCreatorProfileVisits(
   const res = await api.get<PagedResponse<CreatorProfileVisitItem>>('/api/creator/profile/visits', {
     params: { page, size },
   });
-  return res.data;
+  const pageData = res.data;
+  return {
+    ...pageData,
+    content: (pageData.content ?? []).map((row) => ({
+      ...row,
+      viewerAppRole: row.viewerAppRole ?? null,
+      visitCount:
+        typeof row.visitCount === 'number' && row.visitCount > 0 ? row.visitCount : 1,
+    })),
+  };
 }

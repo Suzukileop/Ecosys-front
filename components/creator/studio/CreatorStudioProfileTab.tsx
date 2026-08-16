@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/context/AuthContext';
@@ -25,8 +26,10 @@ import {
 import { CREATOR_GENDER_VALUES, normalizeCreatorGender } from '@/lib/creator-gender';
 import { NATIONALITY_SELECT_OPTIONS, nationalityLabel, normalizeNationalityCode } from '@/lib/countries';
 import { parseSpecialtyList, parseSpecialtyTags } from '@/lib/specialties';
+import { collapseRepeatedBio, isRepeatedBioContent } from '@/lib/profile-bio';
 import {
   DEFAULT_CREATOR_APP_ROLE,
+  creatorShowsProviderAboutFields,
   dispatchCreatorAppRoleChanged,
   normalizeCreatorAppRole,
   type CreatorAppRole,
@@ -104,6 +107,7 @@ import { TYPICAL_RESPONSE_TIME_OPTIONS } from '@/lib/typical-response-time';
 import {
   getProfileSection,
   filterProfileSectionGroups,
+  filterStoreInformationSectionsForRole,
   PROFILE_SECTION_GROUPS,
   ProfileSectionNavIcon,
   type ProfileSectionId,
@@ -355,6 +359,7 @@ const ABOUT_FIELD_TOAST_TITLES: Record<string, string> = {
   yearsOfExperience: 'Years of experience updated',
   spokenLanguages: 'Languages updated',
   isAvailable: 'Status updated',
+  availabilityLabel: 'Availability label updated',
   availabilityHours: 'Availability hours updated',
   typicalResponseTime: 'Response time updated',
 };
@@ -368,14 +373,6 @@ export function CreatorStudioProfileTab({
   showProfileHero = true,
 }: CreatorStudioProfileTabProps) {
   const isPortfolioLayout = variant === 'portfolio';
-  const sectionGroups = useMemo(
-    () => filterProfileSectionGroups(PROFILE_SECTION_GROUPS, allowedSections),
-    [allowedSections]
-  );
-  const allowedSectionIds = useMemo(
-    () => sectionGroups.flat(),
-    [sectionGroups]
-  );
   const navTitle = sectionsNavTitle ?? (allowedSections?.length ? 'Information' : 'Portfolio Sections');
   const sectionLabelOverrides = useMemo((): Partial<Record<ProfileSectionId, string>> => {
     if (!allowedSections?.length) return PORTFOLIO_SECTION_LABELS;
@@ -401,13 +398,7 @@ export function CreatorStudioProfileTab({
   const [portfolioNavCollapsed, setPortfolioNavCollapsed] = useState(false);
   const [portfolioNavIconsOnly, setPortfolioNavIconsOnly] = useState(false);
   const [portfolioNavSideInternal, setPortfolioNavSideInternal] = useState<'left' | 'right'>('left');
-
-  useEffect(() => {
-    if (allowedSectionIds.length === 0) return;
-    if (!allowedSectionIds.includes(activeSection)) {
-      setActiveSection(allowedSectionIds[0]);
-    }
-  }, [activeSection, allowedSectionIds]);
+  const searchParams = useSearchParams();
   const portfolioNavSide = portfolioNavSideProp ?? portfolioNavSideInternal;
   const [isEditing, setIsEditing] = useState(false);
   const [portfolioChromeOpen, setPortfolioChromeOpen] = useState(false);
@@ -552,6 +543,7 @@ export function CreatorStudioProfileTab({
       contactEmails: [],
       availabilityHours: '',
       isAvailable: true,
+      availabilityLabel: '',
       profileLinks: [],
       serviceOffers: [],
       faqItems: [],
@@ -563,6 +555,33 @@ export function CreatorStudioProfileTab({
       strengthsTools: [],
     },
   });
+
+  const watchedAppRole = form.watch('appRole');
+  const effectiveAllowedSections = useMemo(() => {
+    if (!allowedSections?.length) return allowedSections;
+    return filterStoreInformationSectionsForRole(watchedAppRole, allowedSections);
+  }, [allowedSections, watchedAppRole]);
+  const sectionGroups = useMemo(
+    () => filterProfileSectionGroups(PROFILE_SECTION_GROUPS, effectiveAllowedSections),
+    [effectiveAllowedSections]
+  );
+  const allowedSectionIds = useMemo(() => sectionGroups.flat(), [sectionGroups]);
+  const showProviderAboutFields = creatorShowsProviderAboutFields(watchedAppRole);
+
+  useEffect(() => {
+    if (allowedSectionIds.length === 0) return;
+    if (!allowedSectionIds.includes(activeSection)) {
+      setActiveSection(allowedSectionIds[0]);
+    }
+  }, [activeSection, allowedSectionIds]);
+
+  useEffect(() => {
+    const section = searchParams.get('section');
+    if (!section) return;
+    if ((allowedSectionIds as string[]).includes(section)) {
+      setActiveSection(section as ProfileSectionId);
+    }
+  }, [searchParams, allowedSectionIds]);
 
   const {
     fields: linkFields,
@@ -1242,7 +1261,7 @@ export function CreatorStudioProfileTab({
 
       const resetValues: ProfileFormValues = {
         fullName: p.fullName?.trim() || user?.fullName?.trim() || '',
-        bio: p.bio ?? '',
+        bio: collapseRepeatedBio(p.bio ?? ''),
         specialite: parseSpecialtyList(p.specialties, p.specialite)[0] ?? p.specialite ?? '',
         specialties: parseSpecialtyList(p.specialties, p.specialite),
         specialtyTags: parseSpecialtyTags(p.specialtyTags),
@@ -1278,6 +1297,7 @@ export function CreatorStudioProfileTab({
         })(),
         availabilityHours: p.availabilityHours ?? '',
         isAvailable: p.isAvailable ?? true,
+        availabilityLabel: p.availabilityLabel ?? '',
         profileLinks: buildProfileLinksFromLegacy(p),
         serviceOffers: parseProfileServices(p.profileServices),
         faqItems: parseFaqItems(p.faqItems),
@@ -1449,11 +1469,13 @@ export function CreatorStudioProfileTab({
           ? parsed.availabilityHours.trim()
           : undefined,
         isAvailable: parsed.isAvailable,
+        availabilityLabel: parsed.availabilityLabel?.trim() ?? '',
         contactVisibility: JSON.stringify(contactVisibility),
         profileLinks: serializeProfileLinks(parsed.profileLinks),
         profileServices: serializeProfileServices(
           parsed.serviceOffers,
-          parsed.specialties?.[0] ?? ''
+          parsed.specialties?.[0] ?? '',
+          parsed.specialties
         ),
         faqItems: serializeFaqItems(parsed.faqItems),
         teamMembers: serializeTeamMembers(parsed.teamMembers),
@@ -1587,7 +1609,7 @@ export function CreatorStudioProfileTab({
       return (
         <div className={`flex min-h-0 flex-col ${iconsOnly ? 'items-center' : ''}`}>
           <div
-            className={`flex h-12 shrink-0 items-center bg-neutral-100 dark:bg-[#0F0F0F] ${
+            className={`flex h-12 shrink-0 items-center border-b border-neutral-200/70 bg-neutral-100 dark:border-neutral-700/45 dark:bg-[#151515] ${
               iconsOnly ? 'justify-center px-0' : 'justify-between gap-2 px-3'
             }`}
           >
@@ -1624,7 +1646,7 @@ export function CreatorStudioProfileTab({
             </button>
           </div>
           <nav
-            className={`flex w-full flex-col ${iconsOnly ? 'items-center gap-3 px-0 pb-1 pt-1' : 'gap-1.5 px-2 pb-1 pt-0.5'} ${navScrollClass}`}
+            className={`flex w-full flex-col ${iconsOnly ? 'items-center gap-3.5 px-0 pb-2 pt-2' : 'gap-2.5 px-2 pb-2 pt-1'} ${navScrollClass}`}
             aria-label="Portfolio sections"
           >
             {sectionGroups.flat().map((sectionId) => {
@@ -1639,14 +1661,14 @@ export function CreatorStudioProfileTab({
                   aria-label={label}
                   onClick={() => handleSectionChange(section.id)}
                   aria-current={active ? 'true' : undefined}
-                  className={`relative flex items-center rounded-xl text-left text-sm transition-colors duration-200 ${
+                  className={`relative flex items-center rounded-xl text-left text-sm transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 ${
                     iconsOnly
-                      ? 'mx-auto h-9 w-9 shrink-0 justify-center'
-                      : 'w-full gap-2.5 px-3 py-2.5'
+                      ? 'mx-auto h-10 w-10 shrink-0 justify-center'
+                      : 'min-h-11 w-full gap-2.5 px-3 py-3'
                   } ${
                     active
-                      ? 'bg-white font-semibold text-[#EA580C] shadow-sm dark:bg-neutral-800 dark:text-[#FB923C]'
-                      : 'font-medium text-neutral-900 hover:bg-white/80 dark:text-neutral-200 dark:hover:bg-neutral-800/70'
+                      ? 'bg-white font-semibold text-neutral-950 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-800/90 dark:text-white dark:ring-neutral-600/80'
+                      : 'font-medium text-neutral-700 hover:bg-white/80 dark:text-neutral-300 dark:hover:bg-neutral-800/55'
                   }`}
                 >
                   <ProfileSectionNavIcon sectionId={section.id} active={active} />
@@ -1770,13 +1792,15 @@ export function CreatorStudioProfileTab({
           ? parsed.availabilityHours.trim()
           : undefined,
         isAvailable: parsed.isAvailable,
+        availabilityLabel: parsed.availabilityLabel?.trim() ?? '',
         contactVisibility: JSON.stringify(nextVisibility),
         typicalResponseTime:
           responseTimeOverride !== undefined ? responseTimeOverride : typicalResponseTime,
         profileLinks: serializeProfileLinks(parsed.profileLinks),
         profileServices: serializeProfileServices(
           parsed.serviceOffers,
-          parsed.specialties?.[0] ?? ''
+          parsed.specialties?.[0] ?? '',
+          parsed.specialties
         ),
         faqItems: serializeFaqItems(parsed.faqItems),
         teamMembers: serializeTeamMembers(parsed.teamMembers),
@@ -1883,6 +1907,8 @@ export function CreatorStudioProfileTab({
           form.setValue('spokenLanguages', languages, { shouldDirty: true });
         } else if (field === 'isAvailable') {
           form.setValue('isAvailable', Boolean(value), { shouldDirty: true });
+        } else if (field === 'availabilityLabel') {
+          form.setValue('availabilityLabel', String(value ?? ''), { shouldDirty: true });
         } else if (field === 'availabilityHours') {
           const hours = String(value);
           nextSchedule = parseAvailabilityHours(hours);
@@ -1935,13 +1961,70 @@ export function CreatorStudioProfileTab({
             ? { spokenLanguages: (value as string[]).map((item) => ({ value: item })) }
             : {}),
           ...(field === 'isAvailable' ? { isAvailable: Boolean(value) } : {}),
+          ...(field === 'availabilityLabel' ? { availabilityLabel: String(value ?? '') } : {}),
         });
 
         const responseTimeForSave =
           field === 'typicalResponseTime' ? String(value) : typicalResponseTime;
-        await updateCreatorProfile(
-          buildCreatorProfileUpdateBody(parsed, contactVisibility, responseTimeForSave)
-        );
+
+        // Scoped PUT: about fields must not re-submit services/FAQ/etc.
+        // Full-body saves were rejecting bio edits when service categories used old specialty aliases
+        // (e.g. "designer") after specialties were canonicalized ("Design").
+        if (field === 'bio') {
+          if (isRepeatedBioContent(String(value))) {
+            form.setError('bio', {
+              type: 'manual',
+              message: 'Bio looks duplicated — remove the repeated paragraph before saving.',
+            });
+            throw new Error('Bio looks duplicated — remove the repeated paragraph before saving.');
+          }
+          const cleaned = collapseRepeatedBio(String(value));
+          form.setValue('bio', cleaned, { shouldDirty: true });
+          form.clearErrors('bio');
+          await updateCreatorProfile({ bio: cleaned });
+        } else if (field === 'fullName') {
+          // Already persisted via updateUserProfile above.
+        } else if (field === 'specialtySet') {
+          const payload = value as PortfolioAboutFieldValue['specialtySet'];
+          const specialties = parseSpecialtyList(payload.specialties);
+          await updateCreatorProfile({
+            specialties,
+            specialtyTags: parseSpecialtyTags(payload.specialtyTags),
+            specialite: specialties[0] ?? '',
+          });
+        } else if (field === 'specialite') {
+          await updateCreatorProfile({ specialite: String(value) });
+        } else if (field === 'gender') {
+          await updateCreatorProfile({ gender: normalizeCreatorGender(value) ?? undefined });
+        } else if (field === 'nationality') {
+          await updateCreatorProfile({ nationality: normalizeNationalityCode(value) ?? '' });
+        } else if (field === 'yearsOfExperience') {
+          const years =
+            value == null
+              ? null
+              : typeof value === 'number'
+                ? value
+                : Number.parseInt(String(value), 10);
+          await updateCreatorProfile({
+            yearsOfExperience: years == null || Number.isNaN(years) ? null : years,
+          });
+        } else if (field === 'spokenLanguages') {
+          await updateCreatorProfile({
+            spokenLanguages: (value as string[]).map((item) => item.trim()).filter(Boolean),
+          });
+        } else if (field === 'isAvailable') {
+          await updateCreatorProfile({ isAvailable: Boolean(value) });
+        } else if (field === 'availabilityLabel') {
+          await updateCreatorProfile({ availabilityLabel: String(value ?? '').trim() });
+        } else if (field === 'availabilityHours') {
+          await updateCreatorProfile({ availabilityHours: String(value) });
+        } else if (field === 'typicalResponseTime') {
+          await updateCreatorProfile({ typicalResponseTime: responseTimeForSave });
+        } else {
+          await updateCreatorProfile(
+            buildCreatorProfileUpdateBody(parsed, contactVisibility, responseTimeForSave)
+          );
+        }
         await loadProfile({ silent: true });
         onProfileUpdated?.();
         pushFlashFeedback({
@@ -1993,6 +2076,7 @@ export function CreatorStudioProfileTab({
           { shouldDirty: true }
         );
         form.setValue('isAvailable', values.isAvailable, { shouldDirty: true });
+        form.setValue('availabilityLabel', values.availabilityLabel ?? '', { shouldDirty: true });
         const nextSchedule = parseAvailabilityHours(values.availabilityHours);
         setAvailabilitySchedule(nextSchedule);
         form.setValue('availabilityHours', values.availabilityHours, { shouldDirty: true });
@@ -2003,25 +2087,28 @@ export function CreatorStudioProfileTab({
           updateUser({ fullName: updated.fullName, avatarUrl: updated.avatarUrl });
         }
 
-        const latest = form.getValues();
-        const parsed = profileSchema.parse({
-          ...latest,
-          fullName: trimmedName,
-          bio: values.bio,
-          specialite: values.specialtySet?.specialties[0] ?? values.specialite,
+        if (isRepeatedBioContent(values.bio)) {
+          form.setError('bio', {
+            type: 'manual',
+            message: 'Bio looks duplicated — remove the repeated paragraph before saving.',
+          });
+          throw new Error('Bio looks duplicated — remove the repeated paragraph before saving.');
+        }
+
+        await updateCreatorProfile({
+          bio: collapseRepeatedBio(values.bio),
+          specialite: parseSpecialtyList(values.specialtySet?.specialties, values.specialite)[0] ?? '',
           specialties: parseSpecialtyList(values.specialtySet?.specialties, values.specialite),
           specialtyTags: parseSpecialtyTags(values.specialtySet?.specialtyTags),
-          gender: normalizeCreatorGender(values.gender) ?? '',
+          gender: normalizeCreatorGender(values.gender) ?? undefined,
           nationality: normalizeNationalityCode(values.nationality) ?? '',
           yearsOfExperience: values.yearsOfExperience ?? null,
-          spokenLanguages: values.spokenLanguages.map((item) => ({ value: item })),
+          spokenLanguages: values.spokenLanguages.map((item) => item.trim()).filter(Boolean),
           isAvailable: values.isAvailable,
+          availabilityLabel: values.availabilityLabel?.trim() ?? '',
           availabilityHours: values.availabilityHours,
+          typicalResponseTime: values.typicalResponseTime,
         });
-
-        await updateCreatorProfile(
-          buildCreatorProfileUpdateBody(parsed, contactVisibility, values.typicalResponseTime)
-        );
         await loadProfile({ silent: true });
         onProfileUpdated?.();
         pushFlashFeedback({
@@ -2035,7 +2122,7 @@ export function CreatorStudioProfileTab({
         setSaving(false);
       }
     },
-    [buildCreatorProfileUpdateBody, contactVisibility, form, loadProfile, onProfileUpdated, updateUser]
+    [form, loadProfile, onProfileUpdated, updateUser]
   );
 
   const registerPortfolioGlobalConfirm = useCallback((confirm: (() => Promise<void>) | null) => {
@@ -3168,12 +3255,14 @@ export function CreatorStudioProfileTab({
               yearsOfExperience={values.yearsOfExperience ?? null}
               languages={values.spokenLanguages.map((item) => item.value).filter(Boolean)}
               isAvailable={values.isAvailable}
+              availabilityLabel={values.availabilityLabel ?? ''}
               availabilityHours={hoursParts ? hoursParts.join(' · ') : null}
               availabilityTimezone={timezoneId || null}
               rawAvailabilityHours={values.availabilityHours}
               memberSince={formatMemberSince(memberSince)}
               responseTimeLabel={responseTimeLabel}
               typicalResponseTime={typicalResponseTime}
+              hideProviderFields={!showProviderAboutFields}
               locationCity={values.locationCity ?? ''}
               locationCountry={values.locationCountry ?? ''}
               locationTimezone={values.timezoneId ?? ''}
@@ -3268,7 +3357,10 @@ export function CreatorStudioProfileTab({
               </div>
               <div className="flex items-center gap-2">
                 <span className={profileSectionMutedTextClass}>Status:</span>
-                <CreatorAvailabilityBadge isAvailable={values.isAvailable} />
+                <CreatorAvailabilityBadge
+                  isAvailable={values.isAvailable}
+                  availabilityLabel={values.availabilityLabel}
+                />
               </div>
               <ProfileReadOnlyField
                 label="Availability hours"
@@ -3340,6 +3432,11 @@ export function CreatorStudioProfileTab({
                 className={profileFormInputClass}
                 {...form.register('bio')}
               />
+              {form.formState.errors.bio ? (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {form.formState.errors.bio.message}
+                </p>
+              ) : null}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -3352,6 +3449,7 @@ export function CreatorStudioProfileTab({
                     form.setValue('specialite', next[0] ?? '', { shouldDirty: true });
                   }}
                   onTagsChange={(next) => form.setValue('specialtyTags', next, { shouldDirty: true })}
+                  showTags={false}
                 />
               </div>
               <div>
@@ -3425,6 +3523,7 @@ export function CreatorStudioProfileTab({
             />
             <CreatorAvailabilityControl
               isAvailable={values.isAvailable}
+              availabilityLabel={values.availabilityLabel}
               onChange={(next) => form.setValue('isAvailable', next, { shouldDirty: true })}
             />
             <div>
@@ -3746,6 +3845,13 @@ export function CreatorStudioProfileTab({
           return (
             <PortfolioStrengthsReadOnly
               allowedSpecialties={values.specialties ?? []}
+              skillTags={values.specialtyTags ?? []}
+              onSkillTagsSave={async (next) => {
+                form.setValue('specialtyTags', next, { shouldDirty: true });
+                await updateCreatorProfile({ specialtyTags: next });
+                await loadProfile({ silent: true });
+                onProfileUpdated?.();
+              }}
               items={values.strengthsTools.map((item, index) => ({
                 id: `strength-${index}-${item.value}`,
                 value: item.value ?? '',
@@ -4620,9 +4726,9 @@ export function CreatorStudioProfileTab({
             className={
               isPortfolioLayout
                 ? portfolioNavSide === 'right'
-                  ? 'grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:gap-4'
-                  : 'grid items-start gap-4 md:grid-cols-[auto_minmax(0,1fr)] md:gap-4'
-                : 'grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_15rem]'
+                  ? 'grid items-start gap-5 md:grid-cols-[minmax(0,1fr)_auto] md:gap-6'
+                  : 'grid items-start gap-5 md:grid-cols-[auto_minmax(0,1fr)] md:gap-6'
+                : 'grid items-start gap-5 md:grid-cols-[minmax(0,1fr)_15rem] md:gap-6'
             }
           >
             {/* Portfolio: sections rail (sticky on scroll) */}
@@ -4649,8 +4755,8 @@ export function CreatorStudioProfileTab({
                 ref={isPortfolioLayout ? portfolioInfoCardRef : undefined}
                 className={
                   isPortfolioLayout
-                    ? 'flex min-h-[480px] flex-col overflow-x-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-[#0a0a0a]'
-                    : 'flex min-h-[480px] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900'
+                    ? 'flex min-h-[480px] flex-col overflow-x-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.04)] dark:border-neutral-700/50 dark:bg-[#171717] dark:shadow-[0_6px_20px_rgba(0,0,0,0.22)]'
+                    : 'flex min-h-[480px] flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.04)] dark:border-neutral-700/50 dark:bg-[#171717] dark:shadow-[0_6px_20px_rgba(0,0,0,0.22)]'
                 }
               >
                 {isPortfolioLayout ? (
@@ -4659,6 +4765,7 @@ export function CreatorStudioProfileTab({
                     name={values.fullName || user.fullName || ''}
                     avatarUrl={profileAvatarUrl ?? user.avatarUrl}
                     isAvailable={values.isAvailable}
+                    availabilityLabel={values.availabilityLabel}
                     {...(isPortfolioChromeSection
                       ? {
                           aboutChromeOpen: portfolioChromeOpen,
@@ -5325,7 +5432,7 @@ export function CreatorStudioProfileTab({
                                   );
                                   setStrengthsAddingItem(true);
                                 },
-                                addEntryLabel: 'Add skill',
+                                addEntryLabel: 'Add tool',
                                 onDeleteEntry: () => {
                                   if (strengthsAddingItem) cancelStrengthsCompose();
                                   setStrengthsDeleteMode((active) => !active);
@@ -5350,14 +5457,14 @@ export function CreatorStudioProfileTab({
                   className={`flex-1 ${
                     isPortfolioLayout
                       ? showProfileHero
-                        ? 'px-5 pt-5 sm:px-6 sm:pt-6'
-                        : 'px-5 pt-2 sm:px-6 sm:pt-3'
-                      : 'p-5 sm:p-6'
+                        ? 'px-5 pt-5 sm:px-7 sm:pt-7'
+                        : 'px-5 pt-0 sm:px-7 sm:pt-0.5'
+                      : 'p-5 sm:p-7'
                   }`}
                 >
                   {!isPortfolioLayout ? (
-                    <header className="mb-5 border-b border-neutral-100 pb-4 dark:border-neutral-800">
-                      <div className="flex items-center gap-3">
+                    <header className="mb-6 border-b border-neutral-200/60 pb-5 dark:border-neutral-700/40">
+                      <div className="flex items-center gap-3.5">
                         <ProfileSectionNavIcon sectionId={activeSection} variant="header" />
                         <div className="min-w-0 flex-1">
                           <h2 className={profileSectionHeaderTitleClass}>{sectionDisplayLabel}</h2>

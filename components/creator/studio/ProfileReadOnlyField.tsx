@@ -23,8 +23,8 @@ export function ProfileReadOnlyField({
 
   if (variant === 'flat') {
     return (
-      <div className="border-b border-neutral-200/50 py-6 last:border-b-0 dark:border-white/[0.06]">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
+      <div className="border-b border-neutral-200/50 py-6 last:border-b-0 sm:py-7 dark:border-white/[0.04]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
           {label}
         </p>
         {display ? (
@@ -33,17 +33,17 @@ export function ProfileReadOnlyField({
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2.5 block text-[15px] font-semibold text-orange-600 hover:underline dark:text-orange-400"
+              className="mt-3 block text-[15px] font-semibold text-orange-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:text-orange-400"
             >
               {display}
             </a>
           ) : (
-            <p className="mt-2.5 text-[15px] font-semibold leading-relaxed whitespace-pre-wrap text-neutral-900 dark:text-white">
+            <p className="mt-3 text-[15px] font-semibold leading-relaxed whitespace-pre-wrap text-neutral-900 dark:text-neutral-50">
               {display}
             </p>
           )
         ) : (
-          <p className="mt-2.5 text-[15px] italic text-neutral-500 dark:text-neutral-400">{emptyLabel}</p>
+          <p className="mt-3 text-[15px] italic text-neutral-500 dark:text-neutral-400">{emptyLabel}</p>
         )}
       </div>
     );
@@ -58,7 +58,7 @@ export function ProfileReadOnlyField({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${profileSectionValueClass} block text-orange-600 hover:underline dark:text-orange-400`}
+            className={`${profileSectionValueClass} block text-orange-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:text-orange-400`}
           >
             {display}
           </a>

@@ -49,7 +49,7 @@ export function MarketplacePatternBackground({
             alt=""
             fill
             priority
-            className="object-cover opacity-[0.62] saturate-[0.82] dark:opacity-[0.32] dark:saturate-0 dark:[filter:invert(1)_brightness(1.85)_contrast(1)]"
+            className="object-cover opacity-[0.55] saturate-[0.82] dark:opacity-[0.2] dark:saturate-0 dark:[filter:invert(1)_brightness(1.85)_contrast(1)]"
             sizes="100vw"
             draggable={false}
           />

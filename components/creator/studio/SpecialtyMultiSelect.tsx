@@ -6,6 +6,7 @@ import {
   MAX_SPECIALTY_LENGTH,
   MAX_SPECIALTY_TAG_LENGTH,
   MAX_SPECIALTY_TAGS,
+  canonicalizeSpecialty,
   specialtyKey,
 } from '@/lib/specialties';
 import { suggestSpecialties } from '@/lib/creator-profile-api';
@@ -16,6 +17,8 @@ type SpecialtyMultiSelectProps = {
   onSpecialtiesChange: (next: string[]) => void;
   onTagsChange: (next: string[]) => void;
   disabled?: boolean;
+  /** Keyword tags live under Skills & Tools — hide them from Specialty when false. */
+  showTags?: boolean;
 };
 
 export function SpecialtyMultiSelect({
@@ -24,6 +27,7 @@ export function SpecialtyMultiSelect({
   onSpecialtiesChange,
   onTagsChange,
   disabled = false,
+  showTags = true,
 }: SpecialtyMultiSelectProps) {
   const [specialtyDraft, setSpecialtyDraft] = useState('');
   const [tagDraft, setTagDraft] = useState('');
@@ -83,7 +87,7 @@ export function SpecialtyMultiSelect({
     const reused =
       suggestions.find((item) => specialtyKey(item) === key) ??
       specialties.find((item) => specialtyKey(item) === key);
-    const label = reused ?? trimmed;
+    const label = canonicalizeSpecialty(reused ?? trimmed) ?? reused ?? trimmed;
     const existing = specialties.find((item) => specialtyKey(item) === specialtyKey(label));
     if (existing) {
       onSpecialtiesChange([existing, ...specialties.filter((item) => item !== existing)]);
@@ -249,6 +253,7 @@ export function SpecialtyMultiSelect({
           </ul>
         ) : null}
       </div>
+      {showTags ? (
       <div>
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
           Keyword tags
@@ -298,6 +303,7 @@ export function SpecialtyMultiSelect({
           </button>
         </div>
       </div>
+      ) : null}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMoon, faSun, faExpand, faCompress } from '@fortawesome/free-solid-svg-icons';
 import { NotificationBell } from '@/components/NotificationBell';
+import { MessagesHeaderButton } from '@/components/messaging/MessagesHeaderButton';
 import {
   getPageTitle,
   isProductsHeaderTogglePath,
@@ -23,9 +24,35 @@ import {
   creatorCanAccessProductsMenu,
   creatorCanAccessServiceProviderMenu,
 } from '@/lib/creator-app-role';
+import { NewsPublishHeaderCta } from '@/components/home/NewsPublishHeaderCta';
 
 const headerIconClass =
-  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white';
+  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white';
+
+function HeaderHelpButton() {
+  return (
+    <button
+      type="button"
+      title="Help"
+      aria-label="Help"
+      className={headerIconClass}
+    >
+      <span className="text-base font-semibold leading-none" aria-hidden>
+        ?
+      </span>
+    </button>
+  );
+}
+
+function isNewsFeedPath(pathname: string): boolean {
+  return pathname === '/dashboard/home' || pathname.startsWith('/dashboard/home/');
+}
+
+function getDashboardScrollY() {
+  const content = document.querySelector('[data-dashboard-content]');
+  const contentScroll = content instanceof HTMLElement ? content.scrollTop : 0;
+  return Math.max(window.scrollY, contentScroll);
+}
 
 function HeaderThemeToggle() {
   const { theme, toggle } = useTheme();
@@ -92,10 +119,12 @@ export function DashboardTopHeader({
   const { hasRole } = useAuth();
   const { appRole, ready: appRoleReady } = useCreatorAppRole();
   const [scrolled, setScrolled] = useState(false);
+  const [newsCtaVisible, setNewsCtaVisible] = useState(false);
   const search = searchParams.toString();
   const pageTitle = getPageTitle(pathname, search);
   const showCreatorsBack = isMarketplaceCreatorProfilePath(pathname);
   const isDiscussionsPage = pathname.startsWith('/dashboard/discussions');
+  const isNewsPage = isNewsFeedPath(pathname);
   const showProductsToggle =
     hasRole('ROLE_CREATOR') &&
     isProductsHeaderTogglePath(pathname, search) &&
@@ -106,6 +135,7 @@ export function DashboardTopHeader({
     (!appRoleReady || creatorCanAccessServiceProviderMenu(appRole));
 
   const showSolidBg = !transparent || scrolled;
+  const showNewsPublishCta = isNewsPage && newsCtaVisible;
 
   useEffect(() => {
     if (!transparent) {
@@ -114,9 +144,7 @@ export function DashboardTopHeader({
     }
 
     const update = () => {
-      const content = document.querySelector('[data-dashboard-content]');
-      const contentScroll = content instanceof HTMLElement ? content.scrollTop : 0;
-      setScrolled(window.scrollY > 6 || contentScroll > 6);
+      setScrolled(getDashboardScrollY() > 6);
     };
 
     update();
@@ -129,6 +157,28 @@ export function DashboardTopHeader({
       content?.removeEventListener('scroll', update);
     };
   }, [transparent, pathname]);
+
+  useEffect(() => {
+    if (!isNewsPage) {
+      setNewsCtaVisible(false);
+      return;
+    }
+
+    const update = () => {
+      // Show in header only after scrolling down — hide again near the top.
+      setNewsCtaVisible(getDashboardScrollY() > 72);
+    };
+
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    const content = document.querySelector('[data-dashboard-content]');
+    content?.addEventListener('scroll', update, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', update);
+      content?.removeEventListener('scroll', update);
+    };
+  }, [isNewsPage, pathname]);
 
   return (
     <header
@@ -156,6 +206,7 @@ export function DashboardTopHeader({
           ) : null}
           {showProductsToggle ? <ProductsHeaderToggle /> : null}
           {showServiceProviderToggle ? <ServiceProviderHeaderToggle /> : null}
+          {showNewsPublishCta ? <NewsPublishHeaderCta /> : null}
         </div>
 
         <h1 className="max-w-[40vw] truncate text-center text-xl font-bold tracking-tight text-neutral-900 dark:text-white sm:max-w-none">
@@ -163,9 +214,11 @@ export function DashboardTopHeader({
         </h1>
 
         <div className="flex h-9 shrink-0 items-center justify-end gap-2 justify-self-end">
+          <MessagesHeaderButton />
           <NotificationBell compact />
           <HeaderThemeToggle />
           <HeaderFocusToggle />
+          <HeaderHelpButton />
         </div>
       </div>
     </header>

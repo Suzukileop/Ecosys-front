@@ -30,6 +30,7 @@ import { CreatorStudioImagesTab } from './CreatorStudioImagesTab';
 import { parseCreatorStudioTab, type CreatorStudioTab } from './types';
 import type { CreatorProfileDto } from '@/types/ecosystem';
 import { parseSpecialtyList, parseSpecialtyTags } from '@/lib/specialties';
+import { filterActiveServices } from '@/lib/profile-services';
 import {
   creatorCanAccessMyProducts,
   creatorCanAccessProfileProducts,
@@ -104,10 +105,16 @@ function CreatorStudioPageInner() {
         specialtyTags: parseSpecialtyTags(profile.specialtyTags),
         followerCount: followStatsRes.followerCount ?? 0,
         productCount: productsRes.totalElements ?? productsRes.content.length,
+        serviceCount: filterActiveServices(profile.profileServices ?? []).length,
         profileVisits: profile.profileVisits ?? 0,
         isAvailable: profile.isAvailable ?? true,
+        availabilityLabel: profile.availabilityLabel ?? null,
         averageRating: profile.reputation?.averageRating ?? null,
-        locationLabel: formatLocationLabel(profile.locationCity, profile.locationCountry),
+        locationLabel: formatLocationLabel(
+          profile.locationCity,
+          profile.locationCountry,
+          profile.nationality
+        ),
         appRole: profile.appRole ?? null,
         headerLayout: parseCreatorStudioHeaderLayout(profile.studioHeaderLayout),
         headerContentStyle: parseCreatorStudioHeaderContentStyle(profile.studioHeaderContentStyle),
@@ -130,8 +137,10 @@ function CreatorStudioPageInner() {
         specialtyTags: [],
         followerCount: 0,
         productCount: 0,
+        serviceCount: 0,
         profileVisits: 0,
         isAvailable: true,
+        availabilityLabel: null,
         appRole: null,
         headerLayout: 'BANNER',
         headerContentStyle: 'DEFAULT',

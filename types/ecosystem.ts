@@ -230,6 +230,13 @@ export interface NotificationDto {
   createdAt: string;
   refId?: string | null;
   refSecondaryId?: string | null;
+  /** Actor (e.g. profile visitor) display fields from the API. */
+  actorFullName?: string | null;
+  actorAvatarUrl?: string | null;
+  /** False when the actor has no public creator profile. */
+  actorProfileAvailable?: boolean | null;
+  /** Frontend-only: ids collapsed into a profile-visit group row. */
+  aggregatedNotificationIds?: string[];
 }
 
 export interface CreatorReviewItem {
@@ -245,6 +252,12 @@ export interface CreatorReputationDto {
   averageRating: number | null;
   reviewCount: number;
   recommendPercent: number;
+  /** Legacy recommend-sample size — not used by public Response rate. */
+  completedMissionsCount?: number;
+  /** Discuss inbound reply rate (0–100), or null/undefined when no inbound DMs. */
+  responseRatePercent?: number | null;
+  inboundConversationCount?: number;
+  typicallyRepliesWithinLabel?: string | null;
   trustBadges: string[];
   recentReviews: CreatorReviewItem[];
   ratingDistribution?: Partial<Record<1 | 2 | 3 | 4 | 5, number>>;
@@ -443,6 +456,8 @@ export interface CreatorProfileDto {
   contactEmails?: ContactEntry[];
   availabilityHours?: string | null;
   isAvailable?: boolean;
+  /** Custom status text when available (empty → "Available"). */
+  availabilityLabel?: string | null;
   contactVisibility?: string | null;
   studioHeaderLayout?: string | null;
   studioHeaderContentStyle?: string | null;
@@ -513,6 +528,7 @@ export interface CreatorProfileUpdateBody {
   contactEmails?: ContactEntry[];
   availabilityHours?: string;
   isAvailable?: boolean;
+  availabilityLabel?: string | null;
   contactVisibility?: string;
   typicalResponseTime?: string;
   studioHeaderLayout?: string;

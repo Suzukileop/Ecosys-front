@@ -1,7 +1,15 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { CREATOR_PROFILE_SUBSCRIBERS_LABEL, CREATOR_PROFILE_VISITS_LABEL, type CreatorProfileHeaderProps } from '@/components/creator/creator-profile-header-types';
+import {
+  CREATOR_PROFILE_PRODUCTS_LABEL,
+  CREATOR_PROFILE_SERVICES_LABEL,
+  CREATOR_PROFILE_SUBSCRIBERS_LABEL,
+  CREATOR_PROFILE_VISITS_LABEL,
+  resolveShowProductCount,
+  resolveShowSubscriberCount,
+  type CreatorProfileHeaderProps,
+} from '@/components/creator/creator-profile-header-types';
 import { ProfileVisitStat, ProfileVisitStatGridItem } from '@/components/creator/ProfileVisitStat';
 import { ProfileHeaderSpecialtyBlock } from '@/components/creator/CreatorProfileHeader';
 import type { CreatorStudioHeaderContentStyle } from '@/components/creator/studio/creator-studio-header-content';
@@ -13,17 +21,28 @@ type BannerProfileContentProps = CreatorProfileHeaderProps & {
 };
 
 function StatsInline(props: CreatorProfileHeaderProps) {
+  const showProductCount = resolveShowProductCount(props);
+  const showSubscribers = resolveShowSubscriberCount(props);
+  const serviceCount = props.serviceCount ?? 0;
+  const middleValue = showProductCount ? props.productCount : serviceCount;
+  const middleLabel = showProductCount
+    ? `product${props.productCount !== 1 ? 's' : ''}`
+    : `service${serviceCount !== 1 ? 's' : ''}`;
   return (
     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-600 dark:text-neutral-400">
-      <ProfileVisitStat
-        value={props.followerCount}
-        label={CREATOR_PROFILE_SUBSCRIBERS_LABEL}
-        href={props.profileSubscribersHref}
-        layout="inline"
-      />
-      <span aria-hidden>·</span>
+      {showSubscribers ? (
+        <>
+          <ProfileVisitStat
+            value={props.followerCount}
+            label={CREATOR_PROFILE_SUBSCRIBERS_LABEL}
+            href={props.profileSubscribersHref}
+            layout="inline"
+          />
+          <span aria-hidden>·</span>
+        </>
+      ) : null}
       <span>
-        {props.productCount} product{props.productCount !== 1 ? 's' : ''}
+        {middleValue} {middleLabel}
       </span>
       <span aria-hidden>·</span>
       <ProfileVisitStat
@@ -51,16 +70,28 @@ function StatsInline(props: CreatorProfileHeaderProps) {
 }
 
 function StatsGrid(props: CreatorProfileHeaderProps) {
+  const showProductCount = resolveShowProductCount(props);
+  const showSubscribers = resolveShowSubscriberCount(props);
+  const serviceCount = props.serviceCount ?? 0;
+  const middleValue = showProductCount ? props.productCount : serviceCount;
+  const middleLabel = showProductCount ? CREATOR_PROFILE_PRODUCTS_LABEL : CREATOR_PROFILE_SERVICES_LABEL;
+  const columns = 1 + (showSubscribers ? 1 : 0) + 1;
   return (
-    <div className="mt-3 grid grid-cols-3 gap-3 sm:max-w-sm">
-      <ProfileVisitStatGridItem
-        value={props.followerCount}
-        label={CREATOR_PROFILE_SUBSCRIBERS_LABEL}
-        href={props.profileSubscribersHref}
-      />
+    <div
+      className={`mt-3 grid gap-3 sm:max-w-sm ${
+        columns === 3 ? 'grid-cols-3' : 'grid-cols-2'
+      }`}
+    >
+      {showSubscribers ? (
+        <ProfileVisitStatGridItem
+          value={props.followerCount}
+          label={CREATOR_PROFILE_SUBSCRIBERS_LABEL}
+          href={props.profileSubscribersHref}
+        />
+      ) : null}
       <div className="rounded-lg border border-neutral-200/80 bg-neutral-50/80 px-2 py-2 dark:border-neutral-800 dark:bg-neutral-900/60">
-        <p className="text-base font-bold text-neutral-900 dark:text-white">{props.productCount.toLocaleString()}</p>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Products</p>
+        <p className="text-base font-bold text-neutral-900 dark:text-white">{middleValue.toLocaleString()}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">{middleLabel}</p>
       </div>
       <ProfileVisitStatGridItem
         value={props.profileVisits}
@@ -111,7 +142,6 @@ export function BannerProfileContent({
           <ProfileHeaderSpecialtyBlock
             specialties={props.specialties}
             specialite={props.specialite}
-            specialtyTags={props.specialtyTags}
           />
           {bioPreview && (
             <p className="max-w-xl text-sm text-neutral-600 dark:text-neutral-400">{bioPreview}</p>
@@ -131,14 +161,22 @@ export function BannerProfileContent({
             <div className="min-w-0 pb-0.5">
               <NameBlock props={props} />
               <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                <ProfileVisitStat
-                  value={props.followerCount}
-                  label={CREATOR_PROFILE_SUBSCRIBERS_LABEL}
-                  href={props.profileSubscribersHref}
-                  layout="inline"
-                />
-                <span aria-hidden>·</span>
-                <span>{props.productCount} products</span>
+                {resolveShowSubscriberCount(props) ? (
+                  <>
+                    <ProfileVisitStat
+                      value={props.followerCount}
+                      label={CREATOR_PROFILE_SUBSCRIBERS_LABEL}
+                      href={props.profileSubscribersHref}
+                      layout="inline"
+                    />
+                    <span aria-hidden>·</span>
+                  </>
+                ) : null}
+                <span>
+                  {resolveShowProductCount(props)
+                    ? `${props.productCount} products`
+                    : `${props.serviceCount ?? 0} services`}
+                </span>
                 <span aria-hidden>·</span>
                 <ProfileVisitStat
                   value={props.profileVisits}
@@ -150,7 +188,6 @@ export function BannerProfileContent({
               <ProfileHeaderSpecialtyBlock
                 specialties={props.specialties}
                 specialite={props.specialite}
-                specialtyTags={props.specialtyTags}
               />
             </div>
           </div>
@@ -173,7 +210,6 @@ export function BannerProfileContent({
                 <ProfileHeaderSpecialtyBlock
                   specialties={props.specialties}
                   specialite={props.specialite}
-                  specialtyTags={props.specialtyTags}
                 />
               </div>
               {bioPreview && (
@@ -199,7 +235,6 @@ export function BannerProfileContent({
               <ProfileHeaderSpecialtyBlock
                 specialties={props.specialties}
                 specialite={props.specialite}
-                specialtyTags={props.specialtyTags}
               />
             </div>
             {bioPreview && (

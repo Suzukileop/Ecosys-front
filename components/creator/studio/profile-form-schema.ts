@@ -9,8 +9,10 @@ import {
   MAX_SPECIALTY_LENGTH,
   MAX_SPECIALTY_TAG_LENGTH,
   MAX_SPECIALTY_TAGS,
+  matchSpecialtyOption,
   parseSpecialtyList,
 } from '@/lib/specialties';
+import { isRepeatedBioContent } from '@/lib/profile-bio';
 
 export const platformEnum = z.enum([
   'INSTAGRAM',
@@ -464,6 +466,7 @@ export const profileSchema = z
     contactEmails: z.array(contactEntrySchema).max(8),
     availabilityHours: z.string().max(200).optional(),
     isAvailable: z.boolean(),
+    availabilityLabel: z.string().max(80).optional(),
     profileLinks: z.array(profileLinkSchema).max(10),
     serviceOffers: z.array(profileServiceSchema).max(8),
     faqItems: z.array(faqItemSchema).max(8),
@@ -505,6 +508,14 @@ export const profileSchema = z
         code: z.ZodIssueCode.custom,
         message: `Choose at most ${MAX_PROFILE_SPECIALTIES} specialties.`,
         path: ['specialties'],
+      });
+    }
+
+    if (data.bio && isRepeatedBioContent(data.bio)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Bio looks duplicated — remove the repeated paragraph before saving.',
+        path: ['bio'],
       });
     }
 
@@ -1360,8 +1371,10 @@ export function serializeProfileLinks(links: ProfileLinkForm[]) {
 
 export function serializeProfileServices(
   services: ProfileServiceForm[],
-  fallbackSpecialty = ''
+  fallbackSpecialty = '',
+  allowedSpecialties: string[] = []
 ) {
+  const allowed = parseSpecialtyList(allowedSpecialties, fallbackSpecialty);
   return services
     .filter((service) => service.title.trim().length > 0)
     .map((service, index) => {
@@ -1383,6 +1396,10 @@ export function serializeProfileServices(
             ? `${deliveryValue} week${singular ? '' : 's'}`
             : `${deliveryValue} day${singular ? '' : 's'}`;
       }
+      const rawSpecialty = service.specialty?.trim() || fallbackSpecialty || '';
+      const matched =
+        matchSpecialtyOption(rawSpecialty, allowed) ||
+        (allowed[0] ?? rawSpecialty);
       return {
         id: service.id,
         sortOrder: index,
@@ -1391,7 +1408,7 @@ export function serializeProfileServices(
         basePriceCents: pricingType === 'QUOTE' ? null : service.basePriceCents ?? null,
         deadline,
         tasks: service.tasks?.map((item) => item.value.trim()).filter(Boolean) ?? [],
-        specialty: service.specialty?.trim() || fallbackSpecialty || null,
+        specialty: matched || null,
         pricingType,
         coverImageUrl: service.coverImageUrl?.trim() || null,
         status: service.status ?? 'ACTIVE',
@@ -1491,8 +1508,13 @@ function normalizeProfileComparable(values: ProfileFormValues, availabilityHours
     contactEmails: serializeContactEntries(values.contactEmails, 'email'),
     availabilityHours: trimOptional(availabilityHours),
     isAvailable: values.isAvailable,
+    availabilityLabel: trimOptional(values.availabilityLabel),
     profileLinks: serializeProfileLinks(values.profileLinks),
-    serviceOffers: serializeProfileServices(values.serviceOffers, values.specialties?.[0] ?? ''),
+    serviceOffers: serializeProfileServices(
+      values.serviceOffers,
+      values.specialties?.[0] ?? '',
+      values.specialties
+    ),
     faqItems: serializeFaqItems(values.faqItems),
     teamMembers: serializeTeamMembers(values.teamMembers),
     galleryItems: serializeGalleryItems(values.galleryItems),

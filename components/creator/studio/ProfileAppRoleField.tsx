@@ -5,6 +5,7 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faCheck, faGraduationCap, faStore, faTags, faUser, faUserTie } from '@fortawesome/free-solid-svg-icons';
 import {
   CREATOR_APP_ROLE_OPTIONS,
+  creatorAppRoleAccent,
   type CreatorAppRole,
 } from '@/lib/creator-app-role';
 
@@ -37,6 +38,7 @@ export function ProfileAppRoleField({ value, disabled, onChange }: ProfileAppRol
       >
         {CREATOR_APP_ROLE_OPTIONS.map((option) => {
           const selected = value === option.value;
+          const accent = creatorAppRoleAccent(option.value);
           const descriptionLines = Array.isArray(option.description)
             ? option.description
             : [option.description];
@@ -50,15 +52,17 @@ export function ProfileAppRoleField({ value, disabled, onChange }: ProfileAppRol
               onClick={() => {
                 if (!disabled && !selected) onChange(option.value);
               }}
-              className={`group relative flex min-h-[9.5rem] flex-col items-start rounded-2xl border px-4 pb-4 pt-5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 ${
+              className={`group relative flex min-h-[9.5rem] flex-col items-start rounded-2xl bg-white px-4 pb-4 pt-5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:bg-neutral-950 dark:focus-visible:ring-offset-neutral-900 ${
+                accent.focusRing
+              } ${
                 selected
-                  ? 'border-2 border-orange-500 bg-white shadow-sm dark:border-orange-400 dark:bg-neutral-950'
-                  : 'border border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50/80 dark:border-neutral-700 dark:bg-neutral-950 dark:hover:border-neutral-600 dark:hover:bg-neutral-900/80'
+                  ? `border-2 ${accent.borderSelected} shadow-sm`
+                  : `border ${accent.border} hover:brightness-[0.98] dark:hover:brightness-110`
               } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
             >
               {selected ? (
                 <span
-                  className="absolute right-3 top-3 inline-flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-white shadow-sm dark:bg-orange-400 dark:text-neutral-950"
+                  className={`absolute right-3 top-3 inline-flex h-6 w-6 items-center justify-center rounded-full shadow-sm ${accent.check}`}
                   aria-hidden
                 >
                   <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />
@@ -67,9 +71,7 @@ export function ProfileAppRoleField({ value, disabled, onChange }: ProfileAppRol
 
               <span
                 className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl transition ${
-                  selected
-                    ? 'bg-orange-500/15 text-orange-600 dark:bg-orange-400/20 dark:text-orange-300'
-                    : 'bg-neutral-100 text-neutral-500 group-hover:bg-neutral-200/80 group-hover:text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400'
+                  selected ? accent.iconSelected : accent.iconIdle
                 }`}
                 aria-hidden
               >
@@ -98,7 +100,7 @@ export function ProfileAppRoleField({ value, disabled, onChange }: ProfileAppRol
 
               {descriptionLines.length > 1 ? (
                 <ul
-                  className={`mt-2 list-disc space-y-1.5 pl-4 text-xs leading-relaxed ${
+                  className={`mt-2 list-disc space-y-1.5 pl-4 text-sm leading-relaxed ${
                     selected
                       ? 'text-neutral-600 dark:text-neutral-300'
                       : 'text-neutral-500 dark:text-neutral-400'
@@ -110,7 +112,7 @@ export function ProfileAppRoleField({ value, disabled, onChange }: ProfileAppRol
                 </ul>
               ) : (
                 <span
-                  className={`mt-2 text-xs leading-relaxed ${
+                  className={`mt-2 text-sm leading-relaxed ${
                     selected
                       ? 'text-neutral-600 dark:text-neutral-300'
                       : 'text-neutral-500 dark:text-neutral-400'

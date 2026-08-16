@@ -10,7 +10,6 @@ type CreatorProfileTrustStripProps = {
   creatorId: string;
   availabilityHours?: string | null;
   timezoneId?: string | null;
-  isAvailable?: boolean;
   className?: string;
 };
 
@@ -18,7 +17,6 @@ export function CreatorProfileTrustStrip({
   creatorId,
   availabilityHours,
   timezoneId,
-  isAvailable = true,
   className = '',
 }: CreatorProfileTrustStripProps) {
   const [reputation, setReputation] = useState<CreatorReputationDto | null>(null);
@@ -49,10 +47,11 @@ export function CreatorProfileTrustStrip({
       <CreatorTrustMetricsRow
         averageRating={reputation?.averageRating ?? null}
         reviewCount={reputation?.reviewCount ?? 0}
-        recommendPercent={reputation?.recommendPercent ?? null}
+        responseRatePercent={reputation?.responseRatePercent ?? null}
+        inboundConversationCount={reputation?.inboundConversationCount ?? 0}
+        typicallyRepliesWithinLabel={reputation?.typicallyRepliesWithinLabel ?? null}
         availabilityHours={availabilityHours}
         timezoneId={timezoneId}
-        isAvailable={isAvailable}
       />
     </div>
   );

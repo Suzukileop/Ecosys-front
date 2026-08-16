@@ -1,10 +1,22 @@
 import type { ReactNode } from 'react';
 import { getAvailabilityDisplayParts } from '@/lib/availabilityHours';
 
+/**
+ * Minimum sample size before rating & Discuss response metrics
+ * show a numeric value with full visual authority (reviews / inbound Discuss DMs).
+ */
+export const TRUST_METRICS_MIN_SAMPLE = 2;
+
 type TrustMetricCardProps = {
   label: string;
-  value: string;
   icon?: ReactNode;
+  /** Main numeric / text value when sample is sufficient. */
+  value?: string;
+  /** Secondary denominator / latency line under the value. */
+  hint?: string | null;
+  /** When true, hide the number and show a neutral badge instead. */
+  insufficient?: boolean;
+  insufficientLabel?: string;
 };
 
 function MetricIconShell({ children }: { children: ReactNode }) {
@@ -15,14 +27,32 @@ function MetricIconShell({ children }: { children: ReactNode }) {
   );
 }
 
-export function TrustMetricCard({ label, value, icon }: TrustMetricCardProps) {
+export function TrustMetricCard({
+  label,
+  icon,
+  value,
+  hint,
+  insufficient = false,
+  insufficientLabel = 'Not enough data yet',
+}: TrustMetricCardProps) {
   return (
     <div className="flex min-h-[5.5rem] flex-col justify-between rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
       <div className="flex items-start justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">{label}</p>
         {icon}
       </div>
-      <p className="mt-2 text-xl font-bold leading-tight text-neutral-900 dark:text-white">{value}</p>
+      {insufficient ? (
+        <span className="mt-2 inline-flex w-fit max-w-full rounded-lg bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+          {insufficientLabel}
+        </span>
+      ) : (
+        <div className="mt-2 min-w-0">
+          <p className="text-xl font-bold leading-tight text-neutral-900 dark:text-white">{value}</p>
+          {hint ? (
+            <p className="mt-1 text-xs leading-snug text-neutral-500 dark:text-neutral-400">{hint}</p>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
@@ -30,18 +60,16 @@ export function TrustMetricCard({ label, value, icon }: TrustMetricCardProps) {
 function AvailabilityMetricCard({
   availabilityHours,
   timezoneId,
-  isAvailable = true,
 }: {
   availabilityHours?: string | null;
   timezoneId?: string | null;
-  isAvailable?: boolean;
 }) {
   const parts = getAvailabilityDisplayParts(availabilityHours, timezoneId);
 
   return (
     <div className="flex min-h-[5.5rem] flex-col rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">Disponibilité</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">Availability</p>
         <MetricIconShell>
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -49,18 +77,10 @@ function AvailabilityMetricCard({
         </MetricIconShell>
       </div>
 
-      <p
-        className={`mt-2 text-sm font-semibold ${
-          isAvailable ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-500 dark:text-neutral-400'
-        }`}
-      >
-        {isAvailable ? 'Disponible' : 'Indisponible'}
-      </p>
-
       {!parts ? (
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Horaires non renseignés</p>
+        <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">Hours not set</p>
       ) : (
-        <div className="mt-1 space-y-0.5">
+        <div className="mt-2 space-y-0.5">
           <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">{parts.days}</p>
           <p className="text-base font-bold tabular-nums leading-tight text-neutral-900 dark:text-white">{parts.hours}</p>
           {parts.timezone ? (
@@ -75,33 +95,54 @@ function AvailabilityMetricCard({
 type CreatorTrustMetricsRowProps = {
   averageRating: number | null;
   reviewCount: number;
-  recommendPercent: number | null;
+  responseRatePercent?: number | null;
+  inboundConversationCount?: number;
+  typicallyRepliesWithinLabel?: string | null;
   availabilityHours?: string | null;
   timezoneId?: string | null;
-  isAvailable?: boolean;
 };
 
+export function formatEnglishCount(value: number): string {
+  return new Intl.NumberFormat('en-US').format(value);
+}
+
+/** @deprecated Prefer formatEnglishCount */
 export function formatFrenchCount(value: number): string {
-  return new Intl.NumberFormat('fr-FR').format(value);
+  return formatEnglishCount(value);
+}
+
+function insufficientSampleLabel(sampleSize: number): string {
+  return sampleSize <= 0 ? 'New provider' : 'Not enough data yet';
+}
+
+function basedOnReviewsHint(reviewCount: number): string {
+  const n = formatEnglishCount(reviewCount);
+  return reviewCount === 1 ? `Based on ${n} review` : `Based on ${n} reviews`;
 }
 
 export function CreatorTrustMetricsRow({
   averageRating,
   reviewCount,
-  recommendPercent,
+  responseRatePercent,
+  inboundConversationCount = 0,
+  typicallyRepliesWithinLabel,
   availabilityHours,
   timezoneId,
-  isAvailable = true,
 }: CreatorTrustMetricsRowProps) {
+  const ratingInsufficient = reviewCount < TRUST_METRICS_MIN_SAMPLE;
+  const responseInsufficient = inboundConversationCount < TRUST_METRICS_MIN_SAMPLE;
+
   const hasRating = averageRating != null && reviewCount > 0;
-  const completionPercent =
-    reviewCount > 0 && recommendPercent != null ? `${Math.round(recommendPercent)} %` : '—';
+  const hasResponseRate = typeof responseRatePercent === 'number' && inboundConversationCount > 0;
 
   return (
-    <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid min-w-0 gap-3 md:grid-cols-3">
       <TrustMetricCard
-        label="Note moyenne"
-        value={hasRating ? `${averageRating!.toFixed(1)} ★` : '—'}
+        label="Average rating"
+        insufficient={ratingInsufficient || !hasRating}
+        insufficientLabel={insufficientSampleLabel(reviewCount)}
+        value={hasRating ? `${averageRating!.toFixed(1)} ★` : undefined}
+        hint={hasRating && !ratingInsufficient ? basedOnReviewsHint(reviewCount) : null}
         icon={
           <MetricIconShell>
             <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
@@ -111,20 +152,15 @@ export function CreatorTrustMetricsRow({
         }
       />
       <TrustMetricCard
-        label="Taux de complétion"
-        value={completionPercent}
-        icon={
-          <MetricIconShell>
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </MetricIconShell>
+        label="Response rate"
+        insufficient={responseInsufficient || !hasResponseRate}
+        insufficientLabel={insufficientSampleLabel(inboundConversationCount)}
+        value={hasResponseRate ? `${Math.round(responseRatePercent!)} %` : undefined}
+        hint={
+          hasResponseRate && !responseInsufficient && typicallyRepliesWithinLabel?.trim()
+            ? typicallyRepliesWithinLabel.trim()
+            : null
         }
-      />
-      <AvailabilityMetricCard availabilityHours={availabilityHours} timezoneId={timezoneId} isAvailable={isAvailable} />
-      <TrustMetricCard
-        label="Avis clients"
-        value={reviewCount > 0 ? formatFrenchCount(reviewCount) : '—'}
         icon={
           <MetricIconShell>
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
@@ -137,6 +173,7 @@ export function CreatorTrustMetricsRow({
           </MetricIconShell>
         }
       />
+      <AvailabilityMetricCard availabilityHours={availabilityHours} timezoneId={timezoneId} />
     </div>
   );
 }

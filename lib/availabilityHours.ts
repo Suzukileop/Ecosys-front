@@ -116,14 +116,19 @@ export function getActiveDays(schedule: AvailabilitySchedule): boolean[] {
 }
 
 const DAY_LABELS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
+const DAY_LABELS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
-function formatDayRangeFr(days: boolean[]): string {
+function formatDayRangeLocalized(
+  days: boolean[],
+  labels: readonly string[],
+  copy: { none: string; all: string; weekday: string; weekSat: string }
+): string {
   const active = days.map((on, i) => (on ? i : -1)).filter((i) => i >= 0);
-  if (active.length === 0) return 'Aucun jour sélectionné';
-  if (active.length === 7) return 'Tous les jours';
-  if (active.join(',') === '0,1,2,3,4') return 'Lun–Ven';
-  if (active.join(',') === '0,1,2,3,4,5') return 'Lun–Sam';
-  if (active.length === 1) return DAY_LABELS_FR[active[0]];
+  if (active.length === 0) return copy.none;
+  if (active.length === 7) return copy.all;
+  if (active.join(',') === '0,1,2,3,4') return copy.weekday;
+  if (active.join(',') === '0,1,2,3,4,5') return copy.weekSat;
+  if (active.length === 1) return labels[active[0]];
   const ranges: string[] = [];
   let start = active[0];
   let prev = active[0];
@@ -132,12 +137,30 @@ function formatDayRangeFr(days: boolean[]): string {
       prev = active[i];
       continue;
     }
-    ranges.push(start === prev ? DAY_LABELS_FR[start] : `${DAY_LABELS_FR[start]}–${DAY_LABELS_FR[prev]}`);
+    ranges.push(start === prev ? labels[start] : `${labels[start]}–${labels[prev]}`);
     start = active[i];
     prev = active[i];
   }
-  ranges.push(start === prev ? DAY_LABELS_FR[start] : `${DAY_LABELS_FR[start]}–${DAY_LABELS_FR[prev]}`);
+  ranges.push(start === prev ? labels[start] : `${labels[start]}–${labels[prev]}`);
   return ranges.join(', ');
+}
+
+function formatDayRangeFr(days: boolean[]): string {
+  return formatDayRangeLocalized(days, DAY_LABELS_FR, {
+    none: 'Aucun jour sélectionné',
+    all: 'Tous les jours',
+    weekday: 'Lun–Ven',
+    weekSat: 'Lun–Sam',
+  });
+}
+
+function formatDayRangeEn(days: boolean[]): string {
+  return formatDayRangeLocalized(days, DAY_LABELS_EN, {
+    none: 'No days selected',
+    all: 'Every day',
+    weekday: 'Mon–Fri',
+    weekSat: 'Mon–Sat',
+  });
 }
 
 export function formatAvailabilityHoursFr(schedule: AvailabilitySchedule, timezoneId?: string | null): string {
@@ -149,13 +172,21 @@ export function formatAvailabilityHoursFr(schedule: AvailabilitySchedule, timezo
   return tz ? `${daysLabel} · ${start}–${end} (${tz})` : `${daysLabel} · ${start}–${end}`;
 }
 
-/** Formate les horaires stockés pour l'affichage public (français). */
+/** Format stored hours for public display (English). */
 export function formatAvailabilityDisplay(
   raw: string | null | undefined,
   timezoneId?: string | null
 ): string | null {
   if (!raw?.trim()) return null;
-  return formatAvailabilityHoursFr(parseAvailabilityHours(raw), timezoneId);
+  const schedule = parseAvailabilityHours(raw);
+  const daysLabel =
+    schedule.preset === 'custom'
+      ? formatDayRangeEn(schedule.customDays)
+      : formatDayRangeEn(PRESET_DAYS[schedule.preset]);
+  const start = normalizeTime(schedule.start);
+  const end = normalizeTime(schedule.end);
+  const tz = timezoneId?.trim();
+  return tz ? `${daysLabel} · ${start}–${end} (${tz})` : `${daysLabel} · ${start}–${end}`;
 }
 
 export type AvailabilityDisplayParts = {
@@ -165,7 +196,7 @@ export type AvailabilityDisplayParts = {
 };
 
 /** Libellé court du fuseau (ex. « Antananarivo · UTC+3 »). */
-export function formatTimezoneShort(timezoneId: string | null | undefined, locale = 'fr-FR'): string | null {
+export function formatTimezoneShort(timezoneId: string | null | undefined, locale = 'en-US'): string | null {
   const tz = timezoneId?.trim();
   if (!tz) return null;
   const city = tz.split('/').pop()?.replace(/_/g, ' ') ?? tz;
@@ -194,8 +225,8 @@ export function getAvailabilityDisplayParts(
   const schedule = parseAvailabilityHours(raw);
   const days =
     schedule.preset === 'custom'
-      ? formatDayRangeFr(schedule.customDays)
-      : formatDayRangeFr(PRESET_DAYS[schedule.preset]);
+      ? formatDayRangeEn(schedule.customDays)
+      : formatDayRangeEn(PRESET_DAYS[schedule.preset]);
   const start = normalizeTime(schedule.start);
   const end = normalizeTime(schedule.end);
   return {

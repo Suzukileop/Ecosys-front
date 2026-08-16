@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getApiErrorMessage } from '@/lib/api-error';
-import { getAttachmentDownloadUrl, getAttachmentViewUrl } from '@/lib/messaging';
+import { getAttachmentViewUrl } from '@/lib/messaging';
 import {
   isAttachmentLoadFailed,
   isAttachmentNotFoundError,
@@ -78,27 +78,14 @@ function InlineMediaAttachment({
     };
   }, [conversationId, attachment.id]);
 
-  const download = useCallback(async () => {
-    try {
-      const access = await getAttachmentDownloadUrl(conversationId, attachment.id);
-      const link = document.createElement('a');
-      link.href = access.url;
-      link.download = access.fileName;
-      link.rel = 'noopener noreferrer';
-      link.click();
-    } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to download.'));
-    }
-  }, [conversationId, attachment.id]);
-
   if (loading) {
     return (
       <div
-        className={`flex items-center justify-center bg-neutral-900 ${
+        className={`flex items-center justify-center bg-transparent ${
           embedded ? 'aspect-[9/16] min-h-[200px] w-full max-w-[280px]' : 'mt-1 h-44 w-56 max-w-full rounded-2xl'
         }`}
       >
-        <span className="text-xs text-neutral-400">Loading…</span>
+        <span className="text-xs text-[var(--cw-text-muted,#9AA1AA)]">Loading…</span>
       </div>
     );
   }
@@ -126,7 +113,6 @@ function InlineMediaAttachment({
           <ChatShortVideoPlayer
             src={previewUrl}
             label={attachment.fileName}
-            onDownload={() => void download()}
             className={embedded ? 'w-full' : 'rounded-2xl overflow-hidden'}
           />
         ) : (
@@ -149,7 +135,10 @@ function InlineMediaAttachment({
 
             {embedded && timeLabel && (
               <>
-                <div className={`pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent ${HOVER_CHROME}`} aria-hidden />
+                <div
+                  className={`pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent ${HOVER_CHROME}`}
+                  aria-hidden
+                />
                 <time
                   dateTime={sentAt}
                   className={`pointer-events-none absolute bottom-1.5 right-2 text-[11px] font-medium text-white drop-shadow-md ${HOVER_CHROME}`}
@@ -158,18 +147,6 @@ function InlineMediaAttachment({
                 </time>
               </>
             )}
-
-            <button
-              type="button"
-              onClick={() => void download()}
-              title="Download"
-              className={`absolute right-2 top-2 rounded-full bg-black/50 p-1.5 text-white backdrop-blur-sm ${HOVER_CHROME}`}
-              aria-label="Download image"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
-              </svg>
-            </button>
           </>
         )}
       </div>
@@ -207,11 +184,11 @@ function InlineMediaAttachment({
 }
 
 function FileAttachmentCard({ conversationId, attachment, mine = false }: MessageAttachmentViewProps) {
-  const [loading, setLoading] = useState<'view' | 'download' | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const openView = async () => {
-    setLoading('view');
+    setLoading(true);
     setError(null);
     try {
       const access = await getAttachmentViewUrl(conversationId, attachment.id);
@@ -219,30 +196,13 @@ function FileAttachmentCard({ conversationId, attachment, mine = false }: Messag
     } catch (e) {
       setError(getApiErrorMessage(e, 'Unable to open file.'));
     } finally {
-      setLoading(null);
-    }
-  };
-
-  const download = async () => {
-    setLoading('download');
-    setError(null);
-    try {
-      const access = await getAttachmentDownloadUrl(conversationId, attachment.id);
-      const link = document.createElement('a');
-      link.href = access.url;
-      link.download = access.fileName;
-      link.rel = 'noopener noreferrer';
-      link.click();
-    } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to download file.'));
-    } finally {
-      setLoading(null);
+      setLoading(false);
     }
   };
 
   return (
     <div
-      className={`group/file mt-2 flex items-center gap-3 rounded-xl border px-3 py-2.5 ${
+      className={`mt-2 flex items-center gap-3 rounded-xl border px-3 py-2.5 ${
         mine
           ? 'border-blue-400/30 bg-blue-500/15'
           : 'border-neutral-200 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900/50'
@@ -255,37 +215,23 @@ function FileAttachmentCard({ conversationId, attachment, mine = false }: Messag
         <p className={`truncate text-sm font-medium ${mine ? 'text-white' : 'text-neutral-800 dark:text-neutral-200'}`}>
           {attachment.fileName}
         </p>
-        <p className={`text-[11px] ${mine ? 'text-blue-100' : 'text-neutral-500'}`}>{formatSize(attachment.sizeBytes)}</p>
+        <p className={`text-[11px] ${mine ? 'text-blue-100' : 'text-neutral-500'}`}>
+          {formatSize(attachment.sizeBytes)}
+        </p>
       </div>
-      <div
-        className={`flex shrink-0 gap-1 ${HOVER_CHROME.replace('group-hover/media:', 'group-hover/file:')}`}
+      <button
+        type="button"
+        onClick={() => void openView()}
+        disabled={loading}
+        className={`shrink-0 rounded-lg px-2 py-1 text-[11px] font-semibold ${
+          mine
+            ? 'bg-white/20 text-white hover:bg-white/30'
+            : 'bg-neutral-200 text-neutral-800 hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-200'
+        }`}
       >
-        <button
-          type="button"
-          onClick={() => void openView()}
-          disabled={loading !== null}
-          className={`rounded-lg px-2 py-1 text-[11px] font-semibold ${
-            mine
-              ? 'bg-white/20 text-white hover:bg-white/30'
-              : 'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-200'
-          }`}
-        >
-          Open
-        </button>
-        <button
-          type="button"
-          onClick={() => void download()}
-          disabled={loading !== null}
-          className={`rounded-lg px-2 py-1 text-[11px] font-semibold ${
-            mine
-              ? 'bg-white/20 text-white hover:bg-white/30'
-              : 'bg-neutral-200 text-neutral-800 hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-200'
-          }`}
-        >
-          ↓
-        </button>
-      </div>
-      {error && <p className="mt-1 w-full text-[10px] text-red-500">{error}</p>}
+        {loading ? '…' : 'Open'}
+      </button>
+      {error ? <p className="mt-1 w-full text-[10px] text-red-500">{error}</p> : null}
     </div>
   );
 }

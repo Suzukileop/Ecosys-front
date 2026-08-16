@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar } from '@/components/ui/Avatar';
+import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
+import { creatorAppRoleRingClass } from '@/lib/creator-app-role';
 import api from '@/lib/api';
 import type { CreatorProfileDto } from '@/types/ecosystem';
 
@@ -15,14 +17,17 @@ type SidebarUserProfileProps = {
  *  pl-3 centers the lg avatar (3rem) inside the 4.5rem collapsed rail.
  */
 const PROFILE_BLOCK_CLASS =
-  'flex h-[5.5rem] w-full shrink-0 items-center gap-3 overflow-hidden rounded-2xl py-3 pl-3 pr-3 transition hover:bg-neutral-100 dark:hover:bg-white/10';
+  'flex h-[5.5rem] w-full shrink-0 items-center gap-3 overflow-visible rounded-2xl py-3 pl-3 pr-3 transition hover:bg-neutral-100 dark:hover:bg-white/10';
 
 export function SidebarUserProfile({ collapsed }: SidebarUserProfileProps) {
   const { user, hasRole } = useAuth();
+  const { appRole } = useCreatorAppRole();
   const [specialite, setSpecialite] = useState<string | null>(null);
+  const isCreator = hasRole('ROLE_CREATOR');
+  const ringClass = creatorAppRoleRingClass(isCreator ? appRole : null);
 
   useEffect(() => {
-    if (!user || !hasRole('ROLE_CREATOR')) {
+    if (!user || !isCreator) {
       setSpecialite(null);
       return;
     }
@@ -40,18 +45,22 @@ export function SidebarUserProfile({ collapsed }: SidebarUserProfileProps) {
     return () => {
       cancelled = true;
     };
-  }, [user, hasRole]);
+  }, [user, isCreator]);
 
   if (!user) return null;
 
   return (
     <Link
-      href={hasRole('ROLE_CREATOR') ? '/dashboard/creator' : '/dashboard/home'}
+      href={isCreator ? '/dashboard/creator' : '/dashboard/home'}
       title={collapsed ? user.fullName : undefined}
       aria-label="My Profile"
       className={PROFILE_BLOCK_CLASS}
     >
-      <Avatar name={user.fullName} avatarUrl={user.avatarUrl} size="lg" tone="muted" />
+      <span
+        className={`inline-flex shrink-0 rounded-full ring-[3px] ring-offset-2 ring-offset-white dark:ring-offset-[#0a0a0a] ${ringClass}`}
+      >
+        <Avatar name={user.fullName} avatarUrl={user.avatarUrl} size="lg" tone="muted" />
+      </span>
       <div
         className={`min-w-0 flex-1 space-y-0.5 overflow-hidden transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
           collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'

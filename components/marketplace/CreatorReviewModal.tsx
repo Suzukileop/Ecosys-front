@@ -32,7 +32,7 @@ export function CreatorReviewTriggerButton({
         'inline-flex shrink-0 items-center justify-center rounded-full bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-orange-600 sm:px-4 sm:py-2 sm:text-sm'
       }
     >
-      Laisser un avis
+      Leave a review
     </button>
   );
 }
@@ -110,15 +110,15 @@ export function CreatorReviewModal({
               id="creator-review-modal-title"
               className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white"
             >
-              Laisser un avis
+              Leave a review
             </h2>
-            <p className="mt-1 text-sm text-neutral-500">Partagez votre expérience avec {creatorName}.</p>
+            <p className="mt-1 text-sm text-neutral-500">Share your experience with {creatorName}.</p>
           </div>
           <button
             type="button"
             onClick={handleClose}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-800 dark:border-neutral-700 dark:hover:bg-neutral-900"
-            aria-label="Fermer"
+            aria-label="Close"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

@@ -1,13 +1,23 @@
 'use client';
 
+import { resolveAvailabilityStatusLabel } from '@/lib/availability-status';
+
 type CreatorAvailabilityControlProps = {
   isAvailable: boolean;
+  availabilityLabel?: string | null;
   onChange: (next: boolean) => void;
   disabled?: boolean;
   compact?: boolean;
 };
 
-export function CreatorAvailabilityBadge({ isAvailable }: { isAvailable: boolean }) {
+export function CreatorAvailabilityBadge({
+  isAvailable,
+  availabilityLabel,
+}: {
+  isAvailable: boolean;
+  availabilityLabel?: string | null;
+}) {
+  const label = resolveAvailabilityStatusLabel(isAvailable, availabilityLabel) ?? 'Unavailable';
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold ${
@@ -20,13 +30,14 @@ export function CreatorAvailabilityBadge({ isAvailable }: { isAvailable: boolean
         className={`h-2 w-2 rounded-full ${isAvailable ? 'bg-emerald-700' : 'bg-neutral-400 dark:bg-neutral-500'}`}
         aria-hidden
       />
-      {isAvailable ? 'Available' : 'Unavailable'}
+      {label}
     </span>
   );
 }
 
 export function CreatorAvailabilityControl({
   isAvailable,
+  availabilityLabel,
   onChange,
   disabled = false,
   compact = false,
@@ -44,7 +55,7 @@ export function CreatorAvailabilityControl({
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-3">
-        <CreatorAvailabilityBadge isAvailable={isAvailable} />
+        <CreatorAvailabilityBadge isAvailable={isAvailable} availabilityLabel={availabilityLabel} />
         <button
           type="button"
           role="switch"

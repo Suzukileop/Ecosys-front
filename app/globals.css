@@ -28,6 +28,32 @@
 
   /** Zone preview éditeur — aligné sur TIMELINE_LIGHT.previewWorkspaceBg */
   --preview-workspace-bg: #f0f5f7;
+
+  /* Messages — aligned with dashboard neutrals (DASHBOARD_MAIN_BG / sidebar search) */
+  --msg-bg: #f5f5f5; /* neutral-100 */
+  --msg-card: #ffffff;
+  --msg-border: #e5e5e5; /* neutral-200 */
+  --msg-text: #171717; /* neutral-900 */
+  --msg-muted: #737373; /* neutral-500 */
+  --msg-brand: #f47b20;
+  --msg-brand-hover: #e06e18;
+  --msg-brand-soft: #fff4eb;
+  --msg-incoming: #f5f5f5;
+  --msg-outgoing: #f47b20;
+  --msg-radius: 12px;
+
+  /* Conversation workspace (B2B timeline) */
+  --cw-page-bg: #f4f5f7;
+  --cw-surface: #ffffff;
+  --cw-surface-soft: #fcfcfb;
+  --cw-border: #e2e5e9;
+  --cw-text-primary: #17191c;
+  --cw-text-secondary: #68707a;
+  --cw-text-muted: #9aa1aa;
+  --cw-accent: #f47b20;
+  --cw-accent-soft: #fff1e6;
+  --cw-success: #138a72;
+  --cw-radius: 8px;
 }
 
 /* ── Dark ── */
@@ -42,6 +68,32 @@
   --lp-muted:    #9CA3AF;
   --lp-border:   rgba(255,255,255,0.08);
   --lp-overlay:  rgba(255,255,255,0.05);
+
+  /* Messages — aligned with dashboard neutrals */
+  --msg-bg: #0a0a0a; /* neutral-950 */
+  --msg-card: #171717; /* neutral-900 */
+  --msg-border: #262626; /* neutral-800 */
+  --msg-text: #f5f5f5; /* neutral-100 */
+  --msg-muted: #a3a3a3; /* neutral-400 */
+  --msg-brand: #f47b20;
+  --msg-brand-hover: #fb923c;
+  --msg-brand-soft: #3a2414;
+  --msg-incoming: #0a0a0a;
+  --msg-outgoing: #f47b20;
+  --msg-radius: 12px;
+
+  /* Conversation workspace — dark */
+  --cw-page-bg: #0a0a0a;
+  --cw-surface: #171717;
+  --cw-surface-soft: #1f1f1f;
+  --cw-border: #262626;
+  --cw-text-primary: #f5f5f5;
+  --cw-text-secondary: #a3a3a3;
+  --cw-text-muted: #737373;
+  --cw-accent: #f47b20;
+  --cw-accent-soft: #3a2414;
+  --cw-success: #2dd4bf;
+  --cw-radius: 8px;
 }
 
 html {
@@ -749,6 +801,75 @@ html.ecosystem-geo-bg [data-dashboard-content] {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(249, 115, 22, 0.6);
+}
+
+/* Neutral scrollbar for notification panel (avoids orange accent) */
+.notification-panel-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(115, 115, 115, 0.45) transparent;
+}
+.notification-panel-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.notification-panel-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.notification-panel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(163, 163, 163, 0.55);
+  border-radius: 3px;
+}
+.notification-panel-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(115, 115, 115, 0.7);
+}
+.dark .notification-panel-scroll {
+  scrollbar-color: rgba(163, 163, 163, 0.4) transparent;
+}
+.dark .notification-panel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(115, 115, 115, 0.55);
+}
+.dark .notification-panel-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(163, 163, 163, 0.55);
+}
+
+/* Notification panel chips + unread dot — forced neutral (no brand orange) */
+.notification-filter-tab {
+  border-radius: 9999px;
+  padding: 0.375rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.notification-filter-tab-active {
+  background-color: #171717 !important;
+  color: #ffffff !important;
+}
+.notification-filter-tab-idle {
+  background-color: #f5f5f5 !important;
+  color: #525252 !important;
+}
+.notification-filter-tab-idle:hover {
+  background-color: #e5e5e5 !important;
+}
+.dark .notification-filter-tab-active {
+  background-color: #e5e5e5 !important;
+  color: #171717 !important;
+}
+.dark .notification-filter-tab-idle {
+  background-color: #262626 !important;
+  color: #d4d4d4 !important;
+}
+.dark .notification-filter-tab-idle:hover {
+  background-color: #404040 !important;
+}
+.notification-unread-dot {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  background-color: #a3a3a3 !important;
+}
+.dark .notification-unread-dot {
+  background-color: #737373 !important;
 }
 
 /* Subtle orange border pulse for marketplace theme accents */

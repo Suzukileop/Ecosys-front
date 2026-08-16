@@ -64,24 +64,18 @@ export function InboxConversationRow({
         : null;
 
   return (
-    <li>
+    <li className="px-3 sm:px-4">
       <button
         type="button"
         role="option"
         aria-selected={selected}
         onClick={() => onSelect(conversation.id)}
-        className={`flex w-full items-start gap-3 rounded-2xl px-3 text-left transition ${
-          compact ? 'py-2.5' : 'py-3'
-        } ${
-          selected
-            ? 'bg-white dark:bg-neutral-800'
-            : 'hover:bg-gray-200/70 dark:hover:bg-neutral-800/80'
-        }`}
+        className={`flex w-full items-start gap-3 rounded-[10px] px-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/40 sm:px-3.5 ${
+          compact ? 'py-3' : 'min-h-[4.5rem] py-3.5'
+        } ${selected ? 'bg-neutral-100 dark:bg-neutral-950' : 'hover:bg-neutral-100/80 dark:hover:bg-neutral-950/80'}`}
       >
         <div className="relative shrink-0">
-          <div
-            className={`rounded-full ${isGroup ? 'ring-2 ring-[#F97316]/35 dark:ring-[#FB923C]/40' : ''}`}
-          >
+          <div className={isGroup ? 'rounded-full ring-2 ring-neutral-200 dark:ring-neutral-700' : undefined}>
             <Avatar
               avatarUrl={
                 isGroup
@@ -93,55 +87,51 @@ export function InboxConversationRow({
               tone="muted"
             />
           </div>
-          {selected && (
-            <span
-              className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-neutral-900"
-              aria-hidden
-            />
-          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <span
-              className={`truncate text-sm ${
+              className={`min-w-0 truncate text-sm ${
                 unread || selected
-                  ? 'font-bold text-gray-900 dark:text-white'
-                  : 'font-semibold text-gray-800 dark:text-neutral-200'
+                  ? 'font-semibold text-[var(--msg-text)]'
+                  : 'font-medium text-[var(--msg-text)]'
               }`}
             >
               {conversation.otherUserName}
             </span>
-            <span className="shrink-0 text-[11px] text-gray-400 dark:text-neutral-500">
+            <span className="shrink-0 text-[11px] text-[var(--msg-muted)]">
               {formatRelativeTime(conversation.lastMessageAt)}
             </span>
           </div>
           <div className="mt-0.5 flex items-center justify-between gap-2">
             {conversation.guestSession ? (
-              <p className="truncate text-xs text-gray-600 dark:text-neutral-400">
+              <p className="min-w-0 truncate text-xs text-[var(--msg-muted)]">
                 Guest · {formatGuestExpiry(conversation.guestExpiresAt)}
               </p>
             ) : typingName ? (
-              <p className="truncate text-xs italic text-gray-600 dark:text-neutral-400">{typingName} is typing…</p>
+              <p className="min-w-0 truncate text-xs italic text-[var(--msg-muted)]">
+                {typingName} is typing…
+              </p>
             ) : (
               <div className="flex min-w-0 flex-1 items-center gap-1.5">
                 <p
                   className={`min-w-0 flex-1 truncate text-xs ${
-                    unread ? 'text-gray-700 dark:text-neutral-300' : 'text-gray-500 dark:text-neutral-400'
+                    unread ? 'font-medium text-[var(--msg-text)]' : 'text-[var(--msg-muted)]'
                   }`}
                 >
                   {groupLabel ? (
-                    <span className="font-medium text-neutral-500 dark:text-neutral-400">{groupLabel} · </span>
+                    <span className="font-medium text-[var(--msg-muted)]">{groupLabel} · </span>
                   ) : null}
                   {preview}
                 </p>
                 {outgoingStatus ? <InboxMessageStatus status={outgoingStatus} /> : null}
               </div>
             )}
-            {unread && (
-              <span className="inline-flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-neutral-800 px-1.5 text-[10px] font-semibold text-white dark:bg-neutral-200 dark:text-neutral-900">
+            {unread ? (
+              <span className="inline-flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-[var(--msg-brand)] px-1.5 text-[10px] font-semibold text-white">
                 {conversation.unreadCount}
               </span>
-            )}
+            ) : null}
           </div>
         </div>
       </button>

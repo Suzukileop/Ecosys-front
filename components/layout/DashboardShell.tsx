@@ -11,6 +11,10 @@ import { DashboardTopHeader } from '@/components/layout/DashboardTopHeader';
 import { MarketplacePatternBackground } from '@/components/marketplace/ProductDetailHalftoneBackground';
 import { isContentCreatorsPath, isMarketplaceCreatorProfilePath, isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
 import { DASHBOARD_MAIN_BG } from '@/components/landing/landingBrand';
+import {
+  MESSAGING_DETAILS_OPEN_EVENT,
+  notifyDashboardSidebarExpand,
+} from '@/lib/dashboard-chrome';
 import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
 import {
   creatorCanAccessMyProducts,
@@ -119,8 +123,21 @@ export function DashboardShell({
     setSidebarCollapsed((value) => {
       const next = !value;
       writeSidebarCollapsed(next);
+      // Expanding the main sidebar closes conversation details.
+      if (!next) {
+        notifyDashboardSidebarExpand();
+      }
       return next;
     });
+  }, []);
+
+  useEffect(() => {
+    const onDetailsOpen = () => {
+      setSidebarCollapsed(true);
+      writeSidebarCollapsed(true);
+    };
+    window.addEventListener(MESSAGING_DETAILS_OPEN_EVENT, onDetailsOpen);
+    return () => window.removeEventListener(MESSAGING_DETAILS_OPEN_EVENT, onDetailsOpen);
   }, []);
 
   const creatorStudioPattern = isCreatorStudioPath(pathname);
@@ -242,7 +259,9 @@ export function DashboardShell({
         <div
           data-dashboard-content
           className={`relative z-10 min-w-0 flex-1 ${
-            fillMainLayout
+            discussionsLayout
+              ? 'flex min-h-0 flex-col overflow-hidden p-0'
+              : fillMainLayout
               ? 'flex min-h-0 flex-col overflow-hidden px-6 pb-4 pt-4'
               : `overflow-x-clip pb-6 ${compactContentTop ? 'pt-2' : 'pt-6'} ${
                   serviceProvidersCatalog

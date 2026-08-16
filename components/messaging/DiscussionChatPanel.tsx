@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { getAccessToken, onAccessTokenChange } from '@/lib/accessToken';
@@ -17,6 +17,7 @@ import {
   markConversationRead,
   normalizeDirectMessage,
   revokeConversationGuest,
+  deleteConversationMessage,
   sendFileMessage,
   startCall,
 } from '@/lib/messaging';
@@ -36,20 +37,21 @@ import type {
 import { useAuth } from '@/context/AuthContext';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { MessageAttachmentView, attachmentIsVisualMedia } from '@/components/messaging/MessageAttachmentView';
 import { DiscussionCallPanel } from '@/components/messaging/DiscussionCallPanel';
-import { MessageStatusIndicator, type MessageStatusType } from '@/components/messaging/MessageStatusIndicator';
-import { MessageActionsMenu } from '@/components/messaging/MessageActionsMenu';
+import { type MessageStatusType } from '@/components/messaging/MessageStatusIndicator';
+import { ConversationHeader } from '@/components/messaging/conversation/ConversationHeader';
+import {
+  MessageComposer,
+  type ComposerPendingFile,
+} from '@/components/messaging/conversation/MessageComposer';
+import { MessageTimeline } from '@/components/messaging/conversation/MessageTimeline';
 import { TemporaryGuestBanner } from '@/components/messaging/TemporaryGuestBanner';
 import { GuestSessionTraceMenu } from '@/components/messaging/GuestSessionTraceMenu';
 import { PendingGuestInviteStrip } from '@/components/messaging/PendingGuestInviteStrip';
-import {
-  filterGuestSessionTraces,
-  isGuestSessionTrace,
-} from '@/lib/guest-session-trace';
-import { Avatar } from '@/components/ui/Avatar';
+import { filterGuestSessionTraces } from '@/lib/guest-session-trace';
 import { clearAttachmentLoadFailuresForConversation } from '@/lib/messaging-attachments';
-import { useDiscussionThreadTheme } from '@/hooks/useDiscussionThreadTheme';
+import { removePinnedMessage } from '@/lib/discussion-pins';
+import { SHOW_CALL_BUTTONS, SHOW_GROUP_CHAT } from '@/lib/messaging-feature-flags';
 
 const AddGroupMemberModal = dynamic(
   () => import('@/components/messaging/AddGroupMemberModal').then((module) => module.AddGroupMemberModal),
@@ -79,6 +81,7 @@ interface DiscussionChatPanelProps {
   readOnlyGuestHistory?: boolean;
   detailsOpen?: boolean;
   onToggleDetails?: () => void;
+  onBack?: () => void;
   onConversationUpdated?: () => void;
   onConversationRead?: (conversationId: string) => void;
   onGuestSessionEnded?: () => void;
@@ -151,75 +154,9 @@ function getOutgoingMessageStatusType(
   return 'sent';
 }
 
-function formatMessageTime(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '';
-  const now = new Date();
-  if (date.toDateString() === now.toDateString()) {
-    return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-  }
-  return date.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-function getMessageGrouping(messages: DirectMessage[], index: number) {
-  const current = messages[index];
-  if (current.messageType === 'SYSTEM') {
-    return { groupedWithPrev: false, groupedWithNext: false };
-  }
-
-  let prevIndex = index - 1;
-  while (prevIndex >= 0 && messages[prevIndex].messageType === 'SYSTEM') prevIndex -= 1;
-
-  let nextIndex = index + 1;
-  while (nextIndex < messages.length && messages[nextIndex].messageType === 'SYSTEM') nextIndex += 1;
-
-  const previous = prevIndex >= 0 ? messages[prevIndex] : null;
-  const next = nextIndex < messages.length ? messages[nextIndex] : null;
-  const sameSender = (a: DirectMessage, b: DirectMessage) => a.senderId === b.senderId;
-
-  return {
-    groupedWithPrev: previous != null && sameSender(current, previous),
-    groupedWithNext: next != null && sameSender(current, next),
-  };
-}
-
-function getMessengerBubbleRadius(mine: boolean, groupedWithPrev: boolean, groupedWithNext: boolean): string {
-  const base = 'rounded-[18px]';
-  if (mine) {
-    if (groupedWithPrev) return `${base} rounded-tr-[4px] rounded-br-[4px]`;
-    if (groupedWithNext) return `${base} rounded-br-[4px]`;
-    return `${base} rounded-br-[4px]`;
-  }
-  if (groupedWithPrev) return `${base} rounded-tl-[4px] rounded-bl-[4px]`;
-  if (groupedWithNext) return `${base} rounded-bl-[4px]`;
-  return `${base} rounded-bl-[4px]`;
-}
-
-function buildMessengerBubbleClass(mine: boolean, shape: string): string {
-  if (mine) {
-    return `${shape} bg-[#F97316] px-3 py-1.5 text-[15px] leading-snug text-white`;
-  }
-  return `${shape} bg-[#E4E6EB] px-3 py-1.5 text-[15px] leading-snug text-gray-900 dark:bg-[#3E4042] dark:text-white`;
-}
-
-const MESSAGE_BUBBLE_MAX_WIDTH = 'min-w-0 max-w-[min(85%,520px)]';
-const MESSAGE_MEDIA_MAX_WIDTH = 'min-w-0 max-w-[min(85%,480px)]';
-const MESSAGE_TEXT_CLASS = 'whitespace-pre-wrap break-words [overflow-wrap:anywhere]';
-
-const composerActionClass =
-  'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-200/80 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white';
-
-const composerBarClass =
-  'flex shrink-0 items-center gap-1.5 rounded-2xl bg-white px-2 py-1.5 shadow-sm dark:bg-black dark:ring-1 dark:ring-neutral-800';
-
-function ComposerIcon({ children }: { children: React.ReactNode }) {
+function HeaderIcon({ children }: { children: ReactNode }) {
   return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
       {children}
     </svg>
   );
@@ -227,69 +164,25 @@ function ComposerIcon({ children }: { children: React.ReactNode }) {
 
 function PhoneIcon() {
   return (
-    <ComposerIcon>
+    <HeaderIcon>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
       />
-    </ComposerIcon>
+    </HeaderIcon>
   );
 }
 
 function VideoIcon() {
   return (
-    <ComposerIcon>
+    <HeaderIcon>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
       />
-    </ComposerIcon>
-  );
-}
-
-function InviteIcon() {
-  return (
-    <ComposerIcon>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-    </ComposerIcon>
-  );
-}
-
-function HashIcon() {
-  return (
-    <ComposerIcon>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-    </ComposerIcon>
-  );
-}
-
-function AtIcon() {
-  return (
-    <ComposerIcon>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-    </ComposerIcon>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <ComposerIcon>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-    </ComposerIcon>
-  );
-}
-
-function InfoPanelIcon() {
-  return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
+    </HeaderIcon>
   );
 }
 
@@ -303,6 +196,7 @@ export function DiscussionChatPanel({
   readOnlyGuestHistory = false,
   detailsOpen = false,
   onToggleDetails,
+  onBack,
   onConversationUpdated,
   onConversationRead,
   onGuestSessionEnded,
@@ -322,6 +216,7 @@ export function DiscussionChatPanel({
   const [activeCall, setActiveCall] = useState<CallSession | null>(null);
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [transferMessage, setTransferMessage] = useState<DirectMessage | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<ComposerPendingFile[]>([]);
   const [participants, setParticipants] = useState<ConversationParticipant[]>([]);
   const [activeGuests, setActiveGuests] = useState<ConversationGuestSession[]>([]);
   const [pendingGuestInvites, setPendingGuestInvites] = useState<OutgoingGuestInvite[]>([]);
@@ -841,6 +736,19 @@ export function DiscussionChatPanel({
           }
         });
 
+        stomp.subscribe(`/topic/conversations/${conversationId}/deleted`, (message: IMessage) => {
+          try {
+            const payload = JSON.parse(message.body) as { messageId?: string };
+            const deletedId = payload.messageId ? String(payload.messageId) : null;
+            if (!deletedId) return;
+            setMessages((prev) => prev.filter((m) => m.id !== deletedId));
+            removePinnedMessage(conversationId, deletedId);
+            scheduleInboxRefreshRef.current?.();
+          } catch {
+            /* ignore */
+          }
+        });
+
         stomp.subscribe(`/topic/conversations/${conversationId}/typing`, (message: IMessage) => {
           try {
             const indicator = JSON.parse(message.body) as TypingIndicator;
@@ -978,42 +886,108 @@ export function DiscussionChatPanel({
   }, [typingUsers]);
 
   const send = () => {
+    void sendMessage();
+  };
+
+  const clearPendingFiles = useCallback(() => {
+    setPendingFiles((prev) => {
+      for (const item of prev) {
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      }
+      return [];
+    });
+  }, []);
+
+  const queuePendingFile = useCallback((file: File) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const needsPreview = file.type.startsWith('image/') || file.type.startsWith('video/');
+    const previewUrl = needsPreview ? URL.createObjectURL(file) : null;
+    setPendingFiles((prev) => [...prev, { id, file, previewUrl }]);
+  }, []);
+
+  const removePendingFile = useCallback((id: string) => {
+    setPendingFiles((prev) => {
+      const target = prev.find((item) => item.id === id);
+      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((item) => item.id !== id);
+    });
+  }, []);
+
+  const sendMessage = async () => {
     const text = input.trim();
+    const files = pendingFiles;
     const client = clientRef.current;
-    if (!text || !client?.connected || sending) return;
-    try {
-      setSending(true);
-      publishTyping(false);
-      client.publish({
-        destination: `/app/conversations/${conversationId}/send`,
-        body: JSON.stringify({ content: text }),
-      });
-      setInput('');
-      if (sendFallbackTimerRef.current) clearTimeout(sendFallbackTimerRef.current);
-      sendFallbackTimerRef.current = setTimeout(() => {
+    if ((!text && files.length === 0) || sending || uploading) return;
+
+    if (files.length === 0) {
+      if (!client?.connected) return;
+      try {
+        setSending(true);
+        publishTyping(false);
+        client.publish({
+          destination: `/app/conversations/${conversationId}/send`,
+          body: JSON.stringify({ content: text }),
+        });
+        setInput('');
+        if (sendFallbackTimerRef.current) clearTimeout(sendFallbackTimerRef.current);
+        sendFallbackTimerRef.current = setTimeout(() => {
+          setSending(false);
+          void loadHistory();
+          sendFallbackTimerRef.current = null;
+        }, 1200);
+      } catch (e) {
         setSending(false);
-        void loadHistory();
-        sendFallbackTimerRef.current = null;
-      }, 1200);
+        setError(getApiErrorMessage(e, 'Unable to send message.'));
+      }
+      return;
+    }
+
+    setSending(true);
+    setUploading(true);
+    setError(null);
+    publishTyping(false);
+    try {
+      for (let index = 0; index < files.length; index += 1) {
+        const caption = index === 0 ? text || undefined : undefined;
+        const msg = await sendFileMessage(conversationId, files[index].file, caption);
+        setMessages((prev) => [...prev.filter((m) => m.id !== msg.id), msg].sort(sortBySentAt));
+      }
+      setInput('');
+      clearPendingFiles();
+      scheduleInboxRefresh();
     } catch (e) {
+      setError(getApiErrorMessage(e, 'Unable to send media.'));
+    } finally {
       setSending(false);
-      setError(getApiErrorMessage(e, 'Unable to send message.'));
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const onFileSelected = async (file: File | undefined) => {
-    if (!file || uploading) return;
-    setUploading(true);
-    setError(null);
+  const onFileSelected = (fileList: FileList | null) => {
+    if (!fileList?.length || uploading || sending) return;
+    const files = Array.from(fileList);
+    for (const file of files) {
+      queuePendingFile(file);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  useEffect(() => {
+    clearPendingFiles();
+  }, [conversationId, clearPendingFiles]);
+
+  const handleDeleteMessage = async (message: DirectMessage) => {
+    if (!message.id) return;
+    const previous = messages;
+    setMessages((prev) => prev.filter((m) => m.id !== message.id));
+    removePinnedMessage(conversationId, message.id);
     try {
-      const msg = await sendFileMessage(conversationId, file, input.trim() || undefined);
-      setInput('');
-      setMessages((prev) => [...prev.filter((m) => m.id !== msg.id), msg].sort(sortBySentAt));
+      await deleteConversationMessage(conversationId, message.id);
+      scheduleInboxRefresh();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to send file.'));
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setMessages(previous);
+      setError(getApiErrorMessage(e, 'Unable to delete message.'));
     }
   };
 
@@ -1028,14 +1002,6 @@ export function DiscussionChatPanel({
   };
 
   const callButtonsDisabled = !connected || Boolean(activeCall);
-  const { patternClass: threadPatternClass } = useDiscussionThreadTheme();
-
-  const headerIconButtonClass = (disabled: boolean) =>
-    `flex h-9 w-9 items-center justify-center rounded-full transition ${
-      disabled
-        ? 'cursor-not-allowed text-neutral-400 dark:text-neutral-500'
-        : 'text-gray-700 hover:bg-[#FFF7ED] hover:text-[#EA580C] dark:text-neutral-200 dark:hover:bg-[#F97316]/15 dark:hover:text-[#FB923C]'
-    }`;
 
   const showWsHint = noToken && !connected;
   const isGroup = conversationType === 'GROUP';
@@ -1057,16 +1023,6 @@ export function DiscussionChatPanel({
     return map;
   }, [activeGuests, messages, participants]);
 
-  const showSenderNames = useMemo(() => {
-    if (isGroup) return true;
-    const senderIds = new Set(
-      messages
-        .filter((message) => message.messageType !== 'SYSTEM' && message.senderId !== user?.id)
-        .map((message) => message.senderId)
-    );
-    return senderIds.size > 1;
-  }, [isGroup, messages, user?.id]);
-
   const resolveSenderAvatarUrl = (message: DirectMessage): string | null | undefined => {
     if (participantAvatarsByUserId.has(message.senderId)) {
       return participantAvatarsByUserId.get(message.senderId);
@@ -1078,6 +1034,35 @@ export function DiscussionChatPanel({
     return null;
   };
 
+  const getOutgoingStatus = useCallback(
+    (message: DirectMessage): MessageStatusType | null => {
+      const mine = user?.id != null && message.senderId === user.id;
+      if (!mine || message.messageType === 'SYSTEM') return null;
+      const showOutgoingStatus = message.id === lastOutgoingMessageId;
+      return getOutgoingMessageStatusType(
+        message,
+        showOutgoingStatus,
+        sending && showOutgoingStatus,
+        participants,
+        deliveredReceipts,
+        user?.id
+      );
+    },
+    [deliveredReceipts, lastOutgoingMessageId, participants, sending, user?.id]
+  );
+
+  const openContextView = useCallback(
+    (view: 'people' | 'pins') => {
+      if (!detailsOpen) onToggleDetails?.();
+      window.dispatchEvent(
+        new CustomEvent('discussion-context-navigate', {
+          detail: { conversationId, view },
+        })
+      );
+    },
+    [conversationId, detailsOpen, onToggleDetails]
+  );
+
   const isCurrentUserGuest = useMemo(
     () => participants.some((participant) => participant.userId === user?.id && participant.role === 'GUEST'),
     [participants, user?.id]
@@ -1085,13 +1070,65 @@ export function DiscussionChatPanel({
 
   const guestSessionTraces = useMemo(() => filterGuestSessionTraces(messages), [messages]);
 
+  const headerSubtitle = typingLabel ?? (isGroup ? 'Group' : 'Direct message');
+
+  const headerExtraActions = (
+    <>
+      {isCurrentUserGuest && (
+        <button
+          type="button"
+          onClick={() => void handleLeaveAsGuest()}
+          disabled={guestActionLoading}
+          className="rounded-[8px] border border-[var(--cw-border)] px-3 py-2 text-[11px] font-semibold text-[var(--cw-text-primary)] transition hover:bg-[var(--cw-surface-soft)] disabled:opacity-60"
+          title="Leave this temporary conversation"
+        >
+          {guestActionLoading ? '…' : 'Leave'}
+        </button>
+      )}
+      {!isGroup && SHOW_CALL_BUTTONS && (
+        <>
+          <button
+            type="button"
+            onClick={() => void initiateCall('VOICE')}
+            disabled={callButtonsDisabled}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] text-[var(--cw-text-secondary)] transition hover:bg-[var(--cw-surface-soft)] hover:text-[var(--cw-text-primary)] disabled:opacity-40"
+            title={callButtonsDisabled && !connected ? 'Waiting for connection…' : 'Voice call'}
+            aria-label="Voice call"
+          >
+            <PhoneIcon />
+          </button>
+          <button
+            type="button"
+            onClick={() => void initiateCall('VIDEO')}
+            disabled={callButtonsDisabled}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] text-[var(--cw-text-secondary)] transition hover:bg-[var(--cw-surface-soft)] hover:text-[var(--cw-text-primary)] disabled:opacity-40"
+            title={callButtonsDisabled && !connected ? 'Waiting for connection…' : 'Video call'}
+            aria-label="Video call"
+          >
+            <VideoIcon />
+          </button>
+        </>
+      )}
+      {isGroup && SHOW_GROUP_CHAT && (
+        <button
+          type="button"
+          onClick={() => setAddMemberOpen(true)}
+          className="rounded-[8px] border border-[var(--cw-border)] bg-[var(--cw-surface)] px-3 py-2 text-[11px] font-semibold text-[var(--cw-text-primary)] transition hover:bg-[var(--cw-surface-soft)]"
+        >
+          + Member
+        </button>
+      )}
+      {isGroup ? <GuestSessionTraceMenu traces={guestSessionTraces} /> : null}
+    </>
+  );
+
   return (
     <section
-      className="flex h-full min-h-0 flex-col overflow-hidden bg-white dark:bg-black"
+      className="flex h-full min-h-0 flex-col overflow-hidden bg-[var(--cw-surface,#fff)]"
       aria-labelledby="discussion-chat-heading"
       aria-busy={loadingHistory}
     >
-      {isGroup && addMemberOpen && (
+      {isGroup && SHOW_GROUP_CHAT && addMemberOpen && (
         <AddGroupMemberModal
           conversationId={conversationId}
           currentUserId={user?.id}
@@ -1119,86 +1156,19 @@ export function DiscussionChatPanel({
           }}
         />
       )}
-      <div className="flex h-14 shrink-0 items-center justify-between gap-2 px-5">
-        <div className="min-w-0 flex-1 leading-tight">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#EA580C] dark:text-[#FB923C]">
-            Chat
-          </p>
-          <div className="flex min-w-0 items-center gap-2">
-            <h3
-              id="discussion-chat-heading"
-              className="truncate text-base font-bold text-gray-900 dark:text-white"
-            >
-              {title}
-            </h3>
-            {isGroup && <GuestSessionTraceMenu traces={guestSessionTraces} />}
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {isCurrentUserGuest && (
-            <button
-              type="button"
-              onClick={() => void handleLeaveAsGuest()}
-              disabled={guestActionLoading}
-              className="rounded-full border border-neutral-300 px-3 py-1.5 text-[11px] font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-60 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
-              title="Leave this temporary conversation"
-            >
-              {guestActionLoading ? '…' : 'Leave chat'}
-            </button>
-          )}
-          {!isGroup && (
-            <>
-              <button
-                type="button"
-                onClick={() => void initiateCall('VOICE')}
-                disabled={callButtonsDisabled}
-                className={headerIconButtonClass(callButtonsDisabled)}
-                title={callButtonsDisabled && !connected ? 'Waiting for connection…' : 'Voice call'}
-                aria-label="Voice call"
-              >
-                <PhoneIcon />
-              </button>
-              <button
-                type="button"
-                onClick={() => void initiateCall('VIDEO')}
-                disabled={callButtonsDisabled}
-                className={headerIconButtonClass(callButtonsDisabled)}
-                title={callButtonsDisabled && !connected ? 'Waiting for connection…' : 'Video call'}
-                aria-label="Video call"
-              >
-                <VideoIcon />
-              </button>
-            </>
-          )}
-          {isGroup && (
-            <button
-              type="button"
-              onClick={() => setAddMemberOpen(true)}
-              className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-gray-800 transition hover:bg-gray-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-700"
-            >
-              + Member
-            </button>
-          )}
-          {onToggleDetails && (
-            <button
-              type="button"
-              onClick={onToggleDetails}
-              aria-pressed={detailsOpen}
-              title="Conversation details"
-              aria-label="Conversation details"
-              className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
-                detailsOpen
-                  ? 'bg-[#FFF7ED] text-[#EA580C] dark:bg-[#F97316]/15 dark:text-[#FB923C]'
-                  : 'text-gray-700 hover:bg-gray-50 dark:text-neutral-200 dark:hover:bg-neutral-800'
-              }`}
-            >
-              <InfoPanelIcon />
-            </button>
-          )}
-        </div>
-      </div>
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-3 pb-3 pt-2">
+      <ConversationHeader
+        title={title}
+        subtitle={headerSubtitle}
+        detailsOpen={detailsOpen}
+        onBack={onBack}
+        onSearch={() => openContextView('people')}
+        onPin={() => openContextView('pins')}
+        onToggleDetails={onToggleDetails}
+        extraActions={headerExtraActions}
+      />
+
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {activeCall && (
           <DiscussionCallPanel
             conversationId={conversationId}
@@ -1212,31 +1182,31 @@ export function DiscussionChatPanel({
           />
         )}
 
-        {showWsHint && (
-          <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-            Real-time messaging requires an active session. Reload or sign in again.
-          </p>
-        )}
+        <div className="space-y-2 px-3 pt-2 sm:px-4">
+          {showWsHint && (
+            <p className="rounded-[8px] bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+              Real-time messaging requires an active session. Reload or sign in again.
+            </p>
+          )}
 
-        {readOnlyGuestHistory && (
-          <p className="mb-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-300">
-            Viewing your temporary session history — only messages from when you joined until you left are shown.
-          </p>
-        )}
+          {readOnlyGuestHistory && (
+            <p className="rounded-[8px] border border-[var(--cw-border)] bg-[var(--cw-surface-soft)] px-3 py-2 text-xs text-[var(--cw-text-secondary)]">
+              Viewing your temporary session history — only messages from when you joined until you left are shown.
+            </p>
+          )}
 
-        {error && (
-          <div className="mb-3">
+          {error && (
             <ErrorAlert message={error} onDismiss={() => setError(null)} />
-          </div>
-        )}
+          )}
 
-        <TemporaryGuestBanner
-          guests={activeGuests}
-          currentUserId={user?.id}
-          acting={guestActionLoading}
-          onRevoke={(guestUserId) => void handleRevokeGuest(guestUserId)}
-          onLeave={() => void handleLeaveAsGuest()}
-        />
+          <TemporaryGuestBanner
+            guests={activeGuests}
+            currentUserId={user?.id}
+            acting={guestActionLoading}
+            onRevoke={(guestUserId) => void handleRevokeGuest(guestUserId)}
+            onLeave={() => void handleLeaveAsGuest()}
+          />
+        </div>
 
         <div
           ref={scrollContainerRef}
@@ -1251,218 +1221,33 @@ export function DiscussionChatPanel({
               tryMarkAsReadIfAtBottom();
             }
           }}
-          className={`${threadPatternClass} relative mb-2 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto rounded-2xl px-3 py-3 text-sm [scrollbar-width:thin] [scrollbar-color:#737373_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-500 dark:[scrollbar-color:#525252_transparent] [&::-webkit-scrollbar-thumb]:dark:bg-neutral-600 [&::-webkit-scrollbar-thumb:hover]:bg-neutral-400 [&::-webkit-scrollbar-thumb:hover]:dark:bg-neutral-500`}
+          className="relative mb-0 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-2 text-sm [scrollbar-width:thin] [scrollbar-color:#a3a3a3_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-400 sm:px-4"
           role="log"
           aria-live="polite"
         >
-          {loadingHistory ? (
-            <div className="flex min-h-[12rem] items-center justify-center py-16">
-              <LoadingSpinner />
-            </div>
-          ) : messages.length === 0 ? (
-            <p className="text-center text-gray-500 dark:text-neutral-400">
-              {readOnlyGuestHistory
-                ? 'No messages during your temporary session.'
-                : 'No messages yet. Say hello!'}
-            </p>
-          ) : (
-            <div ref={messagesContentRef}>
-            {messages.map((m, index) => {
-              const mine = user?.id != null && m.senderId === user.id;
-              const isSystem = m.messageType === 'SYSTEM';
-
-              if (isSystem) {
-                const guestTrace = isGuestSessionTrace(m.content);
-                return (
-                  <p
-                    key={m.id}
-                    className={`mt-3 text-center ${guestTrace ? 'px-2' : 'break-words text-xs text-gray-500 [overflow-wrap:anywhere] dark:text-neutral-400'}`}
-                  >
-                    {guestTrace ? (
-                      <span className="inline-flex max-w-[92%] flex-col items-center gap-0.5 rounded-full border border-neutral-200/70 bg-neutral-50/90 px-3 py-1.5 text-[11px] leading-snug text-neutral-600 dark:border-neutral-700/80 dark:bg-neutral-900/70 dark:text-neutral-400">
-                        <span>{m.content}</span>
-                        <span className="text-[10px] text-neutral-400 dark:text-neutral-500">
-                          {formatMessageTime(m.sentAt)}
-                        </span>
-                      </span>
-                    ) : (
-                      m.content
-                    )}
-                  </p>
-                );
+          <div ref={messagesContentRef}>
+            <MessageTimeline
+              messages={messages}
+              conversationId={conversationId}
+              currentUserId={user?.id}
+              resolveAvatarUrl={resolveSenderAvatarUrl}
+              getOutgoingStatus={getOutgoingStatus}
+              onTransfer={setTransferMessage}
+              onDelete={(message) => void handleDeleteMessage(message)}
+              loading={loadingHistory}
+              loadingNode={<LoadingSpinner />}
+              emptyLabel={
+                readOnlyGuestHistory
+                  ? 'No messages during your temporary session.'
+                  : 'No messages yet. Say hello!'
               }
-
-              const { groupedWithPrev, groupedWithNext } = getMessageGrouping(messages, index);
-              const bubbleShape = getMessengerBubbleRadius(mine, groupedWithPrev, groupedWithNext);
-              const bubbleClass = buildMessengerBubbleClass(mine, bubbleShape);
-              const marginClass = groupedWithPrev ? 'mt-0.5' : 'mt-3';
-              const showAvatar = !mine && !groupedWithNext;
-              const incomingAvatarUrl = resolveSenderAvatarUrl(m);
-              const timeClass = mine ? 'text-white/55' : 'text-gray-500 dark:text-white/55';
-
-              const visualAttachments = (m.attachments ?? []).filter(attachmentIsVisualMedia);
-              const fileAttachments = (m.attachments ?? []).filter((a) => !attachmentIsVisualMedia(a));
-              const hasVisualMedia = visualAttachments.length > 0;
-              const hasCaption = Boolean(m.content?.trim());
-              const bareMediaLayout = hasVisualMedia && fileAttachments.length === 0;
-
-              const showOutgoingStatus = mine && m.id === lastOutgoingMessageId;
-              const outgoingStatus = getOutgoingMessageStatusType(
-                m,
-                showOutgoingStatus,
-                sending && showOutgoingStatus,
-                participants,
-                deliveredReceipts,
-                user?.id
-              );
-
-              if (bareMediaLayout) {
-                return (
-                  <div key={m.id} className={`group/msg flex w-full min-w-0 ${mine ? 'justify-end' : 'justify-start'} ${marginClass}`}>
-                    {!mine && (
-                      <div className="mr-1.5 flex w-9 shrink-0 items-end self-end">
-                        {showAvatar ? (
-                          <Avatar
-                            name={m.senderName || title}
-                            avatarUrl={incomingAvatarUrl}
-                            size="xs"
-                            tone="muted"
-                          />
-                        ) : null}
-                      </div>
-                    )}
-                    <div className={`flex items-center gap-0.5 ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div className={`relative flex ${MESSAGE_MEDIA_MAX_WIDTH} flex-col gap-0.5 ${mine ? 'items-end' : 'items-start'}`}>
-                      {showSenderNames && !groupedWithPrev && (
-                        <p className="mb-0.5 max-w-full truncate px-1 text-[10px] font-medium text-gray-500 dark:text-neutral-400">
-                          {m.senderName}
-                        </p>
-                      )}
-                      <div className={`relative w-full overflow-hidden ${bubbleShape}`}>
-                        {visualAttachments.map((att) => (
-                          <MessageAttachmentView
-                            key={att.id}
-                            conversationId={conversationId}
-                            attachment={att}
-                            mine={mine}
-                            embedded
-                            sentAt={m.sentAt}
-                          />
-                        ))}
-                      </div>
-                      {hasCaption && (
-                        <div className={`w-full ${MESSAGE_BUBBLE_MAX_WIDTH} ${bubbleClass}`}>
-                          <p className={MESSAGE_TEXT_CLASS}>{m.content}</p>
-                          {outgoingStatus ? (
-                            <div className="mt-1 flex items-center justify-end gap-1">
-                              <time dateTime={m.sentAt} className="text-[10px] text-white/55">
-                                {formatMessageTime(m.sentAt)}
-                              </time>
-                              <MessageStatusIndicator status={outgoingStatus} variant="chat" />
-                            </div>
-                          ) : null}
-                        </div>
-                      )}
-                      {outgoingStatus && !hasCaption && (
-                        <div className="mt-1 flex items-center justify-end px-0.5">
-                          <MessageStatusIndicator status={outgoingStatus} variant="chat" />
-                        </div>
-                      )}
-                    </div>
-                    <MessageActionsMenu
-                      message={m}
-                      conversationId={conversationId}
-                      mine={Boolean(mine)}
-                      onTransfer={setTransferMessage}
-                    />
-                    </div>
-                  </div>
-                );
-              }
-
-              const bubbleMediaClass = hasVisualMedia ? 'p-1.5' : '';
-
-              return (
-                <div key={m.id} className={`group/msg flex w-full min-w-0 ${mine ? 'justify-end' : 'justify-start'} ${marginClass}`}>
-                  {!mine && (
-                    <div className="mr-1.5 flex w-9 shrink-0 items-end self-end">
-                      {showAvatar ? (
-                        <Avatar
-                          name={m.senderName || title}
-                          avatarUrl={incomingAvatarUrl}
-                          size="xs"
-                          tone="muted"
-                        />
-                      ) : null}
-                    </div>
-                  )}
-                  <div className={`flex items-center gap-0.5 ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <div className={`relative flex ${MESSAGE_BUBBLE_MAX_WIDTH} flex-col ${mine ? 'items-end' : 'items-start'}`}>
-
-                    {showSenderNames && !groupedWithPrev && (
-                      <p className="mb-0.5 max-w-full truncate px-1 text-[10px] font-medium text-gray-500 dark:text-neutral-400">
-                        {m.senderName}
-                      </p>
-                    )}
-
-                    <div className={`w-full ${bubbleMediaClass} ${bubbleClass}`}>
-                      {m.attachments?.map((att) => (
-                        <MessageAttachmentView
-                          key={att.id}
-                          conversationId={conversationId}
-                          attachment={att}
-                          mine={mine}
-                        />
-                      ))}
-
-                      {hasCaption && (
-                        <p className={`${MESSAGE_TEXT_CLASS} ${hasVisualMedia ? 'px-1.5 pt-1.5' : ''}`}>
-                          {m.content}
-                        </p>
-                      )}
-
-                      {!hasVisualMedia && hasCaption && (
-                        <div className={`mt-1 flex items-center gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
-                          <time dateTime={m.sentAt} className={`shrink-0 text-[10px] leading-none ${timeClass}`}>
-                            {formatMessageTime(m.sentAt)}
-                          </time>
-                          {outgoingStatus ? (
-                            <MessageStatusIndicator status={outgoingStatus} variant="chat" />
-                          ) : null}
-                        </div>
-                      )}
-
-                      {hasVisualMedia && (
-                        <div
-                          className={`mt-0.5 flex items-center gap-1 px-1.5 pb-0.5 ${mine ? 'justify-end' : 'justify-start'}`}
-                        >
-                          <time dateTime={m.sentAt} className={`text-[10px] ${timeClass}`}>
-                            {formatMessageTime(m.sentAt)}
-                          </time>
-                          {outgoingStatus ? (
-                            <MessageStatusIndicator status={outgoingStatus} variant="chat" />
-                          ) : null}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <MessageActionsMenu
-                    message={m}
-                    conversationId={conversationId}
-                    mine={Boolean(mine)}
-                    onTransfer={setTransferMessage}
-                  />
-                  </div>
-                </div>
-              );
-            })}
+            />
             <div ref={bottomRef} />
-            </div>
-          )}
+          </div>
         </div>
 
         {typingLabel && (
-          <p className="mb-2 px-2 text-xs italic text-gray-500 dark:text-neutral-400" aria-live="polite">
+          <p className="mb-1 px-4 text-xs italic text-[var(--cw-text-secondary)]" aria-live="polite">
             {typingLabel}
           </p>
         )}
@@ -1473,72 +1258,43 @@ export function DiscussionChatPanel({
           onCancel={(inviteId) => void handleCancelGuestInvite(inviteId)}
         />
 
-        {showComposer ? (
-          <div className={composerBarClass}>
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              onChange={(e) => void onFileSelected(e.target.files?.[0])}
-            />
-            <button type="button" className={composerActionClass} title="Tag" aria-label="Tag" disabled>
-              <HashIcon />
-            </button>
-            <button type="button" className={composerActionClass} title="Mention" aria-label="Mention" disabled>
-              <AtIcon />
-            </button>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className={composerActionClass}
-              title="Attach file"
-              aria-label="Attach file"
-            >
-              {uploading ? <span className="text-xs">…</span> : <PlusIcon />}
-            </button>
-            <button
-              type="button"
-              onClick={() => setGuestInviteOpen(true)}
-              className={composerActionClass}
-              title="Invite temporary guest"
-              aria-label="Invite temporary guest"
-            >
-              <InviteIcon />
-            </button>
-            <label htmlFor="discussion-chat-input" className="sr-only">
-              Your message
-            </label>
-            <input
-              id="discussion-chat-input"
-              type="text"
-              value={input}
-              onChange={(e) => handleInputChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              placeholder={
-                loadingHistory ? 'Loading messages…' : connected ? 'Write a message...' : 'Connecting...'
-              }
-              className="min-w-0 flex-1 border-0 bg-transparent px-2 py-2 text-sm text-gray-900 outline-none placeholder:text-neutral-400 focus:ring-0 dark:text-white"
-              disabled={!connected || sending || loadingHistory}
-            />
-            <button
-              type="button"
-              onClick={send}
-              disabled={!connected || sending || loadingHistory || !input.trim()}
-              className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#F97316] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#EA580C] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {sending ? '…' : 'Send'}
-              <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden />
-            </button>
-          </div>
-        ) : (
-          <p className="text-xs text-gray-500 dark:text-neutral-400">Read-only conversation.</p>
-        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
+          multiple
+          className="hidden"
+          onChange={(e) => onFileSelected(e.target.files)}
+        />
+
+        <MessageComposer
+          value={input}
+          onChange={handleInputChange}
+          onSend={send}
+          onAttach={showComposer && !readOnlyGuestHistory ? () => fileInputRef.current?.click() : undefined}
+          onInviteGuest={showComposer && !readOnlyGuestHistory ? () => setGuestInviteOpen(true) : undefined}
+          pendingFiles={pendingFiles}
+          onRemovePendingFile={removePendingFile}
+          disabled={!connected || loadingHistory}
+          sending={sending}
+          uploading={uploading}
+          placeholder={
+            loadingHistory
+              ? 'Loading messages…'
+              : connected
+                ? pendingFiles.length > 0
+                  ? 'Add a caption, then send…'
+                  : 'Write your message…'
+                : 'Connecting…'
+          }
+          readOnlyLabel={
+            showComposer
+              ? null
+              : readOnlyGuestHistory
+                ? 'Read-only temporary session history.'
+                : 'Read-only conversation.'
+          }
+        />
       </div>
     </section>
   );

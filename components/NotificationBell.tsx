@@ -8,16 +8,19 @@ import { getApiErrorMessage } from '@/lib/api-error';
 import { dispatchAgentContentSync } from '@/lib/agent-content-sync';
 import { useNotificationBadge } from '@/hooks/useNotificationBadge';
 import {
+  extractVisitorNameFromVisitMessage,
   fetchNotifications,
   fetchUnreadCount,
   filterNotifications,
   markAllNotificationsRead,
-  markNotificationRead,
-  resolveNotificationHref,
+  markNotificationItemRead,
+  resolveNotificationNavigation,
+  visitorPublicProfileUnavailableMessage,
   type NotificationFilter,
 } from '@/lib/notifications';
 import { NotificationFilterTabs } from '@/components/notifications/NotificationFilterTabs';
 import { NotificationGroupedList } from '@/components/notifications/NotificationGroupedList';
+import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import { NotificationDto } from '@/types/ecosystem';
 
 const POLL_MS = 15_000;
@@ -75,13 +78,47 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
 
   const handleNotificationClick = async (n: NotificationDto) => {
     try {
-      if (!n.isRead) {
-        await markNotificationRead(n.id);
-        setUnreadCount((c) => Math.max(0, c - 1));
-        setItems((prev) => prev.map((item) => (item.id === n.id ? { ...item, isRead: true } : item)));
+      const targetIds = n.aggregatedNotificationIds?.length
+        ? n.aggregatedNotificationIds
+        : [n.id];
+      const unreadTargets = items.filter((item) => targetIds.includes(item.id) && !item.isRead);
+      const idsToRead =
+        unreadTargets.length > 0
+          ? unreadTargets.map((item) => item.id)
+          : !n.isRead
+            ? targetIds.filter((id) => !id.startsWith('profile-visit-group:'))
+            : [];
+
+      if (idsToRead.length > 0) {
+        const readIds = await markNotificationItemRead({
+          ...n,
+          aggregatedNotificationIds: idsToRead,
+          isRead: false,
+        });
+        const readSet = new Set(readIds);
+        setUnreadCount((c) => Math.max(0, c - readIds.length));
+        setItems((prev) =>
+          prev.map((item) => (readSet.has(item.id) ? { ...item, isRead: true } : item)),
+        );
       }
-      const href = resolveNotificationHref(n.type, n.refId, isAgent, n.refSecondaryId);
+
+      const { href, unavailableVisitor } = resolveNotificationNavigation(n, isAgent);
       setOpen(false);
+
+      if (unavailableVisitor) {
+        const fallback = visitorPublicProfileUnavailableMessage(
+          n.actorFullName ?? extractVisitorNameFromVisitMessage(n.message),
+        );
+        pushFlashFeedback({
+          variant: 'info',
+          title: fallback.title,
+          description: fallback.description,
+          actionHref: '/dashboard/creator?tab=visitors',
+          actionLabel: 'Open Visitors',
+        });
+        return;
+      }
+
       if (href) {
         if (n.type === 'CONTENT_DELIVERED' && n.refId) {
           dispatchAgentContentSync(n.refId, n.refSecondaryId);
@@ -114,10 +151,10 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
       <button
         type="button"
         onClick={handleToggle}
-        className={`relative text-neutral-600 transition hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F97316]/40 dark:text-neutral-400 dark:hover:text-white ${
+        className={`relative text-neutral-600 transition hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50 dark:text-neutral-400 dark:hover:text-white ${
           compact
             ? 'flex h-9 w-9 items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            : 'rounded-lg p-2 hover:bg-gray-100 focus-visible:ring-[#F97316]/40'
+            : 'rounded-lg p-2 hover:bg-gray-100 focus-visible:ring-neutral-400/50'
         }`}
         aria-expanded={open}
         aria-haspopup="true"
@@ -157,7 +194,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
                 <button
                   type="button"
                   onClick={() => void markAllRead()}
-                  className="text-xs font-medium text-[#EA580C] hover:text-[#F97316] dark:text-[#FB923C] dark:hover:text-[#FDBA74]"
+                  className="text-xs font-medium text-neutral-500 transition hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
                 >
                   Mark all as read
                 </button>
@@ -168,7 +205,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
 
           {error && <p className="px-4 py-2 text-xs text-red-600">{error}</p>}
 
-          <div className="max-h-[min(24rem,70vh)] overflow-y-auto">
+          <div className="notification-panel-scroll max-h-[min(24rem,70vh)] overflow-y-auto">
             <NotificationGroupedList
               items={filteredItems}
               isAgent={isAgent}
@@ -181,7 +218,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
           <div className="border-t border-neutral-100 px-4 py-2.5 dark:border-neutral-800">
             <Link
               href="/dashboard/notifications"
-              className="block text-center text-sm font-semibold text-[#EA580C] hover:text-[#F97316] dark:text-[#FB923C] dark:hover:text-[#FDBA74]"
+              className="block text-center text-sm font-semibold text-neutral-600 transition hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white"
               onClick={openAllPage}
             >
               View all

@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import type { Control, UseFormSetValue } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
+import { SkillTagsEditor } from '@/components/creator/studio/SkillTagsEditor';
 import {
   CREATOR_TOOL_PRESETS,
   findCreatorToolPreset,
@@ -15,7 +16,7 @@ import type {
   StrengthFormItem,
   StrengthToolLevel,
 } from '@/components/creator/studio/profile-form-schema';
-import { matchSpecialtyOption, specialtyGroupLabel } from '@/lib/specialties';
+import { groupBySpecialty, matchSpecialtyOption } from '@/lib/specialties';
 import {
   profileFormInputClass,
   profileSectionEmptyClass,
@@ -139,6 +140,7 @@ export function ProfileStrengthsField({
   allowedSpecialties = [],
 }: ProfileStrengthsFieldProps) {
   const watchedStrengths = useWatch({ control, name: 'strengthsTools' });
+  const watchedSkillTags = useWatch({ control, name: 'specialtyTags' }) ?? [];
   const [customDraft, setCustomDraft] = useState('');
   const [customIconUrl, setCustomIconUrl] = useState<string | null>(null);
   const [uploadingIcon, setUploadingIcon] = useState(false);
@@ -146,6 +148,20 @@ export function ProfileStrengthsField({
   const iconInputRef = useRef<HTMLInputElement>(null);
   const [useCaseDraftByLabel, setUseCaseDraftByLabel] = useState<Record<string, string>>({});
   const [expandedCategories, setExpandedCategories] = useState<Set<ToolCategoryId>>(() => new Set());
+
+  const skillTagsBlock = (
+    <section className="space-y-2">
+      <p className={profileSectionSubheadingClass}>Skills</p>
+      <p className={profileSectionMutedTextClass}>
+        Keyword tags shown under Skills in Profile info on your public profile.
+      </p>
+      <SkillTagsEditor
+        tags={Array.isArray(watchedSkillTags) ? watchedSkillTags : []}
+        onChange={(next) => setValue('specialtyTags', next, { shouldDirty: true })}
+        editable={!readOnly}
+      />
+    </section>
+  );
 
   const formItems = useMemo((): StrengthFormItem[] => {
     if (readOnly) return values;
@@ -292,51 +308,62 @@ export function ProfileStrengthsField({
   };
 
   if (readOnly) {
-    if (selectedValues.length === 0) {
-      return <p className={profileSectionEmptyClass}>Aucun outil ajouté pour le moment.</p>;
-    }
-    const grouped = new Map<string, string[]>();
-    for (const item of selectedValues) {
-      const data = itemByLabel.get(item.toLowerCase());
-      const group = specialtyGroupLabel(data?.category ?? '', allowedSpecialties);
-      const current = grouped.get(group) ?? [];
-      current.push(item);
-      grouped.set(group, current);
-    }
-    const groupOrder = [
-      ...allowedSpecialties.filter((specialty) => grouped.has(specialty)),
-      ...[...grouped.keys()].filter((key) => !allowedSpecialties.includes(key)),
-    ];
-    return (
-      <div className="space-y-5">
-        {groupOrder.map((group) => (
-          <div key={group} className="space-y-3">
-            <p className={profileSectionSubheadingClass}>{group}</p>
-            {(grouped.get(group) ?? []).map((item) => {
-          const data = itemByLabel.get(item.toLowerCase());
-          const custom = data?.description?.trim() ?? '';
-          const body = custom || getSkillUsageDescription(item);
-          const level = levelLabel(data?.level ?? null);
+    const toolsBlock =
+      selectedValues.length === 0 ? (
+        <p className={profileSectionEmptyClass}>Aucun outil ajouté pour le moment.</p>
+      ) : (
+        (() => {
+          const groups = groupBySpecialty(
+            selectedValues,
+            (item) => itemByLabel.get(item.toLowerCase())?.category ?? '',
+            allowedSpecialties
+          );
           return (
-            <div
-              key={item}
-              className="rounded-2xl border border-neutral-200 bg-white px-3.5 py-3 dark:border-neutral-700 dark:bg-neutral-950"
-            >
-              <div className="flex items-center gap-2.5">
-                <CreatorToolLogo label={item} iconUrl={data?.iconUrl} size={28} />
-                <div className="min-w-0">
-                  <p className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">{item}</p>
-                  {level ? (
-                    <p className={`mt-0.5 text-xs ${profileSectionMutedTextClass}`}>{level}</p>
-                  ) : null}
+            <div className="space-y-5">
+              {groups.map(({ group, items }) => (
+                <div key={group} className="space-y-3">
+                  <p className={profileSectionSubheadingClass}>{group}</p>
+                  {items.map((item) => {
+                    const data = itemByLabel.get(item.toLowerCase());
+                    const custom = data?.description?.trim() ?? '';
+                    const body = custom || getSkillUsageDescription(item);
+                    const level = levelLabel(data?.level ?? null);
+                    return (
+                      <div
+                        key={item}
+                        className="rounded-2xl border border-neutral-200 bg-white px-3.5 py-3 dark:border-neutral-700 dark:bg-neutral-950"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <CreatorToolLogo label={item} iconUrl={data?.iconUrl} size={28} />
+                          <div className="min-w-0">
+                            <p className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">
+                              {item}
+                            </p>
+                            {level ? (
+                              <p className={`mt-0.5 text-xs ${profileSectionMutedTextClass}`}>{level}</p>
+                            ) : null}
+                          </div>
+                        </div>
+                        <p className={`mt-2 text-sm leading-relaxed ${profileSectionMutedTextClass}`}>
+                          {body}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-              <p className={`mt-2 text-sm leading-relaxed ${profileSectionMutedTextClass}`}>{body}</p>
+              ))}
             </div>
           );
-            })}
-          </div>
-        ))}
+        })()
+      );
+
+    return (
+      <div className="space-y-6">
+        {skillTagsBlock}
+        <section className="space-y-3">
+          <p className={profileSectionSubheadingClass}>Tools</p>
+          {toolsBlock}
+        </section>
       </div>
     );
   }
@@ -344,7 +371,10 @@ export function ProfileStrengthsField({
   const categories = getCreatorToolCategories();
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      {skillTagsBlock}
+      <section className="space-y-5">
+        <p className={profileSectionSubheadingClass}>Tools</p>
       {selectedValues.length > 0 && (
         <div className="space-y-3">
           <div>
@@ -670,6 +700,7 @@ export function ProfileStrengthsField({
         ) : null}
         {uploadError ? <p className="mt-2 text-xs text-red-600 dark:text-red-400">{uploadError}</p> : null}
       </div>
+      </section>
     </div>
   );
 }

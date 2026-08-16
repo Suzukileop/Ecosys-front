@@ -22,6 +22,7 @@ export interface MarketplaceCreatorSummary {
   bio?: string | null;
   isVerified: boolean;
   isAvailable?: boolean;
+  availabilityLabel?: string | null;
   portfolioCount?: number;
   productCount?: number;
   serviceCount?: number;
@@ -31,6 +32,8 @@ export interface MarketplaceCreatorSummary {
   nationality?: string | null;
   yearsOfExperience?: number | null;
   distanceKm?: number | null;
+  locationCity?: string | null;
+  locationCountry?: string | null;
 }
 
 export type MarketplaceCreatorsPage = PagedResponse<MarketplaceCreatorSummary>;
@@ -62,10 +65,12 @@ export interface MarketplaceCreatorPublicProfile {
   bio: string | null;
   isVerified: boolean;
   isAvailable?: boolean;
+  availabilityLabel?: string | null;
   portfolioCount: number;
   /** Total non-deleted content posts by this creator (includes archived). */
   contentCount?: number;
   productCount?: number;
+  serviceCount?: number;
   averageRating: number | null;
   /** Backend field: recent public portfolio posts */
   recentPosts?: MarketplaceContentItem[];
@@ -76,7 +81,12 @@ export interface MarketplaceCreatorPublicProfile {
   studioTabNavAlign?: string | null;
   locationCity?: string | null;
   locationCountry?: string | null;
+  /** Stored profile coordinates — preferred for distance (avoids flaky geocoding). */
+  locationLat?: number | null;
+  locationLng?: number | null;
   nationality?: string | null;
+  /** Creator app role — drives Products / Services visibility on public profile. */
+  appRole?: string | null;
   portfolio?: MarketplaceContentItem[];
   contents?: MarketplaceContentItem[];
   followerCount?: number;

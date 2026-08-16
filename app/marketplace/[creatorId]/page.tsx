@@ -7,7 +7,7 @@ import { parseCreatorStudioHeaderLayout } from '@/components/creator/studio/crea
 import { parseCreatorStudioHeaderContentStyle } from '@/components/creator/studio/creator-studio-header-content';
 import { parseCreatorStudioTabNavAlign } from '@/components/creator/studio/creator-studio-layout';
 import { PublicCreatorProfileShell } from '@/components/marketplace/PublicCreatorProfileShell';
-import { formatLocationLabel } from '@/lib/geolocation';
+import { formatPlaceLabel } from '@/lib/geolocation';
 import {
   listPublicProductsServer,
   normalizeCreatorProfile,
@@ -58,7 +58,11 @@ export default async function MarketplaceCreatorPage({
     size: 24,
   });
 
-  const locationLabel = formatLocationLabel(profile.locationCity, profile.locationCountry);
+  const locationLabel = formatPlaceLabel(
+    profile.locationCity,
+    profile.locationCountry,
+    profile.nationality
+  );
 
   return (
     <DashboardHomeShell fullWidth>

@@ -4,7 +4,6 @@ import { type ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { SidebarHelpButton } from '@/components/layout/SidebarHelpButton';
 import { SidebarUserProfile } from '@/components/layout/SidebarUserProfile';
 import { DashboardHeaderSearch } from '@/components/layout/DashboardHeaderSearch';
 import { DASHBOARD_SIDEBAR_BG } from '@/components/landing/landingBrand';
@@ -93,14 +92,14 @@ function SidebarToggleIcon() {
 }
 
 const navItemBaseClass =
-  'flex h-10 items-center rounded-xl text-sm transition-colors';
+  'relative flex h-10 items-center rounded-xl text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
 const navItemExpandedClass = 'w-full gap-2.5 px-3';
 /** Square hit/highlight area centered in the 4.5rem collapsed rail (nav has px-3). */
 const navItemCollapsedClass = 'w-10 justify-center gap-0 px-0';
 const navItemInactiveClass =
-  'font-medium text-black hover:bg-neutral-200 dark:text-white dark:hover:bg-neutral-800';
+  'font-medium text-black hover:bg-neutral-200/80 dark:text-neutral-200 dark:hover:bg-neutral-800';
 const navItemActiveClass =
-  'font-semibold bg-neutral-200 text-black dark:bg-neutral-800 dark:text-white';
+  'font-semibold bg-neutral-200 text-black before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-orange-500 dark:bg-neutral-800 dark:text-white';
 const navItemComingSoonClass =
   'font-medium text-black/50 hover:bg-neutral-200 dark:text-white/50 dark:hover:bg-neutral-800';
 const navChildInactiveClass =
@@ -108,7 +107,7 @@ const navChildInactiveClass =
 const navChildActiveClass =
   'font-semibold bg-neutral-200 text-black dark:bg-neutral-800 dark:text-white';
 const collapseButtonClass =
-  'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-black transition hover:bg-neutral-200 dark:text-white dark:hover:bg-neutral-800';
+  'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-black transition hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:text-white dark:hover:bg-neutral-800';
 
 function navItemLayoutClass(collapsed: boolean) {
   return collapsed ? navItemCollapsedClass : navItemExpandedClass;
@@ -380,7 +379,6 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
             </svg>
             {!collapsed ? <SidebarLabel show>Log out</SidebarLabel> : null}
           </button>
-          <SidebarHelpButton collapsed={collapsed} />
         </div>
       </div>
     </aside>

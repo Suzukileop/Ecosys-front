@@ -140,6 +140,26 @@ export const STORE_INFORMATION_SECTION_IDS: ProfileSectionId[] = [
   'reputation',
 ];
 
+/** Hidden from Information for RH / Recruiter / Client. */
+export const RH_RECRUITER_HIDDEN_INFORMATION_SECTIONS: readonly ProfileSectionId[] = [
+  'whyMe',
+  'strengths',
+  'faq',
+];
+
+export function filterStoreInformationSectionsForRole(
+  role: string | null | undefined,
+  sections: readonly ProfileSectionId[] = STORE_INFORMATION_SECTION_IDS
+): ProfileSectionId[] {
+  const normalized = String(role ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_');
+  if (normalized !== 'RH_RECRUITER') return [...sections];
+  const hidden = new Set(RH_RECRUITER_HIDDEN_INFORMATION_SECTIONS);
+  return sections.filter((id) => !hidden.has(id));
+}
+
 export function filterProfileSectionGroups(
   groups: ProfileSectionId[][],
   allowed?: readonly ProfileSectionId[] | null
@@ -201,8 +221,8 @@ function NavIcon({
     <span
       className={`flex h-8 w-8 shrink-0 items-center justify-center transition-colors ${
         isHighlighted
-          ? 'text-[#F97316] dark:text-[#FB923C]'
-          : 'text-neutral-900 dark:text-neutral-200'
+          ? 'text-orange-600 dark:text-orange-400'
+          : 'text-neutral-600 dark:text-neutral-400'
       }`}
       aria-hidden
     >

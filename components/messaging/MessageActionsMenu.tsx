@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { getApiErrorMessage } from '@/lib/api-error';
 import { isMessagePinned, togglePinnedMessage } from '@/lib/discussion-pins';
+import { getAttachmentDownloadUrl } from '@/lib/messaging';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import type { DirectMessage } from '@/types/messaging';
 
@@ -10,9 +12,10 @@ type MessageActionsMenuProps = {
   conversationId: string;
   mine: boolean;
   onTransfer?: (message: DirectMessage) => void;
+  onDelete?: (message: DirectMessage) => void;
 };
 
-const MENU_ESTIMATED_HEIGHT = 132;
+const MENU_ESTIMATED_HEIGHT = 200;
 
 function MoreVerticalIcon() {
   return (
@@ -24,13 +27,22 @@ function MoreVerticalIcon() {
   );
 }
 
-export function MessageActionsMenu({ message, conversationId, mine, onTransfer }: MessageActionsMenuProps) {
+export function MessageActionsMenu({
+  message,
+  conversationId,
+  mine,
+  onTransfer,
+  onDelete,
+}: MessageActionsMenuProps) {
   const [open, setOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const pinned = isMessagePinned(conversationId, message.id);
+  const attachments = message.attachments ?? [];
+  const hasAttachments = attachments.length > 0;
 
   useLayoutEffect(() => {
     if (!open || !buttonRef.current) return;
@@ -67,12 +79,12 @@ export function MessageActionsMenu({ message, conversationId, mine, onTransfer }
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, [open]);
 
-  const triggerClass = `flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 opacity-0 transition hover:bg-neutral-200/80 hover:text-neutral-700 group-hover/msg:opacity-100 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 ${
-    open ? 'opacity-100 bg-neutral-200/80 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200' : ''
+  const triggerClass = `flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-200/80 hover:text-neutral-700 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 ${
+    open ? 'bg-neutral-200/80 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200' : ''
   }`;
 
   const menuItemClass =
-    'flex w-full items-center px-3 py-2 text-left text-xs font-medium text-neutral-700 transition hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800';
+    'flex w-full items-center px-3 py-2 text-left text-xs font-medium text-neutral-700 transition hover:bg-neutral-100 disabled:opacity-50 dark:text-neutral-200 dark:hover:bg-neutral-800';
 
   const handleCopy = async () => {
     const text =
@@ -102,8 +114,42 @@ export function MessageActionsMenu({ message, conversationId, mine, onTransfer }
     setOpen(false);
   };
 
+  const handleDelete = () => {
+    setOpen(false);
+    onDelete?.(message);
+  };
+
+  const handleDownload = async () => {
+    if (!hasAttachments || downloading) return;
+    setDownloading(true);
+    try {
+      for (const attachment of attachments) {
+        const access = await getAttachmentDownloadUrl(conversationId, attachment.id);
+        const link = document.createElement('a');
+        link.href = access.url;
+        link.download = access.fileName;
+        link.rel = 'noopener noreferrer';
+        link.click();
+      }
+      pushFlashFeedback({
+        variant: 'success',
+        title: 'Download started',
+        description: attachments.length > 1 ? `${attachments.length} files` : attachments[0]?.fileName,
+      });
+      setOpen(false);
+    } catch (e) {
+      pushFlashFeedback({
+        variant: 'error',
+        title: 'Download failed',
+        description: getApiErrorMessage(e, 'Unable to download media.'),
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
-    <div ref={rootRef} className="relative shrink-0 self-center">
+    <div ref={rootRef} className="relative shrink-0 self-start">
       <button
         ref={buttonRef}
         type="button"
@@ -121,7 +167,7 @@ export function MessageActionsMenu({ message, conversationId, mine, onTransfer }
           role="menu"
           className={`absolute z-30 min-w-[9.5rem] overflow-hidden rounded-xl border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-600 dark:bg-neutral-900 ${
             openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
-          } ${mine ? 'right-0' : 'left-0'}`}
+          } ${mine ? 'left-0' : 'right-0'}`}
         >
           <button type="button" role="menuitem" className={menuItemClass} onClick={handleTransfer}>
             Transfer
@@ -129,9 +175,30 @@ export function MessageActionsMenu({ message, conversationId, mine, onTransfer }
           <button type="button" role="menuitem" className={menuItemClass} onClick={() => void handleCopy()}>
             Copy
           </button>
+          {hasAttachments ? (
+            <button
+              type="button"
+              role="menuitem"
+              className={menuItemClass}
+              disabled={downloading}
+              onClick={() => void handleDownload()}
+            >
+              {downloading ? 'Downloading…' : attachments.length > 1 ? 'Download media' : 'Download'}
+            </button>
+          ) : null}
           <button type="button" role="menuitem" className={menuItemClass} onClick={handlePin}>
             {pinned ? 'Unpin' : 'Pin'}
           </button>
+          {mine && onDelete ? (
+            <button
+              type="button"
+              role="menuitem"
+              className={`${menuItemClass} text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40`}
+              onClick={handleDelete}
+            >
+              Delete
+            </button>
+          ) : null}
         </div>
       )}
     </div>

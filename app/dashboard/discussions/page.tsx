@@ -6,13 +6,19 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardHomeShell } from '@/components/DashboardHomeShell';
 import { DiscussionChatPanel } from '@/components/messaging/DiscussionChatPanel';
 import { DiscussionDetailsPanel } from '@/components/messaging/DiscussionDetailsPanel';
-import { ThreadBackgroundGallery } from '@/components/messaging/ThreadBackgroundPicker';
+import { EmptyConversation } from '@/components/messaging/EmptyConversation';
 import { InboxConversationRow } from '@/components/messaging/InboxConversationRow';
+import { InboxPanel, type InboxFilterId } from '@/components/messaging/InboxPanel';
 import { InboxPendingGuestInvites } from '@/components/messaging/InboxPendingGuestInvites';
 import { InboxTemporarySection } from '@/components/messaging/InboxTemporarySection';
+import { MessageLayout } from '@/components/messaging/MessageLayout';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { getApiErrorMessage } from '@/lib/api-error';
+import {
+  DASHBOARD_SIDEBAR_EXPAND_EVENT,
+  notifyMessagingDetailsOpen,
+} from '@/lib/dashboard-chrome';
 import {
   acceptDirectGuestInvite,
   cancelOutgoingGuestInvite,
@@ -24,6 +30,7 @@ import {
   listTemporaryInbox,
 } from '@/lib/messaging';
 import { formatMessagePreview } from '@/lib/messaging-preview';
+import { SHOW_GROUP_CHAT } from '@/lib/messaging-feature-flags';
 import { useDiscussionsInboxRealtime } from '@/hooks/useDiscussionsInboxRealtime';
 import type {
   ConversationReadReceipt,
@@ -41,6 +48,11 @@ const CreateGroupModal = dynamic(
   { ssr: false }
 );
 
+const NewMessageModal = dynamic(
+  () => import('@/components/messaging/NewMessageModal').then((module) => module.NewMessageModal),
+  { ssr: false }
+);
+
 function sortConversations(conversations: ConversationSummary[]): ConversationSummary[] {
   return [...conversations].sort((a, b) => {
     const aTime = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
@@ -48,8 +60,6 @@ function sortConversations(conversations: ConversationSummary[]): ConversationSu
     return bTime - aTime;
   });
 }
-
-type InboxFilter = 'all' | 'unread' | 'groups' | 'temporary';
 
 type OpenChatContext = {
   id: string;
@@ -64,13 +74,14 @@ function isGuestConversation(conversation: ConversationSummary): boolean {
   return conversation.guestSession === true;
 }
 
-function matchesInboxFilter(conversation: ConversationSummary, filter: InboxFilter): boolean {
+function matchesInboxFilter(conversation: ConversationSummary, filter: InboxFilterId): boolean {
   if (isGuestConversation(conversation)) return false;
+  if (!SHOW_GROUP_CHAT && conversation.type === 'GROUP') return false;
   switch (filter) {
     case 'unread':
       return (conversation.unreadCount ?? 0) > 0;
     case 'groups':
-      return conversation.type === 'GROUP';
+      return SHOW_GROUP_CHAT && conversation.type === 'GROUP';
     case 'temporary':
       return false;
     default:
@@ -120,12 +131,11 @@ function DiscussionsPageContent() {
   const [loadingList, setLoadingList] = useState(true);
   const [openingUser, setOpeningUser] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sidePanelTab, setSidePanelTab] = useState<'inbox' | 'thread'>('inbox');
-  const [themesGalleryOpen, setThemesGalleryOpen] = useState(false);
-  const [sidePanelOpen, setSidePanelOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [inboxSearch, setInboxSearch] = useState('');
-  const [inboxFilter, setInboxFilter] = useState<InboxFilter>('all');
+  const [inboxFilter, setInboxFilter] = useState<InboxFilterId>('all');
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
+  const [newMessageOpen, setNewMessageOpen] = useState(false);
   const [temporaryInbox, setTemporaryInbox] = useState<TemporaryInboxEntry[]>([]);
   const [pendingIncomingInvites, setPendingIncomingInvites] = useState<PendingConversationInvite[]>([]);
   const [inviteActionId, setInviteActionId] = useState<string | null>(null);
@@ -143,18 +153,26 @@ function DiscussionsPageContent() {
   openContextIdRef.current = openContext?.id ?? null;
 
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 1024px)');
-    const apply = () => setSidePanelOpen(mq.matches);
-    apply();
-    mq.addEventListener('change', apply);
-    return () => mq.removeEventListener('change', apply);
-  }, []);
+    if (!SHOW_GROUP_CHAT && inboxFilter === 'groups') {
+      setInboxFilter('all');
+    }
+  }, [inboxFilter]);
 
   useEffect(() => {
-    if (sidePanelTab !== 'thread') {
-      setThemesGalleryOpen(false);
+    if (!SHOW_GROUP_CHAT && openContext?.conversationType === 'GROUP') {
+      setOpenContext(null);
     }
-  }, [sidePanelTab]);
+  }, [openContext?.conversationType]);
+
+  useEffect(() => {
+    if (!openContext) setDetailsOpen(false);
+  }, [openContext]);
+
+  useEffect(() => {
+    if (filterParam === 'temporary') {
+      setInboxFilter('temporary');
+    }
+  }, [filterParam]);
 
   const refreshConversations = useCallback(async () => {
     try {
@@ -183,14 +201,6 @@ function DiscussionsPageContent() {
   }, [user?.id]);
 
   useEffect(() => {
-    if (filterParam === 'temporary') {
-      setInboxFilter('temporary');
-      setSidePanelTab('inbox');
-      setSidePanelOpen(true);
-    }
-  }, [filterParam]);
-
-  useEffect(() => {
     if (!user?.id) return;
     const refreshOnVisible = () => {
       if (document.visibilityState === 'visible') {
@@ -210,14 +220,17 @@ function DiscussionsPageContent() {
     void refreshTemporaryInbox();
   }, [refreshConversations, refreshTemporaryInbox]);
 
-  const handleConversationRead = useCallback((conversationId: string) => {
-    setConversations((prev) =>
-      prev.map((conversation) =>
-        conversation.id === conversationId ? { ...conversation, unreadCount: 0 } : conversation
-      )
-    );
-    void refreshConversations();
-  }, [refreshConversations]);
+  const handleConversationRead = useCallback(
+    (conversationId: string) => {
+      setConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.id === conversationId ? { ...conversation, unreadCount: 0 } : conversation
+        )
+      );
+      void refreshConversations();
+    },
+    [refreshConversations]
+  );
 
   const conversationIds = useMemo(() => conversations.map((conversation) => conversation.id), [conversations]);
 
@@ -265,7 +278,6 @@ function DiscussionsPageContent() {
         delete next[conversationId];
         return next;
       });
-
     },
     [refreshConversations, user?.id]
   );
@@ -364,14 +376,36 @@ function DiscussionsPageContent() {
     };
   }, [refreshConversations, refreshTemporaryInbox]);
 
+  // Sync open thread from URL + inbox list. Do NOT close Details here:
+  // `conversations` refreshes often (realtime / unread), which was auto-closing Details.
   useEffect(() => {
     if (!targetConversationId) return;
-    setSidePanelTab('thread');
     const conversation = conversations.find((item) => item.id === targetConversationId);
-    if (conversation) {
-      setOpenContext(buildOpenChatContext(conversation));
-    }
+    if (!conversation) return;
+    setOpenContext((prev) => {
+      const next = buildOpenChatContext(conversation);
+      if (
+        prev &&
+        prev.id === next.id &&
+        prev.title === next.title &&
+        prev.partnerAvatarUrl === next.partnerAvatarUrl &&
+        prev.partnerUserId === next.partnerUserId &&
+        prev.conversationType === next.conversationType &&
+        prev.readOnlyGuestHistory === next.readOnlyGuestHistory
+      ) {
+        return prev;
+      }
+      return next;
+    });
   }, [targetConversationId, conversations]);
+
+  // Close Details only when the selected conversation (URL) actually changes.
+  const prevTargetConversationIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (prevTargetConversationIdRef.current === targetConversationId) return;
+    prevTargetConversationIdRef.current = targetConversationId;
+    setDetailsOpen(false);
+  }, [targetConversationId]);
 
   useEffect(() => {
     if (!targetUserId) return;
@@ -383,12 +417,23 @@ function DiscussionsPageContent() {
       try {
         const conversation = await createOrGetConversation(targetUserId);
         if (cancelled) return;
+        // Keep the thread visible in the main panel immediately (before list refresh).
+        setConversations((prev) => {
+          if (prev.some((item) => item.id === conversation.id)) {
+            return sortConversations(
+              prev.map((item) => (item.id === conversation.id ? { ...item, ...conversation } : item))
+            );
+          }
+          return sortConversations([conversation, ...prev]);
+        });
         setOpenContext(buildOpenChatContext(conversation));
-        const list = await refreshConversations();
-        if (!list.some((c) => c.id === conversation.id)) {
-          setConversations(sortConversations([conversation, ...list]));
-        }
-        router.replace('/dashboard/discussions', { scroll: false });
+        setDetailsOpen(false);
+        await refreshConversations();
+        if (cancelled) return;
+        router.replace(
+          `/dashboard/discussions?conversation=${encodeURIComponent(conversation.id)}`,
+          { scroll: false }
+        );
       } catch (e) {
         if (!cancelled) {
           setError(getApiErrorMessage(e, 'Unable to start conversation.'));
@@ -412,13 +457,19 @@ function DiscussionsPageContent() {
 
   useEffect(() => {
     if (!openContext?.id) return;
+    // Avoid wiping a just-opened Discuss thread while the inbox list is still loading.
+    if (loadingList || openingUser) return;
     if (!conversations.some((conversation) => conversation.id === openContext.id)) {
       setOpenContext(null);
     }
-  }, [conversations, openContext]);
+  }, [conversations, openContext, loadingList, openingUser]);
 
   const permanentConversations = useMemo(
-    () => conversations.filter((conversation) => !isGuestConversation(conversation)),
+    () =>
+      conversations.filter(
+        (conversation) =>
+          !isGuestConversation(conversation) && (SHOW_GROUP_CHAT || conversation.type !== 'GROUP')
+      ),
     [conversations]
   );
 
@@ -458,23 +509,21 @@ function DiscussionsPageContent() {
     });
   }, [permanentConversations, inboxSearch, inboxFilter]);
 
-  const showChat = Boolean(activeChatContext);
-  const threadActive = sidePanelTab === 'thread' && sidePanelOpen;
-  const showSidePanel = !showChat || sidePanelOpen;
-
   const handleSelectConversation = (conversationId: string) => {
     const conversation = conversations.find((item) => item.id === conversationId);
     if (conversation) {
       setOpenContext(buildOpenChatContext(conversation));
+      router.replace(
+        `/dashboard/discussions?conversation=${encodeURIComponent(conversationId)}`,
+        { scroll: false }
+      );
     }
     setConversations((prev) =>
-      prev.map((conversation) =>
-        conversation.id === conversationId ? { ...conversation, unreadCount: 0 } : conversation
+      prev.map((item) =>
+        item.id === conversationId ? { ...item, unreadCount: 0 } : item
       )
     );
-    if (window.matchMedia('(max-width: 1023px)').matches) {
-      setSidePanelOpen(false);
-    }
+    setDetailsOpen(false);
   };
 
   const handleOpenTemporaryConversation = (entry: TemporaryInboxEntry) => {
@@ -485,16 +534,30 @@ function DiscussionsPageContent() {
       conversationType: 'GROUP',
       readOnlyGuestHistory: entry.entryType === 'ENDED_GUEST',
     });
-    setSidePanelTab('inbox');
-    if (window.matchMedia('(max-width: 1023px)').matches) {
-      setSidePanelOpen(false);
-    }
+    setDetailsOpen(false);
   };
 
-  const openThreadPanel = () => {
-    setSidePanelTab('thread');
-    setSidePanelOpen(true);
+  const handleBackToInbox = () => {
+    setOpenContext(null);
+    setDetailsOpen(false);
+    router.replace('/dashboard/discussions', { scroll: false });
   };
+
+  const toggleDetails = () => {
+    setDetailsOpen((open) => {
+      const next = !open;
+      if (next) {
+        notifyMessagingDetailsOpen();
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const onSidebarExpand = () => setDetailsOpen(false);
+    window.addEventListener(DASHBOARD_SIDEBAR_EXPAND_EVENT, onSidebarExpand);
+    return () => window.removeEventListener(DASHBOARD_SIDEBAR_EXPAND_EVENT, onSidebarExpand);
+  }, []);
 
   const handleGuestSessionEnded = useCallback(() => {
     setOpenContext(null);
@@ -513,10 +576,7 @@ function DiscussionsPageContent() {
       }
       await refreshTemporaryInbox();
       setOpenContext(buildOpenChatContext(conversation));
-      setSidePanelTab('inbox');
-      if (window.matchMedia('(max-width: 1023px)').matches) {
-        setSidePanelOpen(false);
-      }
+      setDetailsOpen(false);
     } catch (e) {
       setError(getApiErrorMessage(e, 'Unable to accept invite.'));
     } finally {
@@ -550,176 +610,137 @@ function DiscussionsPageContent() {
     }
   };
 
-  const inboxList = (
-    <>
-      <div className="flex shrink-0 items-center justify-between gap-2 px-4 pb-2 pt-3">
-        <h2 className="text-sm font-bold text-gray-900 dark:text-white">Inbox</h2>
-        <button
-          type="button"
-          onClick={() => void createGroup()}
-          className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-900 transition hover:bg-gray-50 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700"
-        >
-          New group
-        </button>
-      </div>
-
-      {pendingIncomingInvites.length > 0 && (
-        <InboxPendingGuestInvites
-          invites={pendingIncomingInvites}
-          actingId={inviteActionId}
-          onAccept={(inviteId) => void handleAcceptGuestInvite(inviteId)}
-          onDecline={(inviteId) => void handleDeclineGuestInvite(inviteId)}
-        />
-      )}
-
-      <div className="shrink-0 px-3 pb-3">
-        <label htmlFor="inbox-search" className="sr-only">
-          Search messages
-        </label>
-        <div className="relative">
-          <svg
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-            aria-hidden
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            id="inbox-search"
-            type="search"
-            value={inboxSearch}
-            onChange={(e) => setInboxSearch(e.target.value)}
-            placeholder="Search messages..."
-            className="w-full rounded-2xl border-0 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition placeholder:text-neutral-400 focus:ring-2 focus:ring-neutral-400/15 dark:bg-neutral-800 dark:text-white dark:focus:ring-neutral-600/40"
-          />
-        </div>
-      </div>
-
-      <div className="shrink-0 px-3 pb-3">
-        <div
-          className="flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          role="tablist"
-          aria-label="Filter conversations"
-        >
-          {(
-            [
-              { id: 'all' as const, label: 'All' },
-              { id: 'unread' as const, label: 'Unread', count: inboxFilterCounts.unread },
-              { id: 'groups' as const, label: 'Groups', count: inboxFilterCounts.groups },
-              { id: 'temporary' as const, label: 'Temporary', count: inboxFilterCounts.temporary },
-            ] as const
-          ).map((chip) => {
-            const active = inboxFilter === chip.id;
-            return (
-              <button
-                key={chip.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setInboxFilter(chip.id)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                  active
-                    ? 'bg-neutral-200 text-gray-900 dark:bg-neutral-700 dark:text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-50 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700'
-                }`}
-              >
-                {chip.label}
-                {'count' in chip && chip.count > 0 ? (
-                  <span className="text-gray-500 dark:text-neutral-400">
-                    {' '}
-                    {chip.count}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto bg-transparent pb-2 [scrollbar-width:thin] [scrollbar-color:#a3a3a3_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-400 dark:[scrollbar-color:#525252_transparent] [&::-webkit-scrollbar-thumb]:dark:bg-neutral-600">
-        {loadingList || openingUser ? (
-          <div className="flex items-center justify-center py-12">
-            <LoadingSpinner />
-          </div>
-        ) : inboxFilter === 'temporary' ? (
-          filteredTemporaryInboxWithoutIncoming.length === 0 && pendingIncomingInvites.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-gray-500 dark:text-neutral-400">
-              {inboxSearch.trim()
-                ? 'No temporary access matches your search.'
-                : 'No temporary guest access or pending invites.'}
-            </p>
-          ) : filteredTemporaryInboxWithoutIncoming.length === 0 ? null : (
-            <InboxTemporarySection
-              entries={filteredTemporaryInboxWithoutIncoming}
-              actingInviteId={inviteActionId}
-              actingCancelId={cancelInviteId}
-              onAcceptInvite={(inviteId) => void handleAcceptGuestInvite(inviteId)}
-              onDeclineInvite={(inviteId) => void handleDeclineGuestInvite(inviteId)}
-              onCancelInvite={(conversationId, inviteId) =>
-                void handleCancelOutgoingInvite(conversationId, inviteId)
-              }
-              onOpenConversation={handleOpenTemporaryConversation}
-            />
-          )
-        ) : (
-          <>
-            <div className="px-2">
-              {filteredConversations.length === 0 ? (
-                <p className="px-4 py-8 text-center text-sm text-gray-500 dark:text-neutral-400">
-                  {inboxSearch.trim()
-                    ? 'No conversations match your search.'
-                    : inboxFilter !== 'all'
-                      ? 'No conversations match this filter.'
-                      : 'No conversations yet. Visit a creator profile and tap "Discuss" to start chatting.'}
-                </p>
-              ) : (
-                <ul role="listbox" aria-label="Conversations" className="space-y-1">
-                  {filteredConversations.map((conversation) => (
-                    <InboxConversationRow
-                      key={conversation.id}
-                      conversation={conversation}
-                      selected={conversation.id === openContext?.id}
-                      currentUserId={user?.id}
-                      typingName={typingByConversationId[conversation.id]}
-                      deliveredUserIds={
-                        conversation.lastMessageId
-                          ? deliveryReceiptsByConversation[conversation.id]?.[conversation.lastMessageId]
-                          : undefined
-                      }
-                      onSelect={handleSelectConversation}
-                    />
-                  ))}
-                </ul>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-    </>
-  );
-
-  const createGroup = () => {
-    setCreateGroupOpen(true);
-  };
-
   const handleGroupCreated = async (group: ConversationSummary) => {
     setOpenContext(buildOpenChatContext(group));
-    setSidePanelTab('thread');
-    if (window.matchMedia('(max-width: 1023px)').matches) {
-      setSidePanelOpen(false);
-    }
+    setDetailsOpen(false);
     const list = await refreshConversations();
     if (!list.some((conversation) => conversation.id === group.id)) {
       setConversations(sortConversations([group, ...list]));
     }
   };
 
+  const handleNewMessageStarted = async (conversation: ConversationSummary) => {
+    setConversations((prev) => {
+      if (prev.some((item) => item.id === conversation.id)) {
+        return sortConversations(
+          prev.map((item) => (item.id === conversation.id ? { ...item, ...conversation } : item))
+        );
+      }
+      return sortConversations([conversation, ...prev]);
+    });
+    setOpenContext(buildOpenChatContext(conversation));
+    setDetailsOpen(false);
+    router.replace(
+      `/dashboard/discussions?conversation=${encodeURIComponent(conversation.id)}`,
+      { scroll: false }
+    );
+    const list = await refreshConversations();
+    if (!list.some((item) => item.id === conversation.id)) {
+      setConversations(sortConversations([conversation, ...list]));
+    }
+  };
+
+  const inboxContent = (
+    <InboxPanel
+      search={inboxSearch}
+      onSearchChange={setInboxSearch}
+      filter={inboxFilter}
+      onFilterChange={setInboxFilter}
+      filterCounts={inboxFilterCounts}
+      onNewMessage={() => setNewMessageOpen(true)}
+      onNewGroup={SHOW_GROUP_CHAT ? () => setCreateGroupOpen(true) : undefined}
+      pendingInvites={
+        pendingIncomingInvites.length > 0 ? (
+          <InboxPendingGuestInvites
+            invites={pendingIncomingInvites}
+            actingId={inviteActionId}
+            onAccept={(inviteId) => void handleAcceptGuestInvite(inviteId)}
+            onDecline={(inviteId) => void handleDeclineGuestInvite(inviteId)}
+          />
+        ) : null
+      }
+    >
+      {loadingList || openingUser ? (
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner />
+        </div>
+      ) : inboxFilter === 'temporary' ? (
+        filteredTemporaryInboxWithoutIncoming.length === 0 && pendingIncomingInvites.length === 0 ? (
+          <p className="px-4 py-8 text-center text-sm text-[var(--msg-muted)]">
+            {inboxSearch.trim()
+              ? 'No temporary access matches your search.'
+              : 'No temporary guest access or pending invites.'}
+          </p>
+        ) : filteredTemporaryInboxWithoutIncoming.length === 0 ? null : (
+          <InboxTemporarySection
+            entries={filteredTemporaryInboxWithoutIncoming}
+            actingInviteId={inviteActionId}
+            actingCancelId={cancelInviteId}
+            onAcceptInvite={(inviteId) => void handleAcceptGuestInvite(inviteId)}
+            onDeclineInvite={(inviteId) => void handleDeclineGuestInvite(inviteId)}
+            onCancelInvite={(conversationId, inviteId) =>
+              void handleCancelOutgoingInvite(conversationId, inviteId)
+            }
+            onOpenConversation={handleOpenTemporaryConversation}
+          />
+        )
+      ) : filteredConversations.length === 0 ? (
+        <p className="px-4 py-8 text-center text-sm text-[var(--msg-muted)]">
+          {inboxSearch.trim()
+            ? 'No conversations match your search.'
+            : inboxFilter !== 'all'
+              ? 'No conversations match this filter.'
+              : 'No conversations yet. Start one from a profile or with “New message”.'}
+        </p>
+      ) : (
+        <ul role="listbox" aria-label="Conversations" className="flex flex-col gap-0.5 py-1">
+          {filteredConversations.map((conversation) => (
+            <InboxConversationRow
+              key={conversation.id}
+              conversation={conversation}
+              selected={conversation.id === openContext?.id}
+              currentUserId={user?.id}
+              typingName={typingByConversationId[conversation.id]}
+              deliveredUserIds={
+                conversation.lastMessageId
+                  ? deliveryReceiptsByConversation[conversation.id]?.[conversation.lastMessageId]
+                  : undefined
+              }
+              onSelect={handleSelectConversation}
+            />
+          ))}
+        </ul>
+      )}
+    </InboxPanel>
+  );
+
+  const conversationContent = activeChatContext ? (
+    <DiscussionChatPanel
+      conversationId={activeChatContext.id}
+      title={activeChatContext.title}
+      partnerAvatarUrl={activeChatContext.partnerAvatarUrl}
+      partnerUserId={activeChatContext.partnerUserId}
+      conversationType={activeChatContext.conversationType}
+      readOnlyGuestHistory={activeChatContext.readOnlyGuestHistory}
+      showComposer={!activeChatContext.readOnlyGuestHistory}
+      detailsOpen={detailsOpen}
+      onToggleDetails={toggleDetails}
+      onBack={handleBackToInbox}
+      onConversationUpdated={handleConversationUpdated}
+      onConversationRead={handleConversationRead}
+      onGuestSessionEnded={handleGuestSessionEnded}
+      incomingDeliveryReceipt={
+        lastDeliveryConversationId === activeChatContext.id ? lastDeliveryReceipt : null
+      }
+      incomingReadReceipt={lastReadConversationId === activeChatContext.id ? lastReadReceipt : null}
+    />
+  ) : (
+    <EmptyConversation onNewMessage={() => setNewMessageOpen(true)} />
+  );
+
   return (
     <DashboardHomeShell wide fullWidth fillViewport>
-      {createGroupOpen && (
+      {SHOW_GROUP_CHAT && createGroupOpen && (
         <CreateGroupModal
           open
           currentUserId={user?.id}
@@ -727,162 +748,37 @@ function DiscussionsPageContent() {
           onCreated={(group) => void handleGroupCreated(group)}
         />
       )}
-      {error && (
-        <div className="mb-3 shrink-0">
+      <NewMessageModal
+        key={newMessageOpen ? 'new-message-open' : 'new-message-closed'}
+        open={newMessageOpen}
+        currentUserId={user?.id}
+        onClose={() => setNewMessageOpen(false)}
+        onStarted={(conversation) => void handleNewMessageStarted(conversation)}
+      />
+      {error ? (
+        <div className="shrink-0 px-3 pt-2">
           <ErrorAlert message={error} onDismiss={() => setError(null)} />
         </div>
-      )}
+      ) : null}
 
-      <div className="flex min-h-0 flex-1 gap-3 p-1">
-        <div className={`flex min-h-0 min-w-0 flex-1 ${showChat ? 'flex' : 'hidden lg:flex'}`}>
-          {activeChatContext ? (
-            <section
-              className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-black"
-              aria-label="Chat"
-            >
-              <div className="flex shrink-0 items-center gap-2 px-3 pt-2 lg:hidden">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpenContext(null);
-                    setSidePanelTab('inbox');
-                    setSidePanelOpen(true);
-                  }}
-                  className="rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-900 transition hover:bg-gray-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-700"
-                >
-                  Inbox
-                </button>
-                <button
-                  type="button"
-                  onClick={openThreadPanel}
-                  disabled={!selectedConversation}
-                  className="rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-900 transition hover:bg-gray-50 disabled:opacity-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-700"
-                >
-                  Thread
-                </button>
-              </div>
-              <DiscussionChatPanel
-                conversationId={activeChatContext.id}
-                title={activeChatContext.title}
-                partnerAvatarUrl={activeChatContext.partnerAvatarUrl}
-                partnerUserId={activeChatContext.partnerUserId}
-                conversationType={activeChatContext.conversationType}
-                readOnlyGuestHistory={activeChatContext.readOnlyGuestHistory}
-                showComposer={!activeChatContext.readOnlyGuestHistory}
-                detailsOpen={threadActive}
-                onToggleDetails={openThreadPanel}
-                onConversationUpdated={handleConversationUpdated}
-                onConversationRead={handleConversationRead}
-                onGuestSessionEnded={handleGuestSessionEnded}
-                incomingDeliveryReceipt={
-                  lastDeliveryConversationId === activeChatContext.id ? lastDeliveryReceipt : null
-                }
-                incomingReadReceipt={
-                  lastReadConversationId === activeChatContext.id ? lastReadReceipt : null
-                }
-              />
-            </section>
-          ) : (
-            <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-3xl border border-dashed border-neutral-300 bg-gray-100 px-6 py-12 text-center dark:border-neutral-800 dark:bg-black">
-              <p className="text-sm font-medium text-gray-700 dark:text-neutral-300">Select a conversation</p>
-              <p className="mt-1 max-w-sm text-xs text-gray-500 dark:text-neutral-400">
-                Open your inbox on the right to choose a chat, or start one from a creator profile.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {sidePanelOpen && showChat && (
-          <button
-            type="button"
-            aria-label="Close side panel"
-            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-            onClick={() => setSidePanelOpen(false)}
-          />
-        )}
-
-        <aside
-          className={`flex min-h-0 shrink-0 flex-col overflow-hidden rounded-3xl bg-gray-100 dark:bg-neutral-900 ${
-            showSidePanel ? 'flex' : 'hidden'
-          } fixed inset-y-0 right-0 z-50 w-[min(100%,480px)] lg:static lg:z-auto lg:flex lg:w-[440px] xl:w-[480px] ${
-            !showChat ? 'inset-x-0 w-full max-w-none rounded-none lg:rounded-3xl' : ''
-          }`}
-          aria-label="Discussions side panel"
-        >
-          <div className="shrink-0 p-2">
-            {!themesGalleryOpen && (
-              <div className="grid grid-cols-2 gap-1 rounded-2xl bg-white p-1 dark:bg-neutral-800">
-                <button
-                  type="button"
-                  onClick={() => setSidePanelTab('inbox')}
-                  className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                    sidePanelTab === 'inbox'
-                      ? 'bg-neutral-200 text-gray-900 shadow-sm dark:bg-neutral-700 dark:text-white'
-                      : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800'
-                  }`}
-                >
-                  Inbox
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSidePanelTab('thread')}
-                  className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                    sidePanelTab === 'thread'
-                      ? 'bg-neutral-200 text-gray-900 shadow-sm dark:bg-neutral-700 dark:text-white'
-                      : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800'
-                  }`}
-                >
-                  Thread
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            {themesGalleryOpen ? (
-              <ThreadBackgroundGallery onBack={() => setThemesGalleryOpen(false)} />
-            ) : sidePanelTab === 'inbox' ? (
-              inboxList
-            ) : selectedConversation ? (
-              <DiscussionDetailsPanel
-                key={selectedConversation.id}
-                embedded
-                conversation={selectedConversation}
-                onClose={() => setSidePanelOpen(false)}
-                onConversationUpdated={handleConversationUpdated}
-                onOpenThemesGallery={() => setThemesGalleryOpen(true)}
-              />
-            ) : (
-              <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
-                <p className="text-sm font-medium text-gray-700 dark:text-neutral-300">No conversation selected</p>
-                <p className="mt-1 text-xs text-gray-500 dark:text-neutral-400">
-                  Pick a chat from the Inbox tab to see thread details here.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setSidePanelTab('inbox')}
-                  className="mt-4 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-semibold text-gray-900 transition hover:bg-gray-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-800"
-                >
-                  Open Inbox
-                </button>
-              </div>
-            )}
-          </div>
-        </aside>
-
-        {!sidePanelOpen && showChat && (
-          <button
-            type="button"
-            onClick={() => setSidePanelOpen(true)}
-            className="fixed bottom-5 right-5 z-30 flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-gray-900 shadow-lg transition hover:bg-gray-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-800 lg:hidden"
-            aria-label="Open inbox and thread panel"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        )}
-      </div>
+      <MessageLayout
+        showConversationMobile={Boolean(activeChatContext)}
+        detailsOpen={detailsOpen && Boolean(selectedConversation)}
+        onCloseDetails={() => setDetailsOpen(false)}
+        inbox={inboxContent}
+        conversation={conversationContent}
+        details={
+          selectedConversation ? (
+            <DiscussionDetailsPanel
+              key={selectedConversation.id}
+              embedded
+              conversation={selectedConversation}
+              onClose={() => setDetailsOpen(false)}
+              onConversationUpdated={handleConversationUpdated}
+            />
+          ) : null
+        }
+      />
     </DashboardHomeShell>
   );
 }

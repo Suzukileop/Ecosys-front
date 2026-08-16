@@ -7,12 +7,14 @@ import { useAuth } from '@/context/AuthContext';
 import { getApiErrorMessage } from '@/lib/api-error';
 import {
   dismissNotificationBadge,
+  extractVisitorNameFromVisitMessage,
   fetchNotifications,
   fetchUnreadCount,
   filterNotifications,
   markAllNotificationsRead,
-  markNotificationRead,
-  resolveNotificationHref,
+  markNotificationItemRead,
+  resolveNotificationNavigation,
+  visitorPublicProfileUnavailableMessage,
   type NotificationFilter,
 } from '@/lib/notifications';
 import { NotificationFilterTabs } from '@/components/notifications/NotificationFilterTabs';
@@ -21,6 +23,7 @@ import { dispatchAgentContentSync } from '@/lib/agent-content-sync';
 import { DashboardHomeShell } from '@/components/DashboardHomeShell';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import { NotificationDto } from '@/types/ecosystem';
 
 export function NotificationsPageClient() {
@@ -59,12 +62,45 @@ export function NotificationsPageClient() {
 
   const openNotification = async (n: NotificationDto) => {
     try {
-      if (!n.isRead) {
-        await markNotificationRead(n.id);
-        setUnreadCount((c) => Math.max(0, c - 1));
-        setItems((prev) => prev.map((item) => (item.id === n.id ? { ...item, isRead: true } : item)));
+      const targetIds = n.aggregatedNotificationIds?.length
+        ? n.aggregatedNotificationIds
+        : [n.id];
+      const unreadTargets = items.filter((item) => targetIds.includes(item.id) && !item.isRead);
+      const idsToRead =
+        unreadTargets.length > 0
+          ? unreadTargets.map((item) => item.id)
+          : !n.isRead
+            ? targetIds.filter((id) => !id.startsWith('profile-visit-group:'))
+            : [];
+
+      if (idsToRead.length > 0) {
+        const readIds = await markNotificationItemRead({
+          ...n,
+          aggregatedNotificationIds: idsToRead,
+          isRead: false,
+        });
+        const readSet = new Set(readIds);
+        setUnreadCount((c) => Math.max(0, c - readIds.length));
+        setItems((prev) =>
+          prev.map((item) => (readSet.has(item.id) ? { ...item, isRead: true } : item)),
+        );
       }
-      const href = resolveNotificationHref(n.type, n.refId, isAgent, n.refSecondaryId);
+
+      const { href, unavailableVisitor } = resolveNotificationNavigation(n, isAgent);
+      if (unavailableVisitor) {
+        const fallback = visitorPublicProfileUnavailableMessage(
+          n.actorFullName ?? extractVisitorNameFromVisitMessage(n.message),
+        );
+        pushFlashFeedback({
+          variant: 'info',
+          title: fallback.title,
+          description: fallback.description,
+          actionHref: '/dashboard/creator?tab=visitors',
+          actionLabel: 'Open Visitors',
+        });
+        return;
+      }
+
       if (href) {
         if (n.type === 'CONTENT_DELIVERED' && n.refId) {
           dispatchAgentContentSync(n.refId, n.refSecondaryId);
@@ -92,7 +128,7 @@ export function NotificationsPageClient() {
       <div className="mx-auto max-w-2xl space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <Link href="/dashboard/home" className="text-sm text-[#EA580C] hover:text-[#F97316] dark:text-[#FB923C]">
+            <Link href="/dashboard/home" className="text-sm text-neutral-500 transition hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200">
               ← Dashboard
             </Link>
             <h1 className="mt-2 text-2xl font-bold text-neutral-900 dark:text-white">Notifications</h1>

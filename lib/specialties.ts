@@ -12,6 +12,7 @@ export const PROFILE_SPECIALTIES = [
   '3D',
   'Photography',
   'Data science',
+  'DevOps',
 ] as const;
 
 export type ProfileSpecialty = (typeof PROFILE_SPECIALTIES)[number];
@@ -62,6 +63,11 @@ const ALIAS_TO_LABEL: Record<string, ProfileSpecialty> = {
   'data scientist': 'Data science',
   datascience: 'Data science',
   'data scien': 'Data science',
+  devops: 'DevOps',
+  'dev ops': 'DevOps',
+  devoops: 'DevOps',
+  'devops engineer': 'DevOps',
+  'dev ops engineer': 'DevOps',
 };
 
 export function specialtyKey(value: string): string {
@@ -97,8 +103,9 @@ export function parseSpecialtyList(raw: unknown, fallbackPrimary?: string | null
   const seen = new Set<string>();
   const result: string[] = [];
   const push = (value: unknown) => {
-    const label = sanitizeSpecialtyLabel(typeof value === 'string' ? value : '');
-    if (!label) return;
+    const sanitized = sanitizeSpecialtyLabel(typeof value === 'string' ? value : '');
+    if (!sanitized) return;
+    const label = canonicalizeSpecialty(sanitized) ?? sanitized;
     const key = specialtyKey(label);
     if (seen.has(key) || result.length >= MAX_PROFILE_SPECIALTIES) return;
     seen.add(key);
@@ -137,12 +144,35 @@ export function primarySpecialty(specialties: string[], fallback?: string | null
 
 export function matchSpecialtyOption(value: string | null | undefined, options: string[]): string {
   if (!value?.trim() || options.length === 0) return '';
-  const key = specialtyKey(value);
-  return options.find((item) => specialtyKey(item) === key) ?? '';
+  const resolved = canonicalizeSpecialty(value) ?? value;
+  const key = specialtyKey(resolved);
+  return (
+    options.find((item) => specialtyKey(canonicalizeSpecialty(item) ?? item) === key) ?? ''
+  );
 }
 
 export function specialtyGroupLabel(value: string | null | undefined, options: string[] = []): string {
   return matchSpecialtyOption(value, options) || value?.trim() || 'Other';
+}
+
+/** Group items by specialty label, preserving allowed-specialty order then leftover groups. */
+export function groupBySpecialty<T>(
+  items: T[],
+  getCategory: (item: T) => string | null | undefined,
+  allowedSpecialties: string[] = []
+): Array<{ group: string; items: T[] }> {
+  const grouped = new Map<string, T[]>();
+  for (const item of items) {
+    const group = specialtyGroupLabel(getCategory(item), allowedSpecialties);
+    const current = grouped.get(group) ?? [];
+    current.push(item);
+    grouped.set(group, current);
+  }
+  const orderedKeys = [
+    ...allowedSpecialties.filter((specialty) => grouped.has(specialty)),
+    ...[...grouped.keys()].filter((key) => !allowedSpecialties.includes(key)),
+  ];
+  return orderedKeys.map((group) => ({ group, items: grouped.get(group) ?? [] }));
 }
 
 export function specialtiesMatchFilter(

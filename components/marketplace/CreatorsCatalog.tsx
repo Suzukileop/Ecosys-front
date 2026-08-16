@@ -171,6 +171,7 @@ function CreatorsCatalogContent() {
               page,
               size: 12,
               ...(genre ? { specialite: genre } : {}),
+              ...(verifiedOnly ? { verified: true } : {}),
               ...(availableOnly ? { available: true } : {}),
               ...(nationality ? { nationality } : {}),
               ...(minYearsExperience != null ? { minYearsExperience } : {}),
@@ -461,6 +462,8 @@ function CreatorsCatalogContent() {
                   nationality={c.nationality}
                   yearsOfExperience={c.yearsOfExperience}
                   distanceKm={c.distanceKm}
+                  locationCity={c.locationCity}
+                  locationCountry={c.locationCountry}
                 />
               ))}
             </div>

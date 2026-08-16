@@ -45,14 +45,15 @@ function PublicCreatorProfileHeaderSkeleton() {
 
 export function CreatorTrustMetricsRowSkeleton({ className = '' }: { className?: string }) {
   return (
-    <div className={`grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4 ${className}`} aria-hidden>
-      {Array.from({ length: 4 }, (_, index) => (
+    <div className={`grid min-w-0 gap-3 md:grid-cols-3 ${className}`} aria-hidden>
+      {Array.from({ length: 3 }, (_, index) => (
         <div
           key={index}
           className="min-h-[5.5rem] min-w-0 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
         >
           <div className={`h-3 w-24 max-w-full ${block}`} />
           <div className={`mt-4 h-7 w-20 max-w-full ${block}`} />
+          <div className={`mt-2 h-3 w-28 max-w-full ${block}`} />
         </div>
       ))}
     </div>
@@ -129,10 +130,9 @@ export function PublicCreatorProfileSkeleton() {
     <div className="mx-auto w-full min-w-0 max-w-[1280px] overflow-x-hidden" aria-busy="true" aria-label="Chargement du profil créateur">
       <div className="px-4 sm:px-6">
         <PublicCreatorProfileHeaderSkeleton />
-      </div>
-
-      <div className="mt-4 px-4 sm:px-6">
-        <CreatorTrustMetricsRowSkeleton />
+        <div className="mt-4">
+          <CreatorTrustMetricsRowSkeleton />
+        </div>
       </div>
 
       <div className="px-4 sm:px-6">
