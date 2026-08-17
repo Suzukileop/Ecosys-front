@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useState, type DragEvent } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
 
@@ -15,6 +16,7 @@ type MessageComposerProps = {
   onSend: () => void;
   onAttach?: () => void;
   onInviteGuest?: () => void;
+  onFilesDropped?: (files: FileList | File[]) => void;
   pendingFiles?: ComposerPendingFile[];
   onRemovePendingFile?: (id: string) => void;
   disabled?: boolean;
@@ -36,6 +38,7 @@ export function MessageComposer({
   onSend,
   onAttach,
   onInviteGuest,
+  onFilesDropped,
   pendingFiles = [],
   onRemovePendingFile,
   disabled = false,
@@ -44,10 +47,13 @@ export function MessageComposer({
   placeholder = 'Write your message…',
   readOnlyLabel = null,
 }: MessageComposerProps) {
+  const [dragging, setDragging] = useState(false);
+  const dragDepthRef = useRef(0);
+
   if (readOnlyLabel) {
     return (
-      <div className="shrink-0 border-t border-[var(--cw-border)] px-4 py-3">
-        <p className="text-xs text-[var(--cw-text-secondary)]">{readOnlyLabel}</p>
+      <div className="shrink-0 border-t border-[var(--cw-border)] bg-[var(--cw-surface)] px-4 py-3">
+        <p className="text-[13px] text-[var(--cw-text-secondary)]">{readOnlyLabel}</p>
       </div>
     );
   }
@@ -55,9 +61,60 @@ export function MessageComposer({
   const canSend =
     !disabled && !sending && !uploading && (value.trim().length > 0 || pendingFiles.length > 0);
 
+  const handleDragEnter = (e: DragEvent) => {
+    if (!onFilesDropped || disabled || sending) return;
+    e.preventDefault();
+    dragDepthRef.current += 1;
+    setDragging(true);
+  };
+
+  const handleDragLeave = (e: DragEvent) => {
+    if (!onFilesDropped) return;
+    e.preventDefault();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setDragging(false);
+  };
+
+  const handleDragOver = (e: DragEvent) => {
+    if (!onFilesDropped) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    if (!onFilesDropped) return;
+    e.preventDefault();
+    dragDepthRef.current = 0;
+    setDragging(false);
+    if (e.dataTransfer.files?.length) {
+      onFilesDropped(e.dataTransfer.files);
+    }
+  };
+
   return (
-    <div className="shrink-0 border-t border-[var(--cw-border)] bg-[var(--cw-surface)] px-3 py-3 sm:px-4">
-      <div className="rounded-[8px] border border-[var(--cw-border)] bg-[var(--cw-surface)]">
+    <div
+      className="relative shrink-0 border-t border-[var(--cw-border)] bg-[var(--cw-surface)] px-3 py-3 sm:px-4"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {dragging ? (
+        <div
+          className="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-[10px] border-2 border-dashed border-[var(--cw-accent)] bg-[var(--cw-accent-soft)]/95"
+          aria-hidden
+        >
+          <p className="text-sm font-semibold text-[var(--cw-accent)]">Drop files to attach</p>
+        </div>
+      ) : null}
+
+      <div
+        className={`rounded-[8px] border bg-[var(--cw-surface)] transition ${
+          dragging
+            ? 'border-neutral-500 dark:border-neutral-400'
+            : 'border-neutral-300 focus-within:border-neutral-500 focus-within:ring-1 focus-within:ring-neutral-400/40 dark:border-neutral-700 dark:focus-within:border-neutral-400 dark:focus-within:ring-neutral-500/40'
+        }`}
+      >
         {pendingFiles.length > 0 ? (
           <div className="flex flex-wrap gap-2 border-b border-[var(--cw-border)] px-3 py-2.5">
             {pendingFiles.map((item) => {
@@ -81,10 +138,10 @@ export function MessageComposer({
                     </div>
                   )}
                   <div className="min-w-0 flex-1 pr-5">
-                    <p className="truncate text-[11px] font-medium text-[var(--cw-text-primary)]">
+                    <p className="truncate text-[13px] font-medium text-[var(--cw-text-primary)]">
                       {item.file.name}
                     </p>
-                    <p className="text-[10px] text-[var(--cw-text-muted)]">{formatSize(item.file.size)}</p>
+                    <p className="text-[12px] text-[var(--cw-text-secondary)]">{formatSize(item.file.size)}</p>
                   </div>
                   {onRemovePendingFile ? (
                     <button
@@ -120,16 +177,17 @@ export function MessageComposer({
             }
           }}
           placeholder={placeholder}
-          className="min-h-[72px] w-full resize-none border-0 bg-transparent px-3 py-2.5 text-sm text-[var(--cw-text-primary)] outline-none placeholder:text-[var(--cw-text-muted)] disabled:opacity-60"
+          className="min-h-[72px] w-full resize-none border-0 bg-transparent px-3 py-2.5 text-sm text-[var(--cw-text-primary)] outline-none ring-0 focus:outline-none focus:ring-0 placeholder:text-[var(--cw-text-secondary)] disabled:opacity-60"
         />
+
         <div className="flex items-center justify-between gap-2 px-2 pb-2">
           <div className="flex items-center gap-0.5">
             {onAttach ? (
               <button
                 type="button"
                 onClick={onAttach}
-                disabled={uploading || sending || disabled}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] text-[var(--cw-text-secondary)] transition hover:bg-[var(--cw-surface-soft)] hover:text-[var(--cw-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cw-accent)]/35 disabled:opacity-40"
+                disabled={sending || disabled}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] text-[var(--cw-text-secondary)] transition hover:bg-neutral-100 hover:text-[var(--cw-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cw-accent)]/40 disabled:opacity-40 dark:hover:bg-neutral-800"
                 title="Attach media"
                 aria-label="Attach media"
               >
@@ -142,14 +200,15 @@ export function MessageComposer({
                 </svg>
               </button>
             ) : null}
+
             {onInviteGuest ? (
               <button
                 type="button"
                 onClick={onInviteGuest}
                 disabled={disabled || sending || uploading}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] text-[var(--cw-text-secondary)] transition hover:bg-[var(--cw-surface-soft)] hover:text-[var(--cw-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cw-accent)]/35 disabled:opacity-40"
-                title="Invite temporary guest"
-                aria-label="Invite temporary guest"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] text-[var(--cw-text-secondary)] transition hover:bg-neutral-100 hover:text-[var(--cw-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cw-accent)]/40 disabled:opacity-40 dark:hover:bg-neutral-800"
+                title="Invite guest"
+                aria-label="Invite guest"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
                   <path
@@ -161,13 +220,18 @@ export function MessageComposer({
               </button>
             ) : null}
           </div>
+
           <button
             type="button"
             onClick={onSend}
             disabled={!canSend}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--cw-accent)] text-white transition hover:bg-[var(--msg-brand-hover,#E06E18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cw-accent)]/40 disabled:cursor-not-allowed disabled:opacity-40"
-            title="Send"
-            aria-label="Send"
+            className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cw-accent)]/40 ${
+              canSend
+                ? 'bg-[var(--cw-accent)] text-white hover:bg-[var(--msg-brand-hover,#E06E18)] active:scale-[0.97]'
+                : 'cursor-not-allowed bg-neutral-200 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500'
+            }`}
+            title={canSend ? 'Send' : 'Write a message to send'}
+            aria-label={canSend ? 'Send' : 'Send (disabled — empty message)'}
           >
             {sending || uploading ? (
               <span className="text-xs">…</span>

@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { DateSeparator } from '@/components/messaging/conversation/DateSeparator';
 import { MessageCard } from '@/components/messaging/conversation/MessageCard';
 import { MessageIdentity } from '@/components/messaging/conversation/MessageIdentity';
@@ -21,7 +20,7 @@ type MessageTimelineProps = {
   onDelete?: (message: DirectMessage) => void;
   emptyLabel: string;
   loading?: boolean;
-  loadingNode?: ReactNode;
+  highlightedMessageId?: string | null;
 };
 
 export function MessageTimeline({
@@ -34,12 +33,13 @@ export function MessageTimeline({
   onDelete,
   emptyLabel,
   loading = false,
-  loadingNode,
+  highlightedMessageId = null,
 }: MessageTimelineProps) {
   const timeline = buildMessageTimeline(messages);
 
-  if (loading) {
-    return <div className="flex min-h-[12rem] items-center justify-center py-16">{loadingNode}</div>;
+  // Keep inbox switches fluid: no centered spinner while history loads.
+  if (loading && messages.length === 0) {
+    return <div className="min-h-[4rem]" aria-busy="true" />;
   }
 
   if (messages.length === 0) {
@@ -87,26 +87,35 @@ export function MessageTimeline({
           const hasCaption = Boolean(m.content?.trim());
 
           return (
-            <div key={m.id} className="relative flex items-start gap-2 py-2.5 sm:gap-2.5">
+            <div
+              key={m.id}
+              data-message-id={m.id}
+              className={`relative flex items-start gap-2 py-2.5 sm:gap-2.5 ${
+                m.clientPending ? 'opacity-90' : m.clientFailed ? 'opacity-60' : 'opacity-100'
+              }`}
+            >
               {!mine ? (
                 <MessageIdentity
                   name={m.senderName || 'Member'}
                   avatarUrl={resolveAvatarUrl(m)}
                 />
               ) : null}
-              <div className="min-w-0 flex-1">
+              <div className={`min-w-0 ${mine ? 'ml-auto' : ''} max-w-[min(100%,520px)]`}>
                 <MessageCard
                   mine={mine}
                   sentAt={m.sentAt}
                   status={status}
+                  highlighted={highlightedMessageId === m.id}
                   actions={
-                    <MessageActionsMenu
-                      message={m}
-                      conversationId={conversationId}
-                      mine={mine}
-                      onTransfer={onTransfer}
-                      onDelete={mine ? onDelete : undefined}
-                    />
+                    m.clientPending || m.clientFailed ? null : (
+                      <MessageActionsMenu
+                        message={m}
+                        conversationId={conversationId}
+                        mine={mine}
+                        onTransfer={onTransfer}
+                        onDelete={mine ? onDelete : undefined}
+                      />
+                    )
                   }
                   media={
                     visualAttachments.length > 0 ? (
@@ -119,6 +128,7 @@ export function MessageTimeline({
                               mine={mine}
                               embedded
                               sentAt={m.sentAt}
+                              messageId={m.id}
                             />
                           </div>
                         ))}

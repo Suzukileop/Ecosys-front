@@ -19,6 +19,7 @@ import { OrderCreatorCta } from '@/components/marketplace/OrderCreatorCta';
 import { CreatorProfileViewTracker } from '@/components/marketplace/CreatorProfileViewTracker';
 import { CreatorProfileServicesTab } from '@/components/marketplace/CreatorProfileServicesTab';
 import { ProductCard, marketplaceProductGridClassName } from '@/components/marketplace/ProductCard';
+import { usePresence } from '@/hooks/usePresence';
 import type { MarketplaceCreatorPublicProfile, MarketplaceProductSummary } from '@/types/marketplace';
 import { filterActiveServices } from '@/lib/profile-services';
 import {
@@ -78,6 +79,8 @@ export function PublicCreatorProfileShell({
 }: PublicCreatorProfileShellProps) {
   const appRole = normalizeCreatorAppRole(profile.appRole);
   const showProducts = creatorCanAccessProfileProducts(appRole);
+  const { isOnline } = usePresence([creatorId]);
+  const creatorOnline = isOnline(creatorId);
   const showServices = creatorCanAccessProfileServices(appRole);
   const visibleTabs = PUBLIC_CREATOR_TABS.filter((item) => {
     if (item.id === 'products') return showProducts;
@@ -147,6 +150,7 @@ export function PublicCreatorProfileShell({
           averageRating={profile.averageRating}
           locationLabel={locationLabel}
           nationality={profile.nationality}
+          isOnline={creatorOnline}
           isAvailable={profile.isAvailable}
           availabilityLabel={profile.availabilityLabel}
           isVerified={profile.isVerified}

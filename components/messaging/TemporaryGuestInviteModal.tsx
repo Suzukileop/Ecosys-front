@@ -64,7 +64,7 @@ function mergeUsers(...lists: MessagingUserSummary[][]): MessagingUserSummary[] 
 
 export function TemporaryGuestInviteModal({
   conversationId,
-  conversationTitle,
+  conversationTitle: _conversationTitle,
   currentUserId = null,
   onClose,
   onInvited,
@@ -170,10 +170,10 @@ export function TemporaryGuestInviteModal({
   };
 
   const emptyMessage = (() => {
-    if (isSearching) return 'No users found. Try another name.';
-    if (query.length === 1) return 'Type at least 2 characters to search all users.';
+    if (isSearching) return 'No users found.';
+    if (query.length === 1) return 'Type at least 2 characters.';
     if (suggestionsLoading) return null;
-    return 'No recent contacts. Type a name to search all users.';
+    return 'No recent contacts.';
   })();
 
   return (
@@ -187,12 +187,10 @@ export function TemporaryGuestInviteModal({
       >
         <div className="border-b border-neutral-200 px-5 py-4 dark:border-neutral-700">
           <h2 id="guest-invite-title" className="text-lg font-bold text-neutral-900 dark:text-white">
-            Invite temporary guest
+            Invite guest
           </h2>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            {conversationTitle
-              ? `Invite someone to join "${conversationTitle}" temporarily. They will receive the invite in their inbox and can accept or decline. Access lasts 48 hours.`
-              : 'Invite someone temporarily. They will receive the invite in their inbox and can accept or decline. Access lasts 48 hours.'}
+            Temporary access · 48 hours
           </p>
         </div>
 
@@ -211,19 +209,16 @@ export function TemporaryGuestInviteModal({
             className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-400/15 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus:border-neutral-500"
             autoFocus
           />
-          <p className="mt-2 text-[11px] text-neutral-500 dark:text-neutral-500">
-            Search any user on the platform (minimum 2 characters).
-          </p>
 
           <div className="mt-4">
             {!isSearching && visibleCandidates.length > 0 && (
               <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                Recent contacts
+                Recent
               </p>
             )}
             {isSearching && !searchLoading && visibleCandidates.length > 0 && (
               <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                Search results
+                Results
               </p>
             )}
 
@@ -250,7 +245,6 @@ export function TemporaryGuestInviteModal({
                         <p className="truncate text-sm font-semibold text-neutral-900 dark:text-white">
                           {candidate.fullName}
                         </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">Temporary guest · 48h</p>
                       </div>
                       {invitingId === candidate.id ? (
                         <LoadingSpinner size="sm" />

@@ -10,13 +10,16 @@ const BADGE_BASELINE_KEY = 'notification_badge_baseline';
 export const NOTIFICATION_BADGE_DISMISS_EVENT = 'notification-badge-dismiss';
 
 /**
- * When more than this many registered profile-visit notifications fall on the
- * same calendar day, they collapse into one aggregated row in the panel.
+ * Profile visits stay as individual rows (no same-day aggregation).
+ * Kept as a pass-through for callers that previously collapsed groups.
  */
-export const PROFILE_VISIT_NOTIFICATION_INDIVIDUAL_MAX = 3;
+export const PROFILE_VISIT_NOTIFICATION_INDIVIDUAL_MAX = Number.POSITIVE_INFINITY;
 
 export const CREATOR_PROFILE_VISIT_TYPE = 'CREATOR_PROFILE_VISIT';
 export const CREATOR_PROFILE_VISIT_GROUP_TYPE = 'CREATOR_PROFILE_VISIT_GROUP';
+export const FOLLOWER_NEW_PRODUCT_TYPE = 'FOLLOWER_NEW_PRODUCT';
+export const FOLLOWER_NEW_CONTENT_TYPE = 'FOLLOWER_NEW_CONTENT';
+export const FOLLOWER_NEW_SERVICE_TYPE = 'FOLLOWER_NEW_SERVICE';
 
 export type NotificationFilter = 'all' | 'unread';
 export type NotificationTimeGroup = 'nouveau' | 'aujourdhui' | 'plus_tot';
@@ -79,72 +82,14 @@ export function filterNotifications(
   return items;
 }
 
-function localDayKey(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return 'invalid';
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-}
-
-function isProfileVisitNotification(n: NotificationDto): boolean {
-  return n.type === CREATOR_PROFILE_VISIT_TYPE && !n.aggregatedNotificationIds?.length;
-}
-
 /**
- * Collapse same-day profile-visit notifications beyond
- * {@link PROFILE_VISIT_NOTIFICATION_INDIVIDUAL_MAX} into one row.
+ * Profile-visit notifications are shown individually (no same-day bundle).
  */
 export function collapseProfileVisitNotifications(
   items: NotificationDto[],
-  individualMax = PROFILE_VISIT_NOTIFICATION_INDIVIDUAL_MAX,
+  _individualMax = PROFILE_VISIT_NOTIFICATION_INDIVIDUAL_MAX,
 ): NotificationDto[] {
-  const visitsByDay = new Map<string, NotificationDto[]>();
-  for (const n of items) {
-    if (!isProfileVisitNotification(n)) continue;
-    const key = localDayKey(n.createdAt);
-    const list = visitsByDay.get(key) ?? [];
-    list.push(n);
-    visitsByDay.set(key, list);
-  }
-
-  const collapsedIds = new Set<string>();
-  const aggregates: NotificationDto[] = [];
-
-  for (const [dayKey, visits] of visitsByDay) {
-    if (visits.length <= individualMax) continue;
-    const sorted = [...visits].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    sorted.forEach((v) => collapsedIds.add(v.id));
-    const unread = sorted.some((v) => !v.isRead);
-    const count = sorted.length;
-    const isToday = dayKey === localDayKey(new Date().toISOString());
-    const daySuffix = isToday ? ' today' : '';
-    aggregates.push({
-      id: `profile-visit-group:${dayKey}`,
-      type: CREATOR_PROFILE_VISIT_GROUP_TYPE,
-      title: 'Profile visits',
-      message:
-        count === 1
-          ? `1 person visited your profile${daySuffix}.`
-          : `${count} people visited your profile${daySuffix}.`,
-      isRead: !unread,
-      createdAt: sorted[0]?.createdAt ?? new Date().toISOString(),
-      refId: sorted[0]?.refId ?? null,
-      refSecondaryId: null,
-      aggregatedNotificationIds: sorted.map((v) => v.id),
-      actorFullName: null,
-      actorAvatarUrl: null,
-      actorProfileAvailable: null,
-    });
-  }
-
-  const kept = items.filter((n) => !collapsedIds.has(n.id));
-  const merged = [...kept, ...aggregates];
-  merged.sort((a, b) => {
-    if (a.isRead !== b.isRead) return a.isRead ? 1 : -1;
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
-  return merged;
+  return items;
 }
 
 export function groupNotificationsByTime(
@@ -254,6 +199,16 @@ export function resolveNotificationHref(
       return '/dashboard/home';
     case 'CONVERSATION_GUEST_INVITE':
       return '/dashboard/discussions?filter=temporary';
+    case FOLLOWER_NEW_PRODUCT_TYPE:
+      return `/marketplace/products/${encodeURIComponent(refId)}`;
+    case FOLLOWER_NEW_CONTENT_TYPE:
+      return refSecondaryId
+        ? `/marketplace/${encodeURIComponent(refSecondaryId)}?tab=content&post=${encodeURIComponent(refId)}`
+        : `/marketplace/content/${encodeURIComponent(refId)}`;
+    case FOLLOWER_NEW_SERVICE_TYPE:
+      return refSecondaryId
+        ? `/marketplace/${encodeURIComponent(refSecondaryId)}?tab=services&service=${encodeURIComponent(refId)}`
+        : '/marketplace/creators';
     default:
       return '/dashboard/home';
   }
@@ -313,6 +268,9 @@ const NOTIFICATION_TITLES_EN: Record<string, string> = {
   CONVERSATION_GUEST_INVITE: 'Temporary conversation invite',
   CREATOR_PROFILE_VISIT: 'Profile visit',
   CREATOR_PROFILE_VISIT_GROUP: 'Profile visits',
+  FOLLOWER_NEW_PRODUCT: 'New product',
+  FOLLOWER_NEW_CONTENT: 'New content',
+  FOLLOWER_NEW_SERVICE: 'New service',
 };
 
 function extractQuotedTheme(message: string | null | undefined): string | null {
@@ -462,7 +420,54 @@ export function formatNotificationDisplay(n: NotificationDto): { title: string; 
     case CREATOR_PROFILE_VISIT_GROUP_TYPE:
       return { title, message: raw };
 
+    case FOLLOWER_NEW_PRODUCT_TYPE:
+      return {
+        title: 'New product',
+        message: formatFollowerPublishMessage(raw, n.actorFullName, 'product', 'published'),
+      };
+
+    case FOLLOWER_NEW_CONTENT_TYPE:
+      return {
+        title: 'New content',
+        message: formatFollowerPublishMessage(raw, n.actorFullName, 'content', 'shared'),
+      };
+
+    case FOLLOWER_NEW_SERVICE_TYPE:
+      return {
+        title: 'New service',
+        message: formatFollowerPublishMessage(raw, n.actorFullName, 'service', 'added'),
+      };
+
     default:
       return { title, message: raw };
   }
+}
+
+/**
+ * Ensure follower publish rows always name the kind (product / content / service),
+ * including legacy messages that only had "X added Title".
+ */
+function formatFollowerPublishMessage(
+  raw: string | null,
+  actorFullName: string | null | undefined,
+  kind: 'product' | 'content' | 'service',
+  verb: 'published' | 'shared' | 'added',
+): string {
+  const actorFromRaw =
+    raw?.match(/^(.+?)\s+(?:published|shared|added)\b/i)?.[1]?.trim() ?? null;
+  const actor =
+    actorFullName?.trim() ||
+    actorFromRaw ||
+    'A creator you follow';
+
+  const afterColon = raw?.includes(':') ? raw.slice(raw.indexOf(':') + 1).trim() : null;
+  const legacyItem =
+    raw?.match(/^(.+?)\s+(?:published|shared|added)\s+(?:a\s+new\s+(?:product|service|content):\s*)?(.+)$/i)?.[2]?.trim() ??
+    null;
+  const item = (afterColon || legacyItem || '').trim();
+
+  if (item && !/^(a new (product|service|post|content)|untitled)$/i.test(item)) {
+    return `${actor} ${verb} a new ${kind}: ${item}`;
+  }
+  return `${actor} ${verb} a new ${kind}.`;
 }

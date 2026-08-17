@@ -6,6 +6,7 @@ type ChatShortVideoPlayerProps = {
   src: string;
   label: string;
   onDownload?: () => void;
+  onReady?: () => void;
   className?: string;
 };
 
@@ -17,7 +18,13 @@ function formatVideoTime(seconds: number): string {
 }
 
 /** Desktop: controls on hover only. Shorts-style minimal bottom bar. */
-export function ChatShortVideoPlayer({ src, label, onDownload, className = '' }: ChatShortVideoPlayerProps) {
+export function ChatShortVideoPlayer({
+  src,
+  label,
+  onDownload,
+  onReady,
+  className = '',
+}: ChatShortVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -69,6 +76,9 @@ export function ChatShortVideoPlayer({ src, label, onDownload, className = '' }:
     }
   }, []);
 
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
+
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -76,20 +86,27 @@ export function ChatShortVideoPlayer({ src, label, onDownload, className = '' }:
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
     const onTimeUpdate = () => syncTime();
-    const onLoaded = () => syncTime();
+    const notifyReady = () => {
+      syncTime();
+      onReadyRef.current?.();
+    };
 
     v.addEventListener('play', onPlay);
     v.addEventListener('pause', onPause);
     v.addEventListener('timeupdate', onTimeUpdate);
-    v.addEventListener('loadedmetadata', onLoaded);
-    v.addEventListener('durationchange', onLoaded);
+    v.addEventListener('loadeddata', notifyReady);
+    v.addEventListener('loadedmetadata', notifyReady);
+    v.addEventListener('durationchange', notifyReady);
+
+    if (v.readyState >= 2) onReadyRef.current?.();
 
     return () => {
       v.removeEventListener('play', onPlay);
       v.removeEventListener('pause', onPause);
       v.removeEventListener('timeupdate', onTimeUpdate);
-      v.removeEventListener('loadedmetadata', onLoaded);
-      v.removeEventListener('durationchange', onLoaded);
+      v.removeEventListener('loadeddata', notifyReady);
+      v.removeEventListener('loadedmetadata', notifyReady);
+      v.removeEventListener('durationchange', notifyReady);
     };
   }, [syncTime, src]);
 

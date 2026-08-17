@@ -35,6 +35,8 @@ export interface MessageAttachment {
   fileName: string;
   contentType: string;
   sizeBytes: number;
+  /** Local blob URL for optimistic / in-flight media (not from API). */
+  localPreviewUrl?: string | null;
 }
 
 export interface ConversationSummary {
@@ -54,6 +56,10 @@ export interface ConversationSummary {
   unreadCount?: number;
   guestSession?: boolean;
   guestExpiresAt?: string | null;
+  /** Isolated temporary guest room (not shown in permanent inbox). */
+  temporarySession?: boolean;
+  /** Archived for the current user only. */
+  archived?: boolean;
 }
 
 export interface DirectMessage {
@@ -66,6 +72,10 @@ export interface DirectMessage {
   messageType?: MessageType;
   attachments?: MessageAttachment[];
   sentAt: string;
+  /** Client-only: message is uploading / not yet confirmed by server. */
+  clientPending?: boolean;
+  /** Client-only: upload failed. */
+  clientFailed?: boolean;
 }
 
 export interface CreateConversationRequest {
@@ -112,6 +122,11 @@ export type TemporaryInboxEntryType =
   | 'ACTIVE_GUEST'
   | 'ENDED_GUEST';
 
+export interface TemporaryInboxMember {
+  name: string;
+  avatarUrl?: string | null;
+}
+
 export interface TemporaryInboxEntry {
   entryType: TemporaryInboxEntryType;
   id: string;
@@ -123,6 +138,7 @@ export interface TemporaryInboxEntry {
   occurredAt: string;
   inviteId?: string | null;
   canOpen: boolean;
+  members?: TemporaryInboxMember[];
 }
 
 export interface ConversationGuestSession {

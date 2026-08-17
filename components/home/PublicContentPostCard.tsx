@@ -109,6 +109,9 @@ export function PublicContentPostCard({
           <ContentPostStudioHeader
             creatorName={post.creator.fullName}
             avatarUrl={post.creator.avatarUrl}
+            appRole={post.creator.appRole}
+            specialite={post.creator.specialite}
+            specialties={post.creator.specialties}
             moodLabel={post.moodLabel}
             moodEmoji={post.moodEmoji}
             taggedUsers={post.taggedUsers}
@@ -173,6 +176,9 @@ export function PublicContentPostCard({
         open={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
         loginRedirect="/login?redirect=/dashboard/home"
+        appRole={post.creator.appRole}
+        specialite={post.creator.specialite}
+        specialties={post.creator.specialties}
       />
     </div>
   );

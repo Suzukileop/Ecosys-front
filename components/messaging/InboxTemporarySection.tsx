@@ -7,10 +7,12 @@ type InboxTemporarySectionProps = {
   entries: TemporaryInboxEntry[];
   actingInviteId: string | null;
   actingCancelId: string | null;
+  dismissingEntryKey?: string | null;
   onAcceptInvite: (inviteId: string) => void;
   onDeclineInvite: (inviteId: string) => void;
   onCancelInvite: (conversationId: string, inviteId: string) => void;
   onOpenConversation: (entry: TemporaryInboxEntry) => void;
+  onDismissEntry: (entry: TemporaryInboxEntry) => void;
   embedded?: boolean;
   emptyMessage?: string;
 };
@@ -19,10 +21,12 @@ export function InboxTemporarySection({
   entries,
   actingInviteId,
   actingCancelId,
+  dismissingEntryKey = null,
   onAcceptInvite,
   onDeclineInvite,
   onCancelInvite,
   onOpenConversation,
+  onDismissEntry,
   embedded = false,
   emptyMessage,
 }: InboxTemporarySectionProps) {
@@ -46,10 +50,12 @@ export function InboxTemporarySection({
             entries={entries}
             actingInviteId={actingInviteId}
             actingCancelId={actingCancelId}
+            dismissingEntryKey={dismissingEntryKey}
             onAcceptInvite={onAcceptInvite}
             onDeclineInvite={onDeclineInvite}
             onCancelInvite={onCancelInvite}
             onOpenConversation={onOpenConversation}
+            onDismissEntry={onDismissEntry}
           />
         )}
       </div>

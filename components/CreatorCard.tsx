@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faComment } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
 import { CountryFlag } from '@/components/ui/CountryFlag';
+import { usePresence } from '@/hooks/usePresence';
 import { formatDistanceAwayKm, nationalityLabel, normalizeNationalityCode } from '@/lib/countries';
 import { formatPlaceLabel } from '@/lib/geolocation';
 import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
@@ -153,11 +154,15 @@ function CreatorCardAvatar({
   );
 }
 
-const primaryActionClass =
-  'inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
-
 const tertiaryActionClass =
   'inline-flex items-center rounded-lg px-1 py-1 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/40 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100';
+
+/** Portfolio CTA in the Service Provider footer. */
+const portfolioSideFrameClass =
+  'inline-flex items-center justify-center gap-1.5 rounded-lg bg-orange-500 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
+
+const primaryActionClass =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
 
 type CreatorCardProps = {
   /** Identifiant créateur pour l’URL ; `userId` sert de repli si l’API ne renvoie que celui-ci. */
@@ -201,7 +206,16 @@ export function CreatorCard({
 }: CreatorCardProps) {
   const { user } = useAuth();
   const resolvedId = (id ?? userId ?? '').trim();
+  /** Presence API keys off auth user id — prefer `userId` like Profiles search rows. */
+  const presenceUserId = (userId ?? id ?? '').trim();
   const isOwnCard = Boolean(user?.id && resolvedId && user.id === resolvedId);
+  const presenceIds = useMemo(
+    () => (presenceUserId ? [presenceUserId] : []),
+    [presenceUserId]
+  );
+  const { isOnline } = usePresence(presenceIds);
+  const online = Boolean(presenceUserId) && isOnline(presenceUserId);
+  const statusLabel = online ? 'Online' : 'Offline';
   const hue = hueFromId(resolvedId || 'unknown');
   const services = serviceCount ?? 0;
   const hasRating = averageRating !== null && averageRating !== undefined;
@@ -258,6 +272,18 @@ export function CreatorCard({
                   </h3>
                 )}
                 {nationality ? <NationalityFlag code={nationality} /> : null}
+                {presenceUserId ? (
+                  <span
+                    className={
+                      online
+                        ? 'ml-2.5 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500'
+                        : 'ml-2.5 h-2.5 w-2.5 shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500'
+                    }
+                    title={statusLabel}
+                    aria-label={statusLabel}
+                    role="status"
+                  />
+                ) : null}
               </div>
             </div>
             {yearsOfExperience != null && yearsOfExperience >= 0 ? (
@@ -334,7 +360,7 @@ export function CreatorCard({
           )}
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3">
               {servicesHref ? (
                 <Link href={servicesHref} className={tertiaryActionClass}>
                   View service
@@ -345,11 +371,13 @@ export function CreatorCard({
                 </span>
               )}
               {portfolioHref ? (
-                <Link href={portfolioHref} className={tertiaryActionClass}>
+                <Link href={portfolioHref} className={portfolioSideFrameClass}>
                   Portfolio
                 </Link>
               ) : (
-                <span className={`${tertiaryActionClass} pointer-events-none opacity-50`}>Portfolio</span>
+                <span className={`${portfolioSideFrameClass} pointer-events-none opacity-50`}>
+                  Portfolio
+                </span>
               )}
             </div>
             {isOwnCard ? null : discussHref ? (

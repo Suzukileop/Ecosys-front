@@ -53,6 +53,8 @@ function normalizeConversationSummary(raw: RawConversationSummary): Conversation
     unreadCount: Number(raw.unreadCount ?? 0),
     guestSession: Boolean(raw.guestSession),
     guestExpiresAt: raw.guestExpiresAt ?? null,
+    temporarySession: Boolean(raw.temporarySession),
+    archived: Boolean(raw.archived),
   };
 }
 
@@ -81,9 +83,10 @@ function unwrapConversationList(
   return items.map(normalizeConversationSummary);
 }
 
-export async function listConversations(): Promise<ConversationSummary[]> {
+export async function listConversations(options?: { archived?: boolean }): Promise<ConversationSummary[]> {
   const res = await api.get<RawConversationSummary[] | SpringPageRaw<RawConversationSummary>>(
-    '/api/messaging/conversations'
+    '/api/messaging/conversations',
+    { params: options?.archived ? { archived: true } : undefined }
   );
   return unwrapConversationList(res.data);
 }
@@ -255,6 +258,10 @@ export async function listTemporaryInbox(): Promise<TemporaryInboxEntry[]> {
     id: String(entry.id),
     conversationId: String(entry.conversationId),
     inviteId: entry.inviteId != null ? String(entry.inviteId) : null,
+    members: (entry.members ?? []).map((member) => ({
+      name: member.name,
+      avatarUrl: member.avatarUrl ?? null,
+    })),
   }));
 }
 
@@ -315,6 +322,33 @@ export async function revokeConversationGuest(conversationId: string, guestUserI
 
 export async function leaveConversationAsGuest(conversationId: string): Promise<void> {
   await api.post(`/api/messaging/conversations/${encodeURIComponent(conversationId)}/guests/leave`);
+}
+
+/** Soft-hide a conversation from the current user's inbox (self only). */
+export async function hideConversationFromInbox(conversationId: string): Promise<void> {
+  await api.delete(`/api/messaging/conversations/${encodeURIComponent(conversationId)}`);
+}
+
+export async function archiveConversation(conversationId: string): Promise<void> {
+  await api.post(`/api/messaging/conversations/${encodeURIComponent(conversationId)}/archive`);
+}
+
+export async function unarchiveConversation(conversationId: string): Promise<void> {
+  await api.post(`/api/messaging/conversations/${encodeURIComponent(conversationId)}/unarchive`);
+}
+
+export async function markConversationUnread(conversationId: string): Promise<void> {
+  await api.post(`/api/messaging/conversations/${encodeURIComponent(conversationId)}/unread`);
+}
+
+/** Remove a temporary-inbox card (invite / active guest / ended session). */
+export async function dismissTemporaryInboxEntry(
+  entryType: TemporaryInboxEntry['entryType'],
+  entryId: string
+): Promise<void> {
+  await api.delete(
+    `/api/messaging/temporary/inbox/${encodeURIComponent(entryType)}/${encodeURIComponent(entryId)}`
+  );
 }
 
 export async function searchMessagingUsers(query: string, page = 0, size = 20): Promise<MessagingUserSummary[]> {

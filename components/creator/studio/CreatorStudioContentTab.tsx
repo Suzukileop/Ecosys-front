@@ -22,9 +22,14 @@ const BUCKETS: { id: ContentPostBucket; label: string; empty: string }[] = [
 type CreatorStudioContentTabProps = {
   contentHeadline?: string | null;
   specialite?: string | null;
+  specialties?: string[] | null;
 };
 
-export function CreatorStudioContentTab({ contentHeadline, specialite }: CreatorStudioContentTabProps) {
+export function CreatorStudioContentTab({
+  contentHeadline,
+  specialite,
+  specialties,
+}: CreatorStudioContentTabProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -135,6 +140,7 @@ export function CreatorStudioContentTab({ contentHeadline, specialite }: Creator
                 bucket={bucket}
                 creatorName={user?.fullName ?? 'You'}
                 specialite={specialite}
+                specialties={specialties}
                 onChanged={() => void load(bucket, true)}
                 onError={setError}
                 className="w-full"

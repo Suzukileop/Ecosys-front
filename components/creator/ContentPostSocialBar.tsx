@@ -67,7 +67,6 @@ export function ContentPostSocialBar({
 }: ContentPostSocialBarProps) {
   const { user, isLoading } = useAuth();
   const [likes, setLikes] = useState(initialLikes);
-  const [dislikes, setDislikes] = useState(0);
   const [userReaction, setUserReaction] = useState<ReactionType | null>(null);
   const [commentCount, setCommentCount] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -85,8 +84,7 @@ export function ContentPostSocialBar({
       .then((counts) => {
         if (!cancelled) {
           setLikes(counts.likes);
-          setDislikes(counts.dislikes);
-          setUserReaction(counts.userReaction);
+          setUserReaction(counts.userReaction === 'LIKE' ? 'LIKE' : null);
         }
       })
       .catch(() => {
@@ -106,32 +104,28 @@ export function ContentPostSocialBar({
     };
   }, [postId]);
 
-  const applyReaction = useCallback(
-    async (type: ReactionType) => {
-      if (!canInteract || busy) return;
+  const toggleLike = useCallback(async () => {
+    if (!canInteract || busy) return;
 
-      setBusy(true);
-      try {
-        if (userReaction === type) {
-          await removeReaction('POST', postId);
-          if (type === 'LIKE') setLikes((c) => Math.max(0, c - 1));
-          if (type === 'DISLIKE') setDislikes((c) => Math.max(0, c - 1));
-          setUserReaction(null);
-          return;
-        }
-
-        await setReaction('POST', postId, type);
-        if (userReaction === 'LIKE') setLikes((c) => Math.max(0, c - 1));
-        if (userReaction === 'DISLIKE') setDislikes((c) => Math.max(0, c - 1));
-        if (type === 'LIKE') setLikes((c) => c + 1);
-        if (type === 'DISLIKE') setDislikes((c) => c + 1);
-        setUserReaction(type);
-      } finally {
-        setBusy(false);
+    setBusy(true);
+    try {
+      if (userReaction === 'LIKE') {
+        await removeReaction('POST', postId);
+        setLikes((c) => Math.max(0, c - 1));
+        setUserReaction(null);
+        return;
       }
-    },
-    [busy, canInteract, postId, userReaction]
-  );
+
+      await setReaction('POST', postId, 'LIKE');
+      if (userReaction === 'DISLIKE') {
+        // Switching from a legacy dislike to like — counts already exclude dislike in UI.
+      }
+      setLikes((c) => c + 1);
+      setUserReaction('LIKE');
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, canInteract, postId, userReaction]);
 
   const displayCommentCount = commentCountProp ?? commentCount;
 
@@ -148,12 +142,11 @@ export function ContentPostSocialBar({
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex flex-wrap items-center gap-1">
-      {canInteract ? (
-        <>
+        {canInteract ? (
           <button
             type="button"
             disabled={busy}
-            onClick={() => void applyReaction('LIKE')}
+            onClick={() => void toggleLike()}
             className={buttonClass(userReaction === 'LIKE')}
             aria-pressed={userReaction === 'LIKE'}
             aria-label="Like"
@@ -173,32 +166,7 @@ export function ContentPostSocialBar({
             </svg>
             {formatCount(likes)}
           </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void applyReaction('DISLIKE')}
-            className={buttonClass(userReaction === 'DISLIKE')}
-            aria-pressed={userReaction === 'DISLIKE'}
-            aria-label="Dislike"
-          >
-            <svg
-              className="h-4 w-4"
-              fill={userReaction === 'DISLIKE' ? 'currentColor' : 'none'}
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.75}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
-              />
-            </svg>
-            {formatCount(dislikes)}
-          </button>
-        </>
-      ) : (
-        <>
+        ) : (
           <span className="inline-flex items-center gap-1.5 px-2 py-1 text-sm text-neutral-500">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
               <path
@@ -209,42 +177,25 @@ export function ContentPostSocialBar({
             </svg>
             {formatCount(likes)}
           </span>
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 text-sm text-neutral-500">
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.75}
-            >
+        )}
+
+        {!hideCommentsButton && (
+          <button
+            type="button"
+            onClick={() => onCommentsToggle?.(!commentsOpen)}
+            className={buttonClass(commentsOpen)}
+            aria-expanded={commentsOpen}
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
             </svg>
-            {formatCount(dislikes)}
-          </span>
-        </>
-      )}
-
-      {!hideCommentsButton && (
-        <button
-          type="button"
-          onClick={() => onCommentsToggle?.(!commentsOpen)}
-          className={buttonClass(commentsOpen)}
-          aria-expanded={commentsOpen}
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-            />
-          </svg>
-          {formatCount(displayCommentCount)}
-        </button>
-      )}
+            {formatCount(displayCommentCount)}
+          </button>
+        )}
       </div>
 
       <time className="shrink-0 text-xs text-neutral-400" dateTime={createdAt}>

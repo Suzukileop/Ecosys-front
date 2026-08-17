@@ -36,6 +36,8 @@ export type CreatorProfileHeaderProps = {
   locationLabel?: string | null;
   /** ISO nationality shown as a flag next to the display name. */
   nationality?: string | null;
+  /** Presence dot next to the flag / name (messaging-style). */
+  isOnline?: boolean;
   isVerified?: boolean;
   /** Availability status shown under the display name. */
   isAvailable?: boolean;

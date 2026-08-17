@@ -4,6 +4,9 @@ import { PersonAvatar } from '@/components/ui/PersonAvatar';
 import {
   CREATOR_PROFILE_VISIT_GROUP_TYPE,
   CREATOR_PROFILE_VISIT_TYPE,
+  FOLLOWER_NEW_CONTENT_TYPE,
+  FOLLOWER_NEW_PRODUCT_TYPE,
+  FOLLOWER_NEW_SERVICE_TYPE,
   extractVisitorNameFromVisitMessage,
   formatNotificationDisplay,
   formatNotificationTimestamp,
@@ -13,7 +16,40 @@ import {
 } from '@/lib/notifications';
 import type { NotificationDto } from '@/types/ecosystem';
 
+function followerKindLabel(type: string): string | null {
+  switch (type) {
+    case FOLLOWER_NEW_PRODUCT_TYPE:
+      return 'Product';
+    case FOLLOWER_NEW_CONTENT_TYPE:
+      return 'Content';
+    case FOLLOWER_NEW_SERVICE_TYPE:
+      return 'Service';
+    default:
+      return null;
+  }
+}
+
 function NotificationLeadingIcon({ n }: { n: NotificationDto }) {
+  const isFollowerPublish =
+    n.type === FOLLOWER_NEW_PRODUCT_TYPE ||
+    n.type === FOLLOWER_NEW_CONTENT_TYPE ||
+    n.type === FOLLOWER_NEW_SERVICE_TYPE;
+
+  if (isFollowerPublish || n.type === CREATOR_PROFILE_VISIT_TYPE) {
+    const name =
+      n.actorFullName?.trim() ||
+      (isFollowerPublish
+        ? n.message?.match(/^(.+?)\s+(?:published|shared|added)\b/i)?.[1]?.trim()
+        : null) ||
+      extractVisitorNameFromVisitMessage(n.message) ||
+      (isFollowerPublish ? 'Creator' : 'Visitor');
+    return (
+      <span className="mt-0.5 shrink-0">
+        <PersonAvatar name={name} avatarUrl={n.actorAvatarUrl} size="md" />
+      </span>
+    );
+  }
+
   if (n.type === CREATOR_PROFILE_VISIT_GROUP_TYPE) {
     const count = n.aggregatedNotificationIds?.length ?? 0;
     return (
@@ -22,18 +58,6 @@ function NotificationLeadingIcon({ n }: { n: NotificationDto }) {
         aria-hidden
       >
         {count > 0 ? count : '···'}
-      </span>
-    );
-  }
-
-  if (n.type === CREATOR_PROFILE_VISIT_TYPE) {
-    const name =
-      n.actorFullName?.trim() ||
-      extractVisitorNameFromVisitMessage(n.message) ||
-      'Visitor';
-    return (
-      <span className="mt-0.5 shrink-0">
-        <PersonAvatar name={name} avatarUrl={n.actorAvatarUrl} size="md" />
       </span>
     );
   }
@@ -107,6 +131,7 @@ export function NotificationGroupedList({
                 Boolean(href) ||
                 (n.type === CREATOR_PROFILE_VISIT_TYPE && Boolean(n.refSecondaryId));
               const display = formatNotificationDisplay(n);
+              const kindLabel = followerKindLabel(n.type);
               return (
                 <li key={n.id}>
                   <button
@@ -118,8 +143,15 @@ export function NotificationGroupedList({
                   >
                     <NotificationLeadingIcon n={n} />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold text-neutral-900 dark:text-white">
-                        {display.title}
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold text-neutral-900 dark:text-white">
+                          {display.title}
+                        </span>
+                        {kindLabel ? (
+                          <span className="rounded-md bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                            {kindLabel}
+                          </span>
+                        ) : null}
                       </span>
                       {display.message && (
                         <span className="mt-0.5 block text-xs leading-snug text-neutral-600 line-clamp-2 dark:text-neutral-400">

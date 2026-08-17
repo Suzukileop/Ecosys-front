@@ -62,7 +62,14 @@ function mapTaggedUsers(raw: unknown) {
     });
 }
 
-function mapContentCreator(raw: unknown): { id: string; fullName: string; avatarUrl: string | null } {
+function mapContentCreator(raw: unknown): {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+  appRole?: string | null;
+  specialite?: string | null;
+  specialties?: string[];
+} {
   if (!raw || typeof raw !== 'object') {
     return { id: '', fullName: 'Creator', avatarUrl: null };
   }
@@ -71,6 +78,9 @@ function mapContentCreator(raw: unknown): { id: string; fullName: string; avatar
     id: String(row.id ?? ''),
     fullName: String(row.fullName ?? 'Creator'),
     avatarUrl: row.avatarUrl != null ? String(row.avatarUrl) : null,
+    appRole: row.appRole != null ? String(row.appRole) : null,
+    specialite: row.specialite != null ? String(row.specialite) : null,
+    specialties: Array.isArray(row.specialties) ? row.specialties.map((item) => String(item)) : [],
   };
 }
 
@@ -159,6 +169,7 @@ export function normalizeCreatorSummary(raw: RawRecord): MarketplaceCreatorSumma
         ? Number(raw.yearsOfExperience)
         : null,
     distanceKm: raw.distanceKm != null ? Number(raw.distanceKm) : null,
+    appRole: raw.appRole != null ? String(raw.appRole) : null,
   };
 }
 
@@ -1391,6 +1402,32 @@ export async function getCreatorFollowStats(creatorId: string): Promise<CreatorF
   return res.data;
 }
 
+export type PublicCreatorFollowerPreview = {
+  id: string;
+  followerUserId: string;
+  followerFullName: string | null;
+  followerAvatarUrl: string | null;
+};
+
+/** Recent followers for public profile previews (search cards, etc.). */
+export async function listPublicCreatorFollowers(
+  creatorId: string,
+  page = 0,
+  size = 3
+): Promise<PublicCreatorFollowerPreview[]> {
+  const res = await api.get<SpringPageRaw<Record<string, unknown>>>(
+    `/api/marketplace/creators/${encodeURIComponent(creatorId)}/followers`,
+    { params: { page, size } }
+  );
+  const content = Array.isArray(res.data?.content) ? res.data.content : [];
+  return content.map((row) => ({
+    id: String(row.id ?? ''),
+    followerUserId: String(row.followerUserId ?? ''),
+    followerFullName: (row.followerFullName as string | null | undefined) ?? null,
+    followerAvatarUrl: (row.followerAvatarUrl as string | null | undefined) ?? null,
+  }));
+}
+
 export async function followCreator(creatorId: string): Promise<CreatorFollowStats | null> {
   const res = await api.post<CreatorFollowStats>(
     `/api/marketplace/creators/${encodeURIComponent(creatorId)}/follow`,
@@ -1475,10 +1512,32 @@ export async function listFollowingCreators(
 export async function searchMarketplaceCreators(
   query: string,
   page = 0,
-  size = 20
+  size = 20,
+  filters?: {
+    nationality?: string;
+    minYearsExperience?: number;
+    lat?: number;
+    lng?: number;
+    sort?: string;
+  }
 ): Promise<PagedResponse<MarketplaceCreatorSummary>> {
   const res = await api.get<SpringPageRaw<Record<string, unknown>>>('/api/marketplace/creators/search', {
-    params: { q: query.trim(), page, size },
+    params: {
+      q: query.trim(),
+      page,
+      size,
+      ...(filters?.nationality ? { nationality: filters.nationality } : {}),
+      ...(filters?.minYearsExperience != null
+        ? { minYearsExperience: filters.minYearsExperience }
+        : {}),
+      ...(filters?.lat != null && filters?.lng != null
+        ? {
+            lat: filters.lat,
+            lng: filters.lng,
+            ...(filters?.sort ? { sort: filters.sort } : {}),
+          }
+        : {}),
+    },
   });
   const pageData = normalizeSpringPage(res.data);
   return {

@@ -3,12 +3,18 @@
 export const MESSAGING_DETAILS_OPEN_EVENT = 'messaging-details-open';
 export const DASHBOARD_SIDEBAR_EXPAND_EVENT = 'dashboard-sidebar-expand';
 
-export function notifyMessagingDetailsOpen(): void {
+function dispatchDeferred(eventName: string): void {
   if (typeof window === 'undefined') return;
-  window.dispatchEvent(new CustomEvent(MESSAGING_DETAILS_OPEN_EVENT));
+  // Defer so listeners never setState during another component's render/updater.
+  queueMicrotask(() => {
+    window.dispatchEvent(new CustomEvent(eventName));
+  });
+}
+
+export function notifyMessagingDetailsOpen(): void {
+  dispatchDeferred(MESSAGING_DETAILS_OPEN_EVENT);
 }
 
 export function notifyDashboardSidebarExpand(): void {
-  if (typeof window === 'undefined') return;
-  window.dispatchEvent(new CustomEvent(DASHBOARD_SIDEBAR_EXPAND_EVENT));
+  dispatchDeferred(DASHBOARD_SIDEBAR_EXPAND_EVENT);
 }

@@ -99,14 +99,14 @@ function ProfileAvatar({
   onAvatarPick?: () => void;
 }) {
   const ringColorClass = creatorAppRoleRingClass(appRole)
-    .replace('ring-orange-500', 'ring-orange-500/65')
-    .replace('ring-cyan-500', 'ring-cyan-500/65')
-    .replace('ring-violet-500', 'ring-violet-500/65')
-    .replace('ring-yellow-400', 'ring-yellow-400/70')
-    .replace('ring-gray-400', 'ring-gray-400/70');
+    .replace('ring-sky-500', 'ring-sky-500/90')
+    .replace('ring-red-500', 'ring-red-500/90')
+    .replace('ring-violet-500', 'ring-violet-500/90')
+    .replace('ring-yellow-400', 'ring-yellow-400/95')
+    .replace('ring-gray-400', 'ring-gray-400/85');
   const ringShellClass = [
     'aspect-square w-full rounded-full',
-    'ring-2 ring-offset-2',
+    'ring-4 ring-offset-4 sm:ring-[5px] sm:ring-offset-[5px]',
     'ring-offset-white dark:ring-offset-[#171717]',
     'transition-all duration-200',
     ringColorClass,
@@ -119,7 +119,7 @@ function ProfileAvatar({
     // eslint-disable-next-line @next/next/no-img-element
     <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
   ) : (
-    <div className="flex h-full w-full items-center justify-center bg-orange-500 text-2xl font-bold text-white sm:text-3xl">
+    <div className="flex h-full w-full items-center justify-center bg-orange-500 text-3xl font-bold text-white sm:text-4xl">
       {initials(fullName)}
     </div>
   );
@@ -203,8 +203,8 @@ function HorizontalProfileHeader(props: CreatorProfileHeaderProps) {
         props.flushBottom ? 'rounded-t-2xl rounded-b-none' : 'rounded-2xl'
       }`}
     >
-      <div className="flex min-h-[14rem] flex-row items-stretch gap-6 sm:min-h-[16rem] sm:gap-8 md:min-h-[17.5rem] md:gap-10">
-        <div className="flex w-40 shrink-0 items-center sm:w-48 md:w-56 lg:w-64">
+      <div className="flex min-h-[15rem] flex-row items-stretch gap-6 sm:min-h-[17rem] sm:gap-8 md:min-h-[19rem] md:gap-10">
+        <div className="flex w-48 shrink-0 items-center sm:w-56 md:w-64 lg:w-72">
           <ProfileAvatar
             fullName={props.fullName}
             avatarUrl={props.avatarUrl}
@@ -235,6 +235,18 @@ function HorizontalProfileHeader(props: CreatorProfileHeaderProps) {
                   </span>
                 );
               })()}
+              {props.isOnline != null ? (
+                <span
+                  className={
+                    props.isOnline
+                      ? 'ml-0.5 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500'
+                      : 'ml-0.5 h-2.5 w-2.5 shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500'
+                  }
+                  title={props.isOnline ? 'Online' : 'Offline'}
+                  aria-label={props.isOnline ? 'Online' : 'Offline'}
+                  role="status"
+                />
+              ) : null}
               {props.isVerified && (
                 <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-500/15 dark:text-green-300">
                   Verified

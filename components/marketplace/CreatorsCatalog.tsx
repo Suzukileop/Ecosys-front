@@ -13,11 +13,12 @@ import {
   ServiceProviderCategoriesShell,
   useServiceProviderCategoriesMenuId,
 } from '@/components/marketplace/ServiceProviderCategoriesMenu';
+import { ServiceProviderFilterPills } from '@/components/marketplace/ServiceProviderFilterPills';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { normalizeCreatorSummary } from '@/lib/marketplace-api';
 import { detectUserCoordinates } from '@/lib/geolocation';
-import { NATIONALITY_SELECT_OPTIONS, normalizeNationalityCode } from '@/lib/countries';
+import { normalizeNationalityCode } from '@/lib/countries';
 import {
   findServiceProviderCategoryLabel,
   SERVICE_PROVIDER_POPULAR_TAGS,
@@ -69,15 +70,6 @@ function popularChipTone(active: boolean) {
     : 'border-neutral-300 bg-transparent text-neutral-700 hover:border-neutral-400 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-neutral-500';
 }
 
-const MIN_YEARS_OPTIONS = [
-  { value: '', label: 'Any experience' },
-  { value: '1', label: '1+ years' },
-  { value: '3', label: '3+ years' },
-  { value: '5', label: '5+ years' },
-  { value: '10', label: '10+ years' },
-  { value: '15', label: '15+ years' },
-] as const;
-
 function parseMinYearsExperience(raw: string | null): number | null {
   if (!raw) return null;
   const n = Number.parseInt(raw, 10);
@@ -112,12 +104,6 @@ function CreatorsCatalogContent() {
   }, [q]);
 
   useEffect(() => {
-    if (!closestFirst) {
-      setGeoLoading(false);
-      return;
-    }
-    if (viewerCoords) return;
-
     let cancelled = false;
     setGeoLoading(true);
     setGeoError(null);
@@ -139,7 +125,7 @@ function CreatorsCatalogContent() {
     return () => {
       cancelled = true;
     };
-  }, [closestFirst, viewerCoords]);
+  }, []);
 
   const pushParams = (next: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -152,6 +138,7 @@ function CreatorsCatalogContent() {
   };
 
   const load = useCallback(async () => {
+    // Only block the list while waiting for geo when sorting by distance.
     if (closestFirst && !viewerCoords && !geoError) {
       setLoading(true);
       return;
@@ -160,10 +147,13 @@ function CreatorsCatalogContent() {
       setLoading(true);
       setError(null);
       const trimmed = q.trim();
-      const proximity =
-        closestFirst && viewerCoords
-          ? { lat: viewerCoords.lat, lng: viewerCoords.lng, sort: 'distance' }
-          : {};
+      const proximity = viewerCoords
+        ? {
+            lat: viewerCoords.lat,
+            lng: viewerCoords.lng,
+            ...(closestFirst ? { sort: 'distance' } : {}),
+          }
+        : {};
       const res = trimmed
         ? await api.get<MarketplaceCreatorsPage>('/api/marketplace/creators/search', {
             params: {
@@ -314,25 +304,6 @@ function CreatorsCatalogContent() {
               label="Available only"
             />
 
-            <select
-              value={minYearsExperience != null ? String(minYearsExperience) : ''}
-              onChange={(event) =>
-                pushParams({ minYears: event.target.value || undefined, page: '0' })
-              }
-              aria-label="Years of experience"
-              className="h-9 min-w-[9.5rem] rounded-xl border border-neutral-300 bg-white px-3 text-sm font-medium text-neutral-800 outline-none transition focus:border-orange-400 dark:border-neutral-600 dark:bg-neutral-950 dark:text-neutral-100 dark:[color-scheme:dark]"
-            >
-              {MIN_YEARS_OPTIONS.map((option) => (
-                <option
-                  key={option.value || 'any'}
-                  value={option.value}
-                  className="bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
-                >
-                  {option.label}
-                </option>
-              ))}
-            </select>
-
             <button
               type="submit"
               className="w-full shrink-0 rounded-xl bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 lg:w-auto"
@@ -391,47 +362,27 @@ function CreatorsCatalogContent() {
         </section>
 
         <div className="mt-6 space-y-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:gap-y-3">
-          <FilterToggle
-            checked={closestFirst}
-            onChange={(next) => {
-              if (!next) {
-                setGeoError(null);
-                pushParams({ near: undefined, page: '0' });
-                return;
-              }
-              pushParams({ near: '1', page: '0' });
-            }}
-            label="Closest first"
-          />
-          <label className="flex min-w-0 items-center gap-2.5">
-            <span className="shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">
-              Nationality
-            </span>
-            <select
-              value={nationality}
-              onChange={(event) =>
-                pushParams({ nationality: event.target.value || undefined, page: '0' })
-              }
-              className="h-10 min-w-[12rem] rounded-xl border border-neutral-300 bg-white px-3 text-sm font-medium text-neutral-800 outline-none transition focus:border-orange-400 dark:border-neutral-600 dark:bg-neutral-950 dark:text-neutral-100 dark:[color-scheme:dark]"
-            >
-              <option value="" className="bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-                All nationalities
-              </option>
-              {NATIONALITY_SELECT_OPTIONS.map((option) => (
-                <option
-                  key={option.code}
-                  value={option.code}
-                  className="bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
-                >
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {/* Future: Localisation / rayon for home services — complement or replace Nationality. */}
-        </div>
-        {closestFirst && geoError ? <ErrorAlert message={geoError} onDismiss={() => setGeoError(null)} /> : null}
+        <ServiceProviderFilterPills
+          idPrefix="catalog-sp"
+          minYearsExperience={minYearsExperience}
+          nationality={nationality}
+          closestFirst={closestFirst}
+          onYearsChange={(years) =>
+            pushParams({ minYears: years != null ? String(years) : undefined, page: '0' })
+          }
+          onNationalityChange={(code) =>
+            pushParams({ nationality: code || undefined, page: '0' })
+          }
+          onClosestFirstChange={(enabled) => {
+            if (!enabled) {
+              setGeoError(null);
+              pushParams({ near: undefined, page: '0' });
+              return;
+            }
+            pushParams({ near: '1', page: '0' });
+          }}
+        />
+        {geoError ? <ErrorAlert message={geoError} onDismiss={() => setGeoError(null)} /> : null}
 
         {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
 

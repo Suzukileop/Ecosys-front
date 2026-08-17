@@ -1,5 +1,7 @@
 'use client';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { Avatar } from '@/components/ui/Avatar';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { formatGuestTraceTime } from '@/lib/guest-session-trace';
@@ -9,10 +11,12 @@ type TemporaryInboxListProps = {
   entries: TemporaryInboxEntry[];
   actingInviteId: string | null;
   actingCancelId: string | null;
+  dismissingEntryKey?: string | null;
   onAcceptInvite: (inviteId: string) => void;
   onDeclineInvite: (inviteId: string) => void;
   onCancelInvite: (conversationId: string, inviteId: string) => void;
   onOpenConversation: (entry: TemporaryInboxEntry) => void;
+  onDismissEntry: (entry: TemporaryInboxEntry) => void;
 };
 
 function entryLabel(entry: TemporaryInboxEntry): string {
@@ -34,28 +38,50 @@ export function TemporaryInboxList({
   entries,
   actingInviteId,
   actingCancelId,
+  dismissingEntryKey = null,
   onAcceptInvite,
   onDeclineInvite,
   onCancelInvite,
   onOpenConversation,
+  onDismissEntry,
 }: TemporaryInboxListProps) {
   return (
     <ul className="space-y-2 px-1" aria-label="Temporary inbox">
       {entries.map((entry) => {
         const inviteId = entry.inviteId ?? entry.id;
-        const busy = actingInviteId === inviteId || actingCancelId === inviteId;
+        const entryKey = `${entry.entryType}-${entry.id}`;
+        const busy =
+          actingInviteId === inviteId ||
+          actingCancelId === inviteId ||
+          dismissingEntryKey === entryKey;
 
         return (
           <li
-            key={`${entry.entryType}-${entry.id}`}
+            key={entryKey}
             className="rounded-2xl bg-white p-3 dark:bg-neutral-900"
           >
             <div className="flex items-start gap-3">
               <Avatar avatarUrl={entry.avatarUrl} name={entry.headline} size="sm" tone="muted" />
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                  {entryLabel(entry)}
-                </p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                    {entryLabel(entry)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => onDismissEntry(entry)}
+                    disabled={busy}
+                    aria-label="Delete temporary entry"
+                    title="Delete"
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-100 hover:text-red-600 disabled:opacity-50 dark:hover:bg-neutral-800 dark:hover:text-red-400"
+                  >
+                    {dismissingEntryKey === entryKey ? (
+                      <LoadingSpinner size="sm" />
+                    ) : (
+                      <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </div>
                 <p className="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">
                   {entry.headline}
                 </p>
@@ -108,7 +134,8 @@ export function TemporaryInboxList({
                 <button
                   type="button"
                   onClick={() => onOpenConversation(entry)}
-                  className="rounded-xl bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                  disabled={busy}
+                  className="rounded-xl bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-200 disabled:opacity-60 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
                 >
                   {entry.entryType === 'ENDED_GUEST' ? 'View session history' : 'Open conversation'}
                 </button>

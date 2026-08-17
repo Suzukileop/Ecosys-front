@@ -42,7 +42,7 @@ export function GuestSessionTraceMenu({ traces }: GuestSessionTraceMenuProps) {
         <div
           role="dialog"
           aria-label="Temporary guest activity"
-          className="absolute right-0 top-[calc(100%+6px)] z-40 w-72 rounded-2xl border border-neutral-200 bg-white p-3 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
+          className="absolute left-0 top-[calc(100%+6px)] z-40 w-72 rounded-2xl border border-neutral-200 bg-white p-3 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
         >
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
             Guest activity

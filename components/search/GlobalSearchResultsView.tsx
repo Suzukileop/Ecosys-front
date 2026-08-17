@@ -1,16 +1,17 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PublicContentPostCard } from '@/components/home/PublicContentPostCard';
 import { SearchCreatorRow } from '@/components/search/SearchCreatorRow';
+import { SearchServiceProviderGrid } from '@/components/search/SearchServiceProviderGrid';
 import {
   GlobalSearchFilterButton,
   GlobalSearchFilterModal,
 } from '@/components/search/GlobalSearchFilterModal';
+import { GlobalSearchCategoryQuickFilters } from '@/components/search/GlobalSearchCategoryQuickFilters';
 import { SearchProductCard, searchProductGridClassName } from '@/components/search/SearchProductCard';
-import { Avatar } from '@/components/ui/Avatar';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
@@ -28,53 +29,28 @@ import {
   type GlobalSearchPageData,
   type GlobalSearchTab,
 } from '@/lib/global-search';
-import { createOrGetConversation } from '@/lib/messaging';
 import {
   applyGlobalSearchFilters,
   createDefaultGlobalSearchFilters,
   isGlobalSearchFiltersActive,
   type GlobalSearchFilters,
 } from '@/lib/global-search-filters';
-import type { MessagingUserSummary } from '@/types/messaging';
+import { detectUserCoordinates } from '@/lib/geolocation';
 
 const EMPTY_DATA: GlobalSearchPageData = {
   users: [],
   creators: [],
+  serviceProviders: [],
   products: [],
   content: [],
 };
 
-const CATEGORY_ORDER: GlobalSearchCategory[] = ['users', 'creators', 'products', 'content'];
-
-function SearchUserCard({
-  user,
-  onOpen,
-  busy,
-}: {
-  user: MessagingUserSummary;
-  onOpen: () => void;
-  busy: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      disabled={busy}
-      className="group flex w-full items-center gap-5 rounded-2xl border border-neutral-200 bg-white p-6 text-left shadow-sm transition hover:border-neutral-300 hover:shadow-md disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-neutral-600"
-    >
-      <Avatar name={user.fullName} avatarUrl={user.avatarUrl} size="lg" tone="muted" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-lg font-bold text-neutral-900 group-hover:text-orange-600 dark:text-white dark:group-hover:text-orange-400">
-          {user.fullName}
-        </p>
-        <p className="mt-1 text-base text-neutral-600 dark:text-neutral-300">Open conversation</p>
-      </div>
-      <span className="rounded-full bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 dark:bg-orange-500/10 dark:text-orange-300">
-        Message
-      </span>
-    </button>
-  );
-}
+const CATEGORY_ORDER: GlobalSearchCategory[] = [
+  'creators',
+  'serviceProviders',
+  'products',
+  'content',
+];
 
 function SearchSectionBox({
   title,
@@ -112,22 +88,31 @@ function GlobalSearchResultsContent() {
 
   const q = searchParams.get('q') ?? '';
   const rawTab = searchParams.get('tab') ?? 'all';
-  const tab: GlobalSearchTab = GLOBAL_SEARCH_TABS.includes(rawTab as GlobalSearchTab)
-    ? (rawTab as GlobalSearchTab)
-    : 'all';
+  const tab: GlobalSearchTab =
+    rawTab === 'users'
+      ? 'creators'
+      : GLOBAL_SEARCH_TABS.includes(rawTab as GlobalSearchTab)
+        ? (rawTab as GlobalSearchTab)
+        : 'all';
 
   const [data, setData] = useState<GlobalSearchPageData>(EMPTY_DATA);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [openingUserId, setOpeningUserId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<GlobalSearchFilters>(() =>
     createDefaultGlobalSearchFilters(Boolean(user))
   );
+  const [viewerCoords, setViewerCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoError, setGeoError] = useState<string | null>(null);
 
   const trimmedQ = q.trim();
   const isAuthenticated = Boolean(user);
   const prevTrimmedQRef = useRef(trimmedQ);
+
+  useEffect(() => {
+    if (rawTab !== 'users') return;
+    router.replace(buildGlobalSearchPageUrl(trimmedQ, 'creators'));
+  }, [rawTab, router, trimmedQ]);
 
   useEffect(() => {
     if (prevTrimmedQRef.current === trimmedQ) return;
@@ -137,17 +122,30 @@ function GlobalSearchResultsContent() {
   }, [trimmedQ, isAuthenticated]);
 
   useEffect(() => {
-    setFilters((prev) => ({
-      ...prev,
-      categories: prev.categories.filter(
-        (category) => category !== 'users' || isAuthenticated
-      ),
-    }));
-  }, [isAuthenticated]);
+    let cancelled = false;
+    void detectUserCoordinates()
+      .then((coords) => {
+        if (cancelled) return;
+        setViewerCoords(coords);
+        setGeoError(null);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setViewerCoords(null);
+        setGeoError(e instanceof Error ? e.message : 'Unable to detect your location.');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filterCategories = filters.categories;
   const filterProductType = filters.productType;
   const filterSort = filters.sort;
+  const filterMinYears = filters.minYearsExperience;
+  const filterNationality = filters.nationality;
+  const filterClosest = filters.closestFirst;
 
   useEffect(() => {
     if (trimmedQ.length < GLOBAL_SEARCH_MIN_LENGTH) {
@@ -156,14 +154,17 @@ function GlobalSearchResultsContent() {
       return;
     }
 
+    if (filterClosest && !viewerCoords && !geoError) {
+      setLoading(true);
+      return;
+    }
+
     let cancelled = false;
     setLoading(true);
     setError(null);
 
     const limit = tab === 'all' ? GLOBAL_SEARCH_ALL_TAB_SECTION_SIZE : GLOBAL_SEARCH_FULL_PAGE_SIZE;
-    const tabCategories =
-      getCategoriesForTab(tab) ??
-      CATEGORY_ORDER.filter((category) => category !== 'users' || isAuthenticated);
+    const tabCategories = getCategoriesForTab(tab) ?? CATEGORY_ORDER;
     const categories = tabCategories.filter((category) => filterCategories.includes(category));
 
     void (async () => {
@@ -171,12 +172,16 @@ function GlobalSearchResultsContent() {
         const next = await fetchGlobalSearchPageData(trimmedQ, isAuthenticated, {
           limit,
           categories,
+          viewerCoords,
           filters: {
             categories: filterCategories,
             dateRange: 'any',
             sort: filterSort,
             productType: filterProductType,
             contentMedia: 'all',
+            minYearsExperience: filterMinYears,
+            nationality: filterNationality,
+            closestFirst: filterClosest,
           },
         });
         if (!cancelled) {
@@ -195,21 +200,19 @@ function GlobalSearchResultsContent() {
     return () => {
       cancelled = true;
     };
-  }, [trimmedQ, tab, isAuthenticated, filterCategories, filterProductType, filterSort]);
-
-  const openUser = useCallback(
-    async (member: MessagingUserSummary) => {
-      if (openingUserId) return;
-      setOpeningUserId(member.id);
-      try {
-        const conversation = await createOrGetConversation(member.id);
-        router.push(`/dashboard/discussions?conversation=${encodeURIComponent(conversation.id)}`);
-      } finally {
-        setOpeningUserId(null);
-      }
-    },
-    [openingUserId, router]
-  );
+  }, [
+    trimmedQ,
+    tab,
+    isAuthenticated,
+    filterCategories,
+    filterProductType,
+    filterSort,
+    filterMinYears,
+    filterNationality,
+    filterClosest,
+    viewerCoords,
+    geoError,
+  ]);
 
   const setTab = (next: GlobalSearchTab) => {
     if (trimmedQ.length < GLOBAL_SEARCH_MIN_LENGTH) return;
@@ -219,35 +222,37 @@ function GlobalSearchResultsContent() {
   const visibleCategories = useMemo(
     () =>
       tab === 'all'
-        ? CATEGORY_ORDER.filter(
-            (category) =>
-              filters.categories.includes(category) && (category !== 'users' || isAuthenticated)
-          )
+        ? CATEGORY_ORDER.filter((category) => filters.categories.includes(category))
         : CATEGORY_ORDER.filter(
-            (category) =>
-              category === tab &&
-              filters.categories.includes(category) &&
-              (category !== 'users' || isAuthenticated)
+            (category) => category === tab && filters.categories.includes(category)
           ),
-    [tab, isAuthenticated, filters.categories]
+    [tab, filters.categories]
   );
 
-  const filteredData = useMemo(() => applyGlobalSearchFilters(data, filters), [data, filters]);
+  const filteredData = useMemo(
+    () => applyGlobalSearchFilters(data, filters, trimmedQ),
+    [data, filters, trimmedQ]
+  );
+
+  const peopleCount = Math.max(
+    filteredData.creators.length,
+    filteredData.serviceProviders.length
+  );
 
   const rawResultCount =
-    data.users.length + data.creators.length + data.products.length + data.content.length;
+    peopleCount + filteredData.products.length + filteredData.content.length;
 
   const displayedCount = useMemo(() => {
     if (tab === 'all') {
       return (
-        filteredData.creators.length +
+        Math.max(filteredData.creators.length, filteredData.serviceProviders.length) +
         filteredData.products.length +
-        filteredData.content.length +
-        (isAuthenticated ? filteredData.users.length : 0)
+        filteredData.content.length
       );
     }
+    if (tab === 'users') return 0;
     return filteredData[tab].length;
-  }, [filteredData, tab, isAuthenticated]);
+  }, [filteredData, tab]);
 
   const filtersActive = isGlobalSearchFiltersActive(filters, isAuthenticated);
 
@@ -264,28 +269,39 @@ function GlobalSearchResultsContent() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-3">
-          {GLOBAL_SEARCH_TABS.filter((item) => item !== 'users' || isAuthenticated).map((item) => {
-            const isActive = tab === item;
+      <div>
+        <div className="flex items-end gap-4 border-b border-neutral-200 dark:border-neutral-800">
+          <nav
+            className="flex min-w-0 flex-1 items-stretch gap-2 overflow-x-auto"
+            aria-label="Search categories"
+          >
+            {GLOBAL_SEARCH_TABS.map((item) => {
+              const isActive = tab === item;
 
-            return (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setTab(item)}
-                className={`rounded-full px-5 py-2.5 text-base font-semibold transition ${
-                  isActive
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-transparent text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white'
-                }`}
-              >
-                {GLOBAL_SEARCH_TAB_LABELS[item]}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setTab(item)}
+                  className={`relative shrink-0 px-4 py-3 text-base font-semibold tracking-wide transition ${
+                    isActive
+                      ? 'text-neutral-900 dark:text-white'
+                      : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+                  }`}
+                >
+                  {GLOBAL_SEARCH_TAB_LABELS[item]}
+                  {isActive ? (
+                    <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-orange-500" />
+                  ) : null}
+                </button>
+              );
+            })}
+          </nav>
+          <div className="shrink-0 self-center pb-2.5 pr-1">
+            <GlobalSearchFilterButton onClick={() => setFiltersOpen(true)} />
+          </div>
         </div>
-        <GlobalSearchFilterButton onClick={() => setFiltersOpen(true)} />
+        <GlobalSearchCategoryQuickFilters tab={tab} filters={filters} onChange={setFilters} />
       </div>
 
       <GlobalSearchFilterModal
@@ -298,6 +314,7 @@ function GlobalSearchResultsContent() {
       />
 
       {error ? <ErrorAlert message={error} onDismiss={() => setError(null)} /> : null}
+      {geoError ? <ErrorAlert message={geoError} onDismiss={() => setGeoError(null)} /> : null}
 
       {loading ? (
         <div className="flex justify-center py-20">
@@ -313,24 +330,6 @@ function GlobalSearchResultsContent() {
         </div>
       ) : (
         <div className="space-y-12">
-          {visibleCategories.includes('users') && filteredData.users.length > 0 ? (
-            <SearchSectionBox
-              title={GLOBAL_SEARCH_CATEGORY_LABELS.users}
-              seeMoreHref={tab === 'all' ? buildGlobalSearchPageUrl(trimmedQ, 'users') : undefined}
-            >
-              <div className="grid gap-5 sm:grid-cols-2">
-                {filteredData.users.map((member) => (
-                  <SearchUserCard
-                    key={member.id}
-                    user={member}
-                    busy={openingUserId != null}
-                    onOpen={() => void openUser(member)}
-                  />
-                ))}
-              </div>
-            </SearchSectionBox>
-          ) : null}
-
           {visibleCategories.includes('creators') && filteredData.creators.length > 0 ? (
             <SearchSectionBox
               title={GLOBAL_SEARCH_CATEGORY_LABELS.creators}
@@ -341,6 +340,18 @@ function GlobalSearchResultsContent() {
                   <SearchCreatorRow key={creator.userId ?? creator.id} creator={creator} />
                 ))}
               </div>
+            </SearchSectionBox>
+          ) : null}
+
+          {visibleCategories.includes('serviceProviders') &&
+          filteredData.serviceProviders.length > 0 ? (
+            <SearchSectionBox
+              title={GLOBAL_SEARCH_CATEGORY_LABELS.serviceProviders}
+              seeMoreHref={
+                tab === 'all' ? buildGlobalSearchPageUrl(trimmedQ, 'serviceProviders') : undefined
+              }
+            >
+              <SearchServiceProviderGrid creators={filteredData.serviceProviders} />
             </SearchSectionBox>
           ) : null}
 

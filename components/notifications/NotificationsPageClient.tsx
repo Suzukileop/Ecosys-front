@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { getApiErrorMessage } from '@/lib/api-error';
@@ -126,14 +125,8 @@ export function NotificationsPageClient() {
   return (
     <DashboardHomeShell>
       <div className="mx-auto max-w-2xl space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <Link href="/dashboard/home" className="text-sm text-neutral-500 transition hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200">
-              ← Dashboard
-            </Link>
-            <h1 className="mt-2 text-2xl font-bold text-neutral-900 dark:text-white">Notifications</h1>
-          </div>
-          {unreadCount > 0 && (
+        {unreadCount > 0 ? (
+          <div className="flex justify-end">
             <button
               type="button"
               onClick={() => void markAll()}
@@ -141,8 +134,8 @@ export function NotificationsPageClient() {
             >
               Mark all as read
             </button>
-          )}
-        </div>
+          </div>
+        ) : null}
 
         <NotificationFilterTabs value={filter} onChange={setFilter} />
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   ContentPostGalleryThumb,
   ContentPostLightbox,
@@ -27,6 +28,8 @@ type CreatorProfileContentTabProps = {
 };
 
 export function CreatorProfileContentTab({ creatorId, creatorName }: CreatorProfileContentTabProps) {
+  const searchParams = useSearchParams();
+  const deepLinkPostId = searchParams.get('post');
   const [items, setItems] = useState<PublicContentFeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +52,14 @@ export function CreatorProfileContentTab({ creatorId, creatorName }: CreatorProf
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!deepLinkPostId || items.length === 0) return;
+    const match = items.find((item) => item.id === deepLinkPostId);
+    if (match) {
+      setActivePost(match);
+    }
+  }, [deepLinkPostId, items]);
 
   if (loading) {
     return <PublicCreatorProfileContentTabSkeleton />;

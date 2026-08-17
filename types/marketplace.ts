@@ -34,6 +34,8 @@ export interface MarketplaceCreatorSummary {
   distanceKm?: number | null;
   locationCity?: string | null;
   locationCountry?: string | null;
+  /** Creator app role — used for avatar role ring. */
+  appRole?: string | null;
 }
 
 export type MarketplaceCreatorsPage = PagedResponse<MarketplaceCreatorSummary>;
@@ -133,6 +135,10 @@ export interface MarketplaceContentCreator {
   id: string;
   fullName: string;
   avatarUrl: string | null;
+  /** App UX role — used for avatar status ring on content cards. */
+  appRole?: string | null;
+  specialite?: string | null;
+  specialties?: string[];
 }
 
 export interface MarketplaceContentDetail {

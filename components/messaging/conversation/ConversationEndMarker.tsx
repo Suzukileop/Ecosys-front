@@ -23,10 +23,10 @@ export function ConversationEndMarker({ lastActivityAt }: ConversationEndMarkerP
   if (!lastActivityAt) return null;
   return (
     <div className="flex flex-col items-center gap-2 py-6" role="status">
-      <p className="text-[10px] font-semibold tracking-[0.12em] text-[var(--cw-text-muted,#9AA1AA)]">
+      <p className="text-[13px] font-semibold tracking-[0.08em] text-[var(--cw-text-secondary,#4B5563)]">
         END OF DISCUSSION
       </p>
-      <span className="rounded-full border border-[var(--cw-border,#E2E5E9)] bg-[var(--cw-surface,#fff)] px-2.5 py-1 text-[10px] font-medium text-[var(--cw-text-secondary,#68707A)]">
+      <span className="rounded-full border border-[var(--cw-border,#E2E5E9)] bg-[var(--cw-surface,#fff)] px-2.5 py-1 text-[13px] font-medium text-[var(--cw-text-secondary,#4B5563)]">
         {formatEndActivityLabel(lastActivityAt)}
       </span>
     </div>

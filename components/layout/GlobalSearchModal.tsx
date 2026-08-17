@@ -20,7 +20,6 @@ import {
   type GlobalSearchItem,
   type GlobalSearchResults,
 } from '@/lib/global-search';
-import { createOrGetConversation } from '@/lib/messaging';
 
 type GlobalSearchModalProps = {
   open: boolean;
@@ -30,11 +29,16 @@ type GlobalSearchModalProps = {
 const EMPTY_RESULTS: GlobalSearchResults = {
   users: [],
   creators: [],
+  serviceProviders: [],
   products: [],
   content: [],
 };
 
-const CATEGORY_ORDER: GlobalSearchCategory[] = ['users', 'creators', 'products', 'content'];
+const CATEGORY_ORDER: GlobalSearchCategory[] = [
+  'creators',
+  'products',
+  'content',
+];
 
 const MODAL_SCROLLBAR =
   '[scrollbar-width:thin] [scrollbar-color:#a3a3a3_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-400 dark:[scrollbar-color:#525252_transparent] [&::-webkit-scrollbar-thumb]:dark:bg-neutral-600';
@@ -63,7 +67,6 @@ export function GlobalSearchModal({ open, onClose }: GlobalSearchModalProps) {
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [mounted, setMounted] = useState(false);
-  const [openingUserId, setOpeningUserId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const flatItems = useMemo(() => flattenGlobalSearchResults(results), [results]);
@@ -112,6 +115,7 @@ export function GlobalSearchModal({ open, onClose }: GlobalSearchModalProps) {
         try {
           const data = await fetchGlobalSearch(trimmedQuery, Boolean(user), {
             limit: GLOBAL_SEARCH_MODAL_PREVIEW_SIZE,
+            categories: ['creators', 'products', 'content'],
           });
           if (!cancelled) {
             setResults(data);
@@ -140,22 +144,10 @@ export function GlobalSearchModal({ open, onClose }: GlobalSearchModalProps) {
 
   const activateItem = useCallback(
     async (item: GlobalSearchItem) => {
-      if (item.category === 'users') {
-        if (openingUserId) return;
-        setOpeningUserId(item.id);
-        try {
-          const conversation = await createOrGetConversation(item.id);
-          onClose();
-          router.push(`/dashboard/discussions?conversation=${encodeURIComponent(conversation.id)}`);
-        } finally {
-          setOpeningUserId(null);
-        }
-        return;
-      }
       onClose();
       router.push(getGlobalSearchItemHref(item));
     },
-    [onClose, openingUserId, router]
+    [onClose, router]
   );
 
   const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -209,7 +201,7 @@ export function GlobalSearchModal({ open, onClose }: GlobalSearchModalProps) {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={onInputKeyDown}
-            placeholder="Search users, creators, products, content…"
+            placeholder="Search profiles, service providers, products, content…"
             className="h-14 min-w-0 flex-1 bg-transparent text-base text-neutral-900 outline-none placeholder:text-neutral-400 dark:text-white"
             autoComplete="off"
             spellCheck={false}
@@ -246,7 +238,6 @@ export function GlobalSearchModal({ open, onClose }: GlobalSearchModalProps) {
               {CATEGORY_ORDER.map((category) => {
                 const items = results[category];
                 if (items.length === 0) return null;
-                if (category === 'users' && !user) return null;
 
                 return (
                   <section key={category} className="mb-2">
@@ -271,7 +262,6 @@ export function GlobalSearchModal({ open, onClose }: GlobalSearchModalProps) {
                             <GlobalSearchResultRow
                               item={item}
                               selected={itemIndex === selectedIndex}
-                              disabled={openingUserId != null}
                               compact
                               onMouseEnter={() => setSelectedIndex(itemIndex)}
                               onClick={() => void activateItem(item)}

@@ -14,17 +14,19 @@ type MessageLayoutProps = {
 
 /**
  * Messages shell with internal padding.
- * Inbox is detached from the main conversation panel with a visible gap.
- * Details open/close with a simple fluid width + slide transition.
+ * Desktop: 3 columns. Mobile: successive views (inbox → conversation → details).
  */
 export function MessageLayout({
   inbox,
   conversation,
   details,
   detailsOpen = false,
-  onCloseDetails,
   showConversationMobile = false,
 }: MessageLayoutProps) {
+  const mobileShowInbox = !showConversationMobile && !detailsOpen;
+  const mobileShowConversation = showConversationMobile && !detailsOpen;
+  const mobileShowDetails = Boolean(details) && detailsOpen;
+
   return (
     <div className="msg-shell flex min-h-0 flex-1 flex-col bg-neutral-100 dark:bg-neutral-950">
       <div
@@ -35,8 +37,8 @@ export function MessageLayout({
         }`}
       >
         <aside
-          className={`flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-[var(--msg-radius)] border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 lg:w-[320px] xl:w-[340px] ${
-            showConversationMobile ? 'hidden lg:flex' : 'flex'
+          className={`min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-[var(--msg-radius)] border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 lg:flex lg:w-[380px] xl:w-[400px] ${
+            mobileShowInbox ? 'flex' : 'hidden'
           }`}
           aria-label="Inbox"
         >
@@ -44,8 +46,8 @@ export function MessageLayout({
         </aside>
 
         <section
-          className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[var(--msg-radius)] border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 ${
-            showConversationMobile ? 'flex' : 'hidden lg:flex'
+          className={`min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[var(--msg-radius)] border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 lg:flex ${
+            mobileShowConversation ? 'flex' : 'hidden'
           }`}
           aria-label="Conversation"
         >
@@ -54,28 +56,30 @@ export function MessageLayout({
 
         {details ? (
           <>
-            <button
-              type="button"
-              aria-label="Close details"
-              tabIndex={detailsOpen ? 0 : -1}
-              className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ease-out dark:bg-black/50 lg:hidden ${
-                detailsOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
-              }`}
-              onClick={onCloseDetails}
-            />
             <aside
               aria-label="Conversation details"
               aria-hidden={!detailsOpen}
               inert={!detailsOpen ? true : undefined}
-              className={`z-50 flex shrink-0 flex-col overflow-hidden border-neutral-200 bg-white shadow-lg transition-[width,transform,opacity,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-black/40 max-lg:fixed max-lg:inset-y-0 max-lg:right-0 max-lg:w-[min(100%,340px)] max-lg:border-l ${
+              className={`z-50 hidden shrink-0 flex-col overflow-hidden border-neutral-200 bg-white transition-[width,opacity,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-neutral-800 dark:bg-neutral-900 lg:flex ${
                 detailsOpen
-                  ? 'max-lg:translate-x-0 max-lg:opacity-100 lg:ml-0 lg:w-[320px] lg:border lg:opacity-100 lg:shadow-none xl:w-[340px] lg:rounded-[var(--msg-radius)]'
-                  : 'pointer-events-none max-lg:translate-x-full max-lg:opacity-0 lg:-ml-4 lg:w-0 lg:border-0 lg:opacity-0 lg:shadow-none'
+                  ? 'ml-0 w-[320px] border opacity-100 xl:w-[340px] lg:rounded-[var(--msg-radius)]'
+                  : 'pointer-events-none -ml-4 w-0 border-0 opacity-0'
               }`}
             >
-              <div className="flex h-full w-[min(100vw,340px)] min-w-[min(100vw,340px)] flex-col lg:w-[320px] lg:min-w-[320px] xl:w-[340px] xl:min-w-[340px]">
+              <div className="flex h-full w-[320px] min-w-[320px] flex-col xl:w-[340px] xl:min-w-[340px]">
                 {details}
               </div>
+            </aside>
+
+            <aside
+              aria-label="Conversation details"
+              aria-hidden={!mobileShowDetails}
+              inert={!mobileShowDetails ? true : undefined}
+              className={`min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden rounded-[var(--msg-radius)] border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 lg:hidden ${
+                mobileShowDetails ? 'flex' : 'hidden'
+              }`}
+            >
+              {details}
             </aside>
           </>
         ) : null}

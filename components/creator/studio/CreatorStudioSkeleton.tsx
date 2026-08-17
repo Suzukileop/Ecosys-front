@@ -14,9 +14,9 @@ export function CreatorStudioHeaderSkeleton() {
       <div className="px-4 sm:px-6">
         <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-[#0F0F0F] sm:p-6">
           <div className="flex flex-row items-stretch gap-5 sm:gap-7">
-            <div className="w-40 shrink-0 sm:w-48 md:w-56 lg:w-64">
+            <div className="w-48 shrink-0 sm:w-56 md:w-64 lg:w-72">
               <div
-                className={`aspect-square w-full rounded-full ring-4 ring-neutral-200 ring-offset-4 ring-offset-white dark:ring-neutral-700 dark:ring-offset-[#0F0F0F] ${block}`}
+                className={`aspect-square w-full rounded-full ring-[5px] ring-neutral-200 ring-offset-[5px] ring-offset-white dark:ring-neutral-700 dark:ring-offset-[#0F0F0F] ${block}`}
               />
             </div>
 

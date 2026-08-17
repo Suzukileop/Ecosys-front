@@ -59,6 +59,10 @@ type ContentPostLightboxProps = {
   headerActions?: ReactNode;
   showSocialBar?: boolean;
   specialite?: string | null;
+  /** Specialty list — first item is shown under the creator name. */
+  specialties?: string[] | null;
+  /** Creator app role for the avatar status ring. */
+  appRole?: string | null;
 };
 
 export function ContentPostLightbox({
@@ -71,6 +75,8 @@ export function ContentPostLightbox({
   headerActions,
   showSocialBar = true,
   specialite,
+  specialties,
+  appRole,
 }: ContentPostLightboxProps) {
   const { isAuthenticated } = useAuth();
   const [mounted, setMounted] = useState(false);
@@ -164,7 +170,9 @@ export function ContentPostLightbox({
               <ContentPostStudioHeader
                 creatorName={post.creator?.fullName ?? 'Creator'}
                 avatarUrl={post.creator?.avatarUrl}
+                appRole={appRole ?? post.creator?.appRole}
                 specialite={specialite}
+                specialties={specialties}
                 moodLabel={post.moodLabel}
                 moodEmoji={post.moodEmoji}
                 taggedUsers={post.taggedUsers}

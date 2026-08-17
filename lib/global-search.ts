@@ -4,7 +4,6 @@ import {
   searchMarketplaceCreators,
 } from '@/lib/marketplace-api';
 import { getProductSortParam, type GlobalSearchFilters } from '@/lib/global-search-filters';
-import { searchMessagingUsers } from '@/lib/messaging';
 import type {
   MarketplaceCreatorSummary,
   MarketplaceProductSummary,
@@ -12,7 +11,12 @@ import type {
 } from '@/types/marketplace';
 import type { MessagingUserSummary } from '@/types/messaging';
 
-export type GlobalSearchCategory = 'users' | 'creators' | 'products' | 'content';
+export type GlobalSearchCategory =
+  | 'users'
+  | 'creators'
+  | 'serviceProviders'
+  | 'products'
+  | 'content';
 
 export type GlobalSearchTab = 'all' | GlobalSearchCategory;
 
@@ -31,6 +35,8 @@ export type GlobalSearchResults = Record<GlobalSearchCategory, GlobalSearchItem[
 export type GlobalSearchPageData = {
   users: MessagingUserSummary[];
   creators: MarketplaceCreatorSummary[];
+  /** Same marketplace creator search — rendered as Service Provider catalog cards. */
+  serviceProviders: MarketplaceCreatorSummary[];
   products: MarketplaceProductSummary[];
   content: PublicContentFeedItem[];
 };
@@ -47,7 +53,8 @@ export const GLOBAL_SEARCH_ALL_TAB_SECTION_SIZE = 6;
 
 export const GLOBAL_SEARCH_CATEGORY_LABELS: Record<GlobalSearchCategory, string> = {
   users: 'Users',
-  creators: 'Creators',
+  creators: 'Profiles',
+  serviceProviders: 'Service Provider',
   products: 'Products',
   content: 'Content',
 };
@@ -55,15 +62,16 @@ export const GLOBAL_SEARCH_CATEGORY_LABELS: Record<GlobalSearchCategory, string>
 export const GLOBAL_SEARCH_TAB_LABELS: Record<GlobalSearchTab, string> = {
   all: 'All',
   users: 'Users',
-  creators: 'Creators',
+  creators: 'Profiles',
+  serviceProviders: 'Service Provider',
   products: 'Products',
   content: 'Content',
 };
 
 export const GLOBAL_SEARCH_TABS: GlobalSearchTab[] = [
   'all',
-  'users',
   'creators',
+  'serviceProviders',
   'products',
   'content',
 ];
@@ -97,54 +105,67 @@ type FetchGlobalSearchOptions = {
   limit?: number;
   categories?: GlobalSearchCategory[];
   filters?: GlobalSearchFilters;
+  viewerCoords?: { lat: number; lng: number } | null;
 };
+
+function emptyResults(): GlobalSearchResults {
+  return { users: [], creators: [], serviceProviders: [], products: [], content: [] };
+}
+
+function emptyPageData(): GlobalSearchPageData {
+  return { users: [], creators: [], serviceProviders: [], products: [], content: [] };
+}
 
 export async function fetchGlobalSearch(
   query: string,
-  isAuthenticated: boolean,
+  _isAuthenticated: boolean,
   options?: FetchGlobalSearchOptions
 ): Promise<GlobalSearchResults> {
   const q = query.trim();
-  const empty: GlobalSearchResults = { users: [], creators: [], products: [], content: [] };
-  if (q.length < GLOBAL_SEARCH_MIN_LENGTH) return empty;
+  if (q.length < GLOBAL_SEARCH_MIN_LENGTH) return emptyResults();
 
   const limit = options?.limit ?? GLOBAL_SEARCH_FULL_PAGE_SIZE;
-  const categories = options?.categories ?? ['users', 'creators', 'products', 'content'];
+  const categories =
+    options?.categories ?? ['creators', 'serviceProviders', 'products', 'content'];
   const include = (category: GlobalSearchCategory) => categories.includes(category);
+  const needCreators = include('creators') || include('serviceProviders');
 
-  const [usersRes, creatorsRes, productsRes, contentRes] = await Promise.allSettled([
-    isAuthenticated && include('users')
-      ? searchMessagingUsers(q, 0, limit)
-      : Promise.resolve([]),
-    include('creators') ? searchMarketplaceCreators(q, 0, limit) : Promise.resolve({ content: [] }),
+  const [creatorsRes, productsRes, contentRes] = await Promise.allSettled([
+    needCreators ? searchMarketplaceCreators(q, 0, limit) : Promise.resolve({ content: [] }),
     include('products') ? listPublicProducts({ q, size: limit }) : Promise.resolve({ content: [] }),
     include('content') ? listPublicContentFeed({ q, size: limit }) : Promise.resolve({ content: [] }),
   ]);
 
-  const users =
-    usersRes.status === 'fulfilled'
-      ? usersRes.value.map((user) => ({
-          id: user.id,
-          category: 'users' as const,
-          title: user.fullName,
-          subtitle: 'Member',
-          avatarUrl: user.avatarUrl?.trim() || null,
-        }))
+  const creatorRows =
+    creatorsRes.status === 'fulfilled' && 'content' in creatorsRes.value
+      ? creatorsRes.value.content
       : [];
 
-  const creators =
-    creatorsRes.status === 'fulfilled' && 'content' in creatorsRes.value
-      ? creatorsRes.value.content.map((creator) => {
-          const id = creator.userId ?? creator.id ?? '';
-          return {
-            id,
-            category: 'creators' as const,
-            title: creator.fullName,
-            subtitle: creator.specialite ?? 'Creator profile',
-            avatarUrl: creator.avatarUrl?.trim() || null,
-          };
-        })
-      : [];
+  const creators = include('creators')
+    ? creatorRows.map((creator) => {
+        const id = creator.userId ?? creator.id ?? '';
+        return {
+          id,
+          category: 'creators' as const,
+          title: creator.fullName,
+          subtitle: creator.specialite ?? 'Profile',
+          avatarUrl: creator.avatarUrl?.trim() || null,
+        };
+      })
+    : [];
+
+  const serviceProviders = include('serviceProviders')
+    ? creatorRows.map((creator) => {
+        const id = creator.userId ?? creator.id ?? '';
+        return {
+          id,
+          category: 'serviceProviders' as const,
+          title: creator.fullName,
+          subtitle: creator.specialite ?? 'Service provider',
+          avatarUrl: creator.avatarUrl?.trim() || null,
+        };
+      })
+    : [];
 
   const products =
     productsRes.status === 'fulfilled' && 'content' in productsRes.value
@@ -169,16 +190,11 @@ export async function fetchGlobalSearch(
         }))
       : [];
 
-  return { users, creators, products, content };
+  return { users: [], creators, serviceProviders, products, content };
 }
 
 export function flattenGlobalSearchResults(results: GlobalSearchResults): GlobalSearchItem[] {
-  return [
-    ...results.users,
-    ...results.creators,
-    ...results.products,
-    ...results.content,
-  ];
+  return [...results.creators, ...results.products, ...results.content];
 }
 
 export function getCategoriesForTab(tab: GlobalSearchTab): GlobalSearchCategory[] | null {
@@ -188,43 +204,59 @@ export function getCategoriesForTab(tab: GlobalSearchTab): GlobalSearchCategory[
 
 export async function fetchGlobalSearchPageData(
   query: string,
-  isAuthenticated: boolean,
+  _isAuthenticated: boolean,
   options?: FetchGlobalSearchOptions
 ): Promise<GlobalSearchPageData> {
   const q = query.trim();
-  const empty: GlobalSearchPageData = { users: [], creators: [], products: [], content: [] };
-  if (q.length < GLOBAL_SEARCH_MIN_LENGTH) return empty;
+  if (q.length < GLOBAL_SEARCH_MIN_LENGTH) return emptyPageData();
 
   const limit = options?.limit ?? GLOBAL_SEARCH_FULL_PAGE_SIZE;
-  const categories = options?.categories ?? ['users', 'creators', 'products', 'content'];
+  const categories =
+    options?.categories ?? ['creators', 'serviceProviders', 'products', 'content'];
   const include = (category: GlobalSearchCategory) => categories.includes(category);
+  const needCreators = include('creators') || include('serviceProviders');
   const filters = options?.filters;
-  const productType =
+  const productFormat =
     filters?.productType && filters.productType !== 'all' ? filters.productType : undefined;
   const productSort = filters ? getProductSortParam(filters.sort) : undefined;
+  const creatorSearchFilters = {
+    ...(filters?.nationality?.trim() ? { nationality: filters.nationality.trim() } : {}),
+    ...(filters?.minYearsExperience != null
+      ? { minYearsExperience: filters.minYearsExperience }
+      : {}),
+    ...(options?.viewerCoords
+      ? {
+          lat: options.viewerCoords.lat,
+          lng: options.viewerCoords.lng,
+          ...(filters?.closestFirst ? { sort: 'distance' } : {}),
+        }
+      : {}),
+  };
 
-  const [usersRes, creatorsRes, productsRes, contentRes] = await Promise.allSettled([
-    isAuthenticated && include('users')
-      ? searchMessagingUsers(q, 0, limit)
-      : Promise.resolve([]),
-    include('creators') ? searchMarketplaceCreators(q, 0, limit) : Promise.resolve({ content: [] }),
+  const [creatorsRes, productsRes, contentRes] = await Promise.allSettled([
+    needCreators
+      ? searchMarketplaceCreators(q, 0, limit, creatorSearchFilters)
+      : Promise.resolve({ content: [] }),
     include('products')
       ? listPublicProducts({
           q,
           size: limit,
-          ...(productType ? { type: productType } : {}),
+          ...(productFormat ? { format: productFormat } : {}),
           ...(productSort ? { sort: productSort } : {}),
         })
       : Promise.resolve({ content: [] }),
     include('content') ? listPublicContentFeed({ q, size: limit }) : Promise.resolve({ content: [] }),
   ]);
 
+  const creatorRows =
+    creatorsRes.status === 'fulfilled' && 'content' in creatorsRes.value
+      ? creatorsRes.value.content
+      : [];
+
   return {
-    users: usersRes.status === 'fulfilled' ? usersRes.value : [],
-    creators:
-      creatorsRes.status === 'fulfilled' && 'content' in creatorsRes.value
-        ? creatorsRes.value.content
-        : [],
+    users: [],
+    creators: include('creators') ? creatorRows : [],
+    serviceProviders: include('serviceProviders') ? creatorRows : [],
     products:
       productsRes.status === 'fulfilled' && 'content' in productsRes.value
         ? productsRes.value.content
@@ -239,6 +271,7 @@ export async function fetchGlobalSearchPageData(
 const EMPTY_TAB_COUNTS: GlobalSearchTabCounts = {
   users: 0,
   creators: 0,
+  serviceProviders: 0,
   products: 0,
   content: 0,
 };
@@ -246,41 +279,38 @@ const EMPTY_TAB_COUNTS: GlobalSearchTabCounts = {
 /** Lightweight totals for tab badges (independent of active tab). */
 export async function fetchGlobalSearchTabCounts(
   query: string,
-  isAuthenticated: boolean
+  _isAuthenticated: boolean
 ): Promise<GlobalSearchTabCounts> {
   const q = query.trim();
   if (q.length < GLOBAL_SEARCH_MIN_LENGTH) return EMPTY_TAB_COUNTS;
 
-  const [usersRes, creatorsRes, productsRes, contentRes] = await Promise.allSettled([
-    isAuthenticated ? searchMessagingUsers(q, 0, 50) : Promise.resolve([]),
+  const [creatorsRes, productsRes, contentRes] = await Promise.allSettled([
     searchMarketplaceCreators(q, 0, 1),
     listPublicProducts({ q, size: 1 }),
     listPublicContentFeed({ q, size: 1 }),
   ]);
 
+  const creatorTotal =
+    creatorsRes.status === 'fulfilled' ? creatorsRes.value.totalElements : 0;
+
   return {
-    users: usersRes.status === 'fulfilled' ? usersRes.value.length : 0,
-    creators:
-      creatorsRes.status === 'fulfilled' ? creatorsRes.value.totalElements : 0,
-    products:
-      productsRes.status === 'fulfilled' ? productsRes.value.totalElements : 0,
-    content:
-      contentRes.status === 'fulfilled' ? contentRes.value.totalElements : 0,
+    users: 0,
+    creators: creatorTotal,
+    serviceProviders: creatorTotal,
+    products: productsRes.status === 'fulfilled' ? productsRes.value.totalElements : 0,
+    content: contentRes.status === 'fulfilled' ? contentRes.value.totalElements : 0,
   };
 }
 
 export function getTabCount(
   tab: GlobalSearchTab,
   counts: GlobalSearchTabCounts,
-  isAuthenticated: boolean
+  _isAuthenticated: boolean
 ): number {
   if (tab === 'all') {
-    return (
-      counts.creators +
-      counts.products +
-      counts.content +
-      (isAuthenticated ? counts.users : 0)
-    );
+    // Profiles + Service Provider share the same people — count once
+    return counts.creators + counts.products + counts.content;
   }
+  if (tab === 'users') return 0;
   return counts[tab];
 }

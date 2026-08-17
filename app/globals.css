@@ -34,24 +34,26 @@
   --msg-card: #ffffff;
   --msg-border: #e5e5e5; /* neutral-200 */
   --msg-text: #171717; /* neutral-900 */
-  --msg-muted: #737373; /* neutral-500 */
+  --msg-muted: #4b5563; /* gray-600 — AA on white */
   --msg-brand: #f47b20;
   --msg-brand-hover: #e06e18;
   --msg-brand-soft: #fff4eb;
-  --msg-incoming: #f5f5f5;
+  --msg-incoming: #f3f4f6; /* gray-100 */
   --msg-outgoing: #f47b20;
+  --msg-thread-bg: #fafafa;
   --msg-radius: 12px;
 
   /* Conversation workspace (B2B timeline) */
   --cw-page-bg: #f4f5f7;
   --cw-surface: #ffffff;
-  --cw-surface-soft: #fcfcfb;
+  --cw-surface-soft: #f9fafb;
   --cw-border: #e2e5e9;
   --cw-text-primary: #17191c;
-  --cw-text-secondary: #68707a;
-  --cw-text-muted: #9aa1aa;
+  --cw-text-secondary: #4b5563; /* gray-600 — AA */
+  --cw-text-muted: #6b7280; /* gray-500 — AA secondary */
   --cw-accent: #f47b20;
   --cw-accent-soft: #fff1e6;
+  --cw-incoming-bg: #f3f4f6;
   --cw-success: #138a72;
   --cw-radius: 8px;
 }
@@ -74,12 +76,13 @@
   --msg-card: #171717; /* neutral-900 */
   --msg-border: #262626; /* neutral-800 */
   --msg-text: #f5f5f5; /* neutral-100 */
-  --msg-muted: #a3a3a3; /* neutral-400 */
+  --msg-muted: #d1d5db; /* gray-300 — AA on dark */
   --msg-brand: #f47b20;
   --msg-brand-hover: #fb923c;
   --msg-brand-soft: #3a2414;
-  --msg-incoming: #0a0a0a;
+  --msg-incoming: #262626;
   --msg-outgoing: #f47b20;
+  --msg-thread-bg: #111111;
   --msg-radius: 12px;
 
   /* Conversation workspace — dark */
@@ -88,10 +91,11 @@
   --cw-surface-soft: #1f1f1f;
   --cw-border: #262626;
   --cw-text-primary: #f5f5f5;
-  --cw-text-secondary: #a3a3a3;
-  --cw-text-muted: #737373;
+  --cw-text-secondary: #d1d5db;
+  --cw-text-muted: #9ca3af;
   --cw-accent: #f47b20;
   --cw-accent-soft: #3a2414;
+  --cw-incoming-bg: #262626;
   --cw-success: #2dd4bf;
   --cw-radius: 8px;
 }
@@ -272,16 +276,64 @@ body {
 @keyframes discussion-thread-content-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 .discussion-thread-content-in {
-  animation: discussion-thread-content-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: discussion-thread-content-in 200ms ease-out both;
+}
+
+/** Soft media open — lightbox + inline reveal (no hard pop). */
+@keyframes msg-media-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes msg-media-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes msg-media-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.msg-media-backdrop-in {
+  animation: msg-media-backdrop-in 220ms ease-out both;
+}
+
+.msg-media-panel-in {
+  animation: msg-media-panel-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.msg-media-reveal {
+  animation: msg-media-reveal 280ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-media-backdrop-in,
+  .msg-media-panel-in,
+  .msg-media-reveal {
+    animation: none;
+  }
 }
 
 /** Discussion thread backgrounds — outside @layer so utilities cannot override the pattern */
@@ -866,10 +918,10 @@ html.ecosystem-geo-bg [data-dashboard-content] {
   height: 0.625rem;
   border-radius: 9999px;
   flex-shrink: 0;
-  background-color: #a3a3a3 !important;
+  background-color: #f47b20 !important;
 }
 .dark .notification-unread-dot {
-  background-color: #737373 !important;
+  background-color: #f47b20 !important;
 }
 
 /* Subtle orange border pulse for marketplace theme accents */

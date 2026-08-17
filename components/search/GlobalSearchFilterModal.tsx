@@ -3,18 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { GlobalSearchCategory } from '@/lib/global-search';
-import type {
-  GlobalSearchContentMediaFilter,
-  GlobalSearchFilters,
-  GlobalSearchProductTypeFilter,
-} from '@/lib/global-search-filters';
+import type { GlobalSearchFilters } from '@/lib/global-search-filters';
 import {
   countActiveGlobalSearchFilters,
   createDefaultGlobalSearchFilters,
   GLOBAL_SEARCH_CATEGORY_OPTIONS,
-  GLOBAL_SEARCH_CONTENT_MEDIA_OPTIONS,
   GLOBAL_SEARCH_DATE_OPTIONS,
-  GLOBAL_SEARCH_PRODUCT_TYPE_OPTIONS,
   GLOBAL_SEARCH_SORT_OPTIONS,
 } from '@/lib/global-search-filters';
 
@@ -27,14 +21,12 @@ type GlobalSearchFilterModalProps = {
   onApply: (filters: GlobalSearchFilters) => void;
 };
 
-type FilterPanel = 'show' | 'date' | 'sort' | 'product' | 'content';
+type FilterPanel = 'show' | 'date' | 'sort';
 
 const PANELS: { id: FilterPanel; label: string }[] = [
   { id: 'show', label: 'Show' },
   { id: 'date', label: 'Publication date' },
   { id: 'sort', label: 'Sort by' },
-  { id: 'product', label: 'Product type' },
-  { id: 'content', label: 'Content media' },
 ];
 
 const SCROLLBAR =
@@ -165,10 +157,7 @@ export function GlobalSearchFilterModal({
     };
   }, [open, mounted]);
 
-  const categoryOptions = useMemo(
-    () => GLOBAL_SEARCH_CATEGORY_OPTIONS.filter((option) => option.value !== 'users' || isAuthenticated),
-    [isAuthenticated]
-  );
+  const categoryOptions = useMemo(() => GLOBAL_SEARCH_CATEGORY_OPTIONS, []);
 
   const activeFilterCount = countActiveGlobalSearchFilters(draft, isAuthenticated);
 
@@ -203,10 +192,6 @@ export function GlobalSearchFilterModal({
         return draft.dateRange !== defaults.dateRange;
       case 'sort':
         return draft.sort !== defaults.sort;
-      case 'product':
-        return draft.productType !== defaults.productType;
-      case 'content':
-        return draft.contentMedia !== defaults.contentMedia;
       default:
         return false;
     }
@@ -230,7 +215,7 @@ export function GlobalSearchFilterModal({
           <div>
             <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Filter Search</h2>
             <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              Refine your results across all categories
+              Refine categories, date, and sort
             </p>
           </div>
           <button
@@ -332,50 +317,6 @@ export function GlobalSearchFilterModal({
                     </option>
                   ))}
                 </select>
-              </div>
-            ) : null}
-
-            {activePanel === 'product' ? (
-              <div className="space-y-4">
-                <PanelTitle>Product type</PanelTitle>
-                <div className="flex flex-wrap gap-2">
-                  {GLOBAL_SEARCH_PRODUCT_TYPE_OPTIONS.map((option) => (
-                    <PillButton
-                      key={option.value}
-                      active={draft.productType === option.value}
-                      onClick={() =>
-                        setDraft((prev) => ({
-                          ...prev,
-                          productType: option.value as GlobalSearchProductTypeFilter,
-                        }))
-                      }
-                    >
-                      {option.label}
-                    </PillButton>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {activePanel === 'content' ? (
-              <div className="space-y-4">
-                <PanelTitle>Content media</PanelTitle>
-                <div className="flex flex-wrap gap-2">
-                  {GLOBAL_SEARCH_CONTENT_MEDIA_OPTIONS.map((option) => (
-                    <PillButton
-                      key={option.value}
-                      active={draft.contentMedia === option.value}
-                      onClick={() =>
-                        setDraft((prev) => ({
-                          ...prev,
-                          contentMedia: option.value as GlobalSearchContentMediaFilter,
-                        }))
-                      }
-                    >
-                      {option.label}
-                    </PillButton>
-                  ))}
-                </div>
               </div>
             ) : null}
           </div>

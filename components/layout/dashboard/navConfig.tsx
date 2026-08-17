@@ -192,8 +192,9 @@ export function isDashboardHomePath(pathname: string): boolean {
 export function getPageTitle(pathname: string, search = ''): string {
   if (pathname === '/dashboard') return 'Dashboard';
   if (pathname === '/dashboard/home') return 'News';
+  if (pathname.startsWith('/dashboard/notifications')) return 'Notifications';
   if (pathname.startsWith('/dashboard/credits')) return 'Credits';
-  if (pathname.startsWith('/dashboard/discussions')) return 'Messages';
+  if (pathname.startsWith('/dashboard/discussions')) return 'Professional Discussion';
   if (pathname.startsWith('/dashboard/portfolio')) return 'My Portfolio';
   if (pathname.startsWith('/dashboard/search')) return 'Search';
   if (pathname.startsWith('/dashboard/scheduler')) return 'Scheduler';

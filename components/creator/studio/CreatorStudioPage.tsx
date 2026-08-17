@@ -285,6 +285,7 @@ function CreatorStudioPageInner() {
             <CreatorStudioContentTab
               contentHeadline={header.contentHeadline}
               specialite={header.specialite}
+              specialties={header.specialties}
             />
           )}
           {tab === 'services' && <CreatorStudioServicesTab />}

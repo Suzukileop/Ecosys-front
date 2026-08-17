@@ -31,6 +31,7 @@ import { getApiErrorMessage } from '@/lib/api-error';
 import { listComments } from '@/lib/marketplace-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import { useAuth } from '@/context/AuthContext';
+import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
 import type {
   ContentPostBucket,
   CreatorContentCreateBody,
@@ -42,6 +43,7 @@ type CreatorContentPostCardProps = {
   bucket: ContentPostBucket;
   creatorName: string;
   specialite?: string | null;
+  specialties?: string[] | null;
   onChanged: () => void;
   onError: (message: string) => void;
   className?: string;
@@ -134,11 +136,13 @@ export function CreatorContentPostCard({
   bucket,
   creatorName,
   specialite,
+  specialties,
   onChanged,
   onError,
   className = '',
 }: CreatorContentPostCardProps) {
   const { user } = useAuth();
+  const { appRole } = useCreatorAppRole();
   const [post, setPost] = useState(postProp);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentCount, setCommentCount] = useState<number | undefined>(undefined);
@@ -368,7 +372,9 @@ export function CreatorContentPostCard({
             <ContentPostStudioHeader
               creatorName={creatorName}
               avatarUrl={user?.avatarUrl}
+              appRole={appRole}
               specialite={specialite}
+              specialties={specialties}
               moodLabel={post.moodLabel}
               moodEmoji={post.moodEmoji}
               taggedUsers={post.taggedUsers}
@@ -463,6 +469,8 @@ export function CreatorContentPostCard({
         moderationMode
         loginRedirect="/dashboard/creator?tab=content"
         specialite={specialite}
+        specialties={specialties}
+        appRole={appRole}
       />
     </div>
   );

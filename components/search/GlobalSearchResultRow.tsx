@@ -20,7 +20,7 @@ function ChevronIcon({ className }: { className?: string }) {
 }
 
 function isPeopleCategory(category: GlobalSearchItem['category']) {
-  return category === 'users' || category === 'creators';
+  return category === 'users' || category === 'creators' || category === 'serviceProviders';
 }
 
 export function GlobalSearchResultThumbnail({ item }: { item: GlobalSearchItem }) {
@@ -112,6 +112,7 @@ export function GlobalSearchResultRow({
 export function getGlobalSearchItemHref(item: GlobalSearchItem): string {
   switch (item.category) {
     case 'creators':
+    case 'serviceProviders':
       return `/marketplace/${item.id}`;
     case 'products':
       return `/marketplace/products/${item.id}`;

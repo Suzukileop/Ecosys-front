@@ -28,6 +28,29 @@ export function isMarketplaceCreatorProfilePath(pathname: string): boolean {
   return !MARKETPLACE_PRODUCT_SECTIONS.has(segment) && segment !== 'content';
 }
 
+/**
+ * Safe internal path for profile "back" navigation (`from` query).
+ * Rejects protocol-relative / external URLs.
+ */
+export function sanitizeMarketplaceReturnTo(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) return null;
+  if (trimmed.includes('://')) return null;
+  return trimmed;
+}
+
+/** Public profile URL, optionally carrying a return path for the header back button. */
+export function marketplaceCreatorProfileHref(
+  creatorId: string,
+  returnTo?: string | null
+): string {
+  const base = `/marketplace/${encodeURIComponent(creatorId)}`;
+  const safe = sanitizeMarketplaceReturnTo(returnTo);
+  if (!safe) return base;
+  return `${base}?from=${encodeURIComponent(safe)}`;
+}
+
 /** Service Provider directory (not a single creator profile). */
 export function isServiceProvidersCatalogPath(pathname: string): boolean {
   return pathname === '/marketplace/creators' || pathname.startsWith('/marketplace/creators/');

@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CreatorContentPublishModal } from '@/components/creator/CreatorContentPublishModal';
+import { NewsCreateShortcuts } from '@/components/home/NewsCreateShortcuts';
 import { NewsDiscoverRail } from '@/components/home/NewsDiscoverRail';
-import { NEWS_OPEN_PUBLISH_EVENT } from '@/components/home/NewsPublishHeaderCta';
+import {
+  NEWS_OPEN_PUBLISH_EVENT,
+  NewsPublishHeaderCta,
+} from '@/components/home/NewsPublishHeaderCta';
 import { PublicContentPostCard } from '@/components/home/PublicContentPostCard';
 import { HomeNewsFeedSkeleton } from '@/components/home/HomeNewsSkeleton';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
@@ -162,20 +166,34 @@ export function HomeNewsFeed() {
   );
 
   return (
-    <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:gap-5">
+    <div className="flex flex-col gap-4">
       {publishModal}
 
-      <div className="min-w-0 flex-1 space-y-2">{feedBody}</div>
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:gap-5">
+        <div className="min-w-0 flex-1 space-y-4">
+          <div
+            className={`mx-auto w-full space-y-4 transition-[max-width] duration-300 ease-out ${
+              railExpanded
+                ? 'max-w-xl xl:max-w-2xl'
+                : 'max-w-[min(100%,88rem)] px-1 sm:px-2'
+            }`}
+          >
+            <NewsCreateShortcuts />
+            <NewsPublishHeaderCta inline className="w-full" />
+          </div>
+          <div className="space-y-2">{feedBody}</div>
+        </div>
 
-      <NewsDiscoverRail
-        selected={interest}
-        onSelect={handleInterestSelect}
-        search={searchDraft}
-        onSearchChange={handleSearchChange}
-        expanded={railExpanded}
-        onExpandedChange={setRailExpanded}
-        className="order-first xl:order-none xl:sticky xl:top-[4.75rem]"
-      />
+        <NewsDiscoverRail
+          selected={interest}
+          onSelect={handleInterestSelect}
+          search={searchDraft}
+          onSearchChange={handleSearchChange}
+          expanded={railExpanded}
+          onExpandedChange={setRailExpanded}
+          className="order-first xl:order-none xl:sticky xl:top-[4.75rem]"
+        />
+      </div>
     </div>
   );
 }

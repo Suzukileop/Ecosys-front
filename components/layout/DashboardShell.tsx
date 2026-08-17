@@ -16,6 +16,7 @@ import {
   notifyDashboardSidebarExpand,
 } from '@/lib/dashboard-chrome';
 import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
+import { usePresenceHeartbeat } from '@/hooks/usePresenceHeartbeat';
 import {
   creatorCanAccessMyProducts,
   creatorCanAccessMyServices,
@@ -115,21 +116,23 @@ export function DashboardShell({
   const { appRole, ready: appRoleReady } = useCreatorAppRole();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  usePresenceHeartbeat(Boolean(user) && sessionStatus === 'authenticated');
+
   useLayoutEffect(() => {
     setSidebarCollapsed(readSidebarCollapsed());
   }, []);
 
   const toggleSidebarCollapsed = useCallback(() => {
+    const willExpand = sidebarCollapsed;
     setSidebarCollapsed((value) => {
       const next = !value;
       writeSidebarCollapsed(next);
-      // Expanding the main sidebar closes conversation details.
-      if (!next) {
-        notifyDashboardSidebarExpand();
-      }
       return next;
     });
-  }, []);
+    if (willExpand) {
+      notifyDashboardSidebarExpand();
+    }
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     const onDetailsOpen = () => {
@@ -253,9 +256,7 @@ export function DashboardShell({
         data-dashboard-main
         className={`flex min-w-0 flex-1 flex-col ${fillMainLayout ? 'h-screen max-h-screen overflow-hidden' : ''} ${shellBg}`}
       >
-        <DashboardTopHeader
-          transparent={useTransparentHeader}
-        />
+        <DashboardTopHeader transparent={useTransparentHeader} />
         <div
           data-dashboard-content
           className={`relative z-10 min-w-0 flex-1 ${

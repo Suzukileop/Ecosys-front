@@ -44,9 +44,7 @@ export function TemporaryGuestBanner({
           >
             <Avatar avatarUrl={guest.guestAvatarUrl} name={guest.guestName} size="sm" tone="muted" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-gray-900 dark:text-white">
-                Temporary guest · {guest.guestName}
-              </p>
+              <p className="text-xs font-semibold text-gray-900 dark:text-white">Temporary guest</p>
               <p className="text-[11px] text-gray-600 dark:text-neutral-400">
                 Invited by <span className="font-medium text-gray-800 dark:text-neutral-200">{guest.inviterName}</span>
                 {' · '}

@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Client, IMessage } from '@stomp/stompjs';
+import { Client, IMessage, type StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { getAccessToken, onAccessTokenChange } from '@/lib/accessToken';
 import { getApiErrorMessage } from '@/lib/api-error';
@@ -36,7 +36,8 @@ import type {
 } from '@/types/messaging';
 import { useAuth } from '@/context/AuthContext';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import { DiscussionCallPanel } from '@/components/messaging/DiscussionCallPanel';
 import { type MessageStatusType } from '@/components/messaging/MessageStatusIndicator';
 import { ConversationHeader } from '@/components/messaging/conversation/ConversationHeader';
@@ -45,7 +46,6 @@ import {
   type ComposerPendingFile,
 } from '@/components/messaging/conversation/MessageComposer';
 import { MessageTimeline } from '@/components/messaging/conversation/MessageTimeline';
-import { TemporaryGuestBanner } from '@/components/messaging/TemporaryGuestBanner';
 import { GuestSessionTraceMenu } from '@/components/messaging/GuestSessionTraceMenu';
 import { PendingGuestInviteStrip } from '@/components/messaging/PendingGuestInviteStrip';
 import { filterGuestSessionTraces } from '@/lib/guest-session-trace';
@@ -79,6 +79,7 @@ interface DiscussionChatPanelProps {
   conversationType?: ConversationType;
   showComposer?: boolean;
   readOnlyGuestHistory?: boolean;
+  temporarySession?: boolean;
   detailsOpen?: boolean;
   onToggleDetails?: () => void;
   onBack?: () => void;
@@ -194,6 +195,7 @@ export function DiscussionChatPanel({
   conversationType = 'DIRECT',
   showComposer = true,
   readOnlyGuestHistory = false,
+  temporarySession = false,
   detailsOpen = false,
   onToggleDetails,
   onBack,
@@ -225,7 +227,12 @@ export function DiscussionChatPanel({
   const [typingUsers, setTypingUsers] = useState<Map<string, string>>(() => new Map());
   const [wsReconnectNonce, setWsReconnectNonce] = useState(0);
   const [deliveredReceipts, setDeliveredReceipts] = useState<Map<string, Set<string>>>(() => new Map());
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+  const [pendingDeleteMessage, setPendingDeleteMessage] = useState<DirectMessage | null>(null);
+  const [deletingMessage, setDeletingMessage] = useState(false);
   const clientRef = useRef<Client | null>(null);
+  const topicSubsRef = useRef<StompSubscription[]>([]);
+  const attachConversationTopicsRef = useRef<(() => void) | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesContentRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -238,6 +245,7 @@ export function DiscussionChatPanel({
   const onGuestSessionEndedRef = useRef(onGuestSessionEnded);
   const historyLoadSeqRef = useRef(0);
   const loadingHistoryRef = useRef(loadingHistory);
+  const loadHistoryRef = useRef<((options?: { switching?: boolean }) => Promise<void>) | null>(null);
   const loadActiveGuestsRef = useRef<(() => Promise<void>) | null>(null);
   const loadParticipantsRef = useRef<(() => Promise<void>) | null>(null);
   const loadPendingGuestInvitesRef = useRef<(() => Promise<void>) | null>(null);
@@ -251,8 +259,19 @@ export function DiscussionChatPanel({
   const deliveredAckSentRef = useRef<Set<string>>(new Set());
   const pendingDeliveryAcksRef = useRef<Set<string>>(new Set());
   const markReadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const leavingRef = useRef(false);
   const accessRevokedRef = useRef(false);
+  const mountedRef = useRef(true);
+  const conversationIdRef = useRef(conversationId);
+  conversationIdRef.current = conversationId;
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     onConversationUpdatedRef.current = onConversationUpdated;
@@ -474,7 +493,7 @@ export function DiscussionChatPanel({
     }
   };
 
-  const handleRevokeGuest = async (guestUserId: string) => {
+  const handleEndGuestAccess = async (guestUserId: string) => {
     setGuestActionLoading(true);
     setError(null);
     try {
@@ -524,7 +543,7 @@ export function DiscussionChatPanel({
         forceStickToBottomRef.current = true;
         shouldStickToBottomRef.current = true;
       }
-      const page = await listConversationMessages(conversationId, 0, 50);
+      const page = await listConversationMessages(conversationId, 0, 200);
       if (loadSeq !== historyLoadSeqRef.current) return;
       const sorted = [...page.content].sort(sortBySentAt);
       setMessages(sorted);
@@ -563,11 +582,15 @@ export function DiscussionChatPanel({
     return () => window.clearInterval(interval);
   }, [conversationId, loadActiveGuests, loadParticipants, loadPendingGuestInvites, loadingHistory]);
 
-  useEffect(() => {
+  // Reset + load before paint so the previous thread never flashes under the new header.
+  useLayoutEffect(() => {
     leavingRef.current = false;
     accessRevokedRef.current = false;
     clearAttachmentLoadFailuresForConversation(conversationId);
-    setMessages([]);
+    setMessages((prev) => {
+      revokeMessageLocalPreviews(prev);
+      return [];
+    });
     setInput('');
     setError(null);
     setSending(false);
@@ -577,6 +600,7 @@ export function DiscussionChatPanel({
     setPendingGuestInvites([]);
     setTypingUsers(new Map());
     setDeliveredReceipts(new Map());
+    setActiveCall(null);
     lastTypingSentRef.current = false;
     deliveredAckSentRef.current = new Set();
     pendingDeliveryAcksRef.current = new Set();
@@ -591,6 +615,7 @@ export function DiscussionChatPanel({
   }, [conversationId, readOnlyGuestHistory]);
 
   useEffect(() => {
+    loadHistoryRef.current = loadHistory;
     loadActiveGuestsRef.current = loadActiveGuests;
     loadParticipantsRef.current = loadParticipants;
     loadPendingGuestInvitesRef.current = loadPendingGuestInvites;
@@ -600,6 +625,7 @@ export function DiscussionChatPanel({
   }, [
     acknowledgeDeliveryOnce,
     loadActiveGuests,
+    loadHistory,
     loadParticipants,
     loadPendingGuestInvites,
     scheduleInboxRefresh,
@@ -662,12 +688,29 @@ export function DiscussionChatPanel({
     requestAnimationFrame(() => scrollToBottom('smooth'));
   }, [messages, loadingHistory, scrollToBottom]);
 
+  // Keep one STOMP socket for the panel lifetime — switching chats only swaps topic subscriptions
+  // so the composer never flips to "Connecting…" on inbox navigation.
   useEffect(() => {
-    if (!conversationId || accessRevokedRef.current || readOnlyGuestHistory) {
+    if (readOnlyGuestHistory) {
       setConnected(false);
+      for (const sub of topicSubsRef.current) {
+        try {
+          sub.unsubscribe();
+        } catch {
+          /* ignore */
+        }
+      }
+      topicSubsRef.current = [];
+      try {
+        void clientRef.current?.deactivate();
+      } catch {
+        /* ignore */
+      }
+      clientRef.current = null;
       return;
     }
 
+    let disposed = false;
     const token = getAccessToken();
     setNoToken(!token);
 
@@ -678,24 +721,138 @@ export function DiscussionChatPanel({
       connectHeaders: token ? { Authorization: `Bearer ${token}` } : undefined,
       webSocketFactory: () => new SockJS(getSockJsEndpoint()) as unknown as WebSocket,
       onConnect: () => {
+        if (disposed) return;
         setConnected(true);
-        setError(null);
+        setError((prev) =>
+          prev === 'WebSocket connection interrupted.' ||
+          prev === 'Real-time connection error.' ||
+          (prev?.startsWith('Real-time session') ?? false)
+            ? null
+            : prev
+        );
         flushPendingDeliveryAcks();
-        stomp.subscribe(`/topic/conversations/${conversationId}`, (message: IMessage) => {
+        attachConversationTopicsRef.current?.();
+      },
+      onDisconnect: () => {
+        if (disposed || leavingRef.current) return;
+        setConnected(false);
+      },
+      onStompError: (frame) => {
+        if (disposed || leavingRef.current) return;
+        const message = frame.headers['message'] ?? '';
+        if (
+          message.includes('clientInboundChannel') ||
+          message.includes('ExecutorSubscribableChannel') ||
+          /connection closed|broken pipe|whoami/i.test(message)
+        ) {
+          return;
+        }
+        if (/unauthorized|forbidden|access denied|invalid token|jwt/i.test(message)) {
+          setError('Real-time session expired. Reload or sign in again.');
+          setConnected(false);
+        }
+        // Transient broker errors: let STOMP reconnect quietly — keep composer frozen.
+      },
+      onWebSocketError: () => {
+        if (disposed || leavingRef.current) return;
+      },
+      onWebSocketClose: () => {
+        if (disposed || leavingRef.current) return;
+        setConnected(false);
+      },
+    });
+
+    clientRef.current = stomp;
+    if (token) stomp.activate();
+
+    return () => {
+      disposed = true;
+      for (const sub of topicSubsRef.current) {
+        try {
+          sub.unsubscribe();
+        } catch {
+          /* ignore */
+        }
+      }
+      topicSubsRef.current = [];
+      try {
+        void stomp.deactivate();
+      } catch {
+        /* ignore teardown errors */
+      }
+      if (clientRef.current === stomp) {
+        clientRef.current = null;
+      }
+    };
+  }, [flushPendingDeliveryAcks, readOnlyGuestHistory, user?.id, wsReconnectNonce]);
+
+  useEffect(() => {
+    if (!conversationId || accessRevokedRef.current || readOnlyGuestHistory) {
+      return;
+    }
+
+    let disposed = false;
+    const activeConversationId = conversationId;
+
+    const clearTopicSubs = () => {
+      for (const sub of topicSubsRef.current) {
+        try {
+          sub.unsubscribe();
+        } catch {
+          /* ignore */
+        }
+      }
+      topicSubsRef.current = [];
+    };
+
+    const attachTopics = () => {
+      const stomp = clientRef.current;
+      if (!stomp?.connected || disposed) return;
+      clearTopicSubs();
+
+      topicSubsRef.current = [
+        stomp.subscribe(`/topic/conversations/${activeConversationId}`, (message: IMessage) => {
+          if (disposed) return;
           try {
             const raw = JSON.parse(message.body) as DirectMessage;
             const parsed = normalizeDirectMessage({
               ...raw,
               sentAt: parseRealtimeTimestamp(raw.sentAt),
             });
+            if (
+              parsed.conversationId &&
+              String(parsed.conversationId) !== activeConversationId
+            ) {
+              return;
+            }
+            if (conversationIdRef.current !== activeConversationId || disposed) return;
             setSending(false);
             if (sendFallbackTimerRef.current) {
               clearTimeout(sendFallbackTimerRef.current);
               sendFallbackTimerRef.current = null;
             }
             setMessages((prev) => {
-              const next = [...prev.filter((m) => m.id !== parsed.id), parsed];
-              return next.sort(sortBySentAt);
+              const withoutDup = prev.filter((m) => m.id !== parsed.id);
+              const optimisticMatch = withoutDup.find(
+                (m) =>
+                  m.clientPending &&
+                  m.senderId === parsed.senderId &&
+                  (m.attachments?.[0]?.fileName ?? null) === (parsed.attachments?.[0]?.fileName ?? null)
+              );
+              const nextBase = optimisticMatch
+                ? withoutDup.filter((m) => m.id !== optimisticMatch.id)
+                : withoutDup;
+              const localPreviewUrl = optimisticMatch?.attachments?.[0]?.localPreviewUrl;
+              const merged =
+                localPreviewUrl && parsed.attachments?.length
+                  ? {
+                      ...parsed,
+                      attachments: parsed.attachments.map((att, index) =>
+                        index === 0 ? { ...att, localPreviewUrl } : att
+                      ),
+                    }
+                  : parsed;
+              return [...nextBase, merged].sort(sortBySentAt);
             });
             if (parsed.senderId !== user?.id) {
               acknowledgeDeliveryOnceRef.current(parsed.id);
@@ -708,11 +865,12 @@ export function DiscussionChatPanel({
             scheduleInboxRefreshRef.current?.();
             requestAnimationFrame(() => tryMarkAsReadIfAtBottomRef.current?.());
           } catch {
-            setError('Received an invalid message.');
+            if (!disposed) setError('Received an invalid message.');
           }
-        });
+        }),
 
-        stomp.subscribe(`/topic/conversations/${conversationId}/read`, (message: IMessage) => {
+        stomp.subscribe(`/topic/conversations/${activeConversationId}/read`, (message: IMessage) => {
+          if (disposed) return;
           try {
             const receipt = JSON.parse(message.body) as ConversationReadReceipt;
             const readerId = String(receipt.userId);
@@ -725,31 +883,34 @@ export function DiscussionChatPanel({
           } catch {
             /* ignore */
           }
-        });
+        }),
 
-        stomp.subscribe(`/topic/conversations/${conversationId}/delivered`, (message: IMessage) => {
+        stomp.subscribe(`/topic/conversations/${activeConversationId}/delivered`, (message: IMessage) => {
+          if (disposed) return;
           try {
             const receipt = JSON.parse(message.body) as MessageDeliveryReceipt;
             recordDeliveryReceipt(String(receipt.messageId), String(receipt.userId));
           } catch {
             /* ignore */
           }
-        });
+        }),
 
-        stomp.subscribe(`/topic/conversations/${conversationId}/deleted`, (message: IMessage) => {
+        stomp.subscribe(`/topic/conversations/${activeConversationId}/deleted`, (message: IMessage) => {
+          if (disposed) return;
           try {
             const payload = JSON.parse(message.body) as { messageId?: string };
             const deletedId = payload.messageId ? String(payload.messageId) : null;
             if (!deletedId) return;
             setMessages((prev) => prev.filter((m) => m.id !== deletedId));
-            removePinnedMessage(conversationId, deletedId);
+            removePinnedMessage(activeConversationId, deletedId);
             scheduleInboxRefreshRef.current?.();
           } catch {
             /* ignore */
           }
-        });
+        }),
 
-        stomp.subscribe(`/topic/conversations/${conversationId}/typing`, (message: IMessage) => {
+        stomp.subscribe(`/topic/conversations/${activeConversationId}/typing`, (message: IMessage) => {
+          if (disposed) return;
           try {
             const indicator = JSON.parse(message.body) as TypingIndicator;
             const typingUserId = String(indicator.userId);
@@ -783,9 +944,10 @@ export function DiscussionChatPanel({
           } catch {
             /* ignore */
           }
-        });
+        }),
 
-        stomp.subscribe(`/topic/conversations/${conversationId}/call`, (message: IMessage) => {
+        stomp.subscribe(`/topic/conversations/${activeConversationId}/call`, (message: IMessage) => {
+          if (disposed) return;
           try {
             const session = JSON.parse(message.body) as CallSession;
             if (session.status === 'ENDED' || session.status === 'MISSED') {
@@ -796,42 +958,30 @@ export function DiscussionChatPanel({
           } catch {
             /* ignore */
           }
-        });
-      },
-      onDisconnect: () => setConnected(false),
-      onStompError: (frame) => {
-        if (leavingRef.current) return;
-        const message = frame.headers['message'] ?? '';
-        if (
-          message.includes('clientInboundChannel') ||
-          message.includes('ExecutorSubscribableChannel')
-        ) {
-          return;
-        }
-        setError(message || 'Real-time connection error.');
-      },
-      onWebSocketError: () => {
-        if (leavingRef.current) return;
-        setError('WebSocket connection interrupted.');
-      },
-    });
+        }),
+      ];
+    };
 
-    clientRef.current = stomp;
-    if (token) stomp.activate();
+    attachConversationTopicsRef.current = attachTopics;
+    attachTopics();
 
     const typingClearTimers = typingClearTimersRef.current;
 
     return () => {
+      disposed = true;
       if (sendFallbackTimerRef.current) clearTimeout(sendFallbackTimerRef.current);
       if (inboxRefreshTimerRef.current) clearTimeout(inboxRefreshTimerRef.current);
       if (typingIdleTimerRef.current) clearTimeout(typingIdleTimerRef.current);
       if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
       typingClearTimers.forEach((timer) => clearTimeout(timer));
       typingClearTimers.clear();
-      stomp.deactivate();
-      clientRef.current = null;
+      setTypingUsers(new Map());
+      clearTopicSubs();
+      if (attachConversationTopicsRef.current === attachTopics) {
+        attachConversationTopicsRef.current = null;
+      }
     };
-  }, [conversationId, flushPendingDeliveryAcks, readOnlyGuestHistory, recordDeliveryReceipt, user?.id, wsReconnectNonce]);
+  }, [conversationId, readOnlyGuestHistory, recordDeliveryReceipt, user?.id]);
 
   const publishTyping = useCallback(
     (typing: boolean) => {
@@ -913,6 +1063,16 @@ export function DiscussionChatPanel({
     });
   }, []);
 
+  const revokeMessageLocalPreviews = useCallback((list: DirectMessage[]) => {
+    for (const message of list) {
+      for (const attachment of message.attachments ?? []) {
+        if (attachment.localPreviewUrl?.startsWith('blob:')) {
+          URL.revokeObjectURL(attachment.localPreviewUrl);
+        }
+      }
+    }
+  }, []);
+
   const sendMessage = async () => {
     const text = input.trim();
     const files = pendingFiles;
@@ -942,30 +1102,92 @@ export function DiscussionChatPanel({
       return;
     }
 
-    setSending(true);
-    setUploading(true);
-    setError(null);
+    if (!user?.id) return;
+
+    // Optimistic UI: show media in the thread immediately, free the composer.
+    const filesToSend = files.map((item) => ({ ...item }));
+    const captionText = text;
+    const optimisticMessages: DirectMessage[] = filesToSend.map((item, index) => ({
+      id: `optimistic-${item.id}`,
+      conversationId,
+      senderId: user.id,
+      senderName: user.fullName?.trim() || 'You',
+      senderAvatarUrl: user.avatarUrl ?? null,
+      content: index === 0 ? captionText || null : null,
+      messageType: 'FILE',
+      attachments: [
+        {
+          id: `optimistic-att-${item.id}`,
+          fileName: item.file.name,
+          contentType: item.file.type || 'application/octet-stream',
+          sizeBytes: item.file.size,
+          localPreviewUrl: item.previewUrl,
+        },
+      ],
+      sentAt: new Date().toISOString(),
+      clientPending: true,
+    }));
+
+    setInput('');
+    setPendingFiles([]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     publishTyping(false);
+    setError(null);
+    setMessages((prev) => [...prev, ...optimisticMessages].sort(sortBySentAt));
+    forceStickToBottomRef.current = true;
+    shouldStickToBottomRef.current = true;
+    requestAnimationFrame(() => scrollToBottom('smooth'));
+
+    setUploading(true);
+    const uploadForConversationId = conversationId;
     try {
-      for (let index = 0; index < files.length; index += 1) {
-        const caption = index === 0 ? text || undefined : undefined;
-        const msg = await sendFileMessage(conversationId, files[index].file, caption);
-        setMessages((prev) => [...prev.filter((m) => m.id !== msg.id), msg].sort(sortBySentAt));
+      for (let index = 0; index < filesToSend.length; index += 1) {
+        const item = filesToSend[index];
+        const optimisticId = `optimistic-${item.id}`;
+        const caption = index === 0 ? captionText || undefined : undefined;
+        try {
+          const msg = await sendFileMessage(uploadForConversationId, item.file, caption);
+          if (!mountedRef.current || conversationIdRef.current !== uploadForConversationId) {
+            if (item.previewUrl?.startsWith('blob:')) URL.revokeObjectURL(item.previewUrl);
+            continue;
+          }
+          const localPreviewUrl = item.previewUrl;
+          const merged: DirectMessage = {
+            ...msg,
+            attachments: (msg.attachments ?? []).map((att, attIndex) =>
+              attIndex === 0 && localPreviewUrl ? { ...att, localPreviewUrl } : att
+            ),
+          };
+          setMessages((prev) =>
+            [...prev.filter((m) => m.id !== optimisticId && m.id !== merged.id), merged].sort(sortBySentAt)
+          );
+        } catch (fileError) {
+          if (mountedRef.current && conversationIdRef.current === uploadForConversationId) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === optimisticId ? { ...m, clientPending: false, clientFailed: true } : m
+              )
+            );
+          } else if (item.previewUrl?.startsWith('blob:')) {
+            URL.revokeObjectURL(item.previewUrl);
+          }
+          throw fileError;
+        }
       }
-      setInput('');
-      clearPendingFiles();
       scheduleInboxRefresh();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to send media.'));
+      if (mountedRef.current && conversationIdRef.current === uploadForConversationId) {
+        setError(getApiErrorMessage(e, 'Unable to send media.'));
+      }
     } finally {
-      setSending(false);
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (mountedRef.current && conversationIdRef.current === uploadForConversationId) {
+        setUploading(false);
+      }
     }
   };
 
   const onFileSelected = (fileList: FileList | null) => {
-    if (!fileList?.length || uploading || sending) return;
+    if (!fileList?.length || sending) return;
     const files = Array.from(fileList);
     for (const file of files) {
       queuePendingFile(file);
@@ -977,17 +1199,34 @@ export function DiscussionChatPanel({
     clearPendingFiles();
   }, [conversationId, clearPendingFiles]);
 
+  const requestDeleteMessage = (message: DirectMessage) => {
+    if (!message.id) return;
+    setPendingDeleteMessage(message);
+  };
+
   const handleDeleteMessage = async (message: DirectMessage) => {
     if (!message.id) return;
+    setDeletingMessage(true);
     const previous = messages;
     setMessages((prev) => prev.filter((m) => m.id !== message.id));
     removePinnedMessage(conversationId, message.id);
     try {
       await deleteConversationMessage(conversationId, message.id);
       scheduleInboxRefresh();
+      pushFlashFeedback({
+        variant: 'success',
+        title: 'Message deleted',
+      });
+      setPendingDeleteMessage(null);
     } catch (e) {
       setMessages(previous);
       setError(getApiErrorMessage(e, 'Unable to delete message.'));
+      pushFlashFeedback({
+        variant: 'error',
+        title: 'Unable to delete message',
+      });
+    } finally {
+      setDeletingMessage(false);
     }
   };
 
@@ -1038,6 +1277,7 @@ export function DiscussionChatPanel({
     (message: DirectMessage): MessageStatusType | null => {
       const mine = user?.id != null && message.senderId === user.id;
       if (!mine || message.messageType === 'SYSTEM') return null;
+      if (message.clientPending || message.clientFailed) return 'sending';
       const showOutgoingStatus = message.id === lastOutgoingMessageId;
       return getOutgoingMessageStatusType(
         message,
@@ -1052,7 +1292,7 @@ export function DiscussionChatPanel({
   );
 
   const openContextView = useCallback(
-    (view: 'people' | 'pins') => {
+    (view: 'people' | 'pins' | 'search') => {
       if (!detailsOpen) onToggleDetails?.();
       window.dispatchEvent(
         new CustomEvent('discussion-context-navigate', {
@@ -1063,6 +1303,62 @@ export function DiscussionChatPanel({
     [conversationId, detailsOpen, onToggleDetails]
   );
 
+  useEffect(() => {
+    const onRequestDetailsOpen = (event: Event) => {
+      const detail = (event as CustomEvent<{ conversationId?: string }>).detail;
+      if (detail?.conversationId && detail.conversationId !== conversationId) return;
+      if (!detailsOpen) onToggleDetails?.();
+    };
+    window.addEventListener('discussion-request-details-open', onRequestDetailsOpen);
+    return () => window.removeEventListener('discussion-request-details-open', onRequestDetailsOpen);
+  }, [conversationId, detailsOpen, onToggleDetails]);
+
+  useEffect(() => {
+    const onScrollToMessage = (event: Event) => {
+      const detail = (event as CustomEvent<{ conversationId?: string; messageId?: string }>).detail;
+      if (detail?.conversationId && detail.conversationId !== conversationId) return;
+      const messageId = detail?.messageId;
+      if (!messageId) return;
+
+      const highlight = () => {
+        setHighlightedMessageId(messageId);
+        if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+        highlightTimerRef.current = setTimeout(() => setHighlightedMessageId(null), 2200);
+      };
+
+      const tryScroll = (attempt: number) => {
+        const container = scrollContainerRef.current;
+        const target = container?.querySelector(
+          `[data-message-id="${CSS.escape(messageId)}"]`
+        ) as HTMLElement | null;
+        if (target) {
+          shouldStickToBottomRef.current = false;
+          forceStickToBottomRef.current = false;
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          highlight();
+          return;
+        }
+        if (attempt === 2) {
+          void loadHistoryRef.current?.().then(() => {
+            window.setTimeout(() => tryScroll(attempt + 1), 60);
+          });
+          return;
+        }
+        if (attempt < 10) {
+          window.setTimeout(() => tryScroll(attempt + 1), 80);
+        }
+      };
+
+      requestAnimationFrame(() => tryScroll(0));
+    };
+
+    window.addEventListener('discussion-scroll-to-message', onScrollToMessage);
+    return () => {
+      window.removeEventListener('discussion-scroll-to-message', onScrollToMessage);
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    };
+  }, [conversationId]);
+
   const isCurrentUserGuest = useMemo(
     () => participants.some((participant) => participant.userId === user?.id && participant.role === 'GUEST'),
     [participants, user?.id]
@@ -1070,7 +1366,23 @@ export function DiscussionChatPanel({
 
   const guestSessionTraces = useMemo(() => filterGuestSessionTraces(messages), [messages]);
 
-  const headerSubtitle = typingLabel ?? (isGroup ? 'Group' : 'Direct message');
+  const isTemporarySession = temporarySession || activeGuests.length > 0 || isCurrentUserGuest;
+
+  const headerTitle = useMemo(() => {
+    if (!isTemporarySession) return title;
+    const firstNames = participants
+      .map((participant) => participant.fullName?.trim().split(/\s+/)[0])
+      .filter((name): name is string => Boolean(name));
+    if (firstNames.length > 0) return firstNames.join(' / ');
+    const cleaned = title.replace(/^Temporary\s*[·•\-–]\s*/i, '').trim();
+    return cleaned.split(/\s+/)[0] || cleaned || title;
+  }, [isTemporarySession, participants, title]);
+
+  const headerSubtitle = typingLabel ?? (isGroup ? 'Group' : null);
+
+  const headerLeadingActions = isTemporarySession ? (
+    <GuestSessionTraceMenu traces={guestSessionTraces} />
+  ) : null;
 
   const headerExtraActions = (
     <>
@@ -1085,6 +1397,21 @@ export function DiscussionChatPanel({
           {guestActionLoading ? '…' : 'Leave'}
         </button>
       )}
+      {!isCurrentUserGuest &&
+        activeGuests
+          .filter((guest) => guest.inviterUserId === user?.id)
+          .map((guest) => (
+            <button
+              key={guest.inviteId}
+              type="button"
+              onClick={() => void handleEndGuestAccess(guest.guestUserId)}
+              disabled={guestActionLoading}
+              className="rounded-[8px] border border-[var(--cw-border)] px-3 py-2 text-[11px] font-semibold text-[var(--cw-text-primary)] transition hover:bg-[var(--cw-surface-soft)] disabled:opacity-60"
+              title={`End guest access for ${guest.guestName}`}
+            >
+              {guestActionLoading ? '…' : 'End access'}
+            </button>
+          ))}
       {!isGroup && SHOW_CALL_BUTTONS && (
         <>
           <button
@@ -1118,7 +1445,7 @@ export function DiscussionChatPanel({
           + Member
         </button>
       )}
-      {isGroup ? <GuestSessionTraceMenu traces={guestSessionTraces} /> : null}
+      {!isTemporarySession && isGroup ? <GuestSessionTraceMenu traces={guestSessionTraces} /> : null}
     </>
   );
 
@@ -1156,13 +1483,30 @@ export function DiscussionChatPanel({
           }}
         />
       )}
+      <ConfirmDialog
+        open={Boolean(pendingDeleteMessage)}
+        title="Delete this message?"
+        description="This cannot be undone. The message will be removed from the conversation."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        tone="danger"
+        busy={deletingMessage}
+        onCancel={() => {
+          if (!deletingMessage) setPendingDeleteMessage(null);
+        }}
+        onConfirm={() => {
+          if (pendingDeleteMessage) void handleDeleteMessage(pendingDeleteMessage);
+        }}
+      />
 
       <ConversationHeader
-        title={title}
+        title={headerTitle}
         subtitle={headerSubtitle}
+        titleCentered={isTemporarySession}
+        leadingActions={headerLeadingActions}
         detailsOpen={detailsOpen}
         onBack={onBack}
-        onSearch={() => openContextView('people')}
+        onSearch={() => openContextView('search')}
         onPin={() => openContextView('pins')}
         onToggleDetails={onToggleDetails}
         extraActions={headerExtraActions}
@@ -1198,14 +1542,6 @@ export function DiscussionChatPanel({
           {error && (
             <ErrorAlert message={error} onDismiss={() => setError(null)} />
           )}
-
-          <TemporaryGuestBanner
-            guests={activeGuests}
-            currentUserId={user?.id}
-            acting={guestActionLoading}
-            onRevoke={(guestUserId) => void handleRevokeGuest(guestUserId)}
-            onLeave={() => void handleLeaveAsGuest()}
-          />
         </div>
 
         <div
@@ -1221,11 +1557,11 @@ export function DiscussionChatPanel({
               tryMarkAsReadIfAtBottom();
             }
           }}
-          className="relative mb-0 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-2 text-sm [scrollbar-width:thin] [scrollbar-color:#a3a3a3_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-400 sm:px-4"
+          className="relative mb-0 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-[var(--msg-thread-bg,#FAFAFA)] px-3 py-2 text-sm dark:bg-[var(--msg-thread-bg,#111111)] [scrollbar-width:thin] [scrollbar-color:#a3a3a3_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-400 sm:px-4"
           role="log"
           aria-live="polite"
         >
-          <div ref={messagesContentRef}>
+          <div ref={messagesContentRef} key={conversationId} className="discussion-thread-content-in">
             <MessageTimeline
               messages={messages}
               conversationId={conversationId}
@@ -1233,9 +1569,9 @@ export function DiscussionChatPanel({
               resolveAvatarUrl={resolveSenderAvatarUrl}
               getOutgoingStatus={getOutgoingStatus}
               onTransfer={setTransferMessage}
-              onDelete={(message) => void handleDeleteMessage(message)}
+              onDelete={requestDeleteMessage}
               loading={loadingHistory}
-              loadingNode={<LoadingSpinner />}
+              highlightedMessageId={highlightedMessageId}
               emptyLabel={
                 readOnlyGuestHistory
                   ? 'No messages during your temporary session.'
@@ -1247,7 +1583,7 @@ export function DiscussionChatPanel({
         </div>
 
         {typingLabel && (
-          <p className="mb-1 px-4 text-xs italic text-[var(--cw-text-secondary)]" aria-live="polite">
+          <p className="mb-1 px-4 text-[13px] italic text-[var(--cw-text-secondary)]" aria-live="polite">
             {typingLabel}
           </p>
         )}
@@ -1273,19 +1609,22 @@ export function DiscussionChatPanel({
           onSend={send}
           onAttach={showComposer && !readOnlyGuestHistory ? () => fileInputRef.current?.click() : undefined}
           onInviteGuest={showComposer && !readOnlyGuestHistory ? () => setGuestInviteOpen(true) : undefined}
+          onFilesDropped={
+            showComposer && !readOnlyGuestHistory
+              ? (files) => {
+                  for (const file of Array.from(files)) {
+                    queuePendingFile(file);
+                  }
+                }
+              : undefined
+          }
           pendingFiles={pendingFiles}
           onRemovePendingFile={removePendingFile}
-          disabled={!connected || loadingHistory}
+          disabled={false}
           sending={sending}
           uploading={uploading}
           placeholder={
-            loadingHistory
-              ? 'Loading messages…'
-              : connected
-                ? pendingFiles.length > 0
-                  ? 'Add a caption, then send…'
-                  : 'Write your message…'
-                : 'Connecting…'
+            pendingFiles.length > 0 ? 'Add a caption, then send…' : 'Write your message…'
           }
           readOnlyLabel={
             showComposer

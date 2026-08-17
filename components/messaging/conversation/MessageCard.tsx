@@ -11,6 +11,7 @@ type MessageCardProps = {
   media?: ReactNode;
   status?: MessageStatusType | null;
   actions?: ReactNode;
+  highlighted?: boolean;
 };
 
 export function MessageCard({
@@ -20,32 +21,34 @@ export function MessageCard({
   media = null,
   status = null,
   actions,
+  highlighted = false,
 }: MessageCardProps) {
   const hasBody = children != null && children !== false && children !== '';
   const mediaOnly = Boolean(media) && !hasBody;
 
+  const incomingShell =
+    'bg-[var(--cw-incoming-bg,#F3F4F6)] dark:bg-[var(--cw-incoming-bg,#262626)]';
+  const outgoingShell =
+    'bg-[var(--cw-accent-soft,#FFF1E6)] dark:bg-[var(--cw-accent-soft,#3a2414)]';
+  const highlightShell =
+    'ring-2 ring-neutral-500 ring-offset-1 ring-offset-[var(--msg-thread-bg,#FAFAFA)] dark:ring-neutral-400 dark:ring-offset-[var(--msg-thread-bg,#111111)]';
+
   return (
-    <div className={`group/msg relative flex w-full min-w-0 items-start gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+    <div
+      className={`group/msg relative flex min-w-0 items-start gap-1 ${mine ? 'justify-end' : 'justify-start'}`}
+    >
       {mine && actions ? (
         <div className="mt-1 shrink-0 opacity-0 transition group-hover/msg:opacity-100 focus-within:opacity-100">
           {actions}
         </div>
       ) : null}
       <div
-        className={`relative max-w-[min(100%,520px)] overflow-hidden rounded-[var(--cw-radius,8px)] ${
+        className={`relative w-fit max-w-[min(100%,520px)] overflow-hidden rounded-[var(--cw-radius,8px)] transition-[box-shadow] duration-300 ${
           mediaOnly
-            ? 'border-0 bg-transparent p-0'
+            ? `border-0 bg-transparent p-0 ${highlighted ? highlightShell : ''}`
             : media && hasBody
-              ? `border p-0 ${
-                  mine
-                    ? 'border-[var(--cw-accent,#F47B20)]/20 bg-[var(--cw-accent-soft,#FFF1E6)] dark:border-[var(--cw-border,#262626)] dark:bg-[var(--cw-accent-soft,#3a2414)]'
-                    : 'border-[var(--cw-border,#E2E5E9)] bg-[var(--cw-surface-soft,#FCFCFB)]'
-                }`
-              : `border px-3.5 py-2.5 ${
-                  mine
-                    ? 'border-[var(--cw-accent,#F47B20)]/20 bg-[var(--cw-accent-soft,#FFF1E6)] dark:border-[var(--cw-border,#262626)] dark:bg-[var(--cw-accent-soft,#3a2414)]'
-                    : 'border-[var(--cw-border,#E2E5E9)] bg-[var(--cw-surface-soft,#FCFCFB)]'
-                }`
+              ? `p-0 ${mine ? outgoingShell : incomingShell} ${highlighted ? highlightShell : ''}`
+              : `px-3.5 py-2.5 ${mine ? outgoingShell : incomingShell} ${highlighted ? highlightShell : ''}`
         }`}
       >
         {media ? <div className="bg-transparent">{media}</div> : null}
@@ -55,7 +58,10 @@ export function MessageCard({
               {children}
             </div>
             <div className={`mt-2 flex items-end gap-1.5 ${mine ? 'justify-end' : 'justify-start'}`}>
-              <time dateTime={sentAt} className="text-[10px] leading-none text-[var(--cw-text-muted,#9AA1AA)]">
+              <time
+                dateTime={sentAt}
+                className="text-[13px] leading-none text-[var(--cw-text-secondary,#4B5563)]"
+              >
                 {formatConversationTime(sentAt)}
               </time>
               {mine && status ? <MessageStatusIndicator status={status} variant="chat" /> : null}
@@ -63,7 +69,10 @@ export function MessageCard({
           </div>
         ) : (
           <div className={`mt-1.5 flex items-end gap-1.5 ${mine ? 'justify-end' : 'justify-start'}`}>
-            <time dateTime={sentAt} className="text-[10px] leading-none text-[var(--cw-text-muted,#9AA1AA)]">
+            <time
+              dateTime={sentAt}
+              className="text-[13px] leading-none text-[var(--cw-text-secondary,#4B5563)]"
+            >
               {formatConversationTime(sentAt)}
             </time>
             {mine && status ? <MessageStatusIndicator status={status} variant="chat" /> : null}

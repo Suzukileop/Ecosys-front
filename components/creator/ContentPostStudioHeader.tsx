@@ -1,6 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import {
+  creatorAppRoleRingClass,
+  normalizeCreatorAppRole,
+  type CreatorAppRole,
+} from '@/lib/creator-app-role';
 import type { TaggedUserRef } from '@/types/creator-content';
 
 function userInitials(name: string) {
@@ -28,8 +33,12 @@ function buildMoodSubtitle(moodLabel?: string | null, taggedUsers?: TaggedUserRe
 type ContentPostStudioHeaderProps = {
   creatorName: string;
   avatarUrl?: string | null;
+  /** App role — drives the avatar status ring color. */
+  appRole?: CreatorAppRole | string | null;
   /** Profile specialty shown under the name when there is no mood line. */
   specialite?: string | null;
+  /** Optional specialty list — first entry used when `specialite` is empty. */
+  specialties?: string[] | null;
   moodLabel?: string | null;
   moodEmoji?: string | null;
   taggedUsers?: TaggedUserRef[];
@@ -39,29 +48,40 @@ type ContentPostStudioHeaderProps = {
 export function ContentPostStudioHeader({
   creatorName,
   avatarUrl,
+  appRole,
   specialite,
+  specialties,
   moodLabel,
   taggedUsers,
   profileHref,
 }: ContentPostStudioHeaderProps) {
   const moodSubtitle = buildMoodSubtitle(moodLabel, taggedUsers);
-  const specialtyLine = specialite?.trim() || null;
+  const specialtyLine =
+    specialite?.trim() ||
+    specialties?.map((s) => s.trim()).find(Boolean) ||
+    null;
   const subtitle = moodSubtitle || (specialtyLine ? specialtyLine.toUpperCase() : null);
+  const role = appRole != null ? normalizeCreatorAppRole(appRole) : null;
+  const ringClass = creatorAppRoleRingClass(role);
+
+  const avatar = (
+    <span
+      className={`inline-flex h-11 w-11 shrink-0 overflow-hidden rounded-full ring-[3px] ring-offset-2 ring-offset-white dark:ring-offset-neutral-900 ${ringClass}`}
+    >
+      {avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center bg-orange-500 text-sm font-bold text-white">
+          {userInitials(creatorName)}
+        </span>
+      )}
+    </span>
+  );
 
   const content = (
     <>
-      {avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={avatarUrl}
-          alt=""
-          className="h-11 w-11 shrink-0 rounded-xl object-cover ring-2 ring-white dark:ring-neutral-800"
-        />
-      ) : (
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-sm font-bold text-white shadow-sm">
-          {userInitials(creatorName)}
-        </div>
-      )}
+      {avatar}
       <div className="min-w-0">
         <p className="truncate text-sm font-bold text-neutral-900 dark:text-white">{creatorName}</p>
         {subtitle ? (

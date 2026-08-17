@@ -99,7 +99,7 @@ const navItemCollapsedClass = 'w-10 justify-center gap-0 px-0';
 const navItemInactiveClass =
   'font-medium text-black hover:bg-neutral-200/80 dark:text-neutral-200 dark:hover:bg-neutral-800';
 const navItemActiveClass =
-  'font-semibold bg-neutral-200 text-black before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-orange-500 dark:bg-neutral-800 dark:text-white';
+  'font-semibold bg-neutral-200 text-black dark:bg-neutral-800 dark:text-white';
 const navItemComingSoonClass =
   'font-medium text-black/50 hover:bg-neutral-200 dark:text-white/50 dark:hover:bg-neutral-800';
 const navChildInactiveClass =

@@ -88,9 +88,9 @@ export function creatorAppRoleLabel(role: CreatorAppRole | null | undefined): st
 export function creatorAppRoleRingClass(role: CreatorAppRole | null | undefined): string {
   switch (normalizeCreatorAppRole(role)) {
     case 'SERVICE_PROVIDER':
-      return 'ring-orange-500';
+      return 'ring-sky-500';
     case 'FREELANCER_STUDENT':
-      return 'ring-cyan-500';
+      return 'ring-red-500';
     case 'SELLER':
       return 'ring-violet-500';
     case 'RH_RECRUITER':
@@ -115,21 +115,21 @@ export function creatorAppRoleAccent(role: CreatorAppRole | null | undefined): C
   switch (normalizeCreatorAppRole(role)) {
     case 'SERVICE_PROVIDER':
       return {
-        border: 'border-orange-400 dark:border-orange-500/70',
-        borderSelected: 'border-orange-500 dark:border-orange-400',
-        iconIdle: 'bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300',
-        iconSelected: 'bg-orange-500/15 text-orange-600 dark:bg-orange-400/20 dark:text-orange-300',
-        check: 'bg-orange-500 text-white dark:bg-orange-400 dark:text-neutral-950',
-        focusRing: 'focus-visible:ring-orange-500/40',
+        border: 'border-sky-400 dark:border-sky-500/70',
+        borderSelected: 'border-sky-500 dark:border-sky-400',
+        iconIdle: 'bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300',
+        iconSelected: 'bg-sky-500/15 text-sky-600 dark:bg-sky-400/20 dark:text-sky-300',
+        check: 'bg-sky-500 text-white dark:bg-sky-400 dark:text-neutral-950',
+        focusRing: 'focus-visible:ring-sky-500/40',
       };
     case 'FREELANCER_STUDENT':
       return {
-        border: 'border-cyan-400 dark:border-cyan-500/70',
-        borderSelected: 'border-cyan-500 dark:border-cyan-400',
-        iconIdle: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-300',
-        iconSelected: 'bg-cyan-500/15 text-cyan-600 dark:bg-cyan-400/20 dark:text-cyan-300',
-        check: 'bg-cyan-500 text-white dark:bg-cyan-400 dark:text-neutral-950',
-        focusRing: 'focus-visible:ring-cyan-500/40',
+        border: 'border-red-400 dark:border-red-500/70',
+        borderSelected: 'border-red-500 dark:border-red-400',
+        iconIdle: 'bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300',
+        iconSelected: 'bg-red-500/15 text-red-600 dark:bg-red-400/20 dark:text-red-300',
+        check: 'bg-red-500 text-white dark:bg-red-400 dark:text-neutral-950',
+        focusRing: 'focus-visible:ring-red-500/40',
       };
     case 'SELLER':
       return {

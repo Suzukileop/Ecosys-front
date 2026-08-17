@@ -13,16 +13,14 @@ export const NEWS_TOP_ROW_CLASS = 'flex min-h-[3.5rem] shrink-0 items-center';
 const COLLAPSED_COUNT = 5;
 const EASE = 'duration-300 ease-out';
 
-/** Same footprint for every catalogue chip (expanded grid + folded list). */
+/** Same footprint for every catalogue chip (folded list). */
 const CHIP_BASE =
   'flex h-11 w-full max-w-[10rem] shrink-0 items-center justify-center rounded-xl border px-2.5 text-center text-sm font-semibold leading-snug transition';
-
-const CHIP_BASE_EXPANDED = `${CHIP_BASE} justify-self-center`;
 
 function chipTone(active: boolean) {
   return active
     ? 'border-orange-500 bg-orange-500 text-white shadow-sm'
-    : 'border-neutral-300 bg-transparent text-neutral-700 hover:border-neutral-400 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-neutral-500';
+    : 'border-neutral-300 bg-transparent text-neutral-700 hover:border-neutral-400 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-neutral-200 dark:hover:border-white/[0.16] dark:hover:bg-white/[0.04]';
 }
 
 type NewsDiscoverRailProps = {
@@ -119,62 +117,77 @@ export function NewsDiscoverRail({
         )}
 
         <div className={expanded ? 'mt-2 flex flex-col' : 'mt-1 shrink-0 pb-3'}>
-          <div
-            className={
-              expanded
-                ? 'grid grid-cols-2 gap-x-5 gap-y-3 px-1'
-                : 'mx-auto flex w-[calc(100%-0.35rem)] max-w-[9.5rem] flex-col gap-2.5 pr-1 sm:gap-3'
-            }
-          >
-            {visible.map((label) => {
-              const active = selected === label;
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => onSelect(active ? null : label)}
-                  aria-pressed={active}
-                  title={label}
-                  className={`${expanded ? CHIP_BASE_EXPANDED : CHIP_BASE} ${chipTone(active)}`}
-                >
-                  <span className="line-clamp-2 px-0.5">{label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {expanded && showSearch ? (
-            <div className="mt-3 shrink-0 pb-3">
-              <label htmlFor="news-discover-search" className="sr-only">
-                Search content
-              </label>
-              <div className="relative">
-                <svg
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  aria-hidden
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"
-                  />
-                </svg>
-                <input
-                  id="news-discover-search"
-                  type="search"
-                  value={search}
-                  onChange={(e) => onSearchChange?.(e.target.value)}
-                  placeholder="Search content…"
-                  autoComplete="off"
-                  className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-100 py-2 pl-10 pr-3 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-orange-500/60"
-                />
+          {expanded ? (
+            /* One column: 2×10rem chips + gap-x-5 — search shares the same width */
+            <div className="mx-auto flex w-full max-w-[calc(20rem+1.25rem)] flex-col px-0 pb-3">
+              <div className="grid grid-cols-2 gap-x-5 gap-y-3">
+                {visible.map((label) => {
+                  const active = selected === label;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => onSelect(active ? null : label)}
+                      aria-pressed={active}
+                      title={label}
+                      className={`flex h-11 w-full items-center justify-center rounded-xl border px-2.5 text-center text-sm font-semibold leading-snug transition ${chipTone(active)}`}
+                    >
+                      <span className="line-clamp-2 px-0.5">{label}</span>
+                    </button>
+                  );
+                })}
               </div>
+
+              {showSearch ? (
+                <div className="relative mt-3 shrink-0">
+                  <label htmlFor="news-discover-search" className="sr-only">
+                    Search content
+                  </label>
+                  <svg
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"
+                    />
+                  </svg>
+                  <input
+                    id="news-discover-search"
+                    type="search"
+                    value={search}
+                    onChange={(e) => onSearchChange?.(e.target.value)}
+                    placeholder="Search content…"
+                    autoComplete="off"
+                    className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-100 py-2 pl-10 pr-3 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-orange-500/50"
+                  />
+                </div>
+              ) : null}
             </div>
-          ) : null}
+          ) : (
+            <div className="mx-auto flex w-[calc(100%-0.35rem)] max-w-[9.5rem] flex-col gap-2.5 pr-1 sm:gap-3">
+              {visible.map((label) => {
+                const active = selected === label;
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => onSelect(active ? null : label)}
+                    aria-pressed={active}
+                    title={label}
+                    className={`${CHIP_BASE} ${chipTone(active)}`}
+                  >
+                    <span className="line-clamp-2 px-0.5">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </aside>

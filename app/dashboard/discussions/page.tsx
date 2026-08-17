@@ -1,37 +1,49 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardHomeShell } from '@/components/DashboardHomeShell';
 import { DiscussionChatPanel } from '@/components/messaging/DiscussionChatPanel';
 import { DiscussionDetailsPanel } from '@/components/messaging/DiscussionDetailsPanel';
 import { EmptyConversation } from '@/components/messaging/EmptyConversation';
 import { InboxConversationRow } from '@/components/messaging/InboxConversationRow';
+import { InboxFollowersModal } from '@/components/messaging/InboxFollowersModal';
+import { InboxFollowersStrip } from '@/components/messaging/InboxFollowersStrip';
 import { InboxPanel, type InboxFilterId } from '@/components/messaging/InboxPanel';
 import { InboxPendingGuestInvites } from '@/components/messaging/InboxPendingGuestInvites';
 import { InboxTemporarySection } from '@/components/messaging/InboxTemporarySection';
+import { TemporaryGuestAvatarStrip } from '@/components/messaging/TemporaryGuestAvatarStrip';
 import { MessageLayout } from '@/components/messaging/MessageLayout';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { listCreatorProfileFollowers, type CreatorProfileFollowerItem } from '@/lib/creator-profile-followers-api';
+import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import {
   DASHBOARD_SIDEBAR_EXPAND_EVENT,
   notifyMessagingDetailsOpen,
 } from '@/lib/dashboard-chrome';
 import {
   acceptDirectGuestInvite,
+  archiveConversation,
   cancelOutgoingGuestInvite,
   createOrGetConversation,
   declineDirectGuestInvite,
+  dismissTemporaryInboxEntry,
+  hideConversationFromInbox,
   listConversationMessages,
   listConversations,
   listPendingGuestInvites,
   listTemporaryInbox,
+  markConversationUnread,
+  unarchiveConversation,
 } from '@/lib/messaging';
 import { formatMessagePreview } from '@/lib/messaging-preview';
 import { SHOW_GROUP_CHAT } from '@/lib/messaging-feature-flags';
 import { useDiscussionsInboxRealtime } from '@/hooks/useDiscussionsInboxRealtime';
+import { usePresence } from '@/hooks/usePresence';
 import type {
   ConversationReadReceipt,
   ConversationSummary,
@@ -68,10 +80,27 @@ type OpenChatContext = {
   partnerUserId?: string | null;
   conversationType?: ConversationSummary['type'];
   readOnlyGuestHistory?: boolean;
+  /** Isolated temporary guest room — allowed even when group chat UI is off. */
+  temporarySession?: boolean;
 };
+
+type InboxConfirmAction =
+  | {
+      type: 'archive' | 'delete';
+      conversationId: string;
+      conversationName: string;
+    }
+  | {
+      type: 'dismiss-temporary';
+      entry: TemporaryInboxEntry;
+    };
 
 function isGuestConversation(conversation: ConversationSummary): boolean {
   return conversation.guestSession === true;
+}
+
+function isTemporarySessionConversation(conversation: ConversationSummary): boolean {
+  return conversation.temporarySession === true;
 }
 
 function matchesInboxFilter(conversation: ConversationSummary, filter: InboxFilterId): boolean {
@@ -83,6 +112,7 @@ function matchesInboxFilter(conversation: ConversationSummary, filter: InboxFilt
     case 'groups':
       return SHOW_GROUP_CHAT && conversation.type === 'GROUP';
     case 'temporary':
+    case 'archived':
       return false;
     default:
       return true;
@@ -100,10 +130,12 @@ function buildOpenChatContext(conversation: ConversationSummary): OpenChatContex
     partnerUserId: conversation.otherUserId,
     conversationType: conversation.type,
     readOnlyGuestHistory: false,
+    temporarySession: Boolean(conversation.temporarySession),
   };
 }
 
 export default function DiscussionsPage() {
+  const { user } = useAuth();
   return (
     <Suspense
       fallback={
@@ -114,7 +146,8 @@ export default function DiscussionsPage() {
         </DashboardHomeShell>
       }
     >
-      <DiscussionsPageContent />
+      {/* Remount inbox state whenever the authenticated identity changes. */}
+      <DiscussionsPageContent key={user?.id ?? 'anonymous'} />
     </Suspense>
   );
 }
@@ -122,12 +155,14 @@ export default function DiscussionsPage() {
 function DiscussionsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isCreator = hasRole('ROLE_CREATOR');
   const targetUserId = searchParams.get('user');
   const targetConversationId = searchParams.get('conversation');
   const filterParam = searchParams.get('filter');
 
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [archivedConversations, setArchivedConversations] = useState<ConversationSummary[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [openingUser, setOpeningUser] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -140,6 +175,13 @@ function DiscussionsPageContent() {
   const [pendingIncomingInvites, setPendingIncomingInvites] = useState<PendingConversationInvite[]>([]);
   const [inviteActionId, setInviteActionId] = useState<string | null>(null);
   const [cancelInviteId, setCancelInviteId] = useState<string | null>(null);
+  const [dismissingTemporaryKey, setDismissingTemporaryKey] = useState<string | null>(null);
+  const [menuActionId, setMenuActionId] = useState<string | null>(null);
+  const [inboxConfirm, setInboxConfirm] = useState<InboxConfirmAction | null>(null);
+  const [inboxFollowers, setInboxFollowers] = useState<CreatorProfileFollowerItem[]>([]);
+  const [inboxFollowersLoading, setInboxFollowersLoading] = useState(false);
+  const [followersModalOpen, setFollowersModalOpen] = useState(false);
+  const [openingFollowerId, setOpeningFollowerId] = useState<string | null>(null);
   const [openContext, setOpenContext] = useState<OpenChatContext | null>(null);
   const [typingByConversationId, setTypingByConversationId] = useState<Record<string, string>>({});
   const [deliveryReceiptsByConversation, setDeliveryReceiptsByConversation] = useState<
@@ -151,6 +193,33 @@ function DiscussionsPageContent() {
   const [lastReadConversationId, setLastReadConversationId] = useState<string | null>(null);
   const openContextIdRef = useRef<string | null>(null);
   openContextIdRef.current = openContext?.id ?? null;
+  /**
+   * Optimistic inbox select updates openContext before the URL (?conversation=)
+   * catches up. Without this guard, the URL-sync effect snaps back to the previous
+   * thread (stale searchParams) → double load / flash of the old discussion.
+   */
+  const pendingOpenConversationIdRef = useRef<string | null>(null);
+  /** Ignore stale listConversations responses after rapid refresh / identity change. */
+  const conversationsFetchGenRef = useRef(0);
+  const authUserIdRef = useRef(user?.id ?? null);
+  authUserIdRef.current = user?.id ?? null;
+
+  useLayoutEffect(() => {
+    // Never paint the previous account's inbox while a new session is resolving.
+    setConversations([]);
+    setArchivedConversations([]);
+    setTemporaryInbox([]);
+    setPendingIncomingInvites([]);
+    setOpenContext(null);
+    setTypingByConversationId({});
+    setDeliveryReceiptsByConversation({});
+    setLastDeliveryReceipt(null);
+    setLastDeliveryConversationId(null);
+    setLastReadReceipt(null);
+    setLastReadConversationId(null);
+    setLoadingList(true);
+    conversationsFetchGenRef.current += 1;
+  }, [user?.id]);
 
   useEffect(() => {
     if (!SHOW_GROUP_CHAT && inboxFilter === 'groups') {
@@ -159,10 +228,10 @@ function DiscussionsPageContent() {
   }, [inboxFilter]);
 
   useEffect(() => {
-    if (!SHOW_GROUP_CHAT && openContext?.conversationType === 'GROUP') {
+    if (!SHOW_GROUP_CHAT && openContext?.conversationType === 'GROUP' && !openContext.temporarySession) {
       setOpenContext(null);
     }
-  }, [openContext?.conversationType]);
+  }, [openContext?.conversationType, openContext?.temporarySession]);
 
   useEffect(() => {
     if (!openContext) setDetailsOpen(false);
@@ -175,19 +244,38 @@ function DiscussionsPageContent() {
   }, [filterParam]);
 
   const refreshConversations = useCallback(async () => {
+    const forUserId = authUserIdRef.current;
+    if (!forUserId) {
+      setConversations([]);
+      setArchivedConversations([]);
+      return [];
+    }
+    const fetchGen = ++conversationsFetchGenRef.current;
     try {
       setError(null);
-      const list = await listConversations();
+      const [list, archived] = await Promise.all([
+        listConversations(),
+        listConversations({ archived: true }),
+      ]);
+      if (fetchGen !== conversationsFetchGenRef.current || authUserIdRef.current !== forUserId) {
+        return list;
+      }
       setConversations(sortConversations(list));
+      setArchivedConversations(sortConversations(archived));
       return list;
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to load conversations.'));
+      if (fetchGen === conversationsFetchGenRef.current && authUserIdRef.current === forUserId) {
+        setError(getApiErrorMessage(e, 'Unable to load conversations.'));
+        setConversations([]);
+        setArchivedConversations([]);
+      }
       return [];
     }
   }, []);
 
   const refreshTemporaryInbox = useCallback(async () => {
-    if (!user?.id) {
+    const forUserId = user?.id;
+    if (!forUserId) {
       setTemporaryInbox([]);
       setPendingIncomingInvites([]);
       return;
@@ -196,9 +284,36 @@ function DiscussionsPageContent() {
       listTemporaryInbox().catch(() => [] as TemporaryInboxEntry[]),
       listPendingGuestInvites().catch(() => [] as PendingConversationInvite[]),
     ]);
+    if (authUserIdRef.current !== forUserId) return;
     setTemporaryInbox(entries);
     setPendingIncomingInvites(invites);
   }, [user?.id]);
+
+  const refreshInboxFollowers = useCallback(async () => {
+    if (!user?.id || !isCreator) {
+      setInboxFollowers([]);
+      setInboxFollowersLoading(false);
+      return;
+    }
+    setInboxFollowersLoading(true);
+    try {
+      const page = await listCreatorProfileFollowers(0, 24);
+      if (authUserIdRef.current !== user.id) return;
+      setInboxFollowers(page.content);
+    } catch {
+      if (authUserIdRef.current === user.id) {
+        setInboxFollowers([]);
+      }
+    } finally {
+      if (authUserIdRef.current === user.id) {
+        setInboxFollowersLoading(false);
+      }
+    }
+  }, [user?.id, isCreator]);
+
+  useEffect(() => {
+    void refreshInboxFollowers();
+  }, [refreshInboxFollowers]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -232,7 +347,13 @@ function DiscussionsPageContent() {
     [refreshConversations]
   );
 
-  const conversationIds = useMemo(() => conversations.map((conversation) => conversation.id), [conversations]);
+  const conversationIds = useMemo(
+    () => [
+      ...conversations.map((conversation) => conversation.id),
+      ...archivedConversations.map((conversation) => conversation.id),
+    ],
+    [conversations, archivedConversations]
+  );
 
   const handleRealtimeMessage = useCallback(
     (conversationId: string, message: DirectMessage) => {
@@ -365,39 +486,90 @@ function DiscussionsPageContent() {
   }, [user?.id, loadingList, refreshConversations, refreshTemporaryInbox]);
 
   useEffect(() => {
+    if (!user?.id) {
+      setLoadingList(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       setLoadingList(true);
       await Promise.all([refreshConversations(), refreshTemporaryInbox()]);
-      if (!cancelled) setLoadingList(false);
+      if (!cancelled && authUserIdRef.current === user.id) setLoadingList(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [refreshConversations, refreshTemporaryInbox]);
+  }, [user?.id, refreshConversations, refreshTemporaryInbox]);
 
   // Sync open thread from URL + inbox list. Do NOT close Details here:
   // `conversations` refreshes often (realtime / unread), which was auto-closing Details.
   useEffect(() => {
     if (!targetConversationId) return;
-    const conversation = conversations.find((item) => item.id === targetConversationId);
-    if (!conversation) return;
+
+    // URL still lagging behind an optimistic click — keep the new thread.
+    if (
+      pendingOpenConversationIdRef.current &&
+      pendingOpenConversationIdRef.current !== targetConversationId
+    ) {
+      return;
+    }
+    if (pendingOpenConversationIdRef.current === targetConversationId) {
+      pendingOpenConversationIdRef.current = null;
+    }
+
+    const conversation =
+      conversations.find((item) => item.id === targetConversationId) ??
+      archivedConversations.find((item) => item.id === targetConversationId);
+    if (conversation) {
+      setOpenContext((prev) => {
+        const next = buildOpenChatContext(conversation);
+        if (
+          prev &&
+          prev.id === next.id &&
+          prev.title === next.title &&
+          prev.partnerAvatarUrl === next.partnerAvatarUrl &&
+          prev.partnerUserId === next.partnerUserId &&
+          prev.conversationType === next.conversationType &&
+          prev.readOnlyGuestHistory === next.readOnlyGuestHistory &&
+          Boolean(prev.temporarySession) === Boolean(next.temporarySession)
+        ) {
+          return prev;
+        }
+        return next;
+      });
+      return;
+    }
+
+    const temporaryEntry = temporaryInbox.find(
+      (entry) =>
+        entry.conversationId === targetConversationId &&
+        (entry.entryType === 'ACTIVE_GUEST' || entry.entryType === 'ENDED_GUEST') &&
+        entry.canOpen
+    );
+    if (!temporaryEntry) return;
     setOpenContext((prev) => {
-      const next = buildOpenChatContext(conversation);
+      const next: OpenChatContext = {
+        id: temporaryEntry.conversationId,
+        title: temporaryEntry.conversationTitle,
+        partnerAvatarUrl: temporaryEntry.avatarUrl,
+        conversationType: 'GROUP',
+        readOnlyGuestHistory: temporaryEntry.entryType === 'ENDED_GUEST',
+        temporarySession: true,
+      };
       if (
         prev &&
         prev.id === next.id &&
         prev.title === next.title &&
         prev.partnerAvatarUrl === next.partnerAvatarUrl &&
-        prev.partnerUserId === next.partnerUserId &&
         prev.conversationType === next.conversationType &&
-        prev.readOnlyGuestHistory === next.readOnlyGuestHistory
+        prev.readOnlyGuestHistory === next.readOnlyGuestHistory &&
+        prev.temporarySession
       ) {
         return prev;
       }
       return next;
     });
-  }, [targetConversationId, conversations]);
+  }, [targetConversationId, conversations, archivedConversations, temporaryInbox]);
 
   // Close Details only when the selected conversation (URL) actually changes.
   const prevTargetConversationIdRef = useRef<string | null>(null);
@@ -428,6 +600,7 @@ function DiscussionsPageContent() {
         });
         setOpenContext(buildOpenChatContext(conversation));
         setDetailsOpen(false);
+        pendingOpenConversationIdRef.current = conversation.id;
         await refreshConversations();
         if (cancelled) return;
         router.replace(
@@ -449,8 +622,11 @@ function DiscussionsPageContent() {
   }, [targetUserId, refreshConversations, router]);
 
   const selectedConversation = useMemo(
-    () => conversations.find((c) => c.id === openContext?.id) ?? null,
-    [conversations, openContext?.id]
+    () =>
+      conversations.find((c) => c.id === openContext?.id) ??
+      archivedConversations.find((c) => c.id === openContext?.id) ??
+      null,
+    [conversations, archivedConversations, openContext?.id]
   );
 
   const activeChatContext = openContext;
@@ -459,18 +635,32 @@ function DiscussionsPageContent() {
     if (!openContext?.id) return;
     // Avoid wiping a just-opened Discuss thread while the inbox list is still loading.
     if (loadingList || openingUser) return;
+    if (openContext.temporarySession) return;
+    if (temporaryInbox.some((entry) => entry.conversationId === openContext.id && entry.canOpen)) {
+      return;
+    }
     if (!conversations.some((conversation) => conversation.id === openContext.id)) {
       setOpenContext(null);
     }
-  }, [conversations, openContext, loadingList, openingUser]);
+  }, [conversations, temporaryInbox, openContext, loadingList, openingUser]);
 
   const permanentConversations = useMemo(
     () =>
       conversations.filter(
         (conversation) =>
-          !isGuestConversation(conversation) && (SHOW_GROUP_CHAT || conversation.type !== 'GROUP')
+          !isGuestConversation(conversation) &&
+          !isTemporarySessionConversation(conversation) &&
+          (SHOW_GROUP_CHAT || conversation.type !== 'GROUP')
       ),
     [conversations]
+  );
+
+  const activeTemporaryEntries = useMemo(
+    () =>
+      temporaryInbox.filter(
+        (entry) => entry.entryType === 'ACTIVE_GUEST' && entry.canOpen
+      ),
+    [temporaryInbox]
   );
 
   const filteredTemporaryInbox = useMemo(() => {
@@ -494,24 +684,55 @@ function DiscussionsPageContent() {
       unread: permanentConversations.filter((c) => (c.unreadCount ?? 0) > 0).length,
       groups: permanentConversations.filter((c) => c.type === 'GROUP').length,
       temporary: Math.max(temporaryInbox.length, pendingIncomingInvites.length),
+      archived: archivedConversations.filter(
+        (c) =>
+          !isGuestConversation(c) && (SHOW_GROUP_CHAT || c.type !== 'GROUP')
+      ).length,
     }),
-    [permanentConversations, temporaryInbox.length, pendingIncomingInvites.length]
+    [
+      permanentConversations,
+      temporaryInbox.length,
+      pendingIncomingInvites.length,
+      archivedConversations,
+    ]
   );
 
   const filteredConversations = useMemo(() => {
     const query = inboxSearch.trim().toLowerCase();
-    return permanentConversations.filter((conversation) => {
-      if (!matchesInboxFilter(conversation, inboxFilter)) return false;
+    const source =
+      inboxFilter === 'archived'
+        ? archivedConversations.filter(
+            (conversation) =>
+              !isGuestConversation(conversation) &&
+              (SHOW_GROUP_CHAT || conversation.type !== 'GROUP')
+          )
+        : permanentConversations.filter((conversation) =>
+            matchesInboxFilter(conversation, inboxFilter)
+          );
+    return source.filter((conversation) => {
       if (!query) return true;
       const name = conversation.otherUserName?.toLowerCase() ?? '';
       const preview = conversation.lastMessagePreview?.toLowerCase() ?? '';
       return name.includes(query) || preview.includes(query);
     });
-  }, [permanentConversations, inboxSearch, inboxFilter]);
+  }, [permanentConversations, archivedConversations, inboxSearch, inboxFilter]);
+
+  const inboxPresenceUserIds = useMemo(
+    () =>
+      filteredConversations
+        .filter((conversation) => conversation.type !== 'GROUP' && conversation.otherUserId)
+        .map((conversation) => conversation.otherUserId),
+    [filteredConversations]
+  );
+  const { isOnline: isPartnerOnline } = usePresence(inboxPresenceUserIds);
 
   const handleSelectConversation = (conversationId: string) => {
-    const conversation = conversations.find((item) => item.id === conversationId);
+    const conversation =
+      conversations.find((item) => item.id === conversationId) ??
+      archivedConversations.find((item) => item.id === conversationId);
     if (conversation) {
+      // Mark optimistic target before URL updates — prevents stale ?conversation= snap-back.
+      pendingOpenConversationIdRef.current = conversationId;
       setOpenContext(buildOpenChatContext(conversation));
       router.replace(
         `/dashboard/discussions?conversation=${encodeURIComponent(conversationId)}`,
@@ -523,34 +744,46 @@ function DiscussionsPageContent() {
         item.id === conversationId ? { ...item, unreadCount: 0 } : item
       )
     );
+    setArchivedConversations((prev) =>
+      prev.map((item) =>
+        item.id === conversationId ? { ...item, unreadCount: 0 } : item
+      )
+    );
     setDetailsOpen(false);
   };
 
   const handleOpenTemporaryConversation = (entry: TemporaryInboxEntry) => {
+    pendingOpenConversationIdRef.current = entry.conversationId;
     setOpenContext({
       id: entry.conversationId,
       title: entry.conversationTitle,
       partnerAvatarUrl: entry.avatarUrl,
       conversationType: 'GROUP',
       readOnlyGuestHistory: entry.entryType === 'ENDED_GUEST',
+      temporarySession: true,
     });
     setDetailsOpen(false);
+    if (entry.canOpen && entry.entryType !== 'ENDED_GUEST') {
+      router.replace(
+        `/dashboard/discussions?conversation=${encodeURIComponent(entry.conversationId)}`,
+        { scroll: false }
+      );
+    }
   };
 
   const handleBackToInbox = () => {
+    pendingOpenConversationIdRef.current = null;
     setOpenContext(null);
     setDetailsOpen(false);
     router.replace('/dashboard/discussions', { scroll: false });
   };
 
   const toggleDetails = () => {
-    setDetailsOpen((open) => {
-      const next = !open;
-      if (next) {
-        notifyMessagingDetailsOpen();
-      }
-      return next;
-    });
+    const willOpen = !detailsOpen;
+    setDetailsOpen(willOpen);
+    if (willOpen) {
+      notifyMessagingDetailsOpen();
+    }
   };
 
   useEffect(() => {
@@ -610,6 +843,185 @@ function DiscussionsPageContent() {
     }
   };
 
+  const requestDismissTemporaryEntry = (entry: TemporaryInboxEntry) => {
+    setInboxConfirm({ type: 'dismiss-temporary', entry });
+  };
+
+  const handleDismissTemporaryEntry = async (entry: TemporaryInboxEntry) => {
+    const entryKey = `${entry.entryType}-${entry.id}`;
+    setDismissingTemporaryKey(entryKey);
+    setError(null);
+    try {
+      await dismissTemporaryInboxEntry(entry.entryType, entry.id);
+      if (openContext?.id === entry.conversationId) {
+        setOpenContext(null);
+      }
+      await refreshTemporaryInbox();
+      if (entry.entryType === 'ACTIVE_GUEST') {
+        await refreshConversations();
+      }
+      pushFlashFeedback({
+        variant: 'success',
+        title: 'Temporary entry deleted',
+      });
+    } catch (e) {
+      setError(getApiErrorMessage(e, 'Unable to delete temporary entry.'));
+      pushFlashFeedback({
+        variant: 'error',
+        title: 'Unable to delete temporary entry',
+      });
+    } finally {
+      setDismissingTemporaryKey(null);
+      setInboxConfirm(null);
+    }
+  };
+
+  const resolveConversationName = (conversationId: string) => {
+    const found =
+      conversations.find((item) => item.id === conversationId) ??
+      archivedConversations.find((item) => item.id === conversationId);
+    return found?.otherUserName?.trim() || 'this conversation';
+  };
+
+  const requestDeleteConversation = (conversationId: string) => {
+    setInboxConfirm({
+      type: 'delete',
+      conversationId,
+      conversationName: resolveConversationName(conversationId),
+    });
+  };
+
+  const requestArchiveConversation = (conversationId: string) => {
+    setInboxConfirm({
+      type: 'archive',
+      conversationId,
+      conversationName: resolveConversationName(conversationId),
+    });
+  };
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    setMenuActionId(conversationId);
+    setError(null);
+    try {
+      await hideConversationFromInbox(conversationId);
+      setConversations((prev) => prev.filter((item) => item.id !== conversationId));
+      setArchivedConversations((prev) => prev.filter((item) => item.id !== conversationId));
+      if (openContext?.id === conversationId) {
+        setOpenContext(null);
+      }
+      await refreshConversations();
+      pushFlashFeedback({
+        variant: 'success',
+        title: 'Conversation deleted',
+      });
+    } catch (e) {
+      setError(getApiErrorMessage(e, 'Unable to delete conversation.'));
+      pushFlashFeedback({
+        variant: 'error',
+        title: 'Unable to delete conversation',
+      });
+    } finally {
+      setMenuActionId(null);
+      setInboxConfirm(null);
+    }
+  };
+
+  const handleMarkConversationUnread = async (conversationId: string) => {
+    setMenuActionId(conversationId);
+    setError(null);
+    try {
+      await markConversationUnread(conversationId);
+      const bumpUnread = (list: ConversationSummary[]) =>
+        list.map((item) =>
+          item.id === conversationId
+            ? { ...item, unreadCount: Math.max(1, item.unreadCount ?? 0) }
+            : item
+        );
+      setConversations((prev) => bumpUnread(prev));
+      setArchivedConversations((prev) => bumpUnread(prev));
+      await refreshConversations();
+    } catch (e) {
+      setError(getApiErrorMessage(e, 'Unable to mark conversation as unread.'));
+    } finally {
+      setMenuActionId(null);
+    }
+  };
+
+  const handleArchiveConversation = async (conversationId: string) => {
+    setMenuActionId(conversationId);
+    setError(null);
+    try {
+      await archiveConversation(conversationId);
+      const moving = conversations.find((item) => item.id === conversationId);
+      setConversations((prev) => prev.filter((item) => item.id !== conversationId));
+      if (moving) {
+        setArchivedConversations((prev) =>
+          sortConversations([{ ...moving, archived: true }, ...prev.filter((item) => item.id !== conversationId)])
+        );
+      }
+      if (openContext?.id === conversationId) {
+        setOpenContext(null);
+      }
+      await refreshConversations();
+      pushFlashFeedback({
+        variant: 'success',
+        title: 'Conversation archived',
+      });
+    } catch (e) {
+      setError(getApiErrorMessage(e, 'Unable to archive conversation.'));
+      pushFlashFeedback({
+        variant: 'error',
+        title: 'Unable to archive conversation',
+      });
+    } finally {
+      setMenuActionId(null);
+      setInboxConfirm(null);
+    }
+  };
+
+  const handleUnarchiveConversation = async (conversationId: string) => {
+    setMenuActionId(conversationId);
+    setError(null);
+    try {
+      await unarchiveConversation(conversationId);
+      const moving = archivedConversations.find((item) => item.id === conversationId);
+      setArchivedConversations((prev) => prev.filter((item) => item.id !== conversationId));
+      if (moving) {
+        setConversations((prev) =>
+          sortConversations([{ ...moving, archived: false }, ...prev.filter((item) => item.id !== conversationId)])
+        );
+      }
+      await refreshConversations();
+      pushFlashFeedback({
+        variant: 'success',
+        title: 'Conversation restored',
+      });
+    } catch (e) {
+      setError(getApiErrorMessage(e, 'Unable to unarchive conversation.'));
+      pushFlashFeedback({
+        variant: 'error',
+        title: 'Unable to restore conversation',
+      });
+    } finally {
+      setMenuActionId(null);
+    }
+  };
+
+  const confirmInboxAction = () => {
+    if (!inboxConfirm) return;
+    if (inboxConfirm.type === 'dismiss-temporary') {
+      if (dismissingTemporaryKey) return;
+      void handleDismissTemporaryEntry(inboxConfirm.entry);
+      return;
+    }
+    if (menuActionId) return;
+    if (inboxConfirm.type === 'delete') {
+      void handleDeleteConversation(inboxConfirm.conversationId);
+      return;
+    }
+    void handleArchiveConversation(inboxConfirm.conversationId);
+  };
+
   const handleGroupCreated = async (group: ConversationSummary) => {
     setOpenContext(buildOpenChatContext(group));
     setDetailsOpen(false);
@@ -628,6 +1040,7 @@ function DiscussionsPageContent() {
       }
       return sortConversations([conversation, ...prev]);
     });
+    pendingOpenConversationIdRef.current = conversation.id;
     setOpenContext(buildOpenChatContext(conversation));
     setDetailsOpen(false);
     router.replace(
@@ -637,6 +1050,21 @@ function DiscussionsPageContent() {
     const list = await refreshConversations();
     if (!list.some((item) => item.id === conversation.id)) {
       setConversations(sortConversations([conversation, ...list]));
+    }
+  };
+
+  const handleOpenFollower = async (follower: CreatorProfileFollowerItem) => {
+    if (!follower.followerUserId || openingFollowerId) return;
+    setOpeningFollowerId(follower.followerUserId);
+    setError(null);
+    try {
+      const conversation = await createOrGetConversation(follower.followerUserId);
+      setFollowersModalOpen(false);
+      await handleNewMessageStarted(conversation);
+    } catch (e) {
+      setError(getApiErrorMessage(e, 'Unable to start conversation.'));
+    } finally {
+      setOpeningFollowerId(null);
     }
   };
 
@@ -659,6 +1087,26 @@ function DiscussionsPageContent() {
           />
         ) : null
       }
+      temporaryAvatars={
+        inboxFilter !== 'temporary' && activeTemporaryEntries.length > 0 ? (
+          <TemporaryGuestAvatarStrip
+            entries={activeTemporaryEntries}
+            selectedConversationId={openContext?.id}
+            onOpen={handleOpenTemporaryConversation}
+          />
+        ) : null
+      }
+      footer={
+        isCreator ? (
+          <InboxFollowersStrip
+            followers={inboxFollowers}
+            loading={inboxFollowersLoading}
+            openingUserId={openingFollowerId}
+            onSeeAll={() => setFollowersModalOpen(true)}
+            onOpenFollower={(follower) => void handleOpenFollower(follower)}
+          />
+        ) : null
+      }
     >
       {loadingList || openingUser ? (
         <div className="flex items-center justify-center py-12">
@@ -676,22 +1124,28 @@ function DiscussionsPageContent() {
             entries={filteredTemporaryInboxWithoutIncoming}
             actingInviteId={inviteActionId}
             actingCancelId={cancelInviteId}
+            dismissingEntryKey={dismissingTemporaryKey}
             onAcceptInvite={(inviteId) => void handleAcceptGuestInvite(inviteId)}
             onDeclineInvite={(inviteId) => void handleDeclineGuestInvite(inviteId)}
             onCancelInvite={(conversationId, inviteId) =>
               void handleCancelOutgoingInvite(conversationId, inviteId)
             }
             onOpenConversation={handleOpenTemporaryConversation}
+            onDismissEntry={requestDismissTemporaryEntry}
           />
         )
       ) : filteredConversations.length === 0 ? (
-        <p className="px-4 py-8 text-center text-sm text-[var(--msg-muted)]">
-          {inboxSearch.trim()
-            ? 'No conversations match your search.'
-            : inboxFilter !== 'all'
-              ? 'No conversations match this filter.'
-              : 'No conversations yet. Start one from a profile or with “New message”.'}
-        </p>
+        activeTemporaryEntries.length > 0 && inboxFilter === 'all' ? null : (
+          <p className="px-4 py-8 text-center text-sm text-[var(--msg-muted)]">
+            {inboxSearch.trim()
+              ? 'No conversations match your search.'
+              : inboxFilter === 'archived'
+                ? 'No archived conversations.'
+                : inboxFilter !== 'all'
+                  ? 'No conversations match this filter.'
+                  : 'No conversations yet. Start one from a profile or with “New message”.'}
+          </p>
+        )
       ) : (
         <ul role="listbox" aria-label="Conversations" className="flex flex-col gap-0.5 py-1">
           {filteredConversations.map((conversation) => (
@@ -700,6 +1154,9 @@ function DiscussionsPageContent() {
               conversation={conversation}
               selected={conversation.id === openContext?.id}
               currentUserId={user?.id}
+              partnerOnline={
+                conversation.type === 'GROUP' ? null : isPartnerOnline(conversation.otherUserId)
+              }
               typingName={typingByConversationId[conversation.id]}
               deliveredUserIds={
                 conversation.lastMessageId
@@ -707,6 +1164,11 @@ function DiscussionsPageContent() {
                   : undefined
               }
               onSelect={handleSelectConversation}
+              onMarkUnread={(id) => void handleMarkConversationUnread(id)}
+              onArchive={requestArchiveConversation}
+              onUnarchive={(id) => void handleUnarchiveConversation(id)}
+              onDelete={requestDeleteConversation}
+              menuBusy={menuActionId === conversation.id}
             />
           ))}
         </ul>
@@ -722,6 +1184,7 @@ function DiscussionsPageContent() {
       partnerUserId={activeChatContext.partnerUserId}
       conversationType={activeChatContext.conversationType}
       readOnlyGuestHistory={activeChatContext.readOnlyGuestHistory}
+      temporarySession={activeChatContext.temporarySession}
       showComposer={!activeChatContext.readOnlyGuestHistory}
       detailsOpen={detailsOpen}
       onToggleDetails={toggleDetails}
@@ -754,6 +1217,39 @@ function DiscussionsPageContent() {
         currentUserId={user?.id}
         onClose={() => setNewMessageOpen(false)}
         onStarted={(conversation) => void handleNewMessageStarted(conversation)}
+      />
+      <InboxFollowersModal
+        open={followersModalOpen}
+        onClose={() => setFollowersModalOpen(false)}
+        selectingUserId={openingFollowerId}
+        onSelectFollower={(follower) => void handleOpenFollower(follower)}
+      />
+      <ConfirmDialog
+        open={Boolean(inboxConfirm)}
+        title={
+          inboxConfirm?.type === 'dismiss-temporary'
+            ? 'Delete this temporary entry?'
+            : inboxConfirm?.type === 'delete'
+              ? 'Delete this conversation?'
+              : 'Archive this conversation?'
+        }
+        description={
+          inboxConfirm?.type === 'dismiss-temporary'
+            ? `Remove “${inboxConfirm.entry.headline || 'this temporary entry'}” from your temporary inbox?`
+            : inboxConfirm?.type === 'delete'
+              ? `Remove “${inboxConfirm.conversationName}” from your inbox? This only removes it for you.`
+              : `Move “${inboxConfirm?.type === 'archive' ? inboxConfirm.conversationName : 'this conversation'}” to Archived. You can find it again anytime.`
+        }
+        confirmLabel={
+          inboxConfirm?.type === 'archive' ? 'Archive' : 'Delete'
+        }
+        cancelLabel="Cancel"
+        tone={inboxConfirm?.type === 'archive' ? 'brand' : 'danger'}
+        busy={Boolean(menuActionId) || Boolean(dismissingTemporaryKey)}
+        onCancel={() => {
+          if (!menuActionId && !dismissingTemporaryKey) setInboxConfirm(null);
+        }}
+        onConfirm={confirmInboxAction}
       />
       {error ? (
         <div className="shrink-0 px-3 pt-2">
