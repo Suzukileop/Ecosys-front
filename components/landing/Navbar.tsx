@@ -25,7 +25,7 @@ function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-300 bg-neutral-100 text-neutral-700 transition-colors duration-300 hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-neutral-400/40 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:focus:ring-neutral-500/40"
+      className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 transition-colors duration-300 hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-neutral-400/40 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:focus:ring-neutral-500/40"
     >
       <AnimatePresence mode="wait" initial={false}>
         {isDark ? (

@@ -313,9 +313,13 @@ export function DashboardTopHeader({
           {showNewsPublishCta ? <NewsPublishHeaderCta /> : null}
         </div>
 
-        <h1 className="max-w-[40vw] truncate text-center text-xl font-bold tracking-tight text-neutral-900 dark:text-white sm:max-w-none">
-          {pageTitle}
-        </h1>
+        {pageTitle ? (
+          <h1 className="max-w-[40vw] truncate text-center text-xl font-bold tracking-tight text-neutral-900 dark:text-white sm:max-w-none">
+            {pageTitle}
+          </h1>
+        ) : (
+          <span className="h-7" aria-hidden />
+        )}
 
         <div className="flex h-9 shrink-0 items-center justify-end gap-2 justify-self-end">
           {isDiscussionsPage ? null : <MessagesHeaderButton />}

@@ -30,7 +30,7 @@ export const PORTFOLIO_GALLERY_COLOR_SLOT_OPTIONS: {
   description: string;
 }[] = [
   { value: 'sectionBackground', label: 'Fond de section', description: 'Remplissage principal de la galerie.' },
-  { value: 'title', label: 'Titre de section', description: 'Couleur du titre Galerie.' },
+  { value: 'title', label: 'Section title', description: 'Gallery heading color.' },
   { value: 'subtitle', label: 'Sous-titre', description: 'Texte introductif sous le titre.' },
   { value: 'itemTitle', label: 'Titre des médias', description: 'Légendes sous les images.' },
   { value: 'overlay', label: 'Overlay', description: 'Voile derrière les légendes superposées.' },

@@ -23,11 +23,12 @@ function formatCount(value: number) {
 }
 
 /** Secondary action — social follow, never competes with Discuss. */
-const secondaryIdleClass =
-  'inline-flex items-center justify-center gap-2 rounded-full border border-neutral-300 bg-white font-semibold text-neutral-700 transition hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800';
+const secondaryBaseClass =
+  'inline-flex items-center justify-center gap-2 rounded-full border font-semibold transition-all duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/35 disabled:pointer-events-none';
 
-const secondaryFollowingClass =
-  'inline-flex items-center justify-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 font-semibold text-neutral-600 transition hover:border-neutral-300 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900/80 dark:text-neutral-300 dark:hover:bg-neutral-800';
+const secondaryIdleClass = `${secondaryBaseClass} border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800`;
+
+const secondaryFollowingClass = `${secondaryBaseClass} border-orange-200/80 bg-orange-50/90 text-orange-700 hover:border-orange-300 hover:bg-orange-100/90 dark:border-orange-500/25 dark:bg-orange-500/[0.08] dark:text-orange-300/90 dark:hover:border-orange-500/35 dark:hover:bg-orange-500/[0.12]`;
 
 export function CreatorFollowButton({
   creatorId,
@@ -41,13 +42,21 @@ export function CreatorFollowButton({
   const [followerCount, setFollowerCount] = useState(initialFollowerCount ?? 0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pop, setPop] = useState(false);
   const touchedRef = useRef(false);
+  const popTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onFollowingChangeRef = useRef(onFollowingChange);
+  onFollowingChangeRef.current = onFollowingChange;
 
   const isSelf = Boolean(user?.id && user.id === creatorId);
   const sessionReady = !isLoading && sessionStatus !== 'loading';
   const canFollow = Boolean(user) && sessionReady && !isSelf;
   const compact = size === 'sm';
   const sizeClass = compact ? 'px-4 py-2 text-sm' : 'px-5 py-2.5 text-sm';
+
+  useEffect(() => {
+    touchedRef.current = false;
+  }, [creatorId]);
 
   useEffect(() => {
     if (touchedRef.current) return;
@@ -59,24 +68,26 @@ export function CreatorFollowButton({
     if (initialFollowerCount !== undefined) setFollowerCount(initialFollowerCount);
   }, [initialFollowerCount, creatorId]);
 
+  // SSR profile may miss isFollowing — always refresh when the session is ready.
   useEffect(() => {
-    if (initialFollowing !== undefined && initialFollowerCount !== undefined) return;
+    if (!sessionReady || !user || isSelf) return;
 
     let cancelled = false;
     void getCreatorFollowStats(creatorId)
       .then((stats) => {
         if (cancelled || touchedRef.current) return;
-        if (initialFollowing === undefined) setFollowing(stats.isFollowing);
-        if (initialFollowerCount === undefined) setFollowerCount(stats.followerCount);
+        setFollowing(stats.isFollowing);
+        setFollowerCount(stats.followerCount);
+        onFollowingChangeRef.current?.(stats.isFollowing, stats.followerCount);
       })
       .catch(() => {
-        // keep defaults
+        // keep SSR defaults
       });
 
     return () => {
       cancelled = true;
     };
-  }, [creatorId, initialFollowerCount, initialFollowing]);
+  }, [creatorId, sessionReady, user, isSelf]);
 
   const applyState = useCallback(
     (nextFollowing: boolean, nextCount: number) => {
@@ -86,6 +97,21 @@ export function CreatorFollowButton({
     },
     [onFollowingChange]
   );
+
+  const triggerPop = useCallback(() => {
+    if (popTimerRef.current) clearTimeout(popTimerRef.current);
+    setPop(false);
+    requestAnimationFrame(() => {
+      setPop(true);
+      popTimerRef.current = setTimeout(() => setPop(false), 320);
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (popTimerRef.current) clearTimeout(popTimerRef.current);
+    };
+  }, []);
 
   const toggle = useCallback(async () => {
     if (!canFollow || busy) return;
@@ -98,6 +124,7 @@ export function CreatorFollowButton({
     const nextFollowing = !following;
     const nextCount = nextFollowing ? followerCount + 1 : Math.max(0, followerCount - 1);
     applyState(nextFollowing, nextCount);
+    triggerPop();
 
     try {
       const stats = nextFollowing
@@ -110,12 +137,12 @@ export function CreatorFollowButton({
     } finally {
       setBusy(false);
     }
-  }, [applyState, busy, canFollow, creatorId, followerCount, following]);
+  }, [applyState, busy, canFollow, creatorId, followerCount, following, triggerPop]);
 
-  const countBadge =
-    followerCount > 0 ? (
-      <span className="text-xs font-medium opacity-70">({formatCount(followerCount)})</span>
-    ) : null;
+  const label = following ? 'Following' : 'Follow';
+  const buttonClass = `${following ? secondaryFollowingClass : secondaryIdleClass} ${sizeClass} ${
+    pop ? 'follow-btn-pop' : ''
+  } ${busy ? 'opacity-75' : ''}`;
 
   if (isSelf) {
     if (followerCount <= 0) return null;
@@ -131,7 +158,6 @@ export function CreatorFollowButton({
     return (
       <button type="button" disabled className={`${secondaryIdleClass} ${sizeClass} opacity-60`}>
         Follow
-        {countBadge}
       </button>
     );
   }
@@ -143,7 +169,6 @@ export function CreatorFollowButton({
         className={`${secondaryIdleClass} ${sizeClass}`}
       >
         Follow
-        {countBadge}
       </Link>
     );
   }
@@ -155,10 +180,12 @@ export function CreatorFollowButton({
         onClick={() => void toggle()}
         disabled={busy || !canFollow}
         aria-pressed={following}
-        className={`${following ? secondaryFollowingClass : secondaryIdleClass} ${sizeClass} disabled:opacity-60`}
+        aria-busy={busy}
+        className={buttonClass}
       >
-        {busy ? '…' : following ? 'Following' : 'Follow'}
-        {countBadge}
+        <span key={label} className="follow-label-in">
+          {label}
+        </span>
       </button>
       {error ? <p className="max-w-[14rem] text-xs text-red-600 dark:text-red-400">{error}</p> : null}
     </div>

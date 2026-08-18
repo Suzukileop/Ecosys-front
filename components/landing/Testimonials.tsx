@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { brandFrameRadiusClass, landingSectionShellClass } from '@/components/landing/landingBrand';
+import { brandFrameRadiusClass, landingPanelSurfaceClass, landingSectionShellClass } from '@/components/landing/landingBrand';
 
 const testimonials = [
   {
@@ -71,27 +71,27 @@ export function Testimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08, duration: 0.5 }}
-              className={`flex h-full flex-col border border-neutral-200 bg-neutral-50 p-6 sm:p-7 dark:border-[#262626] dark:bg-[#161616] ${brandFrameRadiusClass}`}
+              className={`flex h-full flex-col p-7 sm:p-8 ${landingPanelSurfaceClass} ${brandFrameRadiusClass}`}
             >
-              <p className="flex-1 text-[15px] leading-relaxed text-neutral-600 sm:text-base dark:text-[#d1d1d1]">
+              <p className="flex-1 text-base leading-relaxed text-neutral-600 sm:text-lg dark:text-[#d1d1d1]">
                 <span aria-hidden="true">&ldquo;</span>
                 {t.quote}
                 <span aria-hidden="true">&rdquo;</span>
               </p>
 
-              <div className="mt-8 flex items-center gap-3">
-                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-neutral-200 dark:bg-[#262626]">
+              <div className="mt-8 flex items-center gap-3.5 sm:mt-9 sm:gap-4">
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-neutral-200 sm:h-14 sm:w-14 dark:bg-[#262626]">
                   <Image
                     src={t.avatar}
                     alt={t.name}
                     fill
                     className="object-cover"
-                    sizes="40px"
+                    sizes="56px"
                   />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold text-neutral-900 dark:text-white">{t.name}</div>
-                  <div className="text-xs text-neutral-500 sm:text-sm dark:text-[#888888]">{t.niche}</div>
+                  <div className="text-base font-semibold text-neutral-900 dark:text-white">{t.name}</div>
+                  <div className="text-sm text-neutral-500 sm:text-base dark:text-[#888888]">{t.niche}</div>
                 </div>
               </div>
             </motion.article>

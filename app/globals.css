@@ -328,10 +328,61 @@ body {
   animation: msg-media-reveal 280ms ease-out both;
 }
 
+@keyframes follow-btn-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.045);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes follow-label-in {
+  from {
+    opacity: 0.55;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes follow-count-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 0.7;
+    transform: translateY(0);
+  }
+}
+
+.follow-btn-pop {
+  animation: follow-btn-pop 300ms ease-out;
+}
+
+.follow-label-in {
+  display: inline-block;
+  animation: follow-label-in 220ms ease-out both;
+}
+
+.follow-count-in {
+  display: inline-block;
+  animation: follow-count-in 240ms ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .msg-media-backdrop-in,
   .msg-media-panel-in,
-  .msg-media-reveal {
+  .msg-media-reveal,
+  .follow-btn-pop,
+  .follow-label-in,
+  .follow-count-in {
     animation: none;
   }
 }

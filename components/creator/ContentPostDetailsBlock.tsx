@@ -41,25 +41,42 @@ export function toContentDetailsDraft(post: ContentPostDetailsPost): ContentDeta
   };
 }
 
-/** Split "500 Ar", "1 200.50 AR", or plain amounts for styled currency. */
+/** Split "500 Ar", "€100", "$ 1 200", or plain amounts for styled currency. */
 function splitPriceLabel(priceInfo: string): { amount: string; currency: string | null } {
   const raw = priceInfo.trim();
   if (!raw) return { amount: '—', currency: null };
 
-  const match = raw.match(/^(.+?)\s*(Ar|AR|MGA|€|\$|USD|EUR)$/i);
-  if (!match) return { amount: raw, currency: null };
+  const prefix = raw.match(/^(€|\$|£|¥|Ar|AR|MGA|USD|EUR|GBP|JPY)\s*(.+)$/i);
+  if (prefix) {
+    return { amount: prefix[2].trim() || raw, currency: normalizeCurrencyToken(prefix[1]) };
+  }
 
-  const amount = match[1].trim();
-  if (!amount) return { amount: raw, currency: null };
+  const suffix = raw.match(/^(.+?)\s*(Ar|AR|MGA|€|\$|£|¥|USD|EUR|GBP|JPY)$/i);
+  if (suffix) {
+    const amount = suffix[1].trim();
+    if (amount) return { amount, currency: normalizeCurrencyToken(suffix[2]) };
+  }
 
-  const token = match[2];
-  let currency = token;
-  if (/^ar$/i.test(token)) currency = 'Ar';
-  else if (/^mga$/i.test(token)) currency = 'MGA';
-  else if (/^usd$/i.test(token)) currency = 'USD';
-  else if (/^eur$/i.test(token)) currency = 'EUR';
+  return { amount: raw, currency: null };
+}
 
-  return { amount, currency };
+function normalizeCurrencyToken(token: string): string {
+  if (/^(ar|mga)$/i.test(token)) return 'Ar';
+  if (/^(usd|\$)$/i.test(token)) return 'USD';
+  if (/^(eur|€)$/i.test(token)) return 'EUR';
+  if (/^(gbp|£)$/i.test(token)) return 'GBP';
+  if (/^(jpy|yen|¥)$/i.test(token)) return 'JPY';
+  return token;
+}
+
+function currencyGlyph(currency: string | null): string | null {
+  if (!currency) return null;
+  if (currency === 'USD') return '$';
+  if (currency === 'EUR') return '€';
+  if (currency === 'GBP') return '£';
+  if (currency === 'JPY') return '¥';
+  if (currency === 'Ar') return 'Ar';
+  return currency.length <= 3 ? currency : currency.slice(0, 3);
 }
 
 function needsShowMoreInline(description: string) {
@@ -102,7 +119,7 @@ function DescriptionText({
   return (
     <p
       ref={ref}
-      className={`text-sm text-neutral-500 dark:text-neutral-400 ${
+      className={`text-sm text-neutral-700 dark:text-neutral-300 ${
         descExpanded
           ? 'whitespace-pre-wrap leading-relaxed'
           : isSidebar
@@ -160,22 +177,26 @@ function ContentPostPriceEstimate({ priceInfo }: { priceInfo?: string | null }) 
   if (!priceLabel) return null;
 
   const { amount, currency } = splitPriceLabel(priceLabel);
+  const glyph = currencyGlyph(currency);
 
   return (
     <div>
-      <p className="text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-        Estimated amount to recreate this piece…
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
+        Estimated amount to recreate this piece
       </p>
-      <p className="mt-2.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+      <div className="mt-3 flex items-center gap-3.5 rounded-2xl bg-neutral-100 px-4 py-3.5 dark:bg-neutral-800">
+        {glyph ? (
+          <span
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white"
+            aria-hidden
+          >
+            {glyph}
+          </span>
+        ) : null}
         <span className="text-3xl font-bold tracking-tight text-neutral-950 tabular-nums dark:text-white">
           {amount}
         </span>
-        {currency && (
-          <span className="text-xl font-bold tracking-wide text-orange-500 dark:text-orange-400">
-            {currency}
-          </span>
-        )}
-      </p>
+      </div>
     </div>
   );
 }
@@ -280,6 +301,18 @@ export function ContentPostDetailsBlock({
   if (editing && draft && onDraftChange) {
     return (
       <div className={isSidebar ? 'space-y-6' : 'space-y-4'}>
+        {isSidebar ? (
+          <ContentCategorySelect
+            id="content-edit-genre"
+            value={draft.genre}
+            onChange={(next) => onDraftChange({ ...draft, genre: next })}
+            disabled={disabled}
+            labelClass="text-[11px] font-semibold uppercase tracking-wide text-orange-500 dark:text-orange-400"
+            fieldClass={`${editInputClass} mt-0 text-sm font-medium text-neutral-700 dark:text-neutral-200`}
+            placeholder="Branding, Motion, Tech…"
+          />
+        ) : null}
+
         {!hideTitle && (
           <div className="flex flex-wrap items-center gap-2">
             <input
@@ -299,15 +332,17 @@ export function ContentPostDetailsBlock({
           </div>
         )}
 
-        <ContentCategorySelect
-          id="content-edit-genre"
-          value={draft.genre}
-          onChange={(next) => onDraftChange({ ...draft, genre: next })}
-          disabled={disabled}
-          labelClass="text-[11px] font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-500"
-          fieldClass={`${editInputClass} mt-0 text-sm font-medium text-neutral-700 dark:text-neutral-200`}
-          placeholder="Branding, Motion, Tech…"
-        />
+        {!isSidebar ? (
+          <ContentCategorySelect
+            id="content-edit-genre"
+            value={draft.genre}
+            onChange={(next) => onDraftChange({ ...draft, genre: next })}
+            disabled={disabled}
+            labelClass="text-[11px] font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-500"
+            fieldClass={`${editInputClass} mt-0 text-sm font-medium text-neutral-700 dark:text-neutral-200`}
+            placeholder="Branding, Motion, Tech…"
+          />
+        ) : null}
 
         <textarea
           value={draft.description}
@@ -321,8 +356,8 @@ export function ContentPostDetailsBlock({
 
         {isSidebar && (
           <div>
-            <p className="text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-              Estimated amount to recreate this piece…
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
+              Estimated amount to recreate this piece
             </p>
             <input
               type="text"
@@ -331,7 +366,7 @@ export function ContentPostDetailsBlock({
               maxLength={200}
               onChange={(e) => onDraftChange({ ...draft, priceInfo: e.target.value })}
               placeholder="e.g. 500 Ar"
-              className={`${editInputClass} mt-2.5 text-2xl font-bold tracking-tight text-neutral-950 tabular-nums dark:text-white`}
+              className={`${editInputClass} mt-3 text-2xl font-bold tracking-tight text-neutral-950 tabular-nums dark:text-white`}
             />
           </div>
         )}
@@ -339,25 +374,39 @@ export function ContentPostDetailsBlock({
         <div
           className={
             isSidebar
-              ? 'mt-6 grid grid-cols-2 gap-x-8 gap-y-6 border-t border-neutral-800/40 pt-6 dark:border-neutral-200/20'
-              : 'mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-neutral-800/40 pt-4 dark:border-neutral-200/20'
+              ? 'mt-6 grid grid-cols-2 gap-x-8 gap-y-6'
+              : 'mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-neutral-200 pt-4 dark:border-neutral-800'
           }
         >
-          <EditableStringList
-            values={draft.tags}
-            onChange={(tags) => onDraftChange({ ...draft, tags })}
-            placeholder="tag"
-            prefix="#"
-            disabled={disabled}
-            itemClassName={`font-medium text-sky-600 dark:text-sky-400 ${isSidebar ? 'text-sm' : 'text-xs'}`}
-          />
-          <EditableStringList
-            values={draft.toolsUsed}
-            onChange={(toolsUsed) => onDraftChange({ ...draft, toolsUsed })}
-            placeholder="Tool"
-            disabled={disabled}
-            itemClassName={`font-medium text-neutral-700 dark:text-neutral-200 ${isSidebar ? 'text-sm' : 'text-xs'}`}
-          />
+          <div className="min-w-0">
+            {isSidebar ? (
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
+                Tags
+              </p>
+            ) : null}
+            <EditableStringList
+              values={draft.tags}
+              onChange={(tags) => onDraftChange({ ...draft, tags })}
+              placeholder="tag"
+              prefix="#"
+              disabled={disabled}
+              itemClassName={`font-medium text-orange-500 dark:text-orange-400 ${isSidebar ? 'text-sm' : 'text-xs'}`}
+            />
+          </div>
+          <div className="min-w-0">
+            {isSidebar ? (
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
+                Deliverables
+              </p>
+            ) : null}
+            <EditableStringList
+              values={draft.toolsUsed}
+              onChange={(toolsUsed) => onDraftChange({ ...draft, toolsUsed })}
+              placeholder="Tool"
+              disabled={disabled}
+              itemClassName={`font-medium text-neutral-700 dark:text-neutral-200 ${isSidebar ? 'text-sm' : 'text-xs'}`}
+            />
+          </div>
         </div>
       </div>
     );
@@ -376,13 +425,31 @@ export function ContentPostDetailsBlock({
   return (
     <div>
       <div className={isSidebar ? 'space-y-6' : 'space-y-4'}>
-        {!hideTitle && (
+        {isSidebar && !hideTitle && (
+          <div>
+            {genre ? (
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-500 dark:text-orange-400">
+                {genre}
+              </p>
+            ) : null}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <h3
+                className="text-[1.65rem] font-bold leading-tight text-neutral-900 dark:text-white"
+                style={post.textColor ? { color: post.textColor } : undefined}
+              >
+                {title}
+              </h3>
+              {bucketBadge(bucket)}
+            </div>
+            <span className="mt-2.5 block h-1.5 w-14 rounded-full bg-orange-500" aria-hidden />
+          </div>
+        )}
+
+        {!isSidebar && !hideTitle && (
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h3
-                className={`font-bold leading-tight text-neutral-900 dark:text-white ${
-                  isSidebar ? 'text-xl' : 'text-lg'
-                }`}
+                className="text-lg font-bold leading-tight text-neutral-900 dark:text-white"
                 style={post.textColor ? { color: post.textColor } : undefined}
               >
                 {title}
@@ -390,7 +457,7 @@ export function ContentPostDetailsBlock({
               {bucketBadge(bucket)}
             </div>
             {genre && (
-              <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
+              <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wide text-orange-500 dark:text-orange-400">
                 {genre}
               </p>
             )}
@@ -424,36 +491,50 @@ export function ContentPostDetailsBlock({
         <div
           className={
             isSidebar
-              ? 'mt-6 grid grid-cols-2 gap-x-8 gap-y-6 border-t border-neutral-800/40 pt-6 dark:border-neutral-200/20'
-              : 'mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-neutral-800/40 pt-4 dark:border-neutral-200/20'
+              ? 'mt-8 grid grid-cols-2 gap-x-8 gap-y-6'
+              : 'mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-neutral-200 pt-4 dark:border-neutral-800'
           }
         >
           {tags.length > 0 && (
-            <div className="min-w-0 space-y-2">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className={`block font-medium text-sky-600 dark:text-sky-400 ${
-                    isSidebar ? 'text-sm' : 'truncate text-xs'
-                  }`}
-                >
-                  #{tag}
-                </span>
-              ))}
+            <div className="min-w-0">
+              {isSidebar ? (
+                <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
+                  Tags
+                </p>
+              ) : null}
+              <div className="space-y-2">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className={`block font-medium text-orange-500 dark:text-orange-400 ${
+                      isSidebar ? 'text-sm' : 'truncate text-xs'
+                    }`}
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
           {tools.length > 0 && (
-            <div className={`min-w-0 space-y-2 ${tags.length === 0 ? 'col-span-2' : ''}`}>
-              {tools.map((tool) => (
-                <span
-                  key={tool}
-                  className={`block font-medium text-neutral-700 dark:text-neutral-200 ${
-                    isSidebar ? 'text-sm' : 'truncate text-xs'
-                  }`}
-                >
-                  {tool}
-                </span>
-              ))}
+            <div className={`min-w-0 ${tags.length === 0 ? 'col-span-2' : ''}`}>
+              {isSidebar ? (
+                <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
+                  Deliverables
+                </p>
+              ) : null}
+              <div className="space-y-2">
+                {tools.map((tool) => (
+                  <span
+                    key={tool}
+                    className={`block font-medium text-neutral-800 dark:text-neutral-200 ${
+                      isSidebar ? 'text-sm' : 'truncate text-xs'
+                    }`}
+                  >
+                    {tool}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>

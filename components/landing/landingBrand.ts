@@ -25,8 +25,25 @@ export const brandRadiusClass = 'rounded-lg';
 export const brandButtonRadiusClass = brandRadiusClass;
 export const brandFrameRadiusClass = brandRadiusClass;
 
-/** Boutons CTA landing — orange uni + léger lift au survol */
+/** Gray panel surface — matches Features section copy column. */
+export const landingPanelSurfaceClass = 'bg-neutral-50/80 dark:bg-neutral-900';
+
+/** Soft orange check circle — no border, bold tick inside. */
+export const landingCheckBulletClass =
+  'bg-[#F97316]/10 text-[#F97316] dark:bg-[#F97316]/15 dark:text-[#FB923C]';
+export const landingCheckIconClass =
+  'h-[0.8rem] w-[0.8rem] scale-110 font-black sm:h-[0.95rem] sm:w-[0.95rem]';
+
+/** Boutons CTA landing — noir en clair, blanc en sombre */
 export const brandCtaClass =
+  `${brandButtonRadiusClass} bg-neutral-950 text-white transition-all hover:-translate-y-0.5 hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200`;
+
+/** CTA inversé — blanc sur l’image ; reste blanc en sombre à partir de `lg`. */
+export const brandCtaInvertedClass =
+  `${brandButtonRadiusClass} border border-neutral-200 bg-white text-neutral-950 transition-all hover:-translate-y-0.5 hover:bg-neutral-100 dark:border-transparent dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800 lg:dark:border-neutral-200 lg:dark:bg-white lg:dark:text-neutral-950 lg:dark:hover:bg-neutral-100`;
+
+/** CTA orange — hero mobile “Start for free” + accents mobile. */
+export const brandCtaOrangeClass =
   `${brandButtonRadiusClass} bg-[#FF6B00] text-white transition-all hover:-translate-y-0.5 hover:bg-[#EA580C]`;
 
 /** Boutons dashboard / UI — orange uni (sans dégradé) */

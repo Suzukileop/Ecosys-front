@@ -105,7 +105,7 @@ type FetchGlobalSearchOptions = {
   limit?: number;
   categories?: GlobalSearchCategory[];
   filters?: GlobalSearchFilters;
-  viewerCoords?: { lat: number; lng: number } | null;
+  viewerCoords?: { lat: number; lng: number; accuracyM?: number | null } | null;
 };
 
 function emptyResults(): GlobalSearchResults {
@@ -228,6 +228,9 @@ export async function fetchGlobalSearchPageData(
       ? {
           lat: options.viewerCoords.lat,
           lng: options.viewerCoords.lng,
+          ...(options.viewerCoords.accuracyM != null
+            ? { accuracyM: options.viewerCoords.accuracyM }
+            : {}),
           ...(filters?.closestFirst ? { sort: 'distance' } : {}),
         }
       : {}),

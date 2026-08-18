@@ -4,7 +4,14 @@ import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { motion } from 'framer-motion';
-import { brandCtaClass, brandFrameRadiusClass, landingSectionShellClass } from '@/components/landing/landingBrand';
+import {
+  brandCtaClass,
+  brandFrameRadiusClass,
+  landingCheckBulletClass,
+  landingCheckIconClass,
+  landingPanelSurfaceClass,
+  landingSectionShellClass,
+} from '@/components/landing/landingBrand';
 
 const comparisons = [
   {
@@ -48,14 +55,14 @@ function ComparisonBullet({
       <span
         className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full sm:mt-1 sm:h-6 sm:w-6 ${
           isAfter
-            ? 'bg-[#F97316] text-white'
-            : 'border border-neutral-400 text-neutral-500 dark:border-neutral-500 dark:text-neutral-400'
+            ? landingCheckBulletClass
+            : 'bg-neutral-400/10 text-neutral-400 dark:bg-neutral-500/15 dark:text-neutral-400'
         }`}
         aria-hidden="true"
       >
         <FontAwesomeIcon
           icon={isAfter ? faCheck : faXmark}
-          className="h-2.5 w-2.5 sm:h-3 sm:w-3"
+          className={landingCheckIconClass}
         />
       </span>
       <span className="text-base font-medium leading-snug lp-text sm:text-lg md:text-xl">
@@ -89,12 +96,8 @@ export function ProblemSolution() {
         className="relative z-10 w-full overflow-x-hidden lp-bg pt-16 pb-16 transition-colors duration-300 md:pt-24 md:pb-24"
       >
         <div className={landingSectionShellClass}>
-          <p className="mx-auto mb-10 max-w-xl text-center text-sm lp-muted sm:text-base md:mb-14">
-            See the difference between building alone and launching with NoProbleme.
-          </p>
-
           <div
-            className={`relative border border-neutral-200 bg-neutral-100 px-5 py-8 dark:border-neutral-700 dark:bg-neutral-900/60 sm:px-8 sm:py-10 md:px-10 md:py-12 lg:px-12 lg:py-14 ${brandFrameRadiusClass}`}
+            className={`relative px-5 py-8 sm:px-8 sm:py-10 md:px-10 md:py-12 lg:px-12 lg:py-14 ${landingPanelSurfaceClass} ${brandFrameRadiusClass}`}
           >
             <div className="relative grid grid-cols-1 items-start gap-12 lg:grid-cols-2 lg:gap-0">
               <div
@@ -103,22 +106,19 @@ export function ProblemSolution() {
               />
 
               <div className="flex w-full min-w-0 flex-col lg:pr-12 xl:pr-16 2xl:pr-20">
-                <span className="mb-4 block text-[10px] font-bold uppercase tracking-[0.22em] text-neutral-400 dark:text-neutral-500 sm:text-xs">
-                  Before
-                </span>
-                <div className="mb-6 md:mb-8">
+                <div className="mb-14 md:mb-16">
                   <h3 className="text-2xl font-bold tracking-tight lp-text sm:text-3xl md:text-4xl">
                     Without our platform
                   </h3>
                 </div>
 
-                <ul className="flex flex-col gap-9 sm:gap-10 md:gap-12">
+                <ul className="flex flex-col gap-8 sm:gap-9 md:gap-10">
                   {comparisons.map((item) => (
                     <ComparisonBullet key={item.before} text={item.before} tone="before" />
                   ))}
                 </ul>
 
-                <div className="mt-8 md:mt-10">
+                <div className="mt-16 md:mt-20">
                   <span className="text-sm text-neutral-500 underline decoration-neutral-400/80 underline-offset-4 dark:text-neutral-400 dark:decoration-neutral-500 sm:text-base">
                     Keep doing it manually
                   </span>
@@ -126,22 +126,19 @@ export function ProblemSolution() {
               </div>
 
               <div className="flex w-full min-w-0 flex-col border-t border-neutral-300 pt-10 dark:border-neutral-700 lg:border-t-0 lg:pl-12 lg:pt-0 xl:pl-16 2xl:pl-20">
-                <span className="mb-4 block text-[10px] font-bold uppercase tracking-[0.22em] text-[#F97316] sm:text-xs">
-                  After
-                </span>
-                <div className="mb-6 md:mb-8">
+                <div className="mb-14 md:mb-16">
                   <h3 className="text-2xl font-bold tracking-tight lp-text sm:text-3xl md:text-4xl">
                     With our platform
                   </h3>
                 </div>
 
-                <ul className="flex flex-col gap-9 sm:gap-10 md:gap-12">
+                <ul className="flex flex-col gap-8 sm:gap-9 md:gap-10">
                   {comparisons.map((item) => (
                     <ComparisonBullet key={item.after} text={item.after} tone="after" />
                   ))}
                 </ul>
 
-                <div className="mt-8 md:mt-10">
+                <div className="mt-16 md:mt-20">
                   <Link
                     href="/register"
                     className={`inline-flex items-center px-6 py-3 text-sm font-semibold sm:px-8 sm:py-3.5 sm:text-base ${brandCtaClass}`}

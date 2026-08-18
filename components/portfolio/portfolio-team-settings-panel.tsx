@@ -204,9 +204,9 @@ export function TeamSettingsPanel({
             ) : null}
           </div>
 
-          <SelectField label="Titre" value={team.titlePreset} options={PORTFOLIO_TEAM_TITLE_PRESET_OPTIONS} onChange={(titlePreset) => onChange({ titlePreset })} />
-          {team.titlePreset === 'custom' ? <input value={team.titleCustom} onChange={(event) => onChange({ titleCustom: event.target.value, title: event.target.value })} className="w-full rounded-xl border border-neutral-200 px-3 py-2.5" placeholder="Titre personnalisé" /> : null}
-          <SelectField label="Sous-titre" value={team.subtitlePreset} options={PORTFOLIO_TEAM_SUBTITLE_PRESET_OPTIONS} onChange={(subtitlePreset) => onChange({ subtitlePreset })} />
+          <SelectField label="Title" value={team.titlePreset} options={PORTFOLIO_TEAM_TITLE_PRESET_OPTIONS} onChange={(titlePreset) => onChange({ titlePreset })} />
+          {team.titlePreset === 'custom' ? <input value={team.titleCustom} onChange={(event) => onChange({ titleCustom: event.target.value, title: event.target.value })} className="w-full rounded-xl border border-neutral-200 px-3 py-2.5" placeholder="Custom title" /> : null}
+          <SelectField label="Subtitle" value={team.subtitlePreset} options={PORTFOLIO_TEAM_SUBTITLE_PRESET_OPTIONS} onChange={(subtitlePreset) => onChange({ subtitlePreset })} />
           {team.subtitlePreset === 'default' || team.subtitlePreset === 'custom' ? (
             <textarea
               rows={3}
@@ -218,22 +218,22 @@ export function TeamSettingsPanel({
           <div className="grid gap-4 sm:grid-cols-2">
             {teamSectionLayoutIsAside(team.sectionLayout) ? (
               <p className="sm:col-span-2 text-sm text-neutral-500">
-                Alignement du texte du titre : le titre est déjà placé{' '}
-                {team.sectionLayout === 'aside-right' ? 'à droite' : 'à gauche'} de la grille.
+                Title alignment is hidden: the title is already placed{' '}
+                {team.sectionLayout === 'aside-right' ? 'on the right' : 'on the left'} of the grid.
               </p>
             ) : (
               <SelectField
-                label="Alignement"
+                label="Alignment"
                 value={team.headerAlignment}
                 options={['left', 'center', 'right'].map((value) => ({
                   value: value as typeof team.headerAlignment,
-                  label: value === 'left' ? 'Gauche' : value === 'right' ? 'Droite' : 'Centre',
+                  label: value === 'left' ? 'Left' : value === 'right' ? 'Right' : 'Center',
                 }))}
                 onChange={(headerAlignment) => onChange({ headerAlignment })}
               />
             )}
-            <SelectField label="Police du titre" value={team.titleFont} options={['sans', 'serif', 'display'].map((value) => ({ value: value as typeof team.titleFont, label: value }))} onChange={(titleFont) => onChange({ titleFont })} />
-            <SelectField label="Police du sous-titre" value={team.subtitleFont} options={['sans', 'serif', 'display'].map((value) => ({ value: value as typeof team.subtitleFont, label: value }))} onChange={(subtitleFont) => onChange({ subtitleFont })} />
+            <SelectField label="Title font" value={team.titleFont} options={['sans', 'serif', 'display'].map((value) => ({ value: value as typeof team.titleFont, label: value }))} onChange={(titleFont) => onChange({ titleFont })} />
+            <SelectField label="Subtitle font" value={team.subtitleFont} options={['sans', 'serif', 'display'].map((value) => ({ value: value as typeof team.subtitleFont, label: value }))} onChange={(subtitleFont) => onChange({ subtitleFont })} />
           </div>
           {team.useHeroPalette === false ? <div className="grid gap-4 sm:grid-cols-2"><ColorField label="Couleur du titre" value={team.titleColor} onChange={(titleColor) => onChange({ titleColor })} /><ColorField label="Couleur du sous-titre" value={team.subtitleColor} onChange={(subtitleColor) => onChange({ subtitleColor })} /></div> : null}
 
@@ -280,6 +280,87 @@ export function TeamSettingsPanel({
       {current === 'cards' ? (
         <div className="space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
+            <SelectField
+              label={
+                team.layout === 'directory'
+                  ? 'Largeur de la liste'
+                  : team.layout === 'spotlight'
+                    ? 'Largeur du cadre'
+                    : 'Largeur de carte'
+              }
+              value={team.cardMaxWidth ?? 'sm'}
+              options={[
+                { value: 'xs', label: 'XS' },
+                { value: 'sm', label: 'S' },
+                { value: 'md', label: 'M' },
+                { value: 'lg', label: 'L' },
+                { value: 'xl', label: 'XL' },
+                { value: 'full', label: 'Pleine largeur' },
+              ].map((option) => ({ value: option.value as typeof team.cardMaxWidth, label: option.label }))}
+              onChange={(cardMaxWidth) => onChange({ cardMaxWidth })}
+            />
+            <SelectField
+              label={
+                team.layout === 'profile-cards' ||
+                team.layout === 'hover-cards' ||
+                team.layout === 'cover-cards' ||
+                team.layout === 'avatar-cards' ||
+                team.layout === 'float-cards'
+                  ? 'Alignement du texte'
+                  : 'Alignement'
+              }
+              value={team.listAlign ?? 'center'}
+              options={[
+                { value: 'left' as const, label: 'Gauche' },
+                { value: 'center' as const, label: 'Centre' },
+                { value: 'right' as const, label: 'Droite' },
+              ]}
+              onChange={(listAlign) => onChange({ listAlign })}
+            />
+            <SelectField
+              label={
+                team.layout === 'spotlight'
+                  ? 'Taille du portrait'
+                  : team.layout === 'profile-cards' || team.layout === 'hover-cards' || team.layout === 'cover-cards'
+                    ? 'Taille de la photo'
+                    : 'Taille d’avatar'
+              }
+              value={team.avatarSize ?? 'md'}
+              options={
+                team.layout === 'spotlight' || team.layout === 'profile-cards' || team.layout === 'hover-cards' || team.layout === 'cover-cards'
+                  ? [
+                      { value: 'sm' as const, label: 'S' },
+                      { value: 'md' as const, label: 'M' },
+                      { value: 'lg' as const, label: 'L' },
+                      { value: 'xl' as const, label: 'XL' },
+                    ]
+                  : team.layout === 'avatar-cards' || team.layout === 'float-cards'
+                    ? [
+                        { value: 'sm' as const, label: 'S · 80 px' },
+                        { value: 'md' as const, label: 'M · 112 px' },
+                        { value: 'lg' as const, label: 'L · 144 px' },
+                        { value: 'xl' as const, label: 'XL · 192 px' },
+                      ]
+                    : [
+                      { value: 'sm' as const, label: 'S · 64 px' },
+                      { value: 'md' as const, label: 'M · 96 px' },
+                      { value: 'lg' as const, label: 'L · 128 px' },
+                      { value: 'xl' as const, label: 'XL · 176 px' },
+                    ]
+              }
+              onChange={(avatarSize) => onChange({ avatarSize })}
+            />
+            <SelectField
+              label="Taille des icônes"
+              value={team.socialIconSize}
+              options={[
+                { value: 'sm' as const, label: 'S · 28 px' },
+                { value: 'md' as const, label: 'M · 36 px' },
+                { value: 'lg' as const, label: 'L · 48 px' },
+                { value: 'xl' as const, label: 'XL · 64 px' },
+              ]}
+              onChange={(socialIconSize) => onChange({ socialIconSize })}
+            />
             <SelectField label="Arrondi" value={team.cardRadius} options={['none', 'sm', 'md', 'lg', 'xl'].map((value) => ({ value: value as typeof team.cardRadius, label: value }))} onChange={(cardRadius) => onChange({ cardRadius })} />
             <SelectField label="Marge intérieure" value={team.cardPadding} options={['none', 'sm', 'md', 'lg'].map((value) => ({ value: value as typeof team.cardPadding, label: value }))} onChange={(cardPadding) => onChange({ cardPadding })} />
             <SelectField label="Ombre" value={team.cardShadow} options={['none', 'soft', 'medium', 'strong'].map((value) => ({ value: value as typeof team.cardShadow, label: value }))} onChange={(cardShadow) => onChange({ cardShadow })} />
@@ -299,7 +380,17 @@ export function TeamSettingsPanel({
       {current === 'socials' ? (
         <div className="space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
-            <SelectField label="Taille" value={team.socialIconSize} options={['sm', 'md', 'lg'].map((value) => ({ value: value as typeof team.socialIconSize, label: value }))} onChange={(socialIconSize) => onChange({ socialIconSize })} />
+            <SelectField
+              label="Taille"
+              value={team.socialIconSize}
+              options={[
+                { value: 'sm' as const, label: 'S · 28 px' },
+                { value: 'md' as const, label: 'M · 36 px' },
+                { value: 'lg' as const, label: 'L · 48 px' },
+                { value: 'xl' as const, label: 'XL · 64 px' },
+              ]}
+              onChange={(socialIconSize) => onChange({ socialIconSize })}
+            />
             <SelectField label="Style" value={team.socialIconStyle} options={['circle', 'soft', 'outline', 'minimal'].map((value) => ({ value: value as typeof team.socialIconStyle, label: value }))} onChange={(socialIconStyle) => onChange({ socialIconStyle })} />
           </div>
           {team.useHeroPalette === false ? <div className="grid gap-4 sm:grid-cols-2"><ColorField label="Icône" value={team.socialIconColor} onChange={(socialIconColor) => onChange({ socialIconColor })} /><ColorField label="Fond d’icône" value={team.socialBackgroundColor} onChange={(socialBackgroundColor) => onChange({ socialBackgroundColor })} /></div> : null}

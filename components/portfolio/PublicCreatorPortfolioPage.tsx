@@ -2140,7 +2140,8 @@ export function PublicCreatorPortfolioPage({
       case 'gallery': {
         const layout = galleryPresentation.sectionLayout ?? 'stacked';
         const aside = !isSplitMode && faqSectionLayoutIsAside(layout);
-        const headerBlock = (
+        const headerBlock =
+          gallerySectionTitle || gallerySectionSubtitle ? (
           <EditorialSectionStickyHeader
             title={gallerySectionTitle}
             subtitle={gallerySectionSubtitle || undefined}
@@ -2162,7 +2163,7 @@ export function PublicCreatorPortfolioPage({
             scrollBehavior={effectiveTitleScroll}
             orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'gallery')}
           />
-        );
+        ) : null;
         const contentBlock = (
           <SectionIllustratedContent
             variant={galleryPresentation.illustrationVariant}

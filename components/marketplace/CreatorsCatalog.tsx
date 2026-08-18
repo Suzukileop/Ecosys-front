@@ -17,7 +17,7 @@ import { ServiceProviderFilterPills } from '@/components/marketplace/ServiceProv
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { normalizeCreatorSummary } from '@/lib/marketplace-api';
-import { detectUserCoordinates } from '@/lib/geolocation';
+import { detectUserCoordinates, type ViewerCoordinates } from '@/lib/geolocation';
 import { normalizeNationalityCode } from '@/lib/countries';
 import {
   findServiceProviderCategoryLabel,
@@ -94,7 +94,7 @@ function CreatorsCatalogContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageData, setPageData] = useState<MarketplaceCreatorsPage | null>(null);
-  const [viewerCoords, setViewerCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [viewerCoords, setViewerCoords] = useState<ViewerCoordinates | null>(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
@@ -151,6 +151,9 @@ function CreatorsCatalogContent() {
         ? {
             lat: viewerCoords.lat,
             lng: viewerCoords.lng,
+            ...('accuracyM' in viewerCoords && viewerCoords.accuracyM != null
+              ? { accuracyM: viewerCoords.accuracyM }
+              : {}),
             ...(closestFirst ? { sort: 'distance' } : {}),
           }
         : {};

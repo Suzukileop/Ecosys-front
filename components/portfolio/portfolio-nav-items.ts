@@ -40,8 +40,8 @@ export const PORTFOLIO_NAV_SECTION_META: {
   { key: 'services', title: 'Services', description: 'Jumps to services and pricing.' },
   { key: 'about', title: 'About', description: 'Jumps to bio, stats, and profile details.' },
   { key: 'experience', title: 'Experience', description: 'Jumps to career timeline and roles.' },
-  { key: 'team', title: 'Équipe', description: 'Accède aux membres et à leurs responsabilités.' },
-  { key: 'gallery', title: 'Galerie', description: 'Accède à la galerie média.' },
+  { key: 'team', title: 'Team', description: 'Jumps to members and their roles.' },
+  { key: 'gallery', title: 'Gallery', description: 'Jumps to the media gallery.' },
   { key: 'faq', title: 'FAQ', description: 'Jumps to questions and answers.' },
   { key: 'contact', title: 'Contact', description: 'Jumps to email, phone, and links.' },
 ];
@@ -52,8 +52,8 @@ export const DEFAULT_PORTFOLIO_NAV_ITEM_LABELS: PortfolioNavItemLabels = {
   skills: 'Skills',
   about: 'About',
   experience: 'Experience',
-  team: 'Équipe',
-  gallery: 'Galerie',
+  team: 'Team',
+  gallery: 'Gallery',
   faq: 'FAQ',
   contact: 'Contact',
 };
@@ -115,6 +115,7 @@ export const PORTFOLIO_NAV_LABEL_PRESETS: Record<
     { value: 'Studio', label: 'Studio' },
   ],
   gallery: [
+    { value: 'Gallery', label: 'Gallery' },
     { value: 'Galerie', label: 'Galerie' },
     { value: 'Gallery', label: 'Gallery' },
     { value: 'Journal', label: 'Journal visuel' },
@@ -193,6 +194,11 @@ const EXPERIENCE_ICONS = new Set<PortfolioNavExperienceIcon>(['briefcase', 'list
 const FAQ_ICONS = new Set<PortfolioNavFaqIcon>(['help-circle', 'message', 'list']);
 const CONTACT_ICONS = new Set<PortfolioNavContactIcon>(['mail', 'send', 'phone']);
 
+const LEGACY_NAV_LABELS: Partial<Record<PortfolioNavSectionKey, Record<string, string>>> = {
+  team: { Équipe: 'Team' },
+  gallery: { Galerie: 'Gallery' },
+};
+
 export function mergeNavItemLabels(
   base: PortfolioNavItemLabels,
   patch: unknown
@@ -204,7 +210,8 @@ export function mergeNavItemLabels(
   for (const key of Object.keys(base) as PortfolioNavSectionKey[]) {
     const value = record[key];
     if (typeof value === 'string' && value.trim()) {
-      next[key] = value.trim();
+      const trimmed = value.trim();
+      next[key] = LEGACY_NAV_LABELS[key]?.[trimmed] ?? trimmed;
     }
   }
 

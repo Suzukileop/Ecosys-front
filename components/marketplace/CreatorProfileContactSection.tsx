@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import {
   NeutralIconBadge,
@@ -9,7 +9,7 @@ import {
   type NeutralIconName,
 } from '@/components/marketplace/creator-profile-social-icons';
 import { PublicSkillsToolsGrouped } from '@/components/marketplace/PublicSkillsToolsGrouped';
-import { geocodePlaceLabel, haversineKm, openStreetMapEmbedUrl, detectUserCoordinatesForDistance } from '@/lib/geolocation';
+import { geocodePlaceLabel, openStreetMapEmbedUrl, detectUserCoordinatesForDistance, computeReliableDistanceKm } from '@/lib/geolocation';
 import { formatDistanceAwayKm } from '@/lib/countries';
 import { formatPhoneDisplay } from '@/lib/phone';
 import type { ProfileMediaBlock } from '@/types/ecosystem';
@@ -154,47 +154,58 @@ function LocationFeaturedBlock({
   const [distancePending, setDistancePending] = useState(false);
   const [geoDenied, setGeoDenied] = useState(false);
   const [mapImageFailed, setMapImageFailed] = useState(false);
+  const [distanceEnabled, setDistanceEnabled] = useState(false);
+  const distanceAbortRef = useRef<AbortController | null>(null);
 
   const applyDistance = useCallback(
-    (place: { lat: number; lng: number }, viewer: { lat: number; lng: number }) => {
-      if (
-        !Number.isFinite(viewer.lat) ||
-        !Number.isFinite(viewer.lng) ||
-        !Number.isFinite(place.lat) ||
-        !Number.isFinite(place.lng)
-      ) {
-        return;
-      }
-      const km = haversineKm(viewer.lat, viewer.lng, place.lat, place.lng);
-      if (!Number.isFinite(km)) return;
+    (place: { lat: number; lng: number }, viewer: { lat: number; lng: number; accuracyM?: number | null }) => {
+      const km = computeReliableDistanceKm(
+        {
+          lat: viewer.lat,
+          lng: viewer.lng,
+          accuracyM: viewer.accuracyM ?? null,
+        },
+        place
+      );
+      if (km == null) return false;
       setDistanceLabel(formatDistanceAwayKm(km));
       setGeoDenied(false);
       setDistancePending(false);
+      return true;
     },
     []
   );
 
   const resolveDistance = useCallback(
-    async (place: { lat: number; lng: number }, isCancelled?: () => boolean) => {
+    async (
+      place: { lat: number; lng: number },
+      options?: { force?: boolean; isCancelled?: () => boolean; signal?: AbortSignal }
+    ) => {
+      const isCancelled = options?.isCancelled;
       setDistancePending(true);
       setGeoDenied(false);
+      setDistanceLabel(null);
+      distanceAbortRef.current?.abort();
+      const controller = new AbortController();
+      distanceAbortRef.current = controller;
       try {
-        const viewer = await detectUserCoordinatesForDistance((next) => {
-          if (isCancelled?.()) return;
-          // Skip painting coarse network/IP guesses (they produce bogus km values).
-          if (next.accuracyM != null && next.accuracyM > 20_000) return;
-          applyDistance(place, next);
-        });
-        if (isCancelled?.()) return;
-        if (viewer.accuracyM != null && viewer.accuracyM > 20_000) {
+        const viewer = await detectUserCoordinatesForDistance(
+          (next) => {
+            if (isCancelled?.() || controller.signal.aborted) return;
+            applyDistance(place, next);
+          },
+          { timeoutMs: options?.force ? 20_000 : 18_000, signal: controller.signal }
+        );
+        if (isCancelled?.() || controller.signal.aborted) return;
+        const ok = applyDistance(place, viewer);
+        if (!ok) {
           setDistanceLabel(null);
           setDistancePending(false);
           setGeoDenied(true);
-          return;
         }
-        applyDistance(place, viewer);
-      } catch {
-        if (isCancelled?.()) return;
+      } catch (error) {
+        if (isCancelled?.() || controller.signal.aborted) return;
+        if (error instanceof Error && /cancelled/i.test(error.message)) return;
         setDistanceLabel(null);
         setGeoDenied(true);
         setDistancePending(false);
@@ -202,6 +213,11 @@ function LocationFeaturedBlock({
     },
     [applyDistance]
   );
+
+  const refreshDistance = useCallback(() => {
+    if (!coords || !distanceEnabled) return;
+    void resolveDistance(coords, { force: true });
+  }, [coords, distanceEnabled, resolveDistance]);
 
   useEffect(() => {
     let cancelled = false;
@@ -213,6 +229,7 @@ function LocationFeaturedBlock({
     setDistancePending(false);
     setGeoDenied(false);
     setMapImageFailed(false);
+    setDistanceEnabled(false);
 
     // Clear legacy coarse cache that poisoned distance on first paint.
     try {
@@ -244,7 +261,11 @@ function LocationFeaturedBlock({
       if (place) {
         setCoords(place);
         if (!cancelled) setLoading(false);
-        await resolveDistance(place, isCancelled);
+        // Distance is only meaningful from stored GPS, never a city geocode centroid.
+        if (storedLat != null && storedLng != null) {
+          setDistanceEnabled(true);
+          await resolveDistance(place, { isCancelled });
+        }
         return;
       }
       if (!cancelled) setLoading(false);
@@ -252,6 +273,7 @@ function LocationFeaturedBlock({
 
     return () => {
       cancelled = true;
+      distanceAbortRef.current?.abort();
     };
   }, [label, locationLat, locationLng, resolveDistance]);
 
@@ -277,6 +299,32 @@ function LocationFeaturedBlock({
   const mapsHref = `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=11/${coords.lat}/${coords.lng}`;
   const staticMapUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${coords.lat},${coords.lng}&zoom=11&size=960x480&maptype=mapnik&markers=${coords.lat},${coords.lng},red-pushpin`;
 
+  const distanceRefreshButton = (
+    <button
+      type="button"
+      onClick={refreshDistance}
+      disabled={distancePending}
+      aria-label={distancePending ? 'Refreshing distance…' : 'Refresh distance'}
+      title={distancePending ? 'Refreshing distance…' : 'Refresh distance'}
+      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800 disabled:cursor-wait disabled:opacity-60 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+    >
+      <svg
+        className={`h-3.5 w-3.5 ${distancePending ? 'animate-spin' : ''}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+        aria-hidden
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M4 4v5h5M20 20v-5h-5M20 9A8 8 0 0 0 5.6 6.6M4 15a8 8 0 0 0 14.4 2.4"
+        />
+      </svg>
+    </button>
+  );
+
   return (
     <div className="overflow-hidden rounded-2xl border border-neutral-200/80 dark:border-neutral-800">
       <div className="relative h-52 bg-neutral-100 dark:bg-neutral-900 sm:h-64 lg:h-72">
@@ -297,20 +345,49 @@ function LocationFeaturedBlock({
             referrerPolicy="no-referrer-when-downgrade"
           />
         )}
-        {distanceLabel ? (
-          <p className="absolute left-3 top-3 z-20 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 shadow-md dark:bg-neutral-950 dark:text-neutral-100">
-            {distanceLabel}
-          </p>
-        ) : distancePending ? (
-          <p className="absolute left-3 top-3 z-20 rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-neutral-500 shadow-md dark:bg-neutral-950/95 dark:text-neutral-400">
+        {distanceEnabled && distanceLabel ? (
+          <div className="absolute left-3 top-3 z-20 flex items-center gap-0.5 rounded-full bg-white py-1 pl-3 pr-1 text-xs font-semibold text-neutral-800 shadow-md dark:bg-neutral-950 dark:text-neutral-100">
+            <span>{distanceLabel}</span>
+            {distanceRefreshButton}
+          </div>
+        ) : distanceEnabled && distancePending ? (
+          <div className="absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-neutral-500 shadow-md dark:bg-neutral-950/95 dark:text-neutral-400">
+            <svg
+              className="h-3.5 w-3.5 animate-spin"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 4v5h5M20 20v-5h-5M20 9A8 8 0 0 0 5.6 6.6M4 15a8 8 0 0 0 14.4 2.4"
+              />
+            </svg>
             Measuring distance…
-          </p>
-        ) : geoDenied ? (
+          </div>
+        ) : distanceEnabled && geoDenied ? (
           <button
             type="button"
-            onClick={() => void resolveDistance(coords)}
-            className="absolute left-3 top-3 z-20 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-orange-600 shadow-md transition hover:bg-orange-50 dark:bg-neutral-950 dark:text-orange-400 dark:hover:bg-neutral-900"
+            onClick={() => void resolveDistance(coords, { force: true })}
+            className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-orange-600 shadow-md transition hover:bg-orange-50 dark:bg-neutral-950 dark:text-orange-400 dark:hover:bg-neutral-900"
           >
+            <svg
+              className="h-3.5 w-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 4v5h5M20 20v-5h-5M20 9A8 8 0 0 0 5.6 6.6M4 15a8 8 0 0 0 14.4 2.4"
+              />
+            </svg>
             Show distance from you
           </button>
         ) : null}
@@ -319,9 +396,32 @@ function LocationFeaturedBlock({
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
             Location
-            {distanceLabel ? (
-              <span className="ml-2 font-medium normal-case tracking-normal text-neutral-600 dark:text-neutral-300">
+            {distanceEnabled && distanceLabel ? (
+              <span className="ml-2 inline-flex items-center gap-1 font-medium normal-case tracking-normal text-neutral-600 dark:text-neutral-300">
                 · {distanceLabel}
+                <button
+                  type="button"
+                  onClick={refreshDistance}
+                  disabled={distancePending}
+                  aria-label="Refresh distance"
+                  title="Refresh distance"
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 disabled:opacity-50 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+                >
+                  <svg
+                    className={`h-3 w-3 ${distancePending ? 'animate-spin' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4 4v5h5M20 20v-5h-5M20 9A8 8 0 0 0 5.6 6.6M4 15a8 8 0 0 0 14.4 2.4"
+                    />
+                  </svg>
+                </button>
               </span>
             ) : null}
           </p>

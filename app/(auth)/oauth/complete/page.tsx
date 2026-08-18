@@ -85,10 +85,10 @@ function OAuthCompleteContent() {
     <div className="flex min-h-screen items-center justify-center bg-white px-6 dark:bg-neutral-950">
       <div className="w-full max-w-md">
         <h1 className="mb-2 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
-          Complete your account
+          Create your account
         </h1>
         <p className="mb-6 text-sm text-neutral-600 dark:text-neutral-400">
-          Confirm your details to finish signing up as a creator.
+          No account was found for this Google profile. Confirm your details to create one automatically.
         </p>
 
         <div className="mb-6 flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-900">

@@ -17,6 +17,7 @@ export const PROFILE_VISIT_NOTIFICATION_INDIVIDUAL_MAX = Number.POSITIVE_INFINIT
 
 export const CREATOR_PROFILE_VISIT_TYPE = 'CREATOR_PROFILE_VISIT';
 export const CREATOR_PROFILE_VISIT_GROUP_TYPE = 'CREATOR_PROFILE_VISIT_GROUP';
+export const CREATOR_NEW_FOLLOWER_TYPE = 'CREATOR_NEW_FOLLOWER';
 export const FOLLOWER_NEW_PRODUCT_TYPE = 'FOLLOWER_NEW_PRODUCT';
 export const FOLLOWER_NEW_CONTENT_TYPE = 'FOLLOWER_NEW_CONTENT';
 export const FOLLOWER_NEW_SERVICE_TYPE = 'FOLLOWER_NEW_SERVICE';
@@ -168,6 +169,16 @@ export function resolveNotificationHref(
     return '/dashboard/creator?tab=visitors';
   }
 
+  if (type === CREATOR_NEW_FOLLOWER_TYPE) {
+    if (refSecondaryId) {
+      if (options?.actorProfileAvailable === false) {
+        return null;
+      }
+      return `/marketplace/${encodeURIComponent(refSecondaryId)}`;
+    }
+    return '/dashboard/creator?tab=subscribers';
+  }
+
   if (!refId) {
     if (isAgent && (type === 'NICHE_ACTIVATED' || type === 'NICHE_WAITING_VALIDATION' || type === 'NICHE_REQUEST_NEW')) {
       return '/dashboard/agent';
@@ -242,7 +253,11 @@ export function resolveNotificationNavigation(
   n: NotificationDto,
   isAgent: boolean,
 ): { href: string | null; unavailableVisitor: boolean } {
-  if (n.type === CREATOR_PROFILE_VISIT_TYPE && n.refSecondaryId && n.actorProfileAvailable === false) {
+  if (
+    (n.type === CREATOR_PROFILE_VISIT_TYPE || n.type === CREATOR_NEW_FOLLOWER_TYPE) &&
+    n.refSecondaryId &&
+    n.actorProfileAvailable === false
+  ) {
     return { href: null, unavailableVisitor: true };
   }
   return {
@@ -268,6 +283,7 @@ const NOTIFICATION_TITLES_EN: Record<string, string> = {
   CONVERSATION_GUEST_INVITE: 'Temporary conversation invite',
   CREATOR_PROFILE_VISIT: 'Profile visit',
   CREATOR_PROFILE_VISIT_GROUP: 'Profile visits',
+  CREATOR_NEW_FOLLOWER: 'New follower',
   FOLLOWER_NEW_PRODUCT: 'New product',
   FOLLOWER_NEW_CONTENT: 'New content',
   FOLLOWER_NEW_SERVICE: 'New service',
@@ -298,6 +314,15 @@ function extractAfterColon(message: string | null | undefined): string | null {
 export function extractVisitorNameFromVisitMessage(message: string | null | undefined): string | null {
   if (!message) return null;
   const match = message.match(/^(.+?)\s+visited your profile\.?$/i);
+  if (!match?.[1]) return null;
+  const name = match[1].trim();
+  if (!name || /^someone$/i.test(name) || /^a user$/i.test(name)) return null;
+  return name;
+}
+
+export function extractFollowerNameFromFollowMessage(message: string | null | undefined): string | null {
+  if (!message) return null;
+  const match = message.match(/^(.+?)\s+started following you\.?$/i);
   if (!match?.[1]) return null;
   const name = match[1].trim();
   if (!name || /^someone$/i.test(name) || /^a user$/i.test(name)) return null;
@@ -419,6 +444,14 @@ export function formatNotificationDisplay(n: NotificationDto): { title: string; 
 
     case CREATOR_PROFILE_VISIT_GROUP_TYPE:
       return { title, message: raw };
+
+    case CREATOR_NEW_FOLLOWER_TYPE: {
+      const name = n.actorFullName?.trim() || extractFollowerNameFromFollowMessage(raw);
+      if (name) {
+        return { title, message: `${name} started following you.` };
+      }
+      return { title, message: raw ?? 'Someone started following you.' };
+    }
 
     case FOLLOWER_NEW_PRODUCT_TYPE:
       return {

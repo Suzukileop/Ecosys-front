@@ -16,7 +16,8 @@ import { toEntranceRect } from '@/components/landing/landingEntranceTypes';
 
 import {
   BRAND_ORANGE,
-  brandCtaClass,
+  brandCtaInvertedClass,
+  brandCtaOrangeClass,
   brandFrameRadiusClass,
 } from '@/components/landing/landingBrand';
 const WORD_INTERVAL_MS = 2500;
@@ -61,6 +62,14 @@ const heroGalleryItems = [
     title: 'Online shop',
     description:
       'Launch a simple storefront, display your products, and talk to buyers without leaving the platform.',
+  },
+  {
+    src: '/landing/hero/portrait-pro-freelan.png',
+    alt: 'Freelancers collaborating in a professional workspace',
+    marketingTerm: 'Freelancers',
+    title: 'Service Provider',
+    description:
+      'Show your expertise, get discovered by clients, and run your freelance work from one professional profile.',
   },
 ] as const;
 
@@ -130,18 +139,9 @@ function HeroInteractiveGallery() {
               </motion.div>
             </AnimatePresence>
 
-            {/* Stronger left darkening so overlay copy stays readable */}
+            {/* Left edge only — ~22% of the photo, rest stays untouched */}
             <div
-              className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-black/75 via-black/35 to-transparent sm:from-black/70 sm:via-black/30"
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-36 bg-gradient-to-b from-black/40 to-transparent sm:h-40"
-              aria-hidden
-            />
-            {/* Bottom scrim only when copy sits on the image (sm+) */}
-            <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] hidden h-48 bg-gradient-to-t from-black/60 via-black/30 to-transparent sm:block sm:h-56"
+              className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-[34%] bg-gradient-to-r from-black/50 to-transparent"
               aria-hidden
             />
 
@@ -153,7 +153,7 @@ function HeroInteractiveGallery() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.35, ease: REVEAL_EASE }}
-                className="absolute left-4 top-4 z-10 max-w-[min(100%,18rem)] text-lg font-bold leading-snug text-white sm:left-5 sm:top-5 sm:max-w-[20rem] sm:text-xl md:left-6 md:top-6 md:text-2xl lg:text-[1.75rem]"
+                className="absolute left-4 top-4 z-10 max-w-[min(100%,18rem)] text-lg font-bold leading-snug text-white sm:left-5 sm:top-5 sm:max-w-[20rem] sm:text-xl md:left-6 md:top-6 md:text-2xl lg:text-[1.75rem] [text-shadow:0_1px_10px_rgba(0,0,0,0.45)]"
               >
                 {active.title}
               </motion.h3>
@@ -169,12 +169,12 @@ function HeroInteractiveGallery() {
                 transition={{ duration: 0.35, ease: REVEAL_EASE }}
                 className="absolute bottom-7 left-4 z-10 hidden w-[min(100%,18rem)] flex-col items-start gap-4 sm:bottom-8 sm:left-5 sm:flex sm:w-[min(100%,20.5rem)] sm:gap-5 md:bottom-9 md:left-6 md:w-[22rem] lg:w-[24rem]"
               >
-                <p className="text-base leading-snug text-white/90 sm:text-lg sm:leading-snug md:text-xl md:leading-snug">
+                <p className="text-base leading-snug text-white sm:text-lg sm:leading-snug md:text-xl md:leading-snug [text-shadow:0_1px_10px_rgba(0,0,0,0.55)]">
                   {active.description}
                 </p>
                 <Link
                   href="/register"
-                  className={`inline-flex items-center justify-center px-7 py-2.5 text-sm font-semibold sm:px-8 sm:py-3 sm:text-base ${brandCtaClass}`}
+                  className={`inline-flex items-center justify-center px-7 py-2.5 text-sm font-semibold sm:px-8 sm:py-3 sm:text-base ${brandCtaInvertedClass}`}
                 >
                   Start for free
                 </Link>
@@ -197,7 +197,7 @@ function HeroInteractiveGallery() {
               </p>
               <Link
                 href="/register"
-                className={`inline-flex items-center justify-center px-7 py-2.5 text-sm font-semibold ${brandCtaClass}`}
+                className={`inline-flex items-center justify-center px-7 py-2.5 text-sm font-semibold ${brandCtaOrangeClass}`}
               >
                 Start for free
               </Link>
@@ -225,7 +225,7 @@ function HeroInteractiveGallery() {
                     onClick={() => setSelectedIndex(index)}
                     className={`group flex items-center gap-2 text-left transition-colors duration-300 sm:gap-2.5 ${
                       isActive
-                        ? 'text-[#F97316]'
+                        ? 'text-[#F97316] lg:text-zinc-900 lg:dark:text-white'
                         : 'text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300'
                     }`}
                   >
@@ -236,7 +236,9 @@ function HeroInteractiveGallery() {
                     />
                     <span
                       className={`text-sm font-semibold tracking-wide sm:text-base md:text-lg ${
-                        isActive ? 'underline decoration-[#F97316]/50 underline-offset-4' : ''
+                        isActive
+                          ? 'underline decoration-[#F97316]/50 underline-offset-4 lg:decoration-zinc-900/50 lg:dark:decoration-white/50'
+                          : ''
                       }`}
                     >
                       {item.marketingTerm}

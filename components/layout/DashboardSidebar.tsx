@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { SidebarUserProfile } from '@/components/layout/SidebarUserProfile';
 import { DashboardHeaderSearch } from '@/components/layout/DashboardHeaderSearch';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DASHBOARD_SIDEBAR_BG } from '@/components/landing/landingBrand';
 import { dashboardNavItems } from '@/components/layout/dashboard/navConfig';
 import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
@@ -92,10 +93,10 @@ function SidebarToggleIcon() {
 }
 
 const navItemBaseClass =
-  'relative flex h-10 items-center rounded-xl text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
+  'relative flex h-12 items-center rounded-xl text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
 const navItemExpandedClass = 'w-full gap-2.5 px-3';
 /** Square hit/highlight area centered in the 4.5rem collapsed rail (nav has px-3). */
-const navItemCollapsedClass = 'w-10 justify-center gap-0 px-0';
+const navItemCollapsedClass = 'w-12 justify-center gap-0 px-0';
 const navItemInactiveClass =
   'font-medium text-black hover:bg-neutral-200/80 dark:text-neutral-200 dark:hover:bg-neutral-800';
 const navItemActiveClass =
@@ -128,7 +129,7 @@ function SidebarLabel({
   return (
     <span
       className={`min-w-0 overflow-hidden whitespace-nowrap transition-[max-width,opacity] ${SIDEBAR_EASE} ${
-        show ? 'max-w-[14rem] opacity-100' : 'max-w-0 opacity-0'
+        show ? 'max-w-[14rem] opacity-100' : 'pointer-events-none max-w-0 opacity-0'
       } ${className}`}
       aria-hidden={!show}
     >
@@ -144,6 +145,8 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
   const { hasRole, logout } = useAuth();
   const { appRole, ready: appRoleReady } = useCreatorAppRole();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [logoutBusy, setLogoutBusy] = useState(false);
 
   const visibleItems = dashboardNavItems.filter((item) => {
     const isAgentOnly = hasRole('ROLE_AGENT') && !hasRole('ROLE_ADMIN');
@@ -167,7 +170,19 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
     return true;
   });
 
+  const handleConfirmLogout = () => {
+    setLogoutBusy(true);
+    void logout()
+      .then(() => {
+        window.location.assign('/login');
+      })
+      .finally(() => {
+        setLogoutBusy(false);
+      });
+  };
+
   return (
+    <>
     <aside
       className={`sticky top-0 flex h-screen shrink-0 flex-col overflow-hidden border-r border-neutral-200 ${DASHBOARD_SIDEBAR_BG} transition-[width] ${SIDEBAR_EASE} dark:border-neutral-800`}
       style={{ width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH }}
@@ -352,11 +367,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
         <div className="shrink-0 border-t border-neutral-200 px-3 pt-3 pb-4 dark:border-neutral-800">
           <button
             type="button"
-            onClick={() => {
-              void logout().then(() => {
-                window.location.assign('/login');
-              });
-            }}
+            onClick={() => setLogoutConfirmOpen(true)}
             title="Log out"
             aria-label="Log out"
             className={`mb-2 flex h-10 items-center rounded-xl text-sm font-semibold text-black transition hover:bg-neutral-200 hover:text-[#EA580C] dark:text-white dark:hover:bg-neutral-800 ${
@@ -382,5 +393,19 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
         </div>
       </div>
     </aside>
+    <ConfirmDialog
+      open={logoutConfirmOpen}
+      title="Log out?"
+      description="You will be signed out of your account on this device."
+      confirmLabel="Log out"
+      cancelLabel="Cancel"
+      tone="neutral"
+      busy={logoutBusy}
+      onConfirm={handleConfirmLogout}
+      onCancel={() => {
+        if (!logoutBusy) setLogoutConfirmOpen(false);
+      }}
+    />
+    </>
   );
 }

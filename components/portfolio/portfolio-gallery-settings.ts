@@ -13,7 +13,10 @@ export type PortfolioGalleryDesign =
   | 'masonry'
   | 'cinema-strip'
   | 'lightbox-stack'
-  | 'editorial-split';
+  | 'editorial-split'
+  | 'caption-carousel'
+  | 'hero-mosaic'
+  | 'featured-strip';
 export type PortfolioGalleryTitlePlacement = 'under' | 'overlay' | 'hidden';
 export type PortfolioGalleryAspect = 'auto' | 'square' | 'portrait' | 'landscape' | 'cinema';
 export type PortfolioGalleryObjectFit = 'cover' | 'contain';
@@ -27,7 +30,7 @@ export type PortfolioGalleryHeaderFont = 'sans' | 'serif' | 'display';
 export type PortfolioGalleryHeaderAlignment = 'left' | 'center';
 export type PortfolioGalleryMaxWidth = 'md' | 'lg' | 'xl' | 'full';
 export type PortfolioGalleryPlacement = 'left' | 'center' | 'right';
-export type PortfolioGalleryTitlePreset = 'gallery' | 'selected-work' | 'visual-journal' | 'custom';
+export type PortfolioGalleryTitlePreset = 'gallery' | 'selected-work' | 'visual-journal' | 'custom' | 'none';
 export type PortfolioGallerySubtitlePreset = 'default' | 'selection' | 'journal' | 'minimal' | 'custom';
 /**
  * `stacked` — section title above the gallery grid (default).
@@ -85,32 +88,48 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   galleryColorBindings?: PortfolioGalleryColorBindings;
   maxWidth: PortfolioGalleryMaxWidth;
   placement: PortfolioGalleryPlacement;
+  /** Prev/next arrows for strip and carousel designs. */
+  showCarouselNav: boolean;
+  /** Dot indicators under caption carousel. */
+  showPagination: boolean;
+  /** Surface behind caption-carousel cards. */
+  cardSurfaceColor: string;
 };
 
 export type PortfolioGallerySectionSettings =
   PortfolioSectionCopy & PortfolioGalleryPresentationSettings;
 
-export const PORTFOLIO_GALLERY_DESIGN_OPTIONS = [
+export const PORTFOLIO_GALLERY_DESIGN_OPTIONS: {
+  value: PortfolioGalleryDesign;
+  label: string;
+  description: string;
+}[] = [
   { value: 'framed-grid', label: 'Grille encadrée', description: 'Grille responsive classique avec légendes.' },
+  { value: 'caption-carousel', label: 'Cartes légendées', description: 'Cartes avec image et titre, défilement horizontal et points.' },
+  { value: 'cinema-strip', label: 'Bande cinéma', description: 'Grand défilement horizontal avec flèches de navigation.' },
+  { value: 'hero-mosaic', label: 'Mosaïque héros', description: 'Une grande image à gauche et une grille 2×2 à droite.' },
+  { value: 'featured-strip', label: 'À la une + rail', description: 'Image vedette et bande horizontale avec légendes.' },
   { value: 'masonry', label: 'Masonry', description: 'Colonnes fluides qui respectent la hauteur des médias.' },
-  { value: 'cinema-strip', label: 'Bande cinéma', description: 'Défilement horizontal avec accrochage par image.' },
   { value: 'lightbox-stack', label: 'Lightbox stack', description: 'Grille dense pensée pour une ouverture plein écran.' },
   { value: 'editorial-split', label: 'Editorial split', description: 'Alternance de compositions larges et compactes.' },
-] as const;
+];
+
+export const PORTFOLIO_GALLERY_DESIGNS = PORTFOLIO_GALLERY_DESIGN_OPTIONS.map((option) => option.value);
 
 export const PORTFOLIO_GALLERY_TITLE_PRESET_OPTIONS = [
-  { value: 'gallery', label: 'Galerie', description: 'Titre français simple.' },
-  { value: 'selected-work', label: 'Sélection visuelle', description: 'Une sélection de créations.' },
-  { value: 'visual-journal', label: 'Journal visuel', description: 'Une approche plus éditoriale.' },
-  { value: 'custom', label: 'Personnalisé', description: 'Saisissez votre propre titre.' },
+  { value: 'none', label: 'None', description: 'Hide the gallery section title.' },
+  { value: 'gallery', label: 'Gallery', description: 'Simple English title.' },
+  { value: 'selected-work', label: 'Selected work', description: 'A selection of work.' },
+  { value: 'visual-journal', label: 'Visual journal', description: 'A more editorial heading.' },
+  { value: 'custom', label: 'Custom', description: 'Enter your own title.' },
 ] as const;
 
 export const PORTFOLIO_GALLERY_SUBTITLE_PRESET_OPTIONS = [
-  { value: 'default', label: 'Défaut', description: 'Images, films et instants choisis.' },
-  { value: 'selection', label: 'Sélection', description: 'Une sélection de travaux récents.' },
-  { value: 'journal', label: 'Journal', description: 'Fragments de projets et recherches visuelles.' },
-  { value: 'minimal', label: 'Aucun', description: 'Masquer le sous-titre.' },
-  { value: 'custom', label: 'Personnalisé', description: 'Saisissez votre propre texte.' },
+  { value: 'default', label: 'Default', description: 'Images, films, and chosen moments.' },
+  { value: 'selection', label: 'Selection', description: 'A selection of recent work.' },
+  { value: 'journal', label: 'Journal', description: 'Fragments of projects and visual research.' },
+  { value: 'minimal', label: 'None', description: 'Hide the subtitle.' },
+  { value: 'custom', label: 'Custom', description: 'Enter your own text.' },
 ] as const;
 
 export const PORTFOLIO_GALLERY_SECTION_LAYOUT_OPTIONS: {
@@ -212,7 +231,37 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   useHeroPalette: true,
   maxWidth: 'full',
   placement: 'center',
+  showCarouselNav: true,
+  showPagination: true,
+  cardSurfaceColor: '#ffffff',
 };
+
+export const DEFAULT_GALLERY_TITLE_EN = 'Gallery';
+export const DEFAULT_GALLERY_SUBTITLE_EN = 'Images, films, and chosen moments.';
+const LEGACY_GALLERY_TITLES = new Set(['Galerie', 'GALERIE']);
+const LEGACY_GALLERY_SUBTITLES = new Set(['Images, films et instants choisis.']);
+
+export function migrateLegacyGalleryCopy(title: string, subtitle: string): { title: string; subtitle: string } {
+  return {
+    title: LEGACY_GALLERY_TITLES.has(title.trim()) ? DEFAULT_GALLERY_TITLE_EN : title,
+    subtitle: LEGACY_GALLERY_SUBTITLES.has(subtitle.trim()) ? DEFAULT_GALLERY_SUBTITLE_EN : subtitle,
+  };
+}
+
+export function galleryDesignUsesCarouselNav(design: PortfolioGalleryDesign): boolean {
+  return design === 'cinema-strip' || design === 'caption-carousel' || design === 'featured-strip';
+}
+
+export function galleryDesignUsesColumns(design: PortfolioGalleryDesign): boolean {
+  return design !== 'cinema-strip' && design !== 'caption-carousel' && design !== 'featured-strip' && design !== 'hero-mosaic';
+}
+
+export function galleryCaptionCardWidthClass(columns: number): string {
+  if (columns === 1) return 'w-[88vw] sm:w-full';
+  if (columns === 2) return 'w-[72vw] sm:w-[calc((100%-var(--gallery-gap,24px))/2)]';
+  if (columns === 4) return 'w-[56vw] sm:w-[calc((100%-var(--gallery-gap,24px)*3)/4)]';
+  return 'w-[64vw] sm:w-[calc((100%-var(--gallery-gap,24px)*2)/3)]';
+}
 
 function pickString<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
   return typeof value === 'string' && allowed.includes(value as T) ? (value as T) : fallback;
@@ -235,7 +284,7 @@ export function mergeGalleryPresentation(
   const record = patch as Record<string, unknown>;
   return {
     ...mergeSectionBackground(base, patch),
-    design: pickString(record.design, ['framed-grid', 'masonry', 'cinema-strip', 'lightbox-stack', 'editorial-split'], base.design),
+    design: pickString(record.design, PORTFOLIO_GALLERY_DESIGNS, base.design),
     columns: clamp(record.columns, 1, 4, base.columns) as 1 | 2 | 3 | 4,
     gap: clamp(record.gap, 0, 64, base.gap),
     radius: clamp(record.radius, 0, 48, base.radius),
@@ -247,7 +296,7 @@ export function mergeGalleryPresentation(
     hoverZoom: typeof record.hoverZoom === 'boolean' ? record.hoverZoom : base.hoverZoom,
     showTitle: typeof record.showTitle === 'boolean' ? record.showTitle : base.showTitle,
     lightboxEnabled: typeof record.lightboxEnabled === 'boolean' ? record.lightboxEnabled : base.lightboxEnabled,
-    titlePreset: pickString(record.titlePreset, ['gallery', 'selected-work', 'visual-journal', 'custom'], base.titlePreset),
+    titlePreset: pickString(record.titlePreset, ['none', 'gallery', 'selected-work', 'visual-journal', 'custom'], base.titlePreset),
     titleCustom: typeof record.titleCustom === 'string' ? record.titleCustom : base.titleCustom,
     subtitlePreset: pickString(record.subtitlePreset, ['default', 'selection', 'journal', 'minimal', 'custom'], base.subtitlePreset),
     subtitleCustom: typeof record.subtitleCustom === 'string' ? record.subtitleCustom : base.subtitleCustom,
@@ -285,6 +334,9 @@ export function mergeGalleryPresentation(
         : base.galleryColorBindings,
     maxWidth: pickString(record.maxWidth, ['md', 'lg', 'xl', 'full'], base.maxWidth),
     placement: pickString(record.placement, ['left', 'center', 'right'], base.placement),
+    showCarouselNav: typeof record.showCarouselNav === 'boolean' ? record.showCarouselNav : base.showCarouselNav,
+    showPagination: typeof record.showPagination === 'boolean' ? record.showPagination : base.showPagination,
+    cardSurfaceColor: color(record.cardSurfaceColor, base.cardSurfaceColor),
   };
 }
 
@@ -292,19 +344,34 @@ export function pickGalleryPresentationSettings(value: unknown): PortfolioGaller
   return mergeGalleryPresentation(DEFAULT_GALLERY_PRESENTATION, value);
 }
 
-export function resolveGallerySectionTitle(settings: PortfolioGallerySectionSettings): string {
-  if (settings.titlePreset === 'selected-work') return 'SÉLECTION VISUELLE';
-  if (settings.titlePreset === 'visual-journal') return 'JOURNAL VISUEL';
-  if (settings.titlePreset === 'custom') return settings.titleCustom.trim() || settings.title.trim() || 'Galerie';
-  return 'GALERIE';
+/** Placeholder leftovers like "title" / "title 0" from older gallery items — not real captions. */
+export function galleryItemDisplayTitle(title: string | null | undefined): string {
+  const trimmed = (title ?? '').trim();
+  if (!trimmed) return '';
+  if (/^title(\s+\d+)?$/i.test(trimmed)) return '';
+  return trimmed;
 }
 
-export function resolveGallerySectionSubtitle(settings: PortfolioGallerySectionSettings): string {
+export function resolveGallerySectionTitle(
+  settings: Pick<PortfolioGallerySectionSettings, 'titlePreset' | 'titleCustom' | 'title'>
+): string {
+  if (settings.titlePreset === 'none') return '';
+  if (settings.titlePreset === 'selected-work') return 'Selected work';
+  if (settings.titlePreset === 'visual-journal') return 'Visual journal';
+  if (settings.titlePreset === 'custom') return settings.titleCustom.trim() || settings.title.trim();
+  return DEFAULT_GALLERY_TITLE_EN;
+}
+
+export function resolveGallerySectionSubtitle(
+  settings: Pick<PortfolioGallerySectionSettings, 'subtitlePreset' | 'subtitleCustom' | 'subtitle'>
+): string {
   if (settings.subtitlePreset === 'minimal') return '';
-  if (settings.subtitlePreset === 'selection') return 'Une sélection de travaux récents.';
-  if (settings.subtitlePreset === 'journal') return 'Fragments de projets et recherches visuelles.';
+  if (settings.subtitlePreset === 'selection') return 'A selection of recent work.';
+  if (settings.subtitlePreset === 'journal') return 'Fragments of projects and visual research.';
   if (settings.subtitlePreset === 'custom') return settings.subtitleCustom.trim() || settings.subtitle.trim();
-  return settings.subtitle.trim() || 'Images, films et instants choisis.';
+  const stored = settings.subtitle.trim();
+  if (!stored || LEGACY_GALLERY_SUBTITLES.has(stored)) return DEFAULT_GALLERY_SUBTITLE_EN;
+  return stored;
 }
 
 export function galleryHeaderFontClass(font: PortfolioGalleryHeaderFont, kind: 'title' | 'subtitle'): string {

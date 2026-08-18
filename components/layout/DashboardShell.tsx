@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { Suspense, useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useSyncExternalStore } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -12,8 +12,13 @@ import { MarketplacePatternBackground } from '@/components/marketplace/ProductDe
 import { isContentCreatorsPath, isMarketplaceCreatorProfilePath, isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
 import { DASHBOARD_MAIN_BG } from '@/components/landing/landingBrand';
 import {
+  getSidebarCollapsedServerSnapshot,
+  getSidebarCollapsedSnapshot,
   MESSAGING_DETAILS_OPEN_EVENT,
   notifyDashboardSidebarExpand,
+  setSidebarCollapsed,
+  subscribeSidebarCollapsed,
+  toggleSidebarCollapsedStore,
 } from '@/lib/dashboard-chrome';
 import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
 import { usePresenceHeartbeat } from '@/hooks/usePresenceHeartbeat';
@@ -24,24 +29,6 @@ import {
   creatorCanAccessServiceProviderMenu,
 } from '@/lib/creator-app-role';
 import { isMyProductNavPath, isMyServiceNavPath } from '@/components/layout/dashboard/navConfig';
-
-const SIDEBAR_COLLAPSED_STORAGE_KEY = 'noproble.dashboard.sidebar-collapsed';
-
-function readSidebarCollapsed(): boolean {
-  try {
-    return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function writeSidebarCollapsed(collapsed: boolean) {
-  try {
-    window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0');
-  } catch {
-    /* ignore quota / private mode */
-  }
-}
 
 function isCreatorStudioPath(pathname: string): boolean {
   if (!pathname.startsWith('/dashboard/creator')) return false;
@@ -114,30 +101,25 @@ export function DashboardShell({
   const router = useRouter();
   const { isLoading, user, sessionStatus, restoreSession } = useAuth();
   const { appRole, ready: appRoleReady } = useCreatorAppRole();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const sidebarCollapsed = useSyncExternalStore(
+    subscribeSidebarCollapsed,
+    getSidebarCollapsedSnapshot,
+    getSidebarCollapsedServerSnapshot
+  );
 
   usePresenceHeartbeat(Boolean(user) && sessionStatus === 'authenticated');
 
-  useLayoutEffect(() => {
-    setSidebarCollapsed(readSidebarCollapsed());
-  }, []);
-
   const toggleSidebarCollapsed = useCallback(() => {
-    const willExpand = sidebarCollapsed;
-    setSidebarCollapsed((value) => {
-      const next = !value;
-      writeSidebarCollapsed(next);
-      return next;
-    });
-    if (willExpand) {
+    const wasCollapsed = getSidebarCollapsedSnapshot();
+    toggleSidebarCollapsedStore();
+    if (wasCollapsed) {
       notifyDashboardSidebarExpand();
     }
-  }, [sidebarCollapsed]);
+  }, []);
 
   useEffect(() => {
     const onDetailsOpen = () => {
       setSidebarCollapsed(true);
-      writeSidebarCollapsed(true);
     };
     window.addEventListener(MESSAGING_DETAILS_OPEN_EVENT, onDetailsOpen);
     return () => window.removeEventListener(MESSAGING_DETAILS_OPEN_EVENT, onDetailsOpen);
@@ -248,10 +230,12 @@ export function DashboardShell({
         style={{ '--dash-sidebar-w': sidebarCollapsed ? '4.5rem' : '18rem' } as CSSProperties}
         data-sidebar-collapsed={sidebarCollapsed ? 'true' : 'false'}
       >
-      <DashboardSidebar
-        collapsed={sidebarCollapsed}
-        onToggle={toggleSidebarCollapsed}
-      />
+      <Suspense fallback={null}>
+        <DashboardSidebar
+          collapsed={sidebarCollapsed}
+          onToggle={toggleSidebarCollapsed}
+        />
+      </Suspense>
       <div
         data-dashboard-main
         className={`flex min-w-0 flex-1 flex-col ${fillMainLayout ? 'h-screen max-h-screen overflow-hidden' : ''} ${shellBg}`}

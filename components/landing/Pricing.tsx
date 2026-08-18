@@ -4,10 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
-  brandButtonRadiusClass,
   brandCtaClass,
   brandFrameRadiusClass,
   brandSolidBg,
+  landingPanelSurfaceClass,
   landingSectionShellClass,
 } from '@/components/landing/landingBrand';
 
@@ -32,7 +32,7 @@ const plans = [
     name: 'Pro',
     priceMonthly: 3.99,
     priceAnnual: 3.19,
-    badge: 'Most popular',
+    badge: 'Popular',
     highlighted: true,
     description: 'Perfect for independent developers and content creators.',
     intro: null,
@@ -88,18 +88,15 @@ export function Pricing() {
           transition={{ duration: 0.6 }}
           className="mb-10 text-center"
         >
-          <h2 className="mb-3 text-3xl font-bold leading-tight lp-text md:text-5xl">
-            Plans tailored to your ambitions
+          <h2 className="mb-8 text-3xl font-bold leading-tight lp-text md:text-5xl">
+            Pricing
           </h2>
-          <p className="mb-8 text-sm lp-muted md:text-base">
-            Boost your portfolio or get the source code for your interfaces in one click.
-          </p>
 
-          <div className={`inline-flex items-center border border-neutral-200 bg-neutral-100 p-1 dark:border-neutral-700 dark:bg-neutral-900 ${brandFrameRadiusClass}`}>
+          <div className={`inline-flex items-center border border-neutral-200 bg-white p-1 dark:border-neutral-700 dark:bg-neutral-900 ${brandFrameRadiusClass}`}>
             <button
               type="button"
               onClick={() => setAnnual(false)}
-              className={`rounded-lg px-5 py-2 text-xs font-semibold transition-all ${
+              className={`rounded-lg px-5 py-2 text-sm font-semibold transition-all ${
                 !annual
                   ? 'bg-black text-white dark:bg-white dark:text-black'
                   : 'text-neutral-500 dark:text-neutral-400'
@@ -110,7 +107,7 @@ export function Pricing() {
             <button
               type="button"
               onClick={() => setAnnual(true)}
-              className={`rounded-lg px-5 py-2 text-xs font-semibold transition-all ${
+              className={`rounded-lg px-5 py-2 text-sm font-semibold transition-all ${
                 annual
                   ? 'bg-black text-white dark:bg-white dark:text-black'
                   : 'text-neutral-500 dark:text-neutral-400'
@@ -129,40 +126,36 @@ export function Pricing() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.15, duration: 0.5 }}
-              className={`relative flex min-h-[510px] flex-col border lp-bg-card p-7 transition-all duration-300 lg:p-8 ${brandFrameRadiusClass} ${
-                plan.highlighted
-                  ? 'border-[#F97316]/70 shadow-[0_0_14px_rgba(249,115,22,0.06)]'
-                  : 'border-[var(--lp-border)] hover:border-[#F97316]/30'
-              }`}
+              className={`relative flex min-h-[510px] flex-col border border-neutral-200 p-7 transition-all duration-300 lg:p-8 dark:border-neutral-700 ${landingPanelSurfaceClass} ${brandFrameRadiusClass}`}
             >
               {plan.badge && (
-                <div className="absolute -top-3 right-5 whitespace-nowrap">
-                  <span className={`inline-flex rounded-full px-3 py-1 text-[9px] font-bold uppercase text-white ${brandSolidBg}`}>
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                  <span className={`inline-flex px-3 py-1 text-[10px] font-bold uppercase text-white ${brandFrameRadiusClass} ${brandSolidBg}`}>
                     {plan.badge}
                   </span>
                 </div>
               )}
 
-              <h3 className={`mb-5 text-sm font-bold uppercase tracking-[0.18em] ${plan.highlighted ? 'text-[#F97316]' : 'lp-muted'}`}>
+              <h3 className={`mb-2.5 text-base font-bold uppercase tracking-[0.18em] ${plan.highlighted ? 'text-[#F97316]' : 'lp-muted'}`}>
                 {plan.name}
               </h3>
 
-              <div className="mb-9 flex items-end gap-1">
-                <span className="text-4xl font-bold lp-text">
+              <div className="mb-12 flex items-end gap-1 md:mb-14">
+                <span className="text-[2rem] font-bold leading-none lp-text sm:text-4xl">
                   €{annual ? plan.priceAnnual.toFixed(plan.priceAnnual === 0 ? 0 : 2) : plan.priceMonthly.toFixed(plan.priceMonthly === 0 ? 0 : 2)}
                 </span>
-                <span className="mb-1 text-xs lp-muted">/ month</span>
+                <span className="mb-1 text-sm lp-muted">/ month</span>
               </div>
 
-              <p className="mb-6 min-h-[52px] text-sm leading-relaxed lp-muted">{plan.description}</p>
+              <p className="mb-6 min-h-[52px] text-base leading-relaxed lp-muted">{plan.description}</p>
 
               {plan.intro && (
-                <p className="mb-4 text-[11px] font-bold uppercase tracking-wide text-[#F97316]">{plan.intro}</p>
+                <p className="mb-4 text-sm font-bold uppercase tracking-wide lp-text">{plan.intro}</p>
               )}
 
               <ul className="mb-8 flex-1 space-y-4">
                 {plan.features.map((f) => (
-                  <li key={f.label} className="flex items-start gap-2.5 text-sm leading-relaxed lp-text">
+                  <li key={f.label} className="flex items-start gap-2.5 text-base leading-relaxed lp-text">
                     <span className={`mt-0.5 ${f.included ? 'text-[#F97316]' : 'lp-muted'}`}>
                       {f.included ? '✓' : '△'}
                     </span>
@@ -173,10 +166,10 @@ export function Pricing() {
 
               <Link
                 href="/register"
-                className={`w-full py-3.5 text-center text-xs font-bold uppercase ${brandButtonRadiusClass} ${
+                className={`w-full py-3.5 text-center text-sm font-bold uppercase !rounded-full ${
                   plan.highlighted
                     ? brandCtaClass
-                    : 'border border-[var(--lp-border)] lp-text transition-all hover:border-[#F97316]/40 hover:bg-[var(--lp-surface)]'
+                    : 'bg-neutral-200 text-neutral-700 transition-all hover:-translate-y-0.5 hover:bg-neutral-300 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700'
                 }`}
               >
                 {plan.cta}
@@ -194,7 +187,7 @@ export function Pricing() {
         >
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
             {['Secure payment', 'Cancel anytime', '24/7 support'].map((item) => (
-              <span key={item} className="flex items-center gap-2 text-xs lp-muted">
+              <span key={item} className="flex items-center gap-2 text-sm lp-muted">
                 <span className="text-[#F97316]">◆</span>
                 {item}
               </span>

@@ -6,6 +6,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faArrowRight, faGear } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
 import { CreatorStudioProfileTab } from '@/components/creator/studio/CreatorStudioProfileTab';
+import { PortfolioPresencePicker } from '@/components/portfolio/PortfolioPresencePicker';
+import {
+  getPortfolioPresenceOption,
+  type PortfolioPresenceKind,
+} from '@/components/portfolio/portfolio-presence';
 import { buildCreatorPortfolioPath, buildCreatorPortfolioUrl } from '@/lib/portfolio-url';
 import { brandCtaClass } from '@/components/landing/landingBrand';
 
@@ -116,9 +121,11 @@ function PortfolioLivePreview({ creatorId }: { creatorId: string }) {
 function PortfolioInformationSettings({
   navSide,
   onToggleNavSide,
+  onChangePresence,
 }: {
   navSide: PortfolioNavSide;
   onToggleNavSide: () => void;
+  onChangePresence: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -164,6 +171,17 @@ function PortfolioInformationSettings({
             type="button"
             role="menuitem"
             onClick={() => {
+              onChangePresence();
+              setOpen(false);
+            }}
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-neutral-700 transition hover:bg-neutral-50 dark:text-neutral-200 dark:hover:bg-neutral-800"
+          >
+            <span className="min-w-0 flex-1">Choose another presence</span>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
               onToggleNavSide();
               setOpen(false);
             }}
@@ -187,6 +205,8 @@ export function MyPortfolioWorkspace() {
   const [tab, setTab] = useState<PortfolioTabId>('information');
   const [copied, setCopied] = useState(false);
   const [portfolioNavSide, setPortfolioNavSide] = useState<PortfolioNavSide>('left');
+  const [presenceKind, setPresenceKind] = useState<PortfolioPresenceKind | null>(null);
+  const selectedPresence = getPortfolioPresenceOption(presenceKind);
 
   const isCreator = hasRole('ROLE_CREATOR');
   const shareUrl = useMemo(
@@ -204,6 +224,10 @@ export function MyPortfolioWorkspace() {
       /* ignore */
     }
   }, []);
+
+  useEffect(() => {
+    if (tab !== 'information') setPresenceKind(null);
+  }, [tab]);
 
   const togglePortfolioNavSide = useCallback(() => {
     setPortfolioNavSide((prev) => {
@@ -279,11 +303,21 @@ export function MyPortfolioWorkspace() {
               </button>
             );
           })}
-          {tab === 'information' ? (
-            <PortfolioInformationSettings
-              navSide={portfolioNavSide}
-              onToggleNavSide={togglePortfolioNavSide}
-            />
+          {tab === 'information' && selectedPresence ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setPresenceKind(null)}
+                className="inline-flex items-center rounded-xl bg-neutral-100 px-3 py-2.5 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-200/80 dark:bg-neutral-800/80 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              >
+                Change presence
+              </button>
+              <PortfolioInformationSettings
+                navSide={portfolioNavSide}
+                onToggleNavSide={togglePortfolioNavSide}
+                onChangePresence={() => setPresenceKind(null)}
+              />
+            </>
           ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2.5">
@@ -303,10 +337,16 @@ export function MyPortfolioWorkspace() {
 
       {/* Tab panels */}
       {tab === 'information' ? (
-        <CreatorStudioProfileTab
-          variant="portfolio"
-          portfolioNavSide={portfolioNavSide}
-        />
+        selectedPresence ? (
+          <CreatorStudioProfileTab
+            variant="portfolio"
+            portfolioNavSide={portfolioNavSide}
+            allowedSections={selectedPresence.sections}
+            sectionsNavTitle={selectedPresence.title}
+          />
+        ) : (
+          <PortfolioPresencePicker onSelect={setPresenceKind} />
+        )
       ) : tab === 'preview' ? (
         <PortfolioLivePreview creatorId={user.id} />
       ) : (

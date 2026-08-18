@@ -91,12 +91,12 @@ export const PROFILE_SECTIONS: ProfileSection[] = [
   },
   {
     id: 'team',
-    label: 'Équipe',
+    label: 'Team',
     description: 'Présentez les membres de votre équipe, leurs rôles et leurs contacts.',
   },
   {
     id: 'gallery',
-    label: 'Galerie',
+    label: 'Gallery',
     description: 'Ajoutez des images et vidéos pour illustrer votre univers.',
   },
   {

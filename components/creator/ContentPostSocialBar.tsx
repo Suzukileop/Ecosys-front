@@ -37,10 +37,10 @@ export function ContentPostCommentsButton({
       type="button"
       onClick={() => onToggle?.(!commentsOpen)}
       aria-expanded={commentsOpen}
-      className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition ${
+      className={`inline-flex w-full items-center justify-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-semibold transition ${
         active
-          ? 'bg-orange-500/15 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400'
-          : 'bg-white text-neutral-700 hover:bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800'
+          ? 'border-neutral-400 bg-neutral-100 text-neutral-700 dark:border-neutral-500 dark:bg-neutral-800 dark:text-neutral-200'
+          : 'border-neutral-300 bg-transparent text-neutral-500 hover:border-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-600 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200'
       } ${className}`}
     >
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -50,8 +50,8 @@ export function ContentPostCommentsButton({
           d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
         />
       </svg>
-      {active ? 'Hide comments' : 'View comments'}
-      <span className="tabular-nums text-neutral-400">({formatCount(commentCount ?? 0)})</span>
+      {active ? 'Masquer les commentaires' : 'Voir les commentaires'}
+      <span className="tabular-nums">({formatCount(commentCount ?? 0)})</span>
     </button>
   );
 }
@@ -129,25 +129,25 @@ export function ContentPostSocialBar({
 
   const displayCommentCount = commentCountProp ?? commentCount;
 
-  const buttonClass = (active: boolean) =>
-    `inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-medium transition disabled:opacity-60 ${
+  const pillClass = (active: boolean) =>
+    `inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1.5 text-sm font-medium transition disabled:opacity-60 dark:bg-neutral-800 ${
       active
         ? 'text-orange-600 dark:text-orange-400'
-        : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200'
+        : 'text-neutral-600 hover:bg-neutral-200 dark:text-neutral-300 dark:hover:bg-neutral-700'
     }`;
 
   return (
     <div
-      className="flex items-center justify-between gap-3 border-t border-neutral-200 pt-3 dark:border-neutral-800"
+      className="flex items-center justify-between gap-3 pt-1"
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex flex-wrap items-center gap-2">
         {canInteract ? (
           <button
             type="button"
             disabled={busy}
             onClick={() => void toggleLike()}
-            className={buttonClass(userReaction === 'LIKE')}
+            className={pillClass(userReaction === 'LIKE')}
             aria-pressed={userReaction === 'LIKE'}
             aria-label="Like"
           >
@@ -167,7 +167,7 @@ export function ContentPostSocialBar({
             {formatCount(likes)}
           </button>
         ) : (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 text-sm text-neutral-500">
+          <span className={pillClass(false)}>
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
               <path
                 strokeLinecap="round"
@@ -183,7 +183,7 @@ export function ContentPostSocialBar({
           <button
             type="button"
             onClick={() => onCommentsToggle?.(!commentsOpen)}
-            className={buttonClass(commentsOpen)}
+            className={pillClass(commentsOpen)}
             aria-expanded={commentsOpen}
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -198,7 +198,17 @@ export function ContentPostSocialBar({
         )}
       </div>
 
-      <time className="shrink-0 text-xs text-neutral-400" dateTime={createdAt}>
+      <time
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1.5 text-sm font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
+        dateTime={createdAt}
+      >
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6.75 3v2.25M17.25 3v2.25M3.75 8.25h16.5M4.5 6.75h15a1.5 1.5 0 011.5 1.5v11.25a1.5 1.5 0 01-1.5 1.5h-15a1.5 1.5 0 01-1.5-1.5V8.25a1.5 1.5 0 011.5-1.5z"
+          />
+        </svg>
         {new Date(createdAt).toLocaleDateString()}
       </time>
     </div>

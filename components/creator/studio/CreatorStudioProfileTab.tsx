@@ -374,13 +374,14 @@ export function CreatorStudioProfileTab({
 }: CreatorStudioProfileTabProps) {
   const isPortfolioLayout = variant === 'portfolio';
   const navTitle = sectionsNavTitle ?? (allowedSections?.length ? 'Information' : 'Portfolio Sections');
+  const isStoreInformationNav = sectionsNavTitle === 'Information';
   const sectionLabelOverrides = useMemo((): Partial<Record<ProfileSectionId, string>> => {
-    if (!allowedSections?.length) return PORTFOLIO_SECTION_LABELS;
+    if (!isStoreInformationNav) return PORTFOLIO_SECTION_LABELS;
     return {
       ...PORTFOLIO_SECTION_LABELS,
       links: 'Link',
     };
-  }, [allowedSections]);
+  }, [isStoreInformationNav]);
   const { user, updateUser } = useAuth();
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -559,8 +560,9 @@ export function CreatorStudioProfileTab({
   const watchedAppRole = form.watch('appRole');
   const effectiveAllowedSections = useMemo(() => {
     if (!allowedSections?.length) return allowedSections;
+    if (!isStoreInformationNav) return allowedSections;
     return filterStoreInformationSectionsForRole(watchedAppRole, allowedSections);
-  }, [allowedSections, watchedAppRole]);
+  }, [allowedSections, isStoreInformationNav, watchedAppRole]);
   const sectionGroups = useMemo(
     () => filterProfileSectionGroups(PROFILE_SECTION_GROUPS, effectiveAllowedSections),
     [effectiveAllowedSections]

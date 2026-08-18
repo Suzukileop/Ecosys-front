@@ -54,7 +54,7 @@ export function NewsCreateShortcuts({ className = '' }: NewsCreateShortcutsProps
         <Link
           key={item.id}
           href={item.href}
-          className="group relative flex min-h-[7.5rem] flex-col items-center justify-center gap-2.5 rounded-2xl border border-neutral-200 bg-neutral-100 px-3 py-5 text-center shadow-sm transition hover:border-orange-300/60 hover:bg-neutral-50 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-orange-500/35 dark:hover:bg-neutral-800/80 sm:min-h-[8.25rem]"
+          className="group relative flex min-h-[7.5rem] flex-col items-center justify-center gap-2.5 rounded-2xl border border-neutral-200 bg-neutral-100 px-3 py-5 text-center shadow-sm transition hover:bg-neutral-50 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800/80 sm:min-h-[8.25rem]"
         >
           <FontAwesomeIcon
             icon={item.icon}

@@ -93,7 +93,7 @@ function isFiniteCoords(coords: { lat: number; lng: number }): boolean {
  * Fast coarse coordinates for marketplace "closest first" sorting.
  * Not suitable for profile distance badges (often network/IP, tens/hundreds of km off).
  */
-export async function detectUserCoordinates(): Promise<{ lat: number; lng: number }> {
+export async function detectUserCoordinates(): Promise<ViewerCoordinates> {
   if (typeof window === 'undefined' || !navigator.geolocation) {
     throw new Error('Geolocation is not supported by your browser.');
   }
@@ -113,129 +113,117 @@ export async function detectUserCoordinates(): Promise<{ lat: number; lng: numbe
   if (!isFiniteCoords(coords)) {
     throw new Error('Unable to detect your location.');
   }
-  return { lat: coords.lat, lng: coords.lng };
+  return coords;
 }
 
 /**
- * Max accepted GPS accuracy (meters) for showing distance on a profile.
- * Coarse IP/network fixes often report 20–100+ km accuracy and produce bogus distances.
+ * Max accepted GPS accuracy (meters) before we publish a distance label.
+ * Coarse IP/Wi-Fi fixes often report 2–50 km and produce "Less than 1 km" by chance.
  */
-export const DISTANCE_MAX_ACCURACY_M = 20_000;
+export const DISTANCE_MAX_ACCURACY_M = 500;
+
+export function isReliableDistanceFix(coords: ViewerCoordinates): boolean {
+  if (!isFiniteCoords(coords)) return false;
+  if (coords.accuracyM == null || !Number.isFinite(coords.accuracyM) || coords.accuracyM <= 0) {
+    return false;
+  }
+  return coords.accuracyM <= DISTANCE_MAX_ACCURACY_M;
+}
 
 /**
- * Resolve a GPS fix accurate enough for profile distance.
- * Prefers high-accuracy readings and keeps watching briefly until accuracy improves.
- * Calls {@code onUpdate} each time a better fix arrives (so UI can refine without refresh).
+ * Haversine km only when GPS error cannot flip the displayed bucket.
+ * Returns null instead of a guessed "Less than 1 km".
+ */
+export function computeReliableDistanceKm(
+  viewer: ViewerCoordinates,
+  place: { lat: number; lng: number }
+): number | null {
+  if (!isReliableDistanceFix(viewer) || !isFiniteCoords(place)) return null;
+  const km = haversineKm(viewer.lat, viewer.lng, place.lat, place.lng);
+  if (!Number.isFinite(km) || km < 0) return null;
+  const accuracyKm = (viewer.accuracyM as number) / 1000;
+  if (km < 1 && accuracyKm > 0.35) return null;
+  if (km >= 1 && accuracyKm > km) return null;
+  return km;
+}
+
+/**
+ * Resolve a GPS fix accurate enough for a public distance badge.
+ * Watches until accuracy is good; never falls back to IP/network guesses.
+ * {@code onUpdate} is only called with reliable fixes.
  */
 export async function detectUserCoordinatesForDistance(
   onUpdate?: (coords: ViewerCoordinates) => void,
-  options?: { timeoutMs?: number; maxAccuracyM?: number }
+  options?: { timeoutMs?: number; maxAccuracyM?: number; signal?: AbortSignal }
 ): Promise<ViewerCoordinates> {
   if (typeof window === 'undefined' || !navigator.geolocation) {
     throw new Error('Geolocation is not supported by your browser.');
   }
 
-  const timeoutMs = options?.timeoutMs ?? 12_000;
+  const timeoutMs = options?.timeoutMs ?? 18_000;
   const maxAccuracyM = options?.maxAccuracyM ?? DISTANCE_MAX_ACCURACY_M;
 
-  const emit = (coords: ViewerCoordinates) => {
-    if (!isFiniteCoords(coords)) return;
-    onUpdate?.(coords);
-  };
-
-  // Fresh high-accuracy attempt first (ignore stale network cache).
-  try {
-    const precise = toViewerCoordinates(
-      await getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: Math.min(8_000, timeoutMs),
-        maximumAge: 0,
-      })
-    );
-    if (isFiniteCoords(precise)) {
-      emit(precise);
-      if (precise.accuracyM == null || precise.accuracyM <= maxAccuracyM) {
-        return precise;
-      }
-    }
-  } catch {
-    // Fall through to watch / coarse.
-  }
+  const goodEnough = (coords: ViewerCoordinates) =>
+    isFiniteCoords(coords) &&
+    coords.accuracyM != null &&
+    Number.isFinite(coords.accuracyM) &&
+    coords.accuracyM > 0 &&
+    coords.accuracyM <= maxAccuracyM;
 
   return await new Promise<ViewerCoordinates>((resolve, reject) => {
     let best: ViewerCoordinates | null = null;
     let settled = false;
+    let watchId: number | null = null;
 
     const finish = (coords: ViewerCoordinates | null, error?: Error) => {
       if (settled) return;
       settled = true;
       window.clearTimeout(timer);
       if (watchId != null) navigator.geolocation.clearWatch(watchId);
-      if (coords && isFiniteCoords(coords)) {
-        emit(coords);
+      options?.signal?.removeEventListener('abort', onAbort);
+      if (coords && goodEnough(coords)) {
+        onUpdate?.(coords);
         resolve(coords);
         return;
       }
-      reject(error ?? new Error('Unable to detect your location.'));
+      reject(error ?? new Error('Location accuracy is too low to show distance.'));
     };
+
+    const onAbort = () => {
+      finish(null, new Error('Distance measurement cancelled.'));
+    };
+    if (options?.signal?.aborted) {
+      onAbort();
+      return;
+    }
+    options?.signal?.addEventListener('abort', onAbort, { once: true });
 
     const consider = (position: GeolocationPosition) => {
       const next = toViewerCoordinates(position);
       if (!isFiniteCoords(next)) return;
-
       const better =
         !best ||
         (next.accuracyM != null &&
           (best.accuracyM == null || next.accuracyM < best.accuracyM));
-      if (better) {
-        best = next;
-        emit(next);
-      }
-
-      if (next.accuracyM != null && next.accuracyM <= Math.min(5_000, maxAccuracyM)) {
+      if (better) best = next;
+      if (goodEnough(next)) {
         finish(next);
       }
     };
 
     const timer = window.setTimeout(() => {
-      if (best && (best.accuracyM == null || best.accuracyM <= maxAccuracyM)) {
-        finish(best);
-        return;
-      }
-      // Last resort: one coarse reading — still gated by maxAccuracyM when reported.
-      void getCurrentPosition({
-        enableHighAccuracy: false,
-        timeout: 4_000,
-        maximumAge: 60_000,
-      })
-        .then((position) => {
-          const coarse = toViewerCoordinates(position);
-          if (!isFiniteCoords(coarse)) {
-            finish(best, new Error('Unable to detect your location.'));
-            return;
-          }
-          if (coarse.accuracyM != null && coarse.accuracyM > maxAccuracyM) {
-            finish(best, new Error('Location accuracy is too low to show distance.'));
-            return;
-          }
-          finish(coarse);
-        })
-        .catch((err) => {
-          finish(
-            best,
-            err instanceof GeolocationPositionError
-              ? new Error(geolocationErrorMessage(err.code))
-              : err instanceof Error
-                ? err
-                : new Error('Unable to detect your location.')
-          );
-        });
+      finish(
+        best && goodEnough(best) ? best : null,
+        new Error('Location accuracy is too low to show distance.')
+      );
     }, timeoutMs);
 
-    const watchId = navigator.geolocation.watchPosition(
+    watchId = navigator.geolocation.watchPosition(
       consider,
-      () => {
-        // Keep waiting until timeout; watch errors are common when refining.
+      (err) => {
+        if (err.code === 1) {
+          finish(null, new Error(geolocationErrorMessage(err.code)));
+        }
       },
       {
         enableHighAccuracy: true,

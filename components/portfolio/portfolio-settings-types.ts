@@ -41,11 +41,13 @@ import {
 import {
   DEFAULT_TEAM_PRESENTATION,
   mergeTeamPresentation,
+  migrateLegacyTeamCopy,
   type PortfolioTeamSectionSettings,
 } from '@/components/portfolio/portfolio-team-settings';
 import {
   DEFAULT_GALLERY_PRESENTATION,
   mergeGalleryPresentation,
+  migrateLegacyGalleryCopy,
   type PortfolioGallerySectionSettings,
 } from '@/components/portfolio/portfolio-gallery-settings';
 import {
@@ -838,12 +840,12 @@ export const PORTFOLIO_SETTINGS_SECTIONS: PortfolioSettingsSectionMeta[] = [
   },
   {
     id: 'team',
-    label: 'Équipe',
-    description: 'Membres, responsabilités, portraits et réseaux sociaux.',
+    label: 'Team',
+    description: 'Members, roles, portraits, and social links.',
   },
   {
     id: 'gallery',
-    label: 'Galerie',
+    label: 'Gallery',
     description: 'Images and videos displayed in five advanced layouts.',
   },
   {
@@ -1007,14 +1009,14 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
     },
     team: {
       enabled: true,
-      title: 'Notre équipe',
-      subtitle: 'Les personnes qui donnent vie à chaque projet.',
+      title: 'Team',
+      subtitle: 'The people who bring every project to life.',
       ...DEFAULT_TEAM_PRESENTATION,
     },
     gallery: {
       enabled: true,
-      title: 'Galerie',
-      subtitle: 'Images, films et instants choisis.',
+      title: 'Gallery',
+      subtitle: 'Images, films, and chosen moments.',
       ...DEFAULT_GALLERY_PRESENTATION,
     },
     faq: {
@@ -1671,14 +1673,20 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
       }
       return migrateExperienceFromLegacyAbout(stored.about);
     })(),
-    team: {
-      ...mergeSectionCopy(defaults.team, stored.team),
-      ...mergeTeamPresentation(defaults.team, stored.team),
-    },
-    gallery: {
-      ...mergeSectionCopy(defaults.gallery, stored.gallery),
-      ...mergeGalleryPresentation(defaults.gallery, stored.gallery),
-    },
+    team: (() => {
+      const merged = {
+        ...mergeSectionCopy(defaults.team, stored.team),
+        ...mergeTeamPresentation(defaults.team, stored.team),
+      };
+      return { ...merged, ...migrateLegacyTeamCopy(merged.title, merged.subtitle) };
+    })(),
+    gallery: (() => {
+      const merged = {
+        ...mergeSectionCopy(defaults.gallery, stored.gallery),
+        ...mergeGalleryPresentation(defaults.gallery, stored.gallery),
+      };
+      return { ...merged, ...migrateLegacyGalleryCopy(merged.title, merged.subtitle) };
+    })(),
     faq: {
       ...mergeSectionCopy(defaults.faq, stored.faq),
       ...mergeFaqPresentation(defaults.faq, stored.faq),

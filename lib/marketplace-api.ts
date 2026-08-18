@@ -1518,6 +1518,7 @@ export async function searchMarketplaceCreators(
     minYearsExperience?: number;
     lat?: number;
     lng?: number;
+    accuracyM?: number;
     sort?: string;
   }
 ): Promise<PagedResponse<MarketplaceCreatorSummary>> {
@@ -1534,6 +1535,7 @@ export async function searchMarketplaceCreators(
         ? {
             lat: filters.lat,
             lng: filters.lng,
+            ...(filters.accuracyM != null ? { accuracyM: filters.accuracyM } : {}),
             ...(filters?.sort ? { sort: filters.sort } : {}),
           }
         : {}),

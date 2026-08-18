@@ -39,6 +39,9 @@ import type {
 import type { MarketplaceContentItem } from '@/types/marketplace';
 import {
   galleryAspectStyle,
+  galleryCaptionCardWidthClass,
+  galleryDesignUsesCarouselNav,
+  galleryItemDisplayTitle,
   galleryMaxWidthClass,
   galleryPlacementClass,
   type PortfolioGalleryPresentationSettings,
@@ -104,10 +107,34 @@ import {
 } from '@/components/portfolio/portfolio-global-settings';
 import type { PortfolioNavIconVariant } from '@/components/portfolio/portfolio-nav-items';
 import {
+  teamAvatarSizeClass,
   teamCardClass,
+  teamCardFooterPaddingClass,
+  teamCardFrameClass,
+  teamCardMaxWidthClass,
   teamCardStyle,
+  teamCircleAvatarClass,
+  teamContentAlignClass,
+  teamDirectoryMaxWidthClass,
+  teamFlexAlignClass,
+  teamFloatCardBodyPadClass,
+  teamFloatCardMinHeightClass,
+  teamFloatGridOffsetClass,
   teamGridClass,
+  teamHoverOverlayPaddingClass,
+  teamHoverPhotoClass,
+  teamListAlignClass,
+  teamProfilePhotoHeightClass,
   teamReadableCardText,
+  teamSocialAlignClass,
+  teamSocialIconButtonClass,
+  teamSocialIconGlyphClass,
+  teamSpotlightGridClass,
+  teamSpotlightMaxWidthClass,
+  teamSpotlightNameClass,
+  teamSpotlightPhotoSizeClass,
+  teamSpotlightRoleClass,
+  teamSpotlightThumbClass,
   type PortfolioTeamPresentationSettings,
 } from '@/components/portfolio/portfolio-team-settings';
 import {
@@ -552,6 +579,8 @@ export function EditorialGallerySection({
   presentation: PortfolioGalleryPresentationSettings;
 }) {
   const [activeItem, setActiveItem] = useState<ProfileGalleryItem | null>(null);
+  const [carouselPage, setCarouselPage] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const sortedItems = useMemo(
     () => [...items].sort((a, b) => a.sortOrder - b.sortOrder),
     [items]
@@ -571,13 +600,47 @@ export function EditorialGallerySection({
     };
   }, [activeItem]);
 
+  useEffect(() => {
+    setCarouselPage(0);
+  }, [presentation.design, presentation.columns, sortedItems.length]);
+
   const showItemTitle = presentation.showTitle && presentation.titlePlacement !== 'hidden';
   const columnsStyle = {
     '--gallery-columns': presentation.columns,
+    '--gallery-gap': `${presentation.gap}px`,
     gap: `${presentation.gap}px`,
     padding: `${presentation.padding}px`,
   } as CSSProperties;
   const baseWidth = `${galleryMaxWidthClass(presentation.maxWidth)} ${galleryPlacementClass(presentation.placement)} w-full`;
+  const useOverlayTitles =
+    presentation.titlePlacement === 'overlay' ||
+    presentation.design === 'featured-strip';
+
+  const openLightbox = (item: ProfileGalleryItem) => {
+    if (presentation.lightboxEnabled) setActiveItem(item);
+  };
+
+  const scrollCarousel = (direction: -1 | 1) => {
+    const node = scrollRef.current;
+    if (!node) return;
+    const card = node.querySelector<HTMLElement>('[data-gallery-carousel-item]');
+    const step = card ? card.offsetWidth + presentation.gap : node.clientWidth * 0.85;
+    node.scrollBy({ left: direction * step, behavior: 'smooth' });
+  };
+
+  const scrollToCarouselPage = (page: number) => {
+    const node = scrollRef.current;
+    if (!node) return;
+    setCarouselPage(page);
+    const card = node.querySelector<HTMLElement>('[data-gallery-carousel-item]');
+    const step = card ? card.offsetWidth + presentation.gap : node.clientWidth * 0.85;
+    node.scrollTo({ left: page * step * presentation.columns, behavior: 'smooth' });
+  };
+
+  const captionPageCount = useMemo(() => {
+    if (presentation.design !== 'caption-carousel') return 1;
+    return Math.max(1, Math.ceil(sortedItems.length / presentation.columns));
+  }, [presentation.design, presentation.columns, sortedItems.length]);
 
   const media = (item: ProfileGalleryItem, lightbox = false) => {
     const commonClass = `${lightbox ? 'max-h-[82vh] max-w-[92vw]' : 'h-full w-full'} ${
@@ -608,10 +671,28 @@ export function EditorialGallerySection({
         </div>
       );
     }
-    return <img src={item.mediaUrl} alt={item.title} className={commonClass} style={style} loading="lazy" />;
+    return <img src={item.mediaUrl} alt={galleryItemDisplayTitle(item.title) || 'Gallery media'} className={commonClass} style={style} loading="lazy" />;
   };
 
-  const card = (item: ProfileGalleryItem, index: number) => {
+  const persistentOverlayTitle = (itemTitle: string) => (
+    <>
+      <span
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2"
+        style={{
+          background: `linear-gradient(transparent, ${presentation.overlayColor}${Math.round(
+            (presentation.overlayOpacity / 100) * 255
+          ).toString(16).padStart(2, '0')})`,
+        }}
+        aria-hidden
+      />
+      <h3 className="absolute inset-x-0 bottom-0 p-4 text-sm font-semibold text-white [text-shadow:0_1px_8px_rgb(0_0_0/0.8)] sm:p-5 sm:text-base">
+        {itemTitle}
+      </h3>
+    </>
+  );
+
+  const card = (item: ProfileGalleryItem, index: number, options?: { forceOverlay?: boolean; forceAspect?: CSSProperties }) => {
+    const itemTitle = galleryItemDisplayTitle(item.title);
     const isEditorial = presentation.design === 'editorial-split';
     const editorialClass = isEditorial
       ? index % 3 === 0
@@ -620,11 +701,13 @@ export function EditorialGallerySection({
       : '';
     const isMasonry = presentation.design === 'masonry';
     const aspect =
-      isMasonry || presentation.imageAspect === 'auto'
+      options?.forceAspect ??
+      (isMasonry || presentation.imageAspect === 'auto'
         ? {}
         : galleryAspectStyle(
             presentation.design === 'cinema-strip' ? 'cinema' : presentation.imageAspect
-          );
+          ));
+    const overlayActive = options?.forceOverlay || (showItemTitle && useOverlayTitles && itemTitle);
     return (
       <article
         key={item.id}
@@ -635,48 +718,197 @@ export function EditorialGallerySection({
         role={presentation.lightboxEnabled ? 'button' : undefined}
         tabIndex={presentation.lightboxEnabled ? 0 : undefined}
         aria-label={presentation.lightboxEnabled ? `Ouvrir ${item.title}` : undefined}
-        onClick={() => presentation.lightboxEnabled && setActiveItem(item)}
+        onClick={() => openLightbox(item)}
         onKeyDown={(event) => {
           if (presentation.lightboxEnabled && (event.key === 'Enter' || event.key === ' ')) {
             event.preventDefault();
-            setActiveItem(item);
+            openLightbox(item);
           }
         }}
       >
-        <div className="relative overflow-hidden bg-neutral-100 dark:bg-neutral-900" style={aspect}>
+        <div className="relative h-full overflow-hidden bg-neutral-100 dark:bg-neutral-900" style={aspect}>
           {media(item)}
-          {showItemTitle && presentation.titlePlacement === 'overlay' ? (
-            <>
-              <span
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2"
-                style={{
-                  background: `linear-gradient(transparent, ${presentation.overlayColor}${Math.round(
-                    (presentation.overlayOpacity / 100) * 255
-                  ).toString(16).padStart(2, '0')})`,
-                }}
-                aria-hidden
-              />
-              <h3 className="absolute inset-x-0 bottom-0 p-4 text-sm font-semibold text-white [text-shadow:0_1px_8px_rgb(0_0_0/0.8)] sm:p-5 sm:text-base">
-                {item.title}
-              </h3>
-            </>
-          ) : null}
+          {overlayActive && itemTitle ? persistentOverlayTitle(itemTitle) : null}
         </div>
-        {showItemTitle && presentation.titlePlacement === 'under' ? (
+        {showItemTitle && presentation.titlePlacement === 'under' && itemTitle ? (
           <h3 className="px-1 pb-1 pt-3 text-sm font-semibold sm:text-base" style={{ color: presentation.itemTitleColor }}>
-            {item.title}
+            {itemTitle}
           </h3>
         ) : null}
       </article>
     );
   };
 
+  const captionCard = (item: ProfileGalleryItem) => {
+    const itemTitle = galleryItemDisplayTitle(item.title);
+    const aspect = galleryAspectStyle(presentation.imageAspect === 'auto' ? 'square' : presentation.imageAspect);
+    return (
+      <article
+        key={item.id}
+        data-gallery-carousel-item
+        className={`group shrink-0 snap-start ${galleryCaptionCardWidthClass(presentation.columns)} ${
+          presentation.lightboxEnabled ? 'cursor-zoom-in' : ''
+        }`}
+        style={{
+          borderRadius: `${presentation.radius}px`,
+          border: '1px solid rgba(0,0,0,0.08)',
+          backgroundColor: presentation.cardSurfaceColor,
+          padding: Math.max(12, Math.min(presentation.padding, 20)),
+        }}
+        role={presentation.lightboxEnabled ? 'button' : undefined}
+        tabIndex={presentation.lightboxEnabled ? 0 : undefined}
+        onClick={() => openLightbox(item)}
+        onKeyDown={(event) => {
+          if (presentation.lightboxEnabled && (event.key === 'Enter' || event.key === ' ')) {
+            event.preventDefault();
+            openLightbox(item);
+          }
+        }}
+      >
+        <div
+          className="relative overflow-hidden bg-neutral-100 dark:bg-neutral-900"
+          style={{ ...aspect, borderRadius: `${Math.max(0, presentation.radius - 4)}px` }}
+        >
+          {media(item)}
+        </div>
+        {showItemTitle && itemTitle ? (
+          <h3
+            className="pt-3 text-center text-sm font-bold sm:text-base"
+            style={{ color: presentation.itemTitleColor }}
+          >
+            {itemTitle}
+          </h3>
+        ) : null}
+      </article>
+    );
+  };
+
+  const carouselNavButtons = (className?: string) =>
+    presentation.showCarouselNav && galleryDesignUsesCarouselNav(presentation.design) ? (
+      <div className={`flex items-center justify-center gap-3 ${className ?? ''}`}>
+        <button
+          type="button"
+          onClick={() => scrollCarousel(-1)}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-violet-300 text-lg text-violet-700 transition hover:bg-violet-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-violet-500/40 dark:text-violet-200 dark:hover:bg-violet-950/40"
+          aria-label="Previous"
+        >
+          ‹
+        </button>
+        <button
+          type="button"
+          onClick={() => scrollCarousel(1)}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-violet-300 text-lg text-violet-700 transition hover:bg-violet-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-violet-500/40 dark:text-violet-200 dark:hover:bg-violet-950/40"
+          aria-label="Next"
+        >
+          ›
+        </button>
+      </div>
+    ) : null;
+
+  const paginationDots =
+    presentation.design === 'caption-carousel' && presentation.showPagination && captionPageCount > 1 ? (
+      <div className="mt-6 flex items-center justify-center gap-2">
+        {Array.from({ length: captionPageCount }, (_, index) => (
+          <button
+            key={index}
+            type="button"
+            onClick={() => scrollToCarouselPage(index)}
+            className={`h-2.5 w-2.5 rounded-full transition ${
+              carouselPage === index ? 'bg-neutral-900 dark:bg-white' : 'bg-neutral-300 dark:bg-neutral-600'
+            }`}
+            aria-label={`Page ${index + 1}`}
+            aria-current={carouselPage === index ? 'true' : undefined}
+          />
+        ))}
+      </div>
+    ) : null;
+
   const content =
-    presentation.design === 'cinema-strip' ? (
-      <div className={`${baseWidth} flex snap-x snap-mandatory overflow-x-auto pb-4`} style={columnsStyle}>
+    presentation.design === 'caption-carousel' ? (
+      <div className={baseWidth} style={{ padding: `${presentation.padding}px` }}>
+        <div
+          ref={scrollRef}
+          className="flex snap-x snap-mandatory overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ gap: `${presentation.gap}px` }}
+        >
+          {sortedItems.map(captionCard)}
+        </div>
+        {paginationDots}
+      </div>
+    ) : presentation.design === 'cinema-strip' ? (
+      <div className={baseWidth} style={{ padding: `${presentation.padding}px` }}>
+        <div className="mb-4 flex justify-end">{carouselNavButtons()}</div>
+        <div
+          ref={scrollRef}
+          className="flex snap-x snap-mandatory overflow-x-auto pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ gap: `${presentation.gap}px` }}
+        >
+          {sortedItems.map((item, index) => (
+            <div key={item.id} data-gallery-carousel-item className="w-[86vw] shrink-0 snap-center sm:w-[68vw] lg:w-[56rem]">
+              {card(item, index)}
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : presentation.design === 'hero-mosaic' ? (
+      <div
+        className={`${baseWidth} grid grid-cols-1 gap-[var(--gallery-gap)] lg:grid-cols-2 lg:grid-rows-2`}
+        style={columnsStyle}
+      >
+        {sortedItems[0] ? (
+          <div className="min-h-[280px] lg:row-span-2 lg:min-h-[520px]">
+            {card(sortedItems[0], 0, { forceAspect: galleryAspectStyle('portrait') })}
+          </div>
+        ) : null}
+        {sortedItems.slice(1, 5).map((item, index) => (
+          <div key={item.id} className="min-h-[180px] lg:min-h-[240px]">
+            {card(item, index + 1, { forceAspect: galleryAspectStyle('landscape') })}
+          </div>
+        ))}
+      </div>
+    ) : presentation.design === 'featured-strip' ? (
+      <div className={baseWidth} style={{ padding: `${presentation.padding}px` }}>
+        <div
+          className="grid grid-cols-1 gap-[var(--gallery-gap)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]"
+          style={{ '--gallery-gap': `${presentation.gap}px` } as CSSProperties}
+        >
+          {sortedItems[0] ? (
+            <div className="min-h-[320px] lg:min-h-[480px]">
+              {card(sortedItems[0], 0, {
+                forceOverlay: true,
+                forceAspect: galleryAspectStyle('portrait'),
+              })}
+            </div>
+          ) : null}
+          <div className="flex min-w-0 flex-col">
+            <div
+              ref={scrollRef}
+              className="flex flex-1 snap-x snap-mandatory overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              style={{ gap: `${presentation.gap}px` }}
+            >
+              {sortedItems.slice(1).map((item, index) => (
+                <div
+                  key={item.id}
+                  data-gallery-carousel-item
+                  className="w-[72vw] shrink-0 snap-start sm:w-[280px] lg:w-[calc((100%-var(--gallery-gap)*2)/3)]"
+                  style={{ '--gallery-gap': `${presentation.gap}px` } as CSSProperties}
+                >
+                  {card(item, index + 1, {
+                    forceOverlay: true,
+                    forceAspect: galleryAspectStyle('landscape'),
+                  })}
+                </div>
+              ))}
+            </div>
+            {carouselNavButtons('mt-4')}
+          </div>
+        </div>
+      </div>
+    ) : presentation.design === 'lightbox-stack' ? (
+      <div className={`${baseWidth} flex flex-col`} style={columnsStyle}>
         {sortedItems.map((item, index) => (
-          <div key={item.id} className="w-[86vw] shrink-0 snap-center sm:w-[68vw] lg:w-[56rem]">
-            {card(item, index)}
+          <div key={item.id} className="w-full">
+            {card(item, index, { forceAspect: galleryAspectStyle(presentation.imageAspect === 'auto' ? 'landscape' : presentation.imageAspect) })}
           </div>
         ))}
       </div>
@@ -685,14 +917,14 @@ export function EditorialGallerySection({
         className={`${baseWidth} [column-count:1] sm:[column-count:2] lg:[column-count:var(--gallery-columns)]`}
         style={columnsStyle}
       >
-        {sortedItems.map(card)}
+        {sortedItems.map((item, index) => card(item, index))}
       </div>
     ) : (
       <div
         className={`${baseWidth} grid grid-cols-1 sm:grid-cols-2 lg:[grid-template-columns:repeat(var(--gallery-columns),minmax(0,1fr))]`}
         style={columnsStyle}
       >
-        {sortedItems.map(card)}
+        {sortedItems.map((item, index) => card(item, index))}
       </div>
     );
 
@@ -721,7 +953,11 @@ export function EditorialGallerySection({
                   ×
                 </button>
                 {media(activeItem, true)}
-                {presentation.showTitle ? <p className="text-center text-sm font-medium text-white sm:text-base">{activeItem.title}</p> : null}
+                {presentation.showTitle && galleryItemDisplayTitle(activeItem.title) ? (
+                  <p className="text-center text-sm font-medium text-white sm:text-base">
+                    {galleryItemDisplayTitle(activeItem.title)}
+                  </p>
+                ) : null}
               </div>
             </div>,
             document.body
@@ -14076,20 +14312,22 @@ export function EditorialFaqList({
 }
 
 function teamImageAspectClass(aspect: PortfolioTeamPresentationSettings['imageAspect']): string {
-  if (aspect === 'square') return 'aspect-square';
-  if (aspect === 'landscape') return 'aspect-[4/3]';
-  if (aspect === 'auto') return 'min-h-48';
-  return 'aspect-[4/5]';
+  if (aspect === 'square') return 'aspect-square w-full';
+  if (aspect === 'landscape') return 'aspect-[4/3] w-full';
+  if (aspect === 'auto') return 'min-h-48 w-full';
+  return 'aspect-[4/5] w-full';
 }
 
 function TeamMemberImage({
   member,
   presentation,
   className = '',
+  fill = false,
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
   className?: string;
+  fill?: boolean;
 }) {
   if (!presentation.showImage) return null;
   const fit = presentation.imageFit === 'contain' ? 'object-contain' : 'object-cover';
@@ -14102,7 +14340,9 @@ function TeamMemberImage({
   }[presentation.imagePosition];
   return (
     <div
-      className={`relative overflow-hidden bg-neutral-100 ${teamImageAspectClass(presentation.imageAspect)} ${className}`}
+      className={`relative overflow-hidden bg-neutral-100 ${
+        fill ? 'h-full w-full' : teamImageAspectClass(presentation.imageAspect)
+      } ${className}`}
     >
       {member.imageUrl?.trim() ? (
         <img
@@ -14112,7 +14352,7 @@ function TeamMemberImage({
           loading="lazy"
         />
       ) : (
-        <div className="flex h-full min-h-48 items-center justify-center text-4xl font-bold text-neutral-400" aria-hidden>
+        <div className="flex h-full min-h-0 items-center justify-center text-4xl font-bold text-neutral-400" aria-hidden>
           {member.name.trim().charAt(0).toUpperCase() || '—'}
         </div>
       )}
@@ -14137,15 +14377,17 @@ function TeamSocialLinks({
   member,
   presentation,
   align = 'justify-center',
+  hoverLight = false,
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
   align?: string;
+  hoverLight?: boolean;
 }) {
   const links = (member.socialLinks ?? []).filter((link) => link.url.trim());
   if (!presentation.showSocials || links.length === 0) return null;
-  const size = presentation.socialIconSize === 'sm' ? 'h-8 w-8' : presentation.socialIconSize === 'lg' ? 'h-11 w-11' : 'h-9 w-9';
-  const glyph = presentation.socialIconSize === 'sm' ? 'h-3.5 w-3.5' : presentation.socialIconSize === 'lg' ? 'h-5 w-5' : 'h-4 w-4';
+  const size = teamSocialIconButtonClass(presentation.socialIconSize);
+  const glyph = teamSocialIconGlyphClass(presentation.socialIconSize);
   const chrome =
     presentation.socialIconStyle === 'minimal'
       ? 'border-transparent bg-transparent'
@@ -14154,6 +14396,7 @@ function TeamSocialLinks({
         : presentation.socialIconStyle === 'soft'
           ? 'border-transparent rounded-xl'
           : 'border-transparent rounded-full';
+  const hoverTone = hoverLight ? 'group-hover:!border-white/30 group-hover:!bg-white/20 group-hover:!text-white' : '';
   return (
     <div className={`flex flex-wrap gap-2 ${align}`} aria-label={`Liens sociaux de ${member.name}`}>
       {links.map((link) => {
@@ -14168,7 +14411,7 @@ function TeamSocialLinks({
             target={link.platform === 'EMAIL' ? undefined : '_blank'}
             rel={link.platform === 'EMAIL' ? undefined : 'noopener noreferrer'}
             aria-label={link.label?.trim() || `${link.platform} — ${member.name}`}
-            className={`inline-flex shrink-0 items-center justify-center border transition hover:-translate-y-0.5 hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${size} ${chrome}`}
+            className={`inline-flex shrink-0 items-center justify-center border transition hover:-translate-y-0.5 hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${size} ${chrome} ${hoverTone}`}
             style={{
               color: presentation.socialIconColor,
               backgroundColor:
@@ -14222,13 +14465,280 @@ function TeamStandardCard({
 }) {
   const rotation = polaroidIndex == null ? '' : ['-rotate-1', 'rotate-[0.8deg]', '-rotate-[0.4deg]', 'rotate-[1.2deg]'][polaroidIndex % 4];
   return (
-    <article className={`${teamCardClass(presentation)} ${rotation} transition-transform hover:rotate-0 hover:-translate-y-1`} style={teamCardStyle(presentation)}>
+    <article className={`w-full ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardClass(presentation)} ${rotation} transition-transform hover:rotate-0 hover:-translate-y-1`} style={teamCardStyle(presentation)}>
       <TeamMemberImage member={member} presentation={presentation} className="rounded-[calc(2rem-0.75rem)]" />
       <div className={presentation.showImage ? 'mt-5' : ''}>
         <TeamMemberCopy member={member} presentation={presentation} />
         <div className="mt-4">
           <TeamSocialLinks member={member} presentation={presentation} />
         </div>
+      </div>
+    </article>
+  );
+}
+
+function TeamProfileCard({
+  member,
+  presentation,
+}: {
+  member: ProfileTeamMember;
+  presentation: PortfolioTeamPresentationSettings;
+}) {
+  const readable = teamReadableCardText(presentation);
+  const align = presentation.listAlign ?? 'center';
+  return (
+    <article
+      className={`w-full ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} transition hover:-translate-y-0.5`}
+      style={teamCardStyle(presentation)}
+    >
+      {presentation.showImage ? (
+        <div className={`w-full overflow-hidden ${teamProfilePhotoHeightClass(presentation.avatarSize)}`}>
+          <TeamMemberImage member={member} presentation={presentation} fill />
+        </div>
+      ) : null}
+      <div className={`${teamCardFooterPaddingClass(presentation.cardPadding)} ${teamContentAlignClass(align)}`}>
+        {presentation.showName ? (
+          <h3 className="text-xl font-bold tracking-tight" style={{ color: readable.strong }}>
+            {member.name}
+          </h3>
+        ) : null}
+        {presentation.showResponsibility && member.responsibility.trim() ? (
+          <p className="mt-1 text-sm" style={{ color: readable.muted }}>
+            {member.responsibility}
+          </p>
+        ) : null}
+        <div className={presentation.showName || presentation.showResponsibility ? 'mt-4' : ''}>
+          <TeamSocialLinks member={member} presentation={presentation} align={teamSocialAlignClass(align)} />
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function TeamAvatarCard({
+  member,
+  presentation,
+}: {
+  member: ProfileTeamMember;
+  presentation: PortfolioTeamPresentationSettings;
+}) {
+  const readable = teamReadableCardText(presentation);
+  const align = presentation.listAlign ?? 'center';
+  return (
+    <article
+      className={`flex w-full flex-col ${teamFlexAlignClass(align)} ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} ${teamCardFooterPaddingClass(presentation.cardPadding)} ${teamContentAlignClass(align)} transition hover:-translate-y-0.5`}
+      style={teamCardStyle(presentation)}
+    >
+      {presentation.showImage ? (
+        <div className={`shrink-0 overflow-hidden rounded-full ${teamCircleAvatarClass(presentation.avatarSize)}`}>
+          <TeamMemberImage
+            member={member}
+            presentation={{ ...presentation, imageAspect: 'square' }}
+            fill
+          />
+        </div>
+      ) : null}
+      {presentation.showName ? (
+        <h3
+          className={`text-lg font-bold tracking-tight ${presentation.showImage ? 'mt-5' : ''}`}
+          style={{ color: readable.strong }}
+        >
+          {member.name}
+        </h3>
+      ) : null}
+      {presentation.showResponsibility && member.responsibility.trim() ? (
+        <p className={`text-sm ${presentation.showName ? 'mt-1' : presentation.showImage ? 'mt-5' : ''}`} style={{ color: readable.muted }}>
+          {member.responsibility}
+        </p>
+      ) : null}
+      {presentation.showSocials ? (
+        <div
+          className={
+            presentation.showImage || presentation.showName || presentation.showResponsibility ? 'mt-5' : ''
+          }
+        >
+          <TeamSocialLinks member={member} presentation={presentation} align={teamSocialAlignClass(align)} />
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function TeamFloatCard({
+  member,
+  presentation,
+}: {
+  member: ProfileTeamMember;
+  presentation: PortfolioTeamPresentationSettings;
+}) {
+  const readable = teamReadableCardText(presentation);
+  const align = presentation.listAlign ?? 'center';
+  const cardStyle = teamCardStyle(presentation);
+  return (
+    <article className={`group relative w-full overflow-visible ${teamCardMaxWidthClass(presentation.cardMaxWidth)}`}>
+      {presentation.showImage ? (
+        <div
+          className={`pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border-4 ${teamCircleAvatarClass(presentation.avatarSize)}`}
+          style={{
+            borderColor: presentation.cardBackgroundColor,
+            boxShadow: `0 0 0 1px ${presentation.cardBorderColor}`,
+          }}
+        >
+          <TeamMemberImage
+            member={member}
+            presentation={{ ...presentation, imageAspect: 'square' }}
+            fill
+          />
+        </div>
+      ) : null}
+      <div
+        className={`w-full ${teamCardFrameClass(presentation)} flex flex-col ${teamFlexAlignClass(align)} ${teamFloatCardBodyPadClass(presentation.avatarSize)} ${teamFloatCardMinHeightClass(presentation.avatarSize)} ${teamContentAlignClass(align)} transition-colors duration-200 group-hover:border-transparent group-hover:shadow-lg group-hover:[background-color:var(--team-float-hover)]`}
+        style={
+          {
+            ...cardStyle,
+            '--team-float-hover': presentation.socialIconColor,
+          } as CSSProperties
+        }
+      >
+        {presentation.showName ? (
+          <h3
+            className="text-lg font-bold tracking-tight transition-colors group-hover:text-white"
+            style={{ color: readable.strong }}
+          >
+            {member.name}
+          </h3>
+        ) : null}
+        {presentation.showResponsibility && member.responsibility.trim() ? (
+          <p
+            className={`text-sm transition-colors group-hover:text-white/85 ${presentation.showName ? 'mt-1' : ''}`}
+            style={{ color: readable.muted }}
+          >
+            {member.responsibility}
+          </p>
+        ) : null}
+        {presentation.showSocials ? (
+          <div className={presentation.showName || presentation.showResponsibility ? 'mt-4' : ''}>
+            <TeamSocialLinks
+              member={member}
+              presentation={presentation}
+              align={teamSocialAlignClass(align)}
+              hoverLight
+            />
+          </div>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function TeamHoverCard({
+  member,
+  presentation,
+}: {
+  member: ProfileTeamMember;
+  presentation: PortfolioTeamPresentationSettings;
+}) {
+  const readable = teamReadableCardText(presentation);
+  const align = presentation.listAlign ?? 'left';
+  const overlayRadius =
+    presentation.cardRadius === 'none'
+      ? 'rounded-none'
+      : presentation.cardRadius === 'sm'
+        ? 'rounded-lg'
+        : presentation.cardRadius === 'xl'
+          ? 'rounded-2xl'
+          : 'rounded-xl';
+  return (
+    <article
+      className={`group relative w-full ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} ${teamHoverPhotoClass(presentation.avatarSize)}`}
+      style={teamCardStyle(presentation)}
+    >
+      {presentation.showImage ? (
+        <TeamMemberImage
+          member={member}
+          presentation={{ ...presentation, imageAspect: 'portrait' }}
+          fill
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-neutral-400" aria-hidden>
+          {member.name.trim().charAt(0).toUpperCase() || '—'}
+        </div>
+      )}
+      <div
+        className={`absolute inset-x-3 bottom-3 z-10 ${overlayRadius} shadow-lg ${teamHoverOverlayPaddingClass(presentation.avatarSize)} ${teamContentAlignClass(align)} pointer-events-none opacity-0 translate-y-2 transition duration-200 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100`}
+        style={{ backgroundColor: presentation.cardBackgroundColor }}
+      >
+        {presentation.showName ? (
+          <h3 className="text-base font-bold leading-tight tracking-tight sm:text-lg" style={{ color: readable.strong }}>
+            {member.name}
+          </h3>
+        ) : null}
+        {presentation.showResponsibility && member.responsibility.trim() ? (
+          <p className="mt-0.5 text-sm" style={{ color: readable.muted }}>
+            {member.responsibility}
+          </p>
+        ) : null}
+        {presentation.showSocials ? (
+          <div className={presentation.showName || presentation.showResponsibility ? 'mt-3' : ''}>
+            <TeamSocialLinks member={member} presentation={presentation} align={teamSocialAlignClass(align)} />
+          </div>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function TeamCoverCard({
+  member,
+  presentation,
+}: {
+  member: ProfileTeamMember;
+  presentation: PortfolioTeamPresentationSettings;
+}) {
+  const align = presentation.listAlign ?? 'center';
+  const overlayAlign =
+    align === 'left' ? 'items-start text-left' : align === 'right' ? 'items-end text-right' : 'items-center text-center';
+  return (
+    <article
+      className={`group relative w-full ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} ${teamHoverPhotoClass(presentation.avatarSize)}`}
+      style={teamCardStyle(presentation)}
+    >
+      {presentation.showImage ? (
+        <TeamMemberImage
+          member={member}
+          presentation={{ ...presentation, imageAspect: 'portrait' }}
+          fill
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-neutral-400" aria-hidden>
+          {member.name.trim().charAt(0).toUpperCase() || '—'}
+        </div>
+      )}
+      <div
+        className={`absolute inset-0 z-10 flex flex-col justify-center px-5 py-6 ${overlayAlign} pointer-events-none bg-black/55 opacity-0 transition duration-200 ease-out group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100`}
+      >
+        {presentation.showName ? (
+          <h3 className="text-xl font-bold leading-tight tracking-tight text-white sm:text-2xl">
+            {member.name}
+          </h3>
+        ) : null}
+        {presentation.showResponsibility && member.responsibility.trim() ? (
+          <p className="mt-1 text-sm text-white/80 sm:text-base">{member.responsibility}</p>
+        ) : null}
+        {presentation.showSocials ? (
+          <div className={presentation.showName || presentation.showResponsibility ? 'mt-4' : ''}>
+            <TeamSocialLinks
+              member={member}
+              presentation={{
+                ...presentation,
+                socialIconColor: '#171717',
+                socialBackgroundColor: '#ffffff',
+                socialIconStyle: 'circle',
+              }}
+              align={teamSocialAlignClass(align)}
+            />
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -14245,33 +14755,75 @@ function TeamSpotlight({
   const active = members.find((member) => member.id === activeId) ?? members[0];
   if (!active) return null;
   const readable = teamReadableCardText(presentation);
+  const portraitSize = presentation.avatarSize ?? 'md';
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_8rem]">
-      <article className={`${teamCardClass(presentation)} grid gap-6 md:grid-cols-[minmax(0,1.15fr)_minmax(16rem,0.85fr)] md:items-center`} style={teamCardStyle(presentation)}>
-        <TeamMemberImage member={active} presentation={presentation} className="rounded-2xl" />
-        <div className="py-3 text-left">
-          {presentation.showName ? <h3 className="text-3xl font-extrabold sm:text-4xl" style={{ color: readable.strong }}>{active.name}</h3> : null}
-          {presentation.showResponsibility ? <p className="mt-3 text-base leading-relaxed" style={{ color: readable.muted }}>{active.responsibility}</p> : null}
-          <div className="mt-6"><TeamSocialLinks member={active} presentation={presentation} align="justify-start" /></div>
-        </div>
-      </article>
-      <div className="flex gap-3 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible" role="tablist" aria-label="Choisir un membre">
-        {members.map((member) => (
-          <button
-            key={member.id}
-            type="button"
-            role="tab"
-            aria-selected={member.id === active.id}
-            onClick={() => setActiveId(member.id)}
-            className={`w-20 shrink-0 overflow-hidden rounded-2xl border-2 transition lg:w-full ${member.id === active.id ? 'ring-2 ring-offset-2' : 'opacity-70 hover:opacity-100'}`}
-            style={{ borderColor: member.id === active.id ? presentation.socialIconColor : presentation.cardBorderColor }}
-          >
-            <TeamMemberImage member={member} presentation={{ ...presentation, imageAspect: 'square', showImage: true }} />
-            <span className="sr-only">{member.name}</span>
-          </button>
-        ))}
+    <article
+      className={`${teamCardClass(presentation)} grid w-full gap-4 ${teamSpotlightMaxWidthClass(presentation.cardMaxWidth)} ${teamListAlignClass(presentation.listAlign)} ${teamSpotlightGridClass()}`}
+      style={teamCardStyle(presentation)}
+    >
+      <div className={`self-start shrink-0 overflow-hidden rounded-2xl aspect-[4/5] ${teamSpotlightPhotoSizeClass(portraitSize)}`}>
+        <TeamMemberImage
+          member={active}
+          presentation={{ ...presentation, imageAspect: 'portrait' }}
+          fill
+          className="rounded-2xl"
+        />
       </div>
-    </div>
+      <div className="flex min-h-0 min-w-0 flex-col md:h-full">
+        <div className="text-left">
+          {presentation.showName ? (
+            <h3
+              className={teamSpotlightNameClass(presentation.cardMaxWidth)}
+              style={{ color: readable.strong }}
+            >
+              {active.name}
+            </h3>
+          ) : null}
+          {presentation.showResponsibility ? (
+            <p className={teamSpotlightRoleClass(presentation.cardMaxWidth)} style={{ color: readable.muted }}>
+              {active.responsibility}
+            </p>
+          ) : null}
+          <div
+            className="mt-5 h-px w-full max-w-[12rem]"
+            style={{ backgroundColor: presentation.cardBorderColor }}
+            aria-hidden
+          />
+          <div className="mt-5">
+            <TeamSocialLinks member={active} presentation={presentation} align="justify-start" />
+          </div>
+        </div>
+        <div
+          className="mt-6 flex gap-3 overflow-x-auto pb-1 md:mt-auto md:pt-6"
+          role="tablist"
+          aria-label="Choose a team member"
+        >
+          {members.map((member) => (
+            <button
+              key={member.id}
+              type="button"
+              role="tab"
+              aria-selected={member.id === active.id}
+              onClick={() => setActiveId(member.id)}
+              className={`shrink-0 overflow-hidden rounded-xl border-2 transition ${teamSpotlightThumbClass(portraitSize)} ${
+                member.id === active.id ? 'opacity-100' : 'opacity-70 hover:opacity-100'
+              }`}
+              style={{
+                borderColor:
+                  member.id === active.id ? presentation.socialIconColor : presentation.cardBorderColor,
+              }}
+            >
+              <TeamMemberImage
+                member={member}
+                presentation={{ ...presentation, imageAspect: 'square', showImage: true }}
+                fill
+              />
+              <span className="sr-only">{member.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -14287,10 +14839,16 @@ export function EditorialTeamGallery({
     return <TeamSpotlight members={members} presentation={presentation} />;
   }
   if (presentation.layout === 'portrait-rail') {
+    const railAlign =
+      presentation.listAlign === 'left'
+        ? 'justify-start'
+        : presentation.listAlign === 'right'
+          ? 'justify-end'
+          : 'justify-center';
     return (
-      <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-5">
+      <div className={`flex snap-x snap-mandatory gap-5 overflow-x-auto pb-5 ${railAlign}`}>
         {members.map((member) => (
-          <div key={member.id} className="w-[78vw] max-w-sm shrink-0 snap-center sm:w-80">
+          <div key={member.id} className={`w-[72vw] shrink-0 snap-center ${teamCardMaxWidthClass(presentation.cardMaxWidth)}`}>
             <TeamStandardCard member={member} presentation={{ ...presentation, imageAspect: 'portrait' }} />
           </div>
         ))}
@@ -14300,34 +14858,58 @@ export function EditorialTeamGallery({
   if (presentation.layout === 'directory') {
     const readable = teamReadableCardText(presentation);
     return (
-      <div className="overflow-hidden rounded-2xl border" style={teamCardStyle(presentation)}>
-        {members.map((member) => (
-          <article key={member.id} className="flex flex-col gap-4 border-b p-4 last:border-b-0 sm:flex-row sm:items-center" style={{ borderColor: presentation.cardBorderColor }}>
-            <div className="flex min-w-0 flex-1 items-center gap-4">
-              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full">
-                <TeamMemberImage member={member} presentation={{ ...presentation, imageAspect: 'square' }} />
+      <div
+        className={`w-full ${teamDirectoryMaxWidthClass(presentation.cardMaxWidth)} ${teamListAlignClass(presentation.listAlign)}`}
+      >
+        <div className="overflow-hidden rounded-2xl border" style={teamCardStyle(presentation)}>
+          {members.map((member) => (
+            <article key={member.id} className="flex flex-col gap-4 border-b p-4 last:border-b-0 sm:flex-row sm:items-center" style={{ borderColor: presentation.cardBorderColor }}>
+              <div className="flex min-w-0 flex-1 items-center gap-4">
+                <div className={`shrink-0 overflow-hidden rounded-full ${teamAvatarSizeClass(presentation.avatarSize)}`}>
+                  <TeamMemberImage
+                    member={member}
+                    presentation={{ ...presentation, imageAspect: 'square' }}
+                    className="h-full min-h-0"
+                  />
+                </div>
+                <div className="min-w-0 text-left">
+                  {presentation.showName ? <h3 className="truncate font-bold" style={{ color: readable.strong }}>{member.name}</h3> : null}
+                  {presentation.showResponsibility ? <p className="truncate text-sm" style={{ color: readable.muted }}>{member.responsibility}</p> : null}
+                </div>
               </div>
-              <div className="min-w-0 text-left">
-                {presentation.showName ? <h3 className="truncate font-bold" style={{ color: readable.strong }}>{member.name}</h3> : null}
-                {presentation.showResponsibility ? <p className="truncate text-sm" style={{ color: readable.muted }}>{member.responsibility}</p> : null}
-              </div>
-            </div>
-            <TeamSocialLinks member={member} presentation={presentation} align="justify-start sm:justify-end" />
-          </article>
-        ))}
+              <TeamSocialLinks member={member} presentation={presentation} align="justify-start sm:justify-end" />
+            </article>
+          ))}
+        </div>
       </div>
     );
   }
   return (
-    <div className={teamGridClass(presentation.columns, presentation.gap)}>
-      {members.map((member, index) => (
-        <TeamStandardCard
-          key={member.id}
-          member={member}
-          presentation={presentation}
-          polaroidIndex={presentation.layout === 'polaroid' ? index : undefined}
-        />
-      ))}
+    <div
+      className={`w-full overflow-visible ${teamGridClass(presentation.columns, presentation.gap, presentation.listAlign)} ${
+        presentation.layout === 'float-cards' ? teamFloatGridOffsetClass(presentation.avatarSize) : ''
+      }`}
+    >
+      {members.map((member, index) =>
+        presentation.layout === 'profile-cards' ? (
+          <TeamProfileCard key={member.id} member={member} presentation={presentation} />
+        ) : presentation.layout === 'hover-cards' ? (
+          <TeamHoverCard key={member.id} member={member} presentation={presentation} />
+        ) : presentation.layout === 'cover-cards' ? (
+          <TeamCoverCard key={member.id} member={member} presentation={presentation} />
+        ) : presentation.layout === 'avatar-cards' ? (
+          <TeamAvatarCard key={member.id} member={member} presentation={presentation} />
+        ) : presentation.layout === 'float-cards' ? (
+          <TeamFloatCard key={member.id} member={member} presentation={presentation} />
+        ) : (
+          <TeamStandardCard
+            key={member.id}
+            member={member}
+            presentation={presentation}
+            polaroidIndex={presentation.layout === 'polaroid' ? index : undefined}
+          />
+        )
+      )}
     </div>
   );
 }

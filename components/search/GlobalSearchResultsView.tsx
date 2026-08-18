@@ -35,7 +35,7 @@ import {
   isGlobalSearchFiltersActive,
   type GlobalSearchFilters,
 } from '@/lib/global-search-filters';
-import { detectUserCoordinates } from '@/lib/geolocation';
+import { detectUserCoordinates, type ViewerCoordinates } from '@/lib/geolocation';
 
 const EMPTY_DATA: GlobalSearchPageData = {
   users: [],
@@ -102,7 +102,7 @@ function GlobalSearchResultsContent() {
   const [filters, setFilters] = useState<GlobalSearchFilters>(() =>
     createDefaultGlobalSearchFilters(Boolean(user))
   );
-  const [viewerCoords, setViewerCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [viewerCoords, setViewerCoords] = useState<ViewerCoordinates | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
 
   const trimmedQ = q.trim();

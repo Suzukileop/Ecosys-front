@@ -2,11 +2,13 @@
 
 import { PersonAvatar } from '@/components/ui/PersonAvatar';
 import {
+  CREATOR_NEW_FOLLOWER_TYPE,
   CREATOR_PROFILE_VISIT_GROUP_TYPE,
   CREATOR_PROFILE_VISIT_TYPE,
   FOLLOWER_NEW_CONTENT_TYPE,
   FOLLOWER_NEW_PRODUCT_TYPE,
   FOLLOWER_NEW_SERVICE_TYPE,
+  extractFollowerNameFromFollowMessage,
   extractVisitorNameFromVisitMessage,
   formatNotificationDisplay,
   formatNotificationTimestamp,
@@ -35,14 +37,20 @@ function NotificationLeadingIcon({ n }: { n: NotificationDto }) {
     n.type === FOLLOWER_NEW_CONTENT_TYPE ||
     n.type === FOLLOWER_NEW_SERVICE_TYPE;
 
-  if (isFollowerPublish || n.type === CREATOR_PROFILE_VISIT_TYPE) {
+  if (
+    isFollowerPublish ||
+    n.type === CREATOR_PROFILE_VISIT_TYPE ||
+    n.type === CREATOR_NEW_FOLLOWER_TYPE
+  ) {
     const name =
       n.actorFullName?.trim() ||
       (isFollowerPublish
         ? n.message?.match(/^(.+?)\s+(?:published|shared|added)\b/i)?.[1]?.trim()
         : null) ||
-      extractVisitorNameFromVisitMessage(n.message) ||
-      (isFollowerPublish ? 'Creator' : 'Visitor');
+      (n.type === CREATOR_NEW_FOLLOWER_TYPE
+        ? extractFollowerNameFromFollowMessage(n.message)
+        : extractVisitorNameFromVisitMessage(n.message)) ||
+      (isFollowerPublish ? 'Creator' : n.type === CREATOR_NEW_FOLLOWER_TYPE ? 'Follower' : 'Visitor');
     return (
       <span className="mt-0.5 shrink-0">
         <PersonAvatar name={name} avatarUrl={n.actorAvatarUrl} size="md" />
@@ -129,7 +137,8 @@ export function NotificationGroupedList({
               });
               const showView =
                 Boolean(href) ||
-                (n.type === CREATOR_PROFILE_VISIT_TYPE && Boolean(n.refSecondaryId));
+                (n.type === CREATOR_PROFILE_VISIT_TYPE && Boolean(n.refSecondaryId)) ||
+                (n.type === CREATOR_NEW_FOLLOWER_TYPE && Boolean(n.refSecondaryId));
               const display = formatNotificationDisplay(n);
               const kindLabel = followerKindLabel(n.type);
               return (

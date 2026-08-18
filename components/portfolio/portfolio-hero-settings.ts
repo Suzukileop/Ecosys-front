@@ -221,8 +221,8 @@ export const PORTFOLIO_HERO_SECONDARY_CTA_TARGET_OPTIONS: {
   { value: 'skills', label: 'Skills', description: 'Skills section.' },
   { value: 'about', label: 'About', description: 'About / bio section.' },
   { value: 'experience', label: 'Experience', description: 'Experience timeline.' },
-  { value: 'team', label: 'Équipe', description: 'Membres et responsabilités.' },
-  { value: 'gallery', label: 'Galerie', description: 'Galerie média visuelle.' },
+  { value: 'team', label: 'Team', description: 'Members and roles.' },
+  { value: 'gallery', label: 'Gallery', description: 'Visual media gallery.' },
   { value: 'faq', label: 'FAQ', description: 'Frequently asked questions.' },
   { value: 'contact', label: 'Contact', description: 'Contact section.' },
 ];

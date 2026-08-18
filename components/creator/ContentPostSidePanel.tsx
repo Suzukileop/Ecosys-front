@@ -154,7 +154,7 @@ export function ContentPostSidePanel({
             ) : (
               <>
                 {bucket !== 'trash' && commentsEnabled && (
-                  <div className="mt-auto shrink-0 bg-neutral-100 p-4 dark:bg-neutral-950/50">
+                  <div className="mt-auto shrink-0 p-5 pt-2">
                     <ContentPostCommentsButton
                       commentCount={commentCount}
                       commentsOpen={false}
@@ -163,7 +163,7 @@ export function ContentPostSidePanel({
                   </div>
                 )}
                 {bucket !== 'trash' && !commentsEnabled && (
-                  <div className="mt-auto shrink-0 bg-neutral-100 p-4 text-center text-sm text-neutral-500 dark:bg-neutral-950/50">
+                  <div className="mt-auto shrink-0 p-5 text-center text-sm text-neutral-500">
                     Comments are disabled for this content.
                   </div>
                 )}

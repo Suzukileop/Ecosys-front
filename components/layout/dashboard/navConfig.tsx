@@ -1,6 +1,6 @@
 import type { Role } from '@/types/auth';
 import type { ReactNode } from 'react';
-import { isContentCreatorsPath, isMarketplaceHubPath, isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
+import { isContentCreatorsPath, isMarketplaceCreatorProfilePath, isMarketplaceHubPath, isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
 import {
   APP_ROLES_WITHOUT_PRODUCTS_MENU,
   APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU,
@@ -215,6 +215,7 @@ export function getPageTitle(pathname: string, search = ''): string {
   }
   if (pathname.startsWith('/dashboard/creator/profile')) return 'My Profile';
   if (pathname.startsWith('/dashboard/creator')) return 'My Profile';
+  if (isMarketplaceCreatorProfilePath(pathname)) return '';
   if (isServiceProvidersCatalogPath(pathname)) return 'Service Provider';
   if (isContentCreatorsPath(pathname)) return 'Service Provider';
   if (/\/marketplace\/[^/]+\/shop\/?$/.test(pathname)) return 'Shop';

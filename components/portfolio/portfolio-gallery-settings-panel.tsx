@@ -1,6 +1,8 @@
 'use client';
 
 import {
+  galleryDesignUsesCarouselNav,
+  galleryDesignUsesColumns,
   gallerySectionLayoutIsAside,
   PORTFOLIO_GALLERY_DESIGN_OPTIONS,
   PORTFOLIO_GALLERY_ILLUSTRATION_OPTIONS,
@@ -147,8 +149,58 @@ export function GallerySettingsPanel({
 
       {subSection === 'layout' ? (
         <div className="space-y-5">
-          <Select label="Design" value={gallery.design} options={PORTFOLIO_GALLERY_DESIGN_OPTIONS} onChange={(design) => onChange({ design })} />
-          <Select label="Colonnes" value={String(gallery.columns)} options={['1', '2', '3', '4'].map((value) => ({ value, label: value }))} onChange={(columns) => onChange({ columns: Number(columns) as 1 | 2 | 3 | 4 })} />
+          <div className="space-y-3">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">Design</p>
+            <div className="grid gap-3">
+              {PORTFOLIO_GALLERY_DESIGN_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => onChange({ design: option.value })}
+                  className={`rounded-2xl border p-4 text-left ${
+                    gallery.design === option.value
+                      ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                      : 'border-neutral-200 bg-white'
+                  }`}
+                >
+                  <span className="block text-sm font-bold text-neutral-950">{option.label}</span>
+                  <span className="mt-1 block text-xs text-neutral-500">{option.description}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          {galleryDesignUsesColumns(gallery.design) ? (
+            <Select label="Colonnes" value={String(gallery.columns)} options={['1', '2', '3', '4'].map((value) => ({ value, label: value }))} onChange={(columns) => onChange({ columns: Number(columns) as 1 | 2 | 3 | 4 })} />
+          ) : (
+            <p className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-500">
+              Ce design utilise une mise en page fixe — les colonnes ne s’appliquent pas.
+            </p>
+          )}
+          {galleryDesignUsesCarouselNav(gallery.design) ? (
+            <Toggle
+              label="Flèches de navigation"
+              description="Boutons précédent / suivant pour les galeries défilantes."
+              checked={gallery.showCarouselNav}
+              onChange={(showCarouselNav) => onChange({ showCarouselNav })}
+            />
+          ) : null}
+          {gallery.design === 'caption-carousel' ? (
+            <>
+              <Toggle
+                label="Points de pagination"
+                description="Indicateurs sous le carrousel de cartes."
+                checked={gallery.showPagination}
+                onChange={(showPagination) => onChange({ showPagination })}
+              />
+              {!gallery.useHeroPalette ? (
+                <Color
+                  label="Fond des cartes"
+                  value={gallery.cardSurfaceColor}
+                  onChange={(cardSurfaceColor) => onChange({ cardSurfaceColor })}
+                />
+              ) : null}
+            </>
+          ) : null}
           <Range label="Espace" value={gallery.gap} min={0} max={64} onChange={(gap) => onChange({ gap })} />
           <Range label="Coins" value={gallery.radius} min={0} max={48} onChange={(radius) => onChange({ radius })} />
           <Range label="Padding" value={gallery.padding} min={0} max={96} onChange={(padding) => onChange({ padding })} />
@@ -205,12 +257,23 @@ export function GallerySettingsPanel({
                 de chaque média (Médias), ni le placement du bloc galerie (Disposition).
               </p>
             </div>
-            <Select
-              label="Disposition titre / grille"
-              value={gallery.sectionLayout ?? 'stacked'}
-              options={PORTFOLIO_GALLERY_SECTION_LAYOUT_OPTIONS}
-              onChange={(sectionLayout) => onChange({ sectionLayout })}
-            />
+            <div className="grid gap-3">
+              {PORTFOLIO_GALLERY_SECTION_LAYOUT_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => onChange({ sectionLayout: option.value })}
+                  className={`rounded-2xl border p-4 text-left ${
+                    (gallery.sectionLayout ?? 'stacked') === option.value
+                      ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                      : 'border-neutral-200 bg-white'
+                  }`}
+                >
+                  <span className="block text-sm font-bold text-neutral-950">{option.label}</span>
+                  <span className="mt-1 block text-xs text-neutral-500">{option.description}</span>
+                </button>
+              ))}
+            </div>
             {gallerySectionLayoutIsAside(gallery.sectionLayout) ? (
               <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
                 En côte à côte, le titre de section et la grille s’affichent en deux colonnes sur
@@ -219,9 +282,9 @@ export function GallerySettingsPanel({
             ) : null}
           </div>
 
-          <Select label="Titre" value={gallery.titlePreset} options={PORTFOLIO_GALLERY_TITLE_PRESET_OPTIONS} onChange={(titlePreset) => onChange({ titlePreset })} />
-          {gallery.titlePreset === 'custom' ? <input value={gallery.titleCustom} onChange={(event) => onChange({ titleCustom: event.target.value, title: event.target.value })} className="w-full rounded-xl border px-3 py-2.5" placeholder="Galerie" /> : null}
-          <Select label="Sous-titre" value={gallery.subtitlePreset} options={PORTFOLIO_GALLERY_SUBTITLE_PRESET_OPTIONS} onChange={(subtitlePreset) => onChange({ subtitlePreset })} />
+          <Select label="Title" value={gallery.titlePreset} options={PORTFOLIO_GALLERY_TITLE_PRESET_OPTIONS} onChange={(titlePreset) => onChange({ titlePreset })} />
+          {gallery.titlePreset === 'custom' ? <input value={gallery.titleCustom} onChange={(event) => onChange({ titleCustom: event.target.value, title: event.target.value })} className="w-full rounded-xl border px-3 py-2.5" placeholder="Gallery" /> : null}
+          <Select label="Subtitle" value={gallery.subtitlePreset} options={PORTFOLIO_GALLERY_SUBTITLE_PRESET_OPTIONS} onChange={(subtitlePreset) => onChange({ subtitlePreset })} />
           {gallery.subtitlePreset === 'custom' ? <textarea value={gallery.subtitleCustom} onChange={(event) => onChange({ subtitleCustom: event.target.value, subtitle: event.target.value })} className="w-full rounded-xl border px-3 py-2.5" rows={3} /> : null}
           <Select label="Police du titre" value={gallery.titleFont} options={[{ value: 'sans', label: 'Sans' }, { value: 'serif', label: 'Serif' }, { value: 'display', label: 'Display' }]} onChange={(titleFont) => onChange({ titleFont })} />
           <Select label="Police du sous-titre" value={gallery.subtitleFont} options={[{ value: 'sans', label: 'Sans' }, { value: 'serif', label: 'Serif' }, { value: 'display', label: 'Display' }]} onChange={(subtitleFont) => onChange({ subtitleFont })} />
