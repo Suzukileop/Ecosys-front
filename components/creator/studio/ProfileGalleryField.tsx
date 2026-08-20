@@ -26,7 +26,7 @@ import {
 } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 
-export const MAX_GALLERY = 3;
+export const MAX_GALLERY = 8;
 
 const GALLERY_MEDIA_ACCEPT =
   'image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,.jpg,.jpeg,.png,.webp,.mp4,.webm,.mov';

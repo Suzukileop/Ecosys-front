@@ -67,48 +67,40 @@ export const PORTFOLIO_FOOTER_STYLE_TARGET_OPTIONS: {
 ];
 
 export const DEFAULT_FOOTER_ELEMENT_STYLES: PortfolioFooterElementStyles = {
-  brand: createElementTextStyle({ color: '#0a0a0a', font: 'serif', size: 'xl', bold: true }),
-  description: createElementTextStyle({ color: '#a3a3a3', font: 'serif', size: 'md' }),
+  brand: createElementTextStyle({ color: '#0a0a0a', size: 'xl', bold: true }),
+  description: createElementTextStyle({ color: '#a3a3a3', size: 'md' }),
   columnHeading: createElementTextStyle({
     color: '#a3a3a3',
-    font: 'serif',
     size: 'md',
     bold: true,
     uppercase: true,
   }),
-  contactLine: createElementTextStyle({ color: '#0a0a0a', font: 'serif', size: 'md', bold: true }),
-  socialLabel: createElementTextStyle({ color: '#0a0a0a', font: 'serif', size: 'lg', bold: true }),
-  meta: createElementTextStyle({ color: '#a3a3a3', font: 'serif', size: 'md', bold: true }),
+  contactLine: createElementTextStyle({ color: '#0a0a0a', size: 'md', bold: true }),
+  socialLabel: createElementTextStyle({ color: '#0a0a0a', size: 'lg', bold: true }),
+  meta: createElementTextStyle({ color: '#a3a3a3', size: 'md', bold: true }),
   marketplaceLink: createElementTextStyle({
     color: '#ea580c',
-    font: 'serif',
     size: 'lg',
     bold: true,
   }),
-  ctaTitle: createElementTextStyle({ color: '#ffffff', font: 'serif', size: 'xl', bold: true }),
-  ctaSubtitle: createElementTextStyle({ color: '#ffffff', font: 'serif', size: 'md' }),
+  ctaTitle: createElementTextStyle({ color: '#ffffff', size: 'xl', bold: true }),
+  ctaSubtitle: createElementTextStyle({ color: '#ffffff', size: 'md' }),
   ctaButton: createElementTextStyle({
     color: '#0a0a0a',
-    font: 'serif',
     size: 'md',
     bold: true,
   }),
 };
 
-/** Move saved footer typography from plain sans → editorial serif when still at the old default. */
-function migrateFooterElementStyleFonts(
-  styles: PortfolioFooterElementStyles,
-  defaults: PortfolioFooterElementStyles
+/** Footer typeface always inherits Global → Police principale (no per-element serif/display). */
+function inheritGlobalFooterFonts(
+  styles: PortfolioFooterElementStyles
 ): PortfolioFooterElementStyles {
-  // Treat an all-sans footer as never customized for font (old defaults).
-  const untouched = FOOTER_STYLE_TARGET_IDS.every((id) => styles[id].font === 'sans');
-  if (!untouched) return styles;
-
   let next: PortfolioFooterElementStyles | null = null;
   for (const id of FOOTER_STYLE_TARGET_IDS) {
-    if (defaults[id].font === 'sans') continue;
+    if (styles[id].font === 'sans') continue;
     if (!next) next = { ...styles };
-    next[id] = { ...styles[id], font: defaults[id].font };
+    next[id] = { ...styles[id], font: 'sans' };
   }
   return next ?? styles;
 }
@@ -128,60 +120,50 @@ export function buildFooterElementStyleDefaults(
     ...DEFAULT_FOOTER_ELEMENT_STYLES,
     brand: createElementTextStyle({
       color: presentation.primaryColor,
-      font: 'serif',
       size: 'xl',
       bold: true,
     }),
     description: createElementTextStyle({
       color: presentation.textColor,
-      font: 'serif',
       size: 'md',
     }),
     columnHeading: createElementTextStyle({
       color: presentation.textColor,
-      font: 'serif',
       size: 'md',
       bold: true,
       uppercase: true,
     }),
     contactLine: createElementTextStyle({
       color: presentation.primaryColor,
-      font: 'serif',
       size: 'md',
       bold: true,
     }),
     socialLabel: createElementTextStyle({
       color: presentation.primaryColor,
-      font: 'serif',
       size: 'lg',
       bold: true,
     }),
     meta: createElementTextStyle({
       color: presentation.textColor,
-      font: 'serif',
       size: 'md',
       bold: true,
     }),
     marketplaceLink: createElementTextStyle({
       color: presentation.accentColor,
-      font: 'serif',
       size: 'lg',
       bold: true,
     }),
     ctaTitle: createElementTextStyle({
       color: presentation.ctaTitleColor,
-      font: 'serif',
       size: 'xl',
       bold: true,
     }),
     ctaSubtitle: createElementTextStyle({
       color: presentation.ctaSubtitleColor,
-      font: 'serif',
       size: 'md',
     }),
     ctaButton: createElementTextStyle({
       color: presentation.ctaButtonTextColor,
-      font: 'serif',
       size: 'md',
       bold: true,
     }),
@@ -203,9 +185,8 @@ export function normalizeFooterElementStyles(
   const defaults = buildFooterElementStyleDefaults(presentation);
   // Do not re-migrate sizes on every normalize — that treated intentional `sm`
   // as the old default and forced it back to `md`, so Small looked unclickable.
-  return migrateFooterElementStyleFonts(
-    normalizeElementStylesRecord(raw, defaults, FOOTER_STYLE_TARGET_IDS),
-    defaults
+  return inheritGlobalFooterFonts(
+    normalizeElementStylesRecord(raw, defaults, FOOTER_STYLE_TARGET_IDS)
   );
 }
 
@@ -224,7 +205,15 @@ export function patchFooterElementStyle(
   >
 ): PortfolioFooterElementStyles {
   const defaults = buildFooterElementStyleDefaults(presentation);
-  return patchElementStylesRecord(styles, target, patch, defaults, FOOTER_STYLE_TARGET_IDS);
+  return inheritGlobalFooterFonts(
+    patchElementStylesRecord(
+      styles,
+      target,
+      { ...patch, font: 'sans' },
+      defaults,
+      FOOTER_STYLE_TARGET_IDS
+    )
+  );
 }
 
 export function syncFooterLegacyTypographyFromElementStyles(
@@ -289,6 +278,7 @@ export function syncFooterElementStylesFromLegacyPatch(
  * - editorial: columns with separators — Networks | Contact | meta
  * - compact: SaaS utility bar — brand + icons, contact line, bottom meta
  * - minimal: contact CTA band + bottom utility row
+ * - contact-card: accent card (name + location + phone/email) + one Links column
  * - landing: brand + link columns (Product / Creators / Legal) like the site footer
  */
 export type PortfolioFooterDesign =
@@ -296,7 +286,8 @@ export type PortfolioFooterDesign =
   | 'minimal'
   | 'compact'
   | 'landing'
-  | 'centered-minimal';
+  | 'centered-minimal'
+  | 'contact-card';
 
 export type PortfolioFooterCenteredIdentity = 'avatar' | 'name' | 'custom';
 
@@ -423,6 +414,12 @@ export type PortfolioFooterPresentationSettings = PortfolioSectionBackgroundSett
   marketplaceCtaBorderColor: string;
   /** Show ↗ beside the label (especially useful for text-arrow). */
   marketplaceCtaShowArrow: boolean;
+  /** Landing column — Marketplace profile CTA under the brand. Off by default. */
+  showLandingMarketplaceLink: boolean;
+  /** Landing Links column — Marketplace row. Off by default. */
+  showMarketplaceColumnLink: boolean;
+  /** Landing Links column — NoProbleme profile row. Off by default. */
+  showNopbProfileLink: boolean;
   showProfileVisits: boolean;
   showContactLinks: boolean;
   showDesignCredit: boolean;
@@ -556,8 +553,6 @@ export const DEFAULT_FOOTER_LINK_COLUMNS: PortfolioFooterLinkColumn[] = [
     id: 'links',
     title: 'Links',
     links: [
-      { id: 'marketplace', label: 'Marketplace', href: '/marketplace' },
-      { id: 'profile', label: 'NoProbleme profile', href: '__profile__' },
       { id: 'services', label: 'Services', href: '#services' },
       { id: 'work', label: 'Work', href: '#work' },
     ],
@@ -585,6 +580,117 @@ export function resolveFooterLinkHref(href: string, creatorId: string): string {
     return `/marketplace/${creatorId}`;
   }
   return raw || '#';
+}
+
+export function isFooterNopbProfileLink(link: Pick<PortfolioFooterLinkItem, 'id' | 'label' | 'href'>): boolean {
+  const href = link.href.trim();
+  const id = link.id.trim().toLowerCase();
+  const label = link.label.trim().toLowerCase();
+  return (
+    id === 'profile' ||
+    href === '__profile__' ||
+    href === '{{profile}}' ||
+    label === 'noprobleme profile' ||
+    label === 'noproblème profile'
+  );
+}
+
+export function isFooterMarketplaceColumnLink(
+  link: Pick<PortfolioFooterLinkItem, 'id' | 'label' | 'href'>
+): boolean {
+  const href = link.href.trim().toLowerCase().replace(/\/$/, '');
+  const id = link.id.trim().toLowerCase();
+  const label = link.label.trim().toLowerCase();
+  return (
+    id === 'marketplace' ||
+    label === 'marketplace' ||
+    href === '/marketplace' ||
+    href === 'marketplace'
+  );
+}
+
+export type PortfolioFooterAutoSectionKey = 'aboutUs' | 'team' | 'gallery' | 'services' | 'work';
+
+export const FOOTER_AUTO_SECTION_LINKS: {
+  section: PortfolioFooterAutoSectionKey;
+  id: string;
+  label: string;
+  href: string;
+}[] = [
+  { section: 'gallery', id: 'gallery', label: 'Gallery', href: '#gallery' },
+  { section: 'aboutUs', id: 'about-us', label: 'About us', href: '#aboutUs' },
+  { section: 'team', id: 'team', label: 'Team', href: '#team' },
+  { section: 'services', id: 'services', label: 'Services', href: '#services' },
+  { section: 'work', id: 'work', label: 'Work', href: '#work' },
+];
+
+function isFooterAutoSectionLink(
+  link: Pick<PortfolioFooterLinkItem, 'id' | 'label' | 'href'>,
+  auto: (typeof FOOTER_AUTO_SECTION_LINKS)[number]
+): boolean {
+  const href = link.href.trim();
+  const id = link.id.trim().toLowerCase();
+  const label = link.label.trim().toLowerCase();
+  return id === auto.id || href === auto.href || label === auto.label.toLowerCase();
+}
+
+/** Landing Links — section anchors, only when that portfolio section is visible. */
+export function resolveFooterLandingSectionLinks(
+  stored: PortfolioFooterLinkItem[],
+  visible?: Partial<Record<PortfolioFooterAutoSectionKey, boolean>>
+): PortfolioFooterLinkItem[] {
+  if (!visible) return stored;
+  const custom = stored.filter(
+    (link) => !FOOTER_AUTO_SECTION_LINKS.some((auto) => isFooterAutoSectionLink(link, auto))
+  );
+  const autoLinks = FOOTER_AUTO_SECTION_LINKS.filter((auto) => visible[auto.section] === true).map(
+    (auto) => {
+      const existing = stored.find((link) => isFooterAutoSectionLink(link, auto));
+      return existing ?? { id: auto.id, label: auto.label, href: auto.href };
+    }
+  );
+  return [...autoLinks, ...custom];
+}
+
+export const DEFAULT_FOOTER_CONNECT_LABEL = 'Connect';
+
+/** Links column only (internal section anchors) — used by Landing and Contact card. */
+export function resolveFooterInternalLinksColumn(
+  presentation: Pick<
+    PortfolioFooterPresentationSettings,
+    'linkColumns' | 'showMarketplaceColumnLink' | 'showNopbProfileLink'
+  >,
+  visible?: Partial<Record<PortfolioFooterAutoSectionKey, boolean>>
+): { title: string; links: PortfolioFooterLinkItem[] } {
+  const raw = presentation.linkColumns ?? [];
+  const col =
+    raw.find((item) => item.id === 'links' || item.title.trim().toLowerCase() === 'links') ??
+    DEFAULT_FOOTER_LINK_COLUMNS.find((item) => item.id === 'links')!;
+  let links = (col.links ?? []).filter((link) => link.label.trim() || link.href.trim());
+  if (presentation.showMarketplaceColumnLink === true) {
+    if (!links.some((link) => isFooterMarketplaceColumnLink(link))) {
+      links = [{ id: 'marketplace', label: 'Marketplace', href: '/marketplace' }, ...links];
+    }
+  } else {
+    links = links.filter((link) => !isFooterMarketplaceColumnLink(link));
+  }
+  if (presentation.showNopbProfileLink === true) {
+    if (!links.some((link) => isFooterNopbProfileLink(link))) {
+      const insertAt = Math.min(
+        links.some((link) => isFooterMarketplaceColumnLink(link)) ? 1 : 0,
+        links.length
+      );
+      links = [
+        ...links.slice(0, insertAt),
+        { id: 'profile', label: 'NoProbleme profile', href: '__profile__' },
+        ...links.slice(insertAt),
+      ];
+    }
+  } else {
+    links = links.filter((link) => !isFooterNopbProfileLink(link));
+  }
+  links = resolveFooterLandingSectionLinks(links, visible);
+  return { title: col.title.trim() || 'Links', links };
 }
 
 function newFooterLinkId(prefix: string): string {
@@ -713,7 +819,7 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   paddingRightPx: 40,
   marginTop: 'none',
   marginTopPx: 0,
-  landingBrandGapPx: 16,
+  landingBrandGapPx: 28,
   columnHeadingGapPx: 16,
   showBrand: true,
   showAvatar: false,
@@ -734,7 +840,7 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   showCtaIcon: true,
   showCopyright: true,
   copyrightLabel: DEFAULT_FOOTER_COPYRIGHT_LABEL,
-  showMarketplaceLink: true,
+  showMarketplaceLink: false,
   marketplaceCtaLabel: DEFAULT_FOOTER_MARKETPLACE_CTA_LABEL,
   marketplaceCtaHref: '',
   marketplaceCtaDesign: 'pill-outline',
@@ -742,6 +848,9 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   marketplaceCtaTextColor: DEFAULT_FOOTER_MARKETPLACE_CTA_TEXT,
   marketplaceCtaBorderColor: DEFAULT_FOOTER_MARKETPLACE_CTA_BORDER,
   marketplaceCtaShowArrow: true,
+  showLandingMarketplaceLink: false,
+  showMarketplaceColumnLink: false,
+  showNopbProfileLink: false,
   showProfileVisits: false,
   showContactLinks: true,
   showDesignCredit: true,
@@ -807,7 +916,7 @@ export const PORTFOLIO_FOOTER_DESIGN_OPTIONS: {
   {
     value: 'editorial',
     label: 'Separated columns',
-    description: 'Networks | Contact | copyright — equal columns, icon-only socials.',
+    description: 'Networks | Contact — two centered columns, copyright below.',
   },
   {
     value: 'compact',
@@ -817,7 +926,12 @@ export const PORTFOLIO_FOOTER_DESIGN_OPTIONS: {
   {
     value: 'minimal',
     label: 'Contact CTA',
-    description: 'Brand + left-aligned contact rail, centered CTAs, copyright.',
+    description: 'Name + bio + CTA | location, contact, socials — copyright below.',
+  },
+  {
+    value: 'contact-card',
+    label: 'Contact card',
+    description: 'Accent card (name, location, phone, email) + Links — grouped toward the center.',
   },
 ];
 
@@ -971,6 +1085,7 @@ export const FOOTER_PADDING_MOBILE_MIN_BOTTOM_PX = 16;
 export function footerContentPaddingStyle(
   settings: Pick<
     PortfolioFooterPresentationSettings,
+    | 'design'
     | 'padding'
     | 'paddingTopPx'
     | 'paddingBottomPx'
@@ -979,11 +1094,17 @@ export function footerContentPaddingStyle(
   >
 ): CSSProperties {
   const sides = resolveFooterPaddingSides(settings);
+  const extraX =
+    settings.design === 'landing' ||
+    settings.design === 'compact' ||
+    settings.design === 'minimal'
+      ? 72
+      : 0;
   return {
     ['--pf-footer-pad-t' as string]: `${sides.top}px`,
     ['--pf-footer-pad-b' as string]: `${sides.bottom}px`,
-    ['--pf-footer-pad-l' as string]: `${sides.left}px`,
-    ['--pf-footer-pad-r' as string]: `${sides.right}px`,
+    ['--pf-footer-pad-l' as string]: `${sides.left + extraX}px`,
+    ['--pf-footer-pad-r' as string]: `${sides.right + extraX}px`,
   };
 }
 
@@ -1018,7 +1139,7 @@ export const FOOTER_MARGIN_TOP_PRESET_PX: Record<
 
 export const FOOTER_LANDING_BRAND_GAP_PX_MIN = 0;
 export const FOOTER_LANDING_BRAND_GAP_PX_MAX = 64;
-export const DEFAULT_FOOTER_LANDING_BRAND_GAP_PX = 16;
+export const DEFAULT_FOOTER_LANDING_BRAND_GAP_PX = 28;
 
 export function clampFooterMarginTopPx(value: unknown, fallback = 0): number {
   const n = typeof value === 'number' ? value : Number(value);
@@ -1262,6 +1383,7 @@ export function footerLayoutClass(
   alignment: PortfolioFooterAlignment,
   options?: { contentDivider?: boolean }
 ): string {
+  void alignment;
   const withDivider = options?.contentDivider === true;
   switch (design) {
     case 'centered-minimal':
@@ -1276,25 +1398,11 @@ export function footerLayoutClass(
       return withDivider
         ? 'flex w-full flex-col gap-8 sm:gap-10'
         : 'flex w-full flex-col gap-10 sm:gap-12';
+    case 'contact-card':
+      return 'flex w-full flex-col items-center gap-10 sm:gap-12';
     default: {
-      // Separated columns — Networks | Contact | meta
-      if (withDivider) {
-        const align =
-          alignment === 'center'
-            ? 'text-center'
-            : alignment === 'left'
-              ? 'text-left max-w-5xl'
-              : 'text-left';
-        return `flex w-full flex-col gap-8 lg:flex-row lg:items-stretch lg:gap-0 ${align}`;
-      }
-      if (alignment === 'center') {
-        return 'grid w-full gap-10 text-center sm:gap-12 lg:grid-cols-3 lg:gap-x-10 xl:gap-x-14 lg:justify-items-center';
-      }
-      if (alignment === 'left') {
-        return 'grid w-full max-w-5xl gap-10 text-left sm:gap-12 lg:grid-cols-3 lg:gap-x-8';
-      }
-      // split — equal columns across the full content width (no empty right rail)
-      return 'grid w-full gap-10 text-left sm:gap-12 lg:grid-cols-3 lg:gap-x-10 xl:gap-x-14';
+      // Separated columns — Networks | Contact (copyright is below, centered).
+      return 'flex w-full flex-col items-center gap-8 sm:gap-10';
     }
   }
 }
@@ -1780,7 +1888,7 @@ export function mergeFooterPresentation(
     ...mergedBackground,
     design: pick(
       record.design,
-      ['editorial', 'minimal', 'compact', 'landing', 'centered-minimal'],
+      ['editorial', 'minimal', 'compact', 'landing', 'centered-minimal', 'contact-card'],
       base.design
     ),
     alignment: pick(record.alignment, ['split', 'center', 'left'], base.alignment),
@@ -1823,7 +1931,7 @@ export function mergeFooterPresentation(
               : base.marginTopPx ?? 0
     ),
     landingBrandGapPx: clampFooterLandingBrandGapPx(
-      record.landingBrandGapPx,
+      record.landingBrandGapPx === 16 ? DEFAULT_FOOTER_LANDING_BRAND_GAP_PX : record.landingBrandGapPx,
       base.landingBrandGapPx ?? DEFAULT_FOOTER_LANDING_BRAND_GAP_PX
     ),
     columnHeadingGapPx: clampFooterColumnHeadingGapPx(
@@ -1899,6 +2007,18 @@ export function mergeFooterPresentation(
       typeof record.marketplaceCtaShowArrow === 'boolean'
         ? record.marketplaceCtaShowArrow
         : base.marketplaceCtaShowArrow ?? true,
+    showLandingMarketplaceLink:
+      typeof record.showLandingMarketplaceLink === 'boolean'
+        ? record.showLandingMarketplaceLink
+        : (base.showLandingMarketplaceLink ?? false),
+    showMarketplaceColumnLink:
+      typeof record.showMarketplaceColumnLink === 'boolean'
+        ? record.showMarketplaceColumnLink
+        : (base.showMarketplaceColumnLink ?? false),
+    showNopbProfileLink:
+      typeof record.showNopbProfileLink === 'boolean'
+        ? record.showNopbProfileLink
+        : (base.showNopbProfileLink ?? false),
     showProfileVisits: false,
     showContactLinks:
       typeof record.showContactLinks === 'boolean' ? record.showContactLinks : base.showContactLinks,

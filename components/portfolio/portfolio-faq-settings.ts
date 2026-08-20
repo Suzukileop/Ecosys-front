@@ -49,7 +49,13 @@ import {
   type PortfolioElementTextStyle,
 } from '@/components/portfolio/portfolio-element-text-style';
 
-export type PortfolioFaqTitlePreset = 'faq' | 'questions' | 'common-questions' | 'q-and-a' | 'custom';
+export type PortfolioFaqTitlePreset =
+  | 'faq'
+  | 'frequently-asked'
+  | 'questions'
+  | 'common-questions'
+  | 'q-and-a'
+  | 'custom';
 
 export type PortfolioFaqSubtitlePreset = 'default' | 'short' | 'reassurance' | 'minimal' | 'custom';
 
@@ -59,6 +65,11 @@ export type PortfolioFaqHeaderAlignment = 'left' | 'center' | 'right';
 
 /** How the section title relates to the FAQ list. */
 export type PortfolioFaqSectionLayout = 'stacked' | 'aside-left' | 'aside-right';
+
+/** Ready-to-use FAQ section layouts. Item design stays independently switchable. */
+export type PortfolioFaqDesign = 'two-column' | 'panel' | 'split' | 'cta-split';
+
+export type PortfolioFaqPanelShadow = 'none' | 'soft' | 'medium' | 'strong';
 
 export type PortfolioFaqItemDesign =
   | 'editorial'
@@ -116,11 +127,15 @@ export type PortfolioFaqPresentationSettings = PortfolioSectionBackgroundSetting
    * `aside-left` / `aside-right` — title beside the list on large screens.
    */
   sectionLayout: PortfolioFaqSectionLayout;
+  /** Ready-to-use section layout (header + default item arrangement). */
+  design: PortfolioFaqDesign;
   itemDesign: PortfolioFaqItemDesign;
   itemGap: PortfolioFaqItemGap;
   listMaxWidth: PortfolioFaqListMaxWidth;
   listPlacement: PortfolioFaqListPlacement;
   itemAlign: PortfolioFaqContentAlign;
+  panelShadow: PortfolioFaqPanelShadow;
+  panelShadowIntensity: number;
   cardBorder: PortfolioServicesCardBorder;
   cardBorderColor: string;
   cardBackgroundEnabled: boolean;
@@ -202,6 +217,8 @@ const FAQ_ITEM_DESIGNS = [
   'raised',
 ] as const;
 
+const FAQ_DESIGNS = ['two-column', 'panel', 'split', 'cta-split'] as const;
+
 export const FAQ_STYLE_TARGET_IDS: PortfolioFaqStyleTarget[] = ['question', 'answer', 'number'];
 
 export const DEFAULT_FAQ_ELEMENT_STYLES: PortfolioFaqElementStyles = {
@@ -209,7 +226,7 @@ export const DEFAULT_FAQ_ELEMENT_STYLES: PortfolioFaqElementStyles = {
     color: DEFAULT_FAQ_QUESTION_COLOR,
     font: 'sans',
     size: 'md',
-    bold: true,
+    weight: 'semibold',
   }),
   answer: createElementTextStyle({
     color: DEFAULT_FAQ_ANSWER_COLOR,
@@ -237,7 +254,7 @@ export const PORTFOLIO_FAQ_STYLE_TARGET_OPTIONS: {
 export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   ...DEFAULT_SECTION_BACKGROUND,
   ...DEFAULT_SOLID_CARD_BACKGROUND_SETTINGS,
-  titlePreset: 'faq',
+  titlePreset: 'frequently-asked',
   titleCustom: '',
   subtitlePreset: 'default',
   subtitleCustom: '',
@@ -249,11 +266,14 @@ export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   subtitleUppercase: false,
   headerAlignment: 'center',
   sectionLayout: 'stacked',
-  itemDesign: 'raised',
-  itemGap: 'lg',
-  listMaxWidth: 'default',
+  design: 'two-column',
+  itemDesign: 'two-column',
+  itemGap: 'md',
+  listMaxWidth: 'wide',
   listPlacement: 'center',
   itemAlign: 'left',
+  panelShadow: 'medium',
+  panelShadowIntensity: 55,
   cardBorder: 'soft',
   cardBorderColor: DEFAULT_FAQ_CARD_BORDER_COLOR,
   cardBackgroundEnabled: true,
@@ -271,7 +291,7 @@ export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   expandIconStyle: 'plus',
   expandIconColor: '#737373',
   answerAccentBorderColor: DEFAULT_FAQ_ACCENT_COLOR,
-  showItemNumbers: true,
+  showItemNumbers: false,
   itemMarkerSource: 'section',
   itemMarkerStyle: 'number',
   itemMarkerColor: DEFAULT_FAQ_NUMBER_COLOR,
@@ -280,9 +300,9 @@ export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   itemMarkerWeight: 'bold',
   itemMarkerWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.bold,
   showAnswerAccentBorder: false,
-  showExpandIcon: false,
-  expandable: false,
-  accordionExclusive: false,
+  showExpandIcon: true,
+  expandable: true,
+  accordionExclusive: true,
   illustrationVariant: 'none',
   illustrationPlacement: 'right',
   answerFlushWithQuestion: true,
@@ -307,6 +327,11 @@ export const PORTFOLIO_FAQ_TITLE_PRESET_OPTIONS: {
   description: string;
 }[] = [
   { value: 'faq', label: 'FAQ', description: 'Classic short label.' },
+  {
+    value: 'frequently-asked',
+    label: 'Frequently asked',
+    description: 'Frequently Asked Questions — default for Two columns.',
+  },
   { value: 'questions', label: 'Questions', description: 'Simple and direct.' },
   { value: 'common-questions', label: 'Common questions', description: 'Client-friendly wording.' },
   { value: 'q-and-a', label: 'Q & A', description: 'Compact editorial style.' },
@@ -361,6 +386,238 @@ export function isPortfolioFaqSectionLayout(value: unknown): value is PortfolioF
   return value === 'stacked' || value === 'aside-left' || value === 'aside-right';
 }
 
+export const PORTFOLIO_FAQ_DESIGN_OPTIONS: {
+  value: PortfolioFaqDesign;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'two-column',
+    label: 'Two columns',
+    description: 'Centered title, rounded accordion cards in two columns — default.',
+  },
+  {
+    value: 'panel',
+    label: 'Panel card',
+    description: 'One rounded card: centered title, divided rows, controllable outer shadow.',
+  },
+  {
+    value: 'split',
+    label: 'Title + SVG',
+    description: 'Title and SVG centered on one side, FAQ items on the other — reversible.',
+  },
+  {
+    value: 'cta-split',
+    label: 'Title + chat CTA',
+    description: 'Centered title on top, chat SVG with Contact CTA below, questions on the other side.',
+  },
+];
+
+export function isPortfolioFaqDesign(value: unknown): value is PortfolioFaqDesign {
+  return (FAQ_DESIGNS as readonly string[]).includes(String(value));
+}
+
+export function faqDesignIsSplit(design: PortfolioFaqDesign | undefined): boolean {
+  return design === 'split';
+}
+
+export function faqDesignIsCtaSplit(design: PortfolioFaqDesign | undefined): boolean {
+  return design === 'cta-split';
+}
+
+export const PORTFOLIO_FAQ_SPLIT_SIDE_OPTIONS: {
+  value: PortfolioFaqIllustrationPlacement;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'left',
+    label: 'Titre à gauche',
+    description: 'Titre + SVG centrés à gauche, questions à droite.',
+  },
+  {
+    value: 'right',
+    label: 'Titre à droite',
+    description: 'Questions à gauche, titre + SVG centrés à droite.',
+  },
+];
+
+export const PORTFOLIO_FAQ_CTA_SPLIT_SIDE_OPTIONS: {
+  value: PortfolioFaqIllustrationPlacement;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'right',
+    label: 'SVG à droite',
+    description: 'Questions à gauche, SVG + Contact à droite.',
+  },
+  {
+    value: 'left',
+    label: 'SVG à gauche',
+    description: 'SVG + Contact à gauche, questions à droite.',
+  },
+];
+
+export function faqDesignShowsTitleKicker(design: PortfolioFaqDesign | undefined): boolean {
+  const value = design ?? 'two-column';
+  return value === 'two-column' || value === 'panel' || value === 'split' || value === 'cta-split';
+}
+
+export const PORTFOLIO_FAQ_PANEL_SHADOW_OPTIONS: {
+  value: PortfolioFaqPanelShadow;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: 'Aucune', description: 'Pas d’ombre autour de la carte.' },
+  { value: 'soft', label: 'Douce', description: 'Halo léger.' },
+  { value: 'medium', label: 'Moyenne', description: 'Ombre diffuse — défaut.' },
+  { value: 'strong', label: 'Forte', description: 'Relief marqué.' },
+];
+
+export const PORTFOLIO_FAQ_PANEL_SHADOW_PRESET_INTENSITY: Record<PortfolioFaqPanelShadow, number> = {
+  none: 0,
+  soft: 28,
+  medium: 55,
+  strong: 82,
+};
+
+export function isPortfolioFaqPanelShadow(value: unknown): value is PortfolioFaqPanelShadow {
+  return value === 'none' || value === 'soft' || value === 'medium' || value === 'strong';
+}
+
+export function clampFaqPanelShadowIntensity(value: unknown, fallback = 55): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+export function faqPanelShadowStyle(
+  shadow: PortfolioFaqPanelShadow | undefined,
+  intensity: number | undefined
+): CSSProperties | undefined {
+  const kind = shadow ?? 'medium';
+  if (kind === 'none') return undefined;
+  const amount = clampFaqPanelShadowIntensity(
+    intensity,
+    PORTFOLIO_FAQ_PANEL_SHADOW_PRESET_INTENSITY[kind]
+  );
+  if (amount <= 0) return undefined;
+  const t = amount / 100;
+  const y = Math.round(10 + t * 22);
+  const blur = Math.round(28 + t * 48);
+  const spread = Math.round(-12 - t * 8);
+  const alpha = (0.06 + t * 0.2).toFixed(3);
+  return { boxShadow: `0 ${y}px ${blur}px ${spread}px rgba(15, 23, 42, ${alpha})` };
+}
+
+export function defaultsForFaqDesign(design: PortfolioFaqDesign): Partial<PortfolioFaqPresentationSettings> {
+  if (design === 'two-column') {
+    return {
+      design,
+      headerAlignment: 'center',
+      sectionLayout: 'stacked',
+      itemDesign: 'two-column',
+      itemGap: 'md',
+      listMaxWidth: 'wide',
+      listPlacement: 'center',
+      itemAlign: 'left',
+      showItemNumbers: false,
+      showExpandIcon: true,
+      expandIconStyle: 'plus',
+      expandable: true,
+      accordionExclusive: true,
+      showAnswerAccentBorder: false,
+      illustrationVariant: 'none',
+      cardBorder: 'soft',
+      cardBorderRadius: 'xl',
+      cardPadding: 'lg',
+      titlePreset: 'frequently-asked',
+      titleUppercase: false,
+      subtitlePreset: 'default',
+    };
+  }
+  if (design === 'panel') {
+    return {
+      design,
+      headerAlignment: 'center',
+      sectionLayout: 'stacked',
+      itemDesign: 'minimal',
+      itemGap: 'md',
+      listMaxWidth: 'default',
+      listPlacement: 'center',
+      itemAlign: 'left',
+      showItemNumbers: false,
+      showExpandIcon: true,
+      expandIconStyle: 'plus',
+      expandable: true,
+      accordionExclusive: true,
+      showAnswerAccentBorder: false,
+      illustrationVariant: 'none',
+      cardBorder: 'none',
+      cardBorderRadius: 'lg',
+      cardPadding: 'lg',
+      panelShadow: 'medium',
+      panelShadowIntensity: PORTFOLIO_FAQ_PANEL_SHADOW_PRESET_INTENSITY.medium,
+      titlePreset: 'frequently-asked',
+      titleUppercase: false,
+      subtitlePreset: 'minimal',
+    };
+  }
+  if (design === 'split') {
+    return {
+      design,
+      headerAlignment: 'center',
+      sectionLayout: 'stacked',
+      itemDesign: 'bordered',
+      itemGap: 'md',
+      listMaxWidth: 'full',
+      listPlacement: 'center',
+      itemAlign: 'left',
+      showItemNumbers: false,
+      showExpandIcon: true,
+      expandIconStyle: 'plus',
+      expandable: true,
+      accordionExclusive: true,
+      showAnswerAccentBorder: false,
+      illustrationVariant: 'question',
+      illustrationPlacement: 'left',
+      cardBorder: 'soft',
+      cardBorderRadius: 'xl',
+      cardPadding: 'md',
+      titlePreset: 'frequently-asked',
+      titleUppercase: false,
+      subtitlePreset: 'short',
+    };
+  }
+  if (design === 'cta-split') {
+    return {
+      design,
+      headerAlignment: 'center',
+      sectionLayout: 'stacked',
+      itemDesign: 'bordered',
+      itemGap: 'md',
+      listMaxWidth: 'full',
+      listPlacement: 'center',
+      itemAlign: 'left',
+      showItemNumbers: false,
+      showExpandIcon: true,
+      expandIconStyle: 'plus',
+      expandable: true,
+      accordionExclusive: true,
+      showAnswerAccentBorder: false,
+      illustrationVariant: 'chat',
+      illustrationPlacement: 'right',
+      cardBorder: 'soft',
+      cardBorderRadius: 'xl',
+      cardPadding: 'md',
+      titlePreset: 'frequently-asked',
+      titleUppercase: false,
+      subtitlePreset: 'short',
+    };
+  }
+  return { design };
+}
+
 export function faqSectionLayoutIsAside(layout: PortfolioFaqSectionLayout | undefined): boolean {
   return layout === 'aside-left' || layout === 'aside-right';
 }
@@ -381,7 +638,7 @@ export const PORTFOLIO_FAQ_ITEM_DESIGN_OPTIONS: {
   {
     value: 'raised',
     label: 'Raised cards',
-    description: 'Soft elevated cards with Q. labels — default.',
+    description: 'Soft elevated cards with Q. labels.',
   },
   { value: 'editorial', label: 'Editorial', description: 'Framed list with soft panel.' },
   { value: 'pill', label: 'Soft pills', description: 'Standalone rounded rows with light fill.' },
@@ -389,7 +646,7 @@ export const PORTFOLIO_FAQ_ITEM_DESIGN_OPTIONS: {
   { value: 'bordered', label: 'Bordered cards', description: 'Separate cards with controllable gap.' },
   { value: 'accent', label: 'Accent edge', description: 'Warm left border on each item.' },
   { value: 'numbered-rail', label: 'Numbered rail', description: 'Accent step numbers with connector line.' },
-  { value: 'two-column', label: 'Two columns', description: 'Grid layout on large screens.' },
+  { value: 'two-column', label: 'Two columns', description: 'Grid layout on large screens — default for this design.' },
   { value: 'compact', label: 'Compact', description: 'Dense spacing and smaller type.' },
 ];
 
@@ -399,7 +656,7 @@ export const PORTFOLIO_FAQ_ITEM_GAP_OPTIONS: {
   description: string;
 }[] = [
   { value: 'sm', label: 'Tight', description: 'Minimal vertical gap (hairline dividers).' },
-  { value: 'md', label: 'Standard', description: 'Balanced space between every question.' },
+  { value: 'md', label: 'Standard', description: 'Balanced space between every question (default).' },
   { value: 'lg', label: 'Relaxed', description: 'Generous vertical gap between items.' },
   { value: 'xl', label: 'Airy', description: 'Maximum vertical separation.' },
 ];
@@ -492,6 +749,8 @@ export function resolveFaqSectionTitle(
   settings: Pick<PortfolioFaqSectionSettings, 'titlePreset' | 'titleCustom' | 'title'>
 ): string {
   switch (settings.titlePreset) {
+    case 'frequently-asked':
+      return 'Frequently Asked Questions';
     case 'questions':
       return 'QUESTIONS';
     case 'common-questions':
@@ -542,6 +801,10 @@ export function faqHeaderFontClass(font: PortfolioFaqHeaderFont, kind: 'title' |
       return 'leading-relaxed';
   }
 }
+
+/** Matches About us split heading: size + semibold, without the narrow left-column max-width. */
+export const FAQ_READY_TITLE_CLASS =
+  'font-semibold leading-[1.14] tracking-tight text-[2.05rem] sm:text-[2.55rem] lg:text-[2.95rem]';
 
 export function faqHeaderFontStyle(font: PortfolioFaqHeaderFont): CSSProperties | undefined {
   if (font === 'serif') return { fontFamily: "'Playfair Display', serif" };
@@ -605,6 +868,17 @@ function faqCardBorderWidthClass(border: PortfolioServicesCardBorder): string {
   }
 }
 
+export function faqPanelInnerClass(p: PortfolioFaqPresentationSettings): string {
+  const radius = servicesCardRadiusClass(p.cardBorderRadius);
+  const pad =
+    p.cardPadding === 'sm'
+      ? 'px-6 py-8 sm:px-8 sm:py-10'
+      : p.cardPadding === 'lg'
+        ? 'px-8 py-10 sm:px-12 sm:py-14'
+        : 'px-7 py-9 sm:px-10 sm:py-12';
+  return `${radius} ${pad} relative overflow-x-hidden`;
+}
+
 export function faqFrameClass(p: PortfolioFaqPresentationSettings): string {
   const parts = [servicesCardRadiusClass(p.cardBorderRadius), servicesCardPaddingClass(p.cardPadding)];
   if (p.cardBorder !== 'none') {
@@ -637,14 +911,31 @@ export function faqSeparatedCardFrameClass(
     parts.push(faqCardBorderWidthClass(p.cardBorder));
     if (p.cardBorder === 'soft') {
       parts.push(
-        design === 'bordered' || design === 'accent' || design === 'two-column'
-          ? 'shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)]'
-          : 'shadow-sm'
+        design === 'two-column'
+          ? ''
+          : design === 'bordered' || design === 'accent'
+            ? 'shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)]'
+            : 'shadow-sm'
       );
     }
   }
-  if (design === 'two-column') parts.push('h-fit');
+  if (design === 'two-column') {
+    parts.push('h-fit transition-[background-color,box-shadow,border-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]');
+  }
   return parts.filter(Boolean).join(' ');
+}
+
+/** Longhands only — mixing `borderColor` with `borderLeftColor` warns on React rerenders. */
+function cssSideBorderColors(color: string): Pick<
+  CSSProperties,
+  'borderTopColor' | 'borderRightColor' | 'borderBottomColor' | 'borderLeftColor'
+> {
+  return {
+    borderTopColor: color,
+    borderRightColor: color,
+    borderBottomColor: color,
+    borderLeftColor: color,
+  };
 }
 
 export function faqFrameStyle(
@@ -661,10 +952,13 @@ export function faqFrameStyle(
   }
   if (p.cardBorder === 'accent') {
     style.borderStyle = 'solid';
-    style.borderColor = sanitizeHex(p.accentColor, DEFAULT_FAQ_ACCENT_COLOR);
+    Object.assign(style, cssSideBorderColors(sanitizeHex(p.accentColor, DEFAULT_FAQ_ACCENT_COLOR)));
   } else if (p.cardBorder === 'soft' || p.cardBorder === 'solid') {
     style.borderStyle = 'solid';
-    style.borderColor = sanitizeHex(p.cardBorderColor, DEFAULT_FAQ_CARD_BORDER_COLOR);
+    Object.assign(
+      style,
+      cssSideBorderColors(sanitizeHex(p.cardBorderColor, DEFAULT_FAQ_CARD_BORDER_COLOR))
+    );
   }
   return style;
 }
@@ -686,24 +980,30 @@ export function faqContentAlignClass(align: PortfolioFaqContentAlign): {
 
 export function faqListShellClass(
   design: PortfolioFaqItemDesign,
-  gap: PortfolioFaqItemGap = 'md'
+  gap: PortfolioFaqItemGap = 'md',
+  sectionDesign?: PortfolioFaqDesign
 ): string {
   const gapClass = faqItemGapClass(gap);
+  const panelRows =
+    sectionDesign === 'panel' &&
+    (design === 'minimal' || design === 'editorial' || design === 'compact');
 
-  // Every design honors Item spacing — including editorial / minimal / compact
-  // inside the shared frame (gap shows as vertical breathing room between rows).
   if (design === 'two-column') {
-    return `grid lg:grid-cols-2 ${gapClass}`;
+    return `grid lg:grid-cols-2 ${gapClass} lg:gap-x-6`;
   }
+  if (panelRows) return 'flex flex-col';
   return `flex flex-col ${gapClass}`;
 }
 
 export function faqItemShellClass(
   design: PortfolioFaqItemDesign,
-  gap: PortfolioFaqItemGap = 'md'
+  gap: PortfolioFaqItemGap = 'md',
+  sectionDesign?: PortfolioFaqDesign
 ): string {
-  // Hairline dividers only when spacing is tight — otherwise gap is the separator.
-  const tight = gap === 'sm';
+  const panelRows =
+    sectionDesign === 'panel' &&
+    (design === 'minimal' || design === 'editorial' || design === 'compact');
+  const dividers = gap === 'sm' || panelRows;
 
   switch (design) {
     case 'bordered':
@@ -717,18 +1017,18 @@ export function faqItemShellClass(
     case 'numbered-rail':
       return '';
     case 'minimal':
-      return tight
+      return dividers
         ? 'border-b border-[color:var(--faq-item-border,#e5e5e5)] last:border-b-0'
         : '';
     case 'compact':
-      return tight
+      return dividers
         ? 'border-b border-[color:var(--faq-item-border,#e5e5e5)] last:border-b-0'
         : '';
     case 'two-column':
       return 'overflow-hidden rounded-[1.25rem] border bg-transparent shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] h-fit border-[color:var(--faq-item-border,#e5e5e5)]';
     default:
       // Editorial
-      return tight
+      return dividers
         ? 'border-b border-[color:var(--faq-item-border,#e5e5e5)] last:border-b-0'
         : '';
   }
@@ -994,7 +1294,12 @@ export function mergeFaqPresentation(
       : // Backward compat: no elementStyles saved yet — seed from the legacy per-field settings.
         normalizeElementStylesRecord(
           {
-            question: createElementTextStyle({ color: questionColor, font: questionFont, size: questionSize, bold: true }),
+            question: createElementTextStyle({
+              color: questionColor,
+              font: questionFont,
+              size: questionSize,
+              weight: 'semibold',
+            }),
             answer: createElementTextStyle({ color: answerColor, font: answerFont, size: answerSize }),
             number: createElementTextStyle({ color: numberColor, font: 'sans', size: 'sm', bold: true }),
           },
@@ -1005,7 +1310,11 @@ export function mergeFaqPresentation(
   const merged: PortfolioFaqPresentationSettings = {
     ...background,
     ...faqFrameBackground,
-    titlePreset: pick(record.titlePreset, ['faq', 'questions', 'common-questions', 'q-and-a', 'custom'], base.titlePreset),
+    titlePreset: pick(
+      record.titlePreset,
+      ['faq', 'frequently-asked', 'questions', 'common-questions', 'q-and-a', 'custom'],
+      base.titlePreset
+    ),
     titleCustom: typeof record.titleCustom === 'string' ? record.titleCustom : base.titleCustom,
     subtitlePreset: pick(
       record.subtitlePreset,
@@ -1024,11 +1333,19 @@ export function mergeFaqPresentation(
     sectionLayout: isPortfolioFaqSectionLayout(record.sectionLayout)
       ? record.sectionLayout
       : (base.sectionLayout ?? 'stacked'),
+    design: isPortfolioFaqDesign(record.design) ? record.design : (base.design ?? 'two-column'),
     itemDesign: pick(record.itemDesign, FAQ_ITEM_DESIGNS, base.itemDesign),
     itemGap: pick(record.itemGap, ['sm', 'md', 'lg', 'xl'], base.itemGap),
     listMaxWidth: pick(record.listMaxWidth, ['narrow', 'default', 'wide', 'full'], base.listMaxWidth),
     listPlacement: pick(record.listPlacement, ['left', 'center', 'right'], base.listPlacement),
     itemAlign: pick(record.itemAlign, ['left', 'center', 'right'], base.itemAlign),
+    panelShadow: isPortfolioFaqPanelShadow(record.panelShadow)
+      ? record.panelShadow
+      : (base.panelShadow ?? 'medium'),
+    panelShadowIntensity: clampFaqPanelShadowIntensity(
+      record.panelShadowIntensity,
+      base.panelShadowIntensity ?? PORTFOLIO_FAQ_PANEL_SHADOW_PRESET_INTENSITY.medium
+    ),
     cardBorder: pick(record.cardBorder, ['none', 'soft', 'solid', 'accent'], base.cardBorder),
     cardBorderColor: sanitizeHex(record.cardBorderColor, base.cardBorderColor),
     cardBackgroundEnabled:
@@ -1081,7 +1398,7 @@ export function mergeFaqPresentation(
     accordionExclusive:
       typeof record.accordionExclusive === 'boolean'
         ? record.accordionExclusive
-        : base.accordionExclusive ?? false,
+        : base.accordionExclusive ?? true,
     illustrationVariant: pick(
       record.illustrationVariant,
       ['none', 'chat', 'question', 'docs', 'support', 'hex'],

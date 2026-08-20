@@ -312,7 +312,7 @@ function mapTeamMember(
     sortOrder: typeof raw.sortOrder === 'number' ? raw.sortOrder : index,
     name: raw.name != null ? String(raw.name) : '',
     responsibility: raw.responsibility != null ? String(raw.responsibility) : '',
-    imageUrl: raw.imageUrl != null ? String(raw.imageUrl) : null,
+    imageUrl: resolveStorageMediaUrl(raw.imageUrl != null ? String(raw.imageUrl) : null) || null,
     socialLinks,
   };
 }
@@ -321,7 +321,7 @@ function mapGalleryItem(
   raw: RawRecord,
   index: number
 ): import('@/types/ecosystem').ProfileGalleryItem {
-  const mediaUrl = raw.mediaUrl != null ? String(raw.mediaUrl) : '';
+  const mediaUrl = resolveStorageMediaUrl(raw.mediaUrl != null ? String(raw.mediaUrl) : '');
   const mediaTypeRaw = raw.mediaType != null ? String(raw.mediaType).toUpperCase() : null;
   const mediaType =
     mediaTypeRaw === 'VIDEO' ? 'VIDEO' : mediaTypeRaw === 'IMAGE' ? 'IMAGE' : null;
@@ -331,6 +331,54 @@ function mapGalleryItem(
     title: raw.title != null ? String(raw.title) : '',
     mediaUrl,
     mediaType,
+  };
+}
+
+function mapAboutUs(raw: unknown): import('@/types/ecosystem').ProfileAboutUs | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const record = raw as RawRecord;
+  const founderRaw =
+    record.founder && typeof record.founder === 'object' && !Array.isArray(record.founder)
+      ? (record.founder as RawRecord)
+      : null;
+  const tasks = Array.isArray(record.tasks)
+    ? record.tasks.map((item) => String(item ?? '').trim()).filter(Boolean).slice(0, 12)
+    : [];
+  const imageUrls = Array.isArray(record.imageUrls)
+    ? record.imageUrls
+        .map((item) => (item != null ? String(item).trim() : ''))
+        .filter(Boolean)
+        .slice(0, 2)
+    : [];
+  const title = record.title != null ? String(record.title).trim() : '';
+  const description = record.description != null ? String(record.description).trim() : '';
+  const quote = record.quote != null ? String(record.quote).trim() : '';
+  const founderName = founderRaw?.name != null ? String(founderRaw.name).trim() : '';
+  const founderFunction = founderRaw?.function != null ? String(founderRaw.function).trim() : '';
+  const founderLogo = founderRaw?.logoUrl != null ? String(founderRaw.logoUrl).trim() : '';
+  if (
+    !title &&
+    !description &&
+    tasks.length === 0 &&
+    imageUrls.length === 0 &&
+    !quote &&
+    !founderName &&
+    !founderFunction &&
+    !founderLogo
+  ) {
+    return null;
+  }
+  return {
+    title: title || null,
+    description: description || null,
+    tasks,
+    imageUrls,
+    quote: quote || null,
+    founder: {
+      logoUrl: founderLogo || null,
+      name: founderName || null,
+      function: founderFunction || null,
+    },
   };
 }
 
@@ -547,6 +595,7 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
           .map((item, index) => mapGalleryItem(item as RawRecord, index))
           .sort((a, b) => a.sortOrder - b.sortOrder)
       : [],
+    aboutUs: mapAboutUs(raw.aboutUs),
     profileLinks: Array.isArray(raw.profileLinks)
       ? raw.profileLinks
           .map((item, index) => mapProfileLink(item as RawRecord, index))

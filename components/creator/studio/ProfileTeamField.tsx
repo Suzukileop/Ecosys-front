@@ -27,7 +27,7 @@ import {
 } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 
-export const MAX_TEAM = 3;
+export const MAX_TEAM = 8;
 const MAX_SOCIAL_LINKS = 6;
 
 const TEAM_MEDIA_ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp';

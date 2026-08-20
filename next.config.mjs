@@ -45,8 +45,15 @@ function buildImageRemotePatterns() {
   return patterns;
 }
 
+const extraDevOrigins = (process.env.NEXT_DEV_ALLOWED_ORIGINS ?? '')
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // LAN preview (phone / autre PC) : HMR is blocked unless the Origin is listed.
+  allowedDevOrigins: ['192.168.1.103', ...extraDevOrigins],
   experimental: {
     optimizePackageImports: [
       'framer-motion',
@@ -59,6 +66,8 @@ const nextConfig = {
   images: {
     // Dev: backend media is on localhost — Next 16 blocks private IPs by default (SSRF guard).
     dangerouslyAllowLocalIP: process.env.NODE_ENV === 'development',
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: buildImageRemotePatterns(),
   },
   async redirects() {

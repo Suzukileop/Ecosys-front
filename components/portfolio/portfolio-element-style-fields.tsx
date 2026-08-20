@@ -126,6 +126,7 @@ export function PortfolioElementStyleFields({
   extra,
   hideTargetPicker = false,
   hideUppercase = false,
+  hideFontPicker = false,
   showDecoration = false,
   title,
   textRole = 'body',
@@ -143,6 +144,8 @@ export function PortfolioElementStyleFields({
   hideTargetPicker?: boolean;
   /** Hide the Uppercase toggle (e.g. headline prefix — casing comes from the typed text). */
   hideUppercase?: boolean;
+  /** Hide per-element typeface (footer inherits Global → Police principale). */
+  hideFontPicker?: boolean;
   /** Show underline / highlight decoration controls (headline emphasis word). */
   showDecoration?: boolean;
   /** Optional heading above the typography fields. */
@@ -221,12 +224,14 @@ export function PortfolioElementStyleFields({
         />
       ) : null}
 
-      <StyleOptionGrid
-        label="Font"
-        options={PORTFOLIO_ELEMENT_FONT_OPTIONS}
-        value={style.font}
-        onChange={(font) => onStyleChange({ font })}
-      />
+      {hideFontPicker ? null : (
+        <StyleOptionGrid
+          label="Font"
+          options={PORTFOLIO_ELEMENT_FONT_OPTIONS}
+          value={style.font}
+          onChange={(font) => onStyleChange({ font })}
+        />
+      )}
 
       <StyleOptionGrid
         label="Size"

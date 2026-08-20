@@ -415,6 +415,21 @@ export interface ProfileTeamMember {
   socialLinks?: ProfileTeamSocialLink[];
 }
 
+export interface ProfileAboutUsFounder {
+  logoUrl?: string | null;
+  name?: string | null;
+  function?: string | null;
+}
+
+export interface ProfileAboutUs {
+  title?: string | null;
+  description?: string | null;
+  tasks?: string[];
+  imageUrls?: Array<string | null>;
+  quote?: string | null;
+  founder?: ProfileAboutUsFounder | null;
+}
+
 export type ProfileLinkType = 'WEBSITE' | 'CTA' | 'CUSTOM' | 'SOCIAL';
 
 export interface ProfileLink {
@@ -486,6 +501,7 @@ export interface CreatorProfileDto {
   faqItems?: FaqItem[];
   teamMembers?: ProfileTeamMember[];
   galleryItems?: ProfileGalleryItem[];
+  aboutUs?: ProfileAboutUs | null;
   profileLinks?: ProfileLink[];
   memberSince?: string | null;
   responseTimeLabel?: string | null;
@@ -514,6 +530,7 @@ export interface CreatorProfileUpdateBody {
   faqItems?: FaqItem[];
   teamMembers?: ProfileTeamMember[];
   galleryItems?: ProfileGalleryItem[];
+  aboutUs?: ProfileAboutUs | null;
   profileLinks?: ProfileLink[];
   locationCity?: string;
   locationCountry?: string;

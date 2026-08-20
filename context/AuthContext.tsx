@@ -166,10 +166,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+const SSR_AUTH_FALLBACK: AuthContextType = {
+  user: null,
+  isLoading: true,
+  sessionStatus: 'loading',
+  isAuthenticated: false,
+  login: async () => undefined,
+  signup: async () => undefined,
+  applyAuthResponse: async () => undefined,
+  updateUser: () => undefined,
+  restoreSession: async () => false,
+  logout: async () => undefined,
+  hasRole: () => false,
+};
+
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  if (context) return context;
+  // Public portfolio SSR can render this hook before the client AuthProvider tree is attached.
+  if (typeof window === 'undefined') return SSR_AUTH_FALLBACK;
+  throw new Error('useAuth must be used within an AuthProvider');
 }

@@ -36,7 +36,7 @@ export const PORTFOLIO_PRESENCE_OPTIONS: readonly PortfolioPresenceOption[] = [
     title: 'Storefront',
     teaser: 'Sell products and services simply',
     icon: faStore,
-    sections: ['about', 'services', 'products', 'faq', 'links', 'contact', 'reputation'],
+    sections: ['about', 'aboutUs', 'services', 'products', 'faq', 'links', 'contact', 'reputation'],
   },
   {
     id: 'business',
@@ -45,6 +45,7 @@ export const PORTFOLIO_PRESENCE_OPTIONS: readonly PortfolioPresenceOption[] = [
     icon: faBuilding,
     sections: [
       'about',
+      'aboutUs',
       'whyMe',
       'experience',
       'strengths',
@@ -70,4 +71,12 @@ export function getPortfolioPresenceOption(
 ): PortfolioPresenceOption | undefined {
   if (!kind) return undefined;
   return PORTFOLIO_PRESENCE_OPTIONS.find((option) => option.id === kind);
+}
+
+export function isPortfolioPresenceKind(value: unknown): value is PortfolioPresenceKind {
+  return value === 'portfolio' || value === 'storefront' || value === 'business' || value === 'linktrue';
+}
+
+export function portfolioPresenceShowsAboutUs(kind: string | null | undefined): boolean {
+  return kind === 'business' || kind === 'storefront';
 }

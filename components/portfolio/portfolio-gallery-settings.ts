@@ -10,14 +10,15 @@ import type { PortfolioGalleryColorBindings } from '@/components/portfolio/portf
 
 export type PortfolioGalleryDesign =
   | 'framed-grid'
-  | 'masonry'
   | 'cinema-strip'
-  | 'lightbox-stack'
   | 'editorial-split'
   | 'caption-carousel'
   | 'hero-mosaic'
-  | 'featured-strip';
+  | 'featured-strip'
+  | 'tall-row';
+export type PortfolioGalleryCaptionPager = 'chevrons' | 'dots';
 export type PortfolioGalleryTitlePlacement = 'under' | 'overlay' | 'hidden';
+export type PortfolioGalleryTallRowTitleReveal = 'always' | 'hover';
 export type PortfolioGalleryAspect = 'auto' | 'square' | 'portrait' | 'landscape' | 'cinema';
 export type PortfolioGalleryObjectFit = 'cover' | 'contain';
 export type PortfolioGalleryObjectPosition =
@@ -30,14 +31,18 @@ export type PortfolioGalleryHeaderFont = 'sans' | 'serif' | 'display';
 export type PortfolioGalleryHeaderAlignment = 'left' | 'center';
 export type PortfolioGalleryMaxWidth = 'md' | 'lg' | 'xl' | 'full';
 export type PortfolioGalleryPlacement = 'left' | 'center' | 'right';
+export type PortfolioGalleryFeaturedRailPlacement = 'right' | 'bottom';
+/** Where featured width/placement apply when thumbnails sit below the hero. */
+export type PortfolioGalleryFeaturedWidthScope = 'global' | 'hero';
 export type PortfolioGalleryTitlePreset = 'gallery' | 'selected-work' | 'visual-journal' | 'custom' | 'none';
 export type PortfolioGallerySubtitlePreset = 'default' | 'selection' | 'journal' | 'minimal' | 'custom';
 /**
  * `stacked` — section title above the gallery grid (default).
  * `aside-left` / `aside-right` — section title beside the grid on large screens.
+ * `over-thumbs` — title centered above the thumbnails (Image haute + rangée).
  * Distinct from per-item `titlePlacement` and block `placement`.
  */
-export type PortfolioGallerySectionLayout = 'stacked' | 'aside-left' | 'aside-right';
+export type PortfolioGallerySectionLayout = 'stacked' | 'aside-left' | 'aside-right' | 'over-thumbs';
 /** Decorative SVG beside the gallery grid (`none` hides it). */
 export type PortfolioGalleryIllustrationVariant =
   | 'none'
@@ -53,9 +58,13 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   design: PortfolioGalleryDesign;
   columns: 1 | 2 | 3 | 4;
   gap: number;
+  /** Vertical (row) gap — defaults to `gap` when not set or -1. */
+  verticalGap: number;
   radius: number;
   padding: number;
   titlePlacement: PortfolioGalleryTitlePlacement;
+  /** Tall-row: item titles always on the photo, or only on hover with a dim veil. */
+  tallRowTitleReveal: PortfolioGalleryTallRowTitleReveal;
   imageAspect: PortfolioGalleryAspect;
   objectFit: PortfolioGalleryObjectFit;
   objectPosition: PortfolioGalleryObjectPosition;
@@ -92,8 +101,20 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   showCarouselNav: boolean;
   /** Dot indicators under caption carousel. */
   showPagination: boolean;
+  /** Caption-carousel pager: cinema-style chevrons, or page dots. */
+  captionPager: PortfolioGalleryCaptionPager;
   /** Surface behind caption-carousel cards. */
   cardSurfaceColor: string;
+  /** Card width for the caption-carousel design. */
+  captionCardWidthPx: number;
+  /** Featured-strip thumbnails: stacked on the right, or in a row under the hero. */
+  featuredRailPlacement: PortfolioGalleryFeaturedRailPlacement;
+  /** Apply width/placement to the whole block, or only the top image. */
+  featuredHeroWidthScope: PortfolioGalleryFeaturedWidthScope;
+  /** Width of the featured hero (or whole bottom layout) as a percent of the gallery. */
+  featuredHeroWidthPercent: number;
+  /** Horizontal placement of the featured hero (or whole bottom layout). */
+  featuredHeroPlacement: PortfolioGalleryPlacement;
 };
 
 export type PortfolioGallerySectionSettings =
@@ -105,12 +126,11 @@ export const PORTFOLIO_GALLERY_DESIGN_OPTIONS: {
   description: string;
 }[] = [
   { value: 'framed-grid', label: 'Grille encadrée', description: 'Grille responsive classique avec légendes.' },
-  { value: 'caption-carousel', label: 'Cartes légendées', description: 'Cartes avec image et titre, défilement horizontal et points.' },
+  { value: 'caption-carousel', label: 'Cartes légendées', description: 'Cartes avec image et titre, défilement horizontal et flèches.' },
   { value: 'cinema-strip', label: 'Bande cinéma', description: 'Grand défilement horizontal avec flèches de navigation.' },
-  { value: 'hero-mosaic', label: 'Mosaïque héros', description: 'Une grande image à gauche et une grille 2×2 à droite.' },
-  { value: 'featured-strip', label: 'À la une + rail', description: 'Image vedette et bande horizontale avec légendes.' },
-  { value: 'masonry', label: 'Masonry', description: 'Colonnes fluides qui respectent la hauteur des médias.' },
-  { value: 'lightbox-stack', label: 'Lightbox stack', description: 'Grille dense pensée pour une ouverture plein écran.' },
+  { value: 'hero-mosaic', label: 'Mosaïque héros', description: 'Image vedette et mosaïque adaptative selon le nombre de médias.' },
+  { value: 'featured-strip', label: 'À la une + rail', description: 'Grande image à gauche et vignettes empilées à droite.' },
+  { value: 'tall-row', label: 'Image haute + rangée', description: 'Première image plus haute à gauche, trois plus basses alignées à droite.' },
   { value: 'editorial-split', label: 'Editorial split', description: 'Alternance de compositions larges et compactes.' },
 ];
 
@@ -152,6 +172,11 @@ export const PORTFOLIO_GALLERY_SECTION_LAYOUT_OPTIONS: {
     label: 'Titre à droite',
     description: 'Grille à gauche, titre de section à droite (côte à côte).',
   },
+  {
+    value: 'over-thumbs',
+    label: 'Au-dessus des miniatures',
+    description: 'Titre et sous-titre centrés au-dessus des miniatures (image haute) ou dans le vide à côté de l’image à la une.',
+  },
 ];
 
 export const PORTFOLIO_GALLERY_ILLUSTRATION_OPTIONS: {
@@ -176,7 +201,7 @@ export const PORTFOLIO_GALLERY_ILLUSTRATION_PLACEMENT_OPTIONS: {
   { value: 'right', label: 'Droite', description: 'SVG à droite de la grille.' },
 ];
 
-export const GALLERY_SECTION_LAYOUTS = ['stacked', 'aside-left', 'aside-right'] as const;
+export const GALLERY_SECTION_LAYOUTS = ['stacked', 'aside-left', 'aside-right', 'over-thumbs'] as const;
 export const GALLERY_ILLUSTRATION_VARIANTS = [
   'none',
   'chat',
@@ -190,13 +215,59 @@ export const GALLERY_ILLUSTRATION_PLACEMENTS = ['left', 'right'] as const;
 export function isPortfolioGallerySectionLayout(
   value: unknown
 ): value is PortfolioGallerySectionLayout {
-  return value === 'stacked' || value === 'aside-left' || value === 'aside-right';
+  return value === 'stacked' || value === 'aside-left' || value === 'aside-right' || value === 'over-thumbs';
 }
 
 export function gallerySectionLayoutIsAside(
   layout: PortfolioGallerySectionLayout | undefined
-): boolean {
+): layout is 'aside-left' | 'aside-right' {
   return layout === 'aside-left' || layout === 'aside-right';
+}
+
+export function gallerySectionLayoutEmbedsInTallRow(
+  layout: PortfolioGallerySectionLayout | undefined,
+  design: PortfolioGalleryDesign | undefined
+): boolean {
+  return design === 'tall-row' && layout === 'over-thumbs';
+}
+
+/** Leftover width beside the featured hero is enough for the section title. */
+export function galleryFeaturedHeroHasTitleVoid(
+  presentation: Pick<
+    PortfolioGalleryPresentationSettings,
+    | 'design'
+    | 'featuredRailPlacement'
+    | 'featuredHeroWidthScope'
+    | 'featuredHeroWidthPercent'
+    | 'featuredHeroPlacement'
+  >
+): boolean {
+  if (presentation.design !== 'featured-strip') return false;
+  if ((presentation.featuredRailPlacement ?? 'right') !== 'bottom') return false;
+  if ((presentation.featuredHeroWidthScope ?? 'hero') === 'global') return false;
+  const percent = presentation.featuredHeroWidthPercent ?? 100;
+  const leftover = 100 - percent;
+  if (leftover < 22) return false;
+  if ((presentation.featuredHeroPlacement ?? 'center') === 'center') {
+    return leftover / 2 >= 16;
+  }
+  return true;
+}
+
+export function gallerySectionLayoutEmbedsHeader(
+  layout: PortfolioGallerySectionLayout | undefined,
+  presentation: Pick<
+    PortfolioGalleryPresentationSettings,
+    | 'design'
+    | 'featuredRailPlacement'
+    | 'featuredHeroWidthScope'
+    | 'featuredHeroWidthPercent'
+    | 'featuredHeroPlacement'
+  >
+): boolean {
+  if (gallerySectionLayoutIsAside(layout)) return false;
+  if (gallerySectionLayoutEmbedsInTallRow(layout, presentation.design)) return true;
+  return galleryFeaturedHeroHasTitleVoid(presentation);
 }
 
 export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings = {
@@ -204,9 +275,11 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   design: 'framed-grid',
   columns: 3,
   gap: 24,
+  verticalGap: -1,
   radius: 16,
   padding: 0,
   titlePlacement: 'under',
+  tallRowTitleReveal: 'always',
   imageAspect: 'landscape',
   objectFit: 'cover',
   objectPosition: 'center',
@@ -233,7 +306,13 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   placement: 'center',
   showCarouselNav: true,
   showPagination: true,
+  captionPager: 'chevrons',
   cardSurfaceColor: '#ffffff',
+  captionCardWidthPx: 320,
+  featuredRailPlacement: 'right',
+  featuredHeroWidthScope: 'hero',
+  featuredHeroWidthPercent: 100,
+  featuredHeroPlacement: 'center',
 };
 
 export const DEFAULT_GALLERY_TITLE_EN = 'Gallery';
@@ -248,12 +327,34 @@ export function migrateLegacyGalleryCopy(title: string, subtitle: string): { tit
   };
 }
 
+export const PORTFOLIO_GALLERY_FEATURED_RAIL_OPTIONS: {
+  value: PortfolioGalleryFeaturedRailPlacement;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'right', label: 'Verticales à droite', description: 'Miniatures empilées à droite de l’image principale.' },
+  { value: 'bottom', label: 'Horizontales en bas', description: 'Miniatures en rangée sous l’image principale.' },
+];
+
+export const PORTFOLIO_GALLERY_FEATURED_WIDTH_SCOPE_OPTIONS: {
+  value: PortfolioGalleryFeaturedWidthScope;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'hero', label: 'Image du haut seulement', description: 'Largeur et placement sur l’image principale uniquement.' },
+  { value: 'global', label: 'Globalement', description: 'Largeur et placement sur l’image et les miniatures ensemble.' },
+];
+
 export function galleryDesignUsesCarouselNav(design: PortfolioGalleryDesign): boolean {
-  return design === 'cinema-strip' || design === 'caption-carousel' || design === 'featured-strip';
+  return design === 'cinema-strip' || design === 'caption-carousel' || design === 'featured-strip' || design === 'tall-row';
 }
 
 export function galleryDesignUsesColumns(design: PortfolioGalleryDesign): boolean {
-  return design !== 'cinema-strip' && design !== 'caption-carousel' && design !== 'featured-strip' && design !== 'hero-mosaic';
+  return design !== 'cinema-strip' && design !== 'caption-carousel' && design !== 'featured-strip' && design !== 'hero-mosaic' && design !== 'tall-row';
+}
+
+export function galleryDesignUsesCaptionCardWidth(design: PortfolioGalleryDesign): boolean {
+  return design === 'cinema-strip' || design === 'caption-carousel';
 }
 
 export function galleryCaptionCardWidthClass(columns: number): string {
@@ -287,9 +388,11 @@ export function mergeGalleryPresentation(
     design: pickString(record.design, PORTFOLIO_GALLERY_DESIGNS, base.design),
     columns: clamp(record.columns, 1, 4, base.columns) as 1 | 2 | 3 | 4,
     gap: clamp(record.gap, 0, 64, base.gap),
+    verticalGap: clamp(record.verticalGap, -1, 64, base.verticalGap),
     radius: clamp(record.radius, 0, 48, base.radius),
     padding: clamp(record.padding, 0, 96, base.padding),
     titlePlacement: pickString(record.titlePlacement, ['under', 'overlay', 'hidden'], base.titlePlacement),
+    tallRowTitleReveal: pickString(record.tallRowTitleReveal, ['always', 'hover'], base.tallRowTitleReveal),
     imageAspect: pickString(record.imageAspect, ['auto', 'square', 'portrait', 'landscape', 'cinema'], base.imageAspect),
     objectFit: pickString(record.objectFit, ['cover', 'contain'], base.objectFit),
     objectPosition: pickString(record.objectPosition, ['center', 'top', 'bottom', 'left', 'right'], base.objectPosition),
@@ -336,7 +439,13 @@ export function mergeGalleryPresentation(
     placement: pickString(record.placement, ['left', 'center', 'right'], base.placement),
     showCarouselNav: typeof record.showCarouselNav === 'boolean' ? record.showCarouselNav : base.showCarouselNav,
     showPagination: typeof record.showPagination === 'boolean' ? record.showPagination : base.showPagination,
+    captionPager: pickString(record.captionPager, ['chevrons', 'dots'], base.captionPager),
     cardSurfaceColor: color(record.cardSurfaceColor, base.cardSurfaceColor),
+    captionCardWidthPx: clamp(record.captionCardWidthPx, 180, 420, base.captionCardWidthPx),
+    featuredRailPlacement: pickString(record.featuredRailPlacement, ['right', 'bottom'], base.featuredRailPlacement),
+    featuredHeroWidthScope: pickString(record.featuredHeroWidthScope, ['global', 'hero'], base.featuredHeroWidthScope),
+    featuredHeroWidthPercent: clamp(record.featuredHeroWidthPercent, 50, 100, base.featuredHeroWidthPercent),
+    featuredHeroPlacement: pickString(record.featuredHeroPlacement, ['left', 'center', 'right'], base.featuredHeroPlacement),
   };
 }
 
@@ -395,6 +504,11 @@ export function galleryPlacementClass(placement: PortfolioGalleryPlacement): str
   if (placement === 'left') return 'mr-auto';
   if (placement === 'right') return 'ml-auto';
   return 'mx-auto';
+}
+
+/** Resolved vertical gap — falls back to horizontal `gap` when verticalGap is -1. */
+export function galleryEffectiveVerticalGap(presentation: Pick<PortfolioGalleryPresentationSettings, 'gap' | 'verticalGap'>): number {
+  return presentation.verticalGap >= 0 ? presentation.verticalGap : presentation.gap;
 }
 
 export function galleryAspectStyle(aspect: PortfolioGalleryAspect): CSSProperties {

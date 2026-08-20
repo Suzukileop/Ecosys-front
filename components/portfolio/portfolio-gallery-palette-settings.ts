@@ -9,6 +9,7 @@ import type { PortfolioGalleryPresentationSettings } from '@/components/portfoli
 
 export type GalleryColorSlot =
   | 'sectionBackground'
+  | 'cardSurface'
   | 'title'
   | 'subtitle'
   | 'itemTitle'
@@ -18,6 +19,7 @@ export type PortfolioGalleryColorBindings = Record<GalleryColorSlot, HeroPalette
 
 export const DEFAULT_GALLERY_COLOR_BINDINGS: PortfolioGalleryColorBindings = {
   sectionBackground: 'fond',
+  cardSurface: 'neutre',
   title: 'texteFort',
   subtitle: 'texteMuted',
   itemTitle: 'texteFort',
@@ -30,6 +32,7 @@ export const PORTFOLIO_GALLERY_COLOR_SLOT_OPTIONS: {
   description: string;
 }[] = [
   { value: 'sectionBackground', label: 'Fond de section', description: 'Remplissage principal de la galerie.' },
+  { value: 'cardSurface', label: 'Surface carte', description: 'Fond et bordure des cartes galerie (mode sombre).' },
   { value: 'title', label: 'Section title', description: 'Gallery heading color.' },
   { value: 'subtitle', label: 'Sous-titre', description: 'Texte introductif sous le titre.' },
   { value: 'itemTitle', label: 'Titre des médias', description: 'Légendes sous les images.' },
@@ -69,6 +72,7 @@ export function applyGalleryPaletteToSettings(
     galleryPalette,
     galleryColorBindings,
     sectionBackgroundColor: resolveHeroPaletteColor(galleryPalette, galleryColorBindings.sectionBackground),
+    cardSurfaceColor: resolveHeroPaletteColor(galleryPalette, galleryColorBindings.cardSurface),
     titleColor: resolveHeroPaletteColor(galleryPalette, galleryColorBindings.title),
     subtitleColor: resolveHeroPaletteColor(galleryPalette, galleryColorBindings.subtitle),
     itemTitleColor: resolveHeroPaletteColor(galleryPalette, galleryColorBindings.itemTitle),

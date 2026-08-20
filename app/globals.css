@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=Dancing+Script:wght@400;700&family=Pacifico&family=Playfair+Display:wght@400;500;600;700;800;900&family=Anton&family=Raleway:wght@400;500;600;700;800&family=Permanent+Marker&family=Righteous&family=Lobster&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=Dancing+Script:wght@400;700&family=Pacifico&family=Playfair+Display:wght@400;500;600;700;800;900&family=Anton&family=Raleway:wght@400;500;600;700;800&family=Permanent+Marker&family=Righteous&family=Lobster&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Geist:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -8,6 +8,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --font-geist: 'Geist', ui-sans-serif, system-ui, sans-serif;
 
   /* Landing page tokens — light */
   --lp-bg:       #F5F6FF;
@@ -1174,7 +1175,40 @@ html.ecosystem-geo-bg [data-dashboard-content] {
   }
 }
 
+/* FAQ accordion — height fold that works on open and close. */
+.pf-faq-answer-fold {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pf-faq-answer-fold[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+.pf-faq-answer-fold > .pf-faq-answer-fold-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.pf-faq-answer-fold-inner > * {
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.28s ease,
+    transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pf-faq-answer-fold[data-open='true'] > .pf-faq-answer-fold-inner > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .pf-faq-answer-fold,
+  .pf-faq-answer-fold-inner > * {
+    transition: none;
+  }
+  .pf-faq-answer-fold-inner > * {
+    transform: none;
+  }
+
   .portfolio-marquee {
     animation: none;
   }
@@ -1633,6 +1667,22 @@ html.ecosystem-geo-bg [data-dashboard-content] {
   padding-left: var(--pf-footer-pad-l, 2.5rem);
 }
 
+@media (min-width: 1024px) {
+  .pf-footer-content-pad.pf-footer-editorial-lg-bottom {
+    padding-bottom: max(var(--pf-footer-pad-b, 0.75rem), 2.5rem);
+  }
+
+  .pf-footer-content-pad.pf-footer-landing-pad-x {
+    padding-left: max(var(--pf-footer-pad-l, 2.5rem), 7rem);
+    padding-right: max(var(--pf-footer-pad-r, 2.5rem), 7rem);
+  }
+
+  .pf-footer-content-pad.pf-footer-compact-pad-x {
+    padding-left: max(var(--pf-footer-pad-l, 2.5rem), 8rem);
+    padding-right: max(var(--pf-footer-pad-r, 2.5rem), 8rem);
+  }
+}
+
 @media (max-width: 639px) {
   .pf-footer-shell-x {
     padding-left: max(1.25rem, env(safe-area-inset-left, 0px)) !important;
@@ -1645,4 +1695,119 @@ html.ecosystem-geo-bg [data-dashboard-content] {
     padding-top: max(var(--pf-footer-pad-t, 2.5rem), 1.5rem);
     padding-bottom: max(var(--pf-footer-pad-b, 0.75rem), 1rem);
   }
+}
+
+@keyframes pf-featured-veil {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes pf-media-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.42;
+  }
+  50% {
+    opacity: 0.88;
+  }
+}
+
+.pf-featured-in {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.pf-featured-in::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: rgb(24 24 24 / 0.14);
+  animation: pf-featured-veil 420ms ease forwards;
+}
+
+.pf-media-skeleton {
+  background-color: rgb(82 82 82 / 0.55);
+  animation: pf-media-skeleton-pulse 1.15s ease-in-out infinite;
+}
+
+.pf-media-skeleton {
+  background-color: rgb(82 82 82 / 0.55);
+  animation: pf-media-skeleton-pulse 1.15s ease-in-out infinite;
+}
+
+.pf-gallery-media-title {
+  font-size: 28px !important;
+  font-weight: 600 !important;
+  font-synthesis: none;
+  line-height: 1.2 !important;
+  letter-spacing: -0.02em;
+  text-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transform: translateZ(0);
+  -webkit-font-smoothing: antialiased;
+}
+
+.pf-gallery-media-title--in-frame {
+  font-size: 24px !important;
+}
+
+.pf-gallery-media-title--cinema {
+  font-size: 20px !important;
+  line-height: 1.35 !important;
+}
+
+.pf-gallery-media-title--tall {
+  font-size: 20px !important;
+  line-height: 1.3 !important;
+}
+
+.pf-gallery-media-title--caption {
+  font-size: 18px !important;
+  font-weight: 500 !important;
+  line-height: 1.35 !important;
+  letter-spacing: 0.01em;
+}
+
+/*
+ * Aeonik only ships Light / Regular / Bold. Weight 600 snaps to Bold (700),
+ * which is why gallery captions always looked bold. Plus Jakarta has a real 600.
+ * Selector must beat `[data-portfolio-force-font='true'] *`.
+ */
+.pf-theme-root .pf-gallery-media-title,
+.pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif !important;
+  font-weight: 600 !important;
+}
+
+.pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--caption,
+.pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--caption {
+  font-weight: 500 !important;
+}
+
+.pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--aeonik,
+.pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--aeonik {
+  font-family: var(--font-aeonik), ui-sans-serif, system-ui, sans-serif !important;
+  font-weight: 400 !important;
+  font-size: 2.25rem !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0;
+}
+
+.pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--aeonik.pf-gallery-media-title--cinema,
+.pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--aeonik.pf-gallery-media-title--cinema {
+  font-size: 20px !important;
+}
+
+.pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--aeonik.pf-gallery-media-title--tall,
+.pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--aeonik.pf-gallery-media-title--tall {
+  font-size: 20px !important;
 }

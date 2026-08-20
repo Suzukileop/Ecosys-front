@@ -9,8 +9,14 @@ import { CreatorStudioProfileTab } from '@/components/creator/studio/CreatorStud
 import { PortfolioPresencePicker } from '@/components/portfolio/PortfolioPresencePicker';
 import {
   getPortfolioPresenceOption,
+  isPortfolioPresenceKind,
   type PortfolioPresenceKind,
 } from '@/components/portfolio/portfolio-presence';
+import { mergePortfolioSettings } from '@/components/portfolio/portfolio-settings-types';
+import {
+  getCreatorPortfolioSettings,
+  updateCreatorPortfolioSettings,
+} from '@/lib/portfolio-settings-api';
 import { buildCreatorPortfolioPath, buildCreatorPortfolioUrl } from '@/lib/portfolio-url';
 import { brandCtaClass } from '@/components/landing/landingBrand';
 
@@ -226,8 +232,36 @@ export function MyPortfolioWorkspace() {
   }, []);
 
   useEffect(() => {
-    if (tab !== 'information') setPresenceKind(null);
-  }, [tab]);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const raw = await getCreatorPortfolioSettings();
+        const merged = mergePortfolioSettings(raw);
+        if (!cancelled && isPortfolioPresenceKind(merged.global.presenceKind)) {
+          setPresenceKind(merged.global.presenceKind);
+        }
+      } catch {
+        /* keep picker until the owner chooses */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const persistPresenceKind = useCallback(async (kind: PortfolioPresenceKind) => {
+    setPresenceKind(kind);
+    try {
+      const raw = await getCreatorPortfolioSettings();
+      const merged = mergePortfolioSettings(raw);
+      await updateCreatorPortfolioSettings({
+        ...merged,
+        global: { ...merged.global, presenceKind: kind },
+      });
+    } catch {
+      /* local selection still applies in this session */
+    }
+  }, []);
 
   const togglePortfolioNavSide = useCallback(() => {
     setPortfolioNavSide((prev) => {
@@ -345,7 +379,7 @@ export function MyPortfolioWorkspace() {
             sectionsNavTitle={selectedPresence.title}
           />
         ) : (
-          <PortfolioPresencePicker onSelect={setPresenceKind} />
+          <PortfolioPresencePicker onSelect={(kind) => void persistPresenceKind(kind)} />
         )
       ) : tab === 'preview' ? (
         <PortfolioLivePreview creatorId={user.id} />

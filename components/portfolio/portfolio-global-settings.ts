@@ -21,6 +21,10 @@ import {
 } from '@/components/portfolio/portfolio-motion-settings';
 import type { PortfolioNavSectionKey } from '@/components/portfolio/portfolio-nav-items';
 import {
+  isPortfolioPresenceKind,
+  type PortfolioPresenceKind,
+} from '@/components/portfolio/portfolio-presence';
+import {
   DEFAULT_CONTENT_GUTTER,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
@@ -69,12 +73,14 @@ export type PortfolioGlobalBodyFont =
   | 'aeonik'
   | 'default'
   | 'plusJakarta'
+  | 'geist'
   | 'montserrat'
   | 'raleway'
   | 'roboto';
 
 export type PortfolioGlobalHeaderFont =
   | 'aeonik'
+  | 'geist'
   | 'sans'
   | 'serif'
   | 'display'
@@ -305,6 +311,8 @@ export type PortfolioGlobalSettings = {
    */
   sectionTitleTopExtraPx: number;
   sectionOrder: PortfolioNavSectionKey[];
+  /** Session presence type for the public page (About us is business + storefront only). */
+  presenceKind: PortfolioPresenceKind | null;
   /**
    * Base typeface for all portfolio text.
    * With {@link bodyFontForceAll}, it wins over every per-element font.
@@ -487,6 +495,7 @@ export const DEFAULT_GLOBAL_TITLE_ORIENTATION_TARGETS: PortfolioGlobalTitleOrien
   services: false,
   skills: false,
   about: false,
+  aboutUs: false,
   experience: false,
   team: false,
   gallery: false,
@@ -499,6 +508,7 @@ export const DEFAULT_CONTENT_SECTION_ORDER: PortfolioNavSectionKey[] = [
   'skills',
   'services',
   'about',
+  'aboutUs',
   'experience',
   'team',
   'gallery',
@@ -635,6 +645,7 @@ export const DEFAULT_GLOBAL_SETTINGS: PortfolioGlobalSettings = {
   sectionTitleTopSpacing: 'standard',
   sectionTitleTopExtraPx: 0,
   sectionOrder: [...DEFAULT_CONTENT_SECTION_ORDER],
+  presenceKind: null,
   bodyFont: 'plusJakarta',
   bodyFontForceAll: false,
   titleTypography: { ...DEFAULT_GLOBAL_TITLE_TYPOGRAPHY },
@@ -804,6 +815,12 @@ export const PORTFOLIO_GLOBAL_TYPOGRAPHY_SCOPE_OPTIONS: {
   { value: 'global', label: 'Global', description: 'Apply one shared style to every section.' },
 ];
 
+export const AEONIK_FONT_FAMILY =
+  'var(--font-aeonik), ui-sans-serif, system-ui, sans-serif';
+
+export const GEIST_FONT_FAMILY =
+  'var(--font-geist), ui-sans-serif, system-ui, sans-serif';
+
 export const PORTFOLIO_GLOBAL_HEADER_FONT_OPTIONS: {
   value: PortfolioGlobalHeaderFont;
   label: string;
@@ -817,7 +834,14 @@ export const PORTFOLIO_GLOBAL_HEADER_FONT_OPTIONS: {
     value: 'aeonik',
     label: 'Aeonik',
     description: 'Brand sans — same typeface as the landing page.',
-    fontFamily: 'var(--font-aeonik), ui-sans-serif, system-ui, sans-serif',
+    fontFamily: AEONIK_FONT_FAMILY,
+    previewText: 'Projects',
+  },
+  {
+    value: 'geist',
+    label: 'Geist',
+    description: 'Police Vercel — UI moderne, SemiBold réel (600). Gratuite pour le commercial.',
+    fontFamily: GEIST_FONT_FAMILY,
     previewText: 'Projects',
   },
   {
@@ -857,9 +881,6 @@ export const PORTFOLIO_GLOBAL_HEADER_FONT_OPTIONS: {
   },
 ];
 
-export const AEONIK_FONT_FAMILY =
-  'var(--font-aeonik), ui-sans-serif, system-ui, sans-serif';
-
 export const PORTFOLIO_GLOBAL_BODY_FONT_OPTIONS: {
   value: PortfolioGlobalBodyFont;
   label: string;
@@ -880,6 +901,13 @@ export const PORTFOLIO_GLOBAL_BODY_FONT_OPTIONS: {
     label: 'Plus Jakarta Sans',
     description: 'Google Fonts equivalent to Maison Neue — premium neo-grotesque.',
     fontFamily: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
+    previewText: 'The quick brown fox',
+  },
+  {
+    value: 'geist',
+    label: 'Geist',
+    description: 'Police Vercel — UI moderne, SemiBold réel (600). Gratuite pour le commercial.',
+    fontFamily: GEIST_FONT_FAMILY,
     previewText: 'The quick brown fox',
   },
   {
@@ -2003,6 +2031,7 @@ function globalHeaderFontClass(font: PortfolioGlobalHeaderFont, kind: 'title' | 
     // Weight is applied separately via {@link globalTitleFontWeightClass}.
     switch (font) {
       case 'aeonik':
+      case 'geist':
         return 'tracking-[-0.03em]';
       case 'serif':
         return 'tracking-[-0.03em]';
@@ -2018,6 +2047,7 @@ function globalHeaderFontClass(font: PortfolioGlobalHeaderFont, kind: 'title' | 
   }
   switch (font) {
     case 'aeonik':
+    case 'geist':
       return 'leading-relaxed';
     case 'serif':
       return 'leading-relaxed';
@@ -2715,6 +2745,11 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
       base.sectionTitleTopExtraPx ?? 0
     ),
     sectionOrder: mergeSectionOrder(base.sectionOrder, record.sectionOrder),
+    presenceKind: isPortfolioPresenceKind(record.presenceKind)
+      ? record.presenceKind
+      : record.presenceKind === null
+        ? null
+        : (base.presenceKind ?? null),
     bodyFont: isPortfolioGlobalBodyFont(record.bodyFont)
       ? record.bodyFont
       : base.bodyFont ?? 'plusJakarta',

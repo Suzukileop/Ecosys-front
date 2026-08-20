@@ -101,6 +101,7 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
       'sous-titre',
       'alignement',
       'police',
+      'geist',
     ],
     'titles'
   ),
@@ -131,6 +132,7 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
       'body font',
       'maison neue',
       'plus jakarta',
+      'geist',
       'caractères',
     ],
     'typography'
@@ -143,6 +145,7 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
       'site font',
       'police',
       'plus jakarta',
+      'geist',
       'maison neue',
       'montserrat',
       'raleway',
@@ -690,6 +693,8 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   entry('about', 'Style Why me', ['typography', 'colors', 'bullets'], 'styleWhyMe'),
   entry('about', 'Content blocks', ['show', 'hide', 'blocks'], 'content'),
   entry('about', 'Background', ['fill', 'gradient', 'fond'], 'background'),
+
+  entry('aboutUs', 'General', ['visibility', 'about us', 'company', 'layout', 'title', 'subtitle', 'à propos', 'design', 'split', 'overlap', 'founder', 'liste', 'cadre', 'image gauche', 'media left', 'quote', 'citation', 'inverser', 'bordure', 'ombre', 'arrondi', 'fond', 'transparent', 'svg', 'illustration', 'globe', 'photo', 'image'], 'general'),
 
   // Experience
   entry(

@@ -28,6 +28,7 @@ import { patchWorkPalette } from '@/components/portfolio/portfolio-work-palette-
 import { applyGalleryPaletteToSettings } from '@/components/portfolio/portfolio-gallery-palette-settings';
 import {
   applyHeroPaletteToAbout,
+  applyHeroPaletteToAboutUs,
   applyHeroPaletteToContact,
   applyHeroPaletteToExperience,
   applyHeroPaletteToFaq,
@@ -257,6 +258,13 @@ export function applyActivePortfolioPalette(settings: PortfolioSettings): Portfo
         : {
             ...settings.about,
             ...applyHeroPaletteToAbout({ ...settings.about, useHeroPalette: true }, palette),
+          },
+    aboutUs:
+      settings.aboutUs.useHeroPalette === false
+        ? { ...settings.aboutUs }
+        : {
+            ...settings.aboutUs,
+            ...applyHeroPaletteToAboutUs({ ...settings.aboutUs, useHeroPalette: true }, palette),
           },
     experience: periodRulePair ? { ...experienceNext, ...periodRulePair } : experienceNext,
     team:

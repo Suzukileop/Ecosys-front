@@ -12,6 +12,7 @@ type ProductThumbnailMediaProps = {
   autoPlay?: boolean;
   /** Subtle zoom-in on card hover (catalog cards). */
   zoomOnHover?: boolean;
+  loading?: 'lazy' | 'eager';
 };
 
 export function ProductThumbnailMedia({
@@ -21,6 +22,7 @@ export function ProductThumbnailMedia({
   fit = 'cover',
   autoPlay = false,
   zoomOnHover = false,
+  loading = 'lazy',
 }: ProductThumbnailMediaProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fitClass = fit === 'contain' ? 'object-contain' : 'object-cover';
@@ -63,7 +65,7 @@ export function ProductThumbnailMedia({
         muted
         playsInline
         loop
-        preload="auto"
+        preload={autoPlay ? 'metadata' : 'none'}
         aria-label={alt}
       />
     );
@@ -71,6 +73,12 @@ export function ProductThumbnailMedia({
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={url} alt={alt} className={`${fitClass} ${sizeClass} ${hoverClass} ${className}`.trim()} />
+    <img
+      src={url}
+      alt={alt}
+      className={`${fitClass} ${sizeClass} ${hoverClass} ${className}`.trim()}
+      loading={loading}
+      decoding="async"
+    />
   );
 }

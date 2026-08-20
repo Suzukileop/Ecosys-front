@@ -22,6 +22,7 @@ import {
 
 export type ProfileSectionId =
   | 'about'
+  | 'aboutUs'
   | 'myRole'
   | 'whyMe'
   | 'experience'
@@ -48,6 +49,11 @@ export const PROFILE_SECTIONS: ProfileSection[] = [
     id: 'about',
     label: 'About',
     description: 'Explain your value proposition, gender, nationality, working languages, and location.',
+  },
+  {
+    id: 'aboutUs',
+    label: 'About us',
+    description: 'Company story, tasks, images, quote, and founder information.',
   },
   {
     id: 'myRole',
@@ -123,7 +129,7 @@ export const PROFILE_SECTIONS: ProfileSection[] = [
 
 /** Sidebar order: presentation → offers & showcase → reach & contact → reputation last */
 export const PROFILE_SECTION_GROUPS: ProfileSectionId[][] = [
-  ['about', 'myRole', 'whyMe', 'experience', 'strengths'],
+  ['about', 'aboutUs', 'myRole', 'whyMe', 'experience', 'strengths'],
   ['services', 'products', 'portfolio', 'faq', 'team', 'gallery', 'links'],
   ['contact', 'reputation'],
 ];
@@ -175,6 +181,7 @@ const PROFILE_SECTION_BY_ID = new Map(PROFILE_SECTIONS.map((section) => [section
 
 const PROFILE_SECTION_ICONS: Record<ProfileSectionId, IconDefinition> = {
   about: faAddressCard,
+  aboutUs: faFileLines,
   myRole: faUser,
   whyMe: faStar,
   experience: faIdBadge,

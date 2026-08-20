@@ -229,8 +229,8 @@ export const PORTFOLIO_NAV_LABEL_CASE_OPTIONS: {
   description: string;
 }[] = [
   { value: 'uppercase', label: 'Uppercase', description: 'Bold caps with wide letter-spacing.' },
-  { value: 'titlecase', label: 'Title case', description: 'Capitalized words — editorial feel.' },
-  { value: 'normal', label: 'Sentence case', description: 'Natural casing as written in labels.' },
+  { value: 'titlecase', label: 'Title case', description: 'Each word starts with a capital letter.' },
+  { value: 'normal', label: 'Sentence case', description: 'First character uppercase, the rest lowercase — default.' },
 ];
 
 export const PORTFOLIO_NAV_MOBILE_LAYOUT_OPTIONS: {
@@ -1297,22 +1297,22 @@ export function portfolioNavItemBaseClass(
   const textSize =
     thickness === 'sm'
       ? compactOnMobile
-        ? 'text-[9px] sm:text-[10px]'
-        : 'text-[10px]'
+        ? 'text-xs sm:text-[13px]'
+        : 'text-[13px]'
       : thickness === 'lg' || thickness === 'xl'
         ? compactOnMobile
-          ? 'text-[11px] sm:text-xs'
-          : 'text-xs'
+          ? 'text-sm sm:text-base'
+          : 'text-base'
         : compactOnMobile
-          ? 'text-[10px] sm:text-[11px]'
-          : 'text-[11px]';
+          ? 'text-sm sm:text-[15px]'
+          : 'text-[15px]';
   const textPad = buttonPaddingClass(buttonPadding, compactOnMobile);
   const casing =
     labelCase === 'uppercase'
-      ? 'font-bold uppercase tracking-[0.14em]'
+      ? 'font-semibold uppercase tracking-[0.14em]'
       : labelCase === 'titlecase'
-        ? 'font-semibold capitalize tracking-[0.04em]'
-        : 'font-medium tracking-normal normal-case';
+        ? 'font-semibold tracking-[0.02em] normal-case'
+        : 'font-semibold tracking-normal normal-case';
 
   const decor = portfolioNavButtonDesignBaseClass(buttonDesign);
   const iconBox = iconSizeClass(thickness, compactOnMobile);
@@ -1458,27 +1458,27 @@ export function portfolioNavItemActiveClass(
   switch (activeStyle) {
     case 'underline':
       classicActive = vertical
-        ? 'rounded-none border-l-2 bg-transparent font-bold text-neutral-950 dark:text-white'
-        : 'rounded-none border-b-2 bg-transparent pb-1.5 font-bold text-neutral-950 dark:text-white';
+        ? 'rounded-none border-l-2 bg-transparent font-semibold text-neutral-950 dark:text-white'
+        : 'rounded-none border-b-2 bg-transparent pb-1.5 font-semibold text-neutral-950 dark:text-white';
       break;
     case 'outline':
-      classicActive = 'border bg-transparent font-bold';
+      classicActive = 'border bg-transparent font-semibold';
       break;
     case 'accent-fill':
-      classicActive = 'border-0 font-bold';
+      classicActive = 'border-0 font-semibold';
       break;
     case 'soft-badge':
       classicActive = 'border-0 font-semibold';
       break;
     case 'dot':
-      classicActive = 'relative border-0 bg-transparent font-bold';
+      classicActive = 'relative border-0 bg-transparent font-semibold';
       break;
     case 'accent-text':
-      classicActive = 'font-bold bg-transparent';
+      classicActive = 'font-semibold bg-transparent';
       break;
     default:
       // filled-pill — fill / icon colors come from palette via portfolioNavActiveItemStyle
-      classicActive = 'border-0 font-bold';
+      classicActive = 'border-0 font-semibold';
   }
 
   return decorActive ? `${classicActive} ${decorActive}` : classicActive;
@@ -1628,9 +1628,12 @@ export function portfolioNavRailDividerClass(vertical: boolean): string {
 }
 
 export function formatNavLabel(label: string, labelCase: PortfolioNavLabelCase): string {
-  if (labelCase === 'uppercase') return label.toUpperCase();
+  const trimmed = label.trim();
+  if (!trimmed) return label;
+  if (labelCase === 'uppercase') return trimmed.toLocaleUpperCase();
+  const lower = trimmed.toLocaleLowerCase();
   if (labelCase === 'titlecase') {
-    return label.replace(/\b\w/g, (char) => char.toUpperCase());
+    return lower.replace(/(^|[\s/&-])\S/g, (chunk) => chunk.toLocaleUpperCase());
   }
-  return label;
+  return lower.charAt(0).toLocaleUpperCase() + lower.slice(1);
 }

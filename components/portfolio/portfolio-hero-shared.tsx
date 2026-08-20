@@ -824,6 +824,7 @@ export function PortfolioHeroEditorialPortraitLayer({
                     className="aspect-[4/5] h-auto w-full"
                     style={imageMediaStyle}
                     priority
+                    sizes="(min-width: 1280px) 22rem, (min-width: 768px) 18rem, 72vw"
                   />
                 ) : (
                   <div className="flex aspect-[4/5] w-full items-center justify-center bg-neutral-200 text-4xl font-bold text-neutral-700">
@@ -1108,6 +1109,7 @@ export function HeroPortrait({
         className={`${className}${preserveLayoutOnDesktop ? ' xl:hidden' : ''}`}
         style={profile ? portraitImageMediaStyle(profile) : undefined}
         priority
+        sizes="(min-width: 1280px) 22rem, (min-width: 768px) 18rem, 72vw"
       />
       {preserveLayoutOnDesktop ? (
         <div className={`hidden xl:block ${className}`} aria-hidden />

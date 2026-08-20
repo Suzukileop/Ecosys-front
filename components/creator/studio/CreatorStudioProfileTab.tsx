@@ -82,6 +82,9 @@ import {
   parseProfileServices,
   parseSpokenLanguages,
   parseStrengthsTools,
+  parseAboutUs,
+  serializeAboutUs,
+  emptyAboutUsForm,
   parseTeamMembers,
   primaryContactValue,
   profileSchema,
@@ -143,6 +146,7 @@ import { PortfolioStrengthsReadOnly } from '@/components/portfolio/PortfolioStre
 import { PortfolioServicesReadOnly } from '@/components/portfolio/PortfolioServicesChrome';
 import { PortfolioFaqReadOnly } from '@/components/portfolio/PortfolioFaqChrome';
 import { PortfolioTeamReadOnly } from '@/components/portfolio/PortfolioTeamChrome';
+import { PortfolioAboutUsReadOnly } from '@/components/portfolio/PortfolioAboutUsChrome';
 import { PortfolioShowcaseChrome } from '@/components/portfolio/PortfolioShowcaseChrome';
 import { PortfolioReputationChrome } from '@/components/portfolio/PortfolioReputationChrome';
 import { PortfolioGalleryReadOnly } from '@/components/portfolio/PortfolioGalleryChrome';
@@ -289,6 +293,19 @@ function portfolioSectionItemCountLabel(
       ).length;
       return formatItemCountLabel(count, 'member');
     }
+    case 'aboutUs': {
+      const aboutUs = values.aboutUs;
+      const count =
+        (aboutUs.title.trim() ? 1 : 0) +
+        (aboutUs.description.trim() ? 1 : 0) +
+        aboutUs.tasks.filter((task) => task.trim()).length +
+        aboutUs.imageUrls.filter((url) => url.trim()).length +
+        (aboutUs.quote.trim() ? 1 : 0) +
+        (aboutUs.founder.name.trim() || aboutUs.founder.function.trim() || aboutUs.founder.logoUrl.trim()
+          ? 1
+          : 0);
+      return formatItemCountLabel(count, 'field');
+    }
     case 'gallery': {
       const count = values.galleryItems.filter((item) => (item.mediaUrl ?? '').trim().length > 0)
         .length;
@@ -333,6 +350,7 @@ type CreatorStudioProfileTabProps = {
 const PORTFOLIO_SECTION_LABELS: Partial<Record<ProfileSectionId, string>> = {
   services: 'Services & Shop',
   products: 'Products',
+  aboutUs: 'About us',
   team: 'Team',
   gallery: 'Gallery',
   strengths: 'Skills & Tools',
@@ -550,6 +568,7 @@ export function CreatorStudioProfileTab({
       faqItems: [],
       teamMembers: [],
       galleryItems: [],
+      aboutUs: emptyAboutUsForm(),
       whyMeBlocks: [],
       experienceBlocks: [],
       yearsOfExperience: null,
@@ -563,10 +582,13 @@ export function CreatorStudioProfileTab({
     if (!isStoreInformationNav) return allowedSections;
     return filterStoreInformationSectionsForRole(watchedAppRole, allowedSections);
   }, [allowedSections, isStoreInformationNav, watchedAppRole]);
-  const sectionGroups = useMemo(
-    () => filterProfileSectionGroups(PROFILE_SECTION_GROUPS, effectiveAllowedSections),
-    [effectiveAllowedSections]
-  );
+  const sectionGroups = useMemo(() => {
+    const groups = filterProfileSectionGroups(PROFILE_SECTION_GROUPS, effectiveAllowedSections);
+    if (isPortfolioLayout) return groups;
+    return groups
+      .map((group) => group.filter((id) => id !== 'aboutUs'))
+      .filter((group) => group.length > 0);
+  }, [effectiveAllowedSections, isPortfolioLayout]);
   const allowedSectionIds = useMemo(() => sectionGroups.flat(), [sectionGroups]);
   const showProviderAboutFields = creatorShowsProviderAboutFields(watchedAppRole);
 
@@ -1305,6 +1327,7 @@ export function CreatorStudioProfileTab({
         faqItems: parseFaqItems(p.faqItems),
         teamMembers: parseTeamMembers(p.teamMembers),
         galleryItems: parseGalleryItems(p.galleryItems),
+        aboutUs: parseAboutUs(p.aboutUs),
         whyMeBlocks: parseProfileBlocks(p.whyMeBlocks).map((block) => ({
           ...block,
           mediaUrl: '',
@@ -1482,6 +1505,7 @@ export function CreatorStudioProfileTab({
         faqItems: serializeFaqItems(parsed.faqItems),
         teamMembers: serializeTeamMembers(parsed.teamMembers),
         galleryItems: serializeGalleryItems(parsed.galleryItems),
+        aboutUs: serializeAboutUs(parsed.aboutUs),
         whyMeBlocks: serializeProfileBlocks(parsed.whyMeBlocks, { stripMedia: true }),
         experienceBlocks: serializeProfileBlocks(parsed.experienceBlocks),
         yearsOfExperience: parsed.yearsOfExperience,
@@ -1807,6 +1831,7 @@ export function CreatorStudioProfileTab({
         faqItems: serializeFaqItems(parsed.faqItems),
         teamMembers: serializeTeamMembers(parsed.teamMembers),
         galleryItems: serializeGalleryItems(parsed.galleryItems),
+        aboutUs: serializeAboutUs(parsed.aboutUs),
         whyMeBlocks: serializeProfileBlocks(parsed.whyMeBlocks, { stripMedia: true }),
         experienceBlocks: serializeProfileBlocks(parsed.experienceBlocks),
         yearsOfExperience: parsed.yearsOfExperience,
@@ -2474,6 +2499,33 @@ export function CreatorStudioProfileTab({
       loadProfile,
       onProfileUpdated,
     ]
+  );
+
+  const persistPortfolioAboutUs = useCallback(
+    async (next: ProfileFormValues['aboutUs']) => {
+      setSaving(true);
+      setSubmitError(null);
+      try {
+        const payload = serializeAboutUs(next);
+        await updateCreatorProfile({ aboutUs: payload });
+        const parsed = parseAboutUs(payload);
+        form.setValue('aboutUs', parsed, { shouldDirty: false });
+        if (savedSnapshot.current) {
+          savedSnapshot.current = { ...savedSnapshot.current, aboutUs: parsed };
+        }
+        onProfileUpdated?.();
+        pushFlashFeedback({
+          variant: 'success',
+          title: 'About us updated',
+        });
+      } catch (e) {
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update About us.');
+        throw e;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [form, onProfileUpdated]
   );
 
   const persistPortfolioExperience = useCallback(
@@ -4131,6 +4183,15 @@ export function CreatorStudioProfileTab({
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, faq: value }))}
             />
           </div>
+        );
+      case 'aboutUs':
+        return (
+          <PortfolioAboutUsReadOnly
+            value={values.aboutUs}
+            saving={saving}
+            editMode={isPortfolioLayout ? portfolioEditMode : 'individual'}
+            onSave={persistPortfolioAboutUs}
+          />
         );
       case 'team':
         if (isPortfolioLayout) {

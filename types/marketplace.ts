@@ -2,6 +2,7 @@ import type {
   ContactEntry,
   FaqItem,
   PagedResponse,
+  ProfileAboutUs,
   ProfileGalleryItem,
   ProfileLink,
   ProfileMediaBlock,
@@ -118,6 +119,7 @@ export interface MarketplaceCreatorPublicProfile {
   faqItems?: FaqItem[];
   teamMembers?: ProfileTeamMember[];
   galleryItems?: ProfileGalleryItem[];
+  aboutUs?: ProfileAboutUs | null;
   profileLinks?: ProfileLink[];
   memberSince?: string | null;
   responseTimeLabel?: string | null;

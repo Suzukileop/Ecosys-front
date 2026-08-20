@@ -301,8 +301,12 @@ function ContactFreeSpaceButton({
     );
   }
 
-  const className = `inline-flex shrink-0 items-center justify-center gap-2 ${shapeClass} text-xs font-bold uppercase tracking-[0.14em] transition hover:opacity-90 ${shadowClass} ${glassClass} ${
-    compact ? 'min-h-9 px-3.5 py-1.5 text-[0.65rem]' : 'min-h-10 px-4 py-2'
+  const caseClass =
+    labelCase === 'uppercase'
+      ? 'uppercase tracking-[0.14em]'
+      : 'normal-case tracking-normal';
+  const className = `inline-flex shrink-0 items-center justify-center gap-2 ${shapeClass} text-[15px] font-semibold ${caseClass} transition hover:opacity-90 ${shadowClass} ${glassClass} ${
+    compact ? 'min-h-9 px-3.5 py-1.5 text-sm' : 'min-h-10 px-4 py-2'
   }`;
   const content = (
     <>
@@ -789,7 +793,15 @@ export function PortfolioNavInlineExtras({
       includeContact={includeContact}
       includeCustom={includeCustom}
       compact
-      className="shrink-0"
+      className={`shrink-0 ${
+        side === 'left'
+          ? model.verticalExtras
+            ? 'mb-8'
+            : 'mr-12 sm:mr-20'
+          : model.verticalExtras
+            ? 'mt-8'
+            : 'ml-12 sm:ml-20'
+      }`}
     />
   );
 }
@@ -830,7 +842,15 @@ export function PortfolioNavAdjacentExtras({
       includeContact={includeContact}
       includeCustom={includeCustom}
       compact
-      className="shrink-0"
+      className={`shrink-0 ${
+        position === 'before'
+          ? model.verticalExtras
+            ? 'mb-8'
+            : 'mr-12 sm:mr-20'
+          : model.verticalExtras
+            ? 'mt-8'
+            : 'ml-12 sm:ml-20'
+      }`}
     />
   );
 }

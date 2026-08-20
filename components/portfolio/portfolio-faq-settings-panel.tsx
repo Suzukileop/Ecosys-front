@@ -13,6 +13,12 @@ import {
   PORTFOLIO_FAQ_ILLUSTRATION_OPTIONS,
   PORTFOLIO_FAQ_ILLUSTRATION_PLACEMENT_OPTIONS,
   PORTFOLIO_FAQ_ITEM_DESIGN_OPTIONS,
+  PORTFOLIO_FAQ_DESIGN_OPTIONS,
+  PORTFOLIO_FAQ_PANEL_SHADOW_OPTIONS,
+  PORTFOLIO_FAQ_PANEL_SHADOW_PRESET_INTENSITY,
+  PORTFOLIO_FAQ_SPLIT_SIDE_OPTIONS,
+  PORTFOLIO_FAQ_CTA_SPLIT_SIDE_OPTIONS,
+  defaultsForFaqDesign,
   PORTFOLIO_FAQ_ITEM_GAP_OPTIONS,
   PORTFOLIO_FAQ_LIST_MAX_WIDTH_OPTIONS,
   PORTFOLIO_FAQ_LIST_PLACEMENT_OPTIONS,
@@ -82,7 +88,7 @@ export type FaqSubSection =
   | 'background';
 
 const FAQ_SUB_SECTIONS: { id: FaqSubSection; label: string; description: string }[] = [
-  { id: 'general', label: 'General', description: 'Section visibility, item design, spacing, and accent color.' },
+  { id: 'general', label: 'General', description: 'Section visibility, ready-to-use design, item design, and spacing.' },
   { id: 'palette', label: 'Palette', description: 'Use the Global site palette and bind section colors to tokens.' },
   { id: 'header', label: 'Header', description: 'Title, subtitle, fonts, and colors.' },
   { id: 'frame', label: 'Frame', description: 'Complete card frame controls (border, split background, radius).' },
@@ -427,6 +433,79 @@ export function FaqSettingsPanel({
             }
           />
           <FaqOptionGrid
+            label="Design"
+            options={PORTFOLIO_FAQ_DESIGN_OPTIONS}
+            value={faq.design ?? 'two-column'}
+            onChange={(design) => onChange(asFaqPatch(defaultsForFaqDesign(design)))}
+            columns={1}
+          />
+          {faq.design === 'panel' ? (
+            <>
+              <FaqOptionGrid
+                label="Ombre de la carte"
+                options={PORTFOLIO_FAQ_PANEL_SHADOW_OPTIONS}
+                value={faq.panelShadow ?? 'medium'}
+                onChange={(panelShadow) =>
+                  onChange({
+                    panelShadow,
+                    panelShadowIntensity: PORTFOLIO_FAQ_PANEL_SHADOW_PRESET_INTENSITY[panelShadow],
+                  })
+                }
+                columns={2}
+              />
+              {(faq.panelShadow ?? 'medium') !== 'none' ? (
+                <div>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                      Intensité de l’ombre
+                    </p>
+                    <span className="text-sm font-semibold text-neutral-700">
+                      {faq.panelShadowIntensity ?? 55}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={faq.panelShadowIntensity ?? 55}
+                    onChange={(event) =>
+                      onChange({ panelShadowIntensity: Number(event.target.value) })
+                    }
+                    className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
+                    aria-label="Intensité de l’ombre de la carte FAQ"
+                  />
+                </div>
+              ) : null}
+            </>
+          ) : null}
+          {faq.design === 'split' || faq.design === 'cta-split' ? (
+            <>
+              <FaqOptionGrid
+                label={faq.design === 'cta-split' ? 'Placement SVG / questions' : 'Placement titre / questions'}
+                options={
+                  faq.design === 'cta-split'
+                    ? PORTFOLIO_FAQ_CTA_SPLIT_SIDE_OPTIONS
+                    : PORTFOLIO_FAQ_SPLIT_SIDE_OPTIONS
+                }
+                value={
+                  faq.illustrationPlacement ?? (faq.design === 'cta-split' ? 'right' : 'left')
+                }
+                onChange={(illustrationPlacement) => onChange({ illustrationPlacement })}
+                columns={2}
+              />
+              <FaqOptionGrid
+                label="SVG"
+                options={PORTFOLIO_FAQ_ILLUSTRATION_OPTIONS}
+                value={
+                  faq.illustrationVariant ?? (faq.design === 'cta-split' ? 'chat' : 'question')
+                }
+                onChange={(illustrationVariant) => onChange({ illustrationVariant })}
+                columns={2}
+              />
+            </>
+          ) : null}
+          <FaqOptionGrid
             label="Item design"
             options={PORTFOLIO_FAQ_ITEM_DESIGN_OPTIONS}
             value={faq.itemDesign}
@@ -727,7 +806,13 @@ export function FaqSettingsPanel({
               <FaqToggleRow
                 label="One answer at a time"
                 description="Opening a question automatically closes any other open answer."
-                checked={faq.accordionExclusive === true}
+                checked={
+                  faq.design === 'two-column' ||
+                  faq.design === 'panel' ||
+                  faq.design === 'split' ||
+                  faq.design === 'cta-split' ||
+                  faq.accordionExclusive === true
+                }
                 onChange={(accordionExclusive) => onChange({ accordionExclusive })}
               />
             ) : null}
@@ -739,31 +824,33 @@ export function FaqSettingsPanel({
             />
           </div>
 
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">FAQ illustration</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Decorative SVG beside the list. Choose a style, then place it left or right on large
-                screens.
-              </p>
-            </div>
-            <FaqOptionGrid
-              label="SVG style"
-              options={PORTFOLIO_FAQ_ILLUSTRATION_OPTIONS}
-              value={faq.illustrationVariant ?? 'none'}
-              onChange={(illustrationVariant) => onChange({ illustrationVariant })}
-              columns={2}
-            />
-            {(faq.illustrationVariant ?? 'none') !== 'none' ? (
+          {faq.design === 'split' || faq.design === 'cta-split' ? null : (
+            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
+              <div>
+                <p className="text-sm font-semibold text-neutral-950">FAQ illustration</p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Decorative SVG beside the list. Choose a style, then place it left or right on large
+                  screens.
+                </p>
+              </div>
               <FaqOptionGrid
-                label="SVG placement"
-                options={PORTFOLIO_FAQ_ILLUSTRATION_PLACEMENT_OPTIONS}
-                value={faq.illustrationPlacement ?? 'right'}
-                onChange={(illustrationPlacement) => onChange({ illustrationPlacement })}
+                label="SVG style"
+                options={PORTFOLIO_FAQ_ILLUSTRATION_OPTIONS}
+                value={faq.illustrationVariant ?? 'none'}
+                onChange={(illustrationVariant) => onChange({ illustrationVariant })}
                 columns={2}
               />
-            ) : null}
-          </div>
+              {(faq.illustrationVariant ?? 'none') !== 'none' ? (
+                <FaqOptionGrid
+                  label="SVG placement"
+                  options={PORTFOLIO_FAQ_ILLUSTRATION_PLACEMENT_OPTIONS}
+                  value={faq.illustrationPlacement ?? 'right'}
+                  onChange={(illustrationPlacement) => onChange({ illustrationPlacement })}
+                  columns={2}
+                />
+              ) : null}
+            </div>
+          )}
 
           <FaqOptionGrid
             label="Content alignment"

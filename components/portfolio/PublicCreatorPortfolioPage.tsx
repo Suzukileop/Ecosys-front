@@ -59,6 +59,8 @@ import {
 import {
   galleryHeaderFontClass,
   galleryHeaderFontStyle,
+  gallerySectionLayoutEmbedsHeader,
+  gallerySectionLayoutIsAside,
   pickGalleryPresentationSettings,
   resolveGallerySectionSubtitle,
   resolveGallerySectionTitle,
@@ -115,13 +117,16 @@ import {
   resolveFaqSectionSubtitle,
   resolveFaqSectionTitle,
   faqHeaderFontClass,
+  FAQ_READY_TITLE_CLASS,
   faqHeaderFontStyle,
   faqListPlacementClass,
   faqListMaxWidthClass,
   faqSubtitleColorStyle,
   faqTitleColorStyle,
-  faqAsideLayoutClass,
   faqSectionLayoutIsAside,
+  faqDesignShowsTitleKicker,
+  faqDesignIsSplit,
+  faqDesignIsCtaSplit,
 } from '@/components/portfolio/portfolio-faq-settings';
 import {
   pickTeamPresentationSettings,
@@ -129,9 +134,23 @@ import {
   resolveTeamSectionTitle,
   teamHeaderFontClass,
   teamHeaderFontStyle,
+  teamSectionLayoutIsAside,
   teamSubtitleColorStyle,
   teamTitleColorStyle,
 } from '@/components/portfolio/portfolio-team-settings';
+import {
+  aboutUsDesignEmbedsHeader,
+  aboutUsHeaderFontClass,
+  aboutUsHeaderFontStyle,
+  aboutUsSectionLayoutIsAside,
+  aboutUsSubtitleColorStyle,
+  aboutUsTitleColorStyle,
+  pickAboutUsPresentationSettings,
+  resolveAboutUsSectionSubtitle,
+  resolveAboutUsSectionTitle,
+} from '@/components/portfolio/portfolio-about-us-settings';
+import { EditorialAboutUsSection } from '@/components/portfolio/EditorialAboutUsSection';
+import { portfolioPresenceShowsAboutUs } from '@/components/portfolio/portfolio-presence';
 import {
   pickExperiencePresentationSettings,
   resolveExperienceSectionSubtitle,
@@ -149,10 +168,12 @@ import {
   contactHeaderFontStyle,
   contactSubtitleColorStyle,
   contactTitleColorStyle,
+  contactDesignUsesTitleCaseHeading,
 } from '@/components/portfolio/portfolio-contact-settings';
 import { pickFooterPresentationSettings, portfolioFooterNavClearanceClass } from '@/components/portfolio/portfolio-footer-settings';
 import {
   applyHeroPaletteToAbout,
+  applyHeroPaletteToAboutUs,
   applyHeroPaletteToContact,
   applyHeroPaletteToExperience,
   applyHeroPaletteToFaq,
@@ -403,11 +424,8 @@ function asideAwareHeaderAlign(
   layout: SectionTitleLayout | undefined,
   fallback: { centered: boolean; alignRight: boolean; alwaysCentered: boolean }
 ) {
-  if (layout === 'aside-left') {
-    return { centered: false, alignRight: false, alwaysCentered: true };
-  }
-  if (layout === 'aside-right') {
-    return { centered: false, alignRight: true, alwaysCentered: true };
+  if (layout === 'aside-left' || layout === 'aside-right') {
+    return { centered: true, alignRight: false, alwaysCentered: true };
   }
   return fallback;
 }
@@ -463,21 +481,31 @@ function SectionAsideContent({
   layout,
   header,
   children,
+  centerHeader = true,
 }: {
   layout: SectionTitleLayout;
   header: ReactNode;
   children: ReactNode;
+  centerHeader?: boolean;
 }) {
+  const align = centerHeader ? 'lg:items-stretch' : 'lg:items-start';
+  const grid =
+    layout === 'aside-right'
+      ? `grid w-full gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(14rem,0.85fr)] ${align} lg:gap-x-12 xl:gap-x-16`
+      : `grid w-full gap-10 lg:grid-cols-[minmax(14rem,0.85fr)_minmax(0,1.15fr)] ${align} lg:gap-x-12 xl:gap-x-16`;
+  const headerCell = centerHeader
+    ? 'flex min-w-0 flex-col items-center justify-center self-stretch text-center'
+    : 'min-w-0';
   return (
-    <div className={faqAsideLayoutClass(layout)}>
+    <div className={grid}>
       {layout === 'aside-right' ? (
         <>
           <div className="min-w-0">{children}</div>
-          <div className="min-w-0">{header}</div>
+          <div className={headerCell}>{header}</div>
         </>
       ) : (
         <>
-          <div className="min-w-0">{header}</div>
+          <div className={headerCell}>{header}</div>
           <div className="min-w-0">{children}</div>
         </>
       )}
@@ -565,6 +593,7 @@ export function PublicCreatorPortfolioPage({
   const faqItems = profile.faqItems ?? [];
   const teamMembers = profile.teamMembers ?? [];
   const galleryItems = profile.galleryItems ?? [];
+  const aboutUs = profile.aboutUs ?? null;
   const displayLinks = resolveDisplayLinks(profile);
   const uniqueContactLinks = useMemo(() => dedupeContactLinks(displayLinks), [displayLinks]);
   const primaryLink = resolvePrimaryLink(profile);
@@ -602,6 +631,19 @@ export function PublicCreatorPortfolioPage({
   const hasFaqSection = faqItems.length > 0;
   const hasTeamSection = teamMembers.length > 0;
   const hasGallerySection = galleryItems.length > 0;
+  const hasAboutUsSection =
+    portfolioPresenceShowsAboutUs(settings.global.presenceKind) &&
+    Boolean(
+      aboutUs &&
+        (aboutUs.title?.trim() ||
+          aboutUs.description?.trim() ||
+          (aboutUs.tasks ?? []).some((task) => task.trim()) ||
+          (aboutUs.imageUrls ?? []).some((url) => (url ?? '').trim()) ||
+          aboutUs.quote?.trim() ||
+          aboutUs.founder?.name?.trim() ||
+          aboutUs.founder?.function?.trim() ||
+          aboutUs.founder?.logoUrl?.trim())
+    );
   const hasContactSection = Boolean(
     resolvedContactEmail ||
       profile.phone?.trim() ||
@@ -637,7 +679,15 @@ export function PublicCreatorPortfolioPage({
   const showFaqSection = hasFaqSection && settings.faq.enabled;
   const showTeamSection = hasTeamSection && settings.team.enabled;
   const showGallerySection = hasGallerySection && settings.gallery.enabled;
+  const showAboutUsSection = hasAboutUsSection && settings.aboutUs.enabled;
   const showContactSectionResolved = hasContactSection && settings.contact.enabled;
+  const footerVisibleSectionLinks = {
+    gallery: showGallerySection,
+    aboutUs: showAboutUsSection,
+    team: showTeamSection,
+    services: showServicesSection,
+    work: showWorkSection,
+  };
 
   const heroTools = useMemo(
     () => resolveHeroTools(strengthNames, settings.hero.selectedTools),
@@ -767,6 +817,7 @@ export function PublicCreatorPortfolioPage({
         servicesPresentation.showSkills &&
         strengths.length > 0,
       about: showAboutSection,
+      aboutUs: showAboutUsSection,
       experience: showExperienceSection,
       team: showTeamSection,
       gallery: showGallerySection,
@@ -781,6 +832,7 @@ export function PublicCreatorPortfolioPage({
       servicesPresentation.showSkills,
       strengths.length,
       showAboutSection,
+      showAboutUsSection,
       showExperienceSection,
       showTeamSection,
       showGallerySection,
@@ -811,6 +863,21 @@ export function PublicCreatorPortfolioPage({
   );
   const teamSectionTitle = useMemo(() => resolveTeamSectionTitle(settings.team), [settings.team]);
   const teamSectionSubtitle = useMemo(() => resolveTeamSectionSubtitle(settings.team), [settings.team]);
+  const aboutUsPresentation = useMemo(
+    () => ({
+      ...applyHeroPaletteToAboutUs(pickAboutUsPresentationSettings(settings.aboutUs), heroPalette),
+      activeColorMode: (settings.global.colorMode ?? 'dark') as 'light' | 'dark',
+    }),
+    [settings.aboutUs, settings.global.colorMode, heroPalette]
+  );
+  const aboutUsSectionTitle = useMemo(
+    () => resolveAboutUsSectionTitle(settings.aboutUs),
+    [settings.aboutUs]
+  );
+  const aboutUsSectionSubtitle = useMemo(
+    () => resolveAboutUsSectionSubtitle(settings.aboutUs),
+    [settings.aboutUs]
+  );
   const contactPresentation = useMemo(
     () => ({
       ...applyHeroPaletteToContact(pickContactPresentationSettings(settings.contact), heroPalette),
@@ -964,6 +1031,7 @@ export function PublicCreatorPortfolioPage({
       skills: servicesPresentation,
       services: servicesPresentation,
       about: aboutPresentation,
+      aboutUs: aboutUsPresentation,
       experience: experiencePresentation,
       team: teamPresentation,
       faq: faqPresentation,
@@ -973,6 +1041,7 @@ export function PublicCreatorPortfolioPage({
     workPresentation,
     servicesPresentation,
     aboutPresentation,
+    aboutUsPresentation,
     experiencePresentation,
     teamPresentation,
     faqPresentation,
@@ -1048,11 +1117,8 @@ export function PublicCreatorPortfolioPage({
   );
   const skillsHeaderAlign = useMemo(() => {
     const layout = settings.services.skillsHeader.sectionLayout ?? 'stacked';
-    if (layout === 'aside-left') {
-      return { centered: false, alignRight: false, alwaysCentered: true };
-    }
-    if (layout === 'aside-right') {
-      return { centered: false, alignRight: true, alwaysCentered: true };
+    if (layout === 'aside-left' || layout === 'aside-right') {
+      return { centered: true, alignRight: false, alwaysCentered: true };
     }
     return resolveSectionHeaderAlign(
       settings.global,
@@ -1088,17 +1154,17 @@ export function PublicCreatorPortfolioPage({
   );
   const faqHeaderAlign = useMemo(() => {
     const layout = settings.faq.sectionLayout ?? 'stacked';
-    if (layout === 'aside-left') {
-      return { centered: false, alignRight: false, alwaysCentered: true };
-    }
-    if (layout === 'aside-right') {
-      return { centered: false, alignRight: true, alwaysCentered: true };
+    if (layout === 'aside-left' || layout === 'aside-right') {
+      return { centered: true, alignRight: false, alwaysCentered: true };
     }
     if (settings.faq.headerAlignment === 'right') {
       return { centered: false, alignRight: true, alwaysCentered: true };
     }
-    const sectionAlign = settings.faq.headerAlignment === 'center' ? 'center' : 'left';
-    return resolveSectionHeaderAlign(settings.global, sectionAlign);
+    // Two-column (and FAQ center) stay centered even if Global titles are left-aligned.
+    if (settings.faq.headerAlignment !== 'left') {
+      return { centered: true, alignRight: false, alwaysCentered: true };
+    }
+    return resolveSectionHeaderAlign(settings.global, 'left');
   }, [settings.global, settings.faq.headerAlignment, settings.faq.sectionLayout]);
   const experienceHeaderAlign = useMemo(() => {
     const layout = experiencePresentation.sectionLayout;
@@ -1118,11 +1184,7 @@ export function PublicCreatorPortfolioPage({
   const teamHeaderAlign = useMemo(() => {
     const layout = teamPresentation.sectionLayout;
     if (layout === 'aside-left' || layout === 'aside-right') {
-      return asideAwareHeaderAlign(layout, {
-        centered: false,
-        alignRight: false,
-        alwaysCentered: false,
-      });
+      return { centered: true, alignRight: false, alwaysCentered: true };
     }
     if (teamPresentation.headerAlignment === 'right') {
       return { centered: false, alignRight: true, alwaysCentered: true };
@@ -1132,10 +1194,29 @@ export function PublicCreatorPortfolioPage({
       teamPresentation.headerAlignment === 'center' ? 'center' : 'left'
     );
   }, [settings.global, teamPresentation.headerAlignment, teamPresentation.sectionLayout]);
+  const aboutUsHeaderAlign = useMemo(() => {
+    const layout = aboutUsPresentation.sectionLayout;
+    if (layout === 'aside-left' || layout === 'aside-right') {
+      return asideAwareHeaderAlign(layout, {
+        centered: false,
+        alignRight: false,
+        alwaysCentered: false,
+      });
+    }
+    if (aboutUsPresentation.headerAlignment === 'right') {
+      return { centered: false, alignRight: true, alwaysCentered: true };
+    }
+    return resolveSectionHeaderAlign(
+      settings.global,
+      aboutUsPresentation.headerAlignment === 'center' ? 'center' : 'left'
+    );
+  }, [settings.global, aboutUsPresentation.headerAlignment, aboutUsPresentation.sectionLayout]);
   const galleryHeaderAlign = useMemo(
     () =>
       asideAwareHeaderAlign(
-        galleryPresentation.sectionLayout,
+        gallerySectionLayoutIsAside(galleryPresentation.sectionLayout)
+          ? galleryPresentation.sectionLayout
+          : undefined,
         resolveSectionHeaderAlign(settings.global, galleryPresentation.headerAlignment)
       ),
     [galleryPresentation.headerAlignment, galleryPresentation.sectionLayout, settings.global]
@@ -1330,6 +1411,28 @@ export function PublicCreatorPortfolioPage({
     return { title, subtitle };
   }, [settings.global, teamPresentation, globalTypographyContext]);
 
+  const aboutUsHeaderTypography = useMemo(() => {
+    const title = resolveGlobalSectionTitleTypography(
+      settings.global,
+      {
+        fontClass: aboutUsHeaderFontClass(aboutUsPresentation.titleFont, 'title'),
+        fontStyle: aboutUsHeaderFontStyle(aboutUsPresentation.titleFont),
+        colorStyle: aboutUsTitleColorStyle(aboutUsPresentation.titleColor),
+      },
+      globalTypographyContext
+    );
+    const subtitle = resolveGlobalSectionSubtitleTypography(
+      settings.global,
+      {
+        fontClass: aboutUsHeaderFontClass(aboutUsPresentation.subtitleFont, 'subtitle'),
+        fontStyle: aboutUsHeaderFontStyle(aboutUsPresentation.subtitleFont),
+        colorStyle: aboutUsSubtitleColorStyle(aboutUsPresentation.subtitleColor),
+      },
+      globalTypographyContext
+    );
+    return { title, subtitle };
+  }, [settings.global, aboutUsPresentation, globalTypographyContext]);
+
   const galleryHeaderTypography = useMemo(() => {
     const title = resolveGlobalSectionTitleTypography(
       settings.global,
@@ -1386,6 +1489,35 @@ export function PublicCreatorPortfolioPage({
       },
       globalTypographyContext
     );
+
+    if (
+      (faqPresentation.design ?? 'two-column') === 'two-column' ||
+      faqPresentation.design === 'panel' ||
+      faqPresentation.design === 'split' ||
+      faqPresentation.design === 'cta-split'
+    ) {
+      const readyTitleClass = [
+        faqPresentation.titleFont === 'serif' ? 'font-serif' : '',
+        faqPresentation.titleFont === 'display' ? 'font-black uppercase tracking-[0.08em]' : FAQ_READY_TITLE_CLASS,
+        faqPresentation.titleUppercase && faqPresentation.titleFont !== 'display' ? 'uppercase' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+      return {
+        title: {
+          className: readyTitleClass,
+          style: {
+            ...faqHeaderFontStyle(faqPresentation.titleFont),
+            ...faqTitleColorStyle(faqPresentation.titleColor),
+            fontWeight: faqPresentation.titleFont === 'display' ? undefined : 600,
+          },
+          decorationStyle: title.decorationStyle,
+          customSizing: true,
+        },
+        subtitle,
+      };
+    }
+
     return { title, subtitle };
   }, [settings.global, faqPresentation, globalTypographyContext]);
 
@@ -1416,6 +1548,15 @@ export function PublicCreatorPortfolioPage({
       },
       globalTypographyContext
     );
+    if (contactDesignUsesTitleCaseHeading(contactPresentation.cardDesign)) {
+      return {
+        title: {
+          ...title,
+          className: title.className.replace(/\buppercase\b/g, '').replace(/\s+/g, ' ').trim(),
+        },
+        subtitle,
+      };
+    }
     return { title, subtitle };
   }, [settings.global, contactPresentation, globalTypographyContext]);
 
@@ -1525,7 +1666,7 @@ export function PublicCreatorPortfolioPage({
             centered={workHeaderAlign.centered}
             alignRight={workHeaderAlign.alignRight}
             alwaysCentered={workHeaderAlign.alwaysCentered}
-            className={aside ? 'mb-0 lg:sticky lg:top-32' : undefined}
+            className={aside ? 'mb-0 w-full' : undefined}
             titleTypographyClass={workHeaderTypography.title.className}
             titleTypographyStyle={workHeaderTypography.title.style}
             titleDecorationStyle={workHeaderTypography.title.decorationStyle}
@@ -1589,7 +1730,7 @@ export function PublicCreatorPortfolioPage({
             centered={skillsHeaderAlign.centered}
             alignRight={skillsHeaderAlign.alignRight}
             alwaysCentered={skillsHeaderAlign.alwaysCentered}
-            className={skillsAside ? 'mb-0 lg:sticky lg:top-32' : undefined}
+            className={skillsAside ? 'mb-0 w-full' : undefined}
             titleTypographyClass={skillsHeaderTypography.title.className}
             titleTypographyStyle={skillsHeaderTypography.title.style}
             titleDecorationStyle={skillsHeaderTypography.title.decorationStyle}
@@ -1627,19 +1768,9 @@ export function PublicCreatorPortfolioPage({
             header={skillsAside ? undefined : skillsHeaderBlock}
           >
             {skillsAside ? (
-              <div className={faqAsideLayoutClass(skillsLayout)}>
-                {skillsLayout === 'aside-right' ? (
-                  <>
-                    {skillsContentBlock}
-                    <div className="min-w-0">{skillsHeaderBlock}</div>
-                  </>
-                ) : (
-                  <>
-                    <div className="min-w-0">{skillsHeaderBlock}</div>
-                    {skillsContentBlock}
-                  </>
-                )}
-              </div>
+              <SectionAsideContent layout={skillsLayout} header={skillsHeaderBlock}>
+                {skillsContentBlock}
+              </SectionAsideContent>
             ) : (
               skillsContentBlock
             )}
@@ -1689,7 +1820,7 @@ export function PublicCreatorPortfolioPage({
                 ? distinctServicesHeaderAlign.alwaysCentered
                 : servicesHeaderAlign.alwaysCentered
             }
-            className={servicesAside ? 'mb-0 lg:sticky lg:top-32' : undefined}
+            className={servicesAside ? 'mb-0 w-full' : undefined}
             titleTypographyClass={
               (isDistinctServicesOrganization
                 ? distinctServicesHeaderTypography
@@ -1818,7 +1949,7 @@ export function PublicCreatorPortfolioPage({
             centered={aboutHeaderAlign.centered}
             alignRight={aboutHeaderAlign.alignRight}
             alwaysCentered={aboutHeaderAlign.alwaysCentered}
-            className={aside ? 'mb-0 lg:sticky lg:top-32' : undefined}
+            className={aside ? 'mb-0 w-full' : undefined}
             titleTypographyClass={aboutHeaderTypography.title.className}
             titleTypographyStyle={aboutHeaderTypography.title.style}
             titleDecorationStyle={aboutHeaderTypography.title.decorationStyle}
@@ -2018,7 +2149,7 @@ export function PublicCreatorPortfolioPage({
             centered={experienceHeaderAlign.centered}
             alignRight={experienceHeaderAlign.alignRight}
             alwaysCentered={experienceHeaderAlign.alwaysCentered}
-            className={aside ? 'mb-0 lg:sticky lg:top-32' : undefined}
+            className={aside ? 'mb-0 w-full' : undefined}
             titleTypographyClass={experienceHeaderTypography.title.className}
             titleTypographyStyle={experienceHeaderTypography.title.style}
             titleDecorationStyle={experienceHeaderTypography.title.decorationStyle}
@@ -2078,9 +2209,68 @@ export function PublicCreatorPortfolioPage({
           </PortfolioSectionShell>
         );
       }
+      case 'aboutUs': {
+        if (!aboutUs) return null;
+        const layout = aboutUsPresentation.sectionLayout ?? 'stacked';
+        const embedHeader = aboutUsDesignEmbedsHeader(aboutUsPresentation.design);
+        const aside = !embedHeader && !isSplitMode && aboutUsSectionLayoutIsAside(layout);
+        const headerBlock = (
+          <EditorialSectionStickyHeader
+            title={aboutUsSectionTitle}
+            subtitle={aboutUsSectionSubtitle || undefined}
+            editorialLayout={isEditorialLayout}
+            centered={aboutUsHeaderAlign.centered}
+            alignRight={aboutUsHeaderAlign.alignRight}
+            alwaysCentered={aboutUsHeaderAlign.alwaysCentered}
+            className={aside ? 'mb-0 w-full' : undefined}
+            titleTypographyClass={aboutUsHeaderTypography.title.className}
+            titleTypographyStyle={aboutUsHeaderTypography.title.style}
+            titleDecorationStyle={aboutUsHeaderTypography.title.decorationStyle}
+            titleChromeClass={titleChrome.className}
+            titleChromeStyle={titleChrome.style}
+            customTitleSizing={aboutUsHeaderTypography.title.customSizing}
+            subtitleTypographyClass={aboutUsHeaderTypography.subtitle.className}
+            subtitleTypographyStyle={aboutUsHeaderTypography.subtitle.style}
+            subtitleDecorationStyle={aboutUsHeaderTypography.subtitle.decorationStyle}
+            customSubtitleSizing={aboutUsHeaderTypography.subtitle.customSizing}
+            scrollBehavior={effectiveTitleScroll}
+            orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'aboutUs')}
+          />
+        );
+        const contentBlock = (
+          <EditorialAboutUsSection
+            aboutUs={aboutUs}
+            presentation={aboutUsPresentation}
+            sectionTitle={aboutUsSectionTitle}
+            sectionSubtitle={aboutUsSectionSubtitle}
+            founderRating={typeof profile.averageRating === 'number' ? profile.averageRating : 4.5}
+          />
+        );
+        return (
+          <PortfolioSectionShell
+            id="aboutUs"
+            background={aboutUsPresentation}
+            fitContent
+            fillAvailableHeight={isPagesMode}
+            suppressBackground={suppressSectionBackground(aboutUsPresentation)}
+            topSpacingClass={sectionTopSpacingClass}
+            topSpacingStyle={sectionTopSpacingStyle}
+            contentLayout={sectionContentLayout}
+            header={embedHeader || aside ? undefined : headerBlock}
+          >
+            {aside ? (
+              <SectionAsideContent layout={layout} header={headerBlock}>
+                {contentBlock}
+              </SectionAsideContent>
+            ) : (
+              contentBlock
+            )}
+          </PortfolioSectionShell>
+        );
+      }
       case 'team': {
         const layout = teamPresentation.sectionLayout ?? 'stacked';
-        const aside = !isSplitMode && faqSectionLayoutIsAside(layout);
+        const aside = !isSplitMode && teamSectionLayoutIsAside(layout);
         const headerBlock = (
           <EditorialSectionStickyHeader
             title={teamSectionTitle}
@@ -2089,7 +2279,7 @@ export function PublicCreatorPortfolioPage({
             centered={teamHeaderAlign.centered}
             alignRight={teamHeaderAlign.alignRight}
             alwaysCentered={teamHeaderAlign.alwaysCentered}
-            className={aside ? 'mb-0 lg:sticky lg:top-32' : undefined}
+            className={aside ? 'mb-0 w-full' : undefined}
             titleTypographyClass={teamHeaderTypography.title.className}
             titleTypographyStyle={teamHeaderTypography.title.style}
             titleDecorationStyle={teamHeaderTypography.title.decorationStyle}
@@ -2128,7 +2318,7 @@ export function PublicCreatorPortfolioPage({
             header={aside ? undefined : headerBlock}
           >
             {aside ? (
-              <SectionAsideContent layout={layout} header={headerBlock}>
+              <SectionAsideContent layout={layout} header={headerBlock} centerHeader>
                 {contentBlock}
               </SectionAsideContent>
             ) : (
@@ -2139,17 +2329,18 @@ export function PublicCreatorPortfolioPage({
       }
       case 'gallery': {
         const layout = galleryPresentation.sectionLayout ?? 'stacked';
-        const aside = !isSplitMode && faqSectionLayoutIsAside(layout);
+        const aside = !isSplitMode && gallerySectionLayoutIsAside(layout);
+        const embedHeader = gallerySectionLayoutEmbedsHeader(layout, galleryPresentation);
         const headerBlock =
           gallerySectionTitle || gallerySectionSubtitle ? (
           <EditorialSectionStickyHeader
             title={gallerySectionTitle}
             subtitle={gallerySectionSubtitle || undefined}
             editorialLayout={isEditorialLayout}
-            centered={galleryHeaderAlign.centered}
-            alignRight={galleryHeaderAlign.alignRight}
-            alwaysCentered={galleryHeaderAlign.alwaysCentered}
-            className={aside ? 'mb-0 lg:sticky lg:top-32' : undefined}
+            centered={embedHeader ? true : galleryHeaderAlign.centered}
+            alignRight={embedHeader ? false : galleryHeaderAlign.alignRight}
+            alwaysCentered={embedHeader ? true : galleryHeaderAlign.alwaysCentered}
+            className={embedHeader ? 'mb-0' : aside ? 'mb-0 w-full' : undefined}
             titleTypographyClass={galleryHeaderTypography.title.className}
             titleTypographyStyle={galleryHeaderTypography.title.style}
             titleDecorationStyle={galleryHeaderTypography.title.decorationStyle}
@@ -2160,7 +2351,7 @@ export function PublicCreatorPortfolioPage({
             subtitleTypographyStyle={galleryHeaderTypography.subtitle.style}
             subtitleDecorationStyle={galleryHeaderTypography.subtitle.decorationStyle}
             customSubtitleSizing={galleryHeaderTypography.subtitle.customSizing}
-            scrollBehavior={effectiveTitleScroll}
+            scrollBehavior={embedHeader ? 'static' : effectiveTitleScroll}
             orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'gallery')}
           />
         ) : null;
@@ -2172,7 +2363,11 @@ export function PublicCreatorPortfolioPage({
             ink={galleryPresentation.titleColor}
             surface={galleryPresentation.sectionBackgroundColor}
           >
-            <EditorialGallerySection items={galleryItems} presentation={galleryPresentation} />
+            <EditorialGallerySection
+              items={galleryItems}
+              presentation={galleryPresentation}
+              embeddedHeader={embedHeader ? headerBlock : undefined}
+            />
           </SectionIllustratedContent>
         );
         return (
@@ -2185,7 +2380,7 @@ export function PublicCreatorPortfolioPage({
             topSpacingClass={sectionTopSpacingClass}
             topSpacingStyle={sectionTopSpacingStyle}
             contentLayout={sectionContentLayout}
-            header={aside ? undefined : headerBlock}
+            header={aside || embedHeader ? undefined : headerBlock}
           >
             {aside ? (
               <SectionAsideContent layout={layout} header={headerBlock}>
@@ -2198,17 +2393,37 @@ export function PublicCreatorPortfolioPage({
         );
       }
       case 'faq': {
+        const faqSplit = faqDesignIsSplit(faqPresentation.design);
+        const faqCtaSplit = faqDesignIsCtaSplit(faqPresentation.design);
         const faqAside =
-          !isSplitMode && faqSectionLayoutIsAside(faqPresentation.sectionLayout ?? 'stacked');
+          !isSplitMode &&
+          !faqSplit &&
+          !faqCtaSplit &&
+          faqSectionLayoutIsAside(faqPresentation.sectionLayout ?? 'stacked');
+        const faqPanel = faqPresentation.design === 'panel';
+        const faqSplitTitleLeft = (faqPresentation.illustrationPlacement ?? 'left') !== 'right';
+        const faqCtaSvgOnLeft = (faqPresentation.illustrationPlacement ?? 'right') === 'left';
         const faqHeaderBlock = (
           <EditorialSectionStickyHeader
             title={faqSectionTitle}
-            subtitle={faqSectionSubtitle || undefined}
+            subtitle={faqPanel ? undefined : faqSectionSubtitle || undefined}
             editorialLayout={isEditorialLayout}
             centered={faqHeaderAlign.centered}
             alignRight={faqHeaderAlign.alignRight}
-            alwaysCentered={faqHeaderAlign.alwaysCentered}
-            className={faqAside ? 'mb-0 lg:sticky lg:top-32' : 'mb-10 lg:mb-12'}
+            alwaysCentered={faqHeaderAlign.alwaysCentered || faqSplit || faqCtaSplit}
+            kicker={
+              faqDesignShowsTitleKicker(faqPresentation.design) ? (
+                <span
+                  className="text-base font-bold uppercase tracking-[0.18em] sm:text-lg"
+                  style={{ color: faqPresentation.accentColor }}
+                >
+                  FAQ
+                </span>
+              ) : undefined
+            }
+            className={
+              faqAside || faqPanel || faqSplit ? 'mb-0 w-full' : 'mb-10 lg:mb-12'
+            }
             titleTypographyClass={faqHeaderTypography.title.className}
             titleTypographyStyle={faqHeaderTypography.title.style}
             titleDecorationStyle={faqHeaderTypography.title.decorationStyle}
@@ -2219,14 +2434,14 @@ export function PublicCreatorPortfolioPage({
             subtitleTypographyStyle={faqHeaderTypography.subtitle.style}
             subtitleDecorationStyle={faqHeaderTypography.subtitle.decorationStyle}
             customSubtitleSizing={faqHeaderTypography.subtitle.customSizing}
-            scrollBehavior={effectiveTitleScroll}
+            scrollBehavior={faqPanel || faqSplit ? 'static' : effectiveTitleScroll}
             orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'faq')}
           />
         );
         const faqListBlock = (
           <div
             className={
-              faqAside
+              faqAside || faqSplit || faqCtaSplit
                 ? 'w-full min-w-0'
                 : `${faqListPlacementClass(faqPresentation.listPlacement)} ${faqListMaxWidthClass(
                     faqPresentation.listMaxWidth
@@ -2239,7 +2454,108 @@ export function PublicCreatorPortfolioPage({
               motionProfile={motionProfile}
               askCtaHref="#contact"
               askCtaLabel="Ask a question"
+              embeddedHeader={faqPanel ? faqHeaderBlock : undefined}
             />
+          </div>
+        );
+
+        const faqSplitMedia =
+          faqPresentation.illustrationVariant && faqPresentation.illustrationVariant !== 'none' ? (
+            <div
+              className="mt-8 w-full"
+              style={
+                {
+                  ['--faq-accent' as string]: faqPresentation.accentColor,
+                  ['--faq-ink' as string]: faqPresentation.titleColor || faqPresentation.questionColor,
+                  ['--faq-surface' as string]: faqPresentation.cardBackgroundColor,
+                } as CSSProperties
+              }
+            >
+              <FaqSectionIllustration variant={faqPresentation.illustrationVariant} />
+            </div>
+          ) : null;
+
+        const faqSplitTitleColumn = (
+          <div className="flex min-h-[18rem] w-full flex-col items-center justify-center px-2 text-center lg:min-h-[28rem]">
+            {faqHeaderBlock}
+            {faqSplitMedia}
+          </div>
+        );
+
+        const faqSplitBlock = (
+          <div className="grid w-full items-center gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-20">
+            <div className={faqSplitTitleLeft ? 'max-lg:order-1' : 'max-lg:order-1 lg:order-2'}>
+              {faqSplitTitleColumn}
+            </div>
+            <div className={faqSplitTitleLeft ? 'max-lg:order-2 min-w-0' : 'max-lg:order-2 min-w-0 lg:order-1'}>
+              {faqListBlock}
+            </div>
+          </div>
+        );
+
+        const faqCtaInk = faqPresentation.titleColor || faqPresentation.questionColor || '#0a0a0a';
+        const faqCtaSplitMedia =
+          faqPresentation.illustrationVariant && faqPresentation.illustrationVariant !== 'none' ? (
+            <div
+              className="w-full max-w-md"
+              style={
+                {
+                  ['--faq-accent' as string]: faqPresentation.accentColor,
+                  ['--faq-ink' as string]: faqCtaInk,
+                  ['--faq-surface' as string]: faqPresentation.cardBackgroundColor,
+                } as CSSProperties
+              }
+            >
+              <FaqSectionIllustration variant={faqPresentation.illustrationVariant} />
+            </div>
+          ) : null;
+
+        const faqCtaSplitColumn = (
+          <div className="flex h-full min-h-[18rem] w-full flex-col items-center justify-center px-2 text-center lg:min-h-[28rem]">
+            {faqCtaSplitMedia}
+            <p
+              className="mt-8 text-2xl font-semibold tracking-tight sm:text-[1.75rem] lg:text-[2rem]"
+              style={{ color: faqCtaInk }}
+            >
+              Still have questions?
+            </p>
+            <a
+              href={navContactHref}
+              className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-full border-2 bg-transparent px-6 text-sm font-semibold transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[color:var(--faq-cta-ink)] hover:text-[color:var(--faq-cta-on-ink)] hover:shadow-[0_12px_28px_-12px_rgba(15,23,42,0.45)]"
+              style={
+                {
+                  borderColor: faqCtaInk,
+                  color: faqCtaInk,
+                  ['--faq-cta-ink' as string]: faqCtaInk,
+                  ['--faq-cta-on-ink' as string]:
+                    faqPresentation.cardBackgroundColor?.trim() || '#ffffff',
+                } as CSSProperties
+              }
+            >
+              <svg
+                className="h-4 w-4 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                aria-hidden
+              >
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <path strokeLinecap="round" d="M4 7l8 6 8-6" />
+              </svg>
+              Contact me
+            </a>
+          </div>
+        );
+
+        const faqCtaSplitBlock = (
+          <div className="grid w-full items-center gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-20">
+            <div className={faqCtaSvgOnLeft ? 'max-lg:order-2 min-w-0 lg:order-2' : 'max-lg:order-1 min-w-0'}>
+              {faqListBlock}
+            </div>
+            <div className={faqCtaSvgOnLeft ? 'max-lg:order-1 lg:order-1' : 'max-lg:order-2'}>
+              {faqCtaSplitColumn}
+            </div>
           </div>
         );
 
@@ -2254,22 +2570,19 @@ export function PublicCreatorPortfolioPage({
             topSpacingClass={sectionTopSpacingClass}
             topSpacingStyle={sectionTopSpacingStyle}
             contentLayout={sectionContentLayout}
-            header={faqAside ? undefined : faqHeaderBlock}
+            header={faqAside || faqPanel || faqSplit ? undefined : faqHeaderBlock}
           >
             {faqAside ? (
-              <div className={faqAsideLayoutClass(faqPresentation.sectionLayout ?? 'aside-left')}>
-                {faqPresentation.sectionLayout === 'aside-right' ? (
-                  <>
-                    {faqListBlock}
-                    <div className="min-w-0">{faqHeaderBlock}</div>
-                  </>
-                ) : (
-                  <>
-                    <div className="min-w-0">{faqHeaderBlock}</div>
-                    {faqListBlock}
-                  </>
-                )}
-              </div>
+              <SectionAsideContent
+                layout={faqPresentation.sectionLayout ?? 'aside-left'}
+                header={faqHeaderBlock}
+              >
+                {faqListBlock}
+              </SectionAsideContent>
+            ) : faqSplit ? (
+              faqSplitBlock
+            ) : faqCtaSplit ? (
+              faqCtaSplitBlock
             ) : (
               faqListBlock
             )}
@@ -2546,6 +2859,7 @@ export function PublicCreatorPortfolioPage({
                         }
                         motionProfile={motionProfile}
                         bottomClearanceClass={footerNavClearanceClass}
+                        visibleSectionLinks={footerVisibleSectionLinks}
                       />
                     </div>
                   ) : null}
@@ -2641,6 +2955,7 @@ export function PublicCreatorPortfolioPage({
                 }
                 motionProfile={motionProfile}
                 bottomClearanceClass={footerNavClearanceClass}
+                visibleSectionLinks={footerVisibleSectionLinks}
               />
             </div>
           ) : null}

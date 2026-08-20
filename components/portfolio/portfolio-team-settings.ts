@@ -26,6 +26,7 @@ export type PortfolioTeamCardMaxWidth = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full
 export type PortfolioTeamListAlign = 'left' | 'center' | 'right';
 export type PortfolioTeamAvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 export type PortfolioTeamCardShadow = 'none' | 'soft' | 'medium' | 'strong';
+export type PortfolioTeamCardBorder = 'none' | 'thin' | 'medium';
 export type PortfolioTeamImageAspect = 'square' | 'portrait' | 'landscape' | 'auto';
 export type PortfolioTeamImageFit = 'cover' | 'contain';
 export type PortfolioTeamImagePosition = 'center' | 'top' | 'bottom' | 'left' | 'right';
@@ -80,8 +81,12 @@ export type PortfolioTeamPresentationSettings = PortfolioSectionBackgroundSettin
   listAlign: PortfolioTeamListAlign;
   avatarSize: PortfolioTeamAvatarSize;
   cardShadow: PortfolioTeamCardShadow;
+  cardBorder: PortfolioTeamCardBorder;
+  cardBackgroundEnabled: boolean;
   cardBackgroundColor: string;
   cardBorderColor: string;
+  /** Directory: separate member cards instead of one list frame. */
+  directoryDetachedCards: boolean;
   imageAspect: PortfolioTeamImageAspect;
   imageFit: PortfolioTeamImageFit;
   imagePosition: PortfolioTeamImagePosition;
@@ -135,6 +140,16 @@ export const PORTFOLIO_TEAM_LAYOUT_OPTIONS: {
   { value: 'cover-cards', label: 'Voile survol', description: 'Portrait seul ; un voile sombre révèle nom, rôle et liens au survol.' },
   { value: 'avatar-cards', label: 'Cartes avatar', description: 'Avatar circulaire, nom, rôle et réseaux centrés.' },
   { value: 'float-cards', label: 'Cartes flottantes', description: 'Avatar chevauchant la carte ; nom, rôle et liens toujours visibles.' },
+];
+
+export const PORTFOLIO_TEAM_GAP_OPTIONS: {
+  value: PortfolioTeamGap;
+  label: string;
+}[] = [
+  { value: 'sm', label: 'Serré' },
+  { value: 'md', label: 'Moyen' },
+  { value: 'lg', label: 'Large' },
+  { value: 'xl', label: 'Très large' },
 ];
 
 export const PORTFOLIO_TEAM_TITLE_PRESET_OPTIONS = [
@@ -244,8 +259,11 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
   listAlign: 'center',
   avatarSize: 'md',
   cardShadow: 'soft',
+  cardBorder: 'thin',
+  cardBackgroundEnabled: true,
   cardBackgroundColor: '#ffffff',
   cardBorderColor: '#e5e5e5',
+  directoryDetachedCards: true,
   imageAspect: 'portrait',
   imageFit: 'cover',
   imagePosition: 'center',
@@ -340,7 +358,8 @@ export function teamSubtitleColorStyle(color: string): CSSProperties {
 export function teamGridClass(
   columns: number,
   gap: PortfolioTeamGap,
-  align: PortfolioTeamListAlign = 'center'
+  align: PortfolioTeamListAlign = 'center',
+  layout?: PortfolioTeamLayout
 ): string {
   const cols =
     columns === 1
@@ -350,10 +369,25 @@ export function teamGridClass(
         : columns === 4
           ? 'sm:grid-cols-2 xl:grid-cols-4'
           : 'sm:grid-cols-2 lg:grid-cols-3';
-  const gaps = gap === 'sm' ? 'gap-3' : gap === 'md' ? 'gap-5' : gap === 'xl' ? 'gap-10' : 'gap-7';
+  const gaps =
+    layout === 'float-cards'
+      ? gap === 'sm'
+        ? 'gap-x-5 gap-y-10'
+        : gap === 'md'
+          ? 'gap-x-10 gap-y-20'
+          : gap === 'xl'
+            ? 'gap-x-24 gap-y-48'
+            : 'gap-x-16 gap-y-32'
+      : gap === 'sm'
+        ? 'gap-4'
+        : gap === 'md'
+          ? 'gap-10'
+          : gap === 'xl'
+            ? 'gap-28'
+            : 'gap-16';
   const justify =
     align === 'left' ? 'justify-items-start' : align === 'right' ? 'justify-items-end' : 'justify-items-center';
-  return `grid ${justify} ${cols} ${gaps}`;
+  return `grid items-stretch ${justify} ${cols} ${gaps}`;
 }
 
 export function teamListAlignClass(align: PortfolioTeamListAlign | undefined): string {
@@ -381,6 +415,14 @@ export function teamFloatGridOffsetClass(size: PortfolioTeamAvatarSize | undefin
   if (size === 'lg') return 'pt-[4.5rem]';
   if (size === 'xl') return 'pt-24';
   return 'pt-14';
+}
+
+/** Pins the overlapping avatar to the white card’s top edge, inside the article padding. */
+export function teamFloatAvatarAnchorClass(size: PortfolioTeamAvatarSize | undefined): string {
+  if (size === 'sm') return 'top-10';
+  if (size === 'lg') return 'top-[4.5rem]';
+  if (size === 'xl') return 'top-24';
+  return 'top-14';
 }
 
 export function teamFloatCardBodyPadClass(size: PortfolioTeamAvatarSize | undefined): string {
@@ -427,6 +469,13 @@ export function teamDirectoryMaxWidthClass(width: PortfolioTeamCardMaxWidth | un
   return 'max-w-none';
 }
 
+export function teamDirectoryStackGapClass(gap: PortfolioTeamGap | undefined): string {
+  if (gap === 'sm') return 'gap-3';
+  if (gap === 'md') return 'gap-4';
+  if (gap === 'xl') return 'gap-8';
+  return 'gap-5';
+}
+
 export function teamCardMaxWidthClass(width: PortfolioTeamCardMaxWidth | undefined): string {
   if (width === 'xs') return 'max-w-[14rem]';
   if (width === 'sm' || width == null) return 'max-w-[17.5rem]';
@@ -466,11 +515,11 @@ export function teamSpotlightThumbClass(avatarSize: PortfolioTeamAvatarSize | un
 
 export function teamSpotlightNameClass(width: PortfolioTeamCardMaxWidth | undefined): string {
   if (width === 'xs' || width === 'sm' || width == null) {
-    return 'font-serif text-3xl font-bold leading-tight tracking-tight sm:text-4xl';
+    return 'font-serif text-3xl font-semibold leading-tight tracking-tight sm:text-4xl';
   }
-  if (width === 'md') return 'font-serif text-4xl font-bold leading-tight tracking-tight sm:text-5xl';
-  if (width === 'lg') return 'font-serif text-5xl font-bold leading-tight tracking-tight';
-  return 'font-serif text-5xl font-bold leading-tight tracking-tight sm:text-6xl';
+  if (width === 'md') return 'font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-5xl';
+  if (width === 'lg') return 'font-serif text-5xl font-semibold leading-tight tracking-tight';
+  return 'font-serif text-5xl font-semibold leading-tight tracking-tight sm:text-6xl';
 }
 
 export function teamSpotlightRoleClass(width: PortfolioTeamCardMaxWidth | undefined): string {
@@ -512,10 +561,26 @@ export function teamHoverOverlayPaddingClass(size: PortfolioTeamAvatarSize | und
   return 'px-4 py-3';
 }
 
+export const PORTFOLIO_TEAM_CARD_BORDER_OPTIONS: {
+  value: PortfolioTeamCardBorder;
+  label: string;
+}[] = [
+  { value: 'none', label: 'Aucune' },
+  { value: 'thin', label: 'Fine' },
+  { value: 'medium', label: 'Moyenne' },
+];
+
+export function teamCardBorderClass(settings: PortfolioTeamPresentationSettings): string {
+  const border = settings.cardBorder ?? 'thin';
+  if (border === 'none') return 'border-0';
+  if (border === 'medium') return 'border-2';
+  return 'border';
+}
+
 export function teamCardFrameClass(settings: PortfolioTeamPresentationSettings): string {
   const radius = { none: 'rounded-none', sm: 'rounded-lg', md: 'rounded-2xl', lg: 'rounded-3xl', xl: 'rounded-[2rem]' }[settings.cardRadius];
   const shadow = { none: '', soft: 'shadow-sm', medium: 'shadow-lg shadow-black/10', strong: 'shadow-2xl shadow-black/20' }[settings.cardShadow];
-  return `${radius} ${shadow} border overflow-hidden`;
+  return `${radius} ${shadow} ${teamCardBorderClass(settings)} overflow-hidden`;
 }
 
 export function teamCardFooterPaddingClass(padding: PortfolioTeamCardPadding | undefined): string {
@@ -529,13 +594,15 @@ export function teamCardClass(settings: PortfolioTeamPresentationSettings): stri
   const radius = { none: 'rounded-none', sm: 'rounded-lg', md: 'rounded-2xl', lg: 'rounded-3xl', xl: 'rounded-[2rem]' }[settings.cardRadius];
   const padding = { none: 'p-0', sm: 'p-3', md: 'p-5', lg: 'p-7' }[settings.cardPadding];
   const shadow = { none: '', soft: 'shadow-sm', medium: 'shadow-lg shadow-black/10', strong: 'shadow-2xl shadow-black/20' }[settings.cardShadow];
-  return `${radius} ${padding} ${shadow} border overflow-hidden`;
+  return `${radius} ${padding} ${shadow} ${teamCardBorderClass(settings)} overflow-hidden`;
 }
 
 export function teamCardStyle(settings: PortfolioTeamPresentationSettings): CSSProperties {
+  const border = settings.cardBorder ?? 'thin';
+  const fillOn = settings.cardBackgroundEnabled !== false;
   return {
-    backgroundColor: sanitizeHex(settings.cardBackgroundColor, '#ffffff'),
-    borderColor: sanitizeHex(settings.cardBorderColor, '#e5e5e5'),
+    backgroundColor: fillOn ? sanitizeHex(settings.cardBackgroundColor, '#ffffff') : 'transparent',
+    borderColor: border === 'none' ? 'transparent' : sanitizeHex(settings.cardBorderColor, '#e5e5e5'),
   };
 }
 
@@ -585,8 +652,17 @@ export function mergeTeamPresentation(
     listAlign: pick(record.listAlign, ['left', 'center', 'right'], base.listAlign ?? 'center'),
     avatarSize: pick(record.avatarSize, ['sm', 'md', 'lg', 'xl'], base.avatarSize ?? 'md'),
     cardShadow: pick(record.cardShadow, ['none', 'soft', 'medium', 'strong'], base.cardShadow),
+    cardBorder: pick(record.cardBorder, ['none', 'thin', 'medium'], base.cardBorder ?? 'thin'),
+    cardBackgroundEnabled:
+      typeof record.cardBackgroundEnabled === 'boolean'
+        ? record.cardBackgroundEnabled
+        : (base.cardBackgroundEnabled ?? true),
     cardBackgroundColor: sanitizeHex(record.cardBackgroundColor, base.cardBackgroundColor),
     cardBorderColor: sanitizeHex(record.cardBorderColor, base.cardBorderColor),
+    directoryDetachedCards:
+      typeof record.directoryDetachedCards === 'boolean'
+        ? record.directoryDetachedCards
+        : (base.directoryDetachedCards ?? true),
     imageAspect: pick(record.imageAspect, ['square', 'portrait', 'landscape', 'auto'], base.imageAspect),
     imageFit: pick(record.imageFit, ['cover', 'contain'], base.imageFit),
     imagePosition: pick(record.imagePosition, ['center', 'top', 'bottom', 'left', 'right'], base.imagePosition),

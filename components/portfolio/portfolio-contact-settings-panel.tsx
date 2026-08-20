@@ -7,6 +7,7 @@ import {
   PORTFOLIO_CONTACT_CARD_MAX_WIDTH_OPTIONS,
   PORTFOLIO_CONTACT_CARD_PADDING_OPTIONS,
   PORTFOLIO_CONTACT_CARD_PLACEMENT_OPTIONS,
+  PORTFOLIO_CONTACT_CHANNEL_CARDS_BORDER_OPTIONS,
   PORTFOLIO_CONTACT_CTA_DESIGN_OPTIONS,
   PORTFOLIO_CONTACT_DESK_WIDTH_OPTIONS,
   PORTFOLIO_CONTACT_FORM_DESIGN_OPTIONS,
@@ -32,9 +33,11 @@ import {
   isContactInquiryPanelDesign,
   isContactDeskDesign,
   isContactInfoPanelDesign,
+  isContactChannelCardsDesign,
   isContactOwnedLayoutDesign,
   migrateContactFormDesignFromCardDesign,
   resolveContactFormDesign,
+  type PortfolioContactChannelCardsBorder,
   type PortfolioContactSectionSettings,
   type PortfolioContactStyleTarget,
 } from '@/components/portfolio/portfolio-contact-settings';
@@ -324,7 +327,22 @@ export function ContactSettingsPanel({
                           }
                         : {}),
                     }
-                  : isContactOwnedLayoutDesign(cardDesign)
+                  : isContactChannelCardsDesign(cardDesign)
+                    ? {
+                        cardDesign,
+                        headerAlignment: 'center',
+                        iconRadius: 'full',
+                        iconPlacement: 'top',
+                        showPhone: true,
+                        showEmail: true,
+                        showLocation: true,
+                        showContactForm: false,
+                        channelCardsBackgroundEnabled: true,
+                        channelCardsBorder: 'thin',
+                        cardMaxWidth:
+                          contact.cardMaxWidth === 'md' ? 'xl' : contact.cardMaxWidth,
+                      }
+                    : isContactOwnedLayoutDesign(cardDesign)
                     ? {
                         cardDesign,
                         showContactForm: true,
@@ -469,6 +487,66 @@ export function ContactSettingsPanel({
               Info panel : infos à gauche, formulaire sur carte accent (CTA / Hero palette). Cadre
               extérieur via Card frame ; fond de section via Background.
             </p>
+          ) : null}
+          {isContactChannelCardsDesign(contact.cardDesign) ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/80 p-4">
+              <div>
+                <p className="text-sm font-semibold text-neutral-950">Fond & bordure</p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Uniquement pour Contact cards : fond et trait des tuiles Phone / Email / Address.
+                </p>
+              </div>
+              <ContactToggleRow
+                label="Fond de la carte"
+                description="Remplit les trois tuiles. Désactivé = fond de section visible."
+                checked={contact.channelCardsBackgroundEnabled !== false}
+                onChange={(channelCardsBackgroundEnabled) =>
+                  onChange({ channelCardsBackgroundEnabled })
+                }
+              />
+              {contact.channelCardsBackgroundEnabled !== false ? (
+                <ContactManualColorField
+                  label="Couleur du fond"
+                  value={contact.channelCardsBackgroundColor || contact.cardBackgroundColor}
+                  onChange={(channelCardsBackgroundColor) =>
+                    onChange({ channelCardsBackgroundColor })
+                  }
+                />
+              ) : null}
+              <div>
+                <p className="text-xs font-semibold text-neutral-500">Bordure</p>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {PORTFOLIO_CONTACT_CHANNEL_CARDS_BORDER_OPTIONS.map((option) => {
+                    const active = option.value === (contact.channelCardsBorder ?? 'thin');
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() =>
+                          onChange({
+                            channelCardsBorder: option.value as PortfolioContactChannelCardsBorder,
+                          })
+                        }
+                        className={`rounded-2xl border px-2 py-2.5 text-sm font-semibold transition ${
+                          active
+                            ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
+                            : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {(contact.channelCardsBorder ?? 'thin') !== 'none' ? (
+                <ContactManualColorField
+                  label="Couleur de bordure"
+                  value={contact.channelCardsBorderColor || contact.cardBorderColor}
+                  onChange={(channelCardsBorderColor) => onChange({ channelCardsBorderColor })}
+                />
+              ) : null}
+            </div>
           ) : null}
           <ContactOptionGrid
             label="Icon placement"
@@ -919,9 +997,32 @@ export function ContactSettingsPanel({
                 <div>
                   <p className="text-sm font-semibold text-neutral-950">Form container</p>
                   <p className="mt-1 text-sm text-neutral-500">
-                    Outer border and drop shadow around the message form — all nine form designs.
+                    Outer fill, border and drop shadow around the message form — all nine form
+                    designs.
                   </p>
                 </div>
+
+                <ContactToggleRow
+                  label="Form background"
+                  description="Fill the form frame. Off keeps the same color as the section background."
+                  checked={contact.formBackgroundEnabled === true}
+                  onChange={(formBackgroundEnabled) =>
+                    onChange({
+                      formBackgroundEnabled,
+                      formBackgroundColor:
+                        contact.formBackgroundColor ||
+                        contact.cardBackgroundColor ||
+                        '#f5f5f5',
+                    })
+                  }
+                />
+                {contact.formBackgroundEnabled ? (
+                  <ContactManualColorField
+                    label="Form background color"
+                    value={contact.formBackgroundColor || contact.cardBackgroundColor || '#f5f5f5'}
+                    onChange={(formBackgroundColor) => onChange({ formBackgroundColor })}
+                  />
+                ) : null}
 
                 <ContactOptionGrid
                   label="Form border"
@@ -1022,24 +1123,6 @@ export function ContactSettingsPanel({
                   }
                 />
               </div>
-
-              {formDesign === 'desk' ? (
-                <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/80 p-4">
-                  <div>
-                    <p className="text-sm font-semibold text-neutral-950">Desk — topic chips</p>
-                    <p className="mt-1 text-sm text-neutral-500">
-                      One option per line (e.g. Development, Others). Shown as chips under the form.
-                    </p>
-                  </div>
-                  <textarea
-                    rows={4}
-                    value={contact.deskTopicOptions ?? ''}
-                    onChange={(event) => onChange({ deskTopicOptions: event.target.value })}
-                    placeholder={'Development\nOthers'}
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
-                  />
-                </div>
-              ) : null}
 
               {formDesign === 'stepped-inquiry' ? (
                 <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">

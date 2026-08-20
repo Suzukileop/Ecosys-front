@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -217,6 +217,25 @@ function GalleryMediaEditor({
         </button>
       </div>
       <div className="space-y-2 px-5 pt-3">
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+            Title
+          </p>
+          <input
+            type="text"
+            autoComplete="off"
+            value={draft.title}
+            onChange={(event) =>
+              onChange({
+                ...draft,
+                title: event.target.value,
+              })
+            }
+            placeholder="Add a title"
+            className={`${portfolioInlineInputClass} font-medium`}
+            disabled={disabled || uploading}
+          />
+        </div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
           Or paste media URL
         </p>

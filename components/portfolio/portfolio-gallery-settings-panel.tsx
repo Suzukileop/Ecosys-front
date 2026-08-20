@@ -3,8 +3,11 @@
 import {
   galleryDesignUsesCarouselNav,
   galleryDesignUsesColumns,
+  galleryDesignUsesCaptionCardWidth,
   gallerySectionLayoutIsAside,
   PORTFOLIO_GALLERY_DESIGN_OPTIONS,
+  PORTFOLIO_GALLERY_FEATURED_RAIL_OPTIONS,
+  PORTFOLIO_GALLERY_FEATURED_WIDTH_SCOPE_OPTIONS,
   PORTFOLIO_GALLERY_ILLUSTRATION_OPTIONS,
   PORTFOLIO_GALLERY_ILLUSTRATION_PLACEMENT_OPTIONS,
   PORTFOLIO_GALLERY_SECTION_LAYOUT_OPTIONS,
@@ -176,6 +179,52 @@ export function GallerySettingsPanel({
               Ce design utilise une mise en page fixe — les colonnes ne s’appliquent pas.
             </p>
           )}
+          {gallery.design === 'featured-strip' ? (
+            <>
+              <Select
+                label="Placement des miniatures"
+                value={gallery.featuredRailPlacement}
+                options={PORTFOLIO_GALLERY_FEATURED_RAIL_OPTIONS}
+                onChange={(featuredRailPlacement) => onChange({ featuredRailPlacement })}
+              />
+              {gallery.featuredRailPlacement === 'bottom' ? (
+                <>
+                  <Select
+                    label="Appliquer largeur et placement"
+                    value={gallery.featuredHeroWidthScope ?? 'hero'}
+                    options={PORTFOLIO_GALLERY_FEATURED_WIDTH_SCOPE_OPTIONS}
+                    onChange={(featuredHeroWidthScope) => onChange({ featuredHeroWidthScope })}
+                  />
+                  <Range
+                    label={
+                      gallery.featuredHeroWidthScope === 'global'
+                        ? 'Largeur de l’affichage principal'
+                        : 'Largeur de l’image principale'
+                    }
+                    value={gallery.featuredHeroWidthPercent}
+                    min={50}
+                    max={100}
+                    suffix="%"
+                    onChange={(featuredHeroWidthPercent) => onChange({ featuredHeroWidthPercent })}
+                  />
+                  <Select
+                    label={
+                      gallery.featuredHeroWidthScope === 'global'
+                        ? 'Placement de l’affichage principal'
+                        : 'Placement de l’image principale'
+                    }
+                    value={gallery.featuredHeroPlacement}
+                    options={[
+                      { value: 'left', label: 'Gauche' },
+                      { value: 'center', label: 'Centre' },
+                      { value: 'right', label: 'Droite' },
+                    ]}
+                    onChange={(featuredHeroPlacement) => onChange({ featuredHeroPlacement })}
+                  />
+                </>
+              ) : null}
+            </>
+          ) : null}
           {galleryDesignUsesCarouselNav(gallery.design) ? (
             <Toggle
               label="Flèches de navigation"
@@ -184,13 +233,39 @@ export function GallerySettingsPanel({
               onChange={(showCarouselNav) => onChange({ showCarouselNav })}
             />
           ) : null}
+          {galleryDesignUsesCaptionCardWidth(gallery.design) ? (
+            <>
+              <Range
+                label="Largeur des cartes"
+                value={gallery.captionCardWidthPx}
+                min={180}
+                max={420}
+                onChange={(captionCardWidthPx) => onChange({ captionCardWidthPx })}
+              />
+              {gallery.design === 'caption-carousel' || gallery.design === 'cinema-strip' ? (
+                <p className="text-sm text-neutral-500">
+                  Largeur de chaque carte uniquement. La hauteur de l’image suit le ratio (onglet
+                  Médias) : portrait s’allonge, cinéma s’aplatit.
+                </p>
+              ) : null}
+            </>
+          ) : null}
           {gallery.design === 'caption-carousel' ? (
             <>
               <Toggle
-                label="Points de pagination"
-                description="Indicateurs sous le carrousel de cartes."
+                label="Contrôles du carrousel"
+                description="Afficher les boutons sous les cartes."
                 checked={gallery.showPagination}
                 onChange={(showPagination) => onChange({ showPagination })}
+              />
+              <Select
+                label="Style des contrôles"
+                value={gallery.captionPager ?? 'chevrons'}
+                options={[
+                  { value: 'chevrons', label: 'Chevrons — comme la bande cinéma' },
+                  { value: 'dots', label: 'Points de pagination' },
+                ]}
+                onChange={(captionPager) => onChange({ captionPager })}
               />
               {!gallery.useHeroPalette ? (
                 <Color
@@ -201,8 +276,27 @@ export function GallerySettingsPanel({
               ) : null}
             </>
           ) : null}
-          <Range label="Espace" value={gallery.gap} min={0} max={64} onChange={(gap) => onChange({ gap })} />
-          <Range label="Coins" value={gallery.radius} min={0} max={48} onChange={(radius) => onChange({ radius })} />
+          <Range label="Espace horizontal" value={gallery.gap} min={0} max={64} onChange={(gap) => onChange({ gap })} />
+          <Range
+            label="Espace vertical"
+            value={gallery.verticalGap >= 0 ? gallery.verticalGap : gallery.gap}
+            min={0}
+            max={64}
+            onChange={(verticalGap) => onChange({ verticalGap })}
+          />
+          <button
+            type="button"
+            onClick={() => onChange({ verticalGap: -1 })}
+            className={`text-xs font-medium transition ${
+              gallery.verticalGap < 0
+                ? 'text-neutral-400 cursor-default'
+                : 'text-violet-600 hover:text-violet-800'
+            }`}
+            disabled={gallery.verticalGap < 0}
+          >
+            {gallery.verticalGap < 0 ? 'Espacement uniforme (lié)' : 'Lier les espacements'}
+          </button>
+          <Range label="Coins arrondis" value={gallery.radius} min={0} max={48} onChange={(radius) => onChange({ radius })} />
           <Range label="Padding" value={gallery.padding} min={0} max={96} onChange={(padding) => onChange({ padding })} />
           <Select label="Largeur maximale" value={gallery.maxWidth} options={[{ value: 'md', label: 'Moyenne' }, { value: 'lg', label: 'Large' }, { value: 'xl', label: 'Très large' }, { value: 'full', label: 'Pleine largeur' }]} onChange={(maxWidth) => onChange({ maxWidth })} />
           <Select
@@ -238,7 +332,33 @@ export function GallerySettingsPanel({
             Position du titre sur chaque élément de la grille — distinct de la disposition du titre
             de section (En-tête).
           </p>
-          <Select label="Ratio" value={gallery.imageAspect} options={[{ value: 'auto', label: 'Original' }, { value: 'square', label: 'Carré' }, { value: 'portrait', label: 'Portrait' }, { value: 'landscape', label: 'Paysage' }, { value: 'cinema', label: 'Cinéma' }]} onChange={(imageAspect) => onChange({ imageAspect })} />
+          {gallery.design === 'tall-row' ? (
+            <Select
+              label="Titre sur l’image haute + rangée"
+              value={gallery.tallRowTitleReveal ?? 'always'}
+              options={[
+                { value: 'always', label: 'Toujours visible sur la photo' },
+                { value: 'hover', label: 'Au survol — assombrit un peu l’image' },
+              ]}
+              onChange={(tallRowTitleReveal) => onChange({ tallRowTitleReveal })}
+            />
+          ) : null}
+          <Select
+            label="Ratio de l’image"
+            value={gallery.imageAspect}
+            options={[
+              { value: 'auto', label: 'Original — proportions du fichier' },
+              { value: 'square', label: 'Carré — 1:1' },
+              { value: 'portrait', label: 'Portrait — 4:5' },
+              { value: 'landscape', label: 'Paysage — 4:3' },
+              { value: 'cinema', label: 'Cinéma — 16:7' },
+            ]}
+            onChange={(imageAspect) => onChange({ imageAspect })}
+          />
+          <p className="text-sm text-neutral-500">
+            Forme du cadre photo sur toutes les cartes. Indépendant de la largeur des cartes
+            (Disposition). Portrait = plus haut que large, paysage = plus large que haut.
+          </p>
           <Select label="Ajustement" value={gallery.objectFit} options={[{ value: 'cover', label: 'Couvrir' }, { value: 'contain', label: 'Contenir' }]} onChange={(objectFit) => onChange({ objectFit })} />
           <Select label="Position" value={gallery.objectPosition} options={[{ value: 'center', label: 'Centre' }, { value: 'top', label: 'Haut' }, { value: 'bottom', label: 'Bas' }, { value: 'left', label: 'Gauche' }, { value: 'right', label: 'Droite' }]} onChange={(objectPosition) => onChange({ objectPosition })} />
           <Toggle label="Zoom au survol" checked={gallery.hoverZoom} onChange={(hoverZoom) => onChange({ hoverZoom })} />
@@ -279,6 +399,11 @@ export function GallerySettingsPanel({
                 En côte à côte, le titre de section et la grille s’affichent en deux colonnes sur
                 grand écran (empilés sur mobile).
               </p>
+            ) : gallery.sectionLayout === 'over-thumbs' ? (
+              <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
+                Titre centré au-dessus des miniatures (Image haute + rangée), ou dans le vide à
+                côté de l’image à la une si sa largeur laisse de la place.
+              </p>
             ) : null}
           </div>
 
@@ -288,10 +413,15 @@ export function GallerySettingsPanel({
           {gallery.subtitlePreset === 'custom' ? <textarea value={gallery.subtitleCustom} onChange={(event) => onChange({ subtitleCustom: event.target.value, subtitle: event.target.value })} className="w-full rounded-xl border px-3 py-2.5" rows={3} /> : null}
           <Select label="Police du titre" value={gallery.titleFont} options={[{ value: 'sans', label: 'Sans' }, { value: 'serif', label: 'Serif' }, { value: 'display', label: 'Display' }]} onChange={(titleFont) => onChange({ titleFont })} />
           <Select label="Police du sous-titre" value={gallery.subtitleFont} options={[{ value: 'sans', label: 'Sans' }, { value: 'serif', label: 'Serif' }, { value: 'display', label: 'Display' }]} onChange={(subtitleFont) => onChange({ subtitleFont })} />
-          {gallerySectionLayoutIsAside(gallery.sectionLayout) ? (
+          {gallerySectionLayoutIsAside(gallery.sectionLayout) || gallery.sectionLayout === 'over-thumbs' ? (
             <p className="text-sm text-neutral-500">
-              Alignement horizontal masqué : le titre est déjà placé{' '}
-              {gallery.sectionLayout === 'aside-right' ? 'à droite' : 'à gauche'} de la grille.
+              Alignement horizontal masqué : le titre est déjà{' '}
+              {gallery.sectionLayout === 'over-thumbs'
+                ? 'centré au-dessus des miniatures'
+                : gallery.sectionLayout === 'aside-right'
+                  ? 'placé à droite de la grille'
+                  : 'placé à gauche de la grille'}
+              .
             </p>
           ) : (
             <Select

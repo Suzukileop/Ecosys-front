@@ -10,7 +10,6 @@ import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import {
   contactFormContentPaddingClass,
   isLightContactChromeColor,
-  parseContactDeskTopicOptions,
   resolveContactFormDesign,
   type PortfolioContactFormDesign,
   type PortfolioContactPresentationSettings,
@@ -55,39 +54,39 @@ export type ContactFormChannelsMeta = {
 };
 
 const fieldClassName =
-  'w-full rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-surface,#ffffff)] px-3.5 py-2.5 text-sm text-[color:var(--contact-ink,#0a0a0a)] outline-none transition placeholder:text-[color:var(--contact-muted,#737373)] focus:border-[color:var(--contact-accent,#ea580c)] focus:ring-2 focus:ring-[color:var(--contact-accent,#ea580c)]/25';
+  'w-full rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-page,#ffffff)] px-4 py-3 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-none transition placeholder:text-[color:var(--contact-muted,#737373)] focus:border-[color:var(--contact-accent,#ea580c)] focus:ring-2 focus:ring-[color:var(--contact-accent,#ea580c)]/25';
 
 const labelClassName =
-  'mb-1.5 block text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--contact-muted,#737373)]';
+  'mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--contact-muted,#737373)]';
 
 const inquiryLabelClassName =
-  'mb-2 block text-sm font-semibold text-[color:var(--contact-ink,#0a0a0a)]';
+  'mb-2 block text-base font-semibold text-[color:var(--contact-ink,#0a0a0a)]';
 
 const inquiryFieldClassName =
-  'w-full rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-surface,#ffffff)] px-4 py-3 text-sm text-[color:var(--contact-ink,#0a0a0a)] outline-none transition placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:border-[color:var(--contact-accent,#ea580c)] focus:ring-2 focus:ring-[color:var(--contact-accent,#ea580c)]/20';
+  'w-full rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-page,#ffffff)] px-4 py-3 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-none transition placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:border-[color:var(--contact-accent,#ea580c)] focus:ring-2 focus:ring-[color:var(--contact-accent,#ea580c)]/20';
 
 const deskLabelClassName =
-  'mb-2 block text-[11px] font-bold uppercase tracking-[0.16em] text-[color:var(--contact-muted,#737373)]';
+  'mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--contact-muted,#737373)]';
 
 const deskFieldClassName =
-  'w-full rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color-mix(in_srgb,var(--contact-ink,#0a0a0a)_4%,var(--contact-surface,#ffffff))] px-4 py-3 text-sm text-[color:var(--contact-ink,#0a0a0a)] outline-none transition placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:border-[color:var(--contact-accent,#ea580c)] focus:ring-2 focus:ring-[color:var(--contact-accent,#ea580c)]/20';
+  'w-full rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-page,#ffffff)] px-4 py-3 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-none transition placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:border-[color:var(--contact-accent,#ea580c)] focus:ring-2 focus:ring-[color:var(--contact-accent,#ea580c)]/20';
 
 const infoPanelLabelClassName =
-  'mb-2.5 block text-[0.95rem] font-semibold tracking-[-0.01em] text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.18)]';
+  'mb-2.5 block text-base font-semibold tracking-[-0.01em] text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.18)]';
 
-/** Light portfolios — solid white fields on the accent card. */
+/** Light portfolios — page-fill fields with a visible border on the accent card. */
 const infoPanelFieldLightClassName =
-  'w-full rounded-xl border border-transparent bg-white px-4 py-3.5 text-[0.95rem] font-medium text-neutral-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] outline-none transition placeholder:font-normal placeholder:text-neutral-400 focus:border-white focus:ring-2 focus:ring-white/55 [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] [&:-webkit-autofill]:[-webkit-text-fill-color:#171717]';
+  'w-full rounded-xl border border-[color:color-mix(in_srgb,#ffffff_55%,transparent)] bg-[color:var(--contact-page,#ffffff)] px-4 py-3.5 text-base font-medium text-neutral-900 outline-none transition placeholder:font-normal placeholder:text-neutral-400 focus:border-white focus:ring-2 focus:ring-white/55 [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] [&:-webkit-autofill]:[-webkit-text-fill-color:#171717]';
 
-/** Dark portfolios — soft tinted fields (no bright white slabs). */
+/** Dark portfolios — page-fill fields with a visible border. */
 const infoPanelFieldDarkClassName =
-  'w-full rounded-xl border border-transparent bg-[color-mix(in_srgb,#000000_28%,transparent)] px-4 py-3.5 text-[0.95rem] font-medium text-white outline-none transition placeholder:font-normal placeholder:text-white/55 focus:border-white/55 focus:bg-[color-mix(in_srgb,#000000_38%,transparent)] focus:ring-2 focus:ring-white/30 [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_rgb(30,30,30)] [&:-webkit-autofill]:[-webkit-text-fill-color:#ffffff]';
+  'w-full rounded-xl border border-white/35 bg-[color:var(--contact-page,#ffffff)] px-4 py-3.5 text-base font-medium text-neutral-900 outline-none transition placeholder:font-normal placeholder:text-neutral-400 focus:border-white focus:ring-2 focus:ring-white/40 [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] [&:-webkit-autofill]:[-webkit-text-fill-color:#171717]';
 
 const underlineFieldClassName =
-  'w-full rounded-none border-0 border-b border-[color:var(--contact-border,#e5e5e5)] bg-transparent px-0 py-2.5 text-sm text-[color:var(--contact-ink,#0a0a0a)] outline-none transition placeholder:text-[color:var(--contact-muted,#737373)] focus:border-[color:var(--contact-accent,#ea580c)] focus:ring-0';
+  'w-full rounded-none border-0 border-b-2 border-[color:var(--contact-border,#e5e5e5)] bg-transparent px-0 py-2.5 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-none transition placeholder:text-[color:var(--contact-muted,#737373)] focus:border-[color:var(--contact-accent,#ea580c)] focus:ring-0';
 
 const underlineLabelClassName =
-  'mb-1.5 block text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--contact-muted,#737373)]';
+  'mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--contact-muted,#737373)]';
 
 function FieldError({ message, tone = 'default' }: { message?: string; tone?: 'default' | 'on-accent' }) {
   if (!message) return null;
@@ -226,7 +225,6 @@ export function ContactMessageForm({
 }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [selectedTopic, setSelectedTopic] = useState('');
   const [stepIndex, setStepIndex] = useState(0);
   const [stepAnnounce, setStepAnnounce] = useState('');
   const [workspaceMode, setWorkspaceMode] = useState<'message' | 'quote'>('message');
@@ -235,8 +233,6 @@ export function ContactMessageForm({
     formDesign ??
     (variant && variant !== 'default' ? variant : undefined) ??
     resolveContactFormDesign(presentation);
-
-  const deskTopics = parseContactDeskTopicOptions(presentation.deskTopicOptions);
 
   const titleFallback =
     design === 'project-brief'
@@ -293,10 +289,8 @@ export function ContactMessageForm({
     }
     setSubmitError(null);
     try {
-      const topic = selectedTopic.trim();
       let subject =
         values.subject.trim() ||
-        (design === 'desk' && topic ? topic : '') ||
         (design === 'inquiry-panel' && values.company.trim() ? values.company.trim() : '') ||
         '';
 
@@ -319,7 +313,6 @@ export function ContactMessageForm({
         message,
       });
       setSubmitted(true);
-      setSelectedTopic('');
       setStepIndex(0);
       setStepAnnounce('');
       setWorkspaceMode('message');
@@ -360,10 +353,10 @@ export function ContactMessageForm({
 
   if (design === 'inquiry') {
     return (
-      <div className={`relative z-[1] ${contentPad}`.trim()}>
+      <div className={`relative z-[1] flex h-full w-full flex-col ${contentPad}`.trim()}>
         <SuccessBanner submitted={submitted} />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex h-full w-full flex-1 flex-col space-y-5" noValidate>
           <div>
             <label htmlFor="portfolio-contact-name" className={inquiryLabelClassName}>
               How can we call you?
@@ -441,7 +434,7 @@ export function ContactMessageForm({
           <button
             type="submit"
             disabled={isSubmitting || !creatorId.trim()}
-            className="inline-flex w-full items-center justify-center rounded-xl px-6 py-3.5 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-auto inline-flex w-full items-center justify-center rounded-xl px-6 py-3.5 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
           >
             {isSubmitting ? 'Sending…' : submitLabel}
@@ -453,10 +446,10 @@ export function ContactMessageForm({
 
   if (design === 'inquiry-panel') {
     return (
-      <div className={`relative z-[1] ${contentPad}`.trim()}>
+      <div className={`relative z-[1] flex h-full w-full flex-col ${contentPad}`.trim()}>
         <SuccessBanner submitted={submitted} />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex h-full w-full flex-1 flex-col space-y-5" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="portfolio-contact-name" className={inquiryLabelClassName}>
@@ -546,7 +539,7 @@ export function ContactMessageForm({
           <button
             type="submit"
             disabled={isSubmitting || !creatorId.trim()}
-            className="inline-flex items-center justify-center rounded-xl px-7 py-3.5 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-auto inline-flex w-full items-center justify-center rounded-xl px-7 py-3.5 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
           >
             {isSubmitting ? 'Sending…' : submitLabel}
@@ -558,7 +551,7 @@ export function ContactMessageForm({
 
   if (design === 'desk') {
     return (
-      <div className={`relative z-[1] ${contentPad}`.trim()}>
+      <div className={`relative z-[1] flex h-full w-full flex-col ${contentPad}`.trim()}>
         <SuccessBanner submitted={submitted} />
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
@@ -626,32 +619,6 @@ export function ContactMessageForm({
               <FieldError message={errors.message?.message} />
             </div>
           </div>
-
-          {deskTopics.length > 0 ? (
-            <div>
-              <p className={deskLabelClassName}>Option</p>
-              <div className="flex flex-wrap gap-2.5" role="group" aria-label="Topic">
-                {deskTopics.map((topic) => {
-                  const active = selectedTopic === topic;
-                  return (
-                    <button
-                      key={topic}
-                      type="button"
-                      onClick={() => setSelectedTopic(active ? '' : topic)}
-                      className={`rounded-lg border px-3.5 py-2 text-sm font-medium transition ${
-                        active
-                          ? 'border-[color:var(--contact-accent,#ea580c)] bg-[color:var(--contact-accent-soft,rgba(234,88,12,0.14))] text-[color:var(--contact-ink,#0a0a0a)]'
-                          : 'border-[color:var(--contact-border,#e5e5e5)] bg-transparent text-[color:var(--contact-muted,#737373)] hover:border-[color:var(--contact-accent,#ea580c)] hover:text-[color:var(--contact-ink,#0a0a0a)]'
-                      }`}
-                      aria-pressed={active}
-                    >
-                      {topic}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
 
           <input type="hidden" {...register('subject')} />
           <input type="hidden" {...register('company')} />
@@ -797,9 +764,9 @@ export function ContactMessageForm({
   if (design === 'project-brief') {
     return (
       <div className={`relative z-[1] ${contentPad}`.trim()}>
-        <div className="rounded-2xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-surface,#ffffff)] p-5 sm:p-6">
+        <div className="rounded-2xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-surface,#ffffff)] px-6 py-5 sm:px-8 sm:py-6">
           <div className="mb-5">
-            <h3 className="text-lg font-bold tracking-[-0.02em] text-[color:var(--contact-ink,#0a0a0a)]">
+            <h3 className="text-xl font-semibold tracking-[-0.02em] text-[color:var(--contact-ink,#0a0a0a)]">
               {title}
             </h3>
           </div>
@@ -897,17 +864,22 @@ export function ContactMessageForm({
     const isLast = stepIndex >= STEPPED_FIELDS.length - 1;
 
     return (
-      <div className={`relative z-[1] ${contentPad}`.trim()}>
+      <div className={`relative z-[1] flex h-full min-h-0 w-full flex-col ${contentPad}`.trim()}>
         <SuccessBanner submitted={submitted} />
 
-        <div className="mb-5 flex flex-wrap items-center gap-2" role="list" aria-label="Form steps">
+        <div className="mb-4 flex w-full items-center gap-2" role="list" aria-label="Form steps">
           {STEPPED_STEP_LABELS.map((label, index) => {
             const active = index === stepIndex;
             const done = index < stepIndex;
+            const last = index >= STEPPED_STEP_LABELS.length - 1;
             return (
-              <div key={label} className="flex items-center gap-2" role="listitem">
+              <div
+                key={label}
+                className={`flex min-w-0 items-center gap-2 ${last ? '' : 'flex-1'}`}
+                role="listitem"
+              >
                 <span
-                  className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition ${
+                  className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition ${
                     active
                       ? 'bg-[color:var(--contact-accent,#ea580c)] text-white'
                       : done
@@ -919,7 +891,7 @@ export function ContactMessageForm({
                   {index + 1}
                 </span>
                 <span
-                  className={`hidden text-xs font-semibold sm:inline ${
+                  className={`hidden shrink-0 text-xs font-semibold sm:inline ${
                     active
                       ? 'text-[color:var(--contact-ink,#0a0a0a)]'
                       : 'text-[color:var(--contact-muted,#737373)]'
@@ -927,22 +899,22 @@ export function ContactMessageForm({
                 >
                   {label}
                 </span>
-                {index < STEPPED_STEP_LABELS.length - 1 ? (
+                {last ? null : (
                   <span
-                    className={`mx-1 hidden h-1.5 w-1.5 rounded-full sm:inline-block ${
+                    className={`h-px min-w-3 flex-1 ${
                       done
                         ? 'bg-[color:var(--contact-accent,#ea580c)]'
                         : 'bg-[color:var(--contact-border,#e5e5e5)]'
                     }`}
                     aria-hidden
                   />
-                ) : null}
+                )}
               </div>
             );
           })}
         </div>
 
-        <div className="mb-5 flex items-center gap-2" aria-hidden>
+        <div className="mb-5 flex w-full items-center gap-2" aria-hidden>
           {STEPPED_FIELDS.map((_, index) => (
             <span
               key={STEPPED_FIELDS[index]}
@@ -962,11 +934,11 @@ export function ContactMessageForm({
         <form
           onSubmit={handleSteppedFormSubmit}
           onKeyDown={handleSteppedKeyDown}
-          className="space-y-5"
+          className="flex min-h-0 w-full flex-1 flex-col"
           noValidate
         >
           {activeField === 'name' ? (
-            <div>
+            <div className="w-full">
               <label htmlFor="portfolio-contact-name" className={inquiryLabelClassName}>
                 Your name
               </label>
@@ -984,7 +956,7 @@ export function ContactMessageForm({
           ) : null}
 
           {activeField === 'email' ? (
-            <div>
+            <div className="w-full">
               <label htmlFor="portfolio-contact-email" className={inquiryLabelClassName}>
                 Your email
               </label>
@@ -1002,7 +974,7 @@ export function ContactMessageForm({
           ) : null}
 
           {activeField === 'subject' ? (
-            <div>
+            <div className="w-full">
               <label htmlFor="portfolio-contact-subject" className={inquiryLabelClassName}>
                 Subject{' '}
                 <span className="font-normal text-[color:var(--contact-muted,#737373)]">
@@ -1022,7 +994,7 @@ export function ContactMessageForm({
           ) : null}
 
           {activeField === 'message' ? (
-            <div>
+            <div className="flex min-h-0 w-full flex-1 flex-col">
               <label htmlFor="portfolio-contact-message" className={inquiryLabelClassName}>
                 Your message
               </label>
@@ -1030,7 +1002,7 @@ export function ContactMessageForm({
                 id="portfolio-contact-message"
                 rows={5}
                 placeholder="Enter your message"
-                className={`${inquiryFieldClassName} min-h-[8.5rem] resize-y`}
+                className={`${inquiryFieldClassName} min-h-[8.5rem] flex-1 resize-y`}
                 aria-invalid={Boolean(errors.message)}
                 {...register('message')}
               />
@@ -1047,12 +1019,12 @@ export function ContactMessageForm({
             </p>
           ) : null}
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="mt-auto flex w-full items-center gap-3 pt-8">
             <button
               type="button"
               disabled={stepIndex === 0 || isSubmitting}
               onClick={() => goToStep(stepIndex - 1)}
-              className="inline-flex items-center justify-center rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-surface,#ffffff)] px-5 py-3 text-sm font-semibold text-[color:var(--contact-ink,#0a0a0a)] transition hover:border-[color:var(--contact-accent,#ea580c)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex flex-1 items-center justify-center rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-surface,#ffffff)] px-5 py-3 text-sm font-semibold text-[color:var(--contact-ink,#0a0a0a)] transition hover:border-[color:var(--contact-accent,#ea580c)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Back
             </button>
@@ -1060,7 +1032,7 @@ export function ContactMessageForm({
               <button
                 type="submit"
                 disabled={isSubmitting || !creatorId.trim()}
-                className="inline-flex flex-1 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+                className="inline-flex flex-1 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
               >
                 {isSubmitting ? 'Sending…' : submitLabel}
@@ -1070,7 +1042,7 @@ export function ContactMessageForm({
                 type="button"
                 disabled={isSubmitting}
                 onClick={() => void advanceStepped()}
-                className="inline-flex flex-1 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+                className="inline-flex flex-1 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
               >
                 Next
@@ -1326,12 +1298,12 @@ export function ContactMessageForm({
 
   // classic (default)
   return (
-    <div className={`relative z-[1] ${contentPad}`}>
+    <div className={`relative z-[1] flex h-full w-full flex-col ${contentPad}`}>
       <div className="mb-5">
-        <h3 className="text-lg font-bold tracking-[-0.02em] text-[color:var(--contact-ink,#0a0a0a)]">
+        <h3 className="text-xl font-semibold tracking-[-0.02em] text-[color:var(--contact-ink,#0a0a0a)]">
           {title}
         </h3>
-        <p className="mt-1 text-sm text-[color:var(--contact-muted,#737373)]">
+        <p className="mt-1 text-base text-[color:var(--contact-muted,#737373)]">
           Share a short brief — I will get back to you.
         </p>
       </div>
@@ -1410,7 +1382,7 @@ export function ContactMessageForm({
         <button
           type="submit"
           disabled={isSubmitting || !creatorId.trim()}
-          className="inline-flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          className="inline-flex w-full items-center justify-center rounded-full px-6 py-3 text-base font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
         >
           {isSubmitting ? 'Sending…' : submitLabel}

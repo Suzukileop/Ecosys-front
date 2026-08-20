@@ -3,12 +3,14 @@
 import Link from 'next/link';
 import { Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   normalizeSocialPlatformKey,
   SocialPlatformIcon,
   socialPlatformBrandClass,
 } from '@/components/marketplace/creator-profile-social-icons';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
+import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferredMedia';
 import { ContentMediaPreview } from '@/components/creator/creator-content-media';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import { resolveCreatorToolBrandHex, resolveCreatorToolLogoHex } from '@/components/creator/studio/creator-profile-tools-catalog';
@@ -39,11 +41,12 @@ import type {
 import type { MarketplaceContentItem } from '@/types/marketplace';
 import {
   galleryAspectStyle,
-  galleryCaptionCardWidthClass,
   galleryDesignUsesCarouselNav,
+  galleryEffectiveVerticalGap,
   galleryItemDisplayTitle,
   galleryMaxWidthClass,
   galleryPlacementClass,
+  galleryFeaturedHeroHasTitleVoid,
   type PortfolioGalleryPresentationSettings,
 } from '@/components/portfolio/portfolio-gallery-settings';
 import { PortfolioMotionItem } from '@/components/portfolio/PortfolioMotionItem';
@@ -116,9 +119,11 @@ import {
   teamCircleAvatarClass,
   teamContentAlignClass,
   teamDirectoryMaxWidthClass,
+  teamDirectoryStackGapClass,
   teamFlexAlignClass,
   teamFloatCardBodyPadClass,
   teamFloatCardMinHeightClass,
+  teamFloatAvatarAnchorClass,
   teamFloatGridOffsetClass,
   teamGridClass,
   teamHoverOverlayPaddingClass,
@@ -442,6 +447,8 @@ import {
   faqItemBorderCssVars,
   faqItemShellClass,
   faqListShellClass,
+  faqPanelInnerClass,
+  faqPanelShadowStyle,
   faqSeparatedCardFrameClass,
   faqSummaryHorizontalPaddingClass,
   faqSummaryPaddingClass,
@@ -464,7 +471,10 @@ import {
   contactFormFrameStyle,
   contactInquiryFormCardClass,
   contactInquiryAccentBlockClass,
-  contactInquiryChannelCardClass,
+  contactInquiryPanelStatCardClass,
+  contactChannelCardsCardClass,
+  contactChannelCardsCardStyle,
+  contactChannelCardsIconClass,
   contactDeskChannelCardClass,
   contactDeskFormPanelClass,
   contactDeskMaxWidthClass,
@@ -475,6 +485,7 @@ import {
   isContactInquiryPanelDesign,
   isContactDeskDesign,
   isContactInfoPanelDesign,
+  isContactChannelCardsDesign,
   isContactOwnedLayoutDesign,
   contactActiveColorMode,
   resolveContactFormDesign,
@@ -515,17 +526,26 @@ import {
   footerMarketplaceCtaStyle,
   footerPresetCtaClass,
   footerReadableOnBackground,
+  footerColorLuminance,
   footerShellClass,
   footerTopMarginClass,
   footerTopMarginStyle,
   footerLandingBrandGapStyle,
   footerColumnHeadingGapStyle,
+  clampFooterColumnHeadingGapPx,
   resolveFooterCopyrightLabel,
   isFooterBackgroundLight,
   normalizeFooterElementStyles,
   resolveFooterCtaSubtitle,
   resolveFooterDescription,
   resolveFooterLinkHref,
+  isFooterNopbProfileLink,
+  isFooterMarketplaceColumnLink,
+  resolveFooterLandingSectionLinks,
+  resolveFooterInternalLinksColumn,
+  DEFAULT_FOOTER_CONNECT_LABEL,
+  DEFAULT_FOOTER_ACCENT_COLOR,
+  type PortfolioFooterAutoSectionKey,
   resolveFooterMarketplaceCtaHref,
   type PortfolioFooterPresentationSettings,
 } from '@/components/portfolio/portfolio-footer-settings';
@@ -571,16 +591,114 @@ function getScrollParent(el: HTMLElement | null): HTMLElement | null {
   return null;
 }
 
+const HERO_MOSAIC_CHUNK = 5;
+
+function chunkHeroMosaicItems<T>(items: T[]): T[][] {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += HERO_MOSAIC_CHUNK) {
+    chunks.push(items.slice(index, index + HERO_MOSAIC_CHUNK));
+  }
+  const last = chunks[chunks.length - 1];
+  const previous = chunks[chunks.length - 2];
+  if (last && previous && last.length === 1) {
+    last.unshift(...previous.splice(3));
+  }
+  return chunks;
+}
+
+function heroMosaicPlan(count: number): {
+  containerClass: string;
+  heroClass: string;
+  tileClass: (index: number) => string;
+} {
+  if (count <= 1) {
+    return {
+      containerClass: 'grid-cols-1 lg:[aspect-ratio:16/7]',
+      heroClass: '[aspect-ratio:var(--hero-mosaic-aspect)] lg:[aspect-ratio:auto]',
+      tileClass: () => '',
+    };
+  }
+  if (count === 2) {
+    return {
+      containerClass: 'grid-cols-1 gap-y-4 sm:grid-cols-2 lg:grid-cols-8 lg:grid-rows-1 lg:[aspect-ratio:16/7]',
+      heroClass:
+        'sm:col-span-1 lg:col-span-5 [aspect-ratio:var(--hero-mosaic-aspect)] lg:[aspect-ratio:auto]',
+      tileClass: () =>
+        'sm:col-span-1 lg:col-span-3 [aspect-ratio:var(--hero-mosaic-aspect)] lg:[aspect-ratio:auto]',
+    };
+  }
+  if (count === 3) {
+    return {
+      containerClass: 'grid-cols-1 gap-y-4 sm:grid-cols-2 lg:grid-cols-8 lg:grid-rows-2 lg:[aspect-ratio:16/9]',
+      heroClass:
+        'sm:col-span-2 lg:col-span-4 lg:row-span-2 [aspect-ratio:var(--hero-mosaic-aspect)] lg:[aspect-ratio:auto]',
+      tileClass: () =>
+        'sm:col-span-1 lg:col-span-4 [aspect-ratio:var(--hero-mosaic-aspect)] lg:[aspect-ratio:auto]',
+    };
+  }
+  if (count === 4) {
+    return {
+      containerClass: 'grid-cols-1 gap-y-4 sm:grid-cols-2 lg:grid-cols-8 lg:grid-rows-2 lg:[aspect-ratio:16/9]',
+      heroClass:
+        'sm:col-span-2 lg:col-span-4 lg:row-span-2 [aspect-ratio:var(--hero-mosaic-aspect)] lg:[aspect-ratio:auto]',
+      tileClass: (index) =>
+        index === 0
+          ? 'sm:col-span-2 lg:col-span-4 [aspect-ratio:var(--hero-mosaic-aspect)] lg:[aspect-ratio:auto]'
+          : 'sm:col-span-1 lg:col-span-2 [aspect-ratio:1/1] lg:[aspect-ratio:auto]',
+    };
+  }
+  return {
+    containerClass: 'grid-cols-1 gap-y-4 sm:grid-cols-2 lg:grid-cols-8 lg:grid-rows-2 lg:[aspect-ratio:16/9]',
+    heroClass:
+      'sm:col-span-2 lg:col-span-4 lg:row-span-2 [aspect-ratio:var(--hero-mosaic-aspect)] lg:[aspect-ratio:auto]',
+    tileClass: () => 'sm:col-span-1 lg:col-span-2 [aspect-ratio:1/1] lg:[aspect-ratio:auto]',
+  };
+}
+
+function featuredStripPlan(total: number): {
+  layout: 'solo' | 'split';
+  scrollable: boolean;
+} {
+  const tiles = Math.max(0, total - 1);
+  if (tiles === 0) return { layout: 'solo', scrollable: false };
+  return { layout: 'split', scrollable: tiles > 3 };
+}
+
+const TALL_ROW_SLIDE_MS = 620;
+const CINEMA_SLIDE_MS = 540;
+
 export function EditorialGallerySection({
   items,
   presentation,
+  embeddedHeader,
 }: {
   items: ProfileGalleryItem[];
   presentation: PortfolioGalleryPresentationSettings;
+  embeddedHeader?: ReactNode;
 }) {
   const [activeItem, setActiveItem] = useState<ProfileGalleryItem | null>(null);
   const [carouselPage, setCarouselPage] = useState(0);
+  const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [gallerySlideDir, setGallerySlideDir] = useState<1 | -1>(1);
+  const [tallThumbAnim, setTallThumbAnim] = useState<{ from: number; dir: 1 | -1 } | null>(null);
+  const [tallThumbStep, setTallThumbStep] = useState(0);
+  const [tallThumbX, setTallThumbX] = useState(0);
+  const [tallThumbTween, setTallThumbTween] = useState(false);
+  const tallThumbViewRef = useRef<HTMLDivElement>(null);
+  const tallThumbAnimRef = useRef<{ from: number; dir: 1 | -1 } | null>(null);
+  const tallThumbTweenRef = useRef(false);
+  const tallThumbUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tallThumbPrevFrame = useRef<number | null>(null);
+  const [cinemaX, setCinemaX] = useState(0);
+  const [cinemaStep, setCinemaStep] = useState(0);
+  const [cinemaSliding, setCinemaSliding] = useState(false);
+  const cinemaViewRef = useRef<HTMLDivElement>(null);
+  const cinemaLockRef = useRef(false);
+  const cinemaUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reduceMotion = useReducedMotion();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollCarouselLock = useRef(false);
+  const scrollCarouselRestore = useRef<(() => void) | null>(null);
   const sortedItems = useMemo(
     () => [...items].sort((a, b) => a.sortOrder - b.sortOrder),
     [items]
@@ -602,19 +720,228 @@ export function EditorialGallerySection({
 
   useEffect(() => {
     setCarouselPage(0);
+    setFeaturedIndex(0);
+    tallThumbAnimRef.current = null;
+    tallThumbTweenRef.current = false;
+    if (tallThumbUnlockTimer.current) {
+      clearTimeout(tallThumbUnlockTimer.current);
+      tallThumbUnlockTimer.current = null;
+    }
+    if (tallThumbPrevFrame.current != null) {
+      cancelAnimationFrame(tallThumbPrevFrame.current);
+      tallThumbPrevFrame.current = null;
+    }
+    setTallThumbAnim(null);
+    setTallThumbX(0);
+    setTallThumbTween(false);
+    cinemaLockRef.current = false;
+    if (cinemaUnlockTimer.current) {
+      clearTimeout(cinemaUnlockTimer.current);
+      cinemaUnlockTimer.current = null;
+    }
+    setCinemaX(0);
+    setCinemaSliding(false);
   }, [presentation.design, presentation.columns, sortedItems.length]);
 
+  useEffect(() => {
+    return () => {
+      if (tallThumbUnlockTimer.current) clearTimeout(tallThumbUnlockTimer.current);
+      if (tallThumbPrevFrame.current != null) cancelAnimationFrame(tallThumbPrevFrame.current);
+      if (cinemaUnlockTimer.current) clearTimeout(cinemaUnlockTimer.current);
+      scrollCarouselRestore.current?.();
+    };
+  }, []);
+
   const showItemTitle = presentation.showTitle && presentation.titlePlacement !== 'hidden';
-  const columnsStyle = {
+  const hGap = presentation.gap;
+  const captionGap = Math.max(hGap + 28, 56);
+  const vGap = galleryEffectiveVerticalGap(presentation);
+  const gapPx = `${hGap}px`;
+  const vGapPx = `${vGap}px`;
+  const gridStyle: CSSProperties = {
     '--gallery-columns': presentation.columns,
-    '--gallery-gap': `${presentation.gap}px`,
-    gap: `${presentation.gap}px`,
-    padding: `${presentation.padding}px`,
+    '--gallery-gap': gapPx,
+    '--gallery-vgap': vGapPx,
+    columnGap: `${hGap}px`,
+    rowGap: `${vGap}px`,
+    padding: presentation.padding > 0 ? `${presentation.padding}px` : undefined,
   } as CSSProperties;
+  const mosaicChunks = useMemo(
+    () => (presentation.design === 'hero-mosaic' ? chunkHeroMosaicItems(sortedItems) : []),
+    [presentation.design, sortedItems]
+  );
+  const mosaicAspect =
+    galleryAspectStyle(presentation.imageAspect === 'auto' ? 'landscape' : presentation.imageAspect)
+      .aspectRatio ?? '4 / 3';
+  const mosaicGridStyle: CSSProperties = {
+    columnGap: `${hGap}px`,
+    rowGap: `${vGap}px`,
+    ['--hero-mosaic-aspect' as string]: mosaicAspect,
+  };
+  const stripPlan = useMemo(
+    () => featuredStripPlan(presentation.design === 'featured-strip' ? sortedItems.length : 0),
+    [presentation.design, sortedItems.length]
+  );
+  const stripGap = `${hGap}px`;
+  const stripClipStyle: CSSProperties = {
+    borderRadius: 'var(--gallery-frame-radius, 16px)',
+    overflow: 'hidden',
+  };
+  const featuredItem = sortedItems[Math.min(Math.max(0, featuredIndex), Math.max(0, sortedItems.length - 1))] ?? null;
+  const featuredThumbs = sortedItems
+    .map((item, index) => ({ item, index }))
+    .filter(({ index }) => index !== featuredIndex);
+  const tallRowVisibleCount = Math.min(4, sortedItems.length);
+  const tallThumbVisible = Math.min(3, Math.max(0, sortedItems.length - 1));
+  const tallRowItems = sortedItems.length
+    ? Array.from({ length: tallRowVisibleCount }, (_, offset) => {
+        const index = (featuredIndex + offset) % sortedItems.length;
+        return { item: sortedItems[index], index };
+      })
+    : [];
+  const tallHero = tallRowItems[0] ?? null;
+  const tallThumbsAt = (start: number) =>
+    Array.from({ length: tallThumbVisible }, (_, offset) => {
+      const index = (start + 1 + offset) % sortedItems.length;
+      return { item: sortedItems[index], index };
+    });
+  const tallThumbBaseIndex = tallThumbAnim?.from ?? featuredIndex;
+  const tallThumbs = tallThumbsAt(tallThumbBaseIndex);
+  const tallThumbExtra = (start: number) => {
+    const index = (start + 1 + tallThumbVisible) % sortedItems.length;
+    return { item: sortedItems[index], index };
+  };
+  const tallThumbTrack =
+    tallThumbVisible === 0
+      ? []
+      : tallThumbAnim?.dir === -1
+        ? [{ item: sortedItems[tallThumbBaseIndex], index: tallThumbBaseIndex }, ...tallThumbs]
+        : [...tallThumbs, tallThumbExtra(tallThumbBaseIndex)];
+  const finishTallThumbAnim = () => {
+    if (!tallThumbAnimRef.current) return;
+    if (tallThumbUnlockTimer.current) {
+      clearTimeout(tallThumbUnlockTimer.current);
+      tallThumbUnlockTimer.current = null;
+    }
+    if (tallThumbPrevFrame.current != null) {
+      cancelAnimationFrame(tallThumbPrevFrame.current);
+      tallThumbPrevFrame.current = null;
+    }
+    tallThumbAnimRef.current = null;
+    tallThumbTweenRef.current = false;
+    setTallThumbTween(false);
+    setTallThumbX(0);
+    setTallThumbAnim(null);
+  };
+  const measureTallThumbStep = (node: HTMLDivElement) => {
+    if (tallThumbVisible <= 0) return 0;
+    const itemWidth = (node.clientWidth - (tallThumbVisible - 1) * hGap) / tallThumbVisible;
+    return itemWidth + hGap;
+  };
+  const cycleFeatured = (direction: -1 | 1) => {
+    if (sortedItems.length < 2) return;
+    if (presentation.design === 'tall-row') {
+      if (tallThumbAnimRef.current) return;
+      const from = featuredIndex;
+      const node = tallThumbViewRef.current;
+      const step = node && tallThumbVisible > 0 ? measureTallThumbStep(node) : tallThumbStep;
+      if (step > 0 && Math.abs(step - tallThumbStep) > 0.25) setTallThumbStep(step);
+      setGallerySlideDir(direction);
+      setFeaturedIndex((current) => (current + direction + sortedItems.length) % sortedItems.length);
+      if (reduceMotion || tallThumbVisible === 0 || step <= 0) return;
+      const nextAnim = { from, dir: direction };
+      tallThumbAnimRef.current = nextAnim;
+      setTallThumbAnim(nextAnim);
+      if (direction === 1) {
+        tallThumbTweenRef.current = true;
+        setTallThumbTween(true);
+        setTallThumbX(-step);
+      } else {
+        tallThumbTweenRef.current = false;
+        setTallThumbTween(false);
+        setTallThumbX(-step);
+      }
+      if (tallThumbUnlockTimer.current) clearTimeout(tallThumbUnlockTimer.current);
+      tallThumbUnlockTimer.current = setTimeout(() => {
+        finishTallThumbAnim();
+      }, TALL_ROW_SLIDE_MS + 48);
+      return;
+    }
+    setGallerySlideDir(direction);
+    setFeaturedIndex((current) => (current + direction + sortedItems.length) % sortedItems.length);
+  };
   const baseWidth = `${galleryMaxWidthClass(presentation.maxWidth)} ${galleryPlacementClass(presentation.placement)} w-full`;
-  const useOverlayTitles =
-    presentation.titlePlacement === 'overlay' ||
-    presentation.design === 'featured-strip';
+  const useOverlayTitles = presentation.titlePlacement === 'overlay';
+  const isClipCoverDesign = presentation.design === 'featured-strip' || presentation.design === 'tall-row';
+
+  useLayoutEffect(() => {
+    if (presentation.design !== 'tall-row' || tallThumbVisible === 0) return;
+    const node = tallThumbViewRef.current;
+    if (!node) return;
+    const update = () => {
+      if (tallThumbAnimRef.current) return;
+      const itemWidth = (node.clientWidth - (tallThumbVisible - 1) * hGap) / tallThumbVisible;
+      const step = itemWidth + hGap;
+      if (step > 0) {
+        setTallThumbStep((current) => (Math.abs(current - step) > 0.25 ? step : current));
+      }
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [presentation.design, tallThumbVisible, hGap, embeddedHeader, sortedItems.length]);
+
+  useLayoutEffect(() => {
+    if (!tallThumbAnim || tallThumbAnim.dir !== -1 || reduceMotion) return;
+    let cancelled = false;
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (cancelled || !tallThumbAnimRef.current || tallThumbAnimRef.current.dir !== -1) return;
+        tallThumbTweenRef.current = true;
+        setTallThumbTween(true);
+        setTallThumbX(0);
+      });
+    });
+    tallThumbPrevFrame.current = frame;
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      tallThumbPrevFrame.current = null;
+    };
+  }, [tallThumbAnim, reduceMotion]);
+
+  useLayoutEffect(() => {
+    if (presentation.design !== 'cinema-strip') return;
+    const view = cinemaViewRef.current;
+    if (!view) return;
+    const update = () => {
+      const card = view.querySelector<HTMLElement>('[data-gallery-carousel-item]');
+      if (!card) return;
+      const step = card.getBoundingClientRect().width + presentation.gap;
+      if (step <= 0) return;
+      setCinemaStep((current) => (Math.abs(current - step) > 0.25 ? step : current));
+      const trackWidth = step * sortedItems.length - presentation.gap;
+      const maxX = Math.max(0, trackWidth - view.clientWidth);
+      setCinemaX((current) => Math.max(0, Math.min(maxX, current)));
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(view);
+    return () => observer.disconnect();
+  }, [presentation.design, presentation.gap, presentation.captionCardWidthPx, sortedItems.length]);
+
+  useEffect(() => {
+    if (presentation.design !== 'tall-row' || sortedItems.length < 2) return;
+    const preload = (offset: number) => {
+      const item = sortedItems[(featuredIndex + offset + sortedItems.length) % sortedItems.length];
+      if (!item?.mediaUrl || item.mediaType === 'VIDEO') return;
+      const image = new window.Image();
+      image.src = item.mediaUrl;
+    };
+    preload(1);
+    preload(-1);
+  }, [featuredIndex, presentation.design, sortedItems]);
 
   const openLightbox = (item: ProfileGalleryItem) => {
     if (presentation.lightboxEnabled) setActiveItem(item);
@@ -622,10 +949,67 @@ export function EditorialGallerySection({
 
   const scrollCarousel = (direction: -1 | 1) => {
     const node = scrollRef.current;
-    if (!node) return;
-    const card = node.querySelector<HTMLElement>('[data-gallery-carousel-item]');
-    const step = card ? card.offsetWidth + presentation.gap : node.clientWidth * 0.85;
-    node.scrollBy({ left: direction * step, behavior: 'smooth' });
+    if (!node || scrollCarouselLock.current) return;
+    const cards = Array.from(node.querySelectorAll<HTMLElement>('[data-gallery-carousel-item]'));
+    if (!cards.length) return;
+
+    const scrollerRect = node.getBoundingClientRect();
+    const leftOf = (card: HTMLElement) =>
+      card.getBoundingClientRect().left - scrollerRect.left + node.scrollLeft;
+    const current = node.scrollLeft;
+    const maxScroll = Math.max(0, node.scrollWidth - node.clientWidth);
+    const nextCard =
+      direction === 1
+        ? cards.find((card) => leftOf(card) > current + 4)
+        : [...cards].reverse().find((card) => leftOf(card) < current - 4);
+    const targetLeft = Math.max(
+      0,
+      Math.min(maxScroll, nextCard ? leftOf(nextCard) : direction === 1 ? maxScroll : 0)
+    );
+    if (Math.abs(targetLeft - current) < 1) return;
+
+    scrollCarouselRestore.current?.();
+    scrollCarouselLock.current = true;
+    const previousSnap = node.style.scrollSnapType;
+    node.style.scrollSnapType = 'none';
+    node.scrollTo({ left: targetLeft, behavior: reduceMotion ? 'auto' : 'smooth' });
+
+    let restored = false;
+    const restore = () => {
+      if (restored) return;
+      restored = true;
+      scrollCarouselLock.current = false;
+      node.style.scrollSnapType = previousSnap;
+      node.removeEventListener('scrollend', restore);
+      if (scrollCarouselRestore.current === restore) scrollCarouselRestore.current = null;
+    };
+    scrollCarouselRestore.current = restore;
+    node.addEventListener('scrollend', restore);
+    window.setTimeout(restore, reduceMotion ? 32 : 720);
+  };
+
+  const cycleCinema = (direction: -1 | 1) => {
+    const view = cinemaViewRef.current;
+    if (!view || cinemaLockRef.current || sortedItems.length < 2) return;
+    const card = view.querySelector<HTMLElement>('[data-gallery-carousel-item]');
+    const step = card ? card.getBoundingClientRect().width + presentation.gap : cinemaStep;
+    if (step <= 0) return;
+    const trackWidth = step * sortedItems.length - presentation.gap;
+    const maxX = Math.max(0, trackWidth - view.clientWidth);
+    const next = Math.max(0, Math.min(maxX, cinemaX + direction * step));
+    if (Math.abs(next - cinemaX) < 0.5) return;
+    if (Math.abs(step - cinemaStep) > 0.25) setCinemaStep(step);
+    if (!reduceMotion) {
+      cinemaLockRef.current = true;
+      setCinemaSliding(true);
+      if (cinemaUnlockTimer.current) clearTimeout(cinemaUnlockTimer.current);
+      cinemaUnlockTimer.current = setTimeout(() => {
+        cinemaLockRef.current = false;
+        setCinemaSliding(false);
+        cinemaUnlockTimer.current = null;
+      }, CINEMA_SLIDE_MS + 40);
+    }
+    setCinemaX(next);
   };
 
   const scrollToCarouselPage = (page: number) => {
@@ -633,7 +1017,7 @@ export function EditorialGallerySection({
     if (!node) return;
     setCarouselPage(page);
     const card = node.querySelector<HTMLElement>('[data-gallery-carousel-item]');
-    const step = card ? card.offsetWidth + presentation.gap : node.clientWidth * 0.85;
+    const step = card ? card.offsetWidth + captionGap : node.clientWidth * 0.85;
     node.scrollTo({ left: page * step * presentation.columns, behavior: 'smooth' });
   };
 
@@ -642,56 +1026,80 @@ export function EditorialGallerySection({
     return Math.max(1, Math.ceil(sortedItems.length / presentation.columns));
   }, [presentation.design, presentation.columns, sortedItems.length]);
 
-  const media = (item: ProfileGalleryItem, lightbox = false) => {
-    const commonClass = `${lightbox ? 'max-h-[82vh] max-w-[92vw]' : 'h-full w-full'} ${
-      presentation.hoverZoom && !lightbox ? 'transition-transform duration-500 group-hover:scale-105' : ''
-    }`;
-    const style: CSSProperties = {
-      objectFit: lightbox ? 'contain' : presentation.objectFit,
-      objectPosition: presentation.objectPosition,
-    };
-    if (item.mediaType === 'VIDEO') {
-      return (
-        <div className="relative h-full w-full">
-          <video
-            src={item.mediaUrl}
-            className={commonClass}
-            style={style}
-            muted={!lightbox}
-            loop={!lightbox}
-            autoPlay={!lightbox}
-            playsInline
-            controls={lightbox}
-          />
-          {!lightbox ? (
-            <span className="pointer-events-none absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/65 text-sm text-white backdrop-blur" aria-hidden>
-              ▶
-            </span>
-          ) : null}
-        </div>
-      );
-    }
-    return <img src={item.mediaUrl} alt={galleryItemDisplayTitle(item.title) || 'Gallery media'} className={commonClass} style={style} loading="lazy" />;
+  const media = (item: ProfileGalleryItem, lightbox = false, eager = false, highPriority = false) => {
+    const zoomClass =
+      presentation.hoverZoom && !lightbox && !isClipCoverDesign && presentation.design !== 'cinema-strip'
+        ? 'h-full w-full transition-transform duration-500 group-hover:scale-105'
+        : 'h-full w-full';
+    const objectFit = lightbox
+      ? 'contain'
+      : isClipCoverDesign || presentation.design === 'cinema-strip'
+        ? 'cover'
+        : presentation.objectFit;
+    const columnShare = Math.max(2, presentation.columns || 2);
+    const sizes = lightbox
+      ? '100vw'
+      : highPriority
+        ? '(max-width: 768px) 100vw, min(1200px, 72vw)'
+        : presentation.design === 'cinema-strip'
+          ? '(max-width: 768px) 86vw, 680px'
+          : presentation.design === 'caption-carousel'
+            ? '(max-width: 768px) 88vw, 420px'
+            : `(max-width: 640px) 100vw, (max-width: 1024px) 50vw, ${Math.round(100 / columnShare)}vw`;
+    const deferred = (
+      <PortfolioDeferredMedia
+        src={item.mediaUrl}
+        alt={galleryItemDisplayTitle(item.title) || 'Gallery media'}
+        className={zoomClass}
+        sizes={sizes}
+        eager={lightbox || eager}
+        highPriority={lightbox || highPriority}
+        kind={item.mediaType === 'VIDEO' ? 'video' : 'image'}
+        objectFit={objectFit}
+        objectPosition={presentation.objectPosition}
+        autoPlayVideo={!lightbox && item.mediaType === 'VIDEO'}
+        controls={lightbox && item.mediaType === 'VIDEO'}
+        showPlayBadge={!lightbox && item.mediaType === 'VIDEO'}
+        fillParent={lightbox || presentation.imageAspect !== 'auto'}
+      />
+    );
+    if (!lightbox) return deferred;
+    return <div className="relative h-[min(82vh,900px)] w-[min(92vw,1200px)] max-w-[92vw]">{deferred}</div>;
   };
 
-  const persistentOverlayTitle = (itemTitle: string) => (
-    <>
-      <span
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2"
-        style={{
-          background: `linear-gradient(transparent, ${presentation.overlayColor}${Math.round(
-            (presentation.overlayOpacity / 100) * 255
-          ).toString(16).padStart(2, '0')})`,
-        }}
-        aria-hidden
-      />
-      <h3 className="absolute inset-x-0 bottom-0 p-4 text-sm font-semibold text-white [text-shadow:0_1px_8px_rgb(0_0_0/0.8)] sm:p-5 sm:text-base">
-        {itemTitle}
-      </h3>
-    </>
+  const persistentOverlayTitle = (itemTitle: string, revealOnHover = false) => (
+    <span
+      className={`pf-gallery-media-title pf-gallery-media-title--in-frame pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 py-5 text-center text-white sm:px-5 sm:py-6${
+        presentation.design === 'tall-row' ? ' pf-gallery-media-title--aeonik pf-gallery-media-title--tall' : ''
+      }${
+        revealOnHover
+          ? ' opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100'
+          : ''
+      }`}
+    >
+      {itemTitle}
+    </span>
   );
 
-  const card = (item: ProfileGalleryItem, index: number, options?: { forceOverlay?: boolean; forceAspect?: CSSProperties }) => {
+  const card = (
+    item: ProfileGalleryItem,
+    index: number,
+    options?: {
+      forceOverlay?: boolean;
+      overlayOnHover?: boolean;
+      forceAspect?: CSSProperties;
+      fill?: boolean;
+      emphasis?: 'hero';
+      hideTitle?: boolean;
+      onActivate?: () => void;
+      eager?: boolean;
+    }
+  ) => {
+    const isCinemaStrip = presentation.design === 'cinema-strip';
+    const cinemaStart = cinemaStep > 0 ? Math.max(0, Math.round(cinemaX / cinemaStep)) : 0;
+    const loadMediaEager =
+      Boolean(options?.eager) ||
+      (isCinemaStrip && index >= cinemaStart - 1 && index <= cinemaStart + 4);
     const itemTitle = galleryItemDisplayTitle(item.title);
     const isEditorial = presentation.design === 'editorial-split';
     const editorialClass = isEditorial
@@ -699,39 +1107,109 @@ export function EditorialGallerySection({
         ? 'lg:col-span-2'
         : 'lg:col-span-1'
       : '';
-    const isMasonry = presentation.design === 'masonry';
     const aspect =
-      options?.forceAspect ??
-      (isMasonry || presentation.imageAspect === 'auto'
+      options?.fill
         ? {}
-        : galleryAspectStyle(
-            presentation.design === 'cinema-strip' ? 'cinema' : presentation.imageAspect
-          ));
-    const overlayActive = options?.forceOverlay || (showItemTitle && useOverlayTitles && itemTitle);
+        : options?.forceAspect ??
+          (presentation.imageAspect === 'auto'
+            ? {}
+            : galleryAspectStyle(presentation.imageAspect));
+    const overlayOnHover = Boolean(options?.overlayOnHover);
+    const overlayActive =
+      !isCinemaStrip &&
+      Boolean(itemTitle) &&
+      (Boolean(options?.forceOverlay) ||
+        overlayOnHover ||
+        (!options?.hideTitle && showItemTitle && useOverlayTitles));
+    const showUnderTitle =
+      !options?.hideTitle &&
+      showItemTitle &&
+      Boolean(itemTitle) &&
+      (isCinemaStrip || presentation.titlePlacement === 'under');
+    const activate = () => {
+      if (options?.onActivate) {
+        options.onActivate();
+        return;
+      }
+      openLightbox(item);
+    };
+    const isInteractive = Boolean(options?.onActivate || presentation.lightboxEnabled);
+    const deferLayoutPaint =
+      presentation.design !== 'cinema-strip' &&
+      presentation.design !== 'featured-strip' &&
+      presentation.design !== 'tall-row';
     return (
       <article
         key={item.id}
-        className={`group relative break-inside-avoid overflow-hidden ${editorialClass} ${
-          presentation.lightboxEnabled ? 'cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500' : ''
+        className={`group relative break-inside-avoid ${
+          isCinemaStrip ? 'flex flex-col overflow-visible' : 'overflow-hidden'
+        } ${editorialClass} ${
+          options?.fill ? 'flex h-full w-full flex-col' : ''
+        } ${deferLayoutPaint ? 'pf-gallery-tile' : ''} ${
+          isInteractive
+            ? `${options?.onActivate ? 'cursor-pointer' : 'cursor-zoom-in'} focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500`
+            : ''
         }`}
-        style={{ borderRadius: `${presentation.radius}px`, marginBottom: isMasonry ? `${presentation.gap}px` : undefined }}
-        role={presentation.lightboxEnabled ? 'button' : undefined}
-        tabIndex={presentation.lightboxEnabled ? 0 : undefined}
-        aria-label={presentation.lightboxEnabled ? `Ouvrir ${item.title}` : undefined}
-        onClick={() => openLightbox(item)}
+        style={{
+          borderRadius: isClipCoverDesign ? 'var(--gallery-frame-radius, 16px)' : `${presentation.radius}px`,
+          overflow: isCinemaStrip ? 'visible' : 'hidden',
+        }}
+        role={isInteractive ? 'button' : undefined}
+        tabIndex={isInteractive ? 0 : undefined}
+        aria-label={
+          options?.onActivate
+            ? `Afficher ${galleryItemDisplayTitle(item.title) || 'ce média'}`
+            : presentation.lightboxEnabled
+              ? `Ouvrir ${item.title}`
+              : undefined
+        }
+        onClick={activate}
         onKeyDown={(event) => {
-          if (presentation.lightboxEnabled && (event.key === 'Enter' || event.key === ' ')) {
+          if (isInteractive && (event.key === 'Enter' || event.key === ' ')) {
             event.preventDefault();
-            openLightbox(item);
+            activate();
           }
         }}
       >
-        <div className="relative h-full overflow-hidden bg-neutral-100 dark:bg-neutral-900" style={aspect}>
-          {media(item)}
-          {overlayActive && itemTitle ? persistentOverlayTitle(itemTitle) : null}
+        <div
+          className={`relative w-full overflow-hidden ${
+            options?.fill ? 'flex-1 min-h-[12rem] bg-neutral-100 dark:bg-neutral-900' : isCinemaStrip ? 'z-10 w-full bg-transparent' : 'h-full min-h-[12rem] bg-neutral-100 dark:bg-neutral-900'
+          } ${
+            isCinemaStrip
+              ? 'transition-transform duration-300 ease-out will-change-transform group-hover:-translate-y-16'
+              : ''
+          }`}
+          style={
+            isClipCoverDesign
+              ? {
+                  ...aspect,
+                  borderRadius: 'var(--gallery-frame-radius, 16px)',
+                  overflow: 'hidden',
+                }
+              : {
+                  ...aspect,
+                  borderRadius: isCinemaStrip ? `${presentation.radius}px` : undefined,
+                }
+          }
+        >
+          {media(item, false, loadMediaEager, options?.emphasis === 'hero')}
+          {overlayOnHover ? (
+            <span
+              className="pointer-events-none absolute inset-0 z-[9] bg-black/0 transition-colors duration-300 group-hover:bg-black/40"
+              aria-hidden
+            />
+          ) : null}
+          {overlayActive && itemTitle ? persistentOverlayTitle(itemTitle, overlayOnHover) : null}
         </div>
-        {showItemTitle && presentation.titlePlacement === 'under' && itemTitle ? (
-          <h3 className="px-1 pb-1 pt-3 text-sm font-semibold sm:text-base" style={{ color: presentation.itemTitleColor }}>
+        {showUnderTitle ? (
+          <h3
+            className={
+              isCinemaStrip
+                ? 'pf-gallery-media-title pf-gallery-media-title--cinema pf-gallery-media-title--aeonik pointer-events-none absolute inset-x-0 bottom-0 z-0 px-3 pb-1 text-center opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100'
+                : 'pf-gallery-media-title px-1 pb-1 pt-3 text-center'
+            }
+            style={{ color: presentation.itemTitleColor }}
+          >
             {itemTitle}
           </h3>
         ) : null}
@@ -739,22 +1217,31 @@ export function EditorialGallerySection({
     );
   };
 
-  const captionCard = (item: ProfileGalleryItem) => {
+  const captionCard = (item: ProfileGalleryItem, index = 0) => {
     const itemTitle = galleryItemDisplayTitle(item.title);
-    const aspect = galleryAspectStyle(presentation.imageAspect === 'auto' ? 'square' : presentation.imageAspect);
+    const cardSizePx = presentation.captionCardWidthPx;
+    const cardPadding = Math.max(12, Math.min(presentation.padding || 16, 18));
+    const cardBorderColor =
+      presentation.galleryPalette?.bordure ??
+      `color-mix(in srgb, ${presentation.cardSurfaceColor} 38%, transparent)`;
+    const isOriginalRatio = presentation.imageAspect === 'auto';
+    const mediaAspect = galleryAspectStyle(presentation.imageAspect);
     return (
       <article
         key={item.id}
         data-gallery-carousel-item
-        className={`group shrink-0 snap-start ${galleryCaptionCardWidthClass(presentation.columns)} ${
+        className={`group shrink-0 snap-start ${
           presentation.lightboxEnabled ? 'cursor-zoom-in' : ''
-        }`}
-        style={{
-          borderRadius: `${presentation.radius}px`,
-          border: '1px solid rgba(0,0,0,0.08)',
-          backgroundColor: presentation.cardSurfaceColor,
-          padding: Math.max(12, Math.min(presentation.padding, 20)),
-        }}
+        } flex flex-col gap-3 border bg-transparent px-[var(--gallery-card-padding-x)] py-[var(--gallery-card-padding-y)] transition-all duration-300`}
+        style={
+          {
+            width: `min(88vw, ${cardSizePx}px)`,
+            borderRadius: `${presentation.radius}px`,
+            borderColor: cardBorderColor,
+            '--gallery-card-padding-x': `${cardPadding}px`,
+            '--gallery-card-padding-y': `${cardPadding}px`,
+          } as CSSProperties
+        }
         role={presentation.lightboxEnabled ? 'button' : undefined}
         tabIndex={presentation.lightboxEnabled ? 0 : undefined}
         onClick={() => openLightbox(item)}
@@ -766,15 +1253,30 @@ export function EditorialGallerySection({
         }}
       >
         <div
-          className="relative overflow-hidden bg-neutral-100 dark:bg-neutral-900"
-          style={{ ...aspect, borderRadius: `${Math.max(0, presentation.radius - 4)}px` }}
+          className="relative w-full shrink-0 overflow-hidden bg-transparent"
+          style={{
+            ...mediaAspect,
+            borderRadius: `${presentation.radius}px`,
+          }}
         >
-          {media(item)}
+          <PortfolioDeferredMedia
+            src={item.mediaUrl}
+            alt={galleryItemDisplayTitle(item.title) || 'Gallery media'}
+            className="h-full w-full"
+            sizes="(max-width: 768px) 88vw, 420px"
+            eager={index < 2}
+            kind={item.mediaType === 'VIDEO' ? 'video' : 'image'}
+            objectFit={isOriginalRatio ? 'contain' : presentation.objectFit}
+            objectPosition={presentation.objectPosition}
+            autoPlayVideo={item.mediaType === 'VIDEO'}
+            showPlayBadge={item.mediaType === 'VIDEO'}
+            fillParent={!isOriginalRatio}
+          />
         </div>
         {showItemTitle && itemTitle ? (
           <h3
-            className="pt-3 text-center text-sm font-bold sm:text-base"
-            style={{ color: presentation.itemTitleColor }}
+            className="pf-gallery-media-title pf-gallery-media-title--caption w-full shrink-0 pb-1 pt-1 text-center"
+            style={{ color: presentation.subtitleColor }}
           >
             {itemTitle}
           </h3>
@@ -783,37 +1285,47 @@ export function EditorialGallerySection({
     );
   };
 
-  const carouselNavButtons = (className?: string) =>
-    presentation.showCarouselNav && galleryDesignUsesCarouselNav(presentation.design) ? (
-      <div className={`flex items-center justify-center gap-3 ${className ?? ''}`}>
-        <button
-          type="button"
-          onClick={() => scrollCarousel(-1)}
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-violet-300 text-lg text-violet-700 transition hover:bg-violet-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-violet-500/40 dark:text-violet-200 dark:hover:bg-violet-950/40"
-          aria-label="Previous"
-        >
-          ‹
-        </button>
-        <button
-          type="button"
-          onClick={() => scrollCarousel(1)}
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-violet-300 text-lg text-violet-700 transition hover:bg-violet-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-violet-500/40 dark:text-violet-200 dark:hover:bg-violet-950/40"
-          aria-label="Next"
-        >
-          ›
-        </button>
+  const carouselNavButtons = (
+    className?: string,
+    onNavigate?: (direction: -1 | 1) => void,
+    size: 'md' | 'lg' = 'md',
+    forceVisible = false
+  ) =>
+    (forceVisible || (presentation.showCarouselNav && galleryDesignUsesCarouselNav(presentation.design))) ? (
+      <div className={`flex items-center justify-center gap-4 ${className ?? ''}`}>
+        {([-1, 1] as const).map((direction) => (
+          <button
+            key={direction}
+            type="button"
+            onClick={() => (onNavigate ?? scrollCarousel)(direction)}
+            className={`flex items-center justify-center rounded-full border transition duration-200 ease-out hover:scale-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-current active:scale-95 ${
+              size === 'lg' ? 'h-16 w-16 text-3xl' : 'h-14 w-14 text-2xl'
+            }`}
+            style={{
+              backgroundColor:
+                presentation.galleryPalette?.neutre ?? presentation.cardSurfaceColor ?? '#ffffff',
+              borderColor:
+                presentation.galleryPalette?.bordure ??
+                `color-mix(in srgb, ${presentation.itemTitleColor} 32%, transparent)`,
+              color: presentation.itemTitleColor,
+            }}
+            aria-label={direction === -1 ? 'Previous' : 'Next'}
+          >
+            {direction === -1 ? '‹' : '›'}
+          </button>
+        ))}
       </div>
     ) : null;
 
   const paginationDots =
     presentation.design === 'caption-carousel' && presentation.showPagination && captionPageCount > 1 ? (
-      <div className="mt-6 flex items-center justify-center gap-2">
+      <div className="mt-6 flex items-center justify-center gap-3">
         {Array.from({ length: captionPageCount }, (_, index) => (
           <button
             key={index}
             type="button"
             onClick={() => scrollToCarouselPage(index)}
-            className={`h-2.5 w-2.5 rounded-full transition ${
+            className={`h-4 w-4 rounded-full transition ${
               carouselPage === index ? 'bg-neutral-900 dark:bg-white' : 'bg-neutral-300 dark:bg-neutral-600'
             }`}
             aria-label={`Page ${index + 1}`}
@@ -828,101 +1340,355 @@ export function EditorialGallerySection({
       <div className={baseWidth} style={{ padding: `${presentation.padding}px` }}>
         <div
           ref={scrollRef}
-          className="flex snap-x snap-mandatory overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex items-start snap-x snap-mandatory overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{ gap: `${presentation.gap}px` }}
         >
           {sortedItems.map(captionCard)}
         </div>
-        {paginationDots}
+        {presentation.captionPager === 'dots'
+          ? paginationDots
+          : carouselNavButtons('mt-6', undefined, 'lg', presentation.showPagination)}
       </div>
     ) : presentation.design === 'cinema-strip' ? (
       <div className={baseWidth} style={{ padding: `${presentation.padding}px` }}>
-        <div className="mb-4 flex justify-end">{carouselNavButtons()}</div>
+        <div className="mb-4 flex justify-end">{carouselNavButtons(undefined, cycleCinema)}</div>
         <div
-          ref={scrollRef}
-          className="flex snap-x snap-mandatory overflow-x-auto pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{ gap: `${presentation.gap}px` }}
+          ref={cinemaViewRef}
+          className={`overflow-hidden pt-16 ${cinemaSliding ? 'pointer-events-none' : ''}`}
         >
-          {sortedItems.map((item, index) => (
-            <div key={item.id} data-gallery-carousel-item className="w-[86vw] shrink-0 snap-center sm:w-[68vw] lg:w-[56rem]">
-              {card(item, index)}
-            </div>
-          ))}
+          <motion.div
+            className="flex items-end transform-gpu"
+            style={{ gap: `${presentation.gap}px` }}
+            initial={false}
+            animate={{ x: -cinemaX }}
+            transition={
+              reduceMotion
+                ? { type: false }
+                : { type: 'tween', duration: CINEMA_SLIDE_MS / 1000, ease: [0.33, 1, 0.68, 1] }
+            }
+          >
+            {sortedItems.map((item, index) => (
+              <div
+                key={item.id}
+                data-gallery-carousel-item
+                className="h-auto shrink-0"
+                style={{ width: `min(86vw, ${Math.round(presentation.captionCardWidthPx * 1.65)}px)` }}
+              >
+                {card(item, index)}
+              </div>
+            ))}
+          </motion.div>
         </div>
       </div>
     ) : presentation.design === 'hero-mosaic' ? (
       <div
-        className={`${baseWidth} grid grid-cols-1 gap-[var(--gallery-gap)] lg:grid-cols-2 lg:grid-rows-2`}
-        style={columnsStyle}
+        className={`${baseWidth} flex flex-col`}
+        style={{
+          rowGap: `${Math.max(vGap, 24)}px`,
+          padding: presentation.padding > 0 ? `${presentation.padding}px` : undefined,
+        }}
       >
-        {sortedItems[0] ? (
-          <div className="min-h-[280px] lg:row-span-2 lg:min-h-[520px]">
-            {card(sortedItems[0], 0, { forceAspect: galleryAspectStyle('portrait') })}
-          </div>
-        ) : null}
-        {sortedItems.slice(1, 5).map((item, index) => (
-          <div key={item.id} className="min-h-[180px] lg:min-h-[240px]">
-            {card(item, index + 1, { forceAspect: galleryAspectStyle('landscape') })}
-          </div>
-        ))}
+        {mosaicChunks.map((chunk, chunkIndex) => {
+          const plan = heroMosaicPlan(chunk.length);
+          const [heroItem, ...tiles] = chunk;
+          const offset = chunkIndex * HERO_MOSAIC_CHUNK;
+          if (!heroItem) return null;
+          return (
+            <div
+              key={heroItem.id}
+              className={`grid ${plan.containerClass}`}
+              style={mosaicGridStyle}
+            >
+              <div className={`min-w-0 ${plan.heroClass}`}>
+                {card(heroItem, offset, { fill: true, emphasis: 'hero', hideTitle: true, eager: chunkIndex === 0 })}
+              </div>
+              {tiles.map((item, index) => (
+                <div key={item.id} className={`min-w-0 ${plan.tileClass(index)}`}>
+                  {card(item, offset + index + 1, { fill: true, hideTitle: true })}
+                </div>
+              ))}
+            </div>
+          );
+        })}
       </div>
     ) : presentation.design === 'featured-strip' ? (
-      <div className={baseWidth} style={{ padding: `${presentation.padding}px` }}>
-        <div
-          className="grid grid-cols-1 gap-[var(--gallery-gap)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]"
-          style={{ '--gallery-gap': `${presentation.gap}px` } as CSSProperties}
-        >
-          {sortedItems[0] ? (
-            <div className="min-h-[320px] lg:min-h-[480px]">
-              {card(sortedItems[0], 0, {
-                forceOverlay: true,
-                forceAspect: galleryAspectStyle('portrait'),
-              })}
-            </div>
-          ) : null}
-          <div className="flex min-w-0 flex-col">
+      <div
+        className={baseWidth}
+        style={{
+          padding: presentation.padding > 0 ? `${presentation.padding}px` : undefined,
+          ['--gallery-frame-radius' as string]: `${presentation.radius}px`,
+        }}
+      >
+        {stripPlan.layout === 'solo' || !featuredItem ? (
+          <div
+            className="h-[min(62vh,580px)] w-full overflow-hidden"
+            style={stripClipStyle}
+          >
+            {featuredItem
+              ? (
+                <div key={featuredItem.id} className="pf-featured-in">
+                  {card(featuredItem, featuredIndex, { fill: true, emphasis: 'hero', hideTitle: true, eager: true })}
+                </div>
+              )
+              : null}
+          </div>
+        ) : presentation.featuredRailPlacement === 'bottom' ? (
+          <div
+            className={`flex w-full max-w-full flex-col ${
+              (presentation.featuredHeroWidthScope ?? 'hero') === 'global'
+                ? galleryPlacementClass(presentation.featuredHeroPlacement)
+                : ''
+            }`}
+            style={{
+              gap: stripGap,
+              ...((presentation.featuredHeroWidthScope ?? 'hero') === 'global'
+                ? { width: `${presentation.featuredHeroWidthPercent ?? 100}%` }
+                : {}),
+            }}
+          >
+            {embeddedHeader && galleryFeaturedHeroHasTitleVoid(presentation) ? (
+              <div className="lg:hidden">{embeddedHeader}</div>
+            ) : null}
+            {(() => {
+              const heroPercent = presentation.featuredHeroWidthPercent ?? 100;
+              const heroPlace = presentation.featuredHeroPlacement ?? 'center';
+              const titleBeside =
+                Boolean(embeddedHeader) && galleryFeaturedHeroHasTitleVoid(presentation);
+              const titleCell = titleBeside ? (
+                <div className="hidden min-h-0 min-w-0 px-4 lg:flex lg:items-center lg:justify-center">
+                  <div className="max-w-lg text-center">{embeddedHeader}</div>
+                </div>
+              ) : null;
+              const heroCell = (
+                <div
+                  className={`h-[min(58vh,540px)] max-w-full overflow-hidden ${
+                    titleBeside
+                      ? 'w-full'
+                      : (presentation.featuredHeroWidthScope ?? 'hero') === 'hero'
+                        ? galleryPlacementClass(heroPlace)
+                        : 'w-full'
+                  }`}
+                  style={{
+                    ...stripClipStyle,
+                    ...(!titleBeside && (presentation.featuredHeroWidthScope ?? 'hero') === 'hero'
+                      ? { width: `${heroPercent}%` }
+                      : {}),
+                  }}
+                >
+                  <div key={featuredItem.id} className="pf-featured-in">
+                    {card(featuredItem, featuredIndex, { fill: true, emphasis: 'hero', hideTitle: true, eager: true })}
+                  </div>
+                </div>
+              );
+              const heroTrackClass =
+                titleBeside && heroPlace === 'right'
+                  ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,var(--featured-hero-w))]'
+                  : titleBeside && heroPlace === 'center'
+                    ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,var(--featured-hero-w))_minmax(0,1fr)]'
+                    : titleBeside
+                      ? 'lg:grid-cols-[minmax(0,var(--featured-hero-w))_minmax(0,1fr)]'
+                      : '';
+              return (
+                <div
+                  className={`grid w-full max-w-full grid-cols-1 items-stretch ${heroTrackClass}`}
+                  style={
+                    {
+                      gap: stripGap,
+                      ['--featured-hero-w' as string]: `${heroPercent}%`,
+                    } as CSSProperties
+                  }
+                >
+                  {titleBeside && heroPlace === 'right' ? titleCell : null}
+                  {titleBeside && heroPlace === 'center' ? <div className="hidden lg:block" aria-hidden /> : null}
+                  {heroCell}
+                  {titleBeside && heroPlace !== 'right' ? titleCell : null}
+                </div>
+              );
+            })()}
             <div
               ref={scrollRef}
-              className="flex flex-1 snap-x snap-mandatory overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              style={{ gap: `${presentation.gap}px` }}
+              className={
+                featuredThumbs.length > 4
+                  ? 'flex snap-x snap-proximity overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+                  : 'grid'
+              }
+              style={
+                featuredThumbs.length > 4
+                  ? { gap: stripGap }
+                  : {
+                      gap: stripGap,
+                      gridTemplateColumns: `repeat(${Math.max(1, featuredThumbs.length)}, minmax(0, 1fr))`,
+                    }
+              }
             >
-              {sortedItems.slice(1).map((item, index) => (
+              {featuredThumbs.map(({ item, index }, slot) => (
                 <div
                   key={item.id}
                   data-gallery-carousel-item
-                  className="w-[72vw] shrink-0 snap-start sm:w-[280px] lg:w-[calc((100%-var(--gallery-gap)*2)/3)]"
-                  style={{ '--gallery-gap': `${presentation.gap}px` } as CSSProperties}
+                  className={
+                    featuredThumbs.length > 4
+                      ? 'aspect-[4/3] h-[min(22vh,210px)] w-auto shrink-0 snap-start overflow-hidden'
+                      : 'aspect-[4/3] min-h-[160px] min-w-0 overflow-hidden'
+                  }
+                  style={stripClipStyle}
                 >
-                  {card(item, index + 1, {
-                    forceOverlay: true,
-                    forceAspect: galleryAspectStyle('landscape'),
+                  {card(item, index, {
+                    fill: true,
+                    hideTitle: true,
+                    onActivate: () => setFeaturedIndex(index),
+                    eager: slot < 4,
                   })}
                 </div>
               ))}
             </div>
-            {carouselNavButtons('mt-4')}
+            {sortedItems.length > 1 ? carouselNavButtons('mt-4 lg:justify-end', cycleFeatured) : null}
           </div>
-        </div>
-      </div>
-    ) : presentation.design === 'lightbox-stack' ? (
-      <div className={`${baseWidth} flex flex-col`} style={columnsStyle}>
-        {sortedItems.map((item, index) => (
-          <div key={item.id} className="w-full">
-            {card(item, index, { forceAspect: galleryAspectStyle(presentation.imageAspect === 'auto' ? 'landscape' : presentation.imageAspect) })}
+        ) : (
+          <div className="flex w-full flex-col" style={{ gap: stripGap }}>
+            <div
+              className="grid grid-cols-1 items-stretch lg:h-[min(64vh,600px)] lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
+              style={{ gap: stripGap }}
+            >
+              <div
+                className="min-h-[260px] min-w-0 overflow-hidden lg:h-full lg:min-h-0"
+                style={stripClipStyle}
+              >
+                <div key={featuredItem.id} className="pf-featured-in">
+                  {card(featuredItem, featuredIndex, { fill: true, emphasis: 'hero', hideTitle: true, eager: true })}
+                </div>
+              </div>
+              <div
+                ref={scrollRef}
+                className={`grid h-full min-h-0 min-w-0 auto-rows-[minmax(140px,auto)] lg:auto-rows-[minmax(0,1fr)] lg:overflow-hidden ${
+                  featuredThumbs.length > 1 ? 'lg:grid-cols-2' : 'grid-cols-1'
+                } ${featuredThumbs.length > 4 ? 'lg:overflow-y-auto' : ''}`}
+                style={{ gap: `min(${stripGap}, 14px)` }}
+              >
+                {featuredThumbs.map(({ item, index }, slot) => (
+                  <div
+                    key={item.id}
+                    data-gallery-carousel-item
+                    className="min-h-[140px] min-w-0 overflow-hidden lg:min-h-0"
+                    style={stripClipStyle}
+                  >
+                    {card(item, index, {
+                      fill: true,
+                      hideTitle: true,
+                      onActivate: () => setFeaturedIndex(index),
+                      eager: slot < 4,
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+            {sortedItems.length > 1 ? carouselNavButtons('justify-end', cycleFeatured) : null}
           </div>
-        ))}
+        )}
       </div>
-    ) : presentation.design === 'masonry' ? (
+    ) : presentation.design === 'tall-row' ? (
       <div
-        className={`${baseWidth} [column-count:1] sm:[column-count:2] lg:[column-count:var(--gallery-columns)]`}
-        style={columnsStyle}
+        className={baseWidth}
+        style={{
+          padding: presentation.padding > 0 ? `${presentation.padding}px` : undefined,
+          ['--gallery-frame-radius' as string]: `${presentation.radius}px`,
+        }}
       >
-        {sortedItems.map((item, index) => card(item, index))}
+        <div className="flex w-full flex-col" style={{ gap: stripGap }}>
+          <div className="flex flex-col lg:flex-row lg:items-stretch" style={{ gap: stripGap }}>
+            {tallHero ? (
+              <div
+                className="relative min-w-0 overflow-hidden lg:w-[min(100%,32%)] lg:flex-none"
+                style={{
+                  ...stripClipStyle,
+                  aspectRatio: '3 / 4',
+                }}
+              >
+                <AnimatePresence initial={false}>
+                  <motion.div key={tallHero.item.id} className="absolute inset-0" initial={false}>
+                    {card(tallHero.item, tallHero.index, {
+                      fill: true,
+                      emphasis: 'hero',
+                      hideTitle: true,
+                      forceOverlay: showItemTitle && (presentation.tallRowTitleReveal ?? 'always') !== 'hover',
+                      overlayOnHover: showItemTitle && (presentation.tallRowTitleReveal ?? 'always') === 'hover',
+                      eager: true,
+                    })}
+                    {reduceMotion ? null : (
+                      <motion.div
+                        className="pointer-events-none absolute inset-0 z-20 bg-neutral-950/15"
+                        initial={{ opacity: 0.55 }}
+                        animate={{ opacity: 0 }}
+                        transition={{
+                          duration: TALL_ROW_SLIDE_MS / 1000,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                      />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            ) : null}
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+              {embeddedHeader ? (
+                <div className="px-2 text-center">{embeddedHeader}</div>
+              ) : null}
+              {tallThumbTrack.length ? (
+                <div
+                  ref={tallThumbViewRef}
+                  className="mt-8 w-full overflow-hidden [container-type:inline-size] lg:mt-auto lg:h-[74%] lg:flex-none"
+                >
+                  <motion.div
+                    className="flex h-full transform-gpu"
+                    style={{
+                      gap: stripGap,
+                      willChange: tallThumbTween ? 'transform' : 'auto',
+                    }}
+                    initial={false}
+                    animate={{ x: tallThumbX }}
+                    transition={
+                      reduceMotion || !tallThumbTween
+                        ? { type: false }
+                        : { type: 'tween', duration: TALL_ROW_SLIDE_MS / 1000, ease: [0.33, 1, 0.68, 1] }
+                    }
+                    onAnimationComplete={() => {
+                      if (!tallThumbAnimRef.current || !tallThumbTweenRef.current) return;
+                      finishTallThumbAnim();
+                    }}
+                  >
+                    {tallThumbTrack.map(({ item, index }, slot) => (
+                      <div
+                        key={item.id}
+                        className="aspect-square min-h-[140px] overflow-hidden lg:aspect-auto lg:h-full lg:min-h-0"
+                        style={{
+                          ...stripClipStyle,
+                          flex: `0 0 ${
+                            tallThumbStep > 0
+                              ? `${Math.max(0, tallThumbStep - hGap)}px`
+                              : `calc((100cqi - ${(tallThumbVisible - 1) * hGap}px) / ${Math.max(1, tallThumbVisible)})`
+                          }`,
+                        }}
+                      >
+                        {card(item, index, {
+                          fill: true,
+                          hideTitle: true,
+                          forceOverlay: showItemTitle && (presentation.tallRowTitleReveal ?? 'always') !== 'hover',
+                          overlayOnHover: showItemTitle && (presentation.tallRowTitleReveal ?? 'always') === 'hover',
+                          eager: slot < tallThumbVisible,
+                        })}
+                      </div>
+                    ))}
+                  </motion.div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+          {sortedItems.length > 1 ? carouselNavButtons('justify-end', cycleFeatured) : null}
+        </div>
       </div>
     ) : (
       <div
         className={`${baseWidth} grid grid-cols-1 sm:grid-cols-2 lg:[grid-template-columns:repeat(var(--gallery-columns),minmax(0,1fr))]`}
-        style={columnsStyle}
+        style={gridStyle}
       >
         {sortedItems.map((item, index) => card(item, index))}
       </div>
@@ -1253,38 +2019,6 @@ function servicePriceTextStyle(style: CSSProperties): CSSProperties {
   };
 }
 
-function ServiceSequenceBadge({
-  index,
-  accent,
-  ink,
-  sizePx = 28,
-  className = '',
-}: {
-  index: number;
-  accent?: string;
-  ink?: string;
-  sizePx?: number;
-  className?: string;
-}) {
-  const badgeAccent = accent?.trim() || DEFAULT_SERVICES_ACCENT_COLOR;
-  const badgeInk = ink?.trim() || badgeAccent;
-  return (
-    <span
-      aria-hidden
-      className={`inline-flex shrink-0 items-center justify-center rounded-full border text-[10px] font-bold tabular-nums ${className}`.trim()}
-      style={{
-        width: `${sizePx}px`,
-        height: `${sizePx}px`,
-        color: badgeInk,
-        borderColor: `color-mix(in srgb, ${badgeAccent} 42%, transparent)`,
-        backgroundColor: `color-mix(in srgb, ${badgeAccent} 10%, transparent)`,
-      }}
-    >
-      {String(index + 1).padStart(2, '0')}
-    </span>
-  );
-}
-
 function resolveServiceTasks(service: ProfileServiceItem): string[] {
   if (!Array.isArray(service.tasks)) return [];
   return service.tasks.map((task) => task.trim()).filter(Boolean);
@@ -1586,6 +2320,7 @@ export function EditorialSectionStickyHeader({
   centered = false,
   alignRight = false,
   alwaysCentered = false,
+  kicker,
   className = '',
   titleTypographyClass = '',
   titleTypographyStyle,
@@ -1610,6 +2345,8 @@ export function EditorialSectionStickyHeader({
   editorialLayout?: boolean;
   /** Center title, subtitle, and trailing content (FAQ, Contact, etc.). */
   centered?: boolean;
+  /** Small label above the title (FAQ kicker, etc.). */
+  kicker?: React.ReactNode;
   /** Align title, subtitle, and trailing content to the right (global override). */
   alignRight?: boolean;
   /** Keep title centered on scroll — no top-left sticky pill (Contact). */
@@ -1737,6 +2474,13 @@ export function EditorialSectionStickyHeader({
             PORTFOLIO_FLOATING_CHROME
           )}
         >
+          {!showPill && kicker ? (
+            <div
+              className={`mb-3 ${sectionHeaderTitleTextAlignClass(centered, alignRight)}`}
+            >
+              {kicker}
+            </div>
+          ) : null}
           {wrapSectionTitleChrome(
             <h2
               className={`transition-all duration-300 ease-out ${sectionHeaderTitleTextAlignClass(
@@ -5102,27 +5846,14 @@ function WorkGalleryCarousel({
                 index={startIndex}
                 className="w-full min-w-0"
               >
-                {/*
-                  Stack every card in one grid cell so the row height = tallest project.
-                  Inactive cards stay invisible but still size the track; active fills that height.
-                */}
-                <div className="grid w-full">
-                  {items.map((item, index) => {
-                    const active = index === safeIndex;
-                    return (
-                      <div
-                        key={item.id}
-                        className={`col-start-1 row-start-1 min-w-0 w-full ${
-                          active
-                            ? 'relative z-10'
-                            : 'invisible pointer-events-none z-0'
-                        }`}
-                        aria-hidden={!active}
-                      >
-                        <EditorialWorkCard item={item} presentation={carouselPresentation} />
-                      </div>
-                    );
-                  })}
+                <div className="w-full min-w-0">
+                  {items[safeIndex] ? (
+                    <EditorialWorkCard
+                      key={items[safeIndex].id}
+                      item={items[safeIndex]}
+                      presentation={carouselPresentation}
+                    />
+                  ) : null}
                 </div>
               </PortfolioMotionItem>
             </div>
@@ -5608,11 +6339,6 @@ function EditorialServiceSelector({
                 } as CSSProperties}
               >
                 <span className="flex min-w-0 items-center gap-3">
-                  <ServiceSequenceBadge
-                    index={index}
-                    accent={active ? activeTabInk : accent}
-                    sizePx={26}
-                  />
                   <span className="min-w-0 truncate">{service.title}</span>
                 </span>
                 <span aria-hidden className="shrink-0 text-base font-medium">
@@ -5807,10 +6533,9 @@ function EditorialServiceAccordion({
                     if (!hasExpandedContent) return;
                     toggleService(service.id);
                   }}
-                  className="grid min-h-[4.25rem] w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-4 py-4 text-left transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset sm:gap-4 sm:px-5"
+                  className="grid min-h-[4.25rem] w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-4 py-4 text-left transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset sm:gap-4 sm:px-5"
                   style={{ '--tw-ring-color': accent } as CSSProperties}
                 >
-                  <ServiceSequenceBadge index={index} accent={accent} />
                   <span
                     className={`min-w-0 truncate text-sm font-extrabold sm:text-base ${elementTextStyleClass(
                       elementStyles.cardTitle,
@@ -6050,9 +6775,6 @@ export function EditorialServiceCard({
         className={`flex min-h-0 flex-1 flex-col ${contentGap.className}`.trim()}
         style={contentGap.style}
       >
-      <div className={`flex w-full ${align.row}`}>
-        <ServiceSequenceBadge index={cardIndex} accent={accent} />
-      </div>
       {pricePlacement === 'top' ? priceBlock : null}
 
       {presentation.showServiceTitle ? (
@@ -6302,7 +7024,6 @@ function EditorialServiceListRow({
         style={contentGap.style}
       >
         <div className={`mb-1 flex w-full items-center gap-3 ${align.row}`}>
-          <ServiceSequenceBadge index={cardIndex} accent={accent} />
           {/* Bare icon — zinc ink, accent on card hover */}
           <div className="pf-services-list-icon shrink-0" aria-hidden>
             <ServiceBriefIcon className="h-6 w-6 sm:h-7 sm:w-7" />
@@ -6394,7 +7115,6 @@ function EditorialServiceCommercialRow({
     presentation.servicesContentGap,
     presentation.servicesContentGapPx
   );
-  const markerSize = presentation.commercialMarkerSizePx ?? 48;
   const columnGap = presentation.commercialColumnGapPx ?? 32;
   const priceWidth = presentation.commercialPriceWidthPx ?? 160;
   const ctaWidth = presentation.commercialCtaWidthPx ?? 160;
@@ -6407,21 +7127,13 @@ function EditorialServiceCommercialRow({
     >
       <ServicesCardBackgroundLayers presentation={presentation} cardIndex={cardIndex} />
       <ServicesCardForeground
-        className="relative grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-y-6 lg:grid-cols-[auto_minmax(0,1fr)_var(--commercial-price-width)_var(--commercial-cta-width)] lg:items-center"
+        className="relative grid min-w-0 grid-cols-1 gap-y-6 lg:grid-cols-[minmax(0,1fr)_var(--commercial-price-width)_var(--commercial-cta-width)] lg:items-center"
         style={{
           columnGap: `${columnGap}px`,
           ['--commercial-price-width' as string]: `${priceWidth}px`,
           ['--commercial-cta-width' as string]: `${ctaWidth}px`,
         }}
       >
-        <ServiceSequenceBadge
-          index={cardIndex}
-          accent={accent}
-          ink={typeof titleStyle.color === 'string' ? titleStyle.color : undefined}
-          sizePx={markerSize}
-          className="text-sm transition-transform duration-300 group-hover:scale-105"
-        />
-
         <div
           className={`min-w-0 flex flex-col ${contentGap.className}`.trim()}
           style={contentGap.style}
@@ -6470,7 +7182,7 @@ function EditorialServiceCommercialRow({
 
         {presentation.showServicePrice ? (
           <div
-            className={`col-start-2 min-w-0 border-t pt-5 sm:border-t-0 sm:pt-0 lg:col-start-auto lg:border-l lg:pl-8 ${servicesElementChromeClass(chromes.price)}`.trim()}
+            className={`min-w-0 border-t pt-5 lg:border-t-0 lg:border-l lg:pl-8 lg:pt-0 ${servicesElementChromeClass(chromes.price)}`.trim()}
             style={{
               ...servicesElementChromeStyle(chromes.price, accent),
               ...priceMargins,
@@ -6516,7 +7228,7 @@ function EditorialServiceCommercialRow({
         ) : null}
 
         {presentation.showServiceCta !== false ? (
-          <div className="col-span-2 w-full sm:col-start-2 sm:col-span-1 lg:col-start-auto">
+          <div className="w-full">
             <ServiceOrderCta presentation={presentation} fullWidth />
           </div>
         ) : null}
@@ -6620,9 +7332,6 @@ function EditorialServicePricingHeroCard({
         className={`flex min-h-0 flex-1 flex-col ${contentGap.className}`.trim()}
         style={contentGap.style}
       >
-      <div className={`flex w-full ${align.row}`}>
-        <ServiceSequenceBadge index={cardIndex} accent={accent} />
-      </div>
       {presentation.showServicePrice ? (
         <div
           className={`w-full shrink-0 ${priceAlignClass} ${servicesElementChromeClass(chromes.price)}`}
@@ -6851,9 +7560,6 @@ function EditorialServiceTierCard({
         className={`flex min-h-0 flex-1 flex-col ${contentGap.className}`.trim()}
         style={contentGap.style}
       >
-        <div className={`flex w-full ${align.row}`}>
-          <ServiceSequenceBadge index={cardIndex} accent={accent} />
-        </div>
         {presentation.showServiceTitle ? (
           <div
             className={`w-full ${align.block} ${servicesElementChromeClass(chromes.cardTitle)}`.trim()}
@@ -7121,9 +7827,6 @@ function EditorialServicePlanCard({
         className={`flex min-h-0 flex-1 flex-col ${contentGap.className}`.trim()}
         style={contentGap.style}
       >
-        <div className={`flex w-full ${align.row}`}>
-          <ServiceSequenceBadge index={cardIndex} accent={accent} />
-        </div>
         {presentation.showServiceTitle ? (
           <div
             className={`w-full ${align.block} ${servicesElementChromeClass(chromes.cardTitle)}`.trim()}
@@ -13890,8 +14593,14 @@ function FaqChevronIcon({ className }: { className?: string }) {
   );
 }
 
-function FaqExpandIcon({ style }: { style: PortfolioFaqExpandIconStyle }) {
-  return style === 'chevron' ? <FaqChevronIcon className="h-4 w-4" /> : <FaqPlusIcon className="h-4 w-4" />;
+function FaqExpandIcon({
+  style,
+  className = 'h-4 w-4',
+}: {
+  style: PortfolioFaqExpandIconStyle;
+  className?: string;
+}) {
+  return style === 'chevron' ? <FaqChevronIcon className={className} /> : <FaqPlusIcon className={className} />;
 }
 
 export function EditorialFaqItem({
@@ -13911,8 +14620,12 @@ export function EditorialFaqItem({
   onExclusiveToggle?: (itemId: string, open: boolean) => void;
 }) {
   const design = presentation.itemDesign;
+  const sectionDesign = presentation.design;
+  const colorQuestionOnOpen =
+    sectionDesign === 'panel' || sectionDesign === 'split' || sectionDesign === 'cta-split';
+  const plainExpandIcon = design === 'two-column' || colorQuestionOnOpen;
   const isCard = faqIsCardDesign(design);
-  const shellClass = faqItemShellClass(design, presentation.itemGap);
+  const shellClass = faqItemShellClass(design, presentation.itemGap, sectionDesign);
   const accentStyle = faqItemAccentStyle(design, presentation.accentColor);
   const accent = presentation.accentColor;
   const expandFill = presentation.cardBackgroundColor;
@@ -13922,10 +14635,16 @@ export function EditorialFaqItem({
   });
   const summaryPadding = faqSummaryPaddingClass(design, presentation.cardPadding);
   const iconRotateClass =
-    presentation.expandIconStyle === 'chevron' ? 'group-open:rotate-180' : 'group-open:rotate-45';
+    presentation.expandIconStyle === 'chevron'
+      ? 'group-data-[open=true]:rotate-180'
+      : 'group-data-[open=true]:rotate-45';
 
-  const questionClass = `min-w-0 flex-1 leading-snug ${elementTextStyleClass(presentation.elementStyles.question, 'body')}`;
-  const questionStyle = elementTextInlineStyle(presentation.elementStyles.question);
+  const questionTextStyle = {
+    ...presentation.elementStyles.question,
+    ...(design === 'two-column' || colorQuestionOnOpen ? { weight: 'semibold' as const, bold: false } : {}),
+  };
+  const questionClass = `min-w-0 flex-1 leading-snug transition-colors duration-300 ${elementTextStyleClass(questionTextStyle, 'body')}`;
+  const questionStyle = elementTextInlineStyle(questionTextStyle);
   const answerClass = `whitespace-pre-line leading-relaxed ${elementTextStyleClass(presentation.elementStyles.answer, 'body')}`;
   const answerStyle = elementTextInlineStyle(presentation.elementStyles.answer);
   const align = faqContentAlignClass(presentation.itemAlign);
@@ -13956,7 +14675,11 @@ export function EditorialFaqItem({
   const isRaised = design === 'raised';
   const showQPrefix = isRaised && presentation.showItemNumbers;
   const expandable = presentation.expandable !== false;
-  const exclusive = expandable && presentation.accordionExclusive === true && Boolean(onExclusiveToggle);
+  const exclusive = expandable && Boolean(onExclusiveToggle);
+  const [localOpen, setLocalOpen] = useState(false);
+  const isOpen = !expandable ? true : exclusive ? exclusiveOpen === item.id : localOpen;
+  const openFill = design === 'two-column' && isOpen;
+  const openQuestionColor = openFill ? '#ffffff' : colorQuestionOnOpen && isOpen ? accent : undefined;
   const flushAnswers = presentation.answerFlushWithQuestion === true || isRaised;
   const answerPadding = faqAnswerPaddingClass(
     design,
@@ -13987,109 +14710,131 @@ export function EditorialFaqItem({
     </span>
   );
 
-  const details = (
-    <details
-      className={`group ${!isCard && design !== 'numbered-rail' ? shellClass : ''}`}
-      style={{ ['--faq-accent' as string]: accent }}
-      open={
-        !expandable ? true : exclusive ? exclusiveOpen === item.id : undefined
+  const questionRowClass = `flex w-full list-none items-start gap-3 sm:gap-5 bg-transparent text-left text-inherit appearance-none border-0 ${summaryPadding} ${align.row} ${
+    expandable ? 'cursor-pointer' : 'cursor-default'
+  }`;
+
+  const expandIcon = expandable && presentation.showExpandIcon ? (
+    <span
+      className={
+        plainExpandIcon
+          ? `mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center text-neutral-400 transition duration-200 ${iconRotateClass}`
+          : `mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border shadow-sm transition duration-200 sm:h-9 sm:w-9 ${iconRotateClass} group-data-[open=true]:border-[color:var(--faq-expand-open-border)] group-data-[open=true]:bg-[color:var(--faq-expand-open-bg)] group-data-[open=true]:text-[color:var(--faq-expand-open-color)]`
       }
-      onToggle={
-        !expandable
-          ? (event) => {
-              const el = event.currentTarget;
-              if (!el.open) el.open = true;
-            }
-          : exclusive
-            ? (event) => {
-                onExclusiveToggle?.(item.id, event.currentTarget.open);
-              }
-            : undefined
-      }
-    >
-      <summary
-        className={`flex list-none items-start gap-3 sm:gap-5 [&::-webkit-details-marker]:hidden ${summaryPadding} ${align.row} ${
-          expandable ? 'cursor-pointer' : 'cursor-default'
-        }`}
-        onClick={
-          expandable
-            ? undefined
-            : (event) => {
-                event.preventDefault();
-              }
-        }
-      >
-        {showItemMarker || showQPrefix ? itemMarkerNode : null}
-        <span className={`${questionClass} ${align.text}`} style={questionStyle}>
-          {item.question}
-        </span>
-        {expandable && presentation.showExpandIcon ? (
-          <span
-            className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border shadow-sm transition duration-200 sm:h-9 sm:w-9 ${iconRotateClass} group-open:border-[color:var(--faq-expand-open-border)] group-open:bg-[color:var(--faq-expand-open-bg)] group-open:text-[color:var(--faq-expand-open-color)]`}
-            style={{
+      style={
+        plainExpandIcon
+          ? { color: openFill ? '#ffffff' : colorQuestionOnOpen && isOpen ? accent : presentation.expandIconColor }
+          : {
               ...iconStyles.base,
               ['--faq-expand-open-bg' as string]: String(iconStyles.open.backgroundColor ?? ''),
               ['--faq-expand-open-border' as string]: String(iconStyles.open.borderColor ?? ''),
               ['--faq-expand-open-color' as string]: String(iconStyles.open.color ?? ''),
-            }}
-            aria-hidden
-          >
-            <FaqExpandIcon style={presentation.expandIconStyle} />
-          </span>
-        ) : null}
-      </summary>
-      {flushAnswers ? (
-        <div
-          className={`flex items-start gap-3 sm:gap-5 ${answerPadding} ${faqSummaryHorizontalPaddingClass(
-            design,
-            presentation.cardPadding
-          )} ${align.row}`}
-        >
-          {showQPrefix ? (
-            <span
-              className="invisible shrink-0 text-[15px] font-bold leading-snug sm:text-base"
-              aria-hidden
-            >
-              Q.
-            </span>
-          ) : showInlineNumber ? (
-            <span className="w-8 shrink-0" aria-hidden />
-          ) : null}
-          <div className="min-w-0 flex-1">
-            <div
-              className={presentation.showAnswerAccentBorder ? 'border-l-2' : ''}
-              style={
-                presentation.showAnswerAccentBorder
-                  ? faqAnswerBorderStyle(presentation.answerAccentBorderColor)
-                  : undefined
-              }
-            >
-              <p className={`${answerClass} ${align.text}`} style={answerStyle}>
-                {item.answer}
-              </p>
-            </div>
-          </div>
-          {expandable && presentation.showExpandIcon ? (
-            <span className="h-10 w-10 shrink-0 sm:h-9 sm:w-9" aria-hidden />
-          ) : null}
-        </div>
-      ) : (
-        <div className={answerPadding}>
-          <div
-            className={`pl-3 sm:pl-6 ${presentation.showAnswerAccentBorder ? 'border-l-2' : ''}`}
-            style={
-              presentation.showAnswerAccentBorder
-                ? faqAnswerBorderStyle(presentation.answerAccentBorderColor)
-                : undefined
             }
-          >
-            <p className={`${answerClass} ${align.text}`} style={answerStyle}>
-              {item.answer}
-            </p>
-          </div>
+      }
+      aria-hidden
+    >
+      <FaqExpandIcon
+        style={presentation.expandIconStyle}
+        className={plainExpandIcon ? 'h-5 w-5' : 'h-4 w-4'}
+      />
+    </span>
+  ) : null;
+
+  const answerPanel = flushAnswers ? (
+    <div
+      className={`flex items-start gap-3 sm:gap-5 ${answerPadding} ${faqSummaryHorizontalPaddingClass(
+        design,
+        presentation.cardPadding
+      )} ${align.row}`}
+    >
+      {showQPrefix ? (
+        <span
+          className="invisible shrink-0 text-[15px] font-bold leading-snug sm:text-base"
+          aria-hidden
+        >
+          Q.
+        </span>
+      ) : showInlineNumber ? (
+        <span className="w-8 shrink-0" aria-hidden />
+      ) : null}
+      <div className="min-w-0 flex-1">
+        <div
+          className={presentation.showAnswerAccentBorder ? 'border-l-2' : ''}
+          style={
+            presentation.showAnswerAccentBorder
+              ? faqAnswerBorderStyle(presentation.answerAccentBorderColor)
+              : undefined
+          }
+        >
+          <p className={`${answerClass} ${align.text}`} style={openFill ? { ...answerStyle, color: 'rgba(255,255,255,0.92)' } : answerStyle}>
+            {item.answer}
+          </p>
+        </div>
+      </div>
+      {expandable && presentation.showExpandIcon ? (
+        <span className={plainExpandIcon ? 'h-8 w-8 shrink-0' : 'h-10 w-10 shrink-0 sm:h-9 sm:w-9'} aria-hidden />
+      ) : null}
+    </div>
+  ) : (
+    <div className={answerPadding}>
+      <div
+        className={`pl-3 sm:pl-6 ${presentation.showAnswerAccentBorder ? 'border-l-2' : ''}`}
+        style={
+          presentation.showAnswerAccentBorder
+            ? faqAnswerBorderStyle(presentation.answerAccentBorderColor)
+            : undefined
+        }
+      >
+        <p
+          className={`${answerClass} ${align.text}`}
+          style={openFill ? { ...answerStyle, color: 'rgba(255,255,255,0.92)' } : answerStyle}
+        >
+          {item.answer}
+        </p>
+      </div>
+    </div>
+  );
+
+  const toggleOpen = () => {
+    if (!expandable) return;
+    if (exclusive) {
+      onExclusiveToggle?.(item.id, !isOpen);
+      return;
+    }
+    setLocalOpen((open) => !open);
+  };
+
+  const details = (
+    <div
+      className={`group ${!isCard && design !== 'numbered-rail' ? shellClass : ''}`}
+      style={{ ['--faq-accent' as string]: accent }}
+      data-open={isOpen ? 'true' : 'false'}
+      data-faq-card={!isCard ? item.id : undefined}
+    >
+      {expandable ? (
+        <button type="button" className={questionRowClass} aria-expanded={isOpen} onClick={toggleOpen}>
+          {showItemMarker || showQPrefix ? itemMarkerNode : null}
+          <span className={`${questionClass} ${align.text}`} style={openQuestionColor ? { ...questionStyle, color: openQuestionColor } : questionStyle}>
+            {item.question}
+          </span>
+          {expandIcon}
+        </button>
+      ) : (
+        <div className={questionRowClass}>
+          {showItemMarker || showQPrefix ? itemMarkerNode : null}
+          <span className={`${questionClass} ${align.text}`} style={openQuestionColor ? { ...questionStyle, color: openQuestionColor } : questionStyle}>
+            {item.question}
+          </span>
         </div>
       )}
-    </details>
+      {expandable ? (
+        <div className="pf-faq-answer-fold" data-open={isOpen ? 'true' : 'false'}>
+          <div className="pf-faq-answer-fold-inner">{answerPanel}</div>
+        </div>
+      ) : (
+        answerPanel
+      )}
+    </div>
   );
 
   if (design === 'numbered-rail') {
@@ -14151,12 +14896,23 @@ export function EditorialFaqItem({
   }
 
   if (isCard) {
+    const openCardStyle: CSSProperties = openFill
+      ? {
+          backgroundColor: accent,
+          borderTopColor: accent,
+          borderRightColor: accent,
+          borderBottomColor: accent,
+          borderLeftColor: accent,
+          boxShadow: '0 16px 36px -16px rgba(15, 23, 42, 0.35)',
+        }
+      : {};
     return (
       <div
         className={faqSeparatedCardFrameClass(presentation, design)}
-        style={{ ...faqFrameStyle(presentation, design), ...accentStyle }}
+        data-faq-card={item.id}
+        style={{ ...faqFrameStyle(presentation, design), ...accentStyle, ...openCardStyle }}
       >
-        <ServicesCardBackgroundLayers presentation={presentation} />
+        {openFill ? null : <ServicesCardBackgroundLayers presentation={presentation} />}
         <ServicesCardForeground>{details}</ServicesCardForeground>
       </div>
     );
@@ -14172,6 +14928,7 @@ export function EditorialFaqList({
   askCtaHref = '#contact',
   askCtaLabel = 'Ask a question',
   updatedLabel,
+  embeddedHeader,
 }: {
   items: FaqItem[];
   presentation?: PortfolioFaqPresentationSettings;
@@ -14179,12 +14936,33 @@ export function EditorialFaqList({
   askCtaHref?: string;
   askCtaLabel?: string;
   updatedLabel?: string | null;
+  embeddedHeader?: ReactNode;
 }) {
   const [exclusiveOpenId, setExclusiveOpenId] = useState<string | null>(null);
   const exclusive =
-    presentation.expandable !== false && presentation.accordionExclusive === true;
+    presentation.expandable !== false &&
+    (presentation.design === 'two-column' ||
+      presentation.design === 'panel' ||
+      presentation.design === 'split' ||
+      presentation.design === 'cta-split' ||
+      presentation.accordionExclusive === true);
+
+  useEffect(() => {
+    if (!exclusive || !exclusiveOpenId) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(`[data-faq-card="${CSS.escape(exclusiveOpenId)}"]`)) return;
+      setExclusiveOpenId(null);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [exclusive, exclusiveOpenId]);
   const illustrationVariant = presentation.illustrationVariant ?? 'none';
-  const showIllustration = illustrationVariant !== 'none';
+  const showIllustration =
+    illustrationVariant !== 'none' &&
+    presentation.design !== 'split' &&
+    presentation.design !== 'cta-split';
   const illustrationPlacement = presentation.illustrationPlacement ?? 'right';
   const isRaised = presentation.itemDesign === 'raised';
   const accent = presentation.accentColor || '#f97316';
@@ -14203,7 +14981,7 @@ export function EditorialFaqList({
 
   const list = (
     <div
-      className={faqListShellClass(presentation.itemDesign, presentation.itemGap)}
+      className={faqListShellClass(presentation.itemDesign, presentation.itemGap, presentation.design)}
       style={itemBorderVars}
     >
       {items.map((item, index) => (
@@ -14273,7 +15051,27 @@ export function EditorialFaqList({
     </div>
   );
 
-  if (!showIllustration) return framedList;
+  const isPanel = presentation.design === 'panel';
+  const panelList = isPanel ? (
+    <div className="relative" style={faqPanelShadowStyle(presentation.panelShadow, presentation.panelShadowIntensity)}>
+      <div
+        className={faqPanelInnerClass(presentation)}
+        style={{
+          backgroundColor: presentation.cardBackgroundEnabled
+            ? presentation.cardBackgroundColor
+            : DEFAULT_FAQ_PRESENTATION.cardBackgroundColor,
+        }}
+      >
+        {embeddedHeader ? <div className="mb-8 sm:mb-10">{embeddedHeader}</div> : null}
+        {list}
+        {footer}
+      </div>
+    </div>
+  ) : (
+    framedList
+  );
+
+  if (!showIllustration) return panelList;
 
   const illustration = (
     <div
@@ -14299,11 +15097,11 @@ export function EditorialFaqList({
       {illustrationPlacement === 'left' ? (
         <>
           {illustration}
-          <div className="min-w-0">{framedList}</div>
+          <div className="min-w-0">{panelList}</div>
         </>
       ) : (
         <>
-          <div className="min-w-0">{framedList}</div>
+          <div className="min-w-0">{panelList}</div>
           {illustration}
         </>
       )}
@@ -14345,11 +15143,13 @@ function TeamMemberImage({
       } ${className}`}
     >
       {member.imageUrl?.trim() ? (
-        <img
+        <PortfolioDeferredMedia
           src={member.imageUrl}
           alt={`Portrait de ${member.name}`}
           className={`h-full w-full ${fit} ${position}`}
-          loading="lazy"
+          sizes="(max-width: 768px) 50vw, 280px"
+          objectFit={presentation.imageFit === 'contain' ? 'contain' : 'cover'}
+          objectPosition={presentation.imagePosition}
         />
       ) : (
         <div className="flex h-full min-h-0 items-center justify-center text-4xl font-bold text-neutral-400" aria-hidden>
@@ -14385,8 +15185,12 @@ function TeamSocialLinks({
   hoverLight?: boolean;
 }) {
   const links = (member.socialLinks ?? []).filter((link) => link.url.trim());
-  if (!presentation.showSocials || links.length === 0) return null;
+  if (!presentation.showSocials) return null;
   const size = teamSocialIconButtonClass(presentation.socialIconSize);
+  const slotHeight = size.split(' ')[0] ?? 'h-9';
+  if (links.length === 0) {
+    return <div className={`${slotHeight} ${align}`} aria-hidden />;
+  }
   const glyph = teamSocialIconGlyphClass(presentation.socialIconSize);
   const chrome =
     presentation.socialIconStyle === 'minimal'
@@ -14396,7 +15200,9 @@ function TeamSocialLinks({
         : presentation.socialIconStyle === 'soft'
           ? 'border-transparent rounded-xl'
           : 'border-transparent rounded-full';
-  const hoverTone = hoverLight ? 'group-hover:!border-white/30 group-hover:!bg-white/20 group-hover:!text-white' : '';
+  const hoverTone = hoverLight
+    ? 'group-hover:![border-color:color-mix(in_srgb,var(--team-float-hover-ink)_30%,transparent)] group-hover:![background-color:var(--team-float-hover-icon-bg)] group-hover:![color:var(--team-float-hover-ink)]'
+    : '';
   return (
     <div className={`flex flex-wrap gap-2 ${align}`} aria-label={`Liens sociaux de ${member.name}`}>
       {links.map((link) => {
@@ -14432,22 +15238,29 @@ function TeamMemberCopy({
   member,
   presentation,
   align = 'text-center',
+  size = 'md',
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
   align?: string;
+  size?: 'md' | 'lg';
 }) {
   const readable = teamReadableCardText(presentation);
+  const nameClass = size === 'lg' ? 'text-2xl font-semibold leading-tight tracking-tight sm:text-[1.7rem]' : 'text-lg font-bold leading-tight';
+  const roleClass =
+    size === 'lg'
+      ? 'mt-1.5 min-h-[1.5rem] text-base leading-relaxed'
+      : 'mt-1 min-h-[1.25rem] text-sm leading-relaxed';
   return (
     <div className={align}>
       {presentation.showName ? (
-        <h3 className="text-lg font-bold leading-tight" style={{ color: readable.strong }}>
+        <h3 className={nameClass} style={{ color: readable.strong }}>
           {member.name}
         </h3>
       ) : null}
-      {presentation.showResponsibility && member.responsibility.trim() ? (
-        <p className="mt-1 text-sm leading-relaxed" style={{ color: readable.muted }}>
-          {member.responsibility}
+      {presentation.showResponsibility ? (
+        <p className={roleClass} style={{ color: readable.muted }}>
+          {member.responsibility.trim() || '\u00a0'}
         </p>
       ) : null}
     </div>
@@ -14458,20 +15271,24 @@ function TeamStandardCard({
   member,
   presentation,
   polaroidIndex,
+  copySize = 'md',
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
   polaroidIndex?: number;
+  copySize?: 'md' | 'lg';
 }) {
   const rotation = polaroidIndex == null ? '' : ['-rotate-1', 'rotate-[0.8deg]', '-rotate-[0.4deg]', 'rotate-[1.2deg]'][polaroidIndex % 4];
   return (
-    <article className={`w-full ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardClass(presentation)} ${rotation} transition-transform hover:rotate-0 hover:-translate-y-1`} style={teamCardStyle(presentation)}>
+    <article className={`flex h-full w-full flex-col ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardClass(presentation)} ${rotation} transition-transform hover:rotate-0 hover:-translate-y-1`} style={teamCardStyle(presentation)}>
       <TeamMemberImage member={member} presentation={presentation} className="rounded-[calc(2rem-0.75rem)]" />
-      <div className={presentation.showImage ? 'mt-5' : ''}>
-        <TeamMemberCopy member={member} presentation={presentation} />
-        <div className="mt-4">
-          <TeamSocialLinks member={member} presentation={presentation} />
-        </div>
+      <div className={`flex min-h-0 flex-1 flex-col ${presentation.showImage ? 'mt-5' : ''}`}>
+        <TeamMemberCopy member={member} presentation={presentation} size={copySize} />
+        {presentation.showSocials ? (
+          <div className="mt-auto pt-4">
+            <TeamSocialLinks member={member} presentation={presentation} />
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -14488,7 +15305,7 @@ function TeamProfileCard({
   const align = presentation.listAlign ?? 'center';
   return (
     <article
-      className={`w-full ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} transition hover:-translate-y-0.5`}
+      className={`flex h-full w-full flex-col ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} transition hover:-translate-y-0.5`}
       style={teamCardStyle(presentation)}
     >
       {presentation.showImage ? (
@@ -14496,20 +15313,22 @@ function TeamProfileCard({
           <TeamMemberImage member={member} presentation={presentation} fill />
         </div>
       ) : null}
-      <div className={`${teamCardFooterPaddingClass(presentation.cardPadding)} ${teamContentAlignClass(align)}`}>
+      <div className={`${teamCardFooterPaddingClass(presentation.cardPadding)} ${teamContentAlignClass(align)} flex min-h-0 flex-1 flex-col`}>
         {presentation.showName ? (
           <h3 className="text-xl font-bold tracking-tight" style={{ color: readable.strong }}>
             {member.name}
           </h3>
         ) : null}
-        {presentation.showResponsibility && member.responsibility.trim() ? (
-          <p className="mt-1 text-sm" style={{ color: readable.muted }}>
-            {member.responsibility}
+        {presentation.showResponsibility ? (
+          <p className="mt-1 min-h-[1.25rem] text-sm" style={{ color: readable.muted }}>
+            {member.responsibility.trim() || '\u00a0'}
           </p>
         ) : null}
-        <div className={presentation.showName || presentation.showResponsibility ? 'mt-4' : ''}>
-          <TeamSocialLinks member={member} presentation={presentation} align={teamSocialAlignClass(align)} />
-        </div>
+        {presentation.showSocials ? (
+          <div className={`mt-auto ${presentation.showName || presentation.showResponsibility ? 'pt-4' : ''}`}>
+            <TeamSocialLinks member={member} presentation={presentation} align={teamSocialAlignClass(align)} />
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -14526,7 +15345,7 @@ function TeamAvatarCard({
   const align = presentation.listAlign ?? 'center';
   return (
     <article
-      className={`flex w-full flex-col ${teamFlexAlignClass(align)} ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} ${teamCardFooterPaddingClass(presentation.cardPadding)} ${teamContentAlignClass(align)} transition hover:-translate-y-0.5`}
+      className={`flex h-full w-full flex-col ${teamFlexAlignClass(align)} ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} ${teamCardFooterPaddingClass(presentation.cardPadding)} ${teamContentAlignClass(align)} transition hover:-translate-y-0.5`}
       style={teamCardStyle(presentation)}
     >
       {presentation.showImage ? (
@@ -14546,16 +15365,16 @@ function TeamAvatarCard({
           {member.name}
         </h3>
       ) : null}
-      {presentation.showResponsibility && member.responsibility.trim() ? (
-        <p className={`text-sm ${presentation.showName ? 'mt-1' : presentation.showImage ? 'mt-5' : ''}`} style={{ color: readable.muted }}>
-          {member.responsibility}
+      {presentation.showResponsibility ? (
+        <p className={`min-h-[1.25rem] text-sm ${presentation.showName ? 'mt-1' : presentation.showImage ? 'mt-5' : ''}`} style={{ color: readable.muted }}>
+          {member.responsibility.trim() || '\u00a0'}
         </p>
       ) : null}
       {presentation.showSocials ? (
         <div
-          className={
-            presentation.showImage || presentation.showName || presentation.showResponsibility ? 'mt-5' : ''
-          }
+          className={`mt-auto ${
+            presentation.showImage || presentation.showName || presentation.showResponsibility ? 'pt-5' : ''
+          }`}
         >
           <TeamSocialLinks member={member} presentation={presentation} align={teamSocialAlignClass(align)} />
         </div>
@@ -14574,11 +15393,18 @@ function TeamFloatCard({
   const readable = teamReadableCardText(presentation);
   const align = presentation.listAlign ?? 'center';
   const cardStyle = teamCardStyle(presentation);
+  const hoverFill =
+    presentation.teamPalette?.principal?.trim() || presentation.socialIconColor;
+  const hoverInk = servicesColorLuminance(hoverFill) > 0.55 ? '#111827' : '#ffffff';
+  const hoverIconBg =
+    servicesColorLuminance(hoverFill) > 0.55
+      ? 'color-mix(in srgb, #111827 12%, transparent)'
+      : 'color-mix(in srgb, #ffffff 22%, transparent)';
   return (
-    <article className={`group relative w-full overflow-visible ${teamCardMaxWidthClass(presentation.cardMaxWidth)}`}>
+    <article className={`group relative flex h-full w-full flex-col overflow-visible ${presentation.showImage ? teamFloatGridOffsetClass(presentation.avatarSize) : ''} ${teamCardMaxWidthClass(presentation.cardMaxWidth)}`}>
       {presentation.showImage ? (
         <div
-          className={`pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border-4 ${teamCircleAvatarClass(presentation.avatarSize)}`}
+          className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border-4 ${teamFloatAvatarAnchorClass(presentation.avatarSize)} ${teamCircleAvatarClass(presentation.avatarSize)}`}
           style={{
             borderColor: presentation.cardBackgroundColor,
             boxShadow: `0 0 0 1px ${presentation.cardBorderColor}`,
@@ -14592,32 +15418,34 @@ function TeamFloatCard({
         </div>
       ) : null}
       <div
-        className={`w-full ${teamCardFrameClass(presentation)} flex flex-col ${teamFlexAlignClass(align)} ${teamFloatCardBodyPadClass(presentation.avatarSize)} ${teamFloatCardMinHeightClass(presentation.avatarSize)} ${teamContentAlignClass(align)} transition-colors duration-200 group-hover:border-transparent group-hover:shadow-lg group-hover:[background-color:var(--team-float-hover)]`}
+        className={`flex h-full w-full flex-col ${teamCardFrameClass(presentation)} ${teamFlexAlignClass(align)} ${teamFloatCardBodyPadClass(presentation.avatarSize)} ${teamFloatCardMinHeightClass(presentation.avatarSize)} ${teamContentAlignClass(align)} transition-colors duration-200 group-hover:border-transparent group-hover:shadow-lg group-hover:![background-color:var(--team-float-hover)]`}
         style={
           {
             ...cardStyle,
-            '--team-float-hover': presentation.socialIconColor,
+            '--team-float-hover': hoverFill,
+            '--team-float-hover-ink': hoverInk,
+            '--team-float-hover-icon-bg': hoverIconBg,
           } as CSSProperties
         }
       >
         {presentation.showName ? (
           <h3
-            className="text-lg font-bold tracking-tight transition-colors group-hover:text-white"
+            className="text-lg font-bold tracking-tight transition-colors group-hover:![color:var(--team-float-hover-ink)]"
             style={{ color: readable.strong }}
           >
             {member.name}
           </h3>
         ) : null}
-        {presentation.showResponsibility && member.responsibility.trim() ? (
+        {presentation.showResponsibility ? (
           <p
-            className={`text-sm transition-colors group-hover:text-white/85 ${presentation.showName ? 'mt-1' : ''}`}
+            className={`min-h-[1.25rem] text-sm transition-colors group-hover:![color:color-mix(in_srgb,var(--team-float-hover-ink)_85%,transparent)] ${presentation.showName ? 'mt-1' : ''}`}
             style={{ color: readable.muted }}
           >
-            {member.responsibility}
+            {member.responsibility.trim() || '\u00a0'}
           </p>
         ) : null}
         {presentation.showSocials ? (
-          <div className={presentation.showName || presentation.showResponsibility ? 'mt-4' : ''}>
+          <div className={`mt-auto ${presentation.showName || presentation.showResponsibility ? 'pt-4' : ''}`}>
             <TeamSocialLinks
               member={member}
               presentation={presentation}
@@ -14650,7 +15478,7 @@ function TeamHoverCard({
           : 'rounded-xl';
   return (
     <article
-      className={`group relative w-full ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} ${teamHoverPhotoClass(presentation.avatarSize)}`}
+      className={`group relative h-full w-full ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} ${teamHoverPhotoClass(presentation.avatarSize)}`}
       style={teamCardStyle(presentation)}
     >
       {presentation.showImage ? (
@@ -14673,9 +15501,9 @@ function TeamHoverCard({
             {member.name}
           </h3>
         ) : null}
-        {presentation.showResponsibility && member.responsibility.trim() ? (
-          <p className="mt-0.5 text-sm" style={{ color: readable.muted }}>
-            {member.responsibility}
+        {presentation.showResponsibility ? (
+          <p className="mt-0.5 min-h-[1.25rem] text-sm" style={{ color: readable.muted }}>
+            {member.responsibility.trim() || '\u00a0'}
           </p>
         ) : null}
         {presentation.showSocials ? (
@@ -14700,7 +15528,7 @@ function TeamCoverCard({
     align === 'left' ? 'items-start text-left' : align === 'right' ? 'items-end text-right' : 'items-center text-center';
   return (
     <article
-      className={`group relative w-full ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} ${teamHoverPhotoClass(presentation.avatarSize)}`}
+      className={`group relative h-full w-full ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} ${teamHoverPhotoClass(presentation.avatarSize)}`}
       style={teamCardStyle(presentation)}
     >
       {presentation.showImage ? (
@@ -14722,8 +15550,10 @@ function TeamCoverCard({
             {member.name}
           </h3>
         ) : null}
-        {presentation.showResponsibility && member.responsibility.trim() ? (
-          <p className="mt-1 text-sm text-white/80 sm:text-base">{member.responsibility}</p>
+        {presentation.showResponsibility ? (
+          <p className="mt-1 min-h-[1.25rem] text-sm text-white/80 sm:text-base">
+            {member.responsibility.trim() || '\u00a0'}
+          </p>
         ) : null}
         {presentation.showSocials ? (
           <div className={presentation.showName || presentation.showResponsibility ? 'mt-4' : ''}>
@@ -14751,8 +15581,10 @@ function TeamSpotlight({
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
 }) {
-  const [activeId, setActiveId] = useState(members[0]?.id ?? '');
-  const active = members.find((member) => member.id === activeId) ?? members[0];
+  const spotlightMembers = members.slice(0, 4);
+  const [activeId, setActiveId] = useState(spotlightMembers[0]?.id ?? '');
+  const active =
+    spotlightMembers.find((member) => member.id === activeId) ?? spotlightMembers[0];
   if (!active) return null;
   const readable = teamReadableCardText(presentation);
   const portraitSize = presentation.avatarSize ?? 'md';
@@ -14794,18 +15626,18 @@ function TeamSpotlight({
           </div>
         </div>
         <div
-          className="mt-6 flex gap-3 overflow-x-auto pb-1 md:mt-auto md:pt-6"
+          className="mt-6 grid grid-cols-4 gap-3 pb-1 md:mt-auto md:pt-6"
           role="tablist"
           aria-label="Choose a team member"
         >
-          {members.map((member) => (
+          {spotlightMembers.map((member) => (
             <button
               key={member.id}
               type="button"
               role="tab"
               aria-selected={member.id === active.id}
               onClick={() => setActiveId(member.id)}
-              className={`shrink-0 overflow-hidden rounded-xl border-2 transition ${teamSpotlightThumbClass(portraitSize)} ${
+              className={`aspect-square w-full overflow-hidden rounded-xl border-2 transition ${
                 member.id === active.id ? 'opacity-100' : 'opacity-70 hover:opacity-100'
               }`}
               style={{
@@ -14822,6 +15654,59 @@ function TeamSpotlight({
             </button>
           ))}
         </div>
+      </div>
+    </article>
+  );
+}
+
+function TeamDirectoryRow({
+  member,
+  presentation,
+  detached,
+}: {
+  member: ProfileTeamMember;
+  presentation: PortfolioTeamPresentationSettings;
+  detached: boolean;
+}) {
+  const readable = teamReadableCardText(presentation);
+  const pad = teamCardFooterPaddingClass(presentation.cardPadding);
+  return (
+    <article
+      className={`flex h-full flex-col gap-4 sm:flex-row sm:items-center ${
+        detached
+          ? `${teamCardFrameClass(presentation)} ${pad}`
+          : `border-b last:border-b-0 ${pad}`
+      }`}
+      style={detached ? teamCardStyle(presentation) : { borderColor: presentation.cardBorderColor }}
+    >
+      <div className="flex min-w-0 flex-1 items-center gap-4">
+        {presentation.showImage ? (
+          <div className={`shrink-0 overflow-hidden rounded-full ${teamAvatarSizeClass(presentation.avatarSize)}`}>
+            <TeamMemberImage
+              member={member}
+              presentation={{ ...presentation, imageAspect: 'square' }}
+              className="h-full min-h-0"
+            />
+          </div>
+        ) : null}
+        <div className="min-w-0 text-left">
+          {presentation.showName ? (
+            <h3 className="truncate text-xl font-semibold leading-tight tracking-tight sm:text-2xl" style={{ color: readable.strong }}>
+              {member.name}
+            </h3>
+          ) : null}
+          {presentation.showResponsibility ? (
+            <p
+              className={`min-h-[1.5rem] truncate text-base font-semibold sm:text-lg ${presentation.showName ? 'mt-1' : ''}`}
+              style={{ color: readable.muted }}
+            >
+              {member.responsibility.trim() || '\u00a0'}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <div className="sm:min-w-[5.5rem]">
+        <TeamSocialLinks member={member} presentation={presentation} align="justify-start sm:justify-end" />
       </div>
     </article>
   );
@@ -14846,49 +15731,44 @@ export function EditorialTeamGallery({
           ? 'justify-end'
           : 'justify-center';
     return (
-      <div className={`flex snap-x snap-mandatory gap-5 overflow-x-auto pb-5 ${railAlign}`}>
+      <div className={`flex snap-x snap-mandatory items-stretch gap-5 overflow-x-auto pb-5 ${railAlign}`}>
         {members.map((member) => (
-          <div key={member.id} className={`w-[72vw] shrink-0 snap-center ${teamCardMaxWidthClass(presentation.cardMaxWidth)}`}>
-            <TeamStandardCard member={member} presentation={{ ...presentation, imageAspect: 'portrait' }} />
+          <div key={member.id} className={`flex w-[72vw] shrink-0 snap-center self-stretch ${teamCardMaxWidthClass(presentation.cardMaxWidth)}`}>
+            <TeamStandardCard
+              member={member}
+              presentation={{ ...presentation, imageAspect: 'portrait' }}
+              copySize="lg"
+            />
           </div>
         ))}
       </div>
     );
   }
   if (presentation.layout === 'directory') {
-    const readable = teamReadableCardText(presentation);
+    const detached = presentation.directoryDetachedCards !== false;
     return (
       <div
         className={`w-full ${teamDirectoryMaxWidthClass(presentation.cardMaxWidth)} ${teamListAlignClass(presentation.listAlign)}`}
       >
-        <div className="overflow-hidden rounded-2xl border" style={teamCardStyle(presentation)}>
-          {members.map((member) => (
-            <article key={member.id} className="flex flex-col gap-4 border-b p-4 last:border-b-0 sm:flex-row sm:items-center" style={{ borderColor: presentation.cardBorderColor }}>
-              <div className="flex min-w-0 flex-1 items-center gap-4">
-                <div className={`shrink-0 overflow-hidden rounded-full ${teamAvatarSizeClass(presentation.avatarSize)}`}>
-                  <TeamMemberImage
-                    member={member}
-                    presentation={{ ...presentation, imageAspect: 'square' }}
-                    className="h-full min-h-0"
-                  />
-                </div>
-                <div className="min-w-0 text-left">
-                  {presentation.showName ? <h3 className="truncate font-bold" style={{ color: readable.strong }}>{member.name}</h3> : null}
-                  {presentation.showResponsibility ? <p className="truncate text-sm" style={{ color: readable.muted }}>{member.responsibility}</p> : null}
-                </div>
-              </div>
-              <TeamSocialLinks member={member} presentation={presentation} align="justify-start sm:justify-end" />
-            </article>
-          ))}
-        </div>
+        {detached ? (
+          <div className={`flex w-full flex-col ${teamDirectoryStackGapClass(presentation.gap)}`}>
+            {members.map((member) => (
+              <TeamDirectoryRow key={member.id} member={member} presentation={presentation} detached />
+            ))}
+          </div>
+        ) : (
+          <div className={`overflow-hidden ${teamCardFrameClass(presentation)}`} style={teamCardStyle(presentation)}>
+            {members.map((member) => (
+              <TeamDirectoryRow key={member.id} member={member} presentation={presentation} detached={false} />
+            ))}
+          </div>
+        )}
       </div>
     );
   }
   return (
     <div
-      className={`w-full overflow-visible ${teamGridClass(presentation.columns, presentation.gap, presentation.listAlign)} ${
-        presentation.layout === 'float-cards' ? teamFloatGridOffsetClass(presentation.avatarSize) : ''
-      }`}
+      className={`w-full overflow-visible ${teamGridClass(presentation.columns, presentation.gap, presentation.listAlign, presentation.layout)}`}
     >
       {members.map((member, index) =>
         presentation.layout === 'profile-cards' ? (
@@ -15581,6 +16461,7 @@ function ContactCardShell({
   const openChrome =
     presentation.cardDesign === 'tiles' ||
     presentation.cardDesign === 'stacked' ||
+    presentation.cardDesign === 'channel-cards' ||
     isContactOwnedLayoutDesign(presentation.cardDesign);
   return (
     <div
@@ -15602,7 +16483,6 @@ function ContactFormShell({
   presentation: PortfolioContactPresentationSettings;
   children: React.ReactNode;
 }) {
-  const owned = isContactOwnedLayoutDesign(presentation.cardDesign);
   const formDesign = resolveContactFormDesign(presentation);
   if (formDesign === 'info-panel') {
     return (
@@ -15619,11 +16499,12 @@ function ContactFormShell({
   }
   return (
     <div
-      className={contactFormFrameClass(presentation)}
+      className={`${contactFormFrameClass(presentation)} flex h-full min-h-full w-full flex-col`}
       style={{ ...contactFormFrameStyle(presentation), ...contactChromeCssVars(presentation) }}
     >
-      {!owned ? <ServicesCardBackgroundLayers presentation={presentation} /> : null}
-      <ServicesCardForeground>{children}</ServicesCardForeground>
+      <ServicesCardForeground className="flex h-full min-h-0 w-full flex-1 flex-col">
+        {children}
+      </ServicesCardForeground>
     </div>
   );
 }
@@ -16129,6 +17010,7 @@ export function EditorialContactSection({
   const isInquiry = presentation.cardDesign === 'inquiry';
   const isDesk = isContactDeskDesign(presentation.cardDesign);
   const isInfoPanel = isContactInfoPanelDesign(presentation.cardDesign);
+  const isChannelCards = isContactChannelCardsDesign(presentation.cardDesign);
   const formDesign = resolveContactFormDesign(presentation);
   const colorMode =
     presentation.useHeroPalette === false ? contactActiveColorMode(presentation) : 'light';
@@ -16233,8 +17115,8 @@ export function EditorialContactSection({
 
     const inquiryBody = (
       <div className="relative z-[1] w-full" style={chromeVars}>
-        <div className="grid w-full items-center gap-10 lg:grid-cols-2 lg:gap-12 xl:gap-16">
-          <div className="flex min-w-0 flex-col">
+        <div className="grid w-full items-stretch gap-10 lg:grid-cols-2 lg:gap-12 xl:gap-16">
+          <div className="flex min-h-full min-w-0 flex-col items-center justify-center text-center">
             <p
               className="text-xs font-bold uppercase tracking-[0.2em]"
               style={{ color: 'var(--contact-accent, #ea580c)' }}
@@ -16244,23 +17126,23 @@ export function EditorialContactSection({
             <h2 className={`mt-3 ${inquiryTitleClass}`} style={titleTypographyStyle}>
               {resolvedTitle}
             </h2>
-            <div className={inquirySubtitleClass} style={subtitleTypographyStyle}>
+            <div className={`${inquirySubtitleClass} mx-auto`} style={subtitleTypographyStyle}>
               {resolvedSubtitle}
             </div>
             <ContactInquiryIllustration className="mt-8 sm:mt-10" />
           </div>
 
-          <div className="min-w-0 w-full">
-            <PortfolioMotionItem profile={motionProfile} index={0}>
+          <div className="flex min-h-full min-w-0 w-full flex-col">
+            <PortfolioMotionItem profile={motionProfile} index={0} className="flex min-h-0 flex-1 flex-col">
               <div
-                className={contactInquiryFormCardClass(presentation)}
+                className={`${contactInquiryFormCardClass(presentation)} flex h-full min-h-full w-full flex-1 flex-col`}
                 style={contactFormFrameStyle(presentation)}
               >
                 {contactFormNode}
               </div>
             </PortfolioMotionItem>
             {presentation.showCta ? (
-              <div className="mt-5 flex justify-center lg:justify-start">
+              <div className="mt-5 flex justify-center">
                 <PortfolioMotionItem profile={motionProfile} index={1}>
                   <a
                     href={ctaHref}
@@ -16346,44 +17228,50 @@ export function EditorialContactSection({
               {inquirySupporting}
             </p>
 
-            {(visibleEmail?.trim() || visiblePhone?.trim()) ? (
-              <div className="mt-8 flex w-full max-w-md flex-col gap-3">
-                {visibleEmail?.trim() ? (
-                  <a
-                    href={`mailto:${visibleEmail.trim()}`}
-                    className={`${contactInquiryChannelCardClass()} transition hover:border-[color:var(--contact-accent,#ea580c)]`}
-                  >
-                    <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-                      style={{
-                        backgroundColor: 'var(--contact-accent-soft, rgba(234,88,12,0.14))',
-                        color: 'var(--contact-accent, #ea580c)',
-                      }}
-                    >
-                      <ContactEmailIcon className="h-5 w-5" />
-                    </span>
-                    <span className="min-w-0 truncate text-sm font-medium text-[color:var(--contact-ink,#0a0a0a)]">
-                      {visibleEmail.trim()}
-                    </span>
-                  </a>
-                ) : null}
+            {visiblePhone?.trim() || visibleEmail?.trim() ? (
+              <div className="mt-8 flex w-full max-w-md flex-col gap-4">
                 {visiblePhone?.trim() ? (
                   <a
                     href={`tel:${visiblePhone.replace(/\s+/g, '')}`}
-                    className={`${contactInquiryChannelCardClass()} transition hover:border-[color:var(--contact-accent,#ea580c)]`}
+                    className={contactInquiryPanelStatCardClass()}
                   >
                     <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                      className="flex h-14 w-14 items-center justify-center rounded-full"
                       style={{
                         backgroundColor: 'var(--contact-accent-soft, rgba(234,88,12,0.14))',
                         color: 'var(--contact-accent, #ea580c)',
                       }}
                     >
-                      <ContactPhoneIcon className="h-5 w-5" />
+                      <ContactPhoneIcon className="h-6 w-6" />
                     </span>
-                    <span className="min-w-0 truncate text-sm font-medium text-[color:var(--contact-ink,#0a0a0a)]">
+                    <p className="mt-4 text-lg font-semibold text-[color:var(--contact-ink,#0a0a0a)]">
+                      Phone
+                    </p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-[color:var(--contact-muted,#737373)]">
                       {formatPhoneDisplay(visiblePhone.trim())}
+                    </p>
+                  </a>
+                ) : null}
+                {visibleEmail?.trim() ? (
+                  <a
+                    href={`mailto:${visibleEmail.trim()}`}
+                    className={contactInquiryPanelStatCardClass()}
+                  >
+                    <span
+                      className="flex h-14 w-14 items-center justify-center rounded-full"
+                      style={{
+                        backgroundColor: 'var(--contact-accent-soft, rgba(234,88,12,0.14))',
+                        color: 'var(--contact-accent, #ea580c)',
+                      }}
+                    >
+                      <ContactEmailIcon className="h-6 w-6" />
                     </span>
+                    <p className="mt-4 text-lg font-semibold text-[color:var(--contact-ink,#0a0a0a)]">
+                      Email
+                    </p>
+                    <p className="mt-1.5 break-all text-sm leading-relaxed text-[color:var(--contact-muted,#737373)]">
+                      {visibleEmail.trim()}
+                    </p>
                   </a>
                 ) : null}
               </div>
@@ -16398,7 +17286,7 @@ export function EditorialContactSection({
             />
             <PortfolioMotionItem profile={motionProfile} index={0}>
               <div
-                className={contactInquiryFormCardClass(presentation)}
+                className={`${contactInquiryFormCardClass(presentation)} flex h-full w-full flex-col`}
                 style={contactFormFrameStyle(presentation)}
               >
                 {contactFormNode}
@@ -16530,7 +17418,7 @@ export function EditorialContactSection({
 
           <PortfolioMotionItem profile={motionProfile} index={0}>
             <div
-              className={contactDeskFormPanelClass(presentation)}
+              className={`${contactDeskFormPanelClass(presentation)} flex w-full flex-col`}
               style={contactFormFrameStyle(presentation)}
             >
               {contactFormNode}
@@ -16718,6 +17606,164 @@ export function EditorialContactSection({
     );
   }
 
+  if (isChannelCards) {
+    const hubTitleClass =
+      titleTypographyClass ??
+      'text-3xl font-bold tracking-[-0.03em] text-[color:var(--contact-ink,#0a0a0a)] sm:text-4xl lg:text-[2.65rem]';
+    const hubSubtitleClass =
+      subtitleTypographyClass ??
+      'mt-3 max-w-xl text-base leading-relaxed text-[color:var(--contact-muted,#737373)] sm:text-lg';
+
+    const hubChannels: Array<{
+      key: string;
+      href: string;
+      kind: 'phone' | 'email' | 'location';
+      title: string;
+      lines: string[];
+      external?: boolean;
+    }> = [];
+    if (visiblePhone?.trim()) {
+      hubChannels.push({
+        key: 'phone',
+        href: `tel:${visiblePhone.replace(/\s+/g, '')}`,
+        kind: 'phone',
+        title: 'Phone',
+        lines: [formatPhoneDisplay(visiblePhone.trim())],
+      });
+    }
+    if (visibleEmail?.trim()) {
+      hubChannels.push({
+        key: 'email',
+        href: `mailto:${visibleEmail.trim()}`,
+        kind: 'email',
+        title: 'Email',
+        lines: [visibleEmail.trim()],
+      });
+    }
+    if (visibleLocation?.trim()) {
+      const parts = visibleLocation
+        .split(/[\n,]/)
+        .map((part) => part.trim())
+        .filter(Boolean);
+      hubChannels.push({
+        key: 'location',
+        href: `https://maps.google.com/?q=${encodeURIComponent(visibleLocation.trim())}`,
+        kind: 'location',
+        title: 'Address',
+        lines: [parts.length >= 2 ? parts.join(' / ') : visibleLocation.trim()],
+        external: true,
+      });
+    }
+
+    const channelCardsBody = (
+      <div className="relative z-[1] w-full" style={chromeVars}>
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center text-center">
+          <p
+            className="text-sm font-bold uppercase tracking-[0.2em] sm:text-[0.9375rem]"
+            style={{ color: 'var(--contact-accent, #ea580c)' }}
+          >
+            Contact
+          </p>
+          <h2 className={`mt-3 ${hubTitleClass}`} style={titleTypographyStyle}>
+            {resolvedTitle}
+          </h2>
+          <div className={`${hubSubtitleClass} mx-auto`} style={subtitleTypographyStyle}>
+            {resolvedSubtitle}
+          </div>
+
+          {hubChannels.length > 0 ? (
+            <div
+              className={`mt-10 grid w-full gap-5 sm:mt-12 sm:gap-6 ${
+                hubChannels.length === 1
+                  ? 'max-w-md'
+                  : hubChannels.length === 2
+                    ? 'max-w-3xl sm:grid-cols-2'
+                    : 'sm:grid-cols-2 lg:grid-cols-3'
+              }`}
+            >
+              {hubChannels.map((channel, index) => (
+                <PortfolioMotionItem key={channel.key} profile={motionProfile} index={index}>
+                  <a
+                    href={channel.href}
+                    {...(channel.external ? { target: '_blank', rel: 'noreferrer' } : {})}
+                    className={contactChannelCardsCardClass(presentation)}
+                    style={contactChannelCardsCardStyle(presentation)}
+                  >
+                    <span className={contactChannelCardsIconClass()}>
+                      <ContactChannelGlyph kind={channel.kind} className="h-7 w-7" />
+                    </span>
+                    <p className="mt-5 text-lg font-semibold text-[color:var(--contact-ink,#0a0a0a)]">
+                      {channel.title}
+                    </p>
+                    <div className="mt-2 space-y-0.5 text-sm leading-relaxed text-[color:var(--contact-muted,#737373)]">
+                      {channel.lines.map((line) => (
+                        <p key={line} className="break-words">
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  </a>
+                </PortfolioMotionItem>
+              ))}
+            </div>
+          ) : null}
+
+          {showContactForm ? (
+            <div className="mt-10 w-full max-w-3xl sm:mt-12">
+              <ContactFormShell presentation={presentation}>{contactFormNode}</ContactFormShell>
+            </div>
+          ) : null}
+
+          {presentation.showCta ? (
+            <div className="mt-8 flex justify-center">
+              <PortfolioMotionItem profile={motionProfile} index={hubChannels.length + 1}>
+                <a
+                  href={ctaHref}
+                  {...(ctaHref.startsWith('http') || ctaHref.startsWith('mailto')
+                    ? { target: '_blank', rel: 'noreferrer' }
+                    : {})}
+                  className={`${contactCtaClassName(presentation.ctaDesign)} ${ctaTextClass}`.trim()}
+                  style={ctaTextStyle}
+                >
+                  {resolvedCtaLabel}
+                  <ArrowUpRight className="h-4 w-4" />
+                </a>
+              </PortfolioMotionItem>
+            </div>
+          ) : null}
+          {membersOnlyNode ? <div className="mt-4">{membersOnlyNode}</div> : null}
+        </div>
+      </div>
+    );
+
+    return (
+      <section
+        id="contact"
+        style={topSpacingStyle}
+        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${
+          bgStyle ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12` : topSpacingClass
+        }`}
+      >
+        {bgStyle ? (
+          <>
+            {(presentation.sectionBackgroundOpacity ?? 100) >= 100 ? (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute top-0 left-1/2 z-0 w-screen -translate-x-1/2 -bottom-16 bg-white sm:-bottom-20"
+              />
+            ) : null}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute top-0 left-1/2 z-0 w-screen -translate-x-1/2 -bottom-16 sm:-bottom-20"
+              style={bgStyle}
+            />
+          </>
+        ) : null}
+        {withContactIllustration(channelCardsBody)}
+      </section>
+    );
+  }
+
   const contactAside =
     !split &&
     (presentation.sectionLayout === 'aside-left' ||
@@ -16732,7 +17778,7 @@ export function EditorialContactSection({
       alignRight={alignRight}
       alwaysCentered={alwaysCentered}
       className={`relative z-[1] ${
-        split || contactAside ? 'mb-0 lg:sticky lg:top-32' : 'mb-10 lg:mb-12'
+        split || contactAside ? 'mb-0 w-full' : 'mb-10 lg:mb-12'
       }`}
       titleTypographyClass={titleTypographyClass}
       titleTypographyStyle={titleTypographyStyle}
@@ -16861,11 +17907,15 @@ export function EditorialContactSection({
           {presentation.sectionLayout === 'aside-right' ? (
             <>
               <div className="min-w-0">{illustratedBody}</div>
-              <div className="min-w-0">{header}</div>
+              <div className="flex min-w-0 flex-col items-center justify-center self-stretch text-center">
+                {header}
+              </div>
             </>
           ) : (
             <>
-              <div className="min-w-0">{header}</div>
+              <div className="flex min-w-0 flex-col items-center justify-center self-stretch text-center">
+                {header}
+              </div>
               <div className="min-w-0">{illustratedBody}</div>
             </>
           )}
@@ -16927,6 +17977,7 @@ export function EditorialPortfolioFooter({
   contactHref = '#footer',
   motionProfile = DEFAULT_MOTION_PROFILE,
   bottomClearanceClass,
+  visibleSectionLinks,
 }: {
   creatorName: string;
   creatorId: string;
@@ -16951,6 +18002,8 @@ export function EditorialPortfolioFooter({
   motionProfile?: PortfolioGlobalMotionProfile;
   /** Nav safe-area padding on the footer so its background reaches the viewport bottom. */
   bottomClearanceClass?: string;
+  /** Landing Links — show Gallery / About us / Team / Services / Work only when the section is on. */
+  visibleSectionLinks?: Partial<Record<PortfolioFooterAutoSectionKey, boolean>>;
 }) {
   const bgStyle =
     !transparentBase && presentation.sectionBackgroundEnabled
@@ -16975,9 +18028,22 @@ export function EditorialPortfolioFooter({
   const descriptionClass = elementTextStyleClass(elementStyles.description, 'body');
   const descriptionStyle = elementTextInlineStyle(elementStyles.description);
   const columnHeadingClass = elementTextStyleClass(elementStyles.columnHeading, 'body');
-  const columnHeadingStyle = elementTextInlineStyle(elementStyles.columnHeading);
+  const columnHeadingStyleBase = elementTextInlineStyle(elementStyles.columnHeading);
   const contactLineClass = elementTextStyleClass(elementStyles.contactLine, 'body');
-  const contactLineStyle = elementTextInlineStyle(elementStyles.contactLine);
+  const contactLineStyleBase = elementTextInlineStyle(elementStyles.contactLine);
+  const invertLandingColumns = presentation.design === 'landing';
+  const columnHeadingStyle = invertLandingColumns
+    ? { ...columnHeadingStyleBase, color: contactLineStyleBase.color }
+    : columnHeadingStyleBase;
+  const contactLineStyle = invertLandingColumns
+    ? { ...contactLineStyleBase, color: columnHeadingStyleBase.color }
+    : contactLineStyleBase;
+  const landingColumnTextClass = invertLandingColumns
+    ? `${contactLineClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()} font-normal`
+    : contactLineClass;
+  const landingColumnTextStyle = invertLandingColumns
+    ? { ...contactLineStyle, color: columnHeadingStyle.color, fontWeight: 400 }
+    : contactLineStyle;
   const socialLabelClass = elementTextStyleClass(elementStyles.socialLabel, 'body');
   const socialLabelStyle = elementTextInlineStyle(elementStyles.socialLabel);
   const metaClass = elementTextStyleClass(elementStyles.meta, 'body');
@@ -16990,7 +18056,10 @@ export function EditorialPortfolioFooter({
   const ctaSubtitleStyle = elementTextInlineStyle(elementStyles.ctaSubtitle);
   const ctaButtonTextClass = elementTextStyleClass(elementStyles.ctaButton, 'body');
   const ctaButtonTextStyle = elementTextInlineStyle(elementStyles.ctaButton);
-  const iconStyle = footerIconStyle(presentation.iconColor);
+  const iconStyleBase = footerIconStyle(presentation.iconColor);
+  const iconStyle = invertLandingColumns
+    ? { ...iconStyleBase, color: landingColumnTextStyle.color }
+    : iconStyleBase;
   const patternStyle = footerPatternStyle(presentation);
 
   const description = presentation.showDescription
@@ -17095,7 +18164,7 @@ export function EditorialPortfolioFooter({
             target="_blank"
             rel="noreferrer"
             aria-label={link.label}
-            className={`flex h-9 w-9 items-center justify-center rounded-xl border transition hover:opacity-90 ${
+            className={`flex h-11 w-11 items-center justify-center rounded-xl border transition hover:opacity-90 ${
               lightBackground
                 ? 'border-black/10 bg-white hover:border-orange-500/30'
                 : 'border-white/25 bg-white/10 hover:border-white/45'
@@ -17103,7 +18172,7 @@ export function EditorialPortfolioFooter({
             style={iconStyle}
             title={link.label}
           >
-            <FooterSocialLinkIcon link={link} bare />
+            <FooterSocialLinkIcon link={link} bare iconClassName="h-5 w-5" />
           </a>
         ))}
       </nav>
@@ -17148,72 +18217,91 @@ export function EditorialPortfolioFooter({
     ) : null;
 
   const showContactIcons = presentation.showContactIcons !== false;
-  const contactIconSizeClass = footerContactIconSizeClass(presentation.contactIconSize ?? 'md');
+  const contactIconSizeClass =
+    presentation.design === 'landing'
+      ? 'h-6 w-6'
+      : footerContactIconSizeClass(presentation.contactIconSize ?? 'md');
   const contactIconSizeClassCompact = footerContactIconSizeClassCompact(
     presentation.contactIconSize ?? 'md'
   );
   // Contact CTA (minimal) always left-aligns the contact rail; editorial center may center.
-  const contactLinesCentered =
-    presentation.design === 'editorial' && presentation.alignment === 'center';
+  const contactLinesCentered = presentation.design === 'editorial';
 
-  const contactStack =
-    contactItems.length > 0 ? (
+  const renderFooterContactList = (
+    items: typeof contactItems,
+    centered = contactLinesCentered,
+    options?: {
+      iconAlign?: 'start' | 'center';
+      lineClass?: string;
+      lineStyle?: CSSProperties;
+      glyphStyle?: CSSProperties;
+    }
+  ) => {
+    const lineClass = options?.lineClass ?? landingColumnTextClass;
+    const lineStyle = options?.lineStyle ?? landingColumnTextStyle;
+    const glyphStyle = options?.glyphStyle ?? iconStyle;
+    return items.length > 0 ? (
       <ul
-        className={`w-full space-y-5 text-left ${
-          contactLinesCentered ? 'flex flex-col items-center' : 'flex flex-col items-start'
+        className={`space-y-5 text-left flex flex-col items-start ${
+          centered ? 'mx-auto w-fit' : 'w-full'
         }`}
       >
-        {contactItems.map((item) => (
-          <li
-            key={item.id}
-            className={
-              contactLinesCentered
-                ? 'flex w-full justify-center'
-                : 'flex w-full justify-start'
-            }
-          >
+        {items.map((item) => (
+          <li key={item.id} className="flex w-full justify-start">
             {item.href ? (
               <a
                 href={item.href}
-                className={`flex items-start text-left transition hover:opacity-80 ${
+                className={`flex items-center text-left transition hover:opacity-80 ${
                   showContactIcons ? 'gap-3.5' : ''
-                } ${contactLineClass}`}
-                style={contactLineStyle}
+                } ${lineClass}`}
+                style={lineStyle}
               >
                 {showContactIcons ? (
                   <FooterContactIcon
                     type={item.icon}
-                    className={`mt-0.5 shrink-0 ${contactIconSizeClass}`}
-                    style={iconStyle}
+                    className={`shrink-0 ${contactIconSizeClass}`}
+                    style={glyphStyle}
                   />
                 ) : null}
-                <span className="min-w-0 text-left">{item.label}</span>
+                <span className="min-w-0 text-left leading-none">{item.label}</span>
               </a>
             ) : (
               <span
-                className={`flex items-start text-left ${showContactIcons ? 'gap-3.5' : ''} ${contactLineClass}`}
-                style={contactLineStyle}
+                className={`flex items-center text-left ${showContactIcons ? 'gap-3.5' : ''} ${lineClass}`}
+                style={lineStyle}
               >
                 {showContactIcons ? (
                   <FooterContactIcon
                     type={item.icon}
-                    className={`mt-0.5 shrink-0 ${contactIconSizeClass}`}
-                    style={iconStyle}
+                    className={`shrink-0 ${contactIconSizeClass}`}
+                    style={glyphStyle}
                   />
                 ) : null}
-                <span className="min-w-0 text-left">{item.label}</span>
+                <span className="min-w-0 text-left leading-none">{item.label}</span>
               </span>
             )}
           </li>
         ))}
       </ul>
     ) : null;
+  };
+
+  const contactStack = renderFooterContactList(
+    contactItems,
+    contactLinesCentered,
+    invertLandingColumns
+      ? {
+          iconAlign: 'center',
+          glyphStyle: { ...iconStyleBase, color: landingColumnTextStyle.color },
+        }
+      : undefined
+  );
 
   const contactInline =
     contactItems.length > 0 ? (
       <div
-        className={`flex min-w-0 flex-wrap items-center gap-x-1 gap-y-2 ${contactLineClass}`}
-        style={contactLineStyle}
+        className={`flex min-w-0 flex-wrap items-center gap-x-1 gap-y-2 font-semibold ${contactLineClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
+        style={{ ...contactLineStyle, fontWeight: 600 }}
       >
         {contactItems.map((item, index) => (
           <span key={item.id} className="inline-flex max-w-full items-center gap-x-1">
@@ -17255,8 +18343,11 @@ export function EditorialPortfolioFooter({
       </div>
     ) : null;
 
+  const copyrightClass = `tracking-wide font-normal ${metaClass.replace(/\bfont-(?:bold|semibold|medium)\b/g, '').trim()}`;
+  const copyrightStyle = { ...metaStyle, fontWeight: 400 as const };
+
   const copyrightLine = presentation.showCopyright ? (
-    <p className={`text-pretty tracking-wide ${metaClass}`} style={metaStyle}>
+    <p className={`text-pretty ${copyrightClass}`} style={copyrightStyle}>
       {resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName)}
     </p>
   ) : null;
@@ -17296,7 +18387,11 @@ export function EditorialPortfolioFooter({
     </>
   );
 
-  const marketplaceLink = presentation.showMarketplaceLink ? (
+  const marketplaceLink = (
+    presentation.design === 'landing'
+      ? presentation.showLandingMarketplaceLink === true
+      : presentation.showMarketplaceLink
+  ) ? (
     marketplaceExternal ? (
       <a
         href={marketplaceHref}
@@ -17366,7 +18461,8 @@ export function EditorialPortfolioFooter({
           ),
         }
       : null;
-  const contactCtaButton = presentation.showContactCta ? (
+  const contactCtaButton =
+    presentation.showContactCta || presentation.design === 'minimal' ? (
     <a
       href={ctaHref}
       className={`${contactCtaChromeClass} ${ctaButtonTextClass} text-center`}
@@ -17378,7 +18474,7 @@ export function EditorialPortfolioFooter({
       {presentation.showCtaIcon !== false ? (
         <FooterCtaMailIcon className="h-4 w-4 shrink-0" />
       ) : null}
-      {presentation.ctaButtonLabel}
+      {presentation.ctaButtonLabel?.trim() || 'Contact me'}
     </a>
   ) : null;
   const ctaButtonsAlignClass = footerCtaButtonsAlignClass(presentation.ctaButtonsAlign ?? 'center');
@@ -17453,7 +18549,10 @@ export function EditorialPortfolioFooter({
           className="max-h-16 max-w-[15rem] object-contain"
         />
       ) : (
-        <p className={`tracking-tight ${brandClass}`} style={brandStyle}>
+        <p
+          className={`tracking-tight font-semibold ${brandClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
+          style={{ ...brandStyle, fontWeight: 600 }}
+        >
           {centeredIdentity === 'custom' ? customText : creatorName}
         </p>
       );
@@ -17473,8 +18572,8 @@ export function EditorialPortfolioFooter({
                   key={item.id}
                   href={href}
                   aria-label={`Go to ${item.label}`}
-                  className={`transition hover:opacity-70 ${contactLineClass}`}
-                  style={contactLineStyle}
+                  className={`font-semibold transition hover:opacity-70 ${contactLineClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
+                  style={{ ...contactLineStyle, fontWeight: 600 }}
                 >
                   {item.label}
                 </Link>
@@ -17541,7 +18640,10 @@ export function EditorialPortfolioFooter({
           className="mt-1 h-px w-full max-w-xl"
           style={contentDividerStyle}
         />
-        <p className={`text-center text-pretty tracking-wide ${metaClass}`} style={metaStyle}>
+        <p
+          className={`text-center text-pretty ${copyrightClass}`}
+          style={copyrightStyle}
+        >
           {resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName)}
         </p>
       </>
@@ -17549,10 +18651,40 @@ export function EditorialPortfolioFooter({
   } else if (presentation.design === 'landing') {
     const rawColumns = presentation.linkColumns ?? [];
     const linkColumns = rawColumns
-      .map((col) => ({
-        ...col,
-        links: (col.links ?? []).filter((link) => link.label.trim() || link.href.trim()),
-      }))
+      .map((col) => {
+        let links = (col.links ?? []).filter((link) => link.label.trim() || link.href.trim());
+        const isLinksColumn =
+          col.id === 'links' || col.title.trim().toLowerCase() === 'links';
+        if (presentation.showMarketplaceColumnLink === true && isLinksColumn) {
+          if (!links.some((link) => isFooterMarketplaceColumnLink(link))) {
+            links = [
+              { id: 'marketplace', label: 'Marketplace', href: '/marketplace' },
+              ...links,
+            ];
+          }
+        } else {
+          links = links.filter((link) => !isFooterMarketplaceColumnLink(link));
+        }
+        if (presentation.showNopbProfileLink === true && isLinksColumn) {
+          if (!links.some((link) => isFooterNopbProfileLink(link))) {
+            const insertAt = Math.min(
+              links.some((link) => isFooterMarketplaceColumnLink(link)) ? 1 : 0,
+              links.length
+            );
+            links = [
+              ...links.slice(0, insertAt),
+              { id: 'profile', label: 'NoProbleme profile', href: '__profile__' },
+              ...links.slice(insertAt),
+            ];
+          }
+        } else {
+          links = links.filter((link) => !isFooterNopbProfileLink(link));
+        }
+        if (isLinksColumn) {
+          links = resolveFooterLandingSectionLinks(links, visibleSectionLinks);
+        }
+        return { ...col, links };
+      })
       .filter((col) => {
         // Drop empty rails (legacy Product/Creators/Legal leftovers) — no blank 4th column.
         if (col.id === 'contact') return true;
@@ -17591,24 +18723,33 @@ export function EditorialPortfolioFooter({
                   <img
                     src={avatarUrl}
                     alt=""
-                    className="h-9 w-9 rounded-xl object-cover"
+                    className="h-11 w-11 rounded-full object-cover sm:h-12 sm:w-12"
                   />
                 ) : (
                   <div
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold text-white"
+                    className="flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold text-white sm:h-12 sm:w-12"
                     style={{ backgroundColor: presentation.accentColor }}
                     aria-hidden
                   >
                     {brandInitials}
                   </div>
                 )}
-                <span className={`text-lg tracking-tight ${brandClass}`} style={brandStyle}>
+                <span
+                  className={`tracking-tight font-semibold ${brandClass.replace(/\btext-(?:sm|base|lg|xl|2xl)\b/g, '').trim()}`}
+                  style={{ ...brandStyle, fontWeight: 600, fontSize: '2.25rem', lineHeight: 1.15 }}
+                >
                   {creatorName}
                 </span>
               </div>
             ) : null}
             {description ? (
-              <p className={`max-w-sm text-sm leading-relaxed ${descriptionClass}`} style={descriptionStyle}>
+              <p
+                className={`max-w-sm text-sm leading-relaxed ${descriptionClass}`}
+                style={{
+                  ...descriptionStyle,
+                  ...(invertLandingColumns ? { color: landingColumnTextStyle.color } : null),
+                }}
+              >
                 {description}
               </p>
             ) : null}
@@ -17628,13 +18769,20 @@ export function EditorialPortfolioFooter({
                 >
                   {col.title.trim() ? (
                     <h4
-                      className={`text-sm ${columnHeadingClass}`}
+                      className={`text-lg font-semibold ${landingColumnTextClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
                       style={{
-                        ...columnHeadingStyle,
-                        ...footerColumnHeadingGapStyle(presentation),
+                        ...landingColumnTextStyle,
+                        color: columnHeadingStyle.color,
+                        fontFamily: undefined,
+                        fontSize: '1.875rem',
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        letterSpacing: 'normal',
+                        marginBottom: `${clampFooterColumnHeadingGapPx(presentation.columnHeadingGapPx) + 36}px`,
                       }}
                     >
-                      {col.title}
+                      {col.title.trim().charAt(0).toUpperCase() +
+                        col.title.trim().slice(1).toLowerCase()}
                     </h4>
                   ) : null}
                   {isContactColumn ? (
@@ -17653,8 +18801,8 @@ export function EditorialPortfolioFooter({
                             {external ? (
                               <a
                                 href={href}
-                                className={`text-sm transition hover:opacity-80 ${contactLineClass}`}
-                                style={contactLineStyle}
+                                className={`text-sm transition hover:opacity-80 ${landingColumnTextClass}`}
+                                style={landingColumnTextStyle}
                                 {...(href.startsWith('http')
                                   ? { target: '_blank', rel: 'noreferrer' }
                                   : {})}
@@ -17664,8 +18812,8 @@ export function EditorialPortfolioFooter({
                             ) : (
                               <Link
                                 href={href}
-                                className={`text-sm transition hover:opacity-80 ${contactLineClass}`}
-                                style={contactLineStyle}
+                                className={`text-sm transition hover:opacity-80 ${landingColumnTextClass}`}
+                                style={landingColumnTextStyle}
                               >
                                 {link.label}
                               </Link>
@@ -17683,7 +18831,10 @@ export function EditorialPortfolioFooter({
 
         {copyrightText ? (
           <div className={`border-t pt-5 ${dividerClass}`}>
-            <p className={`tracking-wide ${metaClass}`} style={metaStyle}>
+            <p
+              className={copyrightClass}
+              style={copyrightStyle}
+            >
               {copyrightText}
             </p>
           </div>
@@ -17695,13 +18846,13 @@ export function EditorialPortfolioFooter({
     // Hierarchy: brand block → contact → divider → meta. Socials sit with the brand
     // (not stranded on the far right). No design-credit / views noise.
     const compactCopyright = presentation.showCopyright ? (
-      <p className={`tracking-wide ${metaClass}`} style={metaStyle}>
+      <p className={copyrightClass} style={copyrightStyle}>
         {resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName)}
       </p>
     ) : null;
     const compactSocials =
       visibleLinks.length > 0 ? (
-        <nav className="flex flex-wrap gap-2.5" aria-label="Social">
+        <nav className="flex flex-wrap gap-3" aria-label="Social">
           {visibleLinks.map((link) => (
             <a
               key={link.id}
@@ -17709,7 +18860,7 @@ export function EditorialPortfolioFooter({
               target="_blank"
               rel="noreferrer"
               aria-label={link.label}
-              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition hover:opacity-90 ${
+              className={`flex h-12 w-12 items-center justify-center rounded-xl border transition hover:opacity-90 ${
                 lightBackground
                   ? 'border-black/8 bg-white hover:border-orange-500/30'
                   : 'border-white/10 bg-neutral-900 hover:border-orange-500/40'
@@ -17717,7 +18868,7 @@ export function EditorialPortfolioFooter({
               style={iconStyle}
               title={link.label}
             >
-              <FooterSocialLinkIcon link={link} bare />
+              <FooterSocialLinkIcon link={link} bare iconClassName="h-6 w-6" />
             </a>
           ))}
         </nav>
@@ -17729,7 +18880,10 @@ export function EditorialPortfolioFooter({
           <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
             <div className="min-w-0 max-w-xl space-y-3">
               {presentation.showBrand ? (
-                <p className={`tracking-tight ${brandClass}`} style={brandStyle}>
+                <p
+                  className={`tracking-tight font-semibold ${brandClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
+                  style={{ ...brandStyle, fontWeight: 600 }}
+                >
                   {creatorName}
                 </p>
               ) : null}
@@ -17773,68 +18927,273 @@ export function EditorialPortfolioFooter({
       </>
     );
   } else if (presentation.design === 'minimal') {
-    // Design 3 — Contact CTA: brand | contact → CTAs (alignable) → rule + copyright
+    // Design 3 — Contact CTA: name + bio + CTA | location + contact + socials
     const minimalCopyright = presentation.showCopyright ? (
       <div className={`border-t pt-5 ${dividerClass}`}>
-        <p className={`text-center tracking-wide ${metaClass}`} style={metaStyle}>
+        <p className={`text-center ${copyrightClass}`} style={copyrightStyle}>
           {resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName)}
         </p>
       </div>
     ) : null;
 
-    const tagline =
-      description ??
-      ([locationValue, hoursValue].filter(Boolean).join(' · ') || null);
+    const ctaBio =
+      description ||
+      resolveFooterDescription({
+        source: presentation.descriptionSource,
+        custom: presentation.descriptionCustom,
+        bio,
+        whyMeText,
+        maxLength: 220,
+      });
+    const ctaLocationItem = locationValue
+      ? contactItems.find((item) => item.id === 'location') ?? {
+          id: 'location',
+          label: locationValue,
+          icon: 'location' as const,
+        }
+      : null;
+    const ctaContactColumnItems = [
+      ...(ctaLocationItem ? [ctaLocationItem] : []),
+      ...contactItems.filter((item) => item.id === 'phone' || item.id === 'email'),
+    ];
+    const ctaContactList = renderFooterContactList(ctaContactColumnItems, false, {
+      iconAlign: 'center',
+      lineClass: `${contactLineClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()} font-semibold`,
+      lineStyle: { ...contactLineStyle, fontWeight: 600 },
+    });
+    const ctaSocialIcons =
+      visibleLinks.length > 0 ? (
+        <nav className="flex flex-wrap gap-3" aria-label="Social">
+          {visibleLinks.map((link) => (
+            <a
+              key={link.id}
+              href={link.url}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={link.label}
+              className={`flex h-12 w-12 items-center justify-center rounded-xl border transition hover:opacity-90 ${
+                lightBackground
+                  ? 'border-black/8 bg-white hover:border-orange-500/30'
+                  : 'border-white/10 bg-neutral-900 hover:border-orange-500/40'
+              }`}
+              style={iconStyle}
+              title={link.label}
+            >
+              <FooterSocialLinkIcon link={link} bare iconClassName="h-6 w-6" />
+            </a>
+          ))}
+        </nav>
+      ) : null;
 
     body = (
       <>
         <div className="flex min-w-0 flex-col gap-8 sm:gap-10">
-          {/* Full-width brand + contact — pushed to L/R edges of the content area */}
           <div
-            className={`flex w-full flex-col lg:flex-row lg:items-stretch lg:justify-between ${
-              showContentDivider ? 'gap-8 lg:gap-0' : 'gap-8 sm:gap-10 lg:gap-32 xl:gap-40'
+            className={`grid w-full grid-cols-1 lg:grid-cols-2 lg:items-stretch ${
+              showContentDivider ? 'gap-8 lg:gap-0' : 'gap-8 sm:gap-10 lg:gap-16 xl:gap-20'
             }`}
           >
-            <div className="min-w-0 max-w-xl flex-1 space-y-3 text-left lg:max-w-2xl xl:max-w-3xl">
+            <div className="min-w-0 space-y-7 text-left sm:space-y-8 lg:pr-10 xl:pr-14">
               {presentation.showBrand ? (
-                <p className={`tracking-tight ${brandClass}`} style={brandStyle}>
+                <p
+                  className={`tracking-tight font-semibold ${brandClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
+                  style={{ ...brandStyle, fontWeight: 600 }}
+                >
                   {creatorName}
                 </p>
               ) : null}
-              {tagline ? (
+              {ctaBio ? (
                 <p
-                  className={`text-pretty text-sm leading-relaxed sm:text-[0.9375rem] ${descriptionClass}`}
+                  className={`text-pretty text-sm leading-relaxed sm:text-[0.9375rem] ${descriptionClass.replace(/\bfont-(?:bold|medium)\b/g, '').trim()}`}
                   style={descriptionStyle}
                 >
-                  {tagline}
+                  {ctaBio}
                 </p>
+              ) : null}
+              {dualCtaRowStart ? (
+                <div className="[&_a]:!font-semibold">{dualCtaRowStart}</div>
               ) : null}
             </div>
 
-            {contactStack ? (
-              <>
+            {ctaContactList || ctaSocialIcons ? (
+              <div className="flex min-w-0 w-full flex-col lg:flex-row lg:items-stretch">
                 <FooterInfoDivider enabled={showContentDivider} style={contentDividerStyle} />
-                <div className="min-w-0 w-full max-w-md shrink-0 text-left lg:pt-1 lg:text-left">
-                  {contactStack}
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-5 text-left lg:items-end lg:pt-1">
+                  <div className="flex w-full max-w-md flex-col items-start gap-5">
+                    {ctaContactList}
+                    {ctaSocialIcons}
+                  </div>
                 </div>
-              </>
+              </div>
             ) : null}
           </div>
-
-          {dualCtaRow}
 
           {minimalCopyright}
         </div>
       </>
     );
+  } else if (presentation.design === 'contact-card') {
+    const cardBg = presentation.accentColor?.trim() || DEFAULT_FOOTER_ACCENT_COLOR;
+    const cardIsLight = footerColorLuminance(cardBg) > 0.55;
+    const cardText = cardIsLight ? '#0a0a0a' : '#fafafa';
+    const cardMuted = cardIsLight ? 'rgba(10, 10, 10, 0.78)' : 'rgba(255, 255, 255, 0.88)';
+    const cardGlyph = { color: cardText };
+    const cardContactItems = contactItems.filter((item) => item.id === 'phone' || item.id === 'email');
+    const cardContactList = renderFooterContactList(cardContactItems, false, {
+      iconAlign: 'center',
+      lineClass: 'font-semibold text-[0.9375rem]',
+      lineStyle: { color: cardText, fontWeight: 600 },
+      glyphStyle: cardGlyph,
+    });
+    const cardLocation = locationValue;
+    const internalLinks = resolveFooterInternalLinksColumn(presentation, visibleSectionLinks);
+    const cardSocials =
+      visibleLinks.length > 0 ? (
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <span className={`text-sm font-semibold ${descriptionClass}`} style={descriptionStyle}>
+            {DEFAULT_FOOTER_CONNECT_LABEL}
+          </span>
+          <nav className="flex flex-wrap gap-3" aria-label="Social">
+            {visibleLinks.map((link) => (
+              <a
+                key={link.id}
+                href={link.url}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={link.label}
+                className={`flex h-12 w-12 items-center justify-center rounded-full border transition hover:opacity-90 ${
+                  lightBackground
+                    ? 'border-black/10 bg-white hover:border-orange-500/30'
+                    : 'border-white/15 bg-white/10 hover:border-white/40'
+                }`}
+                style={iconStyle}
+                title={link.label}
+              >
+                <FooterSocialLinkIcon link={link} bare iconClassName="h-5 w-5" />
+              </a>
+            ))}
+          </nav>
+        </div>
+      ) : null;
+
+    body = (
+      <>
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-stretch gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-20 xl:gap-28">
+          <div className="w-full max-w-md lg:max-w-xl">
+            <div
+              className="rounded-2xl px-10 py-10 sm:px-12 sm:py-12"
+              style={{ backgroundColor: cardBg, color: cardText }}
+            >
+              <div className="flex flex-col">
+                {presentation.showBrand !== false ? (
+                  <p
+                    className="text-3xl font-semibold tracking-tight sm:text-[2rem]"
+                    style={{ color: cardText, fontWeight: 600 }}
+                  >
+                    {creatorName}
+                  </p>
+                ) : null}
+                {cardLocation ? (
+                  <p className="mt-3.5 text-base leading-relaxed" style={{ color: cardMuted }}>
+                    {cardLocation}
+                  </p>
+                ) : null}
+                {cardContactList ? <div className="mt-8 space-y-1">{cardContactList}</div> : null}
+              </div>
+            </div>
+            {cardSocials}
+          </div>
+
+          {internalLinks.links.length > 0 || copyrightLine ? (
+            <div className="min-w-0 w-full max-w-xs shrink-0 lg:pt-2">
+              {internalLinks.links.length > 0 ? (
+                <>
+              <h4
+                className={`text-lg font-semibold ${landingColumnTextClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
+                style={{
+                  ...landingColumnTextStyle,
+                  color: columnHeadingStyle.color,
+                  fontFamily: undefined,
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  letterSpacing: 'normal',
+                  marginBottom: `${clampFooterColumnHeadingGapPx(presentation.columnHeadingGapPx) + 10}px`,
+                }}
+              >
+                {internalLinks.title.trim().charAt(0).toUpperCase() +
+                  internalLinks.title.trim().slice(1).toLowerCase()}
+              </h4>
+              <ul className="space-y-3.5">
+                {internalLinks.links.map((link) => {
+                  const href = resolveFooterLinkHref(link.href, creatorId);
+                  const external = href.startsWith('http') || href.startsWith('mailto:');
+                  const linkClass = `text-sm font-semibold transition hover:opacity-80 ${contactLineClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`;
+                  const linkStyle = { ...contactLineStyle, fontWeight: 600 };
+                  return (
+                    <li key={link.id}>
+                      {external ? (
+                        <a
+                          href={href}
+                          className={linkClass}
+                          style={linkStyle}
+                          {...(href.startsWith('http') ? { target: '_blank', rel: 'noreferrer' } : {})}
+                        >
+                          {link.label}
+                        </a>
+                      ) : (
+                        <Link href={href} className={linkClass} style={linkStyle}>
+                          {link.label}
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+                </>
+              ) : null}
+              {copyrightLine ? (
+                <div className={`mt-8 border-t pt-4 text-left ${dividerClass}`}>
+                  {copyrightLine}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </>
+    );
   } else {
-    // Design 1 — Separated columns: Networks | Contact | meta
-    const columnsCentered = presentation.alignment === 'center';
-    const colAlign = columnsCentered ? 'flex flex-col items-center text-center' : '';
+    const editorialLocationItem = locationValue
+      ? contactItems.find((item) => item.id === 'location') ?? {
+          id: 'location',
+          label: locationValue,
+          icon: 'location' as const,
+        }
+      : null;
+    const editorialContactItems = [
+      ...contactItems.filter((item) => item.id === 'phone' || item.id === 'email'),
+      ...(editorialLocationItem ? [editorialLocationItem] : []),
+    ];
+    const editorialContactList = renderFooterContactList(editorialContactItems, true, {
+      iconAlign: 'center',
+      lineClass: `${contactLineClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()} font-semibold`,
+      lineStyle: { ...contactLineStyle, fontWeight: 600 },
+    });
+    const editorialHeading = (label: string) => (
+      <p
+        className={`font-semibold ${columnHeadingClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
+        style={{
+          ...columnHeadingStyle,
+          fontWeight: 600,
+          ...footerColumnHeadingGapStyle(presentation),
+        }}
+      >
+        {label}
+      </p>
+    );
     const socialIconsOnly =
       visibleLinks.length > 0 ? (
         <nav
-          className={`flex flex-wrap gap-3 ${columnsCentered ? 'justify-center' : ''}`}
+          className="flex flex-wrap justify-center gap-5"
           aria-label="Social"
         >
           {visibleLinks.map((link) => (
@@ -17844,7 +19203,7 @@ export function EditorialPortfolioFooter({
               target="_blank"
               rel="noreferrer"
               aria-label={link.label}
-              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition hover:opacity-90 ${
+              className={`flex h-24 w-24 items-center justify-center rounded-xl border transition hover:opacity-90 ${
                 lightBackground
                   ? 'border-black/8 bg-white hover:border-orange-500/30'
                   : 'border-white/10 bg-neutral-900 hover:border-orange-500/40'
@@ -17852,7 +19211,7 @@ export function EditorialPortfolioFooter({
               style={iconStyle}
               title={link.label}
             >
-              <FooterSocialLinkIcon link={link} bare />
+              <FooterSocialLinkIcon link={link} bare iconClassName="h-12 w-12" />
             </a>
           ))}
         </nav>
@@ -17861,55 +19220,45 @@ export function EditorialPortfolioFooter({
     body = (
       <>
         <div
-          className={`min-w-0 w-full space-y-4 lg:flex-1 ${colAlign} ${
-            showContentDivider ? 'lg:px-1' : ''
+          className={`flex w-full flex-col items-center ${
+            showContentDivider ? 'gap-8 lg:flex-row lg:items-stretch lg:justify-center lg:gap-0' : 'gap-10 lg:flex-row lg:items-start lg:justify-center lg:gap-x-14'
           }`}
         >
-          {columnHeading('Networks')}
-          {socialIconsOnly}
-          {!socialIconsOnly && presentation.showBrand ? (
-            <p className={brandClass} style={brandStyle}>
-              {creatorName}
-            </p>
-          ) : null}
-          {description ? (
-            <p
-              className={`max-w-xs text-pretty leading-relaxed ${descriptionClass} ${
-                columnsCentered ? 'mx-auto' : ''
-              }`}
-              style={descriptionStyle}
-            >
-              {description}
-            </p>
-          ) : null}
+          <div className="flex min-w-0 w-full max-w-md flex-col items-center space-y-4 text-center lg:w-auto lg:px-1">
+            {editorialHeading('Networks')}
+            {socialIconsOnly}
+            {!socialIconsOnly && presentation.showBrand ? (
+              <p
+                className={`font-semibold ${brandClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
+                style={{ ...brandStyle, fontWeight: 600 }}
+              >
+                {creatorName}
+              </p>
+            ) : null}
+            {description ? (
+              <p
+                className={`mx-auto max-w-xs text-pretty leading-relaxed ${descriptionClass}`}
+                style={descriptionStyle}
+              >
+                {description}
+              </p>
+            ) : null}
+          </div>
+          <FooterInfoDivider enabled={showContentDivider} style={contentDividerStyle} />
+          <div className="flex min-w-0 w-full max-w-md flex-col items-center space-y-4 text-center lg:w-auto lg:px-1">
+            {editorialHeading('Contact')}
+            {editorialContactList}
+          </div>
         </div>
-        <FooterInfoDivider enabled={showContentDivider} style={contentDividerStyle} />
-        <div
-          className={`min-w-0 w-full space-y-4 lg:flex-1 ${colAlign} ${
-            showContentDivider ? 'lg:px-1' : ''
-          }`}
-        >
-          {columnHeading('Contact')}
-          {contactStack}
-        </div>
-        <FooterInfoDivider enabled={showContentDivider} style={contentDividerStyle} />
-        <div
-          className={`min-w-0 w-full space-y-3 lg:flex-1 ${colAlign || 'flex flex-col items-start'} ${
-            showContentDivider ? 'lg:px-1' : ''
-          }`}
-        >
-          {copyrightLine}
-          {contactCtaButton || marketplaceButton || marketplaceLink ? (
-            <div
-              className={`flex flex-wrap items-center gap-3 ${
-                columnsCentered ? 'justify-center' : ''
-              }`}
-            >
-              {contactCtaButton}
-              {marketplaceButton ?? marketplaceLink}
-            </div>
-          ) : null}
-        </div>
+        {contactCtaButton || marketplaceButton || marketplaceLink ? (
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {contactCtaButton}
+            {marketplaceButton ?? marketplaceLink}
+          </div>
+        ) : null}
+        {copyrightLine ? (
+          <div className="w-full text-center">{copyrightLine}</div>
+        ) : null}
       </>
     );
   }
@@ -17944,7 +19293,15 @@ export function EditorialPortfolioFooter({
         className={`relative z-[1] min-w-0 w-full pf-footer-shell-x ${contentClassName}`}
       >
         <div
-          className={`min-w-0 w-full ${footerContentPaddingClassName()}`}
+          className={`min-w-0 w-full ${footerContentPaddingClassName()} ${
+            presentation.design === 'editorial' ? 'pf-footer-editorial-lg-bottom' : ''
+          } ${
+            presentation.design === 'landing' ||
+            presentation.design === 'compact' ||
+            presentation.design === 'minimal'
+              ? 'pf-footer-landing-pad-x'
+              : ''
+          } ${presentation.design === 'compact' ? 'pf-footer-compact-pad-x' : ''}`}
           style={footerContentPaddingStyle(presentation)}
         >
         <PortfolioMotionItem profile={motionProfile} index={0} className="w-full min-w-0">
@@ -17965,10 +19322,12 @@ export function EditorialPortfolioFooter({
 function FooterSocialLinkIcon({
   link,
   bare = false,
+  iconClassName = 'h-4 w-4',
 }: {
   link: EditorialContactLink;
   /** Icon only — no colored circular chip (landing-style buttons). */
   bare?: boolean;
+  iconClassName?: string;
 }) {
   const platform = inferContactLinkPlatform(link);
   const socialKey = platform ? normalizeSocialPlatformKey(platform) : 'other';
@@ -17976,13 +19335,13 @@ function FooterSocialLinkIcon({
 
   if (isSocial && platform) {
     if (bare) {
-      return <SocialPlatformIcon platform={platform} className="h-4 w-4" />;
+      return <SocialPlatformIcon platform={platform} className={iconClassName} />;
     }
     return (
       <span
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${socialPlatformBrandClass(platform)}`}
       >
-        <SocialPlatformIcon platform={platform} className="h-4 w-4" />
+        <SocialPlatformIcon platform={platform} className={iconClassName} />
       </span>
     );
   }
@@ -17990,7 +19349,7 @@ function FooterSocialLinkIcon({
   const isWebsite = link.type === 'WEBSITE';
   if (bare) {
     return (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+      <svg className={iconClassName} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
         {isWebsite ? (
           <path
             strokeLinecap="round"

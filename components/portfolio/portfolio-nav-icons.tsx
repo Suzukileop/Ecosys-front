@@ -233,6 +233,7 @@ export function PortfolioNavSectionIcon({
     work: 'grid',
     services: 'star',
     about: 'user',
+    aboutUs: 'id-card',
     experience: 'briefcase',
     faq: 'help-circle',
     contact: 'mail',

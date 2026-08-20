@@ -1,4 +1,4 @@
-export type PortfolioNavSectionKey = 'work' | 'services' | 'skills' | 'about' | 'experience' | 'team' | 'gallery' | 'faq' | 'contact';
+export type PortfolioNavSectionKey = 'work' | 'services' | 'skills' | 'about' | 'aboutUs' | 'experience' | 'team' | 'gallery' | 'faq' | 'contact';
 
 export type PortfolioNavWorkIcon = 'grid' | 'briefcase' | 'image';
 export type PortfolioNavServicesIcon = 'star' | 'sparkles' | 'wrench';
@@ -12,6 +12,7 @@ export type PortfolioNavItemIcons = {
   services: PortfolioNavServicesIcon;
   skills: PortfolioNavServicesIcon;
   about: PortfolioNavAboutIcon;
+  aboutUs: PortfolioNavAboutIcon;
   experience: PortfolioNavExperienceIcon;
   team: PortfolioNavAboutIcon;
   gallery: PortfolioNavWorkIcon;
@@ -39,6 +40,7 @@ export const PORTFOLIO_NAV_SECTION_META: {
   { key: 'skills', title: 'Skills', description: 'Jumps to tools and skills.' },
   { key: 'services', title: 'Services', description: 'Jumps to services and pricing.' },
   { key: 'about', title: 'About', description: 'Jumps to bio, stats, and profile details.' },
+  { key: 'aboutUs', title: 'About us', description: 'Jumps to the company story, tasks, and founder.' },
   { key: 'experience', title: 'Experience', description: 'Jumps to career timeline and roles.' },
   { key: 'team', title: 'Team', description: 'Jumps to members and their roles.' },
   { key: 'gallery', title: 'Gallery', description: 'Jumps to the media gallery.' },
@@ -51,6 +53,7 @@ export const DEFAULT_PORTFOLIO_NAV_ITEM_LABELS: PortfolioNavItemLabels = {
   services: 'Services',
   skills: 'Skills',
   about: 'About',
+  aboutUs: 'About us',
   experience: 'Experience',
   team: 'Team',
   gallery: 'Gallery',
@@ -63,6 +66,7 @@ export const DEFAULT_PORTFOLIO_NAV_ITEM_ICONS: PortfolioNavItemIcons = {
   services: 'star',
   skills: 'sparkles',
   about: 'user',
+  aboutUs: 'id-card',
   experience: 'briefcase',
   team: 'user',
   gallery: 'image',
@@ -101,6 +105,12 @@ export const PORTFOLIO_NAV_LABEL_PRESETS: Record<
     { value: 'Story', label: 'Story' },
     { value: 'Background', label: 'Background' },
     { value: 'Who I am', label: 'Who I am' },
+  ],
+  aboutUs: [
+    { value: 'About us', label: 'About us' },
+    { value: 'Our story', label: 'Our story' },
+    { value: 'The studio', label: 'The studio' },
+    { value: 'Company', label: 'Company' },
   ],
   experience: [
     { value: 'Experience', label: 'Experience' },
@@ -158,6 +168,11 @@ export const PORTFOLIO_NAV_ICON_OPTIONS: Record<
   about: [
     { value: 'user', label: 'User' },
     { value: 'id-card', label: 'ID card' },
+    { value: 'heart', label: 'Heart' },
+  ],
+  aboutUs: [
+    { value: 'id-card', label: 'ID card' },
+    { value: 'user', label: 'User' },
     { value: 'heart', label: 'Heart' },
   ],
   experience: [
@@ -235,6 +250,9 @@ export function mergeNavItemIcons(base: PortfolioNavItemIcons, patch: unknown): 
     about: ABOUT_ICONS.has(record.about as PortfolioNavAboutIcon)
       ? (record.about as PortfolioNavAboutIcon)
       : base.about,
+    aboutUs: ABOUT_ICONS.has(record.aboutUs as PortfolioNavAboutIcon)
+      ? (record.aboutUs as PortfolioNavAboutIcon)
+      : base.aboutUs,
     experience: EXPERIENCE_ICONS.has(record.experience as PortfolioNavExperienceIcon)
       ? (record.experience as PortfolioNavExperienceIcon)
       : base.experience,

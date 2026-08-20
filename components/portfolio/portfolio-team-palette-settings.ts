@@ -171,3 +171,17 @@ export function patchTeamColorBinding(
   });
   return applyTeamPaletteToSettings({ ...host, teamColorBindings });
 }
+
+/** Updates the palette token bound to a slot, then reapplies colors. */
+export function patchTeamPaletteSlotColor(
+  host: TeamPaletteHost,
+  slot: TeamColorSlot,
+  hex: string
+): TeamPalettePatch {
+  const teamPalette = mergeTeamPalette(DEFAULT_TEAM_PALETTE, host.teamPalette);
+  const bindings = mergeTeamColorBindings(DEFAULT_TEAM_COLOR_BINDINGS, host.teamColorBindings);
+  return applyTeamPaletteToSettings({
+    ...host,
+    teamPalette: { ...teamPalette, [bindings[slot]]: hex },
+  });
+}

@@ -87,7 +87,7 @@ const FOOTER_SUB_SECTIONS: { id: FooterSubSection; label: string; description: s
   {
     id: 'typography',
     label: 'Typography',
-    description: 'Icons, colors, fonts, sizes, and formatting for footer text.',
+    description: 'Icons, colors, sizes, and formatting for footer text. Typeface follows Global.',
   },
   {
     id: 'background',
@@ -403,11 +403,23 @@ function FooterMarketplaceCtaFields({
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Marketplace CTA</p>
       <FooterToggleRow
         label="Show Marketplace button"
-        description="Paired with Contact me on every footer design — label, URL, and presets."
-        checked={footer.showMarketplaceLink}
-        onChange={(showMarketplaceLink) => onChange({ showMarketplaceLink })}
+        description={
+          footer.design === 'landing'
+            ? 'Landing columns: hidden by default. Turn on to show Marketplace profile under the brand.'
+            : 'Paired with Contact me on every footer design — label, URL, and presets.'
+        }
+        checked={
+          footer.design === 'landing'
+            ? footer.showLandingMarketplaceLink === true
+            : footer.showMarketplaceLink
+        }
+        onChange={(enabled) =>
+          footer.design === 'landing'
+            ? onChange({ showLandingMarketplaceLink: enabled })
+            : onChange({ showMarketplaceLink: enabled })
+        }
       />
-      {footer.showMarketplaceLink ? (
+      {(footer.design === 'landing' ? footer.showLandingMarketplaceLink : footer.showMarketplaceLink) ? (
         <div className="space-y-4 rounded-2xl border border-neutral-200/70 bg-white p-4">
           <label className="block">
             <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">Label</span>
@@ -602,6 +614,36 @@ export function FooterSettingsPanel({
                 });
                 return;
               }
+              if (design === 'contact-card') {
+                const existing = footer.linkColumns ?? [];
+                const useDefaults =
+                  existing.length === 0 || isLegacyLandingMarketingColumns(existing);
+                onChange({
+                  design,
+                  showBrand: true,
+                  showDescription: false,
+                  showContactLinks: true,
+                  showCopyright: true,
+                  showDesignCredit: false,
+                  showMarketplaceLink: false,
+                  showLandingMarketplaceLink: false,
+                  showMarketplaceColumnLink: false,
+                  showNopbProfileLink: false,
+                  showEmail: true,
+                  showPhone: true,
+                  showLocation: true,
+                  showHours: false,
+                  showContactIcons: true,
+                  showContactCta: false,
+                  linkColumns: useDefaults
+                    ? DEFAULT_FOOTER_LINK_COLUMNS.map((col) => ({
+                        ...col,
+                        links: col.links.map((link) => ({ ...link })),
+                      }))
+                    : existing,
+                });
+                return;
+              }
               if (design === 'landing') {
                 const existing = footer.linkColumns ?? [];
                 const useDefaults =
@@ -613,12 +655,17 @@ export function FooterSettingsPanel({
                   showContactLinks: true,
                   showCopyright: true,
                   showDesignCredit: false,
-                  showMarketplaceLink: true,
+                  showMarketplaceLink: false,
+                  showLandingMarketplaceLink: false,
+                  showMarketplaceColumnLink: false,
+                  showNopbProfileLink: false,
                   showProfileVisits: false,
                   showEmail: true,
                   showPhone: true,
                   showLocation: true,
                   showHours: true,
+                  contactIconSize: 'lg',
+                  landingBrandGapPx: DEFAULT_FOOTER_LANDING_BRAND_GAP_PX,
                   linkColumns: useDefaults
                     ? DEFAULT_FOOTER_LINK_COLUMNS.map((col) => ({
                         ...col,
@@ -1230,7 +1277,7 @@ export function FooterSettingsPanel({
           </div>
           ) : null}
 
-          {footer.design === 'landing' ? (
+          {footer.design === 'landing' || footer.design === 'contact-card' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
@@ -1240,8 +1287,9 @@ export function FooterSettingsPanel({
                   <p className="mt-1 text-sm text-neutral-500">
                     Two columns by default: <span className="font-semibold text-neutral-700">Contact</span>{' '}
                     (email, phone, …) and{' '}
-                    <span className="font-semibold text-neutral-700">Links</span> (Marketplace,
-                    NoProbleme profile, Services, Work).
+                    <span className="font-semibold text-neutral-700">Links</span> (Gallery, About us,
+                    Team, Services, Work when those sections are on). Marketplace and NoProbleme
+                    profile stay off by default.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -1279,6 +1327,18 @@ export function FooterSettingsPanel({
                   </button>
                 </div>
               </div>
+              <FooterToggleRow
+                label="Marketplace link"
+                description="Adds “Marketplace” in the Links column. Hidden by default."
+                checked={footer.showMarketplaceColumnLink === true}
+                onChange={(showMarketplaceColumnLink) => onChange({ showMarketplaceColumnLink })}
+              />
+              <FooterToggleRow
+                label="NoProbleme profile link"
+                description="Adds “NoProbleme profile” in the Links column. Hidden by default."
+                checked={footer.showNopbProfileLink === true}
+                onChange={(showNopbProfileLink) => onChange({ showNopbProfileLink })}
+              />
 
               {(footer.linkColumns ?? []).map((column, columnIndex) => (
                 <div
@@ -1530,6 +1590,11 @@ export function FooterSettingsPanel({
             </p>
           ) : null}
 
+          <p className="rounded-2xl border border-neutral-200/80 bg-white px-4 py-3 text-sm text-neutral-600">
+            Police du footer : <span className="font-semibold text-neutral-900">Global → Police principale</span>
+            {' '}(Geist, Aeonik…). Pas de serif / display propre au footer.
+          </p>
+
           <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icons</p>
@@ -1570,6 +1635,7 @@ export function FooterSettingsPanel({
             activeTarget={styleTarget}
             onTargetChange={(value) => setStyleTarget(value as PortfolioFooterStyleTarget)}
             style={elementStyles[styleTarget]}
+            hideFontPicker
             showDarkColor={footer.useHeroPalette === false}
             onStyleChange={(patch) => {
               const nextStyles = patchFooterElementStyle(elementStyles, styleTarget, patch, footer);

@@ -25,6 +25,7 @@ import type { PortfolioWorkPresentationSettings } from '@/components/portfolio/p
 import { applyWorkPaletteToSettings } from '@/components/portfolio/portfolio-work-palette-settings';
 import type { PortfolioTeamPresentationSettings } from '@/components/portfolio/portfolio-team-settings';
 import { applyTeamPaletteToSettings } from '@/components/portfolio/portfolio-team-palette-settings';
+import type { PortfolioAboutUsPresentationSettings } from '@/components/portfolio/portfolio-about-us-settings';
 
 /**
  * Per-section flag: when true, the section’s colors follow the Hero semantic
@@ -198,6 +199,34 @@ export function applyHeroPaletteToTeam(
     ...presentation,
     ...(applyTeamPaletteToSettings({ ...presentation, teamPalette }) as Partial<PortfolioTeamPresentationSettings>),
     teamPalette,
+    useHeroPalette: true,
+  };
+}
+
+export function applyHeroPaletteToAboutUs(
+  presentation: PortfolioAboutUsPresentationSettings,
+  palette: PortfolioHeroPalette
+): PortfolioAboutUsPresentationSettings {
+  if (presentation.useHeroPalette === false) return presentation;
+  const color = (token: HeroPaletteTokenId) => resolveHeroPaletteColor(palette, token);
+  return {
+    ...presentation,
+    sectionBackgroundColor: color('fond'),
+    sectionBackgroundGradientFrom: color('fond'),
+    sectionBackgroundGradientTo: color('neutre'),
+    sectionBackgroundColorA: color('fond'),
+    sectionBackgroundColorB: color('neutre'),
+    sectionBackgroundDividerColor: color('bordure'),
+    titleColor: color('texteFort'),
+    subtitleColor: color('texteMuted'),
+    descriptionColor: color('texteMuted'),
+    quoteColor: color('texteFort'),
+    taskColor: color('texteMuted'),
+    founderNameColor: color('texteFort'),
+    founderFunctionColor: color('texteMuted'),
+    accentColor: color('principal'),
+    cardBackgroundColor: color('neutre'),
+    cardBorderColor: color('bordure'),
     useHeroPalette: true,
   };
 }

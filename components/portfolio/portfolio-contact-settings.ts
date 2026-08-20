@@ -21,6 +21,7 @@ import {
 import {
   DEFAULT_SECTION_BACKGROUND,
   mergeSectionBackground,
+  sectionBackgroundBlockColor,
   type PortfolioSectionBackgroundSettings,
 } from '@/components/portfolio/portfolio-section-background-settings';
 import type { PortfolioSectionCopy } from '@/components/portfolio/portfolio-settings-types';
@@ -148,7 +149,8 @@ export type PortfolioContactCardDesign =
   | 'inquiry'
   | 'inquiry-panel'
   | 'desk'
-  | 'info-panel';
+  | 'info-panel'
+  | 'channel-cards';
 
 /** Either Inquiry layout (illustration or panel). */
 export function isContactInquiryFamily(
@@ -173,6 +175,12 @@ export function isContactInfoPanelDesign(
   design: PortfolioContactCardDesign | undefined
 ): boolean {
   return design === 'info-panel';
+}
+
+export function isContactChannelCardsDesign(
+  design: PortfolioContactCardDesign | undefined
+): boolean {
+  return design === 'channel-cards';
 }
 
 /** Layouts that own their chrome and lock the contact form on. */
@@ -207,6 +215,8 @@ export type PortfolioContactIconRadius = 'md' | 'lg' | 'xl' | 'full';
 export type PortfolioContactIconBorder = 'none' | 'soft' | 'solid';
 
 export type PortfolioContactItemGap = 'none' | 'sm' | 'md' | 'lg';
+
+export type PortfolioContactChannelCardsBorder = 'none' | 'thin' | 'medium';
 
 export type PortfolioContactFormPlacement = 'side' | 'below';
 
@@ -369,6 +379,9 @@ export type PortfolioContactPresentationSettings = PortfolioSectionBackgroundSet
   formBorder: PortfolioServicesCardBorder;
   /** Border color when formBorder is soft or solid. */
   formBorderColor: string;
+  /** Solid fill behind the message form (off = same as section background). */
+  formBackgroundEnabled: boolean;
+  formBackgroundColor: string;
   /** Drop shadow / lift halo around the message form container. */
   formShadow: PortfolioContactFormShadow;
   /** 0–100 — scales formShadow blur strength. */
@@ -393,6 +406,11 @@ export type PortfolioContactPresentationSettings = PortfolioSectionBackgroundSet
    * Info panel only — left column supporting paragraph.
    */
   infoPanelSupporting: string;
+  /** Contact cards only — fill on Phone / Email / Address tiles. */
+  channelCardsBackgroundEnabled: boolean;
+  channelCardsBackgroundColor: string;
+  channelCardsBorder: PortfolioContactChannelCardsBorder;
+  channelCardsBorderColor: string;
   /** When true, section colors follow the Hero semantic palette. */
   useHeroPalette: boolean;
   /** Which Global palette token paints each Contact color slot (when palette is on). */
@@ -464,6 +482,8 @@ export const DEFAULT_CONTACT_PRESENTATION: PortfolioContactPresentationSettings 
   formStackGap: 'lg',
   formBorder: 'soft',
   formBorderColor: DEFAULT_CONTACT_CARD_BORDER_COLOR,
+  formBackgroundEnabled: false,
+  formBackgroundColor: DEFAULT_CONTACT_CARD_BACKGROUND_COLOR,
   formShadow: 'float',
   formShadowIntensity: 55,
   inquiryHeadline: 'Start your project today!',
@@ -473,6 +493,10 @@ export const DEFAULT_CONTACT_PRESENTATION: PortfolioContactPresentationSettings 
   infoPanelHeadline: 'Contact Information',
   infoPanelSupporting:
     'Reach out with a short brief — I typically reply within one business day.',
+  channelCardsBackgroundEnabled: true,
+  channelCardsBackgroundColor: DEFAULT_CONTACT_CARD_BACKGROUND_COLOR,
+  channelCardsBorder: 'thin',
+  channelCardsBorderColor: DEFAULT_CONTACT_CARD_BORDER_COLOR,
   useHeroPalette: false,
   contactColorBindings: { ...DEFAULT_CONTACT_COLOR_BINDINGS },
   elementStyles: DEFAULT_CONTACT_ELEMENT_STYLES,
@@ -625,9 +649,9 @@ export function contactSectionLayoutIsAside(
 /** Two-column shell for title + contact content (large screens). */
 export function contactAsideLayoutClass(layout: PortfolioContactSectionLayout): string {
   if (layout === 'aside-right') {
-    return 'grid w-full gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(14rem,0.85fr)] lg:items-start lg:gap-x-12 xl:gap-x-16';
+    return 'grid w-full gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(14rem,0.85fr)] lg:items-stretch lg:gap-x-12 xl:gap-x-16';
   }
-  return 'grid w-full gap-10 lg:grid-cols-[minmax(14rem,0.85fr)_minmax(0,1.15fr)] lg:items-start lg:gap-x-12 xl:gap-x-16';
+  return 'grid w-full gap-10 lg:grid-cols-[minmax(14rem,0.85fr)_minmax(0,1.15fr)] lg:items-stretch lg:gap-x-12 xl:gap-x-16';
 }
 
 export const PORTFOLIO_CONTACT_ILLUSTRATION_OPTIONS: {
@@ -715,6 +739,11 @@ export const PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS: {
     value: 'info-panel',
     label: 'Info panel',
     description: 'Contact details left, accent form card right — framed shell.',
+  },
+  {
+    value: 'channel-cards',
+    label: 'Contact cards',
+    description: 'Centered heading with Phone, Email and Address cards in a row.',
   },
 ];
 
@@ -877,20 +906,30 @@ function sanitizeHex(value: unknown, fallback: string): string {
   return fallback;
 }
 
+export function contactDesignUsesTitleCaseHeading(
+  design: PortfolioContactCardDesign | undefined
+): boolean {
+  return design === 'channel-cards' || design === 'inquiry' || design === 'inquiry-panel';
+}
+
 export function resolveContactSectionTitle(
-  settings: Pick<PortfolioContactSectionSettings, 'titlePreset' | 'titleCustom' | 'title'>
+  settings: Pick<
+    PortfolioContactSectionSettings,
+    'titlePreset' | 'titleCustom' | 'title' | 'cardDesign'
+  >
 ): string {
+  const titleCase = contactDesignUsesTitleCaseHeading(settings.cardDesign);
   switch (settings.titlePreset) {
     case 'get-in-touch':
-      return 'GET IN TOUCH';
+      return titleCase ? 'Get in touch' : 'GET IN TOUCH';
     case 'lets-talk':
-      return "LET'S TALK";
+      return titleCase ? "Let's talk" : "LET'S TALK";
     case 'start-a-project':
-      return 'START A PROJECT';
+      return titleCase ? 'Start a project' : 'START A PROJECT';
     case 'custom':
-      return settings.titleCustom.trim() || settings.title.trim() || 'CONTACT';
+      return settings.titleCustom.trim() || settings.title.trim() || (titleCase ? 'Contact' : 'CONTACT');
     default:
-      return 'CONTACT';
+      return titleCase ? 'Contact' : 'CONTACT';
   }
 }
 
@@ -964,6 +1003,7 @@ export function contactCardShellClass(design: PortfolioContactCardDesign): strin
     case 'inquiry-panel':
     case 'desk':
     case 'info-panel':
+    case 'channel-cards':
       return 'overflow-visible bg-transparent !border-0 !shadow-none !p-0';
     case 'directory':
       return 'overflow-hidden';
@@ -1000,6 +1040,7 @@ export function contactCardFrameClass(p: PortfolioContactPresentationSettings): 
   if (
     p.cardDesign === 'stacked' ||
     p.cardDesign === 'tiles' ||
+    p.cardDesign === 'channel-cards' ||
     isContactOwnedLayoutDesign(p.cardDesign)
   ) {
     const parts = [servicesCardRadiusClass(p.cardBorderRadius)];
@@ -1019,7 +1060,7 @@ export function contactCardFrameClass(p: PortfolioContactPresentationSettings): 
 
 export function contactCardFrameStyle(p: PortfolioContactPresentationSettings): CSSProperties {
   const style: CSSProperties = {};
-  if (p.cardDesign === 'stacked' || isContactOwnedLayoutDesign(p.cardDesign)) return style;
+  if (p.cardDesign === 'stacked' || p.cardDesign === 'channel-cards' || isContactOwnedLayoutDesign(p.cardDesign)) return style;
 
   if (p.cardBackgroundFill === 'solid' && p.cardBackgroundEnabled) {
     style.backgroundColor = sanitizeHex(p.cardBackgroundColor, DEFAULT_CONTACT_CARD_BACKGROUND_COLOR);
@@ -1043,12 +1084,18 @@ export function contactChromeCssVars(p: PortfolioContactPresentationSettings): C
   const ink = sanitizeHex(p.titleColor, DEFAULT_CONTACT_TITLE_COLOR);
   const muted = sanitizeHex(p.subtitleColor, DEFAULT_CONTACT_SUBTITLE_COLOR);
   const surface = sanitizeHex(p.cardBackgroundColor, DEFAULT_CONTACT_CARD_BACKGROUND_COLOR);
+  const page = sectionBackgroundBlockColor(p);
+  const formFill = p.formBackgroundEnabled
+    ? sanitizeHex(p.formBackgroundColor || p.cardBackgroundColor, DEFAULT_CONTACT_CARD_BACKGROUND_COLOR)
+    : page;
   return {
     ['--contact-border' as string]: border,
     ['--contact-accent' as string]: accent,
     ['--contact-ink' as string]: ink,
     ['--contact-muted' as string]: muted,
     ['--contact-surface' as string]: surface,
+    ['--contact-page' as string]: page,
+    ['--contact-form-fill' as string]: formFill,
     ['--contact-hover-fill' as string]: `color-mix(in srgb, ${accent} 10%, transparent)`,
     ['--contact-accent-soft' as string]: `color-mix(in srgb, ${accent} 14%, transparent)`,
   };
@@ -1101,6 +1148,8 @@ export function contactItemsLayoutClass(
     case 'desk':
     case 'info-panel':
       return `flex flex-col ${gapClass}`;
+    case 'channel-cards':
+      return `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${gapClass}`;
     default:
       // Editorial
       return itemGap === 'none'
@@ -1123,6 +1172,9 @@ export function contactItemRowShellClass(
 
   if (design === 'tiles') {
     return `rounded-[1.25rem] border border-[color:var(--contact-border,#e5e5e5)] bg-transparent ${pad} transition hover:border-[color:var(--contact-accent,#ea580c)]`;
+  }
+  if (design === 'channel-cards') {
+    return `flex h-full min-h-[14rem] flex-col items-center justify-center rounded-2xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-surface,#ffffff)] px-6 py-10 text-center transition hover:border-[color:var(--contact-accent,#ea580c)]`;
   }
   if (design === 'stacked') {
     return `rounded-[1.35rem] border border-[color:var(--contact-border,#e5e5e5)] bg-transparent ${pad} transition hover:border-[color:var(--contact-accent,#ea580c)]`;
@@ -1359,12 +1411,12 @@ function contactFormBorderStyle(
     'formBorder' | 'formBorderColor' | 'ctaColor'
   >
 ): CSSProperties {
-  const style: CSSProperties = {};
+  const style: CSSProperties = {
+    borderStyle: 'solid',
+  };
   if (p.formBorder === 'accent') {
     style.borderColor = sanitizeHex(p.ctaColor, DEFAULT_CONTACT_CTA_COLOR);
-    style.borderStyle = 'solid';
-  } else if (p.formBorder === 'soft' || p.formBorder === 'solid') {
-    style.borderStyle = 'solid';
+  } else {
     style.borderColor = sanitizeHex(p.formBorderColor, DEFAULT_CONTACT_CARD_BORDER_COLOR);
   }
   return style;
@@ -1372,41 +1424,14 @@ function contactFormBorderStyle(
 
 function contactFormFramePaddingClass(
   p: Pick<PortfolioContactPresentationSettings, 'cardPadding' | 'cardDesign' | 'formDesign'>,
-  variant: 'default' | 'info-panel' = 'default'
+  _variant: 'default' | 'info-panel' = 'default'
 ): string {
   const pad = p.cardPadding ?? 'md';
-  const formDesign = resolveContactFormDesign(p);
-  if (variant === 'info-panel' || formDesign === 'info-panel') {
-    return pad === 'lg'
-      ? 'p-7 sm:p-9 lg:p-10'
-      : pad === 'sm'
-        ? 'p-5 sm:p-6'
-        : pad === 'none'
-          ? 'p-5 sm:p-6'
-          : 'p-6 sm:p-8 lg:p-9';
-  }
-  if (formDesign === 'desk' || p.cardDesign === 'desk') {
-    return pad === 'lg'
-      ? 'p-6 sm:p-8 lg:p-9'
-      : pad === 'sm'
-        ? 'p-4 sm:p-5'
-        : pad === 'none'
-          ? 'p-4 sm:p-5'
-          : 'p-5 sm:p-7 lg:p-8';
-  }
-  if (
-    formDesign !== 'classic' ||
-    isContactOwnedLayoutDesign(p.cardDesign)
-  ) {
-    return pad === 'lg'
-      ? 'p-7 sm:p-9'
-      : pad === 'sm'
-        ? 'p-5 sm:p-6'
-        : pad === 'none'
-          ? 'p-5 sm:p-6'
-          : 'p-6 sm:p-8';
-  }
-  return servicesCardPaddingClass(pad);
+  // Shared inset for every form design (classic, inquiry, stepped, desk, info-panel, …).
+  if (pad === 'lg') return 'px-7 py-5 sm:px-9 sm:py-6';
+  if (pad === 'sm') return 'px-5 py-3 sm:px-6 sm:py-3.5';
+  if (pad === 'none') return 'px-5 py-3';
+  return 'px-6 py-4 sm:px-8 sm:py-5';
 }
 
 function contactInfoPanelFormRadiusClass(radius: PortfolioServicesCardRadius = 'md'): string {
@@ -1426,25 +1451,16 @@ function contactInfoPanelFormRadiusClass(radius: PortfolioServicesCardRadius = '
 
 /** Shared outer shell for every contact message form design. */
 export function contactFormFrameClass(p: PortfolioContactPresentationSettings): string {
-  const owned = isContactOwnedLayoutDesign(p.cardDesign);
   const parts = [
     'relative z-[1] overflow-hidden',
     servicesCardRadiusClass(p.cardBorderRadius),
     contactFormFramePaddingClass(p),
   ];
 
-  if (p.formBorder !== 'none') {
-    parts.push(contactFormBorderWidthClass(p.formBorder));
-    if (owned) {
-      parts.push('border-[color:var(--contact-border,#e5e5e5)]');
-    }
-  } else {
-    parts.push('border-0');
-  }
-
-  if (owned || (p.cardBackgroundFill === 'solid' && p.cardBackgroundEnabled)) {
-    parts.push('bg-[color:var(--contact-surface,#ffffff)]');
-  }
+  const formBorder = p.formBorder === 'none' ? 'soft' : p.formBorder;
+  parts.push(contactFormBorderWidthClass(formBorder));
+  parts.push('border-solid border-[color:var(--contact-border,#e5e5e5)]');
+  parts.push('bg-[color:var(--contact-form-fill,var(--contact-page,#ffffff))]');
 
   if (contactFormShadowIntensityValue(p) > 0) {
     parts.push('pf-work-card-lift');
@@ -1454,15 +1470,16 @@ export function contactFormFrameClass(p: PortfolioContactPresentationSettings): 
 }
 
 export function contactFormFrameStyle(p: PortfolioContactPresentationSettings): CSSProperties {
-  const owned = isContactOwnedLayoutDesign(p.cardDesign);
   const style: CSSProperties = {
     ...contactFormBorderStyle(p),
     ...contactFormLiftStyle(p),
+    backgroundColor: p.formBackgroundEnabled
+      ? sanitizeHex(
+          p.formBackgroundColor || p.cardBackgroundColor,
+          DEFAULT_CONTACT_CARD_BACKGROUND_COLOR
+        )
+      : sectionBackgroundBlockColor(p),
   };
-
-  if (!owned && p.cardBackgroundFill === 'solid' && p.cardBackgroundEnabled) {
-    style.backgroundColor = sanitizeHex(p.cardBackgroundColor, DEFAULT_CONTACT_CARD_BACKGROUND_COLOR);
-  }
 
   return style;
 }
@@ -1506,6 +1523,65 @@ export function contactInquiryAccentBlockClass(): string {
 /** Compact email / phone chips under Inquiry copy. */
 export function contactInquiryChannelCardClass(): string {
   return 'flex items-center gap-3 rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-surface,#ffffff)] px-3.5 py-3';
+}
+
+/** Inquiry panel — stacked Phone / Email cards beside the form. */
+export function contactInquiryPanelStatCardClass(): string {
+  return 'flex h-full min-h-[11rem] w-full flex-col items-center justify-center rounded-2xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-page,#ffffff)] px-5 py-7 text-center transition hover:border-[color:var(--contact-accent,#ea580c)]';
+}
+
+export const PORTFOLIO_CONTACT_CHANNEL_CARDS_BORDER_OPTIONS: {
+  value: PortfolioContactChannelCardsBorder;
+  label: string;
+}[] = [
+  { value: 'none', label: 'Aucune' },
+  { value: 'thin', label: 'Fine' },
+  { value: 'medium', label: 'Moyenne' },
+];
+
+/** Contact cards — centered Phone / Email / Address tiles. */
+export function contactChannelCardsCardClass(
+  p: Pick<PortfolioContactPresentationSettings, 'channelCardsBorder' | 'cardBorderRadius'>
+): string {
+  const border = p.channelCardsBorder ?? 'thin';
+  const borderWidth = border === 'none' ? 'border-0' : border === 'medium' ? 'border-2' : 'border';
+  const hover =
+    border === 'none' ? '' : 'hover:border-[color:var(--contact-accent,#ea580c)]';
+  return [
+    'flex h-full min-h-[14.5rem] w-full flex-col items-center justify-center',
+    servicesCardRadiusClass(p.cardBorderRadius),
+    borderWidth,
+    'border-solid px-6 py-10 text-center transition',
+    hover,
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+export function contactChannelCardsCardStyle(
+  p: Pick<
+    PortfolioContactPresentationSettings,
+    | 'channelCardsBackgroundEnabled'
+    | 'channelCardsBackgroundColor'
+    | 'channelCardsBorder'
+    | 'channelCardsBorderColor'
+  >
+): CSSProperties {
+  const fillOn = p.channelCardsBackgroundEnabled !== false;
+  const border = p.channelCardsBorder ?? 'thin';
+  return {
+    backgroundColor: fillOn
+      ? sanitizeHex(p.channelCardsBackgroundColor, DEFAULT_CONTACT_CARD_BACKGROUND_COLOR)
+      : 'transparent',
+    borderColor:
+      border === 'none'
+        ? 'transparent'
+        : sanitizeHex(p.channelCardsBorderColor, DEFAULT_CONTACT_CARD_BORDER_COLOR),
+  };
+}
+
+export function contactChannelCardsIconClass(): string {
+  return 'flex h-16 w-16 items-center justify-center rounded-full bg-[color:color-mix(in_srgb,var(--contact-ink,#0a0a0a)_7%,transparent)] text-[color:var(--contact-accent,#ea580c)]';
 }
 
 /** Desk — top channel info cards. */
@@ -1649,26 +1725,28 @@ export function resolveContactInquirySupporting(
   return custom || fallbackSubtitle;
 }
 
-/** Inner padding for the message form — mirrors Frame `cardPadding` so list + form stay aligned. */
+/** Inner padding for the message form — same left/right inset on every form design. */
 export function contactFormContentPaddingClass(
   cardPadding: PortfolioServicesCardPadding = 'md',
   design: PortfolioContactCardDesign = 'editorial',
   formDesign?: PortfolioContactFormDesign
 ): string {
   const resolvedForm = resolveContactFormDesign({ formDesign, cardDesign: design });
-  // Non-classic form chrome pads itself (panel / brief / stepper / underline / etc.).
-  if (resolvedForm !== 'classic') return '';
-  // Owned section layouts historically kept fields flush; classic form still gets a light inset.
-  if (isContactOwnedLayoutDesign(design) || design === 'tiles' || design === 'stacked') {
-    const scale = cardPadding === 'none' ? 'sm' : cardPadding;
-    return scale === 'lg'
-      ? 'px-5 py-5 sm:px-6 sm:py-6'
-      : scale === 'sm'
-        ? 'px-3 py-3.5 sm:px-4 sm:py-4'
-        : 'px-4 py-4 sm:px-5 sm:py-5';
+  const scale = cardPadding === 'none' ? 'sm' : cardPadding;
+  const sides =
+    scale === 'lg' ? 'px-2 sm:px-3' : scale === 'sm' ? 'px-1.5 sm:px-2' : 'px-2 sm:px-2.5';
+
+  if (resolvedForm !== 'classic') {
+    return sides;
   }
-  // Editorial / directory — Frame already pads the shell; form only needs vertical rhythm.
-  return 'py-1';
+  if (isContactOwnedLayoutDesign(design) || design === 'tiles' || design === 'stacked') {
+    return scale === 'lg'
+      ? `${sides} py-5 sm:py-6`
+      : scale === 'sm'
+        ? `${sides} py-3.5 sm:py-4`
+        : `${sides} py-4 sm:py-5`;
+  }
+  return `${sides} py-1`;
 }
 
 export function contactCtaClassName(design: PortfolioContactCtaDesign): string {
@@ -1720,7 +1798,8 @@ function migrateContactCardDesign(value: unknown): PortfolioContactCardDesign | 
     value === 'inquiry' ||
     value === 'inquiry-panel' ||
     value === 'desk' ||
-    value === 'info-panel'
+    value === 'info-panel' ||
+    value === 'channel-cards'
   ) {
     return value;
   }
@@ -1873,6 +1952,16 @@ export function mergeContactPresentation(
         ? base.formBorderColor
         : sanitizeHex(record.cardBorderColor, base.formBorderColor)
     ),
+    formBackgroundEnabled:
+      typeof record.formBackgroundEnabled === 'boolean'
+        ? record.formBackgroundEnabled
+        : (base.formBackgroundEnabled ?? false),
+    formBackgroundColor: sanitizeHex(
+      record.formBackgroundColor,
+      record.formBackgroundColor !== undefined
+        ? base.formBackgroundColor
+        : sanitizeHex(record.cardBackgroundColor, base.formBackgroundColor)
+    ),
     formShadow: (() => {
       const shadow = record.formShadow;
       if (
@@ -1937,6 +2026,23 @@ export function mergeContactPresentation(
       typeof record.infoPanelSupporting === 'string'
         ? record.infoPanelSupporting
         : (base.infoPanelSupporting ?? DEFAULT_CONTACT_PRESENTATION.infoPanelSupporting),
+    channelCardsBackgroundEnabled:
+      typeof record.channelCardsBackgroundEnabled === 'boolean'
+        ? record.channelCardsBackgroundEnabled
+        : (base.channelCardsBackgroundEnabled ?? true),
+    channelCardsBackgroundColor: sanitizeHex(
+      record.channelCardsBackgroundColor,
+      base.channelCardsBackgroundColor ?? DEFAULT_CONTACT_CARD_BACKGROUND_COLOR
+    ),
+    channelCardsBorder: pick(
+      record.channelCardsBorder,
+      ['none', 'thin', 'medium'],
+      base.channelCardsBorder ?? 'thin'
+    ),
+    channelCardsBorderColor: sanitizeHex(
+      record.channelCardsBorderColor,
+      base.channelCardsBorderColor ?? DEFAULT_CONTACT_CARD_BORDER_COLOR
+    ),
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     contactColorBindings: mergeContactColorBindings(
       mergeContactColorBindings(DEFAULT_CONTACT_COLOR_BINDINGS, base.contactColorBindings),

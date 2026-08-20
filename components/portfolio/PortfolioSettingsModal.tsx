@@ -152,6 +152,10 @@ import {
   type AboutSubSection,
 } from '@/components/portfolio/portfolio-about-settings-panel';
 import {
+  AboutUsSettingsPanel,
+  type AboutUsSubSection,
+} from '@/components/portfolio/portfolio-about-us-settings-panel';
+import {
   ExperienceSettingsPanel,
   normalizeExperienceSubSection,
   type ExperienceSubSection,
@@ -174,6 +178,7 @@ import {
   type FooterSubSection,
 } from '@/components/portfolio/portfolio-footer-settings-panel';
 import { PORTFOLIO_UPGRADE_PATH } from '@/components/portfolio/portfolio-pricing-upgrade-panel';
+import { portfolioPresenceShowsAboutUs } from '@/components/portfolio/portfolio-presence';
 import {
   GLOBAL_SETTINGS_SUB_SECTIONS,
   GlobalSettingsGuideMockup,
@@ -299,6 +304,7 @@ type PanelSubSections = {
   skills?: ServicesSubSection;
   services?: ServicesSubSection;
   about?: AboutSubSection;
+  aboutUs?: AboutUsSubSection;
   experience?: ExperienceSubSection;
   team?: TeamSubSection;
   gallery?: GallerySettingsSubSection;
@@ -5748,6 +5754,17 @@ function SectionPanel({
     );
   }
 
+  if (sectionId === 'aboutUs') {
+    return (
+      <AboutUsSettingsPanel
+        aboutUs={settings.aboutUs}
+        onChange={(patch) => onChange('aboutUs', patch)}
+        subSection={panelSubSections.aboutUs ?? 'general'}
+        onSubSectionChange={(value) => onPanelSubSectionChange('aboutUs', value)}
+      />
+    );
+  }
+
   if (sectionId === 'experience') {
     return (
       <ExperienceSettingsPanel
@@ -5997,6 +6014,11 @@ export function PortfolioSettingsModal({
       }));
     } else if (entry.sectionId === 'about') {
       setPanelSubSections((prev) => ({ ...prev, about: normalizeAboutSubSection(entry.subSection) }));
+    } else if (entry.sectionId === 'aboutUs') {
+      setPanelSubSections((prev) => ({
+        ...prev,
+        aboutUs: (entry.subSection as AboutUsSubSection) ?? 'general',
+      }));
     } else if (entry.sectionId === 'experience') {
       setPanelSubSections((prev) => ({
         ...prev,
@@ -6010,6 +6032,15 @@ export function PortfolioSettingsModal({
       setPanelSubSections((prev) => ({ ...prev, footer: entry.subSection as FooterSubSection }));
     }
   }, []);
+
+  const visibleSettingsSections = useMemo(
+    () =>
+      PORTFOLIO_SETTINGS_SECTIONS.filter(
+        (section) =>
+          section.id !== 'aboutUs' || portfolioPresenceShowsAboutUs(settings.global.presenceKind)
+      ),
+    [settings.global.presenceKind]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -6033,7 +6064,8 @@ export function PortfolioSettingsModal({
   if (!open || !mounted) return null;
 
   const activeMeta =
-    PORTFOLIO_SETTINGS_SECTIONS.find((section) => section.id === activeSection) ??
+    visibleSettingsSections.find((section) => section.id === activeSection) ??
+    visibleSettingsSections[0] ??
     PORTFOLIO_SETTINGS_SECTIONS[0];
 
   const previewMode = panelOpacity < 98;
@@ -6189,7 +6221,7 @@ export function PortfolioSettingsModal({
             aria-label="Portfolio sections"
           >
             <ul className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto sm:max-h-48 sm:grid-cols-3 lg:flex lg:max-h-none lg:flex-col lg:overflow-visible">
-              {PORTFOLIO_SETTINGS_SECTIONS.map((section) => {
+              {visibleSettingsSections.map((section) => {
                 const active = section.id === activeSection;
                 return (
                   <li key={section.id} className="lg:w-full">

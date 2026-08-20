@@ -45,6 +45,11 @@ import {
   type PortfolioTeamSectionSettings,
 } from '@/components/portfolio/portfolio-team-settings';
 import {
+  DEFAULT_ABOUT_US_PRESENTATION,
+  mergeAboutUsPresentation,
+  type PortfolioAboutUsSectionSettings,
+} from '@/components/portfolio/portfolio-about-us-settings';
+import {
   DEFAULT_GALLERY_PRESENTATION,
   mergeGalleryPresentation,
   migrateLegacyGalleryCopy,
@@ -99,6 +104,7 @@ export type PortfolioSettingsSectionId =
   | 'skills'
   | 'services'
   | 'about'
+  | 'aboutUs'
   | 'experience'
   | 'team'
   | 'gallery'
@@ -757,7 +763,7 @@ export type PortfolioAboutSectionSettings = PortfolioSectionCopy & PortfolioAbou
 
 export type PortfolioWorkSectionSettings = PortfolioSectionCopy & PortfolioWorkPresentationSettings;
 
-export type { PortfolioServicesSectionSettings, PortfolioFaqSectionSettings, PortfolioContactSectionSettings, PortfolioExperienceSectionSettings, PortfolioTeamSectionSettings, PortfolioGallerySectionSettings };
+export type { PortfolioServicesSectionSettings, PortfolioFaqSectionSettings, PortfolioContactSectionSettings, PortfolioExperienceSectionSettings, PortfolioTeamSectionSettings, PortfolioGallerySectionSettings, PortfolioAboutUsSectionSettings };
 
 export type { PortfolioGlobalSettings };
 
@@ -773,6 +779,7 @@ export type PortfolioSettings = {
   work: PortfolioWorkSectionSettings;
   services: PortfolioServicesSectionSettings;
   about: PortfolioAboutSectionSettings;
+  aboutUs: PortfolioAboutUsSectionSettings;
   experience: PortfolioExperienceSectionSettings;
   team: PortfolioTeamSectionSettings;
   gallery: PortfolioGallerySectionSettings;
@@ -834,6 +841,11 @@ export const PORTFOLIO_SETTINGS_SECTIONS: PortfolioSettingsSectionMeta[] = [
     description: 'Stats, why work with me, and profile details.',
   },
   {
+    id: 'aboutUs',
+    label: 'About us',
+    description: 'Company story, tasks, images, quote, and founder.',
+  },
+  {
     id: 'experience',
     label: 'Experience',
     description: 'Career timeline, years summary, and role entries.',
@@ -889,7 +901,7 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       menuHandleIconColor: '#171717',
       menuHandleBorderColor: '#d4d4d4',
       menuHandleBorderEnabled: true,
-      labelCase: 'uppercase',
+      labelCase: 'normal',
       barWidth: 'hug',
       barThickness: 'md',
       barPadding: 'md',
@@ -1000,6 +1012,12 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       title: 'About',
       subtitle: 'Strengths, background, and the practical details behind how I work.',
       ...DEFAULT_ABOUT_PRESENTATION,
+    },
+    aboutUs: {
+      enabled: true,
+      title: 'About us',
+      subtitle: 'Who we are, what we do, and the people behind the work.',
+      ...DEFAULT_ABOUT_US_PRESENTATION,
     },
     experience: {
       enabled: true,
@@ -1604,6 +1622,7 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
             services: true,
             skills: true,
             about: true,
+            aboutUs: true,
             experience: true,
             team: true,
             gallery: true,
@@ -1663,6 +1682,10 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
     about: {
       ...mergeSectionCopy(defaults.about, stored.about),
       ...mergeAboutPresentation(defaults.about, stored.about),
+    },
+    aboutUs: {
+      ...mergeSectionCopy(defaults.aboutUs, stored.aboutUs),
+      ...mergeAboutUsPresentation(defaults.aboutUs, stored.aboutUs),
     },
     experience: (() => {
       if (isRecord(stored.experience)) {

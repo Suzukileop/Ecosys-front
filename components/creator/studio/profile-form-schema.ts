@@ -304,6 +304,19 @@ export const galleryItemSchema = z
     }
   });
 
+export const aboutUsSchema = z.object({
+  title: z.string().max(150),
+  description: z.string().max(4000),
+  tasks: z.array(z.string().max(200)).max(12),
+  imageUrls: z.tuple([z.string(), z.string()]),
+  quote: z.string().max(500),
+  founder: z.object({
+    logoUrl: z.string(),
+    name: z.string().max(100),
+    function: z.string().max(120),
+  }),
+});
+
 export const subtitleItemSchema = z.object({
   value: z.string().max(500),
 });
@@ -472,6 +485,7 @@ export const profileSchema = z
     faqItems: z.array(faqItemSchema).max(8),
     teamMembers: z.array(teamMemberSchema).max(12),
     galleryItems: z.array(galleryItemSchema).max(24),
+    aboutUs: aboutUsSchema,
     whyMeBlocks: z.array(profileMediaBlockSchema).max(50),
     experienceBlocks: z.array(profileMediaBlockSchema).max(50),
     yearsOfExperience: z.number().int().min(0).max(80).nullable().optional(),
@@ -544,6 +558,7 @@ export function profileErrorPathToSection(path: string): ProfileSectionIdForErro
   if (path.startsWith('faqItems')) return 'faq';
   if (path.startsWith('teamMembers')) return 'team';
   if (path.startsWith('galleryItems')) return 'gallery';
+  if (path.startsWith('aboutUs')) return 'aboutUs';
   if (path.startsWith('profileLinks')) return 'links';
   if (path.startsWith('serviceOffers')) return 'services';
   if (path.startsWith('whyMeBlocks')) return 'whyMe';
@@ -571,6 +586,7 @@ export function profileErrorPathToSection(path: string): ProfileSectionIdForErro
 
 export type ProfileSectionIdForErrors =
   | 'about'
+  | 'aboutUs'
   | 'myRole'
   | 'whyMe'
   | 'experience'
@@ -618,6 +634,18 @@ export type ContactEntryForm = z.infer<typeof contactEntrySchema>;
 export type TeamSocialLinkForm = z.infer<typeof teamSocialLinkSchema>;
 export type TeamMemberForm = z.infer<typeof teamMemberSchema>;
 export type GalleryItemForm = z.infer<typeof galleryItemSchema>;
+export type AboutUsForm = z.infer<typeof aboutUsSchema>;
+
+export function emptyAboutUsForm(): AboutUsForm {
+  return {
+    title: '',
+    description: '',
+    tasks: [],
+    imageUrls: ['', ''],
+    quote: '',
+    founder: { logoUrl: '', name: '', function: '' },
+  };
+}
 
 export function createEmptyProfileBlock(sortOrder: number): ProfileMediaBlockForm {
   return {
@@ -1034,6 +1062,58 @@ export function parseGalleryItems(raw: unknown): GalleryItemForm[] {
     });
   });
   return items.sort((a, b) => a.sortOrder - b.sortOrder).slice(0, 24);
+}
+
+export function parseAboutUs(raw: unknown): AboutUsForm {
+  const empty = emptyAboutUsForm();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return empty;
+  const record = raw as Record<string, unknown>;
+  const founderRaw =
+    record.founder && typeof record.founder === 'object' && !Array.isArray(record.founder)
+      ? (record.founder as Record<string, unknown>)
+      : {};
+  const imageUrls = Array.isArray(record.imageUrls)
+    ? record.imageUrls.map((item) => (item != null ? String(item) : '')).slice(0, 2)
+    : [];
+  const tasks = Array.isArray(record.tasks)
+    ? record.tasks
+        .map((item) => (item != null ? String(item) : ''))
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, 12)
+    : [];
+  return {
+    title: record.title != null ? String(record.title) : '',
+    description: record.description != null ? String(record.description) : '',
+    tasks,
+    imageUrls: [imageUrls[0] ?? '', imageUrls[1] ?? ''],
+    quote: record.quote != null ? String(record.quote) : '',
+    founder: {
+      logoUrl: founderRaw.logoUrl != null ? String(founderRaw.logoUrl) : '',
+      name: founderRaw.name != null ? String(founderRaw.name) : '',
+      function: founderRaw.function != null ? String(founderRaw.function) : '',
+    },
+  };
+}
+
+export function serializeAboutUs(value: AboutUsForm) {
+  const imageUrls = (value.imageUrls ?? [])
+    .map((url) => url.trim())
+    .filter(Boolean)
+    .slice(0, 2);
+  const founderLogo = value.founder.logoUrl.trim();
+  return {
+    title: value.title.trim(),
+    description: value.description.trim(),
+    tasks: (value.tasks ?? []).map((task) => task.trim()).filter(Boolean).slice(0, 12),
+    imageUrls,
+    quote: value.quote.trim(),
+    founder: {
+      logoUrl: founderLogo || null,
+      name: value.founder.name.trim(),
+      function: value.founder.function.trim(),
+    },
+  };
 }
 
 export function buildProfileLinksFromLegacy(p: {
@@ -1518,6 +1598,7 @@ function normalizeProfileComparable(values: ProfileFormValues, availabilityHours
     faqItems: serializeFaqItems(values.faqItems),
     teamMembers: serializeTeamMembers(values.teamMembers),
     galleryItems: serializeGalleryItems(values.galleryItems),
+    aboutUs: serializeAboutUs(values.aboutUs),
     whyMeBlocks: serializeProfileBlocks(values.whyMeBlocks),
     experienceBlocks: serializeProfileBlocks(values.experienceBlocks),
     yearsOfExperience: values.yearsOfExperience ?? null,

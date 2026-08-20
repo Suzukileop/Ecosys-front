@@ -3,6 +3,8 @@
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionHeroPaletteToggle } from '@/components/portfolio/SectionHeroPaletteToggle';
 import {
+  PORTFOLIO_TEAM_CARD_BORDER_OPTIONS,
+  PORTFOLIO_TEAM_GAP_OPTIONS,
   PORTFOLIO_TEAM_ILLUSTRATION_OPTIONS,
   PORTFOLIO_TEAM_ILLUSTRATION_PLACEMENT_OPTIONS,
   PORTFOLIO_TEAM_LAYOUT_OPTIONS,
@@ -10,6 +12,7 @@ import {
   PORTFOLIO_TEAM_SUBTITLE_PRESET_OPTIONS,
   PORTFOLIO_TEAM_TITLE_PRESET_OPTIONS,
   teamSectionLayoutIsAside,
+  type PortfolioTeamCardBorder,
   type PortfolioTeamSectionSettings,
 } from '@/components/portfolio/portfolio-team-settings';
 import {
@@ -19,6 +22,7 @@ import {
   mergeTeamColorBindings,
   mergeTeamPalette,
   patchTeamColorBinding,
+  patchTeamPaletteSlotColor,
   PORTFOLIO_TEAM_COLOR_SLOT_OPTIONS,
   type TeamColorSlot,
 } from '@/components/portfolio/portfolio-team-palette-settings';
@@ -166,7 +170,7 @@ export function TeamSettingsPanel({
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <SelectField label="Colonnes" value={team.columns} options={[1, 2, 3, 4].map((value) => ({ value: value as 1 | 2 | 3 | 4, label: String(value) }))} onChange={(columns) => onChange({ columns })} />
-            <SelectField label="Espacement" value={team.gap} options={['sm', 'md', 'lg', 'xl'].map((value) => ({ value: value as typeof team.gap, label: value.toUpperCase() }))} onChange={(gap) => onChange({ gap })} />
+            <SelectField label="Espacement" value={team.gap} options={PORTFOLIO_TEAM_GAP_OPTIONS} onChange={(gap) => onChange({ gap })} />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Toggle label="Afficher les noms" checked={team.showName} onChange={(showName) => onChange({ showName })} />
@@ -218,8 +222,8 @@ export function TeamSettingsPanel({
           <div className="grid gap-4 sm:grid-cols-2">
             {teamSectionLayoutIsAside(team.sectionLayout) ? (
               <p className="sm:col-span-2 text-sm text-neutral-500">
-                Title alignment is hidden: the title is already placed{' '}
-                {team.sectionLayout === 'aside-right' ? 'on the right' : 'on the left'} of the grid.
+                Title alignment is hidden: the title stays centered in the side column
+                {team.sectionLayout === 'aside-right' ? ' on the right' : ' on the left'} of the cards.
               </p>
             ) : (
               <SelectField
@@ -365,7 +369,84 @@ export function TeamSettingsPanel({
             <SelectField label="Marge intérieure" value={team.cardPadding} options={['none', 'sm', 'md', 'lg'].map((value) => ({ value: value as typeof team.cardPadding, label: value }))} onChange={(cardPadding) => onChange({ cardPadding })} />
             <SelectField label="Ombre" value={team.cardShadow} options={['none', 'soft', 'medium', 'strong'].map((value) => ({ value: value as typeof team.cardShadow, label: value }))} onChange={(cardShadow) => onChange({ cardShadow })} />
           </div>
-          {team.useHeroPalette === false ? <div className="grid gap-4 sm:grid-cols-2"><ColorField label="Fond" value={team.cardBackgroundColor} onChange={(cardBackgroundColor) => onChange({ cardBackgroundColor })} /><ColorField label="Bordure" value={team.cardBorderColor} onChange={(cardBorderColor) => onChange({ cardBorderColor })} /><ColorField label="Nom" value={team.nameColor} onChange={(nameColor) => onChange({ nameColor })} /><ColorField label="Responsabilité" value={team.responsibilityColor} onChange={(responsibilityColor) => onChange({ responsibilityColor })} /></div> : null}
+          {team.layout === 'directory' ? (
+            <Toggle
+              label="Cartes indépendantes"
+              checked={team.directoryDetachedCards !== false}
+              onChange={(directoryDetachedCards) => onChange({ directoryDetachedCards })}
+            />
+          ) : null}
+          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
+            <div>
+              <p className="text-sm font-semibold text-neutral-950">Fond & bordure</p>
+              <p className="mt-1 text-sm text-neutral-500">
+                Couleur de fond et trait du cadre, pour tous les designs d’équipe.
+              </p>
+            </div>
+            <Toggle
+              label="Fond de la carte"
+              checked={team.cardBackgroundEnabled !== false}
+              onChange={(cardBackgroundEnabled) => onChange({ cardBackgroundEnabled })}
+            />
+            {team.cardBackgroundEnabled !== false ? (
+              <ColorField
+                label="Couleur du fond"
+                value={team.cardBackgroundColor}
+                onChange={(cardBackgroundColor) =>
+                  team.useHeroPalette === false
+                    ? onChange({ cardBackgroundColor })
+                    : onChange(
+                        patchTeamPaletteSlotColor(team, 'cardBackground', cardBackgroundColor) as Partial<PortfolioTeamSectionSettings>
+                      )
+                }
+              />
+            ) : null}
+            <div>
+              <p className="text-xs font-semibold text-neutral-500">Bordure</p>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {PORTFOLIO_TEAM_CARD_BORDER_OPTIONS.map((option) => {
+                  const active = option.value === (team.cardBorder ?? 'thin');
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => onChange({ cardBorder: option.value as PortfolioTeamCardBorder })}
+                      className={`rounded-2xl border px-2 py-2.5 text-sm font-semibold transition ${
+                        active
+                          ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
+                          : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {(team.cardBorder ?? 'thin') !== 'none' ? (
+              <ColorField
+                label="Couleur de bordure"
+                value={team.cardBorderColor}
+                onChange={(cardBorderColor) =>
+                  team.useHeroPalette === false
+                    ? onChange({ cardBorderColor })
+                    : onChange(
+                        patchTeamPaletteSlotColor(team, 'cardBorder', cardBorderColor) as Partial<PortfolioTeamSectionSettings>
+                      )
+                }
+              />
+            ) : null}
+          </div>
+          {team.useHeroPalette === false ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <ColorField label="Nom" value={team.nameColor} onChange={(nameColor) => onChange({ nameColor })} />
+              <ColorField
+                label="Responsabilité"
+                value={team.responsibilityColor}
+                onChange={(responsibilityColor) => onChange({ responsibilityColor })}
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
 

@@ -196,6 +196,7 @@ export const PORTFOLIO_CHROME_SECTIONS = [
   'faq',
   'team',
   'gallery',
+  'aboutUs',
   'links',
   'contact',
   'reputation',
