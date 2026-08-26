@@ -11,6 +11,8 @@ export type PortfolioListMarkerStyle =
   | 'bullseye'
   | 'square'
   | 'check-square'
+  | 'check-circle'
+  | 'check-circle-fill'
   | 'x-square'
   | 'check'
   | 'arrow'
@@ -69,6 +71,13 @@ export const PORTFOLIO_LIST_MARKER_STYLE_OPTIONS: {
   { value: 'bullseye', label: 'Cible', description: 'Cercles concentriques.', preview: '◎' },
   { value: 'square', label: 'Carré', description: 'Case vide.', preview: '☐' },
   { value: 'check-square', label: 'Case cochée', description: 'Carré avec coche.', preview: '☑' },
+  { value: 'check-circle', label: 'Coche ronde', description: 'Cercle avec coche.', preview: '☑️' },
+  {
+    value: 'check-circle-fill',
+    label: 'Coche ronde pleine',
+    description: 'Disque plein avec coche.',
+    preview: '✅',
+  },
   { value: 'x-square', label: 'Case ×', description: 'Carré avec croix.', preview: '☒' },
   { value: 'check', label: 'Coche', description: 'Checkmark seul.', preview: '✓' },
   { value: 'arrow', label: 'Flèche', description: 'Flèche →.', preview: '→' },

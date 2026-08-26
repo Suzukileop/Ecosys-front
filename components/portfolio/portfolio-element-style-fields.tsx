@@ -126,7 +126,7 @@ export function PortfolioElementStyleFields({
   extra,
   hideTargetPicker = false,
   hideUppercase = false,
-  hideFontPicker = false,
+  hideFontPicker = true,
   showDecoration = false,
   title,
   textRole = 'body',
@@ -144,7 +144,7 @@ export function PortfolioElementStyleFields({
   hideTargetPicker?: boolean;
   /** Hide the Uppercase toggle (e.g. headline prefix — casing comes from the typed text). */
   hideUppercase?: boolean;
-  /** Hide per-element typeface (footer inherits Global → Police principale). */
+  /** Per-element typeface is retired — Global → Police principale owns family. */
   hideFontPicker?: boolean;
   /** Show underline / highlight decoration controls (headline emphasis word). */
   showDecoration?: boolean;

@@ -9,7 +9,6 @@ import { PortfolioListMarkerSizeWeightControls } from '@/components/portfolio/Po
 import {
   PORTFOLIO_FAQ_CONTENT_ALIGN_OPTIONS,
   PORTFOLIO_FAQ_EXPAND_ICON_OPTIONS,
-  PORTFOLIO_FAQ_HEADER_FONT_OPTIONS,
   PORTFOLIO_FAQ_ILLUSTRATION_OPTIONS,
   PORTFOLIO_FAQ_ILLUSTRATION_PLACEMENT_OPTIONS,
   PORTFOLIO_FAQ_ITEM_DESIGN_OPTIONS,
@@ -599,23 +598,6 @@ export function FaqSettingsPanel({
               />
             </div>
           ) : null}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FaqOptionGrid
-              label="Title font"
-              options={PORTFOLIO_FAQ_HEADER_FONT_OPTIONS}
-              value={faq.titleFont}
-              onChange={(titleFont) => onChange({ titleFont })}
-              columns={2}
-            />
-            <FaqOptionGrid
-              label="Subtitle font"
-              options={PORTFOLIO_FAQ_HEADER_FONT_OPTIONS}
-              value={faq.subtitleFont}
-              onChange={(subtitleFont) => onChange({ subtitleFont })}
-              columns={2}
-            />
-          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <FaqColorField faq={faq} onChange={onChange} slot="title" label="Title color" value={faq.titleColor} />

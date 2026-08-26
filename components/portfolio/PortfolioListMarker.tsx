@@ -12,17 +12,45 @@ import {
   type PortfolioListMarkerWeight,
 } from '@/components/portfolio/portfolio-list-marker';
 
+/** Contrast ink for glyphs drawn on top of a filled marker (check-circle-fill, bar-dot). */
+function listMarkerGlyphContrast(fillColor: string): string {
+  const raw = fillColor.trim();
+  if (!raw || raw === 'currentColor') {
+    return 'var(--pf-list-marker-glyph, #ffffff)';
+  }
+  const hex = raw.startsWith('#') ? raw.slice(1) : raw;
+  const full =
+    hex.length === 3
+      ? hex
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : hex;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) {
+    return 'var(--pf-list-marker-glyph, #ffffff)';
+  }
+  const r = parseInt(full.slice(0, 2), 16) / 255;
+  const g = parseInt(full.slice(2, 4), 16) / 255;
+  const b = parseInt(full.slice(4, 6), 16) / 255;
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance < 0.55 ? '#ffffff' : '#111111';
+}
+
 function ListMarkerHyperGlyph({
   style,
   className = '',
   strokeWidth = 1.75,
+  fillColor = 'currentColor',
 }: {
   style: PortfolioListMarkerStyle;
   className?: string;
   strokeWidth?: number;
+  /** Marker fill / currentColor — drives contrast for white-on-fill glyphs. */
+  fillColor?: string;
 }) {
   const cn = `shrink-0 ${className}`.trim();
   const sw = strokeWidth;
+  const glyph = listMarkerGlyphContrast(fillColor);
   switch (style) {
     case 'disc':
       return (
@@ -41,7 +69,7 @@ function ListMarkerHyperGlyph({
             rx="1.5"
             fill="currentColor"
           />
-          <circle cx="10" cy="10" r={sw >= 2 ? 2.25 : 2} fill="white" />
+          <circle cx="10" cy="10" r={sw >= 2 ? 2.25 : 2} fill={glyph} />
         </svg>
       );
     case 'bullseye':
@@ -71,6 +99,32 @@ function ListMarkerHyperGlyph({
           />
         </svg>
       );
+    case 'check-circle':
+      return (
+        <svg className={cn} viewBox="0 0 20 20" fill="none" aria-hidden>
+          <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth={sw} />
+          <path
+            d="M6.75 10.25l2.1 2.1 4.4-4.6"
+            stroke="currentColor"
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case 'check-circle-fill':
+      return (
+        <svg className={cn} viewBox="0 0 20 20" fill="none" aria-hidden>
+          <circle cx="10" cy="10" r="8" fill="currentColor" />
+          <path
+            d="M6.4 10.2l2.2 2.2 4.8-5"
+            stroke={glyph}
+            strokeWidth={Math.max(1.6, sw + 0.15)}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
     case 'x-square':
       return (
         <svg className={cn} viewBox="0 0 20 20" fill="none" aria-hidden>
@@ -87,9 +141,9 @@ function ListMarkerHyperGlyph({
       return (
         <svg className={cn} viewBox="0 0 20 20" fill="none" aria-hidden>
           <path
-            d="M4.5 10.5l3.6 3.6 7.4-8"
+            d="M3.25 10.35l4.15 4.15 9.35-9.7"
             stroke="currentColor"
-            strokeWidth={Math.max(1.5, sw + 0.25)}
+            strokeWidth={Math.max(1.85, sw + 0.45)}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -166,6 +220,7 @@ export function PortfolioListMarker({
 
   const px = resolveListMarkerSizePx(size, sizePx);
   const amount = resolveListMarkerWeightAmount(weight, weightAmount);
+  const glyphContrast = listMarkerGlyphContrast(color);
 
   const label = formatListMarkerIndexLabel(index, style);
   if (label) {
@@ -186,11 +241,11 @@ export function PortfolioListMarker({
   if (style === 'dash') {
     return (
       <span
-        className={`mt-2.5 shrink-0 ${className}`.trim()}
+        className={`mt-2.5 inline-block shrink-0 rounded-sm ${className}`.trim()}
         style={{
           backgroundColor: color,
-          width: Math.max(10, Math.round(px * 0.75)),
-          height: listMarkerDashHeightPx(amount),
+          width: Math.max(12, Math.round(px * 0.85)),
+          height: Math.max(2, listMarkerDashHeightPx(amount)),
         }}
         aria-hidden
       />
@@ -218,10 +273,20 @@ export function PortfolioListMarker({
     return (
       <span
         className={`mt-0.5 inline-flex shrink-0 items-center justify-center ${className}`.trim()}
-        style={{ color, width: px, height: px }}
+        style={{
+          color,
+          width: px,
+          height: px,
+          ['--pf-list-marker-glyph' as string]: glyphContrast,
+        }}
         aria-hidden
       >
-        <ListMarkerHyperGlyph style={style} className="h-full w-full" strokeWidth={amount} />
+        <ListMarkerHyperGlyph
+          style={style}
+          className="h-full w-full"
+          strokeWidth={amount}
+          fillColor={color}
+        />
       </span>
     );
   }

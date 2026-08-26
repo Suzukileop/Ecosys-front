@@ -22,7 +22,6 @@ import {
 } from '@/components/portfolio/about-us-quote-svgs';
 import { PortfolioListMarker } from '@/components/portfolio/PortfolioListMarker';
 import { resolveTaskListMarker } from '@/components/portfolio/portfolio-list-marker';
-import { usePortfolioTaskListMarkerGlobal } from '@/components/portfolio/portfolio-task-list-marker-context';
 
 function filledImages(imageUrls: Array<string | null | undefined> | undefined): string[] {
   return (imageUrls ?? []).map((url) => (url ?? '').trim()).filter(Boolean).slice(0, 2);
@@ -907,9 +906,9 @@ function AboutUsStackedDesign({
   presentation: PortfolioAboutUsPresentationSettings;
 }) {
   const marker = resolveTaskListMarker(
-    usePortfolioTaskListMarkerGlobal(),
+    null,
     {
-      taskBulletSource: 'global',
+      taskBulletSource: 'section',
       taskBulletStyle: 'disc',
       taskBulletColor: presentation.taskColor,
       taskBulletSize: 'md',

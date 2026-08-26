@@ -14,7 +14,6 @@ import {
   PORTFOLIO_HERO_CTA_ICON_OPTIONS,
   PORTFOLIO_HERO_CTA_PLACEMENT_OPTIONS,
   PORTFOLIO_HERO_SECONDARY_CTA_TARGET_OPTIONS,
-  PORTFOLIO_HERO_HEADLINE_FONT_OPTIONS,
   PORTFOLIO_HERO_HEADLINE_PREFIX_OPTIONS,
   PORTFOLIO_HERO_HEADLINE_VALUE_OPTIONS,
   PORTFOLIO_HERO_BACKGROUND_FILL_OPTIONS,
@@ -59,6 +58,13 @@ import {
   resolveMotifPoints,
   type PortfolioHeroStyleTarget,
 } from '@/components/portfolio/portfolio-hero-settings';
+import {
+  PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS,
+  PORTFOLIO_HERO_EDITORIAL_OVERLAP_ALIGN_OPTIONS,
+  PORTFOLIO_HERO_EDITORIAL_OVERLAP_WIDTH_OPTIONS,
+  PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS,
+  heroBannerDesignSettingsPatch,
+} from '@/components/portfolio/portfolio-hero-banner-settings';
 import {
   HERO_COPY_ELEMENT_BACKGROUND_OPACITY_MAX,
   HERO_COPY_ELEMENT_BACKGROUND_OPACITY_MIN,
@@ -256,6 +262,7 @@ import {
 
 export type HeroSettingsSubSection =
   | 'general'
+  | 'banner'
   | 'palette'
   | 'background'
   | 'motifs'
@@ -280,6 +287,11 @@ const HERO_SETTINGS_SUB_SECTIONS: {
     id: 'general',
     label: 'General',
     description: 'Section visibility, titles, and screen division (copy vs visual groups).',
+  },
+  {
+    id: 'banner',
+    label: 'Banner',
+    description: 'Hero banner layouts — Classic, Swiss editorial, and future designs.',
   },
   {
     id: 'palette',
@@ -338,6 +350,7 @@ export function normalizeHeroSettingsSubSection(value: string | undefined): Hero
   if (value === 'text' || value === 'typography') return 'title';
   if (
     value === 'general' ||
+    value === 'banner' ||
     value === 'palette' ||
     value === 'background' ||
     value === 'motifs' ||
@@ -1568,6 +1581,7 @@ export function HeroSettingsPanel({
   };
 
   const motifs = hero.heroMotifs ?? [];
+  const backgroundLibrary = usePortfolioBackgroundLibrary();
 
   const applyMotifs = (nextMotifs: HeroMotifInstance[]) => {
     onChange({
@@ -1589,6 +1603,579 @@ export function HeroSettingsPanel({
         </div>
         <HeroSubSectionDropdown value={subSection} onChange={setSubSection} />
       </div>
+
+      {subSection === 'banner' ? (
+        <div className="space-y-6">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+              Design Banner
+            </p>
+            <p className="mt-1 text-sm text-neutral-500">
+              Tous les layouts Hero banner — Classic, Swiss editorial, Portrait identity,
+              Editorial rail, Statement CTA, Portrait balance.
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS.map((option) => {
+                const active = (hero.heroBannerDesign ?? 'classic') === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => onChange(heroBannerDesignSettingsPatch(option.value))}
+                    className={`rounded-2xl border px-4 py-3 text-left transition ${
+                      active
+                        ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                        : 'border-neutral-200 bg-white hover:border-neutral-300'
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold text-neutral-950">{option.label}</span>
+                    <span className="mt-1 block text-sm text-neutral-500">{option.description}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {(hero.heroBannerDesign ?? 'classic') === 'swiss-editorial' ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Contenu Swiss editorial
+              </p>
+              <p className="text-sm text-neutral-500">
+                Le statement utilise la Description du profil. Currently / Specialized in suivent
+                disponibilité et spécialité. Couleurs = palette Hero (Fond, Texte fort, Muted,
+                Bordure).
+              </p>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Label Currently
+                </p>
+                <input
+                  type="text"
+                  value={hero.heroCurrentlyLabel ?? 'Currently'}
+                  onChange={(event) => onChange({ heroCurrentlyLabel: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Label Specialized in
+                </p>
+                <input
+                  type="text"
+                  value={hero.heroSpecializedInLabel ?? 'Specialized in'}
+                  onChange={(event) => onChange({ heroSpecializedInLabel: event.target.value })}
+                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Signature word
+                </p>
+                <input
+                  type="text"
+                  value={hero.heroSignatureWord ?? ''}
+                  onChange={(event) => onChange({ heroSignatureWord: event.target.value })}
+                  placeholder="Vide = prénom en majuscules"
+                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
+                />
+              </div>
+              <HeroToggleRow
+                label="Interchanger bio ↔ nom + spécialité"
+                description="Échange le statement (bio) avec la signature uniquement. La spécialité reste dans le rail Specialized in."
+                checked={hero.heroBannerSwapBioName === true}
+                onChange={(heroBannerSwapBioName) => onChange({ heroBannerSwapBioName })}
+              />
+            </div>
+          ) : null}
+
+          {(hero.heroBannerDesign ?? 'classic') === 'portrait-identity' ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Contenu Portrait identity
+              </p>
+              <HeroToggleRow
+                label="Interchanger bio ↔ nom + spécialité"
+                description="Échange le placement : bio en haut à gauche avec le bloc nom + expertise en bas à droite. Disponibilité, portrait et Contact restent en place."
+                checked={hero.heroBannerSwapBioName === true}
+                onChange={(heroBannerSwapBioName) => onChange({ heroBannerSwapBioName })}
+              />
+            </div>
+          ) : null}
+
+          {(hero.heroBannerDesign ?? 'classic') === 'editorial-rail' ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Contenu Editorial rail
+              </p>
+              <HeroToggleRow
+                label="Description sous le portrait"
+                description="Déplace la bio sous l’image à droite. Availability + titre restent à gauche. Ignoré si « Nom + spécialité sous le portrait » est actif."
+                checked={hero.heroEditorialRailBioUnderPortrait === true}
+                onChange={(heroEditorialRailBioUnderPortrait) =>
+                  onChange({ heroEditorialRailBioUnderPortrait })
+                }
+              />
+              <HeroToggleRow
+                label="Nom + spécialité sous le portrait"
+                description="Place le nom et la spécialité sous l’image en liste (→). La bio revient automatiquement à gauche, avec une taille plus grande."
+                checked={hero.heroEditorialRailIdentityUnderPortrait === true}
+                onChange={(heroEditorialRailIdentityUnderPortrait) =>
+                  onChange({ heroEditorialRailIdentityUnderPortrait })
+                }
+              />
+              <HeroToggleRow
+                label="CTA sous la bio"
+                description="Affiche « Start a project » (bouton) et « View project » (lien souligné) juste sous la description."
+                checked={hero.heroEditorialRailShowCta === true}
+                onChange={(heroEditorialRailShowCta) =>
+                  onChange({ heroEditorialRailShowCta })
+                }
+              />
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Tools affichés
+                </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Choisis jusqu’à 4 tools. Vide = les 4 premiers du profil.
+                </p>
+                {normalizedTools.length > 0 ? (
+                  <>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {normalizedTools.map((tool) => {
+                        const picked = hero.heroEditorialRailSelectedTools ?? [];
+                        const active =
+                          picked.length > 0
+                            ? picked.includes(tool)
+                            : normalizedTools.slice(0, 4).includes(tool);
+                        const disabled =
+                          picked.length > 0 && !active && picked.length >= 4;
+                        return (
+                          <button
+                            key={tool}
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => {
+                              const current =
+                                (hero.heroEditorialRailSelectedTools?.length ?? 0) > 0
+                                  ? [...(hero.heroEditorialRailSelectedTools ?? [])]
+                                  : normalizedTools.slice(0, 4);
+                              const next = current.includes(tool)
+                                ? current.filter((item) => item !== tool)
+                                : current.length >= 4
+                                  ? current
+                                  : [...current, tool];
+                              onChange({ heroEditorialRailSelectedTools: next });
+                            }}
+                            className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition ${
+                              active
+                                ? 'border-neutral-900 bg-neutral-950 text-white'
+                                : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                            } disabled:cursor-not-allowed disabled:opacity-45`}
+                          >
+                            <CreatorToolLogo label={tool} size={22} />
+                            {tool}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {(hero.heroEditorialRailSelectedTools?.length ?? 0) > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => onChange({ heroEditorialRailSelectedTools: [] })}
+                        className="mt-3 text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+                      >
+                        Reset — 4 premiers du profil
+                      </button>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-neutral-500">
+                    Aucun tool dans le profil. Ajoute-les dans Profil → Tools.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {(hero.heroBannerDesign ?? 'classic') === 'statement-cta' ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Contenu Statement CTA
+              </p>
+              <p className="text-sm text-neutral-500">
+                Disposition fixe : salutation + nom/spécialité, disponibilité, CTAs, bio, trait,
+                tools. Palette Hero uniquement.
+              </p>
+              <HeroToggleRow
+                label="Portrait rond au centre"
+                description="Affiche l’avatar du profil en cercle au centre. Déplace automatiquement les CTAs sous la bio. Désactive la cover horizontale."
+                checked={hero.heroStatementCtaCenterPortrait === true}
+                onChange={(heroStatementCtaCenterPortrait) =>
+                  onChange({
+                    heroStatementCtaCenterPortrait,
+                    ...(heroStatementCtaCenterPortrait
+                      ? { heroStatementCtaCenterCover: false }
+                      : {}),
+                  })
+                }
+              />
+              {hero.heroStatementCtaCenterPortrait === true ? (
+                <>
+                  <HeroToggleRow
+                    label="Anneau couleur principal"
+                    description="Bordure principal autour du portrait, avec un écart (style Instagram) — ne colle pas au bord de l’image."
+                    checked={hero.heroStatementCtaPortraitRing === true}
+                    onChange={(heroStatementCtaPortraitRing) =>
+                      onChange({ heroStatementCtaPortraitRing })
+                    }
+                  />
+                  <HeroPxSlider
+                    label="Taille portrait (moyen → XL)"
+                    value={hero.heroStatementCtaPortraitScale ?? 100}
+                    min={100}
+                    max={180}
+                    unit="%"
+                    onChange={(heroStatementCtaPortraitScale) =>
+                      onChange({ heroStatementCtaPortraitScale })
+                    }
+                  />
+                </>
+              ) : null}
+
+              <HeroToggleRow
+                label="Cover horizontale"
+                description="Rectangle horizontal à gauche, aligné au début de la bio. CTAs sous la bio. Désactive le portrait rond."
+                checked={hero.heroStatementCtaCenterCover === true}
+                onChange={(heroStatementCtaCenterCover) =>
+                  onChange({
+                    heroStatementCtaCenterCover,
+                    ...(heroStatementCtaCenterCover
+                      ? { heroStatementCtaCenterPortrait: false }
+                      : {}),
+                  })
+                }
+              />
+              {hero.heroStatementCtaCenterCover === true ? (
+                <PortfolioBackgroundImageUpload
+                  label="Image cover"
+                  url={hero.heroStatementCtaCoverImageUrl ?? ''}
+                  onChange={(heroStatementCtaCoverImageUrl) =>
+                    onChange({ heroStatementCtaCoverImageUrl })
+                  }
+                  library={backgroundLibrary?.library}
+                  onLibraryChange={backgroundLibrary?.onLibraryChange}
+                  helperText="Image du rectangle horizontal — indépendante du profil et du portrait rond."
+                />
+              ) : null}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Tools affichés
+                </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Choisis jusqu’à 5 tools (bandeau bas). Vide = les 5 premiers du profil.
+                </p>
+                {normalizedTools.length > 0 ? (
+                  <>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {normalizedTools.map((tool) => {
+                        const picked = hero.heroEditorialRailSelectedTools ?? [];
+                        const active =
+                          picked.length > 0
+                            ? picked.includes(tool)
+                            : normalizedTools.slice(0, 5).includes(tool);
+                        const disabled =
+                          picked.length > 0 && !active && picked.length >= 5;
+                        return (
+                          <button
+                            key={tool}
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => {
+                              const current =
+                                (hero.heroEditorialRailSelectedTools?.length ?? 0) > 0
+                                  ? [...(hero.heroEditorialRailSelectedTools ?? [])]
+                                  : normalizedTools.slice(0, 5);
+                              const next = current.includes(tool)
+                                ? current.filter((item) => item !== tool)
+                                : current.length >= 5
+                                  ? current
+                                  : [...current, tool];
+                              onChange({ heroEditorialRailSelectedTools: next });
+                            }}
+                            className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition ${
+                              active
+                                ? 'border-neutral-900 bg-neutral-950 text-white'
+                                : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                            } disabled:cursor-not-allowed disabled:opacity-45`}
+                          >
+                            <CreatorToolLogo label={tool} size={22} />
+                            {tool}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {(hero.heroEditorialRailSelectedTools?.length ?? 0) > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => onChange({ heroEditorialRailSelectedTools: [] })}
+                        className="mt-3 text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+                      >
+                        Reset — 5 premiers du profil
+                      </button>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-neutral-500">
+                    Aucun tool dans le profil. Ajoute-les dans Profil → Tools.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {(hero.heroBannerDesign ?? 'classic') === 'portrait-balance' ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Contenu Portrait balance
+              </p>
+              <p className="text-sm text-neutral-500">
+                Core stack en tags au-dessus du trait, sous le titre. Palette Hero uniquement.
+              </p>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Tools affichés
+                </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Choisis jusqu’à 12 tools. Vide = les 12 premiers du profil.
+                </p>
+                {normalizedTools.length > 0 ? (
+                  <>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {normalizedTools.map((tool) => {
+                        const picked = hero.heroEditorialRailSelectedTools ?? [];
+                        const active =
+                          picked.length > 0
+                            ? picked.includes(tool)
+                            : normalizedTools.slice(0, 12).includes(tool);
+                        const disabled =
+                          picked.length > 0 && !active && picked.length >= 12;
+                        return (
+                          <button
+                            key={tool}
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => {
+                              const current =
+                                (hero.heroEditorialRailSelectedTools?.length ?? 0) > 0
+                                  ? [...(hero.heroEditorialRailSelectedTools ?? [])]
+                                  : normalizedTools.slice(0, 12);
+                              const next = current.includes(tool)
+                                ? current.filter((item) => item !== tool)
+                                : current.length >= 12
+                                  ? current
+                                  : [...current, tool];
+                              onChange({ heroEditorialRailSelectedTools: next });
+                            }}
+                            className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition ${
+                              active
+                                ? 'border-neutral-900 bg-neutral-950 text-white'
+                                : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                            } disabled:cursor-not-allowed disabled:opacity-45`}
+                          >
+                            <CreatorToolLogo label={tool} size={22} />
+                            {tool}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {(hero.heroEditorialRailSelectedTools?.length ?? 0) > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => onChange({ heroEditorialRailSelectedTools: [] })}
+                        className="mt-3 text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+                      >
+                        Reset — 12 premiers du profil
+                      </button>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-neutral-500">
+                    Aucun tool dans le profil. Ajoute-les dans Profil → Tools.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {(hero.heroBannerDesign ?? 'classic') === 'left-portrait' ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Contenu Left portrait
+              </p>
+              <p className="text-sm text-neutral-500">
+                Portrait à gauche. En haut à droite : disponibilité + « Hello, I&apos;m nom — a
+                spécialité ». En bas : bio + CTAs « Let&apos;s talk » / « View project ». Palette
+                Hero uniquement.
+              </p>
+              <HeroToggleRow
+                label="Surbrillance spécialité"
+                description="Met en surbrillance la spécialité dans le titre, en couleur Principal (sans soulignement)."
+                checked={hero.heroLeftPortraitSpecialtyMark === true}
+                onChange={(heroLeftPortraitSpecialtyMark) =>
+                  onChange({ heroLeftPortraitSpecialtyMark })
+                }
+              />
+            </div>
+          ) : null}
+
+          {(hero.heroBannerDesign ?? 'classic') === 'circle-portrait' ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Contenu Circle portrait
+              </p>
+              <p className="text-sm text-neutral-500">
+                Portrait circulaire à gauche ; titre en bas par défaut (nom + spécialité + traits
+                Principal). Bio à gauche, CTAs centrés. Toggle « Titre en haut » pour le layout
+                classique. Palette Hero uniquement.
+              </p>
+              <HeroToggleRow
+                label="Surbrillance spécialité"
+                description="Met en surbrillance la spécialité dans le titre, en couleur Principal."
+                checked={hero.heroCirclePortraitSpecialtyMark === true}
+                onChange={(heroCirclePortraitSpecialtyMark) =>
+                  onChange({ heroCirclePortraitSpecialtyMark })
+                }
+              />
+              <HeroToggleRow
+                label="Titre en haut"
+                description="Place le titre au-dessus de la bio (layout classique). Par défaut, le titre reste en bas avec traits Principal."
+                checked={hero.heroCirclePortraitTitleBottom === false}
+                onChange={(titleTop) =>
+                  onChange({ heroCirclePortraitTitleBottom: !titleTop })
+                }
+              />
+            </div>
+          ) : null}
+
+          {(hero.heroBannerDesign ?? 'classic') === 'experience-split' ? (
+            <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Contenu Experience split
+              </p>
+              <p className="text-sm text-neutral-500">
+                Par défaut : deux colonnes — titre + CTAs à gauche (trait Principal),
+                portrait + years/bio à droite. Palette Hero uniquement.
+              </p>
+              <HeroToggleRow
+                label="Bio à droite"
+                description="Layout par défaut. Désactive pour remettre years/bio à gauche du titre."
+                checked={hero.heroExperienceSplitBioRight !== false}
+                onChange={(heroExperienceSplitBioRight) =>
+                  onChange({ heroExperienceSplitBioRight })
+                }
+              />
+              <HeroToggleRow
+                label="Cadre global"
+                description="Ajoute un cadre discret autour du contenu (token Bordure)."
+                checked={hero.heroExperienceSplitGlobalFrame === true}
+                onChange={(heroExperienceSplitGlobalFrame) =>
+                  onChange({ heroExperienceSplitGlobalFrame })
+                }
+              />
+            </div>
+          ) : null}
+
+          {(hero.heroBannerDesign ?? 'classic') === 'editorial-overlap' ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Contenu Editorial overlap
+              </p>
+              <p className="text-sm text-neutral-500">
+                Collage éditorial : grande photo + panneau texte scoopé en bas à gauche. Palette
+                Hero uniquement. L’image de fond n’est pas le portrait de profil.
+              </p>
+              <PortfolioBackgroundImageUpload
+                label="Image de scène"
+                url={hero.heroEditorialOverlapImageUrl ?? ''}
+                onChange={(heroEditorialOverlapImageUrl) =>
+                  onChange({ heroEditorialOverlapImageUrl })
+                }
+                library={backgroundLibrary?.library}
+                onLibraryChange={backgroundLibrary?.onLibraryChange}
+                helperText="Photo paysage derrière le panneau — indépendante de l’avatar profil."
+              />
+              <label className="block space-y-2">
+                <span className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Titre éditorial (optionnel)
+                </span>
+                <textarea
+                  rows={2}
+                  value={hero.heroEditorialOverlapHeadline ?? ''}
+                  onChange={(event) =>
+                    onChange({ heroEditorialOverlapHeadline: event.target.value })
+                  }
+                  placeholder="Hi, I'm …"
+                  className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none ring-neutral-900/10 placeholder:text-neutral-400 focus:ring-2"
+                />
+                <span className="block text-xs text-neutral-500">
+                  Vide = salutation + nom. Panneau : spécialité → salutation → bio.
+                </span>
+              </label>
+              <HeroOptionGrid
+                label="Largeur du cadre"
+                columns={3}
+                options={PORTFOLIO_HERO_EDITORIAL_OVERLAP_WIDTH_OPTIONS}
+                value={hero.heroEditorialOverlapWidth ?? 'full'}
+                onChange={(heroEditorialOverlapWidth) =>
+                  onChange({ heroEditorialOverlapWidth })
+                }
+              />
+              <HeroOptionGrid
+                label="Position"
+                columns={3}
+                options={PORTFOLIO_HERO_EDITORIAL_OVERLAP_ALIGN_OPTIONS}
+                value={hero.heroEditorialOverlapAlign ?? 'left'}
+                onChange={(heroEditorialOverlapAlign) =>
+                  onChange({ heroEditorialOverlapAlign })
+                }
+              />
+            </div>
+          ) : null}
+
+          {(hero.heroBannerDesign ?? 'classic') === 'selected-works' ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Contenu Selected works
+              </p>
+              <p className="text-sm text-neutral-500">
+                Nom / spécialité + bio (split) ou titre centré avec trait (centré) ; miniatures +
+                See all. Palette Hero uniquement.
+              </p>
+              <HeroOptionGrid
+                label="Disposition identité"
+                columns={2}
+                options={PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS}
+                value={hero.heroSelectedWorksIdentityLayout ?? 'split'}
+                onChange={(heroSelectedWorksIdentityLayout) =>
+                  onChange({ heroSelectedWorksIdentityLayout })
+                }
+              />
+              <HeroPxSlider
+                label="Assombrissement miniatures"
+                value={hero.heroSelectedWorksDimIntensity ?? 40}
+                min={0}
+                max={80}
+                unit="%"
+                onChange={(heroSelectedWorksDimIntensity) =>
+                  onChange({ heroSelectedWorksDimIntensity })
+                }
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {subSection === 'general' ? (
         <div className="space-y-5">
@@ -2560,13 +3147,6 @@ export function HeroSettingsPanel({
             }
           />
 
-          <HeroOptionGrid
-            label="Headline display font"
-            options={PORTFOLIO_HERO_HEADLINE_FONT_OPTIONS}
-            value={hero.headlineFont}
-            onChange={(headlineFont) => onChange({ headlineFont })}
-            columns={3}
-          />
         </div>
       ) : null}
 

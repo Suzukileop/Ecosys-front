@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import {
   PORTFOLIO_ABOUT_FULL_WIDTH_PANEL_PLACEMENT_OPTIONS,
-  PORTFOLIO_ABOUT_HEADER_FONT_OPTIONS,
   PORTFOLIO_ABOUT_LAYOUT_MODE_OPTIONS,
   PORTFOLIO_ABOUT_SECTION_LAYOUT_OPTIONS,
   PORTFOLIO_ABOUT_ILLUSTRATION_OPTIONS,
@@ -42,11 +41,9 @@ import {
   PORTFOLIO_ABOUT_WHY_ME_HEADING_PRESET_OPTIONS,
   PORTFOLIO_ABOUT_WHY_ME_HEADING_SIZE_OPTIONS,
   PORTFOLIO_ABOUT_WHY_ME_DESIGN_OPTIONS,
-  PORTFOLIO_ABOUT_WHY_ME_ITEMS_PER_ROW_OPTIONS,
-  whyMeDesignSupportsItemsPerRow,
   whyMeDesignSettingsPatch,
-  whyMeItemsPerRowResponsiveHint,
   PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS,
+  PORTFOLIO_ABOUT_SIDE_PANEL_MARKER_STYLE_OPTIONS,
   PORTFOLIO_ABOUT_WHY_ME_MARKER_PLACEMENT_OPTIONS,
   ABOUT_WHY_ME_MARKER_SIZE_PRESET_PX,
   PORTFOLIO_ABOUT_STYLE_TARGET_OPTIONS,
@@ -58,7 +55,6 @@ import {
   patchAboutElementStyle,
   type PortfolioAboutSectionSettings,
   type PortfolioAboutStyleTarget,
-  type PortfolioAboutWhyMeItemsPerRow,
 } from '@/components/portfolio/portfolio-about-settings';
 import { PortfolioListMarkerSizeWeightControls } from '@/components/portfolio/PortfolioListMarkerSizeWeightControls';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -147,46 +143,81 @@ export type AboutSubSection =
   | 'background'
   | 'palette';
 
-const ABOUT_SUB_SECTIONS: { id: AboutSubSection; label: string; description: string }[] = [
-  { id: 'general', label: 'General', description: 'Section visibility and stats / sidebar toggles.' },
+const ABOUT_SUB_SECTIONS_ABOUT: { id: AboutSubSection; label: string; description: string }[] = [
+  { id: 'general', label: 'General', description: 'Section visibility, stats toggle, and shared accent.' },
   { id: 'palette', label: 'Palette', description: 'Use the Global site palette and bind section colors to tokens.' },
   { id: 'header', label: 'Header', description: 'Title, subtitle, fonts, and colors.' },
-  { id: 'layout', label: 'Layout', description: 'Sidebar position and block designs.' },
+  {
+    id: 'layout',
+    label: 'Layout',
+    description: 'Page structure, twin columns, and stats row design.',
+  },
   { id: 'frame', label: 'Cadre stats', description: 'Bordure, fond X/Y, arrondi et padding des cartes stats.' },
   {
     id: 'statsStyle',
     label: 'Style stats',
     description: 'Couleurs, polices, tailles et graisse des chiffres, libellés et icônes.',
   },
-  {
-    id: 'sidePanel',
-    label: 'Panneau profil',
-    description: 'Cadre, fond X/Y et disposition pleine largeur du panneau sidebar.',
-  },
-  {
-    id: 'whyMe',
-    label: 'Why me',
-    description: 'Designs, cadre, décor géométrique, média et titre Why work with me.',
-  },
-  {
-    id: 'styleSide',
-    label: 'Style side panel',
-    description: 'Color, font, size, and weight for profile side panel rows.',
-  },
-  {
-    id: 'styleWhyMe',
-    label: 'Style Why me',
-    description: 'Color, font, size, and weight for Why me body and bullets.',
-  },
-  { id: 'content', label: 'Content blocks', description: 'Show or hide each about subsection.' },
   { id: 'background', label: 'Background', description: 'Section fill, gradients, and opacity.' },
 ];
 
+const ABOUT_SUB_SECTIONS_INFOS: { id: AboutSubSection; label: string; description: string }[] = [
+  {
+    id: 'sidePanel',
+    label: 'Design & contenu',
+    description: 'Visibilité, design, puces et champs du panneau Infos.',
+  },
+  {
+    id: 'styleSide',
+    label: 'Style',
+    description: 'Couleur, police, taille et graisse des lignes Infos.',
+  },
+];
+
+const ABOUT_SUB_SECTIONS_WHY: { id: AboutSubSection; label: string; description: string }[] = [
+  {
+    id: 'whyMe',
+    label: 'Design & contenu',
+    description: 'Visibilité, designs, numérotation et titre Why choose me.',
+  },
+  {
+    id: 'styleWhyMe',
+    label: 'Style',
+    description: 'Couleur, police, taille et graisse du corps et des puces.',
+  },
+];
+
+const ABOUT_SUB_SECTIONS = [
+  ...ABOUT_SUB_SECTIONS_ABOUT,
+  ...ABOUT_SUB_SECTIONS_INFOS,
+  ...ABOUT_SUB_SECTIONS_WHY,
+];
+
+export type AboutSettingsFocus = 'about' | 'infos' | 'whyChooseMe';
+
+function aboutSubSectionsForFocus(focus: AboutSettingsFocus) {
+  if (focus === 'infos') return ABOUT_SUB_SECTIONS_INFOS;
+  if (focus === 'whyChooseMe') return ABOUT_SUB_SECTIONS_WHY;
+  return ABOUT_SUB_SECTIONS_ABOUT;
+}
+
+function aboutFocusLabel(focus: AboutSettingsFocus): string {
+  if (focus === 'infos') return 'Infos';
+  if (focus === 'whyChooseMe') return 'Why choose me';
+  return 'About';
+}
+
 /** Legacy saved UI id `style` → first typography subsection. */
-export function normalizeAboutSubSection(value: string | undefined): AboutSubSection {
-  if (value === 'style') return 'styleSide';
-  if (ABOUT_SUB_SECTIONS.some((section) => section.id === value)) return value as AboutSubSection;
-  return 'header';
+export function normalizeAboutSubSection(
+  value: string | undefined,
+  focus: AboutSettingsFocus = 'about'
+): AboutSubSection {
+  const allowed = aboutSubSectionsForFocus(focus);
+  if (value === 'style') {
+    return focus === 'whyChooseMe' ? 'styleWhyMe' : focus === 'infos' ? 'styleSide' : 'styleSide';
+  }
+  if (allowed.some((section) => section.id === value)) return value as AboutSubSection;
+  return allowed[0]?.id ?? 'header';
 }
 
 const ABOUT_SIDE_STYLE_TARGETS = PORTFOLIO_ABOUT_STYLE_TARGET_OPTIONS.filter((option) =>
@@ -458,38 +489,49 @@ function AboutPalettePanel({
 export function AboutSettingsPanel({
   about,
   onChange,
+  settingsFocus = 'about',
   subSection: controlledSubSection,
   onSubSectionChange,
 }: {
   about: PortfolioAboutSectionSettings;
   onChange: (patch: Partial<PortfolioAboutSectionSettings>) => void;
+  settingsFocus?: AboutSettingsFocus;
   subSection?: AboutSubSection;
   onSubSectionChange?: (value: AboutSubSection) => void;
 }) {
-  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<AboutSubSection>('header');
-  const subSection = normalizeAboutSubSection(controlledSubSection ?? uncontrolledSubSection);
+  const focusSubSections = aboutSubSectionsForFocus(settingsFocus);
+  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<AboutSubSection>(
+    focusSubSections[0]?.id ?? 'header'
+  );
+  const subSection = normalizeAboutSubSection(
+    controlledSubSection ?? uncontrolledSubSection,
+    settingsFocus
+  );
   const setSubSection = (value: AboutSubSection) => {
-    const next = normalizeAboutSubSection(value);
+    const next = normalizeAboutSubSection(value, settingsFocus);
     onSubSectionChange?.(next);
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
   const [sideStyleTarget, setSideStyleTarget] = useState<PortfolioAboutStyleTarget>('sideLabel');
   const [whyMeStyleTarget, setWhyMeStyleTarget] = useState<PortfolioAboutStyleTarget>('whyMeBody');
-  const activeMeta = ABOUT_SUB_SECTIONS.find((section) => section.id === subSection) ?? ABOUT_SUB_SECTIONS[0];
+  const activeMeta =
+    focusSubSections.find((section) => section.id === subSection) ?? focusSubSections[0];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-4">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">About subsection</p>
-          <p className="mt-1 text-sm text-neutral-500">{activeMeta.description}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+            {aboutFocusLabel(settingsFocus)} subsection
+          </p>
+          <p className="mt-1 text-sm text-neutral-500">{activeMeta?.description}</p>
         </div>
         <select
           value={subSection}
           onChange={(event) => setSubSection(event.target.value as AboutSubSection)}
           className="w-full min-w-0 rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-neutral-900 sm:min-w-[12rem] sm:max-w-xs sm:flex-1"
         >
-          {ABOUT_SUB_SECTIONS.map((section) => (
+          {focusSubSections.map((section) => (
             <option key={section.id} value={section.id}>
               {section.label}
             </option>
@@ -532,12 +574,6 @@ export function AboutSettingsPanel({
               <AboutToggleRow label="Rating" checked={about.showStatRating} onChange={(showStatRating) => onChange({ showStatRating })} />
             </div>
           ) : null}
-          <AboutToggleRow
-            label="Show profile sidebar"
-            description="Location, languages, gender, and availability."
-            checked={about.showSidePanel}
-            onChange={(showSidePanel) => onChange({ showSidePanel })}
-          />
           <AboutColorField
             about={about}
             onChange={onChange}
@@ -546,13 +582,28 @@ export function AboutSettingsPanel({
             value={about.accentColor}
           />
           <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-            Content is edited in Creator Studio → Information. These settings control visibility and presentation.
+            Infos et Why choose me sont des sections séparées dans le menu de gauche. Content is
+            edited in Creator Studio → Information.
           </p>
         </div>
       ) : null}
 
       {subSection === 'header' ? (
         <div className="space-y-6">
+          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+              Titre About
+            </p>
+            <p className="text-sm text-neutral-500">
+              Indépendant d’Infos et de Why choose me — chacun a son propre titre.
+            </p>
+            <AboutToggleRow
+              label="Afficher le titre About"
+              checked={about.showAboutHeading !== false}
+              onChange={(showAboutHeading) => onChange({ showAboutHeading })}
+            />
+          </div>
+
           <AboutOptionGrid
             label="Disposition titre / contenu"
             options={PORTFOLIO_ABOUT_SECTION_LAYOUT_OPTIONS}
@@ -608,30 +659,6 @@ export function AboutSettingsPanel({
               />
             </div>
           ) : null}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <AboutOptionGrid
-              label="Title font"
-              options={PORTFOLIO_ABOUT_HEADER_FONT_OPTIONS}
-              value={about.titleFont}
-              onChange={(titleFont) => onChange({ titleFont })}
-              columns={2}
-            />
-            <AboutOptionGrid
-              label="Subtitle font"
-              options={PORTFOLIO_ABOUT_HEADER_FONT_OPTIONS}
-              value={about.subtitleFont}
-              onChange={(subtitleFont) => onChange({ subtitleFont })}
-              columns={2}
-            />
-          </div>
-
-          <AboutToggleRow
-            label="Serif subtitle"
-            description="Use Playfair Display for the subtitle (editorial default)."
-            checked={about.subtitleSerif}
-            onChange={(subtitleSerif) => onChange({ subtitleSerif })}
-          />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <AboutColorField about={about} onChange={onChange} slot="title" label="Title color" value={about.titleColor} />
@@ -699,7 +726,7 @@ export function AboutSettingsPanel({
           />
           {about.layoutMode === 'full-width' && about.showSidePanel ? (
             <AboutOptionGrid
-              label="Position du panneau profil"
+              label="Position du panneau Infos"
               options={PORTFOLIO_ABOUT_FULL_WIDTH_PANEL_PLACEMENT_OPTIONS}
               value={about.fullWidthPanelPlacement}
               onChange={(fullWidthPanelPlacement) => onChange({ fullWidthPanelPlacement })}
@@ -708,14 +735,14 @@ export function AboutSettingsPanel({
           {about.layoutMode === 'twin-columns' && about.showSidePanel ? (
             <>
               <AboutOptionGrid
-                label="Répartition Why me / Infos"
+                label="Répartition Why choose me / Infos"
                 options={PORTFOLIO_ABOUT_TWIN_COLUMNS_SPLIT_OPTIONS}
                 value={about.twinColumnsSplit ?? 'why-me-70'}
                 onChange={(twinColumnsSplit) => onChange({ twinColumnsSplit })}
                 columns={3}
               />
               <AboutOptionGrid
-                label="Alignement du panneau infos (grand écran)"
+                label="Alignement du panneau Infos (grand écran)"
                 options={PORTFOLIO_ABOUT_SIDE_PANEL_TWIN_ALIGN_OPTIONS}
                 value={about.sidePanelTwinAlign ?? 'right'}
                 onChange={(sidePanelTwinAlign) => onChange({ sidePanelTwinAlign })}
@@ -725,7 +752,7 @@ export function AboutSettingsPanel({
           ) : null}
           {about.layoutMode !== 'full-width' && about.showSidePanel ? (
             <AboutOptionGrid
-              label="Position du duo Infos + Why me"
+              label="Position du duo Infos + Why choose me"
               options={PORTFOLIO_ABOUT_CONTENT_PAIR_ALIGN_OPTIONS}
               value={about.contentPairAlign ?? 'start'}
               onChange={(contentPairAlign) => onChange({ contentPairAlign })}
@@ -738,198 +765,28 @@ export function AboutSettingsPanel({
             value={about.statsDesign}
             onChange={(statsDesign) => onChange({ statsDesign })}
           />
-          <AboutOptionGrid
-            label="Sidebar design"
-            options={PORTFOLIO_ABOUT_SIDE_PANEL_DESIGN_OPTIONS}
-            value={about.sidePanelDesign}
-            onChange={(sidePanelDesign) => onChange({ sidePanelDesign })}
-          />
-          {about.sidePanelDesign === 'profile-cv' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-              <div>
-                <p className="text-sm font-semibold text-neutral-950">Bio / philosophie (Profil CV)</p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Texte optionnel au-dessus de la grille 4 cartes — sans Gender, pleine largeur.
-                </p>
-              </div>
-              <AboutToggleRow
-                label="Afficher la bio"
-                checked={about.showSidePanelBio}
-                onChange={(showSidePanelBio) => onChange({ showSidePanelBio })}
-              />
-              {about.showSidePanelBio ? (
-                <textarea
-                  rows={4}
-                  value={about.sidePanelBio}
-                  onChange={(event) => onChange({ sidePanelBio: event.target.value })}
-                  placeholder="Je conçois avec intention — du code clair, pensé pour les humains."
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
-                  aria-label="Bio du panneau profil CV"
-                />
-              ) : null}
-            </div>
-          ) : null}
-          {about.sidePanelDesign === 'list' || about.layoutMode === 'twin-columns' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-              <div>
-                <p className="text-sm font-semibold text-neutral-950">Colonne Infos — liste à puces</p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Titre optionnel et marqueurs (même système que Why me) — sans trait vertical.
-                </p>
-              </div>
-              <AboutToggleRow
-                label="Afficher le titre Infos"
-                checked={about.showSidePanelHeading}
-                onChange={(showSidePanelHeading) => onChange({ showSidePanelHeading })}
-              />
-              {about.showSidePanelHeading ? (
-                <input
-                  type="text"
-                  value={about.sidePanelHeading}
-                  onChange={(event) => onChange({ sidePanelHeading: event.target.value })}
-                  placeholder="Infos"
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
-                  aria-label="Titre de la colonne Infos"
-                />
-              ) : null}
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Style du marqueur
-                </p>
-                <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
-                  {PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS.map((option) => {
-                    const active = about.sidePanelMarkerStyle === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        title={`${option.label} — ${option.description}`}
-                        onClick={() => onChange({ sidePanelMarkerStyle: option.value })}
-                        className={`flex flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2.5 transition ${
-                          active
-                            ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                            : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-                        }`}
-                      >
-                        <span className="text-base font-semibold leading-none text-neutral-900">
-                          {option.preview}
-                        </span>
-                        <span className="max-w-full truncate text-[10px] font-medium text-neutral-500">
-                          {option.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {about.sidePanelMarkerStyle !== 'none' ? (
-                <>
-                  <PortfolioListMarkerSizeWeightControls
-                    size={about.sidePanelMarkerSize ?? 'md'}
-                    sizePx={about.sidePanelMarkerSizePx}
-                    weight={about.sidePanelMarkerWeight ?? 'regular'}
-                    weightAmount={about.sidePanelMarkerWeightAmount}
-                    OptionGrid={AboutOptionGrid}
-                    sizeLabel="Taille de la puce"
-                    weightLabel="Graisse de la puce"
-                    sizePresets={ABOUT_WHY_ME_MARKER_SIZE_PRESET_PX}
-                    onChange={(patch) =>
-                      onChange({
-                        ...(patch.size !== undefined ? { sidePanelMarkerSize: patch.size } : null),
-                        ...(patch.sizePx !== undefined
-                          ? { sidePanelMarkerSizePx: patch.sizePx }
-                          : null),
-                        ...(patch.weight !== undefined
-                          ? { sidePanelMarkerWeight: patch.weight }
-                          : null),
-                        ...(patch.weightAmount !== undefined
-                          ? { sidePanelMarkerWeightAmount: patch.weightAmount }
-                          : null),
-                      })
-                    }
-                  />
-                  <AboutManualColorField
-                    label="Couleur de la puce"
-                    value={about.sidePanelMarkerColor}
-                    onChange={(sidePanelMarkerColor) => onChange({ sidePanelMarkerColor })}
-                  />
-                </>
-              ) : null}
-            </div>
-          ) : null}
-          {about.sidePanelDesign !== 'list' ? (
-            <>
-              <AboutToggleRow
-                label="Afficher les icônes"
-                description="Masque les pastilles d’icône dans le panneau d’informations."
-                checked={about.sidePanelShowIcons}
-                onChange={(sidePanelShowIcons) => onChange({ sidePanelShowIcons })}
-              />
-              {about.sidePanelShowIcons &&
-              about.sidePanelDesign !== 'info-strip' &&
-              about.sidePanelDesign !== 'profile-cv' ? (
-                <AboutOptionGrid
-                  label="Emplacement de l’icône"
-                  options={PORTFOLIO_ABOUT_SIDE_PANEL_ICON_PLACEMENT_OPTIONS}
-                  value={about.sidePanelIconPlacement}
-                  onChange={(sidePanelIconPlacement) => onChange({ sidePanelIconPlacement })}
-                  columns={2}
-                />
-              ) : null}
-              {about.sidePanelDesign === 'info-strip' ? (
-                <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                  Ligne d’infos : icône en haut, libellé gris, valeur en gras — sans grand fond blanc.
-                </p>
-              ) : null}
-            </>
-          ) : null}
-          {about.layoutMode === 'full-width' &&
-          !aboutSidePanelDesignOwnsLayout(about.sidePanelDesign) ? (
-            <AboutOptionGrid
-              label="Disposition pleine largeur"
-              options={PORTFOLIO_ABOUT_SIDE_PANEL_FULL_WIDTH_LAYOUT_OPTIONS}
-              value={about.sidePanelFullWidthLayout}
-              onChange={(sidePanelFullWidthLayout) => onChange({ sidePanelFullWidthLayout })}
-            />
-          ) : null}
+          <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
+            Le design d’Infos se règle dans la section <span className="font-semibold">Infos</span> du
+            menu. Why choose me a sa propre section dédiée.
+          </p>
         </div>
       ) : null}
 
       {subSection === 'whyMe' ? (
         <div className="space-y-6">
+          <AboutToggleRow
+            label="Afficher Why choose me"
+            description="Bloc Why choose me — indépendant du panneau Infos."
+            checked={about.showWhyMe}
+            onChange={(showWhyMe) => onChange({ showWhyMe })}
+          />
+
           <AboutOptionGrid
-            label="Design des blocs"
+            label="Design Why choose me"
             options={PORTFOLIO_ABOUT_WHY_ME_DESIGN_OPTIONS}
             value={about.whyMeDesign}
             onChange={(whyMeDesign) => onChange(whyMeDesignSettingsPatch(whyMeDesign))}
           />
-
-          {whyMeDesignSupportsItemsPerRow(about.whyMeDesign) ? (
-            <div className="space-y-2">
-              <AboutOptionGrid
-                label="Affichage par ligne"
-                options={PORTFOLIO_ABOUT_WHY_ME_ITEMS_PER_ROW_OPTIONS}
-                value={String(about.whyMeItemsPerRow ?? 1) as '1' | '2' | '3' | '4'}
-                onChange={(value) =>
-                  onChange({
-                    whyMeItemsPerRow: Number(value) as PortfolioAboutWhyMeItemsPerRow,
-                  })
-                }
-                columns={2}
-              />
-              {(() => {
-                const hint = whyMeItemsPerRowResponsiveHint(
-                  (about.whyMeItemsPerRow ?? 1) as PortfolioAboutWhyMeItemsPerRow
-                );
-                return hint ? <p className="text-sm text-neutral-500">{hint}</p> : null;
-              })()}
-            </div>
-          ) : (
-            <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-              <span className="font-semibold text-neutral-700">Stack portfolio</span> reste sur 1
-              colonne pour garder le visuel cinématique pleine largeur.
-            </p>
-          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <AboutOptionGrid
@@ -981,7 +838,7 @@ export function AboutSettingsPanel({
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-neutral-500">
-                  Écart vertical entre chaque bloc — timeline, bento, split, elevate et grilles.
+                  Écart vertical entre chaque bloc — timeline, split, liste séparée et SVG + liste.
                 </p>
                 <input
                   type="range"
@@ -1097,7 +954,12 @@ export function AboutSettingsPanel({
           </div>
 
           <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Titre de section</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+              Titre Why choose me
+            </p>
+            <p className="text-sm text-neutral-500">
+              Titre propre à Why choose me — séparé du titre About et d’Infos.
+            </p>
             <AboutToggleRow
               label="Afficher le titre"
               checked={about.showWhyMeHeading}
@@ -1148,13 +1010,6 @@ export function AboutSettingsPanel({
                     columns={3}
                   />
                 </div>
-                <AboutOptionGrid
-                  label="Police du titre"
-                  options={PORTFOLIO_ABOUT_HEADER_FONT_OPTIONS}
-                  value={about.whyMeHeadingFont}
-                  onChange={(whyMeHeadingFont) => onChange({ whyMeHeadingFont })}
-                  columns={2}
-                />
                 <AboutColorField
                   about={about}
                   onChange={onChange}
@@ -1474,23 +1329,6 @@ export function AboutSettingsPanel({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <AboutOptionGrid
-              label="Police des chiffres"
-              options={PORTFOLIO_ABOUT_HEADER_FONT_OPTIONS}
-              value={about.statsValueFont}
-              onChange={(statsValueFont) => onChange({ statsValueFont })}
-              columns={2}
-            />
-            <AboutOptionGrid
-              label="Police des libellés"
-              options={PORTFOLIO_ABOUT_HEADER_FONT_OPTIONS}
-              value={about.statsLabelFont}
-              onChange={(statsLabelFont) => onChange({ statsLabelFont })}
-              columns={2}
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <AboutOptionGrid
               label="Taille des chiffres"
               options={PORTFOLIO_ABOUT_STATS_VALUE_SIZE_OPTIONS}
               value={about.statsValueSize}
@@ -1566,6 +1404,63 @@ export function AboutSettingsPanel({
 
       {subSection === 'sidePanel' ? (
         <div className="space-y-6">
+          <AboutToggleRow
+            label="Afficher Infos"
+            description="Panneau Infos (location, langues, disponibilité…) — indépendant de Why choose me."
+            checked={about.showSidePanel}
+            onChange={(showSidePanel) => onChange({ showSidePanel })}
+          />
+
+          <AboutOptionGrid
+            label="Design Infos"
+            options={PORTFOLIO_ABOUT_SIDE_PANEL_DESIGN_OPTIONS}
+            value={about.sidePanelDesign}
+            onChange={(sidePanelDesign) => onChange({ sidePanelDesign })}
+          />
+
+          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+              Titre Infos
+            </p>
+            <p className="text-sm text-neutral-500">
+              Titre propre au panneau Infos — séparé du titre About et de Why choose me.
+            </p>
+            <AboutToggleRow
+              label="Afficher le titre Infos"
+              checked={about.showSidePanelHeading !== false}
+              onChange={(showSidePanelHeading) => onChange({ showSidePanelHeading })}
+            />
+            {about.showSidePanelHeading !== false ? (
+              <>
+                <input
+                  type="text"
+                  value={about.sidePanelHeading}
+                  onChange={(event) => onChange({ sidePanelHeading: event.target.value })}
+                  placeholder="Infos"
+                  className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
+                  aria-label="Titre Infos"
+                />
+                <AboutColorField
+                  about={about}
+                  onChange={onChange}
+                  slot="sidePanelHeading"
+                  label="Couleur du titre Infos"
+                  value={about.sidePanelHeadingColor}
+                />
+              </>
+            ) : null}
+          </div>
+
+          {about.layoutMode === 'full-width' &&
+          !aboutSidePanelDesignOwnsLayout(about.sidePanelDesign) ? (
+            <AboutOptionGrid
+              label="Disposition pleine largeur"
+              options={PORTFOLIO_ABOUT_SIDE_PANEL_FULL_WIDTH_LAYOUT_OPTIONS}
+              value={about.sidePanelFullWidthLayout}
+              onChange={(sidePanelFullWidthLayout) => onChange({ sidePanelFullWidthLayout })}
+            />
+          ) : null}
+
           {about.sidePanelDesign === 'profile-cv' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <div>
@@ -1596,30 +1491,15 @@ export function AboutSettingsPanel({
               <div>
                 <p className="text-sm font-semibold text-neutral-950">Liste à puces</p>
                 <p className="mt-1 text-sm text-neutral-500">
-                  Titre et marqueurs pour la colonne Infos — sans séparateurs verticaux.
+                  Marqueurs pour Infos uniquement — le titre se règle plus haut.
                 </p>
               </div>
-              <AboutToggleRow
-                label="Afficher le titre Infos"
-                checked={about.showSidePanelHeading}
-                onChange={(showSidePanelHeading) => onChange({ showSidePanelHeading })}
-              />
-              {about.showSidePanelHeading ? (
-                <input
-                  type="text"
-                  value={about.sidePanelHeading}
-                  onChange={(event) => onChange({ sidePanelHeading: event.target.value })}
-                  placeholder="Infos"
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
-                  aria-label="Titre de la colonne Infos"
-                />
-              ) : null}
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Style du marqueur
                 </p>
                 <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
-                  {PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS.map((option) => {
+                  {PORTFOLIO_ABOUT_SIDE_PANEL_MARKER_STYLE_OPTIONS.map((option) => {
                     const active = about.sidePanelMarkerStyle === option.value;
                     return (
                       <button
@@ -1906,7 +1786,10 @@ export function AboutSettingsPanel({
 
       {subSection === 'content' ? (
         <div className="space-y-4">
-          <AboutToggleRow label="Why work with me" checked={about.showWhyMe} onChange={(showWhyMe) => onChange({ showWhyMe })} />
+          <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
+            Visibilité Infos → section <span className="font-semibold">Infos</span>. Visibilité Why
+            choose me → section <span className="font-semibold">Why choose me</span>.
+          </p>
         </div>
       ) : null}
 

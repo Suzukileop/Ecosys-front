@@ -30,6 +30,11 @@ import {
   type PortfolioHeroMetaSettings,
 } from '@/components/portfolio/portfolio-hero-meta-settings';
 import {
+  isPortfolioHeroBannerDesign,
+  type PortfolioHeroBannerDesign,
+  type PortfolioHeroSelectedWorksIdentityLayout,
+} from '@/components/portfolio/portfolio-hero-banner-settings';
+import {
   DEFAULT_HERO_LEFT_MOTIF_SETTINGS,
   mergeHeroLeftMotifSettings,
   type PortfolioHeroLeftMotifSettings,
@@ -450,6 +455,105 @@ export function resolveHeroVisualFreeCell(presentation: {
 }
 
 export type PortfolioHeroPresentationSettings = {
+  /** Full-section Hero banner layout (Classic vs Swiss editorial, …). */
+  heroBannerDesign: PortfolioHeroBannerDesign;
+  /** Oversized cropped signature word for Swiss editorial (empty → first name). */
+  heroSignatureWord: string;
+  /** Small gray label above availability in Swiss editorial. */
+  heroCurrentlyLabel: string;
+  /** Small gray label above specialty in Swiss editorial. */
+  heroSpecializedInLabel: string;
+  /**
+   * Portrait identity + Swiss editorial: swap bio/statement with name + specialty.
+   */
+  heroBannerSwapBioName: boolean;
+  /**
+   * Editorial rail only: place the description under the portrait instead of under the headline.
+   */
+  heroEditorialRailBioUnderPortrait: boolean;
+  /**
+   * Editorial rail only: place name + specialty under the portrait as a dash list.
+   * When on, bio returns to the left column (overrides bio-under-portrait) with a larger size.
+   */
+  heroEditorialRailIdentityUnderPortrait: boolean;
+  /**
+   * Editorial rail only: which tools to show under Best tools (max 4).
+   * Empty → first tools from the profile (up to 4).
+   */
+  heroEditorialRailSelectedTools: string[];
+  /**
+   * Editorial rail only: show Start a project / View project CTAs under the bio.
+   */
+  heroEditorialRailShowCta: boolean;
+  /**
+   * Statement CTA only: show a rounded profile portrait in the center mid band.
+   * When on, CTAs automatically move under the bio (right column).
+   */
+  heroStatementCtaCenterPortrait: boolean;
+  /**
+   * Statement CTA only: Instagram-style principal ring around the center portrait (gap from image).
+   */
+  heroStatementCtaPortraitRing: boolean;
+  /**
+   * Statement CTA only: center portrait size scale (100 = medium, up to 180 ≈ XL).
+   */
+  heroStatementCtaPortraitScale: number;
+  /**
+   * Statement CTA only: independent horizontal cover rectangle (not profile avatar, not portrait).
+   */
+  heroStatementCtaCenterCover: boolean;
+  /**
+   * Statement CTA only: image URL for the horizontal cover rectangle.
+   */
+  heroStatementCtaCoverImageUrl: string;
+  /**
+   * Left portrait only: underline + principal-color highlight on the specialty in the headline.
+   */
+  heroLeftPortraitSpecialtyMark: boolean;
+  /**
+   * Circle portrait only: principal-color highlight on the specialty in the headline.
+   */
+  heroCirclePortraitSpecialtyMark: boolean;
+  /**
+   * Circle portrait only: when false (default), title sits at the bottom.
+   * When true via the “Titre en haut” toggle, title returns above bio/CTAs.
+   */
+  heroCirclePortraitTitleBottom: boolean;
+  /**
+   * Experience split only: when true (default), years/bio sits to the right of
+   * the portrait and the title + image block sits left (two-column layout).
+   */
+  heroExperienceSplitBioRight: boolean;
+  /**
+   * Experience split only: subtle full frame around the hero content using the
+   * Bordure palette token.
+   */
+  heroExperienceSplitGlobalFrame: boolean;
+  /**
+   * Editorial overlap only: landscape stage image (not the profile avatar).
+   */
+  heroEditorialOverlapImageUrl: string;
+  /**
+   * Editorial overlap only: serif headline inside the scooped text panel.
+   * Empty = greeting with real name.
+   */
+  heroEditorialOverlapHeadline: string;
+  /**
+   * Editorial overlap only: stage / image frame width.
+   */
+  heroEditorialOverlapWidth: 'medium' | 'large' | 'full';
+  /**
+   * Editorial overlap only: horizontal placement of the stage.
+   */
+  heroEditorialOverlapAlign: 'left' | 'center' | 'right';
+  /**
+   * Selected works banner only: dark overlay on thumbnails (0–80%).
+   */
+  heroSelectedWorksDimIntensity: number;
+  /**
+   * Selected works banner only: identity block layout (split columns vs centered title).
+   */
+  heroSelectedWorksIdentityLayout: PortfolioHeroSelectedWorksIdentityLayout;
   heroLayoutFlipped: boolean;
   /** How the copy group and visual group share the hero screen. */
   heroLayoutDivision: HeroLayoutDivision;
@@ -768,6 +872,31 @@ export const DEFAULT_HERO_MOTIFS: HeroMotifInstance[] = migrateLegacyHeroMotifs(
 });
 
 export const DEFAULT_HERO_PRESENTATION: PortfolioHeroPresentationSettings = {
+  heroBannerDesign: 'classic',
+  heroSignatureWord: '',
+  heroCurrentlyLabel: 'Currently',
+  heroSpecializedInLabel: 'Specialized in',
+  heroBannerSwapBioName: false,
+  heroEditorialRailBioUnderPortrait: false,
+  heroEditorialRailIdentityUnderPortrait: false,
+  heroEditorialRailSelectedTools: [],
+  heroEditorialRailShowCta: false,
+  heroStatementCtaCenterPortrait: false,
+  heroStatementCtaPortraitRing: false,
+  heroStatementCtaPortraitScale: 100,
+  heroStatementCtaCenterCover: false,
+  heroStatementCtaCoverImageUrl: '',
+  heroLeftPortraitSpecialtyMark: false,
+  heroCirclePortraitSpecialtyMark: false,
+  heroCirclePortraitTitleBottom: true,
+  heroExperienceSplitBioRight: true,
+  heroExperienceSplitGlobalFrame: false,
+  heroEditorialOverlapImageUrl: '',
+  heroEditorialOverlapHeadline: '',
+  heroEditorialOverlapWidth: 'full',
+  heroEditorialOverlapAlign: 'left',
+  heroSelectedWorksDimIntensity: 40,
+  heroSelectedWorksIdentityLayout: 'split',
   heroLayoutFlipped: false,
   heroLayoutDivision: DEFAULT_HERO_LAYOUT_DIVISION,
   heroHideEmptyDivisionParts: false,
@@ -1597,27 +1726,8 @@ export function heroHeadlineClassName(font: PortfolioHeroHeadlineFont): string {
   }
 }
 
-export function heroHeadlineFontStyle(font: PortfolioHeroHeadlineFont): import('react').CSSProperties | undefined {
-  switch (font) {
-    case 'serif':
-      return { fontFamily: "'Playfair Display', serif" };
-    case 'montserrat':
-      return { fontFamily: "'Montserrat', sans-serif" };
-    case 'oswald':
-      return { fontFamily: "'Oswald', sans-serif" };
-    case 'bebas':
-      return { fontFamily: "'Bebas Neue', sans-serif" };
-    case 'raleway':
-      return { fontFamily: "'Raleway', sans-serif" };
-    case 'anton':
-      return { fontFamily: "'Anton', sans-serif" };
-    case 'righteous':
-      return { fontFamily: "'Righteous', sans-serif" };
-    case 'script':
-      return { fontFamily: "'Dancing Script', cursive" };
-    default:
-      return undefined;
-  }
+export function heroHeadlineFontStyle(_font: PortfolioHeroHeadlineFont): import('react').CSSProperties | undefined {
+  return undefined;
 }
 
 /** @deprecated Use heroHeadlineFontStyle */
@@ -2130,6 +2240,132 @@ export function mergeHeroPresentation(
     : {};
 
   const merged: PortfolioHeroPresentationSettings = {
+    heroBannerDesign: isPortfolioHeroBannerDesign(record.heroBannerDesign)
+      ? record.heroBannerDesign
+      : base.heroBannerDesign ?? 'classic',
+    heroSignatureWord:
+      typeof record.heroSignatureWord === 'string'
+        ? record.heroSignatureWord
+        : base.heroSignatureWord ?? '',
+    heroCurrentlyLabel:
+      typeof record.heroCurrentlyLabel === 'string' && record.heroCurrentlyLabel.trim()
+        ? record.heroCurrentlyLabel.trim()
+        : base.heroCurrentlyLabel ?? 'Currently',
+    heroSpecializedInLabel:
+      typeof record.heroSpecializedInLabel === 'string' && record.heroSpecializedInLabel.trim()
+        ? record.heroSpecializedInLabel.trim()
+        : base.heroSpecializedInLabel ?? 'Specialized in',
+    heroBannerSwapBioName: (() => {
+      if (typeof record.heroBannerSwapBioName === 'boolean') return record.heroBannerSwapBioName;
+      const legacy = (record as { heroPortraitIdentitySwapBioName?: unknown })
+        .heroPortraitIdentitySwapBioName;
+      if (typeof legacy === 'boolean') return legacy;
+      return base.heroBannerSwapBioName ?? false;
+    })(),
+    heroEditorialRailBioUnderPortrait:
+      typeof record.heroEditorialRailBioUnderPortrait === 'boolean'
+        ? record.heroEditorialRailBioUnderPortrait
+        : base.heroEditorialRailBioUnderPortrait ?? false,
+    heroEditorialRailIdentityUnderPortrait:
+      typeof record.heroEditorialRailIdentityUnderPortrait === 'boolean'
+        ? record.heroEditorialRailIdentityUnderPortrait
+        : base.heroEditorialRailIdentityUnderPortrait ?? false,
+    heroEditorialRailSelectedTools: Array.isArray(record.heroEditorialRailSelectedTools)
+      ? record.heroEditorialRailSelectedTools
+          .filter((item): item is string => typeof item === 'string')
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .slice(0, 4)
+      : base.heroEditorialRailSelectedTools ?? [],
+    heroEditorialRailShowCta:
+      typeof record.heroEditorialRailShowCta === 'boolean'
+        ? record.heroEditorialRailShowCta
+        : base.heroEditorialRailShowCta ?? false,
+    heroStatementCtaCenterPortrait: (() => {
+      const portrait =
+        typeof record.heroStatementCtaCenterPortrait === 'boolean'
+          ? record.heroStatementCtaCenterPortrait
+          : base.heroStatementCtaCenterPortrait ?? false;
+      const cover =
+        typeof record.heroStatementCtaCenterCover === 'boolean'
+          ? record.heroStatementCtaCenterCover
+          : base.heroStatementCtaCenterCover ?? false;
+      // Mutual exclusion: never both on — cover wins if both were saved.
+      return portrait && !cover;
+    })(),
+    heroStatementCtaPortraitRing:
+      typeof record.heroStatementCtaPortraitRing === 'boolean'
+        ? record.heroStatementCtaPortraitRing
+        : base.heroStatementCtaPortraitRing ?? false,
+    heroStatementCtaPortraitScale: (() => {
+      const raw =
+        typeof record.heroStatementCtaPortraitScale === 'number'
+          ? record.heroStatementCtaPortraitScale
+          : base.heroStatementCtaPortraitScale ?? 100;
+      if (!Number.isFinite(raw)) return 100;
+      return Math.min(180, Math.max(100, Math.round(raw)));
+    })(),
+    heroStatementCtaCenterCover:
+      typeof record.heroStatementCtaCenterCover === 'boolean'
+        ? record.heroStatementCtaCenterCover
+        : base.heroStatementCtaCenterCover ?? false,
+    heroLeftPortraitSpecialtyMark:
+      typeof record.heroLeftPortraitSpecialtyMark === 'boolean'
+        ? record.heroLeftPortraitSpecialtyMark
+        : base.heroLeftPortraitSpecialtyMark ?? false,
+    heroCirclePortraitSpecialtyMark:
+      typeof record.heroCirclePortraitSpecialtyMark === 'boolean'
+        ? record.heroCirclePortraitSpecialtyMark
+        : base.heroCirclePortraitSpecialtyMark ?? false,
+    heroCirclePortraitTitleBottom:
+      typeof record.heroCirclePortraitTitleBottom === 'boolean'
+        ? record.heroCirclePortraitTitleBottom
+        : base.heroCirclePortraitTitleBottom ?? true,
+    heroExperienceSplitBioRight:
+      typeof record.heroExperienceSplitBioRight === 'boolean'
+        ? record.heroExperienceSplitBioRight
+        : base.heroExperienceSplitBioRight ?? true,
+    heroExperienceSplitGlobalFrame:
+      typeof record.heroExperienceSplitGlobalFrame === 'boolean'
+        ? record.heroExperienceSplitGlobalFrame
+        : base.heroExperienceSplitGlobalFrame ?? false,
+    heroEditorialOverlapImageUrl:
+      typeof record.heroEditorialOverlapImageUrl === 'string'
+        ? record.heroEditorialOverlapImageUrl.trim()
+        : base.heroEditorialOverlapImageUrl ?? '',
+    heroEditorialOverlapHeadline:
+      typeof record.heroEditorialOverlapHeadline === 'string'
+        ? record.heroEditorialOverlapHeadline.trim()
+        : base.heroEditorialOverlapHeadline ?? '',
+    heroEditorialOverlapWidth:
+      record.heroEditorialOverlapWidth === 'medium' ||
+      record.heroEditorialOverlapWidth === 'large' ||
+      record.heroEditorialOverlapWidth === 'full'
+        ? record.heroEditorialOverlapWidth
+        : base.heroEditorialOverlapWidth ?? 'full',
+    heroEditorialOverlapAlign:
+      record.heroEditorialOverlapAlign === 'left' ||
+      record.heroEditorialOverlapAlign === 'center' ||
+      record.heroEditorialOverlapAlign === 'right'
+        ? record.heroEditorialOverlapAlign
+        : base.heroEditorialOverlapAlign ?? 'left',
+    heroSelectedWorksDimIntensity: (() => {
+      const raw =
+        typeof record.heroSelectedWorksDimIntensity === 'number'
+          ? record.heroSelectedWorksDimIntensity
+          : base.heroSelectedWorksDimIntensity ?? 40;
+      if (!Number.isFinite(raw)) return 40;
+      return Math.min(80, Math.max(0, Math.round(raw)));
+    })(),
+    heroSelectedWorksIdentityLayout:
+      record.heroSelectedWorksIdentityLayout === 'split' ||
+      record.heroSelectedWorksIdentityLayout === 'centered'
+        ? record.heroSelectedWorksIdentityLayout
+        : base.heroSelectedWorksIdentityLayout ?? 'split',
+    heroStatementCtaCoverImageUrl:
+      typeof record.heroStatementCtaCoverImageUrl === 'string'
+        ? record.heroStatementCtaCoverImageUrl.trim()
+        : base.heroStatementCtaCoverImageUrl ?? '',
     heroLayoutFlipped:
       typeof record.heroLayoutFlipped === 'boolean' ? record.heroLayoutFlipped : base.heroLayoutFlipped,
     heroLayoutDivision: sanitizeHeroLayoutDivision(

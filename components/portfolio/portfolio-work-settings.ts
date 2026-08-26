@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
+import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import {
   applyWorkPaletteToSettings,
   DEFAULT_WORK_COLOR_BINDINGS,
@@ -1524,20 +1525,23 @@ function sanitizeMediaRatio(value: unknown, fallback: number): number {
 }
 
 export function resolveWorkSectionTitle(settings: Pick<PortfolioWorkSectionSettings, 'titlePreset' | 'titleCustom' | 'title'>): string {
-  switch (settings.titlePreset) {
-    case 'selected-work':
-      return 'SELECTED WORK';
-    case 'projects':
-      return 'PROJECTS';
-    case 'my-work':
-      return 'MY WORK';
-    case 'custom':
-      return settings.titleCustom.trim() || settings.title.trim() || 'PORTFOLIO';
-    case 'portfolio':
-      return 'PORTFOLIO';
-    default:
-      return settings.title.trim() || 'PORTFOLIO';
-  }
+  const raw = (() => {
+    switch (settings.titlePreset) {
+      case 'selected-work':
+        return 'SELECTED WORK';
+      case 'projects':
+        return 'PROJECTS';
+      case 'my-work':
+        return 'MY WORK';
+      case 'custom':
+        return settings.titleCustom.trim() || settings.title.trim() || 'PORTFOLIO';
+      case 'portfolio':
+        return 'PORTFOLIO';
+      default:
+        return settings.title.trim() || 'PORTFOLIO';
+    }
+  })();
+  return portfolioSectionTitleSentenceCase(raw);
 }
 
 export function resolveWorkSectionSubtitle(
@@ -1578,8 +1582,7 @@ export function workHeaderFontClass(font: PortfolioWorkHeaderFont, kind: 'title'
   }
 }
 
-export function workHeaderFontStyle(font: PortfolioWorkHeaderFont): CSSProperties | undefined {
-  if (font === 'serif') return { fontFamily: "'Playfair Display', serif" };
+export function workHeaderFontStyle(_font: PortfolioWorkHeaderFont): CSSProperties | undefined {
   return undefined;
 }
 
@@ -2412,7 +2415,7 @@ export function workCtaClassName(
     ? 'hover:bg-[var(--work-cta-hover-bg)] hover:text-[var(--work-cta-hover-text)] hover:border-[color:var(--work-cta-hover-border)]'
     : '';
   const surface = `bg-[var(--work-cta-bg)] text-[var(--work-cta-text)] border-solid border-[color:var(--work-cta-border)] transition-colors duration-200 ${hoverClasses}`;
-  const base = `group/cta inline-flex max-w-full min-w-0 flex-wrap items-center gap-2.5 text-sm font-bold sm:text-base ${surface}`;
+  const base = `group/cta inline-flex max-w-full min-w-0 flex-nowrap items-center gap-2.5 text-sm font-bold sm:text-base ${surface}`;
 
   switch (design) {
     case 'pill-dark':

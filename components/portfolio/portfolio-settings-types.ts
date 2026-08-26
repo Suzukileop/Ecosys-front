@@ -104,6 +104,8 @@ export type PortfolioSettingsSectionId =
   | 'skills'
   | 'services'
   | 'about'
+  | 'infos'
+  | 'whyChooseMe'
   | 'aboutUs'
   | 'experience'
   | 'team'
@@ -836,9 +838,14 @@ export const PORTFOLIO_SETTINGS_SECTIONS: PortfolioSettingsSectionMeta[] = [
     description: 'Services & pricing section — cards, CTA Commander, and typography.',
   },
   {
-    id: 'about',
-    label: 'About',
-    description: 'Stats, why work with me, and profile details.',
+    id: 'infos',
+    label: 'Infos',
+    description: 'Profile details panel — design, fields, markers, and typography.',
+  },
+  {
+    id: 'whyChooseMe',
+    label: 'Why choose me',
+    description: 'Why choose me block — designs, numbering, heading, and typography.',
   },
   {
     id: 'aboutUs',

@@ -24,7 +24,6 @@ import {
   PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS,
   PORTFOLIO_NAV_EXTRAS_PLACEMENT_OPTIONS,
   PORTFOLIO_NAV_CUSTOM_EXTRA_DISPLAY_OPTIONS,
-  PORTFOLIO_NAV_CUSTOM_EXTRA_FONT_OPTIONS,
   PORTFOLIO_NAV_CUSTOM_EXTRA_FONT_WEIGHT_OPTIONS,
   clampPortfolioNavCustomExtraFontSizePx,
   clampPortfolioNavCustomExtraGapPx,
@@ -36,7 +35,6 @@ import {
   type PortfolioNavExtrasSide,
   type PortfolioNavExtrasPlacement,
   type PortfolioNavCustomExtraDisplay,
-  type PortfolioNavCustomExtraFont,
   type PortfolioNavCustomExtraFontWeight,
   type PortfolioNavCustomExtraPlacement,
   type PortfolioNavCustomExtraShape,
@@ -251,10 +249,6 @@ import {
   resolveGlobalTypographyTextColor,
   globalTitleFontWeightValue,
 } from '@/components/portfolio/portfolio-global-settings';
-import {
-  PORTFOLIO_LIST_MARKER_STYLE_OPTIONS,
-} from '@/components/portfolio/portfolio-list-marker';
-import { PortfolioListMarkerSizeWeightControls } from '@/components/portfolio/PortfolioListMarkerSizeWeightControls';
 import { resolvePortfolioContentSectionOrder } from '@/components/portfolio/portfolio-services-block-settings';
 import type { PortfolioServicesSectionOrganization } from '@/components/portfolio/portfolio-services-settings';
 import {
@@ -303,7 +297,8 @@ type PanelSubSections = {
   work?: WorkSettingsSubSection;
   skills?: ServicesSubSection;
   services?: ServicesSubSection;
-  about?: AboutSubSection;
+  infos?: AboutSubSection;
+  whyChooseMe?: AboutSubSection;
   aboutUs?: AboutUsSubSection;
   experience?: ExperienceSubSection;
   team?: TeamSubSection;
@@ -313,10 +308,10 @@ type PanelSubSections = {
   footer?: FooterSubSection;
 };
 
-/** Settings blob keys (Skills reuses `services` presentation settings). */
+/** Settings blob keys (Skills reuses `services`; Infos / Why choose me reuse `about`). */
 type PortfolioSettingsContentKey = Exclude<
   PortfolioSettingsSectionId,
-  'theme' | 'navigation' | 'skills'
+  'theme' | 'navigation' | 'skills' | 'infos' | 'whyChooseMe'
 >;
 
 function PortfolioSettingsSearchBar({
@@ -468,6 +463,8 @@ function isPortfolioSettingsSectionId(value: string): value is PortfolioSettings
 function readStoredActiveSection(): PortfolioSettingsSectionId {
   if (typeof window === 'undefined') return 'theme';
   const stored = window.sessionStorage.getItem(MODAL_SECTION_STORAGE_KEY);
+  // Legacy: About chrome was removed from the settings nav (Infos / Why choose me remain).
+  if (stored === 'about') return 'infos';
   if (stored && isPortfolioSettingsSectionId(stored)) return stored;
   return 'theme';
 }
@@ -998,7 +995,6 @@ function GlobalSectionTypographySettings({
   onGlobalChange: (patch: Partial<PortfolioGlobalSettings>) => void;
 }) {
   const bodyFont = global.bodyFont ?? 'plusJakarta';
-  const forceAll = global.bodyFontForceAll ?? false;
 
   return (
     <>
@@ -1006,8 +1002,8 @@ function GlobalSectionTypographySettings({
         <div>
           <p className="text-sm font-semibold text-neutral-950">Police principale</p>
           <p className="mt-1 text-sm text-neutral-500">
-            Typeface du portfolio. Avec « Forcer partout », Aeonik (ou toute autre police
-            choisie) remplace serif, display et styles par élément — sans exception.
+            Unique typeface du portfolio public — appliquée partout (hero, titres, cartes,
+            contact, footer…). Les polices par section ont été retirées.
           </p>
         </div>
 
@@ -1024,7 +1020,7 @@ function GlobalSectionTypographySettings({
                   onClick={() =>
                     onGlobalChange({
                       bodyFont: option.value as PortfolioGlobalBodyFont,
-                      ...(option.value === 'aeonik' ? { bodyFontForceAll: true } : {}),
+                      bodyFontForceAll: true,
                     })
                   }
                   className={`rounded-2xl border px-3.5 py-3 text-left transition ${
@@ -1048,36 +1044,7 @@ function GlobalSectionTypographySettings({
             }
           )}
         </div>
-
-        <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-white px-4 py-3.5">
-          <span className="min-w-0">
-            <span className="block text-sm font-semibold text-neutral-950">
-              Forcer partout
-            </span>
-            <span className="mt-1 block text-sm text-neutral-500">
-              Applique la police principale à tous les textes (hero, titres, cartes, footer…).
-              Désactive les overrides serif / display des sections.
-            </span>
-          </span>
-          <input
-            type="checkbox"
-            checked={forceAll}
-            onChange={(event) => onGlobalChange({ bodyFontForceAll: event.target.checked })}
-            className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-neutral-900"
-          />
-        </label>
       </div>
-
-      <GlobalHeaderFontMockups
-        kind="title"
-        value={global.titleTypography.font}
-        selected={global.titleTypography.scope === 'global'}
-        onChange={(font) =>
-          onGlobalChange({
-            titleTypography: { ...global.titleTypography, font, scope: 'global' },
-          })
-        }
-      />
 
       <GlobalHeaderTypographyBlock
         label="Section titles"
@@ -1091,17 +1058,6 @@ function GlobalSectionTypographySettings({
         hideFontPicker
         onChange={(titleTypography) =>
           onGlobalChange({ titleTypography: titleTypography as PortfolioGlobalTitleTypography })
-        }
-      />
-
-      <GlobalHeaderFontMockups
-        kind="subtitle"
-        value={global.subtitleTypography.font}
-        selected={global.subtitleTypography.scope === 'global'}
-        onChange={(font) =>
-          onGlobalChange({
-            subtitleTypography: { ...global.subtitleTypography, font, scope: 'global' },
-          })
         }
       />
 
@@ -1168,8 +1124,8 @@ function GlobalHeaderTypographyBlock({
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
         <p className="mt-1 text-sm text-neutral-500">
           {isTitleBlock
-            ? 'Color, size, weight, font, underline, highlight, and emphasis for every section title.'
-            : 'Color, size, font, underline, highlight, and emphasis for every section description.'}
+            ? 'Color, size, weight, underline, highlight, and emphasis for every section title. Font family comes from Police principale.'
+            : 'Color, size, underline, highlight, and emphasis for every section description. Font family comes from Police principale.'}
         </p>
       </div>
 
@@ -2979,75 +2935,6 @@ function GlobalSettingsPanel({
             motionTiming={global.motionTiming}
             onChange={(patch) => onGlobalChange(patch)}
           />
-
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Task list bullets</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Default puces for Experience and Services task lists when those sections use source
-                Global. Same styles as About → Why me.
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Style
-              </p>
-              <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
-                {PORTFOLIO_LIST_MARKER_STYLE_OPTIONS.map((option) => {
-                  const active = (global.taskListBulletStyle ?? 'disc') === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      title={`${option.label} — ${option.description}`}
-                      onClick={() => onGlobalChange({ taskListBulletStyle: option.value })}
-                      className={`flex flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2.5 transition ${
-                        active
-                          ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                          : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-                      }`}
-                    >
-                      <span className="text-base font-semibold leading-none text-neutral-900">
-                        {option.preview}
-                      </span>
-                      <span className="max-w-full truncate text-[10px] font-medium text-neutral-500">
-                        {option.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            {(global.taskListBulletStyle ?? 'disc') !== 'none' ? (
-              <>
-                <PortfolioListMarkerSizeWeightControls
-                  size={global.taskListBulletSize ?? 'md'}
-                  sizePx={global.taskListBulletSizePx}
-                  weight={global.taskListBulletWeight ?? 'regular'}
-                  weightAmount={global.taskListBulletWeightAmount}
-                  OptionGrid={OptionGrid}
-                  sizeLabel="Size"
-                  weightLabel="Weight"
-                  onChange={(patch) =>
-                    onGlobalChange({
-                      ...(patch.size !== undefined ? { taskListBulletSize: patch.size } : null),
-                      ...(patch.sizePx !== undefined ? { taskListBulletSizePx: patch.sizePx } : null),
-                      ...(patch.weight !== undefined ? { taskListBulletWeight: patch.weight } : null),
-                      ...(patch.weightAmount !== undefined
-                        ? { taskListBulletWeightAmount: patch.weightAmount }
-                        : null),
-                    })
-                  }
-                />
-                <GlobalColorField
-                  label="Bullet color"
-                  description="Color of task list markers site-wide when sections follow Global."
-                  value={global.taskListBulletColor ?? '#e2572e'}
-                  onChange={(taskListBulletColor) => onGlobalChange({ taskListBulletColor })}
-                />
-              </>
-            ) : null}
-          </div>
 
           <OptionGrid
             label="Space above section titles"
@@ -5333,13 +5220,6 @@ function NavigationPanel({
                   onChange={(customExtraOpenNewTab) => onChange({ customExtraOpenNewTab })}
                 />
                 <OptionGrid
-                  label="Police"
-                  columns={3}
-                  value={(navigation.customExtraFont ?? 'sans') as PortfolioNavCustomExtraFont}
-                  onChange={(customExtraFont) => onChange({ customExtraFont })}
-                  options={PORTFOLIO_NAV_CUSTOM_EXTRA_FONT_OPTIONS}
-                />
-                <OptionGrid
                   label="Graisse du texte"
                   columns={4}
                   value={
@@ -5718,6 +5598,30 @@ function SectionPanel({
     );
   }
 
+  if (sectionId === 'infos') {
+    return (
+      <AboutSettingsPanel
+        about={settings.about}
+        onChange={(patch) => onChange('about', patch)}
+        settingsFocus="infos"
+        subSection={panelSubSections.infos ?? 'sidePanel'}
+        onSubSectionChange={(value) => onPanelSubSectionChange('infos', value)}
+      />
+    );
+  }
+
+  if (sectionId === 'whyChooseMe') {
+    return (
+      <AboutSettingsPanel
+        about={settings.about}
+        onChange={(patch) => onChange('about', patch)}
+        settingsFocus="whyChooseMe"
+        subSection={panelSubSections.whyChooseMe ?? 'whyMe'}
+        onSubSectionChange={(value) => onPanelSubSectionChange('whyChooseMe', value)}
+      />
+    );
+  }
+
   const copy = settings[sectionId];
 
   if (sectionId === 'hero') {
@@ -5739,17 +5643,6 @@ function SectionPanel({
         onChange={(patch) => onChange('work', patch)}
         subSection={panelSubSections.work ?? 'header'}
         onSubSectionChange={(value) => onPanelSubSectionChange('work', value)}
-      />
-    );
-  }
-
-  if (sectionId === 'about') {
-    return (
-      <AboutSettingsPanel
-        about={settings.about}
-        onChange={(patch) => onChange('about', patch)}
-        subSection={panelSubSections.about ?? 'header'}
-        onSubSectionChange={(value) => onPanelSubSectionChange('about', value)}
       />
     );
   }
@@ -6012,8 +5905,16 @@ export function PortfolioSettingsModal({
         ...prev,
         services: normalizeServicesSubSection(entry.subSection, 'services'),
       }));
-    } else if (entry.sectionId === 'about') {
-      setPanelSubSections((prev) => ({ ...prev, about: normalizeAboutSubSection(entry.subSection) }));
+    } else if (entry.sectionId === 'infos') {
+      setPanelSubSections((prev) => ({
+        ...prev,
+        infos: normalizeAboutSubSection(entry.subSection, 'infos'),
+      }));
+    } else if (entry.sectionId === 'whyChooseMe') {
+      setPanelSubSections((prev) => ({
+        ...prev,
+        whyChooseMe: normalizeAboutSubSection(entry.subSection, 'whyChooseMe'),
+      }));
     } else if (entry.sectionId === 'aboutUs') {
       setPanelSubSections((prev) => ({
         ...prev,

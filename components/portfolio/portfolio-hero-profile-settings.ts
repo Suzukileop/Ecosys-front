@@ -819,9 +819,8 @@ export function creatorNameFontClass(font: PortfolioHeroCreatorNameFont): string
   }
 }
 
-export function creatorNameFontStyle(font: PortfolioHeroCreatorNameFont): CSSProperties | undefined {
-  if (font !== 'serif') return undefined;
-  return { fontFamily: "'Playfair Display', serif" };
+export function creatorNameFontStyle(_font: PortfolioHeroCreatorNameFont): CSSProperties | undefined {
+  return undefined;
 }
 
 export function mergeHeroProfileSettings(

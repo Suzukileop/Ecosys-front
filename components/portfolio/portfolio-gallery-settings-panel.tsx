@@ -411,8 +411,6 @@ export function GallerySettingsPanel({
           {gallery.titlePreset === 'custom' ? <input value={gallery.titleCustom} onChange={(event) => onChange({ titleCustom: event.target.value, title: event.target.value })} className="w-full rounded-xl border px-3 py-2.5" placeholder="Gallery" /> : null}
           <Select label="Subtitle" value={gallery.subtitlePreset} options={PORTFOLIO_GALLERY_SUBTITLE_PRESET_OPTIONS} onChange={(subtitlePreset) => onChange({ subtitlePreset })} />
           {gallery.subtitlePreset === 'custom' ? <textarea value={gallery.subtitleCustom} onChange={(event) => onChange({ subtitleCustom: event.target.value, subtitle: event.target.value })} className="w-full rounded-xl border px-3 py-2.5" rows={3} /> : null}
-          <Select label="Police du titre" value={gallery.titleFont} options={[{ value: 'sans', label: 'Sans' }, { value: 'serif', label: 'Serif' }, { value: 'display', label: 'Display' }]} onChange={(titleFont) => onChange({ titleFont })} />
-          <Select label="Police du sous-titre" value={gallery.subtitleFont} options={[{ value: 'sans', label: 'Sans' }, { value: 'serif', label: 'Serif' }, { value: 'display', label: 'Display' }]} onChange={(subtitleFont) => onChange({ subtitleFont })} />
           {gallerySectionLayoutIsAside(gallery.sectionLayout) || gallery.sectionLayout === 'over-thumbs' ? (
             <p className="text-sm text-neutral-500">
               Alignement horizontal masqué : le titre est déjà{' '}

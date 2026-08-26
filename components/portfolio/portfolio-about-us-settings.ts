@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
+import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
   DEFAULT_SECTION_BACKGROUND,
@@ -448,7 +449,7 @@ export function aboutUsSectionLayoutIsAside(
 export function resolveAboutUsSectionTitle(
   settings: Pick<PortfolioAboutUsSectionSettings, 'title'>
 ): string {
-  return settings.title.trim() || DEFAULT_ABOUT_US_TITLE;
+  return portfolioSectionTitleSentenceCase(settings.title.trim() || DEFAULT_ABOUT_US_TITLE);
 }
 
 export function resolveAboutUsSectionSubtitle(

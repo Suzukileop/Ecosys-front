@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import {
   DEFAULT_SERVICES_CARD_BACKGROUND_SETTINGS,
   DEFAULT_SERVICES_CARD_BACKGROUND_ZONE_B,
@@ -13,6 +14,8 @@ import {
 } from '@/components/portfolio/portfolio-services-card-decor-settings';
 import {
   createElementTextStyle,
+  ELEMENT_TEXT_SIZE_PRESET_PX,
+  ELEMENT_TEXT_WEIGHT_PRESET_AMOUNT,
   normalizeElementStylesRecord,
   patchElementStylesRecord,
   type PortfolioElementTextStyle,
@@ -159,9 +162,127 @@ export type PortfolioServicesGalleryLayout =
   | 'pricing-hero'
   | 'tier'
   | 'plan'
+  | 'plan-split'
+  | 'card-media'
+  | 'media-banner'
+  | 'media-checklist'
+  | 'media-split'
   | 'icon-stack'
   | 'pill-cloud'
   | 'tool-inspector';
+
+/**
+ * Presentation knobs that belong to one gallery design.
+ * Switching layouts saves/restores these so each design stays independent.
+ */
+export type PortfolioServicesGalleryLayoutPreset = Partial<
+  Pick<
+    PortfolioServicesPresentationSettings,
+    | 'displayMode'
+    | 'servicesColumns'
+    | 'cardMaxWidth'
+    | 'cardAlignment'
+    | 'servicesContentAlignment'
+    | 'servicePriceAlign'
+    | 'servicePricePrefixEnabled'
+    | 'servicePricePeriodSuffix'
+    | 'showServiceTitle'
+    | 'showServiceDescription'
+    | 'showServicePrice'
+    | 'showServiceDelivery'
+    | 'showServiceTasks'
+    | 'showServiceCta'
+    | 'servicesTaskBulletSource'
+    | 'servicesTaskBulletStyle'
+    | 'servicesTaskBulletColor'
+    | 'servicesTaskBulletSize'
+    | 'servicesTaskBulletSizePx'
+    | 'servicesTaskBulletWeight'
+    | 'servicesTaskBulletWeightAmount'
+    | 'ctaLabel'
+    | 'ctaDesign'
+    | 'ctaAlignment'
+    | 'ctaShowIcon'
+    | 'ctaIcon'
+    | 'ctaIconPosition'
+    | 'elementStyles'
+    | 'servicesColorBindings'
+    | 'cardBackgroundEnabled'
+    | 'servicesPrincipalSurfaceEnabled'
+    | 'servicesPrincipalSurfaceAlternation'
+    | 'servicesPrincipalSurfaceAlternateStart'
+    | 'servicesMediaSide'
+    | 'servicesMediaSideAlternation'
+    | 'cardBorder'
+    | 'cardBorderOpacity'
+    | 'cardBackgroundFill'
+    | 'cardBackgroundAlternation'
+    | 'cardDecorEnabled'
+    | 'cardDividerEnabled'
+    | 'cardPadding'
+    | 'commercialPriceWidthPx'
+    | 'commercialCtaWidthPx'
+    | 'commercialColumnGapPx'
+  >
+>;
+
+/** Layouts removed from the picker — remap legacy saved values to Carte horizontal. */
+const REMOVED_SERVICES_GALLERY_LAYOUTS = new Set<string>([
+  'service-accordion',
+  'pricing-hero',
+  'accordion',
+]);
+
+const SERVICES_GALLERY_LAYOUT_VALUES: PortfolioServicesGalleryLayout[] = [
+  'card',
+  'list',
+  'service-selector',
+  'commercial-list',
+  'tier',
+  'plan',
+  'plan-split',
+  'card-media',
+  'media-banner',
+  'media-checklist',
+  'media-split',
+];
+
+const SKILLS_GALLERY_LAYOUT_VALUES: PortfolioServicesGalleryLayout[] = [
+  'card',
+  'list',
+  'icon-stack',
+  'pill-cloud',
+  'tool-inspector',
+];
+
+function normalizeServicesGalleryLayoutValue(
+  raw: unknown,
+  fallback: PortfolioServicesGalleryLayout,
+  kind: 'services' | 'skills' = 'services'
+): PortfolioServicesGalleryLayout {
+  if (typeof raw === 'string' && REMOVED_SERVICES_GALLERY_LAYOUTS.has(raw)) {
+    return 'card';
+  }
+  if (
+    kind === 'skills' &&
+    (raw === 'service-selector' ||
+      raw === 'commercial-list' ||
+      raw === 'tier' ||
+      raw === 'plan' ||
+      raw === 'plan-split' ||
+      raw === 'card-media' ||
+      raw === 'media-banner' ||
+      raw === 'media-checklist' ||
+      raw === 'media-split')
+  ) {
+    return 'card';
+  }
+  const allowed = kind === 'skills' ? SKILLS_GALLERY_LAYOUT_VALUES : SERVICES_GALLERY_LAYOUT_VALUES;
+  if (typeof raw === 'string' && (allowed as string[]).includes(raw)) {
+    return raw as PortfolioServicesGalleryLayout;
+  }
+  return fallback;
+}
 
 export type PortfolioSkillsInspectorRailPlacement = 'left' | 'right' | 'top';
 export type PortfolioServicesSectionLayout = 'stacked' | 'aside-left' | 'aside-right';
@@ -228,6 +349,12 @@ export type PortfolioServicesCardRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 
 /** Alternate light / muted card surfaces across the gallery. */
 export type PortfolioServicesCardBackgroundAlternation = 'uniform' | 'alternate';
+/** Which fill leads when principal-surface alternation is enabled. */
+export type PortfolioServicesPrincipalSurfaceAlternateStart = 'principal' | 'normal';
+/** Media column side for cover-image service layouts. */
+export type PortfolioServicesMediaSide = 'media-left' | 'media-right';
+/** Uniform = same side every card; alternate = flip media/info each card. */
+export type PortfolioServicesMediaSideAlternation = 'uniform' | 'alternate';
 
 export type PortfolioServicesCardPadding = 'none' | 'sm' | 'md' | 'lg';
 
@@ -382,6 +509,21 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
   /** 0–100 opacity for the card outline (soft / solid / accent). */
   cardBorderOpacity: number;
   cardBackgroundEnabled: boolean;
+  /**
+   * When true, featured cards use principal fill + contrasting ink (static — no hover fill).
+   */
+  servicesPrincipalSurfaceEnabled: boolean;
+  /** Uniform = every card; alternate = every other card (normal / principal). */
+  servicesPrincipalSurfaceAlternation: PortfolioServicesCardBackgroundAlternation;
+  /** When alternation is on: which fill leads on the first card. */
+  servicesPrincipalSurfaceAlternateStart: PortfolioServicesPrincipalSurfaceAlternateStart;
+  /**
+   * Cover-image layouts (Carte média / Bannière / Checklist): media left or right.
+   * With alternation, this is the first card’s side.
+   */
+  servicesMediaSide: PortfolioServicesMediaSide;
+  /** Uniform = every card same side; alternate = flip media ↔ info each card. */
+  servicesMediaSideAlternation: PortfolioServicesMediaSideAlternation;
   cardBackgroundColor: string;
   /** Manual dark-mode card fill when palette is off. */
   cardBackgroundColorDark: string;
@@ -574,6 +716,19 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
   elementChromes: PortfolioServicesElementChromes;
   skillsBlock: PortfolioServicesBlockSettings;
   servicesBlock: PortfolioServicesBlockSettings;
+  /**
+   * Bumps when Carte horizontal frame defaults change so saved portfolios
+   * migrate once (border-only chrome) without locking later user edits.
+   */
+  servicesCardChromeVersion?: number;
+  /**
+   * Per gallery-layout presentation snapshot so switching designs
+   * (Carte / Offre·Tarif / Plan / …) restores that design’s own settings
+   * instead of forcing one shared config onto every card.
+   */
+  servicesGalleryLayoutPresets?: Partial<
+    Record<PortfolioServicesGalleryLayout, PortfolioServicesGalleryLayoutPreset>
+  >;
   skillsHeader: PortfolioServicesDistinctHeaderSettings;
   servicesHeader: PortfolioServicesDistinctHeaderSettings;
 };
@@ -710,8 +865,8 @@ export const DEFAULT_SERVICES_ELEMENT_STYLES: PortfolioServicesElementStyles = {
     size: 'md',
   }),
   cta: createElementTextStyle({
-    color: DEFAULT_SERVICES_ACCENT_COLOR,
-    colorDark: '#fb923c',
+    color: DEFAULT_SERVICES_TITLE_COLOR,
+    colorDark: '#f4f4f5',
     size: 'sm',
     bold: true,
     uppercase: true,
@@ -759,12 +914,13 @@ export function resolveServicesTaskBulletColor(
 }
 
 export function resolveServicesTaskBulletSource(
-  presentation: Pick<
+  _presentation?: Pick<
     PortfolioServicesPresentationSettings,
     'servicesTaskBulletSource' | 'servicesTaskBulletStyle'
   >
 ): PortfolioListMarkerSource {
-  return presentation.servicesTaskBulletSource === 'section' ? 'section' : 'global';
+  // Global task-list bullets were removed — Services always uses section markers.
+  return 'section';
 }
 
 export function isPortfolioServicesTaskBulletStyle(
@@ -1226,7 +1382,7 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   headerAlignment: 'left' as const,
   sectionOrganization: 'distinct' as const,
   layoutMode: 'separated' as const,
-  displayMode: 'marquee' as const,
+  displayMode: 'grid' as const,
   deckEntranceEffect: 'expand' as const,
   servicesMarqueeDirection: 'left' as const,
   skillsMarqueeDirection: 'left' as const,
@@ -1242,13 +1398,18 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   cardBorder: 'soft' as const,
   cardBorderColor: DEFAULT_SERVICES_CARD_BORDER_COLOR,
   cardBorderOpacity: 100,
-  cardBackgroundEnabled: true,
+  cardBackgroundEnabled: false,
+  servicesPrincipalSurfaceEnabled: false,
+  servicesPrincipalSurfaceAlternation: 'uniform' as const,
+  servicesPrincipalSurfaceAlternateStart: 'principal' as const,
+  servicesMediaSide: 'media-left' as const,
+  servicesMediaSideAlternation: 'alternate' as const,
   cardBackgroundColor: DEFAULT_SERVICES_CARD_BACKGROUND_COLOR,
   cardBackgroundColorDark: '#171717',
   cardBackgroundColorBDark: '#262626',
   cardBorderRadius: 'lg' as const,
   cardPadding: 'md' as const,
-  cardBackgroundAlternation: 'alternate' as const,
+  cardBackgroundAlternation: 'uniform' as const,
   cardTextContrast: 'auto' as const,
   cardInkStrongA: DEFAULT_SERVICES_CARD_INK_STRONG_A,
   cardInkMutedA: DEFAULT_SERVICES_CARD_INK_MUTED_A,
@@ -1276,10 +1437,10 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   commercialPopularItemNumber: 2,
   commercialPopularLabel: 'Popular',
   commercialRowGapPx: 20,
-  commercialColumnGapPx: 32,
+  commercialColumnGapPx: 48,
   commercialMarkerSizePx: 48,
-  commercialPriceWidthPx: 160,
-  commercialCtaWidthPx: 160,
+  commercialPriceWidthPx: 200,
+  commercialCtaWidthPx: 210,
   skillsIconPlacement: 'start' as const,
   skillsIconRadius: 'full' as const,
   skillsIconBackgroundEnabled: true,
@@ -1307,7 +1468,7 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   servicesIllustrationPlacement: 'right' as const,
   skillsInspectorShowHint: false,
   skillsShowBullet: false,
-  skillsBulletSource: 'global' as const,
+  skillsBulletSource: 'section' as const,
   skillsBulletStyle: 'disc' as const,
   skillsBulletColor: DEFAULT_SERVICES_TASK_BULLET_COLOR,
   skillsBulletSize: 'md' as const,
@@ -1320,7 +1481,7 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   showServicePrice: true,
   showServiceDelivery: true,
   showServiceTasks: true,
-  servicesTaskBulletSource: 'global' as const,
+  servicesTaskBulletSource: 'section' as const,
   servicesTaskBulletStyle: 'check' as const,
   servicesTaskBulletColor: DEFAULT_SERVICES_TASK_BULLET_COLOR,
   servicesTaskBulletSize: 'md' as const,
@@ -1328,7 +1489,7 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   servicesTaskBulletWeight: 'regular' as const,
   servicesTaskBulletWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
   showServiceCta: true,
-  ctaLabel: 'Commander',
+  ctaLabel: 'Get started',
   ctaDesign: 'pill-accent' as const,
   ctaShowIcon: true,
   ctaIcon: 'arrow-up-right' as const,
@@ -1367,6 +1528,8 @@ export const DEFAULT_SERVICES_PRESENTATION: PortfolioServicesPresentationSetting
   servicesColorBindings: { ...DEFAULT_SERVICES_COLOR_BINDINGS },
   elementStyles: DEFAULT_SERVICES_ELEMENT_STYLES,
   elementChromes: DEFAULT_SERVICES_ELEMENT_CHROMES,
+  servicesCardChromeVersion: 15,
+  servicesGalleryLayoutPresets: {},
 };
 
 // Sync hex fields from the default palette without circular init.
@@ -1493,17 +1656,17 @@ export const PORTFOLIO_SERVICES_DISPLAY_MODE_OPTIONS: {
   {
     value: 'marquee',
     label: 'Carrousel infini',
-    description: 'Défilement automatique fluide — nécessite le design « Carte verticale ».',
+    description: 'Défilement automatique fluide — nécessite le design « Carte horizontal ».',
   },
   {
     value: 'coverflow',
     label: 'Coverflow vertical',
-    description: 'Pile centrée auto-rotative — nécessite le design « Carte verticale ».',
+    description: 'Pile centrée auto-rotative — nécessite le design « Carte horizontal ».',
   },
   {
     value: 'deck',
     label: 'Deck diagonal',
-    description: 'Éventail diagonal fluide — nécessite le design « Carte verticale ».',
+    description: 'Éventail diagonal fluide — nécessite le design « Carte horizontal ».',
   },
   { value: 'grid', label: 'Grille statique', description: 'Grille responsive sans animation.' },
   { value: 'stack', label: 'Pile verticale', description: 'Cartes pleine largeur empilées.' },
@@ -1553,7 +1716,7 @@ export const PORTFOLIO_SERVICES_GALLERY_LAYOUT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'card', label: 'Carte verticale', description: 'Carte classique avec titre, description et prix.' },
+  { value: 'card', label: 'Carte horizontal', description: 'Titre, description, tâches alignées, CTA plein — 3 par ligne.' },
   {
     value: 'list',
     label: 'Liste / menu',
@@ -1565,25 +1728,46 @@ export const PORTFOLIO_SERVICES_GALLERY_LAYOUT_OPTIONS: {
     description: 'Onglets verticaux et panneau détaillé avec prix, inclusions et CTA.',
   },
   {
-    value: 'service-accordion',
-    label: 'Accordéon services',
-    description: 'Lignes pleine largeur dépliables avec tarif, prestations et CTA.',
-  },
-  {
     value: 'commercial-list',
     label: 'Liste commerciale',
     description: 'Lignes pleine largeur numérotées, prestations incluses, prix et action.',
   },
-  { value: 'pricing-hero', label: 'Pricing hero', description: 'Prix mis en avant avec CTA de conversion.' },
   {
     value: 'tier',
-    label: 'Offre / Tarif',
-    description: 'Titre, description, trait, tâches, prix et bouton — style abonnement.',
+    label: 'Offre / Tarif horizontal',
+    description: 'Tarif, titre encadré, tâches et CTA outline — description masquée par défaut.',
   },
   {
     value: 'plan',
-    label: 'Plan tarifaire',
-    description: 'Titre, description, prix, bouton puis liste de features (check / lock).',
+    label: 'Plan tarifaire horizontal',
+    description: 'Titre, description, prix, bouton puis liste — 3 par ligne par défaut.',
+  },
+  {
+    value: 'plan-split',
+    label: 'Plan en colonnes',
+    description: 'Bandeau 3 colonnes : titre + description, inclusions, prix et CTA.',
+  },
+  {
+    value: 'card-media',
+    label: 'Carte média',
+    description: 'Contenu à gauche (titre, tâches, prix / délai) et image de couverture à droite.',
+  },
+  {
+    value: 'media-banner',
+    label: 'Bannière média',
+    description:
+      'Image à gauche, contenu à droite : tags, prix, délai et CTA — style offre / formation.',
+  },
+  {
+    value: 'media-checklist',
+    label: 'Média checklist',
+    description: 'Image à gauche, grand titre, tâches cochées et CTA Get started.',
+  },
+  {
+    value: 'media-split',
+    label: 'Média split',
+    description:
+      'Image en bandeau, titre et description à gauche, checklist et prix / délai à droite.',
   },
 ];
 
@@ -1596,10 +1780,14 @@ export const PORTFOLIO_SKILLS_GALLERY_LAYOUT_OPTIONS: {
   ...PORTFOLIO_SERVICES_GALLERY_LAYOUT_OPTIONS.filter(
     (option) =>
       option.value !== 'service-selector' &&
-      option.value !== 'service-accordion' &&
       option.value !== 'commercial-list' &&
       option.value !== 'tier' &&
-      option.value !== 'plan'
+      option.value !== 'plan' &&
+      option.value !== 'plan-split' &&
+      option.value !== 'card-media' &&
+      option.value !== 'media-banner' &&
+      option.value !== 'media-checklist' &&
+      option.value !== 'media-split'
   ),
   {
     value: 'icon-stack',
@@ -1773,6 +1961,22 @@ export function servicesCtaAlignClass(alignment: PortfolioServicesCtaAlignment):
 }
 
 /**
+ * Services order / GET CTA destination:
+ * Contact section → direct phone → footer.
+ */
+export function resolveServicesOrderCtaHref(opts: {
+  contactSectionVisible?: boolean;
+  phone?: string | null;
+  /** When contact is visible (e.g. pages mode `#contact` page id). */
+  contactHref?: string;
+}): string {
+  if (opts.contactSectionVisible) return opts.contactHref?.trim() || '#contact';
+  const phone = opts.phone?.trim();
+  if (phone) return `tel:${phone.replace(/\s+/g, '')}`;
+  return '#footer';
+}
+
+/**
  * Bridge Services CTA settings into the Work CTA surface helpers
  * so Order / Commander matches View project styling exactly.
  * When the section palette is on, resolve CTA colors live from tokens
@@ -1786,9 +1990,6 @@ export function servicesCtaWorkPresentation(p: PortfolioServicesPresentationSett
   const accent = paletteOn
     ? resolveHeroPaletteColor(palette, bindings.ctaAccent)
     : sanitizeHex(p.ctaColor || p.cardAccentColor, DEFAULT_SERVICES_ACCENT_COLOR);
-  const border = paletteOn
-    ? resolveHeroPaletteColor(palette, bindings.ctaBorder)
-    : sanitizeHex(p.ctaBorderColor || p.cardBorderColor, accent);
   const pageFond = paletteOn
     ? resolveHeroPaletteColor(palette, bindings.sectionBackground)
     : sanitizeHex(p.sectionBackgroundColor, '#0b0b0d');
@@ -1804,7 +2005,8 @@ export function servicesCtaWorkPresentation(p: PortfolioServicesPresentationSett
 
   return {
     ctaColor: accent,
-    ctaBorderColor: border,
+    // Outline CTAs need border = principal too (not bordure gray).
+    ctaBorderColor: accent,
     ctaBorderWidth: p.ctaBorderWidth,
     ctaBorderRadius: p.ctaBorderRadius,
     ctaHoverEnabled: p.ctaHoverEnabled !== false,
@@ -1820,8 +2022,8 @@ export function servicesCtaWorkPresentation(p: PortfolioServicesPresentationSett
         const stored = normalizeServicesElementStyles(p.elementStyles).cta;
         return {
           ...stored,
-          // Keep accent as fallback when palette drives the button surface.
-          color: stored.color?.trim() ? stored.color : accent,
+          // Always ink from palette principal (ctaAccent) — never the stale orange default.
+          color: accent,
         };
       })(),
     },
@@ -1896,10 +2098,23 @@ export const PORTFOLIO_SERVICES_CARD_MAX_WIDTH_OPTIONS: {
   description: string;
 }[] = [
   { value: 'full', label: 'Pleine largeur', description: 'La carte remplit toute la colonne.' },
-  { value: 'xl', label: 'Large', description: 'Max ~42rem — encore confortable.' },
-  { value: 'lg', label: 'Carte portrait', description: 'Max ~36rem — forme verticale.' },
-  { value: 'md', label: 'Moyenne', description: 'Max ~32rem — plus compacte.' },
-  { value: 'sm', label: 'Compacte', description: 'Max ~28rem — tuile étroite.' },
+  { value: 'xl', label: 'Large', description: 'Max ~36rem — encore confortable.' },
+  { value: 'lg', label: 'Carte portrait', description: 'Max ~32rem — défaut Carte / Offre / Plan.' },
+  { value: 'md', label: 'Moyenne', description: 'Max ~28rem — plus compacte.' },
+  { value: 'sm', label: 'Compacte', description: 'Max ~24rem — tuile étroite.' },
+];
+
+/** Liste commerciale — row widths (wider steps so price + CTA stay readable). */
+export const PORTFOLIO_SERVICES_COMMERCIAL_LIST_MAX_WIDTH_OPTIONS: {
+  value: PortfolioServicesCardMaxWidth;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'full', label: 'Pleine largeur', description: 'La ligne remplit toute la colonne.' },
+  { value: 'xl', label: 'Très large', description: 'Max ~80rem — grand espace entre sections (défaut).' },
+  { value: 'lg', label: 'Large', description: 'Max ~72rem — défaut Bannière média.' },
+  { value: 'md', label: 'Moyenne', description: 'Max ~64rem — plus compacte.' },
+  { value: 'sm', label: 'Compacte', description: 'Max ~56rem — ligne plus étroite.' },
 ];
 
 /** Tool inspector widths — spread further apart than card tiles (~32–72rem). */
@@ -2631,18 +2846,21 @@ export function servicesCardDesignIntensityStyle(
 export function resolveServicesSectionTitle(
   settings: Pick<PortfolioServicesSectionSettings, 'titlePreset' | 'titleCustom' | 'title'>
 ): string {
-  switch (settings.titlePreset) {
-    case 'expertise':
-      return 'EXPERTISE';
-    case 'what-i-offer':
-      return 'WHAT I OFFER';
-    case 'skills-services':
-      return 'SKILLS & SERVICES';
-    case 'custom':
-      return settings.titleCustom.trim() || settings.title.trim() || 'SERVICES & SKILLS';
-    default:
-      return 'SERVICES & SKILLS';
-  }
+  const raw = (() => {
+    switch (settings.titlePreset) {
+      case 'expertise':
+        return 'EXPERTISE';
+      case 'what-i-offer':
+        return 'WHAT I OFFER';
+      case 'skills-services':
+        return 'SKILLS & SERVICES';
+      case 'custom':
+        return settings.titleCustom.trim() || settings.title.trim() || 'SERVICES & SKILLS';
+      default:
+        return 'SERVICES & SKILLS';
+    }
+  })();
+  return portfolioSectionTitleSentenceCase(raw);
 }
 
 export function resolveServicesSectionSubtitle(
@@ -2685,8 +2903,7 @@ export function servicesHeaderFontClass(font: PortfolioServicesHeaderFont, kind:
   }
 }
 
-export function servicesHeaderFontStyle(font: PortfolioServicesHeaderFont): CSSProperties | undefined {
-  if (font === 'serif') return { fontFamily: "'Playfair Display', serif" };
+export function servicesHeaderFontStyle(_font: PortfolioServicesHeaderFont): CSSProperties | undefined {
   return undefined;
 }
 
@@ -2922,7 +3139,7 @@ export function servicesCardDesignShellClass(
     case 'accent':
       return `${base} ${lightFill} shadow-none ${darkFill} ${muted}`.trim();
     default:
-      return `${base} ${lightFill} ${darkFill} hover:border-orange-200/80 ${muted}`.trim();
+      return `${base} ${lightFill} ${darkFill} ${muted}`.trim();
   }
 }
 
@@ -2941,22 +3158,188 @@ export function servicesCardDesignOwnsBackground(design: PortfolioServicesCardDe
   return design === 'compact' || design === 'glass';
 }
 
+/** All service card designs except Service selector, Carte média, Bannière média and Média checklist. */
+export function servicesLayoutSupportsPrincipalSurface(
+  layout: PortfolioServicesGalleryLayout | undefined
+): boolean {
+  return (
+    layout != null &&
+    layout !== 'service-selector' &&
+    layout !== 'card-media' &&
+    layout !== 'media-banner' &&
+    layout !== 'media-checklist' &&
+    layout !== 'media-split'
+  );
+}
+
+/** Layouts that show a cover image beside service copy (side-by-side). */
+export function servicesLayoutHasCoverMedia(
+  layout: PortfolioServicesGalleryLayout | undefined
+): boolean {
+  return layout === 'card-media' || layout === 'media-banner' || layout === 'media-checklist';
+}
+
+/** Layouts that include a cover image (side-by-side or top banner). */
+export function servicesLayoutHasMediaCover(
+  layout: PortfolioServicesGalleryLayout | undefined
+): boolean {
+  return servicesLayoutHasCoverMedia(layout) || layout === 'media-split';
+}
+
+/** Whether the media column is on the left for this card index. */
+export function servicesMediaOnLeft(
+  presentation: Pick<
+    PortfolioServicesPresentationSettings,
+    'servicesMediaSide' | 'servicesMediaSideAlternation'
+  >,
+  cardIndex = 0
+): boolean {
+  const startLeft = presentation.servicesMediaSide !== 'media-right';
+  if (presentation.servicesMediaSideAlternation !== 'alternate') return startLeft;
+  return cardIndex % 2 === 0 ? startLeft : !startLeft;
+}
+
+export const PORTFOLIO_SERVICES_MEDIA_SIDE_OPTIONS: {
+  value: PortfolioServicesMediaSide;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'media-left',
+    label: 'Média à gauche',
+    description: 'Image à gauche, informations à droite (1re carte si alternance).',
+  },
+  {
+    value: 'media-right',
+    label: 'Média à droite',
+    description: 'Informations à gauche, image à droite (1re carte si alternance).',
+  },
+];
+
+export const PORTFOLIO_SERVICES_MEDIA_SIDE_ALTERNATION_OPTIONS: {
+  value: PortfolioServicesMediaSideAlternation;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'uniform',
+    label: 'Uniforme',
+    description: 'Toutes les cartes gardent le même côté média / infos.',
+  },
+  {
+    value: 'alternate',
+    label: 'Alterné',
+    description: 'Alterne média gauche / infos droite puis l’inverse à chaque carte.',
+  },
+];
+
+export const PORTFOLIO_SERVICES_PRINCIPAL_SURFACE_ALTERNATION_OPTIONS: {
+  value: PortfolioServicesCardBackgroundAlternation;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'uniform',
+    label: 'Uniforme',
+    description: 'Toutes les cartes ont le fond couleur principale (sans survol sur ce fond).',
+  },
+  {
+    value: 'alternate',
+    label: 'Alterné',
+    description: 'Alterne cartes mises en avant (fond principal) et cartes normales.',
+  },
+];
+
+export const PORTFOLIO_SERVICES_PRINCIPAL_SURFACE_ALTERNATE_START_OPTIONS: {
+  value: PortfolioServicesPrincipalSurfaceAlternateStart;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'principal',
+    label: 'Principal d’abord',
+    description: 'La 1re carte a le fond couleur principale, puis normal, etc.',
+  },
+  {
+    value: 'normal',
+    label: 'Normal d’abord',
+    description: 'La 1re carte est normale, puis fond couleur principale, etc.',
+  },
+];
+
+/** True when the card uses static principal fill (no principal-background hover). */
+export function servicesPrincipalSurfaceActive(
+  p: Pick<
+    PortfolioServicesPresentationSettings,
+    | 'servicesPrincipalSurfaceEnabled'
+    | 'servicesPrincipalSurfaceAlternation'
+    | 'servicesPrincipalSurfaceAlternateStart'
+    | 'servicesGalleryLayout'
+  >,
+  cardIndex = 0
+): boolean {
+  if (
+    p.servicesPrincipalSurfaceEnabled !== true ||
+    !servicesLayoutSupportsPrincipalSurface(p.servicesGalleryLayout)
+  ) {
+    return false;
+  }
+  if (p.servicesPrincipalSurfaceAlternation === 'alternate') {
+    const startPrincipal = p.servicesPrincipalSurfaceAlternateStart !== 'normal';
+    const evenIsPrincipal = startPrincipal;
+    return cardIndex % 2 === 0 ? evenIsPrincipal : !evenIsPrincipal;
+  }
+  return true;
+}
+
+/** Layouts that stay border-only in light mode but get a solid fill in dark (like Offre / Tarif). */
+export function servicesLayoutUsesDarkOnlyCardFill(
+  layout: PortfolioServicesGalleryLayout | undefined
+): boolean {
+  // Carte / Liste commerciale now use explicit fill by default; keep dark-only for Liste / menu.
+  return layout === 'list';
+}
+
+/** True when this presentation should paint a card fill only because Global mode is dark. */
+export function servicesCardDarkOnlyFillActive(
+  p: Pick<
+    PortfolioServicesPresentationSettings,
+    'servicesGalleryLayout' | 'activeColorMode' | 'cardBackgroundEnabled'
+  >
+): boolean {
+  if (p.cardBackgroundEnabled) return false;
+  if (!servicesLayoutUsesDarkOnlyCardFill(p.servicesGalleryLayout)) return false;
+  // Strict: only when Global color mode is explicitly dark (not undefined / light).
+  return p.activeColorMode === 'dark';
+}
+
 /** True when the user-controlled card fill should win over theme/design defaults. */
 export function servicesCardHasCustomFill(
   p: Pick<
     PortfolioServicesPresentationSettings,
-    'cardDesign' | 'cardBackgroundFill' | 'cardBackgroundEnabled' | 'cardBackgroundAlternation'
+    | 'cardDesign'
+    | 'cardBackgroundFill'
+    | 'cardBackgroundEnabled'
+    | 'cardBackgroundAlternation'
+    | 'servicesGalleryLayout'
+    | 'activeColorMode'
   >
 ): boolean {
   if (servicesCardDesignOwnsBackground(p.cardDesign)) return false;
   if (p.cardBackgroundFill === 'split') return true;
-  return p.cardBackgroundEnabled;
+  if (p.cardBackgroundEnabled) return true;
+  return servicesCardDarkOnlyFillActive(p);
 }
 
 export function servicesCardFillDataAttrs(
   p: Pick<
     PortfolioServicesPresentationSettings,
-    'cardDesign' | 'cardBackgroundFill' | 'cardBackgroundEnabled' | 'cardBackgroundAlternation'
+    | 'cardDesign'
+    | 'cardBackgroundFill'
+    | 'cardBackgroundEnabled'
+    | 'cardBackgroundAlternation'
+    | 'servicesGalleryLayout'
+    | 'activeColorMode'
   >
 ): { 'data-pf-card-fill'?: 'custom' } {
   return servicesCardHasCustomFill(p) ? { 'data-pf-card-fill': 'custom' } : {};
@@ -3097,15 +3480,18 @@ export function servicesCardShellClass(
     | 'cardBackgroundEnabled'
     | 'cardBackgroundAlternation'
     | 'useHeroPalette'
+    | 'servicesGalleryLayout'
+    | 'activeColorMode'
   >
 ): string {
   const custom = presentation ? servicesCardHasCustomFill(presentation) : false;
   const omitDefaultFill =
     custom ||
-    presentation?.useHeroPalette !== false ||
-    (presentation != null && !presentation.cardBackgroundEnabled);
+    (presentation != null && !presentation.cardBackgroundEnabled) ||
+    presentation?.useHeroPalette !== false;
   return `${servicesCardDesignShellClass(design, tone, {
-    applyMutedClass: !custom,
+    // Never paint muted gray fill when the user turned the card background off.
+    applyMutedClass: custom,
     omitDefaultFill,
   })} flex flex-col`;
 }
@@ -3169,7 +3555,7 @@ export function servicesDeckActiveFor(
   return servicesGallerySupportsDeck(layout);
 }
 
-/** Modes that need « Carte verticale » — auto-applied when selecting the mode. */
+/** Modes that need « Carte horizontal » — auto-applied when selecting the mode. */
 export function servicesDisplayModeNeedsCardLayout(mode: PortfolioServicesDisplayMode): boolean {
   return mode === 'marquee' || mode === 'coverflow' || mode === 'deck';
 }
@@ -3230,6 +3616,19 @@ export function servicesGalleryContainerClass(
 
   if (layout === 'commercial-list') {
     return 'flex w-full flex-col gap-0';
+  }
+
+  if (
+    layout === 'card-media' ||
+    layout === 'media-banner' ||
+    layout === 'media-checklist' ||
+    layout === 'media-split'
+  ) {
+    return 'flex w-full flex-col gap-12 sm:gap-16 lg:gap-20';
+  }
+
+  if (layout === 'plan-split') {
+    return 'flex w-full flex-col gap-5';
   }
 
   if (layout === 'service-accordion') {
@@ -3306,9 +3705,46 @@ export function servicesCardFrameClass(p: PortfolioServicesPresentationSettings)
   const parts = [servicesCardRadiusClass(p.cardBorderRadius), servicesCardPaddingClass(p.cardPadding)];
   if (p.cardBorder !== 'none') {
     parts.push(servicesCardBorderWidthClass(p.cardBorder));
-    if (p.cardBorder === 'soft') parts.push('shadow-sm');
+    // Soft shadow only when there is a fill — border-only cards stay flat.
+    if (p.cardBorder === 'soft' && p.cardBackgroundEnabled) parts.push('shadow-sm');
+  } else {
+    parts.push('border-0 shadow-none');
   }
   return parts.filter(Boolean).join(' ');
+}
+
+/**
+ * Cover-media layouts default to no outline. Soft (legacy shared default) is remapped to none
+ * so old sessions actually lose the border; solid / accent stay if the user set them.
+ */
+export function resolveServicesMediaCardPresentation(
+  presentation: PortfolioServicesPresentationSettings
+): PortfolioServicesPresentationSettings {
+  if (
+    presentation.cardBorder === 'solid' ||
+    presentation.cardBorder === 'accent'
+  ) {
+    return presentation;
+  }
+  return { ...presentation, cardBorder: 'none' };
+}
+
+/** Surface style for media cards — kills leftover soft border / minimal outline / soft shadow. */
+export function servicesMediaCardSurfaceStyle(
+  presentation: PortfolioServicesPresentationSettings,
+  tone: 'light' | 'muted' = 'light'
+): CSSProperties {
+  const resolved = resolveServicesMediaCardPresentation(presentation);
+  const surface = servicesCardSurfaceStyle(resolved, tone);
+  if (resolved.cardBorder !== 'none') return surface;
+  return {
+    ...surface,
+    borderWidth: 0,
+    borderStyle: 'none',
+    borderColor: 'transparent',
+    outline: 'none',
+    boxShadow: 'none',
+  };
 }
 
 export function servicesCardFrameStyle(p: PortfolioServicesPresentationSettings): CSSProperties {
@@ -3328,6 +3764,10 @@ export function servicesCardFrameStyle(p: PortfolioServicesPresentationSettings)
       const border = sanitizeHex(p.cardBorderColor, DEFAULT_SERVICES_CARD_BORDER_COLOR);
       style.borderColor = opacity >= 0.999 ? border : hexWithAlpha(border, opacity);
     }
+  } else {
+    style.borderWidth = 0;
+    style.borderStyle = 'none';
+    style.borderColor = 'transparent';
   }
 
   return style;
@@ -3426,6 +3866,11 @@ export function resolveServicesCardSurfaceHex(
 
   if (p.cardBackgroundFill === 'solid' && p.cardBackgroundEnabled) {
     return lightColor;
+  }
+
+  // Carte / Liste / Liste commerciale — fill like Offre·Tarif, but dark mode only.
+  if (servicesCardDarkOnlyFillActive(p)) {
+    return tone === 'muted' ? mutedColor : lightColor;
   }
 
   // Transparent card — contrast against the section, not a phantom white fill.
@@ -3616,8 +4061,24 @@ export function servicesCardSurfaceStyle(
     };
   }
 
-  // Fill off: strip design-owned paint so "Fond du cadre" actually clears the card.
-  if (!designOwnsBackground && !p.cardBackgroundEnabled) {
+  // Carte / Liste / Liste commerciale: solid fill in dark mode only (Offre·Tarif-like surface).
+  if (servicesCardDarkOnlyFillActive(p) && !designOwnsBackground) {
+    const { backgroundColor: _bg, backgroundImage: _img, ...restDesign } = designStyle as CSSProperties & {
+      backgroundColor?: string;
+      backgroundImage?: string;
+    };
+    void _bg;
+    void _img;
+    return {
+      ...restDesign,
+      ...frameStyle,
+      backgroundImage: 'none',
+      backgroundColor: tone === 'muted' ? mutedColor : lightColor,
+    };
+  }
+
+  // Fill off wins over design-owned paints (compact / glass) so "Fond du cadre" is authoritative.
+  if (!p.cardBackgroundEnabled) {
     const { backgroundColor: _bg, backgroundImage: _img, ...restDesign } = designStyle as CSSProperties & {
       backgroundColor?: string;
       backgroundImage?: string;
@@ -3629,6 +4090,7 @@ export function servicesCardSurfaceStyle(
       ...frameStyle,
       backgroundColor: 'transparent',
       backgroundImage: 'none',
+      boxShadow: 'none',
     };
   }
 
@@ -3724,6 +4186,8 @@ export function servicesListRowShellClass(
     | 'cardBackgroundEnabled'
     | 'cardBackgroundAlternation'
     | 'useHeroPalette'
+    | 'servicesGalleryLayout'
+    | 'activeColorMode'
   >
 ): string {
   const custom = presentation ? servicesCardHasCustomFill(presentation) : false;
@@ -3744,6 +4208,8 @@ export function servicesPricingHeroShellClass(
     | 'cardBackgroundEnabled'
     | 'cardBackgroundAlternation'
     | 'useHeroPalette'
+    | 'servicesGalleryLayout'
+    | 'activeColorMode'
   >
 ): string {
   return `${servicesListRowShellClass(design, tone, presentation)} flex flex-col`;
@@ -3760,6 +4226,8 @@ export function servicesTierShellClass(
     | 'cardBackgroundEnabled'
     | 'cardBackgroundAlternation'
     | 'useHeroPalette'
+    | 'servicesGalleryLayout'
+    | 'activeColorMode'
   >
 ): string {
   return `${servicesCardShellClass(design, tone, presentation)} flex flex-col`;
@@ -3768,8 +4236,818 @@ export function servicesTierShellClass(
 /**
  * Sensible defaults when picking Offre / Tarif or Plan tarifaire layouts.
  */
-export function servicesGalleryLayoutSettingsPatch(
+export const SERVICES_VERTICAL_CARD_CHROME_VERSION = 44;
+
+/** Default width for Bannière média (commercial-list steps: lg ≈ max-w-6xl). */
+export const SERVICES_MEDIA_BANNER_DEFAULT_MAX_WIDTH = 'lg' as const;
+
+/**
+ * Resolve display width for Bannière média.
+ * Pre-migration profiles still store `full` (old default) — show the capped default until chrome migrates.
+ * After migration, `full` and other sizes are respected as configured.
+ */
+export function resolveMediaBannerCardMaxWidth(
+  presentation: Pick<
+    PortfolioServicesPresentationSettings,
+    'cardMaxWidth' | 'servicesCardChromeVersion'
+  >
+): PortfolioServicesCardMaxWidth {
+  const width = presentation.cardMaxWidth;
+  const version = presentation.servicesCardChromeVersion ?? 0;
+  if (version < SERVICES_VERTICAL_CARD_CHROME_VERSION) {
+    if (!width || width === 'full') return SERVICES_MEDIA_BANNER_DEFAULT_MAX_WIDTH;
+  }
+  if (
+    width === 'full' ||
+    width === 'xl' ||
+    width === 'lg' ||
+    width === 'md' ||
+    width === 'sm'
+  ) {
+    return width;
+  }
+  return SERVICES_MEDIA_BANNER_DEFAULT_MAX_WIDTH;
+}
+
+/** Shared max width for Carte / Offre·Tarif / Plan (same footprint). */
+export const SERVICES_HORIZONTAL_CARD_MAX_WIDTH = 'lg' as const;
+
+/** Border-only chrome (fill / decor remain editable after). */
+export const SERVICES_VERTICAL_CARD_FRAME_DEFAULTS = {
+  cardBackgroundEnabled: false as const,
+  cardBorder: 'soft' as const,
+  cardBorderOpacity: 100,
+  cardBackgroundFill: 'solid' as const,
+  cardBackgroundAlternation: 'uniform' as const,
+  cardDecorEnabled: false as const,
+  cardDividerEnabled: false as const,
+};
+
+/** Filled card surface by default (light + dark) — Carte / Offre / Plan / Liste commerciale. */
+export const SERVICES_FILLED_CARD_FRAME_DEFAULTS = {
+  ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
+  cardBackgroundEnabled: true as const,
+};
+
+/** Media layouts — filled surface, no outline by default. */
+export const SERVICES_MEDIA_CARD_FRAME_DEFAULTS = {
+  ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
+  cardBorder: 'none' as const,
+};
+
+/** @deprecated Prefer SERVICES_FILLED_CARD_FRAME_DEFAULTS — Offre / Tarif alias. */
+export const SERVICES_TIER_CARD_FRAME_DEFAULTS = SERVICES_FILLED_CARD_FRAME_DEFAULTS;
+
+/** Layouts that start with a solid card fill (including light mode). */
+function servicesLayoutUsesFilledCardFrame(layout: PortfolioServicesGalleryLayout): boolean {
+  return (
+    layout === 'card' ||
+    layout === 'tier' ||
+    layout === 'plan' ||
+    layout === 'plan-split' ||
+    layout === 'card-media' ||
+    layout === 'media-banner' ||
+    layout === 'media-checklist' ||
+    layout === 'media-split' ||
+    layout === 'commercial-list'
+  );
+}
+
+function servicesLayoutUsesMediaCardFrame(layout: PortfolioServicesGalleryLayout): boolean {
+  return (
+    layout === 'card-media' ||
+    layout === 'media-banner' ||
+    layout === 'media-checklist' ||
+    layout === 'media-split'
+  );
+}
+
+/**
+ * Common frame shape returned by layout presets. The defaults are intentionally
+ * narrow literals, but saved settings can use every valid presentation value.
+ */
+type ServicesGalleryLayoutFrame = Pick<
+  PortfolioServicesPresentationSettings,
+  | 'cardBackgroundEnabled'
+  | 'cardBorder'
+  | 'cardBorderOpacity'
+  | 'cardBackgroundFill'
+  | 'cardBackgroundAlternation'
+  | 'cardDecorEnabled'
+  | 'cardDividerEnabled'
+>;
+
+/**
+ * Per-layout frame defaults.
+ * Carte / Offre / Plan / Plan en colonnes / Liste commerciale start filled; media layouts filled without border; others stay border-only.
+ */
+export function servicesGalleryLayoutFrameDefaults(
   layout: PortfolioServicesGalleryLayout
+): ServicesGalleryLayoutFrame {
+  if (servicesLayoutUsesMediaCardFrame(layout)) return SERVICES_MEDIA_CARD_FRAME_DEFAULTS;
+  return servicesLayoutUsesFilledCardFrame(layout)
+    ? SERVICES_FILLED_CARD_FRAME_DEFAULTS
+    : SERVICES_VERTICAL_CARD_FRAME_DEFAULTS;
+}
+
+/** Resolve frame for a layout from its individual preset, falling back to that layout’s defaults. */
+function resolveServicesGalleryLayoutFrame(
+  layout: PortfolioServicesGalleryLayout,
+  saved?: PortfolioServicesGalleryLayoutPreset | null
+): ServicesGalleryLayoutFrame {
+  const defaults = servicesGalleryLayoutFrameDefaults(layout);
+  if (!saved) return defaults;
+  return {
+    cardBackgroundEnabled:
+      typeof saved.cardBackgroundEnabled === 'boolean'
+        ? saved.cardBackgroundEnabled
+        : defaults.cardBackgroundEnabled,
+    cardBorder:
+      saved.cardBorder === 'none' ||
+      saved.cardBorder === 'soft' ||
+      saved.cardBorder === 'solid' ||
+      saved.cardBorder === 'accent'
+        ? saved.cardBorder
+        : defaults.cardBorder,
+    cardBorderOpacity:
+      typeof saved.cardBorderOpacity === 'number'
+        ? saved.cardBorderOpacity
+        : defaults.cardBorderOpacity,
+    cardBackgroundFill:
+      saved.cardBackgroundFill === 'solid' || saved.cardBackgroundFill === 'split'
+        ? saved.cardBackgroundFill
+        : defaults.cardBackgroundFill,
+    cardBackgroundAlternation:
+      saved.cardBackgroundAlternation === 'uniform' ||
+      saved.cardBackgroundAlternation === 'alternate'
+        ? saved.cardBackgroundAlternation
+        : defaults.cardBackgroundAlternation,
+    cardDecorEnabled:
+      typeof saved.cardDecorEnabled === 'boolean'
+        ? saved.cardDecorEnabled
+        : defaults.cardDecorEnabled,
+    cardDividerEnabled:
+      typeof saved.cardDividerEnabled === 'boolean'
+        ? saved.cardDividerEnabled
+        : defaults.cardDividerEnabled,
+  };
+}
+
+/** Default task bullet size for Carte horizontal (still editable). */
+const SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX = 26;
+
+/** Type scale for Carte horizontal — shared by card / tier / plan (still editable). */
+function servicesVerticalCardElementStyles(
+  current?: PortfolioServicesElementStyles
+): PortfolioServicesElementStyles {
+  const base = normalizeServicesElementStyles(current ?? DEFAULT_SERVICES_ELEMENT_STYLES);
+  return {
+    ...base,
+    cardTitle: {
+      ...base.cardTitle,
+      size: 'custom',
+      // Between md (24) and lg (30) — slightly softer than full LG.
+      sizePx: 27,
+      weight: 'semibold',
+      weightAmount: ELEMENT_TEXT_WEIGHT_PRESET_AMOUNT.semibold,
+      bold: true,
+    },
+    cardBody: {
+      ...base.cardBody,
+      size: 'custom',
+      // Between md (16) and lg (18).
+      sizePx: 17,
+    },
+    tasks: {
+      ...base.tasks,
+      size: 'custom',
+      sizePx: 17,
+    },
+    price: {
+      ...base.price,
+      size: 'xl',
+      sizePx: ELEMENT_TEXT_SIZE_PRESET_PX.title.xl,
+      weight: 'semibold',
+      weightAmount: ELEMENT_TEXT_WEIGHT_PRESET_AMOUNT.semibold,
+      bold: true,
+    },
+  };
+}
+
+/**
+ * Shared defaults for horizontal card layouts (Carte / Offre·Tarif / Plan).
+ * Grid + 3 columns, left CTA, check-circle bullets.
+ * Colors stay on the section palette — never invent accent hexes here.
+ * Filled card background for Carte / Offre / Plan (light + dark).
+ */
+export function applyServicesHorizontalCardDesignDefaults(
+  layout: 'card' | 'tier' | 'plan',
+  services: Pick<
+    PortfolioServicesPresentationSettings,
+    | 'servicesBlock'
+    | 'skillsBlock'
+    | 'skillsGalleryLayout'
+    | 'elementStyles'
+    | 'servicesColorBindings'
+  >
+): Partial<PortfolioServicesPresentationSettings> {
+  // Background fill for Carte / Offre / Plan; skills stay border-only.
+  const frame = servicesLayoutUsesFilledCardFrame(layout)
+    ? SERVICES_FILLED_CARD_FRAME_DEFAULTS
+    : SERVICES_VERTICAL_CARD_FRAME_DEFAULTS;
+  const nextServicesBlock = {
+    ...services.servicesBlock,
+    galleryLayout: layout,
+    columns: 3 as const,
+    displayMode: 'grid' as const,
+    ...frame,
+  };
+  // Skills keep border-only chrome — never inherit Offre / Tarif fill from services.
+  const nextSkillsBlock =
+    services.skillsGalleryLayout === 'card' ||
+    services.skillsGalleryLayout === 'tier' ||
+    services.skillsGalleryLayout === 'plan'
+      ? {
+          ...services.skillsBlock,
+          columns: 3 as const,
+          displayMode: 'grid' as const,
+          ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
+        }
+      : services.skillsBlock;
+
+  const bindings = mergeServicesColorBindings(
+    DEFAULT_SERVICES_COLOR_BINDINGS,
+    services.servicesColorBindings
+  );
+
+  const alignmentPatch =
+    layout === 'tier'
+      ? {
+          servicesContentAlignment: 'center' as const,
+          servicePriceAlign: 'center' as const,
+          servicePricePrefixEnabled: false,
+          showServiceDescription: true,
+          ctaDesign: 'pill-accent' as const,
+          ctaAlignment: 'center' as const,
+          servicePricePeriodSuffix: '',
+          // Match task copy — texteMuted from palette (not principal / accent).
+          servicesColorBindings: {
+            ...bindings,
+            tasksBullet: 'texteMuted' as const,
+            ctaAccent: 'principal' as const,
+            ctaBorder: 'principal' as const,
+          },
+        }
+      : layout === 'plan'
+        ? {
+            servicesContentAlignment: 'left' as const,
+            servicePriceAlign: 'left' as const,
+            servicePricePrefixEnabled: false,
+            showServiceDescription: false,
+            showServiceTasks: true,
+            ctaDesign: 'pill-accent' as const,
+            servicesTaskBulletStyle: 'check-circle' as const,
+            servicesTaskBulletSource: 'section' as const,
+            servicesColorBindings: {
+              ...bindings,
+              tasksBullet: 'principal' as const,
+              ctaAccent: 'principal' as const,
+              ctaBorder: 'principal' as const,
+            },
+          }
+        : layout === 'card'
+          ? {
+              showServiceDescription: true,
+              ctaDesign: 'pill-accent' as const,
+              ctaAlignment: 'left' as const,
+              servicesContentAlignment: 'left' as const,
+              servicePriceAlign: 'left' as const,
+              servicesTaskBulletStyle: 'check-circle-fill' as const,
+              servicesTaskBulletSource: 'section' as const,
+              servicesColorBindings: {
+                ...bindings,
+                ctaAccent: 'principal' as const,
+                ctaBorder: 'principal' as const,
+                tasksBullet: 'principal' as const,
+              },
+            }
+          : {};
+
+  return {
+    servicesGalleryLayout: layout,
+    servicesCardChromeVersion: SERVICES_VERTICAL_CARD_CHROME_VERSION,
+    displayMode: 'grid',
+    servicesColumns: 3,
+    cardMaxWidth: SERVICES_HORIZONTAL_CARD_MAX_WIDTH,
+    ctaLabel: 'Get started',
+    ctaAlignment: 'left',
+    servicesTaskBulletSource: 'section',
+    servicesTaskBulletStyle: layout === 'card' ? 'check-circle-fill' : 'check-circle',
+    servicesTaskBulletSize: 'custom',
+    servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
+    servicesTaskBulletWeight: 'regular',
+    servicesTaskBulletWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
+    // Same type scale for Carte / Offre·Tarif / Plan.
+    elementStyles: servicesVerticalCardElementStyles(services.elementStyles),
+    ...alignmentPatch,
+    ...frame,
+    // Empty period wins over any layout patch that reintroduced "/ month".
+    servicePricePeriodSuffix: '',
+    servicesBlock: nextServicesBlock,
+    skillsBlock: nextSkillsBlock,
+  };
+}
+
+/** @deprecated Prefer applyServicesHorizontalCardDesignDefaults('card', …). */
+export function applyServicesVerticalCardDesignDefaults(
+  services: Pick<
+    PortfolioServicesPresentationSettings,
+    | 'servicesBlock'
+    | 'skillsBlock'
+    | 'skillsGalleryLayout'
+    | 'elementStyles'
+    | 'servicesColorBindings'
+  >
+): Partial<PortfolioServicesPresentationSettings> {
+  return applyServicesHorizontalCardDesignDefaults('card', services);
+}
+
+const SERVICES_GALLERY_LAYOUT_PRESET_KEYS = [
+  'displayMode',
+  'servicesColumns',
+  'cardMaxWidth',
+  'cardAlignment',
+  'servicesContentAlignment',
+  'servicePriceAlign',
+  'servicePricePrefixEnabled',
+  'servicePricePeriodSuffix',
+  'showServiceTitle',
+  'showServiceDescription',
+  'showServicePrice',
+  'showServiceDelivery',
+  'showServiceTasks',
+  'showServiceCta',
+  'servicesTaskBulletSource',
+  'servicesTaskBulletStyle',
+  'servicesTaskBulletColor',
+  'servicesTaskBulletSize',
+  'servicesTaskBulletSizePx',
+  'servicesTaskBulletWeight',
+  'servicesTaskBulletWeightAmount',
+  'ctaLabel',
+  'ctaDesign',
+  'ctaAlignment',
+  'ctaShowIcon',
+  'ctaIcon',
+  'ctaIconPosition',
+  'elementStyles',
+  'servicesColorBindings',
+  'cardBackgroundEnabled',
+  'servicesPrincipalSurfaceEnabled',
+  'servicesPrincipalSurfaceAlternation',
+  'servicesPrincipalSurfaceAlternateStart',
+  'servicesMediaSide',
+  'servicesMediaSideAlternation',
+  'cardBorder',
+  'cardBorderOpacity',
+  'cardBackgroundFill',
+  'cardBackgroundAlternation',
+  'cardDecorEnabled',
+  'cardDividerEnabled',
+  'commercialPriceWidthPx',
+  'commercialCtaWidthPx',
+  'commercialColumnGapPx',
+] as const satisfies ReadonlyArray<keyof PortfolioServicesGalleryLayoutPreset>;
+
+export function captureServicesGalleryLayoutPreset(
+  services: PortfolioServicesPresentationSettings
+): PortfolioServicesGalleryLayoutPreset {
+  const preset: PortfolioServicesGalleryLayoutPreset = {};
+  for (const key of SERVICES_GALLERY_LAYOUT_PRESET_KEYS) {
+    const value = services[key];
+    if (value === undefined) continue;
+    if (key === 'elementStyles') {
+      preset.elementStyles = normalizeServicesElementStyles(value);
+      continue;
+    }
+    if (key === 'servicesColorBindings') {
+      preset.servicesColorBindings = mergeServicesColorBindings(
+        DEFAULT_SERVICES_COLOR_BINDINGS,
+        value
+      );
+      continue;
+    }
+    (preset as Record<string, unknown>)[key] = value;
+  }
+  return preset;
+}
+
+/**
+ * Switch gallery design while keeping each layout’s presentation independent:
+ * snapshot the current design, then restore the target’s saved preset
+ * (or apply first-time defaults only when that design was never configured).
+ * Frame/background is always restored from that layout’s individual config
+ * (Offre / Tarif defaults to fill; every other design defaults to no fill).
+ */
+export function switchServicesGalleryLayout(
+  nextLayout: PortfolioServicesGalleryLayout,
+  current: PortfolioServicesPresentationSettings
+): Partial<PortfolioServicesPresentationSettings> {
+  const prevLayout = current.servicesGalleryLayout;
+  const presets: Partial<
+    Record<PortfolioServicesGalleryLayout, PortfolioServicesGalleryLayoutPreset>
+  > = { ...(current.servicesGalleryLayoutPresets ?? {}) };
+
+  if (prevLayout && prevLayout !== nextLayout) {
+    presets[prevLayout] = {
+      ...presets[prevLayout],
+      ...captureServicesGalleryLayoutPreset(current),
+    };
+  }
+
+  const saved = presets[nextLayout];
+  const frame = resolveServicesGalleryLayoutFrame(nextLayout, saved);
+
+  if (saved && Object.keys(saved).length > 0) {
+    const nextColumns =
+      typeof saved.servicesColumns === 'number' ? saved.servicesColumns : current.servicesColumns;
+    const nextDisplayMode = saved.displayMode ?? current.displayMode;
+    const restored: Partial<PortfolioServicesPresentationSettings> = {
+      servicesGalleryLayout: nextLayout,
+      servicesGalleryLayoutPresets: presets,
+      ...saved,
+      // Always re-apply this layout’s own frame — never leave the previous design’s fill.
+      ...frame,
+      // Older card presets often omitted this flag or inherited `false` from another layout.
+      ...(nextLayout === 'card' && saved.showServiceDescription == null
+        ? { showServiceDescription: true as const }
+        : {}),
+      // Liste / menu always shows description under delivery.
+      ...(nextLayout === 'list'
+        ? {
+            showServiceDescription: true as const,
+            showServiceDelivery: true as const,
+            cardMaxWidth:
+              saved.cardMaxWidth === 'full' ||
+              saved.cardMaxWidth === 'xl' ||
+              saved.cardMaxWidth === 'lg' ||
+              saved.cardMaxWidth === 'md' ||
+              saved.cardMaxWidth === 'sm'
+                ? saved.cardMaxWidth === 'sm'
+                  ? ('md' as const)
+                  : saved.cardMaxWidth
+                : ('md' as const),
+          }
+        : {}),
+      // Plan en colonnes / Carte média / Bannière média / Média split: pleine largeur + fond activé.
+      ...(nextLayout === 'plan-split' ||
+      nextLayout === 'card-media' ||
+      nextLayout === 'media-banner' ||
+      nextLayout === 'media-split'
+        ? {
+            showServiceDescription: true as const,
+            showServiceTasks: true as const,
+            showServicePrice: true as const,
+            showServiceDelivery: true as const,
+            ctaDesign: 'pill-accent' as const,
+            servicesColumns: 1 as const,
+            cardPadding: 'lg' as const,
+            cardBackgroundEnabled: true as const,
+            cardBackgroundFill: 'solid' as const,
+            ...(nextLayout === 'card-media' ||
+            nextLayout === 'media-banner' ||
+            nextLayout === 'media-split'
+              ? { cardBorder: 'none' as const }
+              : {}),
+            ctaLabel:
+              nextLayout === 'media-banner'
+                ? saved.ctaLabel === 'Start Free Trial' ||
+                  saved.ctaLabel === 'Get started' ||
+                  !saved.ctaLabel?.trim()
+                  ? ('Order now' as const)
+                  : saved.ctaLabel
+                : saved.ctaLabel === 'Start Free Trial' || !saved.ctaLabel?.trim()
+                  ? ('Get started' as const)
+                  : saved.ctaLabel,
+            cardMaxWidth:
+              nextLayout === 'media-banner'
+                ? saved.cardMaxWidth === 'xl' ||
+                  saved.cardMaxWidth === 'lg' ||
+                  saved.cardMaxWidth === 'md' ||
+                  saved.cardMaxWidth === 'sm'
+                  ? saved.cardMaxWidth
+                  : ('lg' as const)
+                : nextLayout === 'media-split'
+                  ? saved.cardMaxWidth === 'full' ||
+                    saved.cardMaxWidth === 'xl' ||
+                    saved.cardMaxWidth === 'lg' ||
+                    saved.cardMaxWidth === 'md' ||
+                    saved.cardMaxWidth === 'sm'
+                    ? saved.cardMaxWidth
+                    : ('xl' as const)
+                  : saved.cardMaxWidth === 'full' || saved.cardMaxWidth === 'xl'
+                    ? saved.cardMaxWidth
+                    : ('full' as const),
+            cardAlignment:
+              nextLayout === 'media-banner' || nextLayout === 'media-split'
+                ? saved.cardAlignment === 'left' ||
+                  saved.cardAlignment === 'center' ||
+                  saved.cardAlignment === 'right'
+                  ? saved.cardAlignment
+                  : ('center' as const)
+                : saved.cardAlignment === 'left' ||
+                    saved.cardAlignment === 'center' ||
+                    saved.cardAlignment === 'right'
+                  ? saved.cardAlignment
+                  : ('center' as const),
+            ...(nextLayout === 'plan-split'
+              ? {
+                  servicePricePeriodSuffix:
+                    typeof saved.servicePricePeriodSuffix === 'string'
+                      ? saved.servicePricePeriodSuffix
+                      : '/ month',
+                }
+              : nextLayout === 'media-banner'
+                ? { servicePricePeriodSuffix: '' as const, showServiceCta: true as const }
+                : nextLayout === 'media-split'
+                  ? { servicePricePeriodSuffix: '' as const, showServiceCta: false as const }
+                  : { servicePricePeriodSuffix: '' as const, showServiceCta: false as const }),
+          }
+        : {}),
+      // Média checklist: image + titre + tâches cochées + CTA only.
+      ...(nextLayout === 'media-checklist'
+        ? {
+            showServiceTitle: true as const,
+            showServiceDescription: false as const,
+            showServicePrice: false as const,
+            showServiceDelivery: false as const,
+            showServiceTasks: true as const,
+            showServiceCta: true as const,
+            ctaDesign: 'pill-accent' as const,
+            ctaLabel: 'Get started' as const,
+            servicesColumns: 1 as const,
+            cardPadding: 'lg' as const,
+            cardBackgroundEnabled: true as const,
+            cardBackgroundFill: 'solid' as const,
+            servicePricePeriodSuffix: '' as const,
+            servicesTaskBulletStyle: 'check' as const,
+            servicesTaskBulletSource: 'section' as const,
+            cardBorder: 'none' as const,
+            cardMaxWidth: 'full' as const,
+            cardAlignment:
+              saved.cardAlignment === 'left' ||
+              saved.cardAlignment === 'center' ||
+              saved.cardAlignment === 'right'
+                ? saved.cardAlignment
+                : ('center' as const),
+          }
+        : {}),
+      // Carte / Offre / Plan: même largeur de cadre + fond activé.
+      ...(nextLayout === 'card' || nextLayout === 'tier' || nextLayout === 'plan'
+        ? {
+            cardBackgroundEnabled: true as const,
+            cardBackgroundFill: 'solid' as const,
+            cardMaxWidth:
+              saved.cardMaxWidth === 'full' || saved.cardMaxWidth === 'xl'
+                ? saved.cardMaxWidth
+                : SERVICES_HORIZONTAL_CARD_MAX_WIDTH,
+          }
+        : {}),
+      // Offre / Tarif: description on.
+      ...(nextLayout === 'tier' ? { showServiceDescription: true as const } : {}),
+      // Plan tarifaire: description hidden by default; filled CTA.
+      ...(nextLayout === 'plan'
+        ? {
+            showServiceDescription: false as const,
+            ctaDesign: 'pill-accent' as const,
+          }
+        : {}),
+      // Liste commerciale / tarifaire: roomier price + CTA columns + filled surface.
+      ...(nextLayout === 'commercial-list'
+        ? {
+            cardBackgroundEnabled: true as const,
+            cardBackgroundFill: 'solid' as const,
+            commercialPriceWidthPx:
+              typeof saved.commercialPriceWidthPx === 'number' &&
+              saved.commercialPriceWidthPx > 160
+                ? saved.commercialPriceWidthPx
+                : 200,
+            commercialCtaWidthPx:
+              typeof saved.commercialCtaWidthPx === 'number' && saved.commercialCtaWidthPx > 160
+                ? Math.max(saved.commercialCtaWidthPx, 210)
+                : 210,
+            ctaDesign: 'pill-accent' as const,
+            servicesTaskBulletStyle: 'check' as const,
+            servicesTaskBulletSource: 'section' as const,
+            servicesTaskBulletSize: 'custom' as const,
+            servicesTaskBulletSizePx: 24,
+            servicesTaskBulletWeight: 'bold' as const,
+            cardMaxWidth:
+              saved.cardMaxWidth === 'full' ||
+              saved.cardMaxWidth === 'xl' ||
+              saved.cardMaxWidth === 'lg' ||
+              saved.cardMaxWidth === 'md' ||
+              saved.cardMaxWidth === 'sm'
+                ? saved.cardMaxWidth === 'full' || saved.cardMaxWidth === 'lg'
+                  ? ('xl' as const) // migrate older compact presets to wider default
+                  : saved.cardMaxWidth
+                : ('xl' as const),
+            cardAlignment:
+              saved.cardAlignment === 'left' ||
+              saved.cardAlignment === 'center' ||
+              saved.cardAlignment === 'right'
+                ? saved.cardAlignment
+                : ('center' as const),
+            commercialColumnGapPx:
+              typeof saved.commercialColumnGapPx === 'number' &&
+              saved.commercialColumnGapPx >= 32
+                ? saved.commercialColumnGapPx
+                : 48,
+          }
+        : {}),
+      // Carte / Plan / Offre / Plan en colonnes share Carte horizontal type scale.
+      ...(nextLayout === 'card' ||
+      nextLayout === 'plan' ||
+      nextLayout === 'tier' ||
+      nextLayout === 'plan-split' ||
+      nextLayout === 'card-media' ||
+      nextLayout === 'media-banner' ||
+      nextLayout === 'media-checklist' ||
+      nextLayout === 'media-split'
+        ? {
+            servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
+            elementStyles: servicesVerticalCardElementStyles(
+              (saved.elementStyles as PortfolioServicesElementStyles | undefined) ??
+                current.elementStyles
+            ),
+          }
+        : {}),
+      // Offre / Tarif CTA is filled (plein couleur).
+      ...(nextLayout === 'tier' ||
+      nextLayout === 'plan-split' ||
+      nextLayout === 'card-media' ||
+      nextLayout === 'media-banner' ||
+      nextLayout === 'media-checklist' ||
+      nextLayout === 'media-split'
+        ? { ctaDesign: 'pill-accent' as const }
+        : {}),
+      // Period suffix: keep for Plan en colonnes; clear elsewhere.
+      ...(nextLayout === 'plan-split'
+        ? {}
+        : { servicePricePeriodSuffix: '' as const }),
+      servicesBlock: {
+        ...current.servicesBlock,
+        galleryLayout: nextLayout,
+        columns:
+          nextLayout === 'plan-split' ||
+          nextLayout === 'card-media' ||
+          nextLayout === 'media-banner' ||
+          nextLayout === 'media-checklist' ||
+          nextLayout === 'media-split'
+            ? (1 as const)
+            : nextColumns,
+        displayMode: nextDisplayMode,
+        ...frame,
+        ...(servicesLayoutUsesFilledCardFrame(nextLayout)
+          ? {
+              cardBackgroundEnabled: true as const,
+              cardBackgroundFill: 'solid' as const,
+            }
+          : {}),
+      },
+    };
+    if (current.useHeroPalette !== false) {
+      const palettePatch = applyServicesPaletteToSettings({
+        ...current,
+        ...restored,
+      }) as Partial<PortfolioServicesPresentationSettings>;
+      const filledFrame = servicesLayoutUsesFilledCardFrame(nextLayout)
+        ? {
+            cardBackgroundEnabled: true as const,
+            cardBackgroundFill: 'solid' as const,
+          }
+        : {};
+      return {
+        ...restored,
+        ...palettePatch,
+        ...frame,
+        ...filledFrame,
+        servicesGalleryLayout: nextLayout,
+        servicesGalleryLayoutPresets: presets,
+        useHeroPalette: true,
+        servicesBlock: {
+          ...restored.servicesBlock!,
+          ...frame,
+          ...filledFrame,
+        },
+      };
+    }
+    return restored;
+  }
+
+  const firstTime = servicesGalleryLayoutSettingsPatch(nextLayout, current);
+  const filledFrameFirst = servicesLayoutUsesFilledCardFrame(nextLayout)
+    ? {
+        cardBackgroundEnabled: true as const,
+        cardBackgroundFill: 'solid' as const,
+      }
+    : {};
+  const seeded: Partial<PortfolioServicesPresentationSettings> = {
+    ...firstTime,
+    // First visit: layout defaults for frame (filled layouts keep solid fill).
+    ...frame,
+    ...filledFrameFirst,
+    ...(nextLayout === 'plan-split'
+      ? {}
+      : { servicePricePeriodSuffix: '' as const }),
+    servicesGalleryLayout: nextLayout,
+    servicesGalleryLayoutPresets: presets,
+    servicesBlock: {
+      ...current.servicesBlock,
+      ...(firstTime.servicesBlock ?? {}),
+      galleryLayout: nextLayout,
+      ...frame,
+      ...filledFrameFirst,
+    },
+  };
+  if (current.useHeroPalette !== false) {
+    const palettePatch = applyServicesPaletteToSettings({
+      ...current,
+      ...seeded,
+    }) as Partial<PortfolioServicesPresentationSettings>;
+    return {
+      ...seeded,
+      ...palettePatch,
+      ...frame,
+      ...filledFrameFirst,
+      servicesGalleryLayout: nextLayout,
+      servicesGalleryLayoutPresets: presets,
+      useHeroPalette: true,
+      servicesBlock: {
+        ...seeded.servicesBlock!,
+        ...frame,
+        ...filledFrameFirst,
+      },
+    };
+  }
+  return seeded;
+}
+
+function mergeServicesGalleryLayoutPresets(
+  base: PortfolioServicesPresentationSettings['servicesGalleryLayoutPresets'],
+  raw: unknown
+): Partial<Record<PortfolioServicesGalleryLayout, PortfolioServicesGalleryLayoutPreset>> {
+  const out: Partial<
+    Record<PortfolioServicesGalleryLayout, PortfolioServicesGalleryLayoutPreset>
+  > = { ...(base ?? {}) };
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (!SERVICES_GALLERY_LAYOUT_VALUES.includes(key as PortfolioServicesGalleryLayout)) {
+      // Allow legacy / skills layouts that may still be stored.
+      if (
+        key !== 'pricing-hero' &&
+        key !== 'service-accordion' &&
+        key !== 'icon-stack' &&
+        key !== 'pill-cloud' &&
+        key !== 'tool-inspector'
+      ) {
+        continue;
+      }
+    }
+    if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
+    const layout = key as PortfolioServicesGalleryLayout;
+    const record = value as Record<string, unknown>;
+    const preset: PortfolioServicesGalleryLayoutPreset = { ...(out[layout] ?? {}) };
+    for (const field of SERVICES_GALLERY_LAYOUT_PRESET_KEYS) {
+      if (!(field in record)) continue;
+      if (field === 'elementStyles') {
+        preset.elementStyles = normalizeServicesElementStyles(record.elementStyles);
+        continue;
+      }
+      if (field === 'servicesColorBindings') {
+        preset.servicesColorBindings = mergeServicesColorBindings(
+          DEFAULT_SERVICES_COLOR_BINDINGS,
+          record.servicesColorBindings
+        );
+        continue;
+      }
+      (preset as Record<string, unknown>)[field] = record[field];
+    }
+    out[layout] = preset;
+  }
+  return out;
+}
+
+export function servicesGalleryLayoutSettingsPatch(
+  layout: PortfolioServicesGalleryLayout,
+  current?: Pick<
+    PortfolioServicesPresentationSettings,
+    | 'servicesBlock'
+    | 'skillsBlock'
+    | 'skillsGalleryLayout'
+    | 'elementStyles'
+    | 'servicesColorBindings'
+  >
 ): Partial<PortfolioServicesPresentationSettings> {
   if (layout === 'commercial-list') {
     return {
@@ -3778,7 +5056,20 @@ export function servicesGalleryLayoutSettingsPatch(
       servicesColumns: 1,
       servicesContentAlignment: 'left',
       servicePriceAlign: 'left',
-      ctaAlignment: 'right',
+      ctaAlignment: 'left',
+      // Compact card width with a bit of air (still configurable via Largeur de la carte).
+      cardMaxWidth: 'xl',
+      cardAlignment: 'center',
+      commercialPriceWidthPx: 200,
+      commercialCtaWidthPx: 210,
+      commercialColumnGapPx: 48,
+      ctaDesign: 'pill-accent',
+      servicesTaskBulletStyle: 'check',
+      servicesTaskBulletSource: 'section',
+      servicesTaskBulletSize: 'custom',
+      servicesTaskBulletSizePx: 24,
+      servicesTaskBulletWeight: 'bold',
+      ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
     };
   }
   if (layout === 'service-selector') {
@@ -3788,7 +5079,11 @@ export function servicesGalleryLayoutSettingsPatch(
       servicesColumns: 1,
       servicesContentAlignment: 'left',
       servicePriceAlign: 'right',
-      ctaAlignment: 'center',
+      ctaAlignment: 'left',
+      ctaDesign: 'pill-accent',
+      servicesTaskBulletStyle: 'dash',
+      servicesTaskBulletSource: 'section',
+      ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
     };
   }
   if (layout === 'service-accordion') {
@@ -3798,26 +5093,315 @@ export function servicesGalleryLayoutSettingsPatch(
       servicesColumns: 1,
       servicesContentAlignment: 'left',
       servicePriceAlign: 'right',
-      ctaAlignment: 'center',
+      ctaAlignment: 'left',
+      ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
     };
   }
-  if (layout === 'tier') {
+  if (layout === 'list') {
     return {
       servicesGalleryLayout: layout,
-      servicesContentAlignment: 'center',
-      servicePriceAlign: 'center',
-      servicePricePrefixEnabled: false,
-      ctaAlignment: 'center',
+      displayMode: 'grid',
+      cardMaxWidth: 'md',
+      ctaAlignment: 'left',
+      showServiceDescription: true,
+      showServiceDelivery: true,
+      ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
     };
   }
-  if (layout === 'plan') {
+  if (layout === 'plan-split') {
+    const bindings = current
+      ? mergeServicesColorBindings(
+          DEFAULT_SERVICES_COLOR_BINDINGS,
+          current.servicesColorBindings
+        )
+      : { ...DEFAULT_SERVICES_COLOR_BINDINGS };
     return {
       servicesGalleryLayout: layout,
+      displayMode: 'grid',
+      servicesColumns: 1,
+      cardMaxWidth: 'full',
+      cardAlignment: 'center',
+      cardPadding: 'lg',
       servicesContentAlignment: 'left',
       servicePriceAlign: 'left',
       servicePricePrefixEnabled: false,
+      servicePricePeriodSuffix: '/ month',
+      showServiceTitle: true,
+      showServiceDescription: true,
+      showServicePrice: true,
+      showServiceTasks: true,
+      showServiceCta: true,
+      ctaLabel: 'Get started',
+      ctaDesign: 'pill-accent',
       ctaAlignment: 'left',
+      servicesTaskBulletStyle: 'check-circle',
+      servicesTaskBulletSource: 'section',
+      servicesTaskBulletSize: 'custom',
+      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
+      servicesTaskBulletWeight: 'regular',
+      servicesTaskBulletWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
+      elementStyles: servicesVerticalCardElementStyles(
+        current?.elementStyles ?? DEFAULT_SERVICES_ELEMENT_STYLES
+      ),
+      servicesColorBindings: {
+        ...bindings,
+        tasksBullet: 'principal',
+        ctaAccent: 'principal',
+        ctaBorder: 'principal',
+      },
+      ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
+      ...(current
+        ? {
+            servicesBlock: {
+              ...current.servicesBlock,
+              galleryLayout: layout,
+              columns: 1 as const,
+              displayMode: 'grid' as const,
+              ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
+            },
+          }
+        : {}),
     };
+  }
+  if (layout === 'card-media') {
+    const bindings = current
+      ? mergeServicesColorBindings(
+          DEFAULT_SERVICES_COLOR_BINDINGS,
+          current.servicesColorBindings
+        )
+      : { ...DEFAULT_SERVICES_COLOR_BINDINGS };
+    return {
+      servicesGalleryLayout: layout,
+      displayMode: 'grid',
+      servicesColumns: 1,
+      cardMaxWidth: 'full',
+      cardAlignment: 'center',
+      cardPadding: 'lg',
+      servicesContentAlignment: 'left',
+      servicePriceAlign: 'left',
+      servicePricePrefixEnabled: false,
+      servicePricePeriodSuffix: '',
+      showServiceTitle: true,
+      showServiceDescription: true,
+      showServicePrice: true,
+      showServiceDelivery: true,
+      showServiceTasks: true,
+      showServiceCta: false,
+      ctaLabel: 'Get started',
+      ctaDesign: 'pill-accent',
+      ctaAlignment: 'left',
+      servicesTaskBulletStyle: 'check-circle',
+      servicesTaskBulletSource: 'section',
+      servicesTaskBulletSize: 'custom',
+      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
+      servicesTaskBulletWeight: 'regular',
+      servicesTaskBulletWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
+      elementStyles: servicesVerticalCardElementStyles(
+        current?.elementStyles ?? DEFAULT_SERVICES_ELEMENT_STYLES
+      ),
+      servicesColorBindings: {
+        ...bindings,
+        tasksBullet: 'principal',
+        ctaAccent: 'principal',
+        ctaBorder: 'principal',
+      },
+      ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
+      ...(current
+        ? {
+            servicesBlock: {
+              ...current.servicesBlock,
+              galleryLayout: layout,
+              columns: 1 as const,
+              displayMode: 'grid' as const,
+              ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
+            },
+          }
+        : {}),
+    };
+  }
+  if (layout === 'media-banner') {
+    const bindings = current
+      ? mergeServicesColorBindings(
+          DEFAULT_SERVICES_COLOR_BINDINGS,
+          current.servicesColorBindings
+        )
+      : { ...DEFAULT_SERVICES_COLOR_BINDINGS };
+    return {
+      servicesGalleryLayout: layout,
+      displayMode: 'grid',
+      servicesColumns: 1,
+      cardMaxWidth: SERVICES_MEDIA_BANNER_DEFAULT_MAX_WIDTH,
+      cardAlignment: 'center',
+      cardPadding: 'lg',
+      servicesContentAlignment: 'left',
+      servicePriceAlign: 'left',
+      servicePricePrefixEnabled: false,
+      servicePricePeriodSuffix: '',
+      showServiceTitle: true,
+      showServiceDescription: true,
+      showServicePrice: true,
+      showServiceDelivery: true,
+      showServiceTasks: true,
+      showServiceCta: true,
+      ctaLabel: 'Order now',
+      ctaDesign: 'pill-accent',
+      ctaAlignment: 'left',
+      servicesTaskBulletStyle: 'check-circle',
+      servicesTaskBulletSource: 'section',
+      servicesTaskBulletSize: 'custom',
+      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
+      servicesTaskBulletWeight: 'regular',
+      servicesTaskBulletWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
+      elementStyles: servicesVerticalCardElementStyles(
+        current?.elementStyles ?? DEFAULT_SERVICES_ELEMENT_STYLES
+      ),
+      servicesColorBindings: {
+        ...bindings,
+        tasksBullet: 'principal',
+        ctaAccent: 'principal',
+        ctaBorder: 'principal',
+      },
+      ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
+      ...(current
+        ? {
+            servicesBlock: {
+              ...current.servicesBlock,
+              galleryLayout: layout,
+              columns: 1 as const,
+              displayMode: 'grid' as const,
+              ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
+            },
+          }
+        : {}),
+    };
+  }
+  if (layout === 'media-checklist') {
+    const bindings = current
+      ? mergeServicesColorBindings(
+          DEFAULT_SERVICES_COLOR_BINDINGS,
+          current.servicesColorBindings
+        )
+      : { ...DEFAULT_SERVICES_COLOR_BINDINGS };
+    return {
+      servicesGalleryLayout: layout,
+      displayMode: 'grid',
+      servicesColumns: 1,
+      cardMaxWidth: 'full',
+      cardAlignment: 'center',
+      cardPadding: 'lg',
+      servicesContentAlignment: 'left',
+      servicePriceAlign: 'left',
+      servicePricePrefixEnabled: false,
+      servicePricePeriodSuffix: '',
+      showServiceTitle: true,
+      showServiceDescription: false,
+      showServicePrice: false,
+      showServiceDelivery: false,
+      showServiceTasks: true,
+      showServiceCta: true,
+      ctaLabel: 'Get started',
+      ctaDesign: 'pill-accent',
+      ctaAlignment: 'left',
+      servicesTaskBulletStyle: 'check',
+      servicesTaskBulletSource: 'section',
+      servicesTaskBulletSize: 'custom',
+      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
+      servicesTaskBulletWeight: 'regular',
+      servicesTaskBulletWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
+      elementStyles: servicesVerticalCardElementStyles(
+        current?.elementStyles ?? DEFAULT_SERVICES_ELEMENT_STYLES
+      ),
+      servicesColorBindings: {
+        ...bindings,
+        tasksBullet: 'principal',
+        ctaAccent: 'principal',
+        ctaBorder: 'principal',
+      },
+      ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
+      ...(current
+        ? {
+            servicesBlock: {
+              ...current.servicesBlock,
+              galleryLayout: layout,
+              columns: 1 as const,
+              displayMode: 'grid' as const,
+              ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
+            },
+          }
+        : {}),
+    };
+  }
+  if (layout === 'media-split') {
+    const bindings = current
+      ? mergeServicesColorBindings(
+          DEFAULT_SERVICES_COLOR_BINDINGS,
+          current.servicesColorBindings
+        )
+      : { ...DEFAULT_SERVICES_COLOR_BINDINGS };
+    return {
+      servicesGalleryLayout: layout,
+      displayMode: 'grid',
+      servicesColumns: 1,
+      cardMaxWidth: 'xl',
+      cardAlignment: 'center',
+      cardPadding: 'lg',
+      servicesContentAlignment: 'left',
+      servicePriceAlign: 'left',
+      servicePricePrefixEnabled: false,
+      servicePricePeriodSuffix: '',
+      showServiceTitle: true,
+      showServiceDescription: true,
+      showServicePrice: true,
+      showServiceDelivery: true,
+      showServiceTasks: true,
+      showServiceCta: false,
+      ctaLabel: 'Get started',
+      ctaDesign: 'pill-accent',
+      ctaAlignment: 'left',
+      servicesTaskBulletStyle: 'check-square',
+      servicesTaskBulletSource: 'section',
+      servicesTaskBulletSize: 'custom',
+      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
+      servicesTaskBulletWeight: 'regular',
+      servicesTaskBulletWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
+      elementStyles: servicesVerticalCardElementStyles(
+        current?.elementStyles ?? DEFAULT_SERVICES_ELEMENT_STYLES
+      ),
+      servicesColorBindings: {
+        ...bindings,
+        tasksBullet: 'principal',
+        ctaAccent: 'principal',
+        ctaBorder: 'principal',
+      },
+      ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
+      ...(current
+        ? {
+            servicesBlock: {
+              ...current.servicesBlock,
+              galleryLayout: layout,
+              columns: 1 as const,
+              displayMode: 'grid' as const,
+              ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
+            },
+          }
+        : {}),
+    };
+  }
+  if (layout === 'tier' || layout === 'plan' || layout === 'card') {
+    if (current) return applyServicesHorizontalCardDesignDefaults(layout, current);
+    return applyServicesHorizontalCardDesignDefaults(layout, {
+      servicesBlock: createDefaultServicesBlockSettings('services', {
+        ...DEFAULT_SERVICES_PRESENTATION_BASE,
+        ...DEFAULT_SERVICES_CARD_BACKGROUND_SETTINGS,
+      }),
+      skillsBlock: createDefaultServicesBlockSettings('skills', {
+        ...DEFAULT_SERVICES_PRESENTATION_BASE,
+        ...DEFAULT_SERVICES_CARD_BACKGROUND_SETTINGS,
+      }),
+      skillsGalleryLayout: 'card',
+      elementStyles: DEFAULT_SERVICES_ELEMENT_STYLES,
+      servicesColorBindings: { ...DEFAULT_SERVICES_COLOR_BINDINGS },
+    });
   }
   return { servicesGalleryLayout: layout };
 }
@@ -3831,20 +5415,42 @@ export function servicesGridClass(displayMode: PortfolioServicesDisplayMode): st
 
 export function servicesCardWidthClass(displayMode: PortfolioServicesDisplayMode): string {
   if (displayMode === 'stack' || displayMode === 'coverflow' || displayMode === 'deck') return 'w-full';
-  return 'w-[20.5rem] shrink-0 py-1 sm:w-[22rem] lg:w-[26rem]';
+  // Carte / Offre / Plan marquee — same slightly roomier footprint.
+  return 'w-[20.5rem] shrink-0 py-1 sm:w-[22.5rem] lg:w-[26rem]';
 }
 
 /** Caps card / coverflow width so the stack stays portrait instead of stretching full column. */
 export function servicesCardMaxWidthClass(maxWidth: PortfolioServicesCardMaxWidth | undefined): string {
   switch (maxWidth) {
     case 'sm':
-      return 'w-full max-w-md';
+      return 'w-full max-w-sm';
     case 'md':
-      return 'w-full max-w-lg';
+      return 'w-full max-w-md';
     case 'lg':
-      return 'w-full max-w-xl';
+      return 'w-full max-w-lg';
     case 'xl':
-      return 'w-full max-w-2xl';
+      return 'w-full max-w-xl';
+    default:
+      return 'w-full max-w-full';
+  }
+}
+
+/**
+ * Liste commerciale — wider steps than tile cards so price + CTA fit,
+ * but still capped (default `xl` = max-w-7xl) instead of full bleed.
+ */
+export function servicesCommercialListMaxWidthClass(
+  maxWidth: PortfolioServicesCardMaxWidth | undefined
+): string {
+  switch (maxWidth) {
+    case 'sm':
+      return 'w-full max-w-4xl';
+    case 'md':
+      return 'w-full max-w-5xl';
+    case 'lg':
+      return 'w-full max-w-6xl';
+    case 'xl':
+      return 'w-full max-w-7xl';
     default:
       return 'w-full max-w-full';
   }
@@ -3871,9 +5477,14 @@ export function skillsInspectorMaxWidthClass(
 /** Align a width-capped card stack inside its column. */
 export function servicesCardMaxWidthShellClass(
   maxWidth: PortfolioServicesCardMaxWidth | undefined,
-  alignment: PortfolioServicesCardAlignment | PortfolioServicesContentAlignment = 'center'
+  alignment: PortfolioServicesCardAlignment | PortfolioServicesContentAlignment = 'center',
+  /** Use commercial-list width steps when rendering Liste commerciale rows. */
+  variant: 'card' | 'commercial-list' = 'card'
 ): string {
-  const width = servicesCardMaxWidthClass(maxWidth);
+  const width =
+    variant === 'commercial-list'
+      ? servicesCommercialListMaxWidthClass(maxWidth)
+      : servicesCardMaxWidthClass(maxWidth);
   if (!maxWidth || maxWidth === 'full') return width;
   switch (alignment) {
     case 'left':
@@ -3979,24 +5590,15 @@ export function mergeServicesPresentation(
       ['left', 'right'],
       base.skillsMarqueeDirection ?? 'left'
     ),
-    servicesGalleryLayout: pick(
-      record.servicesGalleryLayout === 'accordion'
-        ? 'service-accordion'
-        : record.servicesGalleryLayout,
-      ['card', 'list', 'service-selector', 'service-accordion', 'commercial-list', 'pricing-hero', 'tier', 'plan'],
-      base.servicesGalleryLayout
+    servicesGalleryLayout: normalizeServicesGalleryLayoutValue(
+      record.servicesGalleryLayout,
+      base.servicesGalleryLayout,
+      'services'
     ),
-    skillsGalleryLayout: pick(
-      record.skillsGalleryLayout === 'accordion' ||
-        record.skillsGalleryLayout === 'service-selector' ||
-        record.skillsGalleryLayout === 'service-accordion' ||
-        record.skillsGalleryLayout === 'commercial-list' ||
-        record.skillsGalleryLayout === 'tier' ||
-        record.skillsGalleryLayout === 'plan'
-        ? 'card'
-        : record.skillsGalleryLayout,
-      ['card', 'list', 'pricing-hero', 'icon-stack', 'pill-cloud', 'tool-inspector'],
-      base.skillsGalleryLayout
+    skillsGalleryLayout: normalizeServicesGalleryLayoutValue(
+      record.skillsGalleryLayout,
+      base.skillsGalleryLayout,
+      'skills'
     ),
     stackOrder: pick(record.stackOrder, ['skills-first', 'services-first'], base.stackOrder),
     cardDesign: pick(record.cardDesign, ['editorial', 'minimal', 'compact', 'glass', 'frost', 'accent'], base.cardDesign),
@@ -4015,6 +5617,29 @@ export function mergeServicesPresentation(
       typeof record.cardBackgroundEnabled === 'boolean'
         ? record.cardBackgroundEnabled
         : base.cardBackgroundEnabled,
+    servicesPrincipalSurfaceEnabled:
+      typeof record.servicesPrincipalSurfaceEnabled === 'boolean'
+        ? record.servicesPrincipalSurfaceEnabled
+        : (base.servicesPrincipalSurfaceEnabled ?? false),
+    servicesPrincipalSurfaceAlternation: pickServicesCardBackgroundAlternation(
+      record.servicesPrincipalSurfaceAlternation,
+      base.servicesPrincipalSurfaceAlternation ?? 'uniform'
+    ),
+    servicesPrincipalSurfaceAlternateStart: pick(
+      record.servicesPrincipalSurfaceAlternateStart,
+      ['principal', 'normal'],
+      base.servicesPrincipalSurfaceAlternateStart ?? 'principal'
+    ),
+    servicesMediaSide: pick(
+      record.servicesMediaSide,
+      ['media-left', 'media-right'],
+      base.servicesMediaSide ?? 'media-left'
+    ),
+    servicesMediaSideAlternation: pick(
+      record.servicesMediaSideAlternation,
+      ['uniform', 'alternate'],
+      base.servicesMediaSideAlternation ?? 'alternate'
+    ),
     cardBackgroundColor: sanitizeHex(record.cardBackgroundColor, base.cardBackgroundColor),
     cardBackgroundColorDark: sanitizeHex(
       record.cardBackgroundColorDark,
@@ -4084,10 +5709,17 @@ export function mergeServicesPresentation(
       typeof record.servicePricePrefix === 'string'
         ? record.servicePricePrefix
         : base.servicePricePrefix,
-    servicePricePeriodSuffix:
-      typeof record.servicePricePeriodSuffix === 'string'
-        ? record.servicePricePeriodSuffix
-        : base.servicePricePeriodSuffix ?? '',
+    servicePricePeriodSuffix: (() => {
+      const raw =
+        typeof record.servicePricePeriodSuffix === 'string'
+          ? record.servicePricePeriodSuffix
+          : base.servicePricePeriodSuffix ?? '';
+      const trimmed = raw.trim();
+      // Drop legacy "/ month" / "per month" suffixes from every design.
+      if (!trimmed) return '';
+      if (/^\/?\s*(per\s+)?months?$/i.test(trimmed)) return '';
+      return trimmed;
+    })(),
     servicePriceAlign: pick(
       record.servicePriceAlign,
       ['left', 'center', 'right'],
@@ -4118,7 +5750,7 @@ export function mergeServicesPresentation(
     ),
     commercialColumnGapPx: clampCommercialLayoutPx(
       record.commercialColumnGapPx,
-      base.commercialColumnGapPx ?? 32,
+      base.commercialColumnGapPx ?? 48,
       12,
       80
     ),
@@ -4130,15 +5762,15 @@ export function mergeServicesPresentation(
     ),
     commercialPriceWidthPx: clampCommercialLayoutPx(
       record.commercialPriceWidthPx,
-      base.commercialPriceWidthPx ?? 160,
+      base.commercialPriceWidthPx ?? 220,
       112,
-      260
+      320
     ),
     commercialCtaWidthPx: clampCommercialLayoutPx(
       record.commercialCtaWidthPx,
-      base.commercialCtaWidthPx ?? 160,
+      base.commercialCtaWidthPx ?? 200,
       112,
-      260
+      320
     ),
     skillsIconPlacement: pick(record.skillsIconPlacement, ['start', 'top'], base.skillsIconPlacement),
     skillsIconRadius: pick(
@@ -4385,22 +6017,15 @@ export function mergeServicesPresentation(
       ...mergedBlock,
       galleryLayout:
         kind === 'services'
-          ? pick(
-              rawGalleryLayout === 'accordion' ? 'service-accordion' : rawGalleryLayout,
-              ['card', 'list', 'service-selector', 'service-accordion', 'commercial-list', 'pricing-hero', 'tier', 'plan'],
-              fallback.galleryLayout
+          ? normalizeServicesGalleryLayoutValue(
+              rawGalleryLayout,
+              fallback.galleryLayout,
+              'services'
             )
-          : pick(
-              rawGalleryLayout === 'accordion' ||
-                rawGalleryLayout === 'service-selector' ||
-                rawGalleryLayout === 'service-accordion' ||
-                rawGalleryLayout === 'commercial-list' ||
-                rawGalleryLayout === 'tier' ||
-                rawGalleryLayout === 'plan'
-                ? 'card'
-                : rawGalleryLayout,
-              ['card', 'list', 'pricing-hero', 'icon-stack', 'pill-cloud', 'tool-inspector'],
-              fallback.galleryLayout
+          : normalizeServicesGalleryLayoutValue(
+              rawGalleryLayout,
+              fallback.galleryLayout,
+              'skills'
             ),
       ...withMigratedServicesCardBackground(
         mergeServicesCardBackgroundSettings(fallback, mergedBlock)
@@ -4464,15 +6089,393 @@ export function mergeServicesPresentation(
       base.servicesHeader ?? createDefaultDistinctHeaderSettings('services'),
       record.servicesHeader
     ),
+    servicesCardChromeVersion:
+      typeof (record as { servicesCardChromeVersion?: unknown }).servicesCardChromeVersion ===
+      'number'
+        ? (record as { servicesCardChromeVersion: number }).servicesCardChromeVersion
+        : 0,
+    servicesGalleryLayoutPresets: mergeServicesGalleryLayoutPresets(
+      base.servicesGalleryLayoutPresets,
+      (record as { servicesGalleryLayoutPresets?: unknown }).servicesGalleryLayoutPresets
+    ),
   };
 
-  if (merged.useHeroPalette === false) {
-    return merged;
+  // One-time migration: horizontal card chrome + grid / 3 columns for card / tier / plan.
+  const chromeVersion = merged.servicesCardChromeVersion ?? 0;
+  let migrated = merged;
+  if (chromeVersion < SERVICES_VERTICAL_CARD_CHROME_VERSION) {
+    const presets = { ...(merged.servicesGalleryLayoutPresets ?? {}) };
+    // Keep Carte horizontal description, filled CTA, and principal checked bullets.
+    presets.card = {
+      ...presets.card,
+      ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
+      showServiceDescription: true,
+      ctaDesign: 'pill-accent',
+      ctaAlignment: 'left',
+      cardMaxWidth: SERVICES_HORIZONTAL_CARD_MAX_WIDTH,
+      servicesTaskBulletStyle: 'check-circle-fill',
+      servicesTaskBulletSource: 'section',
+      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
+      elementStyles: servicesVerticalCardElementStyles(
+        (presets.card?.elementStyles as PortfolioServicesElementStyles | undefined) ??
+          merged.elementStyles
+      ),
+      servicesColorBindings: {
+        ...DEFAULT_SERVICES_COLOR_BINDINGS,
+        ...presets.card?.servicesColorBindings,
+        ctaAccent: 'principal',
+        ctaBorder: 'principal',
+        tasksBullet: 'principal',
+      },
+    };
+    // Offre / Tarif only: filled card surface + filled CTA + Carte horizontal type scale.
+    presets.tier = {
+      ...presets.tier,
+      ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
+      ctaDesign: 'pill-accent',
+      cardMaxWidth: SERVICES_HORIZONTAL_CARD_MAX_WIDTH,
+      showServiceDescription: true,
+      servicePricePeriodSuffix: '',
+      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
+      elementStyles: servicesVerticalCardElementStyles(
+        (presets.tier?.elementStyles as PortfolioServicesElementStyles | undefined) ??
+          merged.elementStyles
+      ),
+    };
+    // Plan tarifaire: same type scale + filled background (light + dark).
+    presets.plan = {
+      ...presets.plan,
+      ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
+      cardMaxWidth: SERVICES_HORIZONTAL_CARD_MAX_WIDTH,
+      showServiceDescription: false,
+      showServiceTasks: true,
+      ctaDesign: 'pill-accent',
+      servicesTaskBulletStyle: 'check-circle',
+      servicesTaskBulletSource: 'section',
+      servicePricePeriodSuffix: '',
+      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
+      elementStyles: servicesVerticalCardElementStyles(
+        (presets.plan?.elementStyles as PortfolioServicesElementStyles | undefined) ??
+          merged.elementStyles
+      ),
+      servicesColorBindings: {
+        ...DEFAULT_SERVICES_COLOR_BINDINGS,
+        ...presets.plan?.servicesColorBindings,
+        tasksBullet: 'principal',
+        ctaAccent: 'principal',
+        ctaBorder: 'principal',
+      },
+    };
+    // Plan en colonnes: full-width bandeau + filled surface.
+    presets['plan-split'] = {
+      ...presets['plan-split'],
+      ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
+      servicesColumns: 1,
+      cardMaxWidth: 'full',
+      cardAlignment: 'center',
+      cardPadding: 'lg',
+      showServiceDescription: true,
+      showServiceTasks: true,
+      ctaDesign: 'pill-accent',
+      ctaLabel: presets['plan-split']?.ctaLabel === 'Start Free Trial'
+        ? 'Get started'
+        : (presets['plan-split']?.ctaLabel ?? 'Get started'),
+      servicePricePeriodSuffix:
+        typeof presets['plan-split']?.servicePricePeriodSuffix === 'string'
+          ? presets['plan-split'].servicePricePeriodSuffix
+          : '/ month',
+      servicesTaskBulletStyle: 'check-circle',
+      servicesTaskBulletSource: 'section',
+      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
+      elementStyles: servicesVerticalCardElementStyles(
+        (presets['plan-split']?.elementStyles as PortfolioServicesElementStyles | undefined) ??
+          merged.elementStyles
+      ),
+      servicesColorBindings: {
+        ...DEFAULT_SERVICES_COLOR_BINDINGS,
+        ...presets['plan-split']?.servicesColorBindings,
+        tasksBullet: 'principal',
+        ctaAccent: 'principal',
+        ctaBorder: 'principal',
+      },
+    };
+    // Liste / menu: same width + full description as Carte horizontal.
+    presets.list = {
+      ...presets.list,
+      ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
+      cardMaxWidth: 'md',
+      showServiceDescription: true,
+      showServiceDelivery: true,
+      cardBackgroundEnabled: false,
+      servicePricePeriodSuffix: '',
+    };
+    // Clear leaked fill from Offre / Tarif on layouts that stay border-only.
+    for (const layout of SERVICES_GALLERY_LAYOUT_VALUES) {
+      if (servicesLayoutUsesFilledCardFrame(layout)) continue;
+      if (!presets[layout]) continue;
+      const keepPeriod = layout === 'plan-split';
+      presets[layout] = {
+        ...presets[layout],
+        ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
+        cardBackgroundEnabled: false,
+        ...(keepPeriod ? {} : { servicePricePeriodSuffix: '' }),
+      };
+    }
+    // Liste commerciale: wider card + filled surface by default.
+    presets['commercial-list'] = {
+      ...presets['commercial-list'],
+      ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
+      cardMaxWidth:
+        presets['commercial-list']?.cardMaxWidth === 'xl' ||
+        presets['commercial-list']?.cardMaxWidth === 'full'
+          ? presets['commercial-list'].cardMaxWidth
+          : 'xl',
+      cardAlignment: presets['commercial-list']?.cardAlignment ?? 'center',
+      commercialPriceWidthPx: presets['commercial-list']?.commercialPriceWidthPx ?? 200,
+      commercialCtaWidthPx: presets['commercial-list']?.commercialCtaWidthPx ?? 210,
+      commercialColumnGapPx: presets['commercial-list']?.commercialColumnGapPx ?? 48,
+      ctaDesign: 'pill-accent',
+      servicesTaskBulletStyle: 'check',
+      servicesTaskBulletSource: 'section',
+      servicesTaskBulletSize: 'custom',
+      servicesTaskBulletSizePx: 24,
+      servicesTaskBulletWeight: 'bold',
+    };
+
+    if (
+      merged.servicesGalleryLayout === 'card' ||
+      merged.servicesGalleryLayout === 'tier' ||
+      merged.servicesGalleryLayout === 'plan'
+    ) {
+      const layoutDefaults = applyServicesHorizontalCardDesignDefaults(
+        merged.servicesGalleryLayout,
+        merged
+      );
+      const afterDefaults = {
+        ...merged,
+        ...layoutDefaults,
+        servicePricePeriodSuffix: '',
+        servicesCardChromeVersion: SERVICES_VERTICAL_CARD_CHROME_VERSION,
+        servicesGalleryLayoutPresets: presets,
+      } as PortfolioServicesPresentationSettings;
+      migrated = {
+        ...afterDefaults,
+        servicesGalleryLayoutPresets: {
+          ...presets,
+          [merged.servicesGalleryLayout]: captureServicesGalleryLayoutPreset(afterDefaults),
+        },
+      };
+    } else if (merged.servicesGalleryLayout === 'plan-split') {
+      migrated = {
+        ...merged,
+        ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
+        cardBackgroundEnabled: true,
+        cardBackgroundFill: 'solid',
+        servicesColumns: 1,
+        cardMaxWidth:
+          merged.cardMaxWidth === 'full' || merged.cardMaxWidth === 'xl'
+            ? merged.cardMaxWidth
+            : 'full',
+        cardAlignment: merged.cardAlignment || 'center',
+        cardPadding: 'lg',
+        showServiceDescription: true,
+        showServiceTasks: true,
+        ctaDesign: 'pill-accent',
+        ctaLabel:
+          merged.ctaLabel === 'Start Free Trial' || !merged.ctaLabel?.trim()
+            ? 'Get started'
+            : merged.ctaLabel,
+        servicePricePeriodSuffix:
+          typeof merged.servicePricePeriodSuffix === 'string'
+            ? merged.servicePricePeriodSuffix
+            : '/ month',
+        servicesCardChromeVersion: SERVICES_VERTICAL_CARD_CHROME_VERSION,
+        servicesGalleryLayoutPresets: {
+          ...presets,
+          'plan-split': {
+            ...presets['plan-split'],
+            servicesColumns: 1,
+            cardMaxWidth: 'full',
+            ctaLabel: 'Get started',
+            cardBackgroundEnabled: true,
+            cardBackgroundFill: 'solid',
+          },
+        },
+        servicesBlock: {
+          ...merged.servicesBlock,
+          ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
+          cardBackgroundEnabled: true,
+          columns: 1,
+          galleryLayout: 'plan-split',
+        },
+      };
+    } else if (merged.servicesGalleryLayout === 'commercial-list') {
+      migrated = {
+        ...merged,
+        ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
+        cardBackgroundEnabled: true,
+        cardBackgroundFill: 'solid',
+        servicePricePeriodSuffix: '',
+        cardMaxWidth:
+          merged.cardMaxWidth === 'full' || merged.cardMaxWidth === 'lg'
+            ? 'xl'
+            : merged.cardMaxWidth || 'xl',
+        cardAlignment: merged.cardAlignment || 'center',
+        commercialPriceWidthPx: merged.commercialPriceWidthPx || 200,
+        commercialCtaWidthPx: merged.commercialCtaWidthPx || 210,
+        commercialColumnGapPx: merged.commercialColumnGapPx || 48,
+        ctaDesign: 'pill-accent',
+        servicesTaskBulletStyle: 'check',
+        servicesTaskBulletSource: 'section',
+        servicesTaskBulletSize: 'custom',
+        servicesTaskBulletSizePx: 24,
+        servicesTaskBulletWeight: 'bold',
+        servicesCardChromeVersion: SERVICES_VERTICAL_CARD_CHROME_VERSION,
+        servicesGalleryLayoutPresets: {
+          ...presets,
+          'commercial-list': {
+            ...presets['commercial-list'],
+            cardBackgroundEnabled: true,
+            cardBackgroundFill: 'solid',
+          },
+        },
+        servicesBlock: {
+          ...merged.servicesBlock,
+          ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
+          cardBackgroundEnabled: true,
+        },
+      };
+    } else if (merged.servicesGalleryLayout === 'list') {
+      migrated = {
+        ...merged,
+        ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
+        cardMaxWidth: 'md',
+        showServiceDescription: true,
+        showServiceDelivery: true,
+        servicePricePeriodSuffix: '',
+        servicesCardChromeVersion: SERVICES_VERTICAL_CARD_CHROME_VERSION,
+        servicesGalleryLayoutPresets: {
+          ...presets,
+          list: {
+            ...presets.list,
+            cardMaxWidth: 'md',
+            showServiceDescription: true,
+            showServiceDelivery: true,
+          },
+        },
+        servicesBlock: {
+          ...merged.servicesBlock,
+          ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
+        },
+      };
+    } else if (
+      merged.servicesGalleryLayout === 'media-banner' ||
+      merged.servicesGalleryLayout === 'media-checklist' ||
+      merged.servicesGalleryLayout === 'card-media' ||
+      merged.servicesGalleryLayout === 'media-split'
+    ) {
+      const mediaLayout = merged.servicesGalleryLayout;
+      const bannerWidth =
+        mediaLayout === 'media-banner'
+          ? merged.cardMaxWidth === 'xl' ||
+            merged.cardMaxWidth === 'lg' ||
+            merged.cardMaxWidth === 'md' ||
+            merged.cardMaxWidth === 'sm'
+            ? merged.cardMaxWidth
+            : SERVICES_MEDIA_BANNER_DEFAULT_MAX_WIDTH
+          : mediaLayout === 'media-checklist'
+            ? ('full' as const)
+            : mediaLayout === 'media-split'
+              ? merged.cardMaxWidth === 'full' ||
+                merged.cardMaxWidth === 'xl' ||
+                merged.cardMaxWidth === 'lg' ||
+                merged.cardMaxWidth === 'md' ||
+                merged.cardMaxWidth === 'sm'
+                ? merged.cardMaxWidth
+                : ('xl' as const)
+              : merged.cardMaxWidth === 'full' ||
+                  merged.cardMaxWidth === 'xl' ||
+                  merged.cardMaxWidth === 'lg' ||
+                  merged.cardMaxWidth === 'md' ||
+                  merged.cardMaxWidth === 'sm'
+                ? merged.cardMaxWidth
+                : ('full' as const);
+      migrated = {
+        ...merged,
+        ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
+        cardBackgroundEnabled: true,
+        cardBackgroundFill: 'solid',
+        cardBorder: 'none',
+        servicesColumns: 1,
+        cardMaxWidth: bannerWidth,
+        cardAlignment:
+          merged.cardAlignment === 'left' ||
+          merged.cardAlignment === 'center' ||
+          merged.cardAlignment === 'right'
+            ? merged.cardAlignment
+            : ('center' as const),
+        ...(mediaLayout === 'media-checklist'
+          ? {
+              showServiceCta: true as const,
+              showServiceDescription: false as const,
+              showServicePrice: false as const,
+              showServiceDelivery: false as const,
+            }
+          : mediaLayout === 'media-banner'
+            ? { showServiceCta: true as const }
+            : mediaLayout === 'media-split'
+              ? {
+                  showServiceCta: false as const,
+                  showServiceDescription: true as const,
+                  showServicePrice: true as const,
+                  showServiceDelivery: true as const,
+                }
+              : {}),
+        servicePricePeriodSuffix: '',
+        servicesCardChromeVersion: SERVICES_VERTICAL_CARD_CHROME_VERSION,
+        servicesGalleryLayoutPresets: {
+          ...presets,
+          [mediaLayout]: {
+            ...presets[mediaLayout],
+            cardMaxWidth: bannerWidth,
+            cardAlignment: 'center',
+            cardBackgroundEnabled: true,
+            cardBackgroundFill: 'solid',
+            cardBorder: 'none',
+            servicesColumns: 1,
+          },
+        },
+        servicesBlock: {
+          ...merged.servicesBlock,
+          ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
+          cardBackgroundEnabled: true,
+          cardBorder: 'none',
+          columns: 1,
+          galleryLayout: mediaLayout,
+        },
+      };
+    } else {
+      migrated = {
+        ...merged,
+        ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
+        servicePricePeriodSuffix: '',
+        servicesCardChromeVersion: SERVICES_VERTICAL_CARD_CHROME_VERSION,
+        servicesGalleryLayoutPresets: presets,
+        servicesBlock: {
+          ...merged.servicesBlock,
+          ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
+        },
+      };
+    }
+  }
+
+  if (migrated.useHeroPalette === false) {
+    return migrated;
   }
 
   return {
-    ...merged,
-    ...(applyServicesPaletteToSettings(merged) as Partial<PortfolioServicesPresentationSettings>),
+    ...migrated,
+    ...(applyServicesPaletteToSettings(migrated) as Partial<PortfolioServicesPresentationSettings>),
     useHeroPalette: true,
   };
 }

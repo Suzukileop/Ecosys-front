@@ -326,7 +326,6 @@ export function elementTextStyleClass(
   role: PortfolioElementTextRole = 'body'
 ): string {
   const parts = [elementTextSizeClass(style.size, role)].filter(Boolean);
-  if (style.font === 'serif') parts.push('font-serif');
   if (style.italic) parts.push('italic');
   const weight = style.weight ?? (style.bold ? 'bold' : 'normal');
   if (weight !== 'custom') {
@@ -367,10 +366,8 @@ export function elementTextInlineStyle(
   if (style.weight === 'custom') {
     base.fontWeight = resolveElementTextWeightAmount(style.weight, style.weightAmount);
   }
-  if (style.font === 'serif') {
-    base.fontFamily = "'Playfair Display', Georgia, serif";
-  } else if (style.font === 'display') {
-    base.fontFamily = "'Playfair Display', Georgia, serif";
+  // Font family is owned by Global → Police principale only (no per-element Playfair/serif).
+  if (style.font === 'display') {
     base.letterSpacing = '-0.02em';
   }
   if (style.decoration === 'underline') {

@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
+import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
   DEFAULT_SECTION_BACKGROUND,
@@ -317,12 +318,15 @@ export function migrateLegacyTeamCopy(title: string, subtitle: string): { title:
 export function resolveTeamSectionTitle(
   settings: Pick<PortfolioTeamSectionSettings, 'titlePreset' | 'titleCustom' | 'title'>
 ): string {
-  if (settings.titlePreset === 'meet-team') return 'Meet the team';
-  if (settings.titlePreset === 'people') return 'The talent';
-  if (settings.titlePreset === 'custom') {
-    return settings.titleCustom.trim() || settings.title.trim();
-  }
-  return DEFAULT_TEAM_TITLE_EN;
+  const raw =
+    settings.titlePreset === 'meet-team'
+      ? 'Meet the team'
+      : settings.titlePreset === 'people'
+        ? 'The talent'
+        : settings.titlePreset === 'custom'
+          ? settings.titleCustom.trim() || settings.title.trim()
+          : DEFAULT_TEAM_TITLE_EN;
+  return portfolioSectionTitleSentenceCase(raw);
 }
 
 export function resolveTeamSectionSubtitle(
@@ -343,8 +347,8 @@ export function teamHeaderFontClass(font: PortfolioTeamHeaderFont, kind: 'title'
   return kind === 'title' ? 'font-extrabold tracking-tight' : 'font-sans';
 }
 
-export function teamHeaderFontStyle(font: PortfolioTeamHeaderFont): CSSProperties | undefined {
-  return font === 'serif' ? { fontFamily: "'Playfair Display', serif" } : undefined;
+export function teamHeaderFontStyle(_font: PortfolioTeamHeaderFont): CSSProperties | undefined {
+  return undefined;
 }
 
 export function teamTitleColorStyle(color: string): CSSProperties {

@@ -4,12 +4,10 @@ import { useState, type ReactNode } from 'react';
 import {
   PORTFOLIO_SERVICES_CARD_BORDER_OPTIONS,
   PORTFOLIO_SERVICES_CARD_BACKGROUND_ALTERNATION_OPTIONS,
-  PORTFOLIO_SERVICES_CARD_DESIGN_INTENSITY_HINTS,
-  PORTFOLIO_SERVICES_CARD_DESIGN_TINT_HINTS,
-  PORTFOLIO_SERVICES_CARD_DESIGN_OPTIONS,
   PORTFOLIO_SERVICES_CARD_PADDING_OPTIONS,
   PORTFOLIO_SERVICES_CARD_RADIUS_OPTIONS,
   PORTFOLIO_SERVICES_CARD_MAX_WIDTH_OPTIONS,
+  PORTFOLIO_SERVICES_COMMERCIAL_LIST_MAX_WIDTH_OPTIONS,
   PORTFOLIO_SERVICES_CARD_ALIGNMENT_OPTIONS,
   PORTFOLIO_SKILLS_INSPECTOR_MAX_WIDTH_OPTIONS,
   PORTFOLIO_SKILLS_INSPECTOR_ALIGNMENT_OPTIONS,
@@ -40,7 +38,6 @@ import {
   SKILLS_INSPECTOR_ICON_GAP_PX_MIN,
   SKILLS_INSPECTOR_ICON_GAP_PX_MAX,
   clampSkillsInspectorIconGapPx,
-  PORTFOLIO_SERVICES_HEADER_FONT_OPTIONS,
   PORTFOLIO_SERVICES_ICON_PLACEMENT_OPTIONS,
   PORTFOLIO_SKILLS_ICON_RADIUS_OPTIONS,
   SKILLS_ICON_BORDER_WIDTH_PX_MIN,
@@ -61,7 +58,6 @@ import {
   PORTFOLIO_SERVICES_STAGE_RADIUS_OPTIONS,
   PORTFOLIO_SERVICES_STYLE_TARGET_OPTIONS,
   PORTFOLIO_SERVICES_TASK_BULLET_STYLE_OPTIONS,
-  resolveServicesTaskBulletSource,
   PORTFOLIO_SERVICES_DISTINCT_SERVICES_SUBTITLE_PRESET_OPTIONS,
   PORTFOLIO_SERVICES_DISTINCT_SERVICES_TITLE_PRESET_OPTIONS,
   PORTFOLIO_SERVICES_DISTINCT_SKILLS_SUBTITLE_PRESET_OPTIONS,
@@ -75,19 +71,19 @@ import {
   DEFAULT_SERVICES_CARD_INK_MUTED_A,
   DEFAULT_SERVICES_CARD_INK_STRONG_B,
   DEFAULT_SERVICES_CARD_INK_MUTED_B,
-  servicesCardDesignIntensityStyle,
-  servicesCardDesignOwnsBackground,
-  servicesCardDesignSupportsTint,
   servicesMarqueeActiveFor,
   servicesCoverflowActiveFor,
   servicesDeckActiveFor,
   servicesDisplayModeNeedsCardLayout,
   servicesDisplayModeSettingsPatch,
-  servicesGalleryLayoutSettingsPatch,
+  switchServicesGalleryLayout,
   stageChromePresetForDesign,
-  type PortfolioServicesCardDesign,
-  type PortfolioServicesCardDesignIntensities,
-  type PortfolioServicesCardDesignTints,
+  servicesLayoutSupportsPrincipalSurface,
+  servicesLayoutHasCoverMedia,
+  PORTFOLIO_SERVICES_PRINCIPAL_SURFACE_ALTERNATION_OPTIONS,
+  PORTFOLIO_SERVICES_PRINCIPAL_SURFACE_ALTERNATE_START_OPTIONS,
+  PORTFOLIO_SERVICES_MEDIA_SIDE_OPTIONS,
+  PORTFOLIO_SERVICES_MEDIA_SIDE_ALTERNATION_OPTIONS,
   type PortfolioServicesElementChromeId,
   type PortfolioServicesSectionSettings,
   type PortfolioServicesStyleTarget,
@@ -398,12 +394,6 @@ function ServicesDistinctHeaderPanel({
             />
           </div>
         ) : null}
-        <ServicesOptionGrid
-          label="Police du titre"
-          options={PORTFOLIO_SERVICES_HEADER_FONT_OPTIONS}
-          value={header.titleFont}
-          onChange={(titleFont) => patchHeader({ titleFont })}
-        />
         <ServicesColorField
           services={services}
           onChange={onChange}
@@ -438,12 +428,6 @@ function ServicesDistinctHeaderPanel({
             />
           </div>
         ) : null}
-        <ServicesOptionGrid
-          label="Police du sous-titre"
-          options={PORTFOLIO_SERVICES_HEADER_FONT_OPTIONS}
-          value={header.subtitleFont}
-          onChange={(subtitleFont) => patchHeader({ subtitleFont })}
-        />
         <ServicesColorField
           services={services}
           onChange={onChange}
@@ -649,122 +633,6 @@ function ServicesOptionGrid<T extends string | number>({
   );
 }
 
-const CARD_DESIGN_PREVIEW_BASE: Record<PortfolioServicesCardDesign, string> = {
-  editorial: 'relative overflow-hidden rounded-xl bg-white',
-  minimal: 'rounded-lg bg-white',
-  compact: 'rounded-lg',
-  glass: 'rounded-xl',
-  frost: 'rounded-xl',
-  accent: 'rounded-lg bg-white',
-};
-
-function ServicesCardDesignGrid({
-  value,
-  intensities,
-  tints,
-  accentColor,
-  onChange,
-  onIntensityChange,
-  onTintChange,
-}: {
-  value: PortfolioServicesCardDesign;
-  intensities: PortfolioServicesCardDesignIntensities;
-  tints: PortfolioServicesCardDesignTints;
-  accentColor: string;
-  onChange: (value: PortfolioServicesCardDesign) => void;
-  onIntensityChange: (intensity: number) => void;
-  onTintChange: (tint: number) => void;
-}) {
-  const intensityHints = PORTFOLIO_SERVICES_CARD_DESIGN_INTENSITY_HINTS[value];
-  const tintHints = PORTFOLIO_SERVICES_CARD_DESIGN_TINT_HINTS[value];
-  const currentIntensity = intensities[value];
-  const currentTint = tints[value];
-  const supportsTint = servicesCardDesignSupportsTint(value);
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Card design (style)</p>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {PORTFOLIO_SERVICES_CARD_DESIGN_OPTIONS.map((option) => {
-            const active = option.value === value;
-            const previewIntensity = intensities[option.value];
-            const previewTint = tints[option.value];
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => onChange(option.value)}
-                className={`rounded-2xl border px-4 py-3 text-left transition ${
-                  active
-                    ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                    : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-                }`}
-              >
-                <div
-                  className={`mb-3 h-12 w-full ${CARD_DESIGN_PREVIEW_BASE[option.value]}`}
-                  style={servicesCardDesignIntensityStyle(
-                    option.value,
-                    previewIntensity,
-                    accentColor,
-                    previewTint
-                  )}
-                  aria-hidden
-                />
-                <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
-                <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{intensityHints.label}</p>
-          <span className="text-sm font-semibold text-neutral-700">{currentIntensity}%</span>
-        </div>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={1}
-          value={currentIntensity}
-          onChange={(event) => onIntensityChange(Number(event.target.value))}
-          className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-          aria-label={intensityHints.label}
-        />
-        <div className="mt-2 flex justify-between gap-4 text-xs text-neutral-500">
-          <span>{intensityHints.low}</span>
-          <span className="text-right">{intensityHints.high}</span>
-        </div>
-      </div>
-
-      {supportsTint ? (
-        <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{tintHints.label}</p>
-            <span className="text-sm font-semibold text-neutral-700">{currentTint}%</span>
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={1}
-            value={currentTint}
-            onChange={(event) => onTintChange(Number(event.target.value))}
-            className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-            aria-label={tintHints.label}
-          />
-          <div className="mt-2 flex justify-between gap-4 text-xs text-neutral-500">
-            <span>{tintHints.low}</span>
-            <span className="text-right">{tintHints.high}</span>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
 
 function ServicesManualColorField({
   label,
@@ -1255,7 +1123,7 @@ export function ServicesSettingsPanel({
   const activeMeta =
     focusSubSections.find((item) => item.id === subSection) ?? focusSubSections[0];
   const blockScope: PortfolioServicesBlockScope = settingsFocus;
-  const usesSplitBlocks = true;
+  const usesSplitBlocks = servicesUsesSplitBlockConfig(services.sectionOrganization);
 
   const patchBlock = (patch: Parameters<typeof patchServicesBlockSettings>[2]) =>
     onChange(patchServicesBlockSettings(services, blockScope, patch));
@@ -1280,7 +1148,6 @@ export function ServicesSettingsPanel({
   const activeFrameSettings = usesSplitBlocks
     ? services[blockScope === 'skills' ? 'skillsBlock' : 'servicesBlock']
     : services;
-  const activeCardDesign = readBlock('cardDesign');
   const isPillCloudLayout =
     blockScope === 'skills' && readBlock('galleryLayout') === 'pill-cloud';
   const isToolInspectorLayout =
@@ -1396,63 +1263,22 @@ export function ServicesSettingsPanel({
                 }
                 value={readBlock('galleryLayout')}
                 onChange={(galleryLayout) => {
+                  if (blockScope === 'services') {
+                    onChange(switchServicesGalleryLayout(galleryLayout, services));
+                    return;
+                  }
                   patchBlock({
                     galleryLayout,
-                    ...(blockScope === 'skills' &&
-                    (galleryLayout === 'pill-cloud' || galleryLayout === 'tool-inspector')
+                    ...(galleryLayout === 'pill-cloud' || galleryLayout === 'tool-inspector'
                       ? { displayMode: 'grid' as const }
                       : {}),
-                    ...(blockScope === 'services' &&
-                    (galleryLayout === 'commercial-list' ||
-                      galleryLayout === 'service-selector' ||
-                      galleryLayout === 'service-accordion')
-                      ? {
-                          displayMode: 'grid' as const,
-                          columns: 1 as const,
-                          contentAlignment: 'left' as const,
-                        }
-                      : {}),
                   });
-                  if (blockScope === 'skills' && galleryLayout === 'tool-inspector') {
+                  if (galleryLayout === 'tool-inspector') {
                     onChange({
                       showSkillDescription: true,
                       showSkillCurrentlyUsed: false,
                       skillsInspectorShowHint: false,
                     });
-                  }
-                  if (blockScope === 'services' && galleryLayout === 'commercial-list') {
-                    onChange({
-                      servicesContentAlignment: 'left',
-                      servicePriceAlign: 'left',
-                      ctaAlignment: 'right',
-                    });
-                  }
-                  if (
-                    blockScope === 'services' &&
-                    (galleryLayout === 'service-selector' || galleryLayout === 'service-accordion')
-                  ) {
-                    onChange({
-                      servicesContentAlignment: 'left',
-                      servicePriceAlign: 'right',
-                      ctaAlignment: 'center',
-                    });
-                  }
-                  if (blockScope === 'services' && (galleryLayout === 'tier' || galleryLayout === 'plan')) {
-                    onChange(
-                      galleryLayout === 'tier'
-                        ? {
-                            servicesContentAlignment: 'center',
-                            servicePriceAlign: 'center',
-                            servicePricePrefixEnabled: false,
-                            ctaAlignment: 'center',
-                          }
-                        : {
-                            servicesContentAlignment: 'left',
-                            servicePriceAlign: 'left',
-                            servicePricePrefixEnabled: false,
-                            ctaAlignment: 'left',
-                          }
-                    );
                   }
                 }}
                 columns={2}
@@ -1598,7 +1424,7 @@ export function ServicesSettingsPanel({
                     {
                       label: 'Espace horizontal',
                       description: 'Distance entre numéro, contenu, prix et bouton.',
-                      value: services.commercialColumnGapPx ?? 32,
+                      value: services.commercialColumnGapPx ?? 48,
                       min: 12,
                       max: 80,
                       patch: (value: number) => ({ commercialColumnGapPx: value }),
@@ -1614,17 +1440,17 @@ export function ServicesSettingsPanel({
                     {
                       label: 'Largeur prix',
                       description: 'Largeur de la colonne du tarif sur grand écran.',
-                      value: services.commercialPriceWidthPx ?? 160,
+                      value: services.commercialPriceWidthPx ?? 200,
                       min: 112,
-                      max: 260,
+                      max: 320,
                       patch: (value: number) => ({ commercialPriceWidthPx: value }),
                     },
                     {
                       label: 'Largeur bouton',
                       description: 'Largeur de la colonne CTA sur grand écran.',
-                      value: services.commercialCtaWidthPx ?? 160,
+                      value: services.commercialCtaWidthPx ?? 210,
                       min: 112,
-                      max: 260,
+                      max: 320,
                       patch: (value: number) => ({ commercialCtaWidthPx: value }),
                     },
                   ].map((control) => (
@@ -1721,12 +1547,24 @@ export function ServicesSettingsPanel({
                     label={
                       isToolInspectorLayout
                         ? 'Largeur de l’inspecteur'
-                        : 'Largeur de la carte'
+                        : readBlock('galleryLayout') === 'commercial-list' ||
+                            readBlock('galleryLayout') === 'plan-split' ||
+                            readBlock('galleryLayout') === 'media-banner' ||
+                            readBlock('galleryLayout') === 'media-checklist' ||
+                            readBlock('galleryLayout') === 'media-split'
+                          ? 'Largeur de la ligne'
+                          : 'Largeur de la carte'
                     }
                     options={
                       isToolInspectorLayout
                         ? PORTFOLIO_SKILLS_INSPECTOR_MAX_WIDTH_OPTIONS
-                        : PORTFOLIO_SERVICES_CARD_MAX_WIDTH_OPTIONS
+                        : readBlock('galleryLayout') === 'commercial-list' ||
+                            readBlock('galleryLayout') === 'plan-split' ||
+                            readBlock('galleryLayout') === 'media-banner' ||
+                            readBlock('galleryLayout') === 'media-checklist' ||
+                            readBlock('galleryLayout') === 'media-split'
+                          ? PORTFOLIO_SERVICES_COMMERCIAL_LIST_MAX_WIDTH_OPTIONS
+                          : PORTFOLIO_SERVICES_CARD_MAX_WIDTH_OPTIONS
                     }
                     value={services.cardMaxWidth}
                     onChange={(cardMaxWidth) => onChange({ cardMaxWidth })}
@@ -1769,7 +1607,7 @@ export function ServicesSettingsPanel({
                     <span className="font-semibold">
                       {blockScope === 'skills' ? 'Tools / Skills' : 'Services'}
                     </span>{' '}
-                    — nécessite le design <span className="font-semibold">Carte verticale</span>.
+                    — nécessite le design <span className="font-semibold">Carte horizontal</span>.
                   </p>
                   <div className="flex items-center gap-2 text-sm text-neutral-700">
                     <span
@@ -1791,7 +1629,7 @@ export function ServicesSettingsPanel({
                         onClick={() => patchBlock({ galleryLayout: 'card' })}
                         className="font-medium text-orange-600 underline-offset-2 hover:underline"
                       >
-                        passer en Carte verticale
+                        passer en Carte horizontal
                       </button>
                     )}
                   </div>
@@ -1821,7 +1659,7 @@ export function ServicesSettingsPanel({
                     <span className="font-semibold">
                       {blockScope === 'skills' ? 'Tools / Skills' : 'Services'}
                     </span>{' '}
-                    — nécessite le design <span className="font-semibold">Carte verticale</span>.
+                    — nécessite le design <span className="font-semibold">Carte horizontal</span>.
                   </p>
                   <div className="flex items-center gap-2 text-sm text-neutral-700">
                     <span
@@ -1843,7 +1681,7 @@ export function ServicesSettingsPanel({
                         onClick={() => patchBlock({ galleryLayout: 'card' })}
                         className="font-medium text-orange-600 underline-offset-2 hover:underline"
                       >
-                        passer en Carte verticale
+                        passer en Carte horizontal
                       </button>
                     )}
                   </div>
@@ -1857,7 +1695,7 @@ export function ServicesSettingsPanel({
                       <span className="font-semibold">
                         {blockScope === 'skills' ? 'Tools / Skills' : 'Services'}
                       </span>{' '}
-                      — nécessite le design <span className="font-semibold">Carte verticale</span>.
+                      — nécessite le design <span className="font-semibold">Carte horizontal</span>.
                     </p>
                     <div className="flex items-center gap-2 text-sm text-neutral-700">
                       <span
@@ -1879,7 +1717,7 @@ export function ServicesSettingsPanel({
                           onClick={() => patchBlock({ galleryLayout: 'card' })}
                           className="font-medium text-orange-600 underline-offset-2 hover:underline"
                         >
-                          passer en Carte verticale
+                          passer en Carte horizontal
                         </button>
                       )}
                     </div>
@@ -1897,7 +1735,7 @@ export function ServicesSettingsPanel({
                   Animation : choisissez <span className="font-semibold text-neutral-700">Carrousel infini</span>,{' '}
                   <span className="font-semibold text-neutral-700">Coverflow vertical</span> ou{' '}
                   <span className="font-semibold text-neutral-700">Deck diagonal</span>, puis{' '}
-                  <span className="font-semibold text-neutral-700">Carte verticale</span> pour ce bloc.
+                  <span className="font-semibold text-neutral-700">Carte horizontal</span> pour ce bloc.
                 </p>
               )}
             </>
@@ -1908,10 +1746,32 @@ export function ServicesSettingsPanel({
             options={PORTFOLIO_SERVICES_GALLERY_LAYOUT_OPTIONS}
             value={services.servicesGalleryLayout}
             onChange={(servicesGalleryLayout) =>
-              onChange(servicesGalleryLayoutSettingsPatch(servicesGalleryLayout))
+              onChange(switchServicesGalleryLayout(servicesGalleryLayout, services))
             }
             columns={2}
           />
+
+          {servicesLayoutHasCoverMedia(services.servicesGalleryLayout) ? (
+            <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 px-4 py-3">
+              <p className="text-sm font-semibold text-neutral-950">Position média / infos</p>
+              <ServicesOptionGrid
+                label="Côté du média"
+                options={PORTFOLIO_SERVICES_MEDIA_SIDE_OPTIONS}
+                value={services.servicesMediaSide ?? 'media-left'}
+                onChange={(servicesMediaSide) => onChange({ servicesMediaSide })}
+                columns={2}
+              />
+              <ServicesOptionGrid
+                label="Alternance"
+                options={PORTFOLIO_SERVICES_MEDIA_SIDE_ALTERNATION_OPTIONS}
+                value={services.servicesMediaSideAlternation ?? 'alternate'}
+                onChange={(servicesMediaSideAlternation) =>
+                  onChange({ servicesMediaSideAlternation })
+                }
+                columns={2}
+              />
+            </div>
+          ) : null}
 
           {services.servicesGalleryLayout === 'service-selector' ||
           services.servicesGalleryLayout === 'service-accordion' ? (
@@ -2039,7 +1899,15 @@ export function ServicesSettingsPanel({
             <>
               <ServicesOptionGrid
                 label="Largeur de la carte"
-                options={PORTFOLIO_SERVICES_CARD_MAX_WIDTH_OPTIONS}
+                options={
+                  services.servicesGalleryLayout === 'media-banner' ||
+                  services.servicesGalleryLayout === 'media-checklist' ||
+                  services.servicesGalleryLayout === 'media-split' ||
+                  services.servicesGalleryLayout === 'plan-split' ||
+                  services.servicesGalleryLayout === 'commercial-list'
+                    ? PORTFOLIO_SERVICES_COMMERCIAL_LIST_MAX_WIDTH_OPTIONS
+                    : PORTFOLIO_SERVICES_CARD_MAX_WIDTH_OPTIONS
+                }
                 value={services.cardMaxWidth}
                 onChange={(cardMaxWidth) => onChange({ cardMaxWidth })}
                 columns={2}
@@ -2067,7 +1935,7 @@ export function ServicesSettingsPanel({
               <p className="text-sm font-semibold text-neutral-950">Carrousel infini</p>
               <p className="text-sm leading-relaxed text-neutral-600">
                 L&apos;animation de défilement s&apos;applique bloc par bloc, uniquement quand le design est{' '}
-                <span className="font-semibold">Carte verticale</span>.
+                <span className="font-semibold">Carte horizontal</span>.
               </p>
               <ul className="space-y-1.5 text-sm text-neutral-700">
                 <li className="flex items-center gap-2">
@@ -2083,10 +1951,10 @@ export function ServicesSettingsPanel({
                   ) : (
                     <button
                       type="button"
-                      onClick={() => onChange({ servicesGalleryLayout: 'card' })}
+                      onClick={() => onChange(switchServicesGalleryLayout('card', services))}
                       className="font-medium text-orange-600 underline-offset-2 hover:underline"
                     >
-                      passer en Carte verticale
+                      passer en Carte horizontal
                     </button>
                   )}
                 </li>
@@ -2106,7 +1974,7 @@ export function ServicesSettingsPanel({
                       onClick={() => onChange({ skillsGalleryLayout: 'card' })}
                       className="font-medium text-orange-600 underline-offset-2 hover:underline"
                     >
-                      passer en Carte verticale
+                      passer en Carte horizontal
                     </button>
                   )}
                 </li>
@@ -2133,7 +2001,7 @@ export function ServicesSettingsPanel({
               <p className="text-sm font-semibold text-neutral-950">Coverflow vertical</p>
               <p className="text-sm leading-relaxed text-neutral-600">
                 Pile centrée auto-rotative, uniquement quand le design est{' '}
-                <span className="font-semibold">Carte verticale</span>.
+                <span className="font-semibold">Carte horizontal</span>.
               </p>
               <ul className="space-y-1.5 text-sm text-neutral-700">
                 <li className="flex items-center gap-2">
@@ -2149,10 +2017,10 @@ export function ServicesSettingsPanel({
                   ) : (
                     <button
                       type="button"
-                      onClick={() => onChange({ servicesGalleryLayout: 'card' })}
+                      onClick={() => onChange(switchServicesGalleryLayout('card', services))}
                       className="font-medium text-orange-600 underline-offset-2 hover:underline"
                     >
-                      passer en Carte verticale
+                      passer en Carte horizontal
                     </button>
                   )}
                 </li>
@@ -2172,7 +2040,7 @@ export function ServicesSettingsPanel({
                       onClick={() => onChange({ skillsGalleryLayout: 'card' })}
                       className="font-medium text-orange-600 underline-offset-2 hover:underline"
                     >
-                      passer en Carte verticale
+                      passer en Carte horizontal
                     </button>
                   )}
                 </li>
@@ -2184,7 +2052,7 @@ export function ServicesSettingsPanel({
                 <p className="text-sm font-semibold text-neutral-950">Deck diagonal</p>
                 <p className="text-sm leading-relaxed text-neutral-600">
                   Éventail diagonal fluide, uniquement quand le design est{' '}
-                  <span className="font-semibold">Carte verticale</span>.
+                  <span className="font-semibold">Carte horizontal</span>.
                 </p>
                 <ul className="space-y-1.5 text-sm text-neutral-700">
                   <li className="flex items-center gap-2">
@@ -2200,10 +2068,10 @@ export function ServicesSettingsPanel({
                     ) : (
                       <button
                         type="button"
-                        onClick={() => onChange({ servicesGalleryLayout: 'card' })}
+                        onClick={() => onChange(switchServicesGalleryLayout('card', services))}
                         className="font-medium text-orange-600 underline-offset-2 hover:underline"
                       >
-                        passer en Carte verticale
+                        passer en Carte horizontal
                       </button>
                     )}
                   </li>
@@ -2223,7 +2091,7 @@ export function ServicesSettingsPanel({
                         onClick={() => onChange({ skillsGalleryLayout: 'card' })}
                         className="font-medium text-orange-600 underline-offset-2 hover:underline"
                       >
-                        passer en Carte verticale
+                        passer en Carte horizontal
                       </button>
                     )}
                   </li>
@@ -2243,7 +2111,7 @@ export function ServicesSettingsPanel({
               <span className="font-semibold text-neutral-700">Carrousel infini</span>,{' '}
               <span className="font-semibold text-neutral-700">Coverflow vertical</span> ou{' '}
               <span className="font-semibold text-neutral-700">Deck diagonal</span>, puis le design{' '}
-              <span className="font-semibold text-neutral-700">Carte verticale</span>.
+              <span className="font-semibold text-neutral-700">Carte horizontal</span>.
             </p>
           )}
             </>
@@ -2416,47 +2284,16 @@ export function ServicesSettingsPanel({
               value={readBlock('cardAccentColor')}
               onManualChange={(cardAccentColor) => patchFrame({ cardAccentColor })}
             />
-          ) : (
-            <>
-              <ServicesCardDesignGrid
-                value={activeCardDesign}
-                intensities={readBlock('cardDesignIntensities')}
-                tints={readBlock('cardDesignTints')}
-                accentColor={readBlock('cardAccentColor')}
-                onChange={(cardDesign) => patchFrame({ cardDesign })}
-                onIntensityChange={(intensity) => {
-                  const intensities = readBlock('cardDesignIntensities');
-                  patchFrame({
-                    cardDesignIntensities: {
-                      ...intensities,
-                      [activeCardDesign]: intensity,
-                    },
-                  });
-                }}
-                onTintChange={(tint) => {
-                  const tints = readBlock('cardDesignTints');
-                  patchFrame({
-                    cardDesignTints: {
-                      ...tints,
-                      [activeCardDesign]: tint,
-                    },
-                  });
-                }}
-              />
-              {activeCardDesign === 'accent' ||
-              readBlock('cardBorder') === 'accent' ||
-              servicesCardDesignSupportsTint(activeCardDesign) ? (
-                <ServicesFrameColorField
-                  services={services}
-                  onChange={onChange}
-                  slot="cardAccent"
-                  label="Couleur de teinte / accent"
-                  value={readBlock('cardAccentColor')}
-                  onManualChange={(cardAccentColor) => patchFrame({ cardAccentColor })}
-                />
-              ) : null}
-            </>
-          )}
+          ) : readBlock('cardBorder') === 'accent' ? (
+            <ServicesFrameColorField
+              services={services}
+              onChange={onChange}
+              slot="cardAccent"
+              label="Couleur de teinte / accent"
+              value={readBlock('cardAccentColor')}
+              onManualChange={(cardAccentColor) => patchFrame({ cardAccentColor })}
+            />
+          ) : null}
         </>
       ) : null}
 
@@ -2494,92 +2331,74 @@ export function ServicesSettingsPanel({
                 />
                 {services.skillsShowBullet === true ? (
                   <>
-                    <ServicesOptionGrid
-                      label="Bullet source"
-                      options={[
-                        {
-                          value: 'global',
-                          label: 'Global',
-                          description: 'Follow Global → Task list bullets.',
-                        },
-                        {
-                          value: 'section',
-                          label: 'Section',
-                          description: 'Override styles below for Skills only.',
-                        },
-                      ]}
-                      value={services.skillsBulletSource ?? 'global'}
-                      onChange={(skillsBulletSource) => onChange({ skillsBulletSource })}
-                      columns={2}
-                    />
-                    {(services.skillsBulletSource ?? 'global') === 'section' ? (
-                      <>
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                            Bullet style
-                          </p>
-                          <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
-                            {PORTFOLIO_SERVICES_TASK_BULLET_STYLE_OPTIONS.map((option) => {
-                              const active = (services.skillsBulletStyle ?? 'disc') === option.value;
-                              return (
-                                <button
-                                  key={option.value}
-                                  type="button"
-                                  title={`${option.label} — ${option.description}`}
-                                  onClick={() => onChange({ skillsBulletStyle: option.value })}
-                                  className={`flex flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2.5 transition ${
-                                    active
-                                      ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                                      : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-                                  }`}
-                                >
-                                  <span className="text-base font-semibold leading-none text-neutral-900">
-                                    {option.preview}
-                                  </span>
-                                  <span className="max-w-full truncate text-[10px] font-medium text-neutral-500">
-                                    {option.label}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                        {(services.skillsBulletStyle ?? 'disc') !== 'none' ? (
-                          <>
-                            <PortfolioListMarkerSizeWeightControls
-                              size={services.skillsBulletSize ?? 'md'}
-                              sizePx={services.skillsBulletSizePx}
-                              weight={services.skillsBulletWeight ?? 'regular'}
-                              weightAmount={services.skillsBulletWeightAmount}
-                              OptionGrid={ServicesOptionGrid}
-                              onChange={(patch) =>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                        Bullet style
+                      </p>
+                      <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
+                        {PORTFOLIO_SERVICES_TASK_BULLET_STYLE_OPTIONS.map((option) => {
+                          const active = (services.skillsBulletStyle ?? 'disc') === option.value;
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              title={`${option.label} — ${option.description}`}
+                              onClick={() =>
                                 onChange({
-                                  ...(patch.size !== undefined ? { skillsBulletSize: patch.size } : null),
-                                  ...(patch.sizePx !== undefined
-                                    ? { skillsBulletSizePx: patch.sizePx }
-                                    : null),
-                                  ...(patch.weight !== undefined
-                                    ? { skillsBulletWeight: patch.weight }
-                                    : null),
-                                  ...(patch.weightAmount !== undefined
-                                    ? { skillsBulletWeightAmount: patch.weightAmount }
-                                    : null),
+                                  skillsBulletSource: 'section',
+                                  skillsBulletStyle: option.value,
                                 })
                               }
-                            />
-                            <ServicesManualColorField
-                              label="Bullet color"
-                              value={services.skillsBulletColor || '#10b981'}
-                              onChange={(skillsBulletColor) => onChange({ skillsBulletColor })}
-                            />
-                          </>
-                        ) : null}
+                              className={`flex flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2.5 transition ${
+                                active
+                                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                              }`}
+                            >
+                              <span className="text-base font-semibold leading-none text-neutral-900">
+                                {option.preview}
+                              </span>
+                              <span className="max-w-full truncate text-[10px] font-medium text-neutral-500">
+                                {option.label}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {(services.skillsBulletStyle ?? 'disc') !== 'none' ? (
+                      <>
+                        <PortfolioListMarkerSizeWeightControls
+                          size={services.skillsBulletSize ?? 'md'}
+                          sizePx={services.skillsBulletSizePx}
+                          weight={services.skillsBulletWeight ?? 'regular'}
+                          weightAmount={services.skillsBulletWeightAmount}
+                          OptionGrid={ServicesOptionGrid}
+                          onChange={(patch) =>
+                            onChange({
+                              skillsBulletSource: 'section',
+                              ...(patch.size !== undefined ? { skillsBulletSize: patch.size } : null),
+                              ...(patch.sizePx !== undefined
+                                ? { skillsBulletSizePx: patch.sizePx }
+                                : null),
+                              ...(patch.weight !== undefined
+                                ? { skillsBulletWeight: patch.weight }
+                                : null),
+                              ...(patch.weightAmount !== undefined
+                                ? { skillsBulletWeightAmount: patch.weightAmount }
+                                : null),
+                            })
+                          }
+                        />
+                        <ServicesManualColorField
+                          label="Bullet color"
+                          value={services.skillsBulletColor || '#10b981'}
+                          onChange={(skillsBulletColor) =>
+                            onChange({ skillsBulletSource: 'section', skillsBulletColor })
+                          }
+                        />
                       </>
-                    ) : (
-                      <p className="text-sm text-neutral-500">
-                        Using Global task list bullets. Switch to Section to override here.
-                      </p>
-                    )}
+                    ) : null}
                   </>
                 ) : null}
               </div>
@@ -2728,14 +2547,6 @@ export function ServicesSettingsPanel({
               </div>
             ) : null}
 
-            {servicesCardDesignOwnsBackground(activeCardDesign) ? (
-              <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                Le design <span className="font-semibold">{activeCardDesign}</span> gère son propre fond
-                (compact / glass). Changez de design carte pour appliquer les couleurs de cadre
-                ci-dessous.
-              </p>
-            ) : null}
-
             <ServicesOptionGrid
               label="Type de fond"
               options={PORTFOLIO_SERVICES_CARD_BACKGROUND_FILL_OPTIONS}
@@ -2794,6 +2605,49 @@ export function ServicesSettingsPanel({
                     patchFrame({ cardBackgroundEnabled: true });
                   }}
                 />
+
+                {settingsFocus !== 'skills' &&
+                servicesLayoutSupportsPrincipalSurface(services.servicesGalleryLayout) ? (
+                  <div className="space-y-4">
+                    <ServicesToggleRow
+                      label="Surface couleur principale"
+                      description="Cartes mises en avant : fond principal fixe (sans survol sur ce fond). Les autres cartes gardent le survol complet."
+                      checked={services.servicesPrincipalSurfaceEnabled === true}
+                      onChange={(servicesPrincipalSurfaceEnabled) =>
+                        onChange({
+                          servicesPrincipalSurfaceEnabled,
+                          ...(servicesPrincipalSurfaceEnabled
+                            ? {}
+                            : { servicesPrincipalSurfaceAlternation: 'uniform' as const }),
+                        })
+                      }
+                    />
+                    {services.servicesPrincipalSurfaceEnabled === true ? (
+                      <div className="space-y-4">
+                        <ServicesOptionGrid
+                          label="Alternance surface principale"
+                          options={PORTFOLIO_SERVICES_PRINCIPAL_SURFACE_ALTERNATION_OPTIONS}
+                          value={services.servicesPrincipalSurfaceAlternation ?? 'uniform'}
+                          onChange={(servicesPrincipalSurfaceAlternation) =>
+                            onChange({ servicesPrincipalSurfaceAlternation })
+                          }
+                          columns={2}
+                        />
+                        {services.servicesPrincipalSurfaceAlternation === 'alternate' ? (
+                          <ServicesOptionGrid
+                            label="Ordre de l’alternance"
+                            options={PORTFOLIO_SERVICES_PRINCIPAL_SURFACE_ALTERNATE_START_OPTIONS}
+                            value={services.servicesPrincipalSurfaceAlternateStart ?? 'principal'}
+                            onChange={(servicesPrincipalSurfaceAlternateStart) =>
+                              onChange({ servicesPrincipalSurfaceAlternateStart })
+                            }
+                            columns={2}
+                          />
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 {activeFrameSettings.cardBackgroundEnabled ? (
                   <div className="space-y-4">
@@ -3440,97 +3294,77 @@ export function ServicesSettingsPanel({
             checked={services.showServiceTasks !== false}
             onChange={(showServiceTasks) => onChange({ showServiceTasks })}
           />
-          <ServicesOptionGrid
-            label="Bullet source"
-            options={[
-              {
-                value: 'global',
-                label: 'Global',
-                description: 'Follow Global → Task list bullets.',
-              },
-              {
-                value: 'section',
-                label: 'Section',
-                description: 'Override with styles below for Services only.',
-              },
-            ]}
-            value={resolveServicesTaskBulletSource(services)}
-            onChange={(servicesTaskBulletSource) => onChange({ servicesTaskBulletSource })}
-            columns={2}
-          />
-          {resolveServicesTaskBulletSource(services) === 'section' ? (
-            <>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Task bullet style
-                </p>
-                <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
-                  {PORTFOLIO_SERVICES_TASK_BULLET_STYLE_OPTIONS.map((option) => {
-                    const active = (services.servicesTaskBulletStyle ?? 'check') === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        title={`${option.label} — ${option.description}`}
-                        onClick={() => onChange({ servicesTaskBulletStyle: option.value })}
-                        className={`flex flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2.5 transition ${
-                          active
-                            ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                            : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-                        }`}
-                      >
-                        <span className="text-base font-semibold leading-none text-neutral-900">
-                          {option.preview}
-                        </span>
-                        <span className="max-w-full truncate text-[10px] font-medium text-neutral-500">
-                          {option.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {(services.servicesTaskBulletStyle ?? 'check') !== 'none' ? (
-                <>
-                  <PortfolioListMarkerSizeWeightControls
-                    size={services.servicesTaskBulletSize ?? 'md'}
-                    sizePx={services.servicesTaskBulletSizePx}
-                    weight={services.servicesTaskBulletWeight ?? 'regular'}
-                    weightAmount={services.servicesTaskBulletWeightAmount}
-                    OptionGrid={ServicesOptionGrid}
-                    onChange={(patch) =>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+              Task bullet style
+            </p>
+            <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
+              {PORTFOLIO_SERVICES_TASK_BULLET_STYLE_OPTIONS.map((option) => {
+                const active = (services.servicesTaskBulletStyle ?? 'check') === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    title={`${option.label} — ${option.description}`}
+                    onClick={() =>
                       onChange({
-                        ...(patch.size !== undefined
-                          ? { servicesTaskBulletSize: patch.size }
-                          : null),
-                        ...(patch.sizePx !== undefined
-                          ? { servicesTaskBulletSizePx: patch.sizePx }
-                          : null),
-                        ...(patch.weight !== undefined
-                          ? { servicesTaskBulletWeight: patch.weight }
-                          : null),
-                        ...(patch.weightAmount !== undefined
-                          ? { servicesTaskBulletWeightAmount: patch.weightAmount }
-                          : null),
+                        servicesTaskBulletSource: 'section',
+                        servicesTaskBulletStyle: option.value,
                       })
                     }
-                  />
-                  <ServicesColorField
-                    services={services}
-                    onChange={onChange}
-                    slot="tasksBullet"
-                    label="Task bullet color"
-                    description="Marker color before each task line."
-                    value={services.servicesTaskBulletColor}
-                  />
-                </>
-              ) : null}
+                    className={`flex flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2.5 transition ${
+                      active
+                        ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                        : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                    }`}
+                  >
+                    <span className="text-base font-semibold leading-none text-neutral-900">
+                      {option.preview}
+                    </span>
+                    <span className="max-w-full truncate text-[10px] font-medium text-neutral-500">
+                      {option.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {(services.servicesTaskBulletStyle ?? 'check') !== 'none' ? (
+            <>
+              <PortfolioListMarkerSizeWeightControls
+                size={services.servicesTaskBulletSize ?? 'md'}
+                sizePx={services.servicesTaskBulletSizePx}
+                weight={services.servicesTaskBulletWeight ?? 'regular'}
+                weightAmount={services.servicesTaskBulletWeightAmount}
+                OptionGrid={ServicesOptionGrid}
+                onChange={(patch) =>
+                  onChange({
+                    servicesTaskBulletSource: 'section',
+                    ...(patch.size !== undefined
+                      ? { servicesTaskBulletSize: patch.size }
+                      : null),
+                    ...(patch.sizePx !== undefined
+                      ? { servicesTaskBulletSizePx: patch.sizePx }
+                      : null),
+                    ...(patch.weight !== undefined
+                      ? { servicesTaskBulletWeight: patch.weight }
+                      : null),
+                    ...(patch.weightAmount !== undefined
+                      ? { servicesTaskBulletWeightAmount: patch.weightAmount }
+                      : null),
+                  })
+                }
+              />
+              <ServicesColorField
+                services={services}
+                onChange={onChange}
+                slot="tasksBullet"
+                label="Task bullet color"
+                description="Marker color before each task line."
+                value={services.servicesTaskBulletColor}
+              />
             </>
-          ) : (
-            <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-              Using Global task list bullets. Switch to Section to override style, size, weight, and color here.
-            </p>
-          )}
+          ) : null}
           <ServicesElementChromeControls
             services={services}
             chromeId="tasks"
@@ -3909,9 +3743,9 @@ export function ServicesSettingsPanel({
                 </p>
                 <input
                   type="text"
-                  value={services.ctaLabel ?? 'Commander'}
+                  value={services.ctaLabel ?? 'Get started'}
                   onChange={(event) => onChange({ ctaLabel: event.target.value })}
-                  placeholder="Commander"
+                  placeholder="Get started"
                   className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
                 />
               </div>

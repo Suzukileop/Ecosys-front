@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
+import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
   DEFAULT_EXPERIENCE_COLOR_BINDINGS,
@@ -842,7 +843,7 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   showDescription: true,
   showMeta: true,
   showTasks: true,
-  taskBulletSource: 'global',
+  taskBulletSource: 'section',
   taskBulletStyle: 'disc',
   taskBulletColor: DEFAULT_LIST_MARKER_COLOR,
   taskBulletSize: 'md',
@@ -2777,17 +2778,20 @@ function sanitizeHex(value: unknown, fallback: string): string {
 export function resolveExperienceSectionTitle(
   settings: Pick<PortfolioExperienceSectionSettings, 'titlePreset' | 'titleCustom' | 'title'>
 ): string {
-  switch (settings.titlePreset) {
-    case 'custom':
-      return settings.titleCustom.trim() || settings.title.trim() || 'Experience';
-    case 'career-path':
-    case 'work-history':
-    case 'professional-journey':
-    case 'experience':
-      return TITLE_PRESET_COPY[settings.titlePreset];
-    default:
-      return settings.title.trim() || 'Experience';
-  }
+  const raw = (() => {
+    switch (settings.titlePreset) {
+      case 'custom':
+        return settings.titleCustom.trim() || settings.title.trim() || 'Experience';
+      case 'career-path':
+      case 'work-history':
+      case 'professional-journey':
+      case 'experience':
+        return TITLE_PRESET_COPY[settings.titlePreset];
+      default:
+        return settings.title.trim() || 'Experience';
+    }
+  })();
+  return portfolioSectionTitleSentenceCase(raw);
 }
 
 export function resolveExperienceSectionSubtitle(
@@ -2831,8 +2835,7 @@ export function experienceHeaderFontClass(
   }
 }
 
-export function experienceHeaderFontStyle(font: PortfolioExperienceHeaderFont): CSSProperties | undefined {
-  if (font === 'serif') return { fontFamily: "'Playfair Display', serif" };
+export function experienceHeaderFontStyle(_font: PortfolioExperienceHeaderFont): CSSProperties | undefined {
   return undefined;
 }
 
@@ -3502,7 +3505,7 @@ export function mergeExperiencePresentation(
     showTasks: typeof record.showTasks === 'boolean' ? record.showTasks : base.showTasks,
     taskBulletSource: isPortfolioListMarkerSource(record.taskBulletSource)
       ? record.taskBulletSource
-      : (base.taskBulletSource ?? 'global'),
+      : (base.taskBulletSource ?? 'section'),
     taskBulletStyle: isPortfolioListMarkerStyle(record.taskBulletStyle)
       ? record.taskBulletStyle
       : (base.taskBulletStyle ?? 'disc'),

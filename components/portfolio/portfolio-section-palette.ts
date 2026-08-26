@@ -258,6 +258,11 @@ export function applyHeroPaletteToContact(
     iconBorderColor: color(bindings.iconBorder),
     // Empty keeps soft tint derived from CTA / principal in contactIconShellStyle.
     iconBackgroundColor: '',
+    // Contact cards + form chrome — same neutre / bordure tokens as the rest of Contact.
+    channelCardsBackgroundColor: color('neutre'),
+    channelCardsBorderColor: color('bordure'),
+    formBorderColor: color('bordure'),
+    formBackgroundColor: color('neutre'),
     contactColorBindings: bindings,
     elementStyles: paintElementColors(presentation.elementStyles, {
       channelValue: 'texteFort',

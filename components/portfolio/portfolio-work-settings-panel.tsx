@@ -25,7 +25,6 @@ import {
   PORTFOLIO_WORK_CTA_ICON_OPTIONS,
   PORTFOLIO_WORK_CTA_ICON_POSITION_OPTIONS,
   PORTFOLIO_WORK_GALLERY_LAYOUT_OPTIONS,
-  PORTFOLIO_WORK_HEADER_FONT_OPTIONS,
   PORTFOLIO_WORK_ILLUSTRATION_OPTIONS,
   PORTFOLIO_WORK_ILLUSTRATION_PLACEMENT_OPTIONS,
   PORTFOLIO_WORK_ITEMS_PER_ROW_OPTIONS,
@@ -1030,23 +1029,6 @@ export function WorkSettingsPanel({
               />
             </div>
           ) : null}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <WorkOptionGrid
-              label="Title font"
-              options={PORTFOLIO_WORK_HEADER_FONT_OPTIONS}
-              value={work.titleFont}
-              onChange={(titleFont) => onChange({ titleFont })}
-              columns={2}
-            />
-            <WorkOptionGrid
-              label="Subtitle font"
-              options={PORTFOLIO_WORK_HEADER_FONT_OPTIONS}
-              value={work.subtitleFont}
-              onChange={(subtitleFont) => onChange({ subtitleFont })}
-              columns={2}
-            />
-          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <WorkColorField

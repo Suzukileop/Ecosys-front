@@ -49,6 +49,7 @@ export type AboutColorSlot =
   | 'sidePanelBackgroundA'
   | 'sidePanelBackgroundB'
   | 'sidePanelDivider'
+  | 'sidePanelHeading'
   | 'whyMeBorder'
   | 'whyMeBackground'
   | 'whyMeBackgroundA'
@@ -87,6 +88,7 @@ type AboutPresentationColorFields = {
   sidePanelBackgroundColorA?: string;
   sidePanelBackgroundColorB?: string;
   sidePanelDividerColor?: string;
+  sidePanelHeadingColor?: string;
   whyMeBorderColor?: string;
   whyMeBackgroundColor?: string;
   whyMeBackgroundColorA?: string;
@@ -128,6 +130,7 @@ export const ABOUT_COLOR_SLOT_IDS: AboutColorSlot[] = [
   'sidePanelBackgroundA',
   'sidePanelBackgroundB',
   'sidePanelDivider',
+  'sidePanelHeading',
   'whyMeBorder',
   'whyMeBackground',
   'whyMeBackgroundA',
@@ -169,6 +172,7 @@ export const PORTFOLIO_ABOUT_COLOR_SLOT_OPTIONS: {
   { value: 'sidePanelBackgroundA', label: 'Side panel split A', description: 'First split zone on profile panel.' },
   { value: 'sidePanelBackgroundB', label: 'Side panel split B', description: 'Second split zone on profile panel.' },
   { value: 'sidePanelDivider', label: 'Side panel divider', description: 'Divider on profile panel.' },
+  { value: 'sidePanelHeading', label: 'Infos heading', description: 'Title above the Infos panel.' },
   { value: 'whyMeBorder', label: 'Why me border', description: 'Outline on Why me blocks.' },
   { value: 'whyMeBackground', label: 'Why me background', description: 'Fill on Why me blocks.' },
   { value: 'whyMeBackgroundA', label: 'Why me split A', description: 'First split zone on Why me blocks.' },
@@ -215,6 +219,7 @@ export const DEFAULT_ABOUT_COLOR_BINDINGS: PortfolioAboutColorBindings = {
   sidePanelBackgroundA: 'neutre',
   sidePanelBackgroundB: 'fond',
   sidePanelDivider: 'bordure',
+  sidePanelHeading: 'texteFort',
   whyMeBorder: 'bordure',
   whyMeBackground: 'neutre',
   whyMeBackgroundA: 'neutre',
@@ -252,6 +257,7 @@ const ABOUT_SLOT_TO_FIELD: Record<AboutColorSlot, string> = {
   sidePanelBackgroundA: 'sidePanelBackgroundColorA',
   sidePanelBackgroundB: 'sidePanelBackgroundColorB',
   sidePanelDivider: 'sidePanelDividerColor',
+  sidePanelHeading: 'sidePanelHeadingColor',
   whyMeBorder: 'whyMeBorderColor',
   whyMeBackground: 'whyMeBackgroundColor',
   whyMeBackgroundA: 'whyMeBackgroundColorA',

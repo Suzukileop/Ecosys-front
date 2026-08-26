@@ -2,6 +2,16 @@
 
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import { PortfolioHeroEditorial } from '@/components/portfolio/hero-variants/PortfolioHeroEditorial';
+import { PortfolioHeroSwissEditorial } from '@/components/portfolio/hero-variants/PortfolioHeroSwissEditorial';
+import { PortfolioHeroPortraitIdentity } from '@/components/portfolio/hero-variants/PortfolioHeroPortraitIdentity';
+import { PortfolioHeroEditorialRail } from '@/components/portfolio/hero-variants/PortfolioHeroEditorialRail';
+import { PortfolioHeroStatementCta } from '@/components/portfolio/hero-variants/PortfolioHeroStatementCta';
+import { PortfolioHeroPortraitBalance } from '@/components/portfolio/hero-variants/PortfolioHeroPortraitBalance';
+import { PortfolioHeroLeftPortrait } from '@/components/portfolio/hero-variants/PortfolioHeroLeftPortrait';
+import { PortfolioHeroCirclePortrait } from '@/components/portfolio/hero-variants/PortfolioHeroCirclePortrait';
+import { PortfolioHeroExperienceSplit } from '@/components/portfolio/hero-variants/PortfolioHeroExperienceSplit';
+import { PortfolioHeroEditorialOverlap } from '@/components/portfolio/hero-variants/PortfolioHeroEditorialOverlap';
+import { PortfolioHeroSelectedWorks } from '@/components/portfolio/hero-variants/PortfolioHeroSelectedWorks';
 import {
   DEFAULT_CONTENT_GUTTER,
   portfolioEditorialShellClass,
@@ -32,6 +42,97 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
   const { sectionRef, opacity: geomOpacity } = usePortfolioHeroGeomFade(
     heroData.geomFadeEnabled ?? false
   );
+  const isSwissEditorial = heroData.presentation.heroBannerDesign === 'swiss-editorial';
+  const isPortraitIdentity = heroData.presentation.heroBannerDesign === 'portrait-identity';
+  const isEditorialRail = heroData.presentation.heroBannerDesign === 'editorial-rail';
+  const isStatementCta = heroData.presentation.heroBannerDesign === 'statement-cta';
+  const isPortraitBalance = heroData.presentation.heroBannerDesign === 'portrait-balance';
+  const isLeftPortrait = heroData.presentation.heroBannerDesign === 'left-portrait';
+  const isCirclePortrait = heroData.presentation.heroBannerDesign === 'circle-portrait';
+  const isExperienceSplit = heroData.presentation.heroBannerDesign === 'experience-split';
+  const isEditorialOverlap = heroData.presentation.heroBannerDesign === 'editorial-overlap';
+  const isSelectedWorks = heroData.presentation.heroBannerDesign === 'selected-works';
+
+  if (isSwissEditorial) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroSwissEditorial data={heroData} />
+      </section>
+    );
+  }
+
+  if (isPortraitIdentity) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroPortraitIdentity data={heroData} />
+      </section>
+    );
+  }
+
+  if (isEditorialRail) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroEditorialRail data={heroData} />
+      </section>
+    );
+  }
+
+  if (isStatementCta) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroStatementCta data={heroData} />
+      </section>
+    );
+  }
+
+  if (isPortraitBalance) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroPortraitBalance data={heroData} />
+      </section>
+    );
+  }
+
+  if (isLeftPortrait) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroLeftPortrait data={heroData} />
+      </section>
+    );
+  }
+
+  if (isCirclePortrait) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroCirclePortrait data={heroData} />
+      </section>
+    );
+  }
+
+  if (isExperienceSplit) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroExperienceSplit data={heroData} />
+      </section>
+    );
+  }
+
+  if (isEditorialOverlap) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroEditorialOverlap data={heroData} />
+      </section>
+    );
+  }
+
+  if (isSelectedWorks) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroSelectedWorks data={heroData} />
+      </section>
+    );
+  }
+
   const { motifLayout, heroMotifs } = heroData.presentation;
   const contentGutter = heroData.contentGutter ?? DEFAULT_CONTENT_GUTTER;
   const contentWidthClass = heroData.contentWidthClass ?? 'max-w-none';

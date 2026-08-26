@@ -49,7 +49,7 @@ export const GLOBAL_SETTINGS_SUB_SECTIONS: {
     label: 'Typography & title box',
     description:
       'Site-wide body font (all text), section title & subtitle styles, and optional title chrome box.',
-    tip: 'Aeonik is the NoProbleme brand face (landing). Enable “Forcer partout” to override every serif/display element font site-wide.',
+    tip: 'Font is only chosen in Police principale and applied everywhere.',
   },
 ];
 

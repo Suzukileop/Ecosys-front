@@ -48,6 +48,10 @@ export type PortfolioHeroData = {
   onNavigateSection?: (sectionId: string) => void;
   /** Primary work CTA target — default `#work`. */
   workHref?: string;
+  /**
+   * Selected works banner — first portfolio posts with media (thumbnails).
+   */
+  featuredWorks?: { id: string; title: string; imageUrl: string; href?: string }[];
   /** Global left/right gutters for hero copy + absolute layers. */
   contentGutter?: PortfolioContentGutter;
   /** Max-width class from Global → Content width (standard / wide / full). */

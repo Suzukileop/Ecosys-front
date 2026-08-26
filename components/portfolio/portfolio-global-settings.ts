@@ -647,7 +647,7 @@ export const DEFAULT_GLOBAL_SETTINGS: PortfolioGlobalSettings = {
   sectionOrder: [...DEFAULT_CONTENT_SECTION_ORDER],
   presenceKind: null,
   bodyFont: 'plusJakarta',
-  bodyFontForceAll: false,
+  bodyFontForceAll: true,
   titleTypography: { ...DEFAULT_GLOBAL_TITLE_TYPOGRAPHY },
   subtitleTypography: { ...DEFAULT_GLOBAL_SUBTITLE_TYPOGRAPHY },
   titleChrome: { ...DEFAULT_GLOBAL_TITLE_CHROME },
@@ -2085,10 +2085,9 @@ export function globalTitleFontWeightValue(weight: PortfolioGlobalTitleFontWeigh
   }
 }
 
-function globalHeaderFontStyle(font: PortfolioGlobalHeaderFont): CSSProperties | undefined {
-  const preset = PORTFOLIO_GLOBAL_HEADER_FONT_OPTIONS.find((option) => option.value === font);
-  if (!preset) return undefined;
-  return { fontFamily: preset.fontFamily };
+function globalHeaderFontStyle(_font: PortfolioGlobalHeaderFont): CSSProperties | undefined {
+  // Font family is controlled only by Global → Police principale (forced site-wide).
+  return undefined;
 }
 
 function globalTitleSizeClass(size: PortfolioGlobalTitleSize): string {
@@ -2753,10 +2752,7 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
     bodyFont: isPortfolioGlobalBodyFont(record.bodyFont)
       ? record.bodyFont
       : base.bodyFont ?? 'plusJakarta',
-    bodyFontForceAll:
-      typeof record.bodyFontForceAll === 'boolean'
-        ? record.bodyFontForceAll
-        : (base.bodyFontForceAll ?? false),
+    bodyFontForceAll: true,
     titleTypography: mergeTitleTypography(base.titleTypography, record.titleTypography),
     subtitleTypography: mergeSubtitleTypography(base.subtitleTypography, record.subtitleTypography),
     titleChrome: mergeTitleChrome(base.titleChrome, record.titleChrome),

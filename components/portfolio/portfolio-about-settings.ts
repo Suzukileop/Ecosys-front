@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
+import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
   DEFAULT_ABOUT_COLOR_BINDINGS,
@@ -127,16 +128,7 @@ export type PortfolioAboutSidePanelFullWidthLayout =
 /** Icon vs text for side-panel info cells. */
 export type PortfolioAboutSidePanelIconPlacement = 'left' | 'top' | 'right';
 
-export type PortfolioAboutWhyMeDesign =
-  | 'editorial'
-  | 'compact'
-  | 'minimal'
-  | 'grid'
-  | 'stacked'
-  | 'bento'
-  | 'timeline'
-  | 'split'
-  | 'elevate';
+export type PortfolioAboutWhyMeDesign = 'timeline' | 'split' | 'lined-list' | 'media-aside';
 
 /** How many Why me cards per row on large screens (not Stack). */
 export type PortfolioAboutWhyMeItemsPerRow = 1 | 2 | 3 | 4;
@@ -156,6 +148,7 @@ export type PortfolioAboutWhyMeBodyLayout = 'stack' | 'inline';
 export type PortfolioAboutWhyMeHeadingPreset =
   | 'default'
   | 'why-work-with-me'
+  | 'why-choose-me'
   | 'my-approach'
   | 'strengths'
   | 'value'
@@ -225,6 +218,8 @@ export type PortfolioAboutPresentationSettings = PortfolioSectionBackgroundSetti
   subtitleColor: string;
   subtitleSerif: boolean;
   headerAlignment: PortfolioAboutHeaderAlignment;
+  /** When false, hide the About section sticky title (Infos / Why choose me keep their own). */
+  showAboutHeading: boolean;
   /**
    * `stacked` — title above content (default).
    * `aside-left` / `aside-right` — title beside content on large screens.
@@ -273,10 +268,12 @@ export type PortfolioAboutPresentationSettings = PortfolioSectionBackgroundSetti
   sidePanelIconPlacement: PortfolioAboutSidePanelIconPlacement;
   /** When false, hide icons in the side / info panel. */
   sidePanelShowIcons: boolean;
-  /** Optional heading above the list / infos column (list design & twin-columns). */
+  /** Optional heading above Infos (all designs — independent from About / Why choose me). */
   showSidePanelHeading: boolean;
-  /** Heading copy for the infos column (default: Infos). */
+  /** Heading copy for Infos (default: Infos). */
   sidePanelHeading: string;
+  /** Color of the Infos heading — independent from Why choose me / About titles. */
+  sidePanelHeadingColor: string;
   /** List-bullet marker style for the `list` side-panel design (same set as Why me). */
   sidePanelMarkerStyle: PortfolioAboutWhyMeMarkerStyle;
   /** Marker size for the list side-panel design. */
@@ -420,6 +417,7 @@ export const ABOUT_SIDE_PANEL_SETTINGS_REVISION = 3;
 export const DEFAULT_ABOUT_WHY_ME_BORDER_COLOR = '#e5e5e5';
 export const DEFAULT_ABOUT_WHY_ME_BACKGROUND_COLOR = '#ffffff';
 export const DEFAULT_ABOUT_WHY_ME_HEADING_COLOR = '#a3a3a3';
+export const DEFAULT_ABOUT_SIDE_PANEL_HEADING_COLOR = '#171717';
 /** Previous factory default (soft accent circle on every card) — migrate off. */
 const LEGACY_DEFAULT_ABOUT_WHY_ME_DECOR: Pick<
   PortfolioAboutPresentationSettings,
@@ -690,6 +688,7 @@ export const DEFAULT_ABOUT_PRESENTATION: PortfolioAboutPresentationSettings = {
   subtitleColor: DEFAULT_ABOUT_SUBTITLE_COLOR,
   subtitleSerif: true,
   headerAlignment: 'left',
+  showAboutHeading: false,
   sectionLayout: 'stacked',
   illustrationVariant: 'none',
   illustrationPlacement: 'right',
@@ -730,6 +729,7 @@ export const DEFAULT_ABOUT_PRESENTATION: PortfolioAboutPresentationSettings = {
   sidePanelShowIcons: true,
   showSidePanelHeading: true,
   sidePanelHeading: 'Infos',
+  sidePanelHeadingColor: DEFAULT_ABOUT_SIDE_PANEL_HEADING_COLOR,
   sidePanelMarkerStyle: 'disc',
   sidePanelMarkerSize: 'md',
   sidePanelMarkerSizePx: ABOUT_WHY_ME_MARKER_SIZE_PRESET_PX.md,
@@ -769,7 +769,7 @@ export const DEFAULT_ABOUT_PRESENTATION: PortfolioAboutPresentationSettings = {
   whyMePadding: 'lg',
   ...DEFAULT_ABOUT_WHY_ME_BACKGROUND,
   ...DEFAULT_ABOUT_WHY_ME_DECOR,
-  whyMeDesign: 'editorial',
+  whyMeDesign: 'timeline',
   whyMeItemsPerRow: 1,
   whyMeMarkerStyle: 'number',
   whyMeMarkerPlacement: 'top',
@@ -1311,36 +1311,6 @@ export const PORTFOLIO_ABOUT_WHY_ME_DESIGN_OPTIONS: {
   description: string;
 }[] = [
   {
-    value: 'editorial',
-    label: 'Editorial',
-    description: 'Grands numéros, icônes et média en alternance — rendu magazine.',
-  },
-  {
-    value: 'compact',
-    label: 'Compact',
-    description: 'Cartes plus denses, icônes réduites — décor et cadre restent réglables.',
-  },
-  {
-    value: 'minimal',
-    label: 'Minimal',
-    description: 'Texte d’abord — filet léger, sans fond ni icônes lourdes.',
-  },
-  {
-    value: 'grid',
-    label: 'Grille portfolio',
-    description: 'Média pleine largeur au-dessus du texte — colonnes réglables (1–4).',
-  },
-  {
-    value: 'stacked',
-    label: 'Stack portfolio',
-    description: 'Grand visuel cinématique pleine largeur, contenu en dessous.',
-  },
-  {
-    value: 'bento',
-    label: 'Bento grid',
-    description: 'Grille asymétrique 3 colonnes — blocs de tailles variées, bordure accent au hover.',
-  },
-  {
     value: 'timeline',
     label: 'Timeline',
     description: 'Ligne verticale minimaliste avec jalons numérotés et texte alterné.',
@@ -1348,12 +1318,20 @@ export const PORTFOLIO_ABOUT_WHY_ME_DESIGN_OPTIONS: {
   {
     value: 'split',
     label: 'Split statistique',
-    description: 'Titre sticky à gauche, arguments empilés à droite séparés par un filet.',
+    description:
+      'Grand titre à gauche, liste numérotée à droite (01…) — pleine largeur, sans filets horizontaux.',
   },
   {
-    value: 'elevate',
-    label: 'Cartes 3D',
-    description: 'Grille 2×2 — élévation, lueur et bordure accent au survol.',
+    value: 'lined-list',
+    label: 'Liste séparée',
+    description:
+      'Grand titre centré « The value I bring », puces simples et filets horizontaux fins entre chaque ligne.',
+  },
+  {
+    value: 'media-aside',
+    label: 'SVG + liste',
+    description:
+      'Illustration et titre à gauche, liste numérotée à droite (numéros avant le texte) — disposition type FAQ.',
   },
 ];
 
@@ -1368,23 +1346,28 @@ export const PORTFOLIO_ABOUT_WHY_ME_ITEMS_PER_ROW_OPTIONS: {
   { value: '4', label: '4 par ligne', description: 'Jusqu’à 4 sur très grand écran — très compact.' },
 ];
 
-export function whyMeDesignSupportsItemsPerRow(design: PortfolioAboutWhyMeDesign): boolean {
-  return design === 'editorial' || design === 'compact' || design === 'minimal' || design === 'grid';
+export function whyMeDesignSupportsItemsPerRow(_design: PortfolioAboutWhyMeDesign): boolean {
+  return false;
 }
 
 /** Designs that own the whole Why me section layout (custom grid / timeline / split). */
 export function whyMeDesignOwnsListLayout(design: PortfolioAboutWhyMeDesign): boolean {
   return (
-    design === 'bento' ||
     design === 'timeline' ||
     design === 'split' ||
-    design === 'elevate'
+    design === 'lined-list' ||
+    design === 'media-aside'
   );
 }
 
-/** Split embeds the heading in the left column — skip the standalone heading. */
+/** Heading lives in the left column for split / media-aside. */
 export function whyMeDesignEmbedsHeading(design: PortfolioAboutWhyMeDesign): boolean {
-  return design === 'split';
+  return design === 'split' || design === 'media-aside';
+}
+
+/** Large centered section titles (timeline + lined-list). */
+export function whyMeDesignUsesHeroHeading(design: PortfolioAboutWhyMeDesign): boolean {
+  return design === 'timeline' || design === 'lined-list';
 }
 
 /**
@@ -1394,22 +1377,20 @@ export function whyMeDesignSettingsPatch(
   design: PortfolioAboutWhyMeDesign
 ): Partial<PortfolioAboutPresentationSettings> {
   switch (design) {
-    case 'bento':
-      return {
-        whyMeDesign: design,
-        whyMeContentAlign: 'left',
-        whyMeMarkerStyle: 'number',
-        whyMeMarkerPlacement: 'top',
-        whyMeShowHeaderAccent: true,
-      };
     case 'timeline':
       return {
         whyMeDesign: design,
-        whyMeContentAlign: 'left',
+        whyMeContentAlign: 'center',
         whyMeMarkerStyle: 'number',
         whyMeMarkerPlacement: 'top',
         whyMeBackgroundEnabled: false,
         whyMeShowHeaderAccent: false,
+        whyMeHeadingSize: 'lg',
+        whyMeHeadingFont: 'sans',
+        whyMeHeadingUppercase: false,
+        whyMeHeadingAlignment: 'center',
+        whyMeHeadingColor: '#171717',
+        whyMeGap: 'lg',
       };
     case 'split':
       return {
@@ -1420,31 +1401,56 @@ export function whyMeDesignSettingsPatch(
         whyMeBackgroundEnabled: false,
         whyMeShowHeaderAccent: false,
         whyMeHeadingSize: 'lg',
+        whyMeHeadingFont: 'serif',
+        whyMeHeadingUppercase: false,
+        whyMeHeadingAlignment: 'left',
+        whyMeHeadingColor: '#0a0a0a',
+        whyMeHeadingPreset: 'why-choose-me',
+        whyMeGap: 'lg',
       };
-    case 'elevate':
+    case 'lined-list':
+      return {
+        whyMeDesign: design,
+        whyMeContentAlign: 'center',
+        whyMeMarkerStyle: 'disc',
+        whyMeMarkerPlacement: 'before',
+        whyMeBackgroundEnabled: false,
+        whyMeShowHeaderAccent: false,
+        whyMeHeadingSize: 'lg',
+        whyMeHeadingFont: 'sans',
+        whyMeHeadingUppercase: false,
+        whyMeHeadingAlignment: 'center',
+        whyMeHeadingColor: '#171717',
+        whyMeHeadingPreset: 'value',
+        whyMeGap: 'lg',
+      };
+    case 'media-aside':
       return {
         whyMeDesign: design,
         whyMeContentAlign: 'left',
         whyMeMarkerStyle: 'number',
-        whyMeMarkerPlacement: 'top',
-        whyMeShowHeaderAccent: true,
-        whyMeItemsPerRow: 2,
+        whyMeMarkerPlacement: 'before',
+        whyMeBackgroundEnabled: false,
+        whyMeShowHeaderAccent: false,
+        whyMeHeadingSize: 'lg',
+        whyMeHeadingFont: 'sans',
+        whyMeHeadingUppercase: false,
+        whyMeHeadingAlignment: 'left',
+        whyMeHeadingColor: '#171717',
+        whyMeHeadingPreset: 'why-choose-me',
+        whyMeGap: 'lg',
       };
-    default:
-      return { whyMeDesign: design };
   }
 }
 
 export function resolveWhyMeItemsPerRow(
-  design: PortfolioAboutWhyMeDesign,
+  _design: PortfolioAboutWhyMeDesign,
   itemsPerRow: PortfolioAboutWhyMeItemsPerRow | undefined
 ): PortfolioAboutWhyMeItemsPerRow {
-  if (!whyMeDesignSupportsItemsPerRow(design)) return 1;
   if (itemsPerRow === 1 || itemsPerRow === 2 || itemsPerRow === 3 || itemsPerRow === 4) {
     return itemsPerRow;
   }
-  // Legacy « Grille portfolio » was hardcoded to 2 columns.
-  return design === 'grid' ? 2 : 1;
+  return 1;
 }
 
 /**
@@ -1563,12 +1569,6 @@ export function resolveWhyMeGapPx(
   }
 
   let resolved: Exclude<PortfolioAboutWhyMeGap, 'custom'> = gap;
-  if (p.whyMeDesign === 'compact') {
-    if (gap === 'lg') resolved = 'md';
-    else if (gap === 'md') resolved = 'sm';
-  } else if (p.whyMeDesign === 'minimal') {
-    if (gap === 'sm') resolved = 'md';
-  }
 
   return ABOUT_WHY_ME_GAP_PRESET_PX[resolved] ?? 24;
 }
@@ -1600,6 +1600,10 @@ export const PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS: {
   { value: 'triangle', label: 'Triangle', description: 'Pointe pleine ▶.', preview: '▶' },
   { value: 'none', label: 'Aucun', description: 'Pas de marqueur d’index.', preview: '—' },
 ];
+
+/** Infos / side panel markers — same shapes as Why me, separate settings fields. */
+export const PORTFOLIO_ABOUT_SIDE_PANEL_MARKER_STYLE_OPTIONS =
+  PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS;
 
 export const PORTFOLIO_ABOUT_WHY_ME_MARKER_PLACEMENT_OPTIONS: {
   value: PortfolioAboutWhyMeMarkerPlacement;
@@ -1807,6 +1811,7 @@ export const PORTFOLIO_ABOUT_WHY_ME_HEADING_PRESET_OPTIONS: {
 }[] = [
   { value: 'default', label: 'Personnalisé', description: 'Utilise le titre saisi ci-dessous.' },
   { value: 'why-work-with-me', label: 'Why work with me', description: 'Libellé par défaut en anglais.' },
+  { value: 'why-choose-me', label: 'Why choose me', description: 'Titre éditorial du layout Split statistique.' },
   { value: 'my-approach', label: 'My approach', description: 'Approche et méthode.' },
   { value: 'strengths', label: 'Strengths', description: 'Points forts.' },
   { value: 'value', label: 'The value I bring', description: 'Valeur apportée au client.' },
@@ -1850,18 +1855,21 @@ export function aboutStatsGapStyle(gap: number): CSSProperties | undefined {
 export function resolveAboutSectionTitle(
   settings: Pick<PortfolioAboutSectionSettings, 'titlePreset' | 'titleCustom' | 'title'>
 ): string {
-  switch (settings.titlePreset) {
-    case 'my-story':
-      return 'MY STORY';
-    case 'who-i-am':
-      return 'WHO I AM';
-    case 'behind-the-work':
-      return 'BEHIND THE WORK';
-    case 'custom':
-      return settings.titleCustom.trim() || settings.title.trim() || 'About';
-    default:
-      return settings.title.trim() || 'About';
-  }
+  const raw = (() => {
+    switch (settings.titlePreset) {
+      case 'my-story':
+        return 'MY STORY';
+      case 'who-i-am':
+        return 'WHO I AM';
+      case 'behind-the-work':
+        return 'BEHIND THE WORK';
+      case 'custom':
+        return settings.titleCustom.trim() || settings.title.trim() || 'About';
+      default:
+        return settings.title.trim() || 'About';
+    }
+  })();
+  return portfolioSectionTitleSentenceCase(raw);
 }
 
 export function resolveAboutSectionSubtitle(
@@ -1903,12 +1911,10 @@ export function aboutHeaderFontClass(font: PortfolioAboutHeaderFont, kind: 'titl
 }
 
 export function aboutHeaderFontStyle(
-  font: PortfolioAboutHeaderFont,
-  subtitleSerif: boolean,
-  kind: 'title' | 'subtitle'
+  _font: PortfolioAboutHeaderFont,
+  _subtitleSerif: boolean,
+  _kind: 'title' | 'subtitle'
 ): CSSProperties | undefined {
-  if (kind === 'subtitle' && subtitleSerif) return { fontFamily: "'Playfair Display', serif" };
-  if (font === 'serif') return { fontFamily: "'Playfair Display', serif" };
   return undefined;
 }
 
@@ -2055,8 +2061,7 @@ export function aboutStatCardFrameStyle(p: PortfolioAboutPresentationSettings): 
   return style;
 }
 
-export function aboutStatFontStyle(font: PortfolioAboutStatsFont): CSSProperties | undefined {
-  if (font === 'serif') return { fontFamily: "'Playfair Display', serif" };
+export function aboutStatFontStyle(_font: PortfolioAboutStatsFont): CSSProperties | undefined {
   return undefined;
 }
 
@@ -2501,24 +2506,8 @@ export function aboutSidePanelAccentSoftBackground(accent: string): string {
   return `color-mix(in srgb, ${aboutAccentColor(accent)} 16%, transparent)`;
 }
 
-export function aboutWhyMeBlockClass(design: PortfolioAboutWhyMeDesign): string {
-  switch (design) {
-    case 'grid':
-    case 'stacked':
-      return 'group relative h-full transition duration-200';
-    case 'bento':
-    case 'elevate':
-      return 'group relative h-full transition duration-300';
-    case 'timeline':
-    case 'split':
-      return 'group relative transition duration-200';
-    case 'compact':
-      return 'group relative transition duration-200';
-    case 'minimal':
-      return 'group relative transition duration-200';
-    default:
-      return 'group relative transition duration-200';
-  }
+export function aboutWhyMeBlockClass(_design: PortfolioAboutWhyMeDesign): string {
+  return 'group relative transition duration-200';
 }
 
 /** Effective padding for Why Me cards — design can tighten without changing saved settings. */
@@ -2532,17 +2521,7 @@ export function aboutWhyMeEffectivePadding(
   if (p.whyMeBackgroundEnabled === false) {
     return 'none';
   }
-  const base = p.whyMePadding;
-  if (p.whyMeDesign === 'compact') {
-    if (base === 'lg') return 'md';
-    if (base === 'md') return 'sm';
-    return base;
-  }
-  if (p.whyMeDesign === 'minimal') {
-    if (base === 'lg') return 'md';
-    return base === 'none' ? 'sm' : base;
-  }
-  return base;
+  return p.whyMePadding;
 }
 
 export function aboutWhyMeContentPaddingClass(
@@ -2559,6 +2538,7 @@ const WHY_ME_HEADING_PRESET_COPY: Record<
   string
 > = {
   'why-work-with-me': 'Why work with me',
+  'why-choose-me': 'Why choose me',
   'my-approach': 'My approach',
   strengths: 'Strengths',
   value: 'The value I bring',
@@ -2574,6 +2554,7 @@ export function resolveWhyMeHeading(
     case 'custom':
       return settings.whyMeHeadingCustom.trim() || settings.whyMeHeading.trim() || 'Why work with me';
     case 'why-work-with-me':
+    case 'why-choose-me':
     case 'my-approach':
     case 'strengths':
     case 'value':
@@ -2625,6 +2606,25 @@ export function whyMeHeadingStyle(
     color: sanitizeHex(settings.whyMeHeadingColor, DEFAULT_ABOUT_WHY_ME_HEADING_COLOR),
     ...aboutHeaderFontStyle(settings.whyMeHeadingFont, false, 'title'),
   };
+}
+
+/** Infos block title — independent from About section title and Why choose me heading. */
+export function sidePanelHeadingClass(): string {
+  return 'text-left text-2xl font-bold tracking-[-0.03em] sm:text-3xl lg:text-[2rem]';
+}
+
+export function sidePanelHeadingStyle(
+  settings: Pick<PortfolioAboutPresentationSettings, 'sidePanelHeadingColor'>
+): CSSProperties {
+  return {
+    color: sanitizeHex(settings.sidePanelHeadingColor, DEFAULT_ABOUT_SIDE_PANEL_HEADING_COLOR),
+  };
+}
+
+export function resolveSidePanelHeading(
+  settings: Pick<PortfolioAboutPresentationSettings, 'sidePanelHeading'>
+): string {
+  return settings.sidePanelHeading?.trim() || 'Infos';
 }
 
 export function whyMeContentAlignClass(align: PortfolioAboutWhyMeContentAlign): {
@@ -2962,14 +2962,11 @@ export function mergeAboutPresentation(
     subtitleColor: sanitizeHex(record.subtitleColor, base.subtitleColor),
     subtitleSerif: typeof record.subtitleSerif === 'boolean' ? record.subtitleSerif : base.subtitleSerif,
     headerAlignment: pick(record.headerAlignment, ['left', 'center'], base.headerAlignment),
+    showAboutHeading: false,
     sectionLayout: isPortfolioAboutSectionLayout(record.sectionLayout)
       ? record.sectionLayout
       : (base.sectionLayout ?? 'stacked'),
-    illustrationVariant: pick(
-      record.illustrationVariant,
-      ['none', 'chat', 'question', 'docs', 'support', 'hex'],
-      base.illustrationVariant ?? 'none'
-    ),
+    illustrationVariant: 'none',
     illustrationPlacement: pick(
       record.illustrationPlacement,
       ['left', 'right'],
@@ -3069,6 +3066,10 @@ export function mergeAboutPresentation(
       typeof record.sidePanelHeading === 'string' && record.sidePanelHeading.trim()
         ? record.sidePanelHeading.trim()
         : base.sidePanelHeading,
+    sidePanelHeadingColor: sanitizeHex(
+      record.sidePanelHeadingColor,
+      base.sidePanelHeadingColor ?? DEFAULT_ABOUT_SIDE_PANEL_HEADING_COLOR
+    ),
     sidePanelMarkerStyle: isPortfolioAboutWhyMeMarkerStyle(record.sidePanelMarkerStyle)
       ? record.sidePanelMarkerStyle
       : base.sidePanelMarkerStyle,
@@ -3185,18 +3186,8 @@ export function mergeAboutPresentation(
     ...mergeWhyMeDecorFields(base, record),
     whyMeDesign: pick(
       record.whyMeDesign,
-      [
-        'editorial',
-        'compact',
-        'minimal',
-        'grid',
-        'stacked',
-        'bento',
-        'timeline',
-        'split',
-        'elevate',
-      ],
-      base.whyMeDesign
+      ['timeline', 'split', 'lined-list', 'media-aside'],
+      'timeline'
     ),
     whyMeItemsPerRow: (() => {
       const raw = record.whyMeItemsPerRow;
@@ -3204,8 +3195,6 @@ export function mergeAboutPresentation(
       if (raw === '1' || raw === '2' || raw === '3' || raw === '4') {
         return Number(raw) as PortfolioAboutWhyMeItemsPerRow;
       }
-      // Preserve legacy Grille portfolio (was always 2 cols) when the field is missing.
-      if (!('whyMeItemsPerRow' in record) && record.whyMeDesign === 'grid') return 2;
       return base.whyMeItemsPerRow;
     })(),
     whyMeMarkerStyle: isPortfolioAboutWhyMeMarkerStyle(record.whyMeMarkerStyle)
@@ -3237,7 +3226,7 @@ export function mergeAboutPresentation(
     whyMeMarkerColor: sanitizeHex(record.whyMeMarkerColor, base.whyMeMarkerColor),
     whyMeHeadingPreset: pick(
       record.whyMeHeadingPreset,
-      ['default', 'why-work-with-me', 'my-approach', 'strengths', 'value', 'custom'],
+      ['default', 'why-work-with-me', 'why-choose-me', 'my-approach', 'strengths', 'value', 'custom'],
       base.whyMeHeadingPreset
     ),
     whyMeHeadingCustom:

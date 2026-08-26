@@ -236,8 +236,6 @@ export function TeamSettingsPanel({
                 onChange={(headerAlignment) => onChange({ headerAlignment })}
               />
             )}
-            <SelectField label="Title font" value={team.titleFont} options={['sans', 'serif', 'display'].map((value) => ({ value: value as typeof team.titleFont, label: value }))} onChange={(titleFont) => onChange({ titleFont })} />
-            <SelectField label="Subtitle font" value={team.subtitleFont} options={['sans', 'serif', 'display'].map((value) => ({ value: value as typeof team.subtitleFont, label: value }))} onChange={(subtitleFont) => onChange({ subtitleFont })} />
           </div>
           {team.useHeroPalette === false ? <div className="grid gap-4 sm:grid-cols-2"><ColorField label="Couleur du titre" value={team.titleColor} onChange={(titleColor) => onChange({ titleColor })} /><ColorField label="Couleur du sous-titre" value={team.subtitleColor} onChange={(subtitleColor) => onChange({ subtitleColor })} /></div> : null}
 

@@ -1422,6 +1422,11 @@ html.ecosystem-geo-bg [data-dashboard-content] {
   .pf-theme-root .pf-muted-card-gradient {
     background: var(--pf-card-muted-bg, #f5f5f5);
   }
+
+  /* No muted gray wash when the card fill toggle is off. */
+  .pf-theme-root .pf-services-card:not([data-pf-card-fill='custom']).pf-muted-card-gradient {
+    background: transparent !important;
+  }
 }
 
 /* ── Monochrome UI (Noir / Blanc + copies): remap chromatic utilities ── */
@@ -1442,7 +1447,64 @@ html.ecosystem-geo-bg [data-dashboard-content] {
 
 /* Flat skill/service cards under monochrome — no wash / diagonal fills
    unless the user set an explicit card fill (data-pf-card-fill="custom"). */
-/* Services Liste / menu — hover = accent border + icon only (no bg flip) */
+/*
+ * Carte / Offre·Tarif horizontal — soft floating shadow on the card frame.
+ * Shadow is applied to the inner article so its OWN border-radius is preserved
+ * (never inherit/override radius from the host).
+ */
+.pf-services-card-float-host {
+  position: relative;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.pf-services-card-float-host > .pf-services-card,
+.pf-services-card-float-host > article {
+  /* Keep the card's own radius from frameClass — do not inherit/override it.
+     Allow overflow so the frame box-shadow is not clipped. */
+  overflow: visible !important;
+  transition: box-shadow 0.35s ease;
+}
+
+.pf-services-card-float-host:hover,
+.pf-services-card-float-host:focus-within {
+  transform: translateY(-6px);
+}
+
+.pf-services-card-float-host:hover > .pf-services-card,
+.pf-services-card-float-host:hover > article,
+.pf-services-card-float-host:focus-within > .pf-services-card,
+.pf-services-card-float-host:focus-within > article {
+  box-shadow:
+    0 22px 44px -14px rgba(15, 23, 42, 0.18),
+    0 10px 22px -10px rgba(15, 23, 42, 0.12),
+    0 4px 10px rgba(15, 23, 42, 0.06);
+}
+
+.pf-theme-root[data-portfolio-color-mode='dark'] .pf-services-card-float-host:hover > .pf-services-card,
+.pf-theme-root[data-portfolio-color-mode='dark'] .pf-services-card-float-host:hover > article,
+.pf-theme-root[data-portfolio-color-mode='dark'] .pf-services-card-float-host:focus-within > .pf-services-card,
+.pf-theme-root[data-portfolio-color-mode='dark'] .pf-services-card-float-host:focus-within > article {
+  box-shadow:
+    0 24px 48px -16px rgba(0, 0, 0, 0.55),
+    0 12px 24px -12px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-services-card-float-host,
+  .pf-services-card-float-host:hover,
+  .pf-services-card-float-host:focus-within {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* legacy class kept inert */
+.pf-services-card-float-border {
+}
+
+/* Services Liste / menu — hover = principal fill + contrasting ink */
 .pf-services-list-card {
   border-style: solid;
   /* Roomier side margins than default card padding (p-4 → ~p-6/p-8) */
@@ -1451,8 +1513,10 @@ html.ecosystem-geo-bg [data-dashboard-content] {
   padding-top: 1.5rem !important;
   padding-bottom: 1.5rem !important;
   transition:
-    border-color 0.28s ease,
-    color 0.28s ease;
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    color 0.3s ease;
 }
 @media (min-width: 640px) {
   .pf-services-list-card {
@@ -1467,18 +1531,30 @@ html.ecosystem-geo-bg [data-dashboard-content] {
 .pf-theme-root[data-portfolio-color-mode='light'] .pf-services-list-card .pf-services-list-icon,
 .pf-services-list-card .pf-services-list-icon {
   color: #18181b;
-  transition: color 0.28s ease;
+  transition: color 0.3s ease;
 }
 .pf-theme-root[data-portfolio-color-mode='dark'] .pf-services-list-card .pf-services-list-icon {
   color: #f4f4f5;
 }
 
 .pf-services-list-card:hover {
-  border-color: var(--pf-services-list-accent, #dc2626) !important;
+  background-color: var(--pf-services-principal, #dc2626) !important;
+  border-color: var(--pf-services-principal, #dc2626) !important;
 }
 
-.pf-services-list-card:hover .pf-services-list-icon {
-  color: var(--pf-services-list-accent, #dc2626) !important;
+.pf-services-list-card:hover .pf-services-list-icon,
+.pf-services-list-card:hover .pf-services-list-ink,
+.pf-services-list-card:hover .pf-services-list-ink * {
+  color: var(--pf-services-principal-hover-ink, #ffffff) !important;
+}
+
+.pf-services-list-card:hover .pf-services-list-muted,
+.pf-services-list-card:hover .pf-services-list-muted * {
+  color: var(--pf-services-principal-hover-muted, rgba(255, 255, 255, 0.8)) !important;
+}
+
+.pf-services-list-card:hover .pf-services-list-prefix {
+  color: var(--pf-services-principal-hover-muted, rgba(255, 255, 255, 0.8)) !important;
 }
 
 /* Delivery chip — accent ink; dark mode uses a dark wash (not light-on-light) */
@@ -1486,6 +1562,10 @@ html.ecosystem-geo-bg [data-dashboard-content] {
   color: var(--pf-services-list-accent, #dc2626) !important;
   border-color: color-mix(in srgb, var(--pf-services-list-accent, #dc2626) 28%, #e4e4e7) !important;
   background-color: color-mix(in srgb, var(--pf-services-list-accent, #dc2626) 8%, #ffffff) !important;
+  transition:
+    color 0.3s ease,
+    border-color 0.3s ease,
+    background-color 0.3s ease;
 }
 .pf-services-list-delivery * {
   color: inherit !important;
@@ -1495,12 +1575,53 @@ html.ecosystem-geo-bg [data-dashboard-content] {
   background-color: color-mix(in srgb, var(--pf-services-list-accent, #dc2626) 16%, #18181b) !important;
 }
 
+.pf-services-list-card:hover .pf-services-list-delivery {
+  color: var(--pf-services-principal-hover-ink, #ffffff) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--pf-services-principal-hover-ink, #ffffff) 35%,
+    transparent
+  ) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--pf-services-principal-hover-ink, #ffffff) 14%,
+    transparent
+  ) !important;
+}
+
+.pf-services-list-card:hover .pf-services-list-delivery span[aria-hidden],
+.pf-services-list-card:hover .pf-services-list-delivery > span > span:first-child {
+  background-color: var(--pf-services-principal-hover-ink, #ffffff) !important;
+}
+
+.pf-services-list-card:hover .pf-services-list-cta {
+  background-color: var(--pf-services-principal-hover-ink, #ffffff) !important;
+  border-color: var(--pf-services-principal-hover-ink, #ffffff) !important;
+  color: var(--pf-services-principal, #dc2626) !important;
+}
+
+/* Liste / menu body copy — readable muted ink (element style can still override) */
+.pf-theme-root[data-portfolio-color-mode='light'] .pf-services-list-card .pf-services-list-muted,
+.pf-services-list-card .pf-services-list-muted {
+  color: #52525b;
+}
+.pf-theme-root[data-portfolio-color-mode='dark'] .pf-services-list-card .pf-services-list-muted {
+  color: #a1a1aa;
+}
+.pf-theme-root[data-portfolio-color-mode='light'] .pf-services-list-card .pf-services-list-ink,
+.pf-services-list-card .pf-services-list-ink {
+  color: #18181b;
+}
+.pf-theme-root[data-portfolio-color-mode='dark'] .pf-services-list-card .pf-services-list-ink {
+  color: #fafafa;
+}
+
 .pf-theme-root[data-portfolio-mono='true'] .pf-services-card:not([data-pf-card-fill='custom']) {
   background-image: none !important;
 }
 
 .pf-theme-root[data-portfolio-mono='true'] .pf-muted-card-gradient:not([data-pf-card-fill='custom']) {
-  background: #f5f5f5 !important;
+  background: transparent !important;
 }
 
 /* Images stay B&W under Noir / Blanc — tool logos keep brand colors. */

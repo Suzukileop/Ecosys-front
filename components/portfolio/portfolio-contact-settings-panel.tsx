@@ -15,7 +15,6 @@ import {
   PORTFOLIO_CONTACT_FORM_SHADOW_OPTIONS,
   PORTFOLIO_CONTACT_FORM_SHADOW_PRESET_INTENSITY,
   PORTFOLIO_CONTACT_FORM_STACK_GAP_OPTIONS,
-  PORTFOLIO_CONTACT_HEADER_FONT_OPTIONS,
   PORTFOLIO_CONTACT_ICON_BORDER_OPTIONS,
   PORTFOLIO_CONTACT_ICON_PLACEMENT_OPTIONS,
   PORTFOLIO_CONTACT_ICON_RADIUS_OPTIONS,
@@ -34,9 +33,13 @@ import {
   isContactDeskDesign,
   isContactInfoPanelDesign,
   isContactChannelCardsDesign,
+  isContactSwissEditorialDesign,
   isContactOwnedLayoutDesign,
   migrateContactFormDesignFromCardDesign,
   resolveContactFormDesign,
+  DEFAULT_CONTACT_SWISS_COBALT,
+  DEFAULT_CONTACT_SWISS_SUBTITLE,
+  DEFAULT_CONTACT_SWISS_TITLE,
   type PortfolioContactChannelCardsBorder,
   type PortfolioContactSectionSettings,
   type PortfolioContactStyleTarget,
@@ -318,6 +321,7 @@ export function ContactSettingsPanel({
                       showLocation: true,
                       showPhone: true,
                       showEmail: true,
+                      headerAlignment: 'center',
                       cardMaxWidth:
                         contact.cardMaxWidth === 'md' ? 'xl' : contact.cardMaxWidth,
                       ...(isContactInfoPanelDesign(cardDesign)
@@ -342,6 +346,73 @@ export function ContactSettingsPanel({
                         cardMaxWidth:
                           contact.cardMaxWidth === 'md' ? 'xl' : contact.cardMaxWidth,
                       }
+                    : cardDesign === 'editorial'
+                      ? {
+                          cardDesign,
+                          showContactForm: true,
+                          contactFormPlacement: 'side',
+                          iconPlacement: 'left',
+                          formDesign: 'inquiry-panel',
+                          headerAlignment: 'left',
+                          sectionLayout: 'stacked',
+                        }
+                      : cardDesign === 'directory'
+                        ? {
+                            cardDesign,
+                            headerAlignment: 'center',
+                            iconPlacement: 'left',
+                            iconRadius: 'full',
+                            iconBorder: 'soft',
+                            iconUseBrandColors: true,
+                            iconSize: 'xl',
+                            showEmail: false,
+                            showPhone: false,
+                            showLocation: false,
+                            showSocialLinks: true,
+                            showContactForm: true,
+                            contactFormPlacement: 'side',
+                            formDesign: 'minimal-underline',
+                            sectionLayout: 'stacked',
+                            cardMaxWidth:
+                              contact.cardMaxWidth === 'md' ? 'xl' : contact.cardMaxWidth,
+                          }
+                        : cardDesign === 'tiles'
+                          ? {
+                              cardDesign,
+                              showContactForm: true,
+                              contactFormPlacement: 'side',
+                              formDesign: 'stepped-inquiry',
+                              cardBackgroundEnabled: false,
+                              cardBorder: 'none',
+                              iconPlacement: 'top',
+                              showEmail: true,
+                              showPhone: true,
+                              showLocation: true,
+                              showSocialLinks: true,
+                              cardMaxWidth:
+                                contact.cardMaxWidth === 'md' ? 'xl' : contact.cardMaxWidth,
+                            }
+                          : isContactSwissEditorialDesign(cardDesign)
+                            ? {
+                                cardDesign,
+                                showContactForm: true,
+                                formDesign: 'swiss-editorial',
+                                titlePreset: 'custom' as const,
+                                titleCustom: DEFAULT_CONTACT_SWISS_TITLE,
+                                title: DEFAULT_CONTACT_SWISS_TITLE,
+                                subtitlePreset: 'custom' as const,
+                                subtitleCustom: DEFAULT_CONTACT_SWISS_SUBTITLE,
+                                headerAlignment: 'left' as const,
+                                showEmail: true,
+                                showPhone: true,
+                                showLocation: true,
+                                showSocialLinks: true,
+                                showCta: false,
+                                ctaColor: DEFAULT_CONTACT_SWISS_COBALT,
+                                cardBackgroundEnabled: false,
+                                cardBorder: 'soft' as const,
+                                cardMaxWidth: 'xl' as const,
+                              }
                     : isContactOwnedLayoutDesign(cardDesign)
                     ? {
                         cardDesign,
@@ -472,8 +543,8 @@ export function ContactSettingsPanel({
           ) : null}
           {isContactInquiryPanelDesign(contact.cardDesign) ? (
             <p className="rounded-xl border border-neutral-200/80 bg-neutral-50/80 px-3.5 py-3 text-sm text-neutral-600">
-              Inquiry panel : headline + email/téléphone à gauche, formulaire carte sur bloc accent à
-              droite. Le formulaire est activé automatiquement.
+              Inquiry panel : headline + canaux à gauche, formulaire (nom / email / message) avec
+              cadre accent à droite. Le formulaire est activé automatiquement.
             </p>
           ) : null}
           {isContactDeskDesign(contact.cardDesign) ? (
@@ -778,30 +849,6 @@ export function ContactSettingsPanel({
               />
             </div>
           ) : null}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <ContactOptionGrid
-              label="Title font"
-              options={PORTFOLIO_CONTACT_HEADER_FONT_OPTIONS}
-              value={contact.titleFont}
-              onChange={(titleFont) => onChange({ titleFont })}
-              columns={2}
-            />
-            <ContactOptionGrid
-              label="Subtitle font"
-              options={PORTFOLIO_CONTACT_HEADER_FONT_OPTIONS}
-              value={contact.subtitleFont}
-              onChange={(subtitleFont) => onChange({ subtitleFont })}
-              columns={2}
-            />
-          </div>
-
-          <ContactToggleRow
-            label="Serif subtitle"
-            description="Use Playfair Display for the subtitle (editorial default)."
-            checked={contact.subtitleSerif}
-            onChange={(subtitleSerif) => onChange({ subtitleSerif })}
-          />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <ContactManualColorField

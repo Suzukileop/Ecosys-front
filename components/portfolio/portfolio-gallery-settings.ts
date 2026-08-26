@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import {
   DEFAULT_SECTION_BACKGROUND,
   mergeSectionBackground,
@@ -465,10 +466,15 @@ export function resolveGallerySectionTitle(
   settings: Pick<PortfolioGallerySectionSettings, 'titlePreset' | 'titleCustom' | 'title'>
 ): string {
   if (settings.titlePreset === 'none') return '';
-  if (settings.titlePreset === 'selected-work') return 'Selected work';
-  if (settings.titlePreset === 'visual-journal') return 'Visual journal';
-  if (settings.titlePreset === 'custom') return settings.titleCustom.trim() || settings.title.trim();
-  return DEFAULT_GALLERY_TITLE_EN;
+  const raw =
+    settings.titlePreset === 'selected-work'
+      ? 'Selected work'
+      : settings.titlePreset === 'visual-journal'
+        ? 'Visual journal'
+        : settings.titlePreset === 'custom'
+          ? settings.titleCustom.trim() || settings.title.trim()
+          : DEFAULT_GALLERY_TITLE_EN;
+  return portfolioSectionTitleSentenceCase(raw);
 }
 
 export function resolveGallerySectionSubtitle(
@@ -489,8 +495,8 @@ export function galleryHeaderFontClass(font: PortfolioGalleryHeaderFont, kind: '
   return kind === 'title' ? 'font-extrabold tracking-[-0.04em]' : 'leading-relaxed';
 }
 
-export function galleryHeaderFontStyle(font: PortfolioGalleryHeaderFont): CSSProperties | undefined {
-  return font === 'serif' ? { fontFamily: "'Playfair Display', serif" } : undefined;
+export function galleryHeaderFontStyle(_font: PortfolioGalleryHeaderFont): CSSProperties | undefined {
+  return undefined;
 }
 
 export function galleryMaxWidthClass(width: PortfolioGalleryMaxWidth): string {

@@ -78,7 +78,7 @@ export function PortfolioThemeRoot({
       data-portfolio-mono={mono ? 'true' : undefined}
       data-portfolio-color-mode={colorMode === 'light' ? 'light' : 'dark'}
       data-portfolio-body-font={resolvedBodyFont}
-      data-portfolio-force-font={bodyFontForceAll ? 'true' : undefined}
+      data-portfolio-force-font="true"
       style={{
         ...portfolioThemeCssVars(themeId, pickerThemes, monochromeUi),
         ...bodyFontStyle,

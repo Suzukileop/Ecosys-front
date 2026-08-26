@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
+import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
   isPortfolioListMarkerSize,
@@ -748,20 +749,23 @@ function sanitizeHex(value: unknown, fallback: string): string {
 export function resolveFaqSectionTitle(
   settings: Pick<PortfolioFaqSectionSettings, 'titlePreset' | 'titleCustom' | 'title'>
 ): string {
-  switch (settings.titlePreset) {
-    case 'frequently-asked':
-      return 'Frequently Asked Questions';
-    case 'questions':
-      return 'QUESTIONS';
-    case 'common-questions':
-      return 'COMMON QUESTIONS';
-    case 'q-and-a':
-      return 'Q & A';
-    case 'custom':
-      return settings.titleCustom.trim() || settings.title.trim() || 'FAQ';
-    default:
-      return 'FAQ';
-  }
+  const raw = (() => {
+    switch (settings.titlePreset) {
+      case 'frequently-asked':
+        return 'Frequently Asked Questions';
+      case 'questions':
+        return 'QUESTIONS';
+      case 'common-questions':
+        return 'COMMON QUESTIONS';
+      case 'q-and-a':
+        return 'Q & A';
+      case 'custom':
+        return settings.titleCustom.trim() || settings.title.trim() || 'FAQ';
+      default:
+        return 'FAQ';
+    }
+  })();
+  return portfolioSectionTitleSentenceCase(raw);
 }
 
 export function resolveFaqSectionSubtitle(
@@ -806,8 +810,7 @@ export function faqHeaderFontClass(font: PortfolioFaqHeaderFont, kind: 'title' |
 export const FAQ_READY_TITLE_CLASS =
   'font-semibold leading-[1.14] tracking-tight text-[2.05rem] sm:text-[2.55rem] lg:text-[2.95rem]';
 
-export function faqHeaderFontStyle(font: PortfolioFaqHeaderFont): CSSProperties | undefined {
-  if (font === 'serif') return { fontFamily: "'Playfair Display', serif" };
+export function faqHeaderFontStyle(_font: PortfolioFaqHeaderFont): CSSProperties | undefined {
   return undefined;
 }
 

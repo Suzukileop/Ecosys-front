@@ -1,4 +1,5 @@
 import { resolveSectionOrder } from '@/components/portfolio/portfolio-global-settings';
+import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import type { PortfolioNavSectionKey } from '@/components/portfolio/portfolio-nav-items';
 import type {
   PortfolioServicesBlockSettings,
@@ -202,31 +203,35 @@ export function resolveDistinctBlockSectionTitle(
 ): string {
   const header = kind === 'skills' ? settings.skillsHeader : settings.servicesHeader;
 
-  if (kind === 'skills') {
+  const raw = (() => {
+    if (kind === 'skills') {
+      switch (header.titlePreset) {
+        case 'expertise':
+          return 'EXPERTISE';
+        case 'skills-services':
+          return 'SKILLS & SERVICES';
+        case 'custom':
+          return header.titleCustom.trim() || 'SKILLS & TOOLS';
+        default:
+          return 'SKILLS & TOOLS';
+      }
+    }
+
     switch (header.titlePreset) {
+      case 'what-i-offer':
+        return 'WHAT I OFFER';
       case 'expertise':
         return 'EXPERTISE';
       case 'skills-services':
-        return 'SKILLS & SERVICES';
+        return 'SERVICES';
       case 'custom':
-        return header.titleCustom.trim() || 'SKILLS & TOOLS';
+        return header.titleCustom.trim() || 'SERVICES';
       default:
-        return 'SKILLS & TOOLS';
+        return 'SERVICES';
     }
-  }
+  })();
 
-  switch (header.titlePreset) {
-    case 'what-i-offer':
-      return 'WHAT I OFFER';
-    case 'expertise':
-      return 'EXPERTISE';
-    case 'skills-services':
-      return 'SERVICES';
-    case 'custom':
-      return header.titleCustom.trim() || 'SERVICES';
-    default:
-      return 'SERVICES';
-  }
+  return portfolioSectionTitleSentenceCase(raw);
 }
 
 export function resolveDistinctBlockSectionSubtitle(

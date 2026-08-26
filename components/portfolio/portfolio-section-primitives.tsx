@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type RefObject } from 'react';
+import { Fragment, createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
@@ -11,6 +11,7 @@ import {
 } from '@/components/marketplace/creator-profile-social-icons';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
 import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferredMedia';
+import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
 import { ContentMediaPreview } from '@/components/creator/creator-content-media';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import { resolveCreatorToolBrandHex, resolveCreatorToolLogoHex } from '@/components/creator/studio/creator-profile-tools-catalog';
@@ -52,12 +53,18 @@ import {
 import { PortfolioMotionItem } from '@/components/portfolio/PortfolioMotionItem';
 import { PortfolioListMarker } from '@/components/portfolio/PortfolioListMarker';
 import {
+  portfolioSectionTitleClassWithoutUppercase,
+  portfolioSectionTitleSentenceCase,
+} from '@/components/portfolio/portfolio-section-title';
+import {
   resolveTaskListMarker,
   listMarkerStrokeWidth,
   listMarkerDashHeightPx,
   listMarkerFontWeightFromAmount,
   resolveListMarkerSizePx,
   resolveListMarkerWeightAmount,
+  LIST_MARKER_SIZE_PRESET_PX,
+  LIST_MARKER_WEIGHT_PRESET_AMOUNT,
   type PortfolioListMarkerWeight,
 } from '@/components/portfolio/portfolio-list-marker';
 import { usePortfolioTaskListMarkerGlobal } from '@/components/portfolio/portfolio-task-list-marker-context';
@@ -165,6 +172,7 @@ import {
   aboutPalettePrincipalColor,
   aboutSidePanelMicroLabelColor,
   aboutActiveColorMode,
+  aboutHeaderFontClass,
   resolveWhyMeTimelineSurfaceColor,
   resolveWhyMeTimelineLineColor,
   aboutStatsAutoCenterClass,
@@ -198,13 +206,18 @@ import {
   whyMeBlockHasMedia,
   whyMeContentAlignClass,
   whyMeDesignEmbedsHeading,
+  whyMeDesignUsesHeroHeading,
   whyMeHeadingClass,
   whyMeHeadingStyle,
+  sidePanelHeadingClass,
+  sidePanelHeadingStyle,
+  resolveSidePanelHeading,
   formatWhyMeIndexLabel,
   isWhyMeHyperBulletMarker,
   resolveWhyMeMarkerColor,
   resolveSidePanelMarkerColor,
   ABOUT_WHY_ME_MARKER_SIZE_PRESET_PX,
+  DEFAULT_ABOUT_WHY_ME_HEADING_COLOR,
   sidePanelIconPlacementClass,
   isAboutRatingStat,
   type AboutStatValueSizeContext,
@@ -387,6 +400,8 @@ import {
   servicesCardFrameClass,
   servicesCardShellClass,
   servicesCardSurfaceStyle,
+  servicesMediaCardSurfaceStyle,
+  resolveServicesMediaCardPresentation,
   servicesReadableCardInk,
   pickServicesCardTextContrast,
   resolveServicesCardSurfaceHex,
@@ -394,6 +409,9 @@ import {
   servicesSoftIconChipBg,
   servicesCardWidthClass,
   servicesCardMaxWidthShellClass,
+  servicesCardMaxWidthClass,
+  resolveMediaBannerCardMaxWidth,
+  servicesMediaOnLeft,
   skillsInspectorMaxWidthShellClass,
   servicesContentAlignClass,
   servicesCardContentGapProps,
@@ -420,11 +438,18 @@ import {
   resolveServicesCardTone,
   resolveServicesTaskBulletColor,
   resolveServicesTaskBulletSource,
+  servicesPrincipalSurfaceActive,
   type PortfolioServicesPresentationSettings,
   type PortfolioServicesStageChromeSettings,
   type PortfolioServicesStageDesign,
   type PortfolioServicesTaskBulletStyle,
 } from '@/components/portfolio/portfolio-services-settings';
+import {
+  DEFAULT_SERVICES_COLOR_BINDINGS,
+  DEFAULT_SERVICES_PALETTE,
+  mergeServicesColorBindings,
+  mergeServicesPalette,
+} from '@/components/portfolio/portfolio-services-palette-settings';
 import {
   resolveServicesBlockPresentation,
 } from '@/components/portfolio/portfolio-services-block-settings';
@@ -471,6 +496,7 @@ import {
   contactFormFrameStyle,
   contactInquiryFormCardClass,
   contactInquiryAccentBlockClass,
+  contactInquiryChannelCardClass,
   contactInquiryPanelStatCardClass,
   contactChannelCardsCardClass,
   contactChannelCardsCardStyle,
@@ -482,10 +508,17 @@ import {
   contactInfoPanelShellStyle,
   contactInfoPanelFormCardClass,
   contactInfoPanelFormCardStyle,
+  contactSwissEditorialFrameClass,
+  contactSwissEditorialFrameStyle,
+  DEFAULT_CONTACT_SWISS_AVAILABILITY,
+  DEFAULT_CONTACT_SWISS_COBALT,
+  DEFAULT_CONTACT_SWISS_SUBTITLE,
+  DEFAULT_CONTACT_SWISS_TITLE,
   isContactInquiryPanelDesign,
   isContactDeskDesign,
   isContactInfoPanelDesign,
   isContactChannelCardsDesign,
+  isContactSwissEditorialDesign,
   isContactOwnedLayoutDesign,
   contactActiveColorMode,
   resolveContactFormDesign,
@@ -497,10 +530,12 @@ import {
   contactIconPlacementClass,
   contactIconShellClass,
   contactIconShellStyle,
+  contactIconBorderClass,
   contactItemRowShellClass,
   contactItemsLayoutClass,
   normalizeContactElementStyles,
   type PortfolioContactElementStyles,
+  type PortfolioContactIconBorder,
   type PortfolioContactIconPlacement,
   type PortfolioContactPresentationSettings,
 } from '@/components/portfolio/portfolio-contact-settings';
@@ -573,7 +608,7 @@ export const PORTFOLIO_FLOATING_CHROME =
   'rounded-full border border-neutral-200/80 bg-white/90 p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.08)] backdrop-blur-md dark:border-neutral-700 dark:bg-neutral-950/90';
 
 export const PORTFOLIO_FLOATING_CHROME_LABEL =
-  'px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em]';
+  'px-4 py-2 text-[11px] font-bold normal-case tracking-[0.04em]';
 
 /** Nearest scrollable ancestor (pages mode uses nested overflow-y-auto). */
 function getScrollParent(el: HTMLElement | null): HTMLElement | null {
@@ -2013,9 +2048,206 @@ function ServicePriceAmount({
 }
 
 function servicePriceTextStyle(style: CSSProperties): CSSProperties {
+  // All service card designs: price / tarif always bold.
+  return { ...style, fontWeight: 700 };
+}
+
+function resolveServicesPrincipalColor(
+  presentation: PortfolioServicesPresentationSettings
+): string {
+  if (presentation.useHeroPalette !== false) {
+    return resolveHeroPaletteColor(
+      mergeServicesPalette(DEFAULT_SERVICES_PALETTE, presentation.servicesPalette),
+      'principal'
+    );
+  }
+  return presentation.cardAccentColor?.trim() || DEFAULT_SERVICES_ACCENT_COLOR;
+}
+
+/** Hover: title / price ink → palette principal (inline color needs !important). */
+const SERVICES_CARD_TITLE_HOVER_CLASS =
+  'transition-colors duration-200 group-hover:!text-[color:var(--pf-services-principal)]';
+const SERVICES_CARD_PRICE_HOVER_CLASS =
+  'transition-colors duration-300 ease-out group-hover:!text-[color:var(--pf-services-principal)]';
+
+/** Shared principal-fill hover for non-featured cards (Plan / Liste / Liste commerciale / Plan en colonnes). */
+const SERVICES_PRINCIPAL_HOVER_INK_CLASS =
+  'transition-colors duration-300 ease-out group-hover:![color:var(--pf-services-principal-hover-ink)]';
+const SERVICES_PRINCIPAL_HOVER_MUTED_CLASS =
+  'transition-colors duration-300 ease-out group-hover:![color:var(--pf-services-principal-hover-muted)]';
+const SERVICES_PRINCIPAL_HOVER_CARD_CLASS =
+  'transition-[background-color,border-color,box-shadow] duration-300 ease-out hover:border-[color:var(--pf-services-principal)] hover:![background-color:var(--pf-services-principal)] hover:shadow-md';
+const SERVICES_PRINCIPAL_HOVER_CTA_WRAP_CLASS =
+  '[&_a]:transition-[background-color,color,border-color,box-shadow] [&_a]:duration-300 [&_a]:ease-out group-hover:[&_a]:!border-[color:var(--pf-services-principal-hover-ink)] group-hover:[&_a]:!bg-[var(--pf-services-principal-hover-ink)] group-hover:[&_a]:!text-[var(--pf-services-principal)] group-hover:[&_a_span]:!text-[var(--pf-services-principal)] group-hover:[&_a_svg]:!text-[var(--pf-services-principal)] group-hover:[&_a]:!shadow-none';
+
+/**
+ * Featured principal-surface cards: static principal fill + inverted ink/CTA.
+ * No hover that changes this principal background (other cards keep full hover).
+ */
+const SERVICES_PRINCIPAL_SURFACE_CARD_CLASS =
+  '![background-color:var(--pf-services-principal)] !border-2 !border-[color:var(--pf-services-principal)] shadow-md';
+const SERVICES_PRINCIPAL_SURFACE_INK_CLASS =
+  '![color:var(--pf-services-principal-hover-ink)]';
+const SERVICES_PRINCIPAL_SURFACE_MUTED_CLASS =
+  '![color:var(--pf-services-principal-hover-muted)]';
+const SERVICES_PRINCIPAL_SURFACE_CTA_WRAP_CLASS =
+  '[&_a]:!border-[color:var(--pf-services-principal-hover-ink)] [&_a]:!bg-[var(--pf-services-principal-hover-ink)] [&_a]:!text-[var(--pf-services-principal)] [&_a_span]:!text-[var(--pf-services-principal)] [&_a_svg]:!text-[var(--pf-services-principal)] [&_a]:!shadow-none';
+const SERVICES_PRINCIPAL_SURFACE_DIVIDER_CLASS =
+  '![border-color:var(--pf-services-principal-hover-ink)]';
+
+function servicesPrincipalCardClass(
+  presentation: PortfolioServicesPresentationSettings,
+  cardIndex = 0,
+  extra = ''
+): string {
+  const surface = servicesPrincipalSurfaceActive(presentation, cardIndex);
+  return [
+    surface ? SERVICES_PRINCIPAL_SURFACE_CARD_CLASS : SERVICES_PRINCIPAL_HOVER_CARD_CLASS,
+    extra,
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function servicesPrincipalInkClass(
+  presentation: PortfolioServicesPresentationSettings,
+  cardIndex = 0,
+  extra = ''
+): string {
+  return [
+    servicesPrincipalSurfaceActive(presentation, cardIndex)
+      ? SERVICES_PRINCIPAL_SURFACE_INK_CLASS
+      : SERVICES_PRINCIPAL_HOVER_INK_CLASS,
+    extra,
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function servicesPrincipalMutedClass(
+  presentation: PortfolioServicesPresentationSettings,
+  cardIndex = 0,
+  extra = ''
+): string {
+  return [
+    servicesPrincipalSurfaceActive(presentation, cardIndex)
+      ? SERVICES_PRINCIPAL_SURFACE_MUTED_CLASS
+      : SERVICES_PRINCIPAL_HOVER_MUTED_CLASS,
+    extra,
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function servicesPrincipalCtaWrapClass(
+  presentation: PortfolioServicesPresentationSettings,
+  cardIndex = 0,
+  extra = ''
+): string {
+  return [
+    servicesPrincipalSurfaceActive(presentation, cardIndex)
+      ? SERVICES_PRINCIPAL_SURFACE_CTA_WRAP_CLASS
+      : SERVICES_PRINCIPAL_HOVER_CTA_WRAP_CLASS,
+    extra,
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function servicesPrincipalBulletClass(
+  presentation: PortfolioServicesPresentationSettings,
+  cardIndex = 0,
+  extra = ''
+): string {
+  return [
+    servicesPrincipalSurfaceActive(presentation, cardIndex)
+      ? // Filled glyphs (check-circle-fill): light disc + principal check on surface.
+        '![color:var(--pf-services-principal-hover-ink)] ![--pf-list-marker-glyph:var(--pf-services-principal)]'
+      : // Hover fill → white disc needs a dark check.
+        'transition-colors duration-300 ease-out group-hover:![color:var(--pf-services-principal-hover-ink)] group-hover:[!--pf-list-marker-glyph:#111111]',
+    extra,
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function servicesPrincipalDividerClass(
+  presentation: PortfolioServicesPresentationSettings,
+  cardIndex = 0,
+  extra = ''
+): string {
+  return [
+    servicesPrincipalSurfaceActive(presentation, cardIndex)
+      ? SERVICES_PRINCIPAL_SURFACE_DIVIDER_CLASS
+      : 'transition-[border-color] duration-300 ease-out group-hover:!border-[color:var(--pf-services-principal-hover-ink)]',
+    extra,
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+/** Inline colors that stay readable on principal-surface cards (beats element hexes). */
+function servicesPrincipalSurfaceInkColors(
+  presentation: PortfolioServicesPresentationSettings,
+  cardIndex = 0
+): { active: boolean; ink: string; muted: string; principal: string } {
+  const principal = resolveServicesPrincipalColor(presentation);
+  const active = servicesPrincipalSurfaceActive(presentation, cardIndex);
+  const darkPrincipal = servicesColorLuminance(principal) < 0.55;
   return {
-    ...style,
-    fontWeight: 700,
+    active,
+    principal,
+    ink: darkPrincipal ? '#ffffff' : '#111111',
+    muted: darkPrincipal
+      ? 'color-mix(in srgb, #ffffff 80%, transparent)'
+      : 'color-mix(in srgb, #111111 72%, transparent)',
+  };
+}
+
+function listMarkerGlyphFallback(fillColor: string): string {
+  return servicesColorLuminance(fillColor) < 0.55 ? '#ffffff' : '#111111';
+}
+
+function servicesCardPrincipalStyle(
+  presentation: PortfolioServicesPresentationSettings,
+  base?: CSSProperties
+): CSSProperties {
+  return {
+    ...base,
+    ['--pf-services-principal' as string]: resolveServicesPrincipalColor(presentation),
+  };
+}
+
+function servicesPrincipalHoverStyle(
+  presentation: PortfolioServicesPresentationSettings,
+  base?: CSSProperties,
+  tone: 'light' | 'muted' = 'light'
+): CSSProperties {
+  const principal = resolveServicesPrincipalColor(presentation);
+  const ink = servicesColorLuminance(principal) < 0.55 ? '#ffffff' : '#111111';
+  const muted =
+    servicesColorLuminance(principal) < 0.55
+      ? 'color-mix(in srgb, #ffffff 80%, transparent)'
+      : 'color-mix(in srgb, #111111 72%, transparent)';
+  const restSurface =
+    (typeof base?.backgroundColor === 'string' && base.backgroundColor.trim()) ||
+    resolveServicesCardSurfaceHex(presentation, tone) ||
+    '#ffffff';
+  const restInkStrong = servicesColorLuminance(restSurface) < 0.55 ? '#ffffff' : '#111111';
+  const restInkMuted =
+    servicesColorLuminance(restSurface) < 0.55
+      ? 'color-mix(in srgb, #ffffff 80%, transparent)'
+      : 'color-mix(in srgb, #111111 72%, transparent)';
+  return {
+    ...servicesCardPrincipalStyle(presentation, base),
+    ['--pf-services-principal-hover-ink' as string]: ink,
+    ['--pf-services-principal-hover-muted' as string]: muted,
+    ['--pf-services-plan-hover-ink' as string]: ink,
+    ['--pf-services-plan-hover-muted' as string]: muted,
+    ['--pf-services-card-surface' as string]: restSurface,
+    ['--pf-services-card-ink' as string]: restInkStrong,
+    ['--pf-services-card-muted' as string]: restInkMuted,
+    ['--pf-services-card-divider' as string]: `color-mix(in srgb, ${restInkStrong} 28%, transparent)`,
   };
 }
 
@@ -2088,6 +2320,127 @@ function ServicesTaskBulletMarker({
 }
 
 /** Shared task checklist used across service card layouts. */
+function resolveServicesTaskListMarker(
+  presentation: PortfolioServicesPresentationSettings,
+  taskListBulletGlobal: ReturnType<typeof usePortfolioTaskListMarkerGlobal>
+) {
+  const layout = presentation.servicesGalleryLayout;
+  const isCardFamily =
+    layout === 'card' || layout === 'plan' || layout === 'tier' || layout === 'plan-split';
+  const isCommercialList = layout === 'commercial-list';
+  const isServiceSelector = layout === 'service-selector';
+  let bulletSource = resolveServicesTaskBulletSource(presentation);
+  let bulletStyle = (presentation.servicesTaskBulletStyle ?? 'check') as PortfolioServicesTaskBulletStyle;
+  let sectionBulletColor = resolveServicesTaskBulletColor(presentation);
+  let sizeOverride: import('@/components/portfolio/portfolio-list-marker').PortfolioListMarkerSize | undefined;
+  let sizePxOverride: number | undefined;
+
+  if (isServiceSelector) {
+    // Service selector: simple dash trait.
+    bulletSource = 'section';
+    bulletStyle = 'dash';
+    sizeOverride = 'lg';
+    if (presentation.useHeroPalette !== false) {
+      const palette = mergeServicesPalette(DEFAULT_SERVICES_PALETTE, presentation.servicesPalette);
+      const bindings = mergeServicesColorBindings(
+        DEFAULT_SERVICES_COLOR_BINDINGS,
+        presentation.servicesColorBindings
+      );
+      sectionBulletColor = resolveHeroPaletteColor(
+        palette,
+        bindings.tasksBullet || 'texteMuted'
+      );
+    } else {
+      const tasksInk = presentation.elementStyles?.tasks?.color?.trim();
+      sectionBulletColor =
+        tasksInk ||
+        presentation.servicesTaskBulletColor?.trim() ||
+        presentation.cardAccentColor?.trim() ||
+        sectionBulletColor;
+    }
+  } else if (isCommercialList) {
+    // Liste commerciale: plain check (no round border), larger glyph.
+    bulletSource = 'section';
+    bulletStyle = 'check';
+    sizeOverride = 'custom';
+    sizePxOverride = 24;
+    if (presentation.useHeroPalette !== false) {
+      const palette = mergeServicesPalette(DEFAULT_SERVICES_PALETTE, presentation.servicesPalette);
+      sectionBulletColor = resolveHeroPaletteColor(palette, 'principal');
+    } else {
+      sectionBulletColor =
+        presentation.ctaColor?.trim() ||
+        presentation.cardAccentColor?.trim() ||
+        sectionBulletColor;
+    }
+  } else if (isCardFamily) {
+    bulletSource = 'section';
+    // Plan / Offre / Carte always show a visible marker (never inherit "none").
+    if (!bulletStyle || bulletStyle === 'none') {
+      bulletStyle = layout === 'card' ? 'check-circle-fill' : 'check-circle';
+    }
+    if (layout === 'card') {
+      bulletStyle = 'check-circle-fill';
+    }
+
+    if (presentation.useHeroPalette !== false) {
+      const palette = mergeServicesPalette(DEFAULT_SERVICES_PALETTE, presentation.servicesPalette);
+      const bindings = mergeServicesColorBindings(
+        DEFAULT_SERVICES_COLOR_BINDINGS,
+        presentation.servicesColorBindings
+      );
+      sectionBulletColor = resolveHeroPaletteColor(palette, bindings.tasksBullet || 'principal');
+      // Visible accent: principal for Carte + Plan + Plan en colonnes.
+      if (layout === 'card' || layout === 'plan' || layout === 'plan-split') {
+        sectionBulletColor = resolveHeroPaletteColor(palette, 'principal');
+      }
+    } else {
+      sectionBulletColor =
+        presentation.ctaColor?.trim() ||
+        presentation.cardAccentColor?.trim() ||
+        sectionBulletColor;
+    }
+  }
+
+  const resolved = resolveTaskListMarker(
+    taskListBulletGlobal,
+    {
+      taskBulletSource: bulletSource,
+      taskBulletStyle: bulletStyle,
+      taskBulletColor: sectionBulletColor,
+      taskBulletSize: sizeOverride ?? presentation.servicesTaskBulletSize ?? 'md',
+      taskBulletSizePx: sizePxOverride ?? presentation.servicesTaskBulletSizePx,
+      taskBulletWeight: presentation.servicesTaskBulletWeight ?? 'regular',
+      taskBulletWeightAmount: presentation.servicesTaskBulletWeightAmount,
+    },
+    sectionBulletColor
+  );
+
+  if (isCommercialList) {
+    return {
+      ...resolved,
+      style: 'check' as const,
+      size: 'custom' as const,
+      sizePx: sizePxOverride ?? 24,
+      weight: 'bold' as const,
+    };
+  }
+
+  if (isServiceSelector) {
+    return {
+      ...resolved,
+      style: 'dash' as const,
+      size: 'lg' as const,
+      sizePx: LIST_MARKER_SIZE_PRESET_PX.lg,
+      weight: 'bold' as const,
+      weightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.bold,
+    };
+  }
+
+  return resolved;
+}
+
+/** Shared task checklist used across service card layouts. */
 function ServicesTaskList({
   tasks,
   presentation,
@@ -2095,7 +2448,9 @@ function ServicesTaskList({
   itemJustifyClass = '',
   textStyle,
   textClassName = '',
-  listClassName = 'space-y-2',
+  listClassName = 'space-y-3.5',
+  bulletColorOverride,
+  bulletClassName = '',
 }: {
   tasks: string[];
   presentation: PortfolioServicesPresentationSettings;
@@ -2105,37 +2460,39 @@ function ServicesTaskList({
   textClassName?: string;
   /** Track layout for the checklist (e.g. two columns on the service selector). */
   listClassName?: string;
+  /** When set, replaces resolved marker color (e.g. muted ink on Offre / Tarif). */
+  bulletColorOverride?: string;
+  /** Optional class on each marker (e.g. principal-fill hover ink). */
+  bulletClassName?: string;
 }) {
   const taskListBulletGlobal = usePortfolioTaskListMarkerGlobal();
   if (tasks.length === 0) return null;
-  const resolved = resolveTaskListMarker(
-    taskListBulletGlobal,
-    {
-      taskBulletSource: resolveServicesTaskBulletSource(presentation),
-      taskBulletStyle: presentation.servicesTaskBulletStyle ?? 'check',
-      taskBulletColor: presentation.servicesTaskBulletColor,
-      taskBulletSize: presentation.servicesTaskBulletSize ?? 'md',
-      taskBulletSizePx: presentation.servicesTaskBulletSizePx,
-      taskBulletWeight: presentation.servicesTaskBulletWeight ?? 'regular',
-      taskBulletWeightAmount: presentation.servicesTaskBulletWeightAmount,
-    },
-    resolveServicesTaskBulletColor(presentation)
-  );
+
+  const resolved = resolveServicesTaskListMarker(presentation, taskListBulletGlobal);
+  const bulletColor = bulletColorOverride?.trim() || resolved.color;
   const elementStyles = normalizeServicesElementStyles(presentation.elementStyles);
+  const glyphContrast = listMarkerGlyphFallback(bulletColor);
 
   return (
     <ul className={`w-full ${listClassName} ${alignClass}`.trim()}>
       {tasks.map((task, index) => (
         <li key={`${index}-${task}`} className={`flex items-start gap-2.5 ${itemJustifyClass}`.trim()}>
-          <span style={{ color: resolved.color }}>
+          <span
+            className={`shrink-0 ${bulletClassName}`.trim()}
+            style={{
+              color: bulletColor,
+              ['--pf-list-marker-glyph' as string]: glyphContrast,
+            }}
+          >
             <ServicesTaskBulletMarker
               style={resolved.style}
-              color={resolved.color}
+              color={bulletClassName.trim() ? 'currentColor' : bulletColor}
               index={index}
               size={resolved.size}
               sizePx={resolved.sizePx}
               weight={resolved.weight}
               weightAmount={resolved.weightAmount}
+              className={bulletClassName}
             />
           </span>
           <span
@@ -2201,7 +2558,7 @@ function WorkCtaLabelAndIcon({
   ) : null;
   const labelNode = (
     <span
-      className={`min-w-0 break-words ${nowrap ? 'whitespace-nowrap' : ''} ${labelClassName ?? ''}`.trim()}
+      className={`min-w-0 ${nowrap ? 'shrink whitespace-nowrap' : 'break-words'} ${labelClassName ?? ''}`.trim()}
       style={labelStyle}
     >
       {label}
@@ -2371,6 +2728,10 @@ export function EditorialSectionStickyHeader({
   orientation?: 'horizontal' | 'vertical';
   splitRailBundle?: boolean;
 }) {
+  const displayTitle = portfolioSectionTitleSentenceCase(title);
+  const titleClassName = `${portfolioSectionTitleClassWithoutUppercase(
+    titleTypographyClass
+  )} normal-case`.trim();
   const spacingClass = className || 'mb-12 lg:mb-16';
   const stickyEnabled = scrollBehavior !== 'static';
   const pillMode = editorialLayout && stickyEnabled;
@@ -2398,14 +2759,14 @@ export function EditorialSectionStickyHeader({
   if (orientation === 'vertical') {
     return (
       <VerticalSectionTitle
-        title={title}
+        title={displayTitle}
         subtitle={subtitle}
         trailing={trailing}
         subtitleSerif={subtitleSerif}
         centered={centered}
         alignRight={alignRight}
         spacingClass={spacingClass}
-        titleTypographyClass={titleTypographyClass}
+        titleTypographyClass={titleClassName}
         titleTypographyStyle={titleTypographyStyle}
         titleDecorationStyle={titleDecorationStyle}
         subtitleTypographyClass={subtitleTypographyClass}
@@ -2424,7 +2785,7 @@ export function EditorialSectionStickyHeader({
     return (
       <div className="flex w-full max-w-full flex-col items-center px-1 text-center sm:px-2">
         <SplitRailAutoFitHeading
-          className={`${titleTypographyClass} ${
+          className={`${titleClassName} ${
             customTitleSizing
               ? 'text-neutral-950 dark:text-white'
               : SPLIT_RAIL_DEFAULT_TITLE_CLASS
@@ -2433,7 +2794,7 @@ export function EditorialSectionStickyHeader({
           chromeClass={titleChromeClass}
           chromeStyle={titleChromeStyle}
         >
-          <SplitRailTitleLines title={title} decorationStyle={titleDecorationStyle} />
+          <SplitRailTitleLines title={displayTitle} decorationStyle={titleDecorationStyle} />
         </SplitRailAutoFitHeading>
         {subtitle ? (
           <p
@@ -2486,13 +2847,13 @@ export function EditorialSectionStickyHeader({
               className={`transition-all duration-300 ease-out ${sectionHeaderTitleTextAlignClass(
                 centered,
                 alignRight
-              )} ${titleTypographyClass} ${titleSizeClass}`}
+              )} ${titleClassName} ${titleSizeClass}`}
               style={titleTypographyStyle}
             >
               {titleDecorationStyle && Object.keys(titleDecorationStyle).length > 0 ? (
-                <span style={titleDecorationStyle}>{title}</span>
+                <span style={titleDecorationStyle}>{displayTitle}</span>
               ) : (
-                title
+                displayTitle
               )}
             </h2>,
             titleChromeClass,
@@ -6188,21 +6549,119 @@ function servicesCardReadableText(
   );
 }
 
-/** Order / Commander CTA — same designs as Portfolio “View project”. */
+/** Order / Commander / GET CTA — Contact → tel → footer (plain <a>, not next/link). */
+type ServicesOrderCtaNav = {
+  href: string;
+  onNavigate?: (href: string) => void;
+};
+
+const ServicesOrderCtaHrefContext = createContext<ServicesOrderCtaNav>({ href: '#contact' });
+
+export function ServicesOrderCtaHrefProvider({
+  href,
+  onNavigate,
+  children,
+}: {
+  href: string;
+  onNavigate?: (href: string) => void;
+  children: ReactNode;
+}) {
+  const value = useMemo(
+    () => ({ href: href || '#contact', onNavigate }),
+    [href, onNavigate]
+  );
+  return (
+    <ServicesOrderCtaHrefContext.Provider value={value}>
+      {children}
+    </ServicesOrderCtaHrefContext.Provider>
+  );
+}
+
+function useServicesOrderCtaNav(): ServicesOrderCtaNav {
+  const value = useContext(ServicesOrderCtaHrefContext);
+  return value.href ? value : { href: '#contact', onNavigate: value.onNavigate };
+}
+
+function handleServicesOrderCtaClick(
+  event: ReactMouseEvent<HTMLAnchorElement>,
+  href: string,
+  onNavigate?: (href: string) => void
+) {
+  if (href.startsWith('tel:') || href.startsWith('mailto:') || /^https?:/i.test(href)) {
+    return;
+  }
+  if (onNavigate) {
+    event.preventDefault();
+    onNavigate(href);
+    return;
+  }
+  if (href.startsWith('#')) {
+    event.preventDefault();
+    const id = href.slice(1);
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function ServicesOrderCtaLink({
+  className,
+  style,
+  ariaLabel,
+  children,
+}: {
+  className?: string;
+  style?: CSSProperties;
+  ariaLabel?: string;
+  children: ReactNode;
+}) {
+  const { href, onNavigate } = useServicesOrderCtaNav();
+  return (
+    <a
+      href={href}
+      className={className}
+      style={style}
+      aria-label={ariaLabel}
+      onClick={(event) => handleServicesOrderCtaClick(event, href, onNavigate)}
+    >
+      {children}
+    </a>
+  );
+}
+
+const SERVICES_CUSTOM_QUOTE_LABEL = 'Custom quote';
+const SERVICES_CUSTOM_QUOTE_CTA_LABEL = 'Discuss';
+
 function ServiceOrderCta({
   presentation,
   className = '',
-  fullWidth = false,
+  fullWidth,
+  labelOverride,
 }: {
   presentation: PortfolioServicesPresentationSettings;
   className?: string;
+  /**
+   * Stretch CTA across the card. Compact left only for Carte horizontal;
+   * Offre / Tarif and other layouts use full-width by default.
+   */
   fullWidth?: boolean;
+  /** When set, replaces the presentation CTA label (e.g. Discuss for custom quote). */
+  labelOverride?: string;
 }) {
   if (presentation.showServiceCta === false) return null;
-  const design = presentation.ctaDesign ?? 'pill-accent';
+  const layout = presentation.servicesGalleryLayout;
+  // Liste commerciale + Offre / Tarif + Plan: filled CTA by default.
+  const design =
+    layout === 'commercial-list' ||
+    layout === 'tier' ||
+    layout === 'plan' ||
+    layout === 'plan-split' ||
+    layout === 'media-banner' ||
+    layout === 'media-checklist'
+      ? 'pill-accent'
+      : (presentation.ctaDesign ?? 'pill-accent');
   const workCta = servicesCtaWorkPresentation(presentation);
-  const label = presentation.ctaLabel?.trim() || 'Commander';
-  const align = servicesCtaAlignClass(presentation.ctaAlignment ?? 'left');
+  const label = labelOverride?.trim() || presentation.ctaLabel?.trim() || 'Get started';
+  const stretch = fullWidth ?? layout !== 'card';
+  const align = stretch ? 'justify-stretch' : servicesCtaAlignClass('left');
   const ctaPresentation = {
     ...workCta,
     ctaDesign: design,
@@ -6210,15 +6669,53 @@ function ServiceOrderCta({
 
   return (
     <div className={`flex w-full min-w-0 ${align} ${className}`.trim()}>
-      <Link
-        href="#contact"
-        className={`${workCtaClassName(design, workCta)} ${fullWidth ? 'w-full justify-center' : 'shrink-0'}`.trim()}
+      <ServicesOrderCtaLink
+        className={`${workCtaClassName(design, workCta)} ${
+          stretch
+            ? 'w-full flex-nowrap items-center justify-center whitespace-nowrap'
+            : 'shrink-0'
+        }`.trim()}
         style={workCtaStyle(design, workCta)}
       >
-        <WorkCtaLabelAndIcon presentation={ctaPresentation} label={label} />
-      </Link>
+        <WorkCtaLabelAndIcon
+          presentation={ctaPresentation}
+          label={label}
+          nowrap={stretch || layout === 'commercial-list'}
+        />
+      </ServicesOrderCtaLink>
     </div>
   );
+}
+
+function ServicesCustomQuoteLabel({
+  className = '',
+  style,
+}: {
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <p
+      className={`w-auto text-left text-[0.8125rem] font-bold leading-snug tracking-[-0.01em] ${className}`.trim()}
+      style={{ fontWeight: 700, ...style }}
+    >
+      {SERVICES_CUSTOM_QUOTE_LABEL}
+    </p>
+  );
+}
+
+/** Prefer principal-surface ink when active so quote/delivery labels stay readable. */
+function servicesPrincipalAwareColorStyle(
+  presentation: PortfolioServicesPresentationSettings,
+  cardIndex: number,
+  baseColor: string | undefined,
+  kind: 'ink' | 'muted' = 'ink'
+): CSSProperties {
+  const surface = servicesPrincipalSurfaceInkColors(presentation, cardIndex);
+  if (!surface.active) {
+    return baseColor ? { color: baseColor } : {};
+  }
+  return { color: kind === 'ink' ? surface.ink : surface.muted };
 }
 
 function EditorialServiceSelector({
@@ -6270,6 +6767,7 @@ function EditorialServiceSelector({
   const activeTabInk = servicesColorLuminance(accent) > 0.55 ? '#0b0b0d' : '#ffffff';
 
   const showPrice = presentation.showServicePrice !== false && hasPrice && Boolean(amount);
+  const showCustomQuote = presentation.showServicePrice !== false && !hasPrice;
   const description = activeService.description?.trim() ?? '';
   const showDescription = presentation.showServiceDescription !== false && Boolean(description);
   const showTasks = presentation.showServiceTasks !== false && tasks.length > 0;
@@ -6306,136 +6804,159 @@ function EditorialServiceSelector({
   };
 
   return (
-    <div className="grid w-full min-w-0 gap-6 lg:grid-cols-[minmax(13rem,0.82fr)_minmax(0,1.55fr)] lg:gap-8">
-      <div className="flex min-w-0 flex-col">
-        <div
-          role="tablist"
-          aria-label="Services"
-          aria-orientation="vertical"
-          className="flex min-w-0 flex-col gap-3"
-        >
-          {services.map((service, index) => {
-            const active = service.id === activeService.id;
-            return (
-              <button
-                key={service.id}
-                ref={(node) => {
-                  tabRefs.current[index] = node;
-                }}
-                id={`${selectorId}-tab-${index}`}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                aria-controls={`${selectorId}-panel`}
-                tabIndex={active ? 0 : -1}
-                onClick={() => setSelectedServiceId(service.id)}
-                onKeyDown={(event) => onTabKeyDown(event, index)}
-                className="flex min-h-[3.35rem] w-full items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left text-sm font-bold transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                style={{
-                  borderColor: active ? accent : border,
-                  backgroundColor: active ? accent : 'transparent',
-                  color: active ? activeTabInk : titleStyle.color,
-                  '--tw-ring-color': accent,
-                } as CSSProperties}
-              >
-                <span className="flex min-w-0 items-center gap-3">
-                  <span className="min-w-0 truncate">{service.title}</span>
-                </span>
-                <span aria-hidden className="shrink-0 text-base font-medium">
-                  →
-                </span>
-              </button>
-            );
-          })}
+    <div
+      className="group mx-auto w-full max-w-6xl min-w-0"
+      style={servicesCardPrincipalStyle(presentation)}
+    >
+      <div className="grid w-full min-w-0 gap-5 lg:grid-cols-[minmax(16rem,1fr)_minmax(0,1.35fr)] lg:gap-7">
+        <div className="flex min-w-0 flex-col">
+          <div
+            role="tablist"
+            aria-label="Services"
+            aria-orientation="vertical"
+            className="flex min-w-0 flex-col gap-3"
+          >
+            {services.map((service, index) => {
+              const active = service.id === activeService.id;
+              const idleFill = surface
+                ? surface
+                : `color-mix(in srgb, ${border} 32%, transparent)`;
+              return (
+                <button
+                  key={service.id}
+                  ref={(node) => {
+                    tabRefs.current[index] = node;
+                  }}
+                  id={`${selectorId}-tab-${index}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  aria-controls={`${selectorId}-panel`}
+                  tabIndex={active ? 0 : -1}
+                  onClick={() => setSelectedServiceId(service.id)}
+                  onKeyDown={(event) => onTabKeyDown(event, index)}
+                  className="flex min-h-[3.65rem] w-full items-center justify-between gap-4 rounded-xl border px-5 py-3.5 text-left text-base font-bold leading-snug transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                  style={{
+                    borderColor: active ? accent : border,
+                    backgroundColor: active ? accent : idleFill,
+                    color: active ? activeTabInk : titleStyle.color,
+                    '--tw-ring-color': accent,
+                  } as CSSProperties}
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="min-w-0 truncate">{service.title}</span>
+                  </span>
+                  <span aria-hidden className="shrink-0 text-base font-medium">
+                    →
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p
+            className="mt-4 text-center text-[9px] font-medium uppercase tracking-[0.16em]"
+            style={{ color: bodyStyle.color }}
+          >
+            Select a service
+          </p>
         </div>
-        <p
-          className="mt-4 text-center text-[9px] font-medium uppercase tracking-[0.16em]"
-          style={{ color: bodyStyle.color }}
-        >
-          Sélectionnez un service
-        </p>
-      </div>
 
-      <article
-        id={`${selectorId}-panel`}
-        role="tabpanel"
-        aria-labelledby={`${selectorId}-tab-${activeServiceIndex}`}
-        tabIndex={0}
-        className="flex min-h-[23rem] min-w-0 flex-col rounded-2xl border p-5 focus-visible:outline-none sm:p-8"
-        style={{
-          borderColor: border,
-          backgroundColor: presentation.cardBackgroundEnabled === false ? 'transparent' : surface,
-        }}
-      >
-        <div className="flex min-w-0 items-start justify-between gap-5">
-          <div className="flex min-w-0 items-center gap-3">
-            <h3
-              className={`min-w-0 text-xl font-extrabold sm:text-2xl ${elementTextStyleClass(
-                elementStyles.cardTitle,
-                'title'
-              )}`}
-              style={titleStyle}
-            >
-              {activeService.title}
-            </h3>
+        <article
+          id={`${selectorId}-panel`}
+          role="tabpanel"
+          aria-labelledby={`${selectorId}-tab-${activeServiceIndex}`}
+          tabIndex={0}
+          className="flex min-h-[23rem] min-w-0 flex-col rounded-2xl border p-5 focus-visible:outline-none sm:p-8"
+          style={{
+            borderColor: border,
+            backgroundColor: presentation.cardBackgroundEnabled === false ? 'transparent' : surface,
+          }}
+        >
+          <div className="flex min-w-0 items-start justify-between gap-6">
+            <div className="min-w-0 flex-1 basis-0">
+              {presentation.showServiceTitle !== false ? (
+                <h3
+                  className={`break-words text-xl font-extrabold leading-tight tracking-[-0.02em] sm:text-2xl ${SERVICES_CARD_TITLE_HOVER_CLASS} ${elementTextStyleClass(
+                    elementStyles.cardTitle,
+                    'title'
+                  )}`}
+                  style={titleStyle}
+                >
+                  {activeService.title}
+                </h3>
+              ) : null}
+            </div>
+
+            {showPrice && amount ? (
+              <p
+                className={`shrink-0 whitespace-nowrap text-right text-xl font-bold tabular-nums leading-none sm:text-2xl ${elementTextStyleClass(
+                  elementStyles.price,
+                  'title'
+                )}`}
+                style={priceStyle}
+              >
+                <ServicePriceAmount
+                  amount={amount}
+                  currencySymbol={currencySymbol}
+                  pricePrefix={pricePrefix}
+                  currencyPlacement={currencyPlacement}
+                  isFree={isFree}
+                />
+              </p>
+            ) : showCustomQuote ? (
+              <ServicesCustomQuoteLabel
+                className="shrink-0 whitespace-nowrap text-right"
+                style={{ color: priceStyle.color, textAlign: 'right' }}
+              />
+            ) : null}
           </div>
 
-          {showPrice && amount ? (
+          {showDescription ? (
             <p
-              className={`shrink-0 text-xl font-extrabold tabular-nums sm:text-2xl ${elementTextStyleClass(
-                elementStyles.price,
-                'title'
+              className={`mt-4 max-w-3xl text-sm leading-6 ${elementTextStyleClass(
+                elementStyles.cardBody,
+                'body'
               )}`}
-              style={priceStyle}
+              style={bodyStyle}
             >
-              <ServicePriceAmount
-                amount={amount}
-                currencySymbol={currencySymbol}
-                pricePrefix={pricePrefix}
-                currencyPlacement={currencyPlacement}
-                isFree={isFree}
-              />
+              {description}
             </p>
           ) : null}
-        </div>
 
-        {showDescription ? (
-          <p
-            className={`mt-4 max-w-3xl text-sm leading-6 ${elementTextStyleClass(
-              elementStyles.cardBody,
-              'body'
-            )}`}
-            style={bodyStyle}
-          >
-            {description}
-          </p>
-        ) : null}
+          {showDivider ? (
+            <div className="my-6 border-t" style={{ borderColor: border }} />
+          ) : null}
 
-        {showDivider ? (
-          <div className="my-6 border-t" style={{ borderColor: border }} />
-        ) : null}
-
-        {showTasks ? (
-          <div className={`min-w-0 ${showDivider ? '' : 'mt-6'}`.trim()}>
-            <p
-              className="text-[11px] font-bold uppercase tracking-[0.08em]"
-              style={{ color: bodyStyle.color }}
-            >
-              Inclus dans la prestation :
-            </p>
-            <div className="mt-3">
+          {showTasks ? (
+            <div className={`min-w-0 ${showDivider || showDescription ? '' : 'mt-6'}`.trim()}>
               <ServicesTaskList
                 tasks={tasks}
                 presentation={presentation}
-                listClassName="grid gap-x-8 gap-y-3 sm:grid-cols-2"
+                listClassName="grid gap-x-8 gap-y-4 sm:grid-cols-2"
                 textStyle={tasksStyle}
+                bulletColorOverride={
+                  typeof tasksStyle.color === 'string' && tasksStyle.color.trim()
+                    ? tasksStyle.color
+                    : undefined
+                }
               />
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        <ServiceOrderCta presentation={presentation} fullWidth className="mt-auto pt-8" />
-      </article>
+          {showCta ? (
+            <div className="mt-auto flex w-full flex-col items-stretch gap-2 pt-8">
+              <ServiceOrderCta
+                presentation={{
+                  ...presentation,
+                  ctaDesign: 'pill-accent',
+                }}
+                fullWidth
+                labelOverride={!hasPrice ? SERVICES_CUSTOM_QUOTE_CTA_LABEL : undefined}
+              />
+            </div>
+          ) : null}
+        </article>
+      </div>
     </div>
   );
 }
@@ -6602,7 +7123,7 @@ function EditorialServiceAccordion({
                     <ServicesTaskList
                       tasks={tasks}
                       presentation={presentation}
-                      listClassName={`flex flex-wrap gap-x-5 gap-y-2 ${
+                      listClassName={`flex flex-wrap gap-x-5 gap-y-3 ${
                         showDescription ? 'mt-5' : ''
                       }`}
                       textStyle={tasksStyle}
@@ -6611,11 +7132,21 @@ function EditorialServiceAccordion({
                   ) : null}
 
                   {showCta ? (
-                    <ServiceOrderCta
-                      presentation={presentation}
-                      fullWidth
-                      className={showDescription || showTasks ? 'mt-6' : ''}
-                    />
+                    <div
+                      className={`flex w-full flex-col items-stretch gap-2 ${
+                        showDescription || showTasks ? 'mt-6' : ''
+                      }`}
+                    >
+                      {presentation.showServicePrice !== false && !hasPrice ? (
+                        <ServicesCustomQuoteLabel
+                          style={{ color: priceStyle.color, textAlign: 'left' }}
+                        />
+                      ) : null}
+                      <ServiceOrderCta
+                        presentation={presentation}
+                        labelOverride={!hasPrice ? SERVICES_CUSTOM_QUOTE_CTA_LABEL : undefined}
+                      />
+                    </div>
                   ) : null}
                 </div>
               ) : null}
@@ -6712,6 +7243,7 @@ export function EditorialServiceCard({
     ? { ...elementTextInlineStyle(elementStyles.tasks, colorMode), color: tasksInk.muted }
     : elementTextInlineStyle(elementStyles.tasks, colorMode);
   const showTasks = presentation.showServiceTasks !== false && serviceTasks.length > 0;
+  const surfaceInk = servicesPrincipalSurfaceInkColors(presentation, cardIndex);
   const deliveryNode =
     presentation.showServiceDelivery && deliveryLabel ? (
       <div
@@ -6719,55 +7251,82 @@ export function EditorialServiceCard({
         style={servicesElementChromeStyle(chromes.delivery, accent)}
       >
         <p
-          className={`inline-flex max-w-full shrink-0 items-center gap-2 rounded-full border px-2.5 py-1 sm:px-3 ${elementTextStyleClass(elementStyles.delivery, 'label')}`}
+          className={`inline-flex max-w-full shrink-0 items-center gap-2 rounded-full border px-2.5 py-1 sm:px-3 ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.delivery, 'label')}`}
           style={{
             ...deliveryStyle,
-            borderColor: cardBorder,
-            backgroundColor: 'color-mix(in srgb, currentColor 6%, transparent)',
+            ...(surfaceInk.active
+              ? {
+                  color: surfaceInk.ink,
+                  borderColor: `color-mix(in srgb, ${surfaceInk.ink} 55%, transparent)`,
+                  backgroundColor: `color-mix(in srgb, ${surfaceInk.ink} 12%, transparent)`,
+                }
+              : {
+                  borderColor: cardBorder,
+                  backgroundColor: 'color-mix(in srgb, currentColor 6%, transparent)',
+                }),
           }}
         >
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} aria-hidden />
+          <span
+            className="h-1.5 w-1.5 shrink-0 rounded-full"
+            style={{ backgroundColor: surfaceInk.active ? surfaceInk.ink : accent }}
+            aria-hidden
+          />
           <span className="min-w-0 break-words">Delivery · {deliveryLabel}</span>
         </p>
       </div>
     ) : null;
-  const priceBlock = presentation.showServicePrice ? (
+  const isCustomQuote = !hasPrice;
+  const showNumericPrice =
+    presentation.showServicePrice !== false && hasPrice && Boolean(priceAmount);
+  const showCustomQuoteLabel = presentation.showServicePrice !== false && isCustomQuote;
+  const priceBlock = showNumericPrice ? (
     <div
       className={`w-full shrink-0 ${pricePlacement === 'top' ? '' : 'mt-auto'} ${priceAlignClass} ${servicesElementChromeClass(chromes.price)}`}
       style={{
         ...servicesElementChromeStyle(chromes.price, accent),
         ...priceMargins,
         ...(usePairAbInk ? { color: priceInk.strong } : priceStyle),
+        ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
       }}
     >
-      {hasPrice && priceAmount ? (
-        <p
-          className={`min-w-0 shrink leading-none break-words ${elementTextStyleClass(elementStyles.price, 'title')}`}
-          style={priceStyle}
-        >
-          <ServicePriceAmount
-            amount={priceAmount}
-            currencySymbol={currencySymbol}
-            pricePrefix={pricePrefix}
-            currencyPlacement={currencyPlacement}
-                isFree={isFree}
-              />
-        </p>
-      ) : (
-        <p
-          className={`min-w-0 shrink ${elementTextStyleClass(elementStyles.price, 'title')}`}
-          style={priceStyle}
-        >
-          Custom quote
-        </p>
-      )}
+      <p
+        className={`min-w-0 shrink font-bold leading-none break-words ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.price, 'title')}`}
+        style={{
+          ...priceStyle,
+          ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+        }}
+      >
+        <ServicePriceAmount
+          amount={priceAmount!}
+          currencySymbol={currencySymbol}
+          pricePrefix={pricePrefix}
+          currencyPlacement={currencyPlacement}
+          isFree={isFree}
+        />
+      </p>
     </div>
   ) : null;
+  const customQuoteLabel = showCustomQuoteLabel ? (
+    <ServicesCustomQuoteLabel
+      className={`${servicesPrincipalMutedClass(presentation, cardIndex)} ${servicesElementChromeClass(chromes.price)}`.trim()}
+      style={{
+        ...servicesElementChromeStyle(chromes.price, accent),
+        color: surfaceInk.active
+          ? surfaceInk.muted
+          : usePairAbInk
+            ? priceInk.muted
+            : priceStyle.color,
+      }}
+    />
+  ) : null;
 
-  return (
+  const isHorizontalCard = presentation.servicesGalleryLayout === 'card';
+  const taskBulletColor = surfaceInk.active ? surfaceInk.ink : undefined;
+
+  const card = (
     <article
-      className={`${shellClass} ${frameClass} ${minHeightClass} flex h-full w-full flex-col ${align.container}`}
-      style={surfaceStyle}
+      className={`group ${shellClass} ${frameClass} ${minHeightClass} ${servicesPrincipalCardClass(presentation, cardIndex)} flex h-full w-full flex-col ${align.container}`}
+      style={servicesPrincipalHoverStyle(presentation, surfaceStyle, tone)}
       {...fillAttrs}
     >
       <ServicesCardBackgroundLayers presentation={presentation} cardIndex={cardIndex} />
@@ -6777,39 +7336,46 @@ export function EditorialServiceCard({
       >
       {pricePlacement === 'top' ? priceBlock : null}
 
-      {presentation.showServiceTitle ? (
-        <div
-          className={servicesElementChromeClass(chromes.cardTitle)}
-          style={servicesElementChromeStyle(chromes.cardTitle, accent)}
-        >
-          <h3
-            className={`leading-tight tracking-[-0.02em] ${elementTextStyleClass(elementStyles.cardTitle, 'title')} ${align.text}`}
-            style={cardTitleStyle}
+      {/* Title + description — full description always visible; tasks stretch for vertical alignment. */}
+      <div className="w-full shrink-0">
+        {presentation.showServiceTitle ? (
+          <div
+            className={servicesElementChromeClass(chromes.cardTitle)}
+            style={servicesElementChromeStyle(chromes.cardTitle, accent)}
           >
-            {service.title}
-          </h3>
-        </div>
-      ) : null}
+            <h3
+              className={`leading-tight tracking-[-0.02em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.cardTitle, 'title')} ${align.text}`}
+              style={{
+                ...cardTitleStyle,
+                ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+              }}
+            >
+              {service.title}
+            </h3>
+          </div>
+        ) : null}
 
-      {presentation.showServiceDescription && service.description ? (
-        <div
-          className={`min-h-0 flex-1 ${servicesElementChromeClass(chromes.cardBody)}`.trim()}
-          style={servicesElementChromeStyle(chromes.cardBody, accent)}
-        >
-          <p
-            className={`min-h-0 flex-1 line-clamp-4 leading-relaxed ${elementTextStyleClass(elementStyles.cardBody, 'body')} ${align.text}`}
-            style={cardBodyStyle}
+        {presentation.showServiceDescription !== false && service.description?.trim() ? (
+          <div
+            className={`mt-4 ${servicesElementChromeClass(chromes.cardBody)}`.trim()}
+            style={servicesElementChromeStyle(chromes.cardBody, accent)}
           >
-            {service.description}
-          </p>
-        </div>
-      ) : (
-        <div className="min-h-0 flex-1" />
-      )}
+            <p
+              className={`leading-relaxed ${servicesPrincipalMutedClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.cardBody, 'body')} ${align.text}`}
+              style={{
+                ...cardBodyStyle,
+                ...(surfaceInk.active ? { color: surfaceInk.muted } : null),
+              }}
+            >
+              {service.description.trim()}
+            </p>
+          </div>
+        ) : null}
+      </div>
 
       {showTasks ? (
         <div
-          className={`w-full ${servicesElementChromeClass(chromes.tasks)}`.trim()}
+          className={`w-full min-h-0 flex-1 ${servicesElementChromeClass(chromes.tasks)}`.trim()}
           style={servicesElementChromeStyle(chromes.tasks, accent)}
         >
           <ServicesTaskList
@@ -6823,23 +7389,48 @@ export function EditorialServiceCard({
                   ? 'justify-end'
                   : ''
             }
-            textClassName={align.text}
-            textStyle={tasksStyle}
+            textClassName={`${align.text} ${servicesPrincipalInkClass(presentation, cardIndex)}`.trim()}
+            textStyle={{
+              ...tasksStyle,
+              ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+            }}
+            bulletClassName={servicesPrincipalBulletClass(presentation, cardIndex)}
+            bulletColorOverride={taskBulletColor}
           />
         </div>
-      ) : null}
+      ) : (
+        <div className="min-h-0 flex-1" aria-hidden />
+      )}
 
       {pricePlacement !== 'top' ? priceBlock : null}
-      {presentation.showServiceCta !== false || deliveryNode ? (
-        <div className="flex w-full items-end gap-3">
-          <div className="min-w-0 flex-1">
-            <ServiceOrderCta presentation={presentation} />
+      {presentation.showServiceCta !== false || deliveryNode || customQuoteLabel ? (
+        <div
+          className={`mt-auto flex w-full flex-col items-stretch gap-2 ${
+            pricePlacement !== 'top' && !priceBlock ? '' : ''
+          } ${servicesPrincipalCtaWrapClass(presentation, cardIndex)}`.trim()}
+        >
+          {customQuoteLabel}
+          <div className="flex w-full items-end justify-between gap-3">
+            <div className="min-w-0 shrink-0">
+              <ServiceOrderCta
+                presentation={presentation}
+                labelOverride={isCustomQuote ? SERVICES_CUSTOM_QUOTE_CTA_LABEL : undefined}
+              />
+            </div>
+            {deliveryNode ? <div className="shrink-0 self-end">{deliveryNode}</div> : null}
           </div>
-          {deliveryNode ? <div className="ml-auto shrink-0 self-end">{deliveryNode}</div> : null}
         </div>
       ) : null}
       </ServicesCardForeground>
     </article>
+  );
+
+  if (!isHorizontalCard) return card;
+
+  return (
+    <div className="pf-services-card-float-host h-full w-full min-w-0">
+      {card}
+    </div>
   );
 }
 
@@ -6881,13 +7472,14 @@ function EditorialServiceListRow({
   const align = servicesContentAlignClass(presentation.servicesContentAlignment);
   const pricePlacement = presentation.servicesPricePlacement;
   const deliveryLabel = service.deadline ? formatServiceDeliveryLabel(service.deadline) : '';
-  const showDescription =
-    presentation.showServiceDescription && Boolean(service.description?.trim());
-  const showDelivery = presentation.showServiceDelivery && Boolean(deliveryLabel);
+  // Liste / menu: description under delivery is always part of this design.
+  const showDescription = true;
+  const showDelivery = presentation.showServiceDelivery !== false;
   const showCta = presentation.showServiceCta !== false;
   const showPrice = presentation.showServicePrice;
   const elementStyles = normalizeServicesElementStyles(presentation.elementStyles);
   const priceStyle = servicePriceTextStyle(elementTextInlineStyle(elementStyles.price));
+  const bodyStyle = elementTextInlineStyle(elementStyles.cardBody);
   const chromes = presentation.elementChromes ?? DEFAULT_SERVICES_ELEMENT_CHROMES;
   const accent = resolveServicesListAccentColor(presentation);
   const onAccent = servicesColorLuminance(accent) < 0.55 ? '#ffffff' : '#0a0a0a';
@@ -6900,119 +7492,151 @@ function EditorialServiceListRow({
     presentation.servicesContentGap,
     presentation.servicesContentGapPx
   );
-  const ctaLabel = presentation.ctaLabel?.trim() || 'Commander';
-  // Liste / menu: price lives in the left content stack (never far-right).
+  const surfaceInk = servicesPrincipalSurfaceInkColors(presentation, cardIndex);
+  const ctaLabel = presentation.ctaLabel?.trim() || 'Get started';
+  const isCustomQuote = !hasPrice;
+  const resolvedCtaLabel = isCustomQuote ? SERVICES_CUSTOM_QUOTE_CTA_LABEL : ctaLabel;
   const priceAboveTitle = pricePlacement === 'top';
+  const descriptionText = service.description?.trim() || '';
 
   const titleBlock = presentation.showServiceTitle ? (
     <div
-      className={`pf-services-list-ink ${servicesElementChromeClass(chromes.cardTitle)}`}
+      className={`pf-services-list-ink shrink-0 ${servicesElementChromeClass(chromes.cardTitle)}`}
       style={servicesElementChromeStyle(chromes.cardTitle, accent)}
     >
       <h3
-        className={`break-words [overflow-wrap:anywhere] leading-tight tracking-[-0.025em] ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
-        style={elementTextInlineStyle(elementStyles.cardTitle)}
+        className={`break-words [overflow-wrap:anywhere] leading-tight tracking-[-0.025em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
+        style={{
+          ...elementTextInlineStyle(elementStyles.cardTitle),
+          ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+        }}
       >
         {service.title}
       </h3>
     </div>
   ) : null;
 
-  /** Price hierarchy: muted prefix + large focal amount, then delivery badge. */
-  const priceMetaBlock =
-    showPrice || showDelivery ? (
-      <div className={`flex flex-col gap-2.5 ${align.text}`}>
-        {showPrice ? (
-          <div
-            className={`pf-services-list-ink ${priceAlignClass} ${servicesElementChromeClass(chromes.price)}`}
-            style={{
-              ...servicesElementChromeStyle(chromes.price, accent),
-              ...priceMargins,
-            }}
-          >
-            {hasPrice && amount ? (
-              <p
-                className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 break-words"
-                style={priceStyle}
-              >
-                {!isFree && pricePrefix ? (
-                  <span className="pf-services-list-prefix text-sm font-bold leading-none text-zinc-500">
-                    {pricePrefix}
-                  </span>
-                ) : null}
-                <span
-                  className={`text-[1.65rem] font-bold leading-none tracking-[-0.04em] sm:text-[1.85rem] ${elementTextStyleClass(elementStyles.price, 'title')}`}
-                  style={{ fontWeight: 700 }}
-                >
-                  {isFree ? (
-                    amount
-                  ) : (
-                    <>
-                      {currencyPlacement === 'before' ? (
-                        <span className="mr-0.5 text-[0.85em] font-bold">{currencySymbol}</span>
-                      ) : null}
-                      {amount}
-                      {currencyPlacement === 'after' ? (
-                        <span className="ml-1 text-[0.85em] font-bold">{currencySymbol}</span>
-                      ) : null}
-                    </>
-                  )}
-                </span>
-              </p>
-            ) : (
-              <p
-                className={`text-[1.35rem] font-bold leading-none tracking-[-0.03em] ${elementTextStyleClass(elementStyles.price, 'title')}`}
-                style={priceStyle}
-              >
-                Sur devis
-              </p>
-            )}
-          </div>
-        ) : null}
-
-        {showDelivery ? (
-          <div
-            className={servicesElementChromeClass(chromes.delivery)}
-            style={servicesElementChromeStyle(chromes.delivery, accent)}
-          >
-            <span
-              className={`pf-services-list-delivery inline-flex max-w-full items-center gap-2 rounded-full border px-2.5 py-1 ${elementTextStyleClass(elementStyles.delivery, 'label')}`}
-              style={elementTextInlineStyle(elementStyles.delivery)}
-            >
-              <span
-                className="h-1.5 w-1.5 shrink-0 rounded-full"
-                style={{ backgroundColor: accent }}
-                aria-hidden
-              />
-              <span className="min-w-0 truncate tracking-[0.12em] uppercase">
-                Livraison · {deliveryLabel}
-              </span>
-            </span>
-          </div>
-        ) : null}
-      </div>
-    ) : null;
-
-  const descriptionBlock = showDescription ? (
+  /** Reserved price row so delivery stays on one horizontal band. */
+  const priceBlock = showPrice ? (
     <div
-      className={`pf-services-list-muted ${servicesElementChromeClass(chromes.cardBody)}`}
+      className={`pf-services-list-ink shrink-0 ${priceAlignClass} ${servicesElementChromeClass(chromes.price)}`}
+      style={{
+        ...servicesElementChromeStyle(chromes.price, accent),
+        ...priceMargins,
+      }}
+    >
+      {hasPrice && amount ? (
+        <p
+          className={`flex min-h-[2rem] min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 break-words ${servicesPrincipalInkClass(presentation, cardIndex)}`}
+          style={{
+            ...priceStyle,
+            ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+          }}
+        >
+          {!isFree && pricePrefix ? (
+            <span className={`pf-services-list-prefix text-sm font-bold leading-none ${servicesPrincipalMutedClass(presentation, cardIndex)}`}>
+              {pricePrefix}
+            </span>
+          ) : null}
+          <span
+            className={`text-[1.65rem] font-bold leading-none tracking-[-0.04em] sm:text-[1.85rem] ${elementTextStyleClass(elementStyles.price, 'title')}`}
+            style={{ fontWeight: 700 }}
+          >
+            {isFree ? (
+              amount
+            ) : (
+              <>
+                {currencyPlacement === 'before' ? (
+                  <span className="mr-0.5 text-[0.85em] font-bold">{currencySymbol}</span>
+                ) : null}
+                {amount}
+                {currencyPlacement === 'after' ? (
+                  <span className="ml-1 text-[0.85em] font-bold">{currencySymbol}</span>
+                ) : null}
+              </>
+            )}
+          </span>
+        </p>
+      ) : (
+        <p
+          className={`flex min-h-[2rem] items-center text-[0.8125rem] font-medium leading-snug tracking-[-0.01em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.price, 'label')}`}
+          style={{
+            ...priceStyle,
+            ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+          }}
+        >
+          {SERVICES_CUSTOM_QUOTE_LABEL}
+        </p>
+      )}
+    </div>
+  ) : (
+    <div className="min-h-[2rem] shrink-0" aria-hidden />
+  );
+
+  const deliveryBlock = showDelivery ? (
+    <div
+      className={`flex min-h-[1.75rem] shrink-0 items-center ${servicesElementChromeClass(chromes.delivery)}`}
+      style={servicesElementChromeStyle(chromes.delivery, accent)}
+    >
+      {deliveryLabel ? (
+        <span
+          className={`pf-services-list-delivery inline-flex max-w-full items-center gap-2 rounded-full border px-2.5 py-1 ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.delivery, 'label')}`}
+          style={{
+            ...elementTextInlineStyle(elementStyles.delivery),
+            ...(surfaceInk.active
+              ? {
+                  color: surfaceInk.ink,
+                  borderColor: `color-mix(in srgb, ${surfaceInk.ink} 55%, transparent)`,
+                  backgroundColor: `color-mix(in srgb, ${surfaceInk.ink} 12%, transparent)`,
+                }
+              : null),
+          }}
+        >
+          <span
+            className="h-1.5 w-1.5 shrink-0 rounded-full"
+            style={{ backgroundColor: surfaceInk.active ? surfaceInk.ink : accent }}
+            aria-hidden
+          />
+          <span className="min-w-0 truncate tracking-[0.12em] uppercase">
+            Delivery · {deliveryLabel}
+          </span>
+        </span>
+      ) : null}
+    </div>
+  ) : null;
+
+  /* Full description — no clamp; cards grow vertically so text stays visible. */
+  const descriptionBlock = showDescription && descriptionText ? (
+    <div
+      className={`pf-services-list-muted shrink-0 ${servicesElementChromeClass(chromes.cardBody)}`}
       style={servicesElementChromeStyle(chromes.cardBody, accent)}
     >
       <p
-        className={`line-clamp-3 leading-relaxed ${elementTextStyleClass(elementStyles.cardBody, 'body')}`}
-        style={elementTextInlineStyle(elementStyles.cardBody)}
+        className={`leading-relaxed ${servicesPrincipalMutedClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.cardBody, 'body')}`}
+        style={{
+          ...bodyStyle,
+          ...(surfaceInk.active ? { color: surfaceInk.muted } : null),
+        }}
       >
-        {service.description}
+        {descriptionText}
       </p>
     </div>
   ) : null;
 
+  const metaStack = (
+    <div className={`flex flex-col gap-2.5 ${align.text}`}>
+      {priceBlock}
+      {deliveryBlock}
+      {descriptionBlock}
+    </div>
+  );
+
   return (
     <article
-      className={`pf-services-list-card group flex h-full w-full flex-col ${shellClass} ${frameClass} ${align.container}`}
+      className={`pf-services-list-card group flex h-full w-full flex-col ${shellClass} ${frameClass} ${servicesPrincipalCardClass(presentation, cardIndex)} ${align.container}`}
       style={
         {
-          ...surfaceStyle,
+          ...servicesPrincipalHoverStyle(presentation, surfaceStyle, tone),
           ['--pf-services-list-accent' as string]: accent,
         } as CSSProperties
       }
@@ -7024,45 +7648,43 @@ function EditorialServiceListRow({
         style={contentGap.style}
       >
         <div className={`mb-1 flex w-full items-center gap-3 ${align.row}`}>
-          {/* Bare icon — zinc ink, accent on card hover */}
-          <div className="pf-services-list-icon shrink-0" aria-hidden>
+          <div className={`pf-services-list-icon shrink-0 ${servicesPrincipalInkClass(presentation, cardIndex)}`} aria-hidden>
             <ServiceBriefIcon className="h-6 w-6 sm:h-7 sm:w-7" />
           </div>
         </div>
 
-        {/* Content stack: title → price + delivery → description (grows to push CTA down) */}
+        {/* title → price → delivery (aligned) → description */}
         <div className={`flex min-w-0 flex-1 flex-col ${align.text}`}>
-          {priceAboveTitle && priceMetaBlock ? (
-            <div className="mb-4">{priceMetaBlock}</div>
-          ) : null}
-          {titleBlock}
-          {!priceAboveTitle && priceMetaBlock ? (
-            <div className={`${titleBlock ? 'mt-5' : ''} mb-1`}>{priceMetaBlock}</div>
-          ) : null}
-          {descriptionBlock ? (
-            <div className={titleBlock || priceMetaBlock ? 'mt-4' : undefined}>{descriptionBlock}</div>
-          ) : null}
+          {priceAboveTitle ? (
+            <>
+              <div className="mb-4">{metaStack}</div>
+              {titleBlock}
+            </>
+          ) : (
+            <>
+              {titleBlock}
+              <div className="mt-5">{metaStack}</div>
+            </>
+          )}
         </div>
 
-        {/* Full-width CTA — pinned to card bottom so buttons align across the row */}
         {showCta ? (
-          <div className="mt-auto w-full pt-4 sm:pt-5">
-            <Link
-              href="#contact"
-              className="group/cta inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3.5 text-sm font-medium tracking-wide shadow-sm transition duration-300 hover:brightness-[0.96]"
+          <div className={`mt-auto flex w-full pt-4 sm:pt-5 ${servicesPrincipalCtaWrapClass(presentation, cardIndex)}`}>
+            <ServicesOrderCtaLink
+              className="pf-services-list-cta group/cta inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3.5 text-sm font-medium tracking-wide shadow-sm transition-[background-color,color,border-color,box-shadow] duration-300 ease-out"
               style={{
                 color: onAccent,
                 backgroundColor: accent,
                 border: `1px solid ${accent}`,
               }}
-              aria-label={ctaLabel}
+              ariaLabel={resolvedCtaLabel}
             >
-              <span className="leading-none">{ctaLabel}</span>
+              <span className="leading-none">{resolvedCtaLabel}</span>
               <ArrowUpRight
                 className="h-4 w-4 shrink-0 transition duration-300 group-hover/cta:translate-x-0.5 group-hover/cta:-translate-y-0.5"
                 aria-hidden
               />
-            </Link>
+            </ServicesOrderCtaLink>
           </div>
         ) : null}
       </ServicesCardForeground>
@@ -7115,14 +7737,14 @@ function EditorialServiceCommercialRow({
     presentation.servicesContentGap,
     presentation.servicesContentGapPx
   );
-  const columnGap = presentation.commercialColumnGapPx ?? 32;
-  const priceWidth = presentation.commercialPriceWidthPx ?? 160;
-  const ctaWidth = presentation.commercialCtaWidthPx ?? 160;
+  const columnGap = presentation.commercialColumnGapPx ?? 48;
+  const priceWidth = presentation.commercialPriceWidthPx ?? 200;
+  const ctaWidth = presentation.commercialCtaWidthPx ?? 210;
 
   return (
     <article
-      className={`group relative w-full overflow-hidden ${shellClass} ${frameClass}`}
-      style={surfaceStyle}
+      className={`group relative w-full overflow-hidden ${shellClass} ${frameClass} ${servicesPrincipalCardClass(presentation, cardIndex)}`}
+      style={servicesPrincipalHoverStyle(presentation, surfaceStyle, tone)}
       {...fillAttrs}
     >
       <ServicesCardBackgroundLayers presentation={presentation} cardIndex={cardIndex} />
@@ -7144,7 +7766,7 @@ function EditorialServiceCommercialRow({
               style={servicesElementChromeStyle(chromes.cardTitle, accent)}
             >
               <h3
-                className={`leading-tight tracking-[-0.025em] ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
+                className={`leading-tight tracking-[-0.025em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
                 style={titleStyle}
               >
                 {service.title}
@@ -7154,11 +7776,11 @@ function EditorialServiceCommercialRow({
 
           {presentation.showServiceDescription && service.description?.trim() ? (
             <div
-              className={`max-w-2xl ${servicesElementChromeClass(chromes.cardBody)}`.trim()}
+              className={`min-w-0 w-full ${servicesElementChromeClass(chromes.cardBody)}`.trim()}
               style={servicesElementChromeStyle(chromes.cardBody, accent)}
             >
               <p
-                className={`leading-relaxed ${elementTextStyleClass(elementStyles.cardBody, 'body')}`}
+                className={`leading-relaxed ${servicesPrincipalMutedClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.cardBody, 'body')}`}
                 style={bodyStyle}
               >
                 {service.description}
@@ -7168,13 +7790,22 @@ function EditorialServiceCommercialRow({
 
           {presentation.showServiceTasks !== false && tasks.length > 0 ? (
             <div
-              className={`max-w-2xl ${servicesElementChromeClass(chromes.tasks)}`.trim()}
+              className={`min-w-0 w-full pr-2 ${servicesElementChromeClass(chromes.tasks)}`.trim()}
               style={servicesElementChromeStyle(chromes.tasks, accent)}
             >
               <ServicesTaskList
                 tasks={tasks}
                 presentation={presentation}
                 textStyle={tasksStyle}
+                textClassName={`break-words [overflow-wrap:normal] ${servicesPrincipalInkClass(presentation, cardIndex)}`}
+                bulletClassName={servicesPrincipalBulletClass(presentation, cardIndex)}
+                bulletColorOverride={
+                  servicesPrincipalSurfaceActive(presentation, cardIndex)
+                    ? servicesColorLuminance(resolveServicesPrincipalColor(presentation)) < 0.55
+                      ? '#ffffff'
+                      : '#111111'
+                    : resolveServicesPrincipalColor(presentation)
+                }
               />
             </div>
           ) : null}
@@ -7182,7 +7813,7 @@ function EditorialServiceCommercialRow({
 
         {presentation.showServicePrice ? (
           <div
-            className={`min-w-0 border-t pt-5 lg:border-t-0 lg:border-l lg:pl-8 lg:pt-0 ${servicesElementChromeClass(chromes.price)}`.trim()}
+            className={`min-w-0 border-t pt-5 ${servicesPrincipalDividerClass(presentation, cardIndex)} lg:border-t-0 lg:border-l lg:pl-8 lg:pt-0 ${servicesElementChromeClass(chromes.price)}`.trim()}
             style={{
               ...servicesElementChromeStyle(chromes.price, accent),
               ...priceMargins,
@@ -7190,53 +7821,80 @@ function EditorialServiceCommercialRow({
             }}
           >
             {hasPrice && amount ? (
-              <p
-                className={`flex flex-wrap items-baseline gap-x-1.5 text-[clamp(1.75rem,3vw,2.65rem)] font-bold leading-none tracking-[-0.055em] ${elementTextStyleClass(elementStyles.price, 'title')}`}
-                style={priceStyle}
-              >
-                <ServicePriceAmount
-                  amount={amount}
-                  currencySymbol={currencySymbol}
-                  pricePrefix={pricePrefix}
-                  currencyPlacement={currencyPlacement}
-                isFree={isFree}
-              />
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <p
+                  className={`font-bold leading-none tracking-[-0.055em] text-[clamp(1.75rem,3vw,2.65rem)] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.price, 'title')}`}
+                  style={priceStyle}
+                >
+                  <ServicePriceAmount
+                    amount={amount}
+                    currencySymbol={currencySymbol}
+                    pricePrefix={pricePrefix}
+                    currencyPlacement={currencyPlacement}
+                    isFree={isFree}
+                  />
+                </p>
                 {periodSuffix ? (
-                  <span className="text-sm font-medium tracking-normal opacity-65">{periodSuffix}</span>
+                  <span
+                    className={`text-sm font-medium tracking-normal opacity-65 ${servicesPrincipalMutedClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.delivery, 'label')}`}
+                    style={deliveryStyle}
+                  >
+                    {periodSuffix}
+                  </span>
                 ) : null}
-              </p>
+              </div>
             ) : (
               <p
-                className={`text-xl font-bold tracking-[-0.03em] ${elementTextStyleClass(elementStyles.price, 'title')}`}
-                style={priceStyle}
+                className={`text-[0.8125rem] font-bold tracking-[-0.01em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.price, 'label')}`}
+                style={{
+                  ...priceStyle,
+                  ...servicesPrincipalAwareColorStyle(
+                    presentation,
+                    cardIndex,
+                    typeof priceStyle.color === 'string' ? priceStyle.color : undefined
+                  ),
+                }}
               >
-                Sur devis
+                {SERVICES_CUSTOM_QUOTE_LABEL}
               </p>
             )}
             {presentation.showServiceDelivery && deliveryLabel ? (
               <p
-                className={`mt-2 text-sm leading-snug opacity-70 ${elementTextStyleClass(elementStyles.delivery, 'label')} ${servicesElementChromeClass(chromes.delivery)}`.trim()}
+                className={`mt-2 text-sm leading-snug ${servicesPrincipalMutedClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.delivery, 'label')} ${servicesElementChromeClass(chromes.delivery)}`.trim()}
                 style={{
                   ...deliveryStyle,
                   ...servicesElementChromeStyle(chromes.delivery, accent),
+                  ...servicesPrincipalAwareColorStyle(
+                    presentation,
+                    cardIndex,
+                    typeof deliveryStyle.color === 'string' ? deliveryStyle.color : undefined,
+                    'muted'
+                  ),
                 }}
               >
-                Livraison · {deliveryLabel}
+                Delivery · {deliveryLabel}
               </p>
             ) : null}
           </div>
         ) : null}
 
         {presentation.showServiceCta !== false ? (
-          <div className="w-full">
-            <ServiceOrderCta presentation={presentation} fullWidth />
+          <div className={`flex w-full min-w-0 ${servicesPrincipalCtaWrapClass(presentation, cardIndex)}`}>
+            <ServiceOrderCta
+              presentation={{
+                ...presentation,
+                ctaDesign: 'pill-accent',
+              }}
+              fullWidth
+              labelOverride={!hasPrice ? SERVICES_CUSTOM_QUOTE_CTA_LABEL : undefined}
+            />
           </div>
         ) : null}
 
         {service.popular ||
         presentation.commercialPopularItemNumber === cardIndex + 1 ? (
           <span
-            className="absolute right-0 top-0 rounded-bl-xl px-3 py-1.5 text-[0.65rem] font-bold tracking-[0.18em] uppercase"
+            className="absolute right-0 top-0 rounded-bl-xl px-3 py-1.5 text-[0.65rem] font-bold tracking-[0.18em] uppercase transition-colors duration-300 ease-out group-hover:![background-color:var(--pf-services-principal-hover-ink)] group-hover:![color:var(--pf-services-principal)]"
             style={{
               color: servicesColorLuminance(accent) < 0.55 ? '#ffffff' : '#0a0a0a',
               backgroundColor: accent,
@@ -7320,11 +7978,15 @@ function EditorialServicePricingHeroCard({
     },
     resolveServicesTaskBulletColor(presentation)
   );
+  const principal = resolveServicesPrincipalColor(presentation);
+  const principalSurfaceActive = servicesPrincipalSurfaceActive(presentation, cardIndex);
+  const principalSurfaceInk =
+    servicesColorLuminance(principal) < 0.55 ? '#ffffff' : '#111111';
 
   return (
     <article
-      className={`${shellClass} ${frameClass} flex h-full w-full flex-col ${align.container} ${align.text}`}
-      style={surfaceStyle}
+      className={`group ${shellClass} ${frameClass} ${servicesPrincipalCardClass(presentation, cardIndex)} flex h-full w-full flex-col ${align.container} ${align.text}`}
+      style={servicesPrincipalHoverStyle(presentation, surfaceStyle, tone)}
       {...fillAttrs}
     >
       <ServicesCardBackgroundLayers presentation={presentation} cardIndex={cardIndex} />
@@ -7342,7 +8004,7 @@ function EditorialServicePricingHeroCard({
         >
           {hasPrice && amount ? (
             <p
-              className={`shrink-0 tracking-[-0.05em] ${elementTextStyleClass(elementStyles.price, 'title')}`}
+              className={`shrink-0 font-bold tracking-[-0.05em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.price, 'title')}`}
               style={priceStyle}
             >
               <ServicePriceAmount
@@ -7355,10 +8017,10 @@ function EditorialServicePricingHeroCard({
             </p>
           ) : (
             <p
-              className={`shrink-0 tracking-[-0.03em] ${elementTextStyleClass(elementStyles.price, 'title')}`}
+              className={`text-[0.8125rem] font-bold tracking-[-0.01em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.price, 'label')}`}
               style={priceStyle}
             >
-              Sur devis
+              {SERVICES_CUSTOM_QUOTE_LABEL}
             </p>
           )}
         </div>
@@ -7369,7 +8031,7 @@ function EditorialServicePricingHeroCard({
           style={servicesElementChromeStyle(chromes.cardTitle, accent)}
         >
           <h3
-            className={`shrink-0 leading-tight tracking-[-0.02em] ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
+            className={`shrink-0 leading-tight tracking-[-0.02em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
             style={elementTextInlineStyle(elementStyles.cardTitle)}
           >
             {service.title}
@@ -7377,12 +8039,13 @@ function EditorialServicePricingHeroCard({
         </div>
       ) : null}
       {features.length > 0 ? (
-        <ul className="min-h-0 w-full flex-1 space-y-2.5">
+        <ul className="min-h-0 w-full flex-1 space-y-3.5">
           {features.map((feature) => {
             const isTask = feature.key.startsWith('task-');
             const taskIndex = isTask ? Number(feature.key.replace('task-', '')) || 0 : 0;
             const bulletStyle = taskMarker.style;
-            const bulletColor = taskMarker.color;
+            const featureBulletClass = servicesPrincipalBulletClass(presentation, cardIndex);
+            const bulletColor = principalSurfaceActive ? principalSurfaceInk : taskMarker.color;
             const bulletSize = taskMarker.size;
             const bulletSizePx = taskMarker.sizePx;
             const bulletWeight = taskMarker.weight;
@@ -7406,10 +8069,10 @@ function EditorialServicePricingHeroCard({
               }`}
             >
               {isTask ? (
-                <span style={{ color: bulletColor }}>
+                <span className={featureBulletClass} style={{ color: bulletColor }}>
                   <ServicesTaskBulletMarker
                     style={bulletStyle}
-                    color={bulletColor}
+                    color={featureBulletClass.trim() ? 'currentColor' : bulletColor}
                     index={taskIndex}
                     size={bulletSize}
                     sizePx={bulletSizePx}
@@ -7421,7 +8084,7 @@ function EditorialServicePricingHeroCard({
                 <ServicesCheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
               )}
               <span
-                className={`${align.text} ${elementTextStyleClass(
+                className={`${align.text} ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(
                   textTarget,
                   feature.kind === 'delivery' ? 'label' : 'body'
                 )} ${servicesElementChromeClass(chromeTarget)}`}
@@ -7439,8 +8102,12 @@ function EditorialServicePricingHeroCard({
       ) : (
         <div className="min-h-0 flex-1" aria-hidden />
       )}
-      <div className="mt-auto w-full shrink-0 self-stretch pt-6">
-        <ServiceOrderCta presentation={presentation} fullWidth />
+      <div className={`mt-auto flex w-full shrink-0 pt-6 ${servicesPrincipalCtaWrapClass(presentation, cardIndex)}`}>
+        <ServiceOrderCta
+          presentation={presentation}
+          fullWidth
+          labelOverride={!hasPrice ? SERVICES_CUSTOM_QUOTE_CTA_LABEL : undefined}
+        />
       </div>
       </ServicesCardForeground>
     </article>
@@ -7448,9 +8115,9 @@ function EditorialServicePricingHeroCard({
 }
 
 /**
- * Offre / Tarif — vertical subscription-style card:
- * title → description → divider → tasks → price → CTA.
- * Content alignment is controlled by servicesContentAlignment (default center when layout selected).
+ * Offre / Tarif — pricing card:
+ * price → title → tasks → outline CTA (full width).
+ * Checklist markers follow the section palette (tasksBullet / task ink).
  */
 function EditorialServiceTierCard({
   service,
@@ -7487,6 +8154,10 @@ function EditorialServiceTierCard({
   const serviceTasks = resolveServiceTasks(service);
   const showTasks = presentation.showServiceTasks !== false && serviceTasks.length > 0;
   const dividerColor = presentation.cardBorderColor || 'currentColor';
+  const periodSuffix = presentation.servicePricePeriodSuffix?.trim() || '';
+  const dividerStyle = {
+    borderColor: `color-mix(in srgb, ${dividerColor} 35%, transparent)`,
+  } as const;
 
   const colorMode =
     presentation.useHeroPalette === false
@@ -7548,11 +8219,44 @@ function EditorialServiceTierCard({
   const tasksStyle = usePairAbInk
     ? { ...elementTextInlineStyle(elementStyles.tasks, colorMode), color: tasksInk.muted }
     : elementTextInlineStyle(elementStyles.tasks, colorMode);
+  const bulletColor = resolveServicesTaskBulletColor(presentation);
+  const periodStyle = {
+    ...elementTextInlineStyle(elementStyles.delivery, colorMode),
+    color:
+      (typeof tasksStyle.color === 'string' && tasksStyle.color.trim()) ||
+      bulletColor,
+  };
 
-  return (
+  const showPriceBlock = presentation.showServicePrice !== false;
+  const showTitle = presentation.showServiceTitle !== false;
+  const showDescription = presentation.showServiceDescription !== false && Boolean(description);
+  const surfaceInk = servicesPrincipalSurfaceInkColors(presentation, cardIndex);
+  const taskBulletColor = surfaceInk.active ? surfaceInk.ink : bulletColor;
+  const surfacePriceStyle = {
+    ...priceStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+  };
+  const surfaceTitleStyle = {
+    ...titleStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+  };
+  const surfaceBodyStyle = {
+    ...bodyStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.muted } : null),
+  };
+  const surfaceTasksStyle = {
+    ...tasksStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+  };
+  const surfacePeriodStyle = {
+    ...periodStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.muted } : null),
+  };
+
+  const card = (
     <article
-      className={`${shellClass} ${frameClass} flex h-full w-full flex-col ${align.container}`}
-      style={surfaceStyle}
+      className={`group ${shellClass} ${frameClass} ${servicesPrincipalCardClass(presentation, cardIndex)} flex h-full w-full flex-col ${align.container}`}
+      style={servicesPrincipalHoverStyle(presentation, surfaceStyle, tone)}
       {...fillAttrs}
     >
       <ServicesCardBackgroundLayers presentation={presentation} cardIndex={cardIndex} />
@@ -7560,43 +8264,93 @@ function EditorialServiceTierCard({
         className={`flex min-h-0 flex-1 flex-col ${contentGap.className}`.trim()}
         style={contentGap.style}
       >
-        {presentation.showServiceTitle ? (
+        {/* Reserved price band so titles align across cards. */}
+        {showPriceBlock ? (
           <div
-            className={`w-full ${align.block} ${servicesElementChromeClass(chromes.cardTitle)}`.trim()}
-            style={servicesElementChromeStyle(chromes.cardTitle, accent)}
+            className={`flex min-h-[3.35rem] w-full shrink-0 items-center justify-center ${priceAlignClass} ${servicesElementChromeClass(chromes.price)}`}
+            style={{
+              ...servicesElementChromeStyle(chromes.price, accent),
+              ...priceMargins,
+            }}
+          >
+            {hasPrice && amount ? (
+              <div className={`flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 ${align.row}`}>
+                <p
+                  className={`shrink-0 font-bold tracking-[-0.04em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.price, 'title')}`}
+                  style={surfacePriceStyle}
+                >
+                  <ServicePriceAmount
+                    amount={amount}
+                    currencySymbol={currencySymbol}
+                    pricePrefix={pricePrefix}
+                    currencyPlacement={currencyPlacement}
+                    isFree={isFree}
+                  />
+                </p>
+                {periodSuffix ? (
+                  <span
+                    className={`text-sm font-bold tracking-normal ${servicesPrincipalMutedClass(presentation, cardIndex)} ${align.text} ${elementTextStyleClass(elementStyles.delivery, 'label')}`}
+                    style={surfacePeriodStyle}
+                  >
+                    {periodSuffix}
+                  </span>
+                ) : null}
+              </div>
+            ) : (
+              <ServicesCustomQuoteLabel
+                className={`text-center ${servicesPrincipalInkClass(presentation, cardIndex)}`}
+                style={{
+                  ...servicesPrincipalAwareColorStyle(
+                    presentation,
+                    cardIndex,
+                    typeof priceStyle.color === 'string' ? priceStyle.color : undefined
+                  ),
+                  textAlign: 'center',
+                }}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="min-h-[3.35rem] w-full shrink-0" aria-hidden />
+        )}
+
+        {showTitle ? (
+          <div
+            className={`flex min-h-[2.75rem] w-full shrink-0 items-center justify-center border-y py-1.5 ${servicesPrincipalDividerClass(presentation, cardIndex)} ${servicesElementChromeClass(chromes.cardTitle)}`.trim()}
+            style={{
+              ...dividerStyle,
+              ...servicesElementChromeStyle(chromes.cardTitle, accent),
+              ...(surfaceInk.active
+                ? { borderColor: `color-mix(in srgb, ${surfaceInk.ink} 45%, transparent)` }
+                : null),
+            }}
           >
             <h3
-              className={`leading-tight tracking-[-0.02em] ${align.text} ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
-              style={titleStyle}
+              className={`w-full text-center leading-tight tracking-[-0.02em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
+              style={surfaceTitleStyle}
             >
               {service.title}
             </h3>
           </div>
         ) : null}
 
-        {presentation.showServiceDescription && description ? (
+        {showDescription ? (
           <div
-            className={`w-full ${align.block} ${servicesElementChromeClass(chromes.cardBody)}`.trim()}
+            className={`w-full shrink-0 ${servicesElementChromeClass(chromes.cardBody)}`.trim()}
             style={servicesElementChromeStyle(chromes.cardBody, accent)}
           >
             <p
-              className={`leading-relaxed ${align.text} ${elementTextStyleClass(elementStyles.cardBody, 'body')}`}
-              style={bodyStyle}
+              className={`text-left leading-relaxed ${servicesPrincipalMutedClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.cardBody, 'body')}`}
+              style={surfaceBodyStyle}
             >
               {description}
             </p>
           </div>
         ) : null}
 
-        <div
-          className="w-full shrink-0 border-t"
-          style={{ borderColor: `color-mix(in srgb, ${dividerColor} 35%, transparent)` }}
-          aria-hidden
-        />
-
         {showTasks ? (
           <div
-            className={`w-full min-h-0 flex-1 ${servicesElementChromeClass(chromes.tasks)}`.trim()}
+            className={`w-full min-h-0 flex-1 pt-4 ${servicesElementChromeClass(chromes.tasks)}`.trim()}
             style={servicesElementChromeStyle(chromes.tasks, accent)}
           >
             <ServicesTaskList
@@ -7604,51 +8358,34 @@ function EditorialServiceTierCard({
               presentation={presentation}
               alignClass={align.container}
               itemJustifyClass={align.row}
-              textClassName={align.text}
-              textStyle={tasksStyle}
+              textClassName={`${align.text} ${servicesPrincipalInkClass(presentation, cardIndex)}`.trim()}
+              textStyle={surfaceTasksStyle}
+              bulletClassName={servicesPrincipalBulletClass(presentation, cardIndex)}
+              bulletColorOverride={taskBulletColor}
             />
           </div>
         ) : (
           <div className="min-h-0 flex-1" aria-hidden />
         )}
 
-        {presentation.showServicePrice ? (
-          <div
-            className={`w-full shrink-0 ${priceAlignClass} ${servicesElementChromeClass(chromes.price)}`}
-            style={{
-              ...servicesElementChromeStyle(chromes.price, accent),
-              ...priceMargins,
+        <div className={`mt-auto w-full shrink-0 pt-2 ${servicesPrincipalCtaWrapClass(presentation, cardIndex)}`}>
+          <ServiceOrderCta
+            presentation={{
+              ...presentation,
+              ctaDesign: 'pill-accent',
             }}
-          >
-            {hasPrice && amount ? (
-              <p
-                className={`shrink-0 tracking-[-0.04em] ${elementTextStyleClass(elementStyles.price, 'title')}`}
-                style={priceStyle}
-              >
-                <ServicePriceAmount
-                  amount={amount}
-                  currencySymbol={currencySymbol}
-                  pricePrefix={pricePrefix}
-                  currencyPlacement={currencyPlacement}
-                isFree={isFree}
-              />
-              </p>
-            ) : (
-              <p
-                className={`shrink-0 tracking-[-0.03em] ${elementTextStyleClass(elementStyles.price, 'title')}`}
-                style={priceStyle}
-              >
-                Sur devis
-              </p>
-            )}
-          </div>
-        ) : null}
-
-        <div className="mt-auto w-full shrink-0 self-stretch pt-2">
-          <ServiceOrderCta presentation={presentation} fullWidth />
+            fullWidth
+            labelOverride={!hasPrice ? SERVICES_CUSTOM_QUOTE_CTA_LABEL : undefined}
+          />
         </div>
       </ServicesCardForeground>
     </article>
+  );
+
+  return (
+    <div className="pf-services-card-float-host h-full w-full min-w-0">
+      {card}
+    </div>
   );
 }
 
@@ -7815,11 +8552,43 @@ function EditorialServicePlanCard({
     ? { ...elementTextInlineStyle(elementStyles.delivery, colorMode), color: noteInk.muted }
     : elementTextInlineStyle(elementStyles.delivery, colorMode);
   const lockedColor = `color-mix(in srgb, ${String(tasksStyle.color || '#a3a3a3')} 55%, transparent)`;
+  const taskListBulletGlobal = usePortfolioTaskListMarkerGlobal();
+  const taskMarker = resolveServicesTaskListMarker(presentation, taskListBulletGlobal);
+  const bulletColor = taskMarker.color;
+  const showTitle = presentation.showServiceTitle !== false;
+  const showDescription = presentation.showServiceDescription === true && Boolean(description);
+  const showPrice = presentation.showServicePrice !== false;
+  const showCta = presentation.showServiceCta !== false;
+  const surfaceInk = servicesPrincipalSurfaceInkColors(presentation, cardIndex);
+  const surfaceTitleStyle = {
+    ...titleStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+  };
+  const surfaceBodyStyle = {
+    ...bodyStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.muted } : null),
+  };
+  const surfacePriceStyle = {
+    ...priceStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+  };
+  const surfaceNoteStyle = {
+    ...noteStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.muted } : null),
+  };
+  const surfaceTasksStyle = {
+    ...tasksStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+  };
+  const surfaceLockedColor = surfaceInk.active
+    ? `color-mix(in srgb, ${surfaceInk.muted} 55%, transparent)`
+    : lockedColor;
+  const surfaceBulletColor = surfaceInk.active ? surfaceInk.ink : bulletColor;
 
   return (
     <article
-      className={`${shellClass} ${frameClass} flex h-full w-full flex-col ${align.container}`}
-      style={surfaceStyle}
+      className={`group ${shellClass} ${frameClass} ${servicesPrincipalCardClass(presentation, cardIndex)} flex h-full w-full flex-col ${align.container}`}
+      style={servicesPrincipalHoverStyle(presentation, surfaceStyle, tone)}
       {...fillAttrs}
     >
       <ServicesCardBackgroundLayers presentation={presentation} cardIndex={cardIndex} />
@@ -7827,126 +8596,455 @@ function EditorialServicePlanCard({
         className={`flex min-h-0 flex-1 flex-col ${contentGap.className}`.trim()}
         style={contentGap.style}
       >
-        {presentation.showServiceTitle ? (
+        {/* Reserved title band so price + CTA align across cards. */}
+        {showTitle ? (
           <div
-            className={`w-full ${align.block} ${servicesElementChromeClass(chromes.cardTitle)}`.trim()}
+            className={`flex min-h-[3.4em] w-full shrink-0 items-start ${align.block} ${servicesElementChromeClass(chromes.cardTitle)}`.trim()}
             style={servicesElementChromeStyle(chromes.cardTitle, accent)}
           >
             <h3
-              className={`leading-tight tracking-[-0.02em] ${align.text} ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
-              style={titleStyle}
+              className={`line-clamp-2 w-full leading-tight tracking-[-0.02em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${align.text} ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
+              style={surfaceTitleStyle}
             >
               {service.title}
             </h3>
           </div>
-        ) : null}
+        ) : (
+          <div className="min-h-[3.4em] w-full shrink-0" aria-hidden />
+        )}
 
-        {presentation.showServiceDescription && description ? (
+        {showDescription ? (
           <div
-            className={`w-full ${align.block} ${servicesElementChromeClass(chromes.cardBody)}`.trim()}
+            className={`w-full shrink-0 ${align.block} ${servicesElementChromeClass(chromes.cardBody)}`.trim()}
             style={servicesElementChromeStyle(chromes.cardBody, accent)}
           >
             <p
-              className={`leading-relaxed ${align.text} ${elementTextStyleClass(elementStyles.cardBody, 'body')}`}
-              style={bodyStyle}
+              className={`leading-relaxed ${servicesPrincipalMutedClass(presentation, cardIndex)} ${align.text} ${elementTextStyleClass(elementStyles.cardBody, 'body')}`}
+              style={surfaceBodyStyle}
             >
               {description}
             </p>
           </div>
         ) : null}
 
-        {presentation.showServicePrice ? (
+        {/* Reserved price / custom-quote band so CTAs share one horizontal line. */}
+        {showPrice ? (
           <div
-            className={`w-full shrink-0 ${priceAlignClass} ${servicesElementChromeClass(chromes.price)}`}
+            className={`flex min-h-[4.25rem] w-full shrink-0 flex-col justify-center ${priceAlignClass} ${servicesElementChromeClass(chromes.price)}`}
             style={{
               ...servicesElementChromeStyle(chromes.price, accent),
               ...priceMargins,
             }}
           >
-            <div className={`flex flex-wrap items-baseline gap-x-2 gap-y-1 ${align.row}`}>
-              {hasPrice && amount ? (
-                <p
-                  className={`shrink-0 tracking-[-0.05em] ${elementTextStyleClass(elementStyles.price, 'title')}`}
-                  style={priceStyle}
-                >
-                  <ServicePriceAmount
-                    amount={amount}
-                    currencySymbol={currencySymbol}
-                    pricePrefix={pricePrefix}
-                    currencyPlacement={currencyPlacement}
-                isFree={isFree}
+            {hasPrice && amount ? (
+              <>
+                <div className={`flex flex-wrap items-baseline gap-x-2 gap-y-1 ${align.row}`}>
+                  <p
+                    className={`shrink-0 font-bold tracking-[-0.05em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.price, 'title')}`}
+                    style={surfacePriceStyle}
+                  >
+                    <ServicePriceAmount
+                      amount={amount}
+                      currencySymbol={currencySymbol}
+                      pricePrefix={pricePrefix}
+                      currencyPlacement={currencyPlacement}
+                      isFree={isFree}
+                    />
+                  </p>
+                  {periodSuffix ? (
+                    <span
+                      className={`text-sm font-medium opacity-70 ${servicesPrincipalMutedClass(presentation, cardIndex)} ${align.text} ${elementTextStyleClass(elementStyles.delivery, 'label')}`}
+                      style={surfaceNoteStyle}
+                    >
+                      {periodSuffix}
+                    </span>
+                  ) : null}
+                </div>
+                {priceNote ? (
+                  <p
+                    className={`mt-1.5 text-sm leading-snug opacity-70 ${servicesPrincipalMutedClass(presentation, cardIndex)} ${align.text} ${elementTextStyleClass(elementStyles.delivery, 'label')}`}
+                    style={surfaceNoteStyle}
+                  >
+                    {priceNote}
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <ServicesCustomQuoteLabel
+                className={`tracking-[-0.02em] ${servicesPrincipalInkClass(presentation, cardIndex)}`}
+                style={{
+                  ...servicesPrincipalAwareColorStyle(
+                    presentation,
+                    cardIndex,
+                    typeof priceStyle.color === 'string' ? priceStyle.color : undefined
+                  ),
+                  textAlign: 'left',
+                  fontSize: '1.2rem',
+                  lineHeight: 1.2,
+                }}
               />
-                </p>
-              ) : (
-                <p
-                  className={`shrink-0 tracking-[-0.03em] ${elementTextStyleClass(elementStyles.price, 'title')}`}
-                  style={priceStyle}
-                >
-                  Sur devis
-                </p>
-              )}
-              {periodSuffix ? (
-                <span
-                  className={`text-sm font-medium opacity-70 ${align.text} ${elementTextStyleClass(elementStyles.delivery, 'label')}`}
-                  style={noteStyle}
-                >
-                  {periodSuffix}
-                </span>
-              ) : null}
-            </div>
-            {priceNote ? (
-              <p
-                className={`mt-1.5 text-sm leading-snug opacity-70 ${align.text} ${elementTextStyleClass(elementStyles.delivery, 'label')}`}
-                style={noteStyle}
-              >
-                {priceNote}
-              </p>
-            ) : null}
+            )}
+          </div>
+        ) : (
+          <div className="min-h-[4.25rem] w-full shrink-0" aria-hidden />
+        )}
+
+        {showCta ? (
+          <div className={`flex w-full shrink-0 justify-start ${servicesPrincipalCtaWrapClass(presentation, cardIndex)}`}>
+            <ServiceOrderCta
+              presentation={presentation}
+              labelOverride={!hasPrice ? SERVICES_CUSTOM_QUOTE_CTA_LABEL : undefined}
+            />
           </div>
         ) : null}
 
-        <div className="w-full shrink-0 self-stretch">
-          <ServiceOrderCta presentation={presentation} fullWidth />
-        </div>
-
         {showFeatures ? (
           <ul
-            className={`mt-1 min-h-0 w-full flex-1 space-y-3 ${align.container} ${servicesElementChromeClass(chromes.tasks)}`.trim()}
+            className={`mt-1 min-h-0 w-full flex-1 space-y-4 ${align.container} ${servicesElementChromeClass(chromes.tasks)}`.trim()}
             style={servicesElementChromeStyle(chromes.tasks, accent)}
           >
-            {features.map((feature) => (
+            {features.map((feature, index) => {
+              const featureBulletClass = feature.locked
+                ? servicesPrincipalMutedClass(presentation, cardIndex)
+                : servicesPrincipalBulletClass(presentation, cardIndex);
+              return (
               <li
                 key={feature.key}
                 className={`flex items-start gap-3 ${align.row}`}
               >
                 <span
-                  className="mt-0.5 shrink-0"
-                  style={{ color: feature.locked ? lockedColor : accent || tasksStyle.color }}
+                  className={`mt-0.5 shrink-0 ${featureBulletClass}`}
+                  style={{
+                    color: feature.locked ? surfaceLockedColor : surfaceBulletColor,
+                    ['--pf-list-marker-glyph' as string]: surfaceInk.active
+                      ? surfaceInk.principal
+                      : listMarkerGlyphFallback(surfaceBulletColor),
+                  }}
                 >
                   {feature.locked ? (
                     <ServicesLockIcon className="h-5 w-5" />
                   ) : (
-                    <ServicesCheckCircleIcon className="h-5 w-5" />
+                    <ServicesTaskBulletMarker
+                      style={taskMarker.style}
+                      color={featureBulletClass.trim() ? 'currentColor' : surfaceBulletColor}
+                      index={index}
+                      size={taskMarker.size}
+                      sizePx={taskMarker.sizePx}
+                      weight={taskMarker.weight}
+                      weightAmount={taskMarker.weightAmount}
+                      className={featureBulletClass}
+                    />
                   )}
                 </span>
                 <span
                   className={`min-w-0 leading-snug ${align.text} ${elementTextStyleClass(elementStyles.tasks, 'body')} ${
-                    feature.locked ? 'opacity-55' : ''
+                    feature.locked
+                      ? `opacity-55 ${servicesPrincipalMutedClass(presentation, cardIndex)}`
+                      : servicesPrincipalInkClass(presentation, cardIndex)
                   }`}
                   style={
                     feature.locked
-                      ? { ...tasksStyle, color: lockedColor }
-                      : tasksStyle
+                      ? { ...surfaceTasksStyle, color: surfaceLockedColor }
+                      : surfaceTasksStyle
                   }
                 >
                   {feature.label}
                 </span>
               </li>
-            ))}
+              );
+            })}
           </ul>
         ) : (
           <div className="min-h-0 flex-1" aria-hidden />
         )}
+      </ServicesCardForeground>
+    </article>
+  );
+}
+
+/**
+ * Plan en colonnes — bandeau 3 colonnes :
+ * titre + description | inclusions | prix + période + CTA.
+ */
+function EditorialServicePlanSplitCard({
+  service,
+  presentation = DEFAULT_SERVICES_PRESENTATION,
+  cardIndex = 0,
+  tone = 'light',
+}: {
+  service: ProfileServiceItem;
+  presentation?: PortfolioServicesPresentationSettings;
+  cardIndex?: number;
+  tone?: EditorialMarqueeCardTone;
+}) {
+  const { hasPrice, isFree, amount } = resolveServicePrice(service);
+  const shellClass = servicesTierShellClass(presentation.cardDesign, tone, presentation);
+  const frameClass = servicesCardFrameClass(presentation);
+  const surfaceStyle = servicesCardSurfaceStyle(presentation, tone);
+  const fillAttrs = servicesCardFillDataAttrs(presentation);
+  const accent = presentation.cardAccentColor;
+  const currencySymbol = servicesCurrencySymbol(presentation.servicesCurrency);
+  const pricePrefix = resolveServicePricePrefix(presentation);
+  const currencyPlacement = resolveServiceCurrencyPlacement(presentation.serviceCurrencyPlacement);
+  const priceMargins = servicePriceBoxStyle(presentation);
+  const contentGap = servicesCardContentGapProps(
+    presentation.servicesContentGap,
+    presentation.servicesContentGapPx
+  );
+  const elementStyles = normalizeServicesElementStyles(presentation.elementStyles);
+  const chromes = presentation.elementChromes ?? DEFAULT_SERVICES_ELEMENT_CHROMES;
+  const description = service.description?.trim() || '';
+  const serviceTasks = resolveServiceTasks(service);
+  const periodSuffix = presentation.servicePricePeriodSuffix?.trim() || '';
+  const dividerColor = presentation.cardBorderColor || 'currentColor';
+  const dividerBorder = {
+    borderColor: `color-mix(in srgb, ${dividerColor} 28%, transparent)`,
+  } as const;
+  const principal = resolveServicesPrincipalColor(presentation);
+
+  const colorMode =
+    presentation.useHeroPalette === false
+      ? presentation.activeColorMode === 'light'
+        ? 'light'
+        : 'dark'
+      : 'light';
+  const titleColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.cardTitle.colorDark || elementStyles.cardTitle.color
+      : elementStyles.cardTitle.color;
+  const bodyColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.cardBody.colorDark || elementStyles.cardBody.color
+      : elementStyles.cardBody.color;
+  const priceColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.price.colorDark || elementStyles.price.color
+      : elementStyles.price.color;
+  const tasksColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.tasks.colorDark || elementStyles.tasks.color
+      : elementStyles.tasks.color;
+  const usePairAbInk =
+    pickServicesCardTextContrast(presentation.cardTextContrast, 'auto') === 'pair-ab';
+  const readingSurface = resolveServicesCardSurfaceHex(presentation, tone);
+  const cardInk = servicesCardReadableText(
+    presentation,
+    tone,
+    titleColor,
+    bodyColor,
+    readingSurface
+  );
+  const priceInk = servicesCardReadableText(
+    presentation,
+    tone,
+    priceColor,
+    priceColor,
+    readingSurface
+  );
+  const tasksInk = servicesCardReadableText(
+    presentation,
+    tone,
+    tasksColor,
+    tasksColor,
+    readingSurface
+  );
+  const titleStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.cardTitle, colorMode), color: cardInk.strong }
+    : elementTextInlineStyle(elementStyles.cardTitle, colorMode);
+  const bodyStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.cardBody, colorMode), color: cardInk.muted }
+    : elementTextInlineStyle(elementStyles.cardBody, colorMode);
+  const priceStyle = servicePriceTextStyle(
+    usePairAbInk
+      ? { ...elementTextInlineStyle(elementStyles.price, colorMode), color: priceInk.strong }
+      : elementTextInlineStyle(elementStyles.price, colorMode)
+  );
+  const tasksStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.tasks, colorMode), color: tasksInk.muted }
+    : elementTextInlineStyle(elementStyles.tasks, colorMode);
+  const periodStyle = {
+    ...elementTextInlineStyle(elementStyles.delivery, colorMode),
+    color:
+      (typeof tasksStyle.color === 'string' && tasksStyle.color.trim()) ||
+      cardInk.muted,
+  };
+
+  const showTitle = presentation.showServiceTitle !== false;
+  const showDescription = presentation.showServiceDescription !== false && Boolean(description);
+  const showTasks = presentation.showServiceTasks !== false && serviceTasks.length > 0;
+  const showPrice = presentation.showServicePrice !== false;
+  const showCta = presentation.showServiceCta !== false;
+  const surfaceInk = servicesPrincipalSurfaceInkColors(presentation, cardIndex);
+  const taskBulletColor = surfaceInk.active ? surfaceInk.ink : principal;
+  const surfaceTitleStyle = {
+    ...titleStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+  };
+  const surfaceBodyStyle = {
+    ...bodyStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.muted } : null),
+  };
+  const surfacePriceStyle = {
+    ...priceStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+  };
+  const surfacePeriodStyle = {
+    ...periodStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.muted } : null),
+  };
+  const surfaceTasksStyle = {
+    ...tasksStyle,
+    ...(surfaceInk.active ? { color: surfaceInk.ink } : null),
+  };
+
+  return (
+    <article
+      className={`group ${shellClass} ${frameClass} ${servicesPrincipalCardClass(presentation, cardIndex)} !px-6 !py-8 sm:!px-8 sm:!py-10 lg:!px-10 lg:!py-11 flex h-full w-full flex-col`}
+      style={servicesPrincipalHoverStyle(presentation, surfaceStyle, tone)}
+      {...fillAttrs}
+    >
+      <ServicesCardBackgroundLayers presentation={presentation} cardIndex={cardIndex} />
+      <ServicesCardForeground
+        className="grid min-h-0 flex-1 grid-cols-1 gap-0 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1.25fr)_minmax(15.5rem,0.9fr)] lg:items-stretch"
+      >
+        {/* Col 1 — titre + description */}
+        <div
+          className={`flex min-w-0 flex-col justify-center border-b py-1 ${servicesPrincipalDividerClass(presentation, cardIndex)} lg:border-b-0 lg:border-r lg:pr-10 ${contentGap.className}`.trim()}
+          style={{
+            ...contentGap.style,
+            ...dividerBorder,
+            ...(surfaceInk.active
+              ? { borderColor: `color-mix(in srgb, ${surfaceInk.ink} 40%, transparent)` }
+              : null),
+          }}
+        >
+          {showTitle ? (
+            <div
+              className={servicesElementChromeClass(chromes.cardTitle)}
+              style={servicesElementChromeStyle(chromes.cardTitle, accent)}
+            >
+              <h3
+                className={`leading-tight tracking-[-0.03em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
+                style={surfaceTitleStyle}
+              >
+                {service.title}
+              </h3>
+            </div>
+          ) : null}
+          {showDescription ? (
+            <div
+              className={servicesElementChromeClass(chromes.cardBody)}
+              style={servicesElementChromeStyle(chromes.cardBody, accent)}
+            >
+              <p
+                className={`leading-relaxed ${servicesPrincipalMutedClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.cardBody, 'body')}`}
+                style={surfaceBodyStyle}
+              >
+                {description}
+              </p>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Col 2 — inclusions */}
+        <div
+          className={`flex min-w-0 flex-col justify-center border-b py-5 ${servicesPrincipalDividerClass(presentation, cardIndex)} lg:border-b-0 lg:border-r lg:px-10 lg:py-1 ${servicesElementChromeClass(chromes.tasks)}`.trim()}
+          style={{
+            ...dividerBorder,
+            ...servicesElementChromeStyle(chromes.tasks, accent),
+            ...(surfaceInk.active
+              ? { borderColor: `color-mix(in srgb, ${surfaceInk.ink} 40%, transparent)` }
+              : null),
+          }}
+        >
+          {showTasks ? (
+            <ServicesTaskList
+              tasks={serviceTasks}
+              presentation={presentation}
+              textStyle={surfaceTasksStyle}
+              textClassName={`text-left break-words [overflow-wrap:normal] ${servicesPrincipalInkClass(presentation, cardIndex)}`}
+              listClassName="space-y-5"
+              bulletClassName={servicesPrincipalBulletClass(presentation, cardIndex)}
+              bulletColorOverride={taskBulletColor}
+            />
+          ) : null}
+        </div>
+
+        {/* Col 3 — prix + CTA */}
+        <div className="flex min-w-0 flex-col justify-center gap-4 py-1 lg:pl-10">
+          {showPrice ? (
+            <div
+              className={`flex w-full flex-col ${servicesElementChromeClass(chromes.price)}`}
+              style={{
+                ...servicesElementChromeStyle(chromes.price, accent),
+                ...priceMargins,
+              }}
+            >
+              {hasPrice && amount ? (
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <p
+                    className={`relative shrink-0 font-bold tracking-[-0.04em] ${servicesPrincipalInkClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.price, 'title')}`}
+                    style={surfacePriceStyle}
+                  >
+                    <span
+                      aria-hidden
+                      className={`pointer-events-none absolute inset-x-0 bottom-[0.12em] z-0 h-[0.38em] rounded-sm transition-opacity duration-300 ${
+                        surfaceInk.active ? 'opacity-0' : 'opacity-35 group-hover:opacity-0'
+                      }`}
+                      style={{ backgroundColor: principal }}
+                    />
+                    <span className="relative z-[1]">
+                      <ServicePriceAmount
+                        amount={amount}
+                        currencySymbol={currencySymbol}
+                        pricePrefix={pricePrefix}
+                        currencyPlacement={currencyPlacement}
+                        isFree={isFree}
+                      />
+                    </span>
+                  </p>
+                  {periodSuffix ? (
+                    <span
+                      className={`text-sm font-medium opacity-70 ${servicesPrincipalMutedClass(presentation, cardIndex)} ${elementTextStyleClass(elementStyles.delivery, 'label')}`}
+                      style={surfacePeriodStyle}
+                    >
+                      {periodSuffix}
+                    </span>
+                  ) : null}
+                </div>
+              ) : (
+                <ServicesCustomQuoteLabel
+                  className={servicesPrincipalInkClass(presentation, cardIndex)}
+                  style={{
+                    ...servicesPrincipalAwareColorStyle(
+                      presentation,
+                      cardIndex,
+                      typeof priceStyle.color === 'string' ? priceStyle.color : undefined
+                    ),
+                    fontSize: '1.2rem',
+                    lineHeight: 1.2,
+                  }}
+                />
+              )}
+            </div>
+          ) : null}
+
+          {showCta ? (
+            <div
+              className={`w-full ${servicesPrincipalDividerClass(presentation, cardIndex)} ${showPrice ? 'border-t pt-4' : ''} ${servicesPrincipalCtaWrapClass(presentation, cardIndex)}`.trim()}
+              style={showPrice ? dividerBorder : undefined}
+            >
+              <ServiceOrderCta
+                presentation={{
+                  ...presentation,
+                  ctaDesign: 'pill-accent',
+                }}
+                fullWidth
+                labelOverride={!hasPrice ? SERVICES_CUSTOM_QUOTE_CTA_LABEL : undefined}
+              />
+            </div>
+          ) : null}
+        </div>
       </ServicesCardForeground>
     </article>
   );
@@ -7958,7 +9056,7 @@ function useSkillListBullet(presentation: PortfolioServicesPresentationSettings)
   return resolveTaskListMarker(
     taskListBulletGlobal,
     {
-      taskBulletSource: presentation.skillsBulletSource ?? 'global',
+      taskBulletSource: 'section',
       taskBulletStyle: presentation.skillsBulletStyle ?? 'disc',
       taskBulletColor: presentation.skillsBulletColor,
       taskBulletSize: presentation.skillsBulletSize ?? 'md',
@@ -8367,6 +9465,1111 @@ function EditorialSkillPricingHeroCard({
 }
 
 
+/**
+ * Carte média — content column (title, description, tasks, price / delivery)
+ * + cover image on the right. English labels only.
+ */
+function EditorialServiceMediaCard({
+  service,
+  presentation = DEFAULT_SERVICES_PRESENTATION,
+  cardIndex = 0,
+  tone = 'light',
+}: {
+  service: ProfileServiceItem;
+  presentation?: PortfolioServicesPresentationSettings;
+  cardIndex?: number;
+  tone?: EditorialMarqueeCardTone;
+}) {
+  const { hasPrice, isFree, amount } = resolveServicePrice(service);
+  const mediaPresentation = resolveServicesMediaCardPresentation(presentation);
+  const shellClass = servicesTierShellClass(mediaPresentation.cardDesign, tone, mediaPresentation);
+  const frameClass = servicesCardFrameClass(mediaPresentation);
+  const surfaceStyle = servicesMediaCardSurfaceStyle(mediaPresentation, tone);
+  const fillAttrs = servicesCardFillDataAttrs(mediaPresentation);
+  const accent = resolveServicesPrincipalColor(presentation);
+  const currencySymbol = servicesCurrencySymbol(presentation.servicesCurrency);
+  const pricePrefix = resolveServicePricePrefix(presentation);
+  const currencyPlacement = resolveServiceCurrencyPlacement(presentation.serviceCurrencyPlacement);
+  const priceMargins = servicePriceBoxStyle(presentation);
+  const contentGap = servicesCardContentGapProps(
+    presentation.servicesContentGap,
+    presentation.servicesContentGapPx
+  );
+  const elementStyles = normalizeServicesElementStyles(presentation.elementStyles);
+  const chromes = presentation.elementChromes ?? DEFAULT_SERVICES_ELEMENT_CHROMES;
+  const description = service.description?.trim() || '';
+  const serviceTasks = resolveServiceTasks(service);
+  const deliveryLabel = service.deadline ? formatServiceDeliveryLabel(service.deadline) : '';
+  const coverSrc =
+    resolveStorageMediaUrl(service.coverImageUrl) || service.coverImageUrl?.trim() || '';
+
+  const colorMode =
+    presentation.useHeroPalette === false
+      ? presentation.activeColorMode === 'light'
+        ? 'light'
+        : 'dark'
+      : 'light';
+  const titleColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.cardTitle.colorDark || elementStyles.cardTitle.color
+      : elementStyles.cardTitle.color;
+  const bodyColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.cardBody.colorDark || elementStyles.cardBody.color
+      : elementStyles.cardBody.color;
+  const priceColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.price.colorDark || elementStyles.price.color
+      : elementStyles.price.color;
+  const tasksColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.tasks.colorDark || elementStyles.tasks.color
+      : elementStyles.tasks.color;
+  const usePairAbInk =
+    pickServicesCardTextContrast(presentation.cardTextContrast, 'auto') === 'pair-ab';
+  const readingSurface = resolveServicesCardSurfaceHex(presentation, tone);
+  const cardInk = servicesCardReadableText(
+    presentation,
+    tone,
+    titleColor,
+    bodyColor,
+    readingSurface
+  );
+  const priceInk = servicesCardReadableText(
+    presentation,
+    tone,
+    priceColor,
+    priceColor,
+    readingSurface
+  );
+  const tasksInk = servicesCardReadableText(
+    presentation,
+    tone,
+    tasksColor,
+    tasksColor,
+    readingSurface
+  );
+  const titleStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.cardTitle, colorMode), color: cardInk.strong }
+    : elementTextInlineStyle(elementStyles.cardTitle, colorMode);
+  const bodyStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.cardBody, colorMode), color: cardInk.muted }
+    : elementTextInlineStyle(elementStyles.cardBody, colorMode);
+  const priceStyle = servicePriceTextStyle(
+    usePairAbInk
+      ? { ...elementTextInlineStyle(elementStyles.price, colorMode), color: priceInk.strong }
+      : elementTextInlineStyle(elementStyles.price, colorMode)
+  );
+  const tasksStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.tasks, colorMode), color: tasksInk.muted }
+    : elementTextInlineStyle(elementStyles.tasks, colorMode);
+
+  const metaLabelStyle = { color: cardInk.muted };
+  const markerColor = accent;
+
+  const showTitle = presentation.showServiceTitle !== false;
+  const showDescription = presentation.showServiceDescription !== false && Boolean(description);
+  const showTasks = presentation.showServiceTasks !== false && serviceTasks.length > 0;
+  const showPrice = presentation.showServicePrice !== false;
+  const showDelivery = presentation.showServiceDelivery !== false && Boolean(deliveryLabel);
+  const showCta = presentation.showServiceCta === true;
+  const showMeta = showPrice || showDelivery;
+  const mediaOnLeft = servicesMediaOnLeft(presentation, cardIndex);
+  const mediaOrderClass = mediaOnLeft ? 'order-1 lg:order-1' : 'order-1 lg:order-2';
+  const infoOrderClass = mediaOnLeft ? 'order-2 lg:order-2' : 'order-2 lg:order-1';
+  const splitGridClass = mediaOnLeft
+    ? 'lg:grid-cols-[minmax(14rem,0.85fr)_minmax(0,1.15fr)]'
+    : 'lg:grid-cols-[minmax(0,1.15fr)_minmax(14rem,0.85fr)]';
+
+  return (
+    <article
+      className={`${shellClass} ${frameClass} !p-5 sm:!p-6 lg:!p-7 flex h-full w-full flex-col`}
+      style={servicesCardPrincipalStyle(presentation, surfaceStyle)}
+      {...fillAttrs}
+    >
+      <ServicesCardBackgroundLayers presentation={presentation} cardIndex={cardIndex} />
+      <ServicesCardForeground
+        className={`grid min-h-0 flex-1 grid-cols-1 gap-6 lg:items-stretch lg:gap-8 ${splitGridClass}`}
+      >
+        <div
+          className={`flex min-w-0 flex-col ${infoOrderClass} ${contentGap.className}`.trim()}
+          style={contentGap.style}
+        >
+          {showTitle ? (
+            <div
+              className={servicesElementChromeClass(chromes.cardTitle)}
+              style={servicesElementChromeStyle(chromes.cardTitle, accent)}
+            >
+              <h3
+                className={`font-serif leading-tight tracking-[-0.03em] ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
+                style={titleStyle}
+              >
+                {service.title}
+              </h3>
+            </div>
+          ) : null}
+
+          {showDescription ? (
+            <div
+              className={`mt-4 ${servicesElementChromeClass(chromes.cardBody)}`.trim()}
+              style={servicesElementChromeStyle(chromes.cardBody, accent)}
+            >
+              <p
+                className={`leading-relaxed ${elementTextStyleClass(elementStyles.cardBody, 'body')}`}
+                style={bodyStyle}
+              >
+                {description}
+              </p>
+            </div>
+          ) : null}
+
+          {showTasks ? (
+            <ul
+              className={`mt-5 w-full divide-y ${servicesElementChromeClass(chromes.tasks)}`.trim()}
+              style={{
+                ...servicesElementChromeStyle(chromes.tasks, accent),
+                borderColor: `color-mix(in srgb, ${accent} 18%, transparent)`,
+              }}
+            >
+              {serviceTasks.map((task, index) => (
+                <li
+                  key={`${index}-${task}`}
+                  className="flex items-start gap-3 py-3.5 first:pt-0 last:pb-0"
+                  style={{
+                    borderColor: `color-mix(in srgb, ${accent} 18%, transparent)`,
+                  }}
+                >
+                  <span
+                    className="mt-0.5 inline-block h-5 w-[3px] shrink-0 rounded-full"
+                    style={{ backgroundColor: markerColor }}
+                    aria-hidden
+                  />
+                  <span
+                    className={`min-w-0 leading-snug ${elementTextStyleClass(elementStyles.tasks, 'body')}`}
+                    style={tasksStyle}
+                  >
+                    {task}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="min-h-0 flex-1" aria-hidden />
+          )}
+
+          <div className="mt-auto flex w-full flex-col gap-4 pt-6">
+            {showMeta ? (
+              <div
+                className={`flex w-full flex-wrap items-stretch gap-5 sm:gap-6 ${servicesElementChromeClass(chromes.price)}`.trim()}
+                style={{
+                  ...servicesElementChromeStyle(chromes.price, accent),
+                  ...priceMargins,
+                }}
+              >
+                {showPrice ? (
+                  <div className="min-w-0">
+                    <p
+                      className="text-[0.68rem] font-semibold uppercase tracking-[0.14em]"
+                      style={metaLabelStyle}
+                    >
+                      Price
+                    </p>
+                    {hasPrice && amount ? (
+                      <p
+                        className={`mt-0.5 font-bold leading-none tracking-[-0.03em] ${elementTextStyleClass(elementStyles.price, 'title')}`}
+                        style={priceStyle}
+                      >
+                        <ServicePriceAmount
+                          amount={amount}
+                          currencySymbol={currencySymbol}
+                          pricePrefix={pricePrefix}
+                          currencyPlacement={currencyPlacement}
+                          isFree={isFree}
+                        />
+                      </p>
+                    ) : (
+                      <ServicesCustomQuoteLabel
+                        className="mt-0.5"
+                        style={{
+                          color:
+                            typeof priceStyle.color === 'string' ? priceStyle.color : undefined,
+                          fontSize: '1.15rem',
+                          lineHeight: 1.2,
+                        }}
+                      />
+                    )}
+                  </div>
+                ) : null}
+
+                {showPrice && showDelivery ? (
+                  <div
+                    className="hidden w-px self-stretch sm:block"
+                    style={{
+                      backgroundColor: `color-mix(in srgb, ${accent} 22%, transparent)`,
+                    }}
+                    aria-hidden
+                  />
+                ) : null}
+
+                {showDelivery ? (
+                  <div className="flex min-w-0 items-center gap-3">
+                    <MediaCardClockIcon className="h-8 w-8 shrink-0" style={{ color: markerColor }} />
+                    <div className="min-w-0">
+                      <p
+                        className="text-[0.68rem] font-semibold uppercase tracking-[0.14em]"
+                        style={metaLabelStyle}
+                      >
+                        Delivery
+                      </p>
+                      <p
+                        className={`mt-0.5 font-bold leading-none tracking-[-0.02em] ${elementTextStyleClass(elementStyles.delivery, 'label')}`}
+                        style={priceStyle}
+                      >
+                        {deliveryLabel}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {showCta ? (
+              <div className="w-full">
+                <ServiceOrderCta
+                  presentation={{
+                    ...presentation,
+                    ctaDesign: 'pill-accent',
+                  }}
+                  fullWidth
+                  labelOverride={!hasPrice ? SERVICES_CUSTOM_QUOTE_CTA_LABEL : undefined}
+                />
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div
+          className={`relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-[1.35rem] lg:mx-0 lg:max-w-none lg:self-stretch lg:aspect-auto lg:min-h-[18rem] ${mediaOrderClass}`}
+        >
+          {coverSrc ? (
+            <PortfolioDeferredMedia
+              src={coverSrc}
+              alt={service.title}
+              className="h-full w-full"
+              objectFit="cover"
+              eager={cardIndex < 2}
+            />
+          ) : (
+            <div
+              className="flex h-full w-full items-center justify-center"
+              style={{
+                background: `linear-gradient(145deg, ${accent} 0%, color-mix(in srgb, ${accent} 55%, #111) 100%)`,
+              }}
+              aria-hidden
+            >
+              <MediaCardLayersIcon className="h-12 w-12 text-white/80" />
+            </div>
+          )}
+        </div>
+      </ServicesCardForeground>
+    </article>
+  );
+}
+
+/**
+ * Bannière média — cover image left, content right with tag chips,
+ * price / delivery meta and CTA. English labels. No principal hover.
+ */
+function EditorialServiceMediaBannerCard({
+  service,
+  presentation = DEFAULT_SERVICES_PRESENTATION,
+  cardIndex = 0,
+  tone = 'light',
+}: {
+  service: ProfileServiceItem;
+  presentation?: PortfolioServicesPresentationSettings;
+  cardIndex?: number;
+  tone?: EditorialMarqueeCardTone;
+}) {
+  const { hasPrice, isFree, amount } = resolveServicePrice(service);
+  const mediaPresentation = resolveServicesMediaCardPresentation(presentation);
+  const shellClass = servicesTierShellClass(mediaPresentation.cardDesign, tone, mediaPresentation);
+  const frameClass = servicesCardFrameClass(mediaPresentation);
+  const surfaceStyle = servicesMediaCardSurfaceStyle(mediaPresentation, tone);
+  const fillAttrs = servicesCardFillDataAttrs(mediaPresentation);
+  const accent = resolveServicesPrincipalColor(presentation);
+  const currencySymbol = servicesCurrencySymbol(presentation.servicesCurrency);
+  const pricePrefix = resolveServicePricePrefix(presentation);
+  const currencyPlacement = resolveServiceCurrencyPlacement(presentation.serviceCurrencyPlacement);
+  const priceMargins = servicePriceBoxStyle(presentation);
+  const contentGap = servicesCardContentGapProps(
+    presentation.servicesContentGap,
+    presentation.servicesContentGapPx
+  );
+  const elementStyles = normalizeServicesElementStyles(presentation.elementStyles);
+  const chromes = presentation.elementChromes ?? DEFAULT_SERVICES_ELEMENT_CHROMES;
+  const description = service.description?.trim() || '';
+  const serviceTasks = resolveServiceTasks(service);
+  const deliveryLabel = service.deadline ? formatServiceDeliveryLabel(service.deadline) : '';
+  const coverSrc =
+    resolveStorageMediaUrl(service.coverImageUrl) || service.coverImageUrl?.trim() || '';
+
+  const colorMode =
+    presentation.useHeroPalette === false
+      ? presentation.activeColorMode === 'light'
+        ? 'light'
+        : 'dark'
+      : 'light';
+  const titleColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.cardTitle.colorDark || elementStyles.cardTitle.color
+      : elementStyles.cardTitle.color;
+  const bodyColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.cardBody.colorDark || elementStyles.cardBody.color
+      : elementStyles.cardBody.color;
+  const priceColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.price.colorDark || elementStyles.price.color
+      : elementStyles.price.color;
+  const tasksColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.tasks.colorDark || elementStyles.tasks.color
+      : elementStyles.tasks.color;
+  const usePairAbInk =
+    pickServicesCardTextContrast(presentation.cardTextContrast, 'auto') === 'pair-ab';
+  const readingSurface = resolveServicesCardSurfaceHex(presentation, tone);
+  const cardInk = servicesCardReadableText(
+    presentation,
+    tone,
+    titleColor,
+    bodyColor,
+    readingSurface
+  );
+  const priceInk = servicesCardReadableText(
+    presentation,
+    tone,
+    priceColor,
+    priceColor,
+    readingSurface
+  );
+  const tasksInk = servicesCardReadableText(
+    presentation,
+    tone,
+    tasksColor,
+    tasksColor,
+    readingSurface
+  );
+  const titleStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.cardTitle, colorMode), color: cardInk.strong }
+    : elementTextInlineStyle(elementStyles.cardTitle, colorMode);
+  const bodyStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.cardBody, colorMode), color: cardInk.muted }
+    : elementTextInlineStyle(elementStyles.cardBody, colorMode);
+  const priceStyle = servicePriceTextStyle(
+    usePairAbInk
+      ? { ...elementTextInlineStyle(elementStyles.price, colorMode), color: priceInk.strong }
+      : elementTextInlineStyle(elementStyles.price, colorMode)
+  );
+  const tasksStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.tasks, colorMode), color: tasksInk.muted }
+    : elementTextInlineStyle(elementStyles.tasks, colorMode);
+
+  const metaLabelStyle = {
+    color: cardInk.muted,
+    fontSize: '0.68rem',
+    fontWeight: 600,
+    letterSpacing: '0.14em',
+    textTransform: 'uppercase' as const,
+  };
+  const markerColor = accent;
+  const surfaceIsDark = servicesColorLuminance(readingSurface) < 0.45;
+  const chipSurfaceHex = surfaceIsDark ? '#1c1c1f' : '#f4f4f5';
+  const chipBg = surfaceIsDark
+    ? `color-mix(in srgb, ${accent} 18%, ${chipSurfaceHex})`
+    : `color-mix(in srgb, ${accent} 5%, ${chipSurfaceHex})`;
+  const dividerColor = surfaceIsDark
+    ? `color-mix(in srgb, ${accent} 22%, #3f3f46)`
+    : `color-mix(in srgb, ${accent} 14%, #e5e5e5)`;
+  const chipTextInk = servicesCardReadableText(
+    presentation,
+    tone,
+    tasksColor,
+    tasksColor,
+    chipSurfaceHex
+  );
+  const chipTaskStyle = {
+    ...tasksStyle,
+    color: chipTextInk.muted,
+  };
+
+  const showTitle = presentation.showServiceTitle !== false;
+  const showDescription = presentation.showServiceDescription !== false && Boolean(description);
+  const showTasks = presentation.showServiceTasks !== false && serviceTasks.length > 0;
+  const showPrice = presentation.showServicePrice !== false;
+  const showDelivery = presentation.showServiceDelivery !== false && Boolean(deliveryLabel);
+  const showCta = presentation.showServiceCta !== false;
+  const showMeta = showPrice || showDelivery;
+  const showFooter = showMeta || showCta;
+  const bannerWidthClass = servicesCardMaxWidthShellClass(
+    resolveMediaBannerCardMaxWidth(presentation),
+    presentation.cardAlignment === 'left' || presentation.cardAlignment === 'right'
+      ? presentation.cardAlignment
+      : 'center',
+    'commercial-list'
+  );
+  const mediaOnLeft = servicesMediaOnLeft(presentation, cardIndex);
+  const mediaOrderClass = mediaOnLeft ? 'order-1 lg:order-1' : 'order-1 lg:order-2';
+  const infoOrderClass = mediaOnLeft ? 'order-2 lg:order-2' : 'order-2 lg:order-1';
+  const splitGridClass = mediaOnLeft
+    ? 'lg:grid-cols-[minmax(12rem,0.9fr)_minmax(0,1.35fr)]'
+    : 'lg:grid-cols-[minmax(0,1.35fr)_minmax(12rem,0.9fr)]';
+
+  return (
+    <article
+      className={`${shellClass} ${frameClass} ${bannerWidthClass} !p-0 flex h-full flex-col overflow-hidden`}
+      style={servicesCardPrincipalStyle(presentation, surfaceStyle)}
+      {...fillAttrs}
+    >
+      <ServicesCardBackgroundLayers presentation={presentation} cardIndex={cardIndex} />
+      <ServicesCardForeground
+        className={`grid min-h-0 flex-1 grid-cols-1 lg:items-stretch ${splitGridClass}`}
+      >
+        <div
+          className={`relative min-h-[14rem] w-full overflow-hidden sm:min-h-[16rem] lg:min-h-full lg:self-stretch ${mediaOrderClass}`}
+        >
+          {coverSrc ? (
+            <PortfolioDeferredMedia
+              src={coverSrc}
+              alt={service.title}
+              className="h-full w-full min-h-[14rem] sm:min-h-[16rem] lg:absolute lg:inset-0 lg:min-h-0"
+              objectFit="cover"
+              eager={cardIndex < 2}
+            />
+          ) : (
+            <div
+              className="flex h-full min-h-[14rem] w-full items-center justify-center sm:min-h-[16rem] lg:absolute lg:inset-0 lg:min-h-0"
+              style={{
+                background: `linear-gradient(145deg, ${accent} 0%, color-mix(in srgb, ${accent} 55%, #111) 100%)`,
+              }}
+              aria-hidden
+            >
+              <MediaCardLayersIcon className="h-12 w-12 text-white/80" />
+            </div>
+          )}
+        </div>
+
+        <div
+          className={`flex min-w-0 flex-col px-5 py-6 sm:px-7 sm:py-7 lg:px-8 lg:py-8 ${infoOrderClass} ${contentGap.className}`.trim()}
+          style={contentGap.style}
+        >
+          {showTitle ? (
+            <div
+              className={servicesElementChromeClass(chromes.cardTitle)}
+              style={servicesElementChromeStyle(chromes.cardTitle, accent)}
+            >
+              <h3
+                className={`font-serif leading-tight tracking-[-0.03em] ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
+                style={titleStyle}
+              >
+                {service.title}
+              </h3>
+            </div>
+          ) : null}
+
+          {showDescription ? (
+            <div
+              className={`mt-3 ${servicesElementChromeClass(chromes.cardBody)}`.trim()}
+              style={servicesElementChromeStyle(chromes.cardBody, accent)}
+            >
+              <p
+                className={`max-w-2xl leading-relaxed ${elementTextStyleClass(elementStyles.cardBody, 'body')}`}
+                style={bodyStyle}
+              >
+                {description}
+              </p>
+            </div>
+          ) : null}
+
+          {showTasks ? (
+            <ul
+              className={`mt-5 flex w-full flex-wrap gap-2.5 ${servicesElementChromeClass(chromes.tasks)}`.trim()}
+              style={servicesElementChromeStyle(chromes.tasks, accent)}
+            >
+              {serviceTasks.map((task, index) => (
+                <li
+                  key={`${index}-${task}`}
+                  className="inline-flex max-w-full items-center rounded-md px-3 py-2"
+                  style={{ backgroundColor: chipBg }}
+                >
+                  <span
+                    className={`min-w-0 leading-snug ${elementTextStyleClass(elementStyles.tasks, 'body')}`}
+                    style={chipTaskStyle}
+                  >
+                    {task}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {showFooter ? (
+            <div className="mt-auto flex w-full flex-col gap-5 pt-6">
+              <div className="h-px w-full" style={{ backgroundColor: dividerColor }} aria-hidden />
+              <div className="flex w-full flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+                {showMeta ? (
+                  <div
+                    className={`flex min-w-0 flex-1 flex-wrap items-stretch gap-5 sm:gap-8 ${servicesElementChromeClass(chromes.price)}`.trim()}
+                    style={{
+                      ...servicesElementChromeStyle(chromes.price, accent),
+                      ...priceMargins,
+                    }}
+                  >
+                    {showPrice ? (
+                      <div className="min-w-0">
+                        <p style={metaLabelStyle}>Price</p>
+                        {hasPrice && amount ? (
+                          <p
+                            className={`mt-0.5 font-bold leading-none tracking-[-0.03em] ${elementTextStyleClass(elementStyles.price, 'title')}`}
+                            style={priceStyle}
+                          >
+                            <ServicePriceAmount
+                              amount={amount}
+                              currencySymbol={currencySymbol}
+                              pricePrefix={pricePrefix}
+                              currencyPlacement={currencyPlacement}
+                              isFree={isFree}
+                            />
+                          </p>
+                        ) : (
+                          <ServicesCustomQuoteLabel
+                            className="mt-0.5"
+                            style={{
+                              color:
+                                typeof priceStyle.color === 'string'
+                                  ? priceStyle.color
+                                  : undefined,
+                              fontSize: '1.15rem',
+                              lineHeight: 1.2,
+                            }}
+                          />
+                        )}
+                      </div>
+                    ) : null}
+
+                    {showDelivery ? (
+                      <div className="flex min-w-0 items-center gap-3">
+                        <MediaCardClockIcon
+                          className="h-8 w-8 shrink-0"
+                          style={{ color: markerColor }}
+                        />
+                        <div className="min-w-0">
+                          <p style={metaLabelStyle}>Delivery</p>
+                          <p
+                            className={`mt-0.5 font-bold leading-none tracking-[-0.02em] ${elementTextStyleClass(elementStyles.delivery, 'label')}`}
+                            style={priceStyle}
+                          >
+                            {deliveryLabel}
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="min-w-0 flex-1" aria-hidden />
+                )}
+
+                {showCta ? (
+                  <div className="w-full shrink-0 sm:w-auto sm:min-w-[12.5rem]">
+                    <ServiceOrderCta
+                      presentation={{
+                        ...presentation,
+                        ctaDesign: 'pill-accent',
+                      }}
+                      fullWidth
+                      labelOverride={!hasPrice ? SERVICES_CUSTOM_QUOTE_CTA_LABEL : undefined}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </ServicesCardForeground>
+    </article>
+  );
+}
+
+/**
+ * Média checklist — image left; right: large regular title, checked tasks,
+ * divider, Get started CTA. Nothing else.
+ */
+function EditorialServiceMediaChecklistCard({
+  service,
+  presentation = DEFAULT_SERVICES_PRESENTATION,
+  cardIndex = 0,
+  tone = 'light',
+}: {
+  service: ProfileServiceItem;
+  presentation?: PortfolioServicesPresentationSettings;
+  cardIndex?: number;
+  tone?: EditorialMarqueeCardTone;
+}) {
+  const mediaPresentation = resolveServicesMediaCardPresentation(presentation);
+  const shellClass = servicesTierShellClass(mediaPresentation.cardDesign, tone, mediaPresentation);
+  const frameClass = servicesCardFrameClass(mediaPresentation);
+  const surfaceStyle = servicesMediaCardSurfaceStyle(mediaPresentation, tone);
+  const fillAttrs = servicesCardFillDataAttrs(mediaPresentation);
+  const accent = resolveServicesPrincipalColor(presentation);
+  const elementStyles = normalizeServicesElementStyles(presentation.elementStyles);
+  const serviceTasks = resolveServiceTasks(service);
+  const coverSrc =
+    resolveStorageMediaUrl(service.coverImageUrl) || service.coverImageUrl?.trim() || '';
+
+  const colorMode =
+    presentation.useHeroPalette === false
+      ? presentation.activeColorMode === 'light'
+        ? 'light'
+        : 'dark'
+      : 'light';
+  const titleColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.cardTitle.colorDark || elementStyles.cardTitle.color
+      : elementStyles.cardTitle.color;
+  const tasksColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.tasks.colorDark || elementStyles.tasks.color
+      : elementStyles.tasks.color;
+  const usePairAbInk =
+    pickServicesCardTextContrast(presentation.cardTextContrast, 'auto') === 'pair-ab';
+  const readingSurface = resolveServicesCardSurfaceHex(presentation, tone);
+  const cardInk = servicesCardReadableText(
+    presentation,
+    tone,
+    titleColor,
+    titleColor,
+    readingSurface
+  );
+  const tasksInk = servicesCardReadableText(
+    presentation,
+    tone,
+    tasksColor,
+    tasksColor,
+    readingSurface
+  );
+  const titleBaseStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.cardTitle, colorMode), color: cardInk.strong }
+    : elementTextInlineStyle(elementStyles.cardTitle, colorMode);
+  const { fontSize: _titleFontSize, fontWeight: _titleFontWeight, ...titleStyleRest } =
+    titleBaseStyle as CSSProperties & { fontSize?: unknown; fontWeight?: unknown };
+  const titleStyle: CSSProperties = {
+    ...titleStyleRest,
+    fontWeight: 400,
+    fontSize: 'clamp(2.35rem, 6vw, 4.75rem)',
+    lineHeight: 1.05,
+    letterSpacing: '-0.04em',
+  };
+  const tasksStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.tasks, colorMode), color: tasksInk.muted }
+    : elementTextInlineStyle(elementStyles.tasks, colorMode);
+
+  const dividerColor = `color-mix(in srgb, ${accent} 14%, #e5e5e5)`;
+  const checklistPresentation = {
+    ...presentation,
+    servicesTaskBulletStyle: 'check' as const,
+    servicesTaskBulletSource: 'section' as const,
+  };
+  const mediaOnLeft = servicesMediaOnLeft(presentation, cardIndex);
+  const mediaOrderClass = mediaOnLeft ? 'order-1 lg:order-1' : 'order-1 lg:order-2';
+  const infoOrderClass = mediaOnLeft ? 'order-2 lg:order-2' : 'order-2 lg:order-1';
+  const splitGridClass = mediaOnLeft
+    ? 'lg:grid-cols-[minmax(12rem,0.95fr)_minmax(0,1.2fr)]'
+    : 'lg:grid-cols-[minmax(0,1.2fr)_minmax(12rem,0.95fr)]';
+
+  const mediaColumn = (
+        <div
+          className={`relative min-h-[20rem] w-full overflow-hidden sm:min-h-[24rem] lg:min-h-full lg:self-stretch ${mediaOrderClass}`}
+        >
+          {coverSrc ? (
+            <PortfolioDeferredMedia
+              src={coverSrc}
+              alt={service.title}
+              className="h-full w-full min-h-[20rem] sm:min-h-[24rem] lg:absolute lg:inset-0 lg:min-h-0"
+              objectFit="cover"
+              eager={cardIndex < 2}
+            />
+          ) : (
+            <div
+              className="flex h-full min-h-[20rem] w-full items-center justify-center sm:min-h-[24rem] lg:absolute lg:inset-0 lg:min-h-0"
+              style={{
+                background: `linear-gradient(145deg, ${accent} 0%, color-mix(in srgb, ${accent} 55%, #111) 100%)`,
+              }}
+              aria-hidden
+            >
+              <MediaCardLayersIcon className="h-12 w-12 text-white/80" />
+            </div>
+          )}
+        </div>
+  );
+
+  const infoColumn = (
+        <div
+          className={`flex min-w-0 flex-col px-5 py-8 sm:px-7 sm:py-10 lg:px-9 lg:py-12 ${infoOrderClass}`}
+        >
+          <h3 className="font-normal" style={titleStyle}>
+            {service.title}
+          </h3>
+
+          {serviceTasks.length > 0 ? (
+            <div className="mt-8 sm:mt-10">
+              <ServicesTaskList
+                tasks={serviceTasks}
+                presentation={checklistPresentation}
+                listClassName="space-y-3"
+                textStyle={tasksStyle}
+                bulletColorOverride={accent}
+              />
+            </div>
+          ) : null}
+
+          <div className="mt-auto flex w-full flex-col gap-5 pt-10 sm:pt-12">
+            <div className="h-px w-full" style={{ backgroundColor: dividerColor }} aria-hidden />
+            <div className="w-full sm:w-auto sm:self-start sm:min-w-[11rem]">
+              <ServiceOrderCta
+                presentation={{
+                  ...presentation,
+                  showServiceCta: true,
+                  ctaDesign: 'pill-accent',
+                  ctaLabel: presentation.ctaLabel?.trim() || 'Get started',
+                }}
+                fullWidth
+              />
+            </div>
+          </div>
+        </div>
+  );
+
+  return (
+    <article
+      className={`${shellClass} ${frameClass} !p-0 flex h-full min-h-[22rem] w-full flex-col overflow-hidden sm:min-h-[26rem] lg:min-h-[30rem]`}
+      style={servicesCardPrincipalStyle(presentation, surfaceStyle)}
+      {...fillAttrs}
+    >
+      <ServicesCardBackgroundLayers presentation={presentation} cardIndex={cardIndex} />
+      <ServicesCardForeground
+        className={`grid min-h-0 flex-1 grid-cols-1 lg:items-stretch ${splitGridClass}`}
+      >
+        {mediaColumn}
+        {infoColumn}
+      </ServicesCardForeground>
+    </article>
+  );
+}
+
+/**
+ * Média split — cover banner on top; below: title + description left,
+ * checked tasks + price / delivery right (vertical divider between columns).
+ */
+function EditorialServiceMediaSplitCard({
+  service,
+  presentation = DEFAULT_SERVICES_PRESENTATION,
+  cardIndex = 0,
+  tone = 'light',
+}: {
+  service: ProfileServiceItem;
+  presentation?: PortfolioServicesPresentationSettings;
+  cardIndex?: number;
+  tone?: EditorialMarqueeCardTone;
+}) {
+  const { hasPrice, isFree, amount } = resolveServicePrice(service);
+  const mediaPresentation = resolveServicesMediaCardPresentation(presentation);
+  const shellClass = servicesTierShellClass(mediaPresentation.cardDesign, tone, mediaPresentation);
+  const frameClass = servicesCardFrameClass(mediaPresentation);
+  const surfaceStyle = servicesMediaCardSurfaceStyle(mediaPresentation, tone);
+  const fillAttrs = servicesCardFillDataAttrs(mediaPresentation);
+  const accent = resolveServicesPrincipalColor(presentation);
+  const currencySymbol = servicesCurrencySymbol(presentation.servicesCurrency);
+  const pricePrefix = resolveServicePricePrefix(presentation);
+  const currencyPlacement = resolveServiceCurrencyPlacement(presentation.serviceCurrencyPlacement);
+  const elementStyles = normalizeServicesElementStyles(presentation.elementStyles);
+  const chromes = presentation.elementChromes ?? DEFAULT_SERVICES_ELEMENT_CHROMES;
+  const description = service.description?.trim() || '';
+  const serviceTasks = resolveServiceTasks(service);
+  const deliveryLabel = service.deadline ? formatServiceDeliveryLabel(service.deadline) : '';
+  const coverSrc =
+    resolveStorageMediaUrl(service.coverImageUrl) || service.coverImageUrl?.trim() || '';
+
+  const colorMode =
+    presentation.useHeroPalette === false
+      ? presentation.activeColorMode === 'light'
+        ? 'light'
+        : 'dark'
+      : 'light';
+  const titleColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.cardTitle.colorDark || elementStyles.cardTitle.color
+      : elementStyles.cardTitle.color;
+  const bodyColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.cardBody.colorDark || elementStyles.cardBody.color
+      : elementStyles.cardBody.color;
+  const priceColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.price.colorDark || elementStyles.price.color
+      : elementStyles.price.color;
+  const tasksColor =
+    presentation.useHeroPalette === false && colorMode === 'dark'
+      ? elementStyles.tasks.colorDark || elementStyles.tasks.color
+      : elementStyles.tasks.color;
+  const usePairAbInk =
+    pickServicesCardTextContrast(presentation.cardTextContrast, 'auto') === 'pair-ab';
+  const readingSurface = resolveServicesCardSurfaceHex(presentation, tone);
+  const surfaceIsDark = servicesColorLuminance(readingSurface) < 0.45;
+  const cardInk = servicesCardReadableText(
+    presentation,
+    tone,
+    titleColor,
+    bodyColor,
+    readingSurface
+  );
+  const priceInk = servicesCardReadableText(
+    presentation,
+    tone,
+    priceColor,
+    priceColor,
+    readingSurface
+  );
+  const tasksInk = servicesCardReadableText(
+    presentation,
+    tone,
+    tasksColor,
+    tasksColor,
+    readingSurface
+  );
+  const titleStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.cardTitle, colorMode), color: cardInk.strong }
+    : elementTextInlineStyle(elementStyles.cardTitle, colorMode);
+  const bodyStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.cardBody, colorMode), color: cardInk.muted }
+    : elementTextInlineStyle(elementStyles.cardBody, colorMode);
+  const priceStyle = servicePriceTextStyle(
+    usePairAbInk
+      ? { ...elementTextInlineStyle(elementStyles.price, colorMode), color: priceInk.strong }
+      : elementTextInlineStyle(elementStyles.price, colorMode)
+  );
+  const tasksStyle = usePairAbInk
+    ? { ...elementTextInlineStyle(elementStyles.tasks, colorMode), color: tasksInk.muted }
+    : elementTextInlineStyle(elementStyles.tasks, colorMode);
+
+  const dividerColor = surfaceIsDark
+    ? `color-mix(in srgb, ${accent} 18%, #3f3f46)`
+    : `color-mix(in srgb, ${accent} 12%, #e5e5e5)`;
+
+  const showTitle = presentation.showServiceTitle !== false;
+  const showDescription = presentation.showServiceDescription !== false && Boolean(description);
+  const showTasks = presentation.showServiceTasks !== false && serviceTasks.length > 0;
+  const showPrice = presentation.showServicePrice !== false;
+  const showDelivery = presentation.showServiceDelivery !== false && Boolean(deliveryLabel);
+  const showMeta = showPrice || showDelivery;
+
+  return (
+    <article
+      className={`${shellClass} ${frameClass} !p-0 flex h-full w-full flex-col overflow-hidden`}
+      style={servicesCardPrincipalStyle(presentation, surfaceStyle)}
+      {...fillAttrs}
+    >
+      <ServicesCardBackgroundLayers presentation={presentation} cardIndex={cardIndex} />
+      <ServicesCardForeground className="flex min-h-0 flex-1 flex-col">
+        <div className="relative aspect-[2.35/1] w-full min-h-[11rem] overflow-hidden sm:min-h-[13rem]">
+          {coverSrc ? (
+            <PortfolioDeferredMedia
+              src={coverSrc}
+              alt={service.title}
+              className="absolute inset-0 h-full w-full"
+              objectFit="cover"
+              eager={cardIndex < 2}
+            />
+          ) : (
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{
+                background: `linear-gradient(145deg, ${accent} 0%, color-mix(in srgb, ${accent} 55%, #111) 100%)`,
+              }}
+              aria-hidden
+            >
+              <MediaCardLayersIcon className="h-12 w-12 text-white/80" />
+            </div>
+          )}
+        </div>
+
+        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+          <div className="flex min-w-0 flex-col px-6 py-7 sm:px-8 sm:py-8 lg:px-10 lg:py-9">
+            {showTitle ? (
+              <div
+                className={servicesElementChromeClass(chromes.cardTitle)}
+                style={servicesElementChromeStyle(chromes.cardTitle, accent)}
+              >
+                <h3
+                  className={`font-serif leading-tight tracking-[-0.03em] ${elementTextStyleClass(elementStyles.cardTitle, 'title')}`}
+                  style={titleStyle}
+                >
+                  {service.title}
+                </h3>
+              </div>
+            ) : null}
+
+            {showDescription ? (
+              <div
+                className={`mt-4 ${servicesElementChromeClass(chromes.cardBody)}`.trim()}
+                style={servicesElementChromeStyle(chromes.cardBody, accent)}
+              >
+                <p
+                  className={`max-w-xl leading-relaxed ${elementTextStyleClass(elementStyles.cardBody, 'body')}`}
+                  style={bodyStyle}
+                >
+                  {description}
+                </p>
+              </div>
+            ) : null}
+          </div>
+
+          <div
+            className="flex min-w-0 flex-col px-6 py-7 sm:px-8 sm:py-8 lg:border-l lg:px-9 lg:py-9"
+            style={{ borderColor: dividerColor }}
+          >
+            {showTasks ? (
+              <ul
+                className={`w-full ${servicesElementChromeClass(chromes.tasks)}`.trim()}
+                style={servicesElementChromeStyle(chromes.tasks, accent)}
+              >
+                {serviceTasks.map((task, index) => (
+                  <li
+                    key={`${index}-${task}`}
+                    className="flex items-start gap-3 border-b py-3.5 first:pt-0 last:border-b-0 last:pb-0"
+                    style={{ borderColor: dividerColor }}
+                  >
+                    <span
+                      className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px]"
+                      style={{ backgroundColor: accent }}
+                      aria-hidden
+                    >
+                      <svg className="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                          fillRule="evenodd"
+                          d="M16.704 5.29a1 1 0 010 1.42l-7.25 7.25a1 1 0 01-1.42 0l-3.25-3.25a1 1 0 111.42-1.42l2.54 2.54 6.54-6.54a1 1 0 011.42 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      className={`min-w-0 leading-snug ${elementTextStyleClass(elementStyles.tasks, 'body')}`}
+                      style={tasksStyle}
+                    >
+                      {task}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            {showMeta ? (
+              <div
+                className={`mt-auto flex w-full items-center gap-5 border-t pt-5 ${showTasks ? 'mt-6' : ''} ${servicesElementChromeClass(chromes.price)}`.trim()}
+                style={{
+                  ...servicesElementChromeStyle(chromes.price, accent),
+                  borderColor: dividerColor,
+                }}
+              >
+                {showPrice ? (
+                  <div className="min-w-0" style={priceStyle}>
+                    {hasPrice && amount ? (
+                      <ServicePriceAmount
+                        amount={amount}
+                        currencySymbol={currencySymbol}
+                        pricePrefix={pricePrefix}
+                        currencyPlacement={currencyPlacement}
+                        isFree={isFree}
+                      />
+                    ) : (
+                      <span className="font-semibold tracking-tight">Custom quote</span>
+                    )}
+                  </div>
+                ) : null}
+                {showPrice && showDelivery ? (
+                  <div
+                    className="h-6 w-px shrink-0"
+                    style={{ backgroundColor: dividerColor }}
+                    aria-hidden
+                  />
+                ) : null}
+                {showDelivery ? (
+                  <p className="min-w-0 font-semibold tracking-tight" style={priceStyle}>
+                    {deliveryLabel}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </ServicesCardForeground>
+    </article>
+  );
+}
+
+function MediaCardLayersIcon({
+  className = '',
+  style,
+}: {
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <svg className={className} style={style} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 3.5L3.75 8 12 12.5 20.25 8 12 3.5z"
+        stroke="currentColor"
+        strokeWidth={1.7}
+        strokeLinejoin="round"
+      />
+      <path
+        d="M3.75 12L12 16.5 20.25 12"
+        stroke="currentColor"
+        strokeWidth={1.7}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M3.75 16L12 20.5 20.25 16"
+        stroke="currentColor"
+        strokeWidth={1.7}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function MediaCardClockIcon({
+  className = '',
+  style,
+}: {
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <svg className={className} style={style} viewBox="0 0 32 32" fill="none" aria-hidden>
+      <circle cx="16" cy="16" r="9.25" stroke="currentColor" strokeWidth={1.7} />
+      <path
+        d="M16 11.2V16l3.4 2.2"
+        stroke="currentColor"
+        strokeWidth={1.7}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function renderServiceGalleryItem(
   service: ProfileServiceItem,
   presentation: PortfolioServicesPresentationSettings,
@@ -8417,6 +10620,56 @@ function renderServiceGalleryItem(
     case 'plan':
       return (
         <EditorialServicePlanCard
+          key={service.id}
+          service={service}
+          presentation={presentation}
+          cardIndex={index}
+          tone={tone}
+        />
+      );
+    case 'plan-split':
+      return (
+        <EditorialServicePlanSplitCard
+          key={service.id}
+          service={service}
+          presentation={presentation}
+          cardIndex={index}
+          tone={tone}
+        />
+      );
+    case 'card-media':
+      return (
+        <EditorialServiceMediaCard
+          key={service.id}
+          service={service}
+          presentation={presentation}
+          cardIndex={index}
+          tone={tone}
+        />
+      );
+    case 'media-banner':
+      return (
+        <EditorialServiceMediaBannerCard
+          key={service.id}
+          service={service}
+          presentation={presentation}
+          cardIndex={index}
+          tone={tone}
+        />
+      );
+    case 'media-checklist':
+      return (
+        <EditorialServiceMediaChecklistCard
+          key={service.id}
+          service={service}
+          presentation={presentation}
+          cardIndex={index}
+          tone={tone}
+        />
+      );
+    case 'media-split':
+      return (
+        <EditorialServiceMediaSplitCard
           key={service.id}
           service={service}
           presentation={presentation}
@@ -9499,7 +11752,7 @@ function ServicesMarqueeTrack({
   return (
     <div className="flex shrink-0 items-stretch gap-5 pr-5" aria-hidden={ariaHidden}>
       {services.map((service, index) => (
-        <div key={`${service.id}-${startIndex}`} className={widthClass}>
+        <div key={`${service.id}-${startIndex}`} className={`${widthClass} overflow-visible py-2`}>
           {renderServiceGalleryItem(
             service,
             presentation,
@@ -9615,11 +11868,45 @@ export function EditorialServicesGallery({
       blockPresentation.servicesColumns
     );
     const widthShell =
-      blockPresentation.displayMode === 'stack' ||
-      blockPresentation.displayMode === 'coverflow' ||
-      blockPresentation.displayMode === 'deck'
-        ? servicesCardMaxWidthShellClass(blockPresentation.cardMaxWidth, blockPresentation.cardAlignment)
-        : 'w-full';
+      layout === 'commercial-list' || layout === 'plan-split'
+        ? servicesCardMaxWidthShellClass(
+            blockPresentation.cardMaxWidth,
+            blockPresentation.cardAlignment,
+            'commercial-list'
+          )
+        : layout === 'media-banner' || layout === 'media-checklist' || layout === 'media-split'
+          ? servicesCardMaxWidthShellClass(
+              layout === 'media-banner'
+                ? resolveMediaBannerCardMaxWidth(blockPresentation)
+                : layout === 'media-split'
+                  ? blockPresentation.cardMaxWidth === 'full' ||
+                    blockPresentation.cardMaxWidth === 'xl' ||
+                    blockPresentation.cardMaxWidth === 'lg' ||
+                    blockPresentation.cardMaxWidth === 'md' ||
+                    blockPresentation.cardMaxWidth === 'sm'
+                    ? blockPresentation.cardMaxWidth
+                    : 'xl'
+                  : blockPresentation.cardMaxWidth === 'full' ||
+                      blockPresentation.cardMaxWidth === 'xl' ||
+                      blockPresentation.cardMaxWidth === 'lg' ||
+                      blockPresentation.cardMaxWidth === 'md' ||
+                      blockPresentation.cardMaxWidth === 'sm'
+                    ? blockPresentation.cardMaxWidth
+                    : 'full',
+              blockPresentation.cardAlignment === 'left' ||
+                blockPresentation.cardAlignment === 'right'
+                ? blockPresentation.cardAlignment
+                : 'center',
+              'commercial-list'
+            )
+        : blockPresentation.displayMode === 'stack' ||
+            blockPresentation.displayMode === 'coverflow' ||
+            blockPresentation.displayMode === 'deck'
+          ? servicesCardMaxWidthShellClass(
+              blockPresentation.cardMaxWidth,
+              blockPresentation.cardAlignment
+            )
+          : 'w-full';
     const containerStyle =
       layout === 'commercial-list'
         ? { gap: `${blockPresentation.commercialRowGapPx ?? 20}px` }
@@ -9628,7 +11915,20 @@ export function EditorialServicesGallery({
       <div className={widthShell}>
         <div className={containerClass} style={containerStyle}>
           {services.map((service, index) => (
-            <PortfolioMotionItem key={service.id} profile={motionProfile} index={index} className="h-full">
+            <PortfolioMotionItem
+              key={service.id}
+              profile={motionProfile}
+              index={index}
+              className={
+                layout === 'card' || layout === 'tier'
+                  ? `mx-auto h-full overflow-visible py-2 ${servicesCardMaxWidthClass(blockPresentation.cardMaxWidth)}`
+                  : layout === 'plan'
+                    ? `mx-auto h-full overflow-visible ${servicesCardMaxWidthClass(blockPresentation.cardMaxWidth)}`
+                    : layout === 'media-banner' || layout === 'media-split'
+                      ? 'h-full w-full'
+                      : 'h-full'
+              }
+            >
               {renderServiceGalleryItem(
                 service,
                 blockPresentation,
@@ -9928,25 +12228,7 @@ function EditorialHighlightMediaPreview({
 function resolveWhyMeShellPresentation(
   presentation: PortfolioAboutPresentationSettings
 ): PortfolioAboutPresentationSettings {
-  const whyMePadding = aboutWhyMeEffectivePadding(presentation);
-  const design = presentation.whyMeDesign;
-
-  // Compact: denser padding only — decor / cadre follow the user's toggles.
-  if (design === 'compact') {
-    return { ...presentation, whyMePadding };
-  }
-
-  // Minimal: no card fill / divider; geometric décor still honors whyMeDecorEnabled.
-  if (design === 'minimal') {
-    return {
-      ...presentation,
-      whyMePadding,
-      whyMeBackgroundEnabled: false,
-      whyMeDividerEnabled: false,
-    };
-  }
-
-  return { ...presentation, whyMePadding };
+  return { ...presentation, whyMePadding: aboutWhyMeEffectivePadding(presentation) };
 }
 
 function WhyMeCardShell({
@@ -9966,26 +12248,11 @@ function WhyMeCardShell({
   const frameClass = aboutWhyMeFrameClass(shell, { includePadding });
   const surfaceStyle = aboutWhyMeFrameStyle(shell);
   const layers = aboutWhyMeLayersSettings(shell);
-  const isMinimal = presentation.whyMeDesign === 'minimal';
 
   return (
     <article
       className={`relative flex h-full flex-col overflow-hidden ${frameClass} ${aboutWhyMeBlockClass(presentation.whyMeDesign)} ${className}`.trim()}
-      style={
-        isMinimal
-          ? {
-              ...surfaceStyle,
-              backgroundColor: 'transparent',
-              ...(shell.whyMeBorder === 'none'
-                ? {
-                    borderStyle: 'solid' as const,
-                    borderWidth: 1,
-                    borderColor: aboutAccentColor(presentation.accentColor),
-                  }
-                : {}),
-            }
-          : surfaceStyle
-      }
+      style={surfaceStyle}
     >
       <ServicesCardBackgroundLayers presentation={layers} cardIndex={cardIndex} />
       {/* Pack chrome + copy to the top — never pin the phrase to the card bottom. */}
@@ -10208,7 +12475,7 @@ function WhyMeBlockHeader({
   index,
   Icon,
   align,
-  design,
+  design: _design,
   accent,
   markerStyle,
   markerSize,
@@ -10246,30 +12513,6 @@ function WhyMeBlockHeader({
     />
   ) : null;
 
-  if (design === 'minimal') {
-    if (!marker) return null;
-    // No decorative hairline — it read as a broken accent stub.
-    return <div className={`flex items-center gap-3 ${align.header}`}>{marker}</div>;
-  }
-
-  if (design === 'compact') {
-    if (!marker && !showHeaderAccent) return null;
-    return (
-      <div className={`flex items-center gap-2.5 ${align.header}`}>
-        {marker}
-        {showHeaderAccent ? (
-          <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition"
-            style={{ color: accent, backgroundColor: softBg }}
-          >
-            <Icon className="h-4 w-4" />
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-
-  // editorial | grid | stacked — icon only, no truncated gradient line
   if (!marker && !showHeaderAccent) return null;
   return (
     <div className={`flex items-center gap-3 ${align.header}`}>
@@ -10541,7 +12784,6 @@ function EditorialHighlightBlock({
   icons: readonly HighlightIcon[];
   presentation: PortfolioAboutPresentationSettings;
 }) {
-  const design = presentation.whyMeDesign;
   const accent = aboutPalettePrincipalColor(presentation);
   const hasMedia = whyMeBlockHasMedia(block, presentation.whyMeMediaPlacement);
   const mediaLayout = hasMedia
@@ -10549,9 +12791,9 @@ function EditorialHighlightBlock({
     : 'hidden';
   const align = whyMeContentAlignClass(presentation.whyMeContentAlign);
   const Icon = icons[index % icons.length];
-  const density = design === 'compact' ? 'compact' : design === 'minimal' ? 'minimal' : 'editorial';
-  const isCompact = design === 'compact';
-  const isMinimal = design === 'minimal';
+  const density = 'editorial' as const;
+  const isCompact = false;
+  const isMinimal = false;
   const showHeaderMarker = (presentation.whyMeMarkerPlacement ?? 'top') === 'top';
   const showHeaderAccent = presentation.whyMeShowHeaderAccent !== false;
   const flushTop = !showHeaderMarker && !showHeaderAccent;
@@ -10592,7 +12834,7 @@ function EditorialHighlightBlock({
               index={index}
               Icon={Icon}
               align={align}
-              design={design}
+              design={presentation.whyMeDesign}
               accent={accent}
               presentation={presentation}
               density={density}
@@ -10658,7 +12900,7 @@ function WhyMeGridBlock({
               index={index}
               Icon={Icon}
               align={align}
-              design="grid"
+              design={presentation.whyMeDesign}
               accent={accent}
               presentation={presentation}
               density="compact"
@@ -10711,7 +12953,7 @@ function WhyMeStackedBlock({
             index={index}
             Icon={Icon}
             align={align}
-            design="stacked"
+            design={presentation.whyMeDesign}
             accent={accent}
             presentation={presentation}
             density="editorial"
@@ -10886,16 +13128,10 @@ function WhyMeTimelineLayout({
   const colorMode = aboutActiveColorMode(presentation);
   const bodyStyle = elementTextInlineStyle(presentation.elementStyles.whyMeBody, colorMode);
   const gapPx = resolveWhyMeGapPx(presentation);
-  /**
-   * Desktop grid: left column = max-content of left phrases (right-aligned → hug spine).
-   * Longest left line then starts on the same edge as the Why me title; shorter ones
-   * stay tucked against the support. Right column takes the rest (left-aligned).
-   */
-  const fromSpine = '1.75rem';
 
   const renderMacaron = (label: string) => (
     <span
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold tabular-nums"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold tabular-nums"
       style={{
         borderColor: accent,
         color: markerColor,
@@ -10907,30 +13143,33 @@ function WhyMeTimelineLayout({
     </span>
   );
 
-  const renderCopy = (title: string, body: string | null, align: 'left' | 'right') => (
-    <>
-      <h4
-        className="whitespace-nowrap text-lg font-bold tracking-[-0.02em] sm:text-xl"
-        style={{ ...bodyStyle, textAlign: align }}
-      >
-        {title}
-      </h4>
-      {body && body !== title ? (
-        <p
-          className={`mt-2 whitespace-nowrap leading-relaxed opacity-70 ${elementTextStyleClass(presentation.elementStyles.whyMeBody, 'body')}`}
-          style={{ ...bodyStyle, textAlign: align }}
+  const renderCopy = (title: string, body: string | null, align: 'left' | 'right' | 'center') => {
+    const copyStyle: CSSProperties = { ...bodyStyle, textAlign: align, fontWeight: 600 };
+    return (
+      <>
+        <h4
+          className="text-lg font-semibold tracking-[-0.02em] sm:text-xl md:text-[1.35rem]"
+          style={copyStyle}
         >
-          {body}
-        </p>
-      ) : null}
-    </>
-  );
+          {title}
+        </h4>
+        {body && body !== title ? (
+          <p
+            className={`mt-2 leading-relaxed opacity-70 ${elementTextStyleClass(presentation.elementStyles.whyMeBody, 'body')}`}
+            style={copyStyle}
+          >
+            {body}
+          </p>
+        ) : null}
+      </>
+    );
+  };
 
   return (
-    <div className="relative w-full min-w-0 overflow-x-clip">
-      {/* Mobile */}
+    <div className="relative mx-auto w-full min-w-0 max-w-5xl overflow-x-clip">
+      {/* Mobile — spine + copy centered as a compact column */}
       <ol
-        className="relative m-0 flex list-none flex-col p-0 md:hidden"
+        className="relative m-0 mx-auto flex w-fit max-w-full list-none flex-col p-0 md:hidden"
         style={{ gap: `${gapPx}px` }}
       >
         <div
@@ -10952,9 +13191,7 @@ function WhyMeTimelineLayout({
               <PortfolioMotionItem profile={motionProfile} index={index} className="w-full min-w-0">
                 <div className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-x-3">
                   <div className="relative z-[1] flex justify-center">{renderMacaron(label)}</div>
-                  <div className="min-w-0 overflow-x-auto pt-1 text-left">
-                    {renderCopy(title, body, 'left')}
-                  </div>
+                  <div className="min-w-0 pt-1 text-left">{renderCopy(title, body, 'left')}</div>
                 </div>
               </PortfolioMotionItem>
             </li>
@@ -10962,12 +13199,12 @@ function WhyMeTimelineLayout({
         })}
       </ol>
 
-      {/* Desktop — shared left max-content column so longest line = title edge */}
+      {/* Desktop — centered spine with equal left / right columns */}
       <ol
-        className="relative m-0 hidden list-none p-0 md:grid"
+        className="relative m-0 mx-auto hidden w-full list-none p-0 md:grid"
         style={{
-          gridTemplateColumns: `max-content 2.5rem minmax(0, 1fr)`,
-          columnGap: fromSpine,
+          gridTemplateColumns: '1fr 2.5rem 1fr',
+          columnGap: '1.75rem',
           rowGap: `${gapPx}px`,
         }}
       >
@@ -10995,13 +13232,9 @@ function WhyMeTimelineLayout({
           const row = index + 1;
 
           return (
-            <li
-              key={block.id}
-              className="contents"
-              style={{ listStyle: 'none' }}
-            >
+            <li key={block.id} className="contents" style={{ listStyle: 'none' }}>
               <div
-                className="min-w-0 self-start whitespace-nowrap text-right"
+                className="min-w-0 self-start text-right"
                 style={{ gridColumn: 1, gridRow: row }}
               >
                 {onLeft ? (
@@ -11017,7 +13250,7 @@ function WhyMeTimelineLayout({
                 {renderMacaron(label)}
               </div>
               <div
-                className="min-w-0 self-start overflow-x-auto whitespace-nowrap text-left"
+                className="min-w-0 self-start text-left"
                 style={{ gridColumn: 3, gridRow: row }}
               >
                 {!onLeft ? (
@@ -11034,6 +13267,95 @@ function WhyMeTimelineLayout({
   );
 }
 
+/** Centered bullet list with fine horizontal rules between items. */
+function WhyMeLinedListLayout({
+  blocks,
+  presentation,
+  motionProfile,
+}: {
+  blocks: ProfileMediaBlock[];
+  presentation: PortfolioAboutPresentationSettings;
+  motionProfile: PortfolioGlobalMotionProfile;
+}) {
+  const accent = aboutAccentColor(presentation.accentColor);
+  const markerColor = resolveWhyMeMarkerColor(presentation) || accent;
+  const lineColor = resolveWhyMeTimelineLineColor(presentation);
+  const colorMode = aboutActiveColorMode(presentation);
+  const bodyStyle = elementTextInlineStyle(presentation.elementStyles.whyMeBody, colorMode);
+  const gapPx = Math.max(resolveWhyMeGapPx(presentation), 28);
+  const markerStyle = presentation.whyMeMarkerStyle ?? 'disc';
+  const markerSize = presentation.whyMeMarkerSize ?? 'md';
+  const markerSizePx = presentation.whyMeMarkerSizePx;
+  const markerWeight = presentation.whyMeMarkerWeight ?? 'regular';
+  const markerWeightAmount = presentation.whyMeMarkerWeightAmount;
+  const showMarker = markerStyle !== 'none';
+  const ruleColor = `color-mix(in srgb, ${lineColor} 42%, transparent)`;
+
+  return (
+    <div className="relative mx-auto w-fit max-w-full min-w-0">
+      <ul className="m-0 flex w-full list-none flex-col p-0" role="list">
+        {blocks.map((block, index) => {
+          const title = whyMeBlockTitle(block);
+          const body = whyMeBlockBody(block);
+          const isLast = index === blocks.length - 1;
+          const copyStyle = { ...bodyStyle, fontWeight: 600 as const };
+
+          return (
+            <li key={block.id} className="m-0 w-full p-0">
+              <PortfolioMotionItem profile={motionProfile} index={index} className="w-full">
+                <div
+                  className="flex w-full items-start gap-3 text-left sm:gap-3.5"
+                  style={{
+                    paddingTop: index === 0 ? 0 : `${Math.round(gapPx * 0.55)}px`,
+                    paddingBottom: `${Math.round(gapPx * 0.55)}px`,
+                  }}
+                >
+                  {showMarker ? (
+                    <WhyMeInlineMarkerSlot>
+                      <WhyMeIndexMarker
+                        index={index}
+                        style={markerStyle}
+                        accent={markerColor}
+                        size={markerSize}
+                        sizePx={markerSizePx}
+                        weight={markerWeight}
+                        weightAmount={markerWeightAmount}
+                        inline
+                      />
+                    </WhyMeInlineMarkerSlot>
+                  ) : null}
+                  <div className="min-w-0 flex-1 text-left">
+                    <p
+                      className="text-lg font-semibold tracking-[-0.02em] sm:text-xl md:text-[1.35rem]"
+                      style={copyStyle}
+                    >
+                      {title}
+                    </p>
+                    {body && body !== title ? (
+                      <p
+                        className={`mt-2 leading-relaxed opacity-70 ${elementTextStyleClass(
+                          presentation.elementStyles.whyMeBody,
+                          'body'
+                        )}`}
+                        style={copyStyle}
+                      >
+                        {body}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </PortfolioMotionItem>
+              {!isLast ? (
+                <div className="h-px w-full" style={{ backgroundColor: ruleColor }} aria-hidden />
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 function WhyMeSplitLayout({
   blocks,
   presentation,
@@ -11044,65 +13366,193 @@ function WhyMeSplitLayout({
   motionProfile: PortfolioGlobalMotionProfile;
 }) {
   const accent = aboutAccentColor(presentation.accentColor);
-  const markerColor = resolveWhyMeMarkerColor(presentation);
-  const bodyStyle = elementTextInlineStyle(
-    presentation.elementStyles.whyMeBody,
-    aboutActiveColorMode(presentation)
-  );
-  const lineColor = resolveWhyMeTimelineLineColor(presentation);
+  const markerColor = resolveWhyMeMarkerColor(presentation) || accent;
+  const colorMode = aboutActiveColorMode(presentation);
+  const bodyStyle = elementTextInlineStyle(presentation.elementStyles.whyMeBody, colorMode);
+  const headingBase = whyMeHeadingStyle({
+    ...presentation,
+    whyMeHeadingFont: presentation.whyMeHeadingFont || 'serif',
+  });
+  const defaultMutedHeading = DEFAULT_ABOUT_WHY_ME_HEADING_COLOR.toLowerCase();
+  const rawHeading = String(headingBase.color || '').toLowerCase();
+  const headingColor =
+    !rawHeading || rawHeading === defaultMutedHeading
+      ? colorMode === 'dark'
+        ? '#fafafa'
+        : '#171717'
+      : headingBase.color;
+  const titleColor =
+    typeof bodyStyle.color === 'string' && bodyStyle.color.trim()
+      ? bodyStyle.color
+      : colorMode === 'dark'
+        ? '#e5e5e5'
+        : '#404040';
 
   return (
-    <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)] lg:gap-14 xl:gap-16">
-      <div className="lg:sticky lg:top-28 lg:self-start">
+    <div className="grid w-full min-w-0 grid-cols-1 items-start gap-12 lg:grid-cols-2 lg:gap-x-16 xl:gap-x-24">
+      <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
         {presentation.showWhyMeHeading !== false ? (
           <h3
-            className={`${whyMeHeadingClass({
-              ...presentation,
-              whyMeHeadingAlignment: 'left',
-              whyMeHeadingSize: presentation.whyMeHeadingSize === 'sm' ? 'md' : presentation.whyMeHeadingSize || 'lg',
-            })}`}
-            style={whyMeHeadingStyle(presentation)}
+            className="font-serif text-[3.25rem] font-medium leading-[0.98] tracking-[-0.045em] sm:text-6xl md:text-7xl lg:text-[4.75rem] xl:text-[5.5rem]"
+            style={{ color: headingColor }}
           >
             {resolveWhyMeHeading(presentation)}
           </h3>
         ) : null}
       </div>
-      <ul className="flex min-w-0 flex-col" style={whyMeGapStyle(presentation)}>
+
+      <ul className="flex min-w-0 w-full flex-col gap-8 sm:gap-10 lg:gap-12 xl:gap-14">
         {blocks.map((block, index) => {
           const label =
             formatWhyMeIndexLabel(index, presentation.whyMeMarkerStyle ?? 'number') ??
             String(index + 1).padStart(2, '0');
           const title = whyMeBlockTitle(block);
-          const body = whyMeBlockBody(block);
           return (
-            <PortfolioMotionItem key={block.id} profile={motionProfile} index={index} className="w-full">
-              <li
-                className="border-t first:border-t-0"
-                style={{ borderColor: lineColor }}
-              >
-                <div className="flex items-start gap-4 sm:gap-5">
+            <PortfolioMotionItem key={block.id} profile={motionProfile} index={index} className="w-full min-w-0">
+              <li className="w-full min-w-0">
+                <div className="flex w-full min-w-0 items-baseline gap-4 sm:gap-5 lg:gap-6">
                   <span
-                    className="shrink-0 text-3xl font-extrabold tabular-nums tracking-[-0.04em] sm:text-4xl"
-                    style={{ color: markerColor || accent }}
+                    className="shrink-0 font-serif text-sm tabular-nums tracking-[0.06em] sm:text-base"
+                    style={{ color: markerColor }}
                   >
                     {label}
                   </span>
-                  <div className="min-w-0 flex-1 pt-1">
-                    <h4 className="text-lg font-bold tracking-[-0.02em] sm:text-xl" style={bodyStyle}>
+                  <p
+                    className="min-w-0 flex-1 font-serif text-lg font-normal leading-snug tracking-[-0.01em] sm:text-xl lg:text-[1.4rem] lg:whitespace-nowrap"
+                    style={{ ...bodyStyle, color: titleColor }}
+                  >
+                    {title}
+                  </p>
+                </div>
+              </li>
+            </PortfolioMotionItem>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function WhyMeMediaAsideLayout({
+  blocks,
+  presentation,
+  motionProfile,
+}: {
+  blocks: ProfileMediaBlock[];
+  presentation: PortfolioAboutPresentationSettings;
+  motionProfile: PortfolioGlobalMotionProfile;
+}) {
+  const accent = aboutAccentColor(presentation.accentColor);
+  const markerColor = resolveWhyMeMarkerColor(presentation) || accent;
+  const colorMode = aboutActiveColorMode(presentation);
+  const bodyStyle = elementTextInlineStyle(presentation.elementStyles.whyMeBody, colorMode);
+  const headingStyle = whyMeHeadingStyle(presentation);
+  const defaultMutedHeading = DEFAULT_ABOUT_WHY_ME_HEADING_COLOR.toLowerCase();
+  const rawHeading = String(headingStyle.color || '').toLowerCase();
+  const headingColor =
+    !rawHeading || rawHeading === defaultMutedHeading
+      ? colorMode === 'dark'
+        ? '#fafafa'
+        : '#171717'
+      : headingStyle.color;
+  const titleColor =
+    typeof bodyStyle.color === 'string' && bodyStyle.color.trim()
+      ? bodyStyle.color
+      : colorMode === 'dark'
+        ? '#e5e5e5'
+        : '#171717';
+  const surface =
+    presentation.cardBackgroundColor?.trim() ||
+    (colorMode === 'dark' ? '#0a0a0a' : '#ffffff');
+  const gapPx = Math.max(resolveWhyMeGapPx(presentation), 28);
+  const markerStyle = presentation.whyMeMarkerStyle ?? 'number';
+  const markerSize = presentation.whyMeMarkerSize ?? 'md';
+  const showMarker = markerStyle !== 'none';
+
+  return (
+    <div className="grid w-full min-w-0 grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-x-14 xl:gap-x-20">
+      <div className="flex min-w-0 flex-col items-start justify-center gap-6 sm:gap-8">
+        <div
+          className="w-full max-w-[16rem] sm:max-w-[18rem]"
+          style={
+            {
+              ['--faq-accent' as string]: accent,
+              ['--faq-ink' as string]: headingColor,
+              ['--faq-surface' as string]: surface,
+            } as CSSProperties
+          }
+        >
+          <FaqSectionIllustration variant="chat" className="mx-0 max-w-none" />
+        </div>
+        {presentation.showWhyMeHeading !== false ? (
+          <h3
+            className={`max-w-md text-left text-3xl font-semibold tracking-[-0.04em] sm:text-4xl md:text-5xl lg:text-[3.25rem] ${aboutHeaderFontClass(
+              presentation.whyMeHeadingFont,
+              'title'
+            )}`}
+            style={{
+              ...headingStyle,
+              color: headingColor,
+              fontWeight: 600,
+            }}
+          >
+            {resolveWhyMeHeading(presentation)}
+          </h3>
+        ) : null}
+      </div>
+
+      <ul className="m-0 flex min-w-0 w-full list-none flex-col p-0" role="list">
+        {blocks.map((block, index) => {
+          const title = whyMeBlockTitle(block);
+          const body = whyMeBlockBody(block);
+          const copyStyle = { ...bodyStyle, color: titleColor, fontWeight: 600 as const };
+
+          return (
+            <li key={block.id} className="m-0 w-full p-0">
+              <PortfolioMotionItem profile={motionProfile} index={index} className="w-full min-w-0">
+                <div
+                  className="flex w-full min-w-0 items-start gap-3 sm:gap-3.5"
+                  style={{
+                    paddingTop: index === 0 ? 0 : `${Math.round(gapPx * 0.45)}px`,
+                    paddingBottom: `${Math.round(gapPx * 0.45)}px`,
+                  }}
+                >
+                  {showMarker ? (
+                    <WhyMeInlineMarkerSlot>
+                      <WhyMeIndexMarker
+                        index={index}
+                        style={markerStyle}
+                        accent={markerColor}
+                        size={markerSize}
+                        sizePx={presentation.whyMeMarkerSizePx}
+                        weight={presentation.whyMeMarkerWeight ?? 'regular'}
+                        weightAmount={presentation.whyMeMarkerWeightAmount}
+                        inline
+                      />
+                    </WhyMeInlineMarkerSlot>
+                  ) : null}
+                  <div className="min-w-0 flex-1 text-left">
+                    <p
+                      className="text-lg font-semibold tracking-[-0.02em] sm:text-xl md:text-[1.35rem]"
+                      style={copyStyle}
+                    >
                       {title}
-                    </h4>
+                    </p>
                     {body && body !== title ? (
                       <p
-                        className={`mt-2 leading-relaxed opacity-70 ${elementTextStyleClass(presentation.elementStyles.whyMeBody, 'body')}`}
-                        style={bodyStyle}
+                        className={`mt-2 leading-relaxed opacity-70 ${elementTextStyleClass(
+                          presentation.elementStyles.whyMeBody,
+                          'body'
+                        )}`}
+                        style={copyStyle}
                       >
                         {body}
                       </p>
                     ) : null}
                   </div>
                 </div>
-              </li>
-            </PortfolioMotionItem>
+              </PortfolioMotionItem>
+            </li>
           );
         })}
       </ul>
@@ -11214,8 +13664,36 @@ export function EditorialWhyMeHeading({
   if (!presentation.showWhyMeHeading) return null;
   if (whyMeDesignEmbedsHeading(presentation.whyMeDesign)) return null;
 
-  // Placement (left/center/right) is handled by the shared Why me track wrapper.
-  // Keep the title start-aligned so it shares the same edge as 01 / 02 / …
+  const isHeroHeading = whyMeDesignUsesHeroHeading(presentation.whyMeDesign);
+  const colorMode = aboutActiveColorMode(presentation);
+  const headingStyle = whyMeHeadingStyle(presentation);
+  const defaultMutedHeading = DEFAULT_ABOUT_WHY_ME_HEADING_COLOR.toLowerCase();
+  const rawHeading = String(headingStyle.color || '').toLowerCase();
+  const heroColor =
+    !rawHeading || rawHeading === defaultMutedHeading
+      ? colorMode === 'dark'
+        ? '#fafafa'
+        : '#171717'
+      : headingStyle.color;
+
+  if (isHeroHeading) {
+    return (
+      <h3
+        className={`mb-10 text-center text-4xl font-semibold tracking-[-0.04em] sm:mb-12 sm:text-5xl md:text-6xl lg:text-7xl ${aboutHeaderFontClass(
+          presentation.whyMeHeadingFont,
+          'title'
+        )}`}
+        style={{
+          ...headingStyle,
+          color: heroColor,
+          fontWeight: 600,
+        }}
+      >
+        {resolveWhyMeHeading(presentation)}
+      </h3>
+    );
+  }
+
   return (
     <h3
       className={`mb-6 text-left ${whyMeHeadingClass({
@@ -11229,19 +13707,17 @@ export function EditorialWhyMeHeading({
   );
 }
 
-/** Side-panel / infos column heading — mirrors Why me heading chrome for twin-columns cohesion. */
+/** Infos column heading — independent title from About / Why choose me. */
 export function EditorialSideInfoHeading({
   presentation = DEFAULT_ABOUT_PRESENTATION,
 }: {
   presentation?: PortfolioAboutPresentationSettings;
 }) {
-  if (!presentation.showSidePanelHeading) return null;
-
-  const title = presentation.sidePanelHeading?.trim() || 'Infos';
+  if (presentation.showSidePanelHeading === false) return null;
 
   return (
-    <h3 className={`mb-6 ${whyMeHeadingClass(presentation)}`} style={whyMeHeadingStyle(presentation)}>
-      {title}
+    <h3 className={`mb-5 ${sidePanelHeadingClass()}`} style={sidePanelHeadingStyle(presentation)}>
+      {resolveSidePanelHeading(presentation)}
     </h3>
   );
 }
@@ -11255,16 +13731,6 @@ export function EditorialWhyMeBlock({
   index: number;
   presentation?: PortfolioAboutPresentationSettings;
 }) {
-  const design = presentation.whyMeDesign;
-
-  if (design === 'grid') {
-    return <WhyMeGridBlock block={block} index={index} icons={WHY_ME_ICONS} presentation={presentation} />;
-  }
-
-  if (design === 'stacked') {
-    return <WhyMeStackedBlock block={block} index={index} icons={WHY_ME_ICONS} presentation={presentation} />;
-  }
-
   return (
     <EditorialHighlightBlock
       block={block}
@@ -11279,53 +13745,46 @@ export function EditorialWhyMeList({
   blocks,
   presentation = DEFAULT_ABOUT_PRESENTATION,
   motionProfile = DEFAULT_MOTION_PROFILE,
-  forceStack = false,
+  forceStack: _forceStack = false,
 }: {
   blocks: ProfileMediaBlock[];
   presentation?: PortfolioAboutPresentationSettings;
   motionProfile?: PortfolioGlobalMotionProfile;
-  /** Split-screen: keep Why Me blocks in a single column (right pane is already narrow). */
+  /** Kept for API compatibility — timeline/split own their layout. */
   forceStack?: boolean;
 }) {
   if (blocks.length === 0) return null;
 
   const design = presentation.whyMeDesign;
 
-  if (!forceStack && design === 'bento') {
-    return (
-      <WhyMeBentoLayout blocks={blocks} presentation={presentation} motionProfile={motionProfile} />
-    );
-  }
-  if (!forceStack && design === 'timeline') {
-    return (
-      <WhyMeTimelineLayout blocks={blocks} presentation={presentation} motionProfile={motionProfile} />
-    );
-  }
-  if (!forceStack && design === 'split') {
+  if (design === 'split') {
     return (
       <WhyMeSplitLayout blocks={blocks} presentation={presentation} motionProfile={motionProfile} />
     );
   }
-  if (!forceStack && design === 'elevate') {
+
+  if (design === 'media-aside') {
     return (
-      <WhyMeElevateLayout blocks={blocks} presentation={presentation} motionProfile={motionProfile} />
+      <WhyMeMediaAsideLayout
+        blocks={blocks}
+        presentation={presentation}
+        motionProfile={motionProfile}
+      />
     );
   }
 
-  const gapStyle = whyMeGapStyle(presentation);
-  const itemsPerRow = forceStack
-    ? 1
-    : resolveWhyMeItemsPerRow(presentation.whyMeDesign, presentation.whyMeItemsPerRow);
-  const layoutClass = whyMeItemsPerRowGridClass(itemsPerRow);
+  if (design === 'lined-list') {
+    return (
+      <WhyMeLinedListLayout
+        blocks={blocks}
+        presentation={presentation}
+        motionProfile={motionProfile}
+      />
+    );
+  }
 
   return (
-    <div className={layoutClass} style={gapStyle}>
-      {blocks.map((block, index) => (
-        <PortfolioMotionItem key={block.id} profile={motionProfile} index={index} className="h-full w-full">
-          <EditorialWhyMeBlock block={block} index={index} presentation={presentation} />
-        </PortfolioMotionItem>
-      ))}
-    </div>
+    <WhyMeTimelineLayout blocks={blocks} presentation={presentation} motionProfile={motionProfile} />
   );
 }
 
@@ -12246,7 +14705,7 @@ function ExperienceEntryTasks({
   showLabel = true,
   labelStyle,
   textStyle,
-  taskBulletSource = 'global',
+  taskBulletSource = 'section',
   taskBulletStyle = 'disc',
   taskBulletColor,
   taskBulletSize = 'md',
@@ -12277,7 +14736,7 @@ function ExperienceEntryTasks({
   const marker = resolveTaskListMarker(
     taskListBulletGlobal,
     {
-      taskBulletSource,
+      taskBulletSource: 'section',
       taskBulletStyle,
       taskBulletColor: taskBulletColor || accent,
       taskBulletSize,
@@ -12853,7 +15312,7 @@ function ExperienceEntryBody({
   elementStyles,
   chipChrome,
   softChipChrome,
-  taskBulletSource = 'global',
+  taskBulletSource = 'section',
   taskBulletStyle = 'disc',
   taskBulletColor,
   taskBulletSize = 'md',
@@ -13838,7 +16297,7 @@ export function EditorialExperienceBlock({
     elementStyles: presentation.elementStyles,
     chipChrome: experienceChipChromeStyle(presentation),
     softChipChrome: experienceSoftChipChromeStyle(presentation),
-    taskBulletSource: presentation.taskBulletSource,
+    taskBulletSource: 'section',
     taskBulletStyle: presentation.taskBulletStyle,
     taskBulletColor: presentation.taskBulletColor,
     taskBulletSize: presentation.taskBulletSize,
@@ -16097,7 +18556,6 @@ export function EditorialSideInfoPanel({
 
     return (
       <div className={`${aboutSidePanelShellClass('list')} ${centerClass} ${twinFitClass}`.trim()}>
-        <EditorialSideInfoHeading presentation={presentation} />
         <ul className="flex flex-col" style={listGapStyle} role="list">
           {items.map((item, index) => (
             <li
@@ -16460,7 +18918,10 @@ function ContactCardShell({
 }) {
   const openChrome =
     presentation.cardDesign === 'tiles' ||
-    presentation.cardDesign === 'stacked' ||
+    presentation.cardDesign === 'channel-cards' ||
+    isContactOwnedLayoutDesign(presentation.cardDesign);
+  const skipOuterFill =
+    presentation.cardDesign === 'tiles' ||
     presentation.cardDesign === 'channel-cards' ||
     isContactOwnedLayoutDesign(presentation.cardDesign);
   return (
@@ -16470,7 +18931,7 @@ function ContactCardShell({
       )} ${contactCardShellClass(presentation.cardDesign)}`}
       style={{ ...contactCardFrameStyle(presentation), ...contactChromeCssVars(presentation) }}
     >
-      <ServicesCardBackgroundLayers presentation={presentation} />
+      {skipOuterFill ? null : <ServicesCardBackgroundLayers presentation={presentation} />}
       <ServicesCardForeground>{children}</ServicesCardForeground>
     </div>
   );
@@ -16528,10 +18989,20 @@ function ContactItemIconBadge({
   presentation: PortfolioContactPresentationSettings;
   children: React.ReactNode;
 }) {
+  const withThinBorder = {
+    ...presentation,
+    iconBorder: (presentation.iconBorder === 'solid' ? 'solid' : 'soft') as PortfolioContactIconBorder,
+  };
   return (
     <div
-      className={contactIconShellClass(presentation)}
-      style={contactIconShellStyle(presentation)}
+      className={contactIconShellClass(withThinBorder)}
+      style={{
+        ...contactIconShellStyle(withThinBorder),
+        borderColor:
+          presentation.iconBorderColor ||
+          presentation.cardBorderColor ||
+          'color-mix(in srgb, var(--contact-border, #a3a3a3) 55%, transparent)',
+      }}
     >
       {children}
     </div>
@@ -16545,9 +19016,27 @@ type ContactUnifiedItem = {
   subtitle: string;
   external?: boolean;
   icon: React.ReactNode;
-  titleStyleTarget: 'channelValue' | 'locationValue' | 'linkLabel';
-  subtitleStyleTarget: 'linkUrl' | 'linksHeading';
+  titleStyleTarget: 'channelValue' | 'locationValue' | 'linkLabel' | 'linksHeading' | 'linkUrl';
+  subtitleStyleTarget: 'channelValue' | 'locationValue' | 'linkLabel' | 'linksHeading' | 'linkUrl';
 };
+
+function contactElementStyleForTarget(
+  target: ContactUnifiedItem['titleStyleTarget'],
+  elementStyles: PortfolioContactElementStyles
+) {
+  switch (target) {
+    case 'locationValue':
+      return elementStyles.locationValue;
+    case 'linkLabel':
+      return elementStyles.linkLabel;
+    case 'linksHeading':
+      return elementStyles.linksHeading;
+    case 'linkUrl':
+      return elementStyles.linkUrl;
+    default:
+      return elementStyles.channelValue;
+  }
+}
 
 function ContactUnifiedItemRow({
   item,
@@ -16564,41 +19053,59 @@ function ContactUnifiedItemRow({
   elementStyles: PortfolioContactElementStyles;
   colorMode?: 'light' | 'dark';
 }) {
-  const placement = contactIconPlacementClass(iconPlacement);
+  const placement =
+    design === 'directory'
+      ? {
+          row: 'flex flex-row items-center gap-3 text-left',
+          icon: 'shrink-0',
+          text: 'min-w-0 flex-1 text-left',
+        }
+      : contactIconPlacementClass(iconPlacement);
   const shell = contactItemRowShellClass(design, cardPadding);
+  const titleStyleDefRaw = contactElementStyleForTarget(item.titleStyleTarget, elementStyles);
+  const titleStyleDef =
+    design === 'editorial' &&
+    (item.titleStyleTarget === 'channelValue' || item.titleStyleTarget === 'locationValue')
+      ? { ...titleStyleDefRaw, size: 'md' as const }
+      : titleStyleDefRaw;
+  const subtitleStyleDef = contactElementStyleForTarget(item.subtitleStyleTarget, elementStyles);
+  const isChannelValue =
+    item.titleStyleTarget === 'channelValue' ||
+    item.titleStyleTarget === 'locationValue' ||
+    item.titleStyleTarget === 'linkLabel';
   const titleClass = elementTextStyleClass(
-    item.titleStyleTarget === 'linkLabel'
-      ? elementStyles.linkLabel
-      : item.titleStyleTarget === 'locationValue'
-        ? elementStyles.locationValue
-        : elementStyles.channelValue,
-    'body'
-  );
-  const titleStyle = elementTextInlineStyle(
-    item.titleStyleTarget === 'linkLabel'
-      ? elementStyles.linkLabel
-      : item.titleStyleTarget === 'locationValue'
-        ? elementStyles.locationValue
-        : elementStyles.channelValue,
-    colorMode
-  );
+    isChannelValue ? { ...titleStyleDef, weight: 'semibold' } : titleStyleDef,
+    item.titleStyleTarget === 'linksHeading' || item.titleStyleTarget === 'linkUrl' ? 'label' : 'body'
+  )
+    .replace(/\bfont-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const titleStyle: CSSProperties = {
+    ...elementTextInlineStyle(titleStyleDef, colorMode),
+    ...(isChannelValue ? { fontWeight: 600 } : null),
+  };
   const subtitleClass = elementTextStyleClass(
-    item.subtitleStyleTarget === 'linksHeading' ? elementStyles.linksHeading : elementStyles.linkUrl,
-    'label'
+    subtitleStyleDef,
+    item.subtitleStyleTarget === 'linksHeading' || item.subtitleStyleTarget === 'linkUrl'
+      ? 'label'
+      : 'body'
   );
-  const subtitleStyle = elementTextInlineStyle(
-    item.subtitleStyleTarget === 'linksHeading' ? elementStyles.linksHeading : elementStyles.linkUrl,
-    colorMode
-  );
+  const subtitleStyle = elementTextInlineStyle(subtitleStyleDef, colorMode);
+  const showSubtitle = Boolean(item.subtitle?.trim());
 
   const textBlock = (
     <div className={placement.text}>
-      <p className={`truncate ${titleClass}`} style={titleStyle}>
+      <p
+        className={`truncate ${isChannelValue ? 'font-semibold' : ''} ${titleClass}`.trim()}
+        style={titleStyle}
+      >
         {item.title}
       </p>
-      <p className={`mt-0.5 truncate ${subtitleClass}`} style={subtitleStyle}>
-        {item.subtitle}
-      </p>
+      {showSubtitle ? (
+        <p className={`mt-0.5 truncate ${subtitleClass}`} style={subtitleStyle}>
+          {item.subtitle}
+        </p>
+      ) : null}
     </div>
   );
 
@@ -16637,6 +19144,7 @@ function ContactUnifiedList({
   renderSocialIcon,
   socialBrandClass,
   elementStyles,
+  includeLinks = true,
 }: {
   presentation: PortfolioContactPresentationSettings;
   visibleEmail: string | null;
@@ -16646,86 +19154,179 @@ function ContactUnifiedList({
   renderSocialIcon?: (platform: string, className: string) => React.ReactNode;
   socialBrandClass?: (platform: string) => string;
   elementStyles: PortfolioContactElementStyles;
+  /** When false, only email / phone / location rows are rendered (Directory socials sit outside). */
+  includeLinks?: boolean;
 }) {
   const glyphClass = contactIconGlyphClass(presentation.iconSize ?? 'md');
+  const isEditorial = presentation.cardDesign === 'editorial';
+  const isDirectory = presentation.cardDesign === 'directory';
+  const channelIconPresentation = isDirectory
+    ? {
+        ...presentation,
+        iconRadius: 'full' as const,
+        iconBorder: (presentation.iconBorder === 'solid' ? 'solid' : 'soft') as PortfolioContactIconBorder,
+        iconBackgroundEnabled: false,
+        iconColor: presentation.iconColor?.trim() || presentation.ctaColor,
+      }
+    : presentation;
+  // Filled channel glyphs read larger than social marks — keep them one step smaller in editorial.
+  const channelGlyphClass = isEditorial
+    ? contactIconGlyphClass(
+        presentation.iconSize === 'xl'
+          ? 'lg'
+          : presentation.iconSize === 'lg'
+            ? 'md'
+            : 'sm'
+      )
+    : glyphClass;
   const channelItems: ContactUnifiedItem[] = [];
   if (visibleEmail?.trim()) {
-    channelItems.push({
-      id: 'channel-email',
-      href: `mailto:${visibleEmail.trim()}`,
-      title: visibleEmail.trim(),
-      subtitle: 'Email',
-      icon: (
-        <ContactItemIconBadge presentation={presentation}>
-          <ContactChannelGlyph kind="email" className={glyphClass} />
-        </ContactItemIconBadge>
-      ),
-      titleStyleTarget: 'channelValue',
-      subtitleStyleTarget: 'linksHeading',
-    });
+    channelItems.push(
+      isEditorial
+        ? {
+            id: 'channel-email',
+            href: `mailto:${visibleEmail.trim()}`,
+            title: visibleEmail.trim(),
+            subtitle: '',
+            icon: (
+              <ContactItemIconBadge presentation={channelIconPresentation}>
+                <ContactChannelGlyph kind="email" className={channelGlyphClass} />
+              </ContactItemIconBadge>
+            ),
+            titleStyleTarget: 'channelValue',
+            subtitleStyleTarget: 'linksHeading',
+          }
+        : {
+            id: 'channel-email',
+            href: `mailto:${visibleEmail.trim()}`,
+            title: visibleEmail.trim(),
+            subtitle: 'Email',
+            icon: (
+              <ContactItemIconBadge presentation={channelIconPresentation}>
+                <ContactChannelGlyph kind="email" className={glyphClass} />
+              </ContactItemIconBadge>
+            ),
+            titleStyleTarget: 'channelValue',
+            subtitleStyleTarget: 'linksHeading',
+          }
+    );
   }
   if (visiblePhone?.trim()) {
-    channelItems.push({
-      id: 'channel-phone',
-      href: `tel:${visiblePhone.trim()}`,
-      title: formatPhoneDisplay(visiblePhone.trim()),
-      subtitle: 'Phone',
-      icon: (
-        <ContactItemIconBadge presentation={presentation}>
-          <ContactChannelGlyph kind="phone" className={glyphClass} />
-        </ContactItemIconBadge>
-      ),
-      titleStyleTarget: 'channelValue',
-      subtitleStyleTarget: 'linksHeading',
-    });
+    channelItems.push(
+      isEditorial
+        ? {
+            id: 'channel-phone',
+            href: `tel:${visiblePhone.trim()}`,
+            title: formatPhoneDisplay(visiblePhone.trim()),
+            subtitle: '',
+            icon: (
+              <ContactItemIconBadge presentation={channelIconPresentation}>
+                <ContactChannelGlyph kind="phone" className={channelGlyphClass} />
+              </ContactItemIconBadge>
+            ),
+            titleStyleTarget: 'channelValue',
+            subtitleStyleTarget: 'linksHeading',
+          }
+        : {
+            id: 'channel-phone',
+            href: `tel:${visiblePhone.trim()}`,
+            title: formatPhoneDisplay(visiblePhone.trim()),
+            subtitle: 'Phone',
+            icon: (
+              <ContactItemIconBadge presentation={channelIconPresentation}>
+                <ContactChannelGlyph kind="phone" className={glyphClass} />
+              </ContactItemIconBadge>
+            ),
+            titleStyleTarget: 'channelValue',
+            subtitleStyleTarget: 'linksHeading',
+          }
+    );
   }
   if (visibleLocation?.trim()) {
-    channelItems.push({
-      id: 'channel-location',
-      href: `https://maps.google.com/?q=${encodeURIComponent(visibleLocation.trim())}`,
-      title: visibleLocation.trim(),
-      subtitle: 'Location',
-      external: true,
-      icon: (
-        <ContactItemIconBadge presentation={presentation}>
-          <ContactChannelGlyph kind="location" className={glyphClass} />
-        </ContactItemIconBadge>
-      ),
-      titleStyleTarget: 'locationValue',
-      subtitleStyleTarget: 'linksHeading',
-    });
+    channelItems.push(
+      isEditorial
+        ? {
+            id: 'channel-location',
+            href: `https://maps.google.com/?q=${encodeURIComponent(visibleLocation.trim())}`,
+            title: visibleLocation.trim(),
+            subtitle: '',
+            external: true,
+            icon: (
+              <ContactItemIconBadge presentation={channelIconPresentation}>
+                <ContactChannelGlyph kind="location" className={channelGlyphClass} />
+              </ContactItemIconBadge>
+            ),
+            titleStyleTarget: 'locationValue',
+            subtitleStyleTarget: 'linksHeading',
+          }
+        : {
+            id: 'channel-location',
+            href: `https://maps.google.com/?q=${encodeURIComponent(visibleLocation.trim())}`,
+            title: visibleLocation.trim(),
+            subtitle: 'Location',
+            external: true,
+            icon: (
+              <ContactItemIconBadge presentation={channelIconPresentation}>
+                <ContactChannelGlyph kind="location" className={glyphClass} />
+              </ContactItemIconBadge>
+            ),
+            titleStyleTarget: 'locationValue',
+            subtitleStyleTarget: 'linksHeading',
+          }
+    );
   }
 
-  const linkItems: ContactUnifiedItem[] = links.map((link) => {
-    const url = link.url.trim();
-    let hostname = '';
-    try {
-      hostname = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname.replace(
-        /^www\./i,
-        ''
-      );
-    } catch {
-      hostname = '';
-    }
-    const title = link.label?.trim() || hostname || url;
-    return {
-      id: link.id,
-      href: link.url,
-      title,
-      subtitle: url.replace(/^https?:\/\//, ''),
-      external: true,
-      icon: (
-        <ContactLinkIcon
-          link={link}
-          presentation={presentation}
-          renderSocialIcon={renderSocialIcon}
-          socialBrandClass={socialBrandClass}
-        />
-      ),
-      titleStyleTarget: 'linkLabel' as const,
-      subtitleStyleTarget: 'linkUrl' as const,
-    };
-  });
+  const linkItems: ContactUnifiedItem[] = includeLinks
+    ? links.map((link) => {
+        if (isEditorial) {
+          return {
+            id: link.id,
+            href: link.url,
+            title: contactSocialNetworkLabel(link),
+            subtitle: '',
+            external: true,
+            icon: (
+              <ContactLinkIcon
+                link={link}
+                presentation={presentation}
+                renderSocialIcon={renderSocialIcon}
+                socialBrandClass={socialBrandClass}
+              />
+            ),
+            titleStyleTarget: 'linkLabel' as const,
+            subtitleStyleTarget: 'linkUrl' as const,
+          };
+        }
+        const url = link.url.trim();
+        let hostname = '';
+        try {
+          hostname = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname.replace(
+            /^www\./i,
+            ''
+          );
+        } catch {
+          hostname = '';
+        }
+        const title = link.label?.trim() || hostname || url;
+        return {
+          id: link.id,
+          href: link.url,
+          title,
+          subtitle: url.replace(/^https?:\/\//, ''),
+          external: true,
+          icon: (
+            <ContactLinkIcon
+              link={link}
+              presentation={presentation}
+              renderSocialIcon={renderSocialIcon}
+              socialBrandClass={socialBrandClass}
+            />
+          ),
+          titleStyleTarget: 'linkLabel' as const,
+          subtitleStyleTarget: 'linkUrl' as const,
+        };
+      })
+    : [];
 
   const items =
     presentation.blockOrder === 'links-first'
@@ -16742,11 +19343,137 @@ function ContactUnifiedList({
           item={item}
           design={presentation.cardDesign}
           cardPadding={presentation.cardPadding}
-          iconPlacement={presentation.iconPlacement ?? 'left'}
+          iconPlacement={
+            presentation.cardDesign === 'editorial'
+              ? 'left'
+              : presentation.cardDesign === 'directory'
+                ? 'left'
+                : (presentation.iconPlacement ?? 'left')
+          }
           elementStyles={elementStyles}
         />
       ))}
     </div>
+  );
+}
+
+/** Directory — social / website links as rounded logo-only chips outside the card. */
+function ContactDirectorySocialIcons({
+  links,
+  presentation,
+  renderSocialIcon,
+  socialBrandClass,
+  className = '',
+  enlarged = false,
+}: {
+  links: EditorialContactLink[];
+  presentation: PortfolioContactPresentationSettings;
+  renderSocialIcon?: (platform: string, className: string) => React.ReactNode;
+  socialBrandClass?: (platform: string) => string;
+  className?: string;
+  /** Directory hero socials — much larger chips. */
+  enlarged?: boolean;
+}) {
+  if (links.length === 0) return null;
+  const glyphClass = enlarged
+    ? 'h-10 w-10 sm:h-12 sm:w-12'
+    : contactIconGlyphClass(presentation.iconSize ?? 'md');
+  const thinBorderPresentation = {
+    ...presentation,
+    iconRadius: 'full' as const,
+    iconBorder: (presentation.iconBorder === 'solid' ? 'solid' : 'soft') as PortfolioContactIconBorder,
+    ...(enlarged ? { iconSize: 'xl' as const } : null),
+  };
+  const enlargedShellClass = enlarged
+    ? 'flex h-20 w-20 shrink-0 items-center justify-center rounded-full sm:h-24 sm:w-24'
+    : '';
+
+  return (
+    <nav
+      className={`flex flex-wrap items-center justify-center gap-6 sm:gap-8 ${className}`.trim()}
+      aria-label="Social links"
+    >
+      {links.map((link) => {
+        const platform = inferContactLinkPlatform(link);
+        const socialKey = platform ? normalizeSocialPlatformKey(platform) : 'other';
+        const isSocial = socialKey !== 'other';
+        const useBrand = presentation.iconUseBrandColors !== false;
+        const label =
+          link.label?.trim() ||
+          (platform ? platform.replace(/_/g, ' ').toLowerCase() : 'Link');
+
+        let iconNode: React.ReactNode;
+        let shellClass = `${
+          enlarged ? enlargedShellClass : contactIconShellClass(thinBorderPresentation)
+        } ${contactIconBorderClass(thinBorderPresentation.iconBorder)} transition hover:opacity-90`.trim();
+        let shellStyle: React.CSSProperties = {
+          ...contactIconShellStyle(thinBorderPresentation),
+          borderColor:
+            presentation.iconBorderColor ||
+            presentation.cardBorderColor ||
+            'color-mix(in srgb, var(--contact-border, #a3a3a3) 55%, transparent)',
+        };
+
+        if (isSocial && platform) {
+          iconNode = renderSocialIcon?.(platform, glyphClass) ?? (
+            <SocialPlatformIcon platform={platform} className={glyphClass} />
+          );
+          if (useBrand && presentation.iconBackgroundEnabled !== false) {
+            const brandClass = socialBrandClass?.(platform) ?? socialPlatformBrandClass(platform);
+            shellClass = `${shellClass} ${brandClass}`.trim();
+          }
+        } else if (link.type === 'WEBSITE') {
+          iconNode = (
+            <svg
+              className={glyphClass}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+              />
+            </svg>
+          );
+        } else {
+          iconNode = (
+            <svg
+              className={glyphClass}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+              />
+            </svg>
+          );
+        }
+
+        return (
+          <a
+            key={link.id}
+            href={link.url}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={label}
+            title={label}
+            className={shellClass}
+            style={shellStyle}
+          >
+            {iconNode}
+          </a>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -16759,7 +19486,7 @@ export function ContactChannelCard({
   plainIcon = false,
   showLabel = true,
   paddingClass = 'p-6 sm:p-7',
-  valueTextClass = 'text-lg font-bold leading-snug text-neutral-950',
+  valueTextClass = 'text-lg font-semibold leading-snug text-neutral-950',
   valueTextStyle,
 }: {
   label: string;
@@ -16791,7 +19518,7 @@ export function ContactChannelCard({
       )}
       <div className="min-w-0 flex-1">
         {showLabel ? (
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[color:var(--contact-accent,#ea580c)]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--contact-accent,#ea580c)]">
             {label}
           </p>
         ) : null}
@@ -16805,25 +19532,33 @@ export function ContactChannelCard({
 
 function ContactEmailIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z" />
+      <path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
     </svg>
   );
 }
 
 function ContactPhoneIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M1.5 4.5a3 3 0 013-3h1.372c.86 0 1.61.586 1.819 1.42l1.105 4.423a1.875 1.875 0 01-.694 1.955l-1.293.97c-.135.101-.164.249-.126.352a11.285 11.285 0 006.697 6.697c.103.038.25.009.352-.126l.97-1.293a1.875 1.875 0 011.955-.694l4.423 1.105c.834.209 1.42.959 1.42 1.82V19.5a3 3 0 01-3 3h-2.25C8.552 22.5 1.5 15.448 1.5 6.75V4.5z"
+      />
     </svg>
   );
 }
 
 function ContactLocationIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z"
+      />
     </svg>
   );
 }
@@ -16846,8 +19581,40 @@ function inferContactLinkPlatform(link: EditorialContactLink): string | null {
   if (haystack.includes('linkedin')) return 'LINKEDIN';
   if (haystack.includes('github')) return 'GITHUB';
   if (haystack.includes('twitter') || haystack.includes('x.com')) return 'TWITTER';
+  if (haystack.includes('facebook') || haystack.includes('fb.com') || haystack.includes('fb.me')) {
+    return 'FACEBOOK';
+  }
 
   return link.type === 'SOCIAL' ? link.label : null;
+}
+
+function contactSocialNetworkLabel(link: EditorialContactLink): string {
+  const platform = inferContactLinkPlatform(link);
+  if (platform) {
+    const key = normalizeSocialPlatformKey(platform);
+    switch (key) {
+      case 'youtube':
+        return 'YouTube';
+      case 'tiktok':
+        return 'TikTok';
+      case 'facebook':
+        return 'Facebook';
+      case 'instagram':
+        return 'Instagram';
+      case 'linkedin':
+        return 'LinkedIn';
+      case 'github':
+        return 'GitHub';
+      case 'twitter':
+        return 'X';
+      default:
+        break;
+    }
+  }
+  if (link.type === 'WEBSITE') return 'Website';
+  const label = link.label?.trim();
+  if (label) return label;
+  return 'Link';
 }
 
 function ContactLinkIcon({
@@ -16873,17 +19640,21 @@ function ContactLinkIcon({
       <SocialPlatformIcon platform={platform} className={glyphClass} />
     );
     const noFill = presentation.iconBackgroundEnabled === false;
+    const withThinBorder = {
+      ...presentation,
+      iconBorder: (presentation.iconBorder === 'solid' ? 'solid' : 'soft') as PortfolioContactIconBorder,
+    };
 
     return (
       <div
-        className={`${contactIconShellClass(presentation)} ${noFill ? '' : brandClass}`.trim()}
-        style={
-          noFill
-            ? contactIconShellStyle(presentation)
-            : presentation.iconBorder === 'soft' || presentation.iconBorder === 'solid'
-              ? { borderColor: presentation.iconBorderColor || presentation.cardBorderColor }
-              : undefined
-        }
+        className={`${contactIconShellClass(withThinBorder)} ${noFill ? '' : brandClass}`.trim()}
+        style={{
+          ...(noFill ? contactIconShellStyle(withThinBorder) : {}),
+          borderColor:
+            presentation.iconBorderColor ||
+            presentation.cardBorderColor ||
+            'color-mix(in srgb, var(--contact-border, #a3a3a3) 55%, transparent)',
+        }}
       >
         {iconNode}
       </div>
@@ -17011,12 +19782,19 @@ export function EditorialContactSection({
   const isDesk = isContactDeskDesign(presentation.cardDesign);
   const isInfoPanel = isContactInfoPanelDesign(presentation.cardDesign);
   const isChannelCards = isContactChannelCardsDesign(presentation.cardDesign);
+  const isSwissEditorial = isContactSwissEditorialDesign(presentation.cardDesign);
   const formDesign = resolveContactFormDesign(presentation);
   const colorMode =
     presentation.useHeroPalette === false ? contactActiveColorMode(presentation) : 'light';
   const showContactForm =
-    Boolean(presentation.showContactForm) || isContactOwnedLayoutDesign(presentation.cardDesign);
-  const contactFormPlacement = presentation.contactFormPlacement ?? 'below';
+    Boolean(presentation.showContactForm) ||
+    isContactOwnedLayoutDesign(presentation.cardDesign) ||
+    presentation.cardDesign === 'editorial' ||
+    presentation.cardDesign === 'directory';
+  const contactFormPlacement =
+    presentation.cardDesign === 'editorial' || presentation.cardDesign === 'directory'
+      ? 'side'
+      : (presentation.contactFormPlacement ?? 'below');
   const hasContactList = hasPrimary || hasLinks;
   const bgStyle =
     !suppressBackground && presentation.sectionBackgroundEnabled
@@ -17206,17 +19984,50 @@ export function EditorialContactSection({
     );
     const inquiryTitleClass =
       titleTypographyClass ??
-      'text-3xl font-bold tracking-[-0.03em] text-[color:var(--contact-ink,#0a0a0a)] sm:text-4xl lg:text-[2.65rem] lg:leading-[1.15]';
+      'text-3xl font-semibold tracking-[-0.03em] text-[color:var(--contact-ink,#0a0a0a)] sm:text-4xl lg:text-[2.65rem] lg:leading-[1.15]';
     const inquirySubtitleClass =
       subtitleTypographyClass ??
       'mt-4 max-w-md text-base leading-relaxed text-[color:var(--contact-muted,#737373)] sm:text-[1.05rem]';
+
+    const inquiryPanelChannels: Array<{
+      key: string;
+      href: string;
+      value: string;
+      kind: 'email' | 'phone' | 'location';
+      external?: boolean;
+    }> = [];
+    if (visibleEmail?.trim()) {
+      inquiryPanelChannels.push({
+        key: 'email',
+        href: `mailto:${visibleEmail.trim()}`,
+        value: visibleEmail.trim(),
+        kind: 'email',
+      });
+    }
+    if (visiblePhone?.trim()) {
+      inquiryPanelChannels.push({
+        key: 'phone',
+        href: `tel:${visiblePhone.replace(/\s+/g, '')}`,
+        value: formatPhoneDisplay(visiblePhone.trim()),
+        kind: 'phone',
+      });
+    }
+    if (visibleLocation?.trim()) {
+      inquiryPanelChannels.push({
+        key: 'location',
+        href: `https://maps.google.com/?q=${encodeURIComponent(visibleLocation.trim())}`,
+        value: visibleLocation.trim(),
+        kind: 'location',
+        external: true,
+      });
+    }
 
     const inquiryPanelBody = (
       <div className="relative z-[1] w-full" style={chromeVars}>
         <div className="grid w-full items-start gap-10 lg:grid-cols-2 lg:gap-12 xl:gap-16">
           <div className="flex min-w-0 flex-col">
             <p
-              className="text-xs font-bold uppercase tracking-[0.2em]"
+              className="text-xs font-semibold uppercase tracking-[0.2em]"
               style={{ color: 'var(--contact-accent, #ea580c)' }}
             >
               Contact
@@ -17228,68 +20039,97 @@ export function EditorialContactSection({
               {inquirySupporting}
             </p>
 
-            {visiblePhone?.trim() || visibleEmail?.trim() ? (
-              <div className="mt-8 flex w-full max-w-md flex-col gap-4">
-                {visiblePhone?.trim() ? (
+            {inquiryPanelChannels.length > 0 ? (
+              <div className="mt-8 flex w-full max-w-lg flex-col gap-3">
+                {inquiryPanelChannels.map((channel) => (
                   <a
-                    href={`tel:${visiblePhone.replace(/\s+/g, '')}`}
-                    className={contactInquiryPanelStatCardClass()}
+                    key={channel.key}
+                    href={channel.href}
+                    {...(channel.external ? { target: '_blank', rel: 'noreferrer' } : {})}
+                    className={contactInquiryChannelCardClass()}
                   >
                     <span
-                      className="flex h-14 w-14 items-center justify-center rounded-full"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center bg-transparent"
                       style={{
-                        backgroundColor: 'var(--contact-accent-soft, rgba(234,88,12,0.14))',
                         color: 'var(--contact-accent, #ea580c)',
                       }}
                     >
-                      <ContactPhoneIcon className="h-6 w-6" />
+                      <ContactChannelGlyph kind={channel.kind} className="h-5 w-5" />
                     </span>
-                    <p className="mt-4 text-lg font-semibold text-[color:var(--contact-ink,#0a0a0a)]">
-                      Phone
-                    </p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-[color:var(--contact-muted,#737373)]">
-                      {formatPhoneDisplay(visiblePhone.trim())}
-                    </p>
-                  </a>
-                ) : null}
-                {visibleEmail?.trim() ? (
-                  <a
-                    href={`mailto:${visibleEmail.trim()}`}
-                    className={contactInquiryPanelStatCardClass()}
-                  >
-                    <span
-                      className="flex h-14 w-14 items-center justify-center rounded-full"
-                      style={{
-                        backgroundColor: 'var(--contact-accent-soft, rgba(234,88,12,0.14))',
-                        color: 'var(--contact-accent, #ea580c)',
-                      }}
-                    >
-                      <ContactEmailIcon className="h-6 w-6" />
+                    <span className="min-w-0 truncate text-[0.95rem] font-semibold leading-snug text-[color:var(--contact-ink,#0a0a0a)] sm:text-base">
+                      {channel.value}
                     </span>
-                    <p className="mt-4 text-lg font-semibold text-[color:var(--contact-ink,#0a0a0a)]">
-                      Email
-                    </p>
-                    <p className="mt-1.5 break-all text-sm leading-relaxed text-[color:var(--contact-muted,#737373)]">
-                      {visibleEmail.trim()}
-                    </p>
                   </a>
-                ) : null}
+                ))}
               </div>
+            ) : null}
+
+            {visibleLinks.length > 0 ? (
+              <nav
+                className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3"
+                aria-label="Social links"
+              >
+                {visibleLinks.map((link, index) => {
+                  const platform = inferContactLinkPlatform(link);
+                  const iconNode = platform ? (
+                    renderSocialIcon?.(platform, 'h-5 w-5 sm:h-6 sm:w-6') ?? (
+                      <SocialPlatformIcon platform={platform} className="h-5 w-5 sm:h-6 sm:w-6" />
+                    )
+                  ) : (
+                    <svg
+                      className="h-5 w-5 sm:h-6 sm:w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      aria-hidden
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                      />
+                    </svg>
+                  );
+                  return (
+                    <Fragment key={link.id}>
+                      {index > 0 ? (
+                        <span
+                          aria-hidden
+                          className="hidden h-5 w-px bg-[color:var(--contact-border,#e5e5e5)] sm:block"
+                        />
+                      ) : null}
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2.5 text-base font-semibold text-[color:var(--contact-ink,#0a0a0a)] transition hover:text-[color:var(--contact-accent,#ea580c)] sm:text-lg"
+                      >
+                        <span
+                          className="inline-flex items-center justify-center"
+                          style={{ color: 'var(--contact-accent, #ea580c)' }}
+                        >
+                          {iconNode}
+                        </span>
+                        {contactSocialNetworkLabel(link)}
+                      </a>
+                    </Fragment>
+                  );
+                })}
+              </nav>
             ) : null}
           </div>
 
-          <div className="relative min-w-0 w-full pt-2 sm:pt-4 lg:pt-6">
-            <div
-              className={contactInquiryAccentBlockClass()}
-              style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
-              aria-hidden
-            />
+          <div className="relative min-w-0 w-full">
             <PortfolioMotionItem profile={motionProfile} index={0}>
-              <div
-                className={`${contactInquiryFormCardClass(presentation)} flex h-full w-full flex-col`}
-                style={contactFormFrameStyle(presentation)}
-              >
-                {contactFormNode}
+              <div className="relative isolate">
+                <div className={contactInquiryAccentBlockClass(presentation)} aria-hidden />
+                <div
+                  className={`${contactInquiryFormCardClass(presentation)} relative z-[1] flex h-full w-full flex-col`}
+                  style={contactFormFrameStyle(presentation)}
+                >
+                  {contactFormNode}
+                </div>
               </div>
             </PortfolioMotionItem>
             {membersOnlyNode ? <div className="relative z-[1] mt-4">{membersOnlyNode}</div> : null}
@@ -17368,6 +20208,31 @@ export function EditorialContactSection({
           ? 'grid gap-3 sm:grid-cols-2'
           : 'grid gap-3 sm:grid-cols-1 max-w-xl';
 
+    const deskHeader = (
+      <EditorialSectionStickyHeader
+        title={resolvedTitle}
+        subtitle={resolvedSubtitle}
+        subtitleSerif={presentation.subtitleSerif}
+        editorialLayout={editorialLayout}
+        centered
+        alignRight={false}
+        alwaysCentered
+        className="relative z-[1] mb-8 w-full lg:mb-10"
+        titleTypographyClass={titleTypographyClass}
+        titleTypographyStyle={titleTypographyStyle}
+        titleDecorationStyle={titleDecorationStyle}
+        titleChromeClass={titleChromeClass}
+        titleChromeStyle={titleChromeStyle}
+        customTitleSizing={customTitleSizing}
+        subtitleTypographyClass={subtitleTypographyClass}
+        subtitleTypographyStyle={subtitleTypographyStyle}
+        subtitleDecorationStyle={subtitleDecorationStyle}
+        customSubtitleSizing={customSubtitleSizing}
+        orientation={orientation}
+        scrollBehavior="static"
+      />
+    );
+
     const deskBody = (
       <div className="relative z-[1] w-full" style={chromeVars}>
         <div
@@ -17375,22 +20240,33 @@ export function EditorialContactSection({
             presentation.cardPlacement
           )}`}
         >
+          {deskHeader}
           {deskChannels.length > 0 ? (
             <div className={`${deskChannelGrid} mb-4 sm:mb-5`}>
               {deskChannels.map((channel) => {
                 const inner = (
                   <>
                     <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                      className={contactIconShellClass(presentation)}
                       style={{
-                        backgroundColor: 'var(--contact-accent-soft, rgba(234,88,12,0.14))',
-                        color: 'var(--contact-accent, #ea580c)',
+                        ...contactIconShellStyle(presentation),
+                        ...(presentation.iconBorder !== 'none'
+                          ? {
+                              borderColor:
+                                presentation.iconBorderColor ||
+                                presentation.cardBorderColor ||
+                                'color-mix(in srgb, var(--contact-border, #a3a3a3) 55%, transparent)',
+                            }
+                          : null),
                       }}
                     >
-                      <ContactChannelGlyph kind={channel.kind} className="h-5 w-5" />
+                      <ContactChannelGlyph
+                        kind={channel.kind}
+                        className={contactIconGlyphClass(presentation.iconSize ?? 'md')}
+                      />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-[11px] font-bold uppercase tracking-[0.16em] text-[color:var(--contact-muted,#737373)]">
+                      <span className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--contact-muted,#737373)]">
                         {channel.label}
                       </span>
                       <span className="mt-1 block truncate text-sm font-semibold text-[color:var(--contact-ink,#0a0a0a)] sm:text-[0.95rem]">
@@ -17764,6 +20640,512 @@ export function EditorialContactSection({
     );
   }
 
+  // Swiss editorial — ivory frame, serif headline + form, contact band, follow footer.
+  if (isSwissEditorial) {
+    const swissTitle =
+      typeof resolvedTitle === 'string' && resolvedTitle.trim()
+        ? resolvedTitle.trim()
+        : DEFAULT_CONTACT_SWISS_TITLE;
+    const swissSubtitle =
+      typeof sectionSubtitle === 'string' && sectionSubtitle.trim()
+        ? sectionSubtitle.trim()
+        : DEFAULT_CONTACT_SWISS_SUBTITLE;
+    const swissAccent = presentation.ctaColor?.trim() || DEFAULT_CONTACT_SWISS_COBALT;
+
+    const swissChannels: Array<{
+      key: string;
+      label: string;
+      value: string;
+      href: string | null;
+    }> = [];
+    if (visibleEmail?.trim()) {
+      swissChannels.push({
+        key: 'email',
+        label: 'EMAIL',
+        value: visibleEmail.trim(),
+        href: `mailto:${visibleEmail.trim()}`,
+      });
+    }
+    if (visiblePhone?.trim()) {
+      swissChannels.push({
+        key: 'phone',
+        label: 'PHONE',
+        value: formatPhoneDisplay(visiblePhone.trim()),
+        href: `tel:${visiblePhone.replace(/\s+/g, '')}`,
+      });
+    }
+    if (visibleLocation?.trim()) {
+      swissChannels.push({
+        key: 'location',
+        label: 'LOCATION',
+        value: visibleLocation.trim(),
+        href: `https://maps.google.com/?q=${encodeURIComponent(visibleLocation.trim())}`,
+      });
+    }
+
+    const swissSocials = visibleLinks.map((link) => ({
+      id: link.id,
+      label: contactSocialNetworkLabel(link),
+      url: link.url,
+    }));
+
+    const swissForm = (
+      <ContactMessageForm
+        creatorId={creatorId ?? ''}
+        presentation={{ ...presentation, formDesign: 'swiss-editorial' }}
+        formDesign="swiss-editorial"
+        channelsMeta={formChannelsMeta}
+      />
+    );
+
+    const swissBody = (
+      <div className="relative z-[1] w-full">
+        <div
+          className={contactSwissEditorialFrameClass()}
+          style={contactSwissEditorialFrameStyle({
+            ctaColor: swissAccent,
+            cardBackgroundEnabled: false,
+            titleColor: presentation.titleColor,
+            subtitleColor: presentation.subtitleColor,
+            cardBorderColor: presentation.cardBorderColor,
+          })}
+        >
+          <div className="grid gap-10 py-8 sm:py-10 md:grid-cols-2 md:items-stretch md:gap-10 md:py-12 xl:gap-14">
+            <div className="flex min-w-0 gap-6 sm:gap-8 md:h-full">
+              <span
+                className="w-0.5 shrink-0 self-stretch min-h-[4.5rem] md:min-h-0"
+                style={{ backgroundColor: 'var(--contact-swiss-accent, #1E4FD6)' }}
+                aria-hidden
+              />
+              <div className="flex min-w-0 flex-1 flex-col justify-center py-1 pl-1 sm:pl-2 md:py-0">
+                <p className="text-[14px] font-bold uppercase tracking-[0.16em] text-[color:var(--contact-ink,#0a0a0a)]">
+                  CONTACT
+                </p>
+                <h2
+                  className="mt-4 text-[66px] font-normal leading-[1.05] tracking-[-0.03em] text-[color:var(--contact-ink,#0a0a0a)] md:mt-5 md:text-[110px] md:leading-[1.02]"
+                  style={{ fontFamily: SERIF }}
+                >
+                  {swissTitle}
+                </h2>
+                <p className="mt-4 max-w-[520px] text-[18px] leading-relaxed text-[color:var(--contact-muted,#737373)] md:mt-5">
+                  {swissSubtitle}
+                </p>
+              </div>
+            </div>
+
+            <div className="min-w-0 w-full">{swissForm}</div>
+          </div>
+
+          {swissChannels.length > 0 ? (
+            <div className="border-t border-[color:var(--contact-border,#e5e5e5)] px-5 sm:px-8 lg:px-10">
+              <div className="flex flex-col gap-6 py-6 md:grid md:grid-cols-3 md:gap-0 md:divide-x md:divide-[color:var(--contact-border,#e5e5e5)] md:py-0">
+                {swissChannels.map((channel) => {
+                  const valueNode = (
+                    <span
+                      className="mt-2 block break-words text-[19px] font-semibold leading-snug text-[color:var(--contact-ink,#0a0a0a)] underline decoration-[color:var(--contact-border,#d4d4d4)] underline-offset-4"
+                      style={{ fontFamily: SERIF }}
+                    >
+                      {channel.value}
+                    </span>
+                  );
+                  return (
+                    <div key={channel.key} className="min-w-0 md:px-6 md:py-7 first:md:pl-0 last:md:pr-0">
+                      <p className="text-[14px] font-bold uppercase tracking-[0.16em] text-[color:var(--contact-muted,#737373)]">
+                        {channel.label}
+                      </p>
+                      {channel.href ? (
+                        <a
+                          href={channel.href}
+                          {...(channel.key === 'location'
+                            ? { target: '_blank', rel: 'noreferrer' }
+                            : {})}
+                          className="transition hover:opacity-70"
+                        >
+                          {valueNode}
+                        </a>
+                      ) : (
+                        valueNode
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="border-t border-[color:var(--contact-border,#e5e5e5)] px-5 sm:px-8 lg:px-10">
+            <div className="hidden py-6 md:grid md:grid-cols-3 md:items-center md:gap-6">
+              <p className="text-[14px] font-bold uppercase tracking-[0.16em] text-[color:var(--contact-ink,#0a0a0a)]">
+                FOLLOW ME
+              </p>
+              {swissSocials.length > 0 ? (
+                <nav
+                  className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 text-[19px] font-semibold text-[color:var(--contact-ink,#0a0a0a)]"
+                  aria-label="Social links"
+                >
+                  {swissSocials.map((link, index) => (
+                    <Fragment key={link.id}>
+                      {index > 0 ? (
+                        <span className="px-1.5 text-[color:var(--contact-muted,#a3a3a3)]">/</span>
+                      ) : null}
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline decoration-[color:var(--contact-border,#d4d4d4)] underline-offset-4 transition hover:opacity-70"
+                      >
+                        {link.label}
+                      </a>
+                    </Fragment>
+                  ))}
+                </nav>
+              ) : (
+                <span className="text-center text-[19px] font-semibold text-[color:var(--contact-muted,#a3a3a3)]">—</span>
+              )}
+              <p className="text-right text-[14px] font-bold uppercase tracking-[0.16em] text-[color:var(--contact-ink,#0a0a0a)]">
+                {DEFAULT_CONTACT_SWISS_AVAILABILITY}
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center gap-3 py-5 text-center md:hidden">
+              <p className="text-[14px] font-bold uppercase tracking-[0.16em] text-[color:var(--contact-ink,#0a0a0a)]">
+                FOLLOW ME
+              </p>
+              {swissSocials.length > 0 ? (
+                <nav
+                  className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 text-[19px] font-semibold text-[color:var(--contact-ink,#0a0a0a)]"
+                  aria-label="Social links"
+                >
+                  {swissSocials.map((link, index) => (
+                    <Fragment key={link.id}>
+                      {index > 0 ? (
+                        <span className="px-1.5 text-[color:var(--contact-muted,#a3a3a3)]">/</span>
+                      ) : null}
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline decoration-[color:var(--contact-border,#d4d4d4)] underline-offset-4 transition hover:opacity-70"
+                      >
+                        {link.label}
+                      </a>
+                    </Fragment>
+                  ))}
+                </nav>
+              ) : null}
+            </div>
+            <div className="border-t border-[color:var(--contact-border,#e5e5e5)] py-4 text-center md:hidden">
+              <p className="text-[14px] font-bold uppercase tracking-[0.16em] text-[color:var(--contact-ink,#0a0a0a)]">
+                {DEFAULT_CONTACT_SWISS_AVAILABILITY}
+              </p>
+            </div>
+          </div>
+        </div>
+        {membersOnlyNode ? <div className="mt-6 flex justify-center">{membersOnlyNode}</div> : null}
+      </div>
+    );
+
+    return (
+      <section
+        id="contact"
+        style={topSpacingStyle}
+        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${
+          bgStyle ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12` : topSpacingClass
+        }`}
+      >
+        {bgStyle ? (
+          <>
+            {(presentation.sectionBackgroundOpacity ?? 100) >= 100 ? (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute top-0 left-1/2 z-0 w-screen -translate-x-1/2 -bottom-16 bg-white sm:-bottom-20"
+              />
+            ) : null}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute top-0 left-1/2 z-0 w-screen -translate-x-1/2 -bottom-16 sm:-bottom-20"
+              style={bgStyle}
+            />
+          </>
+        ) : null}
+        {swissBody}
+      </section>
+    );
+  }
+
+  // Editorial — title lives in the left column so the form aligns to the top
+  // and both columns stretch to roughly equal height.
+  if (presentation.cardDesign === 'editorial') {
+    const editorialListCard = hasContactList ? (
+      <ContactCardShell presentation={presentation}>
+        <ContactUnifiedList
+          presentation={presentation}
+          visibleEmail={visibleEmail}
+          visiblePhone={visiblePhone}
+          visibleLocation={visibleLocation}
+          links={visibleLinks}
+          includeLinks
+          renderSocialIcon={renderSocialIcon}
+          socialBrandClass={socialBrandClass}
+          elementStyles={elementStyles}
+        />
+      </ContactCardShell>
+    ) : null;
+
+    const editorialHeader = (
+      <EditorialSectionStickyHeader
+        title={resolvedTitle}
+        subtitle={resolvedSubtitle}
+        subtitleSerif={presentation.subtitleSerif}
+        editorialLayout={editorialLayout}
+        centered={false}
+        alignRight={false}
+        alwaysCentered={false}
+        className="relative z-[1] mb-8 w-full lg:mb-10"
+        titleTypographyClass={titleTypographyClass}
+        titleTypographyStyle={titleTypographyStyle}
+        titleDecorationStyle={titleDecorationStyle}
+        titleChromeClass={titleChromeClass}
+        titleChromeStyle={titleChromeStyle}
+        customTitleSizing={customTitleSizing}
+        subtitleTypographyClass={subtitleTypographyClass}
+        subtitleTypographyStyle={subtitleTypographyStyle}
+        subtitleDecorationStyle={subtitleDecorationStyle}
+        customSubtitleSizing={customSubtitleSizing}
+        orientation={orientation}
+        scrollBehavior="static"
+      />
+    );
+
+    const editorialBody = (
+      <div className="relative z-[1] w-full" style={chromeVars}>
+        <div className="grid w-full items-stretch gap-8 lg:grid-cols-2 lg:gap-10 xl:gap-12">
+          <div className="flex min-w-0 flex-col">
+            {editorialHeader}
+            {editorialListCard}
+          </div>
+
+          <div className="flex min-h-full min-w-0 flex-col">
+            {showContactForm ? (
+              <PortfolioMotionItem
+                profile={motionProfile}
+                index={0}
+                className="flex min-h-full flex-1 flex-col"
+              >
+                <ContactFormShell presentation={presentation}>{contactFormNode}</ContactFormShell>
+              </PortfolioMotionItem>
+            ) : null}
+          </div>
+        </div>
+
+        {presentation.showCta ? (
+          <div
+            className={`mx-auto mt-10 flex max-w-3xl flex-col items-center gap-4 ${
+              presentation.ctaDesign === 'full-width' ? 'w-full px-4' : ''
+            }`}
+          >
+            <PortfolioMotionItem profile={motionProfile} index={1}>
+              <a
+                href={ctaHref}
+                {...(ctaHref.startsWith('http') || ctaHref.startsWith('mailto')
+                  ? { target: '_blank', rel: 'noreferrer' }
+                  : {})}
+                className={`${contactCtaClassName(presentation.ctaDesign)} ${ctaTextClass}`.trim()}
+                style={ctaTextStyle}
+              >
+                {resolvedCtaLabel}
+                <ArrowUpRight className="h-4 w-4" />
+              </a>
+            </PortfolioMotionItem>
+            {membersOnlyNode}
+          </div>
+        ) : membersOnlyNode ? (
+          <div className="mt-6 flex justify-center">{membersOnlyNode}</div>
+        ) : null}
+      </div>
+    );
+
+    return (
+      <section
+        id="contact"
+        style={topSpacingStyle}
+        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${
+          bgStyle ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12` : topSpacingClass
+        }`}
+      >
+        {bgStyle ? (
+          <>
+            {(presentation.sectionBackgroundOpacity ?? 100) >= 100 ? (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute top-0 left-1/2 z-0 w-screen -translate-x-1/2 -bottom-16 bg-white sm:-bottom-20"
+              />
+            ) : null}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute top-0 left-1/2 z-0 w-screen -translate-x-1/2 -bottom-16 sm:-bottom-20"
+              style={bgStyle}
+            />
+          </>
+        ) : null}
+        {split ? (
+          <>
+            <div className="relative z-[1]">
+              <PortfolioSplitScreenTitle>{editorialHeader}</PortfolioSplitScreenTitle>
+            </div>
+            <div className="relative z-[1] w-full" style={chromeVars}>
+              <div className="grid w-full items-stretch gap-8 lg:grid-cols-2 lg:gap-10">
+                <div className="min-w-0">{editorialListCard}</div>
+                <div className="flex min-h-full min-w-0 flex-col">
+                  {showContactForm ? (
+                    <ContactFormShell presentation={presentation}>{contactFormNode}</ContactFormShell>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          withContactIllustration(editorialBody)
+        )}
+      </section>
+    );
+  }
+
+  // Directory — two columns: centered title + large socials left, form right.
+  if (presentation.cardDesign === 'directory') {
+    const directorySocials =
+      visibleLinks.length > 0 ? (
+        <ContactDirectorySocialIcons
+          links={visibleLinks}
+          presentation={presentation}
+          renderSocialIcon={renderSocialIcon}
+          socialBrandClass={socialBrandClass}
+          enlarged
+        />
+      ) : null;
+
+    const directoryHeader = (
+      <EditorialSectionStickyHeader
+        title={resolvedTitle}
+        subtitle={resolvedSubtitle}
+        subtitleSerif={presentation.subtitleSerif}
+        editorialLayout={editorialLayout}
+        centered
+        alignRight={false}
+        alwaysCentered
+        className="relative z-[1] mb-0 w-full"
+        titleTypographyClass={titleTypographyClass}
+        titleTypographyStyle={titleTypographyStyle}
+        titleDecorationStyle={titleDecorationStyle}
+        titleChromeClass={titleChromeClass}
+        titleChromeStyle={titleChromeStyle}
+        customTitleSizing={customTitleSizing}
+        subtitleTypographyClass={subtitleTypographyClass}
+        subtitleTypographyStyle={subtitleTypographyStyle}
+        subtitleDecorationStyle={subtitleDecorationStyle}
+        customSubtitleSizing={customSubtitleSizing}
+        orientation={orientation}
+        scrollBehavior="static"
+      />
+    );
+
+    const directoryBody = (
+      <div className="relative z-[1] w-full" style={chromeVars}>
+        <div className="grid w-full items-stretch gap-8 lg:grid-cols-2 lg:gap-10 xl:gap-12">
+          <div className="flex min-h-full min-w-0 flex-col items-center justify-center text-center">
+            {directoryHeader}
+            {directorySocials ? <div className="mt-10 w-full sm:mt-12">{directorySocials}</div> : null}
+          </div>
+
+          <div className="flex min-h-full min-w-0 flex-col">
+            {showContactForm ? (
+              <PortfolioMotionItem
+                profile={motionProfile}
+                index={0}
+                className="flex min-h-full flex-1 flex-col"
+              >
+                <ContactFormShell presentation={presentation}>{contactFormNode}</ContactFormShell>
+              </PortfolioMotionItem>
+            ) : null}
+          </div>
+        </div>
+
+        {presentation.showCta ? (
+          <div
+            className={`mx-auto mt-10 flex max-w-3xl flex-col items-center gap-4 ${
+              presentation.ctaDesign === 'full-width' ? 'w-full px-4' : ''
+            }`}
+          >
+            <PortfolioMotionItem profile={motionProfile} index={1}>
+              <a
+                href={ctaHref}
+                {...(ctaHref.startsWith('http') || ctaHref.startsWith('mailto')
+                  ? { target: '_blank', rel: 'noreferrer' }
+                  : {})}
+                className={`${contactCtaClassName(presentation.ctaDesign)} ${ctaTextClass}`.trim()}
+                style={ctaTextStyle}
+              >
+                {resolvedCtaLabel}
+                <ArrowUpRight className="h-4 w-4" />
+              </a>
+            </PortfolioMotionItem>
+            {membersOnlyNode}
+          </div>
+        ) : membersOnlyNode ? (
+          <div className="mt-6 flex justify-center">{membersOnlyNode}</div>
+        ) : null}
+      </div>
+    );
+
+    return (
+      <section
+        id="contact"
+        style={topSpacingStyle}
+        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${
+          bgStyle ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12` : topSpacingClass
+        }`}
+      >
+        {bgStyle ? (
+          <>
+            {(presentation.sectionBackgroundOpacity ?? 100) >= 100 ? (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute top-0 left-1/2 z-0 w-screen -translate-x-1/2 -bottom-16 bg-white sm:-bottom-20"
+              />
+            ) : null}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute top-0 left-1/2 z-0 w-screen -translate-x-1/2 -bottom-16 sm:-bottom-20"
+              style={bgStyle}
+            />
+          </>
+        ) : null}
+        {split ? (
+          <>
+            <div className="relative z-[1]">
+              <PortfolioSplitScreenTitle>{directoryHeader}</PortfolioSplitScreenTitle>
+            </div>
+            <div className="relative z-[1] w-full" style={chromeVars}>
+              {directorySocials ? (
+                <div className="mb-10 flex justify-center">{directorySocials}</div>
+              ) : null}
+              <div className="grid w-full items-stretch gap-8 lg:grid-cols-2 lg:gap-10">
+                <div className="min-w-0" />
+                <div className="flex min-h-full min-w-0 flex-col">
+                  {showContactForm ? (
+                    <ContactFormShell presentation={presentation}>{contactFormNode}</ContactFormShell>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          withContactIllustration(directoryBody)
+        )}
+      </section>
+    );
+  }
+
   const contactAside =
     !split &&
     (presentation.sectionLayout === 'aside-left' ||
@@ -17803,6 +21185,7 @@ export function EditorialContactSection({
         visiblePhone={visiblePhone}
         visibleLocation={visibleLocation}
         links={visibleLinks}
+        includeLinks
         renderSocialIcon={renderSocialIcon}
         socialBrandClass={socialBrandClass}
         elementStyles={elementStyles}
@@ -17816,22 +21199,27 @@ export function EditorialContactSection({
     </ContactFormShell>
   ) : null;
 
+  const hasListOrSocials = Boolean(contactListCard);
   const stackVertically =
-    showContactForm && hasContactList && contactFormPlacement === 'below';
+    showContactForm && hasListOrSocials && contactFormPlacement === 'below';
 
   const contactBodyLayoutClass = stackVertically
     ? `flex flex-col ${contactFormStackGapClass(presentation.formStackGap ?? 'lg')}`
-    : showContactForm && hasContactList && contactFormPlacement === 'side'
+    : showContactForm && hasListOrSocials && contactFormPlacement === 'side'
       ? 'grid gap-6 lg:grid-cols-2'
       : 'flex flex-col gap-6';
   const contactBodyMaxWidth =
-    showContactForm && hasContactList && contactFormPlacement === 'side'
+    showContactForm && hasListOrSocials && contactFormPlacement === 'side'
       ? 'full'
       : presentation.cardMaxWidth;
 
+  const listBlock = contactListCard ? (
+    <div className="flex w-full flex-col gap-6">{contactListCard}</div>
+  ) : null;
+
   const body = (
     <div className="relative z-[1]">
-      {(hasContactList || showContactForm) && (
+      {(hasListOrSocials || showContactForm) && (
         <div
           className={`w-full ${contactCardMaxWidthClass(contactBodyMaxWidth)} ${contactCardPlacementClass(
             presentation.cardPlacement
@@ -17839,7 +21227,7 @@ export function EditorialContactSection({
         >
           <PortfolioMotionItem profile={motionProfile} index={0}>
             <div className={contactBodyLayoutClass}>
-              {contactListCard}
+              {listBlock}
               {contactFormCard}
             </div>
           </PortfolioMotionItem>
@@ -17852,7 +21240,7 @@ export function EditorialContactSection({
             presentation.ctaDesign === 'full-width' ? 'w-full px-4' : ''
           }`}
         >
-          <PortfolioMotionItem profile={motionProfile} index={hasContactList || showContactForm ? 1 : 0}>
+          <PortfolioMotionItem profile={motionProfile} index={hasListOrSocials || showContactForm ? 1 : 0}>
             <a
               href={ctaHref}
               {...(ctaHref.startsWith('http') || ctaHref.startsWith('mailto')
@@ -19395,19 +22783,7 @@ function FooterSocialLinkIcon({
 }
 
 function FooterCtaMailIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      aria-hidden
-    >
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-      <path strokeLinecap="round" d="M4 7l8 6 8-6" />
-    </svg>
-  );
+  return <ContactEmailIcon className={className} />;
 }
 
 function FooterContactIcon({
@@ -19421,35 +22797,32 @@ function FooterContactIcon({
 }) {
   if (type === 'phone') {
     return (
-      <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M3.5 6.5c0-1.2.9-2.2 2.1-2.3l2-.2a1.8 1.8 0 011.7 1.3l.5 1.8a1.8 1.8 0 01-.5 1.7l-1 1a12.5 12.5 0 005.5 5.5l1-1a1.8 1.8 0 011.7-.5l1.8.5a1.8 1.8 0 011.3 1.7l-.2 2a2.2 2.2 0 01-2.3 2.1A15.5 15.5 0 013.5 6.5z"
-        />
-      </svg>
+      <span className="inline-flex" style={style}>
+        <ContactPhoneIcon className={className} />
+      </span>
     );
   }
   if (type === 'email') {
     return (
-      <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-        <rect x="3" y="5" width="18" height="14" rx="2" />
-        <path strokeLinecap="round" d="M4 7l8 6 8-6" />
-      </svg>
+      <span className="inline-flex" style={style}>
+        <ContactEmailIcon className={className} />
+      </span>
     );
   }
   if (type === 'location') {
     return (
-      <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-5.4 7-11a7 7 0 10-14 0c0 5.6 7 11 7 11z" />
-        <circle cx="12" cy="10" r="2.5" />
-      </svg>
+      <span className="inline-flex" style={style}>
+        <ContactLocationIcon className={className} />
+      </span>
     );
   }
   return (
-    <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-      <circle cx="12" cy="12" r="8" />
-      <path strokeLinecap="round" d="M12 8v4l2.5 1.5" />
+    <svg className={className} style={style} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z"
+      />
     </svg>
   );
 }

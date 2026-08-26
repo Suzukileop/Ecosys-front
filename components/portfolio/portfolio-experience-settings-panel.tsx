@@ -13,7 +13,6 @@ import {
   PORTFOLIO_EXPERIENCE_ENTRY_MEDIA_POSITION_OPTIONS,
   PORTFOLIO_EXPERIENCE_ENTRY_MEDIA_RADIUS_OPTIONS,
   PORTFOLIO_EXPERIENCE_ENTRY_MEDIA_SIZE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_HEADER_FONT_OPTIONS,
   PORTFOLIO_EXPERIENCE_SECTION_LAYOUT_OPTIONS,
   PORTFOLIO_EXPERIENCE_ILLUSTRATION_OPTIONS,
   PORTFOLIO_EXPERIENCE_ILLUSTRATION_PLACEMENT_OPTIONS,
@@ -105,7 +104,6 @@ import {
   type PortfolioExperienceStyleTarget,
 } from '@/components/portfolio/portfolio-experience-settings';
 import {
-  PORTFOLIO_LIST_MARKER_SOURCE_OPTIONS,
   PORTFOLIO_LIST_MARKER_STYLE_OPTIONS,
 } from '@/components/portfolio/portfolio-list-marker';
 import { PortfolioListMarkerSizeWeightControls } from '@/components/portfolio/PortfolioListMarkerSizeWeightControls';
@@ -1918,17 +1916,9 @@ export function ExperienceSettingsPanel({
                   <div>
                     <p className="text-sm font-semibold text-neutral-950">Task list bullets</p>
                     <p className="mt-1 text-sm text-neutral-500">
-                      Same puce styles as About → Why me. Choose Global to follow Global → Titles &amp;
-                      motion → Task list bullets.
+                      Style, taille et couleur des puces pour les tâches de cette section.
                     </p>
                   </div>
-                  <ExperienceOptionGrid
-                    label="Source"
-                    options={PORTFOLIO_LIST_MARKER_SOURCE_OPTIONS}
-                    value={experience.taskBulletSource ?? 'global'}
-                    onChange={(taskBulletSource) => onChange({ taskBulletSource })}
-                    columns={2}
-                  />
                   <ExperienceOptionGrid
                     label="Espacement entre tâches"
                     options={PORTFOLIO_EXPERIENCE_TASK_ITEM_GAP_OPTIONS}
@@ -1936,72 +1926,69 @@ export function ExperienceSettingsPanel({
                     onChange={(taskItemGap) => onChange({ taskItemGap })}
                     columns={4}
                   />
-                  {experience.taskBulletSource === 'section' ? (
-                    <>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                          Style
-                        </p>
-                        <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
-                          {PORTFOLIO_LIST_MARKER_STYLE_OPTIONS.map((option) => {
-                            const active = (experience.taskBulletStyle ?? 'disc') === option.value;
-                            return (
-                              <button
-                                key={option.value}
-                                type="button"
-                                title={`${option.label} — ${option.description}`}
-                                onClick={() => onChange({ taskBulletStyle: option.value })}
-                                className={`flex flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2.5 transition ${
-                                  active
-                                    ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                                    : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-                                }`}
-                              >
-                                <span className="text-base font-semibold leading-none text-neutral-900">
-                                  {option.preview}
-                                </span>
-                                <span className="max-w-full truncate text-[10px] font-medium text-neutral-500">
-                                  {option.label}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                      {(experience.taskBulletStyle ?? 'disc') !== 'none' ? (
-                        <>
-                          <PortfolioListMarkerSizeWeightControls
-                            size={experience.taskBulletSize ?? 'md'}
-                            sizePx={experience.taskBulletSizePx}
-                            weight={experience.taskBulletWeight ?? 'regular'}
-                            weightAmount={experience.taskBulletWeightAmount}
-                            OptionGrid={ExperienceOptionGrid}
-                            sizeLabel="Size"
-                            weightLabel="Weight"
-                            onChange={(patch) =>
-                              onChange({
-                                ...(patch.size !== undefined ? { taskBulletSize: patch.size } : null),
-                                ...(patch.sizePx !== undefined ? { taskBulletSizePx: patch.sizePx } : null),
-                                ...(patch.weight !== undefined ? { taskBulletWeight: patch.weight } : null),
-                                ...(patch.weightAmount !== undefined
-                                  ? { taskBulletWeightAmount: patch.weightAmount }
-                                  : null),
-                              })
-                            }
-                          />
-                          <ExperienceManualColorField
-                            label="Bullet color"
-                            value={experience.taskBulletColor}
-                            onChange={(taskBulletColor) => onChange({ taskBulletColor })}
-                          />
-                        </>
-                      ) : null}
-                    </>
-                  ) : (
-                    <p className="text-sm text-neutral-500">
-                      Using Global task list bullets. Switch to Section to override here.
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                      Style
                     </p>
-                  )}
+                    <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
+                      {PORTFOLIO_LIST_MARKER_STYLE_OPTIONS.map((option) => {
+                        const active = (experience.taskBulletStyle ?? 'disc') === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            title={`${option.label} — ${option.description}`}
+                            onClick={() =>
+                              onChange({ taskBulletSource: 'section', taskBulletStyle: option.value })
+                            }
+                            className={`flex flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2.5 transition ${
+                              active
+                                ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                                : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                            }`}
+                          >
+                            <span className="text-base font-semibold leading-none text-neutral-900">
+                              {option.preview}
+                            </span>
+                            <span className="max-w-full truncate text-[10px] font-medium text-neutral-500">
+                              {option.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {(experience.taskBulletStyle ?? 'disc') !== 'none' ? (
+                    <>
+                      <PortfolioListMarkerSizeWeightControls
+                        size={experience.taskBulletSize ?? 'md'}
+                        sizePx={experience.taskBulletSizePx}
+                        weight={experience.taskBulletWeight ?? 'regular'}
+                        weightAmount={experience.taskBulletWeightAmount}
+                        OptionGrid={ExperienceOptionGrid}
+                        sizeLabel="Size"
+                        weightLabel="Weight"
+                        onChange={(patch) =>
+                          onChange({
+                            taskBulletSource: 'section',
+                            ...(patch.size !== undefined ? { taskBulletSize: patch.size } : null),
+                            ...(patch.sizePx !== undefined ? { taskBulletSizePx: patch.sizePx } : null),
+                            ...(patch.weight !== undefined ? { taskBulletWeight: patch.weight } : null),
+                            ...(patch.weightAmount !== undefined
+                              ? { taskBulletWeightAmount: patch.weightAmount }
+                              : null),
+                          })
+                        }
+                      />
+                      <ExperienceManualColorField
+                        label="Bullet color"
+                        value={experience.taskBulletColor}
+                        onChange={(taskBulletColor) =>
+                          onChange({ taskBulletSource: 'section', taskBulletColor })
+                        }
+                      />
+                    </>
+                  ) : null}
                 </div>
               ) : null}
               <ExperienceToggleRow
@@ -2367,23 +2354,6 @@ export function ExperienceSettingsPanel({
           ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <ExperienceOptionGrid
-              label="Title font"
-              options={PORTFOLIO_EXPERIENCE_HEADER_FONT_OPTIONS}
-              value={experience.titleFont}
-              onChange={(titleFont) => onChange({ titleFont })}
-              columns={2}
-            />
-            <ExperienceOptionGrid
-              label="Subtitle font"
-              options={PORTFOLIO_EXPERIENCE_HEADER_FONT_OPTIONS}
-              value={experience.subtitleFont}
-              onChange={(subtitleFont) => onChange({ subtitleFont })}
-              columns={2}
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
             <ExperienceColorField
               experience={experience}
               onChange={onChange}
@@ -2489,13 +2459,6 @@ export function ExperienceSettingsPanel({
                   </p>
                 </>
               ) : null}
-              <ExperienceOptionGrid
-                label="Phrase font"
-                options={PORTFOLIO_EXPERIENCE_HEADER_FONT_OPTIONS}
-                value={experience.yearsFont}
-                onChange={(yearsFont) => onChange({ yearsFont })}
-                columns={2}
-              />
               <ExperienceOptionGrid
                 label="Phrase size"
                 options={PORTFOLIO_EXPERIENCE_YEARS_SIZE_OPTIONS.map((option) => ({
