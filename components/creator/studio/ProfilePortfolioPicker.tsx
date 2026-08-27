@@ -16,7 +16,7 @@ import {
 } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 
-export const MAX_PORTFOLIO_PICKS = 3;
+export const MAX_PORTFOLIO_PICKS = 6; // kept in sync with MAX_PORTFOLIO_WORKS
 
 type ProfilePortfolioPickerProps = {
   readOnly?: boolean;

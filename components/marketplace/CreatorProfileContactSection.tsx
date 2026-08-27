@@ -47,7 +47,7 @@ const PUBLIC_INFO_SECTION_DOM_ID: Record<PublicInfoNavId, string> = {
 
 const PUBLIC_INFO_LABEL_OVERRIDES: Partial<Record<PublicInfoNavId, string>> = {
   about: 'Profile',
-  strengths: 'Skills & tools',
+  strengths: 'Stack',
 };
 
 type CreatorProfileContactSectionProps = {

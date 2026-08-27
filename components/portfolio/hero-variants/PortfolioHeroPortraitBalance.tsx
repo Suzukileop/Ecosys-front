@@ -3,13 +3,16 @@
 import Image from 'next/image';
 import { useMemo } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
-import { resolveHeroAvailabilityValue, resolveHeroSpecialtyValue } from '@/components/portfolio/portfolio-hero-banner-settings';
+import { heroImageGrayscaleClass, resolveHeroAvailabilityValue, resolveHeroSpecialtyValue } from '@/components/portfolio/portfolio-hero-banner-settings';
 import {
   DEFAULT_HERO_PALETTE,
   mergeHeroPalette,
   resolveHeroPaletteColor,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
+import {
+  portfolioHeroContentShellClass,
+} from '@/components/portfolio/portfolio-editorial-layout';
 
 /**
  * Portrait balance — specialty (principal) above color portrait (right);
@@ -17,6 +20,7 @@ import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/p
  * the bio; portrait bottom edge aligns with the bio’s last line.
  */
 export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData }) {
+  const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
@@ -24,6 +28,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
   const principal = resolveHeroPaletteColor(palette, 'principal');
   const bordure = resolveHeroPaletteColor(palette, 'bordure');
   const neutre = resolveHeroPaletteColor(palette, 'neutre');
+  const imageBw = data.presentation.heroImageGrayscale === true;
 
   const displayName = (data.fullName || data.nameLead || 'Lorem Ipsum').trim();
   const specialty = resolveHeroSpecialtyValue(data.specialite);
@@ -75,7 +80,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
           alt={`Portrait of ${displayName}`}
           fill
           sizes={sizes}
-          className="object-cover object-center"
+          className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
           priority
         />
       ) : (
@@ -172,12 +177,10 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
         style={{ backgroundColor: fond }}
       />
 
-      {/* —— Desktop —— */}
+      {/* —— Desktop — global content width + gutter only —— */}
       <div
-        className="relative z-[1] mx-auto hidden w-full max-w-[100rem] md:grid"
+        className={`relative z-[1] hidden md:grid ${shellX}`}
         style={{
-          paddingLeft: 'clamp(1.5rem, 4vw, 3.5rem)',
-          paddingRight: 'clamp(1.5rem, 4vw, 3.5rem)',
           paddingTop: 'calc(8.75rem + env(safe-area-inset-top, 0px))',
           paddingBottom: 'clamp(2.5rem, 5vh, 4rem)',
           gridTemplateColumns: 'minmax(0, 1.2fr) minmax(17rem, 32vw)',
@@ -237,8 +240,10 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
         </div>
       </div>
 
-      {/* —— Mobile —— */}
-      <div className="relative z-[1] mx-auto flex w-full max-w-[100rem] flex-col px-[clamp(1.25rem,5.5vw,1.5rem)] pb-12 pt-[calc(7.25rem+env(safe-area-inset-top,0px))] md:hidden">
+      {/* —— Mobile — same global content width + gutter —— */}
+      <div
+        className={`relative z-[1] flex flex-col pb-12 pt-[calc(7.25rem+env(safe-area-inset-top,0px))] md:hidden ${shellX}`}
+      >
         <p
           className="m-0 self-end text-right font-sans font-medium tracking-[-0.01em]"
           style={{

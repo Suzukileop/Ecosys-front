@@ -7,7 +7,10 @@ export async function getUserProfile(): Promise<User> {
   return res.data;
 }
 
-export async function updateUserProfile(body: { fullName?: string }): Promise<User> {
+export async function updateUserProfile(body: {
+  fullName?: string;
+  username?: string;
+}): Promise<User> {
   const res = await api.put<User>('/api/user/profile', body);
   return res.data;
 }

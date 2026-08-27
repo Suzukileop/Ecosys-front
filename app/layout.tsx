@@ -4,6 +4,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/components/landing/ThemeProvider';
 import { ChunkLoadRecovery } from '@/components/ChunkLoadRecovery';
 import { aeonik } from '@/lib/fonts/aeonik';
+import { geist } from '@/lib/fonts/geist';
 
 const initThemeScript = `
   (function(){
@@ -28,12 +29,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" suppressHydrationWarning className={aeonik.variable}>
+    <html
+      lang="fr"
+      suppressHydrationWarning
+      className={`${geist.variable} ${aeonik.variable}`}
+      style={{ ['--font-geist' as string]: 'var(--font-geist-sans)' }}
+    >
       <head>
         {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
         <script dangerouslySetInnerHTML={{ __html: initThemeScript }} />
       </head>
-      <body className={`${aeonik.className} font-sans antialiased`}>
+      <body className={`${geist.className} font-sans antialiased`}>
         <ChunkLoadRecovery />
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>

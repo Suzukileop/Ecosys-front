@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useMemo, type MouseEvent, type ReactNode } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
+  heroImageGrayscaleClass,
   resolveHeroAvailabilityValue,
   resolveHeroSpecialtyValue,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
@@ -13,12 +14,14 @@ import {
   resolveHeroPaletteColor,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
+import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 
 /**
  * Left portrait — image left; availability + Hello I’m name — a specialty on top;
  * bio + Let’s talk / View project centered at the bottom of the remaining width.
  */
 export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData }) {
+  const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
@@ -26,6 +29,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
   const principal = resolveHeroPaletteColor(palette, 'principal');
   const bordure = resolveHeroPaletteColor(palette, 'bordure');
   const neutre = resolveHeroPaletteColor(palette, 'neutre');
+  const imageBw = data.presentation.heroImageGrayscale === true;
 
   const displayName = (data.fullName || data.nameLead || 'Lorem Ipsum').trim();
   const specialty = resolveHeroSpecialtyValue(data.specialite);
@@ -185,7 +189,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
           alt={`Portrait of ${displayName}`}
           fill
           sizes={sizes}
-          className="object-cover object-center"
+          className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
           priority
         />
       ) : (
@@ -211,12 +215,10 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
         style={{ backgroundColor: fond }}
       />
 
-      {/* —— Desktop —— */}
+      {/* —— Desktop — global content width + gutter only —— */}
       <div
-        className="relative z-[1] mx-auto hidden min-h-[100dvh] w-full max-w-[100rem] md:grid"
+        className={`relative z-[1] hidden min-h-[100dvh] md:grid ${shellX}`}
         style={{
-          paddingLeft: 'clamp(1.25rem, 4vw, 3rem)',
-          paddingRight: 'clamp(1.25rem, 4vw, 3rem)',
           paddingTop: 'calc(6.5rem + env(safe-area-inset-top, 0px))',
           paddingBottom: 'clamp(2.5rem, 5vh, 4rem)',
           gridTemplateColumns: 'minmax(14rem, 34vw) minmax(0, 1fr)',
@@ -242,8 +244,10 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
         </div>
       </div>
 
-      {/* —— Mobile —— */}
-      <div className="relative z-[1] mx-auto flex w-full max-w-[100rem] flex-col px-[clamp(1.25rem,5.5vw,1.5rem)] pb-12 pt-[calc(5.75rem+env(safe-area-inset-top,0px))] md:hidden">
+      {/* —— Mobile — same global content width + gutter —— */}
+      <div
+        className={`relative z-[1] flex flex-col pb-12 pt-[calc(5.75rem+env(safe-area-inset-top,0px))] md:hidden ${shellX}`}
+      >
         {availabilityRow}
         {headline({ mobile: true })}
 

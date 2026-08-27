@@ -157,7 +157,7 @@ export function PublicCreatorProfileShell({
           trailingActions={
             <>
               <Link
-                href={buildCreatorPortfolioPath(creatorId)}
+                href={buildCreatorPortfolioPath(creatorId, profile.username)}
                 target="_blank"
                 rel="noreferrer"
                 className="rounded-full border border-neutral-200 bg-transparent px-4 py-2 text-sm font-medium text-neutral-600 transition hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:bg-neutral-900 dark:hover:text-neutral-100"

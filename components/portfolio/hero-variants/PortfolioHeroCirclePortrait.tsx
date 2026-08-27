@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useMemo, type MouseEvent, type ReactNode } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
+  heroImageGrayscaleClass,
   resolveHeroAvailabilityValue,
   resolveHeroSpecialtyValue,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
@@ -14,8 +15,7 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import {
-  DEFAULT_CONTENT_GUTTER,
-  portfolioEditorialGutterX,
+  portfolioHeroContentShellClass,
 } from '@/components/portfolio/portfolio-editorial-layout';
 
 /**
@@ -24,6 +24,7 @@ import {
  * centered on the image (vertical + horizontal).
  */
 export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData }) {
+  const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
@@ -31,6 +32,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
   const principal = resolveHeroPaletteColor(palette, 'principal');
   const bordure = resolveHeroPaletteColor(palette, 'bordure');
   const neutre = resolveHeroPaletteColor(palette, 'neutre');
+  const imageBw = data.presentation.heroImageGrayscale === true;
 
   const displayName = (data.fullName || data.nameLead || 'Lorem Ipsum').trim();
   const specialty = resolveHeroSpecialtyValue(data.specialite);
@@ -61,7 +63,6 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
   const markSpecialty = data.presentation.heroCirclePortraitSpecialtyMark === true;
   /** Default layout is title at the bottom; toggle “Titre en haut” turns this off. */
   const titleBottom = data.presentation.heroCirclePortraitTitleBottom !== false;
-  const mobileGutterX = portfolioEditorialGutterX(data.contentGutter ?? DEFAULT_CONTENT_GUTTER);
 
   const onNavClick = (href: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     if (href.startsWith('#') && data.onNavigateSection) {
@@ -253,7 +254,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
           alt={`Portrait of ${displayName}`}
           fill
           sizes={sizes}
-          className="object-cover object-center"
+          className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
           priority
         />
       ) : (
@@ -287,8 +288,6 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
   );
 
   const shellPad = {
-    paddingLeft: 0,
-    paddingRight: 0,
     paddingTop: 'calc(4.75rem + env(safe-area-inset-top, 0px))',
     paddingBottom: 'clamp(2rem, 4vh, 3.25rem)',
   };
@@ -304,10 +303,10 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
         style={{ backgroundColor: fond }}
       />
 
-      {/* —— Desktop —— */}
+      {/* —— Desktop — global content width + gutter only —— */}
       {titleBottom ? (
         <div
-          className="relative z-[1] mx-auto hidden min-h-[100dvh] w-full max-w-[100rem] flex-col md:flex"
+          className={`relative z-[1] hidden min-h-[100dvh] flex-col md:flex ${shellX}`}
           style={shellPad}
         >
           <div
@@ -332,7 +331,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
         </div>
       ) : (
         <div
-          className="relative z-[1] mx-auto hidden min-h-[100dvh] w-full max-w-[100rem] md:grid"
+          className={`relative z-[1] hidden min-h-[100dvh] md:grid ${shellX}`}
           style={{
             ...shellPad,
             gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
@@ -351,7 +350,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
 
       {/* —— Mobile —— */}
       <div
-        className={`relative z-[1] mx-auto flex w-full max-w-[100rem] flex-col pb-12 pt-[calc(4.25rem+env(safe-area-inset-top,0px))] md:hidden ${mobileGutterX}`}
+        className={`relative z-[1] flex flex-col pb-12 pt-[calc(4.25rem+env(safe-area-inset-top,0px))] md:hidden ${shellX}`}
       >
         {titleBottom ? (
           <>

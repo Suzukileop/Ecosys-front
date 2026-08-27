@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useMemo } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
+  heroImageGrayscaleClass,
   resolveHeroSpecialtyValue,
   type PortfolioHeroEditorialOverlapAlign,
   type PortfolioHeroEditorialOverlapWidth,
@@ -13,10 +14,7 @@ import {
   mergeHeroPalette,
   resolveHeroPaletteColor,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
-import {
-  DEFAULT_CONTENT_GUTTER,
-  portfolioEditorialGutterX,
-} from '@/components/portfolio/portfolio-editorial-layout';
+import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 
 export type EditorialOverlapHeroProps = {
   image: string | null;
@@ -27,9 +25,10 @@ export type EditorialOverlapHeroProps = {
   ink: string;
   muted: string;
   neutre: string;
-  contentGutterClass: string;
+  contentShellClass: string;
   width: PortfolioHeroEditorialOverlapWidth;
   align: PortfolioHeroEditorialOverlapAlign;
+  imageBw: boolean;
 };
 
 function stageWidthStyle(width: PortfolioHeroEditorialOverlapWidth): {
@@ -66,9 +65,10 @@ export function EditorialOverlapHero({
   ink,
   muted,
   neutre,
-  contentGutterClass,
+  contentShellClass,
   width,
   align,
+  imageBw,
 }: EditorialOverlapHeroProps) {
   const mediaSurface = `color-mix(in srgb, ${neutre} 55%, ${fond})`;
   const scoop = 'clamp(3.5rem, 11vw, 7.5rem)';
@@ -117,7 +117,7 @@ export function EditorialOverlapHero({
         fill
         priority
         sizes={sizes}
-        className="object-cover object-[center_30%]"
+        className={`object-cover object-[center_30%] ${heroImageGrayscaleClass(imageBw)}`}
       />
     ) : (
       <div className="absolute inset-0" style={{ backgroundColor: mediaSurface }} aria-hidden />
@@ -125,13 +125,13 @@ export function EditorialOverlapHero({
 
   return (
     <section
-      className={`relative isolate w-full overflow-x-clip ${contentGutterClass}`}
+      className="relative isolate w-full overflow-x-clip"
       style={{ backgroundColor: fond, color: ink }}
       aria-label="Editorial hero"
     >
       {/* —— Desktop collage (vertically centered) —— */}
       <div
-        className="relative mx-auto hidden min-h-[100dvh] w-full max-w-[100rem] md:flex md:items-center"
+        className={`relative hidden min-h-[100dvh] md:flex md:items-center ${contentShellClass}`}
         style={{
           paddingTop: 'calc(4.75rem + env(safe-area-inset-top, 0px))',
           paddingBottom: 'clamp(1.25rem, 3vh, 2rem)',
@@ -171,7 +171,9 @@ export function EditorialOverlapHero({
       </div>
 
       {/* —— Mobile / tablet stacked —— */}
-      <div className="relative mx-auto flex w-full max-w-[100rem] flex-col pb-12 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] md:hidden">
+      <div
+        className={`relative flex flex-col pb-12 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] md:hidden ${contentShellClass}`}
+      >
         <div className={`relative w-full ${alignClass}`} style={widthStyle}>
           <figure
             className="relative m-0 w-full overflow-hidden rounded-2xl"
@@ -213,6 +215,7 @@ export function PortfolioHeroEditorialOverlap({ data }: { data: PortfolioHeroDat
   const displayName = (data.fullName || data.nameLead || '').trim() || 'there';
   const specialty = resolveHeroSpecialtyValue(data.specialite);
   const image = data.presentation.heroEditorialOverlapImageUrl?.trim() || null;
+  const imageBw = data.presentation.heroImageGrayscale === true;
 
   const customHeadline = data.presentation.heroEditorialOverlapHeadline?.trim() || '';
   const greeting = customHeadline || `Hi, I'm ${displayName}.`;
@@ -240,7 +243,7 @@ export function PortfolioHeroEditorialOverlap({ data }: { data: PortfolioHeroDat
     return `${(lastSpace > 80 ? cut.slice(0, lastSpace) : cut).trim()}…`;
   }, [data.description]);
 
-  const gutterX = portfolioEditorialGutterX(data.contentGutter ?? DEFAULT_CONTENT_GUTTER);
+  const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
 
   return (
     <EditorialOverlapHero
@@ -252,9 +255,10 @@ export function PortfolioHeroEditorialOverlap({ data }: { data: PortfolioHeroDat
       ink={ink}
       muted={muted}
       neutre={neutre}
-      contentGutterClass={gutterX}
+      contentShellClass={shellX}
       width={width}
       align={align}
+      imageBw={imageBw}
     />
   );
 }

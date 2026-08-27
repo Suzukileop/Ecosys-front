@@ -1,6 +1,68 @@
 export type PortfolioHeroEditorialOverlapWidth = 'medium' | 'large' | 'full';
 export type PortfolioHeroEditorialOverlapAlign = 'left' | 'center' | 'right';
 export type PortfolioHeroSelectedWorksIdentityLayout = 'split' | 'centered';
+export type PortfolioHeroIdentityIndexPortraitRadius = 'none' | 'medium' | 'full';
+export type PortfolioHeroBowlIntroMotif = 'bowl' | 'hug' | 'orbs-top' | 'orbs-bottom';
+export type PortfolioHeroPortraitIdentityBottomGap = 'tight' | 'medium' | 'large' | 'xlarge';
+
+export const PORTFOLIO_HERO_PORTRAIT_IDENTITY_BOTTOM_GAP_OPTIONS: {
+  value: PortfolioHeroPortraitIdentityBottomGap;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'tight', label: 'Serré', description: 'Peu d’espace au-dessus du cadre.' },
+  { value: 'medium', label: 'Moyenne', description: 'Espacement intermédiaire.' },
+  { value: 'large', label: 'Large', description: 'Espace généreux.' },
+  { value: 'xlarge', label: 'Très grand', description: 'Très grand espace au-dessus du cadre.' },
+];
+
+export const PORTFOLIO_HERO_IDENTITY_INDEX_PORTRAIT_RADIUS_OPTIONS: {
+  value: PortfolioHeroIdentityIndexPortraitRadius;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: 'None', description: 'Coins droits, sans arrondi.' },
+  { value: 'medium', label: 'Moyenne', description: 'Coins légèrement arrondis.' },
+  { value: 'full', label: 'Plein', description: 'Cercle / pill complet.' },
+];
+
+export const PORTFOLIO_HERO_BOWL_INTRO_MOTIF_OPTIONS: {
+  value: PortfolioHeroBowlIntroMotif;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'bowl',
+    label: 'Bol',
+    description: 'Demi-cercle large sous le portrait.',
+  },
+  {
+    value: 'hug',
+    label: 'Bordure',
+    description: 'Cadre serré collé à l’image, bas arrondi sous le nom.',
+  },
+  {
+    value: 'orbs-top',
+    label: 'Ronds haut',
+    description: 'Deux cercles décoratifs en haut du portrait.',
+  },
+  {
+    value: 'orbs-bottom',
+    label: 'Double cadre',
+    description: 'Second cadre d’image décalé à gauche et en bas.',
+  },
+];
+
+export function isPortfolioHeroBowlIntroMotif(
+  value: unknown
+): value is PortfolioHeroBowlIntroMotif {
+  return (
+    value === 'bowl' ||
+    value === 'hug' ||
+    value === 'orbs-top' ||
+    value === 'orbs-bottom'
+  );
+}
 
 export const PORTFOLIO_HERO_EDITORIAL_OVERLAP_WIDTH_OPTIONS: {
   value: PortfolioHeroEditorialOverlapWidth;
@@ -55,7 +117,11 @@ export type PortfolioHeroBannerDesign =
   | 'circle-portrait'
   | 'experience-split'
   | 'editorial-overlap'
-  | 'selected-works';
+  | 'selected-works'
+  | 'identity-index'
+  | 'studio-split'
+  | 'work-duo'
+  | 'bowl-intro';
 
 export const PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS: {
   value: PortfolioHeroBannerDesign;
@@ -127,6 +193,30 @@ export const PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS: {
     description:
       'Nom / spécialité + bio à gauche ; miniatures Selected work + See all en bas.',
   },
+  {
+    value: 'identity-index',
+    label: 'Identity index',
+    description:
+      'Nom centré ; rail Specialty / Availability / Years au milieu ; bio en bas.',
+  },
+  {
+    value: 'studio-split',
+    label: 'Studio split',
+    description:
+      'Eyebrow + Hi I’m nom / spécialité à gauche ; bio, CTAs et disponibilité à droite ; cadre média arrondi en bas.',
+  },
+  {
+    value: 'work-duo',
+    label: 'Work duo',
+    description:
+      'Disponibilité + Hi I’m nom — spécialité + bio + CTAs + years à gauche ; See all + 2 Selected works à droite.',
+  },
+  {
+    value: 'bowl-intro',
+    label: 'Bowl intro',
+    description:
+      'Badge dispo + portrait + nom à gauche ; spécialité rouge + bio + View my work / Contact me à droite.',
+  },
 ];
 
 export function isPortfolioHeroBannerDesign(value: unknown): value is PortfolioHeroBannerDesign {
@@ -141,7 +231,11 @@ export function isPortfolioHeroBannerDesign(value: unknown): value is PortfolioH
     value === 'circle-portrait' ||
     value === 'experience-split' ||
     value === 'editorial-overlap' ||
-    value === 'selected-works'
+    value === 'selected-works' ||
+    value === 'identity-index' ||
+    value === 'studio-split' ||
+    value === 'work-duo' ||
+    value === 'bowl-intro'
   );
 }
 
@@ -174,6 +268,27 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
   heroEditorialOverlapAlign?: 'left' | 'center' | 'right';
   heroSelectedWorksDimIntensity?: number;
   heroSelectedWorksIdentityLayout?: PortfolioHeroSelectedWorksIdentityLayout;
+  heroIdentityIndexShowPortrait?: boolean;
+  heroIdentityIndexSwapBioPortrait?: boolean;
+  heroIdentityIndexPortraitRadius?: PortfolioHeroIdentityIndexPortraitRadius;
+  heroIdentityIndexShowBottomMedia?: boolean;
+  heroIdentityIndexBottomMediaUrl?: string;
+  heroPortraitIdentityBottomText?: string;
+  heroPortraitIdentityBottomWidth?: 'medium' | 'large' | 'full';
+  heroPortraitIdentityBottomAlign?: 'left' | 'center' | 'right';
+  heroPortraitIdentityBottomFontSizePx?: number;
+  heroPortraitIdentityBottomLabel?: string;
+  heroPortraitIdentityBottomShowBorder?: boolean;
+  heroPortraitIdentityBottomBgColor?: string;
+  heroPortraitIdentityBottomGap?: PortfolioHeroPortraitIdentityBottomGap;
+  heroStudioSplitEyebrow?: string;
+  heroStudioSplitMediaUrl?: string;
+  heroStudioSplitMediaCaption?: string;
+  heroStudioSplitMediaWidth?: 'medium' | 'large' | 'full';
+  heroWorkDuoSelectedWorkIds?: string[];
+  heroBowlIntroMotif?: PortfolioHeroBowlIntroMotif;
+  /** Apply grayscale (noir & blanc) to hero banner images / media. */
+  heroImageGrayscale?: boolean;
 } {
   switch (design) {
     case 'swiss-editorial':
@@ -183,12 +298,22 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
         heroCurrentlyLabel: 'Currently',
         heroSpecializedInLabel: 'Specialized in',
         showAvailabilityBadge: false,
+        heroImageGrayscale: true,
       };
     case 'portrait-identity':
       return {
         heroBannerDesign: design,
         showAvailabilityBadge: false,
         showContactCta: true,
+        heroImageGrayscale: true,
+        heroPortraitIdentityBottomText: '',
+        heroPortraitIdentityBottomWidth: 'large',
+        heroPortraitIdentityBottomAlign: 'left',
+        heroPortraitIdentityBottomFontSizePx: 18,
+        heroPortraitIdentityBottomLabel: '',
+        heroPortraitIdentityBottomShowBorder: false,
+        heroPortraitIdentityBottomBgColor: '',
+        heroPortraitIdentityBottomGap: 'medium',
       };
     case 'editorial-rail':
       return {
@@ -200,6 +325,7 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
         heroEditorialRailIdentityUnderPortrait: false,
         heroEditorialRailSelectedTools: [],
         heroEditorialRailShowCta: false,
+        heroImageGrayscale: true,
       };
     case 'statement-cta':
       return {
@@ -208,9 +334,9 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
         showTools: true,
         showContactCta: true,
         heroEditorialRailSelectedTools: [],
-        heroStatementCtaCenterPortrait: false,
+        heroStatementCtaCenterPortrait: true,
         heroStatementCtaPortraitRing: false,
-        heroStatementCtaPortraitScale: 100,
+        heroStatementCtaPortraitScale: 125,
         heroStatementCtaCenterCover: false,
         heroStatementCtaCoverImageUrl: '',
       };
@@ -268,6 +394,45 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
         heroSelectedWorksDimIntensity: 40,
         heroSelectedWorksIdentityLayout: 'split',
       };
+    case 'identity-index':
+      return {
+        heroBannerDesign: design,
+        showAvailabilityBadge: false,
+        showTools: false,
+        showContactCta: false,
+        heroIdentityIndexShowPortrait: false,
+        heroIdentityIndexSwapBioPortrait: false,
+        heroIdentityIndexPortraitRadius: 'none',
+        heroIdentityIndexShowBottomMedia: false,
+        heroIdentityIndexBottomMediaUrl: '',
+      };
+    case 'studio-split':
+      return {
+        heroBannerDesign: design,
+        showAvailabilityBadge: true,
+        showTools: false,
+        showContactCta: true,
+        heroStudioSplitEyebrow: 'Portfolio',
+        heroStudioSplitMediaUrl: '',
+        heroStudioSplitMediaCaption: 'Selected work',
+        heroStudioSplitMediaWidth: 'full',
+      };
+    case 'work-duo':
+      return {
+        heroBannerDesign: design,
+        showAvailabilityBadge: true,
+        showTools: false,
+        showContactCta: true,
+        heroWorkDuoSelectedWorkIds: [],
+      };
+    case 'bowl-intro':
+      return {
+        heroBannerDesign: design,
+        showAvailabilityBadge: true,
+        showTools: false,
+        showContactCta: true,
+        heroBowlIntroMotif: 'bowl',
+      };
     default:
       return { heroBannerDesign: design };
   }
@@ -320,6 +485,38 @@ export function resolveHeroAvailabilityValue(
 export function resolveHeroSpecialtyValue(specialite?: string | null): string {
   const value = specialite?.trim();
   return value || 'UI/UX, Websites, Branding';
+}
+
+/** Tailwind class for hero media when noir & blanc is enabled. */
+export function heroImageGrayscaleClass(enabled?: boolean): string {
+  return enabled === true ? 'grayscale' : '';
+}
+
+/** Merge grayscale into an existing media style (portrait fit/scale, etc.). */
+export function withHeroImageGrayscale(
+  style: Record<string, unknown> | undefined,
+  enabled?: boolean
+): Record<string, unknown> | undefined {
+  if (enabled !== true) return style;
+  const prev = typeof style?.filter === 'string' ? style.filter.trim() : '';
+  const filter = prev.includes('grayscale')
+    ? prev
+    : [prev, 'grayscale(1)'].filter(Boolean).join(' ');
+  return { ...(style ?? {}), filter };
+}
+
+/** Profile years of experience — short value for identity-index rail. */
+export function resolveHeroYearsOfExperienceValue(
+  years?: number | null,
+  stats?: { value: string; label: string }[] | null
+): string {
+  if (typeof years === 'number' && Number.isFinite(years) && years > 0) {
+    const n = Math.min(99, Math.max(1, Math.round(years)));
+    return n === 1 ? '1 year' : `${n} years`;
+  }
+  const fromStats = stats?.find((stat) => /year/i.test(stat.label))?.value?.trim();
+  if (fromStats) return fromStats;
+  return '—';
 }
 
 /** Up to `max` tool labels — explicit selection only when provided. */

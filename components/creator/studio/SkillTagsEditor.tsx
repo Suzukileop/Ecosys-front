@@ -65,7 +65,7 @@ export function SkillTagsEditor({
           ))}
         </div>
       ) : editable ? null : (
-        <p className="text-sm italic text-neutral-500 dark:text-neutral-400">No skill tags.</p>
+        <p className="text-sm italic text-neutral-500 dark:text-neutral-400">No stack tags.</p>
       )}
       {editable ? (
         <div className={`${normalized.length > 0 ? 'mt-2' : ''} flex gap-2`}>
@@ -96,7 +96,7 @@ export function SkillTagsEditor({
       ) : null}
       {editable ? (
         <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-          {normalized.length}/{MAX_SPECIALTY_TAGS} tags · shown under Skills in Profile info
+          {normalized.length}/{MAX_SPECIALTY_TAGS} tags · shown under Stack in Profile info
         </p>
       ) : null}
     </div>

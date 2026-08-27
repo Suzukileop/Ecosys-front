@@ -24,6 +24,9 @@ type ContentPostOverflowMenuProps = {
   postId: string;
   bucket: ContentPostBucket;
   pinned: boolean;
+  isPublic?: boolean;
+  visibilityBusy?: boolean;
+  onVisibilityChange?: (isPublic: boolean) => void;
   commentsEnabled?: boolean;
   commentsBusy?: boolean;
   onCommentsEnabledChange?: (enabled: boolean) => void;
@@ -45,6 +48,9 @@ export function ContentPostOverflowMenu({
   postId,
   bucket,
   pinned,
+  isPublic = true,
+  visibilityBusy = false,
+  onVisibilityChange,
   commentsEnabled = true,
   commentsBusy = false,
   onCommentsEnabledChange,
@@ -105,7 +111,7 @@ export function ContentPostOverflowMenu({
     // Second pass after paint when menu dimensions are known
     const frame = requestAnimationFrame(() => updatePosition());
     return () => cancelAnimationFrame(frame);
-  }, [open, updatePosition, bucket, commentsEnabled, pinned]);
+  }, [open, updatePosition, bucket, commentsEnabled, pinned, isPublic]);
 
   useEffect(() => {
     if (!open) return;
@@ -166,6 +172,15 @@ export function ContentPostOverflowMenu({
         id: 'edit',
         label: 'Edit',
         href: `/dashboard/creator/content/${postId}/edit`,
+      });
+    }
+
+    if (onVisibilityChange) {
+      items.push({
+        id: 'visibility',
+        label: isPublic ? 'Make private' : 'Make public',
+        onClick: () => onVisibilityChange(!isPublic),
+        disabled: visibilityBusy,
       });
     }
 

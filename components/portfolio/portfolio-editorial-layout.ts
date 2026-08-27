@@ -44,6 +44,20 @@ export function portfolioEditorialShellClass(
   return `w-full ${portfolioEditorialGutterX(gutter)}`;
 }
 
+/**
+ * Hero banner content shell — same max-width + horizontal gutter as portfolio `<main>`.
+ * Use instead of hard-coded `max-w-[100rem]` / clamp / % side padding.
+ */
+export function portfolioHeroContentShellClass(
+  contentGutter?: PortfolioContentGutter | null,
+  contentWidthClass?: string | null
+): string {
+  const widthClass = contentWidthClass?.trim() || 'max-w-none';
+  return `mx-auto w-full ${widthClass} ${portfolioEditorialGutterX(
+    contentGutter ?? DEFAULT_CONTENT_GUTTER
+  )}`;
+}
+
 /** @deprecated Prefer portfolioEditorialGutterX(settings) — medium default. */
 export const PORTFOLIO_EDITORIAL_GUTTER_X = GUTTER_PADDING_X.medium;
 

@@ -171,12 +171,13 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
   });
 
   const handleConfirmLogout = () => {
+    if (logoutBusy) return;
     setLogoutBusy(true);
     void logout()
       .then(() => {
         window.location.assign('/login');
       })
-      .finally(() => {
+      .catch(() => {
         setLogoutBusy(false);
       });
   };

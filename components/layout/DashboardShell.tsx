@@ -153,11 +153,14 @@ export function DashboardShell({
   // 'error' (rate-limit / network) must NOT trigger a redirect because
   // the middleware would immediately bounce the user back to /dashboard,
   // creating an infinite loop that exhausts the rate limit even further.
+  // Prefer hard navigation from logout handlers; this soft replace is a
+  // fallback for expired sessions cleared without a full page reload.
   useEffect(() => {
     if (sessionStatus !== 'unauthenticated') return;
     if (!pathname.startsWith('/dashboard')) return;
-    router.replace('/login');
-  }, [sessionStatus, pathname, router]);
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/login')) return;
+    window.location.replace('/login');
+  }, [sessionStatus, pathname]);
 
   // Keep creators off role-gated marketplace sections when deep-linking.
   useEffect(() => {

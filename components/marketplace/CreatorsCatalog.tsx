@@ -403,6 +403,7 @@ function CreatorsCatalogContent() {
                   key={c.id ?? c.userId ?? c.fullName}
                   id={c.id}
                   userId={c.userId}
+                  username={c.username}
                   fullName={c.fullName}
                   avatarUrl={c.avatarUrl}
                   specialite={c.specialite}

@@ -31,7 +31,11 @@ import {
 } from '@/components/portfolio/portfolio-hero-meta-settings';
 import {
   isPortfolioHeroBannerDesign,
+  isPortfolioHeroBowlIntroMotif,
   type PortfolioHeroBannerDesign,
+  type PortfolioHeroBowlIntroMotif,
+  type PortfolioHeroIdentityIndexPortraitRadius,
+  type PortfolioHeroPortraitIdentityBottomGap,
   type PortfolioHeroSelectedWorksIdentityLayout,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
 import {
@@ -554,6 +558,77 @@ export type PortfolioHeroPresentationSettings = {
    * Selected works banner only: identity block layout (split columns vs centered title).
    */
   heroSelectedWorksIdentityLayout: PortfolioHeroSelectedWorksIdentityLayout;
+  /**
+   * All banner designs: free text in a framed band under the hero composition.
+   */
+  heroPortraitIdentityBottomText: string;
+  /** Bottom frame width. */
+  heroPortraitIdentityBottomWidth: 'medium' | 'large' | 'full';
+  /** Bottom frame horizontal placement. */
+  heroPortraitIdentityBottomAlign: 'left' | 'center' | 'right';
+  /** Bottom free-text font size in px. */
+  heroPortraitIdentityBottomFontSizePx: number;
+  /** Small label above the bottom free text. */
+  heroPortraitIdentityBottomLabel: string;
+  /** Legacy: bottom frame border (unused — no border by default). */
+  heroPortraitIdentityBottomShowBorder: boolean;
+  /**
+   * Bottom frame background hex.
+   * Empty = Fond palette color.
+   */
+  heroPortraitIdentityBottomBgColor: string;
+  /** Spacing above the bottom frame. */
+  heroPortraitIdentityBottomGap: PortfolioHeroPortraitIdentityBottomGap;
+  /**
+   * Identity index only: portrait at the bottom-right, aligned with the
+   * description on the left. Uses the profile photo.
+   */
+  heroIdentityIndexShowPortrait: boolean;
+  /**
+   * Identity index only (when portrait is on): swap bio ↔ portrait placement.
+   */
+  heroIdentityIndexSwapBioPortrait: boolean;
+  /**
+   * Identity index only: portrait corner radius (none / medium / full).
+   */
+  heroIdentityIndexPortraitRadius: PortfolioHeroIdentityIndexPortraitRadius;
+  /**
+   * Identity index only: full-width media frame below all other hero content.
+   */
+  heroIdentityIndexShowBottomMedia: boolean;
+  /**
+   * Identity index only: photo or video URL for the bottom media frame.
+   */
+  heroIdentityIndexBottomMediaUrl: string;
+  /**
+   * Studio split only: small eyebrow label above the headline (e.g. Portfolio).
+   */
+  heroStudioSplitEyebrow: string;
+  /**
+   * Studio split only: photo/video for the large rounded frame under the copy.
+   */
+  heroStudioSplitMediaUrl: string;
+  /**
+   * Studio split only: optional caption chip inside the media frame.
+   */
+  heroStudioSplitMediaCaption: string;
+  /**
+   * Studio split only: media frame width (medium / large / full).
+   */
+  heroStudioSplitMediaWidth: 'medium' | 'large' | 'full';
+  /**
+   * Work duo only: up to 2 portfolio post IDs for the Selected work cards.
+   * Empty = first 2 posts with media.
+   */
+  heroWorkDuoSelectedWorkIds: string[];
+  /**
+   * Bowl intro only: decorative motif behind the portrait.
+   */
+  heroBowlIntroMotif: PortfolioHeroBowlIntroMotif;
+  /**
+   * When true, hero banner images / media render in noir & blanc (grayscale).
+   */
+  heroImageGrayscale: boolean;
   heroLayoutFlipped: boolean;
   /** How the copy group and visual group share the hero screen. */
   heroLayoutDivision: HeroLayoutDivision;
@@ -881,9 +956,9 @@ export const DEFAULT_HERO_PRESENTATION: PortfolioHeroPresentationSettings = {
   heroEditorialRailIdentityUnderPortrait: false,
   heroEditorialRailSelectedTools: [],
   heroEditorialRailShowCta: false,
-  heroStatementCtaCenterPortrait: false,
+  heroStatementCtaCenterPortrait: true,
   heroStatementCtaPortraitRing: false,
-  heroStatementCtaPortraitScale: 100,
+  heroStatementCtaPortraitScale: 125,
   heroStatementCtaCenterCover: false,
   heroStatementCtaCoverImageUrl: '',
   heroLeftPortraitSpecialtyMark: false,
@@ -897,6 +972,26 @@ export const DEFAULT_HERO_PRESENTATION: PortfolioHeroPresentationSettings = {
   heroEditorialOverlapAlign: 'left',
   heroSelectedWorksDimIntensity: 40,
   heroSelectedWorksIdentityLayout: 'split',
+  heroPortraitIdentityBottomText: '',
+  heroPortraitIdentityBottomWidth: 'large',
+  heroPortraitIdentityBottomAlign: 'left',
+  heroPortraitIdentityBottomFontSizePx: 18,
+  heroPortraitIdentityBottomLabel: '',
+  heroPortraitIdentityBottomShowBorder: false,
+  heroPortraitIdentityBottomBgColor: '',
+  heroPortraitIdentityBottomGap: 'medium',
+  heroIdentityIndexShowPortrait: false,
+  heroIdentityIndexSwapBioPortrait: false,
+  heroIdentityIndexPortraitRadius: 'none',
+  heroIdentityIndexShowBottomMedia: false,
+  heroIdentityIndexBottomMediaUrl: '',
+  heroStudioSplitEyebrow: 'Portfolio',
+  heroStudioSplitMediaUrl: '',
+  heroStudioSplitMediaCaption: 'Selected work',
+  heroStudioSplitMediaWidth: 'full',
+  heroWorkDuoSelectedWorkIds: [],
+  heroBowlIntroMotif: 'bowl',
+  heroImageGrayscale: false,
   heroLayoutFlipped: false,
   heroLayoutDivision: DEFAULT_HERO_LAYOUT_DIVISION,
   heroHideEmptyDivisionParts: false,
@@ -2285,7 +2380,7 @@ export function mergeHeroPresentation(
       const portrait =
         typeof record.heroStatementCtaCenterPortrait === 'boolean'
           ? record.heroStatementCtaCenterPortrait
-          : base.heroStatementCtaCenterPortrait ?? false;
+          : base.heroStatementCtaCenterPortrait ?? true;
       const cover =
         typeof record.heroStatementCtaCenterCover === 'boolean'
           ? record.heroStatementCtaCenterCover
@@ -2301,8 +2396,8 @@ export function mergeHeroPresentation(
       const raw =
         typeof record.heroStatementCtaPortraitScale === 'number'
           ? record.heroStatementCtaPortraitScale
-          : base.heroStatementCtaPortraitScale ?? 100;
-      if (!Number.isFinite(raw)) return 100;
+          : base.heroStatementCtaPortraitScale ?? 125;
+      if (!Number.isFinite(raw)) return 125;
       return Math.min(180, Math.max(100, Math.round(raw)));
     })(),
     heroStatementCtaCenterCover:
@@ -2362,6 +2457,115 @@ export function mergeHeroPresentation(
       record.heroSelectedWorksIdentityLayout === 'centered'
         ? record.heroSelectedWorksIdentityLayout
         : base.heroSelectedWorksIdentityLayout ?? 'split',
+    heroPortraitIdentityBottomText:
+      typeof record.heroPortraitIdentityBottomText === 'string'
+        ? record.heroPortraitIdentityBottomText
+        : base.heroPortraitIdentityBottomText ?? '',
+    heroPortraitIdentityBottomWidth:
+      record.heroPortraitIdentityBottomWidth === 'medium' ||
+      record.heroPortraitIdentityBottomWidth === 'large' ||
+      record.heroPortraitIdentityBottomWidth === 'full'
+        ? record.heroPortraitIdentityBottomWidth
+        : base.heroPortraitIdentityBottomWidth ?? 'large',
+    heroPortraitIdentityBottomAlign:
+      record.heroPortraitIdentityBottomAlign === 'left' ||
+      record.heroPortraitIdentityBottomAlign === 'center' ||
+      record.heroPortraitIdentityBottomAlign === 'right'
+        ? record.heroPortraitIdentityBottomAlign
+        : base.heroPortraitIdentityBottomAlign ?? 'left',
+    heroPortraitIdentityBottomFontSizePx: (() => {
+      const raw =
+        typeof record.heroPortraitIdentityBottomFontSizePx === 'number'
+          ? record.heroPortraitIdentityBottomFontSizePx
+          : base.heroPortraitIdentityBottomFontSizePx ?? 18;
+      if (!Number.isFinite(raw)) return 18;
+      return Math.min(48, Math.max(12, Math.round(raw)));
+    })(),
+    heroPortraitIdentityBottomLabel:
+      typeof record.heroPortraitIdentityBottomLabel === 'string'
+        ? record.heroPortraitIdentityBottomLabel
+        : base.heroPortraitIdentityBottomLabel ?? '',
+    heroPortraitIdentityBottomShowBorder:
+      typeof record.heroPortraitIdentityBottomShowBorder === 'boolean'
+        ? record.heroPortraitIdentityBottomShowBorder
+        : base.heroPortraitIdentityBottomShowBorder ?? false,
+    heroPortraitIdentityBottomBgColor: (() => {
+      const raw =
+        typeof record.heroPortraitIdentityBottomBgColor === 'string'
+          ? record.heroPortraitIdentityBottomBgColor.trim()
+          : base.heroPortraitIdentityBottomBgColor ?? '';
+      if (!raw) return '';
+      return isValidProfileHexColor(raw) ? raw : '';
+    })(),
+    heroPortraitIdentityBottomGap:
+      record.heroPortraitIdentityBottomGap === 'tight' ||
+      record.heroPortraitIdentityBottomGap === 'medium' ||
+      record.heroPortraitIdentityBottomGap === 'large' ||
+      record.heroPortraitIdentityBottomGap === 'xlarge'
+        ? record.heroPortraitIdentityBottomGap
+        : base.heroPortraitIdentityBottomGap ?? 'medium',
+    heroIdentityIndexShowPortrait:
+      typeof record.heroIdentityIndexShowPortrait === 'boolean'
+        ? record.heroIdentityIndexShowPortrait
+        : base.heroIdentityIndexShowPortrait ?? false,
+    heroIdentityIndexSwapBioPortrait:
+      typeof record.heroIdentityIndexSwapBioPortrait === 'boolean'
+        ? record.heroIdentityIndexSwapBioPortrait
+        : base.heroIdentityIndexSwapBioPortrait ?? false,
+    heroIdentityIndexPortraitRadius:
+      record.heroIdentityIndexPortraitRadius === 'none' ||
+      record.heroIdentityIndexPortraitRadius === 'medium' ||
+      record.heroIdentityIndexPortraitRadius === 'full'
+        ? record.heroIdentityIndexPortraitRadius
+        : base.heroIdentityIndexPortraitRadius ?? 'none',
+    heroIdentityIndexShowBottomMedia:
+      typeof record.heroIdentityIndexShowBottomMedia === 'boolean'
+        ? record.heroIdentityIndexShowBottomMedia
+        : base.heroIdentityIndexShowBottomMedia ?? false,
+    heroIdentityIndexBottomMediaUrl:
+      typeof record.heroIdentityIndexBottomMediaUrl === 'string'
+        ? record.heroIdentityIndexBottomMediaUrl.trim()
+        : base.heroIdentityIndexBottomMediaUrl ?? '',
+    heroStudioSplitEyebrow:
+      typeof record.heroStudioSplitEyebrow === 'string' && record.heroStudioSplitEyebrow.trim()
+        ? record.heroStudioSplitEyebrow.trim()
+        : base.heroStudioSplitEyebrow ?? 'Portfolio',
+    heroStudioSplitMediaUrl:
+      typeof record.heroStudioSplitMediaUrl === 'string'
+        ? record.heroStudioSplitMediaUrl.trim()
+        : base.heroStudioSplitMediaUrl ?? '',
+    heroStudioSplitMediaCaption:
+      typeof record.heroStudioSplitMediaCaption === 'string'
+        ? record.heroStudioSplitMediaCaption.trim()
+        : base.heroStudioSplitMediaCaption ?? 'Selected work',
+    heroStudioSplitMediaWidth:
+      record.heroStudioSplitMediaWidth === 'medium' ||
+      record.heroStudioSplitMediaWidth === 'large' ||
+      record.heroStudioSplitMediaWidth === 'full'
+        ? record.heroStudioSplitMediaWidth
+        : base.heroStudioSplitMediaWidth ?? 'full',
+    heroWorkDuoSelectedWorkIds: (() => {
+      const raw = Array.isArray(record.heroWorkDuoSelectedWorkIds)
+        ? record.heroWorkDuoSelectedWorkIds
+        : base.heroWorkDuoSelectedWorkIds;
+      if (!Array.isArray(raw)) return [];
+      const out: string[] = [];
+      for (const item of raw) {
+        if (typeof item !== 'string') continue;
+        const id = item.trim();
+        if (!id || out.includes(id)) continue;
+        out.push(id);
+        if (out.length >= 2) break;
+      }
+      return out;
+    })(),
+    heroBowlIntroMotif: isPortfolioHeroBowlIntroMotif(record.heroBowlIntroMotif)
+      ? record.heroBowlIntroMotif
+      : base.heroBowlIntroMotif ?? 'bowl',
+    heroImageGrayscale:
+      typeof record.heroImageGrayscale === 'boolean'
+        ? record.heroImageGrayscale
+        : base.heroImageGrayscale ?? false,
     heroStatementCtaCoverImageUrl:
       typeof record.heroStatementCtaCoverImageUrl === 'string'
         ? record.heroStatementCtaCoverImageUrl.trim()

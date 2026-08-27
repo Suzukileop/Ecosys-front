@@ -1,10 +1,13 @@
 import { cache } from 'react';
 import { cookies } from 'next/headers';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { PublicCreatorPortfolioPage } from '@/components/portfolio/PublicCreatorPortfolioPage';
 import { formatLocationLabel } from '@/lib/geolocation';
-import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
+import {
+  buildCreatorPortfolioPath,
+  looksLikeUuid,
+} from '@/lib/portfolio-url';
 import {
   normalizeCreatorProfile,
   serverMarketplaceFetch,
@@ -14,7 +17,7 @@ import type { MarketplaceCreatorPublicProfile } from '@/types/marketplace';
 const getCreatorProfileServer = cache(
   async (creatorId: string, refreshToken?: string): Promise<MarketplaceCreatorPublicProfile | null> => {
     const rawProfile = await serverMarketplaceFetch<Record<string, unknown>>(
-      `/api/marketplace/creators/${creatorId}`,
+      `/api/marketplace/creators/${encodeURIComponent(creatorId)}`,
       { refreshToken }
     );
     if (!rawProfile) return null;
@@ -49,7 +52,7 @@ export async function generateMetadata({
       ...(profile.avatarUrl ? { images: [{ url: profile.avatarUrl }] } : {}),
     },
     alternates: {
-      canonical: buildCreatorPortfolioPath(creatorId),
+      canonical: buildCreatorPortfolioPath(profile.id, profile.username),
     },
   };
 }
@@ -66,11 +69,16 @@ export default async function CreatorPortfolioPage({
   const profile = await getCreatorProfileServer(creatorId, refreshToken);
   if (!profile) notFound();
 
+  const preferredSlug = profile.username?.trim();
+  if (preferredSlug && looksLikeUuid(creatorId) && creatorId !== preferredSlug) {
+    permanentRedirect(buildCreatorPortfolioPath(profile.id, preferredSlug));
+  }
+
   const locationLabel = formatLocationLabel(profile.locationCity, profile.locationCountry);
 
   return (
     <PublicCreatorPortfolioPage
-      creatorId={creatorId}
+      creatorId={profile.id}
       profile={profile}
       isAuthenticated={isAuthenticated}
       locationLabel={locationLabel}

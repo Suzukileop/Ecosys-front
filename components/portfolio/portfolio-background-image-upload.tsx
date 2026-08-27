@@ -178,3 +178,97 @@ export function PortfolioBackgroundImageUpload({
     </div>
   );
 }
+
+const HERO_BANNER_MEDIA_ACCEPT =
+  'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,.jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.mov';
+
+function isHeroBannerVideoUrl(url: string): boolean {
+  return /\.(mp4|webm|mov)(\?|$)/i.test(url.trim());
+}
+
+/** Image or video upload for hero banner frames (no shared wallpaper library). */
+export function PortfolioHeroBannerMediaUpload({
+  url,
+  onChange,
+  label = 'Media',
+  helperText,
+}: {
+  url: string;
+  onChange: (url: string) => void;
+  label?: string;
+  helperText?: string;
+}) {
+  const activeUrl = url.trim();
+  const hasMedia = Boolean(activeUrl);
+  const isVideo = hasMedia && isHeroBannerVideoUrl(activeUrl);
+
+  const { inputRef, uploading, uploadError, pickFile, onFileChange, fileName } = useContentMediaUpload({
+    locale: 'en',
+    onUrlChange: (nextUrl) => onChange(nextUrl.trim()),
+  });
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
+      {helperText ? <p className="text-sm text-neutral-500">{helperText}</p> : null}
+
+      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100">
+        {hasMedia ? (
+          isVideo ? (
+            <video
+              src={activeUrl}
+              className="aspect-[16/9] w-full object-cover"
+              muted
+              playsInline
+              preload="metadata"
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={activeUrl} alt="" className="aspect-[16/9] w-full object-cover" />
+          )
+        ) : (
+          <div className="flex aspect-[16/9] items-center justify-center text-sm text-neutral-400">
+            No media selected
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          ref={inputRef}
+          type="file"
+          accept={HERO_BANNER_MEDIA_ACCEPT}
+          className="sr-only"
+          onChange={(event) => {
+            void onFileChange(event);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => {
+            pickFile();
+          }}
+          disabled={uploading}
+          className="inline-flex min-h-10 items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50 disabled:opacity-60"
+        >
+          {uploading ? <LoadingSpinner size="sm" /> : null}
+          {uploading ? 'Uploading…' : hasMedia ? 'Replace photo/video' : 'Upload photo/video'}
+        </button>
+        {hasMedia ? (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            disabled={uploading}
+            className="rounded-full px-3 py-2 text-sm font-medium text-neutral-500 transition hover:text-neutral-900 disabled:opacity-60"
+          >
+            Clear
+          </button>
+        ) : null}
+        {fileName && !uploading ? (
+          <span className="max-w-[12rem] truncate text-xs text-neutral-500">{fileName}</span>
+        ) : null}
+      </div>
+      {uploadError ? <p className="text-xs text-red-600">{uploadError}</p> : null}
+    </div>
+  );
+}

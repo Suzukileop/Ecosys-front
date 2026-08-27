@@ -15,6 +15,8 @@ export type HeroSocialLink = {
 
 export type PortfolioHeroData = {
   creatorId: string;
+  /** Public unique handle — preferred in portfolio share URLs. */
+  username?: string | null;
   fullName: string;
   nameLead: string;
   nameAccent: string;

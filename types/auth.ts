@@ -4,6 +4,7 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
+  username: string;
   avatarUrl: string | null;
   roles: Role[];
   emailVerified: boolean;
@@ -20,6 +21,7 @@ export interface AuthResponse {
 
 export interface SignupData {
   fullName: string;
+  username: string;
   email: string;
   password: string;
   /** Always CREATOR — kept for API compatibility; backend ignores other values. */

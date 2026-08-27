@@ -1,2 +1,2 @@
-/** @deprecated Use `aeonik` from `@/lib/fonts/aeonik` — kept for landing imports */
-export { aeonik as landingRoboto } from '@/lib/fonts/aeonik';
+/** @deprecated Use `geist` from `@/lib/fonts/geist` — kept for landing imports */
+export { geist as landingRoboto } from '@/lib/fonts/geist';

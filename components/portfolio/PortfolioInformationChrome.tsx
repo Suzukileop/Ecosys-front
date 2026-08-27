@@ -791,6 +791,7 @@ export function PortfolioEditorFooter({
 
 export type PortfolioAboutFieldKey =
   | 'fullName'
+  | 'username'
   | 'bio'
   | 'specialite'
   | 'specialtySet'
@@ -805,6 +806,7 @@ export type PortfolioAboutFieldKey =
 
 export type PortfolioAboutFieldValue = {
   fullName: string;
+  username: string;
   bio: string;
   specialite: string;
   specialtySet: { specialties: string[]; specialtyTags: string[] };
@@ -820,6 +822,7 @@ export type PortfolioAboutFieldValue = {
 
 export function PortfolioAboutReadOnly({
   fullName,
+  username = '',
   bio,
   specialite,
   specialties = [],
@@ -854,6 +857,7 @@ export function PortfolioAboutReadOnly({
   hideProviderFields = false,
 }: {
   fullName: string;
+  username?: string;
   bio: string;
   specialite: string;
   specialties?: string[];
@@ -909,6 +913,7 @@ export function PortfolioAboutReadOnly({
 
   const [editingField, setEditingField] = useState<PortfolioAboutFieldKey | null>(null);
   const [draftName, setDraftName] = useState(fullName);
+  const [draftUsername, setDraftUsername] = useState(username);
   const [draftBio, setDraftBio] = useState(bio);
   const [draftSpecialties, setDraftSpecialties] = useState(() =>
     parseSpecialtyList(specialties, specialite)
@@ -936,6 +941,7 @@ export function PortfolioAboutReadOnly({
 
   const resetDrafts = () => {
     setDraftName(fullName);
+    setDraftUsername(username);
     setDraftBio(bio);
     setDraftSpecialties(parseSpecialtyList(specialties, specialite));
     setDraftSpecialtyTags(parseSpecialtyTags(specialtyTags));
@@ -972,7 +978,7 @@ export function PortfolioAboutReadOnly({
     if (isGlobal) return;
     resetDrafts();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keep drafts in sync when not editing
-  }, [fullName, bio, specialite, specialties, specialtyTags, gender, nationality, yearsOfExperience, languages, isAvailable, availabilityLabel, rawAvailabilityHours, availabilityHours, typicalResponseTime]);
+  }, [fullName, username, bio, specialite, specialties, specialtyTags, gender, nationality, yearsOfExperience, languages, isAvailable, availabilityLabel, rawAvailabilityHours, availabilityHours, typicalResponseTime]);
 
   const startEdit = (field: PortfolioAboutFieldKey) => {
     resetDrafts();
@@ -1012,6 +1018,8 @@ export function PortfolioAboutReadOnly({
     switch (editingField) {
       case 'fullName':
         return draftName.trim() !== fullName.trim();
+      case 'username':
+        return draftUsername.trim() !== username.trim();
       case 'bio':
         return draftBio.trim() !== bio.trim();
       case 'specialite':
@@ -1046,6 +1054,7 @@ export function PortfolioAboutReadOnly({
 
   const globalHasChanges =
     draftName.trim() !== fullName.trim() ||
+    draftUsername.trim() !== username.trim() ||
     draftBio.trim() !== bio.trim() ||
     (!hideProviderFields &&
       (!sameList(draftSpecialties, savedSpecialties) || !sameList(draftSpecialtyTags, savedTags))) ||
@@ -1078,6 +1087,9 @@ export function PortfolioAboutReadOnly({
       switch (editingField) {
         case 'fullName':
           await onFieldSave('fullName', draftName.trim());
+          break;
+        case 'username':
+          await onFieldSave('username', draftUsername.trim());
           break;
         case 'bio':
           await onFieldSave('bio', draftBio);
@@ -1136,6 +1148,7 @@ export function PortfolioAboutReadOnly({
     try {
       await onGlobalSave({
         fullName: draftName.trim(),
+        username: draftUsername.trim(),
         bio: draftBio,
         specialite: draftSpecialties[0] ?? '',
         specialtySet: { specialties: draftSpecialties, specialtyTags: draftSpecialtyTags },
@@ -1206,6 +1219,36 @@ export function PortfolioAboutReadOnly({
             autoFocus={editingField === 'fullName'}
             disabled={confirming}
           />
+        }
+      />
+      <PortfolioFlatField
+        label="Username"
+        value={username || null}
+        emptyLabel="Not set"
+        className="!py-5"
+        editing={fieldEditing('username')}
+        onEdit={fieldOnEdit('username')}
+        onConfirm={fieldOnConfirm}
+        onCancelEdit={fieldOnCancel}
+        confirming={confirming && editingField === 'username'}
+        canConfirm={fieldHasChanges}
+        editControl={
+          <div>
+            <input
+              type="text"
+              value={draftUsername}
+              onChange={(event) => setDraftUsername(event.target.value)}
+              className={inlineInputClass}
+              autoFocus={editingField === 'username'}
+              disabled={confirming}
+              spellCheck={false}
+              autoComplete="username"
+              placeholder="leopard"
+            />
+            <p className="mt-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
+              Unique and case-sensitive — leopard and Leopard are different.
+            </p>
+          </div>
         }
       />
       <PortfolioFlatField

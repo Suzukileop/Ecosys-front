@@ -14,9 +14,16 @@ import { SocialOAuthButtons } from '@/components/auth/SocialOAuthButtons';
 import { brandGradientBg, brandShadow } from '@/components/landing/landingBrand';
 import { AxiosError } from 'axios';
 
+const USERNAME_REGEX = /^[A-Za-z0-9_]{3,30}$/;
+
 const registerSchema = z
   .object({
     fullName: z.string().min(2, 'Name must be at least 2 characters'),
+    username: z
+      .string()
+      .min(3, 'Username must be at least 3 characters')
+      .max(30, 'Username must be at most 30 characters')
+      .regex(USERNAME_REGEX, 'Letters, numbers, and underscores only'),
     email: z.string().email('Invalid email address'),
     password: z
       .string()
@@ -114,6 +121,7 @@ function RegisterForm() {
     try {
       await signup({
         fullName: data.fullName,
+        username: data.username.trim(),
         email: data.email,
         password: data.password,
         role: 'CREATOR',
@@ -175,6 +183,29 @@ function RegisterForm() {
               {errors.fullName ? (
                 <p className="mt-1 text-xs text-red-500" role="alert">
                   {errors.fullName.message}
+                </p>
+              ) : null}
+            </div>
+
+            <div>
+              <label htmlFor="username" className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                Username
+              </label>
+              <input
+                id="username"
+                {...register('username')}
+                type="text"
+                autoComplete="username"
+                spellCheck={false}
+                className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900 transition focus:border-[#F97316]/50 focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+                placeholder="alex_morgan"
+              />
+              <p className="mt-1 text-[11px] text-neutral-400">
+                Unique handle — case-sensitive (leopard ≠ Leopard).
+              </p>
+              {errors.username ? (
+                <p className="mt-1 text-xs text-red-500" role="alert">
+                  {errors.username.message}
                 </p>
               ) : null}
             </div>

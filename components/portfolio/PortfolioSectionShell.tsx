@@ -94,14 +94,14 @@ export function PortfolioSectionShell({
 
       {header ? (
         split ? (
-          <div className="relative z-[1]">
+          <div className="relative z-[1] min-w-0 w-full">
             <PortfolioSplitScreenTitle>{header}</PortfolioSplitScreenTitle>
           </div>
         ) : (
-          <div className="relative z-[1]">{header}</div>
+          <div className="relative z-[1] min-w-0 w-full">{header}</div>
         )
       ) : null}
-      <div className={`relative z-[1] ${stretch ? 'flex-1' : ''}`}>{children}</div>
+      <div className={`relative z-[1] min-w-0 w-full ${stretch ? 'flex-1' : ''}`}>{children}</div>
     </section>
   );
 }

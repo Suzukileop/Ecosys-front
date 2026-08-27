@@ -72,7 +72,7 @@ export const PROFILE_SECTIONS: ProfileSection[] = [
   },
   {
     id: 'strengths',
-    label: 'Skills & tools',
+    label: 'Stack',
     description: 'List the skills and software you master (max 12).',
   },
   {

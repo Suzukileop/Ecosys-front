@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useMemo, type MouseEvent, type ReactNode } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
+  heroImageGrayscaleClass,
   resolveHeroAvailabilityValue,
   resolveHeroSpecialtyValue,
   resolveHeroStatementCtaTools,
@@ -14,6 +15,7 @@ import {
   resolveHeroPaletteColor,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
+import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 
 /**
  * Statement CTA — wide headline · availability · bio · CTAs · tools rail.
@@ -48,12 +50,14 @@ function splitBioParagraphs(raw: string): [string, string] {
 }
 
 export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData }) {
+  const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
   const muted = resolveHeroPaletteColor(palette, 'texteMuted');
   const principal = resolveHeroPaletteColor(palette, 'principal');
   const bordure = resolveHeroPaletteColor(palette, 'bordure');
+  const imageBw = data.presentation.heroImageGrayscale === true;
 
   const displayName = (data.fullName || data.nameLead || 'Lorem Ipsum').trim();
   const specialty = resolveHeroSpecialtyValue(data.specialite);
@@ -76,7 +80,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
   const portraitRing = centerPortrait && data.presentation.heroStatementCtaPortraitRing === true;
   const portraitScale = Math.min(
     180,
-    Math.max(100, data.presentation.heroStatementCtaPortraitScale ?? 100)
+    Math.max(100, data.presentation.heroStatementCtaPortraitScale ?? 125)
   );
   const portraitScaleFactor = portraitScale / 100;
   const desktopPortraitSize = `clamp(${(10 * portraitScaleFactor).toFixed(2)}rem, ${(18 * portraitScaleFactor).toFixed(2)}vw, ${(15 * portraitScaleFactor).toFixed(2)}rem)`;
@@ -173,7 +177,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
             alt={`Portrait of ${displayName}`}
             fill
             sizes="(max-width: 768px) 56vw, 22vw"
-            className="object-cover object-center"
+            className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
             priority
           />
         ) : (
@@ -206,7 +210,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
               alt={`Portrait of ${displayName}`}
               fill
               sizes="(max-width: 768px) 56vw, 22vw"
-              className="object-cover object-center"
+              className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
               priority
             />
           ) : (
@@ -264,7 +268,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
           alt=""
           fill
           sizes="(max-width: 768px) 92vw, 70vw"
-          className="object-cover object-center"
+          className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
           priority
         />
       ) : (
@@ -292,12 +296,10 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
         style={{ backgroundColor: fond }}
       />
 
-      {/* —— Desktop —— */}
+      {/* —— Desktop — global content width + gutter only —— */}
       <div
-        className="relative z-[1] mx-auto hidden min-h-[100dvh] w-full max-w-[100rem] md:grid"
+        className={`relative z-[1] hidden min-h-[100dvh] md:grid ${shellX}`}
         style={{
-          paddingLeft: 0,
-          paddingRight: 0,
           paddingTop: 'calc(8.25rem + env(safe-area-inset-top, 0px))',
           paddingBottom: 'clamp(1.5rem, 3vh, 2.25rem)',
           /* Same 2-col frame always — portrait must not reshape title or tools. */
@@ -423,8 +425,10 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
         </div>
       </div>
 
-      {/* —— Mobile —— */}
-      <div className="relative z-[1] mx-auto flex w-full max-w-[100rem] flex-col px-[clamp(1.25rem,5.5vw,1.5rem)] pb-12 pt-[calc(7rem+env(safe-area-inset-top,0px))] md:hidden">
+      {/* —— Mobile — same global content width + gutter —— */}
+      <div
+        className={`relative z-[1] flex flex-col pb-12 pt-[calc(7rem+env(safe-area-inset-top,0px))] md:hidden ${shellX}`}
+      >
         <div className="flex items-center gap-2.5">
           <span
             className="inline-block h-2 w-2 shrink-0 rounded-full"
@@ -467,7 +471,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
                   alt=""
                   fill
                   sizes="92vw"
-                  className="object-cover object-center"
+                  className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
                   priority
                 />
               ) : (

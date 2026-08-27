@@ -11,7 +11,7 @@ import {
   setRefreshCookie,
 } from '@/lib/auth';
 import { setAccessToken } from '@/lib/api';
-import { refreshSession, invalidateSessionCache } from '@/lib/sessionRefresh';
+import { refreshSession, beginLogout, endLogout } from '@/lib/sessionRefresh';
 
 /**
  * 'loading'        — initial; session restore not yet attempted
@@ -128,16 +128,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    // Block concurrent refreshSession before API/cookie work — otherwise a
+    // refresh can rewrite refresh_token after we clear it and bounce
+    // /login → /dashboard.
+    beginLogout();
     try {
       await logoutApi();
     } catch {
       // Continue with local logout even if API call fails
     }
-    invalidateSessionCache();
-    await clearRefreshCookie();
+    try {
+      await clearRefreshCookie();
+    } catch {
+      // Still clear in-memory session
+    }
     setAccessToken(null);
     setUser(null);
     setSessionStatus('unauthenticated');
+    endLogout();
   }, []);
 
   const hasRole = useCallback(

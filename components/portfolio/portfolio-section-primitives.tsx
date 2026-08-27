@@ -4401,9 +4401,16 @@ export function EditorialWorkCard({
   item: MarketplaceContentItem;
   presentation?: PortfolioWorkPresentationSettings;
 }) {
-  const href = `/marketplace/content/${item.id}`;
+  const externalLink = item.linkUrl?.trim() || null;
+  const href =
+    externalLink ||
+    (item.creatorId ? `/marketplace/content/${item.id}` : '#work');
   const title = item.title?.trim() || 'Untitled project';
-  const description = item.description?.trim() || item.priceInfo?.trim() || null;
+  const description =
+    item.description?.trim() ||
+    (item.priceInfo?.trim() && !/^https?:\/\//i.test(item.priceInfo.trim())
+      ? item.priceInfo.trim()
+      : null);
   const styles = normalizeWorkElementStyles(presentation.elementStyles);
   const toolsLabelText = presentation.toolsLabelText.trim() || 'Tools to use';
   const iconShellClass = toolsIconShellClass(presentation.toolsIconSize);
@@ -5447,7 +5454,9 @@ function EditorialWorkListCard({
   item: MarketplaceContentItem;
   presentation: PortfolioWorkPresentationSettings;
 }) {
-  const href = `/marketplace/content/${item.id}`;
+  const href =
+    item.linkUrl?.trim() ||
+    (item.creatorId ? `/marketplace/content/${item.id}` : '#work');
   const title = item.title?.trim() || 'Untitled project';
   const description = item.description?.trim() || item.priceInfo?.trim() || null;
   const styles = normalizeWorkElementStyles(presentation.elementStyles);
@@ -5652,7 +5661,9 @@ function EditorialWorkAccordionRow({
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
-  const href = `/marketplace/content/${item.id}`;
+  const href =
+    item.linkUrl?.trim() ||
+    (item.creatorId ? `/marketplace/content/${item.id}` : '#work');
   const title = item.title?.trim() || 'Untitled project';
   const description = item.description?.trim() || item.priceInfo?.trim() || null;
   const styles = normalizeWorkElementStyles(presentation.elementStyles);

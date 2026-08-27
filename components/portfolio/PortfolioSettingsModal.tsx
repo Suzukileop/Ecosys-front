@@ -1012,7 +1012,7 @@ function GlobalSectionTypographySettings({
             (option) => {
               const active =
                 bodyFont === option.value ||
-                (option.value === 'aeonik' && bodyFont === 'default');
+                (option.value === 'geist' && bodyFont === 'default');
               return (
                 <button
                   key={option.value}
@@ -5502,6 +5502,7 @@ function SectionPanel({
   onResetBuiltinTheme,
   onDeleteCustomTheme,
   availableTools,
+  availableWorks,
   panelSubSections,
   onPanelSubSectionChange,
 }: {
@@ -5527,6 +5528,7 @@ function SectionPanel({
   onResetBuiltinTheme: (themeId: PortfolioBuiltinThemeId) => void;
   onDeleteCustomTheme: (themeId: string) => void;
   availableTools: string[];
+  availableWorks: { id: string; title: string; imageUrl: string }[];
   panelSubSections: PanelSubSections;
   onPanelSubSectionChange: <K extends keyof PanelSubSections>(
     sectionId: K,
@@ -5629,6 +5631,7 @@ function SectionPanel({
       <HeroSettingsPanel
         hero={settings.hero}
         availableTools={availableTools}
+        availableWorks={availableWorks}
         onChange={(patch) => onChange('hero', patch)}
         subSection={panelSubSections.hero ?? 'general'}
         onSubSectionChange={(value) => onPanelSubSectionChange('hero', value)}
@@ -5779,6 +5782,7 @@ type PortfolioSettingsModalProps = {
   canUndo?: boolean;
   canRedo?: boolean;
   availableTools: string[];
+  availableWorks?: { id: string; title: string; imageUrl: string }[];
 };
 
 export function PortfolioSettingsModal({
@@ -5804,6 +5808,7 @@ export function PortfolioSettingsModal({
   canUndo = false,
   canRedo = false,
   availableTools,
+  availableWorks = [],
 }: PortfolioSettingsModalProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -6182,6 +6187,7 @@ export function PortfolioSettingsModal({
                 onResetBuiltinTheme={onResetBuiltinTheme}
                 onDeleteCustomTheme={onDeleteCustomTheme}
                 availableTools={availableTools}
+                availableWorks={availableWorks}
                 panelSubSections={panelSubSections}
                 onPanelSubSectionChange={setPanelSubSection}
               />

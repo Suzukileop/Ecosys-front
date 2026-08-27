@@ -22,6 +22,7 @@ import {
 } from '@/components/portfolio/portfolio-themes';
 import { SOCIAL_PLATFORMS } from '@/types/ecosystem';
 import type { MarketplaceContentItem, MarketplaceCreatorPublicProfile } from '@/types/marketplace';
+import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
 import { PortfolioHeroSection } from '@/components/portfolio/PortfolioHeroSection';
 import { PortfolioFixedMotifsLayer } from '@/components/portfolio/PortfolioHeroMotifsLayer';
 import { PortfolioSectionShell } from '@/components/portfolio/PortfolioSectionShell';
@@ -58,6 +59,35 @@ import {
   SIDE_INFO_ICONS,
   ServicesOrderCtaHrefProvider,
 } from '@/components/portfolio/portfolio-section-primitives';
+import {
+  isProjectsBoardDesign,
+  ProjectsBoardGallery,
+  ProjectsBoardSectionHeader,
+} from '@/components/portfolio/portfolio-work-projects-board';
+import {
+  isProjectsAccordionDesign,
+  ProjectsAccordionGallery,
+  ProjectsAccordionSectionHeader,
+} from '@/components/portfolio/portfolio-work-projects-accordion';
+import {
+  isProjectsFramesDesign,
+  ProjectsFramesGallery,
+  ProjectsFramesSectionHeader,
+} from '@/components/portfolio/portfolio-work-projects-frames';
+import {
+  isProjectsIndexDesign,
+  ProjectsIndexGallery,
+  ProjectsIndexSectionHeader,
+} from '@/components/portfolio/portfolio-work-projects-index';
+import {
+  isProjectsGridDesign,
+  ProjectsGridSection,
+} from '@/components/portfolio/portfolio-work-projects-grid';
+import {
+  isProjectsSplitDesign,
+  ProjectsSplitGallery,
+  ProjectsSplitSectionHeader,
+} from '@/components/portfolio/portfolio-work-projects-split';
 import {
   galleryHeaderFontClass,
   galleryHeaderFontStyle,
@@ -578,8 +608,25 @@ export function PublicCreatorPortfolioPage({
     flushPendingSave,
   ]);
 
-  const workItems = portfolioPosts ?? profile.portfolioPosts ?? [];
-  const heroFeaturedWorks = useMemo(
+  const workItems = useMemo(() => {
+    const posts = portfolioPosts ?? profile.portfolioPosts ?? [];
+    const works = profile.portfolioWorks;
+    if (!works?.length) return posts;
+    const byId = new Map(works.map((work) => [String(work.id), work]));
+    return posts.map((post) => {
+      const work = byId.get(String(post.id));
+      if (!work) return post;
+      const role = post.role?.trim() || work.role?.trim() || null;
+      const category = post.category?.trim() || work.category?.trim() || null;
+      return {
+        ...post,
+        role,
+        category,
+        genre: post.genre?.trim() || category || role || null,
+      };
+    });
+  }, [portfolioPosts, profile.portfolioPosts, profile.portfolioWorks]);
+  const availableHeroWorks = useMemo(
     () =>
       workItems
         .map((item) => {
@@ -592,10 +639,28 @@ export function PublicCreatorPortfolioPage({
             href: `/marketplace/content/${item.id}`,
           };
         })
-        .filter((item): item is NonNullable<typeof item> => Boolean(item))
-        .slice(0, 4),
+        .filter((item): item is NonNullable<typeof item> => Boolean(item)),
     [workItems]
   );
+  const heroFeaturedWorks = useMemo(() => {
+    const banner = settings.hero.heroBannerDesign ?? 'classic';
+    if (banner === 'work-duo') {
+      const selectedIds = settings.hero.heroWorkDuoSelectedWorkIds ?? [];
+      if (selectedIds.length > 0) {
+        const byId = new Map(availableHeroWorks.map((work) => [work.id, work]));
+        return selectedIds
+          .map((id) => byId.get(id))
+          .filter((work): work is NonNullable<typeof work> => Boolean(work))
+          .slice(0, 2);
+      }
+      return availableHeroWorks.slice(0, 2);
+    }
+    return availableHeroWorks.slice(0, 4);
+  }, [
+    availableHeroWorks,
+    settings.hero.heroBannerDesign,
+    settings.hero.heroWorkDuoSelectedWorkIds,
+  ]);
   const whyMeBlocks = profile.whyMeBlocks ?? [];
   const experienceBlocks = profile.experienceBlocks ?? [];
   const strengths = useMemo(
@@ -1681,15 +1746,72 @@ export function PublicCreatorPortfolioPage({
       case 'work': {
         const layout = workPresentation.sectionLayout ?? 'stacked';
         const aside = !isSplitMode && faqSectionLayoutIsAside(layout);
-        const headerBlock = (
+        const projectsBoard = isProjectsBoardDesign(workPresentation);
+        const projectsAccordion = isProjectsAccordionDesign(workPresentation);
+        const projectsFrames = isProjectsFramesDesign(workPresentation);
+        const projectsIndex = isProjectsIndexDesign(workPresentation);
+        const projectsGrid = isProjectsGridDesign(workPresentation);
+        const projectsSplit = isProjectsSplitDesign(workPresentation);
+        const namedWorkDesign =
+          projectsBoard ||
+          projectsAccordion ||
+          projectsFrames ||
+          projectsIndex ||
+          projectsGrid ||
+          projectsSplit;
+        const marketplaceTrailing = settings.work.showMarketplaceLink ? (
+          <MarketplaceProfileLink creatorId={creatorId} color={workPresentation.titleColor} />
+        ) : null;
+        const accordionAlign =
+          workPresentation.projectsAccordion?.headerAlign ?? 'center';
+        const headerBlock = projectsBoard ? (
+          <ProjectsBoardSectionHeader
+            title={workSectionTitle}
+            subtitle={workSectionSubtitle || undefined}
+            accentColor={workPresentation.ctaColor || workPresentation.categoryActiveColor}
+            titleColor={workPresentation.titleColor}
+            subtitleColor={workPresentation.subtitleColor}
+            trailing={marketplaceTrailing}
+            className={aside ? 'w-full' : undefined}
+          />
+        ) : projectsAccordion ? (
+          <ProjectsAccordionSectionHeader
+            title={workSectionTitle}
+            subtitle={workSectionSubtitle || undefined}
+            titleColor={workPresentation.titleColor}
+            subtitleColor={workPresentation.subtitleColor}
+            align={accordionAlign}
+            className={aside ? 'w-full' : undefined}
+          />
+        ) : projectsFrames ? (
+          <ProjectsFramesSectionHeader
+            title={workSectionTitle}
+            subtitle={workSectionSubtitle || undefined}
+            titleColor={workPresentation.titleColor}
+            subtitleColor={workPresentation.subtitleColor}
+            className={aside ? 'w-full' : undefined}
+          />
+        ) : projectsIndex ? (
+          <ProjectsIndexSectionHeader
+            title={workSectionTitle}
+            subtitle={workSectionSubtitle || undefined}
+            titleColor={workPresentation.titleColor}
+            subtitleColor={workPresentation.subtitleColor}
+            className={aside ? 'w-full' : undefined}
+          />
+        ) : projectsGrid ? null : projectsSplit ? (
+          <ProjectsSplitSectionHeader
+            title={workSectionTitle}
+            subtitle={workSectionSubtitle || undefined}
+            titleColor={workPresentation.titleColor}
+            subtitleColor={workPresentation.subtitleColor}
+            className={aside ? 'w-full' : undefined}
+          />
+        ) : (
           <EditorialSectionStickyHeader
             title={workSectionTitle}
             subtitle={workSectionSubtitle || undefined}
-            trailing={
-              settings.work.showMarketplaceLink ? (
-                <MarketplaceProfileLink creatorId={creatorId} color={workPresentation.titleColor} />
-              ) : null
-            }
+            trailing={marketplaceTrailing}
             editorialLayout={isEditorialLayout}
             centered={workHeaderAlign.centered}
             alignRight={workHeaderAlign.alignRight}
@@ -1711,18 +1833,45 @@ export function PublicCreatorPortfolioPage({
         );
         const contentBlock = (
           <SectionIllustratedContent
-            variant={workPresentation.illustrationVariant}
+            variant={namedWorkDesign ? 'none' : workPresentation.illustrationVariant}
             placement={workPresentation.illustrationPlacement}
             accent={workPresentation.ctaColor}
             ink={workPresentation.titleColor}
             surface={workPresentation.cardBackgroundColor}
           >
-            <EditorialWorkGallery
-              items={workItems}
-              presentation={workPresentation}
-              motionProfile={motionProfile}
-              forceSingleColumn={isSplitMode}
-            />
+            {projectsBoard ? (
+              <ProjectsBoardGallery
+                items={workItems}
+                presentation={workPresentation}
+                forceSingleColumn={isSplitMode}
+              />
+            ) : projectsAccordion ? (
+              <ProjectsAccordionGallery items={workItems} presentation={workPresentation} />
+            ) : projectsFrames ? (
+              <ProjectsFramesGallery items={workItems} presentation={workPresentation} />
+            ) : projectsIndex ? (
+              <ProjectsIndexGallery items={workItems} presentation={workPresentation} />
+            ) : projectsGrid ? (
+              <ProjectsGridSection
+                title={workSectionTitle}
+                subtitle={workSectionSubtitle || undefined}
+                titleColor={workPresentation.titleColor}
+                subtitleColor={workPresentation.subtitleColor}
+                trailing={marketplaceTrailing}
+                items={workItems}
+                presentation={workPresentation}
+                forceSingleColumn={isSplitMode}
+              />
+            ) : projectsSplit ? (
+              <ProjectsSplitGallery items={workItems} presentation={workPresentation} />
+            ) : (
+              <EditorialWorkGallery
+                items={workItems}
+                presentation={workPresentation}
+                motionProfile={motionProfile}
+                forceSingleColumn={isSplitMode}
+              />
+            )}
           </SectionIllustratedContent>
         );
         return (
@@ -2640,7 +2789,7 @@ export function PublicCreatorPortfolioPage({
               !isAuthenticated && profile.membersOnlyContactAvailable ? (
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
                   <Link
-                    href={`/login?redirect=${encodeURIComponent(`/portfolio/${creatorId}`)}`}
+                    href={`/login?redirect=${encodeURIComponent(buildCreatorPortfolioPath(creatorId, profile.username))}`}
                     className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
                   >
                     Sign in
@@ -2755,6 +2904,7 @@ export function PublicCreatorPortfolioPage({
           canUndo={canUndo}
           canRedo={canRedo}
           availableTools={strengthNames}
+          availableWorks={availableHeroWorks}
         />
       ) : null}
 
@@ -2767,6 +2917,7 @@ export function PublicCreatorPortfolioPage({
             >
               <PortfolioHeroSection
                 creatorId={creatorId}
+                username={profile.username}
                 fullName={profile.fullName}
                 nameLead={nameLead}
                 nameAccent={nameAccent}
@@ -2881,6 +3032,7 @@ export function PublicCreatorPortfolioPage({
           {settings.hero.enabled ? (
             <PortfolioHeroSection
               creatorId={creatorId}
+              username={profile.username}
               fullName={profile.fullName}
               nameLead={nameLead}
               nameAccent={nameAccent}

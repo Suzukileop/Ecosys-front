@@ -16,6 +16,7 @@ export interface MarketplaceCreatorSummary {
   id?: string;
   userId?: string;
   fullName: string;
+  username?: string | null;
   avatarUrl: string | null;
   specialite: string | null;
   specialties?: string[];
@@ -55,12 +56,19 @@ export interface MarketplaceContentItem {
   priceInfo?: string | null;
   toolsUsed?: string[];
   tags?: string[];
+  /** Role label for manual portfolio works (shown on Projects board cards). */
+  role?: string | null;
+  /** Category for manual portfolio works (Projects board right label). */
+  category?: string | null;
   creatorId?: string | null;
+  /** External project URL for manual portfolio works. */
+  linkUrl?: string | null;
 }
 
 export interface MarketplaceCreatorPublicProfile {
   id: string;
   fullName: string;
+  username?: string | null;
   avatarUrl: string | null;
   specialite: string | null;
   specialties?: string[];
@@ -125,6 +133,8 @@ export interface MarketplaceCreatorPublicProfile {
   responseTimeLabel?: string | null;
   responseTimeSampleCount?: number | null;
   portfolioPosts?: MarketplaceContentItem[];
+  /** Manual portfolio works (preferred over curated content posts when present). */
+  portfolioWorks?: import('@/types/ecosystem').ProfilePortfolioWork[];
   /** Public portfolio presentation settings (theme, layout, motion, etc.). */
   portfolioSettings?: Record<string, unknown> | null;
   shopName?: string | null;
@@ -136,6 +146,7 @@ export interface MarketplaceCreatorPublicProfile {
 export interface MarketplaceContentCreator {
   id: string;
   fullName: string;
+  username?: string | null;
   avatarUrl: string | null;
   /** App UX role — used for avatar status ring on content cards. */
   appRole?: string | null;

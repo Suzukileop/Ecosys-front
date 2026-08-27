@@ -65,6 +65,7 @@ function mapTaggedUsers(raw: unknown) {
 function mapContentCreator(raw: unknown): {
   id: string;
   fullName: string;
+  username?: string | null;
   avatarUrl: string | null;
   appRole?: string | null;
   specialite?: string | null;
@@ -77,6 +78,7 @@ function mapContentCreator(raw: unknown): {
   return {
     id: String(row.id ?? ''),
     fullName: String(row.fullName ?? 'Creator'),
+    username: row.username != null ? String(row.username) : null,
     avatarUrl: row.avatarUrl != null ? String(row.avatarUrl) : null,
     appRole: row.appRole != null ? String(row.appRole) : null,
     specialite: row.specialite != null ? String(row.specialite) : null,
@@ -110,10 +112,14 @@ export function mapPublicContentFeedItem(raw: RawRecord): PublicContentFeedItem 
 }
 
 function mapContentItem(raw: RawRecord): MarketplaceContentItem {
+  const role = raw.role != null ? String(raw.role).trim() : '';
+  const category = raw.category != null ? String(raw.category).trim() : '';
   return {
     id: String(raw.id ?? ''),
     title: String(raw.title ?? ''),
     genre: raw.genre != null ? String(raw.genre) : null,
+    role: role || null,
+    category: category || null,
     description: raw.description != null ? String(raw.description) : null,
     mediaUrl: raw.mediaUrl != null ? String(raw.mediaUrl) : null,
     mediaType: raw.mediaType != null ? (String(raw.mediaType) as 'FILE' | 'GIF') : null,
@@ -127,6 +133,14 @@ function mapContentItem(raw: RawRecord): MarketplaceContentItem {
     creatorId: raw.creator != null && typeof raw.creator === 'object'
       ? String((raw.creator as RawRecord).id ?? '')
       : null,
+    linkUrl:
+      raw.linkUrl != null
+        ? String(raw.linkUrl)
+        : raw.link != null
+          ? String(raw.link)
+          : raw.priceInfo != null && /^https?:\/\//i.test(String(raw.priceInfo))
+            ? String(raw.priceInfo)
+            : null,
   };
 }
 
@@ -141,6 +155,7 @@ export function normalizeCreatorSummary(raw: RawRecord): MarketplaceCreatorSumma
     id: userId,
     userId,
     fullName: String(raw.fullName ?? 'Creator'),
+    username: raw.username != null ? String(raw.username) : null,
     avatarUrl: resolvedAvatar || null,
     specialite:
       (raw.specialite ?? raw.niche) != null ? String(raw.specialite ?? raw.niche) : null,
@@ -407,6 +422,48 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     ? raw.portfolioPosts.map((item) => mapContentItem(item as RawRecord))
     : [];
 
+  const portfolioWorks = Array.isArray(raw.portfolioWorks)
+    ? raw.portfolioWorks
+        .map((item) => {
+          if (!item || typeof item !== 'object') return null;
+          const row = item as RawRecord;
+          const id = row.id != null ? String(row.id) : '';
+          const title = row.title != null ? String(row.title) : '';
+          const imageUrl = row.imageUrl != null ? String(row.imageUrl) : '';
+          if (!id || !title || !imageUrl) return null;
+          return {
+            id,
+            sortOrder: typeof row.sortOrder === 'number' ? row.sortOrder : 0,
+            role: row.role != null ? String(row.role) : null,
+            category: row.category != null ? String(row.category) : null,
+            title,
+            description: row.description != null ? String(row.description) : null,
+            stack: Array.isArray(row.stack) ? row.stack.map((t) => String(t)) : [],
+            imageUrl,
+            link: row.link != null ? String(row.link) : null,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => Boolean(item))
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+    : [];
+
+  const portfolioPostsFromWorks: MarketplaceContentItem[] = portfolioWorks.map((work) => ({
+    id: work.id,
+    title: work.title,
+    genre: work.category?.trim() || work.role,
+    role: work.role?.trim() || null,
+    category: work.category?.trim() || null,
+    description: work.description,
+    mediaUrl: work.imageUrl,
+    mediaType: 'FILE',
+    toolsUsed: work.stack,
+    tags: [],
+    linkUrl: work.link,
+  }));
+
+  const resolvedPortfolioPosts =
+    portfolioPostsFromWorks.length > 0 ? portfolioPostsFromWorks : portfolioPosts;
+
   let socialLinks: Record<string, string> | null = null;
   if (Array.isArray(raw.socialLinks)) {
     socialLinks = {};
@@ -426,6 +483,7 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
   return {
     id: userId,
     fullName: String(raw.fullName ?? 'Creator'),
+    username: raw.username != null ? String(raw.username) : null,
     avatarUrl: raw.avatarUrl != null ? String(raw.avatarUrl) : null,
     specialite:
       (raw.specialite ?? raw.niche) != null ? String(raw.specialite ?? raw.niche) : null,
@@ -605,7 +663,8 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     responseTimeLabel: raw.responseTimeLabel != null ? String(raw.responseTimeLabel) : null,
     responseTimeSampleCount:
       raw.responseTimeSampleCount != null ? Number(raw.responseTimeSampleCount) : null,
-    portfolioPosts,
+    portfolioPosts: resolvedPortfolioPosts,
+    portfolioWorks,
     portfolioSettings:
       raw.portfolioSettings != null &&
       typeof raw.portfolioSettings === 'object' &&

@@ -55,7 +55,6 @@ import { ProfileGalleryField } from '@/components/creator/studio/ProfileGalleryF
 import { ProfileLinksField } from '@/components/creator/studio/ProfileLinksField';
 import { ProfileProductsPicker, MAX_PORTFOLIO_PRODUCTS } from '@/components/creator/studio/ProfileProductsPicker';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
-import { ProfilePortfolioPicker, MAX_PORTFOLIO_PICKS } from '@/components/creator/studio/ProfilePortfolioPicker';
 import { MAX_SERVICES } from '@/components/creator/studio/ProfileServicesField';
 import { MAX_TEAM } from '@/components/creator/studio/ProfileTeamField';
 import { MAX_GALLERY } from '@/components/creator/studio/ProfileGalleryField';
@@ -147,7 +146,7 @@ import { PortfolioServicesReadOnly } from '@/components/portfolio/PortfolioServi
 import { PortfolioFaqReadOnly } from '@/components/portfolio/PortfolioFaqChrome';
 import { PortfolioTeamReadOnly } from '@/components/portfolio/PortfolioTeamChrome';
 import { PortfolioAboutUsReadOnly } from '@/components/portfolio/PortfolioAboutUsChrome';
-import { PortfolioShowcaseChrome } from '@/components/portfolio/PortfolioShowcaseChrome';
+import { PortfolioShowcaseChrome, MAX_PORTFOLIO_WORKS } from '@/components/portfolio/PortfolioShowcaseChrome';
 import { PortfolioReputationChrome } from '@/components/portfolio/PortfolioReputationChrome';
 import { PortfolioGalleryReadOnly } from '@/components/portfolio/PortfolioGalleryChrome';
 import { PortfolioLinksReadOnly } from '@/components/portfolio/PortfolioLinksChrome';
@@ -278,7 +277,7 @@ function portfolioSectionItemCountLabel(
     case 'products':
       return formatItemCountLabel(productsItemCount, 'product');
     case 'portfolio':
-      return formatItemCountLabel(portfolioItemCount, 'project');
+      return formatItemCountLabel(portfolioItemCount, 'work');
     case 'faq': {
       const count = values.faqItems.filter(
         (item) =>
@@ -353,7 +352,7 @@ const PORTFOLIO_SECTION_LABELS: Partial<Record<ProfileSectionId, string>> = {
   aboutUs: 'About us',
   team: 'Team',
   gallery: 'Gallery',
-  strengths: 'Skills & Tools',
+  strengths: 'Stack',
 };
 
 /** Toast copy for list CRUD: add / delete / update. */
@@ -369,6 +368,7 @@ function listCrudToastTitle(
 
 const ABOUT_FIELD_TOAST_TITLES: Record<string, string> = {
   fullName: 'Name updated',
+  username: 'Username updated',
   bio: 'Bio updated',
   specialite: 'Specialty updated',
   specialtySet: 'Specialty updated',
@@ -541,6 +541,7 @@ export function CreatorStudioProfileTab({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       fullName: '',
+      username: '',
       bio: '',
       specialite: '',
       specialties: [],
@@ -1285,6 +1286,7 @@ export function CreatorStudioProfileTab({
 
       const resetValues: ProfileFormValues = {
         fullName: p.fullName?.trim() || user?.fullName?.trim() || '',
+        username: p.username?.trim() || user?.username?.trim() || '',
         bio: collapseRepeatedBio(p.bio ?? ''),
         specialite: parseSpecialtyList(p.specialties, p.specialite)[0] ?? p.specialite ?? '',
         specialties: parseSpecialtyList(p.specialties, p.specialite),
@@ -1351,7 +1353,7 @@ export function CreatorStudioProfileTab({
         setLoadingProfile(false);
       }
     }
-  }, [form, user?.email, user?.fullName]);
+  }, [form, user?.email, user?.fullName, user?.username]);
 
   useEffect(() => {
     void loadProfile();
@@ -1451,9 +1453,18 @@ export function CreatorStudioProfileTab({
       const parsed = profileSchema.parse(merged);
       const trimmedName = parsed.fullName.trim();
       const savedName = saved?.fullName?.trim() ?? '';
-      if (trimmedName !== savedName) {
-        const updated = await updateUserProfile({ fullName: trimmedName });
-        updateUser({ fullName: updated.fullName, avatarUrl: updated.avatarUrl });
+      const trimmedUsername = parsed.username.trim();
+      const savedUsername = saved?.username?.trim() ?? '';
+      if (trimmedName !== savedName || trimmedUsername !== savedUsername) {
+        const updated = await updateUserProfile({
+          ...(trimmedName !== savedName ? { fullName: trimmedName } : {}),
+          ...(trimmedUsername !== savedUsername ? { username: trimmedUsername } : {}),
+        });
+        updateUser({
+          fullName: updated.fullName,
+          username: updated.username,
+          avatarUrl: updated.avatarUrl,
+        });
       }
 
       const hasCompleteLocation =
@@ -1900,7 +1911,22 @@ export function CreatorStudioProfileTab({
           form.setValue('fullName', trimmedName, { shouldDirty: true });
           if (trimmedName !== (savedSnapshot.current?.fullName?.trim() ?? '')) {
             const updated = await updateUserProfile({ fullName: trimmedName });
-            updateUser({ fullName: updated.fullName, avatarUrl: updated.avatarUrl });
+            updateUser({
+              fullName: updated.fullName,
+              username: updated.username,
+              avatarUrl: updated.avatarUrl,
+            });
+          }
+        } else if (field === 'username') {
+          const trimmedUsername = String(value).trim();
+          form.setValue('username', trimmedUsername, { shouldDirty: true });
+          if (trimmedUsername !== (savedSnapshot.current?.username?.trim() ?? '')) {
+            const updated = await updateUserProfile({ username: trimmedUsername });
+            updateUser({
+              fullName: updated.fullName,
+              username: updated.username,
+              avatarUrl: updated.avatarUrl,
+            });
           }
         } else if (field === 'bio') {
           form.setValue('bio', String(value), { shouldDirty: true });
@@ -1954,6 +1980,7 @@ export function CreatorStudioProfileTab({
           ...latest,
           availabilityHours: availabilityHoursForSave,
           ...(field === 'fullName' ? { fullName: String(value).trim() } : {}),
+          ...(field === 'username' ? { username: String(value).trim() } : {}),
           ...(field === 'bio' ? { bio: String(value) } : {}),
           ...(field === 'specialite' ? { specialite: String(value) } : {}),
           ...(field === 'specialtySet'
@@ -2010,6 +2037,8 @@ export function CreatorStudioProfileTab({
           form.clearErrors('bio');
           await updateCreatorProfile({ bio: cleaned });
         } else if (field === 'fullName') {
+          // Already persisted via updateUserProfile above.
+        } else if (field === 'username') {
           // Already persisted via updateUserProfile above.
         } else if (field === 'specialtySet') {
           const payload = value as PortfolioAboutFieldValue['specialtySet'];
@@ -2084,6 +2113,8 @@ export function CreatorStudioProfileTab({
       try {
         const trimmedName = values.fullName.trim();
         form.setValue('fullName', trimmedName, { shouldDirty: true });
+        const trimmedUsername = values.username.trim();
+        form.setValue('username', trimmedUsername, { shouldDirty: true });
         form.setValue('bio', values.bio, { shouldDirty: true });
         form.setValue('specialite', values.specialtySet?.specialties[0] ?? values.specialite, {
           shouldDirty: true,
@@ -2109,9 +2140,23 @@ export function CreatorStudioProfileTab({
         form.setValue('availabilityHours', values.availabilityHours, { shouldDirty: true });
         setTypicalResponseTime(values.typicalResponseTime);
 
-        if (trimmedName !== (savedSnapshot.current?.fullName?.trim() ?? '')) {
-          const updated = await updateUserProfile({ fullName: trimmedName });
-          updateUser({ fullName: updated.fullName, avatarUrl: updated.avatarUrl });
+        if (
+          trimmedName !== (savedSnapshot.current?.fullName?.trim() ?? '') ||
+          trimmedUsername !== (savedSnapshot.current?.username?.trim() ?? '')
+        ) {
+          const updated = await updateUserProfile({
+            ...(trimmedName !== (savedSnapshot.current?.fullName?.trim() ?? '')
+              ? { fullName: trimmedName }
+              : {}),
+            ...(trimmedUsername !== (savedSnapshot.current?.username?.trim() ?? '')
+              ? { username: trimmedUsername }
+              : {}),
+          });
+          updateUser({
+            fullName: updated.fullName,
+            username: updated.username,
+            avatarUrl: updated.avatarUrl,
+          });
         }
 
         if (isRepeatedBioContent(values.bio)) {
@@ -3272,6 +3317,7 @@ export function CreatorStudioProfileTab({
         if (isPortfolioLayout) {
           return (
             <PortfolioShowcaseChrome
+              stackOptions={values.specialtyTags}
               pickerOpen={portfolioAddingItem}
               onPickerOpenChange={setPortfolioAddingItem}
               onSelectionCountChange={setPortfolioItemCount}
@@ -3281,7 +3327,14 @@ export function CreatorStudioProfileTab({
             />
           );
         }
-        return <ProfilePortfolioPicker readOnly={false} />;
+        return (
+          <PortfolioShowcaseChrome
+            stackOptions={values.specialtyTags}
+            pickerOpen={portfolioAddingItem}
+            onPickerOpenChange={setPortfolioAddingItem}
+            onSelectionCountChange={setPortfolioItemCount}
+          />
+        );
       case 'products':
         return (
           <ProfileProductsPicker
@@ -3300,6 +3353,7 @@ export function CreatorStudioProfileTab({
             <>
             <PortfolioAboutReadOnly
               fullName={values.fullName}
+              username={values.username ?? ''}
               bio={values.bio ?? ''}
               specialite={values.specialite ?? ''}
               specialties={values.specialties ?? []}
@@ -3370,6 +3424,11 @@ export function CreatorStudioProfileTab({
           return (
             <div className="space-y-3">
               <ProfileReadOnlyField label="Name" value={values.fullName} />
+              <ProfileReadOnlyField
+                label="Username"
+                value={values.username || null}
+                emptyLabel="Not set"
+              />
               <ProfileReadOnlyField label="Bio" value={values.bio} />
               <div className="grid gap-3 sm:grid-cols-2">
                 <ProfileReadOnlyField
@@ -3472,6 +3531,30 @@ export function CreatorStudioProfileTab({
               {form.formState.errors.fullName ? (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {form.formState.errors.fullName.message}
+                </p>
+              ) : null}
+            </div>
+            <div>
+              <label htmlFor="username" className={profileFormLabelClass}>
+                Username
+              </label>
+              <div>
+                <input
+                  id="username"
+                  type="text"
+                  spellCheck={false}
+                  autoComplete="username"
+                  placeholder="leopard"
+                  className={profileFormInputClass}
+                  {...form.register('username')}
+                />
+              </div>
+              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500">
+                Unique and case-sensitive — leopard and Leopard are different.
+              </p>
+              {form.formState.errors.username ? (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {form.formState.errors.username.message}
                 </p>
               ) : null}
             </div>
@@ -4002,7 +4085,7 @@ export function CreatorStudioProfileTab({
             />
             <ContactVisibilitySelect
               id="visibility-strengths-edit"
-              label="Public visibility (Skills & tools)"
+              label="Public visibility (Stack)"
               value={contactVisibility.strengthsTools}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, strengthsTools: value }))}
             />
@@ -5296,17 +5379,17 @@ export function CreatorStudioProfileTab({
                                 hideHeroActions: portfolioAddingItem,
                                 onAddEntry: () => {
                                   if (portfolioAddingItem) return;
-                                  if (portfolioItemCount >= MAX_PORTFOLIO_PICKS) {
+                                  if (portfolioItemCount >= MAX_PORTFOLIO_WORKS) {
                                     pushInsertionLimitFeedback({
-                                      limit: MAX_PORTFOLIO_PICKS,
-                                      unit: 'portfolio posts',
+                                      limit: MAX_PORTFOLIO_WORKS,
+                                      unit: 'portfolio works',
                                     });
                                     return;
                                   }
                                   setPortfolioDeleteMode(false);
                                   setPortfolioAddingItem(true);
                                 },
-                                addEntryLabel: 'Add content',
+                                addEntryLabel: 'Add work',
                               }
                             : {}),
                           ...(activeSection === 'products'

@@ -103,7 +103,7 @@ export function PublicSkillsToolsGrouped({
       {tags.length > 0 ? (
         <section className="space-y-2">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Skills
+            Stack
           </p>
           <div className="flex flex-wrap gap-2">
             {tags.map((label) => (

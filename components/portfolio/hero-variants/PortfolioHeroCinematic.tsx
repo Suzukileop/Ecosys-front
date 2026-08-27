@@ -115,6 +115,7 @@ export function PortfolioHeroCinematic({ data }: { data: PortfolioHeroData }) {
         <div className="mt-8">
           <HeroCtas
             creatorId={data.creatorId}
+            username={data.username}
             fullName={data.fullName}
             showWorkCta={data.showWorkCta}
             showContactCta={data.showContactCta}

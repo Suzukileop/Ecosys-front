@@ -21,5 +21,8 @@ export async function setRefreshCookie(refreshToken: string): Promise<void> {
 
 export async function clearRefreshCookie(): Promise<void> {
   inflightSetCookie = null;
-  await fetch('/api/clear-refresh-cookie', { method: 'POST' });
+  const response = await fetch('/api/clear-refresh-cookie', { method: 'POST' });
+  if (!response.ok) {
+    throw new Error(`Failed to clear refresh cookie (${response.status})`);
+  }
 }

@@ -189,11 +189,14 @@ export function ContentPostLightbox({
                 </div>
               )}
               {moderationMode && post.pinned && (bucket === 'active' || bucket === 'pinned') && (
-                <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-orange-500/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
-                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                <span
+                  className="pointer-events-none absolute left-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-500/90 text-white backdrop-blur-sm"
+                  aria-label="Pinned"
+                  title="Pinned"
+                >
+                  <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
                     <path d="M10 2l1.5 4.5H16l-3.7 2.7 1.4 4.3L10 11.8 6.3 13.5l1.4-4.3L4 6.5h4.5L10 2z" />
                   </svg>
-                  Pinned
                 </span>
               )}
             </div>
@@ -273,8 +276,14 @@ export function ContentPostGalleryThumb({ post, onOpen }: ContentPostGalleryThum
         </div>
       )}
       {post.pinned ? (
-        <span className="absolute left-2 top-2 rounded-md bg-orange-500/90 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
-          Pin
+        <span
+          className="absolute left-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-orange-500/90 text-white"
+          aria-label="Pinned"
+          title="Pinned"
+        >
+          <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+            <path d="M10 2l1.5 4.5H16l-3.7 2.7 1.4 4.3L10 11.8 6.3 13.5l1.4-4.3L4 6.5h4.5L10 2z" />
+          </svg>
         </span>
       ) : null}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent p-3 pt-10">

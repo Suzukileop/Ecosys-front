@@ -385,6 +385,20 @@ export interface ProfileGalleryItem {
   mediaType?: 'IMAGE' | 'VIDEO' | null;
 }
 
+/** Manual portfolio work (My Portfolio → Information → Portfolio). */
+export interface ProfilePortfolioWork {
+  id: string;
+  sortOrder: number;
+  role?: string | null;
+  /** Project category label (English), e.g. Business, Lifestyle. */
+  category?: string | null;
+  title: string;
+  description?: string | null;
+  stack?: string[];
+  imageUrl: string;
+  link?: string | null;
+}
+
 export type TeamSocialPlatform =
   | 'FACEBOOK'
   | 'X'
@@ -445,6 +459,7 @@ export interface CreatorProfileDto {
   id: string;
   userId?: string;
   fullName?: string | null;
+  username?: string | null;
   avatarUrl?: string | null;
   bio: string | null;
   specialite: string | null;
@@ -501,6 +516,7 @@ export interface CreatorProfileDto {
   faqItems?: FaqItem[];
   teamMembers?: ProfileTeamMember[];
   galleryItems?: ProfileGalleryItem[];
+  portfolioWorks?: ProfilePortfolioWork[];
   aboutUs?: ProfileAboutUs | null;
   profileLinks?: ProfileLink[];
   memberSince?: string | null;
@@ -530,6 +546,7 @@ export interface CreatorProfileUpdateBody {
   faqItems?: FaqItem[];
   teamMembers?: ProfileTeamMember[];
   galleryItems?: ProfileGalleryItem[];
+  portfolioWorks?: ProfilePortfolioWork[];
   aboutUs?: ProfileAboutUs | null;
   profileLinks?: ProfileLink[];
   locationCity?: string;

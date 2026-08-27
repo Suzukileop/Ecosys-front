@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
+  heroImageGrayscaleClass,
   resolveHeroAvailabilityValue,
   resolveHeroCurrentlyLabel,
   resolveHeroSignatureWord,
@@ -16,6 +17,7 @@ import {
   resolveHeroPaletteColor,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
+import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 
 /**
  * Swiss editorial Hero banner — paper canvas, statement + portrait,
@@ -23,6 +25,7 @@ import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/p
  * Colors follow the Hero / Global palette (fond, texteFort, texteMuted, bordure).
  */
 export function PortfolioHeroSwissEditorial({ data }: { data: PortfolioHeroData }) {
+  const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
@@ -30,6 +33,7 @@ export function PortfolioHeroSwissEditorial({ data }: { data: PortfolioHeroData 
   const faint = resolveHeroPaletteColor(palette, 'texteFaint');
   const bordure = resolveHeroPaletteColor(palette, 'bordure');
   const neutre = resolveHeroPaletteColor(palette, 'neutre');
+  const imageBw = data.presentation.heroImageGrayscale === true;
 
   const statement =
     data.description?.trim() ||
@@ -71,7 +75,9 @@ export function PortfolioHeroSwissEditorial({ data }: { data: PortfolioHeroData 
         style={{ backgroundColor: fond }}
       />
 
-      <div className="relative z-[1] mx-auto flex w-full max-w-[100rem] flex-1 flex-col px-[5%] pb-0 pt-[calc(5.5rem+env(safe-area-inset-top,0px))] md:px-[3%] md:pt-[calc(6.25rem+env(safe-area-inset-top,0px))] lg:pt-[calc(6.75rem+env(safe-area-inset-top,0px))]">
+      <div
+        className={`relative z-[1] flex flex-1 flex-col pb-0 pt-[calc(5.5rem+env(safe-area-inset-top,0px))] md:pt-[calc(6.25rem+env(safe-area-inset-top,0px))] lg:pt-[calc(6.75rem+env(safe-area-inset-top,0px))] ${shellX}`}
+      >
         {/* —— Desktop / tablet: statement left · portrait right —— */}
         <div className="hidden min-h-0 flex-1 flex-col md:flex">
           {/* Top hero content */}
@@ -109,6 +115,7 @@ export function PortfolioHeroSwissEditorial({ data }: { data: PortfolioHeroData 
                 initials={initials}
                 ink={ink}
                 neutre={neutre}
+                imageBw={imageBw}
                 className="aspect-[3/4] w-[min(28vw,22rem)] overflow-hidden"
                 radiusClass="rounded-none"
               />
@@ -181,6 +188,7 @@ export function PortfolioHeroSwissEditorial({ data }: { data: PortfolioHeroData 
               initials={initials}
               ink={ink}
               neutre={neutre}
+              imageBw={imageBw}
               className="aspect-[4/5] w-full overflow-hidden"
               radiusClass="rounded-[1.25rem]"
             />
@@ -267,6 +275,7 @@ function SwissPortrait({
   initials,
   ink,
   neutre,
+  imageBw,
   className,
   radiusClass,
 }: {
@@ -274,6 +283,7 @@ function SwissPortrait({
   initials: string;
   ink: string;
   neutre: string;
+  imageBw: boolean;
   className: string;
   radiusClass: string;
 }) {
@@ -288,12 +298,12 @@ function SwissPortrait({
           alt=""
           fill
           sizes="(max-width: 768px) 90vw, 28vw"
-          className="object-cover object-center grayscale"
+          className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
           priority
         />
       ) : (
         <div
-          className="flex h-full w-full items-center justify-center text-4xl font-semibold tracking-tight grayscale sm:text-5xl"
+          className={`flex h-full w-full items-center justify-center text-4xl font-semibold tracking-tight sm:text-5xl ${heroImageGrayscaleClass(imageBw)}`}
           style={{ color: ink }}
           aria-hidden
         >

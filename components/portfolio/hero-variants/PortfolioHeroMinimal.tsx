@@ -106,6 +106,7 @@ export function PortfolioHeroMinimal({ data }: { data: PortfolioHeroData }) {
         <div className="mt-8 flex justify-center xl:justify-start">
           <HeroCtas
             creatorId={data.creatorId}
+            username={data.username}
             fullName={data.fullName}
             showWorkCta={data.showWorkCta}
             showContactCta={data.showContactCta}

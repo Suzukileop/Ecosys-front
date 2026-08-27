@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useMemo, type MouseEvent, type ReactNode } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
+  heroImageGrayscaleClass,
   resolveHeroAvailabilityValue,
   resolveHeroSpecialtyValue,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
@@ -14,8 +15,7 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import {
-  DEFAULT_CONTENT_GUTTER,
-  portfolioEditorialGutterX,
+  portfolioHeroContentShellClass,
 } from '@/components/portfolio/portfolio-editorial-layout';
 
 type Density = 'mobile' | 'tablet' | 'desktop';
@@ -33,6 +33,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
   const muted = resolveHeroPaletteColor(palette, 'texteMuted');
   const principal = resolveHeroPaletteColor(palette, 'principal');
   const bordure = resolveHeroPaletteColor(palette, 'bordure');
+  const imageBw = data.presentation.heroImageGrayscale === true;
 
   const displayName = (data.fullName || data.nameLead || 'Lorem Ipsum').trim();
   const specialty = resolveHeroSpecialtyValue(data.specialite);
@@ -76,7 +77,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
 
   const primaryHref = data.contactHref || '#contact';
   const secondaryHref = data.workHref || '#work';
-  const gutterX = portfolioEditorialGutterX(data.contentGutter ?? DEFAULT_CONTENT_GUTTER);
+  const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
   const frameColor = `color-mix(in srgb, ${bordure} 70%, transparent)`;
 
   const onNavClick = (href: string) => (event: MouseEvent<HTMLAnchorElement>) => {
@@ -103,16 +104,22 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
         : density === 'tablet'
           ? '240px'
           : '(min-width: 1024px) 22vw, 320px';
+    /** Mobile: no principal L-corner — keeps spacing clean above Available. */
+    const showLCorner = density !== 'mobile';
 
     return (
       <div
         className="shrink-0"
-        style={{
-          borderTop: `5px solid ${principal}`,
-          borderLeft: `5px solid ${principal}`,
-          paddingTop: pad,
-          paddingLeft: pad,
-        }}
+        style={
+          showLCorner
+            ? {
+                borderTop: `5px solid ${principal}`,
+                borderLeft: `5px solid ${principal}`,
+                paddingTop: pad,
+                paddingLeft: pad,
+              }
+            : undefined
+        }
       >
         <div
           className={`relative overflow-hidden ${box}`}
@@ -126,7 +133,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
               alt={`Portrait of ${displayName}`}
               fill
               sizes={sizes}
-              className="object-cover object-center"
+              className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
               priority
             />
           ) : (
@@ -156,9 +163,14 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
       density === 'mobile'
         ? '1.0625rem'
         : 'clamp(0.95rem, 1.05vw, 1.0625rem)';
+    /** Mobile: isolate Available with generous space above when it follows the portrait. */
+    const asideTop =
+      density === 'mobile' && bioRight ? 'mt-2' : '';
 
     return (
-      <aside className={`flex min-w-0 flex-col items-start ${className}`.trim()}>
+      <aside
+        className={`flex min-w-0 flex-col items-start ${asideTop} ${className}`.trim()}
+      >
         <p
           className="m-0 font-sans text-[0.7rem] font-semibold uppercase tracking-[0.16em]"
           style={{ color: ink }}
@@ -391,7 +403,9 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
 
       <div className="flex w-full justify-start">{portrait('mobile')}</div>
 
-      {bioRight ? experienceAside('mobile') : null}
+      {bioRight ? (
+        <div className="w-full pt-4">{experienceAside('mobile')}</div>
+      ) : null}
     </div>
   );
 
@@ -418,12 +432,10 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
         style={{ backgroundColor: fond }}
       />
 
-      {/* Desktop */}
+      {/* Desktop — global content width + gutter only */}
       <div
-        className="relative z-[1] mx-auto hidden min-h-[100dvh] w-full max-w-[100rem] lg:flex lg:items-center"
+        className={`relative z-[1] hidden min-h-[100dvh] lg:flex lg:items-center ${shellX}`}
         style={{
-          paddingLeft: 'clamp(1.5rem, 4vw, 3.5rem)',
-          paddingRight: 'clamp(1.5rem, 4vw, 3.5rem)',
           paddingTop: 'calc(5.25rem + env(safe-area-inset-top, 0px))',
           paddingBottom: 'clamp(2rem, 4vh, 3rem)',
         }}
@@ -433,10 +445,8 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
 
       {/* Tablet */}
       <div
-        className="relative z-[1] mx-auto hidden min-h-[100dvh] w-full max-w-[100rem] md:flex md:items-center lg:hidden"
+        className={`relative z-[1] hidden min-h-[100dvh] md:flex md:items-center lg:hidden ${shellX}`}
         style={{
-          paddingLeft: 'clamp(1.5rem, 4vw, 2.5rem)',
-          paddingRight: 'clamp(1.5rem, 4vw, 2.5rem)',
           paddingTop: 'calc(5rem + env(safe-area-inset-top, 0px))',
           paddingBottom: 'clamp(2rem, 4vh, 2.75rem)',
         }}
@@ -446,7 +456,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
 
       {/* Mobile */}
       <div
-        className={`relative z-[1] mx-auto flex w-full max-w-[100rem] flex-col gap-6 pb-14 pt-[calc(4.75rem+env(safe-area-inset-top,0px))] md:hidden ${gutterX}`}
+        className={`relative z-[1] flex flex-col gap-6 pb-14 pt-[calc(4.75rem+env(safe-area-inset-top,0px))] md:hidden ${shellX}`}
       >
         {withGlobalFrame(mobileBody, 'mobile')}
         {/* Let's talk only — pinned below / outside the global frame */}

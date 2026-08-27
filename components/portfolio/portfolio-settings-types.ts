@@ -1003,8 +1003,7 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
     work: {
       enabled: true,
       title: 'PORTFOLIO',
-      subtitle:
-        'A selection of projects that showcase my work, process, and the tools I use to bring ideas to life.',
+      subtitle: 'Selected projects.',
       ...DEFAULT_WORK_PRESENTATION,
     },
     services: {
@@ -1678,10 +1677,17 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
         : defaults.hero.showContactCta,
       ...mergeHeroPresentation(defaults.hero, stored.hero),
     },
-    work: {
-      ...mergeSectionCopy(defaults.work, stored.work),
-      ...mergeWorkPresentation(defaults.work, stored.work),
-    },
+    work: (() => {
+      const copy = mergeSectionCopy(defaults.work, stored.work);
+      const legacyLongSubtitle =
+        'A selection of projects that showcase my work, process, and the tools I use to bring ideas to life.';
+      return {
+        ...copy,
+        subtitle:
+          copy.subtitle.trim() === legacyLongSubtitle ? defaults.work.subtitle : copy.subtitle,
+        ...mergeWorkPresentation(defaults.work, stored.work),
+      };
+    })(),
     services: {
       ...mergeSectionCopy(defaults.services, stored.services),
       ...mergeServicesPresentation(defaults.services, stored.services),

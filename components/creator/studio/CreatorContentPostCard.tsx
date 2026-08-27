@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ContentVisibilityToggle } from '@/components/creator/ContentVisibilityToggle';
 import { ContentPostFeedMediaFrame } from '@/components/creator/ContentPostFeedMediaFrame';
 import {
   ContentPostLightbox,
@@ -293,20 +292,15 @@ export function CreatorContentPostCard({
 
   const cardControls = (
     <div className="flex flex-row items-center gap-1.5">
-      {bucket !== 'trash' && (
-        <div className="opacity-50 transition-opacity duration-200 hover:opacity-100 focus-within:opacity-100">
-          <ContentVisibilityToggle
-            variant="icon"
-            value={isPublic}
-            onChange={(v) => void handleVisibility(v)}
-            disabled={visibilityBusy || editing}
-          />
-        </div>
-      )}
       <ContentPostOverflowMenu
         postId={post.id}
         bucket={bucket}
         pinned={Boolean(post.pinned)}
+        isPublic={isPublic}
+        visibilityBusy={visibilityBusy || editing}
+        onVisibilityChange={
+          bucket !== 'trash' ? (v) => void handleVisibility(v) : undefined
+        }
         commentsEnabled={commentsEnabled}
         commentsBusy={commentsBusy}
         onCommentsEnabledChange={
@@ -368,7 +362,7 @@ export function CreatorContentPostCard({
       <article className="flex w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 lg:w-[calc((100%-1.5rem)/2)] lg:max-w-[calc((100%-1.5rem)/2)]">
         <div className="relative shrink-0 p-4">
           <div className="absolute right-3 top-3">{cardControls}</div>
-          <div className="pr-24">
+          <div className="pr-12">
             <ContentPostStudioHeader
               creatorName={creatorName}
               avatarUrl={user?.avatarUrl}
@@ -418,11 +412,14 @@ export function CreatorContentPostCard({
           )}
 
           {post.pinned && (bucket === 'active' || bucket === 'pinned') && (
-            <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-orange-500/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
-              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+            <span
+              className="pointer-events-none absolute left-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-500/90 text-white backdrop-blur-sm"
+              aria-label="Pinned"
+              title="Pinned"
+            >
+              <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
                 <path d="M10 2l1.5 4.5H16l-3.7 2.7 1.4 4.3L10 11.8 6.3 13.5l1.4-4.3L4 6.5h4.5L10 2z" />
               </svg>
-              Pinned
             </span>
           )}
         </div>

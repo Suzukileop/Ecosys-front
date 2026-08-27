@@ -32,7 +32,7 @@ export function PortfolioThemeRoot({
   customThemes?: PortfolioCustomTheme[];
   /** Persist monochrome chrome across Noir / Blanc duplicates. */
   monochromeUi?: boolean;
-  /** Site-wide portfolio typeface (Aeonik / Google Font). */
+  /** Site-wide portfolio typeface (Geist / Google Font / local Aeonik). */
   bodyFont?: PortfolioGlobalBodyFont;
   /**
    * Force bodyFont on every text node — overrides serif / display / hardcoded

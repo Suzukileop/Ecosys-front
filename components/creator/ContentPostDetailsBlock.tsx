@@ -180,23 +180,18 @@ function ContentPostPriceEstimate({ priceInfo }: { priceInfo?: string | null }) 
   const glyph = currencyGlyph(currency);
 
   return (
-    <div>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
+    <div className="flex items-center justify-between gap-4 rounded-2xl bg-neutral-100 px-4 py-3.5 dark:bg-neutral-800">
+      <p className="min-w-0 text-[11px] font-semibold uppercase leading-snug tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
         Estimated amount to recreate this piece
       </p>
-      <div className="mt-3 flex items-center gap-3.5 rounded-2xl bg-neutral-100 px-4 py-3.5 dark:bg-neutral-800">
+      <p className="flex shrink-0 items-baseline gap-2 text-neutral-950 dark:text-white">
         {glyph ? (
-          <span
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white"
-            aria-hidden
-          >
+          <span className="text-sm font-semibold tabular-nums text-neutral-500 dark:text-neutral-400">
             {glyph}
           </span>
         ) : null}
-        <span className="text-3xl font-bold tracking-tight text-neutral-950 tabular-nums dark:text-white">
-          {amount}
-        </span>
-      </div>
+        <span className="text-3xl font-bold tracking-tight tabular-nums">{amount}</span>
+      </p>
     </div>
   );
 }
@@ -441,7 +436,6 @@ export function ContentPostDetailsBlock({
               </h3>
               {bucketBadge(bucket)}
             </div>
-            <span className="mt-2.5 block h-1.5 w-14 rounded-full bg-orange-500" aria-hidden />
           </div>
         )}
 

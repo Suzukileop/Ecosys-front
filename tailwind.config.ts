@@ -22,7 +22,7 @@ const config: Config = {
         "text-secondary": "#9CA3AF",
       },
       fontFamily: {
-        sans: ["var(--font-aeonik)", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["var(--font-geist)", "ui-sans-serif", "system-ui", "sans-serif"],
         clash: ["var(--font-clash)", "sans-serif"],
         "dm-sans": ["var(--font-dm-sans)", "sans-serif"],
         "geist-mono": ["var(--font-geist-mono)", "monospace"],

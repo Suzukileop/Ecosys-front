@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useMemo, type MouseEvent, type ReactNode } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
+  heroImageGrayscaleClass,
   resolveHeroAvailabilityValue,
   resolveHeroSpecialtyValue,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
@@ -13,6 +14,7 @@ import {
   resolveHeroPaletteColor,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
+import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 
 /**
  * Editorial rail — availability + headline + bio | portrait, then a tools rail.
@@ -27,6 +29,8 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
   const principal = resolveHeroPaletteColor(palette, 'principal');
   const bordure = resolveHeroPaletteColor(palette, 'bordure');
   const neutre = resolveHeroPaletteColor(palette, 'neutre');
+  const imageBw = data.presentation.heroImageGrayscale === true;
+  const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
 
   const displayName = (data.fullName || data.nameLead || 'Lorem Ipsum').trim();
   const specialty = resolveHeroSpecialtyValue(data.specialite);
@@ -143,8 +147,10 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
         style={{ backgroundColor: fond }}
       />
 
-      {/* Desktop */}
-      <div className="relative z-[1] mx-auto hidden min-h-[100dvh] w-full max-w-[100rem] flex-col px-[clamp(1.25rem,4vw,3rem)] pb-10 pt-[calc(6.25rem+env(safe-area-inset-top,0px))] md:flex lg:pt-[calc(7rem+env(safe-area-inset-top,0px))]">
+      {/* Desktop — Global content gutter only (no extra internal L/R padding) */}
+      <div
+        className={`relative z-[1] hidden min-h-[100dvh] flex-col pb-10 pt-[calc(6.25rem+env(safe-area-inset-top,0px))] md:flex lg:pt-[calc(7rem+env(safe-area-inset-top,0px))] ${shellX}`}
+      >
         {allLeft ? (
           /* Left copy centered against portrait; tools pinned to bottom of left column */
           <div className="grid w-full flex-1 grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] items-stretch gap-x-[clamp(2rem,6vw,5rem)]">
@@ -194,7 +200,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
             </div>
 
             <div
-              className="relative ml-auto aspect-[3/4] w-full max-w-[min(100%,30rem)] overflow-hidden rounded-2xl"
+              className="relative ml-auto aspect-[3/4] w-full overflow-hidden rounded-2xl"
               style={{
                 backgroundColor: neutre,
                 border: `1px solid ${borderSoft}`,
@@ -205,6 +211,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
                 initials={initials}
                 displayName={displayName}
                 muted={muted}
+                imageBw={imageBw}
               />
             </div>
           </div>
@@ -249,7 +256,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
             </div>
 
             <div
-              className="relative ml-auto aspect-[3/4] w-full max-w-[min(100%,30rem)] overflow-hidden rounded-2xl"
+              className="relative ml-auto aspect-[3/4] w-full overflow-hidden rounded-2xl"
               style={{
                 backgroundColor: neutre,
                 border: `1px solid ${borderSoft}`,
@@ -260,6 +267,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
                 initials={initials}
                 displayName={displayName}
                 muted={muted}
+                imageBw={imageBw}
               />
             </div>
 
@@ -275,7 +283,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
               ) : null}
             </div>
 
-            <div className="ml-auto w-full max-w-[min(100%,30rem)] self-start pt-[clamp(1.15rem,2vh,1.5rem)]">
+            <div className="ml-auto w-full self-start pt-[clamp(1.15rem,2vh,1.5rem)]">
               {identityUnderPortrait ? (
                 <ul className="m-0 list-none space-y-2 p-0 font-sans text-[clamp(1.15rem,1.5vw,1.45rem)] font-medium leading-snug tracking-[-0.015em]">
                   <li className="flex gap-2" style={{ color: ink }}>
@@ -296,8 +304,10 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
         )}
       </div>
 
-      {/* Mobile */}
-      <div className="relative z-[1] mx-auto flex w-full max-w-[100rem] flex-col px-[clamp(1.25rem,5.5vw,1.5rem)] pb-12 pt-[calc(5.5rem+env(safe-area-inset-top,0px))] md:hidden">
+      {/* Mobile — Global content gutter only */}
+      <div
+        className={`relative z-[1] flex flex-col pb-12 pt-[calc(5.5rem+env(safe-area-inset-top,0px))] md:hidden ${shellX}`}
+      >
         <div className="flex items-center gap-2.5">
           <span
             className="inline-block h-2 w-2 shrink-0 rounded-full"
@@ -345,6 +355,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
             initials={initials}
             displayName={displayName}
             muted={muted}
+            imageBw={imageBw}
           />
         </div>
 
@@ -439,11 +450,13 @@ function EditorialRailPortrait({
   initials,
   displayName,
   muted,
+  imageBw,
 }: {
   avatarUrl: string | null;
   initials: string;
   displayName: string;
   muted: string;
+  imageBw: boolean;
 }) {
   return (
     <>
@@ -453,7 +466,7 @@ function EditorialRailPortrait({
           alt={`Portrait of ${displayName}`}
           fill
           sizes="(max-width: 768px) 92vw, 34vw"
-          className="object-cover object-center grayscale"
+          className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
           priority
         />
       ) : (

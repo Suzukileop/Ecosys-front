@@ -833,14 +833,14 @@ export const PORTFOLIO_GLOBAL_HEADER_FONT_OPTIONS: {
   {
     value: 'aeonik',
     label: 'Aeonik',
-    description: 'Brand sans — same typeface as the landing page.',
+    description: 'Grotesk trial — option portfolio, plus seulement Light / Regular / Bold.',
     fontFamily: AEONIK_FONT_FAMILY,
     previewText: 'Projects',
   },
   {
     value: 'geist',
     label: 'Geist',
-    description: 'Police Vercel — UI moderne, SemiBold réel (600). Gratuite pour le commercial.',
+    description: 'Police du site — UI moderne, SemiBold réel (600).',
     fontFamily: GEIST_FONT_FAMILY,
     previewText: 'Projects',
   },
@@ -885,14 +885,14 @@ export const PORTFOLIO_GLOBAL_BODY_FONT_OPTIONS: {
   value: PortfolioGlobalBodyFont;
   label: string;
   description: string;
-  /** Empty only for legacy `default` — resolved to Aeonik at runtime. */
+  /** Empty only for legacy `default` — resolved to Geist at runtime. */
   fontFamily: string;
   previewText: string;
 }[] = [
   {
     value: 'aeonik',
     label: 'Aeonik',
-    description: 'Police marque NoProbleme — landing page. Peut tout forcer.',
+    description: 'Grotesk trial — Light / Regular / Bold uniquement. Peut tout forcer.',
     fontFamily: AEONIK_FONT_FAMILY,
     previewText: 'The quick brown fox',
   },
@@ -906,15 +906,15 @@ export const PORTFOLIO_GLOBAL_BODY_FONT_OPTIONS: {
   {
     value: 'geist',
     label: 'Geist',
-    description: 'Police Vercel — UI moderne, SemiBold réel (600). Gratuite pour le commercial.',
+    description: 'Police du site — UI moderne, SemiBold réel (600). Peut tout forcer.',
     fontFamily: GEIST_FONT_FAMILY,
     previewText: 'The quick brown fox',
   },
   {
     value: 'default',
-    label: 'Site default (Aeonik)',
-    description: 'Alias historique — même police que Aeonik.',
-    fontFamily: AEONIK_FONT_FAMILY,
+    label: 'Site default (Geist)',
+    description: 'Alias historique — même police que Geist.',
+    fontFamily: GEIST_FONT_FAMILY,
     previewText: 'The quick brown fox',
   },
   {
@@ -948,11 +948,11 @@ export function isPortfolioGlobalBodyFont(value: unknown): value is PortfolioGlo
   return typeof value === 'string' && GLOBAL_BODY_FONT_VALUES.has(value as PortfolioGlobalBodyFont);
 }
 
-/** Normalize legacy `default` → `aeonik`. */
+/** Normalize legacy `default` → `geist`. */
 export function resolvePortfolioGlobalBodyFont(
   font: PortfolioGlobalBodyFont | undefined
-): Exclude<PortfolioGlobalBodyFont, 'default'> | 'aeonik' {
-  if (!font || font === 'default' || font === 'aeonik') return 'aeonik';
+): Exclude<PortfolioGlobalBodyFont, 'default'> {
+  if (!font || font === 'default') return 'geist';
   return font;
 }
 
@@ -961,9 +961,9 @@ export function globalBodyFontFamily(
   font: PortfolioGlobalBodyFont | undefined
 ): string {
   const resolved = resolvePortfolioGlobalBodyFont(font);
-  if (resolved === 'aeonik') return AEONIK_FONT_FAMILY;
+  if (resolved === 'geist') return GEIST_FONT_FAMILY;
   const option = PORTFOLIO_GLOBAL_BODY_FONT_OPTIONS.find((item) => item.value === resolved);
-  return option?.fontFamily?.trim() || AEONIK_FONT_FAMILY;
+  return option?.fontFamily?.trim() || GEIST_FONT_FAMILY;
 }
 
 /** Inline style + CSS var override so Tailwind `font-sans` inside the portfolio follows bodyFont. */
@@ -976,10 +976,10 @@ export function globalBodyFontRootStyle(
     fontFamily: family,
     ['--portfolio-body-font' as string]: family,
   };
-  // Remap Tailwind `font-sans` (--font-aeonik) only when not using the real Aeonik face,
-  // so the landing variable on <html> stays intact for the Aeonik option.
-  if (resolved !== 'aeonik') {
-    (style as Record<string, string>)['--font-aeonik'] = family;
+  // Remap Tailwind `font-sans` (--font-geist) only when not using the real Geist face,
+  // so the site variable on <html> stays intact for the Geist option.
+  if (resolved !== 'geist') {
+    (style as Record<string, string>)['--font-geist'] = family;
   }
   return style;
 }

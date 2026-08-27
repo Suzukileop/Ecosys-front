@@ -91,6 +91,796 @@ export type PortfolioWorkGalleryLayout =
   | 'accordion'
   | 'carousel';
 
+/**
+ * Named Portfolio section designs (Settings → Portfolio → Design).
+ * `classic` keeps the existing gallery/card controls; presets may lock layout.
+ */
+export type PortfolioWorkSectionDesign =
+  | 'classic'
+  | 'projects-board'
+  | 'projects-accordion'
+  | 'projects-frames'
+  | 'projects-index'
+  | 'projects-grid'
+  | 'projects-split';
+
+/** Options that apply only when `sectionDesign === 'projects-board'`. */
+export type PortfolioWorkProjectsBoardSettings = {
+  /** Thumbnail above each card. */
+  showThumbnail: boolean;
+  /** Role label on the left (accent). */
+  showRole: boolean;
+  /** Category on the same row, right-aligned. */
+  showCategory: boolean;
+  /** Centered “Consult” control on thumbnail hover (uses project link). */
+  showConsultOnHover: boolean;
+  consultLabel: string;
+};
+
+export const DEFAULT_PROJECTS_BOARD_SETTINGS: PortfolioWorkProjectsBoardSettings = {
+  showThumbnail: true,
+  showRole: true,
+  showCategory: true,
+  showConsultOnHover: true,
+  consultLabel: 'Consult',
+};
+
+export function mergeProjectsBoardSettings(
+  base: PortfolioWorkProjectsBoardSettings,
+  patch: unknown
+): PortfolioWorkProjectsBoardSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  const label =
+    typeof record.consultLabel === 'string' && record.consultLabel.trim()
+      ? record.consultLabel.trim().slice(0, 32)
+      : base.consultLabel;
+  return {
+    showThumbnail:
+      typeof record.showThumbnail === 'boolean' ? record.showThumbnail : base.showThumbnail,
+    showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
+    showCategory: typeof record.showCategory === 'boolean' ? record.showCategory : base.showCategory,
+    showConsultOnHover:
+      typeof record.showConsultOnHover === 'boolean'
+        ? record.showConsultOnHover
+        : base.showConsultOnHover,
+    consultLabel: label,
+  };
+}
+
+/** Options that apply only when `sectionDesign === 'projects-accordion'`. */
+export type PortfolioWorkProjectsAccordionSettings = {
+  /** Section title / subtitle alignment for this design only. */
+  headerAlign: 'left' | 'center' | 'right';
+  /** Which column holds the large preview image. */
+  previewSide: 'left' | 'right';
+  /** Label above stacks under the large preview. */
+  toolsLabel: string;
+  /** Show the label (and short rule) above stack chips. Off by default. */
+  showToolsLabel: boolean;
+  showTools: boolean;
+  /** Description inside the open accordion panel. */
+  showDescription: boolean;
+  /** Role label inside the open accordion panel. */
+  showRoleInPanel: boolean;
+  /** Category label inside the open accordion panel. */
+  showCategoryInPanel: boolean;
+  /** Text “Consult” link under the preview (uses project link). */
+  showConsult: boolean;
+  consultLabel: string;
+};
+
+export const DEFAULT_PROJECTS_ACCORDION_SETTINGS: PortfolioWorkProjectsAccordionSettings = {
+  headerAlign: 'center',
+  previewSide: 'right',
+  toolsLabel: 'Tools I use',
+  showToolsLabel: false,
+  showTools: true,
+  showDescription: true,
+  showRoleInPanel: true,
+  showCategoryInPanel: true,
+  showConsult: true,
+  consultLabel: 'Consult',
+};
+
+export function mergeProjectsAccordionSettings(
+  base: PortfolioWorkProjectsAccordionSettings,
+  patch: unknown
+): PortfolioWorkProjectsAccordionSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  const toolsLabel =
+    typeof record.toolsLabel === 'string' && record.toolsLabel.trim()
+      ? record.toolsLabel.trim().slice(0, 48)
+      : base.toolsLabel;
+  const consultLabel =
+    typeof record.consultLabel === 'string' && record.consultLabel.trim()
+      ? record.consultLabel.trim().slice(0, 32)
+      : base.consultLabel;
+  // Recover from a brief bug that saved showRoleInPanel:false when migrating
+  // off legacy showStackInPanel (before showCategoryInPanel existed).
+  const showRoleInPanel =
+    typeof record.showRoleInPanel === 'boolean'
+      ? record.showRoleInPanel === false && !('showCategoryInPanel' in record)
+        ? base.showRoleInPanel
+        : record.showRoleInPanel
+      : base.showRoleInPanel;
+  return {
+    headerAlign:
+      record.headerAlign === 'left' ||
+      record.headerAlign === 'center' ||
+      record.headerAlign === 'right'
+        ? record.headerAlign
+        : base.headerAlign,
+    previewSide: record.previewSide === 'left' || record.previewSide === 'right'
+      ? record.previewSide
+      : base.previewSide,
+    toolsLabel,
+    showToolsLabel:
+      typeof record.showToolsLabel === 'boolean' ? record.showToolsLabel : base.showToolsLabel,
+    showTools: typeof record.showTools === 'boolean' ? record.showTools : base.showTools,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    showRoleInPanel,
+    showCategoryInPanel:
+      typeof record.showCategoryInPanel === 'boolean'
+        ? record.showCategoryInPanel
+        : base.showCategoryInPanel,
+    showConsult: typeof record.showConsult === 'boolean' ? record.showConsult : base.showConsult,
+    consultLabel,
+  };
+}
+
+/** Options that apply only when `sectionDesign === 'projects-frames'`. */
+export type PortfolioWorkProjectsFramesThumbnailSize = 'md' | 'lg' | 'xl' | 'xxl' | 'half';
+export type PortfolioWorkProjectsFramesRadius = 'none' | 'md' | 'xl';
+export type PortfolioWorkProjectsFramesCardGap = 'tight' | 'md' | 'xl';
+
+export type PortfolioWorkProjectsFramesSettings = {
+  showRole: boolean;
+  showCategory: boolean;
+  showDescription: boolean;
+  /** Stack as plain text with hairline separators (not pill tags). */
+  showStack: boolean;
+  showConsult: boolean;
+  consultLabel: string;
+  /** Thumbnail width / height scale (xxl is larger than the previous default). */
+  thumbnailSize: PortfolioWorkProjectsFramesThumbnailSize;
+  /** Base side for the image (info on the opposite side). */
+  imageSide: 'left' | 'right';
+  /** Alternate image left / right on each successive card. */
+  alternateSides: boolean;
+  /** When false, the thumbnail sits flush against the card edge (no inner padding). */
+  imagePadding: boolean;
+  /** Shared corner radius for the card shell and the thumbnail. */
+  radius: PortfolioWorkProjectsFramesRadius;
+  /** Vertical space between stacked cards. */
+  cardGap: PortfolioWorkProjectsFramesCardGap;
+};
+
+export const DEFAULT_PROJECTS_FRAMES_SETTINGS: PortfolioWorkProjectsFramesSettings = {
+  showRole: true,
+  showCategory: true,
+  showDescription: true,
+  showStack: true,
+  showConsult: true,
+  consultLabel: 'Consult',
+  thumbnailSize: 'xl',
+  imageSide: 'left',
+  alternateSides: false,
+  imagePadding: true,
+  radius: 'xl',
+  cardGap: 'tight',
+};
+
+export function mergeProjectsFramesSettings(
+  base: PortfolioWorkProjectsFramesSettings,
+  patch: unknown
+): PortfolioWorkProjectsFramesSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  const consultLabel =
+    typeof record.consultLabel === 'string' && record.consultLabel.trim()
+      ? record.consultLabel.trim().slice(0, 32)
+      : base.consultLabel;
+  const thumbnailSize =
+    record.thumbnailSize === 'md' ||
+    record.thumbnailSize === 'lg' ||
+    record.thumbnailSize === 'xl' ||
+    record.thumbnailSize === 'xxl' ||
+    record.thumbnailSize === 'half'
+      ? record.thumbnailSize
+      : base.thumbnailSize;
+  const radius =
+    record.radius === 'none' || record.radius === 'md' || record.radius === 'xl'
+      ? record.radius
+      : base.radius;
+  const cardGap =
+    record.cardGap === 'tight' || record.cardGap === 'md' || record.cardGap === 'xl'
+      ? record.cardGap
+      : base.cardGap;
+  return {
+    showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
+    showCategory: typeof record.showCategory === 'boolean' ? record.showCategory : base.showCategory,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
+    showConsult: typeof record.showConsult === 'boolean' ? record.showConsult : base.showConsult,
+    consultLabel,
+    thumbnailSize,
+    imageSide: record.imageSide === 'left' || record.imageSide === 'right' ? record.imageSide : base.imageSide,
+    alternateSides:
+      typeof record.alternateSides === 'boolean' ? record.alternateSides : base.alternateSides,
+    imagePadding: typeof record.imagePadding === 'boolean' ? record.imagePadding : base.imagePadding,
+    radius,
+    cardGap,
+  };
+}
+
+export const PORTFOLIO_WORK_FRAMES_THUMBNAIL_SIZE_OPTIONS: {
+  value: PortfolioWorkProjectsFramesThumbnailSize;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'md', label: 'Medium', description: 'Compact thumbnail beside the info.' },
+  { value: 'lg', label: 'Large', description: 'Wider thumbnail, balanced with text.' },
+  { value: 'xl', label: 'Extra large', description: 'Current large default size.' },
+  { value: 'xxl', label: 'Huge', description: 'Very large — bigger than the previous max.' },
+  {
+    value: 'half',
+    label: 'Two columns',
+    description: 'Image and info split evenly — 50 / 50.',
+  },
+];
+
+export const PORTFOLIO_WORK_FRAMES_IMAGE_SIDE_OPTIONS: {
+  value: PortfolioWorkProjectsFramesSettings['imageSide'];
+  label: string;
+  description: string;
+}[] = [
+  { value: 'left', label: 'Image left', description: 'Thumbnail on the left, info on the right.' },
+  { value: 'right', label: 'Image right', description: 'Thumbnail on the right, info on the left.' },
+];
+
+export const PORTFOLIO_WORK_FRAMES_RADIUS_OPTIONS: {
+  value: PortfolioWorkProjectsFramesRadius;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: 'None', description: 'Sharp corners on the card and thumbnail.' },
+  { value: 'md', label: 'Medium', description: 'Soft rounded corners.' },
+  { value: 'xl', label: 'Large', description: 'Very rounded card and thumbnail (default).' },
+];
+
+export const PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS: {
+  value: PortfolioWorkProjectsFramesCardGap;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'tight', label: 'Serré', description: 'Current compact spacing between cards.' },
+  { value: 'md', label: 'Moyen', description: 'More vertical breathing room.' },
+  { value: 'xl', label: 'Très grand', description: 'Wide vertical gap between each card.' },
+];
+
+/** Options that apply only when `sectionDesign === 'projects-index'`. */
+export type PortfolioWorkProjectsIndexMarker = 'number' | 'bullet';
+
+export type PortfolioWorkProjectsIndexSettings = {
+  showNumber: boolean;
+  /** Left column marker — padded numbers or list bullet. */
+  indexMarker: PortfolioWorkProjectsIndexMarker;
+  showStack: boolean;
+  showDescription: boolean;
+  /** Vertical padding around each numbered row. */
+  rowGap: 'tight' | 'md' | 'xl';
+};
+
+export const DEFAULT_PROJECTS_INDEX_SETTINGS: PortfolioWorkProjectsIndexSettings = {
+  showNumber: true,
+  indexMarker: 'number',
+  showStack: true,
+  showDescription: true,
+  rowGap: 'md',
+};
+
+export function mergeProjectsIndexSettings(
+  base: PortfolioWorkProjectsIndexSettings,
+  patch: unknown
+): PortfolioWorkProjectsIndexSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    showNumber: typeof record.showNumber === 'boolean' ? record.showNumber : base.showNumber,
+    indexMarker:
+      record.indexMarker === 'number' || record.indexMarker === 'bullet'
+        ? record.indexMarker
+        : base.indexMarker,
+    showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    rowGap:
+      record.rowGap === 'tight' || record.rowGap === 'md' || record.rowGap === 'xl'
+        ? record.rowGap
+        : base.rowGap,
+  };
+}
+
+export const PORTFOLIO_WORK_INDEX_MARKER_OPTIONS: {
+  value: PortfolioWorkProjectsIndexMarker;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'number', label: 'Numérotation', description: '001, 002… in the left column.' },
+  { value: 'bullet', label: 'Puce', description: 'Simple list bullet instead of numbers.' },
+];
+
+export const PORTFOLIO_WORK_INDEX_ROW_GAP_OPTIONS: {
+  value: PortfolioWorkProjectsIndexSettings['rowGap'];
+  label: string;
+  description: string;
+}[] = [
+  { value: 'tight', label: 'Serré', description: 'Compact padding above / below each separator.' },
+  { value: 'md', label: 'Moyen', description: 'Balanced spacing (default).' },
+  { value: 'xl', label: 'Très grand', description: 'Airy space between numbered rows.' },
+];
+
+/** Options that apply only when `sectionDesign === 'projects-grid'`. */
+export type PortfolioWorkProjectsGridColumns = 2 | 3;
+
+export type PortfolioWorkProjectsGridRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl';
+
+export type PortfolioWorkProjectsGridSettings = {
+  /** Cards per row on large screens (2 or 3). */
+  columnsPerRow: PortfolioWorkProjectsGridColumns;
+  showDescription: boolean;
+  /** Card / thumbnail frame border for this design. */
+  cardBorder: PortfolioWorkCardBorder;
+  /** Shared corner radius on card frame and thumbnail. */
+  cardRadius: PortfolioWorkProjectsGridRadius;
+  /** Slide between rows when more projects than fit on screen. */
+  carouselEnabled: boolean;
+};
+
+export const DEFAULT_PROJECTS_GRID_SETTINGS: PortfolioWorkProjectsGridSettings = {
+  columnsPerRow: 2,
+  showDescription: true,
+  cardBorder: 'none',
+  cardRadius: 'none',
+  carouselEnabled: false,
+};
+
+export function mergeProjectsGridSettings(
+  base: PortfolioWorkProjectsGridSettings,
+  patch: unknown
+): PortfolioWorkProjectsGridSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  const columnsPerRow =
+    record.columnsPerRow === 2 || record.columnsPerRow === 3
+      ? record.columnsPerRow
+      : record.columnsPerRow === '2' || record.columnsPerRow === '3'
+        ? (Number(record.columnsPerRow) as PortfolioWorkProjectsGridColumns)
+        : base.columnsPerRow;
+  const cardBorder =
+    record.cardBorder === 'none' ||
+    record.cardBorder === 'soft' ||
+    record.cardBorder === 'solid' ||
+    record.cardBorder === 'accent'
+      ? record.cardBorder
+      : base.cardBorder;
+  const cardRadius =
+    record.cardRadius === 'none' ||
+    record.cardRadius === 'sm' ||
+    record.cardRadius === 'md' ||
+    record.cardRadius === 'lg' ||
+    record.cardRadius === 'xl'
+      ? record.cardRadius
+      : base.cardRadius;
+  return {
+    columnsPerRow,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    cardBorder,
+    cardRadius,
+    carouselEnabled:
+      typeof record.carouselEnabled === 'boolean' ? record.carouselEnabled : base.carouselEnabled,
+  };
+}
+
+export const PORTFOLIO_WORK_GRID_COLUMNS_OPTIONS: {
+  value: PortfolioWorkProjectsGridColumns;
+  label: string;
+  description: string;
+}[] = [
+  { value: 2, label: '2 columns', description: 'Two cards per row on large screens (default).' },
+  { value: 3, label: '3 columns', description: 'Three cards per row on large screens.' },
+];
+
+/** Options that apply only when `sectionDesign === 'projects-split'`. */
+export type PortfolioWorkProjectsSplitThumbnailSize = 'lg' | 'xl' | 'half';
+
+export type PortfolioWorkProjectsSplitRadius = 'none' | 'md' | 'xl';
+
+export type PortfolioWorkProjectsSplitSettings = {
+  thumbnailSize: PortfolioWorkProjectsSplitThumbnailSize;
+  thumbnailRadius: PortfolioWorkProjectsSplitRadius;
+  rowGap: 'tight' | 'md' | 'xl';
+  showDescription: boolean;
+};
+
+export const DEFAULT_PROJECTS_SPLIT_SETTINGS: PortfolioWorkProjectsSplitSettings = {
+  thumbnailSize: 'xl',
+  thumbnailRadius: 'none',
+  rowGap: 'md',
+  showDescription: false,
+};
+
+export function mergeProjectsSplitSettings(
+  base: PortfolioWorkProjectsSplitSettings,
+  patch: unknown
+): PortfolioWorkProjectsSplitSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  const thumbnailSize =
+    record.thumbnailSize === 'lg' || record.thumbnailSize === 'xl' || record.thumbnailSize === 'half'
+      ? record.thumbnailSize
+      : base.thumbnailSize;
+  const thumbnailRadius =
+    record.thumbnailRadius === 'none' || record.thumbnailRadius === 'md' || record.thumbnailRadius === 'xl'
+      ? record.thumbnailRadius
+      : base.thumbnailRadius;
+  const rowGap =
+    record.rowGap === 'tight' || record.rowGap === 'md' || record.rowGap === 'xl'
+      ? record.rowGap
+      : base.rowGap;
+  return {
+    thumbnailSize,
+    thumbnailRadius,
+    rowGap,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+  };
+}
+
+export const PORTFOLIO_WORK_SPLIT_THUMBNAIL_SIZE_OPTIONS: {
+  value: PortfolioWorkProjectsSplitThumbnailSize;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'lg', label: 'Large', description: 'Big thumbnail, more room for the title on the right.' },
+  { value: 'xl', label: 'Very large', description: 'Dominant thumbnail (default).' },
+  { value: 'half', label: 'Half width', description: 'Thumbnail and title each take 50%.' },
+];
+
+export const PORTFOLIO_WORK_SPLIT_RADIUS_OPTIONS: {
+  value: PortfolioWorkProjectsSplitRadius;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: 'None', description: 'Sharp corners (default).' },
+  { value: 'md', label: 'Medium', description: 'Soft rounded corners.' },
+  { value: 'xl', label: 'Large', description: 'Very rounded thumbnail.' },
+];
+
+export const PORTFOLIO_WORK_SPLIT_ROW_GAP_OPTIONS: {
+  value: PortfolioWorkProjectsSplitSettings['rowGap'];
+  label: string;
+  description: string;
+}[] = [
+  { value: 'tight', label: 'Serré', description: 'Compact spacing between rows.' },
+  { value: 'md', label: 'Moyen', description: 'Balanced spacing (default).' },
+  { value: 'xl', label: 'Très grand', description: 'Airy vertical rhythm.' },
+];
+
+export const PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS: {
+  value: PortfolioWorkSectionDesign;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'classic',
+    label: 'Classic',
+    description: 'Full gallery controls — media, columns, and card chrome from Cards / Media.',
+  },
+  {
+    value: 'projects-board',
+    label: 'Projects board',
+    description: 'Two cards per row with design-only options: thumbnail, category, Consult hover.',
+  },
+  {
+    value: 'projects-accordion',
+    label: 'Accordion',
+    description: 'Accordion + large preview — swap columns, role/category, Consult text link.',
+  },
+  {
+    value: 'projects-frames',
+    label: 'Frames',
+    description: 'Horizontal frames — image left, info right, stack as plain text (not tags).',
+  },
+  {
+    value: 'projects-index',
+    label: 'Index',
+    description: 'Numbered rows with thin rules — title + stack, description on the right.',
+  },
+  {
+    value: 'projects-grid',
+    label: 'Grid',
+    description: 'Thumbnail cards — title + description, 2 or 3 per row on large screens.',
+  },
+  {
+    value: 'projects-split',
+    label: 'Split',
+    description: 'Large thumbnail on the left, title top-aligned on the right.',
+  },
+];
+
+export const PORTFOLIO_WORK_ACCORDION_ALIGN_OPTIONS: {
+  value: PortfolioWorkProjectsAccordionSettings['headerAlign'];
+  label: string;
+  description: string;
+}[] = [
+  { value: 'left', label: 'Left', description: 'Title and subtitle align left.' },
+  { value: 'center', label: 'Center', description: 'Title and subtitle centered (default).' },
+  { value: 'right', label: 'Right', description: 'Title and subtitle align right.' },
+];
+
+export const PORTFOLIO_WORK_ACCORDION_PREVIEW_SIDE_OPTIONS: {
+  value: PortfolioWorkProjectsAccordionSettings['previewSide'];
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'right',
+    label: 'Preview right',
+    description: 'Accordion list on the left, large image on the right.',
+  },
+  {
+    value: 'left',
+    label: 'Preview left',
+    description: 'Large image on the left, accordion list on the right.',
+  },
+];
+
+/** Settings bundled when picking a named section design. */
+export function workSectionDesignSettingsPatch(
+  sectionDesign: PortfolioWorkSectionDesign
+): Partial<PortfolioWorkPresentationSettings> {
+  if (sectionDesign === 'projects-board') {
+    return {
+      sectionDesign,
+      galleryLayout: 'grid',
+      itemsPerRow: 2,
+      cardDesign: 'minimal',
+      showCardMedia: false,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'bottom',
+      cardMaxWidth: 'full',
+      cardBorder: 'soft',
+      cardShadow: 'none',
+      cardBackgroundEnabled: true,
+      cardBorderRadius: 'lg',
+      cardPadding: 'lg',
+      cardGap: 'md',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: true,
+      showCardToolIcons: false,
+      showCardToolList: true,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: false,
+      showCategoryOnCard: false,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'left',
+      sectionLayout: 'stacked',
+      titlePreset: 'projects',
+      subtitlePreset: 'short',
+      subtitleCustom: 'Selected projects.',
+      projectsBoard: { ...DEFAULT_PROJECTS_BOARD_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-accordion') {
+    return {
+      sectionDesign,
+      galleryLayout: 'accordion',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: true,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'soft',
+      cardShadow: 'none',
+      cardBackgroundEnabled: true,
+      cardBorderRadius: 'xl',
+      cardPadding: 'lg',
+      cardGap: 'md',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: true,
+      showCardToolIcons: false,
+      showCardToolList: true,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: false,
+      showCategoryOnCard: false,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'center',
+      sectionLayout: 'stacked',
+      titlePreset: 'custom',
+      titleCustom: 'Selected work',
+      subtitlePreset: 'custom',
+      subtitleCustom: 'A closer look at platforms I designed and built.',
+      projectsAccordion: { ...DEFAULT_PROJECTS_ACCORDION_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-frames') {
+    return {
+      sectionDesign,
+      galleryLayout: 'stack',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: true,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: true,
+      cardBorderRadius: 'xl',
+      cardPadding: 'md',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'center',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: true,
+      showCardToolIcons: false,
+      showCardToolList: true,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: false,
+      showCategoryOnCard: false,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'left',
+      sectionLayout: 'stacked',
+      titlePreset: 'custom',
+      titleCustom: 'Selected work',
+      subtitlePreset: 'custom',
+      subtitleCustom: 'Projects in focus.',
+      projectsFrames: { ...DEFAULT_PROJECTS_FRAMES_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-index') {
+    return {
+      sectionDesign,
+      galleryLayout: 'list',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: false,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'bottom',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: false,
+      cardBorderRadius: 'none',
+      cardPadding: 'md',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: true,
+      showCardToolIcons: false,
+      showCardToolList: true,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: false,
+      showCategoryOnCard: false,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'left',
+      sectionLayout: 'stacked',
+      titlePreset: 'custom',
+      titleCustom: 'Capabilities',
+      subtitlePreset: 'custom',
+      subtitleCustom: 'What I ship across design and engineering.',
+      projectsIndex: { ...DEFAULT_PROJECTS_INDEX_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-grid') {
+    return {
+      sectionDesign,
+      galleryLayout: 'grid',
+      itemsPerRow: 2,
+      cardDesign: 'minimal',
+      showCardMedia: true,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'bottom',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: false,
+      cardBorderRadius: 'lg',
+      cardPadding: 'md',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: false,
+      showCardToolIcons: false,
+      showCardToolList: false,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: false,
+      showCategoryOnCard: false,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'left',
+      sectionLayout: 'stacked',
+      titlePreset: 'custom',
+      titleCustom: 'Selected work',
+      subtitlePreset: 'custom',
+      subtitleCustom: 'Recent projects.',
+      projectsGrid: { ...DEFAULT_PROJECTS_GRID_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-split') {
+    return {
+      sectionDesign,
+      galleryLayout: 'list',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: true,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: false,
+      cardBorderRadius: 'none',
+      cardPadding: 'none',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: false,
+      showCardTools: false,
+      showCardToolIcons: false,
+      showCardToolList: false,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: false,
+      showCategoryOnCard: false,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'left',
+      sectionLayout: 'stacked',
+      titlePreset: 'custom',
+      titleCustom: 'Selected work',
+      subtitlePreset: 'custom',
+      subtitleCustom: 'Recent projects.',
+      projectsSplit: { ...DEFAULT_PROJECTS_SPLIT_SETTINGS },
+    };
+  }
+  return { sectionDesign: 'classic' };
+}
+
 /** How many project cards per row (stack / grid / overlay). Mobile always collapses. */
 export type PortfolioWorkItemsPerRow = 1 | 2 | 3 | 4;
 
@@ -676,6 +1466,20 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   illustrationPlacement: PortfolioWorkIllustrationPlacement;
   contentPlacement: PortfolioWorkContentPlacement;
   galleryLayout: PortfolioWorkGalleryLayout;
+  /** Named Portfolio section design (Settings → Design). */
+  sectionDesign: PortfolioWorkSectionDesign;
+  /** Projects board–only options (ignored by Classic). */
+  projectsBoard: PortfolioWorkProjectsBoardSettings;
+  /** Accordion design–only options (ignored by Classic / Projects board). */
+  projectsAccordion: PortfolioWorkProjectsAccordionSettings;
+  /** Frames design–only options (horizontal image + info cards). */
+  projectsFrames: PortfolioWorkProjectsFramesSettings;
+  /** Index design–only options (numbered rows + separators). */
+  projectsIndex: PortfolioWorkProjectsIndexSettings;
+  /** Grid design–only options (thumbnail + title + description cards). */
+  projectsGrid: PortfolioWorkProjectsGridSettings;
+  /** Split design–only options (large thumbnail left + title right). */
+  projectsSplit: PortfolioWorkProjectsSplitSettings;
   /** Cards per row on large screens (stack / grid / overlay). */
   itemsPerRow: PortfolioWorkItemsPerRow;
   /** Max width of each project card (full = stretch to column). */
@@ -837,6 +1641,13 @@ export const DEFAULT_WORK_PRESENTATION: PortfolioWorkPresentationSettings = {
   illustrationPlacement: 'right',
   contentPlacement: 'side',
   galleryLayout: 'stack',
+  sectionDesign: 'classic',
+  projectsBoard: { ...DEFAULT_PROJECTS_BOARD_SETTINGS },
+  projectsAccordion: { ...DEFAULT_PROJECTS_ACCORDION_SETTINGS },
+  projectsFrames: { ...DEFAULT_PROJECTS_FRAMES_SETTINGS },
+  projectsIndex: { ...DEFAULT_PROJECTS_INDEX_SETTINGS },
+  projectsGrid: { ...DEFAULT_PROJECTS_GRID_SETTINGS },
+  projectsSplit: { ...DEFAULT_PROJECTS_SPLIT_SETTINGS },
   itemsPerRow: 1,
   cardMaxWidth: 'full',
   cardDesign: 'editorial',
@@ -1449,7 +2260,7 @@ export const PORTFOLIO_WORK_TOOLS_DISPLAY_OPTIONS: {
 ];
 
 const SUBTITLE_PRESET_COPY: Record<Exclude<PortfolioWorkSubtitlePreset, 'default' | 'custom' | 'minimal'>, string> = {
-  short: 'A selection of recent projects and client work.',
+  short: 'Selected projects.',
   process: 'Process, tools, and outcomes behind each featured project.',
 };
 
@@ -2571,6 +3382,7 @@ export function mergeWorkPresentation(
   const headerAlignment = record.headerAlignment;
   const contentPlacement = record.contentPlacement;
   const galleryLayout = record.galleryLayout;
+  const sectionDesign = record.sectionDesign;
   const cardDesign = record.cardDesign;
   const cardBorder = record.cardBorder;
   const cardBorderRadius = record.cardBorderRadius;
@@ -2680,6 +3492,40 @@ export function mergeWorkPresentation(
       galleryLayout === 'carousel'
         ? galleryLayout
         : base.galleryLayout,
+    sectionDesign:
+      sectionDesign === 'classic' ||
+      sectionDesign === 'projects-board' ||
+      sectionDesign === 'projects-accordion' ||
+      sectionDesign === 'projects-frames' ||
+      sectionDesign === 'projects-index' ||
+      sectionDesign === 'projects-grid' ||
+      sectionDesign === 'projects-split'
+        ? sectionDesign
+        : base.sectionDesign,
+    projectsBoard: mergeProjectsBoardSettings(
+      mergeProjectsBoardSettings(DEFAULT_PROJECTS_BOARD_SETTINGS, base.projectsBoard),
+      record.projectsBoard
+    ),
+    projectsAccordion: mergeProjectsAccordionSettings(
+      mergeProjectsAccordionSettings(DEFAULT_PROJECTS_ACCORDION_SETTINGS, base.projectsAccordion),
+      record.projectsAccordion
+    ),
+    projectsFrames: mergeProjectsFramesSettings(
+      mergeProjectsFramesSettings(DEFAULT_PROJECTS_FRAMES_SETTINGS, base.projectsFrames),
+      record.projectsFrames
+    ),
+    projectsIndex: mergeProjectsIndexSettings(
+      mergeProjectsIndexSettings(DEFAULT_PROJECTS_INDEX_SETTINGS, base.projectsIndex),
+      record.projectsIndex
+    ),
+    projectsGrid: mergeProjectsGridSettings(
+      mergeProjectsGridSettings(DEFAULT_PROJECTS_GRID_SETTINGS, base.projectsGrid),
+      record.projectsGrid
+    ),
+    projectsSplit: mergeProjectsSplitSettings(
+      mergeProjectsSplitSettings(DEFAULT_PROJECTS_SPLIT_SETTINGS, base.projectsSplit),
+      record.projectsSplit
+    ),
     itemsPerRow: (() => {
       const resolvedLayout =
         galleryLayout === 'stack' ||

@@ -168,6 +168,8 @@ type CreatorCardProps = {
   /** Identifiant créateur pour l’URL ; `userId` sert de repli si l’API ne renvoie que celui-ci. */
   id?: string;
   userId?: string;
+  /** Unique public handle — used in portfolio URLs when present. */
+  username?: string | null;
   fullName?: string;
   avatarUrl?: string | null;
   specialite: string | null;
@@ -188,6 +190,7 @@ type CreatorCardProps = {
 export function CreatorCard({
   id,
   userId,
+  username,
   fullName,
   avatarUrl,
   specialite,
@@ -232,7 +235,7 @@ export function CreatorCard({
         : `/login?redirect=${encodeURIComponent(`/dashboard/discussions?user=${encodeURIComponent(resolvedId)}`)}`
       : null;
   const discussLabel = fullName?.trim() ? `Discuss with ${fullName.trim()}` : 'Discuss';
-  const portfolioHref = resolvedId ? buildCreatorPortfolioPath(resolvedId) : null;
+  const portfolioHref = resolvedId ? buildCreatorPortfolioPath(resolvedId, username) : null;
   const servicesLabel =
     services === 1 ? '1 service disponible' : `${services} services disponibles`;
   const specialtyChips =

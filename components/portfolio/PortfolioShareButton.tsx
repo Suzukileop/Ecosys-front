@@ -5,6 +5,7 @@ import { buildCreatorPortfolioUrl } from '@/lib/portfolio-url';
 
 type PortfolioShareButtonProps = {
   creatorId: string;
+  username?: string | null;
   creatorName: string;
   compact?: boolean;
 };
@@ -21,10 +22,15 @@ function LinkIcon({ className }: { className?: string }) {
   );
 }
 
-export function PortfolioShareButton({ creatorId, creatorName, compact = false }: PortfolioShareButtonProps) {
+export function PortfolioShareButton({
+  creatorId,
+  username,
+  creatorName,
+  compact = false,
+}: PortfolioShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = buildCreatorPortfolioUrl(creatorId);
+  const shareUrl = buildCreatorPortfolioUrl(creatorId, username);
 
   const onCopy = useCallback(async () => {
     try {
@@ -54,8 +60,14 @@ export function PortfolioShareButton({ creatorId, creatorName, compact = false }
 }
 
 /** Banner for creator studio — copy + open portfolio. */
-export function PortfolioShareBanner({ creatorId }: { creatorId: string }) {
-  const shareUrl = buildCreatorPortfolioUrl(creatorId);
+export function PortfolioShareBanner({
+  creatorId,
+  username,
+}: {
+  creatorId: string;
+  username?: string | null;
+}) {
+  const shareUrl = buildCreatorPortfolioUrl(creatorId, username);
   const [copied, setCopied] = useState(false);
 
   const onCopy = async () => {

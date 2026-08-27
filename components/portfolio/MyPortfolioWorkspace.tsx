@@ -80,10 +80,16 @@ function displayHost(url: string): string {
   }
 }
 
-function PortfolioLivePreview({ creatorId }: { creatorId: string }) {
+function PortfolioLivePreview({
+  creatorId,
+  username,
+}: {
+  creatorId: string;
+  username?: string | null;
+}) {
   const [frameKey, setFrameKey] = useState(0);
-  const path = buildCreatorPortfolioPath(creatorId);
-  const absoluteUrl = buildCreatorPortfolioUrl(creatorId);
+  const path = buildCreatorPortfolioPath(creatorId, username);
+  const absoluteUrl = buildCreatorPortfolioUrl(creatorId, username);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
@@ -216,8 +222,8 @@ export function MyPortfolioWorkspace() {
 
   const isCreator = hasRole('ROLE_CREATOR');
   const shareUrl = useMemo(
-    () => (user?.id ? buildCreatorPortfolioUrl(user.id) : ''),
-    [user?.id]
+    () => (user?.id ? buildCreatorPortfolioUrl(user.id, user.username) : ''),
+    [user?.id, user?.username]
   );
 
   useEffect(() => {
@@ -382,7 +388,7 @@ export function MyPortfolioWorkspace() {
           <PortfolioPresencePicker onSelect={(kind) => void persistPresenceKind(kind)} />
         )
       ) : tab === 'preview' ? (
-        <PortfolioLivePreview creatorId={user.id} />
+        <PortfolioLivePreview creatorId={user.id} username={user.username} />
       ) : (
         <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-20 text-center dark:border-neutral-800 dark:bg-neutral-950">
           <p className="text-base font-semibold text-slate-900 dark:text-white">

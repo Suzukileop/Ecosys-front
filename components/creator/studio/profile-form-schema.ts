@@ -458,6 +458,11 @@ export const spokenLanguageSchema = z
 export const profileSchema = z
   .object({
     fullName: z.string().min(1, 'Name is required.').max(150),
+    username: z
+      .string()
+      .min(3, 'Username must be at least 3 characters.')
+      .max(30, 'Username must be at most 30 characters.')
+      .regex(/^[A-Za-z0-9_]+$/, 'Letters, numbers, and underscores only.'),
     bio: z.string().max(8000).optional(),
     specialite: z.string().max(150).optional(),
     specialties: z.array(z.string().max(MAX_SPECIALTY_LENGTH)).max(MAX_PROFILE_SPECIALTIES),
@@ -1565,6 +1570,7 @@ function trimOptional(value?: string | null): string {
 function normalizeProfileComparable(values: ProfileFormValues, availabilityHours: string) {
   return {
     fullName: trimOptional(values.fullName),
+    username: trimOptional(values.username),
     bio: trimOptional(values.bio),
     specialite: trimOptional(values.specialties?.[0] ?? values.specialite),
     specialties: parseSpecialtyList(values.specialties, values.specialite),

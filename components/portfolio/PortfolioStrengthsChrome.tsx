@@ -593,8 +593,8 @@ export function PortfolioStrengthsReadOnly({
 
   const skillsBlock = (
     <PortfolioFlatField
-      label="Skills"
-      emptyLabel="No skill tags"
+      label="Stack"
+      emptyLabel="No stack tags"
       className="!py-3"
       editing={editingSkills}
       confirming={savingSkillTags}

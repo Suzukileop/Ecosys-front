@@ -14,6 +14,8 @@ import {
   resolveHeroPaletteColor,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
+import { heroBottomFrameHasContent } from '@/components/portfolio/hero-variants/PortfolioHeroBottomFrame';
+import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 
 const FALLBACK_INTRO =
   'Ingénieur en informatique, passionné par des solutions innovantes et performantes.';
@@ -37,6 +39,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
   const neutre = resolveHeroPaletteColor(palette, 'neutre');
 
   const bio = useMemo(() => resolveIntroCopy(data.description), [data.description]);
+  const imageBw = data.presentation.heroImageGrayscale === true;
   const availability = resolveHeroAvailabilityValue(
     data.isAvailable,
     data.presentation.availabilityLabel,
@@ -53,8 +56,12 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
 
-  const onContactClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    const href = data.contactHref || '#contact';
+  const showBottomBand = heroBottomFrameHasContent(data.presentation);
+  const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
+
+  const contactHref = data.contactHref || '#contact';
+  const workHref = data.workHref || '#work';
+  const onNavClick = (href: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     if (href.startsWith('#') && data.onNavigateSection) {
       event.preventDefault();
       data.onNavigateSection(href.slice(1) || 'contact');
@@ -74,13 +81,13 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
         style={{ backgroundColor: fond }}
       />
 
-      {/* Desktop: height budget includes navbar padding so CTA stays on-screen */}
-      <div className="relative z-[1] mx-auto hidden h-[100dvh] w-full max-w-[100rem] flex-col pb-8 pt-[calc(6.75rem+env(safe-area-inset-top,0px))] md:flex lg:pt-[calc(7.5rem+env(safe-area-inset-top,0px))]">
-        <div className="flex min-h-0 w-full flex-1 flex-col">
-          {/*
-            Shared 3-col track so Available (top) and right column share the same left edge.
-            Optional swap: bio ↔ name + specialty.
-          */}
+      {/* Desktop — Global content gutter only */}
+      <div
+        className={`relative z-[1] hidden flex-col pt-[calc(6.75rem+env(safe-area-inset-top,0px))] md:flex lg:pt-[calc(7.5rem+env(safe-area-inset-top,0px))] ${shellX} ${
+          showBottomBand ? 'min-h-0 pb-4' : 'min-h-[100dvh] pb-10'
+        }`}
+      >
+        <div className="flex w-full flex-col">
           <div
             className="grid w-full shrink-0"
             style={{
@@ -106,10 +113,10 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
               </div>
             ) : (
               <p
-                className="m-0 max-w-full text-left font-sans font-medium tracking-[-0.02em]"
+                className="m-0 max-w-full text-left font-sans font-semibold tracking-[-0.02em]"
                 style={{
                   color: ink,
-                  fontSize: 'clamp(1.15rem, 1.85vw, 2.25rem)',
+                  fontSize: 'clamp(1.05rem, 1.55vw, 1.95rem)',
                   lineHeight: 1.16,
                 }}
               >
@@ -129,7 +136,6 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
             </p>
           </div>
 
-          {/* Larger equal gap above + below the divider */}
           <div
             aria-hidden
             className="w-full shrink-0"
@@ -141,32 +147,33 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
           />
 
           <div
-            className="grid w-full items-stretch"
+            className="grid w-full items-start"
             style={{
               gridTemplateColumns: 'minmax(18rem, 44%) minmax(0, 8%) minmax(0, 1fr)',
             }}
           >
             <div
-              className="relative aspect-[4/5] w-[min(100%,28rem)] max-h-[min(62vh,calc(100dvh-14rem))] justify-self-start overflow-hidden"
+              className="relative aspect-[4/5] w-[min(100%,28rem)] max-h-[min(58vh,34rem)] shrink-0 justify-self-start overflow-hidden"
               style={{ backgroundColor: neutre }}
             >
               <IdentityPortrait
                 avatarUrl={avatarUrl}
                 initials={initials}
                 muted={muted}
+                imageBw={imageBw}
                 className="absolute inset-0 h-full w-full"
               />
             </div>
 
             <div aria-hidden />
 
-            <div className="flex min-w-0 flex-col self-stretch">
+            <div className="flex min-w-0 flex-col gap-8 self-stretch">
               {swapBioName ? (
                 <p
-                  className="m-0 max-w-full text-left font-sans font-medium tracking-[-0.02em]"
+                  className="m-0 max-w-full text-left font-sans font-semibold tracking-[-0.02em]"
                   style={{
                     color: ink,
-                    fontSize: 'clamp(1.15rem, 1.85vw, 2.25rem)',
+                    fontSize: 'clamp(1.05rem, 1.55vw, 1.95rem)',
                     lineHeight: 1.16,
                   }}
                 >
@@ -190,14 +197,27 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
                 </div>
               )}
 
-              <div className="mt-auto pt-6">
+              <div className="mt-auto flex shrink-0 flex-wrap items-center gap-3.5 pt-2">
                 <a
-                  href={data.contactHref || '#contact'}
-                  onClick={onContactClick}
-                  className="inline-flex h-11 min-w-[9.5rem] items-center justify-center px-7 font-sans text-[0.95rem] font-normal tracking-[-0.01em] transition hover:brightness-110"
+                  href={workHref}
+                  onClick={onNavClick(workHref)}
+                  className="inline-flex h-14 min-h-14 shrink-0 items-center justify-center px-8 font-sans text-[1.05rem] font-normal tracking-[-0.01em] transition hover:brightness-110"
                   style={{
                     backgroundColor: principal,
                     color: '#FFFFFF',
+                    borderRadius: 10,
+                  }}
+                >
+                  View project
+                </a>
+                <a
+                  href={contactHref}
+                  onClick={onNavClick(contactHref)}
+                  className="inline-flex h-14 min-h-14 shrink-0 items-center justify-center border-2 px-8 font-sans text-[1.05rem] font-normal tracking-[-0.01em] transition hover:opacity-85"
+                  style={{
+                    borderColor: ink,
+                    color: ink,
+                    backgroundColor: 'transparent',
                     borderRadius: 10,
                   }}
                 >
@@ -209,8 +229,10 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
         </div>
       </div>
 
-      {/* Mobile */}
-      <div className="relative z-[1] flex min-h-[100dvh] flex-col px-[5%] pb-10 pt-[calc(5.5rem+env(safe-area-inset-top,0px))] md:hidden">
+      {/* Mobile — Global content gutter only */}
+      <div
+        className={`relative z-[1] flex min-h-[100dvh] flex-col pb-10 pt-[calc(5.5rem+env(safe-area-inset-top,0px))] md:hidden ${shellX}`}
+      >
         {swapBioName ? (
           <div className="min-w-0">
             <IdentityName word={displayName} ink={ink} mobile maxFontPx={72} minFontPx={36} />
@@ -223,8 +245,8 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
           </div>
         ) : (
           <p
-            className="m-0 text-left font-sans font-medium tracking-[-0.02em]"
-            style={{ color: ink, fontSize: 'clamp(1.35rem, 6vw, 2rem)', lineHeight: 1.16 }}
+            className="m-0 text-left font-sans font-semibold tracking-[-0.02em]"
+            style={{ color: ink, fontSize: 'clamp(1.2rem, 5.2vw, 1.75rem)', lineHeight: 1.16 }}
           >
             {bio}
           </p>
@@ -243,8 +265,8 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
         <div className="min-w-0">
           {swapBioName ? (
             <p
-              className="m-0 text-left font-sans font-medium tracking-[-0.02em]"
-              style={{ color: ink, fontSize: 'clamp(1.35rem, 6vw, 2rem)', lineHeight: 1.16 }}
+              className="m-0 text-left font-sans font-semibold tracking-[-0.02em]"
+              style={{ color: ink, fontSize: 'clamp(1.2rem, 5.2vw, 1.75rem)', lineHeight: 1.16 }}
             >
               {bio}
             </p>
@@ -259,23 +281,39 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
               </p>
             </>
           )}
-          <a
-            href={data.contactHref || '#contact'}
-            onClick={onContactClick}
-            className="mt-6 inline-flex h-10 items-center justify-center px-6 font-sans text-[0.875rem] font-normal tracking-[-0.01em]"
-            style={{ backgroundColor: principal, color: '#FFFFFF', borderRadius: 10 }}
-          >
-            Contact me
-          </a>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <a
+              href={workHref}
+              onClick={onNavClick(workHref)}
+              className="inline-flex h-12 min-h-12 shrink-0 items-center justify-center px-7 font-sans text-[0.95rem] font-normal tracking-[-0.01em] transition hover:brightness-110"
+              style={{ backgroundColor: principal, color: '#FFFFFF', borderRadius: 10 }}
+            >
+              View project
+            </a>
+            <a
+              href={contactHref}
+              onClick={onNavClick(contactHref)}
+              className="inline-flex h-12 min-h-12 shrink-0 items-center justify-center border-2 px-7 font-sans text-[0.95rem] font-normal tracking-[-0.01em] transition hover:opacity-85"
+              style={{
+                borderColor: ink,
+                color: ink,
+                backgroundColor: 'transparent',
+                borderRadius: 10,
+              }}
+            >
+              Contact me
+            </a>
+          </div>
         </div>
         <div
-          className="relative mt-8 w-full overflow-hidden"
+          className={`relative w-full overflow-hidden ${showBottomBand ? 'mt-8 mb-2' : 'mt-8'}`}
           style={{ aspectRatio: '3 / 3.4', backgroundColor: neutre }}
         >
           <IdentityPortrait
             avatarUrl={avatarUrl}
             initials={initials}
             muted={muted}
+            imageBw={imageBw}
             className="h-full w-full"
           />
         </div>
@@ -288,11 +326,13 @@ function IdentityPortrait({
   avatarUrl,
   initials,
   muted,
+  imageBw,
   className,
 }: {
   avatarUrl: string | null;
   initials: string;
   muted: string;
+  imageBw: boolean;
   className: string;
 }) {
   return (
@@ -304,7 +344,11 @@ function IdentityPortrait({
           fill
           sizes="(max-width: 768px) 90vw, 30vw"
           className="object-cover object-center"
-          style={{ filter: 'grayscale(1) contrast(1.18) brightness(0.88)' }}
+          style={{
+            filter: imageBw
+              ? 'grayscale(1) contrast(1.18) brightness(0.88)'
+              : 'contrast(1.18) brightness(0.88)',
+          }}
           priority
         />
       ) : (

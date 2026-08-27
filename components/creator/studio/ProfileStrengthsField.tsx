@@ -151,9 +151,9 @@ export function ProfileStrengthsField({
 
   const skillTagsBlock = (
     <section className="space-y-2">
-      <p className={profileSectionSubheadingClass}>Skills</p>
+      <p className={profileSectionSubheadingClass}>Stack</p>
       <p className={profileSectionMutedTextClass}>
-        Keyword tags shown under Skills in Profile info on your public profile.
+        Keyword tags shown under Stack in Profile info on your public profile.
       </p>
       <SkillTagsEditor
         tags={Array.isArray(watchedSkillTags) ? watchedSkillTags : []}

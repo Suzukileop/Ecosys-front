@@ -18,6 +18,8 @@ let inflightRefresh: Promise<AuthResponse> | null = null;
 let cachedAt = 0;
 let cachedResult: AuthResponse | null = null;
 let broadcastChannel: BroadcastChannel | null = null;
+/** Blocks refresh + cookie writes while AuthContext.logout runs. */
+let logoutInProgress = false;
 
 type SharedSessionCache = {
   cachedAt: number;
@@ -90,6 +92,7 @@ function ensureBroadcastChannel(): BroadcastChannel | null {
   if (!broadcastChannel) {
     broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL);
     broadcastChannel.onmessage = (event: MessageEvent<{ type?: string; cache?: SharedSessionCache }>) => {
+      if (logoutInProgress) return;
       if (event.data?.type !== 'session_refreshed' || !event.data.cache) return;
       applyCachedSession(event.data.cache);
     };
@@ -173,6 +176,10 @@ function waitForPeerRefresh(): Promise<AuthResponse | null> {
  *  4. cross-tab lock ensures only one tab hits /api/auth/refresh at a time.
  */
 export async function refreshSession(): Promise<AuthResponse> {
+  if (logoutInProgress) {
+    throw new Error('LOGOUT_IN_PROGRESS');
+  }
+
   if (cachedResult && Date.now() - cachedAt < CACHE_TTL_MS) {
     return cachedResult;
   }
@@ -205,6 +212,9 @@ export async function refreshSession(): Promise<AuthResponse> {
       broadcastSessionRefreshed(sharedCache);
 
       if (data.refreshToken && typeof window !== 'undefined') {
+        if (logoutInProgress) {
+          return data;
+        }
         await setRefreshCookie(data.refreshToken);
       }
       return data;
@@ -238,4 +248,14 @@ export function invalidateSessionCache(): void {
   cachedAt = 0;
   inflightRefresh = null;
   clearSharedSessionCache();
+}
+
+/** Call at the start of logout so a concurrent refresh cannot rewrite the cookie. */
+export function beginLogout(): void {
+  logoutInProgress = true;
+  invalidateSessionCache();
+}
+
+export function endLogout(): void {
+  logoutInProgress = false;
 }

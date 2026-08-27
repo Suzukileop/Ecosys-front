@@ -339,6 +339,7 @@ export function HeroAvailabilityAbovePortrait({
 
 export function HeroCtas({
   creatorId,
+  username,
   fullName,
   showWorkCta,
   showContactCta,
@@ -349,7 +350,14 @@ export function HeroCtas({
   secondaryClass = 'inline-flex items-center gap-2 border border-neutral-300 bg-white px-6 py-3 text-sm font-bold text-neutral-900 transition hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white',
 }: Pick<
   PortfolioHeroData,
-  'creatorId' | 'fullName' | 'showWorkCta' | 'showContactCta' | 'contactHref' | 'workHref' | 'onNavigateSection'
+  | 'creatorId'
+  | 'username'
+  | 'fullName'
+  | 'showWorkCta'
+  | 'showContactCta'
+  | 'contactHref'
+  | 'workHref'
+  | 'onNavigateSection'
 > & {
   primaryClass?: string;
   secondaryClass?: string;
@@ -386,7 +394,12 @@ export function HeroCtas({
           Contact me
         </a>
       ) : null}
-      <PortfolioShareButton creatorId={creatorId} creatorName={fullName} compact />
+      <PortfolioShareButton
+        creatorId={creatorId}
+        username={username}
+        creatorName={fullName}
+        compact
+      />
     </div>
   );
 }

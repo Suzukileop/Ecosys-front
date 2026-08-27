@@ -374,7 +374,7 @@ export function portraitImageMediaStyle(
   settings: Pick<
     PortfolioHeroProfileSettings,
     'portraitObjectFit' | 'portraitFocusX' | 'portraitFocusY' | 'portraitImageScale'
-  >
+  > & { heroImageGrayscale?: boolean }
 ): CSSProperties {
   const fit = isPortraitObjectFit(settings.portraitObjectFit) ? settings.portraitObjectFit : 'cover';
   const x = clampPortraitFocusAxis(settings.portraitFocusX, 50);
@@ -385,6 +385,7 @@ export function portraitImageMediaStyle(
     objectPosition: `${x}% ${y}%`,
     transform: scale === 1 ? undefined : `scale(${scale})`,
     transformOrigin: `${x}% ${y}%`,
+    ...(settings.heroImageGrayscale === true ? { filter: 'grayscale(1)' } : {}),
   };
 }
 

@@ -3,22 +3,19 @@
 import Image from 'next/image';
 import { useMemo, type MouseEvent } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
-import { resolveHeroSpecialtyValue } from '@/components/portfolio/portfolio-hero-banner-settings';
+import { heroImageGrayscaleClass, resolveHeroSpecialtyValue } from '@/components/portfolio/portfolio-hero-banner-settings';
 import {
   DEFAULT_HERO_PALETTE,
   mergeHeroPalette,
   resolveHeroPaletteColor,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
-import {
-  DEFAULT_CONTENT_GUTTER,
-  portfolioEditorialGutterX,
-} from '@/components/portfolio/portfolio-editorial-layout';
+import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 
 const MAX_THUMBS = 4;
 
 /**
  * Selected works banner — name / specialty (left) + full bio (right),
- * SEE ALL + dynamic thumbnail row (no empty slots).
+ * SEE ALL + thumbnails stacked full-width on mobile, row from sm (no empty slots).
  */
 export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }) {
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
@@ -27,6 +24,7 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
   const muted = resolveHeroPaletteColor(palette, 'texteMuted');
   const principal = resolveHeroPaletteColor(palette, 'principal');
   const bordure = resolveHeroPaletteColor(palette, 'bordure');
+  const imageBw = data.presentation.heroImageGrayscale === true;
 
   /** First name only — first word of the profile name. */
   const firstName = useMemo(() => {
@@ -53,7 +51,7 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
   }, [data.featuredWorks]);
 
   const workHref = data.workHref || '#work';
-  const gutterX = portfolioEditorialGutterX(data.contentGutter ?? DEFAULT_CONTENT_GUTTER);
+  const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
 
   const onNavClick = (href: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     if (href.startsWith('#') && data.onNavigateSection) {
@@ -69,10 +67,10 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
     works.length === 1
       ? 'grid-cols-1'
       : works.length === 2
-        ? 'grid-cols-2'
+        ? 'grid-cols-1 sm:grid-cols-2'
         : works.length === 3
-          ? 'grid-cols-2 sm:grid-cols-3'
-          : 'grid-cols-2 sm:grid-cols-4';
+          ? 'grid-cols-1 sm:grid-cols-3'
+          : 'grid-cols-1 sm:grid-cols-4';
 
   return (
     <div
@@ -86,16 +84,15 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
       />
 
       <div
-        className={`relative z-[1] mx-auto flex min-h-[100dvh] w-full max-w-[100rem] flex-col ${gutterX}`}
+        className={`relative z-[1] flex min-h-[100dvh] flex-col pt-[calc(4.25rem+env(safe-area-inset-top,0px))] sm:pt-[calc(5.25rem+env(safe-area-inset-top,0px))] ${shellX}`}
         style={{
-          paddingTop: 'calc(5.25rem + env(safe-area-inset-top, 0px))',
           paddingBottom: 'clamp(1.75rem, 4vh, 3rem)',
         }}
       >
         {/* Identity — split (name + bio) or centered title + separator */}
         {isCenteredIdentity ? (
           <div
-            className="mt-[clamp(4rem,12vh,6.5rem)] flex min-h-0 w-full flex-1 flex-col"
+            className="mt-8 flex min-h-0 w-full flex-1 flex-col sm:mt-[clamp(4rem,12vh,6.5rem)]"
           >
             <div className="flex flex-1 flex-col items-center justify-center text-center">
               <h1
@@ -121,7 +118,7 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
           </div>
         ) : (
           <div
-            className="mt-[clamp(4rem,12vh,6.5rem)] grid w-full gap-8 md:grid-cols-2 md:items-start md:gap-12 lg:gap-16"
+            className="mt-8 grid w-full gap-8 sm:mt-[clamp(4rem,12vh,6.5rem)] md:grid-cols-2 md:items-start md:gap-12 lg:gap-16"
           >
             <div className="flex min-w-0 flex-col items-start text-left">
               <h1
@@ -171,13 +168,8 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
             </div>
 
             <ul className={`m-0 grid min-h-0 list-none gap-3 p-0 sm:gap-4 ${thumbGridClass}`}>
-              {works.map((work, index) => (
-                <li
-                  key={work.id}
-                  className={`min-w-0 ${
-                    works.length === 3 && index === 2 ? 'col-span-2 sm:col-span-1' : ''
-                  }`}
-                >
+              {works.map((work) => (
+                <li key={work.id} className="min-w-0">
                   <a
                     href={work.href || workHref}
                     onClick={work.href?.startsWith('#') ? onNavClick(work.href) : undefined}
@@ -193,12 +185,12 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
                         works.length === 1
                           ? '100vw'
                           : works.length === 2
-                            ? '50vw'
+                            ? '(max-width: 639px) 100vw, 50vw'
                             : works.length === 3
-                              ? '33vw'
-                              : '25vw'
+                              ? '(max-width: 639px) 100vw, 33vw'
+                              : '(max-width: 639px) 100vw, 25vw'
                       }
-                      className="object-cover object-center"
+                      className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
                     />
                     <div
                       aria-hidden

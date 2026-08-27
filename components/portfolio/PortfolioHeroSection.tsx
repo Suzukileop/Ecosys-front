@@ -12,6 +12,11 @@ import { PortfolioHeroCirclePortrait } from '@/components/portfolio/hero-variant
 import { PortfolioHeroExperienceSplit } from '@/components/portfolio/hero-variants/PortfolioHeroExperienceSplit';
 import { PortfolioHeroEditorialOverlap } from '@/components/portfolio/hero-variants/PortfolioHeroEditorialOverlap';
 import { PortfolioHeroSelectedWorks } from '@/components/portfolio/hero-variants/PortfolioHeroSelectedWorks';
+import { PortfolioHeroIdentityIndex } from '@/components/portfolio/hero-variants/PortfolioHeroIdentityIndex';
+import { PortfolioHeroStudioSplit } from '@/components/portfolio/hero-variants/PortfolioHeroStudioSplit';
+import { PortfolioHeroWorkDuo } from '@/components/portfolio/hero-variants/PortfolioHeroWorkDuo';
+import { PortfolioHeroBowlIntro } from '@/components/portfolio/hero-variants/PortfolioHeroBowlIntro';
+import { PortfolioHeroBottomFrame } from '@/components/portfolio/hero-variants/PortfolioHeroBottomFrame';
 import {
   DEFAULT_CONTENT_GUTTER,
   portfolioEditorialShellClass,
@@ -52,11 +57,20 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
   const isExperienceSplit = heroData.presentation.heroBannerDesign === 'experience-split';
   const isEditorialOverlap = heroData.presentation.heroBannerDesign === 'editorial-overlap';
   const isSelectedWorks = heroData.presentation.heroBannerDesign === 'selected-works';
+  const isIdentityIndex = heroData.presentation.heroBannerDesign === 'identity-index';
+  const isStudioSplit = heroData.presentation.heroBannerDesign === 'studio-split';
+  const isWorkDuo = heroData.presentation.heroBannerDesign === 'work-duo';
+  const isBowlIntro = heroData.presentation.heroBannerDesign === 'bowl-intro';
 
   if (isSwissEditorial) {
     return (
       <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
         <PortfolioHeroSwissEditorial data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
       </section>
     );
   }
@@ -65,6 +79,11 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
     return (
       <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
         <PortfolioHeroPortraitIdentity data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
       </section>
     );
   }
@@ -73,6 +92,11 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
     return (
       <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
         <PortfolioHeroEditorialRail data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
       </section>
     );
   }
@@ -81,6 +105,11 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
     return (
       <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
         <PortfolioHeroStatementCta data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
       </section>
     );
   }
@@ -89,6 +118,11 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
     return (
       <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
         <PortfolioHeroPortraitBalance data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
       </section>
     );
   }
@@ -97,6 +131,11 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
     return (
       <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
         <PortfolioHeroLeftPortrait data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
       </section>
     );
   }
@@ -105,6 +144,11 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
     return (
       <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
         <PortfolioHeroCirclePortrait data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
       </section>
     );
   }
@@ -113,6 +157,11 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
     return (
       <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
         <PortfolioHeroExperienceSplit data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
       </section>
     );
   }
@@ -121,6 +170,11 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
     return (
       <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
         <PortfolioHeroEditorialOverlap data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
       </section>
     );
   }
@@ -129,6 +183,63 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
     return (
       <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
         <PortfolioHeroSelectedWorks data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
+      </section>
+    );
+  }
+
+  if (isIdentityIndex) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroIdentityIndex data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
+      </section>
+    );
+  }
+
+  if (isStudioSplit) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroStudioSplit data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
+      </section>
+    );
+  }
+
+  if (isWorkDuo) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroWorkDuo data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
+      </section>
+    );
+  }
+
+  if (isBowlIntro) {
+    return (
+      <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+        <PortfolioHeroBowlIntro data={heroData} />
+        <PortfolioHeroBottomFrame
+          presentation={heroData.presentation}
+          contentGutter={heroData.contentGutter}
+          contentWidthClass={heroData.contentWidthClass}
+        />
       </section>
     );
   }
@@ -251,6 +362,11 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
           layoutDivision={layoutDivision}
         />
       ) : null}
+      <PortfolioHeroBottomFrame
+        presentation={heroData.presentation}
+        contentGutter={contentGutter}
+        contentWidthClass={contentWidthClass}
+      />
     </section>
   );
 }

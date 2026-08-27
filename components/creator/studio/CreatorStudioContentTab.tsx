@@ -78,7 +78,7 @@ export function CreatorStudioContentTab({
 
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-          <h1 className="max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
+          <h1 className="max-w-3xl text-center text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
             {resolveStudioContentHeadline(contentHeadline)}
           </h1>
           <button
