@@ -11,6 +11,7 @@ import {
   setRefreshCookie,
 } from '@/lib/auth';
 import { setAccessToken } from '@/lib/api';
+import { sendPresenceOffline } from '@/lib/presence-api';
 import { refreshSession, beginLogout, endLogout } from '@/lib/sessionRefresh';
 
 /**
@@ -132,6 +133,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // refresh can rewrite refresh_token after we clear it and bounce
     // /login → /dashboard.
     beginLogout();
+    try {
+      await sendPresenceOffline();
+    } catch {
+      /* presence is best-effort */
+    }
     try {
       await logoutApi();
     } catch {

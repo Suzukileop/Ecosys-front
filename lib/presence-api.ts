@@ -33,3 +33,9 @@ export async function sendPresenceHeartbeat(): Promise<PresenceStatus | null> {
   const res = await api.post<PresenceStatus>('/api/presence/heartbeat', {});
   return res.data ?? null;
 }
+
+/** Mark the current user offline (logout). */
+export async function sendPresenceOffline(): Promise<PresenceStatus | null> {
+  const res = await api.post<PresenceStatus>('/api/presence/offline', {});
+  return res.data ?? null;
+}

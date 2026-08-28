@@ -65,7 +65,7 @@ export function ProjectsBoardSectionHeader({
           ) : null}
           {headline ? (
             <h2
-              className={`text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl lg:text-[2.75rem] lg:leading-[1.15] ${
+              className={`text-3xl font-semibold tracking-[-0.03em] sm:text-4xl lg:text-[2.75rem] lg:leading-[1.15] ${
                 kicker ? 'mt-2.5' : ''
               }`}
               style={{ color: titleColor || subtitleColor }}
@@ -74,7 +74,7 @@ export function ProjectsBoardSectionHeader({
             </h2>
           ) : kicker ? (
             <h2
-              className="mt-2.5 text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl lg:text-[2.75rem] lg:leading-[1.15]"
+              className="mt-2.5 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl lg:text-[2.75rem] lg:leading-[1.15]"
               style={{ color: titleColor }}
             >
               {kicker}

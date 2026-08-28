@@ -338,25 +338,6 @@ export function resolvePortfolioContentSectionOrder(
   order: PortfolioNavSectionKey[] | undefined,
   _sectionOrganization?: PortfolioServicesSectionOrganization
 ): PortfolioNavSectionKey[] {
-  const resolved = resolveSectionOrder(order);
-  const skillsIdx = resolved.indexOf('skills');
-  const servicesIdx = resolved.indexOf('services');
-
-  // Skills tools sit above Services by default (and when repairing legacy orders).
-  if (skillsIdx === -1) {
-    if (servicesIdx === -1) {
-      return resolveSectionOrder([...resolved, 'skills', 'services']);
-    }
-    const next = [...resolved];
-    next.splice(servicesIdx, 0, 'skills');
-    return resolveSectionOrder(next);
-  }
-
-  if (servicesIdx >= 0 && skillsIdx > servicesIdx) {
-    const next: PortfolioNavSectionKey[] = resolved.filter((key) => key !== 'skills');
-    next.splice(next.indexOf('services'), 0, 'skills');
-    return next;
-  }
-
-  return resolved;
+  // Skills was removed as a portfolio content section — never re-inject it.
+  return resolveSectionOrder(order).filter((key) => (key as string) !== 'skills');
 }

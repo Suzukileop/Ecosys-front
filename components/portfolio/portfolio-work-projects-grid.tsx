@@ -183,7 +183,7 @@ export function ProjectsGridSectionHeader({
         <div className="min-w-0 max-w-3xl">
           {heading ? (
             <h2
-              className="text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl lg:text-5xl lg:leading-[1.12]"
+              className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl lg:text-5xl lg:leading-[1.12]"
               style={{ color: titleColor }}
             >
               {heading}

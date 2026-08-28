@@ -52,7 +52,7 @@ export function ProjectsIndexSectionHeader({
     <header className={`mb-10 w-full sm:mb-14 ${className}`.trim()}>
       {heading ? (
         <h2
-          className="max-w-3xl text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl lg:text-5xl lg:leading-[1.12]"
+          className="max-w-3xl text-3xl font-semibold tracking-[-0.03em] sm:text-4xl lg:text-5xl lg:leading-[1.12]"
           style={{ color: titleColor }}
         >
           {heading}

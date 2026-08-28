@@ -35,6 +35,7 @@ import {
   applyHeroPaletteToFooter,
   applyHeroPaletteToServices,
   applyHeroPaletteToTeam,
+  applyHeroPaletteToTools,
 } from '@/components/portfolio/portfolio-section-palette';
 import { syncExperiencePeriodRulePair } from '@/components/portfolio/portfolio-experience-palette-settings';
 import type { PortfolioGlobalSettings } from '@/components/portfolio/portfolio-global-settings';
@@ -273,6 +274,13 @@ export function applyActivePortfolioPalette(settings: PortfolioSettings): Portfo
         : {
             ...settings.team,
             ...applyHeroPaletteToTeam({ ...settings.team, useHeroPalette: true }, palette),
+          },
+    tools:
+      settings.tools.useHeroPalette === false
+        ? { ...settings.tools }
+        : {
+            ...settings.tools,
+            ...applyHeroPaletteToTools({ ...settings.tools, useHeroPalette: true }, palette),
           },
     gallery:
       settings.gallery.useHeroPalette === false

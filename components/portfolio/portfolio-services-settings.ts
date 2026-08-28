@@ -1450,7 +1450,7 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   skillsIconBorderColor: DEFAULT_SERVICES_CARD_BORDER_COLOR,
   skillsIconBorderManual: false,
   skillsIconBorderWidthPx: 1,
-  showSkills: true,
+  showSkills: false,
   showServices: true,
   showSkillIcon: true,
   showSkillTitle: true,
@@ -5806,7 +5806,7 @@ export function mergeServicesPresentation(
       record.skillsIconBorderWidthPx,
       base.skillsIconBorderWidthPx ?? 1
     ),
-    showSkills: typeof record.showSkills === 'boolean' ? record.showSkills : base.showSkills,
+    showSkills: false,
     showServices: typeof record.showServices === 'boolean' ? record.showServices : base.showServices,
     showSkillIcon: typeof record.showSkillIcon === 'boolean' ? record.showSkillIcon : base.showSkillIcon,
     showSkillTitle: typeof record.showSkillTitle === 'boolean' ? record.showSkillTitle : base.showSkillTitle,

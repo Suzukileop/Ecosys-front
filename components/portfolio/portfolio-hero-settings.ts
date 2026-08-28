@@ -212,7 +212,6 @@ export type PortfolioHeroCtaPlacement =
 export type PortfolioHeroSecondaryCtaTarget =
   | 'work'
   | 'services'
-  | 'skills'
   | 'about'
   | 'experience'
   | 'team'
@@ -227,7 +226,6 @@ export const PORTFOLIO_HERO_SECONDARY_CTA_TARGET_OPTIONS: {
 }[] = [
   { value: 'work', label: 'Work', description: 'Projects / portfolio grid.' },
   { value: 'services', label: 'Services', description: 'Services & offers section.' },
-  { value: 'skills', label: 'Skills', description: 'Skills section.' },
   { value: 'about', label: 'About', description: 'About / bio section.' },
   { value: 'experience', label: 'Experience', description: 'Experience timeline.' },
   { value: 'team', label: 'Team', description: 'Members and roles.' },
@@ -242,7 +240,6 @@ export function isPortfolioHeroSecondaryCtaTarget(
   return (
     value === 'work' ||
     value === 'services' ||
-    value === 'skills' ||
     value === 'about' ||
     value === 'experience' ||
     value === 'team' ||

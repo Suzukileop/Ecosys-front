@@ -49,8 +49,8 @@ export type PortfolioWorkHeaderAlignment = 'left' | 'center';
 
 /**
  * How the Portfolio title relates to the gallery body.
- * `stacked` — title above the projects (default).
- * `aside-left` / `aside-right` — title beside the gallery on large screens.
+ * `stacked` â€” title above the projects (default).
+ * `aside-left` / `aside-right` â€” title beside the gallery on large screens.
  */
 export type PortfolioWorkSectionLayout = 'stacked' | 'aside-left' | 'aside-right';
 
@@ -80,7 +80,7 @@ export type PortfolioWorkCardDesign =
 
 export type PortfolioWorkCardBorder = 'none' | 'soft' | 'solid' | 'accent';
 
-/** Soft lift around the card — independent of border (use for float without outline). */
+/** Soft lift around the card â€” independent of border (use for float without outline). */
 export type PortfolioWorkCardShadow = 'none' | 'soft' | 'float' | 'deep';
 
 export type PortfolioWorkGalleryLayout =
@@ -92,7 +92,7 @@ export type PortfolioWorkGalleryLayout =
   | 'carousel';
 
 /**
- * Named Portfolio section designs (Settings → Portfolio → Design).
+ * Named Portfolio section designs (Settings â†’ Portfolio â†’ Design).
  * `classic` keeps the existing gallery/card controls; presets may lock layout.
  */
 export type PortfolioWorkSectionDesign =
@@ -102,7 +102,15 @@ export type PortfolioWorkSectionDesign =
   | 'projects-frames'
   | 'projects-index'
   | 'projects-grid'
-  | 'projects-split';
+  | 'projects-split'
+  | 'projects-carousel'
+  | 'projects-spotlight'
+  | 'projects-showcase'
+  | 'projects-editorial'
+  | 'projects-ledger'
+  | 'projects-folio'
+  | 'projects-spec'
+  | 'projects-case';
 
 /** Options that apply only when `sectionDesign === 'projects-board'`. */
 export type PortfolioWorkProjectsBoardSettings = {
@@ -112,7 +120,7 @@ export type PortfolioWorkProjectsBoardSettings = {
   showRole: boolean;
   /** Category on the same row, right-aligned. */
   showCategory: boolean;
-  /** Centered “Consult” control on thumbnail hover (uses project link). */
+  /** Centered â€œConsultâ€ control on thumbnail hover (uses project link). */
   showConsultOnHover: boolean;
   consultLabel: string;
 };
@@ -165,7 +173,7 @@ export type PortfolioWorkProjectsAccordionSettings = {
   showRoleInPanel: boolean;
   /** Category label inside the open accordion panel. */
   showCategoryInPanel: boolean;
-  /** Text “Consult” link under the preview (uses project link). */
+  /** Text â€œConsultâ€ link under the preview (uses project link). */
   showConsult: boolean;
   consultLabel: string;
 };
@@ -325,11 +333,11 @@ export const PORTFOLIO_WORK_FRAMES_THUMBNAIL_SIZE_OPTIONS: {
   { value: 'md', label: 'Medium', description: 'Compact thumbnail beside the info.' },
   { value: 'lg', label: 'Large', description: 'Wider thumbnail, balanced with text.' },
   { value: 'xl', label: 'Extra large', description: 'Current large default size.' },
-  { value: 'xxl', label: 'Huge', description: 'Very large — bigger than the previous max.' },
+  { value: 'xxl', label: 'Huge', description: 'Very large â€” bigger than the previous max.' },
   {
     value: 'half',
     label: 'Two columns',
-    description: 'Image and info split evenly — 50 / 50.',
+    description: 'Image and info split evenly â€” 50 / 50.',
   },
 ];
 
@@ -357,9 +365,9 @@ export const PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'Serré', description: 'Current compact spacing between cards.' },
+  { value: 'tight', label: 'SerrÃ©', description: 'Current compact spacing between cards.' },
   { value: 'md', label: 'Moyen', description: 'More vertical breathing room.' },
-  { value: 'xl', label: 'Très grand', description: 'Wide vertical gap between each card.' },
+  { value: 'xl', label: 'TrÃ¨s grand', description: 'Wide vertical gap between each card.' },
 ];
 
 /** Options that apply only when `sectionDesign === 'projects-index'`. */
@@ -367,7 +375,7 @@ export type PortfolioWorkProjectsIndexMarker = 'number' | 'bullet';
 
 export type PortfolioWorkProjectsIndexSettings = {
   showNumber: boolean;
-  /** Left column marker — padded numbers or list bullet. */
+  /** Left column marker â€” padded numbers or list bullet. */
   indexMarker: PortfolioWorkProjectsIndexMarker;
   showStack: boolean;
   showDescription: boolean;
@@ -410,7 +418,7 @@ export const PORTFOLIO_WORK_INDEX_MARKER_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'number', label: 'Numérotation', description: '001, 002… in the left column.' },
+  { value: 'number', label: 'NumÃ©rotation', description: '001, 002â€¦ in the left column.' },
   { value: 'bullet', label: 'Puce', description: 'Simple list bullet instead of numbers.' },
 ];
 
@@ -419,9 +427,9 @@ export const PORTFOLIO_WORK_INDEX_ROW_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'Serré', description: 'Compact padding above / below each separator.' },
+  { value: 'tight', label: 'SerrÃ©', description: 'Compact padding above / below each separator.' },
   { value: 'md', label: 'Moyen', description: 'Balanced spacing (default).' },
-  { value: 'xl', label: 'Très grand', description: 'Airy space between numbered rows.' },
+  { value: 'xl', label: 'TrÃ¨s grand', description: 'Airy space between numbered rows.' },
 ];
 
 /** Options that apply only when `sectionDesign === 'projects-grid'`. */
@@ -506,6 +514,29 @@ export type PortfolioWorkProjectsSplitSettings = {
   thumbnailRadius: PortfolioWorkProjectsSplitRadius;
   rowGap: 'tight' | 'md' | 'xl';
   showDescription: boolean;
+  /** Image left, right, or centered in the row. */
+  imageSide: 'left' | 'right' | 'center';
+  /**
+   * When image is centered: title on the left (default) or right.
+   * Ignored for left/right image placement (title takes the other side).
+   */
+  titleSide: 'left' | 'right';
+  /**
+   * When image is centered: title/description at the top or bottom of the side column.
+   * When description is separated, this only applies to the title.
+   */
+  titleVerticalAlign: 'top' | 'bottom';
+  /**
+   * When image is centered: keep description under the title, or place it on the
+   * opposite side of the image.
+   */
+  descriptionPlacement: 'with-title' | 'opposite';
+  /**
+   * When description is on the opposite side: top or bottom of that column.
+   */
+  descriptionVerticalAlign: 'top' | 'bottom';
+  /** Zigzag: odd rows keep imageSide, even rows flip (ignored when center). */
+  alternateSides: boolean;
 };
 
 export const DEFAULT_PROJECTS_SPLIT_SETTINGS: PortfolioWorkProjectsSplitSettings = {
@@ -513,6 +544,12 @@ export const DEFAULT_PROJECTS_SPLIT_SETTINGS: PortfolioWorkProjectsSplitSettings
   thumbnailRadius: 'none',
   rowGap: 'md',
   showDescription: false,
+  imageSide: 'left',
+  titleSide: 'left',
+  titleVerticalAlign: 'top',
+  descriptionPlacement: 'with-title',
+  descriptionVerticalAlign: 'bottom',
+  alternateSides: false,
 };
 
 export function mergeProjectsSplitSettings(
@@ -539,6 +576,25 @@ export function mergeProjectsSplitSettings(
     rowGap,
     showDescription:
       typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    imageSide:
+      record.imageSide === 'left' || record.imageSide === 'right' || record.imageSide === 'center'
+        ? record.imageSide
+        : base.imageSide,
+    titleSide: record.titleSide === 'left' || record.titleSide === 'right' ? record.titleSide : base.titleSide,
+    titleVerticalAlign:
+      record.titleVerticalAlign === 'top' || record.titleVerticalAlign === 'bottom'
+        ? record.titleVerticalAlign
+        : base.titleVerticalAlign,
+    descriptionPlacement:
+      record.descriptionPlacement === 'with-title' || record.descriptionPlacement === 'opposite'
+        ? record.descriptionPlacement
+        : base.descriptionPlacement,
+    descriptionVerticalAlign:
+      record.descriptionVerticalAlign === 'top' || record.descriptionVerticalAlign === 'bottom'
+        ? record.descriptionVerticalAlign
+        : base.descriptionVerticalAlign,
+    alternateSides:
+      typeof record.alternateSides === 'boolean' ? record.alternateSides : base.alternateSides,
   };
 }
 
@@ -547,7 +603,7 @@ export const PORTFOLIO_WORK_SPLIT_THUMBNAIL_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'lg', label: 'Large', description: 'Big thumbnail, more room for the title on the right.' },
+  { value: 'lg', label: 'Large', description: 'Big thumbnail, more room for the title beside it.' },
   { value: 'xl', label: 'Very large', description: 'Dominant thumbnail (default).' },
   { value: 'half', label: 'Half width', description: 'Thumbnail and title each take 50%.' },
 ];
@@ -567,9 +623,1019 @@ export const PORTFOLIO_WORK_SPLIT_ROW_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'Serré', description: 'Compact spacing between rows.' },
+  { value: 'tight', label: 'SerrÃ©', description: 'Compact spacing between rows.' },
   { value: 'md', label: 'Moyen', description: 'Balanced spacing (default).' },
-  { value: 'xl', label: 'Très grand', description: 'Airy vertical rhythm.' },
+  { value: 'xl', label: 'TrÃ¨s grand', description: 'Airy vertical rhythm.' },
+];
+
+export const PORTFOLIO_WORK_SPLIT_IMAGE_SIDE_OPTIONS: {
+  value: PortfolioWorkProjectsSplitSettings['imageSide'];
+  label: string;
+  description: string;
+}[] = [
+  { value: 'left', label: 'Image left', description: 'Thumbnail on the left, title on the right.' },
+  {
+    value: 'center',
+    label: 'Image center',
+    description: 'Thumbnail centered in the row; title stays left or right.',
+  },
+  { value: 'right', label: 'Image right', description: 'Thumbnail on the right, title on the left.' },
+];
+
+export const PORTFOLIO_WORK_SPLIT_TITLE_SIDE_OPTIONS: {
+  value: PortfolioWorkProjectsSplitSettings['titleSide'];
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'left',
+    label: 'Title left',
+    description: 'Title + description on the left of the centered image (default).',
+  },
+  {
+    value: 'right',
+    label: 'Title right',
+    description: 'Title + description on the right of the centered image.',
+  },
+];
+
+export const PORTFOLIO_WORK_SPLIT_TITLE_VERTICAL_OPTIONS: {
+  value: PortfolioWorkProjectsSplitSettings['titleVerticalAlign'];
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'top',
+    label: 'En haut',
+    description: 'AlignÃ© en haut avec le bord supÃ©rieur de lâ€™image.',
+  },
+  {
+    value: 'bottom',
+    label: 'En bas',
+    description: 'AlignÃ© en bas â€” titre au bas du cÃ´tÃ©.',
+  },
+];
+
+export const PORTFOLIO_WORK_SPLIT_DESCRIPTION_PLACEMENT_OPTIONS: {
+  value: PortfolioWorkProjectsSplitSettings['descriptionPlacement'];
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'with-title',
+    label: 'Sous le titre',
+    description: 'La description reste avec le titre.',
+  },
+  {
+    value: 'opposite',
+    label: 'Autre cÃ´tÃ©',
+    description: 'La description passe de lâ€™autre cÃ´tÃ© de lâ€™image (titre inchangÃ©).',
+  },
+];
+
+export const PORTFOLIO_WORK_SPLIT_DESCRIPTION_VERTICAL_OPTIONS: {
+  value: PortfolioWorkProjectsSplitSettings['descriptionVerticalAlign'];
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'top',
+    label: 'En haut',
+    description: 'Description en haut, de lâ€™autre cÃ´tÃ© de lâ€™image.',
+  },
+  {
+    value: 'bottom',
+    label: 'En bas',
+    description: 'Description en bas, de lâ€™autre cÃ´tÃ© de lâ€™image.',
+  },
+];
+
+/** Options that apply only when `sectionDesign === 'projects-carousel'`. */
+export type PortfolioWorkProjectsCarouselImageSize = 'sm' | 'md' | 'lg' | 'xl';
+
+export type PortfolioWorkProjectsCarouselRadius = 'none' | 'md' | 'xl';
+
+export type PortfolioWorkProjectsCarouselAspect = 'square' | 'landscape' | 'portrait';
+
+export type PortfolioWorkProjectsCarouselSettings = {
+  /** Width of each slide image. */
+  imageSize: PortfolioWorkProjectsCarouselImageSize;
+  imageRadius: PortfolioWorkProjectsCarouselRadius;
+  aspectRatio: PortfolioWorkProjectsCarouselAspect;
+  gap: 'tight' | 'md' | 'xl';
+  /** On hover: zoom image slightly, dim, and show title + description centered. */
+  hoverReveal: boolean;
+  /** On hover: blur sibling slides so the hovered card feels in focus. */
+  focusBlurSiblings: boolean;
+  /** On hover: show project stack in a borderless strip under the image. */
+  hoverStack: boolean;
+};
+
+export const DEFAULT_PROJECTS_CAROUSEL_SETTINGS: PortfolioWorkProjectsCarouselSettings = {
+  imageSize: 'lg',
+  imageRadius: 'none',
+  aspectRatio: 'square',
+  gap: 'md',
+  hoverReveal: true,
+  focusBlurSiblings: true,
+  hoverStack: true,
+};
+
+export function mergeProjectsCarouselSettings(
+  base: PortfolioWorkProjectsCarouselSettings,
+  patch: unknown
+): PortfolioWorkProjectsCarouselSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  const imageSize =
+    record.imageSize === 'sm' ||
+    record.imageSize === 'md' ||
+    record.imageSize === 'lg' ||
+    record.imageSize === 'xl'
+      ? record.imageSize
+      : base.imageSize;
+  const imageRadius =
+    record.imageRadius === 'none' || record.imageRadius === 'md' || record.imageRadius === 'xl'
+      ? record.imageRadius
+      : base.imageRadius;
+  const aspectRatio =
+    record.aspectRatio === 'square' ||
+    record.aspectRatio === 'landscape' ||
+    record.aspectRatio === 'portrait'
+      ? record.aspectRatio
+      : base.aspectRatio;
+  const gap =
+    record.gap === 'tight' || record.gap === 'md' || record.gap === 'xl' ? record.gap : base.gap;
+  return {
+    imageSize,
+    imageRadius,
+    aspectRatio,
+    gap,
+    hoverReveal: typeof record.hoverReveal === 'boolean' ? record.hoverReveal : base.hoverReveal,
+    focusBlurSiblings:
+      typeof record.focusBlurSiblings === 'boolean'
+        ? record.focusBlurSiblings
+        : base.focusBlurSiblings,
+    hoverStack: typeof record.hoverStack === 'boolean' ? record.hoverStack : base.hoverStack,
+  };
+}
+
+export const PORTFOLIO_WORK_CAROUSEL_IMAGE_SIZE_OPTIONS: {
+  value: PortfolioWorkProjectsCarouselImageSize;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'sm', label: 'Petite', description: 'Images compactes â€” plusieurs visibles Ã  la fois.' },
+  { value: 'md', label: 'Moyenne', description: 'Taille Ã©quilibrÃ©e.' },
+  { value: 'lg', label: 'Grande', description: 'Image dominante (dÃ©faut).' },
+  { value: 'xl', label: 'TrÃ¨s grande', description: 'Presque plein Ã©cran, lÃ©ger aperÃ§u suivant.' },
+];
+
+export const PORTFOLIO_WORK_CAROUSEL_RADIUS_OPTIONS: {
+  value: PortfolioWorkProjectsCarouselRadius;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: 'None', description: 'Coins droits (dÃ©faut).' },
+  { value: 'md', label: 'Medium', description: 'Coins lÃ©gÃ¨rement arrondis.' },
+  { value: 'xl', label: 'Large', description: 'Coins trÃ¨s arrondis.' },
+];
+
+export const PORTFOLIO_WORK_CAROUSEL_ASPECT_OPTIONS: {
+  value: PortfolioWorkProjectsCarouselAspect;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'square', label: 'CarrÃ©', description: 'Format 1:1 (dÃ©faut).' },
+  { value: 'landscape', label: 'Paysage', description: 'Format 4:3 horizontal.' },
+  { value: 'portrait', label: 'Portrait', description: 'Format 3:4 vertical.' },
+];
+
+export const PORTFOLIO_WORK_CAROUSEL_GAP_OPTIONS: {
+  value: PortfolioWorkProjectsCarouselSettings['gap'];
+  label: string;
+  description: string;
+}[] = [
+  { value: 'tight', label: 'SerrÃ©', description: 'Peu dâ€™espace entre les images.' },
+  { value: 'md', label: 'Moyen', description: 'Espacement lisible entre les slides.' },
+  { value: 'xl', label: 'Large', description: 'Grand air entre chaque image.' },
+];
+
+/** Options that apply only when `sectionDesign === 'projects-spotlight'`. */
+export type PortfolioWorkProjectsSpotlightStackStyle = 'tags' | 'hairline' | 'list';
+
+export type PortfolioWorkProjectsSpotlightSettings = {
+  /** Title selector list on the left or right (details take the other side). */
+  listSide: 'left' | 'right';
+  showRole: boolean;
+  showDescription: boolean;
+  showConsult: boolean;
+  consultLabel: string;
+  showStack: boolean;
+  /** Three stack presentations: pills, hairline row, or vertical list. */
+  stackStyle: PortfolioWorkProjectsSpotlightStackStyle;
+  /** Fill the outer frame with the card background color. */
+  showFrameFill: boolean;
+  /** Corner radius of the outer frame. */
+  frameRadius: PortfolioWorkCardRadius;
+};
+
+export const DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS: PortfolioWorkProjectsSpotlightSettings = {
+  listSide: 'right',
+  showRole: true,
+  showDescription: true,
+  showConsult: true,
+  consultLabel: 'Consult',
+  showStack: true,
+  stackStyle: 'tags',
+  showFrameFill: true,
+  frameRadius: 'xl',
+};
+
+export function mergeProjectsSpotlightSettings(
+  base: PortfolioWorkProjectsSpotlightSettings,
+  patch: unknown
+): PortfolioWorkProjectsSpotlightSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    listSide: record.listSide === 'left' || record.listSide === 'right' ? record.listSide : base.listSide,
+    showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    showConsult: typeof record.showConsult === 'boolean' ? record.showConsult : base.showConsult,
+    consultLabel:
+      typeof record.consultLabel === 'string' && record.consultLabel.trim()
+        ? record.consultLabel.trim()
+        : base.consultLabel,
+    showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
+    stackStyle:
+      record.stackStyle === 'tags' ||
+      record.stackStyle === 'hairline' ||
+      record.stackStyle === 'list'
+        ? record.stackStyle
+        : base.stackStyle,
+    showFrameFill:
+      typeof record.showFrameFill === 'boolean' ? record.showFrameFill : base.showFrameFill,
+    frameRadius:
+      record.frameRadius === 'none' ||
+      record.frameRadius === 'sm' ||
+      record.frameRadius === 'md' ||
+      record.frameRadius === 'lg' ||
+      record.frameRadius === 'xl'
+        ? record.frameRadius
+        : base.frameRadius,
+  };
+}
+
+export const PORTFOLIO_WORK_SPOTLIGHT_LIST_SIDE_OPTIONS: {
+  value: PortfolioWorkProjectsSpotlightSettings['listSide'];
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'right',
+    label: 'Titres Ã  droite',
+    description: 'DÃ©tails Ã  gauche, sÃ©lecteur de titres Ã  droite (dÃ©faut).',
+  },
+  {
+    value: 'left',
+    label: 'Titres Ã  gauche',
+    description: 'SÃ©lecteur Ã  gauche, dÃ©tails Ã  droite.',
+  },
+];
+
+export const PORTFOLIO_WORK_SPOTLIGHT_STACK_STYLE_OPTIONS: {
+  value: PortfolioWorkProjectsSpotlightStackStyle;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'tags',
+    label: 'Tags',
+    description: 'Labels sÃ©parÃ©s par | , couleur titre.',
+  },
+  {
+    value: 'hairline',
+    label: 'Ligne',
+    description: 'Labels compacts sÃ©parÃ©s par | .',
+  },
+  {
+    value: 'list',
+    label: 'Liste',
+    description: 'Stack en liste verticale aÃ©rÃ©e.',
+  },
+];
+
+/** Options that apply only when `sectionDesign === 'projects-showcase'`. */
+export type PortfolioWorkProjectsShowcaseRadius = 'none' | 'md' | 'xl';
+
+export type PortfolioWorkProjectsShowcaseSettings = {
+  /** Primary media on the left (default) or right. */
+  mediaSide: 'left' | 'right';
+  mediaRadius: PortfolioWorkProjectsShowcaseRadius;
+  showRole: boolean;
+  showDescription: boolean;
+  showCategory: boolean;
+  categoryLabel: string;
+};
+
+export const DEFAULT_PROJECTS_SHOWCASE_SETTINGS: PortfolioWorkProjectsShowcaseSettings = {
+  mediaSide: 'left',
+  mediaRadius: 'xl',
+  showRole: true,
+  showDescription: true,
+  showCategory: true,
+  categoryLabel: 'Category',
+};
+
+export function mergeProjectsShowcaseSettings(
+  base: PortfolioWorkProjectsShowcaseSettings,
+  patch: unknown
+): PortfolioWorkProjectsShowcaseSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    mediaSide:
+      record.mediaSide === 'left' || record.mediaSide === 'right' ? record.mediaSide : base.mediaSide,
+    mediaRadius:
+      record.mediaRadius === 'none' || record.mediaRadius === 'md' || record.mediaRadius === 'xl'
+        ? record.mediaRadius
+        : base.mediaRadius,
+    showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    showCategory: typeof record.showCategory === 'boolean' ? record.showCategory : base.showCategory,
+    categoryLabel:
+      typeof record.categoryLabel === 'string' && record.categoryLabel.trim()
+        ? record.categoryLabel.trim()
+        : base.categoryLabel,
+  };
+}
+
+export const PORTFOLIO_WORK_SHOWCASE_MEDIA_SIDE_OPTIONS: {
+  value: PortfolioWorkProjectsShowcaseSettings['mediaSide'];
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'left',
+    label: 'Media left',
+    description: 'Large image left, details + thumbs right (default).',
+  },
+  {
+    value: 'right',
+    label: 'Media right',
+    description: 'Details left, large image right.',
+  },
+];
+
+export const PORTFOLIO_WORK_SHOWCASE_RADIUS_OPTIONS: {
+  value: PortfolioWorkProjectsShowcaseRadius;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: 'None', description: 'Sharp corners.' },
+  { value: 'md', label: 'Medium', description: 'Soft rounded corners.' },
+  { value: 'xl', label: 'Large', description: 'Editorial rounded media (default).' },
+];
+
+/** Options that apply only when `sectionDesign === 'projects-editorial'`. */
+export type PortfolioWorkProjectsEditorialRightPanel = 'info' | 'thumbnail';
+
+export type PortfolioWorkProjectsEditorialSettings = {
+  /** Right rail: project info (default) or media thumbnail only. */
+  rightPanel: PortfolioWorkProjectsEditorialRightPanel;
+  /**
+   * Thumbnail mode only: on hover, darken from bottom and reveal
+   * description / stack / Consult on the image.
+   */
+  thumbnailHoverReveal: boolean;
+  showRole: boolean;
+  showDescription: boolean;
+  showStack: boolean;
+  showConsult: boolean;
+  consultLabel: string;
+  descriptionLabel: string;
+  categoryLabel: string;
+  stackLabel: string;
+  roleLabel: string;
+};
+
+export const DEFAULT_PROJECTS_EDITORIAL_SETTINGS: PortfolioWorkProjectsEditorialSettings = {
+  rightPanel: 'info',
+  thumbnailHoverReveal: true,
+  showRole: true,
+  showDescription: true,
+  showStack: true,
+  showConsult: true,
+  consultLabel: 'Consult this project',
+  descriptionLabel: 'Description',
+  categoryLabel: 'Category',
+  stackLabel: 'Stack',
+  roleLabel: '',
+};
+
+export function mergeProjectsEditorialSettings(
+  base: PortfolioWorkProjectsEditorialSettings,
+  patch: unknown
+): PortfolioWorkProjectsEditorialSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    rightPanel:
+      record.rightPanel === 'info' || record.rightPanel === 'thumbnail'
+        ? record.rightPanel
+        : base.rightPanel,
+    thumbnailHoverReveal:
+      typeof record.thumbnailHoverReveal === 'boolean'
+        ? record.thumbnailHoverReveal
+        : base.thumbnailHoverReveal,
+    showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
+    showConsult: typeof record.showConsult === 'boolean' ? record.showConsult : base.showConsult,
+    consultLabel:
+      typeof record.consultLabel === 'string' && record.consultLabel.trim()
+        ? record.consultLabel.trim()
+        : base.consultLabel,
+    descriptionLabel:
+      typeof record.descriptionLabel === 'string' && record.descriptionLabel.trim()
+        ? record.descriptionLabel.trim()
+        : base.descriptionLabel,
+    categoryLabel:
+      typeof record.categoryLabel === 'string' && record.categoryLabel.trim()
+        ? record.categoryLabel.trim()
+        : base.categoryLabel,
+    stackLabel:
+      typeof record.stackLabel === 'string' && record.stackLabel.trim()
+        ? record.stackLabel.trim()
+        : base.stackLabel,
+    roleLabel: typeof record.roleLabel === 'string' ? record.roleLabel.trim() : base.roleLabel,
+  };
+}
+
+/** Options that apply only when `sectionDesign === 'projects-ledger'`. */
+export type PortfolioWorkProjectsLedgerExpandMode = 'hover' | 'click' | 'always';
+
+export type PortfolioWorkProjectsLedgerSettings = {
+  /** How project details open under each ledger row. */
+  expandMode: PortfolioWorkProjectsLedgerExpandMode;
+  showIndex: boolean;
+  showRole: boolean;
+  showDescription: boolean;
+  showStack: boolean;
+  showConsult: boolean;
+  showCount: boolean;
+  consultLabel: string;
+};
+
+export const DEFAULT_PROJECTS_LEDGER_SETTINGS: PortfolioWorkProjectsLedgerSettings = {
+  expandMode: 'hover',
+  showIndex: true,
+  showRole: true,
+  showDescription: true,
+  showStack: true,
+  showConsult: true,
+  showCount: true,
+  consultLabel: 'Consult this project',
+};
+
+export function mergeProjectsLedgerSettings(
+  base: PortfolioWorkProjectsLedgerSettings,
+  patch: unknown
+): PortfolioWorkProjectsLedgerSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    expandMode:
+      record.expandMode === 'hover' ||
+      record.expandMode === 'click' ||
+      record.expandMode === 'always'
+        ? record.expandMode
+        : base.expandMode,
+    showIndex: typeof record.showIndex === 'boolean' ? record.showIndex : base.showIndex,
+    showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
+    showConsult: typeof record.showConsult === 'boolean' ? record.showConsult : base.showConsult,
+    showCount: typeof record.showCount === 'boolean' ? record.showCount : base.showCount,
+    consultLabel:
+      typeof record.consultLabel === 'string' && record.consultLabel.trim()
+        ? record.consultLabel.trim()
+        : base.consultLabel,
+  };
+}
+
+/** Options that apply only when `sectionDesign === 'projects-folio'`. */
+export type PortfolioWorkProjectsFolioStackDesign =
+  | 'index'
+  | 'list'
+  | 'inline'
+  | 'grid'
+  | 'rail'
+  | 'tags-soft'
+  | 'tags-outline'
+  | 'tags-solid';
+
+export type PortfolioWorkProjectsFolioSettings = {
+  showRole: boolean;
+  showDescription: boolean;
+  showStack: boolean;
+  showConsult: boolean;
+  consultLabel: string;
+  /** Label above the core stack list (default: Core stack). */
+  stackLabel: string;
+  /** Visual treatment for the tools / core stack block. */
+  stackDesign: PortfolioWorkProjectsFolioStackDesign;
+};
+
+export const DEFAULT_PROJECTS_FOLIO_SETTINGS: PortfolioWorkProjectsFolioSettings = {
+  showRole: true,
+  showDescription: true,
+  showStack: true,
+  showConsult: true,
+  consultLabel: 'Consult this project',
+  stackLabel: 'Core stack',
+  stackDesign: 'tags-outline',
+};
+
+function normalizeFolioStackDesign(value: unknown): PortfolioWorkProjectsFolioStackDesign | null {
+  if (value === 'tags') return 'tags-outline'; // legacy â†’ current default
+  if (
+    value === 'index' ||
+    value === 'list' ||
+    value === 'inline' ||
+    value === 'grid' ||
+    value === 'rail' ||
+    value === 'tags-soft' ||
+    value === 'tags-outline' ||
+    value === 'tags-solid'
+  ) {
+    return value;
+  }
+  return null;
+}
+
+export function mergeProjectsFolioSettings(
+  base: PortfolioWorkProjectsFolioSettings,
+  patch: unknown
+): PortfolioWorkProjectsFolioSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  const stackDesign = normalizeFolioStackDesign(record.stackDesign);
+  return {
+    showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
+    showConsult: typeof record.showConsult === 'boolean' ? record.showConsult : base.showConsult,
+    consultLabel:
+      typeof record.consultLabel === 'string' && record.consultLabel.trim()
+        ? record.consultLabel.trim()
+        : base.consultLabel,
+    stackLabel:
+      typeof record.stackLabel === 'string' && record.stackLabel.trim()
+        ? record.stackLabel.trim()
+        : base.stackLabel,
+    stackDesign: stackDesign ?? base.stackDesign,
+  };
+}
+
+/** Options that apply only when `sectionDesign === 'projects-spec'`. */
+export type PortfolioWorkProjectsSpecConsultDesign =
+  | 'link'
+  | 'underline'
+  | 'bracket'
+  | 'footer'
+  | 'pill'
+  | 'outline'
+  | 'ghost'
+  | 'solid';
+
+export type PortfolioWorkProjectsSpecSettings = {
+  showRole: boolean;
+  showCategory: boolean;
+  showDescription: boolean;
+  showStack: boolean;
+  showConsult: boolean;
+  consultLabel: string;
+  /** How the Consult CTA is rendered. */
+  consultDesign: PortfolioWorkProjectsSpecConsultDesign;
+  /** Vertical gap between each spec sheet. */
+  sheetGap: 'tight' | 'md' | 'xl' | '2xl';
+  /**
+   * Large screens: 1 full-width sheet, or 2 columns with horizontal gap
+   * (title font size shrinks automatically in 2-col mode).
+   */
+  columnsPerRow: 1 | 2;
+  /** Outer frame / border around each spec sheet. */
+  sheetFrame: 'none' | 'thin' | 'solid' | 'accent';
+  /** Show project media thumbnail on the right of each sheet. */
+  showThumbnail: boolean;
+  /** Show Summary / Stack / Link labels in the definition grid. */
+  showFieldLabels: boolean;
+  /** Label for the description row (default: Summary). */
+  descriptionLabel: string;
+  /** Label for the stack row (default: Stack). */
+  stackLabel: string;
+  /** Label for the consult row (default: Link). */
+  linkLabel: string;
+};
+
+export const DEFAULT_PROJECTS_SPEC_SETTINGS: PortfolioWorkProjectsSpecSettings = {
+  showRole: true,
+  showCategory: true,
+  showDescription: true,
+  showStack: true,
+  showConsult: true,
+  consultLabel: 'Consult this project',
+  consultDesign: 'bracket',
+  sheetGap: 'xl',
+  columnsPerRow: 1,
+  sheetFrame: 'none',
+  showThumbnail: false,
+  showFieldLabels: true,
+  descriptionLabel: 'Summary',
+  stackLabel: 'Stack',
+  linkLabel: 'Link',
+};
+
+export function mergeProjectsSpecSettings(
+  base: PortfolioWorkProjectsSpecSettings,
+  patch: unknown
+): PortfolioWorkProjectsSpecSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
+    showCategory: typeof record.showCategory === 'boolean' ? record.showCategory : base.showCategory,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
+    showConsult: typeof record.showConsult === 'boolean' ? record.showConsult : base.showConsult,
+    consultLabel:
+      typeof record.consultLabel === 'string' && record.consultLabel.trim()
+        ? record.consultLabel.trim()
+        : base.consultLabel,
+    consultDesign:
+      record.consultDesign === 'link' ||
+      record.consultDesign === 'underline' ||
+      record.consultDesign === 'bracket' ||
+      record.consultDesign === 'footer' ||
+      record.consultDesign === 'pill' ||
+      record.consultDesign === 'outline' ||
+      record.consultDesign === 'ghost' ||
+      record.consultDesign === 'solid'
+        ? record.consultDesign
+        : base.consultDesign,
+    sheetGap:
+      record.sheetGap === 'tight' ||
+      record.sheetGap === 'md' ||
+      record.sheetGap === 'xl' ||
+      record.sheetGap === '2xl'
+        ? record.sheetGap
+        : base.sheetGap,
+    columnsPerRow: record.columnsPerRow === 2 || record.columnsPerRow === 1 ? record.columnsPerRow : base.columnsPerRow,
+    sheetFrame:
+      record.sheetFrame === 'none' ||
+      record.sheetFrame === 'thin' ||
+      record.sheetFrame === 'solid' ||
+      record.sheetFrame === 'accent'
+        ? record.sheetFrame
+        : base.sheetFrame,
+    showThumbnail:
+      typeof record.showThumbnail === 'boolean' ? record.showThumbnail : base.showThumbnail,
+    showFieldLabels:
+      typeof record.showFieldLabels === 'boolean' ? record.showFieldLabels : base.showFieldLabels,
+    descriptionLabel:
+      typeof record.descriptionLabel === 'string' && record.descriptionLabel.trim()
+        ? record.descriptionLabel.trim()
+        : base.descriptionLabel,
+    stackLabel:
+      typeof record.stackLabel === 'string' && record.stackLabel.trim()
+        ? record.stackLabel.trim()
+        : base.stackLabel,
+    linkLabel:
+      typeof record.linkLabel === 'string' && record.linkLabel.trim()
+        ? record.linkLabel.trim()
+        : base.linkLabel,
+  };
+}
+
+/** Options that apply only when `sectionDesign === 'projects-case'`. */
+export type PortfolioWorkProjectsCaseSettings = {
+  showRole: boolean;
+  showCategory: boolean;
+  showDescription: boolean;
+  showStack: boolean;
+  showConsult: boolean;
+  consultLabel: string;
+  /** How the Consult CTA is rendered (same union as Spec). */
+  consultDesign: PortfolioWorkProjectsSpecConsultDesign;
+  /** Vertical gap between each case row. */
+  sheetGap: 'tight' | 'md' | 'xl' | '2xl';
+  /** Outer frame / border around each case content sheet. */
+  sheetFrame: 'none' | 'thin' | 'solid' | 'accent';
+  /** Show large left thumbnail (50/50). When false, content is full width. */
+  showThumbnail: boolean;
+  /** Thumbnail height preset â€” `md` matches the original Case size. */
+  thumbnailHeight: 'sm' | 'md' | 'lg' | 'xl';
+  /** Show Summary / Stack / Link labels in the definition grid. */
+  showFieldLabels: boolean;
+  /** Label for the description row (default: Summary). */
+  descriptionLabel: string;
+  /** Label for the stack row (default: Stack). */
+  stackLabel: string;
+  /** Label for the consult row (default: Link). */
+  linkLabel: string;
+};
+
+export const DEFAULT_PROJECTS_CASE_SETTINGS: PortfolioWorkProjectsCaseSettings = {
+  showRole: true,
+  showCategory: true,
+  showDescription: true,
+  showStack: true,
+  showConsult: true,
+  consultLabel: 'Consult this project',
+  consultDesign: 'bracket',
+  sheetGap: 'xl',
+  sheetFrame: 'thin',
+  showThumbnail: true,
+  thumbnailHeight: 'xl',
+  showFieldLabels: true,
+  descriptionLabel: 'Summary',
+  stackLabel: 'Stack',
+  linkLabel: 'Link',
+};
+
+export function mergeProjectsCaseSettings(
+  base: PortfolioWorkProjectsCaseSettings,
+  patch: unknown
+): PortfolioWorkProjectsCaseSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
+    showCategory: typeof record.showCategory === 'boolean' ? record.showCategory : base.showCategory,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
+    showConsult: typeof record.showConsult === 'boolean' ? record.showConsult : base.showConsult,
+    consultLabel:
+      typeof record.consultLabel === 'string' && record.consultLabel.trim()
+        ? record.consultLabel.trim()
+        : base.consultLabel,
+    consultDesign:
+      record.consultDesign === 'link' ||
+      record.consultDesign === 'underline' ||
+      record.consultDesign === 'bracket' ||
+      record.consultDesign === 'footer' ||
+      record.consultDesign === 'pill' ||
+      record.consultDesign === 'outline' ||
+      record.consultDesign === 'ghost' ||
+      record.consultDesign === 'solid'
+        ? record.consultDesign
+        : base.consultDesign,
+    sheetGap:
+      record.sheetGap === 'tight' ||
+      record.sheetGap === 'md' ||
+      record.sheetGap === 'xl' ||
+      record.sheetGap === '2xl'
+        ? record.sheetGap
+        : base.sheetGap,
+    sheetFrame:
+      record.sheetFrame === 'none' ||
+      record.sheetFrame === 'thin' ||
+      record.sheetFrame === 'solid' ||
+      record.sheetFrame === 'accent'
+        ? record.sheetFrame
+        : base.sheetFrame,
+    showThumbnail:
+      typeof record.showThumbnail === 'boolean' ? record.showThumbnail : base.showThumbnail,
+    thumbnailHeight:
+      record.thumbnailHeight === 'sm' ||
+      record.thumbnailHeight === 'md' ||
+      record.thumbnailHeight === 'lg' ||
+      record.thumbnailHeight === 'xl'
+        ? record.thumbnailHeight
+        : base.thumbnailHeight,
+    showFieldLabels:
+      typeof record.showFieldLabels === 'boolean' ? record.showFieldLabels : base.showFieldLabels,
+    descriptionLabel:
+      typeof record.descriptionLabel === 'string' && record.descriptionLabel.trim()
+        ? record.descriptionLabel.trim()
+        : base.descriptionLabel,
+    stackLabel:
+      typeof record.stackLabel === 'string' && record.stackLabel.trim()
+        ? record.stackLabel.trim()
+        : base.stackLabel,
+    linkLabel:
+      typeof record.linkLabel === 'string' && record.linkLabel.trim()
+        ? record.linkLabel.trim()
+        : base.linkLabel,
+  };
+}
+
+export const PORTFOLIO_WORK_CASE_THUMBNAIL_HEIGHT_OPTIONS: {
+  value: PortfolioWorkProjectsCaseSettings['thumbnailHeight'];
+  label: string;
+  description: string;
+}[] = [
+  { value: 'sm', label: 'Petite', description: 'Hauteur rÃ©duite.' },
+  { value: 'md', label: 'Moyenne', description: 'Hauteur moyenne.' },
+  { value: 'lg', label: 'Grande', description: 'Miniature plus haute.' },
+  { value: 'xl', label: 'TrÃ¨s grande', description: 'Hauteur maximale (dÃ©faut).' },
+];
+
+export const PORTFOLIO_WORK_SPEC_FRAME_OPTIONS: {
+  value: PortfolioWorkProjectsSpecSettings['sheetFrame'];
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'none',
+    label: 'Aucun',
+    description: 'Pas de cadre (dÃ©faut).',
+  },
+  {
+    value: 'thin',
+    label: 'Fin',
+    description: 'Trait fin (token bordure carte).',
+  },
+  {
+    value: 'solid',
+    label: 'Solid',
+    description: 'Cadre plus marquÃ© autour de la fiche.',
+  },
+  {
+    value: 'accent',
+    label: 'Accent',
+    description: 'Cadre couleur CTA / accent.',
+  },
+];
+
+export const PORTFOLIO_WORK_SPEC_COLUMNS_OPTIONS: {
+  value: '1' | '2';
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: '1',
+    label: '1 par ligne',
+    description: 'Fiche pleine largeur (dÃ©faut).',
+  },
+  {
+    value: '2',
+    label: '2 par ligne',
+    description: '2 colonnes en grand Ã©cran + titre rÃ©duit + gap horizontal.',
+  },
+];
+
+export const PORTFOLIO_WORK_SPEC_SHEET_GAP_OPTIONS: {
+  value: PortfolioWorkProjectsSpecSettings['sheetGap'];
+  label: string;
+  description: string;
+}[] = [
+  { value: 'tight', label: 'SerrÃ©', description: 'Compact, un peu plus dâ€™air quâ€™avant.' },
+  { value: 'md', label: 'Moyen', description: 'Espacement gÃ©nÃ©reux entre fiches.' },
+  { value: 'xl', label: 'Large', description: 'TrÃ¨s aÃ©rÃ© (dÃ©faut).' },
+  { value: '2xl', label: 'TrÃ¨s large', description: 'Espacement maximal, lecture lente.' },
+];
+
+export const PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS: {
+  value: PortfolioWorkProjectsSpecConsultDesign;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'bracket',
+    label: 'Bracket',
+    description: 'Mono [ Consult â†’ ] â€” style Framer (dÃ©faut).',
+  },
+  {
+    value: 'link',
+    label: 'Link',
+    description: 'Lien texte + flÃ¨che â†— dans la grille.',
+  },
+  {
+    value: 'underline',
+    label: 'Underline',
+    description: 'Texte soulignÃ© animÃ©, sans flÃ¨che.',
+  },
+  {
+    value: 'footer',
+    label: 'Footer',
+    description: 'CTA sous la fiche, hors grille label/valeur.',
+  },
+  {
+    value: 'pill',
+    label: 'Pill',
+    description: 'Bouton pastille rempli (accent).',
+  },
+  {
+    value: 'outline',
+    label: 'Outline',
+    description: 'Bouton bordure seule.',
+  },
+  {
+    value: 'ghost',
+    label: 'Ghost',
+    description: 'Fond soft teintÃ©, sans bordure forte.',
+  },
+  {
+    value: 'solid',
+    label: 'Solid',
+    description: 'Bouton plein token titre / tools (pas CTA).',
+  },
+];
+
+export const PORTFOLIO_WORK_FOLIO_STACK_DESIGN_OPTIONS: {
+  value: PortfolioWorkProjectsFolioStackDesign;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'tags-outline',
+    label: 'Tags outline',
+    description: 'Pastilles transparentes, bordure seulement (dÃ©faut).',
+  },
+  {
+    value: 'tags-soft',
+    label: 'Tags soft',
+    description: 'Pastilles teintÃ©es accent.',
+  },
+  {
+    value: 'tags-solid',
+    label: 'Tags solid',
+    description: 'Pastilles pleines (token tools / titre â€” pas la CTA).',
+  },
+  {
+    value: 'index',
+    label: 'Index',
+    description: '01 Â·Â·Â·Â·Â·Â·Â·Â·Â· outil â€” table des matiÃ¨res.',
+  },
+  {
+    value: 'list',
+    label: 'Liste',
+    description: 'Liste uppercase tracked, une ligne par outil.',
+  },
+  {
+    value: 'inline',
+    label: 'Inline',
+    description: 'Outils en une phrase sÃ©parÃ©s par Â·',
+  },
+  {
+    value: 'grid',
+    label: 'Grille',
+    description: 'Grille 2 colonnes compacte.',
+  },
+  {
+    value: 'rail',
+    label: 'Rail',
+    description: 'Barre accent + outils empilÃ©s Ã  droite.',
+  },
+];
+
+export const PORTFOLIO_WORK_LEDGER_EXPAND_OPTIONS: {
+  value: PortfolioWorkProjectsLedgerExpandMode;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'hover',
+    label: 'Hover',
+    description: 'DÃ©tails au survol (desktop) â€” Framer index style.',
+  },
+  {
+    value: 'click',
+    label: 'Click',
+    description: 'Ouvre / ferme au clic â€” idÃ©al mobile.',
+  },
+  {
+    value: 'always',
+    label: 'Always open',
+    description: 'Description et stack toujours visibles sous chaque titre.',
+  },
+];
+
+export const PORTFOLIO_WORK_EDITORIAL_RIGHT_PANEL_OPTIONS: {
+  value: PortfolioWorkProjectsEditorialRightPanel;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'info',
+    label: 'Infos',
+    description: 'Description, stack et Consult Ã  droite (sticky).',
+  },
+  {
+    value: 'thumbnail',
+    label: 'Miniature',
+    description: 'Uniquement la miniature projet Ã  droite â€” sans bordure ni radius.',
+  },
 ];
 
 export const PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS: {
@@ -580,7 +1646,7 @@ export const PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS: {
   {
     value: 'classic',
     label: 'Classic',
-    description: 'Full gallery controls — media, columns, and card chrome from Cards / Media.',
+    description: 'Full gallery controls â€” media, columns, and card chrome from Cards / Media.',
   },
   {
     value: 'projects-board',
@@ -590,27 +1656,73 @@ export const PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS: {
   {
     value: 'projects-accordion',
     label: 'Accordion',
-    description: 'Accordion + large preview — swap columns, role/category, Consult text link.',
+    description: 'Accordion + large preview â€” swap columns, role/category, Consult text link.',
   },
   {
     value: 'projects-frames',
     label: 'Frames',
-    description: 'Horizontal frames — image left, info right, stack as plain text (not tags).',
+    description: 'Horizontal frames â€” image left, info right, stack as plain text (not tags).',
   },
   {
     value: 'projects-index',
     label: 'Index',
-    description: 'Numbered rows with thin rules — title + stack, description on the right.',
+    description: 'Numbered rows with thin rules â€” title + stack, description on the right.',
   },
   {
     value: 'projects-grid',
     label: 'Grid',
-    description: 'Thumbnail cards — title + description, 2 or 3 per row on large screens.',
+    description: 'Thumbnail cards â€” title + description, 2 or 3 per row on large screens.',
   },
   {
     value: 'projects-split',
     label: 'Split',
-    description: 'Large thumbnail on the left, title top-aligned on the right.',
+    description: 'Large thumbnail beside a top-aligned title â€” sides and zigzag configurable.',
+  },
+  {
+    value: 'projects-carousel',
+    label: 'Carousel',
+    description: 'Image-only horizontal carousel â€” configure slide size, ratio, and spacing.',
+  },
+  {
+    value: 'projects-spotlight',
+    label: 'Spotlight',
+    description:
+      'Cadre fin â€” dÃ©tails projet Ã  gauche, sÃ©lecteur de titres Ã  droite (pas accordion).',
+  },
+  {
+    value: 'projects-showcase',
+    label: 'Showcase',
+    description:
+      'Large media + details â€” chevrons and three thumbnails to switch the active project.',
+  },
+  {
+    value: 'projects-editorial',
+    label: 'Editorial',
+    description:
+      'Grand numÃ©ro + rÃ´le + titre Ã  gauche, description / catÃ©gorie / stack Ã  droite â€” sans image.',
+  },
+  {
+    value: 'projects-ledger',
+    label: 'Ledger',
+    description:
+      'Index typographique Framer â€” lignes, titres, rÃ´le, dÃ©tails au survol. DonnÃ©es seulement, sans miniature.',
+  },
+  {
+    value: 'projects-folio',
+    label: 'Folio',
+    description:
+      'Dossier sticky Ã  gauche + liste de titres Ã  droite â€” lecture Ã©ditoriale, donnÃ©es seulement, sans miniature.',
+  },
+  {
+    value: 'projects-spec',
+    label: 'Spec',
+    description:
+      'Fiche technique / datasheet â€” titre + grille label/valeur. DonnÃ©es seulement, sans miniature.',
+  },
+  {
+    value: 'projects-case',
+    label: 'Case',
+    description: 'Grande miniature 50/50 Ã  gauche + fiche Spec Ã  droite.',
   },
 ];
 
@@ -878,6 +1990,325 @@ export function workSectionDesignSettingsPatch(
       projectsSplit: { ...DEFAULT_PROJECTS_SPLIT_SETTINGS },
     };
   }
+  if (sectionDesign === 'projects-carousel') {
+    return {
+      sectionDesign,
+      galleryLayout: 'carousel',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: true,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: false,
+      cardBorderRadius: 'none',
+      cardPadding: 'none',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: false,
+      showCardDescription: false,
+      showCardTools: false,
+      showCardToolIcons: false,
+      showCardToolList: false,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: false,
+      showCategoryOnCard: false,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'left',
+      sectionLayout: 'stacked',
+      titlePreset: 'custom',
+      titleCustom: 'Selected work',
+      subtitlePreset: 'custom',
+      subtitleCustom: 'Recent projects.',
+      projectsCarousel: { ...DEFAULT_PROJECTS_CAROUSEL_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-spotlight') {
+    return {
+      sectionDesign,
+      galleryLayout: 'list',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: false,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'soft',
+      cardShadow: 'none',
+      cardBackgroundEnabled: true,
+      cardBorderRadius: 'xl',
+      cardPadding: 'lg',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: true,
+      showCardToolIcons: false,
+      showCardToolList: true,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: true,
+      showCategoryOnCard: false,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'center',
+      sectionLayout: 'stacked',
+      titlePreset: 'custom',
+      titleCustom: 'Selected work',
+      subtitlePreset: 'minimal',
+      subtitleCustom: '',
+
+      projectsSpotlight: { ...DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-showcase') {
+    return {
+      sectionDesign,
+      galleryLayout: 'list',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: true,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: false,
+      cardBorderRadius: 'xl',
+      cardPadding: 'none',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: false,
+      showCardToolIcons: false,
+      showCardToolList: false,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: false,
+      showCategoryOnCard: true,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'left',
+      sectionLayout: 'stacked',
+      titlePreset: 'custom',
+      titleCustom: 'Selected work',
+      subtitlePreset: 'minimal',
+      subtitleCustom: '',
+
+      projectsShowcase: { ...DEFAULT_PROJECTS_SHOWCASE_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-editorial') {
+    return {
+      sectionDesign,
+      galleryLayout: 'list',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: false,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: false,
+      cardBorderRadius: 'none',
+      cardPadding: 'none',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: true,
+      showCardToolIcons: false,
+      showCardToolList: true,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: true,
+      showCategoryOnCard: true,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'left',
+      sectionLayout: 'stacked',
+      titlePreset: 'custom',
+      titleCustom: 'Selected work',
+      subtitlePreset: 'minimal',
+      subtitleCustom: '',
+
+      projectsEditorial: { ...DEFAULT_PROJECTS_EDITORIAL_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-ledger') {
+    return {
+      sectionDesign,
+      galleryLayout: 'list',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: false,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: false,
+      cardBorderRadius: 'none',
+      cardPadding: 'none',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: true,
+      showCardToolIcons: false,
+      showCardToolList: true,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: true,
+      showCategoryOnCard: true,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'left',
+      sectionLayout: 'stacked',
+      titlePreset: 'custom',
+      titleCustom: 'Selected work',
+      subtitlePreset: 'minimal',
+      subtitleCustom: '',
+
+      projectsLedger: { ...DEFAULT_PROJECTS_LEDGER_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-folio') {
+    return {
+      sectionDesign,
+      galleryLayout: 'list',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: false,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: false,
+      cardBorderRadius: 'none',
+      cardPadding: 'none',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: true,
+      showCardToolIcons: false,
+      showCardToolList: true,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: true,
+      showCategoryOnCard: true,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'left',
+      sectionLayout: 'stacked',
+      titlePreset: 'custom',
+      titleCustom: 'Selected work',
+      subtitlePreset: 'minimal',
+      subtitleCustom: '',
+
+      projectsFolio: { ...DEFAULT_PROJECTS_FOLIO_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-spec') {
+    return {
+      sectionDesign,
+      galleryLayout: 'list',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: false,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: false,
+      cardBorderRadius: 'none',
+      cardPadding: 'none',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: true,
+      showCardToolIcons: false,
+      showCardToolList: true,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: true,
+      showCategoryOnCard: true,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'left',
+      sectionLayout: 'stacked',
+      titlePreset: 'custom',
+      titleCustom: 'Selected work',
+      subtitlePreset: 'minimal',
+      subtitleCustom: '',
+
+      projectsSpec: { ...DEFAULT_PROJECTS_SPEC_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-case') {
+    return {
+      sectionDesign,
+      galleryLayout: 'list',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: true,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: false,
+      cardBorderRadius: 'none',
+      cardPadding: 'none',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: true,
+      showCardToolIcons: false,
+      showCardToolList: true,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: true,
+      showCategoryOnCard: true,
+      showMarketplaceLink: false,
+      illustrationVariant: 'none',
+      headerAlignment: 'left',
+      sectionLayout: 'stacked',
+      titlePreset: 'custom',
+      titleCustom: 'Selected work',
+      subtitlePreset: 'minimal',
+      subtitleCustom: '',
+
+      projectsCase: { ...DEFAULT_PROJECTS_CASE_SETTINGS },
+    };
+  }
   return { sectionDesign: 'classic' };
 }
 
@@ -953,12 +2384,12 @@ export const PORTFOLIO_WORK_OVERLAY_LAYOUT_MODE_OPTIONS: {
   {
     value: 'stack',
     label: 'Pile basse',
-    description: 'Texte empilé en bas de la carte (tous écrans).',
+    description: 'Texte empilÃ© en bas de la carte (tous Ã©crans).',
   },
   {
     value: 'free',
-    label: 'Libre (grand écran)',
-    description: 'Place chaque élément dans une cellule 3×3 — desktop seulement.',
+    label: 'Libre (grand Ã©cran)',
+    description: 'Place chaque Ã©lÃ©ment dans une cellule 3Ã—3 â€” desktop seulement.',
   },
 ];
 
@@ -983,7 +2414,7 @@ export const PORTFOLIO_WORK_OVERLAY_ELEMENT_OPTIONS: {
   value: PortfolioWorkOverlayElementId;
   label: string;
 }[] = [
-  { value: 'category', label: 'Catégorie' },
+  { value: 'category', label: 'CatÃ©gorie' },
   { value: 'title', label: 'Titre' },
   { value: 'description', label: 'Description' },
   { value: 'tools', label: 'Outils' },
@@ -1111,14 +2542,14 @@ export function workOverlayCellAbsoluteStyle(
   };
 }
 
-/** Vertical row of a free-placement cell — lets small screens keep the chosen band. */
+/** Vertical row of a free-placement cell â€” lets small screens keep the chosen band. */
 export function workOverlayCellRow(
   cell: PortfolioWorkOverlayCellPlacement
 ): 'top' | 'center' | 'bottom' {
   return overlayCellMeta(cell).row;
 }
 
-/** Horizontal column of a free-placement cell — lets small screens keep the chosen side. */
+/** Horizontal column of a free-placement cell â€” lets small screens keep the chosen side. */
 export function workOverlayCellColumn(
   cell: PortfolioWorkOverlayCellPlacement
 ): 'left' | 'center' | 'right' {
@@ -1195,7 +2626,7 @@ export const PORTFOLIO_WORK_STYLE_TARGET_OPTIONS: {
 }[] = [
   { value: 'cardTitle', label: 'Project title', description: 'Title text on each project card.' },
   { value: 'cardDescription', label: 'Description', description: 'Body text under the title.' },
-  { value: 'toolsLabel', label: 'Tools label', description: '“Tools to use” heading above the tool logos.' },
+  { value: 'toolsLabel', label: 'Tools label', description: 'â€œTools to useâ€ heading above the tool logos.' },
   { value: 'toolsList', label: 'Tools list', description: 'Text list of tool names.' },
   { value: 'categoryOnCard', label: 'Category on card', description: 'Category name shown above the title.' },
   { value: 'cta', label: 'CTA text', description: 'View project button text.' },
@@ -1220,7 +2651,7 @@ export type PortfolioWorkElementChromeId =
   | 'cardDescription'
   | 'tools';
 
-/** Inner padding for per-element chrome — includes free `custom` px mode. */
+/** Inner padding for per-element chrome â€” includes free `custom` px mode. */
 export type PortfolioWorkElementChromePadding = PortfolioWorkCardPadding | 'custom';
 
 export type PortfolioWorkElementChromeSettings = {
@@ -1233,7 +2664,7 @@ export type PortfolioWorkElementChromeSettings = {
   padding: PortfolioWorkElementChromePadding;
   /** Exact inner padding in px when padding is `custom` (also synced from presets). */
   paddingPx: number;
-  /** Outer spacing around the element — not tied to content-frame vertical gap. */
+  /** Outer spacing around the element â€” not tied to content-frame vertical gap. */
   margin: PortfolioWorkCardPadding;
   /**
    * When true, chrome hugs content width (`w-fit`) instead of stretching full column.
@@ -1254,7 +2685,7 @@ export const WORK_ELEMENT_CHROME_IDS: PortfolioWorkElementChromeId[] = [
   'tools',
 ];
 
-/** Preset → px map for element chrome inner padding (Compact / Standard / Confortable). */
+/** Preset â†’ px map for element chrome inner padding (Compact / Standard / Confortable). */
 export const WORK_ELEMENT_CHROME_PADDING_PRESET_PX: Record<PortfolioWorkCardPadding, number> = {
   none: 0,
   sm: 16,
@@ -1456,8 +2887,8 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   subtitleColor: string;
   headerAlignment: PortfolioWorkHeaderAlignment;
   /**
-   * `stacked` — title above the gallery (default).
-   * `aside-left` / `aside-right` — title beside the gallery on large screens.
+   * `stacked` â€” title above the gallery (default).
+   * `aside-left` / `aside-right` â€” title beside the gallery on large screens.
    */
   sectionLayout: PortfolioWorkSectionLayout;
   /** Decorative SVG beside the gallery (`none` hides it). */
@@ -1466,20 +2897,36 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   illustrationPlacement: PortfolioWorkIllustrationPlacement;
   contentPlacement: PortfolioWorkContentPlacement;
   galleryLayout: PortfolioWorkGalleryLayout;
-  /** Named Portfolio section design (Settings → Design). */
+  /** Named Portfolio section design (Settings â†’ Design). */
   sectionDesign: PortfolioWorkSectionDesign;
-  /** Projects board–only options (ignored by Classic). */
+  /** Projects boardâ€“only options (ignored by Classic). */
   projectsBoard: PortfolioWorkProjectsBoardSettings;
-  /** Accordion design–only options (ignored by Classic / Projects board). */
+  /** Accordion designâ€“only options (ignored by Classic / Projects board). */
   projectsAccordion: PortfolioWorkProjectsAccordionSettings;
-  /** Frames design–only options (horizontal image + info cards). */
+  /** Frames designâ€“only options (horizontal image + info cards). */
   projectsFrames: PortfolioWorkProjectsFramesSettings;
-  /** Index design–only options (numbered rows + separators). */
+  /** Index designâ€“only options (numbered rows + separators). */
   projectsIndex: PortfolioWorkProjectsIndexSettings;
-  /** Grid design–only options (thumbnail + title + description cards). */
+  /** Grid designâ€“only options (thumbnail + title + description cards). */
   projectsGrid: PortfolioWorkProjectsGridSettings;
-  /** Split design–only options (large thumbnail left + title right). */
+  /** Split designâ€“only options (large thumbnail left + title right). */
   projectsSplit: PortfolioWorkProjectsSplitSettings;
+  /** Carousel designâ€“only options (image-only horizontal slides). */
+  projectsCarousel: PortfolioWorkProjectsCarouselSettings;
+  /** Spotlight designâ€“only options (left details + right title selector). */
+  projectsSpotlight: PortfolioWorkProjectsSpotlightSettings;
+  /** Showcase designâ€“only options (media + details + thumbnail selector). */
+  projectsShowcase: PortfolioWorkProjectsShowcaseSettings;
+  /** Editorial designâ€“only options (number + title left, meta rail right). */
+  projectsEditorial: PortfolioWorkProjectsEditorialSettings;
+  /** Ledger designâ€“only options (typographic index rows, data-only). */
+  projectsLedger: PortfolioWorkProjectsLedgerSettings;
+  /** Folio designâ€“only options (sticky dossier + title list, data-only). */
+  projectsFolio: PortfolioWorkProjectsFolioSettings;
+  /** Spec designâ€“only options (technical datasheet rows, data-only). */
+  projectsSpec: PortfolioWorkProjectsSpecSettings;
+  /** Case designâ€“only options (50/50 thumbnail + Spec datasheet). */
+  projectsCase: PortfolioWorkProjectsCaseSettings;
   /** Cards per row on large screens (stack / grid / overlay). */
   itemsPerRow: PortfolioWorkItemsPerRow;
   /** Max width of each project card (full = stretch to column). */
@@ -1496,7 +2943,7 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   overlayMediaDarkness: number;
   /** Diffuse shadow / float halo around the card (no hard border). */
   cardShadow: PortfolioWorkCardShadow;
-  /** 0–100 continuous strength of the float / shadow halo. */
+  /** 0â€“100 continuous strength of the float / shadow halo. */
   cardShadowIntensity: number;
   cardBackgroundEnabled: boolean;
   cardBackgroundColor: string;
@@ -1515,7 +2962,7 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   contentFrameBorderColor: string;
   contentFrameBackgroundEnabled: boolean;
   contentFrameBackgroundColor: string;
-  /** Manual hex override — palette sync skipped until the token binding changes. */
+  /** Manual hex override â€” palette sync skipped until the token binding changes. */
   contentFrameBorderManual: boolean;
   contentFrameBackgroundManual: boolean;
   contentFrameBorderRadius: PortfolioWorkCardRadius;
@@ -1525,7 +2972,7 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   /** Optional surface behind category / title / description / tools (padding, margin, border, fill). */
   elementChromes: PortfolioWorkElementChromes;
   /**
-   * Overlay immersive only: classic bottom stack, or free 3×3 placement on lg+.
+   * Overlay immersive only: classic bottom stack, or free 3Ã—3 placement on lg+.
    * Below lg, free mode still uses the bottom stack.
    */
   overlayLayoutMode: PortfolioWorkOverlayLayoutMode;
@@ -1575,23 +3022,23 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   /** Place the glyph before or after the label. */
   ctaIconPosition: PortfolioWorkCtaIconPosition;
   ctaColor: string;
-  /** CTA outline — bound to the same palette token as Hero `ctaBorder`. */
+  /** CTA outline â€” bound to the same palette token as Hero `ctaBorder`. */
   ctaBorderColor: string;
   /** Border thickness on pill / circle CTA. */
   ctaBorderWidth: PortfolioWorkCtaBorderWidth;
   /** Corner radius on pill CTAs (circle icon shell stays round). */
   ctaBorderRadius: PortfolioWorkCtaBorderRadius;
-  /** Hover fill — palette `ctaHoverBackground`. */
+  /** Hover fill â€” palette `ctaHoverBackground`. */
   ctaHoverBackgroundColor: string;
-  /** Hover label / icon ink — palette `ctaHoverText`. */
+  /** Hover label / icon ink â€” palette `ctaHoverText`. */
   ctaHoverTextColor: string;
-  /** Hover outline — palette `ctaHoverBorder`. */
+  /** Hover outline â€” palette `ctaHoverBorder`. */
   ctaHoverBorderColor: string;
   /** When false, CTA keeps resting colors on hover. */
   ctaHoverEnabled: boolean;
-  /** Tool icon chip fill — bound to Hero `toolsIconBackground`. */
+  /** Tool icon chip fill â€” bound to Hero `toolsIconBackground`. */
   toolsIconBackgroundColor: string;
-  /** Tool icon chip outline — bound to Hero `toolsIconBorder`. */
+  /** Tool icon chip outline â€” bound to Hero `toolsIconBorder`. */
   toolsIconBorderColor: string;
   toolsDisplay: PortfolioWorkToolsDisplay;
   maxToolsShown: number;
@@ -1648,6 +3095,14 @@ export const DEFAULT_WORK_PRESENTATION: PortfolioWorkPresentationSettings = {
   projectsIndex: { ...DEFAULT_PROJECTS_INDEX_SETTINGS },
   projectsGrid: { ...DEFAULT_PROJECTS_GRID_SETTINGS },
   projectsSplit: { ...DEFAULT_PROJECTS_SPLIT_SETTINGS },
+  projectsCarousel: { ...DEFAULT_PROJECTS_CAROUSEL_SETTINGS },
+  projectsSpotlight: { ...DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS },
+  projectsShowcase: { ...DEFAULT_PROJECTS_SHOWCASE_SETTINGS },
+  projectsEditorial: { ...DEFAULT_PROJECTS_EDITORIAL_SETTINGS },
+  projectsLedger: { ...DEFAULT_PROJECTS_LEDGER_SETTINGS },
+  projectsFolio: { ...DEFAULT_PROJECTS_FOLIO_SETTINGS },
+  projectsSpec: { ...DEFAULT_PROJECTS_SPEC_SETTINGS },
+  projectsCase: { ...DEFAULT_PROJECTS_CASE_SETTINGS },
   itemsPerRow: 1,
   cardMaxWidth: 'full',
   cardDesign: 'editorial',
@@ -1782,7 +3237,7 @@ export const PORTFOLIO_WORK_HEADER_FONT_OPTIONS: {
   description: string;
 }[] = [
   { value: 'sans', label: 'Modern sans', description: 'Bold geometric sans-serif.' },
-  { value: 'serif', label: 'Editorial serif', description: 'Playfair Display — magazine feel.' },
+  { value: 'serif', label: 'Editorial serif', description: 'Playfair Display â€” magazine feel.' },
   { value: 'display', label: 'Display caps', description: 'Uppercase poster style.' },
 ];
 
@@ -1804,18 +3259,18 @@ export const PORTFOLIO_WORK_SECTION_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'stacked',
-    label: 'Empilé',
+    label: 'EmpilÃ©',
     description: 'Titre au-dessus, projets en dessous.',
   },
   {
     value: 'aside-left',
-    label: 'Titre à gauche',
-    description: 'Titre à gauche, galerie à droite (côte à côte).',
+    label: 'Titre Ã  gauche',
+    description: 'Titre Ã  gauche, galerie Ã  droite (cÃ´te Ã  cÃ´te).',
   },
   {
     value: 'aside-right',
-    label: 'Titre à droite',
-    description: 'Galerie à gauche, titre à droite (côte à côte).',
+    label: 'Titre Ã  droite',
+    description: 'Galerie Ã  gauche, titre Ã  droite (cÃ´te Ã  cÃ´te).',
   },
 ];
 
@@ -1840,10 +3295,10 @@ export const PORTFOLIO_WORK_ILLUSTRATION_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Aucun', description: 'Pas de SVG décoratif à côté de la galerie.' },
+  { value: 'none', label: 'Aucun', description: 'Pas de SVG dÃ©coratif Ã  cÃ´tÃ© de la galerie.' },
   { value: 'chat', label: 'Chat', description: 'Bulles de conversation.' },
-  { value: 'question', label: 'Question', description: 'Point d’interrogation graphique.' },
-  { value: 'docs', label: 'Docs', description: 'Documents superposés.' },
+  { value: 'question', label: 'Question', description: 'Point dâ€™interrogation graphique.' },
+  { value: 'docs', label: 'Docs', description: 'Documents superposÃ©s.' },
   { value: 'support', label: 'Support', description: 'Illustration support.' },
   { value: 'hex', label: 'Hex', description: 'Symbole hexagonal.' },
 ];
@@ -1853,8 +3308,8 @@ export const PORTFOLIO_WORK_ILLUSTRATION_PLACEMENT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Gauche', description: 'SVG à gauche de la galerie.' },
-  { value: 'right', label: 'Droite', description: 'SVG à droite de la galerie.' },
+  { value: 'left', label: 'Gauche', description: 'SVG Ã  gauche de la galerie.' },
+  { value: 'right', label: 'Droite', description: 'SVG Ã  droite de la galerie.' },
 ];
 
 export function isPortfolioWorkIllustrationVariant(
@@ -1881,12 +3336,12 @@ export const PORTFOLIO_WORK_GALLERY_LAYOUT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'stack', label: 'Grille portfolio', description: 'Grandes cartes éditoriales — colonnes réglables, design libre.' },
-  { value: 'grid', label: 'Grille compacte', description: 'Tuiles denses : média bas, texte serré — colonnes réglables.' },
-  { value: 'carousel', label: 'Carrousel', description: 'Un projet à la fois — flèches gauche / droite pour naviguer.' },
-  { value: 'list', label: 'Liste compacte', description: 'Lignes élevées : grande vignette, tools à droite, action encerclée.' },
-  { value: 'overlay', label: 'Overlay immersif', description: 'Media plein avec texte superposé — colonnes réglables.' },
-  { value: 'accordion', label: 'Accordéon', description: 'Lignes dépliables révélant les détails du projet.' },
+  { value: 'stack', label: 'Grille portfolio', description: 'Grandes cartes Ã©ditoriales â€” colonnes rÃ©glables, design libre.' },
+  { value: 'grid', label: 'Grille compacte', description: 'Tuiles denses : mÃ©dia bas, texte serrÃ© â€” colonnes rÃ©glables.' },
+  { value: 'carousel', label: 'Carrousel', description: 'Un projet Ã  la fois â€” flÃ¨ches gauche / droite pour naviguer.' },
+  { value: 'list', label: 'Liste compacte', description: 'Lignes Ã©levÃ©es : grande vignette, tools Ã  droite, action encerclÃ©e.' },
+  { value: 'overlay', label: 'Overlay immersif', description: 'Media plein avec texte superposÃ© â€” colonnes rÃ©glables.' },
+  { value: 'accordion', label: 'AccordÃ©on', description: 'Lignes dÃ©pliables rÃ©vÃ©lant les dÃ©tails du projet.' },
 ];
 
 export const PORTFOLIO_WORK_ITEMS_PER_ROW_OPTIONS: {
@@ -1894,10 +3349,10 @@ export const PORTFOLIO_WORK_ITEMS_PER_ROW_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: '1', label: '1 par ligne', description: 'Pleine largeur — idéal mobile et grands projets.' },
-  { value: '2', label: '2 par ligne', description: '2 colonnes dès tablette (md).' },
-  { value: '3', label: '3 par ligne', description: '2 dès sm, 3 dès xl — dense sur grand écran.' },
-  { value: '4', label: '4 par ligne', description: 'Jusqu’à 4 sur très grand écran — très compact.' },
+  { value: '1', label: '1 par ligne', description: 'Pleine largeur â€” idÃ©al mobile et grands projets.' },
+  { value: '2', label: '2 par ligne', description: '2 colonnes dÃ¨s tablette (md).' },
+  { value: '3', label: '3 par ligne', description: '2 dÃ¨s sm, 3 dÃ¨s xl â€” dense sur grand Ã©cran.' },
+  { value: '4', label: '4 par ligne', description: 'Jusquâ€™Ã  4 sur trÃ¨s grand Ã©cran â€” trÃ¨s compact.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_MAX_WIDTH_OPTIONS: {
@@ -1906,10 +3361,10 @@ export const PORTFOLIO_WORK_CARD_MAX_WIDTH_OPTIONS: {
   description: string;
 }[] = [
   { value: 'full', label: 'Pleine largeur', description: 'La carte remplit toute la colonne (comportement actuel).' },
-  { value: 'xl', label: 'Large', description: 'Max ~42rem — encore confortable, moins étirée.' },
-  { value: 'lg', label: 'Carte portrait', description: 'Max ~36rem — forme verticale type référence.' },
-  { value: 'md', label: 'Moyenne', description: 'Max ~32rem — carte plus compacte.' },
-  { value: 'sm', label: 'Compacte', description: 'Max ~28rem — tuile étroite.' },
+  { value: 'xl', label: 'Large', description: 'Max ~42rem â€” encore confortable, moins Ã©tirÃ©e.' },
+  { value: 'lg', label: 'Carte portrait', description: 'Max ~36rem â€” forme verticale type rÃ©fÃ©rence.' },
+  { value: 'md', label: 'Moyenne', description: 'Max ~32rem â€” carte plus compacte.' },
+  { value: 'sm', label: 'Compacte', description: 'Max ~28rem â€” tuile Ã©troite.' },
 ];
 
 export const PORTFOLIO_WORK_CATEGORY_MODE_OPTIONS: {
@@ -1932,7 +3387,7 @@ export const PORTFOLIO_WORK_CATEGORY_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'pills', label: 'Pills', description: 'Rounded chips — clear and tap-friendly.' },
+  { value: 'pills', label: 'Pills', description: 'Rounded chips â€” clear and tap-friendly.' },
   { value: 'underline', label: 'Underline', description: 'Text links with an active underline.' },
   { value: 'tabs', label: 'Tabs', description: 'Segmented control in a soft tray.' },
   { value: 'minimal', label: 'Minimal', description: 'Plain text row, no chrome.' },
@@ -1943,11 +3398,11 @@ export const PORTFOLIO_WORK_CARD_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Carré', description: 'Coins droits.' },
-  { value: 'sm', label: 'Léger', description: 'Arrondi subtil.' },
-  { value: 'md', label: 'Moyen', description: 'Arrondi équilibré.' },
-  { value: 'lg', label: 'Large', description: 'Coins bien arrondis (défaut).' },
-  { value: 'xl', label: 'Très large', description: 'Arrondi prononcé.' },
+  { value: 'none', label: 'CarrÃ©', description: 'Coins droits.' },
+  { value: 'sm', label: 'LÃ©ger', description: 'Arrondi subtil.' },
+  { value: 'md', label: 'Moyen', description: 'Arrondi Ã©quilibrÃ©.' },
+  { value: 'lg', label: 'Large', description: 'Coins bien arrondis (dÃ©faut).' },
+  { value: 'xl', label: 'TrÃ¨s large', description: 'Arrondi prononcÃ©.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_PADDING_OPTIONS: {
@@ -1955,10 +3410,10 @@ export const PORTFOLIO_WORK_CARD_PADDING_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Aucun', description: 'Pas de marge intérieure.' },
-  { value: 'sm', label: 'Compact', description: 'Marge intérieure réduite.' },
-  { value: 'md', label: 'Standard', description: 'Marge intérieure équilibrée.' },
-  { value: 'lg', label: 'Confortable', description: 'Marge intérieure généreuse.' },
+  { value: 'none', label: 'Aucun', description: 'Pas de marge intÃ©rieure.' },
+  { value: 'sm', label: 'Compact', description: 'Marge intÃ©rieure rÃ©duite.' },
+  { value: 'md', label: 'Standard', description: 'Marge intÃ©rieure Ã©quilibrÃ©e.' },
+  { value: 'lg', label: 'Confortable', description: 'Marge intÃ©rieure gÃ©nÃ©reuse.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_GAP_OPTIONS: {
@@ -1966,10 +3421,10 @@ export const PORTFOLIO_WORK_CARD_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Serré', description: 'Peu d’espace entre les projets.' },
-  { value: 'md', label: 'Moyen', description: 'Espacement modéré entre les projets.' },
-  { value: 'lg', label: 'Large', description: 'Espacement généreux (défaut).' },
-  { value: 'xl', label: 'Très large', description: 'Espacement maximal entre les projets.' },
+  { value: 'sm', label: 'SerrÃ©', description: 'Peu dâ€™espace entre les projets.' },
+  { value: 'md', label: 'Moyen', description: 'Espacement modÃ©rÃ© entre les projets.' },
+  { value: 'lg', label: 'Large', description: 'Espacement gÃ©nÃ©reux (dÃ©faut).' },
+  { value: 'xl', label: 'TrÃ¨s large', description: 'Espacement maximal entre les projets.' },
 ];
 
 export const PORTFOLIO_WORK_CONTENT_FRAME_GAP_OPTIONS: {
@@ -1977,10 +3432,10 @@ export const PORTFOLIO_WORK_CONTENT_FRAME_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Serré', description: 'Peu d’espace entre catégorie, titre, outils…' },
-  { value: 'md', label: 'Moyen', description: 'Espacement modéré entre les blocs d’info.' },
-  { value: 'lg', label: 'Large', description: 'Espacement généreux entre les blocs.' },
-  { value: 'xl', label: 'Très large', description: 'Espacement maximal entre les blocs.' },
+  { value: 'sm', label: 'SerrÃ©', description: 'Peu dâ€™espace entre catÃ©gorie, titre, outilsâ€¦' },
+  { value: 'md', label: 'Moyen', description: 'Espacement modÃ©rÃ© entre les blocs dâ€™info.' },
+  { value: 'lg', label: 'Large', description: 'Espacement gÃ©nÃ©reux entre les blocs.' },
+  { value: 'xl', label: 'TrÃ¨s large', description: 'Espacement maximal entre les blocs.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_ALIGNMENT_OPTIONS: {
@@ -1988,9 +3443,9 @@ export const PORTFOLIO_WORK_CARD_ALIGNMENT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Gauche', description: 'Place le cadre de la carte à gauche de la colonne.' },
+  { value: 'left', label: 'Gauche', description: 'Place le cadre de la carte Ã  gauche de la colonne.' },
   { value: 'center', label: 'Centre', description: 'Centre le cadre de la carte dans la colonne.' },
-  { value: 'right', label: 'Droite', description: 'Place le cadre de la carte à droite de la colonne.' },
+  { value: 'right', label: 'Droite', description: 'Place le cadre de la carte Ã  droite de la colonne.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_CONTENT_ALIGNMENT_OPTIONS: {
@@ -1998,9 +3453,9 @@ export const PORTFOLIO_WORK_CARD_CONTENT_ALIGNMENT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Gauche', description: 'Titre, texte et outils à l’intérieur de la carte — gauche.' },
-  { value: 'center', label: 'Centre', description: 'Éléments à l’intérieur de la carte — centrés.' },
-  { value: 'right', label: 'Droite', description: 'Éléments à l’intérieur de la carte — droite.' },
+  { value: 'left', label: 'Gauche', description: 'Titre, texte et outils Ã  lâ€™intÃ©rieur de la carte â€” gauche.' },
+  { value: 'center', label: 'Centre', description: 'Ã‰lÃ©ments Ã  lâ€™intÃ©rieur de la carte â€” centrÃ©s.' },
+  { value: 'right', label: 'Droite', description: 'Ã‰lÃ©ments Ã  lâ€™intÃ©rieur de la carte â€” droite.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_CONTENT_VERTICAL_ALIGN_OPTIONS: {
@@ -2011,17 +3466,17 @@ export const PORTFOLIO_WORK_CARD_CONTENT_VERTICAL_ALIGN_OPTIONS: {
   {
     value: 'top',
     label: 'Haut',
-    description: 'Infos collées en haut de la colonne (espace vide en bas).',
+    description: 'Infos collÃ©es en haut de la colonne (espace vide en bas).',
   },
   {
     value: 'center',
     label: 'Centre',
-    description: 'Infos centrées verticalement face au média.',
+    description: 'Infos centrÃ©es verticalement face au mÃ©dia.',
   },
   {
     value: 'bottom',
     label: 'Bas',
-    description: 'Infos collées en bas de la colonne.',
+    description: 'Infos collÃ©es en bas de la colonne.',
   },
 ];
 
@@ -2030,9 +3485,9 @@ export const PORTFOLIO_WORK_CTA_ALIGNMENT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Gauche', description: 'Bouton aligné à gauche.' },
-  { value: 'center', label: 'Centre', description: 'Bouton centré.' },
-  { value: 'right', label: 'Droite', description: 'Bouton aligné à droite.' },
+  { value: 'left', label: 'Gauche', description: 'Bouton alignÃ© Ã  gauche.' },
+  { value: 'center', label: 'Centre', description: 'Bouton centrÃ©.' },
+  { value: 'right', label: 'Droite', description: 'Bouton alignÃ© Ã  droite.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_DESIGN_OPTIONS: {
@@ -2040,12 +3495,12 @@ export const PORTFOLIO_WORK_CARD_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'editorial', label: 'Editorial', description: 'Rounded media, roomy typography — the default.' },
+  { value: 'editorial', label: 'Editorial', description: 'Rounded media, roomy typography â€” the default.' },
   { value: 'minimal', label: 'Minimal', description: 'Flat sharp media, mono CTA, thin content divider.' },
   { value: 'compact', label: 'Compact', description: 'Smaller preview and tighter content stack.' },
   { value: 'stacked', label: 'Stacked', description: 'Full-width media with content underneath.' },
   { value: 'overlay', label: 'Overlay', description: 'Text layered over media with a dark gradient.' },
-  { value: 'framed', label: 'Framed', description: 'Denser spacing and shadow — borders are set in Cadre & espacement.' },
+  { value: 'framed', label: 'Framed', description: 'Denser spacing and shadow â€” borders are set in Cadre & espacement.' },
 ];
 
 export const PORTFOLIO_WORK_CONTENT_PLACEMENT_OPTIONS: {
@@ -2055,22 +3510,22 @@ export const PORTFOLIO_WORK_CONTENT_PLACEMENT_OPTIONS: {
 }[] = [
   {
     value: 'side',
-    label: 'Média à gauche',
-    description: 'Image à gauche, infos complémentaires à droite.',
+    label: 'MÃ©dia Ã  gauche',
+    description: 'Image Ã  gauche, infos complÃ©mentaires Ã  droite.',
   },
   {
     value: 'side-reverse',
-    label: 'Média à droite',
-    description: 'Infos à gauche, image à droite.',
+    label: 'MÃ©dia Ã  droite',
+    description: 'Infos Ã  gauche, image Ã  droite.',
   },
   {
     value: 'bottom',
-    label: 'Média en haut',
+    label: 'MÃ©dia en haut',
     description: 'Image au-dessus, texte et CTA en dessous.',
   },
   {
     value: 'top',
-    label: 'Média en bas',
+    label: 'MÃ©dia en bas',
     description: 'Texte et CTA au-dessus, image en dessous.',
   },
 ];
@@ -2088,12 +3543,12 @@ export const PORTFOLIO_WORK_NO_MEDIA_INFO_LAYOUT_OPTIONS: {
   {
     value: 'readable',
     label: 'Colonne lisible',
-    description: 'Largeur limitée (comme à côté du média) pour une lecture confortable.',
+    description: 'Largeur limitÃ©e (comme Ã  cÃ´tÃ© du mÃ©dia) pour une lecture confortable.',
   },
   {
     value: 'centered',
-    label: 'Centré',
-    description: 'Bloc d’infos centré avec largeur limitée.',
+    label: 'CentrÃ©',
+    description: 'Bloc dâ€™infos centrÃ© avec largeur limitÃ©e.',
   },
 ];
 
@@ -2121,7 +3576,7 @@ export function workListMediaFlexClass(
   }
 }
 
-/** Thumb sizing for list rows — full-bleed when stacked, square when beside. */
+/** Thumb sizing for list rows â€” full-bleed when stacked, square when beside. */
 export function workListThumbClass(
   placement: PortfolioWorkContentPlacement,
   mediaRatio = 50
@@ -2130,7 +3585,7 @@ export function workListThumbClass(
     return 'aspect-[16/10] w-full shrink-0 overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10';
   }
   const clamped = Math.min(70, Math.max(30, Math.round(mediaRatio)));
-  // 30 → ~5.5rem, 50 → 7–8rem, 70 → ~10rem on sm+
+  // 30 â†’ ~5.5rem, 50 â†’ 7â€“8rem, 70 â†’ ~10rem on sm+
   if (clamped <= 40) {
     return 'aspect-[16/10] w-full shrink-0 overflow-hidden rounded-xl ring-1 ring-black/5 sm:aspect-auto sm:h-24 sm:w-24 sm:rounded-xl lg:h-28 lg:w-28 dark:ring-white/10';
   }
@@ -2158,10 +3613,10 @@ export const PORTFOLIO_WORK_CARD_BORDER_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Aucune', description: 'Pas de bordure — les coins restent réglables ci-dessous.' },
-  { value: 'soft', label: 'Fine', description: 'Contour léger autour du média ou de la carte.' },
-  { value: 'solid', label: 'Pleine', description: 'Bordure marquée autour du média ou de la carte.' },
-  { value: 'accent', label: 'Accent', description: 'Bordure teintée avec la couleur d’accent.' },
+  { value: 'none', label: 'Aucune', description: 'Pas de bordure â€” les coins restent rÃ©glables ci-dessous.' },
+  { value: 'soft', label: 'Fine', description: 'Contour lÃ©ger autour du mÃ©dia ou de la carte.' },
+  { value: 'solid', label: 'Pleine', description: 'Bordure marquÃ©e autour du mÃ©dia ou de la carte.' },
+  { value: 'accent', label: 'Accent', description: 'Bordure teintÃ©e avec la couleur dâ€™accent.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_SHADOW_OPTIONS: {
@@ -2169,14 +3624,14 @@ export const PORTFOLIO_WORK_CARD_SHADOW_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Aucune', description: 'Carte à plat — pas de profondeur.' },
-  { value: 'soft', label: 'Douce', description: 'Ombre légère pour un léger relief.' },
+  { value: 'none', label: 'Aucune', description: 'Carte Ã  plat â€” pas de profondeur.' },
+  { value: 'soft', label: 'Douce', description: 'Ombre lÃ©gÃ¨re pour un lÃ©ger relief.' },
   {
     value: 'float',
     label: 'Flottante',
-    description: 'Halo flou autour de la carte — effet de flotte sans bordure.',
+    description: 'Halo flou autour de la carte â€” effet de flotte sans bordure.',
   },
-  { value: 'deep', label: 'Profonde', description: 'Ombre marquée pour un fort détachement du fond.' },
+  { value: 'deep', label: 'Profonde', description: 'Ombre marquÃ©e pour un fort dÃ©tachement du fond.' },
 ];
 
 /** Default intensity when picking a shadow preset (slider can still fine-tune). */
@@ -2201,27 +3656,27 @@ export const PORTFOLIO_WORK_CTA_DESIGN_OPTIONS: {
   {
     value: 'circle-icon',
     label: 'Circle icon',
-    description: 'Label + cercle flèche — bordure et hover sur l’icône.',
+    description: 'Label + cercle flÃ¨che â€” bordure et hover sur lâ€™icÃ´ne.',
   },
   {
     value: 'pill-dark',
     label: 'Dark pill',
-    description: 'Capsule remplie (accent) — bordure et hover configurables.',
+    description: 'Capsule remplie (accent) â€” bordure et hover configurables.',
   },
   {
     value: 'pill-outline',
     label: 'Outline pill',
-    description: 'Capsule à contour — au survol, fond hover + texte.',
+    description: 'Capsule Ã  contour â€” au survol, fond hover + texte.',
   },
   {
     value: 'pill-accent',
     label: 'Accent pill',
-    description: 'Capsule accent vive — bordure fine + swap de couleurs au survol.',
+    description: 'Capsule accent vive â€” bordure fine + swap de couleurs au survol.',
   },
   {
     value: 'text-arrow',
     label: 'Text + arrow',
-    description: 'Lien minimal — soulignement et couleurs au survol.',
+    description: 'Lien minimal â€” soulignement et couleurs au survol.',
   },
 ];
 
@@ -2231,9 +3686,9 @@ export const PORTFOLIO_WORK_CTA_BORDER_WIDTH_OPTIONS: {
   description: string;
 }[] = [
   { value: 'none', label: 'Aucune', description: 'Pas de contour sur le bouton.' },
-  { value: 'thin', label: 'Fine', description: 'Contour léger (1px).' },
-  { value: 'medium', label: 'Moyenne', description: 'Contour marqué (2px).' },
-  { value: 'thick', label: 'Épaisse', description: 'Contour fort (3px).' },
+  { value: 'thin', label: 'Fine', description: 'Contour lÃ©ger (1px).' },
+  { value: 'medium', label: 'Moyenne', description: 'Contour marquÃ© (2px).' },
+  { value: 'thick', label: 'Ã‰paisse', description: 'Contour fort (3px).' },
 ];
 
 export const PORTFOLIO_WORK_CTA_BORDER_RADIUS_OPTIONS: {
@@ -2241,11 +3696,11 @@ export const PORTFOLIO_WORK_CTA_BORDER_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Carré', description: 'Coins droits.' },
-  { value: 'sm', label: 'Léger', description: 'Arrondi subtil.' },
-  { value: 'md', label: 'Moyen', description: 'Arrondi équilibré.' },
+  { value: 'none', label: 'CarrÃ©', description: 'Coins droits.' },
+  { value: 'sm', label: 'LÃ©ger', description: 'Arrondi subtil.' },
+  { value: 'md', label: 'Moyen', description: 'Arrondi Ã©quilibrÃ©.' },
   { value: 'lg', label: 'Large', description: 'Coins bien arrondis.' },
-  { value: 'full', label: 'Pilule', description: 'Capsule complètement ronde (défaut).' },
+  { value: 'full', label: 'Pilule', description: 'Capsule complÃ¨tement ronde (dÃ©faut).' },
 ];
 
 export const PORTFOLIO_WORK_TOOLS_DISPLAY_OPTIONS: {
@@ -2298,7 +3753,7 @@ export function clampWorkToolsMarginTopPx(value: unknown, fallback = 0): number 
 
 /**
  * Tools block spacing classes.
- * Pin-to-bottom uses a sibling flex spacer (see EditorialWorkCard) — not mt-auto here —
+ * Pin-to-bottom uses a sibling flex spacer (see EditorialWorkCard) â€” not mt-auto here â€”
  * so toolsMarginTopPx always applies as real margin-top.
  */
 export function workToolsBlockClass(
@@ -2356,8 +3811,32 @@ export function resolveWorkSectionTitle(settings: Pick<PortfolioWorkSectionSetti
 }
 
 export function resolveWorkSectionSubtitle(
-  settings: Pick<PortfolioWorkSectionSettings, 'subtitlePreset' | 'subtitleCustom' | 'subtitle'>
+  settings: Pick<
+    PortfolioWorkSectionSettings,
+    'subtitlePreset' | 'subtitleCustom' | 'subtitle' | 'sectionDesign'
+  >
 ): string {
+  // Spotlight / Showcase / Editorial / Ledger / Folio / Spec / Case: no section subtitle by default (hide stock lines from older saves).
+  if (
+    settings.sectionDesign === 'projects-spotlight' ||
+    settings.sectionDesign === 'projects-showcase' ||
+    settings.sectionDesign === 'projects-editorial' ||
+    settings.sectionDesign === 'projects-ledger' ||
+    settings.sectionDesign === 'projects-folio' ||
+    settings.sectionDesign === 'projects-spec' ||
+    settings.sectionDesign === 'projects-case'
+  ) {
+    if (settings.subtitlePreset === 'minimal') return '';
+    if (settings.subtitlePreset === 'default') {
+      const text = (settings.subtitle || '').trim();
+      if (!text || text === 'Selected projects.') return '';
+    }
+    if (settings.subtitlePreset === 'custom') {
+      const custom = (settings.subtitleCustom || settings.subtitle || '').trim();
+      if (!custom || custom === 'Recent projects.') return '';
+    }
+  }
+
   switch (settings.subtitlePreset) {
     case 'minimal':
       return '';
@@ -2424,7 +3903,7 @@ export function workCardMediaFr(mediaRatio: number): number {
 
 export function workCardShellClass(design: PortfolioWorkCardDesign, placement: PortfolioWorkContentPlacement): string {
   if (workCardIsStacked(design, placement)) {
-    // Media sits flush with the info block — no empty band between them.
+    // Media sits flush with the info block â€” no empty band between them.
     // `top` = media below content (flex-col-reverse).
     return placement === 'top'
       ? 'group flex h-full flex-col-reverse gap-0'
@@ -2532,7 +4011,7 @@ export function workGalleryLayoutSettingsPatch(
       return {
         galleryLayout,
         cardDesign: 'overlay',
-        // Overlay chrome expects media as the canvas — default to media on top.
+        // Overlay chrome expects media as the canvas â€” default to media on top.
         contentPlacement: 'bottom',
         overlayLayoutMode: 'free',
         overlayElementPlacements: { ...DEFAULT_WORK_OVERLAY_ELEMENT_PLACEMENTS },
@@ -2575,7 +4054,7 @@ export function workListRowFallbackStyle(
 }
 
 /**
- * Liste compacte — flat surface (no forced ambient shadow).
+ * Liste compacte â€” flat surface (no forced ambient shadow).
  * Border / shadow follow Frame settings only.
  */
 export function workListCardSurfaceClass(
@@ -2609,7 +4088,7 @@ export function workListCardSurfaceStyle(
   if (p.cardBackgroundEnabled) {
     style.backgroundColor = sanitizeHex(p.cardBackgroundColor, DEFAULT_WORK_CARD_BACKGROUND_COLOR);
   } else {
-    // Plate vs page fond — dark/light via theme tokens (not light-only --pf-surface).
+    // Plate vs page fond â€” dark/light via theme tokens (not light-only --pf-surface).
     style.backgroundColor = 'var(--pf-muted-surface, #18181b)';
   }
 
@@ -2652,11 +4131,11 @@ export function workItemsPerRowGridClass(
 export function workItemsPerRowResponsiveHint(itemsPerRow: PortfolioWorkItemsPerRow): string | null {
   switch (itemsPerRow) {
     case 2:
-      return 'Sur mobile, les cartes restent sur 1 colonne. 2 colonnes à partir des grands écrans (lg).';
+      return 'Sur mobile, les cartes restent sur 1 colonne. 2 colonnes Ã  partir des grands Ã©crans (lg).';
     case 3:
-      return 'Sur mobile : 1 colonne. Tablette : 2. Grand écran (xl) : 3.';
+      return 'Sur mobile : 1 colonne. Tablette : 2. Grand Ã©cran (xl) : 3.';
     case 4:
-      return '4 colonnes uniquement sur très grand écran (2xl). Sur laptop max 3 ; tablette 2 ; mobile 1.';
+      return '4 colonnes uniquement sur trÃ¨s grand Ã©cran (2xl). Sur laptop max 3 ; tablette 2 ; mobile 1.';
     default:
       return null;
   }
@@ -2678,7 +4157,7 @@ export function workCardMaxWidthClass(maxWidth: PortfolioWorkCardMaxWidth | unde
   }
 }
 
-/** Align constrained cards inside their grid / flex cell — card frame only. */
+/** Align constrained cards inside their grid / flex cell â€” card frame only. */
 export function workCardMaxWidthJustifyClass(
   maxWidth: PortfolioWorkCardMaxWidth | undefined,
   alignment: PortfolioWorkCardAlignment
@@ -2821,11 +4300,11 @@ export function workCardEdgeStyle(
 }
 
 /**
- * Soft lift / float halo around the card — independent of border.
- * Prefer on an outer wrapper (not the same node as overflow-hidden) so the blur isn’t clipped.
- * Intensity (0–100) freely scales blur size + opacity via `--pf-card-lift`.
+ * Soft lift / float halo around the card â€” independent of border.
+ * Prefer on an outer wrapper (not the same node as overflow-hidden) so the blur isnâ€™t clipped.
+ * Intensity (0â€“100) freely scales blur size + opacity via `--pf-card-lift`.
  * Dark vs light shadow recipe is applied in CSS (`.pf-work-card-lift`) so black-on-black
- * doesn’t swallow the effect in dark mode.
+ * doesnâ€™t swallow the effect in dark mode.
  */
 export function workCardLiftStyle(
   p: Pick<PortfolioWorkPresentationSettings, 'cardShadow' | 'cardShadowIntensity'>
@@ -2944,7 +4423,7 @@ export function workContentFrameStyle(
   return Object.keys(style).length > 0 ? style : undefined;
 }
 
-/** Card-design behavior only (shadow, hover) — border and radius come from manual edge settings. */
+/** Card-design behavior only (shadow, hover) â€” border and radius come from manual edge settings. */
 export function workCardMediaBehaviorClass(design: PortfolioWorkCardDesign): string {
   const base = 'relative block overflow-hidden transition duration-300';
   switch (design) {
@@ -2992,7 +4471,7 @@ export function workCardMediaAspectClass(
   }
 }
 
-/** Maps mediaRatio (30–70) to aspect ratio for stacked layouts — lower = shorter, higher = taller. */
+/** Maps mediaRatio (30â€“70) to aspect ratio for stacked layouts â€” lower = shorter, higher = taller. */
 export function workCardMediaAspectStyle(
   design: PortfolioWorkCardDesign,
   placement: PortfolioWorkContentPlacement,
@@ -3050,7 +4529,7 @@ function workHexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-/** Mix hex toward black (positive amount) or white (negative). amount ∈ 0–1. */
+/** Mix hex toward black (positive amount) or white (negative). amount âˆˆ 0â€“1. */
 function workShadeHex(hex: string, amount: number): string {
   const raw = hex.trim().replace('#', '');
   const full =
@@ -3110,7 +4589,7 @@ type WorkCtaSurfacePresentation = Pick<
 
 /**
  * Resting + hover colors as CSS vars (Navigation-style).
- * Filled pills: label ink = page background (`fond`) — not fixed white —
+ * Filled pills: label ink = page background (`fond`) â€” not fixed white â€”
  * so light/dark modes stay consistent with the original contrast rule.
  */
 export function workCtaSurfaceStyle(
@@ -3120,7 +4599,7 @@ export function workCtaSurfaceStyle(
   const accent = sanitizeHex(presentation.ctaColor, DEFAULT_WORK_CTA_COLOR);
   const border = sanitizeHex(presentation.ctaBorderColor, accent);
   const labelInk = sanitizeHex(presentation.elementStyles?.cta?.color ?? accent, accent);
-  /** Page fill — dark in dark mode, light in light mode. */
+  /** Page fill â€” dark in dark mode, light in light mode. */
   const pageFond = sanitizeHex(
     presentation.sectionBackgroundColor,
     workContrastingInk(accent)
@@ -3158,7 +4637,7 @@ export function workCtaSurfaceStyle(
     fg = labelInk;
     brd = border;
     hBg = hoverEnabled ? hoverBgRaw : 'transparent';
-    // Filled on hover → page-fond ink (same rule as accent pills).
+    // Filled on hover â†’ page-fond ink (same rule as accent pills).
     hFg = hoverEnabled ? pageFond : labelInk;
     hBrd = hoverEnabled ? hoverBorderRaw : border;
   } else if (design === 'circle-icon') {
@@ -3277,7 +4756,7 @@ export function workContrastRatio(a: string, b: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-/** Relative luminance 0–1 for work contrast helpers. */
+/** Relative luminance 0â€“1 for work contrast helpers. */
 export function workColorLuminance(hex: string): number {
   const raw = hex.trim().replace('#', '');
   const full =
@@ -3351,7 +4830,7 @@ export function workCtaIconShellStyle(
   };
 }
 
-/** Tool icon circle surface — follows Hero tools icon palette tokens. */
+/** Tool icon circle surface â€” follows Hero tools icon palette tokens. */
 export function workToolIconShellStyle(
   presentation: Pick<
     PortfolioWorkPresentationSettings,
@@ -3499,7 +4978,15 @@ export function mergeWorkPresentation(
       sectionDesign === 'projects-frames' ||
       sectionDesign === 'projects-index' ||
       sectionDesign === 'projects-grid' ||
-      sectionDesign === 'projects-split'
+      sectionDesign === 'projects-split' ||
+      sectionDesign === 'projects-carousel' ||
+      sectionDesign === 'projects-spotlight' ||
+      sectionDesign === 'projects-showcase' ||
+      sectionDesign === 'projects-editorial' ||
+      sectionDesign === 'projects-ledger' ||
+      sectionDesign === 'projects-folio' ||
+      sectionDesign === 'projects-spec' ||
+      sectionDesign === 'projects-case'
         ? sectionDesign
         : base.sectionDesign,
     projectsBoard: mergeProjectsBoardSettings(
@@ -3525,6 +5012,38 @@ export function mergeWorkPresentation(
     projectsSplit: mergeProjectsSplitSettings(
       mergeProjectsSplitSettings(DEFAULT_PROJECTS_SPLIT_SETTINGS, base.projectsSplit),
       record.projectsSplit
+    ),
+    projectsCarousel: mergeProjectsCarouselSettings(
+      mergeProjectsCarouselSettings(DEFAULT_PROJECTS_CAROUSEL_SETTINGS, base.projectsCarousel),
+      record.projectsCarousel
+    ),
+    projectsSpotlight: mergeProjectsSpotlightSettings(
+      mergeProjectsSpotlightSettings(DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS, base.projectsSpotlight),
+      record.projectsSpotlight
+    ),
+    projectsShowcase: mergeProjectsShowcaseSettings(
+      mergeProjectsShowcaseSettings(DEFAULT_PROJECTS_SHOWCASE_SETTINGS, base.projectsShowcase),
+      record.projectsShowcase
+    ),
+    projectsEditorial: mergeProjectsEditorialSettings(
+      mergeProjectsEditorialSettings(DEFAULT_PROJECTS_EDITORIAL_SETTINGS, base.projectsEditorial),
+      record.projectsEditorial
+    ),
+    projectsLedger: mergeProjectsLedgerSettings(
+      mergeProjectsLedgerSettings(DEFAULT_PROJECTS_LEDGER_SETTINGS, base.projectsLedger),
+      record.projectsLedger
+    ),
+    projectsFolio: mergeProjectsFolioSettings(
+      mergeProjectsFolioSettings(DEFAULT_PROJECTS_FOLIO_SETTINGS, base.projectsFolio),
+      record.projectsFolio
+    ),
+    projectsSpec: mergeProjectsSpecSettings(
+      mergeProjectsSpecSettings(DEFAULT_PROJECTS_SPEC_SETTINGS, base.projectsSpec),
+      record.projectsSpec
+    ),
+    projectsCase: mergeProjectsCaseSettings(
+      mergeProjectsCaseSettings(DEFAULT_PROJECTS_CASE_SETTINGS, base.projectsCase),
+      record.projectsCase
     ),
     itemsPerRow: (() => {
       const resolvedLayout =
