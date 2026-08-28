@@ -581,42 +581,15 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ),
   entry('work', 'Background', ['fill', 'gradient', 'opacity', 'fond'], 'background'),
 
-  // Skills
-  entry(
-    'skills',
-    'Use global color palette',
-    ['palette', 'hero palette', 'sync colors', 'couleurs', 'palette hero'],
-    'general'
-  ),
-  entry(
-    'skills',
-    'Use color palette',
-    ['palette', 'manual', 'manuel', 'tokens', 'couleurs', 'désactiver palette'],
-    'general'
-  ),
-  entry(
-    'skills',
-    'Palette',
-    ['palette', 'color', 'couleur', 'tokens', 'semantic', 'bound colors'],
-    'palette'
-  ),
-  entry('skills', 'General', ['visibility', 'show skills', 'section'], 'general'),
-  entry('skills', 'Header', ['title', 'subtitle', 'titre', 'skills header'], 'header'),
-  entry(
-    'skills',
-    'Cards',
-    ['grid', 'design', 'skills', 'tools', 'per row', 'marquee', 'deck', 'frame', 'border', 'radius', 'padding', 'card', 'opacité', 'opacity', 'alignment', 'placement', 'direction', 'gauche', 'droite', 'carousel', 'puce', 'bullet', 'centre'],
-    'cards'
-  ),
-  entry('skills', 'Titre', ['title', 'skill title', 'typography', 'titre'], 'title'),
-  entry('skills', 'Description', ['description', 'body', 'typography', 'texte'], 'description'),
-  entry(
-    'skills',
-    'Icône',
-    ['icon', 'icône', 'brand', 'marque', 'tool icon', 'placement', 'icon size'],
-    'icon'
-  ),
-  entry('skills', 'Background', ['fill', 'gradient', 'fond'], 'background'),
+  // Tools
+  entry('tools', 'Tools', ['tools', 'outils', 'workflow', 'stack', 'section']),
+  entry('tools', 'General', ['visibility', 'show tools', 'design', 'workflow rail', 'brand cards', 'titre'], 'general'),
+  entry('tools', 'Brand cards', ['cards', 'description', 'use cases', 'niveau', 'level', 'landbook', 'framer'], 'general'),
+  entry('tools', 'Brand directory', ['directory', 'rows', 'list', 'webflow', 'framer', 'separators'], 'general'),
+  entry('tools', 'Brand showcase', ['showcase', 'marketplace', 'stage', 'media', 'framer', 'preview'], 'general'),
+  entry('tools', 'Brand tiles', ['tiles', 'social', 'compact', 'grid', 'icon', 'twitter', 'linkedin'], 'general'),
+  entry('tools', 'Palette', ['palette', 'color', 'couleur', 'tiles'], 'palette'),
+  entry('tools', 'Background', ['fill', 'gradient', 'fond'], 'background'),
 
   // Services
   entry(

@@ -14,7 +14,6 @@ import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferred
 import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
 import { ContentMediaPreview } from '@/components/creator/creator-content-media';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
-import { resolveCreatorToolBrandHex, resolveCreatorToolLogoHex } from '@/components/creator/studio/creator-profile-tools-catalog';
 import { PortfolioToolsStackedIcons } from '@/components/portfolio/portfolio-tools-stacked-icons';
 import { PortfolioWorkCtaGlyph } from '@/components/portfolio/portfolio-work-cta-icons';
 import type { PortfolioWorkCtaIcon } from '@/components/portfolio/portfolio-work-cta-icons';
@@ -4739,7 +4738,7 @@ export function EditorialWorkCard({
                         label={tool}
                         size={iconPixelSize}
                         className="rounded-full !bg-transparent"
-                        brandColor={resolveCreatorToolLogoHex(tool) ?? undefined}
+                        brandColor={undefined}
                         bgColor={(_iconShellStyle.backgroundColor as string | undefined) ?? undefined}
                       />
                     </div>
@@ -5001,7 +5000,7 @@ export function EditorialWorkCard({
                   label={tool}
                   size={overlayIconPx}
                   className="rounded-full !bg-transparent"
-                  brandColor={resolveCreatorToolLogoHex(tool) ?? undefined}
+                  brandColor={undefined}
                   bgColor={overlayIconBg}
                 />
               </div>
@@ -5533,7 +5532,7 @@ function EditorialWorkListCard({
                       label={tool}
                       size={iconPixelSize}
                       className="rounded-full !bg-transparent"
-                      brandColor={resolveCreatorToolLogoHex(tool) ?? undefined}
+                      brandColor={undefined}
                       bgColor={(_iconShellStyle.backgroundColor as string | undefined) ?? undefined}
                     />
                   </div>
@@ -5841,7 +5840,7 @@ function EditorialWorkAccordionRow({
                           label={tool}
                           size={iconPixelSize}
                           className="rounded-full !bg-transparent"
-                          brandColor={resolveCreatorToolLogoHex(tool) ?? undefined}
+                          brandColor={undefined}
                           bgColor={(_iconShellStyle.backgroundColor as string | undefined) ?? undefined}
                         />
                       </div>
@@ -9127,8 +9126,8 @@ function resolveSkillCardChrome(
       : skillBody.color;
   const usePairAbInk =
     pickServicesCardTextContrast(presentation.cardTextContrast, 'auto') === 'pair-ab';
-  const brandHex = resolveCreatorToolBrandHex(skillName);
-  const logoHex = resolveCreatorToolLogoHex(skillName);
+  const brandHex = null as string | null;
+  const logoHex = null as string | null;
   const cardInk = servicesCardReadableText(
     presentation,
     tone,
@@ -11226,10 +11225,7 @@ function ToolInspectorSkillsGallery({
                       ? activeSurface
                       : surface
               }
-              brandColor={
-                resolveCreatorToolLogoHex(name) ??
-                (activeItem ? activeLogoInk : undefined)
-              }
+              brandColor={activeItem ? activeLogoInk : undefined}
             />
             {activeItem ? (
               <span

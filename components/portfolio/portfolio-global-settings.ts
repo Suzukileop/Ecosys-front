@@ -493,7 +493,6 @@ export const PORTFOLIO_GLOBAL_SPLIT_TITLE_FRAME_BORDER_SIDE_OPTIONS: {
 export const DEFAULT_GLOBAL_TITLE_ORIENTATION_TARGETS: PortfolioGlobalTitleOrientationTargets = {
   work: false,
   services: false,
-  skills: false,
   about: false,
   aboutUs: false,
   experience: false,
@@ -501,11 +500,12 @@ export const DEFAULT_GLOBAL_TITLE_ORIENTATION_TARGETS: PortfolioGlobalTitleOrien
   gallery: false,
   faq: false,
   contact: false,
+  tools: false,
 };
 
 export const DEFAULT_CONTENT_SECTION_ORDER: PortfolioNavSectionKey[] = [
   'work',
-  'skills',
+  'tools',
   'services',
   'about',
   'aboutUs',
@@ -528,6 +528,8 @@ export function resolveSectionOrder(order: PortfolioNavSectionKey[] | undefined)
   const next: PortfolioNavSectionKey[] = [];
 
   for (const key of order) {
+    // Legacy: Skills section was removed from the portfolio.
+    if ((key as string) === 'skills') continue;
     if (!CONTENT_SECTION_ORDER_KEYS.has(key) || seen.has(key)) continue;
     seen.add(key);
     next.push(key);
@@ -545,19 +547,33 @@ export function resolveSectionOrder(order: PortfolioNavSectionKey[] | undefined)
       seen.add('experience');
       continue;
     }
-    // Skills sits above Services by default (tools → offers).
-    if (key === 'skills') {
-      const servicesIdx = next.indexOf('services');
-      if (servicesIdx >= 0) {
-        next.splice(servicesIdx, 0, 'skills');
+    // Tools sits directly under Portfolio / Work.
+    if (key === 'tools') {
+      const workIdx = next.indexOf('work');
+      if (workIdx >= 0) {
+        next.splice(workIdx + 1, 0, 'tools');
       } else {
-        next.push('skills');
+        const servicesIdx = next.indexOf('services');
+        if (servicesIdx >= 0) {
+          next.splice(servicesIdx, 0, 'tools');
+        } else {
+          next.push('tools');
+        }
       }
-      seen.add('skills');
+      seen.add('tools');
       continue;
     }
     next.push(key);
     seen.add(key);
+  }
+
+  // Keep Tools right under Work when both are present (fixes older “bottom” placement).
+  const toolsIdx = next.indexOf('tools');
+  const workIdx = next.indexOf('work');
+  if (toolsIdx >= 0 && workIdx >= 0 && toolsIdx !== workIdx + 1) {
+    next.splice(toolsIdx, 1);
+    const insertAt = next.indexOf('work') + 1;
+    next.splice(insertAt, 0, 'tools');
   }
 
   return next;

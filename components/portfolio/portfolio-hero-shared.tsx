@@ -26,7 +26,6 @@ import {
 } from '@/components/portfolio/portfolio-editorial-layout';
 import type { PortfolioHeroMotifLayout, PortfolioHeroPresentationSettings } from '@/components/portfolio/portfolio-hero-settings';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
-import { resolveCreatorToolLogoHex } from '@/components/creator/studio/creator-profile-tools-catalog';
 import { PortfolioToolsStackedIcons } from '@/components/portfolio/portfolio-tools-stacked-icons';
 import {
   DEFAULT_HERO_COLOR_BINDINGS,
@@ -87,6 +86,7 @@ import { normalizeHeroElementStyles } from '@/components/portfolio/portfolio-her
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
   resolveSkillDescription,
+  resolveSkillIconUrl,
   resolveSkillLevelLabel,
   resolveSkillName,
   type PortfolioSkillRef,
@@ -1341,7 +1341,6 @@ export function HeroToolsGrid({
       style={{ gap }}
     >
       {items.map((tool) => {
-        const brandHex = resolveCreatorToolLogoHex(tool);
         return (
           <div
             key={tool}
@@ -1363,7 +1362,6 @@ export function HeroToolsGrid({
               label={tool}
               size={size}
               className="rounded-full !bg-transparent"
-              brandColor={brandHex ?? undefined}
               bgColor={contrastBg}
             />
           </div>
@@ -1490,7 +1488,6 @@ export function HeroToolsCards({
         const name = resolveSkillName(tool).trim();
         const description = resolveSkillDescription(tool).trim();
         const level = resolveSkillLevelLabel(tool).trim();
-        const brandHex = resolveCreatorToolLogoHex(name);
         return (
           <article
             key={name}
@@ -1521,9 +1518,9 @@ export function HeroToolsCards({
                   <div className="shrink-0" aria-hidden>
                     <CreatorToolLogo
                       label={name}
+                      iconUrl={resolveSkillIconUrl(tool)}
                       size={iconSize}
                       className="rounded-xl !bg-transparent"
-                      brandColor={brandHex ?? undefined}
                       bgColor={presentation.toolsCardBackgroundEnabled ? background : undefined}
                     />
                   </div>

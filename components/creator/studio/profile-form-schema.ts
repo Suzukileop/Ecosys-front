@@ -1612,12 +1612,12 @@ function normalizeProfileComparable(values: ProfileFormValues, availabilityHours
       .map((item) => ({
         value: trimOptional(item.value),
         description: trimOptional(item.description ?? ''),
-        category: trimOptional(item.category ?? ''),
+        category: null,
         level: item.level ?? null,
         useCases: (item.useCases ?? []).map((entry) => entry.trim()).filter(Boolean).slice(0, 8),
-        experienceYears: item.experienceYears ?? null,
+        experienceYears: null,
         experienceLabel: null,
-        currentlyUsed: item.currentlyUsed ?? null,
+        currentlyUsed: null,
         iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,
       }))
       .filter((item) => Boolean(item.value))
@@ -1642,14 +1642,8 @@ export function normalizeStrengthsToolsComparable(
     .map((item) => ({
       value: trimOptional(item.value),
       description: trimOptional(item.description ?? ''),
-      category: trimOptional(item.category ?? ''),
       level: item.level ?? null,
       useCases: (item.useCases ?? []).map((entry) => entry.trim()).filter(Boolean).slice(0, 8),
-      experienceYears:
-        typeof item.experienceYears === 'number' && Number.isFinite(item.experienceYears)
-          ? Math.max(0, Math.min(40, Math.round(item.experienceYears)))
-          : null,
-      currentlyUsed: typeof item.currentlyUsed === 'boolean' ? item.currentlyUsed : null,
       iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,
     }))
     .filter((item) => Boolean(item.value));

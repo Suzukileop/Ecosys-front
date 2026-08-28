@@ -51,7 +51,7 @@ import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 
 type PortfolioContentSectionId = Exclude<
   PortfolioSettingsSectionId,
-  'theme' | 'navigation' | 'skills' | 'infos' | 'whyChooseMe'
+  'theme' | 'navigation' | 'infos' | 'whyChooseMe'
 >;
 
 const SAVE_DEBOUNCE_MS = 400;

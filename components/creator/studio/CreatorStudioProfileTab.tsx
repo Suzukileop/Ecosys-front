@@ -1523,13 +1523,12 @@ export function CreatorStudioProfileTab({
         strengthsToolsMastered: parsed.strengthsTools.map((item) => ({
           name: item.value.trim(),
           description: item.description?.trim() ? item.description.trim() : null,
-          category: item.category?.trim() ? item.category.trim() : null,
+          category: null,
           level: item.level ?? null,
           useCases: (item.useCases ?? []).map((entry) => entry.trim()).filter(Boolean).slice(0, 8),
-          experienceYears:
-            typeof item.experienceYears === 'number' ? item.experienceYears : null,
+          experienceYears: null,
           experienceLabel: null,
-          currentlyUsed: typeof item.currentlyUsed === 'boolean' ? item.currentlyUsed : null,
+          currentlyUsed: null,
           iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,
         })),
       });
@@ -1849,13 +1848,12 @@ export function CreatorStudioProfileTab({
         strengthsToolsMastered: parsed.strengthsTools.map((item) => ({
           name: item.value.trim(),
           description: item.description?.trim() ? item.description.trim() : null,
-          category: item.category?.trim() ? item.category.trim() : null,
+          category: null,
           level: item.level ?? null,
           useCases: (item.useCases ?? []).map((entry) => entry.trim()).filter(Boolean).slice(0, 8),
-          experienceYears:
-            typeof item.experienceYears === 'number' ? item.experienceYears : null,
+          experienceYears: null,
           experienceLabel: null,
-          currentlyUsed: typeof item.currentlyUsed === 'boolean' ? item.currentlyUsed : null,
+          currentlyUsed: null,
           iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,
         })),
       };
@@ -2773,19 +2771,15 @@ export function CreatorStudioProfileTab({
         .map((item) => ({
           value: item.value.trim(),
           description: (item.description ?? '').trim(),
-          category: (item.category ?? '').trim(),
+          category: '',
           level: item.level ?? null,
           useCases: (item.useCases ?? [])
             .map((entry) => entry.trim())
             .filter(Boolean)
             .slice(0, 8),
-          experienceYears:
-            typeof item.experienceYears === 'number' && Number.isFinite(item.experienceYears)
-              ? Math.max(0, Math.min(40, Math.round(item.experienceYears)))
-              : null,
+          experienceYears: null,
           experienceLabel: '',
-          currentlyUsed:
-            typeof item.currentlyUsed === 'boolean' ? item.currentlyUsed : null,
+          currentlyUsed: null,
           iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,
         }))
         .filter((item) => item.value.length > 0);
@@ -5565,7 +5559,7 @@ export function CreatorStudioProfileTab({
                                       {
                                         value: '',
                                         description: '',
-                                        category: form.getValues('specialties')[0] ?? '',
+                                        category: '',
                                         level: null,
                                         useCases: [],
                                         experienceYears: null,

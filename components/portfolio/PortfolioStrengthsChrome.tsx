@@ -17,7 +17,7 @@ import {
   PortfolioLanguageChips,
 } from '@/components/portfolio/PortfolioInformationChrome';
 import { getSkillUsageDescription } from '@/components/portfolio/skill-usage-descriptions';
-import { matchSpecialtyOption, parseSpecialtyTags, specialtyGroupLabel } from '@/lib/specialties';
+import { parseSpecialtyTags } from '@/lib/specialties';
 import { portfolioInlineInputClass } from '@/components/portfolio/portfolio-section-shared';
 import { uploadContentMedia } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
@@ -85,15 +85,13 @@ function cleanDraft(draft: PortfolioStrengthDraft): PortfolioStrengthDraft {
   return {
     value: draft.value.trim(),
     description: draft.description.trim().slice(0, MAX_DESCRIPTION),
-    category: draft.category.trim(),
+    // Specialty attachment removed from Tools UI — always clear on save.
+    category: '',
     level: draft.level ?? null,
     useCases: normalizeUseCases(draft.useCases),
-    experienceYears:
-      typeof draft.experienceYears === 'number' && Number.isFinite(draft.experienceYears)
-        ? Math.max(0, Math.min(40, Math.round(draft.experienceYears)))
-        : null,
+    experienceYears: null,
     experienceLabel: '',
-    currentlyUsed: typeof draft.currentlyUsed === 'boolean' ? draft.currentlyUsed : null,
+    currentlyUsed: null,
     iconUrl: draft.iconUrl?.trim() ? draft.iconUrl.trim() : null,
   };
 }
@@ -104,21 +102,11 @@ function draftsEqual(left: PortfolioStrengthDraft, right: PortfolioStrengthDraft
   return (
     a.value === b.value &&
     a.description === b.description &&
-    a.category === b.category &&
     a.level === b.level &&
-    a.experienceYears === b.experienceYears &&
-    a.experienceLabel === b.experienceLabel &&
-    a.currentlyUsed === b.currentlyUsed &&
     (a.iconUrl ?? null) === (b.iconUrl ?? null) &&
     a.useCases.length === b.useCases.length &&
     a.useCases.every((entry, index) => entry === b.useCases[index])
   );
-}
-
-function currentlyUsedLabel(value: boolean | null | undefined): string {
-  if (value === true) return 'Yes';
-  if (value === false) return 'No';
-  return '';
 }
 
 function skillHasContent(draft: PortfolioStrengthDraft): boolean {
@@ -127,22 +115,14 @@ function skillHasContent(draft: PortfolioStrengthDraft): boolean {
 
 function isSkillEmpty(draft: PortfolioStrengthDraft): boolean {
   const cleaned = cleanDraft(draft);
-  // Category is often pre-filled from profile specialties when composing a new tool —
-  // treat "no name yet" as empty so Add (+) can open the compose form.
+  // Treat "no name yet" as empty so Add (+) can open the compose form.
   return (
     !cleaned.value &&
     !cleaned.description &&
     cleaned.level == null &&
     cleaned.useCases.length === 0 &&
-    cleaned.experienceYears == null &&
-    cleaned.currentlyUsed == null &&
     !cleaned.iconUrl
   );
-}
-
-function experienceSummary(item: PortfolioStrengthItem | PortfolioStrengthDraft): string {
-  if (item.experienceYears == null) return '';
-  return `${item.experienceYears} year${item.experienceYears === 1 ? '' : 's'}`;
 }
 
 function IconButton({
@@ -263,7 +243,7 @@ export function PortfolioStrengthsReadOnly({
   items,
   skillTags = [],
   onSkillTagsSave,
-  allowedSpecialties = [],
+  allowedSpecialties: _allowedSpecialties = [],
   onItemSave,
   onItemsSave,
   onRemoveItem,
@@ -301,7 +281,6 @@ export function PortfolioStrengthsReadOnly({
   const editSession = Boolean(actionsVisible && !deleteMode);
   const showFieldActions = Boolean((editSession || composeAdd) && !deleteMode);
   const isGlobal = false;
-  const specialtyOptions = allowedSpecialties.filter(Boolean);
 
   const [draftSkillTags, setDraftSkillTags] = useState(() => parseSpecialtyTags(skillTags));
   const [savingSkillTags, setSavingSkillTags] = useState(false);
@@ -560,13 +539,7 @@ export function PortfolioStrengthsReadOnly({
         if (a.index === editingIndex) return -1;
         if (b.index === editingIndex) return 1;
       }
-      const rank = (category: string) => {
-        const matched = matchSpecialtyOption(category, specialtyOptions);
-        if (!matched) return 999;
-        const index = specialtyOptions.indexOf(matched);
-        return index === -1 ? 998 : index;
-      };
-      return rank(a.item.category) - rank(b.item.category);
+      return a.index - b.index;
     });
 
   useEffect(() => {
@@ -663,29 +636,18 @@ export function PortfolioStrengthsReadOnly({
           Tools
         </h3>
       <div className="flex flex-col gap-3.5 pb-5">
-        {visibleEntries.map(({ item, index }, position) => {
+        {visibleEntries.map(({ item, index }) => {
           const composingThis = composeAdd && editingIndex === index;
-          const groupLabel = specialtyGroupLabel(item.category, specialtyOptions);
-          const previousLabel =
-            position > 0
-              ? specialtyGroupLabel(visibleEntries[position - 1].item.category, specialtyOptions)
-              : null;
-          const showGroupHeading =
-            !composingThis &&
-            groupLabel !== previousLabel &&
-            !(position > 0 && composeAdd && visibleEntries[position - 1].index === editingIndex);
           const draft = drafts[index] ?? toDraft(item);
           const editing = !deleteMode && Boolean(showFieldActions && editingIndex === index);
           const open = openIndex === index || editing;
           const display = editing ? draft : toDraft(item);
           const nameValue = display.value.trim();
-          const categoryValue = display.category.trim();
           const levelValue = levelLabel(display.level);
           const customDescription = display.description.trim();
           const descriptionDisplay =
             customDescription || (nameValue ? getSkillUsageDescription(nameValue) : '');
           const descriptionMuted = Boolean(nameValue) && !customDescription;
-          const experienceLine = experienceSummary(display);
           const confirming = fieldSaving && editingIndex === index;
           const showConfirmActions = Boolean(
             !deleteMode && showFieldActions && editing && onItemSave
@@ -715,10 +677,6 @@ export function PortfolioStrengthsReadOnly({
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-orange-600 dark:text-orange-400">
                   New tool
                 </p>
-              ) : showGroupHeading ? (
-                <h4 className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
-                  {groupLabel}
-                </h4>
               ) : null}
             <article
               key={item.id}
@@ -794,58 +752,32 @@ export function PortfolioStrengthsReadOnly({
 
                 <div className="hidden min-w-0 items-center gap-2 sm:inline-flex">
                   {editing ? (
-                    <>
-                      <select
-                        value={matchSpecialtyOption(draft.category, specialtyOptions)}
-                        onChange={(event) =>
-                          updateDraft(index, { ...draft, category: event.target.value })
-                        }
-                        className={`${portfolioInlineInputClass} w-[9.5rem] py-1.5 text-sm`}
-                        disabled={fieldSaving || specialtyOptions.length === 0}
-                      >
-                        <option value="">{specialtyOptions.length === 0 ? 'Add specialties first' : 'Specialty'}</option>
-                        {specialtyOptions.map((specialty) => (
-                          <option key={specialty} value={specialty}>
-                            {specialty}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={draft.level ?? ''}
-                        onChange={(event) =>
-                          updateDraft(index, {
-                            ...draft,
-                            level: (event.target.value || null) as StrengthToolLevel | null,
-                          })
-                        }
-                        className={`${portfolioInlineInputClass} w-[8.5rem] py-1.5 text-sm`}
-                        disabled={fieldSaving}
-                      >
-                        <option value="">Not set</option>
-                        {LEVEL_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </>
+                    <select
+                      value={draft.level ?? ''}
+                      onChange={(event) =>
+                        updateDraft(index, {
+                          ...draft,
+                          level: (event.target.value || null) as StrengthToolLevel | null,
+                        })
+                      }
+                      className={`${portfolioInlineInputClass} w-[8.5rem] py-1.5 text-sm`}
+                      disabled={fieldSaving}
+                    >
+                      <option value="">Not set</option>
+                      {LEVEL_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                   ) : (
-                    <>
-                      <span className="inline-flex min-w-[5.5rem] justify-start">
-                        {categoryValue ? (
-                          <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-600 dark:bg-white/[0.06] dark:text-neutral-300">
-                            {categoryValue}
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className="inline-flex min-w-[6.5rem] justify-start">
-                        {levelValue ? (
-                          <span className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-[#EA580C] dark:text-[#FB923C]">
-                            {levelValue}
-                          </span>
-                        ) : null}
-                      </span>
-                    </>
+                    <span className="inline-flex min-w-[6.5rem] justify-start">
+                      {levelValue ? (
+                        <span className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-[#EA580C] dark:text-[#FB923C]">
+                          {levelValue}
+                        </span>
+                      ) : null}
+                    </span>
                   )}
                 </div>
 
@@ -1016,59 +948,6 @@ export function PortfolioStrengthsReadOnly({
                       <PortfolioLanguageChips languages={display.useCases} />
                     ) : undefined}
                   </PortfolioFlatField>
-
-                  <div className="grid items-start gap-x-8 sm:grid-cols-2">
-                    <PortfolioFlatField
-                      label="Experience"
-                      value={experienceLine || null}
-                      emptyLabel="Not set"
-                      editing={editing}
-                      editControl={
-                        <input
-                          type="number"
-                          min={0}
-                          max={40}
-                          value={draft.experienceYears ?? ''}
-                          onChange={(event) => {
-                            const raw = event.target.value;
-                            updateDraft(index, {
-                              ...draft,
-                              experienceYears:
-                                raw === '' ? null : Math.max(0, Math.min(40, Number(raw))),
-                            });
-                          }}
-                          placeholder="e.g. 3"
-                          className={portfolioInlineInputClass}
-                          disabled={fieldSaving}
-                        />
-                      }
-                    />
-                    <PortfolioFlatField
-                      label="Currently used"
-                      value={currentlyUsedLabel(display.currentlyUsed) || null}
-                      emptyLabel="Not set"
-                      editing={editing}
-                      editControl={
-                        <label className="inline-flex cursor-pointer items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={draft.currentlyUsed === true}
-                            onChange={(event) =>
-                              updateDraft(index, {
-                                ...draft,
-                                currentlyUsed: event.target.checked ? true : null,
-                              })
-                            }
-                            disabled={fieldSaving}
-                            className="h-4 w-4 rounded border-neutral-300 text-[#EA580C]"
-                          />
-                          <span className="text-[15px] font-semibold text-neutral-900 dark:text-white">
-                            Used in current work
-                          </span>
-                        </label>
-                      }
-                    />
-                  </div>
                 </div>
               ) : null}
             </article>

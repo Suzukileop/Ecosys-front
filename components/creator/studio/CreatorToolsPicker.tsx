@@ -2,17 +2,10 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
-import {
-  CREATOR_TOOL_PRESETS,
-  findCreatorToolPreset,
-  getCreatorToolCategories,
-  type CreatorToolPreset,
-} from '@/components/creator/studio/creator-profile-tools-catalog';
+import { resolveCreatorToolSimpleIcon } from '@/components/creator/studio/creator-tool-simple-icons';
 import { uploadContentMedia } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-
-type ToolCategoryId = CreatorToolPreset['category'];
 
 export type CreatorToolPick = {
   value: string;
@@ -63,60 +56,6 @@ function ToolChip({
   );
 }
 
-function CategoryChevron({ expanded }: { expanded: boolean }) {
-  return (
-    <svg
-      className={`h-3 w-3 shrink-0 text-neutral-400 transition-transform duration-200 ${
-        expanded ? 'rotate-0' : '-rotate-90'
-      }`}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.25}
-      aria-hidden
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
-    </svg>
-  );
-}
-
-function PresetToolButton({
-  preset,
-  selected,
-  disabled,
-  onToggle,
-}: {
-  preset: CreatorToolPreset;
-  selected: boolean;
-  disabled: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onToggle}
-      aria-pressed={selected}
-      className={`group flex items-center gap-2.5 rounded-full px-2.5 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-30 ${
-        selected
-          ? 'bg-amber-500/20 text-neutral-900 shadow-none dark:bg-amber-500/25 dark:text-white'
-          : 'bg-neutral-100/80 text-neutral-600 opacity-70 hover:bg-neutral-200/80 hover:opacity-100 dark:bg-white/[0.06] dark:text-neutral-300 dark:hover:bg-white/[0.1]'
-      }`}
-    >
-      <span className={selected ? '' : 'grayscale'}>
-        <CreatorToolLogo label={preset.name} preset={preset} size={20} />
-      </span>
-      <span
-        className={`min-w-0 flex-1 truncate text-xs leading-snug ${
-          selected ? 'font-semibold' : 'font-medium'
-        }`}
-      >
-        {preset.name}
-      </span>
-    </button>
-  );
-}
-
 type CreatorToolsPickerProps = {
   value: CreatorToolPick[];
   onChange: (next: CreatorToolPick[]) => void;
@@ -139,34 +78,15 @@ export function CreatorToolsPicker({
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const iconInputRef = useRef<HTMLInputElement>(null);
-  const [expandedCategories, setExpandedCategories] = useState<Set<ToolCategoryId>>(() => new Set());
 
   const selectedValues = useMemo(() => normalizeSelected(value), [value]);
-  const selectedKeys = useMemo(
-    () => new Set(selectedValues.map((item) => item.value.toLowerCase())),
-    [selectedValues]
+  const draftAutoIcon = useMemo(
+    () => (!customIconUrl && customDraft.trim() ? resolveCreatorToolSimpleIcon(customDraft) : null),
+    [customDraft, customIconUrl]
   );
 
   const syncSelectedValues = (nextValues: CreatorToolPick[]) => {
     onChange(normalizeSelected(nextValues).slice(0, max));
-  };
-
-  const isPresetSelected = (preset: CreatorToolPreset): boolean =>
-    selectedKeys.has(preset.name.toLowerCase()) ||
-    selectedKeys.has(preset.id.toLowerCase()) ||
-    (preset.aliases?.some((alias) => selectedKeys.has(alias.toLowerCase())) ?? false);
-
-  const togglePreset = (preset: CreatorToolPreset) => {
-    if (isPresetSelected(preset)) {
-      const next = selectedValues.filter((item) => {
-        const match = findCreatorToolPreset(item.value);
-        return match?.id !== preset.id;
-      });
-      syncSelectedValues(next);
-      return;
-    }
-    if (selectedValues.length >= max) return;
-    syncSelectedValues([...selectedValues, { value: preset.name, iconUrl: null }]);
   };
 
   const addCustomTool = () => {
@@ -200,19 +120,6 @@ export function CreatorToolsPicker({
     }
   };
 
-  const toggleCategory = (categoryId: ToolCategoryId) => {
-    setExpandedCategories((current) => {
-      const next = new Set(current);
-      if (next.has(categoryId)) next.delete(categoryId);
-      else next.add(categoryId);
-      return next;
-    });
-  };
-
-  const countSelectedInCategory = (categoryId: ToolCategoryId) =>
-    CREATOR_TOOL_PRESETS.filter((preset) => preset.category === categoryId && isPresetSelected(preset))
-      .length;
-
   if (readOnly) {
     if (selectedValues.length === 0) {
       return <p className="text-xs text-neutral-500 dark:text-neutral-400">{emptyLabel}</p>;
@@ -225,8 +132,6 @@ export function CreatorToolsPicker({
       </div>
     );
   }
-
-  const categories = getCreatorToolCategories();
 
   return (
     <div className="space-y-5">
@@ -246,56 +151,14 @@ export function CreatorToolsPicker({
         <p className="text-xs italic text-neutral-500 dark:text-neutral-400">{emptyLabel}</p>
       )}
 
-      <div>
-        <p className="mb-3 text-xs text-neutral-500 dark:text-neutral-400">
-          Pick from the catalog. {selectedValues.length}/{max} selected.
-        </p>
-        <div className="space-y-1">
-          {categories.map((category) => {
-            const expanded = expandedCategories.has(category.id);
-            const presets = CREATOR_TOOL_PRESETS.filter((preset) => preset.category === category.id);
-            const selectedCount = countSelectedInCategory(category.id);
-
-            return (
-              <div key={category.id}>
-                <button
-                  type="button"
-                  onClick={() => toggleCategory(category.id)}
-                  aria-expanded={expanded}
-                  className="flex w-full items-center gap-2 py-2 text-left transition hover:opacity-80"
-                >
-                  <CategoryChevron expanded={expanded} />
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
-                    {category.label}
-                  </span>
-                  <span className="ml-auto text-[11px] tabular-nums text-neutral-400 dark:text-neutral-500">
-                    {selectedCount > 0 ? `${selectedCount} · ` : ''}
-                    {presets.length}
-                  </span>
-                </button>
-                {expanded ? (
-                  <div className="grid grid-cols-1 gap-1.5 pb-3 sm:grid-cols-2">
-                    {presets.map((preset) => (
-                      <PresetToolButton
-                        key={preset.id}
-                        preset={preset}
-                        selected={isPresetSelected(preset)}
-                        disabled={!isPresetSelected(preset) && selectedValues.length >= max}
-                        onToggle={() => togglePreset(preset)}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       {allowCustom ? (
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
-            Custom tool
+            Ajouter un outil
+          </p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            Nom + logo optionnel ({selectedValues.length}/{max}). Sans logo, la première lettre
+            s’affiche.
           </p>
           <div className="flex items-center gap-2">
             <input
@@ -332,7 +195,7 @@ export function CreatorToolsPicker({
                   addCustomTool();
                 }
               }}
-              placeholder="Not in the list…"
+              placeholder="Nom de l’outil…"
               className="min-w-0 flex-1 rounded-full bg-neutral-100/80 px-3.5 py-2 text-sm font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:bg-neutral-100 focus:ring-2 focus:ring-[#F97316]/25 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-neutral-500 dark:focus:bg-white/[0.08]"
             />
             <button
@@ -352,8 +215,16 @@ export function CreatorToolsPicker({
             >
               Remove logo
             </button>
+          ) : draftAutoIcon ? (
+            <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
+              Logo auto détecté : {draftAutoIcon.matchedName}. Tu peux quand même uploader un logo
+              custom.
+            </p>
           ) : (
-            <p className="text-[11px] text-neutral-400">Optional: tap the circle to add a small logo.</p>
+            <p className="text-[11px] text-neutral-400">
+              Optionnel : touche le cercle pour ajouter un logo. Sinon détection auto par nom, ou
+              première lettre.
+            </p>
           )}
           {uploadError ? <p className="text-xs text-red-600 dark:text-red-400">{uploadError}</p> : null}
         </div>

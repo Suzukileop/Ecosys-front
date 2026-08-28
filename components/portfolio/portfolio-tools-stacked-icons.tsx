@@ -2,7 +2,6 @@
 
 import type { CSSProperties } from 'react';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
-import { resolveCreatorToolLogoHex } from '@/components/creator/studio/creator-profile-tools-catalog';
 
 /**
  * Overlapping circular tool logos (avatar-stack style).
@@ -48,7 +47,6 @@ export function PortfolioToolsStackedIcons({
   return (
     <div className={`flex items-center ${className}`.trim()} role="list">
       {list.map((tool, index) => {
-        const brandHex = resolveCreatorToolLogoHex(tool);
         const shellStyle: CSSProperties = {
           width: size,
           height: size,
@@ -75,7 +73,6 @@ export function PortfolioToolsStackedIcons({
               iconUrl={toolIcons?.[tool] ?? null}
               size={logoSize}
               className="rounded-full !bg-transparent"
-              brandColor={brandHex ?? undefined}
               bgColor={shellBackground}
             />
           </div>

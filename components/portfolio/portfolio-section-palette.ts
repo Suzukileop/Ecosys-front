@@ -25,6 +25,8 @@ import type { PortfolioWorkPresentationSettings } from '@/components/portfolio/p
 import { applyWorkPaletteToSettings } from '@/components/portfolio/portfolio-work-palette-settings';
 import type { PortfolioTeamPresentationSettings } from '@/components/portfolio/portfolio-team-settings';
 import { applyTeamPaletteToSettings } from '@/components/portfolio/portfolio-team-palette-settings';
+import type { PortfolioToolsPresentationSettings } from '@/components/portfolio/portfolio-tools-settings';
+import { applyToolsPaletteToSettings } from '@/components/portfolio/portfolio-tools-palette-settings';
 import type { PortfolioAboutUsPresentationSettings } from '@/components/portfolio/portfolio-about-us-settings';
 
 /**
@@ -199,6 +201,20 @@ export function applyHeroPaletteToTeam(
     ...presentation,
     ...(applyTeamPaletteToSettings({ ...presentation, teamPalette }) as Partial<PortfolioTeamPresentationSettings>),
     teamPalette,
+    useHeroPalette: true,
+  };
+}
+
+export function applyHeroPaletteToTools(
+  presentation: PortfolioToolsPresentationSettings,
+  palette: PortfolioHeroPalette
+): PortfolioToolsPresentationSettings {
+  if (presentation.useHeroPalette === false) return presentation;
+  const toolsPalette = mergeHeroPalette(DEFAULT_HERO_PALETTE, palette);
+  return {
+    ...presentation,
+    ...(applyToolsPaletteToSettings({ ...presentation, toolsPalette }) as Partial<PortfolioToolsPresentationSettings>),
+    toolsPalette,
     useHeroPalette: true,
   };
 }

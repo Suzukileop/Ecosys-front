@@ -1,26 +1,27 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import {
-  findCreatorToolPreset,
-  getCreatorToolIconCandidates,
-  type CreatorToolPreset,
-} from '@/components/creator/studio/creator-profile-tools-catalog';
+import { resolveCreatorToolSimpleIcon } from '@/components/creator/studio/creator-tool-simple-icons';
 
+/**
+ * Tool mark priority:
+ * 1. User-uploaded `iconUrl`
+ * 2. Auto Simple Icons match from tool name / keywords
+ * 3. First letter fallback
+ */
 type CreatorToolLogoProps = {
   label: string;
-  preset?: CreatorToolPreset | null;
   size?: number;
   className?: string;
-  /** Hex background the chip / bar sits on — used for contrast. */
+  /** Optional solid surface behind the mark (chip / card). */
   bgColor?: string;
-  /**
-   * Catalog brand tint. On dark surfaces, dark brands (CapCut, VS Code blue,
-   * Unreal…) are lifted to a light glyph so they stay readable.
-   */
+  /** Explicit glyph color override (letter / auto icon). */
   brandColor?: string;
-  /** Uploaded custom logo URL — takes priority over catalog icons. */
+  /** Page color mode for contrast when bg is dark/light. */
+  colorMode?: 'light' | 'dark';
+  /** User-uploaded logo URL — always wins over auto detection. */
   iconUrl?: string | null;
+  /** Disable Simple Icons auto-match (letter only if no upload). */
+  disableAutoIcon?: boolean;
 };
 
 function hexLuminance(hex: string): number {
@@ -35,149 +36,71 @@ function hexLuminance(hex: string): number {
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
-function normalizeHex(hex: string): string {
-  return hex.replace('#', '').trim();
-}
-
-function parseBrandHex(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  if (!/^#?[0-9a-fA-F]{3}$|^#?[0-9a-fA-F]{6}$/.test(raw.trim())) return null;
-  const cleaned = raw.trim().replace('#', '');
-  const full =
-    cleaned.length === 3
-      ? cleaned
-          .split('')
-          .map((c) => c + c)
-          .join('')
-      : cleaned;
-  return `#${full}`;
-}
-
-/**
- * Keep catalog brand colors. Only lift near-black marks (CapCut, Notion…) on
- * dark chips so they stay visible — never flatten yellow/blue/etc. to black
- * on light surfaces.
- */
-function contrastSafeTint(
-  brand: string,
-  bg: string | undefined
-): { tint: string; lifted: boolean } {
-  const brandLum = hexLuminance(brand);
-  const bgLum = bg ? hexLuminance(bg) : null;
-  const nearBlack = brandLum < 0.14;
-  const onDark = bgLum != null && bgLum < 0.45;
-
-  if (nearBlack && (onDark || bgLum == null)) {
-    return { tint: '#f4f3ef', lifted: true };
+function isDarkSurface(bgColor: string | undefined, colorMode?: 'light' | 'dark'): boolean {
+  if (bgColor && /^#?[0-9a-fA-F]{3,6}$/.test(bgColor.trim()) && !/^transparent$/i.test(bgColor)) {
+    return hexLuminance(bgColor) < 0.4;
   }
-  return { tint: brand, lifted: false };
+  return colorMode === 'dark';
 }
 
-/** Swap the color segment in a simpleicons.org URL. */
-function recolorSimpleIcon(url: string, hex: string): string {
-  const clean = normalizeHex(hex);
-  return url.replace(
-    /simpleicons\.org\/([^/]+)\/[0-9a-fA-F]{3,8}($|\?)/,
-    `simpleicons.org/$1/${clean}$2`
-  );
+function contrastSafeBrand(brand: string, darkSurface: boolean): string {
+  const lum = hexLuminance(brand);
+  if (lum < 0.14 && darkSurface) return '#f4f3ef';
+  if (lum > 0.85 && !darkSurface) return '#17171b';
+  return brand.startsWith('#') ? brand : `#${brand}`;
 }
 
 export function CreatorToolLogo({
   label,
-  preset,
   size = 20,
   className = '',
   bgColor,
   brandColor,
-  iconUrl: customIconUrl,
+  colorMode,
+  iconUrl,
+  disableAutoIcon = false,
 }: CreatorToolLogoProps) {
-  const resolvedPreset = preset ?? findCreatorToolPreset(label);
-  const { urls, monochrome } = useMemo(() => {
-    if (customIconUrl?.trim()) {
-      return { urls: [customIconUrl.trim()], monochrome: false };
-    }
-    return resolvedPreset
-      ? getCreatorToolIconCandidates(resolvedPreset)
-      : { urls: [], monochrome: true };
-  }, [customIconUrl, resolvedPreset]);
-  const [urlIndex, setUrlIndex] = useState(0);
+  const url = iconUrl?.trim() || null;
+  const shell = `pf-tool-logo flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-transparent ${className}`;
+  const dark = isDarkSurface(bgColor, colorMode);
 
-  useEffect(() => {
-    setUrlIndex(0);
-  }, [resolvedPreset?.id, label, customIconUrl]);
-
-  const rawBrand = parseBrandHex(brandColor);
-  const { tint: safeBrand, lifted: brandLifted } = rawBrand
-    ? contrastSafeTint(rawBrand, bgColor)
-    : { tint: null as string | null, lifted: false };
-
-  const brandTint = safeBrand;
-  const isDarkBg = bgColor ? hexLuminance(bgColor) < 0.4 : false;
-
-  const iconUrl = useMemo(() => {
-    const raw = urls[urlIndex] ?? null;
-    if (!raw) return raw;
-    if (raw.includes('simpleicons.org')) {
-      if (brandTint) return recolorSimpleIcon(raw, brandTint);
-      if (bgColor) return recolorSimpleIcon(raw, isDarkBg ? 'f4f3ef' : '17171b');
-    }
-    return raw;
-  }, [urls, urlIndex, bgColor, isDarkBg, brandTint]);
-
-  const canRecolorUrl = Boolean(iconUrl?.includes('simpleicons.org'));
-
-  // Local CapCut / jsdelivr fallbacks cannot be recolored via URL — invert instead.
-  const forceInvert =
-    isDarkBg &&
-    !canRecolorUrl &&
-    (brandLifted || monochrome || (rawBrand != null && hexLuminance(rawBrand) < 0.35));
-
-  const needsInvert = monochrome && !bgColor && !brandTint && !forceInvert;
-  const forceBright = monochrome && !!bgColor && !isDarkBg && !brandTint && !forceInvert;
-
-  const shell = `pf-tool-logo flex shrink-0 items-center justify-center overflow-hidden rounded-md ${
-    !bgColor && monochrome && !brandTint ? 'bg-neutral-100 dark:bg-neutral-800' : 'bg-transparent'
-  } ${className}`;
-
-  const imageClass = [
-    'h-full w-full object-contain',
-    monochrome || forceInvert ? 'p-0.5' : 'p-0',
-    needsInvert ? 'dark:invert dark:brightness-200' : '',
-    forceInvert ? 'invert brightness-200' : '',
-    forceBright ? '' : '',
-  ]
-    .join(' ')
-    .trim();
-
-  if (iconUrl && urlIndex < urls.length) {
+  if (url) {
     return (
       <span className={shell} style={{ width: size, height: size }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={iconUrl}
+          src={url}
           alt=""
           width={size}
           height={size}
-          className={imageClass}
-          onError={() => setUrlIndex((current) => current + 1)}
+          className="h-full w-full object-contain"
         />
       </span>
     );
   }
 
+  const auto = disableAutoIcon ? null : resolveCreatorToolSimpleIcon(label);
+  if (auto) {
+    const color = contrastSafeBrand(brandColor?.trim() || auto.hex, dark);
+    const Icon = auto.Icon;
+    return (
+      <span className={shell} style={{ width: size, height: size }} title={auto.matchedName}>
+        <Icon size={size} color={color} title="" aria-hidden />
+      </span>
+    );
+  }
+
+  const letterColor =
+    brandColor?.trim() || (dark ? '#f4f3ef' : '#17171b');
+
   return (
     <span
-      className={`${shell} text-[10px] font-bold uppercase`}
+      className={`${shell} font-bold uppercase leading-none`}
       style={{
         width: size,
         height: size,
-        color: brandTint
-          ? brandTint
-          : bgColor
-            ? isDarkBg
-              ? '#f4f3ef'
-              : '#17171b'
-            : undefined,
+        fontSize: Math.max(14, Math.round(size * 0.55)),
+        color: letterColor,
       }}
       aria-hidden
     >

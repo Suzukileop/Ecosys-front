@@ -9,7 +9,6 @@ import { CreatorStudioProfileTab } from '@/components/creator/studio/CreatorStud
 import { PortfolioPresencePicker } from '@/components/portfolio/PortfolioPresencePicker';
 import {
   getPortfolioPresenceOption,
-  isPortfolioPresenceKind,
   type PortfolioPresenceKind,
 } from '@/components/portfolio/portfolio-presence';
 import { mergePortfolioSettings } from '@/components/portfolio/portfolio-settings-types';
@@ -235,24 +234,6 @@ export function MyPortfolioWorkspace() {
     } catch {
       /* ignore */
     }
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const raw = await getCreatorPortfolioSettings();
-        const merged = mergePortfolioSettings(raw);
-        if (!cancelled && isPortfolioPresenceKind(merged.global.presenceKind)) {
-          setPresenceKind(merged.global.presenceKind);
-        }
-      } catch {
-        /* keep picker until the owner chooses */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   const persistPresenceKind = useCallback(async (kind: PortfolioPresenceKind) => {

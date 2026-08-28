@@ -168,6 +168,11 @@ import {
   type TeamSubSection,
 } from '@/components/portfolio/portfolio-team-settings-panel';
 import {
+  ToolsSettingsPanel,
+  normalizeToolsSubSection,
+  type ToolsSubSection,
+} from '@/components/portfolio/portfolio-tools-settings-panel';
+import {
   ContactSettingsPanel,
   type ContactSubSection,
 } from '@/components/portfolio/portfolio-contact-settings-panel';
@@ -295,23 +300,23 @@ type PanelSubSections = {
   theme?: GlobalSettingsSubSection;
   hero?: HeroSettingsSubSection;
   work?: WorkSettingsSubSection;
-  skills?: ServicesSubSection;
   services?: ServicesSubSection;
   infos?: AboutSubSection;
   whyChooseMe?: AboutSubSection;
   aboutUs?: AboutUsSubSection;
   experience?: ExperienceSubSection;
   team?: TeamSubSection;
+  tools?: ToolsSubSection;
   gallery?: GallerySettingsSubSection;
   faq?: FaqSubSection;
   contact?: ContactSubSection;
   footer?: FooterSubSection;
 };
 
-/** Settings blob keys (Skills reuses `services`; Infos / Why choose me reuse `about`). */
+/** Settings blob keys (Infos / Why choose me reuse `about`). */
 type PortfolioSettingsContentKey = Exclude<
   PortfolioSettingsSectionId,
-  'theme' | 'navigation' | 'skills' | 'infos' | 'whyChooseMe'
+  'theme' | 'navigation' | 'infos' | 'whyChooseMe'
 >;
 
 function PortfolioSettingsSearchBar({
@@ -464,7 +469,9 @@ function readStoredActiveSection(): PortfolioSettingsSectionId {
   if (typeof window === 'undefined') return 'theme';
   const stored = window.sessionStorage.getItem(MODAL_SECTION_STORAGE_KEY);
   // Legacy: About chrome was removed from the settings nav (Infos / Why choose me remain).
+  // Legacy: Skills settings nav was replaced by Tools.
   if (stored === 'about') return 'infos';
+  if (stored === 'skills') return 'tools';
   if (stored && isPortfolioSettingsSectionId(stored)) return stored;
   return 'theme';
 }
@@ -5576,14 +5583,13 @@ function SectionPanel({
     );
   }
 
-  if (sectionId === 'skills') {
+  if (sectionId === 'tools') {
     return (
-      <ServicesSettingsPanel
-        services={settings.services}
-        onChange={(patch) => onChange('services', patch)}
-        settingsFocus="skills"
-        subSection={panelSubSections.skills ?? 'header'}
-        onSubSectionChange={(value) => onPanelSubSectionChange('skills', value)}
+      <ToolsSettingsPanel
+        tools={settings.tools}
+        onChange={(patch) => onChange('tools', patch)}
+        subSection={panelSubSections.tools ?? 'general'}
+        onSubSectionChange={(value) => onPanelSubSectionChange('tools', value)}
       />
     );
   }
@@ -5900,11 +5906,6 @@ export function PortfolioSettingsModal({
         ...prev,
         work: normalizeWorkSettingsSubSection(entry.subSection),
       }));
-    } else if (entry.sectionId === 'skills') {
-      setPanelSubSections((prev) => ({
-        ...prev,
-        skills: normalizeServicesSubSection(entry.subSection, 'skills'),
-      }));
     } else if (entry.sectionId === 'services') {
       setPanelSubSections((prev) => ({
         ...prev,
@@ -5932,6 +5933,11 @@ export function PortfolioSettingsModal({
       }));
     } else if (entry.sectionId === 'faq') {
       setPanelSubSections((prev) => ({ ...prev, faq: normalizeFaqSubSection(entry.subSection) }));
+    } else if (entry.sectionId === 'tools') {
+      setPanelSubSections((prev) => ({
+        ...prev,
+        tools: normalizeToolsSubSection(entry.subSection),
+      }));
     } else if (entry.sectionId === 'contact') {
       setPanelSubSections((prev) => ({ ...prev, contact: entry.subSection as ContactSubSection }));
     } else if (entry.sectionId === 'footer') {

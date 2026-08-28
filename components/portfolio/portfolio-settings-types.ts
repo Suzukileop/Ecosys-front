@@ -56,6 +56,11 @@ import {
   type PortfolioGallerySectionSettings,
 } from '@/components/portfolio/portfolio-gallery-settings';
 import {
+  DEFAULT_TOOLS_PRESENTATION,
+  mergeToolsPresentation,
+  type PortfolioToolsSectionSettings,
+} from '@/components/portfolio/portfolio-tools-settings';
+import {
   applyActivePortfolioPalette,
   seedGlobalPalettePairFromHero,
 } from '@/components/portfolio/portfolio-color-mode';
@@ -101,7 +106,6 @@ export type PortfolioSettingsSectionId =
   | 'navigation'
   | 'hero'
   | 'work'
-  | 'skills'
   | 'services'
   | 'about'
   | 'infos'
@@ -112,6 +116,7 @@ export type PortfolioSettingsSectionId =
   | 'gallery'
   | 'faq'
   | 'contact'
+  | 'tools'
   | 'footer';
 
 export type PortfolioNavPlacement =
@@ -787,6 +792,7 @@ export type PortfolioSettings = {
   gallery: PortfolioGallerySectionSettings;
   faq: PortfolioFaqSectionSettings;
   contact: PortfolioContactSectionSettings;
+  tools: PortfolioToolsSectionSettings;
   footer: PortfolioFooterSettings;
   /**
    * Marketplace product IDs featured on the public portfolio (ordered).
@@ -828,9 +834,9 @@ export const PORTFOLIO_SETTINGS_SECTIONS: PortfolioSettingsSectionMeta[] = [
     description: 'Featured projects shown as large editorial work cards.',
   },
   {
-    id: 'skills',
-    label: 'Skills',
-    description: 'Tools & skills section — cards, cadre, typography, and palette.',
+    id: 'tools',
+    label: 'Tools',
+    description: 'Workflow & tools — logo tiles and labels.',
   },
   {
     id: 'services',
@@ -1055,6 +1061,12 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       subtitle:
         'Should you have a project in mind, I would be pleased to hear from you to discuss your objectives.',
       ...DEFAULT_CONTACT_PRESENTATION,
+    },
+    tools: {
+      enabled: true,
+      title: 'Workflow & Tools',
+      subtitle: '',
+      ...DEFAULT_TOOLS_PRESENTATION,
     },
     footer: {
       enabled: true,
@@ -1626,7 +1638,6 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
           titleOrientationTargets: {
             work: true,
             services: true,
-            skills: true,
             about: true,
             aboutUs: true,
             experience: true,
@@ -1634,6 +1645,7 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
             gallery: true,
             faq: true,
             contact: true,
+            tools: true,
           },
         };
       }
@@ -1730,6 +1742,10 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
     contact: {
       ...mergeSectionCopy(defaults.contact, stored.contact),
       ...mergeContactPresentation(defaults.contact, stored.contact),
+    },
+    tools: {
+      ...mergeSectionCopy(defaults.tools, stored.tools),
+      ...mergeToolsPresentation(defaults.tools, stored.tools),
     },
     footer: {
       enabled: isRecord(stored.footer) && typeof stored.footer.enabled === 'boolean'

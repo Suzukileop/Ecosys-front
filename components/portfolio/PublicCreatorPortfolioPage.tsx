@@ -42,10 +42,8 @@ import {
   EditorialGallerySection,
   EditorialPortfolioFooter,
   EditorialSectionStickyHeader,
-  EditorialServicesSkillsSection,
   EditorialServicesCarousel,
   EditorialTeamGallery,
-  EditorialSkillShowcase,
   EditorialSideInfoHeading,
   EditorialSideInfoPanel,
   EditorialStatGrid,
@@ -88,6 +86,45 @@ import {
   ProjectsSplitGallery,
   ProjectsSplitSectionHeader,
 } from '@/components/portfolio/portfolio-work-projects-split';
+import {
+  isProjectsCarouselDesign,
+  ProjectsCarouselSection,
+} from '@/components/portfolio/portfolio-work-projects-carousel';
+import {
+  isProjectsSpotlightDesign,
+  ProjectsSpotlightGallery,
+  ProjectsSpotlightSectionHeader,
+} from '@/components/portfolio/portfolio-work-projects-spotlight';
+import {
+  isProjectsShowcaseDesign,
+  ProjectsShowcaseGallery,
+  ProjectsShowcaseSectionHeader,
+} from '@/components/portfolio/portfolio-work-projects-showcase';
+import {
+  isProjectsEditorialDesign,
+  ProjectsEditorialGallery,
+  ProjectsEditorialSectionHeader,
+} from '@/components/portfolio/portfolio-work-projects-editorial';
+import {
+  isProjectsLedgerDesign,
+  ProjectsLedgerGallery,
+  ProjectsLedgerSectionHeader,
+} from '@/components/portfolio/portfolio-work-projects-ledger';
+import {
+  isProjectsFolioDesign,
+  ProjectsFolioGallery,
+  ProjectsFolioSectionHeader,
+} from '@/components/portfolio/portfolio-work-projects-folio';
+import {
+  isProjectsSpecDesign,
+  ProjectsSpecGallery,
+  ProjectsSpecSectionHeader,
+} from '@/components/portfolio/portfolio-work-projects-spec';
+import {
+  isProjectsCaseDesign,
+  ProjectsCaseGallery,
+  ProjectsCaseSectionHeader,
+} from '@/components/portfolio/portfolio-work-projects-case';
 import {
   galleryHeaderFontClass,
   galleryHeaderFontStyle,
@@ -171,6 +208,14 @@ import {
   teamTitleColorStyle,
 } from '@/components/portfolio/portfolio-team-settings';
 import {
+  pickToolsPresentationSettings,
+  resolveToolsSectionTitle,
+  toolsHeaderFontClass,
+  toolsHeaderFontStyle,
+  toolsTitleColorStyle,
+} from '@/components/portfolio/portfolio-tools-settings';
+import { EditorialToolsGallery } from '@/components/portfolio/portfolio-tools-section';
+import {
   aboutUsDesignEmbedsHeader,
   aboutUsHeaderFontClass,
   aboutUsHeaderFontStyle,
@@ -211,6 +256,7 @@ import {
   applyHeroPaletteToFooter,
   applyHeroPaletteToServices,
   applyHeroPaletteToTeam,
+  applyHeroPaletteToTools,
   applyHeroPaletteToWork,
   resolveHeroPaletteFromSettings,
 } from '@/components/portfolio/portfolio-section-palette';
@@ -699,7 +745,7 @@ export function PublicCreatorPortfolioPage({
   const heroStats = buildHeroStats(profile, languageCount);
   const rawAboutStats = buildStats(profile, languageCount);
 
-  const hasServicesSection = services.length > 0 || strengths.length > 0;
+  const hasServicesSection = services.length > 0;
   const hasAboutSection = Boolean(
     whyMeBlocks.length > 0 ||
       rawAboutStats.length > 0 ||
@@ -763,6 +809,7 @@ export function PublicCreatorPortfolioPage({
   const showGallerySection = hasGallerySection && settings.gallery.enabled;
   const showAboutUsSection = hasAboutUsSection && settings.aboutUs.enabled;
   const showContactSectionResolved = hasContactSection && settings.contact.enabled;
+  const showToolsSection = strengths.length > 0 && settings.tools.enabled;
   const footerVisibleSectionLinks = {
     gallery: showGallerySection,
     aboutUs: showAboutUsSection,
@@ -929,11 +976,6 @@ export function PublicCreatorPortfolioPage({
       services:
         showServicesSection &&
         (!isDistinctServicesOrganization || servicesPresentation.showServices),
-      skills:
-        showServicesSection &&
-        isDistinctServicesOrganization &&
-        servicesPresentation.showSkills &&
-        strengths.length > 0,
       about: showAboutSection,
       aboutUs: showAboutUsSection,
       experience: showExperienceSection,
@@ -941,14 +983,13 @@ export function PublicCreatorPortfolioPage({
       gallery: showGallerySection,
       faq: showFaqSection,
       contact: showContactSectionResolved,
+      tools: showToolsSection,
     }),
     [
       showWorkSection,
       showServicesSection,
       isDistinctServicesOrganization,
       servicesPresentation.showServices,
-      servicesPresentation.showSkills,
-      strengths.length,
       showAboutSection,
       showAboutUsSection,
       showExperienceSection,
@@ -956,6 +997,7 @@ export function PublicCreatorPortfolioPage({
       showGallerySection,
       showFaqSection,
       showContactSectionResolved,
+      showToolsSection,
     ]
   );
   const servicesSectionTitle = useMemo(
@@ -981,6 +1023,14 @@ export function PublicCreatorPortfolioPage({
   );
   const teamSectionTitle = useMemo(() => resolveTeamSectionTitle(settings.team), [settings.team]);
   const teamSectionSubtitle = useMemo(() => resolveTeamSectionSubtitle(settings.team), [settings.team]);
+  const toolsPresentation = useMemo(
+    () => ({
+      ...applyHeroPaletteToTools(pickToolsPresentationSettings(settings.tools), heroPalette),
+      activeColorMode: (settings.global.colorMode ?? 'dark') as 'light' | 'dark',
+    }),
+    [settings.tools, settings.global.colorMode, heroPalette]
+  );
+  const toolsSectionTitle = useMemo(() => resolveToolsSectionTitle(settings.tools), [settings.tools]);
   const aboutUsPresentation = useMemo(
     () => ({
       ...applyHeroPaletteToAboutUs(pickAboutUsPresentationSettings(settings.aboutUs), heroPalette),
@@ -1161,7 +1211,6 @@ export function PublicCreatorPortfolioPage({
   > => {
     return {
       work: workPresentation,
-      skills: servicesPresentation,
       services: servicesPresentation,
       about: aboutPresentation,
       aboutUs: aboutUsPresentation,
@@ -1169,6 +1218,7 @@ export function PublicCreatorPortfolioPage({
       team: teamPresentation,
       faq: faqPresentation,
       contact: contactPresentation,
+      tools: toolsPresentation,
     };
   }, [
     workPresentation,
@@ -1179,6 +1229,7 @@ export function PublicCreatorPortfolioPage({
     teamPresentation,
     faqPresentation,
     contactPresentation,
+    toolsPresentation,
   ]);
 
   const resolvePageSectionBlocksGlobal = (sectionKey: PortfolioNavSectionKey) => {
@@ -1248,20 +1299,6 @@ export function PublicCreatorPortfolioPage({
     () => resolveSectionHeaderAlign(settings.global, settings.services.headerAlignment),
     [settings.global, settings.services.headerAlignment]
   );
-  const skillsHeaderAlign = useMemo(() => {
-    const layout = settings.services.skillsHeader.sectionLayout ?? 'stacked';
-    if (layout === 'aside-left' || layout === 'aside-right') {
-      return { centered: true, alignRight: false, alwaysCentered: true };
-    }
-    return resolveSectionHeaderAlign(
-      settings.global,
-      settings.services.skillsHeader.headerAlignment
-    );
-  }, [
-    settings.global,
-    settings.services.skillsHeader.headerAlignment,
-    settings.services.skillsHeader.sectionLayout,
-  ]);
   const distinctServicesHeaderAlign = useMemo(
     () =>
       asideAwareHeaderAlign(
@@ -1319,6 +1356,15 @@ export function PublicCreatorPortfolioPage({
       teamPresentation.headerAlignment === 'center' ? 'center' : 'left'
     );
   }, [settings.global, teamPresentation.headerAlignment, teamPresentation.sectionLayout]);
+  const toolsHeaderAlign = useMemo(() => {
+    if (toolsPresentation.headerAlignment === 'right') {
+      return { centered: false, alignRight: true, alwaysCentered: true };
+    }
+    return resolveSectionHeaderAlign(
+      settings.global,
+      toolsPresentation.headerAlignment === 'center' ? 'center' : 'left'
+    );
+  }, [settings.global, toolsPresentation.headerAlignment]);
   const aboutUsHeaderAlign = useMemo(() => {
     const layout = aboutUsPresentation.sectionLayout;
     if (layout === 'aside-left' || layout === 'aside-right') {
@@ -1398,29 +1444,6 @@ export function PublicCreatorPortfolioPage({
     );
     return { title, subtitle };
   }, [settings.global, servicesPresentation, globalTypographyContext]);
-
-  const skillsHeaderTypography = useMemo(() => {
-    const header = servicesPresentation.skillsHeader;
-    const title = resolveGlobalSectionTitleTypography(
-      settings.global,
-      {
-      fontClass: servicesHeaderFontClass(header.titleFont, 'title'),
-      fontStyle: servicesHeaderFontStyle(header.titleFont),
-      colorStyle: servicesTitleColorStyle(header.titleColor),
-      },
-      globalTypographyContext
-    );
-    const subtitle = resolveGlobalSectionSubtitleTypography(
-      settings.global,
-      {
-      fontClass: servicesHeaderFontClass(header.subtitleFont, 'subtitle'),
-      fontStyle: servicesHeaderFontStyle(header.subtitleFont),
-      colorStyle: servicesSubtitleColorStyle(header.subtitleColor),
-      },
-      globalTypographyContext
-    );
-    return { title, subtitle };
-  }, [settings.global, servicesPresentation.skillsHeader, globalTypographyContext]);
 
   const distinctServicesHeaderTypography = useMemo(() => {
     const header = servicesPresentation.servicesHeader;
@@ -1505,6 +1528,19 @@ export function PublicCreatorPortfolioPage({
     );
     return { title, subtitle };
   }, [settings.global, teamPresentation, globalTypographyContext]);
+
+  const toolsHeaderTypography = useMemo(() => {
+    const title = resolveGlobalSectionTitleTypography(
+      settings.global,
+      {
+        fontClass: toolsHeaderFontClass(toolsPresentation.titleFont, 'title'),
+        fontStyle: toolsHeaderFontStyle(toolsPresentation.titleFont),
+        colorStyle: toolsTitleColorStyle(toolsPresentation.titleColor),
+      },
+      globalTypographyContext
+    );
+    return { title };
+  }, [settings.global, toolsPresentation, globalTypographyContext]);
 
   const aboutUsHeaderTypography = useMemo(() => {
     const title = resolveGlobalSectionTitleTypography(
@@ -1752,13 +1788,29 @@ export function PublicCreatorPortfolioPage({
         const projectsIndex = isProjectsIndexDesign(workPresentation);
         const projectsGrid = isProjectsGridDesign(workPresentation);
         const projectsSplit = isProjectsSplitDesign(workPresentation);
+        const projectsCarousel = isProjectsCarouselDesign(workPresentation);
+        const projectsSpotlight = isProjectsSpotlightDesign(workPresentation);
+        const projectsShowcase = isProjectsShowcaseDesign(workPresentation);
+        const projectsEditorial = isProjectsEditorialDesign(workPresentation);
+        const projectsLedger = isProjectsLedgerDesign(workPresentation);
+        const projectsFolio = isProjectsFolioDesign(workPresentation);
+        const projectsSpec = isProjectsSpecDesign(workPresentation);
+        const projectsCase = isProjectsCaseDesign(workPresentation);
         const namedWorkDesign =
           projectsBoard ||
           projectsAccordion ||
           projectsFrames ||
           projectsIndex ||
           projectsGrid ||
-          projectsSplit;
+          projectsSplit ||
+          projectsCarousel ||
+          projectsSpotlight ||
+          projectsShowcase ||
+          projectsEditorial ||
+          projectsLedger ||
+          projectsFolio ||
+          projectsSpec ||
+          projectsCase;
         const marketplaceTrailing = settings.work.showMarketplaceLink ? (
           <MarketplaceProfileLink creatorId={creatorId} color={workPresentation.titleColor} />
         ) : null;
@@ -1799,7 +1851,87 @@ export function PublicCreatorPortfolioPage({
             subtitleColor={workPresentation.subtitleColor}
             className={aside ? 'w-full' : undefined}
           />
-        ) : projectsGrid ? null : projectsSplit ? (
+        ) : projectsGrid ? null : projectsCarousel ? null : projectsSpotlight ? (
+          <ProjectsSpotlightSectionHeader
+            title={workSectionTitle}
+            subtitle={workSectionSubtitle || undefined}
+            titleColor={
+              workPresentation.ctaColor ||
+              workPresentation.categoryActiveColor ||
+              workPresentation.titleColor
+            }
+            subtitleColor={workPresentation.subtitleColor}
+            trailing={marketplaceTrailing}
+            className={aside ? 'w-full' : undefined}
+          />
+        ) : projectsShowcase ? (
+          <ProjectsShowcaseSectionHeader
+            title={workSectionTitle}
+            subtitle={workSectionSubtitle || undefined}
+            titleColor={workPresentation.titleColor}
+            subtitleColor={workPresentation.subtitleColor}
+            trailing={marketplaceTrailing}
+            className={aside ? 'w-full' : undefined}
+          />
+        ) : projectsEditorial ? (
+          <ProjectsEditorialSectionHeader
+            title={workSectionTitle}
+            subtitle={workSectionSubtitle || undefined}
+            titleColor={workPresentation.titleColor}
+            subtitleColor={workPresentation.subtitleColor}
+            titleClassName={workHeaderTypography.title.className}
+            titleStyle={workHeaderTypography.title.style}
+            trailing={marketplaceTrailing}
+            className={aside ? 'w-full' : undefined}
+          />
+        ) : projectsLedger ? (
+          <ProjectsLedgerSectionHeader
+            title={workSectionTitle}
+            subtitle={workSectionSubtitle || undefined}
+            titleColor={workPresentation.titleColor}
+            subtitleColor={workPresentation.subtitleColor}
+            titleClassName={workHeaderTypography.title.className}
+            titleStyle={workHeaderTypography.title.style}
+            trailing={marketplaceTrailing}
+            entryCount={workItems.length}
+            showCount={workPresentation.projectsLedger?.showCount !== false}
+            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
+            className={aside ? 'w-full' : undefined}
+          />
+        ) : projectsFolio ? (
+          <ProjectsFolioSectionHeader
+            title={workSectionTitle}
+            subtitle={workSectionSubtitle || undefined}
+            titleColor={workPresentation.titleColor}
+            subtitleColor={workPresentation.subtitleColor}
+            titleClassName={workHeaderTypography.title.className}
+            titleStyle={workHeaderTypography.title.style}
+            trailing={marketplaceTrailing}
+            className={aside ? 'w-full' : undefined}
+          />
+        ) : projectsSpec ? (
+          <ProjectsSpecSectionHeader
+            title={workSectionTitle}
+            subtitle={workSectionSubtitle || undefined}
+            titleColor={workPresentation.titleColor}
+            subtitleColor={workPresentation.subtitleColor}
+            titleClassName={workHeaderTypography.title.className}
+            titleStyle={workHeaderTypography.title.style}
+            trailing={marketplaceTrailing}
+            className={aside ? 'w-full' : undefined}
+          />
+        ) : projectsCase ? (
+          <ProjectsCaseSectionHeader
+            title={workSectionTitle}
+            subtitle={workSectionSubtitle || undefined}
+            titleColor={workPresentation.titleColor}
+            subtitleColor={workPresentation.subtitleColor}
+            titleClassName={workHeaderTypography.title.className}
+            titleStyle={workHeaderTypography.title.style}
+            trailing={marketplaceTrailing}
+            className={aside ? 'w-full' : undefined}
+          />
+        ) : projectsSplit ? (
           <ProjectsSplitSectionHeader
             title={workSectionTitle}
             subtitle={workSectionSubtitle || undefined}
@@ -1862,6 +1994,30 @@ export function PublicCreatorPortfolioPage({
                 presentation={workPresentation}
                 forceSingleColumn={isSplitMode}
               />
+            ) : projectsCarousel ? (
+              <ProjectsCarouselSection
+                title={workSectionTitle}
+                subtitle={workSectionSubtitle || undefined}
+                titleColor={workPresentation.titleColor}
+                subtitleColor={workPresentation.subtitleColor}
+                trailing={marketplaceTrailing}
+                items={workItems}
+                presentation={workPresentation}
+              />
+            ) : projectsSpotlight ? (
+              <ProjectsSpotlightGallery items={workItems} presentation={workPresentation} />
+            ) : projectsShowcase ? (
+              <ProjectsShowcaseGallery items={workItems} presentation={workPresentation} />
+            ) : projectsEditorial ? (
+              <ProjectsEditorialGallery items={workItems} presentation={workPresentation} />
+            ) : projectsLedger ? (
+              <ProjectsLedgerGallery items={workItems} presentation={workPresentation} />
+            ) : projectsFolio ? (
+              <ProjectsFolioGallery items={workItems} presentation={workPresentation} />
+            ) : projectsSpec ? (
+              <ProjectsSpecGallery items={workItems} presentation={workPresentation} />
+            ) : projectsCase ? (
+              <ProjectsCaseGallery items={workItems} presentation={workPresentation} />
             ) : projectsSplit ? (
               <ProjectsSplitGallery items={workItems} presentation={workPresentation} />
             ) : (
@@ -1892,64 +2048,6 @@ export function PublicCreatorPortfolioPage({
               </SectionAsideContent>
             ) : (
               contentBlock
-            )}
-          </PortfolioSectionShell>
-        );
-      }
-      case 'skills': {
-        const skillsLayout = settings.services.skillsHeader.sectionLayout ?? 'stacked';
-        const skillsAside = !isSplitMode && faqSectionLayoutIsAside(skillsLayout);
-        const skillsHeaderBlock = (
-          <EditorialSectionStickyHeader
-            title={resolveDistinctBlockSectionTitle(settings.services, 'skills')}
-            subtitle={resolveDistinctBlockSectionSubtitle(settings.services, 'skills') || undefined}
-            editorialLayout={isEditorialLayout}
-            centered={skillsHeaderAlign.centered}
-            alignRight={skillsHeaderAlign.alignRight}
-            alwaysCentered={skillsHeaderAlign.alwaysCentered}
-            className={skillsAside ? 'mb-0 w-full' : undefined}
-            titleTypographyClass={skillsHeaderTypography.title.className}
-            titleTypographyStyle={skillsHeaderTypography.title.style}
-            titleDecorationStyle={skillsHeaderTypography.title.decorationStyle}
-            titleChromeClass={titleChrome.className}
-            titleChromeStyle={titleChrome.style}
-            customTitleSizing={skillsHeaderTypography.title.customSizing}
-            subtitleTypographyClass={skillsHeaderTypography.subtitle.className}
-            subtitleTypographyStyle={skillsHeaderTypography.subtitle.style}
-            subtitleDecorationStyle={skillsHeaderTypography.subtitle.decorationStyle}
-            customSubtitleSizing={skillsHeaderTypography.subtitle.customSizing}
-            scrollBehavior={effectiveTitleScroll}
-            orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'skills')}
-          />
-        );
-        const skillsContentBlock = (
-          <div className="min-w-0">
-            <EditorialSkillShowcase
-              skills={strengths}
-              presentation={resolveServicesBlockPresentation(servicesPresentation, 'skills')}
-              motionProfile={motionProfile}
-            />
-          </div>
-        );
-
-        return (
-          <PortfolioSectionShell
-            id="skills"
-            background={servicesPresentation}
-            fitContent
-            fillAvailableHeight={isPagesMode}
-            suppressBackground={suppressSectionBackground(servicesPresentation)}
-            topSpacingClass={sectionTopSpacingClass}
-            topSpacingStyle={sectionTopSpacingStyle}
-            contentLayout={sectionContentLayout}
-            header={skillsAside ? undefined : skillsHeaderBlock}
-          >
-            {skillsAside ? (
-              <SectionAsideContent layout={skillsLayout} header={skillsHeaderBlock}>
-                {skillsContentBlock}
-              </SectionAsideContent>
-            ) : (
-              skillsContentBlock
             )}
           </PortfolioSectionShell>
         );
@@ -2064,35 +2162,18 @@ export function PublicCreatorPortfolioPage({
               ink={servicesPresentation.titleColor}
               surface={servicesPresentation.cardBackgroundColor}
             >
-              {isDistinctServicesOrganization ? (
-                <>
-                  <EditorialServicesCarousel
-                    services={services}
-                    presentation={resolveServicesBlockPresentation(servicesPresentation, 'services')}
-                    motionProfile={motionProfile}
-                  />
-                  {services.length === 0 ? (
-                    <p className="mt-8 text-base leading-relaxed text-neutral-500">
-                      Contact me to discuss a custom engagement.
-                    </p>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <EditorialServicesSkillsSection
-                    skills={strengths}
-                    services={services}
-                    presentation={servicesPresentation}
-                    motionProfile={motionProfile}
-                  />
-
-                  {services.length === 0 && strengths.length > 0 && servicesPresentation.showSkills ? (
-                    <p className="mt-8 text-base leading-relaxed text-neutral-500">
-                      Contact me to discuss a custom engagement.
-                    </p>
-                  ) : null}
-                </>
-              )}
+              <>
+                <EditorialServicesCarousel
+                  services={services}
+                  presentation={resolveServicesBlockPresentation(servicesPresentation, 'services')}
+                  motionProfile={motionProfile}
+                />
+                {services.length === 0 ? (
+                  <p className="mt-8 text-base leading-relaxed text-neutral-500">
+                    Contact me to discuss a custom engagement.
+                  </p>
+                ) : null}
+              </>
             </SectionIllustratedContent>
           </ServicesOrderCtaHrefProvider>
         );
@@ -2800,6 +2881,40 @@ export function PublicCreatorPortfolioPage({
             }
           />
         );
+      case 'tools': {
+        const headerBlock = (
+          <EditorialSectionStickyHeader
+            title={toolsSectionTitle}
+            editorialLayout={isEditorialLayout}
+            centered={toolsHeaderAlign.centered}
+            alignRight={toolsHeaderAlign.alignRight}
+            alwaysCentered={toolsHeaderAlign.alwaysCentered}
+            titleTypographyClass={toolsHeaderTypography.title.className}
+            titleTypographyStyle={toolsHeaderTypography.title.style}
+            titleDecorationStyle={toolsHeaderTypography.title.decorationStyle}
+            titleChromeClass={titleChrome.className}
+            titleChromeStyle={titleChrome.style}
+            customTitleSizing={toolsHeaderTypography.title.customSizing}
+            scrollBehavior={effectiveTitleScroll}
+            orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'tools')}
+          />
+        );
+        return (
+          <PortfolioSectionShell
+            id="tools"
+            background={toolsPresentation}
+            fitContent
+            fillAvailableHeight={isPagesMode}
+            suppressBackground={suppressSectionBackground(toolsPresentation)}
+            topSpacingClass={sectionTopSpacingClass}
+            topSpacingStyle={sectionTopSpacingStyle}
+            contentLayout={sectionContentLayout}
+            header={headerBlock}
+          >
+            <EditorialToolsGallery tools={strengths} presentation={toolsPresentation} />
+          </PortfolioSectionShell>
+        );
+      }
       default:
         return null;
     }
