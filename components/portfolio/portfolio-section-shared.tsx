@@ -187,9 +187,10 @@ export function PortfolioRowEditButton({ onClick, label = 'Edit' }: { onClick: (
 
 export const PORTFOLIO_CHROME_SECTIONS = [
   'about',
-  'whyMe',
+  'aboutPage',
   'experience',
   'strengths',
+  'tools',
   'services',
   'products',
   'portfolio',

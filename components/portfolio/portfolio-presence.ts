@@ -20,9 +20,10 @@ export const PORTFOLIO_PRESENCE_OPTIONS: readonly PortfolioPresenceOption[] = [
     icon: faBriefcase,
     sections: [
       'about',
-      'whyMe',
+      'aboutPage',
       'experience',
       'strengths',
+      'tools',
       'portfolio',
       'gallery',
       'faq',
@@ -36,7 +37,7 @@ export const PORTFOLIO_PRESENCE_OPTIONS: readonly PortfolioPresenceOption[] = [
     title: 'Storefront',
     teaser: 'Sell products and services simply',
     icon: faStore,
-    sections: ['about', 'aboutUs', 'services', 'products', 'faq', 'links', 'contact', 'reputation'],
+    sections: ['about', 'aboutPage', 'aboutUs', 'services', 'products', 'faq', 'links', 'contact', 'reputation'],
   },
   {
     id: 'business',
@@ -45,10 +46,11 @@ export const PORTFOLIO_PRESENCE_OPTIONS: readonly PortfolioPresenceOption[] = [
     icon: faBuilding,
     sections: [
       'about',
+      'aboutPage',
       'aboutUs',
-      'whyMe',
       'experience',
       'strengths',
+      'tools',
       'team',
       'gallery',
       'faq',
@@ -62,7 +64,7 @@ export const PORTFOLIO_PRESENCE_OPTIONS: readonly PortfolioPresenceOption[] = [
     title: 'Linktrue',
     teaser: 'All your links in one place',
     icon: faLink,
-    sections: ['about', 'links', 'contact', 'reputation'],
+    sections: ['about', 'aboutPage', 'links', 'contact', 'reputation'],
   },
 ];
 

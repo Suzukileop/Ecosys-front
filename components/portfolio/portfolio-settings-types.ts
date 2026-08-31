@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import {
   DEFAULT_HERO_PRESENTATION,
   mergeHeroPresentation,
@@ -56,10 +57,20 @@ import {
   type PortfolioGallerySectionSettings,
 } from '@/components/portfolio/portfolio-gallery-settings';
 import {
+  DEFAULT_INFO_PRESENTATION,
+  mergeInfoPresentation,
+  type PortfolioInfoSectionSettings,
+} from '@/components/portfolio/portfolio-info-settings';
+import {
   DEFAULT_TOOLS_PRESENTATION,
   mergeToolsPresentation,
   type PortfolioToolsSectionSettings,
 } from '@/components/portfolio/portfolio-tools-settings';
+import {
+  DEFAULT_STACK_PRESENTATION,
+  mergeStackPresentation,
+  type PortfolioStackSectionSettings,
+} from '@/components/portfolio/portfolio-stack-settings';
 import {
   applyActivePortfolioPalette,
   seedGlobalPalettePairFromHero,
@@ -90,7 +101,15 @@ import {
   mergeNavItemLabels,
   type PortfolioNavItemIcons,
   type PortfolioNavItemLabels,
+  type PortfolioNavSectionKey,
 } from '@/components/portfolio/portfolio-nav-items';
+import {
+  normalizeSplitNavLeftSectionKeys,
+} from '@/components/portfolio/portfolio-nav-split-layout';
+import {
+  normalizePortfolioNavMenuGroups,
+  type PortfolioNavMenuGroup,
+} from '@/components/portfolio/portfolio-nav-menu-groups';
 import {
   applyNavPaletteToSettings,
   DEFAULT_NAV_COLOR_BINDINGS,
@@ -105,17 +124,16 @@ export type PortfolioSettingsSectionId =
   | 'theme'
   | 'navigation'
   | 'hero'
+  | 'info'
   | 'work'
   | 'services'
-  | 'about'
-  | 'infos'
-  | 'whyChooseMe'
   | 'aboutUs'
   | 'experience'
   | 'team'
   | 'gallery'
   | 'faq'
   | 'contact'
+  | 'stack'
   | 'tools'
   | 'footer';
 
@@ -129,6 +147,21 @@ export type PortfolioNavPlacement =
   | 'left-center'
   | 'right-center';
 
+export type PortfolioNavLayoutDesign =
+  | 'classic'
+  | 'editorial-bar'
+  | 'floating-pill'
+  | 'nav-logo-social'
+  | 'center-logo-split'
+  | 'logo-left-nav-contact'
+  | 'case-overlay'
+  | 'duten-panel'
+  | 'half-panel-left';
+
+export type PortfolioNavDutenPanelColumns = 1 | 2;
+
+export type PortfolioNavDutenPanelInset = 'sm' | 'md' | 'lg';
+
 export type PortfolioNavBarDesign = 'classic' | 'rail' | 'dock';
 
 export type PortfolioNavContentMode = 'icons' | 'text' | 'both';
@@ -137,9 +170,11 @@ export type PortfolioNavActiveStyle =
   | 'filled-pill'
   | 'accent-fill'
   | 'underline'
+  | 'underline-animated'
   | 'outline'
   | 'soft-badge'
   | 'dot'
+  | 'dot-left'
   | 'accent-text';
 
 export type PortfolioNavButtonDesign = 'clean' | 'outlined' | 'soft' | 'glow' | 'bottom-line';
@@ -164,7 +199,13 @@ export type PortfolioNavMenuControlIcon = 'dots-h' | 'dots-v' | 'x' | 'chevron' 
 /** Where the open/close control sits relative to nav items (or in the mobile drawer top bar). */
 export type PortfolioNavMenuControlAlign = 'left' | 'center' | 'right';
 
+export type PortfolioNavCaseOverlayMenuSide = 'left' | 'right';
+
+export type PortfolioNavCaseOverlayMenuTrigger = 'text' | 'icon';
+
 export type PortfolioNavLabelCase = 'uppercase' | 'titlecase' | 'normal';
+/** Menu labels and contact/link button text — shared size scale. */
+export type PortfolioNavLabelFontSize = 'xs' | 'sm' | 'md' | 'lg';
 
 /** How wide the nav background stretches. */
 export type PortfolioNavBarWidth = 'hug' | 'full';
@@ -178,8 +219,14 @@ export type PortfolioNavEdgeOffset = 'sm' | 'md' | 'lg' | 'xl';
 /** Spacing between nav items. */
 export type PortfolioNavItemGap = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'spread';
 
+/** Bar shell fill — palette token or transparent (General → Navigation). */
+export type PortfolioNavBarSurface = 'neutre' | 'fond' | 'transparent';
+
 /** Inner padding of the nav bar shell (around items). */
 export type PortfolioNavBarPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
+
+/** Vertical height of the nav bar shell and menu hit area (General → Navigation). */
+export type PortfolioNavBarHeight = 'sm' | 'md' | 'lg';
 
 /** Padding inside each nav button / pill. */
 export type PortfolioNavButtonPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
@@ -217,6 +264,47 @@ export type PortfolioNavLinkIconSource =
 
 /** Where to park Contact + link icons as one cluster in free space. */
 export type PortfolioNavExtrasSide = 'auto' | 'left' | 'right';
+export type PortfolioNavTriZoneSlotMode = 'social' | 'contact';
+export type PortfolioNavTriZoneContactSide = 'left' | 'right';
+/** editorial-bar: same mutual exclusion as tri-zone — social links or contact CTA on the right. */
+export type PortfolioNavEditorialBarSlotMode = PortfolioNavTriZoneSlotMode;
+/** editorial-bar contact mode: tel: or mailto: from profile. */
+export type PortfolioNavEditorialBarContactLink = 'phone' | 'mail';
+
+/** Per-channel contact button chrome for editorial bar (phone vs e-mail). */
+export type PortfolioNavEditorialBarContactChannelSettings = {
+  label: string;
+  display: PortfolioNavContactButtonDisplay;
+  icon: PortfolioNavContactCtaIcon;
+  iconPosition: PortfolioNavContactButtonIconPosition;
+  shape: PortfolioNavContactButtonShape;
+};
+
+export const DEFAULT_EDITORIAL_BAR_PHONE_CONTACT: PortfolioNavEditorialBarContactChannelSettings =
+  {
+    label: 'Call me',
+    display: 'button',
+    icon: 'phone',
+    iconPosition: 'right',
+    shape: 'bottom-line',
+  };
+
+export const DEFAULT_EDITORIAL_BAR_MAIL_CONTACT: PortfolioNavEditorialBarContactChannelSettings =
+  {
+    label: "Let's talk",
+    display: 'button',
+    icon: 'arrow-up-right',
+    iconPosition: 'right',
+    shape: 'bottom-line',
+  };
+/** Icon placement inside a labeled contact button. */
+export type PortfolioNavContactButtonIconPosition = 'left' | 'right' | 'none';
+/** nav-logo-social: rendered size of profile link brand icons (max 3). */
+export type PortfolioNavTriZoneSocialLinkSize = 'xs' | 'sm' | 'md' | 'lg';
+/** nav-logo-social: horizontal gap between link brand icons. */
+export type PortfolioNavTriZoneSocialLinkGap = 'sm' | 'md' | 'lg' | 'xl';
+/** logo-left-nav-contact: logo on the left rail (default) or swapped to the right. */
+export type PortfolioNavLogoLeftContactLogoSide = 'left' | 'right';
 
 /**
  * Where the extras cluster (Contact + link icons + custom extra) sits relative to the nav bar.
@@ -243,34 +331,106 @@ export type PortfolioNavCustomExtraFontWeight =
 /** How the Contact CTA renders in the extras cluster. */
 export type PortfolioNavContactButtonDisplay = 'icon' | 'button';
 
-/** Glyph for the Contact extras CTA — phone variants only. */
+/** Glyph for the Contact extras CTA. */
 export type PortfolioNavContactCtaIcon =
+  | 'none'
   | 'phone'
-  | 'phone-handset'
   | 'smartphone'
   | 'phone-call'
-  | 'phone-outgoing'
-  | 'phone-incoming';
+  | 'mail'
+  | 'chat'
+  | 'at'
+  | 'calendar'
+  | 'send'
+  | 'user'
+  | 'arrow-up-right'
+  | 'arrow-right'
+  | 'arrow-up'
+  /** @deprecated Saved settings — mapped to `phone` on read. */
+  | 'phone-handset'
+  /** @deprecated Saved settings — mapped to `phone` on read. */
+  | 'phone-incoming'
+  /** @deprecated Saved settings — mapped to `send` on read. */
+  | 'phone-outgoing';
 
-/** Corner shape of the Contact extras CTA (icon circle or labeled button). */
-export type PortfolioNavContactButtonShape = 'square' | 'rounded' | 'soft' | 'pill';
+/** Corner / frame style of the Contact extras CTA. */
+export type PortfolioNavContactButtonShape =
+  | 'square'
+  | 'rounded'
+  | 'soft'
+  | 'pill'
+  | 'frameless'
+  | 'bottom-line';
 
 export const PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS: {
   value: PortfolioNavContactButtonShape;
   label: string;
   description: string;
 }[] = [
-  { value: 'square', label: 'Square', description: 'Sharp corners.' },
-  { value: 'rounded', label: 'Rounded', description: 'Soft square corners.' },
-  { value: 'soft', label: 'Soft', description: 'Larger corner radius.' },
-  { value: 'pill', label: 'Pill', description: 'Fully rounded ends — circle when icon-only.' },
+  { value: 'frameless', label: 'Sans cadre', description: 'Texte ou icône seule, sans fond ni bordure.' },
+  { value: 'bottom-line', label: 'Trait en bas', description: 'Soulignement discret sous le libellé.' },
+  { value: 'square', label: 'Carré', description: 'Angles droits.' },
+  { value: 'rounded', label: 'Arrondi', description: 'Coins légèrement arrondis.' },
+  { value: 'soft', label: 'Soft', description: 'Grand rayon de coin.' },
+  { value: 'pill', label: 'Pill', description: 'Bords entièrement arrondis — cercle en mode icône.' },
+];
+
+export function normalizePortfolioNavContactButtonIconPosition(
+  value: unknown,
+  fallback: PortfolioNavContactButtonIconPosition = 'left'
+): PortfolioNavContactButtonIconPosition {
+  if (value === 'left' || value === 'right' || value === 'none') return value;
+  return fallback;
+}
+
+export function normalizePortfolioNavEditorialBarContactLink(
+  value: unknown,
+  fallback: PortfolioNavEditorialBarContactLink = 'phone'
+): PortfolioNavEditorialBarContactLink {
+  if (value === 'phone' || value === 'mail') return value;
+  if (value === 'section') return 'phone';
+  return fallback;
+}
+
+export const PORTFOLIO_NAV_EDITORIAL_BAR_CONTACT_LINK_OPTIONS: {
+  value: PortfolioNavEditorialBarContactLink;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'phone',
+    label: 'Téléphone',
+    description: 'Bouton qui ouvre le numéro du profil (tel:).',
+  },
+  {
+    value: 'mail',
+    label: 'E-mail',
+    description: 'Bouton qui ouvre l’adresse e-mail du profil (mailto:).',
+  },
+];
+
+export const PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS: {
+  value: PortfolioNavContactButtonIconPosition;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'left', label: 'Gauche', description: 'Icône avant le libellé.' },
+  { value: 'right', label: 'Droite', description: 'Icône après le libellé.' },
+  { value: 'none', label: 'Sans icône', description: 'Libellé seul.' },
 ];
 
 export function normalizePortfolioNavContactButtonShape(
   value: unknown,
   fallback: PortfolioNavContactButtonShape = 'pill'
 ): PortfolioNavContactButtonShape {
-  if (value === 'square' || value === 'rounded' || value === 'soft' || value === 'pill') {
+  if (
+    value === 'square' ||
+    value === 'rounded' ||
+    value === 'soft' ||
+    value === 'pill' ||
+    value === 'frameless' ||
+    value === 'bottom-line'
+  ) {
     return value;
   }
   return fallback;
@@ -280,6 +440,9 @@ export function portfolioNavContactButtonShapeClass(
   shape: PortfolioNavContactButtonShape | undefined
 ): string {
   switch (normalizePortfolioNavContactButtonShape(shape)) {
+    case 'frameless':
+    case 'bottom-line':
+      return 'rounded-none';
     case 'square':
       return 'rounded-none';
     case 'rounded':
@@ -290,6 +453,69 @@ export function portfolioNavContactButtonShapeClass(
     default:
       return 'rounded-full';
   }
+}
+
+export type PortfolioNavContactButtonChromeInput = {
+  background: string;
+  color: string;
+  border: string;
+  borderEnabled: boolean;
+};
+
+/** Shell paint for contact CTA — handles frameless / bottom-line variants. */
+export function portfolioNavContactButtonShellPresentation(
+  shape: PortfolioNavContactButtonShape | undefined,
+  chrome: PortfolioNavContactButtonChromeInput
+): { className: string; style: CSSProperties; useShadow: boolean; useGlass: boolean } {
+  const normalized = normalizePortfolioNavContactButtonShape(shape);
+  const baseClass = portfolioNavContactButtonShapeClass(normalized);
+
+  if (normalized === 'frameless') {
+    return {
+      className: `${baseClass} shadow-none`,
+      style: {
+        backgroundColor: 'transparent',
+        color: chrome.color,
+        borderWidth: 0,
+        borderStyle: 'solid',
+        borderColor: 'transparent',
+      },
+      useShadow: false,
+      useGlass: false,
+    };
+  }
+
+  if (normalized === 'bottom-line') {
+    const lineColor = chrome.borderEnabled ? chrome.border : chrome.color;
+    return {
+      className: `${baseClass} shadow-none`,
+      style: {
+        backgroundColor: 'transparent',
+        color: chrome.color,
+        borderWidth: 0,
+        borderStyle: 'solid',
+        borderColor: 'transparent',
+        borderBottomWidth: 2,
+        borderBottomColor: lineColor,
+        paddingBottom: 2,
+      },
+      useShadow: false,
+      useGlass: false,
+    };
+  }
+
+  return {
+    className: baseClass,
+    style: {
+      backgroundColor: chrome.background,
+      color: chrome.color,
+      borderColor: chrome.borderEnabled ? chrome.border : 'transparent',
+      borderWidth: chrome.borderEnabled ? 1 : 0,
+      borderStyle: 'solid',
+    },
+    useShadow: true,
+    useGlass: true,
+  };
 }
 
 /** Custom extra reuses the same corner-shape tokens as the Contact CTA. */
@@ -525,31 +751,153 @@ export const PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'phone', label: 'Classic', description: 'Curved handset.' },
-  { value: 'phone-handset', label: 'Handset', description: 'Bold telephone receiver.' },
-  { value: 'smartphone', label: 'Mobile', description: 'Vertical smartphone.' },
-  { value: 'phone-call', label: 'Ringing', description: 'Handset with sound waves.' },
-  { value: 'phone-outgoing', label: 'Outgoing', description: 'Handset with outward arrow.' },
-  { value: 'phone-incoming', label: 'Incoming', description: 'Handset with inward arrow.' },
+  { value: 'phone', label: 'Téléphone', description: 'Combiné classique.' },
+  { value: 'smartphone', label: 'Mobile', description: 'Smartphone vertical.' },
+  { value: 'phone-call', label: 'Sonnerie', description: 'Combiné avec ondes.' },
+  { value: 'mail', label: 'E-mail', description: 'Enveloppe.' },
+  { value: 'chat', label: 'Message', description: 'Bulle de discussion.' },
+  { value: 'at', label: '@', description: 'Symbole arobase.' },
+  { value: 'calendar', label: 'Agenda', description: 'Prise de rendez-vous.' },
+  { value: 'send', label: 'Envoyer', description: 'Avion en papier.' },
+  { value: 'arrow-up-right', label: 'Flèche ↗', description: 'Diagonale haut-droite.' },
+  { value: 'arrow-right', label: 'Flèche →', description: 'Vers la droite.' },
+  { value: 'arrow-up', label: 'Flèche ↑', description: 'Vers le haut.' },
+  { value: 'user', label: 'Profil', description: 'Silhouette utilisateur.' },
 ];
 
+export const PORTFOLIO_NAV_CONTACT_CTA_DIRECTION_ICONS: PortfolioNavContactCtaIcon[] = [
+  'arrow-up-right',
+  'arrow-right',
+  'arrow-up',
+];
+
+const PORTFOLIO_NAV_CONTACT_CTA_PHONE_ICONS: PortfolioNavContactCtaIcon[] = [
+  'phone',
+  'smartphone',
+  'phone-call',
+  ...PORTFOLIO_NAV_CONTACT_CTA_DIRECTION_ICONS,
+];
+
+const PORTFOLIO_NAV_CONTACT_CTA_MAIL_ICONS: PortfolioNavContactCtaIcon[] = [
+  'mail',
+  'at',
+  'chat',
+  'send',
+  ...PORTFOLIO_NAV_CONTACT_CTA_DIRECTION_ICONS,
+];
+
+/** Editorial bar — phone channel icon picker (no mail / mixed glyphs). */
+export function portfolioNavContactCtaIconOptionsForEditorialChannel(
+  channel: PortfolioNavEditorialBarContactLink
+) {
+  const allowed = new Set(
+    channel === 'phone' ? PORTFOLIO_NAV_CONTACT_CTA_PHONE_ICONS : PORTFOLIO_NAV_CONTACT_CTA_MAIL_ICONS
+  );
+  return PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS.filter((option) => allowed.has(option.value));
+}
+
+const DEPRECATED_CONTACT_CTA_ICON_MAP: Record<string, PortfolioNavContactCtaIcon> = {
+  'phone-handset': 'phone',
+  'phone-incoming': 'phone',
+  'phone-outgoing': 'arrow-up-right',
+};
+
 const LEGACY_CONTACT_CTA_ICON_MAP: Record<string, PortfolioNavContactCtaIcon> = {
-  message: 'phone-call',
-  mail: 'phone',
-  send: 'phone-outgoing',
-  heart: 'phone-handset',
-  user: 'smartphone',
+  message: 'chat',
+  send: 'send',
+  heart: 'user',
+  user: 'user',
+  ...DEPRECATED_CONTACT_CTA_ICON_MAP,
 };
 
 export function normalizePortfolioNavContactCtaIcon(
   value: unknown,
   fallback: PortfolioNavContactCtaIcon = 'phone'
 ): PortfolioNavContactCtaIcon {
+  if (value === 'none') return 'none';
   if (typeof value !== 'string') return fallback;
+  if (DEPRECATED_CONTACT_CTA_ICON_MAP[value]) {
+    return DEPRECATED_CONTACT_CTA_ICON_MAP[value];
+  }
   if (PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS.some((option) => option.value === value)) {
     return value as PortfolioNavContactCtaIcon;
   }
   return LEGACY_CONTACT_CTA_ICON_MAP[value] ?? fallback;
+}
+
+export function mergeEditorialBarContactChannelSettings(
+  base: PortfolioNavEditorialBarContactChannelSettings | undefined,
+  patch: Partial<PortfolioNavEditorialBarContactChannelSettings> | unknown,
+  fallback: PortfolioNavEditorialBarContactChannelSettings
+): PortfolioNavEditorialBarContactChannelSettings {
+  const patchRecord =
+    patch && typeof patch === 'object' && !Array.isArray(patch)
+      ? (patch as Record<string, unknown>)
+      : null;
+  const patchPartial: Partial<PortfolioNavEditorialBarContactChannelSettings> | undefined = patchRecord
+    ? {
+        ...(typeof patchRecord.label === 'string' ? { label: patchRecord.label } : null),
+        ...(patchRecord.display === 'icon' || patchRecord.display === 'button'
+          ? { display: patchRecord.display }
+          : null),
+        ...(typeof patchRecord.icon === 'string' || patchRecord.icon === 'none'
+          ? { icon: normalizePortfolioNavContactCtaIcon(patchRecord.icon, fallback.icon) }
+          : null),
+        ...(typeof patchRecord.iconPosition === 'string'
+          ? {
+              iconPosition: normalizePortfolioNavContactButtonIconPosition(
+                patchRecord.iconPosition,
+                fallback.iconPosition
+              ),
+            }
+          : null),
+        ...(typeof patchRecord.shape === 'string'
+          ? {
+              shape: normalizePortfolioNavContactButtonShape(
+                patchRecord.shape,
+                fallback.shape
+              ),
+            }
+          : null),
+      }
+    : undefined;
+  const merged = { ...fallback, ...base, ...patchPartial };
+  return {
+    label:
+      typeof merged.label === 'string' && merged.label.trim()
+        ? merged.label.trim().slice(0, 32)
+        : fallback.label,
+    display:
+      merged.display === 'icon' || merged.display === 'button'
+        ? merged.display
+        : fallback.display,
+    icon: normalizePortfolioNavContactCtaIcon(merged.icon, fallback.icon),
+    iconPosition: normalizePortfolioNavContactButtonIconPosition(
+      merged.iconPosition,
+      fallback.iconPosition
+    ),
+    shape: normalizePortfolioNavContactButtonShape(merged.shape, fallback.shape),
+  };
+}
+
+export function seedEditorialBarPhoneContactFromLegacy(settings: {
+  contactButtonLabel?: string;
+  contactButtonDisplay?: PortfolioNavContactButtonDisplay;
+  contactButtonIcon?: PortfolioNavContactCtaIcon;
+  contactButtonIconPosition?: PortfolioNavContactButtonIconPosition;
+  contactButtonShape?: PortfolioNavContactButtonShape;
+}): PortfolioNavEditorialBarContactChannelSettings {
+  return mergeEditorialBarContactChannelSettings(
+    undefined,
+    {
+      label: settings.contactButtonLabel,
+      display: settings.contactButtonDisplay,
+      icon: settings.contactButtonIcon,
+      iconPosition: settings.contactButtonIconPosition,
+      shape: settings.contactButtonShape,
+    },
+    DEFAULT_EDITORIAL_BAR_PHONE_CONTACT
+  );
 }
 
 export const DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES: PortfolioNavLinkIconSource[] = [
@@ -567,6 +915,8 @@ export type PortfolioNavSettings = {
   enabled: boolean;
   /** Default = floating + scroll; per-page = dots pager; pages = one section at a time via nav bar only. */
   navMode: 'default' | 'per-page' | 'pages' | 'split';
+  /** Ready-made bar structure (logo / links / contact). */
+  navLayoutDesign: PortfolioNavLayoutDesign;
   placement: PortfolioNavPlacement;
   barDesign: PortfolioNavBarDesign;
   contentMode: PortfolioNavContentMode;
@@ -581,6 +931,22 @@ export type PortfolioNavSettings = {
   menuControlIcon: PortfolioNavMenuControlIcon;
   /** Position of the open/close control relative to section items. */
   menuControlAlign: PortfolioNavMenuControlAlign;
+  /** Case overlay — menu on the left or right; logo moves to the opposite edge. */
+  caseOverlayMenuSide: PortfolioNavCaseOverlayMenuSide;
+  /** Case overlay — Menu/Close text or icon trigger. */
+  caseOverlayMenuTrigger: PortfolioNavCaseOverlayMenuTrigger;
+  /** Duten panel — number of link columns inside the rounded panel. */
+  dutenPanelColumns: PortfolioNavDutenPanelColumns;
+  /** Duten panel — outer margin between panel and viewport edges. */
+  dutenPanelInset: PortfolioNavDutenPanelInset;
+  /** Duten panel — show email / phone row inside the open menu. */
+  dutenPanelShowContact: boolean;
+  /** Duten panel — show social icons inside the open menu. */
+  dutenPanelShowSocial: boolean;
+  /** Duten panel — profile link ids for the social row (empty = first links). */
+  dutenPanelSocialLinkIds: string[];
+  /** Half panel — small heading above the link grid (e.g. Discover Pages). */
+  halfPanelDiscoverLabel: string;
   /** Handle / collapse control background (independent from nav buttons). */
   menuHandleBackgroundColor: string;
   /** Handle / collapse control icon color. */
@@ -590,9 +956,13 @@ export type PortfolioNavSettings = {
   /** Show outline on the handle / collapse control. */
   menuHandleBorderEnabled: boolean;
   labelCase: PortfolioNavLabelCase;
+  /** Shared font size for nav menu labels and link/contact button text. */
+  labelFontSize: PortfolioNavLabelFontSize;
   barWidth: PortfolioNavBarWidth;
   barThickness: PortfolioNavBarThickness;
   barPadding: PortfolioNavBarPadding;
+  /** Vertical padding of the bar shell and menu hit area. */
+  navBarHeight: PortfolioNavBarHeight;
   /** Padding inside each nav button (pill / rail cell). */
   buttonPadding: PortfolioNavButtonPadding;
   edgeOffset: PortfolioNavEdgeOffset;
@@ -602,6 +972,11 @@ export type PortfolioNavSettings = {
    */
   edgeOffsetCloseOnMobile: boolean;
   itemGap: PortfolioNavItemGap;
+  /**
+   * Bar shell surface when palette is on: neutre (card), fond (page), or transparent.
+   * Default neutre preserves current structured layout presets.
+   */
+  navBarSurface: PortfolioNavBarSurface;
   /** Nav bar shell background (classic / rail). */
   barBackgroundColor: string;
   /** Nav bar shell border color (classic / rail). */
@@ -659,6 +1034,8 @@ export type PortfolioNavSettings = {
   contactButtonDisplay: PortfolioNavContactButtonDisplay;
   /** Glyph inside the Contact CTA. */
   contactButtonIcon: PortfolioNavContactCtaIcon;
+  /** Labeled button: icon before/after label, or text-only. */
+  contactButtonIconPosition: PortfolioNavContactButtonIconPosition;
   /** Corner shape of the Contact CTA (square / rounded / soft / pill). */
   contactButtonShape: PortfolioNavContactButtonShape;
   /**
@@ -686,6 +1063,42 @@ export type PortfolioNavSettings = {
   linkIconsEnabled: boolean;
   /** Which link sources to show when URLs/email exist on the profile. */
   linkIconSources: PortfolioNavLinkIconSource[];
+  /** nav-logo-social: ordered link ids to show (max 3). Empty = first available links. */
+  triZoneSocialLinkIds: string[];
+  /** @deprecated Use triZoneShowSocial — kept for saved settings migration. */
+  triZoneSlotMode: PortfolioNavTriZoneSlotMode;
+  /** @deprecated Contact rails are grouped on the right — kept for migration. */
+  triZoneContactSide: PortfolioNavTriZoneContactSide;
+  /** nav-logo-social: brand icon size when showing social links. */
+  triZoneSocialLinkSize: PortfolioNavTriZoneSocialLinkSize;
+  /** nav-logo-social: grayscale brand icons (no platform colors). */
+  triZoneSocialLinkMonochrome: boolean;
+  /** nav-logo-social: spacing between brand link icons. */
+  triZoneSocialLinkGap: PortfolioNavTriZoneSocialLinkGap;
+  /** nav-logo-social: show social link icons (can combine with phone + mail). */
+  triZoneShowSocial: boolean;
+  /** nav-logo-social: show phone contact CTA. */
+  triZoneShowPhone: boolean;
+  /** nav-logo-social: show e-mail contact CTA. */
+  triZoneShowMail: boolean;
+  /** editorial-bar: show social link icons on the right (can combine with phone + mail). */
+  editorialBarShowSocial: boolean;
+  /** editorial-bar: show phone contact CTA on the right. */
+  editorialBarShowPhone: boolean;
+  /** editorial-bar: show e-mail contact CTA on the right. */
+  editorialBarShowMail: boolean;
+  /** @deprecated Use editorialBarShowSocial — kept for saved settings migration. */
+  editorialBarSlotMode: PortfolioNavEditorialBarSlotMode;
+  /** @deprecated Use editorialBarShowPhone / editorialBarShowMail — kept for migration. */
+  editorialBarContactLink: PortfolioNavEditorialBarContactLink;
+  /** editorial-bar: phone channel label, icon, frame, etc. */
+  editorialBarPhoneContact: PortfolioNavEditorialBarContactChannelSettings;
+  /** editorial-bar: e-mail channel label, icon, frame, etc. */
+  editorialBarMailContact: PortfolioNavEditorialBarContactChannelSettings;
+  /** center-logo-split: section keys pinned to the left rail (empty = auto half/half). */
+  splitNavLeftSectionKeys: PortfolioNavSectionKey[];
+  /** logo-left-nav-contact: logo rail — left (nav+contact right) or right (nav+contact left). */
+  logoLeftNavContactLogoSide: PortfolioNavLogoLeftContactLogoSide;
   /** Outer circle background for mail / social icon buttons (not Contact). */
   linkIconBackgroundColor: string;
   /** Glyph color for mail / social icon buttons (not Contact). */
@@ -744,6 +1157,8 @@ export type PortfolioNavSettings = {
   customExtraPaddingY: number;
   itemLabels: PortfolioNavItemLabels;
   itemIcons: PortfolioNavItemIcons;
+  /** Dropdown groups — each groups 2+ section links under a custom label. */
+  navMenuGroups: PortfolioNavMenuGroup[];
   /** Semantic color tokens for the navigation (same system as the Hero palette). */
   navPalette?: PortfolioNavPalette;
   /** Which token each nav color slot uses. */
@@ -783,6 +1198,7 @@ export type PortfolioSettings = {
   global: PortfolioGlobalSettings;
   navigation: PortfolioNavSettings;
   hero: PortfolioHeroSectionSettings;
+  info: PortfolioInfoSectionSettings;
   work: PortfolioWorkSectionSettings;
   services: PortfolioServicesSectionSettings;
   about: PortfolioAboutSectionSettings;
@@ -792,6 +1208,7 @@ export type PortfolioSettings = {
   gallery: PortfolioGallerySectionSettings;
   faq: PortfolioFaqSectionSettings;
   contact: PortfolioContactSectionSettings;
+  stack: PortfolioStackSectionSettings;
   tools: PortfolioToolsSectionSettings;
   footer: PortfolioFooterSettings;
   /**
@@ -805,6 +1222,8 @@ export type PortfolioSettings = {
    */
   updatedAt?: string;
 };
+
+export type { PortfolioNavMenuGroup } from '@/components/portfolio/portfolio-nav-menu-groups';
 
 export type PortfolioSettingsSectionMeta = {
   id: PortfolioSettingsSectionId;
@@ -829,6 +1248,16 @@ export const PORTFOLIO_SETTINGS_SECTIONS: PortfolioSettingsSectionMeta[] = [
     description: 'Opening section — headline, pitch, tools, and primary contact button.',
   },
   {
+    id: 'stack',
+    label: 'Stack',
+    description: 'Tech stack — workflow rail with logo tiles and labels.',
+  },
+  {
+    id: 'info',
+    label: 'Info',
+    description: 'Profile details section — placed below Hero (coming soon).',
+  },
+  {
     id: 'work',
     label: 'Portfolio',
     description: 'Featured projects shown as large editorial work cards.',
@@ -842,16 +1271,6 @@ export const PORTFOLIO_SETTINGS_SECTIONS: PortfolioSettingsSectionMeta[] = [
     id: 'services',
     label: 'Services',
     description: 'Services & pricing section — cards, CTA Commander, and typography.',
-  },
-  {
-    id: 'infos',
-    label: 'Infos',
-    description: 'Profile details panel — design, fields, markers, and typography.',
-  },
-  {
-    id: 'whyChooseMe',
-    label: 'Why choose me',
-    description: 'Why choose me block — designs, numbering, heading, and typography.',
   },
   {
     id: 'aboutUs',
@@ -900,6 +1319,7 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
     navigation: {
       enabled: true,
       navMode: 'default',
+      navLayoutDesign: 'classic',
       placement: 'top-center',
       barDesign: 'classic',
       contentMode: 'icons',
@@ -910,18 +1330,29 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       menuHandleContent: 'both',
       menuControlIcon: 'dots-h',
       menuControlAlign: 'right',
+      caseOverlayMenuSide: 'right',
+      caseOverlayMenuTrigger: 'text',
+      dutenPanelColumns: 2,
+      dutenPanelInset: 'md',
+      dutenPanelShowContact: false,
+      dutenPanelShowSocial: false,
+      dutenPanelSocialLinkIds: [],
+      halfPanelDiscoverLabel: 'Discover Pages',
       menuHandleBackgroundColor: '#ffffff',
       menuHandleIconColor: '#171717',
       menuHandleBorderColor: '#d4d4d4',
       menuHandleBorderEnabled: true,
       labelCase: 'normal',
+      labelFontSize: 'sm',
       barWidth: 'hug',
       barThickness: 'md',
       barPadding: 'md',
+      navBarHeight: 'md',
       buttonPadding: 'md',
       edgeOffset: 'md',
       edgeOffsetCloseOnMobile: true,
       itemGap: 'sm',
+      navBarSurface: 'neutre',
       barBackgroundColor: '#ffffff',
       barBorderColor: '#e5e5e5',
       barBorderEnabled: true,
@@ -949,6 +1380,7 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       contactButtonLabel: 'Contact',
       contactButtonDisplay: 'icon',
       contactButtonIcon: 'phone',
+      contactButtonIconPosition: 'left',
       contactButtonShape: 'pill',
       contactButtonDetached: false,
       contactButtonSide: 'auto',
@@ -960,6 +1392,24 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       contactButtonShadowEnabled: true,
       linkIconsEnabled: false,
       linkIconSources: [...DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES],
+      triZoneSocialLinkIds: [],
+      triZoneSlotMode: 'social',
+      triZoneContactSide: 'right',
+      triZoneSocialLinkSize: 'sm',
+      triZoneSocialLinkMonochrome: false,
+      triZoneSocialLinkGap: 'md',
+      triZoneShowSocial: true,
+      triZoneShowPhone: true,
+      triZoneShowMail: true,
+      editorialBarSlotMode: 'contact',
+      editorialBarShowSocial: true,
+      editorialBarShowPhone: true,
+      editorialBarShowMail: true,
+      editorialBarContactLink: 'phone',
+      editorialBarPhoneContact: { ...DEFAULT_EDITORIAL_BAR_PHONE_CONTACT },
+      editorialBarMailContact: { ...DEFAULT_EDITORIAL_BAR_MAIL_CONTACT },
+      splitNavLeftSectionKeys: [],
+      logoLeftNavContactLogoSide: 'left',
       linkIconBackgroundColor: '#ffffff',
       linkIconColor: '#404040',
       linkIconBorderColor: '#e5e5e5',
@@ -990,6 +1440,7 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       customExtraPaddingY: 6,
       itemLabels: { ...DEFAULT_PORTFOLIO_NAV_ITEM_LABELS },
       itemIcons: { ...DEFAULT_PORTFOLIO_NAV_ITEM_ICONS },
+      navMenuGroups: [],
       navPalette: { ...DEFAULT_NAV_PALETTE },
       navColorBindings: { ...DEFAULT_NAV_COLOR_BINDINGS },
       useNavPalette: true,
@@ -1006,6 +1457,12 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       showContactCta: true,
       ...DEFAULT_HERO_PRESENTATION,
     },
+    info: {
+      enabled: false,
+      title: 'Info',
+      subtitle: '',
+      ...DEFAULT_INFO_PRESENTATION,
+    },
     work: {
       enabled: true,
       title: 'PORTFOLIO',
@@ -1020,10 +1477,11 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       ...DEFAULT_SERVICES_PRESENTATION,
     },
     about: {
-      enabled: true,
+      enabled: false,
       title: 'About',
-      subtitle: 'Strengths, background, and the practical details behind how I work.',
+      subtitle: '',
       ...DEFAULT_ABOUT_PRESENTATION,
+      showSidePanel: false,
     },
     aboutUs: {
       enabled: true,
@@ -1068,6 +1526,12 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       subtitle: '',
       ...DEFAULT_TOOLS_PRESENTATION,
     },
+    stack: {
+      enabled: true,
+      title: 'Core Stack',
+      subtitle: '',
+      ...DEFAULT_STACK_PRESENTATION,
+    },
     footer: {
       enabled: true,
       ...DEFAULT_FOOTER_PRESENTATION,
@@ -1090,6 +1554,20 @@ function mergeSectionCopy(
     title: typeof patch.title === 'string' ? patch.title : base.title,
     subtitle: typeof patch.subtitle === 'string' ? patch.subtitle : base.subtitle,
   };
+}
+
+function migratePortfolioNavActiveStyle(value: unknown): PortfolioNavActiveStyle | undefined {
+  if (value === 'filled-pill') return 'filled-pill';
+  if (value === 'accent-fill') return 'accent-fill';
+  if (value === 'underline') return 'underline';
+  if (value === 'underline-animated') return 'underline-animated';
+  if (value === 'outline') return 'outline';
+  if (value === 'soft-badge') return 'soft-badge';
+  if (value === 'dot') return 'dot';
+  if (value === 'dot-left') return 'dot-left';
+  if (value === 'accent-text') return 'accent-text';
+  if (value === 'icons-stacked') return 'filled-pill';
+  return undefined;
 }
 
 function migrateNavBarDesign(stored: Record<string, unknown>): PortfolioNavBarDesign | undefined {
@@ -1115,6 +1593,7 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
   const labelCase = patch.labelCase;
   const barThickness = patch.barThickness;
   const barPadding = patch.barPadding;
+  const navBarHeight = patch.navBarHeight;
   const edgeOffset = patch.edgeOffset;
   const itemGap = patch.itemGap;
 
@@ -1127,6 +1606,18 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
       patch.navMode === 'split'
         ? patch.navMode
         : base.navMode ?? 'default',
+    navLayoutDesign:
+      patch.navLayoutDesign === 'classic' ||
+      patch.navLayoutDesign === 'editorial-bar' ||
+      patch.navLayoutDesign === 'floating-pill' ||
+      patch.navLayoutDesign === 'nav-logo-social' ||
+      patch.navLayoutDesign === 'center-logo-split' ||
+      patch.navLayoutDesign === 'logo-left-nav-contact' ||
+      patch.navLayoutDesign === 'case-overlay' ||
+      patch.navLayoutDesign === 'duten-panel' ||
+      patch.navLayoutDesign === 'half-panel-left'
+        ? patch.navLayoutDesign
+        : base.navLayoutDesign ?? 'classic',
     placement:
       placement === 'top-center' ||
       placement === 'top-left' ||
@@ -1146,24 +1637,22 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
         : isRecord(patch) && !('contentMode' in patch) && Object.keys(patch).length > 0
           ? 'text'
           : base.contentMode,
-    buttonDesign:
-      buttonDesign === 'clean' ||
-      buttonDesign === 'outlined' ||
-      buttonDesign === 'soft' ||
-      buttonDesign === 'glow' ||
-      buttonDesign === 'bottom-line'
-        ? buttonDesign
-        : base.buttonDesign,
+    buttonDesign: (() => {
+      const resolved =
+        buttonDesign === 'clean' ||
+        buttonDesign === 'outlined' ||
+        buttonDesign === 'soft' ||
+        buttonDesign === 'glow' ||
+        buttonDesign === 'bottom-line'
+          ? buttonDesign
+          : base.buttonDesign;
+      // Legacy generic underline trait — activeStyle indicators replace it.
+      return resolved === 'bottom-line' ? 'clean' : resolved;
+    })(),
     activeStyle:
-      activeStyle === 'filled-pill' ||
-      activeStyle === 'accent-fill' ||
-      activeStyle === 'underline' ||
-      activeStyle === 'outline' ||
-      activeStyle === 'soft-badge' ||
-      activeStyle === 'dot' ||
-      activeStyle === 'accent-text'
-        ? activeStyle
-        : base.activeStyle,
+      migratePortfolioNavActiveStyle(activeStyle) ??
+      migratePortfolioNavActiveStyle(base.activeStyle) ??
+      base.activeStyle,
     displayMode:
       displayMode === 'always' || displayMode === 'on-scroll' || displayMode === 'after-hero'
         ? displayMode
@@ -1199,6 +1688,39 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
             base.menuControlAlign === 'right'
           ? base.menuControlAlign
           : 'right',
+    caseOverlayMenuSide:
+      patch.caseOverlayMenuSide === 'left' || patch.caseOverlayMenuSide === 'right'
+        ? patch.caseOverlayMenuSide
+        : base.caseOverlayMenuSide ?? 'right',
+    caseOverlayMenuTrigger:
+      patch.caseOverlayMenuTrigger === 'text' || patch.caseOverlayMenuTrigger === 'icon'
+        ? patch.caseOverlayMenuTrigger
+        : base.caseOverlayMenuTrigger ?? 'text',
+    dutenPanelColumns:
+      patch.dutenPanelColumns === 1 || patch.dutenPanelColumns === 2
+        ? patch.dutenPanelColumns
+        : base.dutenPanelColumns ?? 2,
+    dutenPanelInset:
+      patch.dutenPanelInset === 'sm' || patch.dutenPanelInset === 'md' || patch.dutenPanelInset === 'lg'
+        ? patch.dutenPanelInset
+        : base.dutenPanelInset ?? 'md',
+    dutenPanelShowContact:
+      typeof patch.dutenPanelShowContact === 'boolean'
+        ? patch.dutenPanelShowContact
+        : base.dutenPanelShowContact ?? false,
+    dutenPanelShowSocial:
+      typeof patch.dutenPanelShowSocial === 'boolean'
+        ? patch.dutenPanelShowSocial
+        : base.dutenPanelShowSocial ?? false,
+    dutenPanelSocialLinkIds: Array.isArray(patch.dutenPanelSocialLinkIds)
+      ? patch.dutenPanelSocialLinkIds
+          .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+          .slice(0, 5)
+      : base.dutenPanelSocialLinkIds ?? [],
+    halfPanelDiscoverLabel:
+      typeof patch.halfPanelDiscoverLabel === 'string'
+        ? patch.halfPanelDiscoverLabel
+        : base.halfPanelDiscoverLabel ?? 'Discover Pages',
     menuHandleBackgroundColor:
       typeof patch.menuHandleBackgroundColor === 'string' &&
       /^#[0-9a-fA-F]{6}$/.test(patch.menuHandleBackgroundColor.trim())
@@ -1222,6 +1744,15 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
       labelCase === 'uppercase' || labelCase === 'titlecase' || labelCase === 'normal'
         ? labelCase
         : base.labelCase,
+    labelFontSize: (() => {
+      const raw =
+        typeof patch.labelFontSize === 'string'
+          ? patch.labelFontSize
+          : typeof base.labelFontSize === 'string'
+            ? base.labelFontSize
+            : 'sm';
+      return raw === 'xs' || raw === 'sm' || raw === 'md' || raw === 'lg' ? raw : 'sm';
+    })(),
     barWidth: (() => {
       const raw =
         typeof patch.barWidth === 'string'
@@ -1243,6 +1774,10 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
       barPadding === 'xl'
         ? barPadding
         : base.barPadding,
+    navBarHeight:
+      navBarHeight === 'sm' || navBarHeight === 'md' || navBarHeight === 'lg'
+        ? navBarHeight
+        : base.navBarHeight ?? 'md',
     buttonPadding: (() => {
       const raw =
         typeof patch.buttonPadding === 'string'
@@ -1271,6 +1806,12 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
       itemGap === 'spread'
         ? itemGap
         : base.itemGap,
+    navBarSurface:
+      patch.navBarSurface === 'neutre' ||
+      patch.navBarSurface === 'fond' ||
+      patch.navBarSurface === 'transparent'
+        ? patch.navBarSurface
+        : base.navBarSurface ?? 'neutre',
     barBackgroundColor:
       typeof patch.barBackgroundColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(patch.barBackgroundColor.trim())
         ? patch.barBackgroundColor.trim()
@@ -1391,6 +1932,10 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
       patch.contactButtonIcon,
       base.contactButtonIcon ?? 'phone'
     ),
+    contactButtonIconPosition: normalizePortfolioNavContactButtonIconPosition(
+      patch.contactButtonIconPosition,
+      base.contactButtonIconPosition ?? 'left'
+    ),
     contactButtonShape: normalizePortfolioNavContactButtonShape(
       patch.contactButtonShape,
       base.contactButtonShape ?? 'pill'
@@ -1437,6 +1982,110 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
         ? patch.linkIconsEnabled
         : base.linkIconsEnabled ?? false,
     linkIconSources: mergeNavLinkIconSources(base.linkIconSources, patch.linkIconSources),
+    triZoneSocialLinkIds: Array.isArray(patch.triZoneSocialLinkIds)
+      ? patch.triZoneSocialLinkIds
+          .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+          .slice(0, 3)
+      : base.triZoneSocialLinkIds ?? [],
+    triZoneSlotMode:
+      patch.triZoneSlotMode === 'contact' || patch.triZoneSlotMode === 'social'
+        ? patch.triZoneSlotMode
+        : base.triZoneSlotMode ?? 'social',
+    triZoneContactSide:
+      patch.triZoneContactSide === 'left' || patch.triZoneContactSide === 'right'
+        ? patch.triZoneContactSide
+        : base.triZoneContactSide ?? 'right',
+    triZoneSocialLinkSize:
+      patch.triZoneSocialLinkSize === 'xs' ||
+      patch.triZoneSocialLinkSize === 'sm' ||
+      patch.triZoneSocialLinkSize === 'md' ||
+      patch.triZoneSocialLinkSize === 'lg'
+        ? patch.triZoneSocialLinkSize
+        : base.triZoneSocialLinkSize ?? 'sm',
+    triZoneSocialLinkMonochrome:
+      typeof patch.triZoneSocialLinkMonochrome === 'boolean'
+        ? patch.triZoneSocialLinkMonochrome
+        : base.triZoneSocialLinkMonochrome ?? false,
+    triZoneSocialLinkGap:
+      patch.triZoneSocialLinkGap === 'sm' ||
+      patch.triZoneSocialLinkGap === 'md' ||
+      patch.triZoneSocialLinkGap === 'lg' ||
+      patch.triZoneSocialLinkGap === 'xl'
+        ? patch.triZoneSocialLinkGap
+        : base.triZoneSocialLinkGap ?? 'md',
+    triZoneShowSocial:
+      typeof patch.triZoneShowSocial === 'boolean'
+        ? patch.triZoneShowSocial
+        : typeof base.triZoneShowSocial === 'boolean'
+          ? base.triZoneShowSocial
+          : (base.triZoneSlotMode ?? 'social') === 'social',
+    triZoneShowPhone:
+      typeof patch.triZoneShowPhone === 'boolean'
+        ? patch.triZoneShowPhone
+        : typeof base.triZoneShowPhone === 'boolean'
+          ? base.triZoneShowPhone
+          : (base.triZoneSlotMode ?? 'social') === 'contact',
+    triZoneShowMail:
+      typeof patch.triZoneShowMail === 'boolean'
+        ? patch.triZoneShowMail
+        : typeof base.triZoneShowMail === 'boolean'
+          ? base.triZoneShowMail
+          : false,
+    editorialBarSlotMode:
+      patch.editorialBarSlotMode === 'contact' || patch.editorialBarSlotMode === 'social'
+        ? patch.editorialBarSlotMode
+        : base.editorialBarSlotMode ?? 'contact',
+    editorialBarShowSocial:
+      typeof patch.editorialBarShowSocial === 'boolean'
+        ? patch.editorialBarShowSocial
+        : typeof base.editorialBarShowSocial === 'boolean'
+          ? base.editorialBarShowSocial
+          : (base.editorialBarSlotMode ?? 'contact') === 'social',
+    editorialBarShowPhone:
+      typeof patch.editorialBarShowPhone === 'boolean'
+        ? patch.editorialBarShowPhone
+        : typeof base.editorialBarShowPhone === 'boolean'
+          ? base.editorialBarShowPhone
+          : (base.editorialBarSlotMode ?? 'contact') === 'contact' &&
+            normalizePortfolioNavEditorialBarContactLink(base.editorialBarContactLink, 'phone') !==
+              'mail',
+    editorialBarShowMail:
+      typeof patch.editorialBarShowMail === 'boolean'
+        ? patch.editorialBarShowMail
+        : typeof base.editorialBarShowMail === 'boolean'
+          ? base.editorialBarShowMail
+          : (base.editorialBarSlotMode ?? 'contact') === 'contact' &&
+            normalizePortfolioNavEditorialBarContactLink(base.editorialBarContactLink, 'phone') ===
+              'mail',
+    editorialBarContactLink: normalizePortfolioNavEditorialBarContactLink(
+      patch.editorialBarContactLink,
+      base.editorialBarContactLink ?? 'phone'
+    ),
+    editorialBarPhoneContact: mergeEditorialBarContactChannelSettings(
+      base.editorialBarPhoneContact ??
+        seedEditorialBarPhoneContactFromLegacy({
+          contactButtonLabel: base.contactButtonLabel,
+          contactButtonDisplay: base.contactButtonDisplay,
+          contactButtonIcon: base.contactButtonIcon,
+          contactButtonIconPosition: base.contactButtonIconPosition,
+          contactButtonShape: base.contactButtonShape,
+        }),
+      patch.editorialBarPhoneContact,
+      DEFAULT_EDITORIAL_BAR_PHONE_CONTACT
+    ),
+    editorialBarMailContact: mergeEditorialBarContactChannelSettings(
+      base.editorialBarMailContact,
+      patch.editorialBarMailContact,
+      DEFAULT_EDITORIAL_BAR_MAIL_CONTACT
+    ),
+    splitNavLeftSectionKeys:
+      patch.splitNavLeftSectionKeys !== undefined
+        ? normalizeSplitNavLeftSectionKeys(patch.splitNavLeftSectionKeys)
+        : base.splitNavLeftSectionKeys ?? [],
+    logoLeftNavContactLogoSide:
+      patch.logoLeftNavContactLogoSide === 'left' || patch.logoLeftNavContactLogoSide === 'right'
+        ? patch.logoLeftNavContactLogoSide
+        : base.logoLeftNavContactLogoSide ?? 'left',
     linkIconBackgroundColor:
       typeof patch.linkIconBackgroundColor === 'string' &&
       /^#[0-9a-fA-F]{6}$/.test(patch.linkIconBackgroundColor.trim())
@@ -1558,6 +2207,10 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
     ),
     itemLabels: mergeNavItemLabels(base.itemLabels, patch.itemLabels),
     itemIcons: mergeNavItemIcons(base.itemIcons, patch.itemIcons),
+    navMenuGroups:
+      patch.navMenuGroups !== undefined
+        ? normalizePortfolioNavMenuGroups(patch.navMenuGroups)
+        : base.navMenuGroups ?? [],
     navPalette: mergeNavPalette(
       mergeNavPalette(DEFAULT_NAV_PALETTE, base.navPalette),
       patch.navPalette
@@ -1636,6 +2289,7 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
         return {
           ...nextGlobal,
           titleOrientationTargets: {
+            info: false,
             work: true,
             services: true,
             about: true,
@@ -1645,6 +2299,7 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
             gallery: true,
             faq: true,
             contact: true,
+            stack: true,
             tools: true,
           },
         };
@@ -1688,6 +2343,10 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
         ? stored.hero.showContactCta
         : defaults.hero.showContactCta,
       ...mergeHeroPresentation(defaults.hero, stored.hero),
+    },
+    info: {
+      ...mergeSectionCopy(defaults.info, stored.info),
+      ...mergeInfoPresentation(defaults.info, stored.info),
     },
     work: (() => {
       const copy = mergeSectionCopy(defaults.work, stored.work);
@@ -1747,6 +2406,29 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
       ...mergeSectionCopy(defaults.tools, stored.tools),
       ...mergeToolsPresentation(defaults.tools, stored.tools),
     },
+    stack: (() => {
+      const copy = mergeSectionCopy(defaults.stack, stored.stack);
+      const presentation = mergeStackPresentation(defaults.stack, stored.stack);
+      const legacyTitle = copy.title.trim().toLocaleLowerCase() === 'stack';
+      const title =
+        presentation.titlePreset === 'tech-stack'
+          ? 'Tech Stack'
+          : presentation.titlePreset === 'core-stack' || legacyTitle
+            ? 'Core Stack'
+            : copy.title;
+      const subtitle =
+        presentation.design === 'brand-cards'
+          ? presentation.subtitleCustom?.trim() ||
+            copy.subtitle.trim() ||
+            'Languages, frameworks, and platforms I use to ship reliable products.'
+          : copy.subtitle;
+      return {
+        ...copy,
+        ...presentation,
+        title,
+        subtitle,
+      };
+    })(),
     footer: {
       enabled: isRecord(stored.footer) && typeof stored.footer.enabled === 'boolean'
         ? stored.footer.enabled
@@ -1786,6 +2468,13 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
   if (typeof stored.updatedAt === 'string' && Number.isFinite(Date.parse(stored.updatedAt))) {
     withActivePalette.updatedAt = stored.updatedAt;
   }
+
+  // Legacy Infos section removed from the portfolio.
+  withActivePalette.about = {
+    ...withActivePalette.about,
+    enabled: false,
+    showSidePanel: false,
+  };
 
   return withActivePalette;
 }

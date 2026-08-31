@@ -305,7 +305,7 @@ export type PortfolioFooterLinkColumn = {
 
 export type PortfolioFooterAlignment = 'split' | 'center' | 'left';
 
-export type PortfolioFooterDescriptionSource = 'bio' | 'whyMe' | 'custom';
+export type PortfolioFooterDescriptionSource = 'bio' | 'custom';
 
 export type PortfolioFooterPattern = 'none' | 'dots' | 'grid' | 'diagonal' | 'crosshatch';
 
@@ -1238,7 +1238,6 @@ export const PORTFOLIO_FOOTER_DESCRIPTION_SOURCE_OPTIONS: {
   description: string;
 }[] = [
   { value: 'bio', label: 'Bio', description: 'Uses your profile bio.' },
-  { value: 'whyMe', label: 'Why me', description: 'First “Why work with me” block.' },
   { value: 'custom', label: 'Custom', description: 'Write a short footer blurb.' },
 ];
 
@@ -1725,16 +1724,13 @@ export function resolveFooterDescription(options: {
   source: PortfolioFooterDescriptionSource;
   custom: string;
   bio?: string | null;
-  whyMeText?: string | null;
   maxLength?: number;
 }): string | null {
   const max = options.maxLength ?? 220;
   const raw =
     options.source === 'custom'
       ? options.custom.trim()
-      : options.source === 'whyMe'
-        ? (options.whyMeText ?? '').trim()
-        : (options.bio ?? '').trim();
+      : (options.bio ?? '').trim();
   if (!raw) return null;
   if (raw.length <= max) return raw;
   return `${raw.slice(0, max - 1).trimEnd()}…`;
@@ -1942,7 +1938,7 @@ export function mergeFooterPresentation(
     showAvatar: typeof record.showAvatar === 'boolean' ? record.showAvatar : base.showAvatar,
     showDescription:
       typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
-    descriptionSource: pick(record.descriptionSource, ['bio', 'whyMe', 'custom'], base.descriptionSource),
+    descriptionSource: pick(record.descriptionSource, ['bio', 'custom'], base.descriptionSource),
     descriptionCustom:
       typeof record.descriptionCustom === 'string' ? record.descriptionCustom : base.descriptionCustom,
     centeredIdentity: pick(

@@ -372,10 +372,10 @@ export const ECARLATE_DARK_HERO_PALETTE: PortfolioHeroPalette = {
 
 /**
  * Ardoise / Rouge / Bleu — Mode clair (défaut).
- * Fond oklch(86.9% 0.022 252.894) ≈ #d4dbe7 ; principal #EF4444 + bleu #2563EB.
+ * Fond oklch(86.9% 0.022 252.894) ≈ #d4dbe7 ; principal #f29107 + bleu #2563EB.
  */
 export const ARDOISE_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#EF4444',
+  principal: '#f29107',
   secondaire: '#2563EB',
   texteFort: '#0F172A',
   texteMuted: '#475569',
@@ -387,10 +387,10 @@ export const ARDOISE_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
 
 /**
  * Ardoise / Rouge / Bleu — Mode sombre.
- * Fond #030712 ; principal soft #F87171 + bleu #60A5FA ; neutres Gray.
+ * Fond #030712 ; principal #f29107 + bleu #60A5FA ; neutres Gray.
  */
 export const ARDOISE_DARK_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#F87171',
+  principal: '#f29107',
   secondaire: '#60A5FA',
   texteFort: '#F9FAFB',
   texteMuted: '#9CA3AF',

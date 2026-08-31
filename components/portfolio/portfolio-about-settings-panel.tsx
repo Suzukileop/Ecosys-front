@@ -30,26 +30,10 @@ import {
   PORTFOLIO_ABOUT_STATS_VALUE_WEIGHT_OPTIONS,
   PORTFOLIO_ABOUT_SUBTITLE_PRESET_OPTIONS,
   PORTFOLIO_ABOUT_TITLE_PRESET_OPTIONS,
-  PORTFOLIO_ABOUT_WHY_ME_CONTENT_ALIGN_OPTIONS,
-  PORTFOLIO_ABOUT_WHY_ME_BODY_LAYOUT_OPTIONS,
-  PORTFOLIO_ABOUT_WHY_ME_GAP_OPTIONS,
-  ABOUT_WHY_ME_GAP_PRESET_PX,
-  ABOUT_WHY_ME_GAP_PX_MIN,
-  ABOUT_WHY_ME_GAP_PX_MAX,
-  clampAboutWhyMeGapPx,
-  resolveWhyMeGapPx,
-  PORTFOLIO_ABOUT_WHY_ME_HEADING_PRESET_OPTIONS,
-  PORTFOLIO_ABOUT_WHY_ME_HEADING_SIZE_OPTIONS,
-  PORTFOLIO_ABOUT_WHY_ME_DESIGN_OPTIONS,
-  whyMeDesignSettingsPatch,
   PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS,
   PORTFOLIO_ABOUT_SIDE_PANEL_MARKER_STYLE_OPTIONS,
-  PORTFOLIO_ABOUT_WHY_ME_MARKER_PLACEMENT_OPTIONS,
   ABOUT_WHY_ME_MARKER_SIZE_PRESET_PX,
   PORTFOLIO_ABOUT_STYLE_TARGET_OPTIONS,
-  patchAboutWhyMeFromCardFrame,
-  aboutWhyMeToCardFrameSettings,
-  aboutWhyMeCardDecorSettings,
   patchAboutSidePanelFromCardFrame,
   aboutSidePanelToCardFrameSettings,
   patchAboutElementStyle,
@@ -121,14 +105,6 @@ const ABOUT_SIDE_FRAME_SLOTS: Record<PortfolioCardFrameColorFieldKey, AboutColor
   cardDividerColor: 'sidePanelDivider',
 };
 
-const ABOUT_WHY_ME_FRAME_SLOTS: Record<PortfolioCardFrameColorFieldKey, AboutColorSlot> = {
-  cardBorderColor: 'whyMeBorder',
-  cardBackgroundColor: 'whyMeBackground',
-  cardBackgroundColorA: 'whyMeBackgroundA',
-  cardBackgroundColorB: 'whyMeBackgroundB',
-  cardDividerColor: 'whyMeDivider',
-};
-
 export type AboutSubSection =
   | 'general'
   | 'header'
@@ -136,9 +112,7 @@ export type AboutSubSection =
   | 'frame'
   | 'statsStyle'
   | 'sidePanel'
-  | 'whyMe'
   | 'styleSide'
-  | 'styleWhyMe'
   | 'content'
   | 'background'
   | 'palette';
@@ -174,36 +148,20 @@ const ABOUT_SUB_SECTIONS_INFOS: { id: AboutSubSection; label: string; descriptio
   },
 ];
 
-const ABOUT_SUB_SECTIONS_WHY: { id: AboutSubSection; label: string; description: string }[] = [
-  {
-    id: 'whyMe',
-    label: 'Design & contenu',
-    description: 'Visibilité, designs, numérotation et titre Why choose me.',
-  },
-  {
-    id: 'styleWhyMe',
-    label: 'Style',
-    description: 'Couleur, police, taille et graisse du corps et des puces.',
-  },
-];
-
 const ABOUT_SUB_SECTIONS = [
   ...ABOUT_SUB_SECTIONS_ABOUT,
   ...ABOUT_SUB_SECTIONS_INFOS,
-  ...ABOUT_SUB_SECTIONS_WHY,
 ];
 
-export type AboutSettingsFocus = 'about' | 'infos' | 'whyChooseMe';
+export type AboutSettingsFocus = 'about' | 'infos';
 
 function aboutSubSectionsForFocus(focus: AboutSettingsFocus) {
   if (focus === 'infos') return ABOUT_SUB_SECTIONS_INFOS;
-  if (focus === 'whyChooseMe') return ABOUT_SUB_SECTIONS_WHY;
   return ABOUT_SUB_SECTIONS_ABOUT;
 }
 
 function aboutFocusLabel(focus: AboutSettingsFocus): string {
   if (focus === 'infos') return 'Infos';
-  if (focus === 'whyChooseMe') return 'Why choose me';
   return 'About';
 }
 
@@ -214,7 +172,7 @@ export function normalizeAboutSubSection(
 ): AboutSubSection {
   const allowed = aboutSubSectionsForFocus(focus);
   if (value === 'style') {
-    return focus === 'whyChooseMe' ? 'styleWhyMe' : focus === 'infos' ? 'styleSide' : 'styleSide';
+    return focus === 'infos' ? 'styleSide' : 'styleSide';
   }
   if (allowed.some((section) => section.id === value)) return value as AboutSubSection;
   return allowed[0]?.id ?? 'header';
@@ -222,10 +180,6 @@ export function normalizeAboutSubSection(
 
 const ABOUT_SIDE_STYLE_TARGETS = PORTFOLIO_ABOUT_STYLE_TARGET_OPTIONS.filter((option) =>
   ['sideLabel', 'sideTitle', 'sideSubtitle'].includes(option.value)
-);
-
-const ABOUT_WHY_ME_STYLE_TARGETS = PORTFOLIO_ABOUT_STYLE_TARGET_OPTIONS.filter((option) =>
-  ['whyMeBody', 'whyMeBullet'].includes(option.value)
 );
 
 function asAboutPatch(patch: Record<string, unknown> | object): Partial<PortfolioAboutSectionSettings> {
@@ -513,7 +467,6 @@ export function AboutSettingsPanel({
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
   const [sideStyleTarget, setSideStyleTarget] = useState<PortfolioAboutStyleTarget>('sideLabel');
-  const [whyMeStyleTarget, setWhyMeStyleTarget] = useState<PortfolioAboutStyleTarget>('whyMeBody');
   const activeMeta =
     focusSubSections.find((section) => section.id === subSection) ?? focusSubSections[0];
 
@@ -737,7 +690,7 @@ export function AboutSettingsPanel({
               <AboutOptionGrid
                 label="Répartition Why choose me / Infos"
                 options={PORTFOLIO_ABOUT_TWIN_COLUMNS_SPLIT_OPTIONS}
-                value={about.twinColumnsSplit ?? 'why-me-70'}
+                value={about.twinColumnsSplit ?? 'equal'}
                 onChange={(twinColumnsSplit) => onChange({ twinColumnsSplit })}
                 columns={3}
               />
@@ -769,473 +722,6 @@ export function AboutSettingsPanel({
             Le design d’Infos se règle dans la section <span className="font-semibold">Infos</span> du
             menu. Why choose me a sa propre section dédiée.
           </p>
-        </div>
-      ) : null}
-
-      {subSection === 'whyMe' ? (
-        <div className="space-y-6">
-          <AboutToggleRow
-            label="Afficher Why choose me"
-            description="Bloc Why choose me — indépendant du panneau Infos."
-            checked={about.showWhyMe}
-            onChange={(showWhyMe) => onChange({ showWhyMe })}
-          />
-
-          <AboutOptionGrid
-            label="Design Why choose me"
-            options={PORTFOLIO_ABOUT_WHY_ME_DESIGN_OPTIONS}
-            value={about.whyMeDesign}
-            onChange={(whyMeDesign) => onChange(whyMeDesignSettingsPatch(whyMeDesign))}
-          />
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <AboutOptionGrid
-              label="Alignement du contenu"
-              options={PORTFOLIO_ABOUT_WHY_ME_CONTENT_ALIGN_OPTIONS}
-              value={about.whyMeContentAlign}
-              onChange={(whyMeContentAlign) => onChange({ whyMeContentAlign })}
-              columns={2}
-            />
-            <AboutOptionGrid
-              label="Disposition numéro / phrase"
-              options={PORTFOLIO_ABOUT_WHY_ME_BODY_LAYOUT_OPTIONS}
-              value={about.whyMeBodyLayout ?? 'stack'}
-              onChange={(whyMeBodyLayout) => onChange({ whyMeBodyLayout })}
-              columns={2}
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-3">
-              <AboutOptionGrid
-                label="Espacement entre blocs"
-                options={PORTFOLIO_ABOUT_WHY_ME_GAP_OPTIONS}
-                value={
-                  about.whyMeGap === 'custom'
-                    ? ('' as 'md')
-                    : ((about.whyMeGap ?? 'md') as 'sm' | 'md' | 'lg')
-                }
-                onChange={(gap) =>
-                  onChange({
-                    whyMeGap: gap,
-                    whyMeGapPx: ABOUT_WHY_ME_GAP_PRESET_PX[gap],
-                  })
-                }
-                columns={2}
-              />
-              {about.whyMeGap === 'custom' ? (
-                <p className="text-xs font-medium text-amber-700">
-                  Mode manuel actif — choisis un preset ci-dessus pour quitter Manual.
-                </p>
-              ) : null}
-              <div>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Manuel (px)
-                  </p>
-                  <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                    {resolveWhyMeGapPx(about)}px
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Écart vertical entre chaque bloc — timeline, split, liste séparée et SVG + liste.
-                </p>
-                <input
-                  type="range"
-                  min={ABOUT_WHY_ME_GAP_PX_MIN}
-                  max={ABOUT_WHY_ME_GAP_PX_MAX}
-                  step={1}
-                  value={clampAboutWhyMeGapPx(about.whyMeGapPx, resolveWhyMeGapPx(about))}
-                  onChange={(event) => {
-                    const px = clampAboutWhyMeGapPx(Number(event.target.value), 24);
-                    onChange({ whyMeGap: 'custom', whyMeGapPx: px });
-                  }}
-                  className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Espacement manuel entre blocs en pixels"
-                />
-                <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
-                  <span>{ABOUT_WHY_ME_GAP_PX_MIN}px</span>
-                  <span>{ABOUT_WHY_ME_GAP_PX_MAX}px</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Numérotation / puces</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Remplace 01–04 par des chiffres romains ou des puces hyper-style — en haut de carte ou
-                devant chaque bloc.
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Style du marqueur
-              </p>
-              <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
-                {PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS.map((option) => {
-                  const active = about.whyMeMarkerStyle === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      title={`${option.label} — ${option.description}`}
-                      onClick={() => onChange({ whyMeMarkerStyle: option.value })}
-                      className={`flex flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2.5 transition ${
-                        active
-                          ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                          : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-                      }`}
-                    >
-                      <span className="text-base font-semibold leading-none text-neutral-900">
-                        {option.preview}
-                      </span>
-                      <span className="max-w-full truncate text-[10px] font-medium text-neutral-500">
-                        {option.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {about.whyMeMarkerStyle !== 'none' ? (
-              <>
-                <AboutOptionGrid
-                  label="Placement"
-                  options={PORTFOLIO_ABOUT_WHY_ME_MARKER_PLACEMENT_OPTIONS}
-                  value={about.whyMeMarkerPlacement}
-                  onChange={(whyMeMarkerPlacement) => onChange({ whyMeMarkerPlacement })}
-                  columns={2}
-                />
-                <PortfolioListMarkerSizeWeightControls
-                  size={about.whyMeMarkerSize ?? 'md'}
-                  sizePx={about.whyMeMarkerSizePx}
-                  weight={about.whyMeMarkerWeight ?? 'regular'}
-                  weightAmount={about.whyMeMarkerWeightAmount}
-                  OptionGrid={AboutOptionGrid}
-                  sizeLabel="Taille de la puce"
-                  weightLabel="Graisse de la puce"
-                  sizePresets={ABOUT_WHY_ME_MARKER_SIZE_PRESET_PX}
-                  onChange={(patch) =>
-                    onChange({
-                      ...(patch.size !== undefined ? { whyMeMarkerSize: patch.size } : null),
-                      ...(patch.sizePx !== undefined ? { whyMeMarkerSizePx: patch.sizePx } : null),
-                      ...(patch.weight !== undefined ? { whyMeMarkerWeight: patch.weight } : null),
-                      ...(patch.weightAmount !== undefined
-                        ? { whyMeMarkerWeightAmount: patch.weightAmount }
-                        : null),
-                    })
-                  }
-                />
-                <AboutManualColorField
-                  label="Couleur de la puce"
-                  value={about.whyMeMarkerColor}
-                  onChange={(whyMeMarkerColor) => onChange({ whyMeMarkerColor })}
-                />
-              </>
-            ) : null}
-
-            <AboutToggleRow
-              label="Icône et filet"
-              description="Pastille d’icône juste après la puce / le numéro (sans ligne décorative)."
-              checked={about.whyMeShowHeaderAccent}
-              onChange={(whyMeShowHeaderAccent) => onChange({ whyMeShowHeaderAccent })}
-            />
-
-            <AboutToggleRow
-              label="Fond des cartes"
-              description="Affiche ou masque le fond derrière chaque bloc Why me."
-              checked={about.whyMeBackgroundEnabled}
-              onChange={(whyMeBackgroundEnabled) => onChange({ whyMeBackgroundEnabled })}
-            />
-          </div>
-
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Titre Why choose me
-            </p>
-            <p className="text-sm text-neutral-500">
-              Titre propre à Why choose me — séparé du titre About et d’Infos.
-            </p>
-            <AboutToggleRow
-              label="Afficher le titre"
-              checked={about.showWhyMeHeading}
-              onChange={(showWhyMeHeading) => onChange({ showWhyMeHeading })}
-            />
-            {about.showWhyMeHeading ? (
-              <>
-                <AboutOptionGrid
-                  label="Preset du titre"
-                  options={PORTFOLIO_ABOUT_WHY_ME_HEADING_PRESET_OPTIONS}
-                  value={about.whyMeHeadingPreset}
-                  onChange={(whyMeHeadingPreset) => onChange({ whyMeHeadingPreset })}
-                />
-                {about.whyMeHeadingPreset === 'default' || about.whyMeHeadingPreset === 'custom' ? (
-                  <input
-                    type="text"
-                    value={
-                      about.whyMeHeadingPreset === 'custom'
-                        ? about.whyMeHeadingCustom || about.whyMeHeading
-                        : about.whyMeHeading
-                    }
-                    onChange={(event) =>
-                      onChange(
-                        about.whyMeHeadingPreset === 'custom'
-                          ? { whyMeHeadingCustom: event.target.value, whyMeHeading: event.target.value }
-                          : { whyMeHeading: event.target.value }
-                      )
-                    }
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
-                  />
-                ) : null}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <AboutOptionGrid
-                    label="Alignement titre"
-                    options={PORTFOLIO_ABOUT_WHY_ME_CONTENT_ALIGN_OPTIONS}
-                    value={about.whyMeHeadingAlignment}
-                    onChange={(whyMeHeadingAlignment) => onChange({ whyMeHeadingAlignment })}
-                    columns={2}
-                  />
-                  <AboutOptionGrid
-                    label="Taille titre"
-                    options={PORTFOLIO_ABOUT_WHY_ME_HEADING_SIZE_OPTIONS.map((option) => ({
-                      ...option,
-                      description: '',
-                    }))}
-                    value={about.whyMeHeadingSize}
-                    onChange={(whyMeHeadingSize) => onChange({ whyMeHeadingSize })}
-                    columns={3}
-                  />
-                </div>
-                <AboutColorField
-                  about={about}
-                  onChange={onChange}
-                  slot="whyMeHeading"
-                  label="Couleur du titre"
-                  value={about.whyMeHeadingColor}
-                />
-                <AboutToggleRow
-                  label="Titre en majuscules"
-                  checked={about.whyMeHeadingUppercase}
-                  onChange={(whyMeHeadingUppercase) => onChange({ whyMeHeadingUppercase })}
-                />
-              </>
-            ) : null}
-          </div>
-
-          <PortfolioCardFrameSettingsFields
-            settings={aboutWhyMeToCardFrameSettings(about)}
-            onChange={(patch) => onChange(patchAboutWhyMeFromCardFrame(patch))}
-            heading="Cadre des blocs"
-            description="Bordure, fond uni ou divisé X/Y, arrondi et padding pour chaque bloc Why me."
-            renderColorField={({ field, label, value }) => (
-              <AboutColorField
-                about={about}
-                onChange={onChange}
-                slot={ABOUT_WHY_ME_FRAME_SLOTS[field]}
-                label={label}
-                value={value}
-              />
-            )}
-          />
-
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Décor géométrique</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Teinte ou forme placée librement dans le cadre — redimensionnable, avec séquence
-                d’apparition optionnelle.
-              </p>
-            </div>
-
-            <AboutToggleRow
-              label="Activer le décor"
-              description="Affiche une forme ou teinte décorative derrière le contenu du bloc."
-              checked={about.whyMeDecorEnabled}
-              onChange={(whyMeDecorEnabled) => onChange({ whyMeDecorEnabled })}
-            />
-
-            {about.whyMeDecorEnabled ? (
-              <>
-                <AboutOptionGrid
-                  label="Forme"
-                  options={PORTFOLIO_SERVICES_CARD_DECOR_SHAPE_OPTIONS}
-                  value={about.whyMeDecorShape}
-                  onChange={(whyMeDecorShape) => onChange({ whyMeDecorShape })}
-                  columns={2}
-                />
-
-                <AboutColorField
-                  about={about}
-                  onChange={onChange}
-                  slot="whyMeDecor"
-                  label="Couleur / teinte"
-                  value={about.whyMeDecorColor}
-                />
-
-                <div>
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Opacité
-                    </p>
-                    <span className="text-xs font-semibold text-neutral-600">
-                      {about.whyMeDecorOpacity}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={5}
-                    max={100}
-                    step={1}
-                    value={about.whyMeDecorOpacity}
-                    onChange={(event) => onChange({ whyMeDecorOpacity: Number(event.target.value) })}
-                    className="w-full accent-neutral-900"
-                  />
-                </div>
-
-                <div>
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Taille
-                    </p>
-                    <span className="text-xs font-semibold text-neutral-600">
-                      {about.whyMeDecorSize}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={8}
-                    max={160}
-                    step={1}
-                    value={about.whyMeDecorSize}
-                    onChange={(event) => onChange({ whyMeDecorSize: Number(event.target.value) })}
-                    className="w-full accent-neutral-900"
-                  />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Position X
-                      </p>
-                      <span className="text-xs font-semibold text-neutral-600">
-                        {about.whyMeDecorX}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      step={1}
-                      value={about.whyMeDecorX}
-                      onChange={(event) => onChange({ whyMeDecorX: Number(event.target.value) })}
-                      className="w-full accent-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Position Y
-                      </p>
-                      <span className="text-xs font-semibold text-neutral-600">
-                        {about.whyMeDecorY}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      step={1}
-                      value={about.whyMeDecorY}
-                      onChange={(event) => onChange({ whyMeDecorY: Number(event.target.value) })}
-                      className="w-full accent-neutral-900"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Rotation
-                    </p>
-                    <span className="text-xs font-semibold text-neutral-600">
-                      {about.whyMeDecorRotation}°
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={360}
-                    step={1}
-                    value={about.whyMeDecorRotation}
-                    onChange={(event) => onChange({ whyMeDecorRotation: Number(event.target.value) })}
-                    className="w-full accent-neutral-900"
-                  />
-                </div>
-
-                <AboutOptionGrid
-                  label="Séquence d’alternance"
-                  options={PORTFOLIO_SERVICES_CARD_DECOR_ALTERNATION_OPTIONS}
-                  value={about.whyMeDecorAlternation}
-                  onChange={(whyMeDecorAlternation) => onChange({ whyMeDecorAlternation })}
-                  columns={2}
-                />
-
-                <div className="relative h-28 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
-                  <div
-                    className="absolute inset-0"
-                    style={servicesCardDecorShellStyle(aboutWhyMeCardDecorSettings(about))}
-                    aria-hidden
-                  />
-                  <p className="absolute bottom-2 left-3 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
-                    Aperçu position
-                  </p>
-                </div>
-              </>
-            ) : null}
-          </div>
-
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Texte de la liste</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Taille et graisse du texte Why work with me (paragraphes et lignes à puces).
-              </p>
-            </div>
-            <AboutOptionGrid
-              label="Taille"
-              options={PORTFOLIO_ELEMENT_TEXT_SIZE_OPTIONS}
-              value={about.elementStyles.whyMeBody.size}
-              onChange={(size: PortfolioElementTextSize) => {
-                let next = patchAboutElementStyle(about.elementStyles, 'whyMeBody', { size });
-                next = patchAboutElementStyle(next, 'whyMeBullet', { size });
-                onChange({ elementStyles: next });
-              }}
-              columns={2}
-            />
-            <AboutOptionGrid
-              label="Graisse"
-              options={PORTFOLIO_ELEMENT_TEXT_WEIGHT_OPTIONS}
-              value={
-                about.elementStyles.whyMeBody.weight ??
-                (about.elementStyles.whyMeBody.bold ? 'bold' : 'normal')
-              }
-              onChange={(weight: PortfolioElementTextWeight) => {
-                const patch = {
-                  weight,
-                  bold: weight === 'bold' || weight === 'semibold',
-                };
-                let next = patchAboutElementStyle(about.elementStyles, 'whyMeBody', patch);
-                next = patchAboutElementStyle(next, 'whyMeBullet', patch);
-                onChange({ elementStyles: next });
-              }}
-              columns={2}
-            />
-          </div>
         </div>
       ) : null}
 
@@ -1747,36 +1233,6 @@ export function AboutSettingsPanel({
               about={about}
               onChange={onChange}
               slot={ABOUT_STYLE_TARGET_COLOR_SLOT[sideStyleTarget]}
-              label={label}
-              value={value}
-            />
-          )}
-        />
-      ) : null}
-
-      {subSection === 'styleWhyMe' ? (
-        <PortfolioElementStyleFields
-          targets={ABOUT_WHY_ME_STYLE_TARGETS}
-          activeTarget={whyMeStyleTarget}
-          onTargetChange={(value) => setWhyMeStyleTarget(value as PortfolioAboutStyleTarget)}
-          style={about.elementStyles[whyMeStyleTarget]}
-          onStyleChange={(patch) => {
-            const next = patchAboutElementStyle(about.elementStyles, whyMeStyleTarget, patch);
-            const slot = ABOUT_STYLE_TARGET_COLOR_SLOT[whyMeStyleTarget];
-            onChange(
-              asAboutPatch(
-                about.useHeroPalette !== false && patch.color
-                  ? { elementStyles: next, ...patchAboutColorField(about, slot, patch.color) }
-                  : { elementStyles: next }
-              )
-            );
-          }}
-          showDarkColor={about.useHeroPalette === false}
-          renderColorField={({ label, value }) => (
-            <AboutColorField
-              about={about}
-              onChange={onChange}
-              slot={ABOUT_STYLE_TARGET_COLOR_SLOT[whyMeStyleTarget]}
               label={label}
               value={value}
             />

@@ -12,6 +12,30 @@ const CLEARANCE_GAP_PX = 16;
 /** Measured from the fixed top nav — 0px when the bar is hidden or not top-placed. */
 export const PORTFOLIO_NAV_TOP_CLEARANCE_CSS_VAR = '--portfolio-nav-top-clearance';
 
+/** Duration to wait after closing an overlay nav before scrolling (panel fold animation). */
+export const PORTFOLIO_NAV_OVERLAY_CLOSE_MS = 520;
+
+export function readPortfolioNavTopClearancePx(): number {
+  if (typeof document === 'undefined') return 0;
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue(PORTFOLIO_NAV_TOP_CLEARANCE_CSS_VAR)
+    .trim();
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/** Live clearance for programmatic scroll — prefers CSS var, falls back to header chrome. */
+export function measurePortfolioNavClearanceForScroll(): number {
+  const fromVar = readPortfolioNavTopClearancePx();
+  if (fromVar > 0) return fromVar;
+  if (typeof document === 'undefined') return 0;
+  const box = document.querySelector('[data-portfolio-nav-clearance-box]');
+  if (box instanceof HTMLElement) {
+    return Math.max(0, Math.ceil(box.getBoundingClientRect().bottom) + CLEARANCE_GAP_PX);
+  }
+  return 72;
+}
+
 export function portfolioNavTopClearanceActive(
   settings: Pick<PortfolioNavSettings, 'enabled' | 'navMode'>,
   effectivePlacement: PortfolioNavPlacement
@@ -25,6 +49,47 @@ export function portfolioNavTopClearanceActive(
 /** Anchor / scroll target offset — grows with the measured top nav height. */
 export function portfolioNavTopScrollMarginClass(): string {
   return 'scroll-mt-[max(7rem,var(--portfolio-nav-top-clearance,0px))]';
+}
+
+/** Smoothly scroll to a portfolio section, respecting top-nav scroll padding. */
+export function scrollToPortfolioSection(sectionId: string): boolean {
+  if (typeof document === 'undefined') return false;
+  const node = document.getElementById(sectionId);
+  if (!node) return false;
+
+  const clearance = measurePortfolioNavClearanceForScroll();
+  const targetTop = node.getBoundingClientRect().top + window.scrollY - clearance;
+
+  window.scrollTo({
+    top: Math.max(0, targetTop),
+    behavior: 'smooth',
+  });
+
+  if (typeof window !== 'undefined' && window.history?.replaceState) {
+    const url = new URL(window.location.href);
+    url.hash = sectionId;
+    window.history.replaceState(null, '', url);
+  }
+
+  return true;
+}
+
+/** Unlock page scroll immediately when closing a full-screen nav overlay. */
+export function unlockPortfolioPageScroll(): void {
+  if (typeof document === 'undefined') return;
+  document.body.style.overflow = '';
+}
+
+/** Run after the overlay fold animation finishes and scroll lock is cleared. */
+export function deferAfterPortfolioNavOverlayClose(
+  action: () => void,
+  delayMs = PORTFOLIO_NAV_OVERLAY_CLOSE_MS
+): void {
+  if (typeof window === 'undefined') {
+    action();
+    return;
+  }
+  window.setTimeout(action, delayMs);
 }
 
 /** Hero copy column — never less than the editorial defaults, grows when the nav is taller. */

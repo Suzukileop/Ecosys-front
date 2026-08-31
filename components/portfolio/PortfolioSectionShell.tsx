@@ -20,6 +20,8 @@ export function PortfolioSectionShell({
   fillAvailableHeight = false,
   topSpacingClass = 'pt-12 sm:pt-16 lg:pt-20',
   topSpacingStyle,
+  bottomSpacingClass = 'pb-12 sm:pb-16 lg:pb-20',
+  bottomSpacingStyle,
   contentLayout = 'stacked',
   header,
   children,
@@ -39,6 +41,10 @@ export function PortfolioSectionShell({
   topSpacingClass?: string;
   /** Optional CSS vars / overrides for top spacing (e.g. Split screen px fine-tune). */
   topSpacingStyle?: CSSProperties;
+  /** Global padding-bottom below section content — mirrors top spacing presets. */
+  bottomSpacingClass?: string;
+  /** Optional CSS vars / overrides for bottom spacing. */
+  bottomSpacingStyle?: CSSProperties;
   /**
    * Split screen (nav mode): titles live in a fixed left virtual frame (page-level);
    * this shell only shows the right-side content on large screens.
@@ -57,18 +63,15 @@ export function PortfolioSectionShell({
   const stretch = fillAvailableHeight && fullyOpaque;
   const split = contentLayout === 'split' && Boolean(header);
 
-  const paddingClass =
-    fitContent && hasBackground
-      ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12`
-      : topSpacingClass;
+  const paddingClass = `${topSpacingClass} ${bottomSpacingClass}`;
 
   return (
     <section
       id={id}
-      style={topSpacingStyle}
+      style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
       className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${paddingClass} ${
-        hasBackground && !fitContent ? 'min-h-0 pb-10 sm:pb-12' : ''
-      } ${stretch ? 'flex min-h-full flex-1 flex-col' : ''} ${className ?? ''}`}
+        stretch ? 'flex min-h-full flex-1 flex-col' : ''
+      } ${className ?? ''}`}
     >
       {bgStyle ? (
         <>

@@ -153,11 +153,6 @@ export function createBuiltinThemeSettings(
       statsUseAccentForRating: false,
       sidePanelBorderColor: NOIR_BORDER,
       sidePanelBackgroundColor: NOIR_WHITE,
-      whyMeBorderColor: NOIR_BORDER,
-      whyMeBackgroundColor: NOIR_WHITE,
-      whyMeDecorColor: NOIR_SOFT,
-      whyMeDecorOpacity: 55,
-      whyMeHeadingColor: NOIR_MUTED,
     },
     experience: {
       ...base.experience,

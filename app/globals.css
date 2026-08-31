@@ -1931,3 +1931,20 @@ html.ecosystem-geo-bg [data-dashboard-content] {
 .pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--aeonik.pf-gallery-media-title--tall {
   font-size: 20px !important;
 }
+
+@keyframes portfolio-nav-underline-in {
+  from {
+    transform: scaleX(0);
+    opacity: 0.6;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+.portfolio-nav-underline-animated {
+  transform: scaleX(1);
+  transform-origin: center;
+  animation: portfolio-nav-underline-in 0.35s ease-out forwards;
+}

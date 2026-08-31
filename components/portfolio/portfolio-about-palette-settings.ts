@@ -16,8 +16,6 @@ import type { PortfolioElementTextStyle } from '@/components/portfolio/portfolio
 
 /** Local mirrors — avoid importing portfolio-about-settings (circular TDZ). */
 export type AboutElementStyleTarget =
-  | 'whyMeBody'
-  | 'whyMeBullet'
   | 'sideLabel'
   | 'sideTitle'
   | 'sideSubtitle';
@@ -50,15 +48,6 @@ export type AboutColorSlot =
   | 'sidePanelBackgroundB'
   | 'sidePanelDivider'
   | 'sidePanelHeading'
-  | 'whyMeBorder'
-  | 'whyMeBackground'
-  | 'whyMeBackgroundA'
-  | 'whyMeBackgroundB'
-  | 'whyMeDivider'
-  | 'whyMeDecor'
-  | 'whyMeHeading'
-  | 'whyMeBody'
-  | 'whyMeBullet'
   | 'sideLabel'
   | 'sideTitle'
   | 'sideSubtitle';
@@ -89,14 +78,6 @@ type AboutPresentationColorFields = {
   sidePanelBackgroundColorB?: string;
   sidePanelDividerColor?: string;
   sidePanelHeadingColor?: string;
-  whyMeBorderColor?: string;
-  whyMeBackgroundColor?: string;
-  whyMeBackgroundColorA?: string;
-  whyMeBackgroundColorB?: string;
-  whyMeDividerColor?: string;
-  whyMeDecorColor?: string;
-  whyMeHeadingColor?: string;
-  whyMeMarkerColor?: string;
   sidePanelMarkerColor?: string;
   useHeroPalette?: boolean;
   aboutPalette?: PortfolioAboutPalette;
@@ -104,7 +85,6 @@ type AboutPresentationColorFields = {
   elementStyles?: AboutElementStyles;
   cardBackgroundEnabled?: boolean;
   sidePanelBackgroundEnabled?: boolean;
-  whyMeBackgroundEnabled?: boolean;
 };
 
 export const ABOUT_COLOR_SLOT_IDS: AboutColorSlot[] = [
@@ -131,15 +111,6 @@ export const ABOUT_COLOR_SLOT_IDS: AboutColorSlot[] = [
   'sidePanelBackgroundB',
   'sidePanelDivider',
   'sidePanelHeading',
-  'whyMeBorder',
-  'whyMeBackground',
-  'whyMeBackgroundA',
-  'whyMeBackgroundB',
-  'whyMeDivider',
-  'whyMeDecor',
-  'whyMeHeading',
-  'whyMeBody',
-  'whyMeBullet',
   'sideLabel',
   'sideTitle',
   'sideSubtitle',
@@ -173,15 +144,6 @@ export const PORTFOLIO_ABOUT_COLOR_SLOT_OPTIONS: {
   { value: 'sidePanelBackgroundB', label: 'Side panel split B', description: 'Second split zone on profile panel.' },
   { value: 'sidePanelDivider', label: 'Side panel divider', description: 'Divider on profile panel.' },
   { value: 'sidePanelHeading', label: 'Infos heading', description: 'Title above the Infos panel.' },
-  { value: 'whyMeBorder', label: 'Why me border', description: 'Outline on Why me blocks.' },
-  { value: 'whyMeBackground', label: 'Why me background', description: 'Fill on Why me blocks.' },
-  { value: 'whyMeBackgroundA', label: 'Why me split A', description: 'First split zone on Why me blocks.' },
-  { value: 'whyMeBackgroundB', label: 'Why me split B', description: 'Second split zone on Why me blocks.' },
-  { value: 'whyMeDivider', label: 'Why me divider', description: 'Divider on Why me blocks.' },
-  { value: 'whyMeDecor', label: 'Why me decor', description: 'Decorative shape color.' },
-  { value: 'whyMeHeading', label: 'Why me heading', description: 'Section heading above blocks.' },
-  { value: 'whyMeBody', label: 'Why me body', description: 'Paragraph text in blocks.' },
-  { value: 'whyMeBullet', label: 'Why me bullets', description: 'Bullet list items.' },
   { value: 'sideLabel', label: 'Side panel label', description: 'LOCATION / LANGUAGES captions (muted).' },
   { value: 'sideTitle', label: 'Side panel title', description: 'Main value in profile rows.' },
   { value: 'sideSubtitle', label: 'Side panel subtitle', description: 'Secondary profile line.' },
@@ -220,15 +182,6 @@ export const DEFAULT_ABOUT_COLOR_BINDINGS: PortfolioAboutColorBindings = {
   sidePanelBackgroundB: 'fond',
   sidePanelDivider: 'bordure',
   sidePanelHeading: 'texteFort',
-  whyMeBorder: 'bordure',
-  whyMeBackground: 'neutre',
-  whyMeBackgroundA: 'neutre',
-  whyMeBackgroundB: 'fond',
-  whyMeDivider: 'bordure',
-  whyMeDecor: 'principal',
-  whyMeHeading: 'texteFaint',
-  whyMeBody: 'texteMuted',
-  whyMeBullet: 'texteMuted',
   sideLabel: 'texteMuted',
   sideTitle: 'texteFort',
   sideSubtitle: 'texteMuted',
@@ -258,23 +211,12 @@ const ABOUT_SLOT_TO_FIELD: Record<AboutColorSlot, string> = {
   sidePanelBackgroundB: 'sidePanelBackgroundColorB',
   sidePanelDivider: 'sidePanelDividerColor',
   sidePanelHeading: 'sidePanelHeadingColor',
-  whyMeBorder: 'whyMeBorderColor',
-  whyMeBackground: 'whyMeBackgroundColor',
-  whyMeBackgroundA: 'whyMeBackgroundColorA',
-  whyMeBackgroundB: 'whyMeBackgroundColorB',
-  whyMeDivider: 'whyMeDividerColor',
-  whyMeDecor: 'whyMeDecorColor',
-  whyMeHeading: 'whyMeHeadingColor',
-  whyMeBody: 'elementStyles.whyMeBody.color',
-  whyMeBullet: 'elementStyles.whyMeBullet.color',
   sideLabel: 'elementStyles.sideLabel.color',
   sideTitle: 'elementStyles.sideTitle.color',
   sideSubtitle: 'elementStyles.sideSubtitle.color',
 };
 
 const ABOUT_ELEMENT_STYLE_SLOT: Partial<Record<AboutColorSlot, AboutElementStyleTarget>> = {
-  whyMeBody: 'whyMeBody',
-  whyMeBullet: 'whyMeBullet',
   sideLabel: 'sideLabel',
   sideTitle: 'sideTitle',
   sideSubtitle: 'sideSubtitle',
@@ -351,7 +293,6 @@ export function applyAboutPaletteToSettings(about: AboutPaletteHost): AboutPalet
     aboutColorBindings: bindings,
     cardBackgroundEnabled: true,
     sidePanelBackgroundEnabled: true,
-    // Keep whyMeBackgroundEnabled as the user's show/hide choice — only paint the hex.
   };
 
   const resolve = (slot: AboutColorSlot) => resolveHeroPaletteColor(palette, bindings[slot]);
@@ -392,7 +333,6 @@ export function applyAboutPaletteToSettings(about: AboutPaletteHost): AboutPalet
 
   // Icon soft washes + Why me / Infos markers track palette principal.
   const principal = resolveHeroPaletteColor(palette, 'principal');
-  patch.whyMeMarkerColor = principal;
   patch.sidePanelMarkerColor = principal;
 
   if (elementStyles) patch.elementStyles = elementStyles;
@@ -457,8 +397,6 @@ export function patchAboutColorField(
 }
 
 export const ABOUT_STYLE_TARGET_COLOR_SLOT: Record<AboutElementStyleTarget, AboutColorSlot> = {
-  whyMeBody: 'whyMeBody',
-  whyMeBullet: 'whyMeBullet',
   sideLabel: 'sideLabel',
   sideTitle: 'sideTitle',
   sideSubtitle: 'sideSubtitle',

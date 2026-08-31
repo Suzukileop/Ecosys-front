@@ -5,6 +5,7 @@ import {
   faAddressBook,
   faAddressCard,
   faCircleQuestion,
+  faCircleUser,
   faCompass,
   faEnvelope,
   faFileLines,
@@ -15,18 +16,19 @@ import {
   faPenToSquare,
   faRectangleList,
   faShareFromSquare,
-  faStar,
   faThumbsUp,
   faUser,
 } from '@fortawesome/free-regular-svg-icons';
+import { faScrewdriverWrench } from '@fortawesome/free-solid-svg-icons';
 
 export type ProfileSectionId =
   | 'about'
+  | 'aboutPage'
   | 'aboutUs'
   | 'myRole'
-  | 'whyMe'
   | 'experience'
   | 'strengths'
+  | 'tools'
   | 'services'
   | 'products'
   | 'portfolio'
@@ -47,8 +49,13 @@ export type ProfileSection = {
 export const PROFILE_SECTIONS: ProfileSection[] = [
   {
     id: 'about',
+    label: 'General Info',
+    description: 'Name, username, bio, specialty, languages, availability, and location.',
+  },
+  {
+    id: 'aboutPage',
     label: 'About',
-    description: 'Explain your value proposition, gender, nationality, working languages, and location.',
+    description: 'Specialty, languages, education, skills, strengths, systems, and interests.',
   },
   {
     id: 'aboutUs',
@@ -61,11 +68,6 @@ export const PROFILE_SECTIONS: ProfileSection[] = [
     description: 'Choose your role in the app to improve your experience.',
   },
   {
-    id: 'whyMe',
-    label: 'Why choose me',
-    description: 'Show what sets you apart with short stories and optional media.',
-  },
-  {
     id: 'experience',
     label: 'Experience',
     description: 'Highlight your background, years of experience, and proof points.',
@@ -73,7 +75,12 @@ export const PROFILE_SECTIONS: ProfileSection[] = [
   {
     id: 'strengths',
     label: 'Stack',
-    description: 'List the skills and software you master (max 12).',
+    description: 'Technologies you work with — name, level, logo, and description (max 12).',
+  },
+  {
+    id: 'tools',
+    label: 'Tools',
+    description: 'List the software and skills you master with proficiency levels (max 12).',
   },
   {
     id: 'services',
@@ -129,7 +136,7 @@ export const PROFILE_SECTIONS: ProfileSection[] = [
 
 /** Sidebar order: presentation → offers & showcase → reach & contact → reputation last */
 export const PROFILE_SECTION_GROUPS: ProfileSectionId[][] = [
-  ['about', 'aboutUs', 'myRole', 'whyMe', 'experience', 'strengths'],
+  ['about', 'aboutPage', 'aboutUs', 'myRole', 'experience', 'strengths', 'tools'],
   ['services', 'products', 'portfolio', 'faq', 'team', 'gallery', 'links'],
   ['contact', 'reputation'],
 ];
@@ -138,8 +145,8 @@ export const PROFILE_SECTION_GROUPS: ProfileSectionId[][] = [
 export const STORE_INFORMATION_SECTION_IDS: ProfileSectionId[] = [
   'about',
   'myRole',
-  'whyMe',
   'strengths',
+  'tools',
   'links',
   'contact',
   'faq',
@@ -148,8 +155,8 @@ export const STORE_INFORMATION_SECTION_IDS: ProfileSectionId[] = [
 
 /** Hidden from Information for RH / Recruiter / Client. */
 export const RH_RECRUITER_HIDDEN_INFORMATION_SECTIONS: readonly ProfileSectionId[] = [
-  'whyMe',
   'strengths',
+  'tools',
   'faq',
 ];
 
@@ -181,11 +188,12 @@ const PROFILE_SECTION_BY_ID = new Map(PROFILE_SECTIONS.map((section) => [section
 
 const PROFILE_SECTION_ICONS: Record<ProfileSectionId, IconDefinition> = {
   about: faAddressCard,
+  aboutPage: faCircleUser,
   aboutUs: faFileLines,
   myRole: faUser,
-  whyMe: faStar,
   experience: faIdBadge,
   strengths: faPenToSquare,
+  tools: faScrewdriverWrench,
   services: faRectangleList,
   products: faGem,
   portfolio: faFolder,

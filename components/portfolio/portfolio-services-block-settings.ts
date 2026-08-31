@@ -338,6 +338,8 @@ export function resolvePortfolioContentSectionOrder(
   order: PortfolioNavSectionKey[] | undefined,
   _sectionOrganization?: PortfolioServicesSectionOrganization
 ): PortfolioNavSectionKey[] {
-  // Skills was removed as a portfolio content section — never re-inject it.
-  return resolveSectionOrder(order).filter((key) => (key as string) !== 'skills');
+  // Skills and Infos / Why choose me (about) were removed as portfolio content sections.
+  return resolveSectionOrder(order).filter(
+    (key) => (key as string) !== 'skills' && key !== 'about'
+  );
 }

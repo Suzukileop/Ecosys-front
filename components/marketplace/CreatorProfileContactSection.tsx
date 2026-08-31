@@ -12,7 +12,7 @@ import { PublicSkillsToolsGrouped } from '@/components/marketplace/PublicSkillsT
 import { geocodePlaceLabel, openStreetMapEmbedUrl, detectUserCoordinatesForDistance, computeReliableDistanceKm } from '@/lib/geolocation';
 import { formatDistanceAwayKm } from '@/lib/countries';
 import { formatPhoneDisplay } from '@/lib/phone';
-import type { ProfileMediaBlock } from '@/types/ecosystem';
+import type { ProfileMediaBlock, ProfileStrengthTool } from '@/types/ecosystem';
 import type { MarketplaceCreatorPublicProfile } from '@/types/marketplace';
 import { ContentMediaPreview } from '@/components/creator/creator-content-media';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
@@ -32,11 +32,10 @@ import { creatorShowsProviderAboutFields, normalizeCreatorAppRole } from '@/lib/
 
 type PublicInfoNavId = Extract<
   ProfileSectionId,
-  'whyMe' | 'experience' | 'about' | 'strengths' | 'faq' | 'contact' | 'links'
+  'experience' | 'about' | 'strengths' | 'faq' | 'contact' | 'links'
 >;
 
 const PUBLIC_INFO_SECTION_DOM_ID: Record<PublicInfoNavId, string> = {
-  whyMe: 'public-info-why-me',
   experience: 'public-info-experience',
   about: 'public-info-about',
   strengths: 'public-info-skills-tools',
@@ -689,25 +688,28 @@ export function CreatorProfileContactSection({
   const hasGender = Boolean(profile.gender?.trim());
   const showProviderSections = creatorShowsProviderAboutFields(normalizeCreatorAppRole(profile.appRole));
 
-  const whyMeBlocks = profile.whyMeBlocks ?? [];
   const experienceBlocks = profile.experienceBlocks ?? [];
   const faqItems = profile.faqItems ?? [];
-  const hasWhyMe = showProviderSections && whyMeBlocks.length > 0;
   const hasYears = showProviderSections && profile.yearsOfExperience != null;
   const hasExperienceBlocks = showProviderSections && experienceBlocks.length > 0;
   const hasExperience = hasYears || hasExperienceBlocks;
   const strengths = profile.strengthsToolsMastered ?? [];
+  const stackItems =
+    profile.profileStack ??
+    (profile as { stack?: ProfileStrengthTool[] }).stack ??
+    [];
   const skillTags = (profile.specialtyTags ?? []).map((tag) => tag.trim()).filter(Boolean);
   const allowedSpecialties = (profile.specialties ?? []).map((item) => item.trim()).filter(Boolean);
   const hasStrengths = showProviderSections && strengths.length > 0;
-  const hasSkillTags = showProviderSections && skillTags.length > 0;
+  const hasStack = showProviderSections && stackItems.length > 0;
+  const hasSkillTags = showProviderSections && skillTags.length > 0 && !hasStack;
   const hasFaq = showProviderSections && faqItems.length > 0;
   const hasLinks = displayLinks.length > 0;
   const hasAboutMeta = hasGender || hasLanguages || memberSinceLabel;
-  const hasProfileInfo = hasAboutMeta || hasLocation || hasStrengths || hasSkillTags;
+  const hasProfileInfo = hasAboutMeta || hasLocation || hasStrengths || hasStack || hasSkillTags;
   const hasDirectContact = hasEmail || hasPhone;
   const hasAnyPublicInfo =
-    hasProfileInfo || hasDirectContact || hasLinks || hasWhyMe || hasExperience || hasFaq;
+    hasProfileInfo || hasDirectContact || hasLinks || hasExperience || hasFaq;
   const showMembersHint = !isAuthenticated && profile.membersOnlyContactAvailable;
 
   const profileFactRows = useMemo(() => {
@@ -761,18 +763,17 @@ export function CreatorProfileContactSection({
     });
   }
 
-  const hasAboutSection = hasProfileInfo || hasStrengths || hasSkillTags;
+  const hasAboutSection = hasProfileInfo || hasStrengths || hasStack || hasSkillTags;
 
   const navItems = useMemo(() => {
     const items: PublicInfoNavId[] = [];
     if (hasAboutSection) items.push('about');
     if (hasExperience) items.push('experience');
-    if (hasWhyMe) items.push('whyMe');
     if (hasFaq) items.push('faq');
     if (hasDirectContact) items.push('contact');
     if (hasLinks) items.push('links');
     return items;
-  }, [hasAboutSection, hasExperience, hasWhyMe, hasFaq, hasDirectContact, hasLinks]);
+  }, [hasAboutSection, hasExperience, hasFaq, hasDirectContact, hasLinks]);
 
   const [activeSection, setActiveSection] = useState<PublicInfoNavId | null>(navItems[0] ?? null);
 
@@ -888,9 +889,10 @@ export function CreatorProfileContactSection({
                 {hasAboutSection ? (
                   <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.about}>
                     <SectionHeading>Profile</SectionHeading>
-                    {hasSkillTags || hasStrengths ? (
+                    {hasStack || hasSkillTags || hasStrengths ? (
                       <div id={PUBLIC_INFO_SECTION_DOM_ID.strengths} className="mb-5 scroll-mt-24">
                         <PublicSkillsToolsGrouped
+                          stack={stackItems}
                           skillTags={skillTags}
                           tools={strengths}
                           allowedSpecialties={allowedSpecialties}
@@ -930,39 +932,6 @@ export function CreatorProfileContactSection({
                         ))}
                       </div>
                     ) : null}
-                  </InfoPanelSection>
-                ) : null}
-
-                {hasWhyMe ? (
-                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.whyMe}>
-                    <SectionHeading>Why choose me</SectionHeading>
-                    <ul className="space-y-3 pl-1">
-                      {whyMeBlocks.map((block) => {
-                        const title = block.title?.trim() ?? '';
-                        const text = block.text?.trim() ?? '';
-                        if (!title && !text) return null;
-                        return (
-                          <li
-                            key={block.id}
-                            className="relative pl-5 text-sm leading-relaxed text-neutral-900 dark:text-white sm:text-base"
-                          >
-                            <span
-                              className="absolute left-0 top-[0.55em] h-1.5 w-1.5 rounded-full bg-neutral-900 dark:bg-white"
-                              aria-hidden
-                            />
-                            {title ? (
-                              <span className="font-semibold">{title}</span>
-                            ) : null}
-                            {title && text ? <span className="mx-1.5 text-neutral-400">·</span> : null}
-                            {text ? (
-                              <span className={title ? 'font-normal text-neutral-700 dark:text-neutral-200' : undefined}>
-                                {text}
-                              </span>
-                            ) : null}
-                          </li>
-                        );
-                      })}
-                    </ul>
                   </InfoPanelSection>
                 ) : null}
 

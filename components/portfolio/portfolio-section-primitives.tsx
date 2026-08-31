@@ -74,6 +74,7 @@ import type { PortfolioNavSettings } from '@/components/portfolio/portfolio-sett
 import {
   formatNavLabel,
   portfolioNavBarContainerClass,
+  portfolioNavBarHeightClass,
   portfolioNavBarInnerClass,
   portfolioNavBarShellStyle,
   portfolioNavBarWidthClass,
@@ -81,21 +82,39 @@ import {
   portfolioNavIsVertical,
   portfolioNavItemActiveClass,
   portfolioNavItemBaseClass,
+  portfolioNavLabelFontSizeClass,
   portfolioNavItemColorStyles,
   portfolioNavItemHoverClass,
   portfolioNavItemHoverCssVars,
   portfolioNavItemHoverIconClass,
+  portfolioNavItemHoverPresentation,
   portfolioNavItemHoverTextClass,
+  portfolioNavDrawerItemHoverClass,
   portfolioNavActiveItemStyle,
+  portfolioNavActiveIndicatorSlot,
+  portfolioNavUsesFlatMenuIndicatorLayout,
   portfolioNavDockGlyphClass,
+  portfolioNavEffectiveContentMode,
+  portfolioNavInkOnAccentFill,
   portfolioNavPlacementClass,
   portfolioNavRailDividerClass,
   portfolioNavBarHostsInlineExtras,
   portfolioNavItemGapClass,
+  portfolioNavTriZoneItemGapClass,
+  resolveNavBarSurfaceBackground,
   resolvePortfolioNavMobileChrome,
   type PortfolioNavMenuControlAlign,
   type PortfolioNavMenuControlIcon,
 } from '@/components/portfolio/portfolio-nav-settings';
+import {
+  portfolioNavUsesCenterLogoSplitLayout,
+  portfolioNavUsesEditorialBarLayout,
+  portfolioNavUsesFloatingPillLayout,
+  portfolioNavUsesLogoLeftNavContactLayout,
+  portfolioNavUsesStructuredBarLayout,
+  portfolioNavUsesTriZoneLayout,
+} from '@/components/portfolio/portfolio-nav-layout-design';
+import { splitNavMenuEntries } from '@/components/portfolio/portfolio-nav-split-layout';
 import {
   DEFAULT_NAV_PALETTE,
   mergeNavPalette,
@@ -105,8 +124,10 @@ import { PortfolioNavIcon } from '@/components/portfolio/portfolio-nav-icons';
 import {
   portfolioNavTopClearanceActive,
   portfolioNavTopScrollMarginClass,
+  scrollToPortfolioSection,
   usePortfolioNavTopClearanceSync,
 } from '@/components/portfolio/portfolio-nav-top-clearance';
+import { usePortfolioSectionSpy } from '@/components/portfolio/portfolio-nav-section-spy';
 import {
   sectionHeaderOuterLayoutClass,
   sectionHeaderSubtitleAlignClass,
@@ -114,6 +135,8 @@ import {
   sectionHeaderTitleWrapClass,
   sectionHeaderTrailingLayoutClass,
 } from '@/components/portfolio/portfolio-global-settings';
+import { PortfolioNavMenuGroupDropdown } from '@/components/portfolio/portfolio-nav-menu-group-dropdown';
+import { resolveNavMenuEntries } from '@/components/portfolio/portfolio-nav-menu-groups';
 import type { PortfolioNavIconVariant } from '@/components/portfolio/portfolio-nav-items';
 import {
   teamAvatarSizeClass,
@@ -150,8 +173,13 @@ import {
 } from '@/components/portfolio/portfolio-team-settings';
 import {
   PortfolioNavAdjacentExtras,
+  PortfolioNavCenterBrand,
+  PortfolioNavContactCta,
+  PortfolioNavEditorialRightSlot,
   PortfolioNavFreeSpaceLinks,
   PortfolioNavInlineExtras,
+  PortfolioNavSocialIconStrip,
+  PortfolioNavTriZoneSideSlot,
   type PortfolioNavChromeLink,
 } from '@/components/portfolio/portfolio-nav-extras';
 import {
@@ -172,8 +200,6 @@ import {
   aboutSidePanelMicroLabelColor,
   aboutActiveColorMode,
   aboutHeaderFontClass,
-  resolveWhyMeTimelineSurfaceColor,
-  resolveWhyMeTimelineLineColor,
   aboutStatsAutoCenterClass,
   aboutStatCardFrameClass,
   aboutStatCardFrameStyle,
@@ -190,33 +216,13 @@ import {
   aboutStatValueColorStyle,
   aboutStatValueSizeClass,
   aboutStatValueWeightClass,
-  aboutWhyMeBlockClass,
-  aboutWhyMeContentPaddingClass,
-  aboutWhyMeEffectivePadding,
-  aboutWhyMeLayersSettings,
-  aboutWhyMeFrameClass,
-  aboutWhyMeFrameStyle,
-  whyMeGapStyle,
-  resolveWhyMeGapPx,
-  resolveWhyMeHeading,
-  resolveWhyMeMediaLayout,
-  resolveWhyMeItemsPerRow,
-  whyMeItemsPerRowGridClass,
-  whyMeBlockHasMedia,
-  whyMeContentAlignClass,
-  whyMeDesignEmbedsHeading,
-  whyMeDesignUsesHeroHeading,
-  whyMeHeadingClass,
-  whyMeHeadingStyle,
   sidePanelHeadingClass,
   sidePanelHeadingStyle,
   resolveSidePanelHeading,
   formatWhyMeIndexLabel,
   isWhyMeHyperBulletMarker,
-  resolveWhyMeMarkerColor,
   resolveSidePanelMarkerColor,
   ABOUT_WHY_ME_MARKER_SIZE_PRESET_PX,
-  DEFAULT_ABOUT_WHY_ME_HEADING_COLOR,
   sidePanelIconPlacementClass,
   isAboutRatingStat,
   type AboutStatValueSizeContext,
@@ -585,9 +591,14 @@ import {
 } from '@/components/portfolio/portfolio-footer-settings';
 import { sectionBackgroundStyle } from '@/components/portfolio/portfolio-section-background-settings';
 import {
+  DEFAULT_CONTENT_GUTTER,
   PORTFOLIO_EDITORIAL_GUTTER_X,
   PORTFOLIO_HERO_LAYER_INSET,
+  portfolioEditorialGutterInsetLeft,
+  portfolioEditorialGutterInsetRight,
+  portfolioEditorialGutterX,
   portfolioEditorialShellClass,
+  type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
 export const SERIF = "'Playfair Display', serif";
 
@@ -2407,7 +2418,7 @@ function resolveServicesTaskListMarker(
       taskBulletSource: bulletSource,
       taskBulletStyle: bulletStyle,
       taskBulletColor: sectionBulletColor,
-      taskBulletSize: sizeOverride ?? presentation.servicesTaskBulletSize ?? 'md',
+      taskBulletSize: sizeOverride ?? presentation.servicesTaskBulletSize ?? 'sm',
       taskBulletSizePx: sizePxOverride ?? presentation.servicesTaskBulletSizePx,
       taskBulletWeight: presentation.servicesTaskBulletWeight ?? 'regular',
       taskBulletWeightAmount: presentation.servicesTaskBulletWeightAmount,
@@ -3304,8 +3315,11 @@ export function PortfolioFloatingNav({
   monochrome,
   contactHref = '#contact',
   onContactNavigate,
+  contactPhone,
+  contactEmail,
   avatarUrl,
   brandName,
+  contentGutter = DEFAULT_CONTENT_GUTTER,
 }: {
   items: NavItem[];
   settings: PortfolioNavSettings;
@@ -3318,12 +3332,17 @@ export function PortfolioFloatingNav({
   monochrome?: boolean;
   contactHref?: string;
   onContactNavigate?: () => void;
+  /** Profile phone — editorial bar tel: link. */
+  contactPhone?: string | null;
+  /** Profile email — editorial bar mailto: link. */
+  contactEmail?: string | null;
   /** Profile avatar for mobile drawer brand (`mobileBrand: 'avatar'`). */
   avatarUrl?: string | null;
   /** Fallback word for mobile drawer brand when `mobileBrandWord` is empty. */
   brandName?: string;
+  /** Global side gutters — aligns in-bar brand / CTA with hero and sections. */
+  contentGutter?: PortfolioContentGutter;
 }) {
-  const [observedActiveId, setObservedActiveId] = useState(items[0]?.id ?? '');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isControlled = typeof onNavigate === 'function';
   // Pages mode uses an inner scroller — window.scrollY never moves.
@@ -3336,22 +3355,43 @@ export function PortfolioFloatingNav({
   const sectionItems = contactButtonEnabled
     ? items.filter((item) => item.id !== 'contact')
     : items;
+  const menuEntries = useMemo(
+    () => resolveNavMenuEntries(sectionItems, settings.navMenuGroups ?? []),
+    [sectionItems, settings.navMenuGroups]
+  );
+  const splitMenuRails = useMemo(
+    () => splitNavMenuEntries(menuEntries, settings.splitNavLeftSectionKeys ?? []),
+    [menuEntries, settings.splitNavLeftSectionKeys]
+  );
+  const sectionIds = useMemo(() => sectionItems.map((item) => item.id), [sectionItems]);
+  const {
+    activeId: spiedActiveId,
+    lockForNavigation,
+  } = usePortfolioSectionSpy(sectionIds, !isControlled);
 
   // Close reveal menus after choosing a page/section.
-  const handleNavigate = (id: string) => {
+  const handleNavigate = (id: string, event?: ReactMouseEvent) => {
     presence.onInteract();
     setDrawerOpen(false);
-    onNavigate?.(id);
+    if (onNavigate) {
+      onNavigate(id);
+      return;
+    }
+    event?.preventDefault();
+    if (scrollToPortfolioSection(id)) {
+      lockForNavigation(id);
+    }
   };
   const activeId = isControlled
     ? (controlledActiveId ?? sectionItems[0]?.id ?? items[0]?.id ?? '')
-    : observedActiveId;
+    : spiedActiveId;
   const innerRef = useRef<HTMLDivElement>(null);
   const navRootRef = useRef<HTMLElement>(null);
   const [autoNeedsScroll, setAutoNeedsScroll] = useState(false);
 
   const mobileChrome = resolvePortfolioNavMobileChrome(settings, isLgUp, isXlUp);
   const contentMode = mobileChrome.contentMode;
+  const effectiveContentMode = portfolioNavEffectiveContentMode(contentMode);
   const effectivePlacement = mobileChrome.placement;
   const itemGap = mobileChrome.itemGap;
   const barWidth = mobileChrome.barWidth;
@@ -3363,6 +3403,17 @@ export function PortfolioFloatingNav({
     () => mergeNavPalette(DEFAULT_NAV_PALETTE, settings.navPalette),
     [settings.navPalette]
   );
+  const effectiveBarBackground = useMemo(
+    () => resolveNavBarSurfaceBackground(settings, navPalette),
+    [
+      settings.navBarSurface,
+      settings.barBackgroundColor,
+      settings.useNavPalette,
+      settings.navPalette,
+      navPalette,
+    ]
+  );
+  const navBarSurfaceTransparent = (settings.navBarSurface ?? 'neutre') === 'transparent';
   const navStrongTextColor = resolveHeroPaletteColor(navPalette, 'texteFort');
   const navPageFillColor = resolveHeroPaletteColor(navPalette, 'fond');
 
@@ -3397,29 +3448,6 @@ export function PortfolioFloatingNav({
     const id = window.requestAnimationFrame(() => setDrawerEntered(true));
     return () => window.cancelAnimationFrame(id);
   }, [drawerOpen]);
-
-  useEffect(() => {
-    if (isControlled || sectionItems.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visibleEntry = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visibleEntry?.target.id) {
-          setObservedActiveId(visibleEntry.target.id);
-        }
-      },
-      { rootMargin: '-40% 0px -50% 0px', threshold: [0, 0.25, 0.5] }
-    );
-
-    for (const item of sectionItems) {
-      const node = document.getElementById(item.id);
-      if (node) observer.observe(node);
-    }
-
-    return () => observer.disconnect();
-  }, [sectionItems, isControlled]);
 
   // Auto mode: if icons still overflow after tight gap, enable swipe.
   useEffect(() => {
@@ -3475,8 +3503,8 @@ export function PortfolioFloatingNav({
   });
 
   if (!settings.enabled) return null;
-  if (settings.hideWhenSingle && sectionItems.length <= 1) return null;
-  if (sectionItems.length === 0) return null;
+  if (settings.hideWhenSingle && menuEntries.length <= 1) return null;
+  if (menuEntries.length === 0) return null;
   if (!mounted) return null;
 
   const menuControlIcon = (settings.menuControlIcon ?? 'dots-h') as PortfolioNavMenuControlIcon;
@@ -3497,6 +3525,7 @@ export function PortfolioFloatingNav({
   if (useDrawer) {
     const mobileBrand = settings.mobileBrand ?? 'none';
     const drawerSide = settings.mobileDrawerSide ?? 'right';
+    const drawerLabelSizeClass = portfolioNavLabelFontSizeClass(settings.labelFontSize ?? 'sm', true);
     const brandWord =
       (settings.mobileBrandWord ?? '').trim() ||
       (brandName ?? '').trim() ||
@@ -3610,11 +3639,19 @@ export function PortfolioFloatingNav({
                     : 'translate-x-full'
               }`}
               style={{
-                backgroundColor: settings.barBackgroundColor ?? '#ffffff',
+                backgroundColor: effectiveBarBackground,
                 color: settings.itemTextColor ?? '#525252',
-                borderColor: settings.barBorderColor ?? '#e5e5e5',
-                borderLeftWidth: drawerSide === 'right' && (settings.barBorderEnabled ?? true) ? 1 : 0,
-                borderRightWidth: drawerSide === 'left' && (settings.barBorderEnabled ?? true) ? 1 : 0,
+                borderColor: navBarSurfaceTransparent
+                  ? 'transparent'
+                  : settings.barBorderColor ?? '#e5e5e5',
+                borderLeftWidth:
+                  drawerSide === 'right' && (settings.barBorderEnabled ?? true) && !navBarSurfaceTransparent
+                    ? 1
+                    : 0,
+                borderRightWidth:
+                  drawerSide === 'left' && (settings.barBorderEnabled ?? true) && !navBarSurfaceTransparent
+                    ? 1
+                    : 0,
                 borderStyle: 'solid',
                 paddingTop: 'env(safe-area-inset-top, 0px)',
               }}
@@ -3633,10 +3670,51 @@ export function PortfolioFloatingNav({
               </div>
               <div className="flex-1 overflow-y-auto px-3 pb-6 pt-1">
                 <ul className="flex flex-col gap-1.5">
-                  {sectionItems.map((item) => {
+                  {menuEntries.map((entry) => {
+                    if (entry.type === 'group') {
+                      return (
+                        <li key={entry.id}>
+                          <PortfolioNavMenuGroupDropdown
+                            groupLabel={entry.label}
+                            items={entry.items}
+                            activeId={activeId}
+                            isControlled={isControlled}
+                            settings={settings}
+                            contentMode={effectiveContentMode}
+                            vertical
+                            triggerClassName="hidden"
+                            triggerStyle={{}}
+                            allowScroll={false}
+                            onNavigate={handleNavigate}
+                            onInteract={presence.onInteract}
+                          />
+                        </li>
+                      );
+                    }
+
+                    const item = entry.item;
                     const active = activeId === item.id;
                     const label = formatNavLabel(item.label, settings.labelCase);
                     const accent = settings.activeAccentColor ?? '#f97316';
+                    const drawerHoverVars = portfolioNavItemHoverCssVars({
+                      active,
+                      backgroundColor: settings.itemBackgroundColor ?? '#ffffff',
+                      borderColor: settings.itemBorderColor ?? '#e5e5e5',
+                      iconColor: settings.itemIconColor ?? '#525252',
+                      textColor: settings.itemTextColor ?? '#525252',
+                      hoverIconColor: settings.itemHoverIconColor ?? accent,
+                      hoverTextColor: settings.itemHoverTextColor ?? settings.itemTextColor ?? '#525252',
+                      hoverBackgroundColor:
+                        settings.itemHoverBackgroundColor ?? accent,
+                      hoverBorderColor: settings.itemHoverBorderColor ?? accent,
+                      borderEnabled: settings.itemBorderEnabled ?? true,
+                      barBackgroundColor: effectiveBarBackground,
+                      activeStyle: settings.activeStyle,
+                    });
+                    const drawerHoverClass = portfolioNavDrawerItemHoverClass(
+                      active,
+                      settings.activeStyle
+                    );
                     return (
                       <li key={item.id}>
                         {isControlled ? (
@@ -3644,9 +3722,7 @@ export function PortfolioFloatingNav({
                             type="button"
                             onClick={() => handleNavigate(item.id)}
                             aria-current={active ? 'page' : undefined}
-                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${
-                              active ? 'shadow-sm' : 'hover:bg-black/[0.04]'
-                            }`}
+                            className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold transition ${drawerLabelSizeClass} ${drawerHoverClass}`}
                             style={
                               active
                                 ? {
@@ -3655,22 +3731,21 @@ export function PortfolioFloatingNav({
                                   }
                                 : {
                                     color: settings.itemTextColor ?? '#525252',
+                                    ...drawerHoverVars,
                                   }
                             }
                           >
-                            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center opacity-90">
+                            <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center ${active ? 'opacity-90' : 'opacity-85 transition-opacity duration-200 group-hover:opacity-100 group-hover:[color:var(--nav-item-hover-icon)]'}`}>
                               <PortfolioNavIcon variant={item.icon} className="h-5 w-5" />
                             </span>
-                            <span className="min-w-0 flex-1 truncate">{label}</span>
+                            <span className={`min-w-0 flex-1 truncate ${active ? '' : 'transition-colors duration-200 group-hover:[color:var(--nav-item-hover-text)] group-hover:font-bold'}`}>{label}</span>
                           </button>
                         ) : (
                           <a
                             href={`#${item.id}`}
                             aria-current={active ? 'page' : undefined}
-                            onClick={() => setDrawerOpen(false)}
-                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${
-                              active ? 'shadow-sm' : 'hover:bg-black/[0.04]'
-                            }`}
+                            onClick={(event) => handleNavigate(item.id, event)}
+                            className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold transition ${drawerLabelSizeClass} ${drawerHoverClass}`}
                             style={
                               active
                                 ? {
@@ -3679,13 +3754,14 @@ export function PortfolioFloatingNav({
                                   }
                                 : {
                                     color: settings.itemTextColor ?? '#525252',
+                                    ...drawerHoverVars,
                                   }
                             }
                           >
-                            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center opacity-90">
+                            <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center ${active ? 'opacity-90' : 'opacity-85 transition-opacity duration-200 group-hover:opacity-100 group-hover:[color:var(--nav-item-hover-icon)]'}`}>
                               <PortfolioNavIcon variant={item.icon} className="h-5 w-5" />
                             </span>
-                            <span className="min-w-0 flex-1 truncate">{label}</span>
+                            <span className={`min-w-0 flex-1 truncate ${active ? '' : 'transition-colors duration-200 group-hover:[color:var(--nav-item-hover-text)] group-hover:font-bold'}`}>{label}</span>
                           </a>
                         )}
                       </li>
@@ -3720,35 +3796,41 @@ export function PortfolioFloatingNav({
     effectivePlacement,
     { wrap: allowWrap, scroll: allowScroll }
   );
+  const navBarHeight = settings.navBarHeight ?? 'md';
+  const structuredBarHeightClass = portfolioNavBarHeightClass(navBarHeight, 'structured');
   const containerClass = portfolioNavBarContainerClass(
     settings.barDesign,
-    settings.glassEffect,
+    navBarSurfaceTransparent ? false : settings.glassEffect,
     vertical,
     settings.barPadding ?? 'md',
     barWidth,
-    settings.barBorderEnabled ?? true,
-    settings.barShadowEnabled ?? true,
+    navBarSurfaceTransparent ? false : (settings.barBorderEnabled ?? true),
+    navBarSurfaceTransparent ? false : (settings.barShadowEnabled ?? true),
     settings.barBlurStrength ?? 'md',
-    settings.barShadowStrength ?? 'md'
+    settings.barShadowStrength ?? 'md',
+    navBarHeight
   );
   const shellStyle =
     settings.barDesign === 'dock'
       ? undefined
       : portfolioNavBarShellStyle(
-          settings.barBackgroundColor,
-          settings.barBorderColor,
-          settings.glassEffect,
-          settings.barBorderEnabled ?? true
+          effectiveBarBackground,
+          navBarSurfaceTransparent ? 'transparent' : settings.barBorderColor,
+          navBarSurfaceTransparent ? false : settings.glassEffect,
+          navBarSurfaceTransparent ? false : (settings.barBorderEnabled ?? true)
         );
   const itemBaseClass = portfolioNavItemBaseClass(
     settings.barDesign,
-    contentMode,
+    effectiveContentMode,
     settings.buttonDesign,
     settings.labelCase,
     compact,
     vertical,
     settings.barThickness,
-    settings.buttonPadding ?? 'md'
+    settings.buttonPadding ?? 'md',
+    settings.labelFontSize ?? 'sm',
+    navBarHeight,
+    settings.activeStyle
   );
   const iconGlyphClass = portfolioNavIconGlyphClass(settings.barThickness);
   const showRailDividers = settings.barDesign === 'rail' && sectionItems.length > 1 && !allowWrap;
@@ -3771,14 +3853,47 @@ export function PortfolioFloatingNav({
     iconsPlacementMode === 'free-side' ||
     contactPlacementMode === 'free-side' ||
     customPlacementMode === 'free-side';
+  const editorialBarLayout = portfolioNavUsesEditorialBarLayout(settings);
+  const floatingPillLayout = portfolioNavUsesFloatingPillLayout(settings);
+  const triZoneLayout = portfolioNavUsesTriZoneLayout(settings);
+  const centerLogoSplitLayout = portfolioNavUsesCenterLogoSplitLayout(settings);
+  const logoLeftNavContactLayout = portfolioNavUsesLogoLeftNavContactLayout(settings);
+  const effectiveButtonDesign = settings.buttonDesign;
+  const logoLeftNavContactLogoOnRight =
+    logoLeftNavContactLayout && (settings.logoLeftNavContactLogoSide ?? 'left') === 'right';
+  const structuredBarLayout = portfolioNavUsesStructuredBarLayout(settings);
   const inlineExtras =
-    anyFreeSideExtras && portfolioNavBarHostsInlineExtras(barWidth, effectivePlacement);
+    structuredBarLayout ||
+    (anyFreeSideExtras && portfolioNavBarHostsInlineExtras(barWidth, effectivePlacement));
+  const triZoneShell = triZoneLayout;
   const placementIsStart =
     effectivePlacement === 'top-left' || effectivePlacement === 'bottom-left';
   const placementIsEnd =
     effectivePlacement === 'top-right' || effectivePlacement === 'bottom-right';
   const placementIsCentered = !vertical && !placementIsStart && !placementIsEnd;
-  const itemsGapClass = portfolioNavItemGapClass(itemGap, vertical);
+  const itemsGapClass =
+    triZoneLayout || centerLogoSplitLayout || logoLeftNavContactLayout
+    ? portfolioNavTriZoneItemGapClass(itemGap, vertical)
+    : portfolioNavItemGapClass(itemGap, vertical);
+  const navContentGutterClass =
+    !vertical && barWidth === 'full' ? portfolioEditorialGutterX(contentGutter) : '';
+  const navUsesGlobalGutterInset = !vertical && barWidth === 'full';
+  const innerBarLayoutClass =
+    logoLeftNavContactLayout
+      ? `grid w-full max-w-full items-center gap-x-4 sm:gap-x-6 !grid ${structuredBarHeightClass} ${
+          logoLeftNavContactLogoOnRight
+            ? 'grid-cols-[minmax(0,1fr)_auto]'
+            : 'grid-cols-[auto_minmax(0,1fr)]'
+        }`
+      : editorialBarLayout || triZoneLayout || centerLogoSplitLayout
+      ? `grid w-full max-w-full items-center gap-x-3 sm:gap-x-4 ${structuredBarHeightClass} ${
+          centerLogoSplitLayout
+            ? 'grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] !grid'
+            : 'grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]'
+        }`
+      : floatingPillLayout
+        ? `grid w-fit max-w-[calc(100vw-1.5rem)] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 sm:gap-x-6 lg:gap-x-8 !px-2 sm:!px-3 ${structuredBarHeightClass}`
+        : innerWidthClass;
 
   const expandedToggleButton = showExpandedToggle ? (
     <button
@@ -3809,15 +3924,384 @@ export function PortfolioFloatingNav({
     ? effectivePlacement === 'right-center'
       ? 'justify-items-end items-center'
       : 'justify-items-start items-center'
+    : centerLogoSplitLayout
+      ? 'w-full justify-items-stretch items-center'
+      : logoLeftNavContactLayout
+        ? 'w-full justify-items-stretch items-center'
     : placementIsStart
       ? 'justify-items-start items-center'
       : placementIsEnd
         ? 'justify-items-end items-center'
         : 'place-items-center';
   /** Full-width bars must stretch the fold stack — centering shrink-wraps and collapses free-space slots. */
-  const foldStackWidthClass = !vertical && barWidth === 'full' && !collapsedToHandle ? 'w-full' : '';
+  const foldStackWidthClass =
+    !vertical && (barWidth === 'full' || editorialBarLayout || triZoneLayout || centerLogoSplitLayout || logoLeftNavContactLayout) && !collapsedToHandle
+      ? 'w-full'
+      : '';
   const foldMotion =
     'transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform';
+
+  const renderNavSectionItem = (item: NavItem, index: number) => {
+      const active = activeId === item.id;
+      const label = formatNavLabel(item.label, settings.labelCase);
+      const itemColors = portfolioNavItemColorStyles(
+        settings.itemIconColor ?? '#525252',
+        settings.itemTextColor ?? '#525252',
+        settings.itemBackgroundColor ?? '#ffffff',
+        settings.itemBorderColor ?? '#e5e5e5',
+        active,
+        settings.itemBorderEnabled ?? true
+      );
+      const itemHoverVars = portfolioNavItemHoverCssVars({
+        active,
+        backgroundColor: settings.itemBackgroundColor ?? '#ffffff',
+        borderColor: settings.itemBorderColor ?? '#e5e5e5',
+        iconColor: settings.itemIconColor ?? '#525252',
+        textColor: settings.itemTextColor ?? '#525252',
+        hoverIconColor: settings.itemHoverIconColor ?? settings.activeAccentColor ?? '#e2572e',
+        hoverTextColor: settings.itemHoverTextColor ?? '#f4f3ef',
+        hoverBackgroundColor:
+          settings.itemHoverBackgroundColor ?? settings.activeAccentColor ?? '#e2572e',
+        hoverBorderColor:
+          settings.itemHoverBorderColor ?? settings.activeAccentColor ?? '#e2572e',
+        borderEnabled: settings.itemBorderEnabled ?? true,
+        barBackgroundColor: effectiveBarBackground,
+        activeStyle: settings.activeStyle,
+      });
+      const itemHoverPresentation = portfolioNavItemHoverPresentation({
+        active,
+        design: settings.barDesign,
+        buttonDesign: effectiveButtonDesign,
+        activeStyle: settings.activeStyle,
+        contentMode: effectiveContentMode,
+        vertical,
+      });
+      const isBottomLine = effectiveButtonDesign === 'bottom-line';
+      const dockWithLabel =
+        settings.barDesign === 'dock' && effectiveContentMode === 'both' && !isBottomLine;
+      const activeAccentStyle = portfolioNavActiveItemStyle({
+        active,
+        design: settings.barDesign,
+        buttonDesign: effectiveButtonDesign,
+        activeStyle: settings.activeStyle,
+        accentColor: settings.activeAccentColor ?? '#f97316',
+        surfaceColor: settings.itemBackgroundColor ?? '#ffffff',
+        strongTextColor: navStrongTextColor,
+        pageFillColor: navPageFillColor,
+        vertical,
+      });
+      const usesFlatIndicator = portfolioNavUsesFlatMenuIndicatorLayout(settings.activeStyle);
+      const usesIndicatorShell =
+        usesFlatIndicator || settings.activeStyle === 'filled-pill';
+      const itemShellStyle =
+        isBottomLine && !active
+          ? ({
+              backgroundColor: 'transparent',
+              borderWidth: 0,
+              borderStyle: 'solid' as const,
+              ...itemHoverVars,
+            } as CSSProperties)
+          : dockWithLabel
+          ? ({
+              backgroundColor: 'transparent',
+              borderWidth: 0,
+              borderStyle: 'solid' as const,
+              ...(active ? {} : itemHoverVars),
+            } as CSSProperties)
+          : active
+            ? usesIndicatorShell
+              ? ({ ...activeAccentStyle, borderStyle: 'solid' as const } as CSSProperties)
+              : { ...itemColors.shell, ...activeAccentStyle }
+            : usesIndicatorShell
+              ? ({
+                  ...itemHoverVars,
+                  backgroundColor: 'transparent',
+                  borderWidth: 0,
+                  borderStyle: 'solid',
+                } as CSSProperties)
+              : ({
+                  ...itemHoverVars,
+                  borderWidth: settings.itemBorderEnabled === false ? 0 : 1,
+                  borderStyle: 'solid',
+                } as CSSProperties);
+      const dockGlyphStyle: CSSProperties | undefined = dockWithLabel
+        ? active
+          ? {
+              backgroundColor: activeAccentStyle?.backgroundColor,
+              borderColor: activeAccentStyle?.borderColor,
+              color: activeAccentStyle?.color,
+              borderWidth: activeAccentStyle?.borderWidth ?? 1,
+              borderStyle: 'solid',
+            }
+          : ({
+              ...itemHoverVars,
+              borderWidth: settings.itemBorderEnabled === false ? 0 : 1,
+              borderStyle: 'solid',
+            } as CSSProperties)
+        : undefined;
+      const activeTextStyle =
+        active && activeAccentStyle?.color
+          ? { color: activeAccentStyle.color }
+          : !active && (usesFlatIndicator || settings.activeStyle === 'filled-pill')
+            ? { color: settings.itemTextColor ?? '#525252', opacity: 0.55 }
+            : undefined;
+      const accentColor = settings.activeAccentColor ?? '#f97316';
+      const activeIndicatorSlot = portfolioNavActiveIndicatorSlot(settings.activeStyle, active);
+      const activeIndicator = (() => {
+        switch (activeIndicatorSlot) {
+          case 'dot-below':
+            return (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full"
+                style={{ backgroundColor: accentColor }}
+              />
+            );
+          case 'dot-left':
+            return (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute left-0 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full"
+                style={{ backgroundColor: accentColor }}
+              />
+            );
+          case 'underline-bar':
+            return (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                style={{ backgroundColor: accentColor }}
+              />
+            );
+          case 'underline-animated':
+            return (
+              <span
+                aria-hidden
+                className="portfolio-nav-underline-animated pointer-events-none absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                style={{ backgroundColor: accentColor }}
+              />
+            );
+          default:
+            return null;
+        }
+      })();
+      const inlineTextIndicator =
+        effectiveContentMode === 'text' && activeIndicator !== null;
+      const textIndicatorWrapClass =
+        activeIndicatorSlot === 'dot-left'
+          ? 'relative inline-block pl-2.5'
+          : activeIndicatorSlot === 'dot-below'
+            ? 'relative inline-block pb-1.5'
+            : activeIndicatorSlot === 'underline-bar' || activeIndicatorSlot === 'underline-animated'
+              ? 'relative inline-block pb-0.5'
+              : '';
+      const itemClassName = `${itemBaseClass} ${
+        dockWithLabel
+          ? ''
+          : portfolioNavItemActiveClass(
+              settings.barDesign,
+              effectiveButtonDesign,
+              settings.activeStyle,
+              active,
+              vertical
+            )
+      } ${portfolioNavItemHoverClass(
+              active,
+              effectiveButtonDesign,
+              vertical,
+              itemHoverPresentation
+            )} ${inlineTextIndicator ? '' : portfolioNavActiveIndicatorSlot(settings.activeStyle, active) ? 'relative' : ''} ${allowScroll ? 'shrink-0' : ''}`.trim();
+      const hoverDot =
+        itemHoverPresentation.showHoverDot ? (
+          <span
+            aria-hidden
+            className={itemHoverPresentation.hoverDotClass}
+            style={{
+              backgroundColor: accentColor,
+            }}
+          />
+        ) : null;
+      const itemContent =
+        effectiveContentMode === 'icons' ? (
+          <span
+            className={portfolioNavItemHoverIconClass(active, itemHoverPresentation)}
+            style={
+              active && activeAccentStyle?.color ? { color: activeAccentStyle.color } : undefined
+            }
+          >
+            <PortfolioNavIcon variant={item.icon} className={iconGlyphClass} />
+          </span>
+        ) : effectiveContentMode === 'both' ? (
+          dockWithLabel ? (
+            <>
+              <span
+                className={`${portfolioNavDockGlyphClass(
+                  settings.barThickness,
+                  compact,
+                  active
+                )} ${
+                  active
+                    ? ''
+                    : 'bg-[var(--nav-item-bg)] border-[color:var(--nav-item-border)] transition-colors duration-200 group-hover:bg-[var(--nav-item-hover-bg)] group-hover:border-[color:var(--nav-item-hover-border)]'
+                }`}
+                style={dockGlyphStyle}
+              >
+                <span
+                  className={portfolioNavItemHoverIconClass(active, itemHoverPresentation)}
+                  style={
+                    active && activeAccentStyle?.color
+                      ? { color: activeAccentStyle.color }
+                      : undefined
+                  }
+                >
+                  <PortfolioNavIcon variant={item.icon} className={iconGlyphClass} />
+                </span>
+              </span>
+              <span
+                className={`max-w-[4.5rem] truncate text-center leading-tight ${portfolioNavItemHoverTextClass(active, itemHoverPresentation)}`}
+                style={activeTextStyle}
+              >
+                {label}
+              </span>
+            </>
+          ) : (
+            <>
+              <span
+                className={portfolioNavItemHoverIconClass(active, itemHoverPresentation)}
+                style={
+                  active && activeAccentStyle?.color
+                    ? { color: activeAccentStyle.color }
+                    : undefined
+                }
+              >
+                <PortfolioNavIcon variant={item.icon} className={iconGlyphClass} />
+              </span>
+              <span
+                className={`text-center leading-tight ${portfolioNavItemHoverTextClass(active, itemHoverPresentation)}`}
+                style={activeTextStyle}
+              >
+                {label}
+              </span>
+            </>
+          )
+        ) : (
+          inlineTextIndicator ? (
+            <span className={textIndicatorWrapClass}>
+              <span
+                className={portfolioNavItemHoverTextClass(active, itemHoverPresentation)}
+                style={activeTextStyle}
+              >
+                {label}
+              </span>
+              {activeIndicator}
+            </span>
+          ) : (
+            <span
+              className={portfolioNavItemHoverTextClass(active, itemHoverPresentation)}
+              style={activeTextStyle}
+            >
+              {label}
+            </span>
+          )
+        );
+
+      return (
+        <Fragment key={item.id}>
+          {showRailDividers && index > 0 ? (
+            <span className={portfolioNavRailDividerClass(vertical)} aria-hidden />
+          ) : null}
+          {isControlled ? (
+            <button
+              type="button"
+              onClick={() => handleNavigate(item.id)}
+              aria-label={label}
+              aria-current={active ? 'page' : undefined}
+              title={effectiveContentMode === 'icons' ? label : undefined}
+              className={itemClassName}
+              style={itemShellStyle}
+            >
+              {itemContent}
+              {inlineTextIndicator ? null : activeIndicator}
+              {hoverDot}
+            </button>
+          ) : (
+            <a
+              href={`#${item.id}`}
+              aria-label={label}
+              title={effectiveContentMode === 'icons' ? label : undefined}
+              className={itemClassName}
+              style={itemShellStyle}
+              onClick={(event) => handleNavigate(item.id, event)}
+            >
+              {itemContent}
+              {inlineTextIndicator ? null : activeIndicator}
+              {hoverDot}
+            </a>
+          )}
+        </Fragment>
+      );
+  };
+
+  const renderNavSectionButtonsForEntries = (
+    entries: typeof menuEntries,
+    indexOffset = 0
+  ) =>
+    entries.map((entry, index) => {
+      const globalIndex = indexOffset + index;
+      if (entry.type === 'group') {
+        const groupActive = entry.items.some((child) => child.id === activeId);
+        const accent = settings.activeAccentColor ?? '#f97316';
+        const accentFillInk = portfolioNavInkOnAccentFill(accent, navPalette);
+        const triggerClassName = `${itemBaseClass} ${portfolioNavItemHoverClass(
+          groupActive,
+          settings.buttonDesign,
+          vertical
+        )} ${allowScroll ? 'shrink-0' : ''}`.trim();
+        const triggerStyle: CSSProperties = groupActive
+          ? {
+              backgroundColor: accent,
+              color: accentFillInk,
+              borderWidth: 0,
+              borderStyle: 'solid',
+            }
+          : {
+              color: settings.itemTextColor ?? '#525252',
+              backgroundColor: 'transparent',
+              borderWidth: 0,
+              borderStyle: 'solid',
+            };
+
+        return (
+          <Fragment key={entry.id}>
+            {showRailDividers && globalIndex > 0 ? (
+              <span className={portfolioNavRailDividerClass(vertical)} aria-hidden />
+            ) : null}
+            <PortfolioNavMenuGroupDropdown
+              groupLabel={entry.label}
+              items={entry.items}
+              activeId={activeId}
+              isControlled={isControlled}
+              settings={settings}
+              contentMode={effectiveContentMode}
+              vertical={vertical}
+              triggerClassName={triggerClassName}
+              triggerStyle={triggerStyle}
+              allowScroll={allowScroll}
+              onNavigate={handleNavigate}
+              onInteract={presence.onInteract}
+            />
+          </Fragment>
+        );
+      }
+
+      return renderNavSectionItem(entry.item, globalIndex);
+    });
+
+  const renderNavSectionButtons = () => renderNavSectionButtonsForEntries(menuEntries);
+
+  const splitNavScrollClass = allowScroll
+    ? 'min-w-0 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [overflow-y:visible]'
+    : '';
 
   return createPortal(
     <>
@@ -3872,9 +4356,15 @@ export function PortfolioFloatingNav({
 
           <div
             ref={innerRef}
-            className={`${foldMotion} col-start-1 row-start-1 ${innerWidthClass} ${containerClass} ${
-              inlineExtras ? '!justify-start' : ''
+            className={`${foldMotion} col-start-1 row-start-1 ${innerBarLayoutClass} ${containerClass} ${
+              triZoneLayout || centerLogoSplitLayout || logoLeftNavContactLayout
+                ? '!rounded-none !border-0 !shadow-none !overflow-visible'
+                : ''
             } ${
+              editorialBarLayout || floatingPillLayout ? '!overflow-visible' : ''
+            } ${
+              inlineExtras && !structuredBarLayout && !triZoneShell ? '!justify-start' : ''
+            } ${navContentGutterClass} ${
               presence.expanded
                 ? 'relative z-0 translate-x-0 translate-y-0 scale-100 opacity-100 delay-75'
                 : `pointer-events-none absolute z-0 delay-0 ${foldExitClass}`
@@ -3882,10 +4372,147 @@ export function PortfolioFloatingNav({
             style={shellStyle}
             aria-hidden={!presence.expanded}
           >
+          {logoLeftNavContactLayout ? (
+            logoLeftNavContactLogoOnRight ? (
+              <>
+                <div className="flex min-w-0 items-center justify-start justify-self-stretch gap-3 sm:gap-4">
+                  {menuControlAlign === 'left' ? expandedToggleButton : null}
+                  <PortfolioNavContactCta
+                    settings={settings}
+                    contactHref={contactHref}
+                    onContactNavigate={onContactNavigate}
+                    compact
+                  />
+                  <div
+                    className={`flex min-w-0 items-center justify-start ${itemsGapClass} ${splitNavScrollClass}`}
+                  >
+                    {renderNavSectionButtons()}
+                  </div>
+                  {menuControlAlign === 'right' || menuControlAlign === 'center'
+                    ? expandedToggleButton
+                    : null}
+                </div>
+                <div className="flex shrink-0 items-center justify-self-end">
+                  <PortfolioNavCenterBrand settings={settings} compact />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex shrink-0 items-center justify-self-start">
+                  <PortfolioNavCenterBrand settings={settings} compact />
+                </div>
+                <div className="flex min-w-0 items-center justify-end justify-self-stretch gap-3 sm:gap-4">
+                  {menuControlAlign === 'left' ? expandedToggleButton : null}
+                  <div
+                    className={`flex min-w-0 items-center justify-end ${itemsGapClass} ${splitNavScrollClass}`}
+                  >
+                    {renderNavSectionButtons()}
+                  </div>
+                  <PortfolioNavContactCta
+                    settings={settings}
+                    contactHref={contactHref}
+                    onContactNavigate={onContactNavigate}
+                    compact
+                  />
+                  {menuControlAlign === 'right' || menuControlAlign === 'center'
+                    ? expandedToggleButton
+                    : null}
+                </div>
+              </>
+            )
+          ) : centerLogoSplitLayout ? (
+            <>
+              <div className="flex w-full min-w-0 items-center justify-start justify-self-stretch gap-2">
+                {menuControlAlign === 'left' ? expandedToggleButton : null}
+                <div
+                  className={`flex min-w-0 items-center justify-start ${itemsGapClass} ${splitNavScrollClass}`}
+                >
+                  {renderNavSectionButtonsForEntries(splitMenuRails.left)}
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center justify-center justify-self-center px-2 sm:px-3">
+                <PortfolioNavCenterBrand settings={settings} compact />
+              </div>
+              <div className="flex w-full min-w-0 items-center justify-end justify-self-stretch gap-2">
+                <div
+                  className={`flex min-w-0 items-center justify-end ${itemsGapClass} ${splitNavScrollClass}`}
+                >
+                  {renderNavSectionButtonsForEntries(
+                    splitMenuRails.right,
+                    splitMenuRails.left.length
+                  )}
+                </div>
+                {menuControlAlign === 'right' || menuControlAlign === 'center'
+                  ? expandedToggleButton
+                  : null}
+              </div>
+            </>
+          ) : editorialBarLayout ? (
+            <>
+              <div className="flex min-w-0 items-center justify-self-start gap-2">
+                {menuControlAlign === 'left' ? expandedToggleButton : null}
+                <PortfolioNavCenterBrand settings={settings} compact />
+              </div>
+              <div
+                className={`flex min-w-0 items-center justify-center justify-self-center ${itemsGapClass} ${splitNavScrollClass}`}
+              >
+                {renderNavSectionButtons()}
+              </div>
+              <div className="flex min-w-0 items-center justify-end justify-self-end gap-2">
+                <PortfolioNavEditorialRightSlot
+                  settings={settings}
+                  links={chromeLinks}
+                  contactHref={contactHref}
+                  contactPhone={contactPhone}
+                  contactEmail={contactEmail}
+                  onContactNavigate={onContactNavigate}
+                  compact
+                />
+                {menuControlAlign === 'right' || menuControlAlign === 'center'
+                  ? expandedToggleButton
+                  : null}
+              </div>
+            </>
+          ) : triZoneLayout ? (
+            <>
+              <div className="flex min-w-0 items-center justify-self-start gap-2">
+                {menuControlAlign === 'left' ? expandedToggleButton : null}
+                <div
+                  className={`flex items-center ${itemsGapClass} ${
+                    allowScroll
+                      ? 'min-w-0 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [overflow-y:visible]'
+                      : ''
+                  }`}
+                >
+                  {renderNavSectionButtons()}
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center justify-center justify-self-center px-1 sm:px-2">
+                <PortfolioNavCenterBrand settings={settings} compact />
+              </div>
+              <div className="flex min-w-0 items-center justify-end justify-self-end gap-2">
+                <PortfolioNavTriZoneSideSlot
+                  settings={settings}
+                  links={chromeLinks}
+                  contactPhone={contactPhone}
+                  contactEmail={contactEmail}
+                  compact
+                />
+                {menuControlAlign === 'right' || menuControlAlign === 'center'
+                  ? expandedToggleButton
+                  : null}
+              </div>
+            </>
+          ) : (
+            <>
           {inlineExtras ? (
             <div
               className={`flex min-w-0 items-center gap-2 ${
-                placementIsCentered || placementIsEnd ? 'flex-1' : 'shrink-0'
+                structuredBarLayout
+                  ? 'justify-self-start'
+                  : placementIsCentered || placementIsEnd
+                    ? 'flex-1'
+                    : 'shrink-0'
               }`}
             >
               {menuControlAlign === 'left' ? expandedToggleButton : null}
@@ -3905,9 +4532,15 @@ export function PortfolioFloatingNav({
           <div
             className={`flex items-center ${itemsGapClass} ${
               vertical ? 'flex-col' : 'flex-row'
-            } ${inlineExtras || adjacentExtras ? 'shrink-0' : 'contents'} ${
+            } ${
+              structuredBarLayout
+                ? 'min-w-0 justify-center justify-self-center'
+                : inlineExtras || adjacentExtras
+                  ? 'shrink-0'
+                  : 'contents'
+            } ${
               (inlineExtras || adjacentExtras) && allowScroll
-                ? 'min-w-0 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+                ? 'min-w-0 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [overflow-y:visible]'
                 : ''
             }`}
           >
@@ -3921,226 +4554,7 @@ export function PortfolioFloatingNav({
               position="before"
             />
           ) : null}
-          {sectionItems.map((item, index) => {
-          const active = activeId === item.id;
-          const label = formatNavLabel(item.label, settings.labelCase);
-          const itemColors = portfolioNavItemColorStyles(
-            settings.itemIconColor ?? '#525252',
-            settings.itemTextColor ?? '#525252',
-            settings.itemBackgroundColor ?? '#ffffff',
-            settings.itemBorderColor ?? '#e5e5e5',
-            active,
-            settings.itemBorderEnabled ?? true
-          );
-          const itemHoverVars = portfolioNavItemHoverCssVars({
-            active,
-            backgroundColor: settings.itemBackgroundColor ?? '#ffffff',
-            borderColor: settings.itemBorderColor ?? '#e5e5e5',
-            iconColor: settings.itemIconColor ?? '#525252',
-            textColor: settings.itemTextColor ?? '#525252',
-            hoverIconColor: settings.itemHoverIconColor ?? settings.activeAccentColor ?? '#e2572e',
-            hoverTextColor: settings.itemHoverTextColor ?? '#f4f3ef',
-            hoverBackgroundColor:
-              settings.itemHoverBackgroundColor ?? settings.activeAccentColor ?? '#e2572e',
-            hoverBorderColor:
-              settings.itemHoverBorderColor ?? settings.activeAccentColor ?? '#e2572e',
-            borderEnabled: settings.itemBorderEnabled ?? true,
-          });
-          const isBottomLine = settings.buttonDesign === 'bottom-line';
-          const dockWithLabel =
-            settings.barDesign === 'dock' && contentMode === 'both' && !isBottomLine;
-          const activeAccentStyle = portfolioNavActiveItemStyle({
-            active,
-            design: settings.barDesign,
-            buttonDesign: settings.buttonDesign,
-            activeStyle: settings.activeStyle,
-            accentColor: settings.activeAccentColor ?? '#f97316',
-            surfaceColor: settings.itemBackgroundColor ?? '#ffffff',
-            strongTextColor: navStrongTextColor,
-            pageFillColor: navPageFillColor,
-            vertical,
-          });
-          // Inactive: CSS vars + Tailwind classes (no inline hex bg — that blocked hover).
-          // Active: keep accent inline styles so they always win.
-          // dockWithLabel: outer shell stays transparent; circular chrome lives on the glyph.
-          // bottom-line: no box border — hairline via hover/active box-shadow.
-          const itemShellStyle = isBottomLine
-            ? ({
-                backgroundColor: 'transparent',
-                borderWidth: 0,
-                borderStyle: 'solid' as const,
-                ...(active ? activeAccentStyle : itemHoverVars),
-              } as CSSProperties)
-            : dockWithLabel
-            ? ({
-                backgroundColor: 'transparent',
-                borderWidth: 0,
-                borderStyle: 'solid' as const,
-                ...(active ? {} : itemHoverVars),
-              } as CSSProperties)
-            : active
-              ? { ...itemColors.shell, ...activeAccentStyle }
-              : ({
-                  ...itemHoverVars,
-                  borderWidth: settings.itemBorderEnabled === false ? 0 : 1,
-                  borderStyle: 'solid',
-                } as CSSProperties);
-          const dockGlyphStyle: CSSProperties | undefined = dockWithLabel
-            ? active
-              ? {
-                  backgroundColor: activeAccentStyle?.backgroundColor,
-                  borderColor: activeAccentStyle?.borderColor,
-                  color: activeAccentStyle?.color,
-                  borderWidth: activeAccentStyle?.borderWidth ?? 1,
-                  borderStyle: 'solid',
-                }
-              : ({
-                  ...itemHoverVars,
-                  borderWidth: settings.itemBorderEnabled === false ? 0 : 1,
-                  borderStyle: 'solid',
-                } as CSSProperties)
-            : undefined;
-          const activeTextStyle =
-            active &&
-            (settings.barDesign === 'dock' ||
-              isBottomLine ||
-              settings.activeStyle === 'accent-text' ||
-              settings.activeStyle === 'outline' ||
-              settings.activeStyle === 'soft-badge' ||
-              settings.activeStyle === 'accent-fill' ||
-              settings.activeStyle === 'filled-pill' ||
-              settings.activeStyle === 'dot') &&
-            activeAccentStyle?.color
-              ? { color: activeAccentStyle.color }
-              : undefined;
-          const itemClassName = `${itemBaseClass} ${
-            dockWithLabel
-              ? ''
-              : portfolioNavItemActiveClass(
-                  settings.barDesign,
-                  settings.buttonDesign,
-                  settings.activeStyle,
-                  active,
-                  vertical
-                )
-          } ${portfolioNavItemHoverClass(active, settings.buttonDesign, vertical)} ${allowScroll ? 'shrink-0' : ''}`.trim();
-          const activeDot =
-            active && settings.barDesign === 'classic' && settings.activeStyle === 'dot' ? (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full"
-                style={{
-                  backgroundColor: settings.activeAccentColor ?? '#f97316',
-                }}
-              />
-            ) : null;
-          const itemContent =
-            contentMode === 'icons' ? (
-              <span
-                className={portfolioNavItemHoverIconClass(active)}
-                style={
-                  active && activeAccentStyle?.color
-                    ? { color: activeAccentStyle.color }
-                    : undefined
-                }
-              >
-                <PortfolioNavIcon variant={item.icon} className={iconGlyphClass} />
-              </span>
-            ) : contentMode === 'both' ? (
-              dockWithLabel ? (
-                <>
-                  <span
-                    className={`${portfolioNavDockGlyphClass(
-                      settings.barThickness,
-                      compact,
-                      active
-                    )} ${
-                      active
-                        ? ''
-                        : 'bg-[var(--nav-item-bg)] border-[color:var(--nav-item-border)] transition-colors duration-200 group-hover:bg-[var(--nav-item-hover-bg)] group-hover:border-[color:var(--nav-item-hover-border)]'
-                    }`}
-                    style={dockGlyphStyle}
-                  >
-                    <span
-                      className={portfolioNavItemHoverIconClass(active)}
-                      style={
-                        active && activeAccentStyle?.color
-                          ? { color: activeAccentStyle.color }
-                          : undefined
-                      }
-                    >
-                      <PortfolioNavIcon variant={item.icon} className={iconGlyphClass} />
-                    </span>
-                  </span>
-                  <span
-                    className={`max-w-[4.5rem] truncate text-center leading-tight ${portfolioNavItemHoverTextClass(active)}`}
-                    style={activeTextStyle}
-                  >
-                    {label}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span
-                    className={portfolioNavItemHoverIconClass(active)}
-                    style={
-                      active && activeAccentStyle?.color
-                        ? { color: activeAccentStyle.color }
-                        : undefined
-                    }
-                  >
-                    <PortfolioNavIcon variant={item.icon} className={iconGlyphClass} />
-                  </span>
-                  <span
-                    className={portfolioNavItemHoverTextClass(active)}
-                    style={activeTextStyle}
-                  >
-                    {label}
-                  </span>
-                </>
-              )
-            ) : (
-              <span className={portfolioNavItemHoverTextClass(active)} style={activeTextStyle}>
-                {label}
-              </span>
-            );
-
-          return (
-            <Fragment key={item.id}>
-              {showRailDividers && index > 0 ? (
-                <span className={portfolioNavRailDividerClass(vertical)} aria-hidden />
-              ) : null}
-              {isControlled ? (
-                <button
-                  type="button"
-                  onClick={() => handleNavigate(item.id)}
-                  aria-label={label}
-                  aria-current={active ? 'page' : undefined}
-                  title={contentMode === 'icons' ? label : undefined}
-                  className={itemClassName}
-                  style={itemShellStyle}
-                >
-                  {itemContent}
-                  {activeDot}
-                </button>
-              ) : (
-                <a
-                  href={`#${item.id}`}
-                  aria-label={label}
-                  title={contentMode === 'icons' ? label : undefined}
-                  className={itemClassName}
-                  style={itemShellStyle}
-                  onClick={() => {
-                    presence.onInteract();
-                  }}
-                >
-                  {itemContent}
-                  {activeDot}
-                </a>
-              )}
-            </Fragment>
-          );
-        })}
+          {renderNavSectionButtons()}
           {adjacentExtras ? (
             <PortfolioNavAdjacentExtras
               settings={settings}
@@ -4156,7 +4570,11 @@ export function PortfolioFloatingNav({
           {inlineExtras ? (
             <div
               className={`flex min-w-0 items-center justify-end gap-2 ${
-                placementIsCentered || placementIsStart ? 'flex-1' : 'shrink-0'
+                structuredBarLayout
+                  ? 'justify-self-end'
+                  : placementIsCentered || placementIsStart
+                    ? 'flex-1'
+                    : 'shrink-0'
               }`}
             >
               <PortfolioNavInlineExtras
@@ -4174,11 +4592,17 @@ export function PortfolioFloatingNav({
           ) : menuControlAlign === 'right' || menuControlAlign === 'center' ? (
             expandedToggleButton
           ) : null}
+            </>
+          )}
       </div>
         </div>
       </div>
     </nav>
-      {!inlineExtras ? (
+      {!inlineExtras &&
+      !triZoneLayout &&
+      !editorialBarLayout &&
+      !centerLogoSplitLayout &&
+      !logoLeftNavContactLayout ? (
         <PortfolioNavFreeSpaceLinks
           settings={settings}
           links={chromeLinks}
@@ -4186,6 +4610,8 @@ export function PortfolioFloatingNav({
           contactHref={contactHref}
           onContactNavigate={onContactNavigate}
           navRevealed={presence.expanded}
+          contentGutter={contentGutter}
+          useGlobalGutterInset={navUsesGlobalGutterInset}
           onMouseEnter={presence.onMouseEnter}
           onMouseLeave={presence.onMouseLeave}
           onFocusCapture={presence.onFocusCapture}
@@ -4210,31 +4636,9 @@ export function PortfolioPerPageNav({
   items: PerPageNavItem[];
   settings: PortfolioNavSettings;
 }) {
-  const [activeId, setActiveId] = useState(items[0]?.id ?? '');
+  const sectionIds = useMemo(() => items.map((item) => item.id), [items]);
+  const { activeId, lockForNavigation } = usePortfolioSectionSpy(sectionIds, items.length > 0);
   const visible = useNavVisibility(settings.displayMode);
-
-  useEffect(() => {
-    if (items.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visibleEntry = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visibleEntry?.target.id) {
-          setActiveId(visibleEntry.target.id);
-        }
-      },
-      { rootMargin: '-35% 0px -45% 0px', threshold: [0, 0.2, 0.45, 0.7] }
-    );
-
-    for (const item of items) {
-      const node = document.getElementById(item.id);
-      if (node) observer.observe(node);
-    }
-
-    return () => observer.disconnect();
-  }, [items]);
 
   if (!settings.enabled) return null;
   if (settings.hideWhenSingle && items.length <= 1) return null;
@@ -4249,10 +4653,8 @@ export function PortfolioPerPageNav({
   const nextItem = activeIndex < items.length - 1 ? items[activeIndex + 1] : null;
 
   const goTo = (id: string) => {
-    const node = document.getElementById(id);
-    if (node) {
-      node.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setActiveId(id);
+    if (scrollToPortfolioSection(id)) {
+      lockForNavigation(id);
     }
   };
 
@@ -6607,8 +7009,7 @@ function handleServicesOrderCtaClick(
   }
   if (href.startsWith('#')) {
     event.preventDefault();
-    const id = href.slice(1);
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollToPortfolioSection(href.slice(1));
   }
 }
 
@@ -7981,7 +8382,7 @@ function EditorialServicePricingHeroCard({
       taskBulletSource: resolveServicesTaskBulletSource(presentation),
       taskBulletStyle: presentation.servicesTaskBulletStyle ?? 'check',
       taskBulletColor: presentation.servicesTaskBulletColor,
-      taskBulletSize: presentation.servicesTaskBulletSize ?? 'md',
+      taskBulletSize: presentation.servicesTaskBulletSize ?? 'sm',
       taskBulletSizePx: presentation.servicesTaskBulletSizePx,
       taskBulletWeight: presentation.servicesTaskBulletWeight ?? 'regular',
       taskBulletWeightAmount: presentation.servicesTaskBulletWeightAmount,
@@ -9069,7 +9470,7 @@ function useSkillListBullet(presentation: PortfolioServicesPresentationSettings)
       taskBulletSource: 'section',
       taskBulletStyle: presentation.skillsBulletStyle ?? 'disc',
       taskBulletColor: presentation.skillsBulletColor,
-      taskBulletSize: presentation.skillsBulletSize ?? 'md',
+      taskBulletSize: presentation.skillsBulletSize ?? 'sm',
       taskBulletSizePx: presentation.skillsBulletSizePx,
       taskBulletWeight: presentation.skillsBulletWeight ?? 'regular',
       taskBulletWeightAmount: presentation.skillsBulletWeightAmount,
@@ -12143,132 +12544,7 @@ export function StoryBlock({ block }: { block: ProfileMediaBlock }) {
   return <EditorialStoryBlock block={block} />;
 }
 
-const WHY_ME_ICONS = [
-  function WhyMeSparkIcon({ className }: { className?: string }) {
-    return (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 2l1.4 4.3L17.5 8l-4.1 1.5L12 14l-1.4-4.5L6.5 8l4.1-1.7L12 2z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 18l.8 2.4 2.4.8-2.4.8L5 24l-.8-2.4-2.4-.8 2.4-.8L5 18zM19 14l.6 1.8 1.8.6-1.8.6L19 19l-.6-1.8-1.8-.6 1.8-.6L19 14z" />
-      </svg>
-    );
-  },
-  function WhyMeCheckIcon({ className }: { className?: string }) {
-    return (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" />
-        <circle cx="12" cy="12" r="9" />
-      </svg>
-    );
-  },
-  function WhyMeUsersIcon({ className }: { className?: string }) {
-    return (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-      </svg>
-    );
-  },
-  function WhyMeBoltIcon({ className }: { className?: string }) {
-    return (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" />
-      </svg>
-    );
-  },
-  function WhyMeTargetIcon({ className }: { className?: string }) {
-    return (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-        <circle cx="12" cy="12" r="9" />
-        <circle cx="12" cy="12" r="5" />
-        <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-      </svg>
-    );
-  },
-] as const;
 
-type HighlightIcon = (props: { className?: string }) => React.ReactNode;
-
-function EditorialHighlightMediaPreview({
-  block,
-  className = '',
-  aspectClass = 'aspect-[4/5]',
-  fullBleed = false,
-}: {
-  block: ProfileMediaBlock;
-  className?: string;
-  aspectClass?: string;
-  /** Edge-to-edge inside the card (grid / stacked). */
-  fullBleed?: boolean;
-}) {
-  if (!block.mediaUrl) return null;
-
-  if (fullBleed) {
-    return (
-      <div className={`relative w-full overflow-hidden bg-neutral-950/5 ${aspectClass} ${className}`.trim()}>
-        <ProductThumbnailMedia
-          url={block.mediaUrl}
-          alt=""
-          fit="cover"
-          className="absolute inset-0 h-full w-full"
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`mx-auto w-full max-w-[15rem] shrink-0 overflow-hidden rounded-2xl border border-neutral-200/80 shadow-sm sm:max-w-[17rem] lg:mx-0 lg:w-[14rem] xl:w-[16rem] ${className}`.trim()}
-    >
-      <div className={`relative w-full overflow-hidden bg-neutral-950/5 ${aspectClass}`}>
-        <ProductThumbnailMedia
-          url={block.mediaUrl}
-          alt=""
-          fit="cover"
-          className="absolute inset-0 h-full w-full"
-        />
-      </div>
-    </div>
-  );
-}
-
-function resolveWhyMeShellPresentation(
-  presentation: PortfolioAboutPresentationSettings
-): PortfolioAboutPresentationSettings {
-  return { ...presentation, whyMePadding: aboutWhyMeEffectivePadding(presentation) };
-}
-
-function WhyMeCardShell({
-  presentation,
-  cardIndex = 0,
-  className = '',
-  includePadding = true,
-  children,
-}: {
-  presentation: PortfolioAboutPresentationSettings;
-  cardIndex?: number;
-  className?: string;
-  includePadding?: boolean;
-  children: React.ReactNode;
-}) {
-  const shell = resolveWhyMeShellPresentation(presentation);
-  const frameClass = aboutWhyMeFrameClass(shell, { includePadding });
-  const surfaceStyle = aboutWhyMeFrameStyle(shell);
-  const layers = aboutWhyMeLayersSettings(shell);
-
-  return (
-    <article
-      className={`relative flex h-full flex-col overflow-hidden ${frameClass} ${aboutWhyMeBlockClass(presentation.whyMeDesign)} ${className}`.trim()}
-      style={surfaceStyle}
-    >
-      <ServicesCardBackgroundLayers presentation={layers} cardIndex={cardIndex} />
-      {/* Pack chrome + copy to the top — never pin the phrase to the card bottom. */}
-      <ServicesCardForeground className="flex h-full flex-col justify-start">
-        {children}
-      </ServicesCardForeground>
-    </article>
-  );
-}
 
 function WhyMeHyperBulletGlyph({
   style,
@@ -12478,1241 +12754,6 @@ function WhyMeInlineMarkerSlot({
   );
 }
 
-function WhyMeBlockHeader({
-  index,
-  Icon,
-  align,
-  design: _design,
-  accent,
-  markerStyle,
-  markerSize,
-  markerSizePx,
-  markerWeight = 'regular',
-  markerWeightAmount,
-  markerColor,
-  showMarker,
-  showHeaderAccent,
-}: {
-  index: number;
-  Icon: HighlightIcon;
-  align: ReturnType<typeof whyMeContentAlignClass>;
-  design: PortfolioAboutPresentationSettings['whyMeDesign'];
-  accent: string;
-  markerStyle: PortfolioAboutWhyMeMarkerStyle;
-  markerSize: PortfolioAboutWhyMeMarkerSize;
-  markerSizePx?: number;
-  markerWeight?: PortfolioListMarkerWeight;
-  markerWeightAmount?: number;
-  markerColor: string;
-  showMarker: boolean;
-  showHeaderAccent: boolean;
-}) {
-  const softBg = aboutSidePanelAccentSoftBackground(accent);
-  const marker = showMarker ? (
-    <WhyMeIndexMarker
-      index={index}
-      style={markerStyle}
-      accent={markerColor}
-      size={markerSize}
-      sizePx={markerSizePx}
-      weight={markerWeight}
-      weightAmount={markerWeightAmount}
-    />
-  ) : null;
-
-  if (!marker && !showHeaderAccent) return null;
-  return (
-    <div className={`flex items-center gap-3 ${align.header}`}>
-      {marker}
-      {showHeaderAccent ? (
-        <div
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition group-hover:scale-[1.03]"
-          style={{ color: accent, backgroundColor: softBg }}
-        >
-          <Icon className="h-5 w-5" />
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-/** Shared header + phrase layout for every Why me design (stack or inline). */
-function WhyMeHeaderAndBody({
-  block,
-  index,
-  Icon,
-  align,
-  design,
-  accent,
-  presentation,
-  density,
-  flushTop,
-}: {
-  block: ProfileMediaBlock;
-  index: number;
-  Icon: HighlightIcon;
-  align: ReturnType<typeof whyMeContentAlignClass>;
-  design: PortfolioAboutPresentationSettings['whyMeDesign'];
-  accent: string;
-  presentation: PortfolioAboutPresentationSettings;
-  density: 'editorial' | 'compact' | 'minimal';
-  flushTop: boolean;
-}) {
-  const markerStyle = presentation.whyMeMarkerStyle ?? 'number';
-  const markerSize = presentation.whyMeMarkerSize ?? 'md';
-  const markerSizePx = presentation.whyMeMarkerSizePx;
-  const markerWeight = presentation.whyMeMarkerWeight ?? 'regular';
-  const markerWeightAmount = presentation.whyMeMarkerWeightAmount;
-  const markerColor = resolveWhyMeMarkerColor(presentation);
-  const showHeaderMarker = (presentation.whyMeMarkerPlacement ?? 'top') === 'top';
-  const showHeaderAccent = presentation.whyMeShowHeaderAccent !== false;
-  const bodyLayout = presentation.whyMeBodyLayout === 'inline' ? 'inline' : 'stack';
-  const inline = bodyLayout === 'inline';
-
-  const header = (
-    <WhyMeBlockHeader
-      index={index}
-      Icon={Icon}
-      align={align}
-      design={design}
-      accent={accent}
-      markerStyle={markerStyle}
-      markerSize={markerSize}
-      markerSizePx={markerSizePx}
-      markerWeight={markerWeight}
-      markerWeightAmount={markerWeightAmount}
-      markerColor={markerColor}
-      showMarker={showHeaderMarker}
-      showHeaderAccent={showHeaderAccent}
-    />
-  );
-
-  const body = (
-    <WhyMeBlockText
-      block={block}
-      align={align}
-      presentation={presentation}
-      accent={accent}
-      density={density}
-      flushTop={inline || flushTop}
-    />
-  );
-
-  if (inline) {
-    return (
-      <div className={`flex w-full flex-row items-center gap-3 sm:gap-4 ${align.header}`}>
-        <div className="shrink-0">{header}</div>
-        <div className={`min-w-0 flex-1 ${align.text}`}>{body}</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex w-full flex-col gap-0">
-      {header}
-      {body}
-    </div>
-  );
-}
-
-function WhyMeLeadingMarkerRow({
-  index,
-  presentation,
-  children,
-}: {
-  index: number;
-  presentation: PortfolioAboutPresentationSettings;
-  accent: string;
-  flushWithText?: boolean;
-  children: ReactNode;
-}) {
-  const style = presentation.whyMeMarkerStyle ?? 'number';
-  const placement = presentation.whyMeMarkerPlacement ?? 'top';
-  if (placement !== 'before' || style === 'none') {
-    return <>{children}</>;
-  }
-
-  const markerColor = resolveWhyMeMarkerColor(presentation);
-  const markerSize = presentation.whyMeMarkerSize ?? 'md';
-  const markerSizePx = presentation.whyMeMarkerSizePx;
-  const markerWeight = presentation.whyMeMarkerWeight ?? 'regular';
-  const markerWeightAmount = presentation.whyMeMarkerWeightAmount;
-  // Inherit Why me body type size so inline em glyphs lock to the first text line.
-  const bodyClass = elementTextStyleClass(presentation.elementStyles.whyMeBody, 'body');
-  const bodyStyle = elementTextInlineStyle(
-    presentation.elementStyles.whyMeBody,
-    aboutActiveColorMode(presentation)
-  );
-
-  return (
-    <div className={`flex w-full items-start gap-2.5 sm:gap-3 ${bodyClass}`} style={bodyStyle}>
-      <WhyMeInlineMarkerSlot>
-        <WhyMeIndexMarker
-          index={index}
-          style={style}
-          accent={markerColor}
-          size={markerSize}
-          sizePx={markerSizePx}
-          weight={markerWeight}
-          weightAmount={markerWeightAmount}
-          inline
-        />
-      </WhyMeInlineMarkerSlot>
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
-  );
-}
-
-function WhyMeBlockText({
-  block,
-  align,
-  presentation,
-  accent,
-  density = 'editorial',
-  flushTop = false,
-}: {
-  block: ProfileMediaBlock;
-  align: ReturnType<typeof whyMeContentAlignClass>;
-  presentation: PortfolioAboutPresentationSettings;
-  accent: string;
-  density?: 'editorial' | 'compact' | 'minimal';
-  /** When header chrome is hidden, start the phrase flush with the leading puce. */
-  flushTop?: boolean;
-}) {
-  const hasText = Boolean(block.text?.trim());
-  const subtitles = (block.subtitles ?? []).map((item) => item.trim()).filter(Boolean);
-  const whyMeColorMode = aboutActiveColorMode(presentation);
-  const bodyClass = elementTextStyleClass(presentation.elementStyles.whyMeBody, 'body');
-  const bodyStyle = elementTextInlineStyle(presentation.elementStyles.whyMeBody, whyMeColorMode);
-  const bulletClass = elementTextStyleClass(presentation.elementStyles.whyMeBullet, 'body');
-  const bulletStyle = elementTextInlineStyle(presentation.elementStyles.whyMeBullet, whyMeColorMode);
-  const textGap = flushTop
-    ? 'mt-0'
-    : density === 'compact'
-      ? 'mt-2'
-      : density === 'minimal'
-        ? 'mt-2'
-        : 'mt-2.5';
-  const listGap = flushTop
-    ? hasText
-      ? density === 'compact'
-        ? 'mt-2.5 space-y-2'
-        : 'mt-3 space-y-2.5'
-      : 'mt-0 space-y-2'
-    : density === 'compact'
-      ? 'mt-2.5 space-y-2'
-      : density === 'minimal'
-        ? 'mt-2.5 space-y-2'
-        : 'mt-3 space-y-2.5';
-  const listMarkerStyle = presentation.whyMeMarkerStyle ?? 'number';
-  const useHyperListBullet = isWhyMeHyperBulletMarker(listMarkerStyle);
-  const markerColor = resolveWhyMeMarkerColor(presentation);
-  const markerSize = presentation.whyMeMarkerSize ?? 'md';
-  const markerSizePx = presentation.whyMeMarkerSizePx;
-  const markerWeight = presentation.whyMeMarkerWeight ?? 'regular';
-  const markerWeightAmount = presentation.whyMeMarkerWeightAmount;
-  const resolvedSizePx = resolveListMarkerSizePx(
-    markerSize,
-    markerSizePx,
-    ABOUT_WHY_ME_MARKER_SIZE_PRESET_PX
-  );
-  const resolvedWeightAmount = resolveListMarkerWeightAmount(markerWeight, markerWeightAmount);
-  const bodyCopy = block.text?.trim() ?? '';
-
-  return (
-    <>
-      {hasText && bodyCopy ? (
-        <p className={`${textGap} whitespace-pre-line leading-relaxed ${bodyClass} ${align.text}`} style={bodyStyle}>
-          {bodyCopy}
-        </p>
-      ) : null}
-      {subtitles.length > 0 ? (
-        <ul className={`${listGap}`}>
-          {subtitles.map((item, subtitleIndex) => (
-            <li
-              key={`${subtitleIndex}-${item.slice(0, 24)}`}
-              className={`flex items-start gap-2.5 leading-relaxed ${bulletClass} ${align.text}`}
-              style={bulletStyle}
-            >
-              {useHyperListBullet ? (
-                <WhyMeInlineMarkerSlot>
-                  <span
-                    className="inline-flex items-center justify-center"
-                    style={{ color: markerColor, width: resolvedSizePx, height: resolvedSizePx }}
-                  >
-                    <WhyMeHyperBulletGlyph
-                      style={listMarkerStyle}
-                      className="h-full w-full"
-                      strokeWidth={resolvedWeightAmount}
-                    />
-                  </span>
-                </WhyMeInlineMarkerSlot>
-              ) : density === 'minimal' ? (
-                <WhyMeInlineMarkerSlot>
-                  <span
-                    className="w-3 shrink-0"
-                    style={{
-                      backgroundColor: markerColor,
-                      height: listMarkerDashHeightPx(resolvedWeightAmount),
-                    }}
-                  />
-                </WhyMeInlineMarkerSlot>
-              ) : (
-                <WhyMeInlineMarkerSlot>
-                  <span className="relative flex h-[0.85em] w-[0.85em] items-center justify-center">
-                    <span
-                      className="absolute inset-0 rounded-full"
-                      style={{ backgroundColor: aboutSidePanelAccentSoftBackground(markerColor) }}
-                    />
-                    <span
-                      className="relative h-[0.35em] w-[0.35em] rounded-full"
-                      style={{ backgroundColor: markerColor }}
-                    />
-                  </span>
-                </WhyMeInlineMarkerSlot>
-              )}
-              <span className="min-w-0 flex-1">{item}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </>
-  );
-}
-
-function EditorialHighlightBlock({
-  block,
-  index,
-  icons,
-  presentation,
-}: {
-  block: ProfileMediaBlock;
-  index: number;
-  icons: readonly HighlightIcon[];
-  presentation: PortfolioAboutPresentationSettings;
-}) {
-  const accent = aboutPalettePrincipalColor(presentation);
-  const hasMedia = whyMeBlockHasMedia(block, presentation.whyMeMediaPlacement);
-  const mediaLayout = hasMedia
-    ? resolveWhyMeMediaLayout(presentation.whyMeMediaPlacement, index)
-    : 'hidden';
-  const align = whyMeContentAlignClass(presentation.whyMeContentAlign);
-  const Icon = icons[index % icons.length];
-  const density = 'editorial' as const;
-  const isCompact = false;
-  const isMinimal = false;
-  const showHeaderMarker = (presentation.whyMeMarkerPlacement ?? 'top') === 'top';
-  const showHeaderAccent = presentation.whyMeShowHeaderAccent !== false;
-  const flushTop = !showHeaderMarker && !showHeaderAccent;
-
-  // Side-by-side row only when media is actually shown — otherwise text uses full width.
-  const flexDirection = !hasMedia
-    ? 'flex-col'
-    : mediaLayout === 'top'
-      ? 'flex-col'
-      : mediaLayout === 'left'
-        ? 'lg:flex-row-reverse'
-        : 'lg:flex-row';
-
-  return (
-    <WhyMeCardShell presentation={presentation} cardIndex={index}>
-      <div
-        className={`relative flex w-full ${flexDirection} ${
-          hasMedia ? `lg:items-start ${align.items}` : align.items
-        } ${isCompact ? 'gap-4 lg:gap-5' : isMinimal ? 'gap-4 lg:gap-5' : 'gap-5 lg:gap-6'}`}
-      >
-        {mediaLayout === 'top' && hasMedia ? (
-          <EditorialHighlightMediaPreview
-            block={block}
-            className={`max-w-none lg:mx-0 lg:w-full lg:max-w-none ${isCompact ? 'sm:max-w-xl' : ''}`}
-            aspectClass={isCompact ? 'aspect-[16/9]' : 'aspect-[16/10]'}
-          />
-        ) : null}
-
-        <div className={`min-w-0 w-full ${hasMedia ? 'flex-1' : ''} ${align.text}`}>
-          <WhyMeLeadingMarkerRow
-            index={index}
-            presentation={presentation}
-            accent={accent}
-            flushWithText={flushTop}
-          >
-            <WhyMeHeaderAndBody
-              block={block}
-              index={index}
-              Icon={Icon}
-              align={align}
-              design={presentation.whyMeDesign}
-              accent={accent}
-              presentation={presentation}
-              density={density}
-              flushTop={flushTop}
-            />
-          </WhyMeLeadingMarkerRow>
-        </div>
-
-        {hasMedia && mediaLayout !== 'top' && mediaLayout !== 'hidden' ? (
-          <EditorialHighlightMediaPreview
-            block={block}
-            className={
-              isCompact
-                ? 'max-w-[11rem] sm:max-w-[13rem] lg:w-[12rem] xl:w-[13rem]'
-                : isMinimal
-                  ? 'max-w-[12rem] opacity-95 sm:max-w-[14rem] lg:w-[12rem] xl:w-[14rem]'
-                  : ''
-            }
-            aspectClass={isCompact || isMinimal ? 'aspect-[3/4]' : 'aspect-[4/5]'}
-          />
-        ) : null}
-      </div>
-    </WhyMeCardShell>
-  );
-}
-
-function WhyMeGridBlock({
-  block,
-  index,
-  icons,
-  presentation,
-}: {
-  block: ProfileMediaBlock;
-  index: number;
-  icons: readonly HighlightIcon[];
-  presentation: PortfolioAboutPresentationSettings;
-}) {
-  const accent = aboutPalettePrincipalColor(presentation);
-  const align = whyMeContentAlignClass(presentation.whyMeContentAlign);
-  const Icon = icons[index % icons.length];
-  const hasMedia = whyMeBlockHasMedia(block, presentation.whyMeMediaPlacement);
-  const showHeaderMarker = (presentation.whyMeMarkerPlacement ?? 'top') === 'top';
-  const showHeaderAccent = presentation.whyMeShowHeaderAccent !== false;
-  const flushTop = !showHeaderMarker && !showHeaderAccent;
-
-  return (
-    <WhyMeCardShell presentation={presentation} cardIndex={index} className="h-full" includePadding={false}>
-      <div className={`flex h-full w-full flex-col justify-start ${align.items}`}>
-        {hasMedia ? (
-          <EditorialHighlightMediaPreview block={block} fullBleed aspectClass="aspect-[4/3]" />
-        ) : null}
-        <div
-          className={`flex min-w-0 w-full flex-col justify-start ${aboutWhyMeContentPaddingClass(presentation)} ${align.text}`}
-        >
-          <WhyMeLeadingMarkerRow
-            index={index}
-            presentation={presentation}
-            accent={accent}
-            flushWithText={flushTop}
-          >
-            <WhyMeHeaderAndBody
-              block={block}
-              index={index}
-              Icon={Icon}
-              align={align}
-              design={presentation.whyMeDesign}
-              accent={accent}
-              presentation={presentation}
-              density="compact"
-              flushTop={flushTop}
-            />
-          </WhyMeLeadingMarkerRow>
-        </div>
-      </div>
-    </WhyMeCardShell>
-  );
-}
-
-function WhyMeStackedBlock({
-  block,
-  index,
-  icons,
-  presentation,
-}: {
-  block: ProfileMediaBlock;
-  index: number;
-  icons: readonly HighlightIcon[];
-  presentation: PortfolioAboutPresentationSettings;
-}) {
-  const accent = aboutPalettePrincipalColor(presentation);
-  const align = whyMeContentAlignClass(presentation.whyMeContentAlign);
-  const Icon = icons[index % icons.length];
-  const hasMedia = whyMeBlockHasMedia(block, presentation.whyMeMediaPlacement);
-  const showHeaderMarker = (presentation.whyMeMarkerPlacement ?? 'top') === 'top';
-  const showHeaderAccent = presentation.whyMeShowHeaderAccent !== false;
-  const flushTop = !showHeaderMarker && !showHeaderAccent;
-
-  return (
-    <WhyMeCardShell presentation={presentation} cardIndex={index} includePadding={false}>
-      {hasMedia ? (
-        <EditorialHighlightMediaPreview
-          block={block}
-          fullBleed
-          aspectClass="aspect-[21/9] sm:aspect-[2/1]"
-        />
-      ) : null}
-      <div className={`w-full ${aboutWhyMeContentPaddingClass(presentation)} ${align.text}`}>
-        <WhyMeLeadingMarkerRow
-          index={index}
-          presentation={presentation}
-          accent={accent}
-          flushWithText={flushTop}
-        >
-          <WhyMeHeaderAndBody
-            block={block}
-            index={index}
-            Icon={Icon}
-            align={align}
-            design={presentation.whyMeDesign}
-            accent={accent}
-            presentation={presentation}
-            density="editorial"
-            flushTop={flushTop}
-          />
-        </WhyMeLeadingMarkerRow>
-      </div>
-    </WhyMeCardShell>
-  );
-}
-
-function whyMeBlockTitle(block: ProfileMediaBlock): string {
-  return block.title?.trim() || block.text?.trim()?.split('\n')[0]?.trim() || 'Argument';
-}
-
-function whyMeBlockBody(block: ProfileMediaBlock): string {
-  const titled = block.title?.trim();
-  const text = block.text?.trim() || '';
-  if (titled && text.startsWith(titled)) {
-    return text.slice(titled.length).trim() || text;
-  }
-  if (titled && text) return text;
-  if (!titled && text.includes('\n')) {
-    const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
-    return lines.slice(1).join('\n') || lines[0] || '';
-  }
-  return text;
-}
-
-function WhyMeBentoCard({
-  block,
-  index,
-  presentation,
-  spanClass,
-}: {
-  block: ProfileMediaBlock;
-  index: number;
-  presentation: PortfolioAboutPresentationSettings;
-  spanClass: string;
-}) {
-  const accent = aboutAccentColor(presentation.accentColor);
-  const markerColor = resolveWhyMeMarkerColor(presentation);
-  const Icon = WHY_ME_ICONS[index % WHY_ME_ICONS.length];
-  const title = whyMeBlockTitle(block);
-  const body = whyMeBlockBody(block);
-  const label = formatWhyMeIndexLabel(index, presentation.whyMeMarkerStyle ?? 'number') ?? String(index + 1).padStart(2, '0');
-  const bodyStyle = elementTextInlineStyle(
-    presentation.elementStyles.whyMeBody,
-    aboutActiveColorMode(presentation)
-  );
-  const isHero = index === 0;
-
-  return (
-    <article
-      className={`${spanClass} group relative flex h-full min-h-[11rem] flex-col justify-between overflow-hidden rounded-2xl border p-5 transition duration-300 sm:min-h-[13rem] sm:p-6 ${
-        isHero ? 'sm:min-h-[16rem]' : ''
-      }`}
-      style={{
-        backgroundColor: presentation.whyMeBackgroundEnabled === false ? 'transparent' : presentation.whyMeBackgroundColor || '#121214',
-        borderColor: 'color-mix(in srgb, currentColor 12%, transparent)',
-      }}
-      onMouseEnter={(event) => {
-        event.currentTarget.style.borderColor = accent;
-        event.currentTarget.style.boxShadow = `0 0 0 1px ${accent}, 0 12px 40px color-mix(in srgb, ${accent} 22%, transparent)`;
-      }}
-      onMouseLeave={(event) => {
-        event.currentTarget.style.borderColor = 'color-mix(in srgb, currentColor 12%, transparent)';
-        event.currentTarget.style.boxShadow = 'none';
-      }}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <span
-          className={`font-extrabold tabular-nums tracking-[-0.04em] ${
-            isHero ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl'
-          }`}
-          style={{ color: markerColor }}
-        >
-          {label}
-        </span>
-        {presentation.whyMeShowHeaderAccent !== false ? (
-          <span
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-            style={{
-              color: accent,
-              backgroundColor: aboutSidePanelAccentSoftBackground(accent),
-              animation: index === 0 ? 'pf-whyme-pulse 2.4s ease-in-out infinite' : undefined,
-            }}
-          >
-            <Icon className="h-5 w-5" />
-          </span>
-        ) : null}
-      </div>
-      <div className="mt-6 space-y-2">
-        <h4
-          className={`font-bold tracking-[-0.02em] ${isHero ? 'text-xl sm:text-2xl' : 'text-lg'}`}
-          style={bodyStyle}
-        >
-          {title}
-        </h4>
-        {body && body !== title ? (
-          <p
-            className={`leading-relaxed opacity-70 ${elementTextStyleClass(presentation.elementStyles.whyMeBody, 'body')}`}
-            style={bodyStyle}
-          >
-            {body}
-          </p>
-        ) : null}
-      </div>
-    </article>
-  );
-}
-
-function WhyMeBentoLayout({
-  blocks,
-  presentation,
-  motionProfile,
-}: {
-  blocks: ProfileMediaBlock[];
-  presentation: PortfolioAboutPresentationSettings;
-  motionProfile: PortfolioGlobalMotionProfile;
-}) {
-  const spanFor = (index: number) => {
-    switch (index % 4) {
-      case 0:
-        return 'md:col-span-4';
-      case 1:
-        return 'md:col-span-2';
-      case 2:
-        return 'md:col-span-3';
-      default:
-        return 'md:col-span-3';
-    }
-  };
-
-  return (
-    <div
-      className="grid w-full grid-cols-1 md:grid-cols-6"
-      style={whyMeGapStyle(presentation)}
-    >
-      {blocks.map((block, index) => (
-        <PortfolioMotionItem
-          key={block.id}
-          profile={motionProfile}
-          index={index}
-          className={`h-full w-full ${spanFor(index)}`}
-        >
-          <WhyMeBentoCard
-            block={block}
-            index={index}
-            presentation={presentation}
-            spanClass="h-full"
-          />
-        </PortfolioMotionItem>
-      ))}
-    </div>
-  );
-}
-
-function WhyMeTimelineLayout({
-  blocks,
-  presentation,
-  motionProfile,
-}: {
-  blocks: ProfileMediaBlock[];
-  presentation: PortfolioAboutPresentationSettings;
-  motionProfile: PortfolioGlobalMotionProfile;
-}) {
-  const accent = aboutAccentColor(presentation.accentColor);
-  const markerColor = resolveWhyMeMarkerColor(presentation);
-  const surfaceColor = resolveWhyMeTimelineSurfaceColor(presentation);
-  const lineColor = resolveWhyMeTimelineLineColor(presentation);
-  const colorMode = aboutActiveColorMode(presentation);
-  const bodyStyle = elementTextInlineStyle(presentation.elementStyles.whyMeBody, colorMode);
-  const gapPx = resolveWhyMeGapPx(presentation);
-
-  const renderMacaron = (label: string) => (
-    <span
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold tabular-nums"
-      style={{
-        borderColor: accent,
-        color: markerColor,
-        /* Match page/section fond so the spine is masked in light and dark. */
-        backgroundColor: surfaceColor,
-      }}
-    >
-      {label}
-    </span>
-  );
-
-  const renderCopy = (title: string, body: string | null, align: 'left' | 'right' | 'center') => {
-    const copyStyle: CSSProperties = { ...bodyStyle, textAlign: align, fontWeight: 600 };
-    return (
-      <>
-        <h4
-          className="text-lg font-semibold tracking-[-0.02em] sm:text-xl md:text-[1.35rem]"
-          style={copyStyle}
-        >
-          {title}
-        </h4>
-        {body && body !== title ? (
-          <p
-            className={`mt-2 leading-relaxed opacity-70 ${elementTextStyleClass(presentation.elementStyles.whyMeBody, 'body')}`}
-            style={copyStyle}
-          >
-            {body}
-          </p>
-        ) : null}
-      </>
-    );
-  };
-
-  return (
-    <div className="relative mx-auto w-full min-w-0 max-w-5xl overflow-x-clip">
-      {/* Mobile — spine + copy centered as a compact column */}
-      <ol
-        className="relative m-0 mx-auto flex w-fit max-w-full list-none flex-col p-0 md:hidden"
-        style={{ gap: `${gapPx}px` }}
-      >
-        <div
-          className="pointer-events-none absolute bottom-2 top-2 w-px"
-          style={{
-            backgroundColor: `color-mix(in srgb, ${lineColor} 55%, transparent)`,
-            left: 'calc(1.25rem - 0.5px)',
-          }}
-          aria-hidden
-        />
-        {blocks.map((block, index) => {
-          const label =
-            formatWhyMeIndexLabel(index, presentation.whyMeMarkerStyle ?? 'number') ??
-            String(index + 1).padStart(2, '0');
-          const title = whyMeBlockTitle(block);
-          const body = whyMeBlockBody(block);
-          return (
-            <li key={block.id} className="relative">
-              <PortfolioMotionItem profile={motionProfile} index={index} className="w-full min-w-0">
-                <div className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-x-3">
-                  <div className="relative z-[1] flex justify-center">{renderMacaron(label)}</div>
-                  <div className="min-w-0 pt-1 text-left">{renderCopy(title, body, 'left')}</div>
-                </div>
-              </PortfolioMotionItem>
-            </li>
-          );
-        })}
-      </ol>
-
-      {/* Desktop — centered spine with equal left / right columns */}
-      <ol
-        className="relative m-0 mx-auto hidden w-full list-none p-0 md:grid"
-        style={{
-          gridTemplateColumns: '1fr 2.5rem 1fr',
-          columnGap: '1.75rem',
-          rowGap: `${gapPx}px`,
-        }}
-      >
-        <li
-          aria-hidden
-          className="pointer-events-none z-0 m-0 p-0"
-          style={{
-            gridColumn: 2,
-            gridRow: `1 / ${blocks.length + 1}`,
-            justifySelf: 'center',
-            width: 1,
-            marginTop: '0.5rem',
-            marginBottom: '0.5rem',
-            backgroundColor: `color-mix(in srgb, ${lineColor} 55%, transparent)`,
-            listStyle: 'none',
-          }}
-        />
-        {blocks.map((block, index) => {
-          const label =
-            formatWhyMeIndexLabel(index, presentation.whyMeMarkerStyle ?? 'number') ??
-            String(index + 1).padStart(2, '0');
-          const title = whyMeBlockTitle(block);
-          const body = whyMeBlockBody(block);
-          const onLeft = index % 2 === 0;
-          const row = index + 1;
-
-          return (
-            <li key={block.id} className="contents" style={{ listStyle: 'none' }}>
-              <div
-                className="min-w-0 self-start text-right"
-                style={{ gridColumn: 1, gridRow: row }}
-              >
-                {onLeft ? (
-                  <PortfolioMotionItem profile={motionProfile} index={index} className="w-full">
-                    {renderCopy(title, body, 'right')}
-                  </PortfolioMotionItem>
-                ) : null}
-              </div>
-              <div
-                className="relative z-[1] flex justify-center self-start"
-                style={{ gridColumn: 2, gridRow: row }}
-              >
-                {renderMacaron(label)}
-              </div>
-              <div
-                className="min-w-0 self-start text-left"
-                style={{ gridColumn: 3, gridRow: row }}
-              >
-                {!onLeft ? (
-                  <PortfolioMotionItem profile={motionProfile} index={index} className="w-full">
-                    {renderCopy(title, body, 'left')}
-                  </PortfolioMotionItem>
-                ) : null}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-    </div>
-  );
-}
-
-/** Centered bullet list with fine horizontal rules between items. */
-function WhyMeLinedListLayout({
-  blocks,
-  presentation,
-  motionProfile,
-}: {
-  blocks: ProfileMediaBlock[];
-  presentation: PortfolioAboutPresentationSettings;
-  motionProfile: PortfolioGlobalMotionProfile;
-}) {
-  const accent = aboutAccentColor(presentation.accentColor);
-  const markerColor = resolveWhyMeMarkerColor(presentation) || accent;
-  const lineColor = resolveWhyMeTimelineLineColor(presentation);
-  const colorMode = aboutActiveColorMode(presentation);
-  const bodyStyle = elementTextInlineStyle(presentation.elementStyles.whyMeBody, colorMode);
-  const gapPx = Math.max(resolveWhyMeGapPx(presentation), 28);
-  const markerStyle = presentation.whyMeMarkerStyle ?? 'disc';
-  const markerSize = presentation.whyMeMarkerSize ?? 'md';
-  const markerSizePx = presentation.whyMeMarkerSizePx;
-  const markerWeight = presentation.whyMeMarkerWeight ?? 'regular';
-  const markerWeightAmount = presentation.whyMeMarkerWeightAmount;
-  const showMarker = markerStyle !== 'none';
-  const ruleColor = `color-mix(in srgb, ${lineColor} 42%, transparent)`;
-
-  return (
-    <div className="relative mx-auto w-fit max-w-full min-w-0">
-      <ul className="m-0 flex w-full list-none flex-col p-0" role="list">
-        {blocks.map((block, index) => {
-          const title = whyMeBlockTitle(block);
-          const body = whyMeBlockBody(block);
-          const isLast = index === blocks.length - 1;
-          const copyStyle = { ...bodyStyle, fontWeight: 600 as const };
-
-          return (
-            <li key={block.id} className="m-0 w-full p-0">
-              <PortfolioMotionItem profile={motionProfile} index={index} className="w-full">
-                <div
-                  className="flex w-full items-start gap-3 text-left sm:gap-3.5"
-                  style={{
-                    paddingTop: index === 0 ? 0 : `${Math.round(gapPx * 0.55)}px`,
-                    paddingBottom: `${Math.round(gapPx * 0.55)}px`,
-                  }}
-                >
-                  {showMarker ? (
-                    <WhyMeInlineMarkerSlot>
-                      <WhyMeIndexMarker
-                        index={index}
-                        style={markerStyle}
-                        accent={markerColor}
-                        size={markerSize}
-                        sizePx={markerSizePx}
-                        weight={markerWeight}
-                        weightAmount={markerWeightAmount}
-                        inline
-                      />
-                    </WhyMeInlineMarkerSlot>
-                  ) : null}
-                  <div className="min-w-0 flex-1 text-left">
-                    <p
-                      className="text-lg font-semibold tracking-[-0.02em] sm:text-xl md:text-[1.35rem]"
-                      style={copyStyle}
-                    >
-                      {title}
-                    </p>
-                    {body && body !== title ? (
-                      <p
-                        className={`mt-2 leading-relaxed opacity-70 ${elementTextStyleClass(
-                          presentation.elementStyles.whyMeBody,
-                          'body'
-                        )}`}
-                        style={copyStyle}
-                      >
-                        {body}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              </PortfolioMotionItem>
-              {!isLast ? (
-                <div className="h-px w-full" style={{ backgroundColor: ruleColor }} aria-hidden />
-              ) : null}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
-function WhyMeSplitLayout({
-  blocks,
-  presentation,
-  motionProfile,
-}: {
-  blocks: ProfileMediaBlock[];
-  presentation: PortfolioAboutPresentationSettings;
-  motionProfile: PortfolioGlobalMotionProfile;
-}) {
-  const accent = aboutAccentColor(presentation.accentColor);
-  const markerColor = resolveWhyMeMarkerColor(presentation) || accent;
-  const colorMode = aboutActiveColorMode(presentation);
-  const bodyStyle = elementTextInlineStyle(presentation.elementStyles.whyMeBody, colorMode);
-  const headingBase = whyMeHeadingStyle({
-    ...presentation,
-    whyMeHeadingFont: presentation.whyMeHeadingFont || 'serif',
-  });
-  const defaultMutedHeading = DEFAULT_ABOUT_WHY_ME_HEADING_COLOR.toLowerCase();
-  const rawHeading = String(headingBase.color || '').toLowerCase();
-  const headingColor =
-    !rawHeading || rawHeading === defaultMutedHeading
-      ? colorMode === 'dark'
-        ? '#fafafa'
-        : '#171717'
-      : headingBase.color;
-  const titleColor =
-    typeof bodyStyle.color === 'string' && bodyStyle.color.trim()
-      ? bodyStyle.color
-      : colorMode === 'dark'
-        ? '#e5e5e5'
-        : '#404040';
-
-  return (
-    <div className="grid w-full min-w-0 grid-cols-1 items-start gap-12 lg:grid-cols-2 lg:gap-x-16 xl:gap-x-24">
-      <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-        {presentation.showWhyMeHeading !== false ? (
-          <h3
-            className="font-serif text-[3.25rem] font-medium leading-[0.98] tracking-[-0.045em] sm:text-6xl md:text-7xl lg:text-[4.75rem] xl:text-[5.5rem]"
-            style={{ color: headingColor }}
-          >
-            {resolveWhyMeHeading(presentation)}
-          </h3>
-        ) : null}
-      </div>
-
-      <ul className="flex min-w-0 w-full flex-col gap-8 sm:gap-10 lg:gap-12 xl:gap-14">
-        {blocks.map((block, index) => {
-          const label =
-            formatWhyMeIndexLabel(index, presentation.whyMeMarkerStyle ?? 'number') ??
-            String(index + 1).padStart(2, '0');
-          const title = whyMeBlockTitle(block);
-          return (
-            <PortfolioMotionItem key={block.id} profile={motionProfile} index={index} className="w-full min-w-0">
-              <li className="w-full min-w-0">
-                <div className="flex w-full min-w-0 items-baseline gap-4 sm:gap-5 lg:gap-6">
-                  <span
-                    className="shrink-0 font-serif text-sm tabular-nums tracking-[0.06em] sm:text-base"
-                    style={{ color: markerColor }}
-                  >
-                    {label}
-                  </span>
-                  <p
-                    className="min-w-0 flex-1 font-serif text-lg font-normal leading-snug tracking-[-0.01em] sm:text-xl lg:text-[1.4rem] lg:whitespace-nowrap"
-                    style={{ ...bodyStyle, color: titleColor }}
-                  >
-                    {title}
-                  </p>
-                </div>
-              </li>
-            </PortfolioMotionItem>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
-function WhyMeMediaAsideLayout({
-  blocks,
-  presentation,
-  motionProfile,
-}: {
-  blocks: ProfileMediaBlock[];
-  presentation: PortfolioAboutPresentationSettings;
-  motionProfile: PortfolioGlobalMotionProfile;
-}) {
-  const accent = aboutAccentColor(presentation.accentColor);
-  const markerColor = resolveWhyMeMarkerColor(presentation) || accent;
-  const colorMode = aboutActiveColorMode(presentation);
-  const bodyStyle = elementTextInlineStyle(presentation.elementStyles.whyMeBody, colorMode);
-  const headingStyle = whyMeHeadingStyle(presentation);
-  const defaultMutedHeading = DEFAULT_ABOUT_WHY_ME_HEADING_COLOR.toLowerCase();
-  const rawHeading = String(headingStyle.color || '').toLowerCase();
-  const headingColor =
-    !rawHeading || rawHeading === defaultMutedHeading
-      ? colorMode === 'dark'
-        ? '#fafafa'
-        : '#171717'
-      : headingStyle.color;
-  const titleColor =
-    typeof bodyStyle.color === 'string' && bodyStyle.color.trim()
-      ? bodyStyle.color
-      : colorMode === 'dark'
-        ? '#e5e5e5'
-        : '#171717';
-  const surface =
-    presentation.cardBackgroundColor?.trim() ||
-    (colorMode === 'dark' ? '#0a0a0a' : '#ffffff');
-  const gapPx = Math.max(resolveWhyMeGapPx(presentation), 28);
-  const markerStyle = presentation.whyMeMarkerStyle ?? 'number';
-  const markerSize = presentation.whyMeMarkerSize ?? 'md';
-  const showMarker = markerStyle !== 'none';
-
-  return (
-    <div className="grid w-full min-w-0 grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-x-14 xl:gap-x-20">
-      <div className="flex min-w-0 flex-col items-start justify-center gap-6 sm:gap-8">
-        <div
-          className="w-full max-w-[16rem] sm:max-w-[18rem]"
-          style={
-            {
-              ['--faq-accent' as string]: accent,
-              ['--faq-ink' as string]: headingColor,
-              ['--faq-surface' as string]: surface,
-            } as CSSProperties
-          }
-        >
-          <FaqSectionIllustration variant="chat" className="mx-0 max-w-none" />
-        </div>
-        {presentation.showWhyMeHeading !== false ? (
-          <h3
-            className={`max-w-md text-left text-3xl font-semibold tracking-[-0.04em] sm:text-4xl md:text-5xl lg:text-[3.25rem] ${aboutHeaderFontClass(
-              presentation.whyMeHeadingFont,
-              'title'
-            )}`}
-            style={{
-              ...headingStyle,
-              color: headingColor,
-              fontWeight: 600,
-            }}
-          >
-            {resolveWhyMeHeading(presentation)}
-          </h3>
-        ) : null}
-      </div>
-
-      <ul className="m-0 flex min-w-0 w-full list-none flex-col p-0" role="list">
-        {blocks.map((block, index) => {
-          const title = whyMeBlockTitle(block);
-          const body = whyMeBlockBody(block);
-          const copyStyle = { ...bodyStyle, color: titleColor, fontWeight: 600 as const };
-
-          return (
-            <li key={block.id} className="m-0 w-full p-0">
-              <PortfolioMotionItem profile={motionProfile} index={index} className="w-full min-w-0">
-                <div
-                  className="flex w-full min-w-0 items-start gap-3 sm:gap-3.5"
-                  style={{
-                    paddingTop: index === 0 ? 0 : `${Math.round(gapPx * 0.45)}px`,
-                    paddingBottom: `${Math.round(gapPx * 0.45)}px`,
-                  }}
-                >
-                  {showMarker ? (
-                    <WhyMeInlineMarkerSlot>
-                      <WhyMeIndexMarker
-                        index={index}
-                        style={markerStyle}
-                        accent={markerColor}
-                        size={markerSize}
-                        sizePx={presentation.whyMeMarkerSizePx}
-                        weight={presentation.whyMeMarkerWeight ?? 'regular'}
-                        weightAmount={presentation.whyMeMarkerWeightAmount}
-                        inline
-                      />
-                    </WhyMeInlineMarkerSlot>
-                  ) : null}
-                  <div className="min-w-0 flex-1 text-left">
-                    <p
-                      className="text-lg font-semibold tracking-[-0.02em] sm:text-xl md:text-[1.35rem]"
-                      style={copyStyle}
-                    >
-                      {title}
-                    </p>
-                    {body && body !== title ? (
-                      <p
-                        className={`mt-2 leading-relaxed opacity-70 ${elementTextStyleClass(
-                          presentation.elementStyles.whyMeBody,
-                          'body'
-                        )}`}
-                        style={copyStyle}
-                      >
-                        {body}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              </PortfolioMotionItem>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
-function WhyMeElevateCard({
-  block,
-  index,
-  presentation,
-}: {
-  block: ProfileMediaBlock;
-  index: number;
-  presentation: PortfolioAboutPresentationSettings;
-}) {
-  const accent = aboutAccentColor(presentation.accentColor);
-  const markerColor = resolveWhyMeMarkerColor(presentation);
-  const Icon = WHY_ME_ICONS[index % WHY_ME_ICONS.length];
-  const title = whyMeBlockTitle(block);
-  const body = whyMeBlockBody(block);
-  const label =
-    formatWhyMeIndexLabel(index, presentation.whyMeMarkerStyle ?? 'number') ??
-    String(index + 1).padStart(2, '0');
-  const bodyStyle = elementTextInlineStyle(
-    presentation.elementStyles.whyMeBody,
-    aboutActiveColorMode(presentation)
-  );
-  const fill =
-    presentation.whyMeBackgroundEnabled === false
-      ? 'transparent'
-      : presentation.whyMeBackgroundColor || resolveWhyMeTimelineSurfaceColor(presentation);
-
-  return (
-    <article
-      className="group relative flex h-full min-h-[14rem] flex-col overflow-hidden rounded-2xl border p-5 transition duration-300 ease-out hover:-translate-y-1 sm:p-6"
-      style={{
-        backgroundColor: fill,
-        borderColor: 'color-mix(in srgb, currentColor 12%, transparent)',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
-      }}
-      onMouseEnter={(event) => {
-        event.currentTarget.style.borderColor = accent;
-        event.currentTarget.style.boxShadow = `0 18px 40px color-mix(in srgb, ${accent} 28%, transparent), 0 0 0 1px ${accent}`;
-      }}
-      onMouseLeave={(event) => {
-        event.currentTarget.style.borderColor = 'color-mix(in srgb, currentColor 12%, transparent)';
-        event.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18)';
-      }}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <span
-          className="text-sm font-bold tabular-nums tracking-[0.16em] opacity-55"
-          style={{ color: markerColor }}
-        >
-          {label}
-        </span>
-        {presentation.whyMeShowHeaderAccent !== false ? (
-          <span className="inline-flex" style={{ color: accent }}>
-            <Icon className="h-5 w-5" />
-          </span>
-        ) : null}
-      </div>
-      <div className="mt-auto space-y-2 pt-10">
-        <h4 className="text-xl font-bold tracking-[-0.02em]" style={bodyStyle}>
-          {title}
-        </h4>
-        {body && body !== title ? (
-          <p
-            className={`leading-relaxed opacity-70 ${elementTextStyleClass(presentation.elementStyles.whyMeBody, 'body')}`}
-            style={bodyStyle}
-          >
-            {body}
-          </p>
-        ) : null}
-      </div>
-    </article>
-  );
-}
-
-function WhyMeElevateLayout({
-  blocks,
-  presentation,
-  motionProfile,
-}: {
-  blocks: ProfileMediaBlock[];
-  presentation: PortfolioAboutPresentationSettings;
-  motionProfile: PortfolioGlobalMotionProfile;
-}) {
-  return (
-    <div
-      className="grid w-full grid-cols-1 sm:grid-cols-2"
-      style={whyMeGapStyle(presentation)}
-    >
-      {blocks.map((block, index) => (
-        <PortfolioMotionItem key={block.id} profile={motionProfile} index={index} className="h-full w-full">
-          <WhyMeElevateCard block={block} index={index} presentation={presentation} />
-        </PortfolioMotionItem>
-      ))}
-    </div>
-  );
-}
-
-export function EditorialWhyMeHeading({
-  presentation = DEFAULT_ABOUT_PRESENTATION,
-}: {
-  presentation?: PortfolioAboutPresentationSettings;
-}) {
-  if (!presentation.showWhyMeHeading) return null;
-  if (whyMeDesignEmbedsHeading(presentation.whyMeDesign)) return null;
-
-  const isHeroHeading = whyMeDesignUsesHeroHeading(presentation.whyMeDesign);
-  const colorMode = aboutActiveColorMode(presentation);
-  const headingStyle = whyMeHeadingStyle(presentation);
-  const defaultMutedHeading = DEFAULT_ABOUT_WHY_ME_HEADING_COLOR.toLowerCase();
-  const rawHeading = String(headingStyle.color || '').toLowerCase();
-  const heroColor =
-    !rawHeading || rawHeading === defaultMutedHeading
-      ? colorMode === 'dark'
-        ? '#fafafa'
-        : '#171717'
-      : headingStyle.color;
-
-  if (isHeroHeading) {
-    return (
-      <h3
-        className={`mb-10 text-center text-4xl font-semibold tracking-[-0.04em] sm:mb-12 sm:text-5xl md:text-6xl lg:text-7xl ${aboutHeaderFontClass(
-          presentation.whyMeHeadingFont,
-          'title'
-        )}`}
-        style={{
-          ...headingStyle,
-          color: heroColor,
-          fontWeight: 600,
-        }}
-      >
-        {resolveWhyMeHeading(presentation)}
-      </h3>
-    );
-  }
-
-  return (
-    <h3
-      className={`mb-6 text-left ${whyMeHeadingClass({
-        ...presentation,
-        whyMeHeadingAlignment: 'left',
-      })}`}
-      style={whyMeHeadingStyle(presentation)}
-    >
-      {resolveWhyMeHeading(presentation)}
-    </h3>
-  );
-}
 
 /** Infos column heading — independent title from About / Why choose me. */
 export function EditorialSideInfoHeading({
@@ -13729,71 +12770,6 @@ export function EditorialSideInfoHeading({
   );
 }
 
-export function EditorialWhyMeBlock({
-  block,
-  index,
-  presentation = DEFAULT_ABOUT_PRESENTATION,
-}: {
-  block: ProfileMediaBlock;
-  index: number;
-  presentation?: PortfolioAboutPresentationSettings;
-}) {
-  return (
-    <EditorialHighlightBlock
-      block={block}
-      index={index}
-      icons={WHY_ME_ICONS}
-      presentation={presentation}
-    />
-  );
-}
-
-export function EditorialWhyMeList({
-  blocks,
-  presentation = DEFAULT_ABOUT_PRESENTATION,
-  motionProfile = DEFAULT_MOTION_PROFILE,
-  forceStack: _forceStack = false,
-}: {
-  blocks: ProfileMediaBlock[];
-  presentation?: PortfolioAboutPresentationSettings;
-  motionProfile?: PortfolioGlobalMotionProfile;
-  /** Kept for API compatibility — timeline/split own their layout. */
-  forceStack?: boolean;
-}) {
-  if (blocks.length === 0) return null;
-
-  const design = presentation.whyMeDesign;
-
-  if (design === 'split') {
-    return (
-      <WhyMeSplitLayout blocks={blocks} presentation={presentation} motionProfile={motionProfile} />
-    );
-  }
-
-  if (design === 'media-aside') {
-    return (
-      <WhyMeMediaAsideLayout
-        blocks={blocks}
-        presentation={presentation}
-        motionProfile={motionProfile}
-      />
-    );
-  }
-
-  if (design === 'lined-list') {
-    return (
-      <WhyMeLinedListLayout
-        blocks={blocks}
-        presentation={presentation}
-        motionProfile={motionProfile}
-      />
-    );
-  }
-
-  return (
-    <WhyMeTimelineLayout blocks={blocks} presentation={presentation} motionProfile={motionProfile} />
-  );
-}
 
 function splitExperienceText(text: string): { title: string | null; body: string | null } {
   const trimmed = text.trim();
@@ -14269,7 +13245,7 @@ function renderExperienceElement(
           tools={ctx.tools}
           toolIcons={ctx.toolIcons}
           display={ctx.toolsDisplay ?? 'icons-and-labels'}
-          iconSize={ctx.toolsIconSize ?? 'md'}
+          iconSize={ctx.toolsIconSize ?? 'sm'}
           iconBorder={ctx.toolsIconBorder ?? 'solid'}
           iconPaddingPx={ctx.toolsIconPaddingPx}
           iconGapPx={ctx.toolsIconGapPx}
@@ -15060,7 +14036,7 @@ function ExperienceEntryMedia({
   if (!mediaUrl) return null;
 
   const placement = presentation.entryMediaPlacement ?? 'aside-right';
-  const size = presentation.entryMediaSize ?? 'md';
+  const size = presentation.entryMediaSize ?? 'sm';
   const radius = presentation.entryMediaRadius ?? 'lg';
   const aspect = presentation.entryMediaAspect ?? '4/5';
   const fit = presentation.entryMediaFit ?? 'cover';
@@ -16311,9 +15287,9 @@ export function EditorialExperienceBlock({
     taskBulletSizePx: presentation.taskBulletSizePx,
     taskBulletWeight: presentation.taskBulletWeight,
     taskBulletWeightAmount: presentation.taskBulletWeightAmount,
-    taskItemGap: presentation.taskItemGap ?? 'md',
+    taskItemGap: presentation.taskItemGap ?? 'sm',
     bentoDetailsPlacement: presentation.bentoDetailsPlacement ?? 'aside',
-    entryMediaSize: presentation.entryMediaSize ?? 'md',
+    entryMediaSize: presentation.entryMediaSize ?? 'sm',
     magazineColumnRatio: presentation.magazineColumnRatio ?? 'media-wide',
   };
   const visiblePeriod = presentation.showPeriod ? period : null;
@@ -17126,7 +16102,7 @@ export function EditorialFaqItem({
         presentation.numberColor ||
         presentation.elementStyles.number.color ||
         accent,
-      taskBulletSize: presentation.itemMarkerSize ?? 'md',
+      taskBulletSize: presentation.itemMarkerSize ?? 'sm',
       taskBulletSizePx: presentation.itemMarkerSizePx,
       taskBulletWeight: presentation.itemMarkerWeight ?? 'regular',
       taskBulletWeightAmount: presentation.itemMarkerWeightAmount,
@@ -18053,7 +17029,7 @@ function TeamSpotlight({
     spotlightMembers.find((member) => member.id === activeId) ?? spotlightMembers[0];
   if (!active) return null;
   const readable = teamReadableCardText(presentation);
-  const portraitSize = presentation.avatarSize ?? 'md';
+  const portraitSize = presentation.avatarSize ?? 'sm';
   return (
     <article
       className={`${teamCardClass(presentation)} grid w-full gap-4 ${teamSpotlightMaxWidthClass(presentation.cardMaxWidth)} ${teamListAlignClass(presentation.listAlign)} ${teamSpotlightGridClass()}`}
@@ -18554,7 +17530,7 @@ export function EditorialSideInfoPanel({
   // Liste à puces — markers like Why me, soft gap only (no vertical dividers / info-bar separators).
   if (design === 'list') {
     const markerStyle = presentation.sidePanelMarkerStyle ?? 'disc';
-    const markerSize = presentation.sidePanelMarkerSize ?? 'md';
+    const markerSize = presentation.sidePanelMarkerSize ?? 'sm';
     const markerSizePx = presentation.sidePanelMarkerSizePx;
     const markerWeight = presentation.sidePanelMarkerWeight ?? 'regular';
     const markerWeightAmount = presentation.sidePanelMarkerWeightAmount;
@@ -19164,7 +18140,7 @@ function ContactUnifiedList({
   /** When false, only email / phone / location rows are rendered (Directory socials sit outside). */
   includeLinks?: boolean;
 }) {
-  const glyphClass = contactIconGlyphClass(presentation.iconSize ?? 'md');
+  const glyphClass = contactIconGlyphClass(presentation.iconSize ?? 'sm');
   const isEditorial = presentation.cardDesign === 'editorial';
   const isDirectory = presentation.cardDesign === 'directory';
   const channelIconPresentation = isDirectory
@@ -19343,7 +18319,7 @@ function ContactUnifiedList({
   if (items.length === 0) return null;
 
   return (
-    <div className={contactItemsLayoutClass(presentation.cardDesign, presentation.itemGap ?? 'md')}>
+    <div className={contactItemsLayoutClass(presentation.cardDesign, presentation.itemGap ?? 'sm')}>
       {items.map((item) => (
         <ContactUnifiedItemRow
           key={item.id}
@@ -19384,7 +18360,7 @@ function ContactDirectorySocialIcons({
   if (links.length === 0) return null;
   const glyphClass = enlarged
     ? 'h-10 w-10 sm:h-12 sm:w-12'
-    : contactIconGlyphClass(presentation.iconSize ?? 'md');
+    : contactIconGlyphClass(presentation.iconSize ?? 'sm');
   const thinBorderPresentation = {
     ...presentation,
     iconRadius: 'full' as const,
@@ -19638,7 +18614,7 @@ function ContactLinkIcon({
   const platform = inferContactLinkPlatform(link);
   const socialKey = platform ? normalizeSocialPlatformKey(platform) : 'other';
   const isSocial = socialKey !== 'other';
-  const glyphClass = contactIconGlyphClass(presentation.iconSize ?? 'md');
+  const glyphClass = contactIconGlyphClass(presentation.iconSize ?? 'sm');
   const useBrand = presentation.iconUseBrandColors !== false;
 
   if (isSocial && platform && useBrand) {
@@ -19733,6 +18709,8 @@ export function EditorialContactSection({
   motionProfile = DEFAULT_MOTION_PROFILE,
   topSpacingClass = 'pt-12 sm:pt-16 lg:pt-20',
   topSpacingStyle,
+  bottomSpacingClass = 'pb-12 sm:pb-16 lg:pb-20',
+  bottomSpacingStyle,
   contentLayout = 'stacked',
 }: {
   creatorId?: string;
@@ -19773,6 +18751,9 @@ export function EditorialContactSection({
   topSpacingClass?: string;
   /** Optional CSS vars for Split screen px fine-tune. */
   topSpacingStyle?: React.CSSProperties;
+  /** Global padding-bottom below section content. */
+  bottomSpacingClass?: string;
+  bottomSpacingStyle?: React.CSSProperties;
   /** Split screen nav: title left / content right on large screens. */
   contentLayout?: 'stacked' | 'split';
 }) {
@@ -19952,10 +18933,8 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={topSpacingStyle}
-        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${
-          bgStyle ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12` : topSpacingClass
-        }`}
+        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
           <>
@@ -20148,10 +19127,8 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={topSpacingStyle}
-        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${
-          bgStyle ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12` : topSpacingClass
-        }`}
+        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
           <>
@@ -20269,7 +19246,7 @@ export function EditorialContactSection({
                     >
                       <ContactChannelGlyph
                         kind={channel.kind}
-                        className={contactIconGlyphClass(presentation.iconSize ?? 'md')}
+                        className={contactIconGlyphClass(presentation.iconSize ?? 'sm')}
                       />
                     </span>
                     <span className="min-w-0">
@@ -20315,10 +19292,8 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={topSpacingStyle}
-        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${
-          bgStyle ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12` : topSpacingClass
-        }`}
+        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
           <>
@@ -20464,10 +19439,8 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={topSpacingStyle}
-        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${
-          bgStyle ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12` : topSpacingClass
-        }`}
+        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
           <>
@@ -20622,10 +19595,8 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={topSpacingStyle}
-        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${
-          bgStyle ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12` : topSpacingClass
-        }`}
+        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
           <>
@@ -20855,10 +19826,8 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={topSpacingStyle}
-        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${
-          bgStyle ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12` : topSpacingClass
-        }`}
+        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
           <>
@@ -20975,10 +19944,8 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={topSpacingStyle}
-        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${
-          bgStyle ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12` : topSpacingClass
-        }`}
+        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
           <>
@@ -21107,10 +20074,8 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={topSpacingStyle}
-        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${
-          bgStyle ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12` : topSpacingClass
-        }`}
+        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
           <>
@@ -21270,10 +20235,8 @@ export function EditorialContactSection({
   return (
     <section
       id="contact"
-      style={topSpacingStyle}
-      className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${
-        bgStyle ? `${topSpacingClass} pb-8 sm:pb-10 lg:pb-12` : topSpacingClass
-      }`}
+      style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+      className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
     >
       {bgStyle ? (
         <>
@@ -21357,7 +20320,6 @@ export function EditorialPortfolioFooter({
   creatorId,
   avatarUrl,
   bio,
-  whyMeText,
   email,
   phone,
   locationLabel,
@@ -21378,7 +20340,6 @@ export function EditorialPortfolioFooter({
   creatorId: string;
   avatarUrl?: string | null;
   bio?: string | null;
-  whyMeText?: string | null;
   email?: string | null;
   phone?: string | null;
   locationLabel?: string | null;
@@ -21462,7 +20423,6 @@ export function EditorialPortfolioFooter({
         source: presentation.descriptionSource,
         custom: presentation.descriptionCustom,
         bio,
-        whyMeText,
         maxLength: presentation.design === 'compact' ? 120 : presentation.design === 'landing' ? 280 : 220,
       })
     : null;
@@ -21615,9 +20575,9 @@ export function EditorialPortfolioFooter({
   const contactIconSizeClass =
     presentation.design === 'landing'
       ? 'h-6 w-6'
-      : footerContactIconSizeClass(presentation.contactIconSize ?? 'md');
+      : footerContactIconSizeClass(presentation.contactIconSize ?? 'sm');
   const contactIconSizeClassCompact = footerContactIconSizeClassCompact(
-    presentation.contactIconSize ?? 'md'
+    presentation.contactIconSize ?? 'sm'
   );
   // Contact CTA (minimal) always left-aligns the contact rail; editorial center may center.
   const contactLinesCentered = presentation.design === 'editorial';
@@ -22337,7 +21297,6 @@ export function EditorialPortfolioFooter({
         source: presentation.descriptionSource,
         custom: presentation.descriptionCustom,
         bio,
-        whyMeText,
         maxLength: 220,
       });
     const ctaLocationItem = locationValue

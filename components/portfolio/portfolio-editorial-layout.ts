@@ -26,6 +26,20 @@ const GUTTER_LAYER_INSET: Record<PortfolioContentGutter, string> = {
     'left-5 right-5 sm:left-8 sm:right-8 md:left-12 md:right-12 lg:left-16 lg:right-16 xl:left-24 xl:right-24 2xl:left-32 2xl:right-32',
 };
 
+const GUTTER_INSET_LEFT: Record<PortfolioContentGutter, string> = {
+  none: 'left-0',
+  wide: 'left-4 sm:left-5 lg:left-8 xl:left-10 2xl:left-12',
+  medium: 'left-4 sm:left-6 md:left-8 lg:left-10 xl:left-12 2xl:left-16',
+  narrow: 'left-5 sm:left-8 md:left-12 lg:left-16 xl:left-24 2xl:left-32',
+};
+
+const GUTTER_INSET_RIGHT: Record<PortfolioContentGutter, string> = {
+  none: 'right-0',
+  wide: 'right-4 sm:right-5 lg:right-8 xl:right-10 2xl:right-12',
+  medium: 'right-4 sm:right-6 md:right-8 lg:right-10 xl:right-12 2xl:right-16',
+  narrow: 'right-5 sm:right-8 md:right-12 lg:right-16 xl:right-24 2xl:right-32',
+};
+
 export function portfolioEditorialGutterX(
   gutter: PortfolioContentGutter = DEFAULT_CONTENT_GUTTER
 ): string {
@@ -42,6 +56,18 @@ export function portfolioEditorialShellClass(
   gutter: PortfolioContentGutter = DEFAULT_CONTENT_GUTTER
 ): string {
   return `w-full ${portfolioEditorialGutterX(gutter)}`;
+}
+
+export function portfolioEditorialGutterInsetLeft(
+  gutter: PortfolioContentGutter = DEFAULT_CONTENT_GUTTER
+): string {
+  return GUTTER_INSET_LEFT[gutter] ?? GUTTER_INSET_LEFT.medium;
+}
+
+export function portfolioEditorialGutterInsetRight(
+  gutter: PortfolioContentGutter = DEFAULT_CONTENT_GUTTER
+): string {
+  return GUTTER_INSET_RIGHT[gutter] ?? GUTTER_INSET_RIGHT.medium;
 }
 
 /**

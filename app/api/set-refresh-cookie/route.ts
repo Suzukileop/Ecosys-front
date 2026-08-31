@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
-  const body = await request.json() as { refreshToken?: string };
+  let body: { refreshToken?: string };
+  try {
+    const raw = await request.text();
+    body = raw.trim() ? (JSON.parse(raw) as { refreshToken?: string }) : {};
+  } catch {
+    return NextResponse.json({ error: 'Corps de requête invalide' }, { status: 400 });
+  }
+
   const { refreshToken } = body;
 
   if (!refreshToken) {

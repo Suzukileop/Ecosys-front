@@ -58,6 +58,8 @@ export type PortfolioStrengthDraft = {
   iconUrl?: string | null;
 };
 
+export type PortfolioStrengthsVariant = 'stack' | 'tools' | 'both';
+
 function levelLabel(level: StrengthToolLevel | null | undefined): string {
   if (!level) return '';
   return LEVEL_OPTIONS.find((option) => option.value === level)?.label ?? level;
@@ -81,14 +83,16 @@ function normalizeUseCases(useCases: string[]): string[] {
   return useCases.map((entry) => entry.trim()).filter(Boolean).slice(0, MAX_USE_CASES);
 }
 
-function cleanDraft(draft: PortfolioStrengthDraft): PortfolioStrengthDraft {
+function cleanDraft(
+  draft: PortfolioStrengthDraft,
+  options?: { stripUseCases?: boolean }
+): PortfolioStrengthDraft {
   return {
     value: draft.value.trim(),
     description: draft.description.trim().slice(0, MAX_DESCRIPTION),
-    // Specialty attachment removed from Tools UI — always clear on save.
-    category: '',
+    category: draft.category.trim().slice(0, 80),
     level: draft.level ?? null,
-    useCases: normalizeUseCases(draft.useCases),
+    useCases: options?.stripUseCases ? [] : normalizeUseCases(draft.useCases),
     experienceYears: null,
     experienceLabel: '',
     currentlyUsed: null,
@@ -96,12 +100,17 @@ function cleanDraft(draft: PortfolioStrengthDraft): PortfolioStrengthDraft {
   };
 }
 
-function draftsEqual(left: PortfolioStrengthDraft, right: PortfolioStrengthDraft): boolean {
-  const a = cleanDraft(left);
-  const b = cleanDraft(right);
+function draftsEqual(
+  left: PortfolioStrengthDraft,
+  right: PortfolioStrengthDraft,
+  stripUseCases = false
+): boolean {
+  const a = cleanDraft(left, { stripUseCases });
+  const b = cleanDraft(right, { stripUseCases });
   return (
     a.value === b.value &&
     a.description === b.description &&
+    a.category === b.category &&
     a.level === b.level &&
     (a.iconUrl ?? null) === (b.iconUrl ?? null) &&
     a.useCases.length === b.useCases.length &&
@@ -113,12 +122,13 @@ function skillHasContent(draft: PortfolioStrengthDraft): boolean {
   return Boolean(cleanDraft(draft).value);
 }
 
-function isSkillEmpty(draft: PortfolioStrengthDraft): boolean {
-  const cleaned = cleanDraft(draft);
+function isSkillEmpty(draft: PortfolioStrengthDraft, stripUseCases = false): boolean {
+  const cleaned = cleanDraft(draft, { stripUseCases });
   // Treat "no name yet" as empty so Add (+) can open the compose form.
   return (
     !cleaned.value &&
     !cleaned.description &&
+    !cleaned.category &&
     cleaned.level == null &&
     cleaned.useCases.length === 0 &&
     !cleaned.iconUrl
@@ -240,6 +250,7 @@ function UseCasesEditor({
 }
 
 export function PortfolioStrengthsReadOnly({
+  variant = 'both',
   items,
   skillTags = [],
   onSkillTagsSave,
@@ -256,9 +267,12 @@ export function PortfolioStrengthsReadOnly({
   sectionRootRef: _sectionRootRef,
   onGlobalHasChangesChange,
   onRegisterGlobalConfirm,
+  hideUseCases = false,
 }: {
+  /** Which band to render — `stack` (rich list), `tools` (proficiency list), or `both`. */
+  variant?: PortfolioStrengthsVariant;
   items: PortfolioStrengthItem[];
-  /** Keyword tags for the Skills band (separate from Tools). */
+  /** Keyword tags for the Skills band (legacy `both` variant only). */
   skillTags?: string[];
   onSkillTagsSave?: (next: string[]) => Promise<void>;
   allowedSpecialties?: string[];
@@ -275,7 +289,10 @@ export function PortfolioStrengthsReadOnly({
   sectionRootRef?: RefObject<HTMLElement | null>;
   onGlobalHasChangesChange?: (hasChanges: boolean) => void;
   onRegisterGlobalConfirm?: (confirm: (() => Promise<void>) | null) => void;
+  /** Hide use cases field (Stack section). */
+  hideUseCases?: boolean;
 }) {
+  const stripUseCases = variant === 'stack' || hideUseCases;
   // Edit session: cards stay in preview; a pen icon opens fields for one item.
   // Add tool: compose only the new item.
   const editSession = Boolean(actionsVisible && !deleteMode);
@@ -387,7 +404,7 @@ export function PortfolioStrengthsReadOnly({
     if (!composeAdd || deleteMode || fieldSaving) return;
     if (items.length > prevLength) {
       const lastIndex = items.length - 1;
-      if (isSkillEmpty(toDraft(items[lastIndex]))) {
+      if (isSkillEmpty(toDraft(items[lastIndex]), stripUseCases)) {
         setDrafts(items.map(toDraft));
         setEditingIndex(lastIndex);
         setOpenIndex(lastIndex);
@@ -402,7 +419,7 @@ export function PortfolioStrengthsReadOnly({
     const lastIndex = items.length - 1;
     if (lastIndex < 0) return;
     const last = toDraft(items[lastIndex]);
-    if (isSkillEmpty(last) || !last.value.trim()) {
+    if (isSkillEmpty(last, stripUseCases) || !last.value.trim()) {
       setDrafts(items.map(toDraft));
       setEditingIndex(lastIndex);
       setOpenIndex(lastIndex);
@@ -429,7 +446,7 @@ export function PortfolioStrengthsReadOnly({
   const cancelEdit = async () => {
     if (fieldSaving || editingIndex == null) return;
     const original = items[editingIndex];
-    const wasEmpty = original ? isSkillEmpty(toDraft(original)) : true;
+    const wasEmpty = original ? isSkillEmpty(toDraft(original), stripUseCases) : true;
     setEditingIndex(null);
     setUploadError(null);
     syncDraftsFromItems();
@@ -460,11 +477,11 @@ export function PortfolioStrengthsReadOnly({
     editingIndex != null &&
     drafts[editingIndex] != null &&
     items[editingIndex] != null &&
-    !draftsEqual(drafts[editingIndex], toDraft(items[editingIndex]));
+    !draftsEqual(drafts[editingIndex], toDraft(items[editingIndex]), stripUseCases);
 
   const globalHasChanges =
     drafts.length === items.length &&
-    drafts.some((draft, index) => !draftsEqual(draft, toDraft(items[index])));
+    drafts.some((draft, index) => !draftsEqual(draft, toDraft(items[index]), stripUseCases));
 
   useEffect(() => {
     onGlobalHasChangesChange?.(isGlobal ? globalHasChanges : false);
@@ -474,11 +491,11 @@ export function PortfolioStrengthsReadOnly({
     if (editingIndex == null || !onItemSave || fieldSaving) return;
     const draft = drafts[editingIndex];
     if (!draft) return;
-    const cleaned = cleanDraft(draft);
+    const cleaned = cleanDraft(draft, { stripUseCases });
     if (!skillHasContent(cleaned)) {
       setEditingIndex(null);
       setUploadError(null);
-      if (isSkillEmpty(draft)) {
+      if (isSkillEmpty(draft, stripUseCases)) {
         onCancelNewItem?.();
         return;
       }
@@ -500,11 +517,16 @@ export function PortfolioStrengthsReadOnly({
 
   const confirmGlobal = async () => {
     if (!onItemsSave || fieldSaving) return;
-    const cleaned = drafts.map(cleanDraft).filter((item) => item.value.length > 0);
-    const currentFilled = items.map(toDraft).map(cleanDraft).filter((item) => item.value.length > 0);
+    const cleaned = drafts
+      .map((draft) => cleanDraft(draft, { stripUseCases }))
+      .filter((item) => item.value.length > 0);
+    const currentFilled = items
+      .map(toDraft)
+      .map((draft) => cleanDraft(draft, { stripUseCases }))
+      .filter((item) => item.value.length > 0);
     const unchanged =
       cleaned.length === currentFilled.length &&
-      cleaned.every((item, index) => draftsEqual(item, currentFilled[index]));
+      cleaned.every((item, index) => draftsEqual(item, currentFilled[index], stripUseCases));
     if (unchanged && cleaned.length === items.length) return;
     try {
       await onItemsSave(cleaned);
@@ -611,30 +633,53 @@ export function PortfolioStrengthsReadOnly({
     </PortfolioFlatField>
   );
 
-  if (visibleEntries.length === 0 && !actionsVisible && !composeAdd) {
+  const toolsEmptyState = (
+    <section className="space-y-2">
+      {variant === 'both' ? (
+        <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
+          Tools
+        </h3>
+      ) : null}
+      <p className="py-6 text-center text-sm italic text-neutral-500 dark:text-neutral-400">
+        {variant === 'stack'
+          ? 'No stack items yet. Click Add stack item to create one.'
+          : 'No tools yet. Click Add tool to create one.'}
+      </p>
+    </section>
+  );
+
+  const stackEmptyState = (
+    <section className="space-y-2">
+      <p className="py-6 text-center text-sm italic text-neutral-500 dark:text-neutral-400">
+        No stack items yet. Click Add stack item to create one.
+      </p>
+    </section>
+  );
+
+  if (variant === 'stack' && visibleEntries.length === 0 && !actionsVisible && !composeAdd) {
+    return <div className="space-y-4 pb-2">{stackEmptyState}</div>;
+  }
+
+  if (variant === 'tools' && visibleEntries.length === 0 && !actionsVisible && !composeAdd) {
+    return <div className="space-y-4 pb-2">{toolsEmptyState}</div>;
+  }
+
+  if (variant === 'both' && visibleEntries.length === 0 && !actionsVisible && !composeAdd) {
     return (
       <div className="space-y-4 pb-2">
         {skillsBlock}
-        <section className="space-y-2">
-          <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
-            Tools
-          </h3>
-          <p className="py-6 text-center text-sm italic text-neutral-500 dark:text-neutral-400">
-            No tools yet. Click Add tool to create one.
-          </p>
-        </section>
+        {toolsEmptyState}
       </div>
     );
   }
 
-  return (
-    <div className="space-y-4 pb-2">
-      {skillsBlock}
-
-      <section className="space-y-2">
+  const toolsBlock = (
+    <section className="space-y-2">
+      {variant === 'both' ? (
         <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
           Tools
         </h3>
+      ) : null}
       <div className="flex flex-col gap-3.5 pb-5">
         {visibleEntries.map(({ item, index }) => {
           const composingThis = composeAdd && editingIndex === index;
@@ -675,7 +720,7 @@ export function PortfolioStrengthsReadOnly({
             <div key={item.id} className="space-y-2">
               {composingThis ? (
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-orange-600 dark:text-orange-400">
-                  New tool
+                  {variant === 'stack' ? 'New stack item' : 'New tool'}
                 </p>
               ) : null}
             <article
@@ -897,6 +942,31 @@ export function PortfolioStrengthsReadOnly({
                     <p className="px-1 py-2 text-xs text-red-600 dark:text-red-400">{uploadError}</p>
                   ) : null}
 
+                  {variant === 'stack' ? (
+                  <PortfolioFlatField
+                    label="Category"
+                    value={display.category.trim() || null}
+                    emptyLabel="Not set"
+                    editing={editing}
+                    editControl={
+                      <input
+                        type="text"
+                        value={draft.category}
+                        onChange={(event) =>
+                          updateDraft(index, {
+                            ...draft,
+                            category: event.target.value.slice(0, 80),
+                          })
+                        }
+                        maxLength={80}
+                        placeholder="e.g. Frontend, Backend, DevOps"
+                        className={`${portfolioInlineInputClass} font-medium`}
+                        disabled={fieldSaving}
+                      />
+                    }
+                  />
+                  ) : null}
+
                   <PortfolioFlatField
                     label="Description"
                     value={descriptionDisplay || null}
@@ -932,22 +1002,24 @@ export function PortfolioStrengthsReadOnly({
                     }
                   />
 
-                  <PortfolioFlatField
-                    label="Use cases"
-                    editing={editing}
-                    emptyLabel="Not set"
-                    editControl={
-                      <UseCasesEditor
-                        useCases={draft.useCases}
-                        onChange={(useCases) => updateDraft(index, { ...draft, useCases })}
-                        disabled={fieldSaving}
-                      />
-                    }
-                  >
-                    {display.useCases.length > 0 ? (
-                      <PortfolioLanguageChips languages={display.useCases} />
-                    ) : undefined}
-                  </PortfolioFlatField>
+                  {!stripUseCases ? (
+                    <PortfolioFlatField
+                      label="Use cases"
+                      editing={editing}
+                      emptyLabel="Not set"
+                      editControl={
+                        <UseCasesEditor
+                          useCases={draft.useCases}
+                          onChange={(useCases) => updateDraft(index, { ...draft, useCases })}
+                          disabled={fieldSaving}
+                        />
+                      }
+                    >
+                      {display.useCases.length > 0 ? (
+                        <PortfolioLanguageChips languages={display.useCases} />
+                      ) : undefined}
+                    </PortfolioFlatField>
+                  ) : null}
                 </div>
               ) : null}
             </article>
@@ -955,7 +1027,50 @@ export function PortfolioStrengthsReadOnly({
           );
         })}
       </div>
-      </section>
+    </section>
+  );
+
+  if (variant === 'tools') {
+    return <div className="space-y-4 pb-2">{toolsBlock}</div>;
+  }
+
+  if (variant === 'stack') {
+    return <div className="space-y-4 pb-2">{toolsBlock}</div>;
+  }
+
+  return (
+    <div className="space-y-4 pb-2">
+      {skillsBlock}
+      {toolsBlock}
     </div>
+  );
+}
+
+export function PortfolioStackReadOnly(
+  props: Omit<
+    Parameters<typeof PortfolioStrengthsReadOnly>[0],
+    'variant' | 'skillTags' | 'onSkillTagsSave'
+  >
+) {
+  return (
+    <PortfolioStrengthsReadOnly
+      {...props}
+      variant="stack"
+      skillTags={[]}
+      onSkillTagsSave={undefined}
+    />
+  );
+}
+
+export function PortfolioToolsReadOnly(
+  props: Omit<Parameters<typeof PortfolioStrengthsReadOnly>[0], 'variant' | 'skillTags' | 'onSkillTagsSave'>
+) {
+  return (
+    <PortfolioStrengthsReadOnly
+      {...props}
+      variant="tools"
+      skillTags={[]}
+      onSkillTagsSave={undefined}
+    />
   );
 }

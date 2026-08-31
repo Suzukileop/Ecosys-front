@@ -1,4 +1,8 @@
 import { applyNavPaletteToSettings } from '@/components/portfolio/portfolio-nav-palette-settings';
+import {
+  resolveHeroPaletteColor,
+  type PortfolioHeroPalette,
+} from '@/components/portfolio/portfolio-hero-palette-settings';
 import type { PortfolioNavSettings } from '@/components/portfolio/portfolio-settings-types';
 
 export type PortfolioNavPlacement = PortfolioNavSettings['placement'];
@@ -12,14 +16,19 @@ export type PortfolioNavPresence = PortfolioNavSettings['presence'];
 export type PortfolioNavMenuHandleContent = PortfolioNavSettings['menuHandleContent'];
 export type PortfolioNavMenuControlIcon = PortfolioNavSettings['menuControlIcon'];
 export type PortfolioNavMenuControlAlign = PortfolioNavSettings['menuControlAlign'];
+export type PortfolioNavCaseOverlayMenuSide = 'left' | 'right';
+export type PortfolioNavCaseOverlayMenuTrigger = 'text' | 'icon';
 export type PortfolioNavLabelCase = PortfolioNavSettings['labelCase'];
+export type PortfolioNavLabelFontSize = PortfolioNavSettings['labelFontSize'];
 export type PortfolioNavBarWidth = PortfolioNavSettings['barWidth'];
 export type PortfolioNavBarThickness = PortfolioNavSettings['barThickness'];
 export type PortfolioNavBarPadding = PortfolioNavSettings['barPadding'];
+export type PortfolioNavBarHeight = PortfolioNavSettings['navBarHeight'];
 export type PortfolioNavButtonPadding = PortfolioNavSettings['buttonPadding'];
 export type PortfolioNavEffectStrength = PortfolioNavSettings['barBlurStrength'];
 export type PortfolioNavEdgeOffset = PortfolioNavSettings['edgeOffset'];
 export type PortfolioNavItemGap = PortfolioNavSettings['itemGap'];
+export type PortfolioNavBarSurface = PortfolioNavSettings['navBarSurface'];
 
 export type PortfolioNavMobileLayout = PortfolioNavSettings['mobileLayout'];
 export type PortfolioNavMobileBrand = PortfolioNavSettings['mobileBrand'];
@@ -104,6 +113,30 @@ export const PORTFOLIO_NAV_CONTENT_MODE_OPTIONS: {
   },
 ];
 
+/** Floating pill — section menu labels vs icons only (not social link icons). */
+export const PORTFOLIO_NAV_FLOATING_PILL_MENU_MODE_OPTIONS: {
+  value: Extract<PortfolioNavContentMode, 'text' | 'icons'>;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'text',
+    label: 'Texte',
+    description: 'Libellés de section dans la capsule (par défaut).',
+  },
+  {
+    value: 'icons',
+    label: 'Icônes seules',
+    description: 'Glyphes compacts à la place du texte du menu.',
+  },
+];
+
+export function normalizePortfolioNavFloatingPillMenuMode(
+  contentMode: PortfolioNavContentMode | undefined
+): Extract<PortfolioNavContentMode, 'text' | 'icons'> {
+  return contentMode === 'icons' ? 'icons' : 'text';
+}
+
 export const PORTFOLIO_NAV_BUTTON_DESIGN_OPTIONS: {
   value: PortfolioNavButtonDesign;
   label: string;
@@ -153,6 +186,95 @@ export const PORTFOLIO_NAV_ACTIVE_OPTIONS: {
   { value: 'underline', label: 'Underline', description: 'Accent underline beneath the active item.' },
   { value: 'accent-text', label: 'Accent text', description: 'Colored bold text — no background shape.' },
 ];
+
+/** French UI — active item indicators for Navigation → General (mockups 01–06, 08). */
+export const PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS: {
+  value: PortfolioNavActiveStyle;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'dot',
+    label: 'Point sous le texte',
+    description: 'Petit point accent centré sous le libellé actif.',
+  },
+  {
+    value: 'underline',
+    label: 'Barre sous le texte',
+    description: 'Barre accent soulignant le libellé actif.',
+  },
+  {
+    value: 'filled-pill',
+    label: 'Pilule colorée',
+    description: 'Rectangle accent arrondi avec texte contrasté sur l’élément actif.',
+  },
+  {
+    value: 'dot-left',
+    label: 'Point à gauche',
+    description: 'Petit point accent à gauche du libellé actif.',
+  },
+  {
+    value: 'accent-text',
+    label: 'Texte en gras + couleur',
+    description: 'Libellé actif en gras et couleur accent — sans forme.',
+  },
+  {
+    value: 'underline-animated',
+    label: 'Souligné animé',
+    description: 'Soulignement accent avec transition de largeur sur l’élément actif.',
+  },
+];
+
+export type PortfolioNavActiveIndicatorSlot =
+  | 'dot-below'
+  | 'dot-left'
+  | 'underline-bar'
+  | 'underline-animated';
+
+export function portfolioNavActiveIndicatorSlot(
+  activeStyle: PortfolioNavActiveStyle,
+  active: boolean
+): PortfolioNavActiveIndicatorSlot | null {
+  if (!active) return null;
+  switch (activeStyle) {
+    case 'dot':
+      return 'dot-below';
+    case 'dot-left':
+      return 'dot-left';
+    case 'underline':
+      return 'underline-bar';
+    case 'underline-animated':
+      return 'underline-animated';
+    default:
+      return null;
+  }
+}
+
+export function portfolioNavUsesFlatMenuIndicatorLayout(
+  activeStyle: PortfolioNavActiveStyle
+): boolean {
+  return (
+    activeStyle === 'dot' ||
+    activeStyle === 'dot-left' ||
+    activeStyle === 'underline' ||
+    activeStyle === 'underline-animated' ||
+    activeStyle === 'accent-text'
+  );
+}
+
+export function portfolioNavActiveIndicatorNeedsRelative(
+  activeStyle: PortfolioNavActiveStyle,
+  active: boolean
+): boolean {
+  return portfolioNavActiveIndicatorSlot(activeStyle, active) !== null;
+}
+
+/** Legacy `both` from removed icons-stacked indicator → text-only menu. */
+export function portfolioNavEffectiveContentMode(
+  contentMode: PortfolioNavContentMode
+): PortfolioNavContentMode {
+  return contentMode === 'both' ? 'text' : contentMode;
+}
 
 export const PORTFOLIO_NAV_DISPLAY_OPTIONS: {
   value: PortfolioNavDisplayMode;
@@ -223,6 +345,28 @@ export const PORTFOLIO_NAV_MENU_CONTROL_ALIGN_OPTIONS: {
   { value: 'right', label: 'Right', description: 'Control sits after the section icons / brand.' },
 ];
 
+export const PORTFOLIO_NAV_BAR_SURFACE_OPTIONS: {
+  value: PortfolioNavBarSurface;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'neutre',
+    label: 'Neutre',
+    description: 'Surface carte — blanc en clair, ardoise en sombre.',
+  },
+  {
+    value: 'fond',
+    label: 'Fond',
+    description: 'Même couleur que le fond de page.',
+  },
+  {
+    value: 'transparent',
+    label: 'Sans fond',
+    description: 'Barre transparente, sans bordure.',
+  },
+];
+
 export const PORTFOLIO_NAV_LABEL_CASE_OPTIONS: {
   value: PortfolioNavLabelCase;
   label: string;
@@ -232,6 +376,33 @@ export const PORTFOLIO_NAV_LABEL_CASE_OPTIONS: {
   { value: 'titlecase', label: 'Title case', description: 'Each word starts with a capital letter.' },
   { value: 'normal', label: 'Sentence case', description: 'First character uppercase, the rest lowercase — default.' },
 ];
+
+export const PORTFOLIO_NAV_LABEL_FONT_SIZE_OPTIONS: {
+  value: PortfolioNavLabelFontSize;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'xs', label: 'Petit', description: '12px — menu et libellés de liens compacts.' },
+  { value: 'sm', label: 'Compact', description: '13px — taille par défaut, discret mais lisible.' },
+  { value: 'md', label: 'Moyen', description: '15px — équilibré et confortable.' },
+  { value: 'lg', label: 'Grand', description: '16px — plus visible sur grand écran.' },
+];
+
+export function portfolioNavLabelFontSizeClass(
+  size: PortfolioNavLabelFontSize = 'sm',
+  compactOnMobile = false
+): string {
+  switch (size) {
+    case 'xs':
+      return compactOnMobile ? 'text-[11px] sm:text-xs' : 'text-xs';
+    case 'sm':
+      return compactOnMobile ? 'text-xs sm:text-[13px]' : 'text-[13px]';
+    case 'lg':
+      return compactOnMobile ? 'text-sm sm:text-base' : 'text-base';
+    default:
+      return compactOnMobile ? 'text-sm sm:text-[15px]' : 'text-[15px]';
+  }
+}
 
 export const PORTFOLIO_NAV_MOBILE_LAYOUT_OPTIONS: {
   value: PortfolioNavMobileLayout;
@@ -456,6 +627,28 @@ export const PORTFOLIO_NAV_BAR_PADDING_OPTIONS: {
   { value: 'md', label: 'Medium', description: 'Default balanced padding.' },
   { value: 'lg', label: 'Large', description: 'Roomy space inside the bar.' },
   { value: 'xl', label: 'Extra large', description: 'Very spacious padding around items.' },
+];
+
+export const PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS: {
+  value: PortfolioNavBarHeight;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'sm',
+    label: 'Petit',
+    description: 'Barre basse — padding vertical réduit et zone de clic compacte.',
+  },
+  {
+    value: 'md',
+    label: 'Normal',
+    description: 'Hauteur équilibrée par défaut (apparence actuelle).',
+  },
+  {
+    value: 'lg',
+    label: 'Aéré',
+    description: 'Barre plus haute — padding vertical généreux et cibles plus confortables.',
+  },
 ];
 
 export const PORTFOLIO_NAV_BUTTON_PADDING_OPTIONS: {
@@ -837,6 +1030,24 @@ export function portfolioNavItemGapClass(itemGap: PortfolioNavItemGap, vertical:
   return map[itemGap];
 }
 
+/** Nav · logo · social — slightly roomier horizontal link spacing. */
+export function portfolioNavTriZoneItemGapClass(
+  itemGap: PortfolioNavItemGap,
+  vertical: boolean
+): string {
+  if (vertical || itemGap === 'spread') {
+    return portfolioNavItemGapClass(itemGap, vertical);
+  }
+  const map: Record<Exclude<PortfolioNavItemGap, 'spread'>, string> = {
+    none: 'gap-0',
+    sm: 'gap-3',
+    md: 'gap-6 sm:gap-7',
+    lg: 'gap-11',
+    xl: 'gap-[4.5rem]',
+  };
+  return map[itemGap];
+}
+
 export const PORTFOLIO_NAV_EFFECT_STRENGTH_OPTIONS: {
   value: PortfolioNavEffectStrength;
   label: string;
@@ -879,18 +1090,55 @@ function glassShell(
   return [border, shadow, blur].filter(Boolean).join(' ');
 }
 
-function barPaddingClass(padding: PortfolioNavBarPadding): string {
+function barPaddingHorizontalClass(padding: PortfolioNavBarPadding): string {
   switch (padding) {
     case 'none':
-      return 'p-0';
+      return 'px-0';
     case 'sm':
-      return 'p-1';
+      return 'px-1';
     case 'lg':
-      return 'p-3';
+      return 'px-3';
     case 'xl':
-      return 'p-4 sm:p-5';
+      return 'px-4 sm:px-5';
     default:
-      return 'p-1.5 sm:p-2';
+      return 'px-1.5 sm:px-2';
+  }
+}
+
+export type PortfolioNavBarHeightVariant = 'shell' | 'structured' | 'item';
+
+/** Vertical padding / min-height for the nav bar shell and menu hit area. `md` matches legacy defaults. */
+export function portfolioNavBarHeightClass(
+  height: PortfolioNavBarHeight = 'md',
+  variant: PortfolioNavBarHeightVariant = 'shell'
+): string {
+  if (variant === 'structured') {
+    switch (height) {
+      case 'sm':
+        return '!py-2 sm:!py-2.5';
+      case 'lg':
+        return '!py-4 sm:!py-5';
+      default:
+        return '!py-3 sm:!py-3.5';
+    }
+  }
+  if (variant === 'item') {
+    switch (height) {
+      case 'sm':
+        return 'min-h-8 sm:min-h-9';
+      case 'lg':
+        return 'min-h-11 sm:min-h-12';
+      default:
+        return '';
+    }
+  }
+  switch (height) {
+    case 'sm':
+      return 'py-1 sm:py-1.5';
+    case 'lg':
+      return 'py-2.5 sm:py-3';
+    default:
+      return 'py-1.5 sm:py-2';
   }
 }
 
@@ -919,7 +1167,8 @@ export function portfolioNavBarContainerClass(
   barBorderEnabled = true,
   barShadowEnabled = true,
   barBlurStrength: PortfolioNavEffectStrength = 'md',
-  barShadowStrength: PortfolioNavEffectStrength = 'md'
+  barShadowStrength: PortfolioNavEffectStrength = 'md',
+  navBarHeight: PortfolioNavBarHeight = 'md'
 ): string {
   const glass = glassShell(
     glassEffect,
@@ -928,7 +1177,9 @@ export function portfolioNavBarContainerClass(
     barBlurStrength,
     barShadowStrength
   );
-  const pad = barPaddingClass(barPadding);
+  const padX = barPaddingHorizontalClass(barPadding);
+  const padY = portfolioNavBarHeightClass(navBarHeight, 'shell');
+  const pad = `${padX} ${padY}`;
   const radius = barRadiusClass(design, vertical, barWidth);
 
   switch (design) {
@@ -1109,16 +1360,65 @@ function darkerColor(a: string, b: string): string {
   return hexLuminance(a) <= hexLuminance(b) ? a : b;
 }
 
+export function portfolioNavContrastRatio(ink: string, background: string): number {
+  const inkLum = hexLuminance(ink);
+  const bgLum = hexLuminance(background);
+  const lighter = Math.max(inkLum, bgLum);
+  const darker = Math.min(inkLum, bgLum);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
+ * Label ink on accent / saturated fills — respects light vs dark page palette.
+ * Light page + orange CTA → neutre (white); dark page + orange CTA → texteFort (light).
+ */
+export function portfolioNavInkOnAccentFill(
+  fillBackground: string,
+  palette: PortfolioHeroPalette
+): string {
+  const pageIsDark = hexLuminance(resolveHeroPaletteColor(palette, 'fond')) < 0.4;
+  const fillLum = hexLuminance(fillBackground);
+  const texteFort = resolveHeroPaletteColor(palette, 'texteFort');
+  const neutre = resolveHeroPaletteColor(palette, 'neutre');
+  const fond = resolveHeroPaletteColor(palette, 'fond');
+
+  if (fillLum < 0.55) {
+    return pageIsDark ? texteFort : neutre;
+  }
+  return pageIsDark ? fond : texteFort;
+}
+
+export function resolveNavBarSurfaceBackground(
+  settings: Pick<
+    PortfolioNavSettings,
+    'navBarSurface' | 'barBackgroundColor' | 'useNavPalette' | 'navPalette'
+  >,
+  palette: PortfolioHeroPalette
+): string {
+  const surface = settings.navBarSurface ?? 'neutre';
+  if (surface === 'transparent') return 'transparent';
+  if (settings.useNavPalette === false) {
+    return settings.barBackgroundColor ?? '#ffffff';
+  }
+  return resolveHeroPaletteColor(palette, surface === 'fond' ? 'fond' : 'neutre');
+}
+
 export function portfolioNavBarShellStyle(
   backgroundColor: string,
   borderColor: string,
   glassEffect: boolean,
   borderEnabled = true
 ): { backgroundColor: string; borderColor: string; borderWidth?: number; borderStyle?: 'solid' } {
-  const bg = navHex(backgroundColor, DEFAULT_NAV_BAR_BACKGROUND_COLOR);
-  const border = navHex(borderColor, DEFAULT_NAV_BAR_BORDER_COLOR);
+  const bg =
+    backgroundColor === 'transparent'
+      ? 'transparent'
+      : navHex(backgroundColor, DEFAULT_NAV_BAR_BACKGROUND_COLOR);
+  const border =
+    borderColor === 'transparent'
+      ? 'transparent'
+      : navHex(borderColor, DEFAULT_NAV_BAR_BORDER_COLOR);
   return {
-    backgroundColor: glassEffect ? `${bg}e6` : bg,
+    backgroundColor: glassEffect && bg !== 'transparent' ? `${bg}e6` : bg,
     borderColor: borderEnabled ? border : 'transparent',
     borderWidth: borderEnabled ? 1 : 0,
     borderStyle: 'solid',
@@ -1153,6 +1453,61 @@ export function portfolioNavItemColorStyles(
   };
 }
 
+function navItemSurfaceHex(value: string, fallback: string): string {
+  if (value === 'transparent') return 'transparent';
+  return navHex(value, fallback);
+}
+
+/** Hover wash strength — lighter on dark bars so inactive items stay subtle. */
+function navItemHoverBgAlpha(
+  hoverBackgroundColor: string,
+  itemBackgroundColor: string,
+  barBackgroundColor: string | undefined,
+  activeStyle: PortfolioNavActiveStyle
+): number {
+  const itemBg = navItemSurfaceHex(itemBackgroundColor, DEFAULT_NAV_ITEM_BACKGROUND_COLOR);
+  const hoverBg = navItemSurfaceHex(hoverBackgroundColor, DEFAULT_NAV_ITEM_HOVER_BACKGROUND_COLOR);
+  const barBg = barBackgroundColor
+    ? navItemSurfaceHex(barBackgroundColor, DEFAULT_NAV_BAR_BACKGROUND_COLOR)
+    : itemBg;
+  const onDarkBar =
+    itemBg === 'transparent' || hexLuminance(itemBg) < 0.08
+      ? hexLuminance(barBg) < 0.35
+      : hexLuminance(itemBg) < 0.35;
+  if (onDarkBar) {
+    return hoverBg === 'transparent' ? 0.1 : 0.14;
+  }
+  switch (activeStyle) {
+    case 'accent-fill':
+      return 0.22;
+    case 'filled-pill':
+      return 0.2;
+    case 'soft-badge':
+      return 0.16;
+    case 'outline':
+      return 0.1;
+    default:
+      return 0.12;
+  }
+}
+
+export type PortfolioNavItemHoverPresentation = {
+  shellClass: string;
+  iconClass: string;
+  textClass: string;
+  showHoverDot: boolean;
+  hoverDotClass: string;
+};
+
+const NAV_ITEM_HOVER_SHELL_TRANSITION =
+  'transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ease-out';
+
+const NAV_ITEM_HOVER_ICON_TRANSITION =
+  'transition-[color,opacity,transform] duration-200 ease-out';
+
+const NAV_ITEM_HOVER_TEXT_TRANSITION =
+  'transition-[color,font-weight,opacity,transform] duration-200 ease-out';
+
 /**
  * CSS custom properties for inactive-item hover, synced with the nav palette.
  * Background hover is a soft translucent wash of the bound hover token.
@@ -1170,17 +1525,40 @@ export function portfolioNavItemHoverCssVars(params: {
   hoverBackgroundColor: string;
   hoverBorderColor: string;
   borderEnabled?: boolean;
+  barBackgroundColor?: string;
+  activeStyle?: PortfolioNavActiveStyle;
 }): Record<string, string> {
   if (params.active) return {};
-  const bg = navHex(params.backgroundColor, DEFAULT_NAV_ITEM_BACKGROUND_COLOR);
+  const bg = navItemSurfaceHex(params.backgroundColor, DEFAULT_NAV_ITEM_BACKGROUND_COLOR);
   const border = navHex(params.borderColor, DEFAULT_NAV_ITEM_BORDER_COLOR);
   const icon = navHex(params.iconColor, DEFAULT_NAV_ITEM_ICON_COLOR);
   const text = navHex(params.textColor, DEFAULT_NAV_ITEM_TEXT_COLOR);
   const hoverIcon = navHex(params.hoverIconColor, DEFAULT_NAV_ITEM_HOVER_ICON_COLOR);
   const hoverText = navHex(params.hoverTextColor, DEFAULT_NAV_ITEM_HOVER_TEXT_COLOR);
-  const hoverBg = navHex(params.hoverBackgroundColor, DEFAULT_NAV_ITEM_HOVER_BACKGROUND_COLOR);
+  const hoverBgToken = navItemSurfaceHex(
+    params.hoverBackgroundColor,
+    DEFAULT_NAV_ITEM_HOVER_BACKGROUND_COLOR
+  );
   const hoverBorder = navHex(params.hoverBorderColor, DEFAULT_NAV_ITEM_HOVER_BORDER_COLOR);
   const borderEnabled = params.borderEnabled !== false;
+  const activeStyle = params.activeStyle ?? 'filled-pill';
+  const barBg = params.barBackgroundColor
+    ? navItemSurfaceHex(params.barBackgroundColor, DEFAULT_NAV_BAR_BACKGROUND_COLOR)
+    : bg;
+  const onDarkBar =
+    bg === 'transparent' || hexLuminance(bg) < 0.08
+      ? hexLuminance(barBg) < 0.35
+      : hexLuminance(bg) < 0.35;
+  const hoverBgAlpha = navItemHoverBgAlpha(
+    params.hoverBackgroundColor,
+    params.backgroundColor,
+    params.barBackgroundColor,
+    activeStyle
+  );
+  const hoverBgWash =
+    onDarkBar && (hoverBgToken === 'transparent' || hoverBgToken === bg)
+      ? hexToRgba(hoverText, hoverBgAlpha)
+      : hexToRgba(hoverBgToken, hoverBgAlpha);
   return {
     '--nav-item-bg': bg,
     '--nav-item-border': borderEnabled ? border : 'transparent',
@@ -1188,33 +1566,262 @@ export function portfolioNavItemHoverCssVars(params: {
     '--nav-item-text': text,
     '--nav-item-hover-icon': hoverIcon,
     '--nav-item-hover-text': hoverText,
-    '--nav-item-hover-bg': hexToRgba(hoverBg, 0.18),
+    '--nav-item-hover-bg': hoverBgWash,
     '--nav-item-hover-border': borderEnabled ? hoverBorder : 'transparent',
+    '--nav-item-hover-line': hexToRgba(hoverBorder, onDarkBar ? 0.55 : 0.42),
   };
+}
+
+/**
+ * Per-design inactive hover — complements activeStyle + bar chrome.
+ * Active items return minimal classes so active styling is preserved on hover.
+ */
+export function portfolioNavItemHoverPresentation(params: {
+  active: boolean;
+  design: PortfolioNavBarDesign;
+  buttonDesign: PortfolioNavButtonDesign;
+  activeStyle: PortfolioNavActiveStyle;
+  contentMode: PortfolioNavContentMode;
+  vertical: boolean;
+}): PortfolioNavItemHoverPresentation {
+  const { active, design, buttonDesign, activeStyle, contentMode, vertical } = params;
+  const inactiveIconBase = `inline-flex [color:var(--nav-item-icon)] ${NAV_ITEM_HOVER_ICON_TRANSITION}`;
+  const inactiveTextBase = `[color:var(--nav-item-text)] ${NAV_ITEM_HOVER_TEXT_TRANSITION}`;
+  const groupShell = `group relative ${NAV_ITEM_HOVER_SHELL_TRANSITION}`;
+
+  if (active) {
+    return {
+      shellClass: 'group relative',
+      iconClass: 'inline-flex',
+      textClass: '',
+      showHoverDot: false,
+      hoverDotClass: '',
+    };
+  }
+
+  const iconColorHover =
+    'group-hover:[color:var(--nav-item-hover-icon)] group-hover:opacity-100';
+  const textColorHover =
+    'group-hover:[color:var(--nav-item-hover-text)] group-hover:font-semibold';
+
+  if (buttonDesign === 'bottom-line') {
+    const previewLine = vertical
+      ? 'shadow-[inset_2px_0_0_0_transparent] hover:shadow-[inset_2px_0_0_0_var(--nav-item-hover-line)]'
+      : 'shadow-[inset_0_-2px_0_0_transparent] hover:shadow-[inset_0_-2px_0_0_var(--nav-item-hover-line)]';
+    return {
+      shellClass: [
+        groupShell,
+        'border-0 bg-transparent',
+        previewLine,
+        'hover:bg-[var(--nav-item-hover-bg)]',
+      ].join(' '),
+      iconClass: `${inactiveIconBase} opacity-90 ${iconColorHover}`,
+      textClass: `${inactiveTextBase} ${textColorHover}`,
+      showHoverDot: false,
+      hoverDotClass: '',
+    };
+  }
+
+  if (design === 'dock') {
+    const dockShell =
+      contentMode === 'both'
+        ? `${groupShell} hover:-translate-y-0.5`
+        : `${groupShell} hover:bg-[var(--nav-item-hover-bg)] hover:border-[color:var(--nav-item-hover-border)] hover:scale-[1.04]`;
+    return {
+      shellClass: [
+        dockShell,
+        contentMode === 'icons' || contentMode === 'both'
+          ? ''
+          : 'bg-[var(--nav-item-bg)] border-[color:var(--nav-item-border)]',
+      ]
+        .filter(Boolean)
+        .join(' '),
+      iconClass: `${inactiveIconBase} opacity-90 ${iconColorHover} group-hover:scale-105`,
+      textClass: `${inactiveTextBase} ${textColorHover} group-hover:-translate-y-px`,
+      showHoverDot: false,
+      hoverDotClass: '',
+    };
+  }
+
+  if (design === 'rail') {
+    const railInset = vertical
+      ? 'hover:shadow-[inset_3px_0_0_0_var(--nav-item-hover-line)]'
+      : 'hover:shadow-[inset_0_0_0_1px_var(--nav-item-hover-border)]';
+    return {
+      shellClass: [
+        groupShell,
+        'bg-[var(--nav-item-bg)] border-[color:var(--nav-item-border)]',
+        railInset,
+        'hover:bg-[var(--nav-item-hover-bg)]',
+      ].join(' '),
+      iconClass: `${inactiveIconBase} opacity-90 ${iconColorHover}`,
+      textClass: `${inactiveTextBase} ${textColorHover}`,
+      showHoverDot: false,
+      hoverDotClass: '',
+    };
+  }
+
+  if (buttonDesign === 'glow') {
+    return {
+      shellClass: [
+        groupShell,
+        'bg-[var(--nav-item-bg)] border-[color:var(--nav-item-border)]',
+        'hover:bg-[var(--nav-item-hover-bg)] hover:border-[color:var(--nav-item-hover-border)]',
+        'hover:shadow-[0_4px_18px_rgba(0,0,0,0.1)]',
+      ].join(' '),
+      iconClass: `${inactiveIconBase} ${iconColorHover}`,
+      textClass: `${inactiveTextBase} ${textColorHover}`,
+      showHoverDot: false,
+      hoverDotClass: '',
+    };
+  }
+
+  if (buttonDesign === 'soft') {
+    return {
+      shellClass: [
+        groupShell,
+        'bg-[var(--nav-item-bg)] border-[color:var(--nav-item-border)]',
+        'hover:bg-[var(--nav-item-hover-bg)] hover:border-[color:var(--nav-item-hover-border)]',
+      ].join(' '),
+      iconClass: `${inactiveIconBase} ${iconColorHover}`,
+      textClass: `${inactiveTextBase} ${textColorHover}`,
+      showHoverDot: false,
+      hoverDotClass: '',
+    };
+  }
+
+  if (contentMode === 'icons') {
+    return {
+      shellClass: [
+        groupShell,
+        'bg-[var(--nav-item-bg)] border-[color:var(--nav-item-border)]',
+        'hover:bg-[var(--nav-item-hover-bg)] hover:border-[color:var(--nav-item-hover-border)]',
+        activeStyle === 'dot' ? '' : 'hover:scale-[1.05]',
+      ]
+        .filter(Boolean)
+        .join(' '),
+      iconClass: `${inactiveIconBase} opacity-85 ${iconColorHover} group-hover:scale-105`,
+      textClass: inactiveTextBase,
+      showHoverDot: false,
+      hoverDotClass:
+        'pointer-events-none absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-50',
+    };
+  }
+
+  switch (activeStyle) {
+    case 'underline': {
+      const underlinePreview = vertical
+        ? 'border-l-2 border-transparent hover:border-[color:var(--nav-item-hover-line)]'
+        : 'border-b-2 border-transparent pb-1.5 hover:border-[color:var(--nav-item-hover-line)]';
+      return {
+        shellClass: [
+          groupShell,
+          'rounded-none border-0 bg-transparent',
+          underlinePreview,
+          'hover:bg-[var(--nav-item-hover-bg)]',
+        ].join(' '),
+        iconClass: `${inactiveIconBase} opacity-90 ${iconColorHover}`,
+        textClass: `${inactiveTextBase} ${textColorHover}`,
+        showHoverDot: false,
+        hoverDotClass: '',
+      };
+    }
+    case 'dot':
+      return {
+        shellClass: [
+          groupShell,
+          'border-0 bg-transparent',
+          'hover:bg-[var(--nav-item-hover-bg)]',
+        ].join(' '),
+        iconClass: `${inactiveIconBase} opacity-90 ${iconColorHover}`,
+        textClass: `${inactiveTextBase} ${textColorHover}`,
+        showHoverDot: contentMode === 'text',
+        hoverDotClass:
+          'pointer-events-none absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-50',
+      };
+    case 'accent-text':
+      return {
+        shellClass: [
+          groupShell,
+          'border-0 bg-transparent',
+          'hover:bg-[var(--nav-item-hover-bg)]',
+        ].join(' '),
+        iconClass: `${inactiveIconBase} opacity-90 ${iconColorHover}`,
+        textClass: `${inactiveTextBase} ${textColorHover}`,
+        showHoverDot: false,
+        hoverDotClass: '',
+      };
+    case 'outline':
+      return {
+        shellClass: [
+          groupShell,
+          'border border-transparent bg-transparent',
+          'hover:border-[color:var(--nav-item-hover-border)] hover:bg-[var(--nav-item-hover-bg)]',
+        ].join(' '),
+        iconClass: `${inactiveIconBase} ${iconColorHover}`,
+        textClass: `${inactiveTextBase} ${textColorHover}`,
+        showHoverDot: false,
+        hoverDotClass: '',
+      };
+    case 'soft-badge':
+    case 'accent-fill':
+    case 'filled-pill':
+      return {
+        shellClass: [
+          groupShell,
+          'border-0 bg-transparent',
+          'hover:bg-[var(--nav-item-hover-bg)]',
+          contentMode === 'both' ? 'hover:-translate-y-0.5' : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
+        iconClass: `${inactiveIconBase} opacity-90 ${iconColorHover} group-hover:scale-[1.03]`,
+        textClass: `${inactiveTextBase} ${textColorHover}`,
+        showHoverDot: false,
+        hoverDotClass: '',
+      };
+    default:
+      return {
+        shellClass: [
+          groupShell,
+          'bg-[var(--nav-item-bg)] border-[color:var(--nav-item-border)]',
+          'hover:bg-[var(--nav-item-hover-bg)] hover:border-[color:var(--nav-item-hover-border)]',
+        ].join(' '),
+        iconClass: `${inactiveIconBase} ${iconColorHover}`,
+        textClass: `${inactiveTextBase} ${textColorHover}`,
+        showHoverDot: false,
+        hoverDotClass: '',
+      };
+  }
 }
 
 /** Tailwind classes that paint resting + hover colors from CSS vars (no inline hex fight). */
 export function portfolioNavItemHoverClass(
   active: boolean,
   buttonDesign?: PortfolioNavButtonDesign,
-  vertical = false
+  vertical = false,
+  presentation?: Pick<
+    PortfolioNavItemHoverPresentation,
+    'shellClass'
+  >
 ): string {
-  if (active) return '';
+  if (active) return 'group relative';
+  if (presentation?.shellClass) return presentation.shellClass;
   if (buttonDesign === 'bottom-line') {
     const line = vertical
-      ? 'shadow-[inset_2px_0_0_0_var(--nav-item-border)] hover:shadow-[inset_2px_0_0_0_var(--nav-item-hover-border)]'
-      : 'shadow-[inset_0_-2px_0_0_var(--nav-item-border)] hover:shadow-[inset_0_-2px_0_0_var(--nav-item-hover-border)]';
+      ? 'shadow-[inset_2px_0_0_0_transparent] hover:shadow-[inset_2px_0_0_0_var(--nav-item-hover-line)]'
+      : 'shadow-[inset_0_-2px_0_0_transparent] hover:shadow-[inset_0_-2px_0_0_var(--nav-item-hover-line)]';
     return [
-      'group',
-      'transition-[background-color,box-shadow,color] duration-200 ease-out',
+      'group relative',
+      NAV_ITEM_HOVER_SHELL_TRANSITION,
       'border-0 bg-transparent',
       line,
       'hover:bg-[var(--nav-item-hover-bg)]',
     ].join(' ');
   }
   return [
-    'group',
-    'transition-[background-color,border-color,color,box-shadow] duration-200 ease-out',
+    'group relative',
+    NAV_ITEM_HOVER_SHELL_TRANSITION,
     'bg-[var(--nav-item-bg)]',
     'border-[color:var(--nav-item-border)]',
     'hover:bg-[var(--nav-item-hover-bg)]',
@@ -1222,14 +1829,50 @@ export function portfolioNavItemHoverClass(
   ].join(' ');
 }
 
-export function portfolioNavItemHoverIconClass(active: boolean): string {
+export function portfolioNavItemHoverIconClass(
+  active: boolean,
+  presentation?: Pick<PortfolioNavItemHoverPresentation, 'iconClass'>
+): string {
   if (active) return 'inline-flex';
-  return 'inline-flex [color:var(--nav-item-icon)] transition-colors duration-200 group-hover:[color:var(--nav-item-hover-icon)]';
+  return (
+    presentation?.iconClass ??
+    `inline-flex [color:var(--nav-item-icon)] ${NAV_ITEM_HOVER_ICON_TRANSITION} group-hover:[color:var(--nav-item-hover-icon)]`
+  );
 }
 
-export function portfolioNavItemHoverTextClass(active: boolean): string {
+export function portfolioNavItemHoverTextClass(
+  active: boolean,
+  presentation?: Pick<PortfolioNavItemHoverPresentation, 'textClass'>
+): string {
   if (active) return '';
-  return '[color:var(--nav-item-text)] transition-colors duration-200 group-hover:[color:var(--nav-item-hover-text)]';
+  return (
+    presentation?.textClass ??
+    `[color:var(--nav-item-text)] ${NAV_ITEM_HOVER_TEXT_TRANSITION} group-hover:[color:var(--nav-item-hover-text)]`
+  );
+}
+
+/** Mobile drawer row hover — mirrors activeStyle without fighting active fill. */
+export function portfolioNavDrawerItemHoverClass(
+  active: boolean,
+  activeStyle: PortfolioNavActiveStyle
+): string {
+  if (active) return 'shadow-sm';
+  switch (activeStyle) {
+    case 'underline':
+      return 'border-l-2 border-transparent hover:border-[color:var(--nav-item-hover-line)] hover:bg-[var(--nav-item-hover-bg)]';
+    case 'dot':
+      return 'hover:bg-[var(--nav-item-hover-bg)] hover:pl-4';
+    case 'outline':
+      return 'border border-transparent hover:border-[color:var(--nav-item-hover-border)] hover:bg-[var(--nav-item-hover-bg)]';
+    case 'accent-text':
+      return 'hover:bg-[var(--nav-item-hover-bg)] hover:font-bold';
+    case 'soft-badge':
+    case 'accent-fill':
+    case 'filled-pill':
+      return 'hover:bg-[var(--nav-item-hover-bg)]';
+    default:
+      return 'hover:bg-[var(--nav-item-hover-bg)]';
+  }
 }
 
 function iconSizeClass(thickness: PortfolioNavBarThickness, compactOnMobile: boolean): string {
@@ -1292,27 +1935,21 @@ export function portfolioNavItemBaseClass(
   compactOnMobile: boolean,
   vertical: boolean,
   thickness: PortfolioNavBarThickness = 'md',
-  buttonPadding: PortfolioNavButtonPadding = 'md'
+  buttonPadding: PortfolioNavButtonPadding = 'md',
+  labelFontSize: PortfolioNavLabelFontSize = 'sm',
+  navBarHeight: PortfolioNavBarHeight = 'md',
+  activeStyle?: PortfolioNavActiveStyle
 ): string {
-  const textSize =
-    thickness === 'sm'
-      ? compactOnMobile
-        ? 'text-xs sm:text-[13px]'
-        : 'text-[13px]'
-      : thickness === 'lg' || thickness === 'xl'
-        ? compactOnMobile
-          ? 'text-sm sm:text-base'
-          : 'text-base'
-        : compactOnMobile
-          ? 'text-sm sm:text-[15px]'
-          : 'text-[15px]';
+  const textSize = portfolioNavLabelFontSizeClass(labelFontSize, compactOnMobile);
   const textPad = buttonPaddingClass(buttonPadding, compactOnMobile);
+  const heightClass = portfolioNavBarHeightClass(navBarHeight, 'item');
+  const itemHeight = heightClass ? ` ${heightClass}` : '';
   const casing =
     labelCase === 'uppercase'
-      ? 'font-semibold uppercase tracking-[0.14em]'
+      ? 'font-normal uppercase tracking-[0.14em]'
       : labelCase === 'titlecase'
-        ? 'font-semibold tracking-[0.02em] normal-case'
-        : 'font-semibold tracking-normal normal-case';
+        ? 'font-normal tracking-[0.02em] normal-case'
+        : 'font-normal tracking-normal normal-case';
 
   const decor = portfolioNavButtonDesignBaseClass(buttonDesign);
   const iconBox = iconSizeClass(thickness, compactOnMobile);
@@ -1352,19 +1989,38 @@ export function portfolioNavItemBaseClass(
         : 'inline-flex flex-row gap-1.5'
       : '';
 
+  const indicatorPad =
+    activeStyle === 'dot'
+      ? 'px-2 pt-2 pb-2'
+      : activeStyle === 'dot-left'
+        ? 'pl-3 pr-2 py-2'
+        : activeStyle === 'underline' || activeStyle === 'underline-animated'
+          ? 'px-2 pt-2 pb-1.5'
+          : activeStyle === 'filled-pill'
+            ? 'px-2.5 py-1 sm:px-3 sm:py-1'
+            : 'px-2 py-2';
+
+  if (activeStyle && portfolioNavUsesFlatMenuIndicatorLayout(activeStyle)) {
+    return `relative inline-flex shrink-0 items-center justify-center rounded-none border-0 bg-transparent shadow-none${itemHeight} ${indicatorPad} ${textSize} ${casing} transition`;
+  }
+
+  if (activeStyle === 'filled-pill') {
+    return `inline-flex shrink-0 items-center justify-center rounded-md border-0 shadow-none ${indicatorPad} ${textSize} ${casing} transition`;
+  }
+
   switch (design) {
     case 'rail':
       return vertical
-        ? `flex w-full items-center justify-center rounded-xl ${textPad} ${textSize} ${casing} ${bothLayout} transition ${decor}`
-        : `shrink-0 items-center justify-center rounded-xl ${textPad} ${textSize} ${casing} ${bothLayout || 'inline-flex'} transition ${decor}`;
+        ? `flex w-full items-center justify-center rounded-xl ${textPad}${itemHeight} ${textSize} ${casing} ${bothLayout} transition ${decor}`
+        : `shrink-0 items-center justify-center rounded-xl ${textPad}${itemHeight} ${textSize} ${casing} ${bothLayout || 'inline-flex'} transition ${decor}`;
     case 'dock':
       // Icon + label: keep the circle on the glyph only — never stretch rounded-full around the text.
       if (contentMode === 'both') {
-        return `inline-flex shrink-0 flex-col items-center justify-center gap-1 border-0 bg-transparent p-0 shadow-none ${textSize} ${casing} transition`;
+        return `inline-flex shrink-0 flex-col items-center justify-center gap-1 border-0 bg-transparent p-0 shadow-none${itemHeight} ${textSize} ${casing} transition`;
       }
-      return `inline-flex shrink-0 items-center justify-center rounded-full ${textPad} ${textSize} ${casing} ${bothLayout} border shadow-sm transition`;
+      return `inline-flex shrink-0 items-center justify-center rounded-full ${textPad}${itemHeight} ${textSize} ${casing} ${bothLayout} border shadow-sm transition`;
     default:
-      return `shrink-0 items-center justify-center rounded-full ${textPad} ${textSize} ${casing} ${bothLayout || 'inline-flex'} transition ${decor}`;
+      return `shrink-0 items-center justify-center rounded-full ${textPad}${itemHeight} ${textSize} ${casing} ${bothLayout || 'inline-flex'} transition ${decor}`;
   }
 }
 
@@ -1397,17 +2053,25 @@ function portfolioNavButtonDesignBaseClass(buttonDesign: PortfolioNavButtonDesig
   }
 }
 
+export function portfolioNavLabelFontClass(_labelCase: PortfolioNavLabelCase): string {
+  return 'font-normal';
+}
+
 /** Structural active classes — accent color is applied via portfolioNavActiveItemStyle. */
-function portfolioNavButtonDesignActiveClass(buttonDesign: PortfolioNavButtonDesign): string {
+function portfolioNavButtonDesignActiveClass(
+  buttonDesign: PortfolioNavButtonDesign,
+  labelCase: PortfolioNavLabelCase = 'normal'
+): string {
+  const weight = portfolioNavLabelFontClass(labelCase);
   switch (buttonDesign) {
     case 'outlined':
       return 'border-neutral-900 dark:border-white';
     case 'soft':
-      return 'font-semibold text-neutral-950 dark:text-white';
+      return `${weight} text-neutral-950 dark:text-white`;
     case 'glow':
-      return 'font-semibold text-neutral-950 dark:text-white';
+      return `${weight} text-neutral-950 dark:text-white`;
     case 'bottom-line':
-      return 'rounded-none border-0 bg-transparent font-semibold shadow-none';
+      return `rounded-none border-0 bg-transparent ${weight} shadow-none`;
     default:
       return '';
   }
@@ -1418,16 +2082,15 @@ export function portfolioNavItemActiveClass(
   buttonDesign: PortfolioNavButtonDesign,
   activeStyle: PortfolioNavActiveStyle,
   active: boolean,
-  vertical: boolean
+  vertical: boolean,
+  labelCase: PortfolioNavLabelCase = 'normal'
 ): string {
   if (buttonDesign === 'bottom-line') {
     if (!active) {
       return design === 'dock' ? '' : 'text-neutral-600 dark:text-neutral-400';
     }
-    return portfolioNavButtonDesignActiveClass('bottom-line');
-  }
-
-  if (!active) {
+    // Legacy bottom-line active trait removed — activeStyle owns the active look.
+  } else if (!active) {
     // Dock: color from palette CSS vars only (avoid neutral/dark: fighting hex tokens).
     const inactive = design === 'dock' ? '' : 'text-neutral-600 dark:text-neutral-400';
 
@@ -1440,45 +2103,48 @@ export function portfolioNavItemActiveClass(
     return inactive;
   }
 
-  const decorActive = portfolioNavButtonDesignActiveClass(buttonDesign);
+  const decorActive = portfolioNavButtonDesignActiveClass(buttonDesign, labelCase);
+  const weight = portfolioNavLabelFontClass(labelCase);
 
   if (design === 'rail') {
     const railActive = vertical
-      ? 'bg-neutral-100 font-semibold text-neutral-950 dark:bg-neutral-800 dark:text-white'
-      : 'bg-neutral-100 font-semibold text-neutral-950 shadow-inner dark:bg-neutral-800 dark:text-white';
+      ? `bg-neutral-100 ${weight} text-neutral-950 dark:bg-neutral-800 dark:text-white`
+      : `bg-neutral-100 ${weight} text-neutral-950 shadow-inner dark:bg-neutral-800 dark:text-white`;
     return decorActive ? `${railActive} ${decorActive}` : railActive;
   }
 
   if (design === 'dock') {
     // Fill/border/glyph from portfolioNavActiveItemStyle (Global fond ↔ texteFort).
-    return 'font-semibold shadow-md';
+    return `${weight} shadow-md`;
   }
 
   let classicActive: string;
   switch (activeStyle) {
     case 'underline':
-      classicActive = vertical
-        ? 'rounded-none border-l-2 bg-transparent font-semibold text-neutral-950 dark:text-white'
-        : 'rounded-none border-b-2 bg-transparent pb-1.5 font-semibold text-neutral-950 dark:text-white';
+    case 'underline-animated':
+      classicActive = `relative rounded-none border-0 bg-transparent ${weight}`;
       break;
     case 'outline':
-      classicActive = 'border bg-transparent font-semibold';
+      classicActive = `border bg-transparent ${weight}`;
       break;
     case 'accent-fill':
-      classicActive = 'border-0 font-semibold';
+      classicActive = `border-0 ${weight}`;
       break;
     case 'soft-badge':
-      classicActive = 'border-0 font-semibold';
+      classicActive = `border-0 ${weight}`;
       break;
     case 'dot':
-      classicActive = 'relative border-0 bg-transparent font-semibold';
+      classicActive = `relative border-0 bg-transparent font-semibold ${weight}`;
+      break;
+    case 'dot-left':
+      classicActive = `relative border-0 bg-transparent font-semibold ${weight}`;
       break;
     case 'accent-text':
-      classicActive = 'font-semibold bg-transparent';
+      classicActive = `border-0 bg-transparent font-semibold`;
       break;
     default:
-      // filled-pill — fill / icon colors come from palette via portfolioNavActiveItemStyle
-      classicActive = 'border-0 font-semibold';
+      // filled-pill — fill from portfolioNavActiveItemStyle
+      classicActive = `border-0 font-semibold ${weight}`;
   }
 
   return decorActive ? `${classicActive} ${decorActive}` : classicActive;
@@ -1521,18 +2187,6 @@ export function portfolioNavActiveItemStyle({
   const contrastFill = darkerColor(pageFill, strong);
   const onContrast = pickContrastingColor(contrastFill, surface, strong);
 
-  // Bottom line wins over dock/rail/box borders — accent hairline only.
-  if (buttonDesign === 'bottom-line') {
-    return {
-      backgroundColor: 'transparent',
-      borderWidth: 0,
-      borderStyle: 'solid',
-      borderColor: 'transparent',
-      color: accent,
-      boxShadow: vertical ? `inset 2px 0 0 0 ${accent}` : `inset 0 -2px 0 0 ${accent}`,
-    };
-  }
-
   // Icon dock: high-contrast circular chrome vs page fond (light↔dark via palette tokens).
   if (design === 'dock') {
     const dockFill = pickContrastingColor(pageFill, strong, surface);
@@ -1574,7 +2228,12 @@ export function portfolioNavActiveItemStyle({
 
   switch (activeStyle) {
     case 'underline':
-      return { borderColor: accent, borderWidth: 2, borderStyle: 'solid' };
+      return {
+        color: strong,
+        backgroundColor: 'transparent',
+        borderWidth: 0,
+        borderStyle: 'solid',
+      };
     case 'outline':
       return {
         borderColor: accent,
@@ -1600,6 +2259,8 @@ export function portfolioNavActiveItemStyle({
         borderStyle: 'solid',
       };
     case 'dot':
+    case 'dot-left':
+    case 'underline-animated':
       return {
         color: strong,
         backgroundColor: 'transparent',
@@ -1607,12 +2268,12 @@ export function portfolioNavActiveItemStyle({
         borderStyle: 'solid',
       };
     case 'accent-text':
-      return { color: accent };
+      return { color: accent, backgroundColor: 'transparent', borderWidth: 0, borderStyle: 'solid' };
     case 'filled-pill':
       return {
-        backgroundColor: contrastFill,
-        color: onContrast,
-        borderColor: contrastFill,
+        backgroundColor: accent,
+        color: pickContrastingColor(accent, '#0a0a0a', strong),
+        borderColor: 'transparent',
         borderWidth: 0,
         borderStyle: 'solid',
       };

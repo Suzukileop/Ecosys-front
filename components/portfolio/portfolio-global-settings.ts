@@ -291,6 +291,13 @@ export type PortfolioGlobalSettings = {
    * Fine-tune the gap between right-column sections (0–200).
    */
   splitContentTopExtraPx: number;
+  /** Bottom padding on right-column sections in Split screen. */
+  splitContentBottomSpacing: PortfolioGlobalSectionTitleTopSpacing;
+  /**
+   * Extra pixels added on top of {@link splitContentBottomSpacing} in Split screen.
+   * Fine-tune the gap below right-column sections (0–200).
+   */
+  splitContentBottomExtraPx: number;
   motionProfile: PortfolioGlobalMotionProfile;
   /** Timing overrides for the active motion profile (delay / duration / stagger / distance). */
   motionTiming: PortfolioMotionTiming;
@@ -310,6 +317,13 @@ export type PortfolioGlobalSettings = {
    * Fine-tune space above every section title (0–200).
    */
   sectionTitleTopExtraPx: number;
+  /** Uniform padding-bottom below section content — mirrors {@link sectionTitleTopSpacing}. */
+  sectionTitleBottomSpacing: PortfolioGlobalSectionTitleTopSpacing;
+  /**
+   * Extra pixels added on top of {@link sectionTitleBottomSpacing}.
+   * Fine-tune space below every section (0–200).
+   */
+  sectionTitleBottomExtraPx: number;
   sectionOrder: PortfolioNavSectionKey[];
   /** Session presence type for the public page (About us is business + storefront only). */
   presenceKind: PortfolioPresenceKind | null;
@@ -491,6 +505,7 @@ export const PORTFOLIO_GLOBAL_SPLIT_TITLE_FRAME_BORDER_SIDE_OPTIONS: {
 ];
 
 export const DEFAULT_GLOBAL_TITLE_ORIENTATION_TARGETS: PortfolioGlobalTitleOrientationTargets = {
+  info: false,
   work: false,
   services: false,
   about: false,
@@ -500,14 +515,16 @@ export const DEFAULT_GLOBAL_TITLE_ORIENTATION_TARGETS: PortfolioGlobalTitleOrien
   gallery: false,
   faq: false,
   contact: false,
+  stack: false,
   tools: false,
 };
 
 export const DEFAULT_CONTENT_SECTION_ORDER: PortfolioNavSectionKey[] = [
+  'stack',
+  'info',
   'work',
   'tools',
   'services',
-  'about',
   'aboutUs',
   'experience',
   'team',
@@ -530,6 +547,8 @@ export function resolveSectionOrder(order: PortfolioNavSectionKey[] | undefined)
   for (const key of order) {
     // Legacy: Skills section was removed from the portfolio.
     if ((key as string) === 'skills') continue;
+    // Legacy: Infos / Why choose me (about) section was removed from the portfolio.
+    if (key === 'about') continue;
     if (!CONTENT_SECTION_ORDER_KEYS.has(key) || seen.has(key)) continue;
     seen.add(key);
     next.push(key);
@@ -538,9 +557,9 @@ export function resolveSectionOrder(order: PortfolioNavSectionKey[] | undefined)
   for (const key of DEFAULT_CONTENT_SECTION_ORDER) {
     if (seen.has(key)) continue;
     if (key === 'experience') {
-      const aboutIdx = next.indexOf('about');
-      if (aboutIdx >= 0) {
-        next.splice(aboutIdx + 1, 0, 'experience');
+      const servicesIdx = next.indexOf('services');
+      if (servicesIdx >= 0) {
+        next.splice(servicesIdx + 1, 0, 'experience');
       } else {
         next.push('experience');
       }
@@ -574,6 +593,13 @@ export function resolveSectionOrder(order: PortfolioNavSectionKey[] | undefined)
     next.splice(toolsIdx, 1);
     const insertAt = next.indexOf('work') + 1;
     next.splice(insertAt, 0, 'tools');
+  }
+
+  // Keep Stack first when present (directly under Hero).
+  const stackIdx = next.indexOf('stack');
+  if (stackIdx > 0) {
+    next.splice(stackIdx, 1);
+    next.unshift('stack');
   }
 
   return next;
@@ -650,6 +676,8 @@ export const DEFAULT_GLOBAL_SETTINGS: PortfolioGlobalSettings = {
   splitTitleFrame: { ...DEFAULT_GLOBAL_SPLIT_TITLE_FRAME },
   splitContentTopSpacing: 'compact',
   splitContentTopExtraPx: 0,
+  splitContentBottomSpacing: 'compact',
+  splitContentBottomExtraPx: 0,
   motionProfile: DEFAULT_MOTION_PROFILE,
   motionTiming: { ...DEFAULT_MOTION_TIMING },
   taskListBulletStyle: 'disc',
@@ -660,6 +688,8 @@ export const DEFAULT_GLOBAL_SETTINGS: PortfolioGlobalSettings = {
   taskListBulletWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
   sectionTitleTopSpacing: 'standard',
   sectionTitleTopExtraPx: 0,
+  sectionTitleBottomSpacing: 'standard',
+  sectionTitleBottomExtraPx: 0,
   sectionOrder: [...DEFAULT_CONTENT_SECTION_ORDER],
   presenceKind: null,
   bodyFont: 'plusJakarta',
@@ -793,6 +823,17 @@ export const PORTFOLIO_GLOBAL_SECTION_TOP_SPACING_OPTIONS: {
   { value: 'standard', label: 'Standard', description: 'Default editorial spacing above titles.' },
   { value: 'comfortable', label: 'Comfortable', description: 'More breathing room above titles.' },
   { value: 'spacious', label: 'Spacious', description: 'Maximum space above section titles.' },
+];
+
+export const PORTFOLIO_GLOBAL_SECTION_BOTTOM_SPACING_OPTIONS: {
+  value: PortfolioGlobalSectionTitleTopSpacing;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'compact', label: 'Compact', description: 'Tighter space below every section.' },
+  { value: 'standard', label: 'Standard', description: 'Default editorial spacing below sections.' },
+  { value: 'comfortable', label: 'Comfortable', description: 'More breathing room below sections.' },
+  { value: 'spacious', label: 'Spacious', description: 'Maximum space below sections.' },
 ];
 
 export const PORTFOLIO_GLOBAL_SPLIT_CONTENT_TOP_SPACING_OPTIONS: {
@@ -2001,6 +2042,35 @@ export function globalSectionTitleTopExtraStyle(extraPx: number): CSSProperties 
   };
 }
 
+/** Uniform padding-bottom below section content — mirrors {@link globalSectionTitleTopClass}. */
+export function globalSectionTitleBottomClass(
+  spacing: PortfolioGlobalSectionTitleTopSpacing
+): string {
+  switch (spacing) {
+    case 'compact':
+      return 'pb-[calc(2rem+var(--pf-section-title-pb-extra,0px))] sm:pb-[calc(2.5rem+var(--pf-section-title-pb-extra,0px))] lg:pb-[calc(3rem+var(--pf-section-title-pb-extra,0px))] transition-[padding-bottom] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]';
+    case 'comfortable':
+      return 'pb-[calc(4rem+var(--pf-section-title-pb-extra,0px))] sm:pb-[calc(5rem+var(--pf-section-title-pb-extra,0px))] lg:pb-[calc(6rem+var(--pf-section-title-pb-extra,0px))] transition-[padding-bottom] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]';
+    case 'spacious':
+      return 'pb-[calc(5rem+var(--pf-section-title-pb-extra,0px))] sm:pb-[calc(7rem+var(--pf-section-title-pb-extra,0px))] lg:pb-[calc(9rem+var(--pf-section-title-pb-extra,0px))] transition-[padding-bottom] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]';
+    default:
+      return 'pb-[calc(3rem+var(--pf-section-title-pb-extra,0px))] sm:pb-[calc(4rem+var(--pf-section-title-pb-extra,0px))] lg:pb-[calc(5rem+var(--pf-section-title-pb-extra,0px))] transition-[padding-bottom] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]';
+  }
+}
+
+export const GLOBAL_SECTION_TITLE_BOTTOM_EXTRA_PX_MIN = GLOBAL_SECTION_TITLE_TOP_EXTRA_PX_MIN;
+export const GLOBAL_SECTION_TITLE_BOTTOM_EXTRA_PX_MAX = GLOBAL_SECTION_TITLE_TOP_EXTRA_PX_MAX;
+
+export function clampGlobalSectionTitleBottomExtraPx(value: unknown, fallback = 0): number {
+  return clampGlobalSectionTitleTopExtraPx(value, fallback);
+}
+
+export function globalSectionTitleBottomExtraStyle(extraPx: number): CSSProperties {
+  return {
+    ['--pf-section-title-pb-extra' as string]: `${clampGlobalSectionTitleBottomExtraPx(extraPx, 0)}px`,
+  };
+}
+
 export const GLOBAL_SPLIT_CONTENT_TOP_EXTRA_PX_MIN = 0;
 export const GLOBAL_SPLIT_CONTENT_TOP_EXTRA_PX_MAX = 200;
 
@@ -2039,6 +2109,61 @@ export function globalSplitContentTopClass(
 export function globalSplitContentTopExtraStyle(extraPx: number): CSSProperties {
   return {
     ['--pf-split-pt-extra' as string]: `${clampGlobalSplitContentTopExtraPx(extraPx, 0)}px`,
+  };
+}
+
+export const PORTFOLIO_GLOBAL_SPLIT_CONTENT_BOTTOM_SPACING_OPTIONS: {
+  value: PortfolioGlobalSectionTitleTopSpacing;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'compact',
+    label: 'Compact',
+    description: 'Petit écart sous chaque bloc de la colonne droite.',
+  },
+  {
+    value: 'standard',
+    label: 'Standard',
+    description: 'Écart équilibré sous chaque bloc.',
+  },
+  {
+    value: 'comfortable',
+    label: 'Comfortable',
+    description: 'Plus d’air sous les blocs de contenu.',
+  },
+  {
+    value: 'spacious',
+    label: 'Spacious',
+    description: 'Grand espace sous chaque bloc.',
+  },
+];
+
+export function globalSplitContentBottomClass(
+  spacing: PortfolioGlobalSectionTitleTopSpacing
+): string {
+  switch (spacing) {
+    case 'compact':
+      return 'pb-[calc(2.5rem+var(--pf-split-pb-extra,0px))] sm:pb-[calc(3rem+var(--pf-split-pb-extra,0px))] lg:pb-[calc(3.5rem+var(--pf-split-pb-extra,0px))] transition-[padding-bottom] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]';
+    case 'comfortable':
+      return 'pb-[calc(5rem+var(--pf-split-pb-extra,0px))] sm:pb-[calc(7rem+var(--pf-split-pb-extra,0px))] lg:pb-[calc(8rem+var(--pf-split-pb-extra,0px))] transition-[padding-bottom] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]';
+    case 'spacious':
+      return 'pb-[calc(7rem+var(--pf-split-pb-extra,0px))] sm:pb-[calc(9.5rem+var(--pf-split-pb-extra,0px))] lg:pb-[calc(11rem+var(--pf-split-pb-extra,0px))] transition-[padding-bottom] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]';
+    default:
+      return 'pb-[calc(3.5rem+var(--pf-split-pb-extra,0px))] sm:pb-[calc(4.5rem+var(--pf-split-pb-extra,0px))] lg:pb-[calc(5.5rem+var(--pf-split-pb-extra,0px))] transition-[padding-bottom] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]';
+  }
+}
+
+export const GLOBAL_SPLIT_CONTENT_BOTTOM_EXTRA_PX_MIN = GLOBAL_SPLIT_CONTENT_TOP_EXTRA_PX_MIN;
+export const GLOBAL_SPLIT_CONTENT_BOTTOM_EXTRA_PX_MAX = GLOBAL_SPLIT_CONTENT_TOP_EXTRA_PX_MAX;
+
+export function clampGlobalSplitContentBottomExtraPx(value: unknown, fallback = 0): number {
+  return clampGlobalSplitContentTopExtraPx(value, fallback);
+}
+
+export function globalSplitContentBottomExtraStyle(extraPx: number): CSSProperties {
+  return {
+    ['--pf-split-pb-extra' as string]: `${clampGlobalSplitContentBottomExtraPx(extraPx, 0)}px`,
   };
 }
 
@@ -2507,7 +2632,9 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
   const titleScroll = record.titleScroll;
   const splitTitleMotion = record.splitTitleMotion;
   const splitContentTopSpacing = record.splitContentTopSpacing;
+  const splitContentBottomSpacing = record.splitContentBottomSpacing;
   const sectionTitleTopSpacing = record.sectionTitleTopSpacing;
+  const sectionTitleBottomSpacing = record.sectionTitleBottomSpacing;
   const titleOrientation =
     record.titleOrientation === 'horizontal' || record.titleOrientation === 'vertical'
       ? record.titleOrientation
@@ -2713,6 +2840,17 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
       record.splitContentTopExtraPx,
       base.splitContentTopExtraPx ?? 0
     ),
+    splitContentBottomSpacing:
+      splitContentBottomSpacing === 'compact' ||
+      splitContentBottomSpacing === 'standard' ||
+      splitContentBottomSpacing === 'comfortable' ||
+      splitContentBottomSpacing === 'spacious'
+        ? splitContentBottomSpacing
+        : base.splitContentBottomSpacing,
+    splitContentBottomExtraPx: clampGlobalSplitContentBottomExtraPx(
+      record.splitContentBottomExtraPx,
+      base.splitContentBottomExtraPx ?? 0
+    ),
     motionProfile: resolveMotionProfileFromStorage(
       record,
       mergeMotionProfile(base.motionProfile, record.motionProfile)
@@ -2758,6 +2896,17 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
     sectionTitleTopExtraPx: clampGlobalSectionTitleTopExtraPx(
       record.sectionTitleTopExtraPx,
       base.sectionTitleTopExtraPx ?? 0
+    ),
+    sectionTitleBottomSpacing:
+      sectionTitleBottomSpacing === 'compact' ||
+      sectionTitleBottomSpacing === 'standard' ||
+      sectionTitleBottomSpacing === 'comfortable' ||
+      sectionTitleBottomSpacing === 'spacious'
+        ? sectionTitleBottomSpacing
+        : base.sectionTitleBottomSpacing,
+    sectionTitleBottomExtraPx: clampGlobalSectionTitleBottomExtraPx(
+      record.sectionTitleBottomExtraPx,
+      base.sectionTitleBottomExtraPx ?? 0
     ),
     sectionOrder: mergeSectionOrder(base.sectionOrder, record.sectionOrder),
     presenceKind: isPortfolioPresenceKind(record.presenceKind)

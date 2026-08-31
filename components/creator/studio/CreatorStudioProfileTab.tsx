@@ -26,6 +26,7 @@ import {
 import { CREATOR_GENDER_VALUES, normalizeCreatorGender } from '@/lib/creator-gender';
 import { NATIONALITY_SELECT_OPTIONS, nationalityLabel, normalizeNationalityCode } from '@/lib/countries';
 import { parseSpecialtyList, parseSpecialtyTags } from '@/lib/specialties';
+import { serializeSpokenLanguagesForApi } from '@/lib/spoken-languages';
 import { collapseRepeatedBio, isRepeatedBioContent } from '@/lib/profile-bio';
 import {
   DEFAULT_CREATOR_APP_ROLE,
@@ -48,6 +49,10 @@ import { ProfileMediaBlocksField } from '@/components/creator/studio/ProfileMedi
 import { ProfileStrengthsField } from '@/components/creator/studio/ProfileStrengthsField';
 import { SpecialtyMultiSelect } from '@/components/creator/studio/SpecialtyMultiSelect';
 import { ProfileLanguagesField } from '@/components/creator/studio/ProfileLanguagesField';
+import { AboutStringListField } from '@/components/creator/studio/AboutStringListField';
+import {
+  AboutEducationField,
+} from '@/components/creator/studio/AboutEducationField';
 import { ProfileServicesField } from '@/components/creator/studio/ProfileServicesField';
 import { ProfileFaqField } from '@/components/creator/studio/ProfileFaqField';
 import { ProfileTeamField } from '@/components/creator/studio/ProfileTeamField';
@@ -82,7 +87,11 @@ import {
   parseSpokenLanguages,
   parseStrengthsTools,
   parseAboutUs,
+  parseAboutStringList,
+  parseAboutEducation,
   serializeAboutUs,
+  serializeAboutStringList,
+  serializeAboutEducation,
   emptyAboutUsForm,
   parseTeamMembers,
   primaryContactValue,
@@ -130,18 +139,18 @@ import { ProfileSectionStickyAside } from '@/components/creator/studio/ProfileSe
 import { CreatorAvailabilityControl, CreatorAvailabilityBadge } from '@/components/creator/studio/CreatorAvailabilityControl';
 import {
   PortfolioAboutReadOnly,
+  PortfolioAboutPageReadOnly,
   PortfolioEditorFooter,
   PortfolioProfileHero,
   type PortfolioAboutFieldKey,
   type PortfolioAboutFieldValue,
 } from '@/components/portfolio/PortfolioInformationChrome';
-import { PortfolioWhyMeReadOnly } from '@/components/portfolio/PortfolioWhyMeChrome';
 import {
   mapProfileBlockToExperienceBlock,
   PortfolioExperienceReadOnly,
   type PortfolioExperienceBlockDraft,
 } from '@/components/portfolio/PortfolioExperienceChrome';
-import { PortfolioStrengthsReadOnly } from '@/components/portfolio/PortfolioStrengthsChrome';
+import { PortfolioStackReadOnly, PortfolioToolsReadOnly } from '@/components/portfolio/PortfolioStrengthsChrome';
 import { PortfolioServicesReadOnly } from '@/components/portfolio/PortfolioServicesChrome';
 import { PortfolioFaqReadOnly } from '@/components/portfolio/PortfolioFaqChrome';
 import { PortfolioTeamReadOnly } from '@/components/portfolio/PortfolioTeamChrome';
@@ -188,6 +197,7 @@ function setSectionSaveError(
 
 const PORTFOLIO_DUAL_EDIT_SECTIONS = [
   'about',
+  'aboutPage',
   'experience',
 ] as const;
 
@@ -255,10 +265,6 @@ function portfolioSectionItemCountLabel(
   reviewCount = 0
 ): string | null {
   switch (section) {
-    case 'whyMe': {
-      const count = values.whyMeBlocks.filter((block) => (block.text ?? '').trim().length > 0).length;
-      return formatItemCountLabel(count, 'argument');
-    }
     case 'experience': {
       const count = values.experienceBlocks
         .map(mapProfileBlockToExperienceBlock)
@@ -266,8 +272,12 @@ function portfolioSectionItemCountLabel(
       return formatItemCountLabel(count, 'experience');
     }
     case 'strengths': {
+      const count = values.stackItems.filter((item) => item.value.trim().length > 0).length;
+      return formatItemCountLabel(count, 'item');
+    }
+    case 'tools': {
       const count = values.strengthsTools.filter((item) => item.value.trim().length > 0).length;
-      return formatItemCountLabel(count, 'skill');
+      return formatItemCountLabel(count, 'tool');
     }
     case 'services': {
       const count = values.serviceOffers.filter((service) => (service.title ?? '').trim().length > 0)
@@ -324,6 +334,7 @@ function portfolioSectionItemCountLabel(
     case 'reputation':
       return formatItemCountLabel(reviewCount, 'review');
     case 'about':
+    case 'aboutPage':
     case 'myRole':
     case 'location':
       return null;
@@ -353,6 +364,7 @@ const PORTFOLIO_SECTION_LABELS: Partial<Record<ProfileSectionId, string>> = {
   team: 'Team',
   gallery: 'Gallery',
   strengths: 'Stack',
+  tools: 'Tools',
 };
 
 /** Toast copy for list CRUD: add / delete / update. */
@@ -376,6 +388,11 @@ const ABOUT_FIELD_TOAST_TITLES: Record<string, string> = {
   nationality: 'Nationality updated',
   yearsOfExperience: 'Years of experience updated',
   spokenLanguages: 'Languages updated',
+  aboutSkills: 'Skills updated',
+  aboutStrengths: 'Strengths updated',
+  aboutSystemsTools: 'Systems & tools updated',
+  aboutInterests: 'Interests updated',
+  aboutEducation: 'Education updated',
   isAvailable: 'Status updated',
   availabilityLabel: 'Availability label updated',
   availabilityHours: 'Availability hours updated',
@@ -423,10 +440,10 @@ export function CreatorStudioProfileTab({
   const [portfolioChromeOpen, setPortfolioChromeOpen] = useState(false);
   const [portfolioEditMode, setPortfolioEditMode] = useState<'individual' | 'global'>('individual');
   const [portfolioGlobalHasChanges, setPortfolioGlobalHasChanges] = useState(false);
-  const [strengthsDeleteMode, setStrengthsDeleteMode] = useState(false);
-  const [strengthsAddingItem, setStrengthsAddingItem] = useState(false);
-  const [whyMeDeleteMode, setWhyMeDeleteMode] = useState(false);
-  const [whyMeAddingArgument, setWhyMeAddingArgument] = useState(false);
+  const [toolsDeleteMode, setToolsDeleteMode] = useState(false);
+  const [toolsAddingItem, setToolsAddingItem] = useState(false);
+  const [stackDeleteMode, setStackDeleteMode] = useState(false);
+  const [stackAddingItem, setStackAddingItem] = useState(false);
   const [faqDeleteMode, setFaqDeleteMode] = useState(false);
   const [faqAddingItem, setFaqAddingItem] = useState(false);
   const [servicesDeleteMode, setServicesDeleteMode] = useState(false);
@@ -494,8 +511,7 @@ export function CreatorStudioProfileTab({
 
   useEffect(() => {
     if (
-      !strengthsDeleteMode &&
-      !whyMeDeleteMode &&
+      !toolsDeleteMode &&
       !faqDeleteMode &&
       !servicesDeleteMode &&
       !portfolioDeleteMode &&
@@ -511,8 +527,7 @@ export function CreatorStudioProfileTab({
       const target = event.target as Node | null;
       if (!target) return;
       if (portfolioInfoCardRef.current?.contains(target)) return;
-      setStrengthsDeleteMode(false);
-      setWhyMeDeleteMode(false);
+      setToolsDeleteMode(false);
       setFaqDeleteMode(false);
       setServicesDeleteMode(false);
       setPortfolioDeleteMode(false);
@@ -525,8 +540,7 @@ export function CreatorStudioProfileTab({
     document.addEventListener('mousedown', onPointerDown);
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, [
-    strengthsDeleteMode,
-    whyMeDeleteMode,
+    toolsDeleteMode,
     faqDeleteMode,
     servicesDeleteMode,
     portfolioDeleteMode,
@@ -570,10 +584,15 @@ export function CreatorStudioProfileTab({
       teamMembers: [],
       galleryItems: [],
       aboutUs: emptyAboutUsForm(),
-      whyMeBlocks: [],
       experienceBlocks: [],
       yearsOfExperience: null,
+      stackItems: [],
       strengthsTools: [],
+      aboutSkills: [],
+      aboutStrengths: [],
+      aboutSystemsTools: [],
+      aboutInterests: [],
+      aboutEducation: [],
     },
   });
 
@@ -639,12 +658,6 @@ export function CreatorStudioProfileTab({
     move: moveGallery,
   } = useFieldArray({ control: form.control, name: 'galleryItems' });
   const {
-    fields: whyMeFields,
-    append: appendWhyMe,
-    remove: removeWhyMe,
-    move: moveWhyMe,
-  } = useFieldArray({ control: form.control, name: 'whyMeBlocks' });
-  const {
     fields: experienceFields,
     append: appendExperience,
     remove: removeExperience,
@@ -662,45 +675,12 @@ export function CreatorStudioProfileTab({
     append: appendContactEmail,
     remove: removeContactEmail,
   } = useFieldArray({ control: form.control, name: 'contactEmails' });
-
-  const exitWhyMeChrome = useCallback(() => {
-    const current = form.getValues('whyMeBlocks');
-    const filled = current
-      .map((block) => ({
-        title: (block.title ?? '').trim(),
-        text: (block.text ?? '').trim(),
-      }))
-      .filter((block) => block.text.length > 0);
-    if (filled.length !== current.length) {
-      form.setValue(
-        'whyMeBlocks',
-        filled.map((block, index) => ({
-          ...createEmptyProfileBlock(index),
-          title: block.title,
-          text: block.text,
-        })),
-        { shouldDirty: false }
-      );
-    }
-
-    setPortfolioChromeOpen(false);
-    setPortfolioEditMode('individual');
-    setPortfolioGlobalHasChanges(false);
-    portfolioGlobalConfirmRef.current = null;
-    setWhyMeDeleteMode(false);
-    setWhyMeAddingArgument(false);
-  }, [form]);
-
-  const cancelWhyMeCompose = useCallback(() => {
-    const current = form.getValues('whyMeBlocks');
-    const lastIndex = current.length - 1;
-    if (lastIndex >= 0) {
-      const block = current[lastIndex];
-      const empty = !(block.text ?? '').trim() && !(block.title ?? '').trim();
-      if (empty) removeWhyMe(lastIndex);
-    }
-    setWhyMeAddingArgument(false);
-  }, [form, removeWhyMe]);
+  const {
+    fields: aboutEducationFields,
+    append: appendAboutEducation,
+    remove: removeAboutEducation,
+    move: moveAboutEducation,
+  } = useFieldArray({ control: form.control, name: 'aboutEducation' });
 
   const exitFaqChrome = useCallback(() => {
     const current = form.getValues('faqItems');
@@ -830,7 +810,24 @@ export function CreatorStudioProfileTab({
     ]
   );
 
-  const cancelStrengthsCompose = useCallback(() => {
+  const cancelStackCompose = useCallback(() => {
+    const current = form.getValues('stackItems');
+    const lastIndex = current.length - 1;
+    if (lastIndex >= 0) {
+      const item = current[lastIndex];
+      const empty = !(item.value ?? '').trim();
+      if (empty) {
+        form.setValue(
+          'stackItems',
+          current.filter((_, index) => index !== lastIndex),
+          { shouldDirty: false }
+        );
+      }
+    }
+    setStackAddingItem(false);
+  }, [form]);
+
+  const cancelToolsCompose = useCallback(() => {
     const current = form.getValues('strengthsTools');
     const lastIndex = current.length - 1;
     if (lastIndex >= 0) {
@@ -844,10 +841,37 @@ export function CreatorStudioProfileTab({
         );
       }
     }
-    setStrengthsAddingItem(false);
+    setToolsAddingItem(false);
   }, [form]);
 
-  const exitStrengthsChrome = useCallback(() => {
+  const exitStackChrome = useCallback(() => {
+    const current = form.getValues('stackItems');
+    const filled = current
+      .map((item) => ({
+        value: item.value ?? '',
+        description: item.description ?? '',
+        category: item.category ?? '',
+        level: item.level ?? null,
+        useCases: item.useCases ?? [],
+        experienceYears: item.experienceYears ?? null,
+        experienceLabel: item.experienceLabel ?? '',
+        currentlyUsed: item.currentlyUsed ?? null,
+        iconUrl: item.iconUrl ?? null,
+      }))
+      .filter((item) => item.value.trim().length > 0);
+    if (filled.length !== current.length) {
+      form.setValue('stackItems', filled, { shouldDirty: false });
+    }
+
+    setPortfolioChromeOpen(false);
+    setPortfolioEditMode('individual');
+    setPortfolioGlobalHasChanges(false);
+    portfolioGlobalConfirmRef.current = null;
+    setStackDeleteMode(false);
+    setStackAddingItem(false);
+  }, [form]);
+
+  const exitToolsChrome = useCallback(() => {
     const current = form.getValues('strengthsTools');
     const filled = current
       .map((item) => ({
@@ -870,8 +894,8 @@ export function CreatorStudioProfileTab({
     setPortfolioEditMode('individual');
     setPortfolioGlobalHasChanges(false);
     portfolioGlobalConfirmRef.current = null;
-    setStrengthsDeleteMode(false);
-    setStrengthsAddingItem(false);
+    setToolsDeleteMode(false);
+    setToolsAddingItem(false);
   }, [form]);
 
   const cancelServicesCompose = useCallback(() => {
@@ -1089,11 +1113,10 @@ export function CreatorStudioProfileTab({
     setLinksAddingItem(false);
   }, [form]);
 
-  // Why choose me / FAQ / Services / Portfolio / Team / Gallery / Links / Skills: click outside exits edit mode.
+  // FAQ / Services / Portfolio / Team / Gallery / Links / Skills: click outside exits edit mode.
   useEffect(() => {
     if (!isPortfolioLayout || !portfolioChromeOpen) return;
     if (
-      activeSection !== 'whyMe' &&
       activeSection !== 'faq' &&
       activeSection !== 'services' &&
       activeSection !== 'portfolio' &&
@@ -1102,6 +1125,7 @@ export function CreatorStudioProfileTab({
       activeSection !== 'gallery' &&
       activeSection !== 'links' &&
       activeSection !== 'strengths' &&
+      activeSection !== 'tools' &&
       activeSection !== 'contact'
     ) {
       return;
@@ -1110,12 +1134,12 @@ export function CreatorStudioProfileTab({
       const target = event.target as Node | null;
       if (!target) return;
       if (portfolioInfoCardRef.current?.contains(target)) return;
-      if (activeSection === 'whyMe') exitWhyMeChrome();
-      else if (activeSection === 'faq') exitFaqChrome();
+      if (activeSection === 'faq') exitFaqChrome();
       else if (activeSection === 'services') exitServicesChrome();
       else if (activeSection === 'portfolio') exitPortfolioChrome();
       else if (activeSection === 'products') exitProductsChrome();
-      else if (activeSection === 'strengths') exitStrengthsChrome();
+      else if (activeSection === 'strengths') exitStackChrome();
+      else if (activeSection === 'tools') exitToolsChrome();
       else if (activeSection === 'gallery') exitGalleryChrome();
       else if (activeSection === 'links') exitLinksChrome();
       else if (activeSection === 'contact') exitContactChrome();
@@ -1132,26 +1156,16 @@ export function CreatorStudioProfileTab({
     exitPortfolioChrome,
     exitProductsChrome,
     exitServicesChrome,
-    exitStrengthsChrome,
+    exitStackChrome,
+    exitToolsChrome,
     exitTeamChrome,
-    exitWhyMeChrome,
     isPortfolioLayout,
     portfolioChromeOpen,
   ]);
 
-  // Why Me / Team / FAQ / Services / Portfolio / Gallery / Links / Skills add compose: click outside cancels.
+  // Team / FAQ / Services / Portfolio / Gallery / Links / Skills add compose: click outside cancels.
   useEffect(() => {
     if (!isPortfolioLayout || portfolioChromeOpen) return;
-    if (activeSection === 'whyMe' && whyMeAddingArgument) {
-      const onPointerDown = (event: MouseEvent) => {
-        const target = event.target as Node | null;
-        if (!target) return;
-        if (portfolioInfoCardRef.current?.contains(target)) return;
-        cancelWhyMeCompose();
-      };
-      document.addEventListener('mousedown', onPointerDown);
-      return () => document.removeEventListener('mousedown', onPointerDown);
-    }
     if (activeSection === 'team' && teamAddingItem) {
       const onPointerDown = (event: MouseEvent) => {
         const target = event.target as Node | null;
@@ -1222,12 +1236,22 @@ export function CreatorStudioProfileTab({
       document.addEventListener('mousedown', onPointerDown);
       return () => document.removeEventListener('mousedown', onPointerDown);
     }
-    if (activeSection === 'strengths' && strengthsAddingItem) {
+    if (activeSection === 'tools' && toolsAddingItem) {
       const onPointerDown = (event: MouseEvent) => {
         const target = event.target as Node | null;
         if (!target) return;
         if (portfolioInfoCardRef.current?.contains(target)) return;
-        cancelStrengthsCompose();
+        cancelToolsCompose();
+      };
+      document.addEventListener('mousedown', onPointerDown);
+      return () => document.removeEventListener('mousedown', onPointerDown);
+    }
+    if (activeSection === 'strengths' && stackAddingItem) {
+      const onPointerDown = (event: MouseEvent) => {
+        const target = event.target as Node | null;
+        if (!target) return;
+        if (portfolioInfoCardRef.current?.contains(target)) return;
+        cancelStackCompose();
       };
       document.addEventListener('mousedown', onPointerDown);
       return () => document.removeEventListener('mousedown', onPointerDown);
@@ -1252,9 +1276,9 @@ export function CreatorStudioProfileTab({
     cancelPortfolioCompose,
     cancelProductsCompose,
     cancelServicesCompose,
-    cancelStrengthsCompose,
+    cancelStackCompose,
+    cancelToolsCompose,
     cancelTeamCompose,
-    cancelWhyMeCompose,
     contactAddingKind,
     faqAddingItem,
     galleryAddingItem,
@@ -1264,9 +1288,9 @@ export function CreatorStudioProfileTab({
     productsAddingItem,
     portfolioChromeOpen,
     servicesAddingItem,
-    strengthsAddingItem,
+    toolsAddingItem,
+    stackAddingItem,
     teamAddingItem,
-    whyMeAddingArgument,
   ]);
 
   const loadProfile = useCallback(async (options?: { silent?: boolean }) => {
@@ -1330,14 +1354,15 @@ export function CreatorStudioProfileTab({
         teamMembers: parseTeamMembers(p.teamMembers),
         galleryItems: parseGalleryItems(p.galleryItems),
         aboutUs: parseAboutUs(p.aboutUs),
-        whyMeBlocks: parseProfileBlocks(p.whyMeBlocks).map((block) => ({
-          ...block,
-          mediaUrl: '',
-          mediaType: null,
-        })),
         experienceBlocks: parseExperienceBlocks(p.experienceBlocks),
         yearsOfExperience: p.yearsOfExperience ?? null,
+        stackItems: parseStrengthsTools(p.profileStack),
         strengthsTools: parseStrengthsTools(p.strengthsToolsMastered),
+        aboutSkills: parseAboutStringList(p.aboutSkills),
+        aboutStrengths: parseAboutStringList(p.aboutStrengths),
+        aboutSystemsTools: parseAboutStringList(p.aboutSystemsTools),
+        aboutInterests: parseAboutStringList(p.aboutInterests),
+        aboutEducation: parseAboutEducation(p.aboutEducation),
       };
       form.reset(resetValues);
       savedSnapshot.current = resetValues;
@@ -1407,9 +1432,19 @@ export function CreatorStudioProfileTab({
         ...raw,
         availabilityHours: availabilityHoursForSave,
         spokenLanguages: raw.spokenLanguages.filter((item) => item.value.trim().length > 0),
-        whyMeBlocks: raw.whyMeBlocks.filter((block) => block.text.trim().length > 0),
         experienceBlocks: raw.experienceBlocks.filter((block) => block.text.trim().length > 0),
+        stackItems: raw.stackItems.filter((item) => item.value.trim().length > 0),
         strengthsTools: raw.strengthsTools.filter((item) => item.value.trim().length > 0),
+        aboutSkills: raw.aboutSkills.filter((item) => item.value.trim().length > 0),
+        aboutStrengths: raw.aboutStrengths.filter((item) => item.value.trim().length > 0),
+        aboutSystemsTools: raw.aboutSystemsTools.filter((item) => item.value.trim().length > 0),
+        aboutInterests: raw.aboutInterests.filter((item) => item.value.trim().length > 0),
+        aboutEducation: raw.aboutEducation.filter(
+          (item) =>
+            item.schoolYear.trim().length > 0 ||
+            item.title.trim().length > 0 ||
+            item.institution.trim().length > 0
+        ),
         profileLinks: raw.profileLinks.filter((link) => link.url.trim().length > 0),
         serviceOffers: raw.serviceOffers.filter(
           (service) =>
@@ -1480,7 +1515,7 @@ export function CreatorStudioProfileTab({
         gender: parsed.gender?.trim() ? parsed.gender.trim() : undefined,
         nationality: parsed.nationality?.trim() ? parsed.nationality.trim().toUpperCase() : '',
         appRole: parsed.appRole ?? DEFAULT_CREATOR_APP_ROLE,
-        spokenLanguages: parsed.spokenLanguages.map((item) => item.value.trim()).filter(Boolean),
+        spokenLanguages: serializeSpokenLanguagesForApi(parsed.spokenLanguages),
         ...(hasCompleteLocation
           ? {
               locationCity: parsed.locationCity?.trim() ? parsed.locationCity.trim() : undefined,
@@ -1517,9 +1552,19 @@ export function CreatorStudioProfileTab({
         teamMembers: serializeTeamMembers(parsed.teamMembers),
         galleryItems: serializeGalleryItems(parsed.galleryItems),
         aboutUs: serializeAboutUs(parsed.aboutUs),
-        whyMeBlocks: serializeProfileBlocks(parsed.whyMeBlocks, { stripMedia: true }),
         experienceBlocks: serializeProfileBlocks(parsed.experienceBlocks),
         yearsOfExperience: parsed.yearsOfExperience,
+        profileStack: parsed.stackItems.map((item) => ({
+          name: item.value.trim(),
+          description: item.description?.trim() ? item.description.trim() : null,
+          category: item.category?.trim() ? item.category.trim().slice(0, 80) : null,
+          level: item.level ?? null,
+          useCases: [],
+          experienceYears: null,
+          experienceLabel: null,
+          currentlyUsed: null,
+          iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,
+        })),
         strengthsToolsMastered: parsed.strengthsTools.map((item) => ({
           name: item.value.trim(),
           description: item.description?.trim() ? item.description.trim() : null,
@@ -1531,6 +1576,11 @@ export function CreatorStudioProfileTab({
           currentlyUsed: null,
           iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,
         })),
+        aboutSkills: serializeAboutStringList(parsed.aboutSkills),
+        aboutStrengths: serializeAboutStringList(parsed.aboutStrengths),
+        aboutSystemsTools: serializeAboutStringList(parsed.aboutSystemsTools),
+        aboutInterests: serializeAboutStringList(parsed.aboutInterests),
+        aboutEducation: serializeAboutEducation(parsed.aboutEducation),
       });
 
       await loadProfile({ silent: true });
@@ -1595,10 +1645,8 @@ export function CreatorStudioProfileTab({
     setPortfolioEditMode('individual');
     setPortfolioGlobalHasChanges(false);
     portfolioGlobalConfirmRef.current = null;
-    setStrengthsDeleteMode(false);
-    setStrengthsAddingItem(false);
-    setWhyMeDeleteMode(false);
-    setWhyMeAddingArgument(false);
+    setToolsDeleteMode(false);
+    setToolsAddingItem(false);
     setFaqDeleteMode(false);
     setFaqAddingItem(false);
     setServicesDeleteMode(false);
@@ -1803,7 +1851,7 @@ export function CreatorStudioProfileTab({
         gender: parsed.gender?.trim() ? parsed.gender.trim() : undefined,
         nationality: parsed.nationality?.trim() ? parsed.nationality.trim().toUpperCase() : '',
         appRole: parsed.appRole ?? DEFAULT_CREATOR_APP_ROLE,
-        spokenLanguages: parsed.spokenLanguages.map((item) => item.value.trim()).filter(Boolean),
+        spokenLanguages: serializeSpokenLanguagesForApi(parsed.spokenLanguages),
         ...(hasCompleteLocation
           ? {
               locationCity: parsed.locationCity?.trim() ? parsed.locationCity.trim() : undefined,
@@ -1842,9 +1890,19 @@ export function CreatorStudioProfileTab({
         teamMembers: serializeTeamMembers(parsed.teamMembers),
         galleryItems: serializeGalleryItems(parsed.galleryItems),
         aboutUs: serializeAboutUs(parsed.aboutUs),
-        whyMeBlocks: serializeProfileBlocks(parsed.whyMeBlocks, { stripMedia: true }),
         experienceBlocks: serializeProfileBlocks(parsed.experienceBlocks),
         yearsOfExperience: parsed.yearsOfExperience,
+        profileStack: parsed.stackItems.map((item) => ({
+          name: item.value.trim(),
+          description: item.description?.trim() ? item.description.trim() : null,
+          category: item.category?.trim() ? item.category.trim().slice(0, 80) : null,
+          level: item.level ?? null,
+          useCases: [],
+          experienceYears: null,
+          experienceLabel: null,
+          currentlyUsed: null,
+          iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,
+        })),
         strengthsToolsMastered: parsed.strengthsTools.map((item) => ({
           name: item.value.trim(),
           description: item.description?.trim() ? item.description.trim() : null,
@@ -1856,6 +1914,11 @@ export function CreatorStudioProfileTab({
           currentlyUsed: null,
           iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,
         })),
+        aboutSkills: serializeAboutStringList(parsed.aboutSkills),
+        aboutStrengths: serializeAboutStringList(parsed.aboutStrengths),
+        aboutSystemsTools: serializeAboutStringList(parsed.aboutSystemsTools),
+        aboutInterests: serializeAboutStringList(parsed.aboutInterests),
+        aboutEducation: serializeAboutEducation(parsed.aboutEducation),
       };
     },
     [typicalResponseTime]
@@ -1954,8 +2017,36 @@ export function CreatorStudioProfileTab({
             { shouldDirty: true }
           );
         } else if (field === 'spokenLanguages') {
-          const languages = (value as string[]).map((item) => ({ value: item }));
+          const languages = value as PortfolioAboutFieldValue['spokenLanguages'];
           form.setValue('spokenLanguages', languages, { shouldDirty: true });
+        } else if (field === 'aboutSkills') {
+          form.setValue(
+            'aboutSkills',
+            (value as string[]).map((item) => ({ value: item })),
+            { shouldDirty: true }
+          );
+        } else if (field === 'aboutStrengths') {
+          form.setValue(
+            'aboutStrengths',
+            (value as string[]).map((item) => ({ value: item })),
+            { shouldDirty: true }
+          );
+        } else if (field === 'aboutSystemsTools') {
+          form.setValue(
+            'aboutSystemsTools',
+            (value as string[]).map((item) => ({ value: item })),
+            { shouldDirty: true }
+          );
+        } else if (field === 'aboutInterests') {
+          form.setValue(
+            'aboutInterests',
+            (value as string[]).map((item) => ({ value: item })),
+            { shouldDirty: true }
+          );
+        } else if (field === 'aboutEducation') {
+          form.setValue('aboutEducation', value as PortfolioAboutFieldValue['aboutEducation'], {
+            shouldDirty: true,
+          });
         } else if (field === 'isAvailable') {
           form.setValue('isAvailable', Boolean(value), { shouldDirty: true });
         } else if (field === 'availabilityLabel') {
@@ -2010,7 +2101,22 @@ export function CreatorStudioProfileTab({
               }
             : {}),
           ...(field === 'spokenLanguages'
-            ? { spokenLanguages: (value as string[]).map((item) => ({ value: item })) }
+            ? { spokenLanguages: value as PortfolioAboutFieldValue['spokenLanguages'] }
+            : {}),
+          ...(field === 'aboutSkills'
+            ? { aboutSkills: (value as string[]).map((item) => ({ value: item })) }
+            : {}),
+          ...(field === 'aboutStrengths'
+            ? { aboutStrengths: (value as string[]).map((item) => ({ value: item })) }
+            : {}),
+          ...(field === 'aboutSystemsTools'
+            ? { aboutSystemsTools: (value as string[]).map((item) => ({ value: item })) }
+            : {}),
+          ...(field === 'aboutInterests'
+            ? { aboutInterests: (value as string[]).map((item) => ({ value: item })) }
+            : {}),
+          ...(field === 'aboutEducation'
+            ? { aboutEducation: value as PortfolioAboutFieldValue['aboutEducation'] }
             : {}),
           ...(field === 'isAvailable' ? { isAvailable: Boolean(value) } : {}),
           ...(field === 'availabilityLabel' ? { availabilityLabel: String(value ?? '') } : {}),
@@ -2064,7 +2170,39 @@ export function CreatorStudioProfileTab({
           });
         } else if (field === 'spokenLanguages') {
           await updateCreatorProfile({
-            spokenLanguages: (value as string[]).map((item) => item.trim()).filter(Boolean),
+            spokenLanguages: serializeSpokenLanguagesForApi(
+              value as PortfolioAboutFieldValue['spokenLanguages']
+            ),
+          });
+        } else if (field === 'aboutSkills') {
+          await updateCreatorProfile({
+            aboutSkills: serializeAboutStringList(
+              (value as string[]).map((item) => ({ value: item }))
+            ),
+          });
+        } else if (field === 'aboutStrengths') {
+          await updateCreatorProfile({
+            aboutStrengths: serializeAboutStringList(
+              (value as string[]).map((item) => ({ value: item }))
+            ),
+          });
+        } else if (field === 'aboutSystemsTools') {
+          await updateCreatorProfile({
+            aboutSystemsTools: serializeAboutStringList(
+              (value as string[]).map((item) => ({ value: item }))
+            ),
+          });
+        } else if (field === 'aboutInterests') {
+          await updateCreatorProfile({
+            aboutInterests: serializeAboutStringList(
+              (value as string[]).map((item) => ({ value: item }))
+            ),
+          });
+        } else if (field === 'aboutEducation') {
+          await updateCreatorProfile({
+            aboutEducation: serializeAboutEducation(
+              value as PortfolioAboutFieldValue['aboutEducation']
+            ),
           });
         } else if (field === 'isAvailable') {
           await updateCreatorProfile({ isAvailable: Boolean(value) });
@@ -2126,11 +2264,28 @@ export function CreatorStudioProfileTab({
         form.setValue('gender', normalizeCreatorGender(values.gender) ?? '', { shouldDirty: true });
         form.setValue('nationality', normalizeNationalityCode(values.nationality) ?? '', { shouldDirty: true });
         form.setValue('yearsOfExperience', values.yearsOfExperience ?? null, { shouldDirty: true });
+        form.setValue('spokenLanguages', values.spokenLanguages, { shouldDirty: true });
         form.setValue(
-          'spokenLanguages',
-          values.spokenLanguages.map((item) => ({ value: item })),
+          'aboutSkills',
+          values.aboutSkills.map((item) => ({ value: item })),
           { shouldDirty: true }
         );
+        form.setValue(
+          'aboutStrengths',
+          values.aboutStrengths.map((item) => ({ value: item })),
+          { shouldDirty: true }
+        );
+        form.setValue(
+          'aboutSystemsTools',
+          values.aboutSystemsTools.map((item) => ({ value: item })),
+          { shouldDirty: true }
+        );
+        form.setValue(
+          'aboutInterests',
+          values.aboutInterests.map((item) => ({ value: item })),
+          { shouldDirty: true }
+        );
+        form.setValue('aboutEducation', values.aboutEducation, { shouldDirty: true });
         form.setValue('isAvailable', values.isAvailable, { shouldDirty: true });
         form.setValue('availabilityLabel', values.availabilityLabel ?? '', { shouldDirty: true });
         const nextSchedule = parseAvailabilityHours(values.availabilityHours);
@@ -2173,7 +2328,20 @@ export function CreatorStudioProfileTab({
           gender: normalizeCreatorGender(values.gender) ?? undefined,
           nationality: normalizeNationalityCode(values.nationality) ?? '',
           yearsOfExperience: values.yearsOfExperience ?? null,
-          spokenLanguages: values.spokenLanguages.map((item) => item.trim()).filter(Boolean),
+          spokenLanguages: serializeSpokenLanguagesForApi(values.spokenLanguages),
+          aboutSkills: serializeAboutStringList(
+            values.aboutSkills.map((item) => ({ value: item }))
+          ),
+          aboutStrengths: serializeAboutStringList(
+            values.aboutStrengths.map((item) => ({ value: item }))
+          ),
+          aboutSystemsTools: serializeAboutStringList(
+            values.aboutSystemsTools.map((item) => ({ value: item }))
+          ),
+          aboutInterests: serializeAboutStringList(
+            values.aboutInterests.map((item) => ({ value: item }))
+          ),
+          aboutEducation: serializeAboutEducation(values.aboutEducation),
           isAvailable: values.isAvailable,
           availabilityLabel: values.availabilityLabel?.trim() ?? '',
           availabilityHours: values.availabilityHours,
@@ -2198,71 +2366,6 @@ export function CreatorStudioProfileTab({
   const registerPortfolioGlobalConfirm = useCallback((confirm: (() => Promise<void>) | null) => {
     portfolioGlobalConfirmRef.current = confirm;
   }, []);
-
-  const persistPortfolioWhyMeBlocks = useCallback(
-    async (nextBlocks: Array<{ title: string; text: string }>) => {
-      const cleaned = nextBlocks
-        .map((block) => ({ title: block.title.trim(), text: block.text.trim() }))
-        .filter((block) => block.text.length > 0);
-      const merged = cleaned.map((block, index) => ({
-        ...createEmptyProfileBlock(index),
-        title: block.title,
-        text: block.text,
-      }));
-      form.setValue('whyMeBlocks', merged, { shouldDirty: true });
-
-      const saved = (savedSnapshot.current?.whyMeBlocks ?? [])
-        .map((block) => ({
-          title: (block.title ?? '').trim(),
-          text: (block.text ?? '').trim(),
-        }))
-        .filter((block) => block.text.length > 0);
-      if (JSON.stringify(cleaned) === JSON.stringify(saved)) {
-        form.setValue('whyMeBlocks', merged, { shouldDirty: false });
-        return;
-      }
-
-      setSaving(true);
-      setSubmitError(null);
-      try {
-        const latest = form.getValues();
-        const availabilityHoursForSave = formatAvailabilityHours(
-          availabilitySchedule,
-          latest.timezoneId
-        );
-        const parsed = profileSchema.parse({
-          ...latest,
-          availabilityHours: availabilityHoursForSave,
-          whyMeBlocks: merged,
-        });
-
-        await updateCreatorProfile(buildCreatorProfileUpdateBody(parsed, contactVisibility));
-        await loadProfile({ silent: true });
-        onProfileUpdated?.();
-        pushFlashFeedback({
-          variant: 'success',
-          title: listCrudToastTitle(saved.length, cleaned.length, {
-            added: 'Argument added',
-            deleted: 'Argument deleted',
-            updated: 'Why choose me updated',
-          }),
-        });
-      } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
-        throw e;
-      } finally {
-        setSaving(false);
-      }
-    },
-    [
-      availabilitySchedule,
-      buildCreatorProfileUpdateBody,
-      contactVisibility,
-      form,
-      loadProfile,
-      onProfileUpdated,
-    ]
-  );
 
   const persistPortfolioServices = useCallback(
     async (
@@ -2753,6 +2856,86 @@ export function CreatorStudioProfileTab({
     ]
   );
 
+  const persistPortfolioStack = useCallback(
+    async (
+      nextItems: Array<{
+        value: string;
+        description?: string;
+        category?: string;
+        level?: StrengthFormItem['level'];
+        useCases?: string[];
+        experienceYears?: number | null;
+        experienceLabel?: string;
+        currentlyUsed?: boolean | null;
+        iconUrl?: string | null;
+      }>
+    ) => {
+      const cleaned = nextItems
+        .map((item) => ({
+          value: item.value.trim(),
+          description: (item.description ?? '').trim(),
+          category: (item.category ?? '').trim().slice(0, 80),
+          level: item.level ?? null,
+          useCases: [],
+          experienceYears: null,
+          experienceLabel: '',
+          currentlyUsed: null,
+          iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,
+        }))
+        .filter((item) => item.value.length > 0);
+
+      form.setValue('stackItems', cleaned, { shouldDirty: true });
+
+      if (areStrengthsToolsEqual(cleaned, savedSnapshot.current?.stackItems ?? [])) {
+        form.setValue('stackItems', cleaned, { shouldDirty: false });
+        return;
+      }
+
+      setSaving(true);
+      setSubmitError(null);
+      try {
+        const latest = form.getValues();
+        const availabilityHoursForSave = formatAvailabilityHours(
+          availabilitySchedule,
+          latest.timezoneId
+        );
+        const parsed = profileSchema.parse({
+          ...latest,
+          availabilityHours: availabilityHoursForSave,
+          stackItems: cleaned,
+        });
+
+        await updateCreatorProfile(buildCreatorProfileUpdateBody(parsed, contactVisibility));
+        await loadProfile({ silent: true });
+        onProfileUpdated?.();
+        const previousCount = (savedSnapshot.current?.stackItems ?? []).filter(
+          (item) => item.value.trim().length > 0
+        ).length;
+        pushFlashFeedback({
+          variant: 'success',
+          title: listCrudToastTitle(previousCount, cleaned.length, {
+            added: 'Stack item added',
+            deleted: 'Stack item deleted',
+            updated: 'Stack item updated',
+          }),
+        });
+      } catch (e) {
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
+        throw e;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [
+      availabilitySchedule,
+      buildCreatorProfileUpdateBody,
+      contactVisibility,
+      form,
+      loadProfile,
+      onProfileUpdated,
+    ]
+  );
+
   const persistPortfolioStrengths = useCallback(
     async (
       nextItems: Array<{
@@ -2895,9 +3078,9 @@ export function CreatorStudioProfileTab({
           ...latest,
           availabilityHours: availabilityHoursForSave,
           spokenLanguages: latest.spokenLanguages.filter((item) => item.value.trim().length > 0),
-          whyMeBlocks: latest.whyMeBlocks.filter((block) => block.text.trim().length > 0),
           experienceBlocks: latest.experienceBlocks.filter((block) => block.text.trim().length > 0),
           strengthsTools: latest.strengthsTools.filter((item) => item.value.trim().length > 0),
+          stackItems: latest.stackItems.filter((item) => item.value.trim().length > 0),
           profileLinks: latest.profileLinks.filter((link) => link.url.trim().length > 0),
           serviceOffers: latest.serviceOffers.filter(
             (service) =>
@@ -2958,6 +3141,7 @@ export function CreatorStudioProfileTab({
         label?: string;
         type?: string;
         platform?: string | null;
+        iconUrl?: string | null;
       }>
     ) => {
       setSaving(true);
@@ -2979,12 +3163,21 @@ export function CreatorStudioProfileTab({
               link.type?.trim() ||
               (existing?.type?.trim() ? existing.type : 'CUSTOM') ||
               'CUSTOM';
+            const iconUrl =
+              link.iconUrl !== undefined
+                ? link.iconUrl?.trim()
+                  ? link.iconUrl.trim()
+                  : null
+                : existing?.iconUrl?.trim()
+                  ? existing.iconUrl.trim()
+                  : null;
             return {
               id: existingId,
               url,
               label: deriveProfileLinkLabel(url),
               type,
-              platform: null as null,
+              platform: existing?.platform ?? null,
+              iconUrl,
             };
           })
           .filter((link) => link.url.length > 0);
@@ -2994,15 +3187,17 @@ export function CreatorStudioProfileTab({
           type: link.type || 'CUSTOM',
           label: link.label,
           url: link.url,
-          platform: null,
+          platform: link.platform ?? null,
+          iconUrl: link.iconUrl ?? null,
         }));
 
         const savedLinks = serializeProfileLinks(savedSnapshot.current?.profileLinks ?? []).map(
-          ({ label, url }) => ({ label, url })
+          ({ label, url, iconUrl }) => ({ label, url, iconUrl: iconUrl ?? null })
         );
-        const nextLinksComparable = serializeProfileLinks(merged).map(({ label, url }) => ({
+        const nextLinksComparable = serializeProfileLinks(merged).map(({ label, url, iconUrl }) => ({
           label,
           url,
+          iconUrl: iconUrl ?? null,
         }));
         if (JSON.stringify(nextLinksComparable) === JSON.stringify(savedLinks)) {
           form.setValue('profileLinks', merged, { shouldDirty: false });
@@ -3019,9 +3214,9 @@ export function CreatorStudioProfileTab({
           ...latest,
           availabilityHours: availabilityHoursForSave,
           spokenLanguages: latest.spokenLanguages.filter((item) => item.value.trim().length > 0),
-          whyMeBlocks: latest.whyMeBlocks.filter((block) => block.text.trim().length > 0),
           experienceBlocks: latest.experienceBlocks.filter((block) => block.text.trim().length > 0),
           strengthsTools: latest.strengthsTools.filter((item) => item.value.trim().length > 0),
+          stackItems: latest.stackItems.filter((item) => item.value.trim().length > 0),
           profileLinks: merged,
           serviceOffers: latest.serviceOffers.filter(
             (service) =>
@@ -3355,7 +3550,12 @@ export function CreatorStudioProfileTab({
               gender={values.gender ?? ''}
               nationality={values.nationality ?? ''}
               yearsOfExperience={values.yearsOfExperience ?? null}
-              languages={values.spokenLanguages.map((item) => item.value).filter(Boolean)}
+              languages={values.spokenLanguages.filter((item) => item.value.trim().length > 0)}
+              aboutSkills={serializeAboutStringList(values.aboutSkills)}
+              aboutStrengths={serializeAboutStringList(values.aboutStrengths)}
+              aboutSystemsTools={serializeAboutStringList(values.aboutSystemsTools)}
+              aboutInterests={serializeAboutStringList(values.aboutInterests)}
+              aboutEducation={serializeAboutEducation(values.aboutEducation)}
               isAvailable={values.isAvailable}
               availabilityLabel={values.availabilityLabel ?? ''}
               availabilityHours={hoursParts ? hoursParts.join(' · ') : null}
@@ -3425,41 +3625,11 @@ export function CreatorStudioProfileTab({
               />
               <ProfileReadOnlyField label="Bio" value={values.bio} />
               <div className="grid gap-3 sm:grid-cols-2">
-                <ProfileReadOnlyField
-                  label="Specialty"
-                  value={
-                    (values.specialties ?? []).length > 0
-                      ? (values.specialties ?? []).join(' · ')
-                      : values.specialite
-                  }
-                />
                 <ProfileReadOnlyField label="Gender" value={values.gender} emptyLabel="Not set" />
                 <ProfileReadOnlyField
                   label="Nationality"
                   value={nationalityLabel(values.nationality)}
                   emptyLabel="Not set"
-                />
-                <ProfileReadOnlyField
-                  label="Years of experience"
-                  value={
-                    values.yearsOfExperience != null
-                      ? values.yearsOfExperience === 1
-                        ? '1 year'
-                        : `${values.yearsOfExperience} years`
-                      : null
-                  }
-                  emptyLabel="Not set"
-                />
-              </div>
-              <div>
-                <p className={`mb-2 ${profileSectionMutedTextClass} font-semibold text-neutral-700 dark:text-neutral-300`}>
-                  Langues de travail
-                </p>
-                <ProfileLanguagesField
-                  control={form.control}
-                  setValue={form.setValue}
-                  readOnly
-                  values={values.spokenLanguages.map((item) => item.value).filter(Boolean)}
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -3570,19 +3740,6 @@ export function CreatorStudioProfileTab({
               ) : null}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <p className={profileFormLabelClass}>Specialty</p>
-                <SpecialtyMultiSelect
-                  specialties={values.specialties ?? []}
-                  tags={values.specialtyTags ?? []}
-                  onSpecialtiesChange={(next) => {
-                    form.setValue('specialties', next, { shouldDirty: true });
-                    form.setValue('specialite', next[0] ?? '', { shouldDirty: true });
-                  }}
-                  onTagsChange={(next) => form.setValue('specialtyTags', next, { shouldDirty: true })}
-                  showTags={false}
-                />
-              </div>
               <div>
                 <label htmlFor="gender" className={profileFormLabelClass}>
                   Gender
@@ -3619,43 +3776,17 @@ export function CreatorStudioProfileTab({
                   ))}
                 </select>
               </div>
-              <div>
-                <label htmlFor="about-yearsOfExperience" className={profileFormLabelClass}>
-                  Years of experience
-                </label>
-                <input
-                  id="about-yearsOfExperience"
-                  type="number"
-                  min={0}
-                  max={80}
-                  className={profileFormInputClass}
-                  {...form.register('yearsOfExperience', {
-                    setValueAs: (v) => {
-                      if (v === '' || v == null) return null;
-                      const n = Number(v);
-                      return Number.isNaN(n) ? null : n;
-                    },
-                  })}
-                />
-              </div>
             </div>
-            <ProfileLanguagesField control={form.control} setValue={form.setValue} />
-            <ContactVisibilitySelect
-              id="visibility-spoken-languages"
-              label="Visibilité des langues de travail (profil public)"
-              value={contactVisibility.spokenLanguages}
-              onChange={(value) => setContactVisibility((prev) => ({ ...prev, spokenLanguages: value }))}
+            <CreatorAvailabilityControl
+              isAvailable={values.isAvailable}
+              availabilityLabel={values.availabilityLabel}
+              onChange={(next) => form.setValue('isAvailable', next, { shouldDirty: true })}
             />
             <ContactVisibilitySelect
               id="visibility-gender"
               label="Visibilité du genre (profil public)"
               value={contactVisibility.gender}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, gender: value }))}
-            />
-            <CreatorAvailabilityControl
-              isAvailable={values.isAvailable}
-              availabilityLabel={values.availabilityLabel}
-              onChange={(next) => form.setValue('isAvailable', next, { shouldDirty: true })}
             />
             <div>
               <label className={profileFormLabelClass}>Availability hours</label>
@@ -3739,50 +3870,49 @@ export function CreatorStudioProfileTab({
             </div>
           </div>
         );
-      case 'whyMe':
+      case 'aboutPage':
         if (isPortfolioLayout) {
           return (
-            <PortfolioWhyMeReadOnly
-              blocks={values.whyMeBlocks.map((block) => ({
-                id: block.id,
-                title: block.title ?? '',
-                text: block.text ?? '',
-              }))}
-              onBlockSave={async (index, next) => {
-                const current = form.getValues('whyMeBlocks');
-                await persistPortfolioWhyMeBlocks(
-                  current.map((block, blockIndex) =>
-                    blockIndex === index
-                      ? { title: next.title, text: next.text }
-                      : { title: block.title ?? '', text: block.text ?? '' }
-                  )
-                );
-                setWhyMeAddingArgument(false);
+            <PortfolioAboutPageReadOnly
+              fullName={values.fullName}
+              username={values.username ?? ''}
+              bio={values.bio ?? ''}
+              specialite={values.specialite ?? ''}
+              specialties={values.specialties ?? []}
+              specialtyTags={values.specialtyTags ?? []}
+              gender={values.gender ?? ''}
+              nationality={values.nationality ?? ''}
+              yearsOfExperience={values.yearsOfExperience ?? null}
+              languages={values.spokenLanguages.filter((item) => item.value.trim().length > 0)}
+              aboutSkills={serializeAboutStringList(values.aboutSkills)}
+              aboutStrengths={serializeAboutStringList(values.aboutStrengths)}
+              aboutSystemsTools={serializeAboutStringList(values.aboutSystemsTools)}
+              aboutInterests={serializeAboutStringList(values.aboutInterests)}
+              aboutEducation={serializeAboutEducation(values.aboutEducation)}
+              isAvailable={values.isAvailable}
+              availabilityLabel={values.availabilityLabel ?? ''}
+              availabilityHours={null}
+              memberSince={formatMemberSince(memberSince)}
+              responseTimeLabel={responseTimeLabel}
+              hideProviderFields={!showProviderAboutFields}
+              visibility={{
+                gender: contactVisibility.gender,
+                spokenLanguages: contactVisibility.spokenLanguages,
+                availability: contactVisibility.availability,
+                responseTime: contactVisibility.responseTime,
+                yearsOfExperience: contactVisibility.yearsOfExperience,
+                aboutSkills: contactVisibility.aboutSkills,
+                aboutStrengths: contactVisibility.aboutStrengths,
+                aboutSystemsTools: contactVisibility.aboutSystemsTools,
+                aboutInterests: contactVisibility.aboutInterests,
+                aboutEducation: contactVisibility.aboutEducation,
               }}
-              onBlocksSave={async (next) => {
-                await persistPortfolioWhyMeBlocks(next);
-              }}
-              onRemoveBlock={async (index) => {
-                const current = form.getValues('whyMeBlocks');
-                const remaining = current
-                  .filter((_, blockIndex) => blockIndex !== index)
-                  .map((block) => ({
-                    title: block.title ?? '',
-                    text: block.text ?? '',
-                  }));
-                removeWhyMe(index);
-                setWhyMeAddingArgument(false);
-                if (remaining.some((block) => block.text.trim() || block.title.trim())) {
-                  await persistPortfolioWhyMeBlocks(remaining);
-                } else {
-                  form.setValue('whyMeBlocks', [], { shouldDirty: true });
-                  await persistPortfolioWhyMeBlocks([]);
-                }
-              }}
+              onVisibilityChange={(key, level) => void persistPortfolioVisibility(key, level)}
+              onFieldSave={persistPortfolioAboutField}
+              onGlobalSave={persistPortfolioAboutGlobal}
               fieldSaving={saving}
-              composeAdd={whyMeAddingArgument}
-              onCancelNewArgument={cancelWhyMeCompose}
-              sectionRootRef={portfolioInfoCardRef}
+              actionsVisible={portfolioChromeOpen}
+              editMode={portfolioEditMode}
               onGlobalHasChangesChange={setPortfolioGlobalHasChanges}
               onRegisterGlobalConfirm={registerPortfolioGlobalConfirm}
             />
@@ -3790,41 +3920,236 @@ export function CreatorStudioProfileTab({
         }
         if (!isEditing) {
           return (
-            <ProfileMediaBlocksField
-              control={form.control}
-              name="whyMeBlocks"
-              fields={whyMeFields}
-              append={appendWhyMe}
-              remove={removeWhyMe}
-              move={moveWhyMe}
-              register={form.register}
-              watch={form.watch}
-              setValue={form.setValue}
-              readOnly
-              allowMedia={false}
-            />
+            <div className="space-y-3">
+              {showProviderAboutFields ? (
+                <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                  <ProfileReadOnlyField
+                    label="Specialty"
+                    value={
+                      (values.specialties ?? []).length > 0
+                        ? (values.specialties ?? []).join(' · ')
+                        : values.specialite
+                    }
+                  />
+                  <ProfileReadOnlyField
+                    label="Years of experience"
+                    value={
+                      values.yearsOfExperience != null
+                        ? values.yearsOfExperience === 1
+                          ? '1 year'
+                          : `${values.yearsOfExperience} years`
+                        : null
+                    }
+                    emptyLabel="Not set"
+                  />
+                </div>
+              ) : (
+                <ProfileReadOnlyField
+                  label="Specialty"
+                  value={
+                    (values.specialties ?? []).length > 0
+                      ? (values.specialties ?? []).join(' · ')
+                      : values.specialite
+                  }
+                />
+              )}
+              <div>
+                <p className={`mb-2 ${profileSectionMutedTextClass} font-semibold text-neutral-700 dark:text-neutral-300`}>
+                  Working languages
+                </p>
+                <ProfileLanguagesField
+                  control={form.control}
+                  setValue={form.setValue}
+                  readOnly
+                  values={values.spokenLanguages.filter((item) => item.value.trim().length > 0)}
+                />
+              </div>
+              <AboutEducationField
+                control={form.control}
+                fields={aboutEducationFields}
+                append={appendAboutEducation}
+                remove={removeAboutEducation}
+                move={moveAboutEducation}
+                register={form.register}
+                readOnly
+                values={serializeAboutEducation(values.aboutEducation)}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <AboutStringListField
+                  control={form.control}
+                  register={form.register}
+                  name="aboutSkills"
+                  label="Skills"
+                  maxItems={12}
+                  readOnly
+                  values={serializeAboutStringList(values.aboutSkills)}
+                />
+                <AboutStringListField
+                  control={form.control}
+                  register={form.register}
+                  name="aboutStrengths"
+                  label="Strengths"
+                  maxItems={12}
+                  readOnly
+                  values={serializeAboutStringList(values.aboutStrengths)}
+                />
+                <AboutStringListField
+                  control={form.control}
+                  register={form.register}
+                  name="aboutSystemsTools"
+                  label="Systems & Tools"
+                  maxItems={16}
+                  readOnly
+                  values={serializeAboutStringList(values.aboutSystemsTools)}
+                />
+                <AboutStringListField
+                  control={form.control}
+                  register={form.register}
+                  name="aboutInterests"
+                  label="Interests"
+                  maxItems={12}
+                  readOnly
+                  values={serializeAboutStringList(values.aboutInterests)}
+                />
+              </div>
+            </div>
           );
         }
         return (
           <div className="space-y-4">
-            <ProfileMediaBlocksField
+            {showProviderAboutFields ? (
+              <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
+                <div>
+                  <p className={profileFormLabelClass}>Specialty</p>
+                  <SpecialtyMultiSelect
+                    specialties={values.specialties ?? []}
+                    tags={values.specialtyTags ?? []}
+                    onSpecialtiesChange={(next) => {
+                      form.setValue('specialties', next, { shouldDirty: true });
+                      form.setValue('specialite', next[0] ?? '', { shouldDirty: true });
+                    }}
+                    onTagsChange={(next) => form.setValue('specialtyTags', next, { shouldDirty: true })}
+                    showTags={false}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="about-page-yearsOfExperience" className={profileFormLabelClass}>
+                    Years of experience
+                  </label>
+                  <input
+                    id="about-page-yearsOfExperience"
+                    type="number"
+                    min={0}
+                    max={80}
+                    className={profileFormInputClass}
+                    {...form.register('yearsOfExperience', {
+                      setValueAs: (v) => {
+                        if (v === '' || v == null) return null;
+                        const n = Number(v);
+                        return Number.isNaN(n) ? null : n;
+                      },
+                    })}
+                  />
+                  <ContactVisibilitySelect
+                    id="visibility-years-about"
+                    label="Years of experience visibility (public profile)"
+                    value={contactVisibility.yearsOfExperience}
+                    onChange={(value) =>
+                      setContactVisibility((prev) => ({ ...prev, yearsOfExperience: value }))
+                    }
+                  />
+                </div>
+              </div>
+            ) : null}
+            <ProfileLanguagesField control={form.control} setValue={form.setValue} />
+            <ContactVisibilitySelect
+              id="visibility-spoken-languages-about"
+              label="Working languages visibility (public profile)"
+              value={contactVisibility.spokenLanguages}
+              onChange={(value) => setContactVisibility((prev) => ({ ...prev, spokenLanguages: value }))}
+            />
+            <AboutEducationField
               control={form.control}
-              name="whyMeBlocks"
-              fields={whyMeFields}
-              append={appendWhyMe}
-              remove={removeWhyMe}
-              move={moveWhyMe}
+              fields={aboutEducationFields}
+              append={appendAboutEducation}
+              remove={removeAboutEducation}
+              move={moveAboutEducation}
               register={form.register}
-              watch={form.watch}
-              setValue={form.setValue}
-              allowMedia={false}
             />
             <ContactVisibilitySelect
-              id="visibility-why-me-edit"
-              label="Public visibility (Why choose me)"
-              value={contactVisibility.whyMe}
-              onChange={(value) => setContactVisibility((prev) => ({ ...prev, whyMe: value }))}
+              id="visibility-about-education"
+              label="Education visibility (public profile)"
+              value={contactVisibility.aboutEducation}
+              onChange={(value) => setContactVisibility((prev) => ({ ...prev, aboutEducation: value }))}
             />
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div className="space-y-3">
+                <AboutStringListField
+                  control={form.control}
+                  register={form.register}
+                  name="aboutSkills"
+                  label="Skills"
+                  description="Highlight core skills for your About page."
+                  maxItems={12}
+                />
+                <ContactVisibilitySelect
+                  id="visibility-about-skills"
+                  label="Skills visibility (public profile)"
+                  value={contactVisibility.aboutSkills}
+                  onChange={(value) => setContactVisibility((prev) => ({ ...prev, aboutSkills: value }))}
+                />
+              </div>
+              <div className="space-y-3">
+                <AboutStringListField
+                  control={form.control}
+                  register={form.register}
+                  name="aboutStrengths"
+                  label="Strengths"
+                  description="Personal strengths that complement your specialty."
+                  maxItems={12}
+                />
+                <ContactVisibilitySelect
+                  id="visibility-about-strengths"
+                  label="Strengths visibility (public profile)"
+                  value={contactVisibility.aboutStrengths}
+                  onChange={(value) => setContactVisibility((prev) => ({ ...prev, aboutStrengths: value }))}
+                />
+              </div>
+              <div className="space-y-3">
+                <AboutStringListField
+                  control={form.control}
+                  register={form.register}
+                  name="aboutSystemsTools"
+                  label="Systems & Tools"
+                  description="Platforms, software, and tools you rely on."
+                  maxItems={16}
+                />
+                <ContactVisibilitySelect
+                  id="visibility-about-systems-tools"
+                  label="Systems & tools visibility (public profile)"
+                  value={contactVisibility.aboutSystemsTools}
+                  onChange={(value) =>
+                    setContactVisibility((prev) => ({ ...prev, aboutSystemsTools: value }))
+                  }
+                />
+              </div>
+              <div className="space-y-3">
+                <AboutStringListField
+                  control={form.control}
+                  register={form.register}
+                  name="aboutInterests"
+                  label="Interests"
+                  description="Topics and hobbies that help clients connect with you."
+                  maxItems={12}
+                />
+                <ContactVisibilitySelect
+                  id="visibility-about-interests"
+                  label="Interests visibility (public profile)"
+                  value={contactVisibility.aboutInterests}
+                  onChange={(value) => setContactVisibility((prev) => ({ ...prev, aboutInterests: value }))}
+                />
+              </div>
+            </div>
           </div>
         );
       case 'experience':
@@ -3974,15 +4299,117 @@ export function CreatorStudioProfileTab({
       case 'strengths':
         if (isPortfolioLayout) {
           return (
-            <PortfolioStrengthsReadOnly
+            <PortfolioStackReadOnly
               allowedSpecialties={values.specialties ?? []}
-              skillTags={values.specialtyTags ?? []}
-              onSkillTagsSave={async (next) => {
-                form.setValue('specialtyTags', next, { shouldDirty: true });
-                await updateCreatorProfile({ specialtyTags: next });
-                await loadProfile({ silent: true });
-                onProfileUpdated?.();
+              items={values.stackItems.map((item, index) => ({
+                id: `stack-${index}-${item.value}`,
+                value: item.value ?? '',
+                description: item.description ?? '',
+                category: item.category ?? '',
+                level: item.level ?? null,
+                useCases: item.useCases ?? [],
+                experienceYears: item.experienceYears ?? null,
+                experienceLabel: item.experienceLabel ?? '',
+                currentlyUsed: item.currentlyUsed ?? null,
+                iconUrl: item.iconUrl ?? null,
+              }))}
+              onItemSave={async (index, next) => {
+                const current = form.getValues('stackItems');
+                await persistPortfolioStack(
+                  current.map((item, itemIndex) =>
+                    itemIndex === index
+                      ? next
+                      : {
+                          value: item.value ?? '',
+                          description: item.description ?? '',
+                          category: item.category ?? '',
+                          level: item.level ?? null,
+                          useCases: item.useCases ?? [],
+                          experienceYears: item.experienceYears ?? null,
+                          experienceLabel: item.experienceLabel ?? '',
+                          currentlyUsed: item.currentlyUsed ?? null,
+                          iconUrl: item.iconUrl ?? null,
+                        }
+                  )
+                );
+                setStackAddingItem(false);
               }}
+              onItemsSave={async (next) => {
+                await persistPortfolioStack(next);
+              }}
+              onRemoveItem={async (index) => {
+                const current = form.getValues('stackItems');
+                const remaining = current
+                  .filter((_, itemIndex) => itemIndex !== index)
+                  .map((item) => ({
+                    value: item.value ?? '',
+                    description: item.description ?? '',
+                    category: item.category ?? '',
+                    level: item.level ?? null,
+                    useCases: item.useCases ?? [],
+                    experienceYears: item.experienceYears ?? null,
+                    experienceLabel: item.experienceLabel ?? '',
+                    currentlyUsed: item.currentlyUsed ?? null,
+                    iconUrl: item.iconUrl ?? null,
+                  }));
+                form.setValue(
+                  'stackItems',
+                  current.filter((_, itemIndex) => itemIndex !== index),
+                  { shouldDirty: true }
+                );
+                setStackAddingItem(false);
+                if (remaining.some((item) => item.value.trim())) {
+                  await persistPortfolioStack(remaining);
+                } else {
+                  form.setValue('stackItems', [], { shouldDirty: true });
+                  await persistPortfolioStack([]);
+                }
+              }}
+              fieldSaving={saving}
+              actionsVisible={portfolioChromeOpen}
+              composeAdd={stackAddingItem}
+              deleteMode={stackDeleteMode}
+              onDeleteModeChange={setStackDeleteMode}
+              onCancelNewItem={cancelStackCompose}
+              sectionRootRef={portfolioInfoCardRef}
+              onGlobalHasChangesChange={setPortfolioGlobalHasChanges}
+              onRegisterGlobalConfirm={registerPortfolioGlobalConfirm}
+            />
+          );
+        }
+        if (!isEditing) {
+          return (
+            <ProfileStrengthsField
+              control={form.control}
+              setValue={form.setValue}
+              readOnly
+              values={values.stackItems}
+              allowedSpecialties={values.specialties ?? []}
+              mode="stack"
+            />
+          );
+        }
+        return (
+          <div className="space-y-4">
+            <ProfileStrengthsField
+              control={form.control}
+              setValue={form.setValue}
+              allowedSpecialties={values.specialties ?? []}
+              mode="stack"
+            />
+            <ContactVisibilitySelect
+              id="visibility-stack-edit"
+              label="Public visibility (Stack)"
+              value={contactVisibility.profileStack}
+              onChange={(value) => setContactVisibility((prev) => ({ ...prev, profileStack: value }))}
+            />
+          </div>
+        );
+      case 'tools':
+        if (isPortfolioLayout) {
+          return (
+            <PortfolioToolsReadOnly
+              allowedSpecialties={values.specialties ?? []}
               items={values.strengthsTools.map((item, index) => ({
                 id: `strength-${index}-${item.value}`,
                 value: item.value ?? '',
@@ -4014,7 +4441,7 @@ export function CreatorStudioProfileTab({
                         }
                   )
                 );
-                setStrengthsAddingItem(false);
+                setToolsAddingItem(false);
               }}
               onItemsSave={async (next) => {
                 await persistPortfolioStrengths(next);
@@ -4039,7 +4466,7 @@ export function CreatorStudioProfileTab({
                   current.filter((_, itemIndex) => itemIndex !== index),
                   { shouldDirty: true }
                 );
-                setStrengthsAddingItem(false);
+                setToolsAddingItem(false);
                 if (remaining.some((item) => item.value.trim())) {
                   await persistPortfolioStrengths(remaining);
                 } else {
@@ -4049,10 +4476,10 @@ export function CreatorStudioProfileTab({
               }}
               fieldSaving={saving}
               actionsVisible={portfolioChromeOpen}
-              composeAdd={strengthsAddingItem}
-              deleteMode={strengthsDeleteMode}
-              onDeleteModeChange={setStrengthsDeleteMode}
-              onCancelNewItem={cancelStrengthsCompose}
+              composeAdd={toolsAddingItem}
+              deleteMode={toolsDeleteMode}
+              onDeleteModeChange={setToolsDeleteMode}
+              onCancelNewItem={cancelToolsCompose}
               sectionRootRef={portfolioInfoCardRef}
               onGlobalHasChangesChange={setPortfolioGlobalHasChanges}
               onRegisterGlobalConfirm={registerPortfolioGlobalConfirm}
@@ -4067,6 +4494,7 @@ export function CreatorStudioProfileTab({
               readOnly
               values={values.strengthsTools}
               allowedSpecialties={values.specialties ?? []}
+              mode="tools"
             />
           );
         }
@@ -4076,10 +4504,11 @@ export function CreatorStudioProfileTab({
               control={form.control}
               setValue={form.setValue}
               allowedSpecialties={values.specialties ?? []}
+              mode="tools"
             />
             <ContactVisibilitySelect
-              id="visibility-strengths-edit"
-              label="Public visibility (Stack)"
+              id="visibility-tools-edit"
+              label="Public visibility (Tools)"
               value={contactVisibility.strengthsTools}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, strengthsTools: value }))}
             />
@@ -4482,6 +4911,7 @@ export function CreatorStudioProfileTab({
                 url: link.url ?? '',
                 type: link.type || 'CUSTOM',
                 platform: link.platform ?? null,
+                iconUrl: link.iconUrl ?? null,
               }))}
               onLinkSave={async (index, next) => {
                 const current = form.getValues('profileLinks');
@@ -4492,12 +4922,16 @@ export function CreatorStudioProfileTab({
                           id: link.id,
                           url: next.url,
                           type: link.type || 'CUSTOM',
+                          platform: link.platform ?? null,
+                          iconUrl: next.iconUrl ?? null,
                         }
                       : {
                           id: link.id,
                           url: link.url ?? '',
                           label: link.label ?? '',
                           type: link.type || 'CUSTOM',
+                          platform: link.platform ?? null,
+                          iconUrl: link.iconUrl ?? null,
                         }
                   )
                 );
@@ -4515,6 +4949,8 @@ export function CreatorStudioProfileTab({
                     url: link.url ?? '',
                     label: link.label ?? '',
                     type: link.type || 'CUSTOM',
+                    platform: link.platform ?? null,
+                    iconUrl: link.iconUrl ?? null,
                   }));
                 removeLink(index);
                 setLinksAddingItem(false);
@@ -4927,10 +5363,10 @@ export function CreatorStudioProfileTab({
                                 setPortfolioEditMode('individual');
                                 setPortfolioGlobalHasChanges(false);
                                 portfolioGlobalConfirmRef.current = null;
-                                setStrengthsDeleteMode(false);
-                                setStrengthsAddingItem(false);
-                                setWhyMeDeleteMode(false);
-                                setWhyMeAddingArgument(false);
+                                setToolsDeleteMode(false);
+                                setToolsAddingItem(false);
+                                setStackDeleteMode(false);
+                                setStackAddingItem(false);
                                 setFaqDeleteMode(false);
                                 setFaqAddingItem(false);
                                 setServicesDeleteMode(false);
@@ -4962,37 +5398,6 @@ export function CreatorStudioProfileTab({
                                     closeChrome();
                                   })();
                                   return;
-                                }
-                              }
-
-                              if (activeSection === 'whyMe') {
-                                const filled = form
-                                  .getValues('whyMeBlocks')
-                                  .map((block) => ({
-                                    title: (block.title ?? '').trim(),
-                                    text: (block.text ?? '').trim(),
-                                  }))
-                                  .filter((block) => block.text.length > 0);
-                                const current = form.getValues('whyMeBlocks');
-                                const saved = (savedSnapshot.current?.whyMeBlocks ?? [])
-                                  .map((block) => ({
-                                    title: (block.title ?? '').trim(),
-                                    text: (block.text ?? '').trim(),
-                                  }))
-                                  .filter((block) => block.text.length > 0);
-                                if (filled.length !== current.length) {
-                                  form.setValue(
-                                    'whyMeBlocks',
-                                    filled.map((block, index) => ({
-                                      ...createEmptyProfileBlock(index),
-                                      title: block.title,
-                                      text: block.text,
-                                    })),
-                                    { shouldDirty: false }
-                                  );
-                                }
-                                if (JSON.stringify(filled) !== JSON.stringify(saved)) {
-                                  void persistPortfolioWhyMeBlocks(filled);
                                 }
                               }
 
@@ -5066,6 +5471,34 @@ export function CreatorStudioProfileTab({
                               }
 
                               if (activeSection === 'strengths') {
+                                const current = form.getValues('stackItems');
+                                const filled = current
+                                  .map((item) => ({
+                                    value: item.value ?? '',
+                                    description: item.description ?? '',
+                                    category: item.category ?? '',
+                                    level: item.level ?? null,
+                                    useCases: item.useCases ?? [],
+                                    experienceYears: item.experienceYears ?? null,
+                                    experienceLabel: item.experienceLabel ?? '',
+                                    currentlyUsed: item.currentlyUsed ?? null,
+                                    iconUrl: item.iconUrl ?? null,
+                                  }))
+                                  .filter((item) => item.value.trim().length > 0);
+                                if (filled.length !== current.length) {
+                                  form.setValue('stackItems', filled, { shouldDirty: false });
+                                }
+                                if (
+                                  !areStrengthsToolsEqual(
+                                    filled,
+                                    savedSnapshot.current?.stackItems ?? []
+                                  )
+                                ) {
+                                  void persistPortfolioStack(filled);
+                                }
+                              }
+
+                              if (activeSection === 'tools') {
                                 const current = form.getValues('strengthsTools');
                                 const filled = current
                                   .map((item) => ({
@@ -5261,10 +5694,8 @@ export function CreatorStudioProfileTab({
                               return;
                             }
 
-                            setStrengthsDeleteMode(false);
-                            setStrengthsAddingItem(false);
-                            setWhyMeDeleteMode(false);
-                            setWhyMeAddingArgument(false);
+                            setToolsDeleteMode(false);
+                            setToolsAddingItem(false);
                             setFaqDeleteMode(false);
                             setFaqAddingItem(false);
                             setServicesDeleteMode(false);
@@ -5311,27 +5742,6 @@ export function CreatorStudioProfileTab({
                                 deleteEntryLabel: 'Delete experience',
                                 deleteEntryActive: experienceDeleteMode,
                                 deleteEntryDisabled: values.experienceBlocks.length === 0,
-                              }
-                            : {}),
-                          ...(activeSection === 'whyMe'
-                            ? {
-                                // Per-row hover/touch edit+delete — no section Edit/Delete chrome.
-                                onAboutToggle: undefined,
-                                aboutChromeOpen: false,
-                                visibility: contactVisibility.whyMe,
-                                onVisibilityChange: (level: ContactVisibilityLevel) => {
-                                  void persistPortfolioVisibility('whyMe', level);
-                                },
-                                hideHeroActions: whyMeAddingArgument,
-                                onAddEntry: () => {
-                                  if (whyMeAddingArgument) return;
-                                  setWhyMeDeleteMode(false);
-                                  appendWhyMe(
-                                    createEmptyProfileBlock(form.getValues('whyMeBlocks').length)
-                                  );
-                                  setWhyMeAddingArgument(true);
-                                },
-                                addEntryLabel: 'Add argument',
                               }
                             : {}),
                           ...(activeSection === 'services'
@@ -5516,13 +5926,13 @@ export function CreatorStudioProfileTab({
                             : {}),
                           ...(activeSection === 'strengths'
                             ? {
-                                visibility: contactVisibility.strengthsTools,
+                                visibility: contactVisibility.profileStack,
                                 onVisibilityChange: (level: ContactVisibilityLevel) => {
-                                  void persistPortfolioVisibility('strengthsTools', level);
+                                  void persistPortfolioVisibility('profileStack', level);
                                 },
-                                hideHeroActions: strengthsAddingItem,
+                                hideHeroActions: stackAddingItem,
                                 onEditSessionCancel: () => {
-                                  exitStrengthsChrome();
+                                  exitStackChrome();
                                 },
                                 onEditSessionDone: () => {
                                   const closeChrome = () => {
@@ -5530,8 +5940,8 @@ export function CreatorStudioProfileTab({
                                     setPortfolioEditMode('individual');
                                     setPortfolioGlobalHasChanges(false);
                                     portfolioGlobalConfirmRef.current = null;
-                                    setStrengthsDeleteMode(false);
-                                    setStrengthsAddingItem(false);
+                                    setStackDeleteMode(false);
+                                    setStackAddingItem(false);
                                   };
                                   const confirm = portfolioGlobalConfirmRef.current;
                                   if (confirm) {
@@ -5548,8 +5958,76 @@ export function CreatorStudioProfileTab({
                                   closeChrome();
                                 },
                                 onAddEntry: () => {
-                                  if (strengthsAddingItem) return;
-                                  setStrengthsDeleteMode(false);
+                                  if (stackAddingItem) return;
+                                  setStackDeleteMode(false);
+                                  const current = form.getValues('stackItems');
+                                  if (current.length >= 12) return;
+                                  form.setValue(
+                                    'stackItems',
+                                    [
+                                      ...current,
+                                      {
+                                        value: '',
+                                        description: '',
+                                        category: '',
+                                        level: null,
+                                        useCases: [],
+                                        experienceYears: null,
+                                        experienceLabel: '',
+                                        currentlyUsed: null,
+                                        iconUrl: null,
+                                      },
+                                    ],
+                                    { shouldDirty: true }
+                                  );
+                                  setStackAddingItem(true);
+                                },
+                                addEntryLabel: 'Add stack item',
+                                onDeleteEntry: () => {
+                                  if (stackAddingItem) cancelStackCompose();
+                                  setStackDeleteMode((active) => !active);
+                                },
+                                deleteEntryLabel: 'Delete stack item',
+                                deleteEntryActive: stackDeleteMode,
+                                deleteEntryDisabled: values.stackItems.length === 0,
+                              }
+                            : {}),
+                          ...(activeSection === 'tools'
+                            ? {
+                                visibility: contactVisibility.strengthsTools,
+                                onVisibilityChange: (level: ContactVisibilityLevel) => {
+                                  void persistPortfolioVisibility('strengthsTools', level);
+                                },
+                                hideHeroActions: toolsAddingItem,
+                                onEditSessionCancel: () => {
+                                  exitToolsChrome();
+                                },
+                                onEditSessionDone: () => {
+                                  const closeChrome = () => {
+                                    setPortfolioChromeOpen(false);
+                                    setPortfolioEditMode('individual');
+                                    setPortfolioGlobalHasChanges(false);
+                                    portfolioGlobalConfirmRef.current = null;
+                                    setToolsDeleteMode(false);
+                                    setToolsAddingItem(false);
+                                  };
+                                  const confirm = portfolioGlobalConfirmRef.current;
+                                  if (confirm) {
+                                    void (async () => {
+                                      try {
+                                        await confirm();
+                                      } catch {
+                                        return;
+                                      }
+                                      closeChrome();
+                                    })();
+                                    return;
+                                  }
+                                  closeChrome();
+                                },
+                                onAddEntry: () => {
+                                  if (toolsAddingItem) return;
+                                  setToolsDeleteMode(false);
                                   const current = form.getValues('strengthsTools');
                                   if (current.length >= 12) return;
                                   form.setValue(
@@ -5570,15 +6048,15 @@ export function CreatorStudioProfileTab({
                                     ],
                                     { shouldDirty: true }
                                   );
-                                  setStrengthsAddingItem(true);
+                                  setToolsAddingItem(true);
                                 },
                                 addEntryLabel: 'Add tool',
                                 onDeleteEntry: () => {
-                                  if (strengthsAddingItem) cancelStrengthsCompose();
-                                  setStrengthsDeleteMode((active) => !active);
+                                  if (toolsAddingItem) cancelToolsCompose();
+                                  setToolsDeleteMode((active) => !active);
                                 },
-                                deleteEntryLabel: 'Delete skill',
-                                deleteEntryActive: strengthsDeleteMode,
+                                deleteEntryLabel: 'Delete tool',
+                                deleteEntryActive: toolsDeleteMode,
                                 deleteEntryDisabled: values.strengthsTools.length === 0,
                               }
                             : {}),
@@ -5646,9 +6124,9 @@ export function CreatorStudioProfileTab({
                         activeSection === 'myRole'
                       }
                       hideTopBorder={
-                        activeSection === 'whyMe' ||
                         activeSection === 'experience' ||
                         activeSection === 'strengths' ||
+                        activeSection === 'tools' ||
                         activeSection === 'services' ||
                         activeSection === 'products' ||
                         activeSection === 'portfolio' ||

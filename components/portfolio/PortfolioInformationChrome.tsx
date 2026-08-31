@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash, faPenToSquare } from '@fortawesome/free-regular-svg-icons';
@@ -25,7 +25,16 @@ import {
   parseAvailabilityHours,
   type AvailabilitySchedule,
 } from '@/lib/availabilityHours';
-import { SPOKEN_LANGUAGE_PRESETS, dedupeSpokenLanguages, spokenLanguageMatchKey } from '@/lib/spoken-languages';
+import {
+  DEFAULT_LANGUAGE_PROFICIENCY_LEVELS,
+  SPOKEN_LANGUAGE_PRESETS,
+  dedupeSpokenLanguageEntries,
+  resolveSpokenLanguageLevelLabel,
+  spokenLanguageEntriesEqual,
+  spokenLanguageMatchKey,
+  type SpokenLanguageEntry,
+} from '@/lib/spoken-languages';
+import { fetchLanguageProficiencyLevels } from '@/lib/reference-api';
 import { TYPICAL_RESPONSE_TIME_OPTIONS } from '@/lib/typical-response-time';
 import {
   AVAILABILITY_STATUS_OTHER_VALUE,
@@ -36,6 +45,7 @@ import {
 } from '@/lib/availability-status';
 import { SpecialtyMultiSelect } from '@/components/creator/studio/SpecialtyMultiSelect';
 import { parseSpecialtyList, parseSpecialtyTags } from '@/lib/specialties';
+import type { ProfileEducationEntry } from '@/types/ecosystem';
 import { PortfolioLocationReadOnly } from '@/components/portfolio/PortfolioLocationChrome';
 import { PORTFOLIO_UPGRADE_PATH } from '@/components/portfolio/portfolio-pricing-upgrade-panel';
 import { brandCtaClass } from '@/components/landing/landingBrand';
@@ -275,21 +285,36 @@ export function PortfolioFlatField({
   );
 }
 
-export function PortfolioLanguageChips({ languages }: { languages: string[] }) {
-  if (languages.length === 0) {
+export function PortfolioLanguageChips({
+  languages,
+}: {
+  languages: Array<string | SpokenLanguageEntry>;
+}) {
+  const normalized = languages.map((item) =>
+    typeof item === 'string' ? { value: item, level: null } : item
+  );
+  if (normalized.length === 0) {
     return <p className="text-[15px] italic text-neutral-500 dark:text-neutral-400">Not set</p>;
   }
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {languages.map((language) => (
-        <span
-          key={language}
-          className="rounded-lg border border-neutral-200 bg-neutral-100 px-3.5 py-1.5 text-sm font-medium text-neutral-800 dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100"
-        >
-          {language}
-        </span>
-      ))}
+      {normalized.map((language) => {
+        const levelLabel = resolveSpokenLanguageLevelLabel(language.level);
+        return (
+          <span
+            key={spokenLanguageMatchKey(language.value)}
+            className="rounded-lg border border-neutral-200 bg-neutral-100 px-3.5 py-1.5 text-sm font-medium text-neutral-800 dark:border-neutral-700 dark:bg-[#141414] dark:text-neutral-100"
+          >
+            {language.value}
+            {levelLabel ? (
+              <span className="ml-1.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                · {levelLabel}
+              </span>
+            ) : null}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -298,19 +323,25 @@ function PortfolioInlineLanguagesEditor({
   value,
   onChange,
 }: {
-  value: string[];
-  onChange: (value: string[]) => void;
+  value: SpokenLanguageEntry[];
+  onChange: (value: SpokenLanguageEntry[]) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [customDraft, setCustomDraft] = useState('');
+  const [levelOptions, setLevelOptions] = useState(DEFAULT_LANGUAGE_PROFICIENCY_LEVELS);
   const rootRef = useRef<HTMLDivElement>(null);
-  const selectedKeys = new Set(value.map((item) => spokenLanguageMatchKey(item)));
-  const customSelected = value.filter(
+  const selected = dedupeSpokenLanguageEntries(value);
+  const selectedKeys = new Set(selected.map((item) => spokenLanguageMatchKey(item.value)));
+  const customSelected = selected.filter(
     (language) =>
       !SPOKEN_LANGUAGE_PRESETS.some(
-        (preset) => spokenLanguageMatchKey(preset) === spokenLanguageMatchKey(language)
+        (preset) => spokenLanguageMatchKey(preset) === spokenLanguageMatchKey(language.value)
       )
   );
+
+  useEffect(() => {
+    void fetchLanguageProficiencyLevels().then(setLevelOptions);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -321,28 +352,49 @@ function PortfolioInlineLanguagesEditor({
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, [open]);
 
+  const sync = (next: SpokenLanguageEntry[]) => {
+    onChange(dedupeSpokenLanguageEntries(next));
+  };
+
   const toggle = (language: string) => {
     const key = spokenLanguageMatchKey(language);
     if (selectedKeys.has(key)) {
-      onChange(value.filter((item) => spokenLanguageMatchKey(item) !== key));
+      sync(selected.filter((item) => spokenLanguageMatchKey(item.value) !== key));
       return;
     }
-    onChange(dedupeSpokenLanguages([...value, language]));
+    sync([...selected, { value: language, level: null }]);
   };
 
   const addCustom = () => {
     const trimmed = customDraft.trim();
     if (!trimmed || selectedKeys.has(spokenLanguageMatchKey(trimmed))) return;
-    onChange(dedupeSpokenLanguages([...value, trimmed]));
+    sync([...selected, { value: trimmed, level: null }]);
     setCustomDraft('');
   };
 
+  const updateLevel = (language: string, level: SpokenLanguageEntry['level']) => {
+    const key = spokenLanguageMatchKey(language);
+    sync(
+      selected.map((item) =>
+        spokenLanguageMatchKey(item.value) === key ? { ...item, level: level ?? null } : item
+      )
+    );
+  };
+
   const summary =
-    value.length === 0
+    selected.length === 0
       ? 'Select languages'
-      : value.length <= 2
-        ? value.join(', ')
-        : `${value.slice(0, 2).join(', ')} +${value.length - 2}`;
+      : selected.length <= 2
+        ? selected
+            .map((item) => {
+              const levelLabel = resolveSpokenLanguageLevelLabel(item.level, levelOptions);
+              return levelLabel ? `${item.value} (${levelLabel})` : item.value;
+            })
+            .join(', ')
+        : `${selected
+            .slice(0, 2)
+            .map((item) => item.value)
+            .join(', ')} +${selected.length - 2}`;
 
   return (
     <div ref={rootRef} className="relative w-full max-w-sm">
@@ -353,7 +405,7 @@ function PortfolioInlineLanguagesEditor({
         aria-haspopup="listbox"
         className={`${inlineInputClass} flex items-center justify-between gap-3 text-left`}
       >
-        <span className={value.length === 0 ? 'font-medium text-neutral-500' : undefined}>{summary}</span>
+        <span className={selected.length === 0 ? 'font-medium text-neutral-500' : undefined}>{summary}</span>
         <svg
           className={`h-4 w-4 shrink-0 text-neutral-400 transition ${open ? 'rotate-180' : ''}`}
           fill="none"
@@ -367,12 +419,43 @@ function PortfolioInlineLanguagesEditor({
       </button>
       {open ? (
         <div className="absolute left-0 right-0 z-20 mt-1.5 overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+          {selected.length > 0 ? (
+            <div className="space-y-2 border-b border-neutral-200 p-2 dark:border-neutral-700">
+              {selected.map((language) => (
+                <div
+                  key={spokenLanguageMatchKey(language.value)}
+                  className="flex items-center gap-2 rounded-md bg-neutral-50 px-2 py-1.5 dark:bg-neutral-800/60"
+                >
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                    {language.value}
+                  </span>
+                  <select
+                    value={language.level ?? ''}
+                    onChange={(event) =>
+                      updateLevel(
+                        language.value,
+                        event.target.value ? (event.target.value as SpokenLanguageEntry['level']) : null
+                      )
+                    }
+                    className="max-w-[9rem] rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs font-medium text-neutral-800 outline-none focus:border-[#F97316] dark:border-neutral-600 dark:bg-neutral-950 dark:text-neutral-100"
+                  >
+                    <option value="">Level</option>
+                    {levelOptions.map((option) => (
+                      <option key={option.code} value={option.code}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          ) : null}
           <div
             role="listbox"
             aria-multiselectable
             className="max-h-48 overflow-y-auto py-1 [scrollbar-color:theme(colors.neutral.300)_transparent] dark:[scrollbar-color:theme(colors.neutral.600)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-300 hover:[&::-webkit-scrollbar-thumb]:bg-neutral-400 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-600 dark:hover:[&::-webkit-scrollbar-thumb]:bg-neutral-500"
           >
-            {[...SPOKEN_LANGUAGE_PRESETS, ...customSelected].map((language) => {
+            {[...SPOKEN_LANGUAGE_PRESETS, ...customSelected.map((item) => item.value)].map((language) => {
               const active = selectedKeys.has(spokenLanguageMatchKey(language));
               return (
                 <button
@@ -799,6 +882,11 @@ export type PortfolioAboutFieldKey =
   | 'nationality'
   | 'yearsOfExperience'
   | 'spokenLanguages'
+  | 'aboutSkills'
+  | 'aboutStrengths'
+  | 'aboutSystemsTools'
+  | 'aboutInterests'
+  | 'aboutEducation'
   | 'isAvailable'
   | 'availabilityLabel'
   | 'availabilityHours'
@@ -813,12 +901,458 @@ export type PortfolioAboutFieldValue = {
   gender: string;
   nationality: string;
   yearsOfExperience: number | null;
-  spokenLanguages: string[];
+  spokenLanguages: SpokenLanguageEntry[];
+  aboutSkills: string[];
+  aboutStrengths: string[];
+  aboutSystemsTools: string[];
+  aboutInterests: string[];
+  aboutEducation: ProfileEducationEntry[];
   isAvailable: boolean;
   availabilityLabel: string;
   availabilityHours: string;
   typicalResponseTime: string;
 };
+
+const aboutCardClass =
+  'rounded-xl border border-neutral-200 bg-neutral-50/70 p-4 dark:border-neutral-700/40 dark:bg-[#141414]';
+
+function PortfolioAboutBulletList({ items }: { items: string[] }) {
+  const filled = items.filter((item) => item.trim());
+  if (filled.length === 0) {
+    return <p className="text-[15px] italic text-neutral-500 dark:text-neutral-400">Not set</p>;
+  }
+  return (
+    <ul className="space-y-1.5">
+      {filled.map((item) => (
+        <li
+          key={item}
+          className="flex items-start gap-2 text-sm text-neutral-800 dark:text-neutral-200"
+        >
+          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#F97316]" aria-hidden />
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function PortfolioAboutEducationGrid({ entries }: { entries: ProfileEducationEntry[] }) {
+  const filled = entries.filter(
+    (item) => item.schoolYear.trim() || item.title.trim() || item.institution.trim()
+  );
+  if (filled.length === 0) {
+    return <p className="text-[15px] italic text-neutral-500 dark:text-neutral-400">Not set</p>;
+  }
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {filled.map((item) => (
+        <div key={item.id} className={aboutCardClass}>
+          {item.schoolYear.trim() ? (
+            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{item.schoolYear}</p>
+          ) : null}
+          {item.title.trim() ? (
+            <p className="mt-1 text-[15px] font-bold text-neutral-900 dark:text-white">{item.title}</p>
+          ) : null}
+          {item.institution.trim() ? (
+            <p className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">{item.institution}</p>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PortfolioInlineStringListEditor({
+  value,
+  onChange,
+  maxItems = 12,
+  placeholder = 'Add item…',
+}: {
+  value: string[];
+  onChange: (value: string[]) => void;
+  maxItems?: number;
+  placeholder?: string;
+}) {
+  const [draft, setDraft] = useState('');
+
+  const updateItem = (index: number, next: string) => {
+    onChange(value.map((item, itemIndex) => (itemIndex === index ? next : item)));
+  };
+
+  const removeItem = (index: number) => {
+    onChange(value.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const moveItem = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= value.length) return;
+    const next = [...value];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  };
+
+  const addItem = () => {
+    const trimmed = draft.trim();
+    if (!trimmed || value.length >= maxItems) return;
+    onChange([...value, trimmed]);
+    setDraft('');
+  };
+
+  return (
+    <div className="w-full space-y-2">
+      {value.map((item, index) => (
+        <div key={`${index}-${item}`} className="flex items-center gap-2">
+          <input
+            type="text"
+            value={item}
+            onChange={(event) => updateItem(index, event.target.value)}
+            className={inlineInputClass}
+          />
+          <button
+            type="button"
+            disabled={index === 0}
+            onClick={() => moveItem(index, -1)}
+            className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+            aria-label="Move up"
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            disabled={index === value.length - 1}
+            onClick={() => moveItem(index, 1)}
+            className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+            aria-label="Move down"
+          >
+            ↓
+          </button>
+          <button
+            type="button"
+            onClick={() => removeItem(index)}
+            className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-700 dark:border-red-500/30 dark:text-red-400"
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              addItem();
+            }
+          }}
+          placeholder={placeholder}
+          className={`${inlineInputClass} min-w-0 flex-1`}
+          disabled={value.length >= maxItems}
+        />
+        <button
+          type="button"
+          onClick={addItem}
+          disabled={!draft.trim() || value.length >= maxItems}
+          className="shrink-0 rounded-md bg-[#F97316] px-3 py-2 text-xs font-semibold text-white hover:bg-[#EA580C] disabled:opacity-40"
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PortfolioInlineEducationEditor({
+  value,
+  onChange,
+  maxItems = 8,
+}: {
+  value: ProfileEducationEntry[];
+  onChange: (value: ProfileEducationEntry[]) => void;
+  maxItems?: number;
+}) {
+  const updateEntry = (index: number, patch: Partial<ProfileEducationEntry>) => {
+    onChange(
+      value.map((entry, entryIndex) =>
+        entryIndex === index ? { ...entry, ...patch } : entry
+      )
+    );
+  };
+
+  const removeEntry = (index: number) => {
+    onChange(value.filter((_, entryIndex) => entryIndex !== index));
+  };
+
+  const moveEntry = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= value.length) return;
+    const next = [...value];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next.map((entry, entryIndex) => ({ ...entry, sortOrder: entryIndex })));
+  };
+
+  const addEntry = () => {
+    if (value.length >= maxItems) return;
+    onChange([
+      ...value,
+      {
+        id: crypto.randomUUID(),
+        sortOrder: value.length,
+        schoolYear: '',
+        title: '',
+        institution: '',
+      },
+    ]);
+  };
+
+  return (
+    <div className="w-full space-y-3">
+      {value.map((entry, index) => (
+        <div
+          key={entry.id}
+          className="space-y-2 rounded-xl border border-neutral-200 p-3 dark:border-neutral-700"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+              Entry {index + 1}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={index === 0}
+                onClick={() => moveEntry(index, -1)}
+                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+                aria-label="Move up"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                disabled={index === value.length - 1}
+                onClick={() => moveEntry(index, 1)}
+                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+                aria-label="Move down"
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                onClick={() => removeEntry(index)}
+                className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-700 dark:border-red-500/30 dark:text-red-400"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+          <input
+            type="text"
+            value={entry.schoolYear}
+            onChange={(event) => updateEntry(index, { schoolYear: event.target.value })}
+            placeholder="School year"
+            className={inlineInputClass}
+          />
+          <input
+            type="text"
+            value={entry.title}
+            onChange={(event) => updateEntry(index, { title: event.target.value })}
+            placeholder="Degree / title"
+            className={inlineInputClass}
+          />
+          <input
+            type="text"
+            value={entry.institution}
+            onChange={(event) => updateEntry(index, { institution: event.target.value })}
+            placeholder="Institution"
+            className={inlineInputClass}
+          />
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={addEntry}
+        disabled={value.length >= maxItems}
+        className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-900"
+      >
+        Add education entry
+      </button>
+    </div>
+  );
+}
+
+function PortfolioAboutCardSection({
+  label,
+  items,
+  editing,
+  editControl,
+  onEdit,
+  onConfirm,
+  onCancelEdit,
+  confirming = false,
+  canConfirm = true,
+  showVisibility = false,
+  visibility,
+  onVisibilityChange,
+  className = '',
+  maxItems = 12,
+}: {
+  label: string;
+  items: string[];
+  editing?: boolean;
+  editControl?: ReactNode;
+  onEdit?: () => void;
+  onConfirm?: () => void;
+  onCancelEdit?: () => void;
+  confirming?: boolean;
+  canConfirm?: boolean;
+  showVisibility?: boolean;
+  visibility?: ContactVisibilityLevel;
+  onVisibilityChange?: (value: ContactVisibilityLevel) => void;
+  className?: string;
+  maxItems?: number;
+}) {
+  const showVisibilityAction = Boolean(
+    showVisibility && visibility && onVisibilityChange && (editing ? !onConfirm : true)
+  );
+  const showEditActions = Boolean(editing ? onConfirm : onEdit);
+  const showActions = showVisibilityAction || showEditActions;
+
+  return (
+    <div className={`py-5 ${className}`}>
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F97316]">
+          {label}
+        </p>
+        {showActions ? (
+          <div className="inline-flex h-8 shrink-0 items-center gap-1.5">
+            {showVisibilityAction ? (
+              <PortfolioFieldVisibilityMenu value={visibility!} onChange={onVisibilityChange!} />
+            ) : null}
+            {editing && onConfirm ? (
+              <>
+                <PortfolioFieldIconButton
+                  label={canConfirm ? `Confirm ${label}` : `No changes to ${label}`}
+                  tone={canConfirm ? 'confirm' : 'neutral'}
+                  disabled={!canConfirm || confirming}
+                  onClick={() => onConfirm()}
+                >
+                  {confirming ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    <FontAwesomeIcon icon={faCircleCheck} className="h-4 w-4" fixedWidth />
+                  )}
+                </PortfolioFieldIconButton>
+                <PortfolioFieldIconButton
+                  label={`Cancel ${label}`}
+                  tone="cancel"
+                  disabled={confirming}
+                  onClick={() => onCancelEdit?.()}
+                >
+                  <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" fixedWidth />
+                </PortfolioFieldIconButton>
+              </>
+            ) : onEdit ? (
+              <PortfolioFieldIconButton label={`Edit ${label}`} onClick={onEdit}>
+                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" fixedWidth />
+              </PortfolioFieldIconButton>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+      <div className={aboutCardClass}>
+        {editing ? (
+          editControl ?? (
+            <PortfolioInlineStringListEditor value={items} onChange={() => undefined} maxItems={maxItems} />
+          )
+        ) : (
+          <PortfolioAboutBulletList items={items} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PortfolioAboutEducationSection({
+  entries,
+  editing,
+  editControl,
+  onEdit,
+  onConfirm,
+  onCancelEdit,
+  confirming = false,
+  canConfirm = true,
+  showVisibility = false,
+  visibility,
+  onVisibilityChange,
+}: {
+  entries: ProfileEducationEntry[];
+  editing?: boolean;
+  editControl?: ReactNode;
+  onEdit?: () => void;
+  onConfirm?: () => void;
+  onCancelEdit?: () => void;
+  confirming?: boolean;
+  canConfirm?: boolean;
+  showVisibility?: boolean;
+  visibility?: ContactVisibilityLevel;
+  onVisibilityChange?: (value: ContactVisibilityLevel) => void;
+}) {
+  const showVisibilityAction = Boolean(
+    showVisibility && visibility && onVisibilityChange && (editing ? !onConfirm : true)
+  );
+  const showEditActions = Boolean(editing ? onConfirm : onEdit);
+  const showActions = showVisibilityAction || showEditActions;
+
+  return (
+    <div className="py-5">
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F97316]">
+          Education
+        </p>
+        {showActions ? (
+          <div className="inline-flex h-8 shrink-0 items-center gap-1.5">
+            {showVisibilityAction ? (
+              <PortfolioFieldVisibilityMenu value={visibility!} onChange={onVisibilityChange!} />
+            ) : null}
+            {editing && onConfirm ? (
+              <>
+                <PortfolioFieldIconButton
+                  label={canConfirm ? 'Confirm Education' : 'No changes to Education'}
+                  tone={canConfirm ? 'confirm' : 'neutral'}
+                  disabled={!canConfirm || confirming}
+                  onClick={() => onConfirm()}
+                >
+                  {confirming ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    <FontAwesomeIcon icon={faCircleCheck} className="h-4 w-4" fixedWidth />
+                  )}
+                </PortfolioFieldIconButton>
+                <PortfolioFieldIconButton
+                  label="Cancel Education"
+                  tone="cancel"
+                  disabled={confirming}
+                  onClick={() => onCancelEdit?.()}
+                >
+                  <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" fixedWidth />
+                </PortfolioFieldIconButton>
+              </>
+            ) : onEdit ? (
+              <PortfolioFieldIconButton label="Edit Education" onClick={onEdit}>
+                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" fixedWidth />
+              </PortfolioFieldIconButton>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+      {editing ? (
+        editControl ?? <PortfolioInlineEducationEditor value={entries} onChange={() => undefined} />
+      ) : (
+        <PortfolioAboutEducationGrid entries={entries} />
+      )}
+    </div>
+  );
+}
 
 export function PortfolioAboutReadOnly({
   fullName,
@@ -831,6 +1365,11 @@ export function PortfolioAboutReadOnly({
   nationality = '',
   yearsOfExperience = null,
   languages,
+  aboutSkills = [],
+  aboutStrengths = [],
+  aboutSystemsTools = [],
+  aboutInterests = [],
+  aboutEducation = [],
   isAvailable,
   availabilityLabel = '',
   availabilityHours,
@@ -855,6 +1394,7 @@ export function PortfolioAboutReadOnly({
   onGlobalHasChangesChange,
   onRegisterGlobalConfirm,
   hideProviderFields = false,
+  layout = 'generalInfo',
 }: {
   fullName: string;
   username?: string;
@@ -865,7 +1405,12 @@ export function PortfolioAboutReadOnly({
   gender: string;
   nationality?: string;
   yearsOfExperience?: number | null;
-  languages: string[];
+  languages: SpokenLanguageEntry[];
+  aboutSkills?: string[];
+  aboutStrengths?: string[];
+  aboutSystemsTools?: string[];
+  aboutInterests?: string[];
+  aboutEducation?: ProfileEducationEntry[];
   isAvailable: boolean;
   availabilityLabel?: string;
   availabilityHours: string | null;
@@ -889,6 +1434,11 @@ export function PortfolioAboutReadOnly({
     responseTime: ContactVisibilityLevel;
     location?: ContactVisibilityLevel;
     yearsOfExperience?: ContactVisibilityLevel;
+    aboutSkills?: ContactVisibilityLevel;
+    aboutStrengths?: ContactVisibilityLevel;
+    aboutSystemsTools?: ContactVisibilityLevel;
+    aboutInterests?: ContactVisibilityLevel;
+    aboutEducation?: ContactVisibilityLevel;
   };
   onVisibilityChange?: (
     key:
@@ -897,7 +1447,12 @@ export function PortfolioAboutReadOnly({
       | 'availability'
       | 'responseTime'
       | 'location'
-      | 'yearsOfExperience',
+      | 'yearsOfExperience'
+      | 'aboutSkills'
+      | 'aboutStrengths'
+      | 'aboutSystemsTools'
+      | 'aboutInterests'
+      | 'aboutEducation',
     value: ContactVisibilityLevel
   ) => void;
   onFieldSave?: (field: PortfolioAboutFieldKey, value: PortfolioAboutFieldValue[PortfolioAboutFieldKey]) => Promise<void>;
@@ -907,7 +1462,10 @@ export function PortfolioAboutReadOnly({
   editMode?: 'individual' | 'global';
   onGlobalHasChangesChange?: (hasChanges: boolean) => void;
   onRegisterGlobalConfirm?: (confirm: (() => Promise<void>) | null) => void;
+  /** `generalInfo` — identity fields. `aboutDetails` — specialty, languages, years. */
+  layout?: 'generalInfo' | 'aboutDetails';
 }) {
+  const isAboutDetails = layout === 'aboutDetails';
   const isGlobal = actionsVisible && editMode === 'global';
   const showFieldActions = actionsVisible && editMode === 'individual';
 
@@ -925,6 +1483,11 @@ export function PortfolioAboutReadOnly({
     yearsOfExperience != null ? String(yearsOfExperience) : ''
   );
   const [draftLanguages, setDraftLanguages] = useState(languages);
+  const [draftAboutSkills, setDraftAboutSkills] = useState(aboutSkills);
+  const [draftAboutStrengths, setDraftAboutStrengths] = useState(aboutStrengths);
+  const [draftAboutSystemsTools, setDraftAboutSystemsTools] = useState(aboutSystemsTools);
+  const [draftAboutInterests, setDraftAboutInterests] = useState(aboutInterests);
+  const [draftAboutEducation, setDraftAboutEducation] = useState(aboutEducation);
   const [draftAvailable, setDraftAvailable] = useState(isAvailable);
   const [draftAvailabilityLabel, setDraftAvailabilityLabel] = useState(() =>
     normalizeAvailabilityStatusSelectValue(availabilityLabel)
@@ -949,6 +1512,11 @@ export function PortfolioAboutReadOnly({
     setDraftNationality(nationality);
     setDraftYearsOfExperience(yearsOfExperience != null ? String(yearsOfExperience) : '');
     setDraftLanguages(languages);
+    setDraftAboutSkills(aboutSkills);
+    setDraftAboutStrengths(aboutStrengths);
+    setDraftAboutSystemsTools(aboutSystemsTools);
+    setDraftAboutInterests(aboutInterests);
+    setDraftAboutEducation(aboutEducation);
     setDraftAvailable(isAvailable);
     setDraftAvailabilityLabel(normalizeAvailabilityStatusSelectValue(availabilityLabel));
     setDraftAvailabilityCustomMode(!isAvailabilityStatusPreset(availabilityLabel));
@@ -978,7 +1546,7 @@ export function PortfolioAboutReadOnly({
     if (isGlobal) return;
     resetDrafts();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keep drafts in sync when not editing
-  }, [fullName, username, bio, specialite, specialties, specialtyTags, gender, nationality, yearsOfExperience, languages, isAvailable, availabilityLabel, rawAvailabilityHours, availabilityHours, typicalResponseTime]);
+  }, [fullName, username, bio, specialite, specialties, specialtyTags, gender, nationality, yearsOfExperience, languages, aboutSkills, aboutStrengths, aboutSystemsTools, aboutInterests, aboutEducation, isAvailable, availabilityLabel, rawAvailabilityHours, availabilityHours, typicalResponseTime]);
 
   const startEdit = (field: PortfolioAboutFieldKey) => {
     resetDrafts();
@@ -991,11 +1559,8 @@ export function PortfolioAboutReadOnly({
     resetDrafts();
   };
 
-  const sameLanguages = (left: string[], right: string[]) => {
-    const leftKeys = dedupeSpokenLanguages(left).map(spokenLanguageMatchKey).sort();
-    const rightKeys = dedupeSpokenLanguages(right).map(spokenLanguageMatchKey).sort();
-    return leftKeys.length === rightKeys.length && leftKeys.every((key, index) => key === rightKeys[index]);
-  };
+  const sameLanguages = (left: SpokenLanguageEntry[], right: SpokenLanguageEntry[]) =>
+    spokenLanguageEntriesEqual(left, right);
 
   const originalAvailabilityHours = formatAvailabilityHours(
     rawAvailabilityHours || availabilityHours
@@ -1036,6 +1601,16 @@ export function PortfolioAboutReadOnly({
       }
       case 'spokenLanguages':
         return !sameLanguages(draftLanguages, languages);
+      case 'aboutSkills':
+        return !sameList(draftAboutSkills, aboutSkills);
+      case 'aboutStrengths':
+        return !sameList(draftAboutStrengths, aboutStrengths);
+      case 'aboutSystemsTools':
+        return !sameList(draftAboutSystemsTools, aboutSystemsTools);
+      case 'aboutInterests':
+        return !sameList(draftAboutInterests, aboutInterests);
+      case 'aboutEducation':
+        return JSON.stringify(draftAboutEducation) !== JSON.stringify(aboutEducation);
       case 'isAvailable':
         return draftAvailable !== isAvailable;
       case 'availabilityLabel':
@@ -1053,24 +1628,35 @@ export function PortfolioAboutReadOnly({
   })();
 
   const globalHasChanges =
-    draftName.trim() !== fullName.trim() ||
-    draftUsername.trim() !== username.trim() ||
-    draftBio.trim() !== bio.trim() ||
-    (!hideProviderFields &&
-      (!sameList(draftSpecialties, savedSpecialties) || !sameList(draftSpecialtyTags, savedTags))) ||
-    draftGender.trim() !== gender.trim() ||
-    draftNationality.trim() !== nationality.trim() ||
-    (!hideProviderFields &&
-      (() => {
-        const draft =
-          draftYearsOfExperience.trim() === ''
-            ? null
-            : Number.parseInt(draftYearsOfExperience, 10);
-        const normalized = draft == null || Number.isNaN(draft) ? null : draft;
-        return normalized !== (yearsOfExperience ?? null);
-      })()) ||
-    !sameLanguages(draftLanguages, languages) ||
-    (!hideProviderFields &&
+    (isAboutDetails
+      ? !hideProviderFields &&
+        (!sameList(draftSpecialties, savedSpecialties) || !sameList(draftSpecialtyTags, savedTags))
+      : draftName.trim() !== fullName.trim() ||
+        draftUsername.trim() !== username.trim() ||
+        draftBio.trim() !== bio.trim() ||
+        draftGender.trim() !== gender.trim() ||
+        draftNationality.trim() !== nationality.trim()) ||
+    (isAboutDetails
+      ? !hideProviderFields &&
+          (() => {
+            const draft =
+              draftYearsOfExperience.trim() === ''
+                ? null
+                : Number.parseInt(draftYearsOfExperience, 10);
+            const normalized = draft == null || Number.isNaN(draft) ? null : draft;
+            return normalized !== (yearsOfExperience ?? null);
+          })()
+      : false) ||
+    (isAboutDetails ? !sameLanguages(draftLanguages, languages) : false) ||
+    (isAboutDetails ? !sameList(draftAboutSkills, aboutSkills) : false) ||
+    (isAboutDetails ? !sameList(draftAboutStrengths, aboutStrengths) : false) ||
+    (isAboutDetails ? !sameList(draftAboutSystemsTools, aboutSystemsTools) : false) ||
+    (isAboutDetails ? !sameList(draftAboutInterests, aboutInterests) : false) ||
+    (isAboutDetails
+      ? JSON.stringify(draftAboutEducation) !== JSON.stringify(aboutEducation)
+      : false) ||
+    (!isAboutDetails &&
+      !hideProviderFields &&
       (draftAvailable !== isAvailable ||
         normalizeAvailabilityStatusSelectValue(draftAvailabilityLabel) !==
           normalizeAvailabilityStatusSelectValue(availabilityLabel) ||
@@ -1119,7 +1705,43 @@ export function PortfolioAboutReadOnly({
           break;
         }
         case 'spokenLanguages':
-          await onFieldSave('spokenLanguages', dedupeSpokenLanguages(draftLanguages));
+          await onFieldSave('spokenLanguages', dedupeSpokenLanguageEntries(draftLanguages));
+          break;
+        case 'aboutSkills':
+          await onFieldSave(
+            'aboutSkills',
+            draftAboutSkills.map((item) => item.trim()).filter(Boolean)
+          );
+          break;
+        case 'aboutStrengths':
+          await onFieldSave(
+            'aboutStrengths',
+            draftAboutStrengths.map((item) => item.trim()).filter(Boolean)
+          );
+          break;
+        case 'aboutSystemsTools':
+          await onFieldSave(
+            'aboutSystemsTools',
+            draftAboutSystemsTools.map((item) => item.trim()).filter(Boolean)
+          );
+          break;
+        case 'aboutInterests':
+          await onFieldSave(
+            'aboutInterests',
+            draftAboutInterests.map((item) => item.trim()).filter(Boolean)
+          );
+          break;
+        case 'aboutEducation':
+          await onFieldSave(
+            'aboutEducation',
+            draftAboutEducation.map((entry, index) => ({
+              ...entry,
+              sortOrder: index,
+              schoolYear: entry.schoolYear.trim(),
+              title: entry.title.trim(),
+              institution: entry.institution.trim(),
+            }))
+          );
           break;
         case 'isAvailable':
           await onFieldSave('isAvailable', draftAvailable);
@@ -1161,7 +1783,18 @@ export function PortfolioAboutReadOnly({
               : Number.parseInt(draftYearsOfExperience, 10);
           return parsed == null || Number.isNaN(parsed) ? null : parsed;
         })(),
-        spokenLanguages: dedupeSpokenLanguages(draftLanguages),
+        spokenLanguages: dedupeSpokenLanguageEntries(draftLanguages),
+        aboutSkills: draftAboutSkills.map((item) => item.trim()).filter(Boolean),
+        aboutStrengths: draftAboutStrengths.map((item) => item.trim()).filter(Boolean),
+        aboutSystemsTools: draftAboutSystemsTools.map((item) => item.trim()).filter(Boolean),
+        aboutInterests: draftAboutInterests.map((item) => item.trim()).filter(Boolean),
+        aboutEducation: draftAboutEducation.map((entry, index) => ({
+          ...entry,
+          sortOrder: index,
+          schoolYear: entry.schoolYear.trim(),
+          title: entry.title.trim(),
+          institution: entry.institution.trim(),
+        })),
         isAvailable: draftAvailable,
         availabilityLabel: normalizeAvailabilityStatusSelectValue(draftAvailabilityLabel),
         availabilityHours: draftAvailabilityHours,
@@ -1200,6 +1833,231 @@ export function PortfolioAboutReadOnly({
 
   return (
     <div className="divide-y divide-neutral-200/50 dark:divide-white/[0.06]">
+      {isAboutDetails ? (
+        <>
+          {!hideProviderFields ? (
+            <div className="grid gap-0 sm:grid-cols-2 sm:gap-x-6">
+              <PortfolioFlatField
+                label="Specialty"
+                className="!pt-3 !pb-5"
+                editing={fieldEditing('specialite')}
+                onEdit={fieldOnEdit('specialite')}
+                onConfirm={fieldOnConfirm}
+                onCancelEdit={fieldOnCancel}
+                confirming={confirming && (editingField === 'specialite' || editingField === 'specialtySet')}
+                canConfirm={fieldHasChanges}
+                editControl={
+                  <SpecialtyMultiSelect
+                    specialties={draftSpecialties}
+                    tags={draftSpecialtyTags}
+                    onSpecialtiesChange={setDraftSpecialties}
+                    onTagsChange={setDraftSpecialtyTags}
+                    disabled={confirming}
+                    showTags={false}
+                  />
+                }
+              >
+                {savedSpecialties.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {savedSpecialties.map((item, index) => {
+                      const isPrimary = index === 0;
+                      return (
+                        <span
+                          key={item}
+                          className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold sm:text-sm ${
+                            isPrimary
+                              ? 'border-orange-500 bg-orange-500 text-white'
+                              : 'border-neutral-300 bg-transparent text-neutral-700 dark:border-neutral-700 dark:text-neutral-200'
+                          }`}
+                        >
+                          {item}
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : undefined}
+              </PortfolioFlatField>
+              <PortfolioFlatField
+                label="Years of experience"
+                className="!pt-3 !pb-5"
+                value={
+                  yearsOfExperience != null
+                    ? yearsOfExperience === 1
+                      ? '1 year'
+                      : `${yearsOfExperience} years`
+                    : ''
+                }
+                emptyLabel="Not set"
+                editing={fieldEditing('yearsOfExperience')}
+                onEdit={fieldOnEdit('yearsOfExperience')}
+                onConfirm={fieldOnConfirm}
+                onCancelEdit={fieldOnCancel}
+                confirming={confirming && editingField === 'yearsOfExperience'}
+                canConfirm={fieldHasChanges}
+                showVisibility={visibilityEnabled && Boolean(visibility?.yearsOfExperience)}
+                visibility={visibility?.yearsOfExperience}
+                onVisibilityChange={
+                  onVisibilityChange
+                    ? (value) => onVisibilityChange('yearsOfExperience', value)
+                    : undefined
+                }
+                editControl={
+                  <input
+                    type="number"
+                    min={0}
+                    max={80}
+                    value={draftYearsOfExperience}
+                    onChange={(event) => setDraftYearsOfExperience(event.target.value)}
+                    className={inlineInputClass}
+                    autoFocus={editingField === 'yearsOfExperience'}
+                    disabled={confirming}
+                    placeholder="e.g. 5"
+                  />
+                }
+              />
+            </div>
+          ) : null}
+          <PortfolioFlatField
+            label="Working Languages"
+            className={hideProviderFields ? '!pt-3 !pb-5' : '!py-5'}
+            editing={fieldEditing('spokenLanguages')}
+            onEdit={fieldOnEdit('spokenLanguages')}
+            onConfirm={fieldOnConfirm}
+            onCancelEdit={fieldOnCancel}
+            confirming={confirming && editingField === 'spokenLanguages'}
+            canConfirm={fieldHasChanges}
+            showVisibility={visibilityEnabled}
+            visibility={visibility?.spokenLanguages}
+            onVisibilityChange={
+              onVisibilityChange ? (value) => onVisibilityChange('spokenLanguages', value) : undefined
+            }
+            editControl={<PortfolioInlineLanguagesEditor value={draftLanguages} onChange={setDraftLanguages} />}
+          >
+            <PortfolioLanguageChips languages={languages} />
+          </PortfolioFlatField>
+          <PortfolioAboutEducationSection
+            entries={aboutEducation}
+            editing={fieldEditing('aboutEducation')}
+            onEdit={fieldOnEdit('aboutEducation')}
+            onConfirm={fieldOnConfirm}
+            onCancelEdit={fieldOnCancel}
+            confirming={confirming && editingField === 'aboutEducation'}
+            canConfirm={fieldHasChanges}
+            showVisibility={visibilityEnabled}
+            visibility={visibility?.aboutEducation}
+            onVisibilityChange={
+              onVisibilityChange ? (value) => onVisibilityChange('aboutEducation', value) : undefined
+            }
+            editControl={
+              <PortfolioInlineEducationEditor
+                value={draftAboutEducation}
+                onChange={setDraftAboutEducation}
+              />
+            }
+          />
+          <div className="grid gap-0 sm:grid-cols-2 sm:gap-x-6">
+            <PortfolioAboutCardSection
+              label="Skills"
+              items={aboutSkills}
+              editing={fieldEditing('aboutSkills')}
+              onEdit={fieldOnEdit('aboutSkills')}
+              onConfirm={fieldOnConfirm}
+              onCancelEdit={fieldOnCancel}
+              confirming={confirming && editingField === 'aboutSkills'}
+              canConfirm={fieldHasChanges}
+              showVisibility={visibilityEnabled}
+              visibility={visibility?.aboutSkills}
+              onVisibilityChange={
+                onVisibilityChange ? (value) => onVisibilityChange('aboutSkills', value) : undefined
+              }
+              editControl={
+                <PortfolioInlineStringListEditor
+                  value={draftAboutSkills}
+                  onChange={setDraftAboutSkills}
+                  maxItems={12}
+                  placeholder="Add skill…"
+                />
+              }
+              className="sm:pr-3"
+            />
+            <PortfolioAboutCardSection
+              label="Strengths"
+              items={aboutStrengths}
+              editing={fieldEditing('aboutStrengths')}
+              onEdit={fieldOnEdit('aboutStrengths')}
+              onConfirm={fieldOnConfirm}
+              onCancelEdit={fieldOnCancel}
+              confirming={confirming && editingField === 'aboutStrengths'}
+              canConfirm={fieldHasChanges}
+              showVisibility={visibilityEnabled}
+              visibility={visibility?.aboutStrengths}
+              onVisibilityChange={
+                onVisibilityChange ? (value) => onVisibilityChange('aboutStrengths', value) : undefined
+              }
+              editControl={
+                <PortfolioInlineStringListEditor
+                  value={draftAboutStrengths}
+                  onChange={setDraftAboutStrengths}
+                  maxItems={12}
+                  placeholder="Add strength…"
+                />
+              }
+              className="sm:pl-3"
+            />
+            <PortfolioAboutCardSection
+              label="Systems & Tools"
+              items={aboutSystemsTools}
+              editing={fieldEditing('aboutSystemsTools')}
+              onEdit={fieldOnEdit('aboutSystemsTools')}
+              onConfirm={fieldOnConfirm}
+              onCancelEdit={fieldOnCancel}
+              confirming={confirming && editingField === 'aboutSystemsTools'}
+              canConfirm={fieldHasChanges}
+              showVisibility={visibilityEnabled}
+              visibility={visibility?.aboutSystemsTools}
+              onVisibilityChange={
+                onVisibilityChange
+                  ? (value) => onVisibilityChange('aboutSystemsTools', value)
+                  : undefined
+              }
+              editControl={
+                <PortfolioInlineStringListEditor
+                  value={draftAboutSystemsTools}
+                  onChange={setDraftAboutSystemsTools}
+                  maxItems={16}
+                  placeholder="Add system or tool…"
+                />
+              }
+              className="sm:pr-3"
+            />
+            <PortfolioAboutCardSection
+              label="Interests"
+              items={aboutInterests}
+              editing={fieldEditing('aboutInterests')}
+              onEdit={fieldOnEdit('aboutInterests')}
+              onConfirm={fieldOnConfirm}
+              onCancelEdit={fieldOnCancel}
+              confirming={confirming && editingField === 'aboutInterests'}
+              canConfirm={fieldHasChanges}
+              showVisibility={visibilityEnabled}
+              visibility={visibility?.aboutInterests}
+              onVisibilityChange={
+                onVisibilityChange ? (value) => onVisibilityChange('aboutInterests', value) : undefined
+              }
+              editControl={
+                <PortfolioInlineStringListEditor
+                  value={draftAboutInterests}
+                  onChange={setDraftAboutInterests}
+                  maxItems={12}
+                  placeholder="Add interest…"
+                />
+              }
+              className="sm:pl-3"
+            />
+          </div>
+        </>
+      ) : (
+        <>
       <PortfolioFlatField
         label="Name"
         value={fullName}
@@ -1273,66 +2131,6 @@ export function PortfolioAboutReadOnly({
         }
       />
       <div className="grid items-start gap-x-8 sm:grid-cols-2">
-        {!hideProviderFields ? (
-          <PortfolioFlatField
-            label="Specialty"
-            editing={fieldEditing('specialite')}
-            onEdit={fieldOnEdit('specialite')}
-            onConfirm={fieldOnConfirm}
-            onCancelEdit={fieldOnCancel}
-            confirming={confirming && (editingField === 'specialite' || editingField === 'specialtySet')}
-            canConfirm={fieldHasChanges}
-            editControl={
-              <SpecialtyMultiSelect
-                specialties={draftSpecialties}
-                tags={draftSpecialtyTags}
-                onSpecialtiesChange={setDraftSpecialties}
-                onTagsChange={setDraftSpecialtyTags}
-                disabled={confirming}
-                showTags={false}
-              />
-            }
-          >
-            {savedSpecialties.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {savedSpecialties.map((item, index) => {
-                  const isPrimary = index === 0;
-                  return (
-                    <span
-                      key={item}
-                      className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold sm:text-sm ${
-                        isPrimary
-                          ? 'border-orange-500 bg-orange-500 text-white'
-                          : 'border-neutral-300 bg-transparent text-neutral-700 dark:border-neutral-700 dark:text-neutral-200'
-                      }`}
-                    >
-                      {item}
-                    </span>
-                  );
-                })}
-              </div>
-            ) : undefined}
-          </PortfolioFlatField>
-        ) : null}
-        <PortfolioFlatField
-          label="Working Languages"
-          editing={fieldEditing('spokenLanguages')}
-          onEdit={fieldOnEdit('spokenLanguages')}
-          onConfirm={fieldOnConfirm}
-          onCancelEdit={fieldOnCancel}
-          confirming={confirming && editingField === 'spokenLanguages'}
-          canConfirm={fieldHasChanges}
-          showVisibility={visibilityEnabled}
-          visibility={visibility?.spokenLanguages}
-          onVisibilityChange={
-            onVisibilityChange ? (value) => onVisibilityChange('spokenLanguages', value) : undefined
-          }
-          editControl={<PortfolioInlineLanguagesEditor value={draftLanguages} onChange={setDraftLanguages} />}
-        >
-          <PortfolioLanguageChips languages={languages} />
-        </PortfolioFlatField>
-      </div>
-      <div className="grid items-start gap-x-8 sm:grid-cols-2">
         <PortfolioFlatField
           label="Gender"
           value={gender}
@@ -1404,43 +2202,6 @@ export function PortfolioAboutReadOnly({
         />
         {!hideProviderFields ? (
           <>
-            <PortfolioFlatField
-              label="Years of experience"
-              value={
-                yearsOfExperience != null
-                  ? yearsOfExperience === 1
-                    ? '1 year'
-                    : `${yearsOfExperience} years`
-                  : ''
-              }
-              emptyLabel="Not set"
-              editing={fieldEditing('yearsOfExperience')}
-              onEdit={fieldOnEdit('yearsOfExperience')}
-              onConfirm={fieldOnConfirm}
-              onCancelEdit={fieldOnCancel}
-              confirming={confirming && editingField === 'yearsOfExperience'}
-              canConfirm={fieldHasChanges}
-              showVisibility={visibilityEnabled && Boolean(visibility?.yearsOfExperience)}
-              visibility={visibility?.yearsOfExperience}
-              onVisibilityChange={
-                onVisibilityChange
-                  ? (value) => onVisibilityChange('yearsOfExperience', value)
-                  : undefined
-              }
-              editControl={
-                <input
-                  type="number"
-                  min={0}
-                  max={80}
-                  value={draftYearsOfExperience}
-                  onChange={(event) => setDraftYearsOfExperience(event.target.value)}
-                  className={inlineInputClass}
-                  autoFocus={editingField === 'yearsOfExperience'}
-                  disabled={confirming}
-                  placeholder="e.g. 5"
-                />
-              }
-            />
             <PortfolioFlatField
               label="Status"
               value={resolveAvailabilityStatusLabel(isAvailable, availabilityLabel)}
@@ -1618,6 +2379,14 @@ export function PortfolioAboutReadOnly({
           onDetectLocation={onDetectLocation}
         />
       </div>
+        </>
+      )}
     </div>
   );
+}
+
+export function PortfolioAboutPageReadOnly(
+  props: Omit<ComponentProps<typeof PortfolioAboutReadOnly>, 'layout'>
+) {
+  return <PortfolioAboutReadOnly {...props} layout="aboutDetails" />;
 }

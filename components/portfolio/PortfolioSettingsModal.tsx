@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {
   useCallback,
@@ -13,7 +13,14 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
+import {
+  PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_GAP_OPTIONS,
+  PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_SIZE_OPTIONS,
+} from '@/components/portfolio/portfolio-nav-tri-zone-social';
+import { LinkBrandIcon } from '@/components/portfolio/PortfolioLinksChrome';
 import { PortfolioNavContactCtaGlyph } from '@/components/portfolio/portfolio-nav-contact-cta-icons';
+import type { PortfolioNavMenuGroup } from '@/components/portfolio/portfolio-nav-menu-groups';
+import type { PortfolioNavChromeLink } from '@/components/portfolio/portfolio-nav-extras';
 import {
   PORTFOLIO_FLOATING_CHROME,
 } from '@/components/portfolio/portfolio-section-primitives';
@@ -21,7 +28,12 @@ import {
   PORTFOLIO_SETTINGS_SECTIONS,
   DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES,
   PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS,
+  PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS,
   PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS,
+  DEFAULT_EDITORIAL_BAR_MAIL_CONTACT,
+  DEFAULT_EDITORIAL_BAR_PHONE_CONTACT,
+  mergeEditorialBarContactChannelSettings,
+  portfolioNavContactCtaIconOptionsForEditorialChannel,
   PORTFOLIO_NAV_EXTRAS_PLACEMENT_OPTIONS,
   PORTFOLIO_NAV_CUSTOM_EXTRA_DISPLAY_OPTIONS,
   PORTFOLIO_NAV_CUSTOM_EXTRA_FONT_WEIGHT_OPTIONS,
@@ -39,14 +51,16 @@ import {
   type PortfolioNavCustomExtraPlacement,
   type PortfolioNavCustomExtraShape,
   type PortfolioNavContactButtonDisplay,
+  type PortfolioNavContactButtonIconPosition,
   type PortfolioNavContactButtonShape,
   type PortfolioNavContactCtaIcon,
+  type PortfolioNavEditorialBarContactChannelSettings,
   type PortfolioSettings,
   type PortfolioSettingsSectionId,
   type PortfolioSettingsSectionMeta,
 } from '@/components/portfolio/portfolio-settings-types';
 import {
-  PORTFOLIO_NAV_ACTIVE_OPTIONS,
+  PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS,
   PORTFOLIO_NAV_BAR_DESIGN_OPTIONS,
   PORTFOLIO_NAV_BAR_PADDING_OPTIONS,
   PORTFOLIO_NAV_BUTTON_PADDING_OPTIONS,
@@ -54,25 +68,33 @@ import {
   PORTFOLIO_NAV_BAR_THICKNESS_OPTIONS,
   PORTFOLIO_NAV_BAR_WIDTH_OPTIONS,
   PORTFOLIO_NAV_BUTTON_DESIGN_OPTIONS,
-  PORTFOLIO_NAV_CONTENT_MODE_OPTIONS,
+  PORTFOLIO_NAV_FLOATING_PILL_MENU_MODE_OPTIONS,
+  normalizePortfolioNavFloatingPillMenuMode,
   PORTFOLIO_NAV_DISPLAY_OPTIONS,
   PORTFOLIO_NAV_PRESENCE_OPTIONS,
   PORTFOLIO_NAV_MENU_HANDLE_OPTIONS,
   PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS,
   PORTFOLIO_NAV_MENU_CONTROL_ALIGN_OPTIONS,
   PORTFOLIO_NAV_EDGE_OFFSET_OPTIONS,
+  PORTFOLIO_NAV_BAR_SURFACE_OPTIONS,
+  PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS,
   PORTFOLIO_NAV_ITEM_GAP_OPTIONS,
   PORTFOLIO_NAV_LABEL_CASE_OPTIONS,
+  PORTFOLIO_NAV_LABEL_FONT_SIZE_OPTIONS,
   PORTFOLIO_NAV_LOOK_PRESET_OPTIONS,
   PORTFOLIO_NAV_MODE_OPTIONS,
   PORTFOLIO_NAV_MOBILE_LAYOUT_OPTIONS,
   PORTFOLIO_NAV_MOBILE_BRAND_OPTIONS,
   PORTFOLIO_NAV_MOBILE_DRAWER_SIDE_OPTIONS,
   PORTFOLIO_NAV_PLACEMENT_OPTIONS,
-  portfolioNavLookPresetPatch,
-  resolvePortfolioNavLookPreset,
   type PortfolioNavLookPreset,
 } from '@/components/portfolio/portfolio-nav-settings';
+import {
+  PORTFOLIO_NAV_IN_BAR_BRAND_LABEL,
+  PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS,
+  portfolioNavLayoutDesignPatch,
+  type PortfolioNavLayoutDesign,
+} from '@/components/portfolio/portfolio-nav-layout-design';
 import { PortfolioNavIcon } from '@/components/portfolio/portfolio-nav-icons';
 import {
   DEFAULT_HERO_PALETTE,
@@ -145,14 +167,12 @@ import {
   type ServicesSubSection,
 } from '@/components/portfolio/portfolio-services-settings-panel';
 import {
-  AboutSettingsPanel,
-  normalizeAboutSubSection,
-  type AboutSubSection,
-} from '@/components/portfolio/portfolio-about-settings-panel';
-import {
   AboutUsSettingsPanel,
   type AboutUsSubSection,
 } from '@/components/portfolio/portfolio-about-us-settings-panel';
+import {
+  InfoSettingsPanel,
+} from '@/components/portfolio/portfolio-info-settings-panel';
 import {
   ExperienceSettingsPanel,
   normalizeExperienceSubSection,
@@ -167,6 +187,11 @@ import {
   TeamSettingsPanel,
   type TeamSubSection,
 } from '@/components/portfolio/portfolio-team-settings-panel';
+import {
+  StackSettingsPanel,
+  normalizeStackSubSection,
+  type StackSubSection,
+} from '@/components/portfolio/portfolio-stack-settings-panel';
 import {
   ToolsSettingsPanel,
   normalizeToolsSubSection,
@@ -212,6 +237,7 @@ import {
   PORTFOLIO_GLOBAL_BODY_FONT_OPTIONS,
   PORTFOLIO_GLOBAL_HEADER_FONT_OPTIONS,
   PORTFOLIO_GLOBAL_SECTION_TOP_SPACING_OPTIONS,
+  PORTFOLIO_GLOBAL_SECTION_BOTTOM_SPACING_OPTIONS,
   PORTFOLIO_GLOBAL_SUBTITLE_SIZE_OPTIONS,
   PORTFOLIO_GLOBAL_TEXT_DECORATION_OPTIONS,
   PORTFOLIO_GLOBAL_TITLE_ALIGNMENT_OPTIONS,
@@ -223,6 +249,7 @@ import {
   PORTFOLIO_GLOBAL_TITLE_SCROLL_OPTIONS,
   PORTFOLIO_GLOBAL_SPLIT_TITLE_MOTION_OPTIONS,
   PORTFOLIO_GLOBAL_SPLIT_CONTENT_TOP_SPACING_OPTIONS,
+  PORTFOLIO_GLOBAL_SPLIT_CONTENT_BOTTOM_SPACING_OPTIONS,
   PORTFOLIO_GLOBAL_SPLIT_TITLE_FRAME_BORDER_BLUR_OPTIONS,
   PORTFOLIO_GLOBAL_SPLIT_TITLE_FRAME_BORDER_DOUBLE_GAP_OPTIONS,
   PORTFOLIO_GLOBAL_SPLIT_TITLE_FRAME_BORDER_SIDE_OPTIONS,
@@ -232,11 +259,17 @@ import {
   GLOBAL_SPLIT_TITLE_OFFSET_X_MIN,
   GLOBAL_SPLIT_CONTENT_TOP_EXTRA_PX_MAX,
   GLOBAL_SPLIT_CONTENT_TOP_EXTRA_PX_MIN,
+  GLOBAL_SPLIT_CONTENT_BOTTOM_EXTRA_PX_MAX,
+  GLOBAL_SPLIT_CONTENT_BOTTOM_EXTRA_PX_MIN,
   GLOBAL_SECTION_TITLE_TOP_EXTRA_PX_MAX,
   GLOBAL_SECTION_TITLE_TOP_EXTRA_PX_MIN,
+  GLOBAL_SECTION_TITLE_BOTTOM_EXTRA_PX_MAX,
+  GLOBAL_SECTION_TITLE_BOTTOM_EXTRA_PX_MIN,
   clampGlobalSplitTitleOffsetX,
   clampGlobalSplitContentTopExtraPx,
+  clampGlobalSplitContentBottomExtraPx,
   clampGlobalSectionTitleTopExtraPx,
+  clampGlobalSectionTitleBottomExtraPx,
   PORTFOLIO_GLOBAL_TITLE_SIZE_OPTIONS,
   PORTFOLIO_GLOBAL_TYPOGRAPHY_SCOPE_OPTIONS,
   PORTFOLIO_GLOBAL_COLOR_SOURCE_OPTIONS,
@@ -301,11 +334,10 @@ type PanelSubSections = {
   hero?: HeroSettingsSubSection;
   work?: WorkSettingsSubSection;
   services?: ServicesSubSection;
-  infos?: AboutSubSection;
-  whyChooseMe?: AboutSubSection;
   aboutUs?: AboutUsSubSection;
   experience?: ExperienceSubSection;
   team?: TeamSubSection;
+  stack?: StackSubSection;
   tools?: ToolsSubSection;
   gallery?: GallerySettingsSubSection;
   faq?: FaqSubSection;
@@ -313,11 +345,8 @@ type PanelSubSections = {
   footer?: FooterSubSection;
 };
 
-/** Settings blob keys (Infos / Why choose me reuse `about`). */
-type PortfolioSettingsContentKey = Exclude<
-  PortfolioSettingsSectionId,
-  'theme' | 'navigation' | 'infos' | 'whyChooseMe'
->;
+/** Settings blob keys mapped 1:1 to portfolio sections in the modal nav. */
+type PortfolioSettingsContentKey = Exclude<PortfolioSettingsSectionId, 'theme' | 'navigation'>;
 
 function PortfolioSettingsSearchBar({
   onSelect,
@@ -372,7 +401,7 @@ function PortfolioSettingsSearchBar({
           type="search"
           value={query}
           autoComplete="off"
-          placeholder="Search settings…"
+          placeholder="Search settingsâ€¦"
           role="combobox"
           aria-expanded={open && suggestions.length > 0}
           aria-controls={listId}
@@ -468,9 +497,10 @@ function isPortfolioSettingsSectionId(value: string): value is PortfolioSettings
 function readStoredActiveSection(): PortfolioSettingsSectionId {
   if (typeof window === 'undefined') return 'theme';
   const stored = window.sessionStorage.getItem(MODAL_SECTION_STORAGE_KEY);
-  // Legacy: About chrome was removed from the settings nav (Infos / Why choose me remain).
+  // Legacy: Infos / Why choose me / About settings nav removed.
+  if (stored === 'about' || stored === 'infos' || stored === 'whyChooseMe') return 'hero';
+  if (stored === 'info') return 'info';
   // Legacy: Skills settings nav was replaced by Tools.
-  if (stored === 'about') return 'infos';
   if (stored === 'skills') return 'tools';
   if (stored && isPortfolioSettingsSectionId(stored)) return stored;
   return 'theme';
@@ -596,7 +626,6 @@ export function PortfolioSettingsButton({
 }) {
   const buttonSize = 44;
   const margin = 16;
-  const defaultBottom = 88; // above the preview bar
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
   const [ready, setReady] = useState(false);
   const dragRef = useRef<{
@@ -620,7 +649,7 @@ export function PortfolioSettingsButton({
   const defaultPos = useCallback(() => {
     return clampPos(
       window.innerWidth - buttonSize - margin,
-      window.innerHeight - buttonSize - defaultBottom
+      margin + 72
     );
   }, [clampPos]);
 
@@ -709,13 +738,13 @@ export function PortfolioSettingsButton({
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
-      className={`pointer-events-auto fixed z-[110] inline-flex h-11 w-11 cursor-grab items-center justify-center text-neutral-700 transition hover:text-neutral-950 active:cursor-grabbing ${PORTFOLIO_FLOATING_CHROME}`}
+      className={`pointer-events-auto fixed z-[220] inline-flex h-11 w-11 cursor-grab items-center justify-center text-neutral-700 transition hover:text-neutral-950 active:cursor-grabbing ${PORTFOLIO_FLOATING_CHROME}`}
       style={{ left: pos.left, top: pos.top }}
       aria-label={shortcutHint ? `Portfolio settings (${shortcutHint})` : 'Portfolio settings'}
       title={
         shortcutHint
-          ? `Settings · ${shortcutHint} — drag to move`
-          : 'Portfolio settings — drag to move'
+          ? `Settings Â· ${shortcutHint} â€” drag to move`
+          : 'Portfolio settings â€” drag to move'
       }
     >
       <SettingsIcon className="h-5 w-5" />
@@ -834,7 +863,7 @@ function GlobalColorField({
   );
 }
 
-/** Text color for Global section titles/subtitles — palette token or free hex. */
+/** Text color for Global section titles/subtitles â€” palette token or free hex. */
 function GlobalTypographyTextColorField({
   typography,
   global,
@@ -911,13 +940,13 @@ function GlobalTypographyTextColorField({
           </select>
           <p className="text-xs text-neutral-500">
             Edit token hex under{' '}
-            <span className="font-semibold text-neutral-700">Global → Theme</span>
+            <span className="font-semibold text-neutral-700">Global â†’ Theme</span>
           </p>
         </div>
       ) : (
         <GlobalColorField
           label="Hex color"
-          description="Manual color — independent from the Global theme palette."
+          description="Manual color â€” independent from the Global theme palette."
           value={typography.color || defaultColor}
           onChange={(color) => onChange({ color, colorSource: 'manual' })}
         />
@@ -948,8 +977,8 @@ function GlobalHeaderFontMockups({
         </p>
         <p className="mt-1 text-sm text-neutral-500">
           {isTitle
-            ? 'Clique une maquette pour appliquer une Google Font à tous les titres de section.'
-            : 'Clique une maquette pour appliquer une Google Font à toutes les descriptions de section.'}
+            ? 'Clique une maquette pour appliquer une Google Font Ã  tous les titres de section.'
+            : 'Clique une maquette pour appliquer une Google Font Ã  toutes les descriptions de section.'}
         </p>
       </div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -1009,8 +1038,8 @@ function GlobalSectionTypographySettings({
         <div>
           <p className="text-sm font-semibold text-neutral-950">Police principale</p>
           <p className="mt-1 text-sm text-neutral-500">
-            Unique typeface du portfolio public — appliquée partout (hero, titres, cartes,
-            contact, footer…). Les polices par section ont été retirées.
+            Unique typeface du portfolio public â€” appliquÃ©e partout (hero, titres, cartes,
+            contact, footerâ€¦). Les polices par section ont Ã©tÃ© retirÃ©es.
           </p>
         </div>
 
@@ -1405,7 +1434,7 @@ function GlobalSplitTitleFrameBlock({
           Split title frame
         </p>
         <p className="mt-1 text-sm text-neutral-500">
-          Cadre autour du titre, de la description et du bouton éventuel dans la colonne gauche.
+          Cadre autour du titre, de la description et du bouton Ã©ventuel dans la colonne gauche.
         </p>
       </div>
 
@@ -1426,7 +1455,7 @@ function GlobalSplitTitleFrameBlock({
           </span>
         </div>
         <p className="mt-1 text-sm text-neutral-500">
-          Décale le titre à gauche (−) ou à droite (+) dans la colonne split pour le centrer précisément.
+          DÃ©cale le titre Ã  gauche (âˆ’) ou Ã  droite (+) dans la colonne split pour le centrer prÃ©cisÃ©ment.
         </p>
         <input
           type="range"
@@ -1499,7 +1528,7 @@ function GlobalSplitTitleFrameBlock({
                 Border sides
               </p>
               <p className="mt-1 text-sm text-neutral-500">
-                Styles (trait, doublure, blur) s’appliquent uniquement aux côtés cochés.
+                Styles (trait, doublure, blur) sâ€™appliquent uniquement aux cÃ´tÃ©s cochÃ©s.
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {PORTFOLIO_GLOBAL_SPLIT_TITLE_FRAME_BORDER_SIDE_OPTIONS.map((side) => {
@@ -1702,7 +1731,7 @@ function GlobalSectionRevealBlock({
           Profil de motion
         </p>
         <p className="mt-2 text-sm text-neutral-500">
-          Chaque profil a une signature différente. Affinez ensuite délai, durée, décalage et
+          Chaque profil a une signature diffÃ©rente. Affinez ensuite dÃ©lai, durÃ©e, dÃ©calage et
           distance.
         </p>
       </div>
@@ -1756,9 +1785,9 @@ function GlobalSectionRevealBlock({
 
       {selectedMeta ? (
         <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-600">
-          <span className="font-semibold text-neutral-800">{selectedMeta.label} · </span>
+          <span className="font-semibold text-neutral-800">{selectedMeta.label} Â· </span>
           {motionProfileSupportsHover(motionProfile)
-            ? `${timing.duration.toFixed(2).replace('.', ',')}s · stagger ${Math.round(timing.stagger * 1000)}ms · ${clampMotionTimingDistance(timing.distance)}px · ${formatMotionHoverRecipe(timing)}`
+            ? `${timing.duration.toFixed(2).replace('.', ',')}s Â· stagger ${Math.round(timing.stagger * 1000)}ms Â· ${clampMotionTimingDistance(timing.distance)}px Â· ${formatMotionHoverRecipe(timing)}`
             : selectedMeta.recipe}
         </p>
       ) : null}
@@ -1767,10 +1796,10 @@ function GlobalSectionRevealBlock({
         <div className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="text-sm font-semibold text-neutral-950">Réglages de timing</p>
+              <p className="text-sm font-semibold text-neutral-950">RÃ©glages de timing</p>
               <p className="mt-1 text-sm text-neutral-500">
-                Appliqués aux cartes / blocs au scroll. Changer de profil recharge les valeurs
-                recommandées.
+                AppliquÃ©s aux cartes / blocs au scroll. Changer de profil recharge les valeurs
+                recommandÃ©es.
               </p>
             </div>
             <button
@@ -1787,13 +1816,13 @@ function GlobalSectionRevealBlock({
           <div>
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Délai de base
+                DÃ©lai de base
               </p>
               <span className="tabular-nums text-sm font-semibold text-neutral-700">
                 {formatMotionSeconds(timing.delay)}
               </span>
             </div>
-            <p className="mt-1 text-sm text-neutral-500">Attente avant la première carte.</p>
+            <p className="mt-1 text-sm text-neutral-500">Attente avant la premiÃ¨re carte.</p>
             <input
               type="range"
               min={MOTION_TIMING_DELAY_MIN}
@@ -1804,20 +1833,20 @@ function GlobalSectionRevealBlock({
                 patchTiming({ delay: clampMotionTimingDelay(Number(event.target.value)) })
               }
               className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-              aria-label="Délai de base"
+              aria-label="DÃ©lai de base"
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Durée
+                DurÃ©e
               </p>
               <span className="tabular-nums text-sm font-semibold text-neutral-700">
                 {formatMotionSeconds(timing.duration)}
               </span>
             </div>
-            <p className="mt-1 text-sm text-neutral-500">Longueur de l’animation d’entrée.</p>
+            <p className="mt-1 text-sm text-neutral-500">Longueur de lâ€™animation dâ€™entrÃ©e.</p>
             <input
               type="range"
               min={MOTION_TIMING_DURATION_MIN}
@@ -1828,21 +1857,21 @@ function GlobalSectionRevealBlock({
                 patchTiming({ duration: clampMotionTimingDuration(Number(event.target.value)) })
               }
               className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-              aria-label="Durée d’animation"
+              aria-label="DurÃ©e dâ€™animation"
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Décalage (stagger)
+                DÃ©calage (stagger)
               </p>
               <span className="tabular-nums text-sm font-semibold text-neutral-700">
                 {formatMotionSeconds(timing.stagger)}
               </span>
             </div>
             <p className="mt-1 text-sm text-neutral-500">
-              Écart entre chaque carte (effet cascade).
+              Ã‰cart entre chaque carte (effet cascade).
             </p>
             <input
               type="range"
@@ -1854,7 +1883,7 @@ function GlobalSectionRevealBlock({
                 patchTiming({ stagger: clampMotionTimingStagger(Number(event.target.value)) })
               }
               className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-              aria-label="Décalage stagger"
+              aria-label="DÃ©calage stagger"
             />
           </div>
 
@@ -1868,7 +1897,7 @@ function GlobalSectionRevealBlock({
               </span>
             </div>
             <p className="mt-1 text-sm text-neutral-500">
-              Déplacement vertical au démarrage de l’entrée.
+              DÃ©placement vertical au dÃ©marrage de lâ€™entrÃ©e.
             </p>
             <input
               type="range"
@@ -1880,7 +1909,7 @@ function GlobalSectionRevealBlock({
                 patchTiming({ distance: clampMotionTimingDistance(Number(event.target.value)) })
               }
               className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-              aria-label="Distance d’entrée"
+              aria-label="Distance dâ€™entrÃ©e"
             />
           </div>
 
@@ -1889,7 +1918,7 @@ function GlobalSectionRevealBlock({
               <div>
                 <p className="text-sm font-semibold text-neutral-950">Survol (lift & ombre)</p>
                 <p className="mt-1 text-sm text-neutral-500">
-                  Effet au survol des cartes — lift vertical, taille et couleur de l’ombrage.
+                  Effet au survol des cartes â€” lift vertical, taille et couleur de lâ€™ombrage.
                 </p>
               </div>
 
@@ -1899,11 +1928,11 @@ function GlobalSectionRevealBlock({
                     Lift au survol
                   </p>
                   <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                    −{clampMotionHoverLift(timing.hoverLift)}px
+                    âˆ’{clampMotionHoverLift(timing.hoverLift)}px
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-neutral-500">
-                  Décalage vertical quand la souris passe sur une carte.
+                  DÃ©calage vertical quand la souris passe sur une carte.
                 </p>
                 <input
                   type="range"
@@ -1922,14 +1951,14 @@ function GlobalSectionRevealBlock({
               <div>
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Taille de l’ombre
+                    Taille de lâ€™ombre
                   </p>
                   <span className="tabular-nums text-sm font-semibold text-neutral-700">
                     {clampMotionHoverShadowSize(timing.hoverShadowSize)}px
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-neutral-500">
-                  Flou / ampleur de l’ombre sous la carte (0 = pas d’ombre).
+                  Flou / ampleur de lâ€™ombre sous la carte (0 = pas dâ€™ombre).
                 </p>
                 <input
                   type="range"
@@ -1943,14 +1972,14 @@ function GlobalSectionRevealBlock({
                     })
                   }
                   className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Taille de l’ombre au survol"
+                  aria-label="Taille de lâ€™ombre au survol"
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Opacité de l’ombre
+                    OpacitÃ© de lâ€™ombre
                   </p>
                   <span className="tabular-nums text-sm font-semibold text-neutral-700">
                     {clampMotionHoverShadowOpacity(timing.hoverShadowOpacity)}%
@@ -1968,13 +1997,13 @@ function GlobalSectionRevealBlock({
                     })
                   }
                   className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Opacité de l’ombre au survol"
+                  aria-label="OpacitÃ© de lâ€™ombre au survol"
                 />
               </div>
 
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Couleur de l’ombre
+                  Couleur de lâ€™ombre
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <input
@@ -1982,7 +2011,7 @@ function GlobalSectionRevealBlock({
                     value={timing.hoverShadowColor}
                     onChange={(event) => patchTiming({ hoverShadowColor: event.target.value })}
                     className="h-11 w-14 cursor-pointer rounded-xl border border-neutral-200 bg-white p-1"
-                    aria-label="Couleur de l’ombre au survol"
+                    aria-label="Couleur de lâ€™ombre au survol"
                   />
                   <input
                     type="text"
@@ -2004,13 +2033,13 @@ function GlobalSectionRevealBlock({
         </div>
       ) : (
         <p className="text-sm text-neutral-500">
-          Les cartes apparaissent sans animation. Choisissez Éditorial, Dynamique ou Cinématique
-          pour activer les réglages de timing.
+          Les cartes apparaissent sans animation. Choisissez Ã‰ditorial, Dynamique ou CinÃ©matique
+          pour activer les rÃ©glages de timing.
         </p>
       )}
 
       <p className="text-sm text-neutral-500">
-        Les titres de section et la navigation sticky ne sont pas animés — plus stable avec vos
+        Les titres de section et la navigation sticky ne sont pas animÃ©s â€” plus stable avec vos
         personnalisations.
       </p>
     </div>
@@ -2248,7 +2277,7 @@ function GlobalSettingsPanel({
         <div className="space-y-5">
           <ToggleRow
             label="Light mode"
-            description="Off = dark half of the selected palette pair. On = light half of the same pair (Indigo, Classic, Verdant, Vive, Safran, Citron, Rouge, Écarlate, or Ardoise stay in their own pair)."
+            description="Off = dark half of the selected palette pair. On = light half of the same pair (Indigo, Classic, Verdant, Vive, Safran, Citron, Rouge, Ã‰carlate, or Ardoise stay in their own pair)."
             checked={activeMode === 'light'}
             onChange={(light) => onColorModeChange(light ? 'light' : 'dark')}
           />
@@ -2259,7 +2288,7 @@ function GlobalSettingsPanel({
                 Site color palette
               </p>
               <p className="mt-1 text-sm text-neutral-500">
-                Pick one coupled pair below. Light mode only flips sombre ↔ clair inside that pair —
+                Pick one coupled pair below. Light mode only flips sombre â†” clair inside that pair â€”
                 it never jumps to another family. Token edits update the{' '}
                 <span className="font-semibold text-neutral-800">
                   {activeMode === 'light' ? 'light' : 'dark'}
@@ -2278,7 +2307,7 @@ function GlobalSettingsPanel({
                     id: 'indigo' as const,
                     label: 'Indigo / Ambre',
                     description:
-                      'Pair: sombre #6366F1 / #F59E0B sur #0F172A · clair #4338CA / orange #EA580C sur #F8FAFC.',
+                      'Pair: sombre #6366F1 / #F59E0B sur #0F172A Â· clair #4338CA / orange #EA580C sur #F8FAFC.',
                     dark: INDIGO_DARK_HERO_PALETTE,
                     light: INDIGO_LIGHT_HERO_PALETTE,
                     darkClass: 'border-slate-600 bg-[#0F172A] hover:border-indigo-400',
@@ -2290,7 +2319,7 @@ function GlobalSettingsPanel({
                     id: 'classic' as const,
                     label: 'Classic orange / teal',
                     description:
-                      'Pair: sombre #e2572e / #22c48f sur #0F172A · clair #c2410c / #00875f sur #F8FAFC (slate).',
+                      'Pair: sombre #e2572e / #22c48f sur #0F172A Â· clair #c2410c / #00875f sur #F8FAFC (slate).',
                     dark: DEFAULT_HERO_PALETTE,
                     light: LIGHT_HERO_PALETTE,
                     darkClass: 'border-slate-600 bg-[#0F172A] hover:border-orange-400',
@@ -2302,7 +2331,7 @@ function GlobalSettingsPanel({
                     id: 'verdant' as const,
                     label: 'Verdant / Rose',
                     description:
-                      'Pair: clair vert #2A9608 / rubis #BE123C sur #F8FAFC · sombre lime #43E00B / coral sur #020617.',
+                      'Pair: clair vert #2A9608 / rubis #BE123C sur #F8FAFC Â· sombre lime #43E00B / coral sur #020617.',
                     dark: VERDANT_DARK_HERO_PALETTE,
                     light: VERDANT_LIGHT_HERO_PALETTE,
                     darkClass: 'border-slate-700/80 bg-[#020617] hover:border-lime-400',
@@ -2312,7 +2341,7 @@ function GlobalSettingsPanel({
                   },
                   {
                     id: 'vive' as const,
-                    label: 'Vive — jaune / violet',
+                    label: 'Vive â€” jaune / violet',
                     description:
                       'Pair: fond #FEE685 + violet #6C1BB9 / magenta #D01C82, neutre blanc + Zinc. Light mode stays in this pair.',
                     dark: VIVE_DARK_HERO_PALETTE,
@@ -2324,9 +2353,9 @@ function GlobalSettingsPanel({
                   },
                   {
                     id: 'safran' as const,
-                    label: 'Safran — jaune / violet / émeraude',
+                    label: 'Safran â€” jaune / violet / Ã©meraude',
                     description:
-                      'Pair: fond #FCE96A + violet #3D2B84 / émeraude #0E7C6B, neutre blanc + Stone. Sombre: jaune #FCE96A / émeraude sur #0C0A09.',
+                      'Pair: fond #FCE96A + violet #3D2B84 / Ã©meraude #0E7C6B, neutre blanc + Stone. Sombre: jaune #FCE96A / Ã©meraude sur #0C0A09.',
                     dark: SAFRAN_DARK_HERO_PALETTE,
                     light: SAFRAN_LIGHT_HERO_PALETTE,
                     darkClass: 'border-stone-700/50 bg-[#0C0A09] hover:border-[#FCE96A]',
@@ -2336,7 +2365,7 @@ function GlobalSettingsPanel({
                   },
                   {
                     id: 'citron' as const,
-                    label: 'Citron — vert-citron / violet / bleu',
+                    label: 'Citron â€” vert-citron / violet / bleu',
                     description:
                       'Pair: fond #C8E01A + violet #4C1D6B / bleu #2563EB, neutres slate. Sombre: violet #A78BFA / orange #F0985A sur #0F172A.',
                     dark: CITRON_DARK_HERO_PALETTE,
@@ -2350,7 +2379,7 @@ function GlobalSettingsPanel({
                     id: 'rouge' as const,
                     label: 'Rouge / Cyan',
                     description:
-                      'Pair: clair #DC2626 / #0EA5E9 sur #F4F4F5 · sombre #EF4444 / #38BDF8 sur #020202 (Cyber-Rouge).',
+                      'Pair: clair #DC2626 / #0EA5E9 sur #F4F4F5 Â· sombre #EF4444 / #38BDF8 sur #020202 (Cyber-Rouge).',
                     dark: ROUGE_DARK_HERO_PALETTE,
                     light: ROUGE_LIGHT_HERO_PALETTE,
                     darkClass: 'border-zinc-700 bg-[#020202] hover:border-red-400',
@@ -2360,9 +2389,9 @@ function GlobalSettingsPanel({
                   },
                   {
                     id: 'ecarlate' as const,
-                    label: 'Écarlate / Émeraude',
+                    label: 'Ã‰carlate / Ã‰meraude',
                     description:
-                      'Pair: clair #DF1C1C / #10B981 sur #FFFFFF · sombre #FF3333 / #34D399 sur #000000.',
+                      'Pair: clair #DF1C1C / #10B981 sur #FFFFFF Â· sombre #FF3333 / #34D399 sur #000000.',
                     dark: ECARLATE_DARK_HERO_PALETTE,
                     light: ECARLATE_LIGHT_HERO_PALETTE,
                     darkClass: 'border-neutral-700 bg-[#000000] hover:border-red-400',
@@ -2372,9 +2401,9 @@ function GlobalSettingsPanel({
                   },
                   {
                     id: 'ardoise' as const,
-                    label: 'Ardoise — rouge / bleu',
+                    label: 'Ardoise â€” rouge / bleu',
                     description:
-                      'Pair: clair #EF4444 / #2563EB sur #D4DBE7 · sombre #F87171 / #60A5FA sur #030712.',
+                      'Pair: clair #EF4444 / #2563EB sur #D4DBE7 Â· sombre #F87171 / #60A5FA sur #030712.',
                     dark: ARDOISE_DARK_HERO_PALETTE,
                     light: ARDOISE_LIGHT_HERO_PALETTE,
                     darkClass: 'border-slate-700 bg-[#030712] hover:border-red-400',
@@ -2422,14 +2451,14 @@ function GlobalSettingsPanel({
 
             {activeFamily === 'custom' ? (
               <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
-                Custom pair — Light mode still flips between your edited dark and light tokens.
-                Pick Indigo, Classic, Verdant, Vive, Safran, Citron, Rouge, Écarlate, or Ardoise above to reset to a named pair.
+                Custom pair â€” Light mode still flips between your edited dark and light tokens.
+                Pick Indigo, Classic, Verdant, Vive, Safran, Citron, Rouge, Ã‰carlate, or Ardoise above to reset to a named pair.
               </p>
             ) : null}
 
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
               Active mode tokens ({activeMode === 'light' ? 'Light' : 'Dark'}
-              {activeFamily !== 'custom' ? ` · ${activeFamily}` : ' · custom'})
+              {activeFamily !== 'custom' ? ` Â· ${activeFamily}` : ' Â· custom'})
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
@@ -2468,9 +2497,9 @@ function GlobalSettingsPanel({
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-neutral-900">Editorial Warm reste intact</p>
                 <p className="mt-1 text-sm leading-relaxed text-neutral-500">
-                  Seul Editorial Warm est verrouillé : toute personnalisation crée automatiquement une
-                  copie. Noir / Blanc se modifie directement. Les copies (ex. « Noir / Blanc copie »)
-                  restent indépendantes.
+                  Seul Editorial Warm est verrouillÃ© : toute personnalisation crÃ©e automatiquement une
+                  copie. Noir / Blanc se modifie directement. Les copies (ex. Â« Noir / Blanc copie Â»)
+                  restent indÃ©pendantes.
                 </p>
               </div>
             </div>
@@ -2482,7 +2511,7 @@ function GlobalSettingsPanel({
             </p>
             <ToggleRow
               label="Settings keyboard shortcut"
-              description="Press Ctrl+, (⌘, on Mac) to open or close portfolio settings. Owner only."
+              description="Press Ctrl+, (âŒ˜, on Mac) to open or close portfolio settings. Owner only."
               checked={global.settingsShortcutEnabled ?? true}
               onChange={(settingsShortcutEnabled) => onGlobalChange({ settingsShortcutEnabled })}
             />
@@ -2498,7 +2527,7 @@ function GlobalSettingsPanel({
               {
                 value: 'none',
                 label: 'None',
-                description: 'Default theme chrome — section fills keep working.',
+                description: 'Default theme chrome â€” section fills keep working.',
               },
               {
                 value: 'solid',
@@ -2541,7 +2570,7 @@ function GlobalSettingsPanel({
                 onChange={(backgroundImageUrl) => onGlobalChange({ backgroundImageUrl })}
                 library={global.backgroundImageLibrary}
                 onLibraryChange={(backgroundImageLibrary) => onGlobalChange({ backgroundImageLibrary })}
-                helperText="This fixed wallpaper shows behind every section. A section can override it with its own image fill — only that section is affected."
+                helperText="This fixed wallpaper shows behind every section. A section can override it with its own image fill â€” only that section is affected."
               />
 
               <OptionGrid
@@ -2741,7 +2770,7 @@ function GlobalSettingsPanel({
                   />
                   <p className="mt-1.5 text-xs text-neutral-500">
                     {(global.backgroundPatternUnitsPerRow ?? 0) === 1
-                      ? 'One unit centered on the page — no repetition. Adjust size below.'
+                      ? 'One unit centered on the page â€” no repetition. Adjust size below.'
                       : (global.backgroundPatternUnitsPerRow ?? 0) === 0
                         ? 'Auto keeps the natural tile size and repeats across the page.'
                         : 'How many units fit across the page.'}
@@ -2904,7 +2933,7 @@ function GlobalSettingsPanel({
                 </span>
               </div>
               <p className="mt-1 text-sm text-neutral-500">
-                Ajoute des pixels au preset ci-dessus pour affiner l’écart entre les blocs à droite.
+                Ajoute des pixels au preset ci-dessus pour affiner lâ€™Ã©cart entre les blocs Ã  droite.
               </p>
               <input
                 type="range"
@@ -2925,6 +2954,46 @@ function GlobalSettingsPanel({
               <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
                 <span>{GLOBAL_SPLIT_CONTENT_TOP_EXTRA_PX_MIN}px</span>
                 <span>{GLOBAL_SPLIT_CONTENT_TOP_EXTRA_PX_MAX}px</span>
+              </div>
+            </div>
+            <OptionGrid
+              label="Split screen content bottom spacing"
+              options={PORTFOLIO_GLOBAL_SPLIT_CONTENT_BOTTOM_SPACING_OPTIONS}
+              value={global.splitContentBottomSpacing ?? 'compact'}
+              onChange={(splitContentBottomSpacing) => onGlobalChange({ splitContentBottomSpacing })}
+              columns={2}
+            />
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Extra bottom spacing (px)
+                </p>
+                <span className="tabular-nums text-sm font-semibold text-neutral-700">
+                  {clampGlobalSplitContentBottomExtraPx(global.splitContentBottomExtraPx, 0)}px
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-neutral-500">
+                Ajoute des pixels au preset ci-dessus pour affiner lâ€™espace sous chaque bloc Ã  droite.
+              </p>
+              <input
+                type="range"
+                min={GLOBAL_SPLIT_CONTENT_BOTTOM_EXTRA_PX_MIN}
+                max={GLOBAL_SPLIT_CONTENT_BOTTOM_EXTRA_PX_MAX}
+                step={4}
+                value={clampGlobalSplitContentBottomExtraPx(global.splitContentBottomExtraPx, 0)}
+                onChange={(event) =>
+                  onGlobalChange({
+                    splitContentBottomExtraPx: clampGlobalSplitContentBottomExtraPx(
+                      Number(event.target.value),
+                      0
+                    ),
+                  })
+                }
+                className="mt-3 w-full accent-neutral-900"
+              />
+              <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
+                <span>{GLOBAL_SPLIT_CONTENT_BOTTOM_EXTRA_PX_MIN}px</span>
+                <span>{GLOBAL_SPLIT_CONTENT_BOTTOM_EXTRA_PX_MAX}px</span>
               </div>
             </div>
             <GlobalSplitTitleFrameBlock
@@ -2960,7 +3029,7 @@ function GlobalSettingsPanel({
               </span>
             </div>
             <p className="mt-1 text-sm text-neutral-500">
-              Ajoute des pixels au preset ci-dessus pour affiner l’espace au-dessus de chaque titre
+              Ajoute des pixels au preset ci-dessus pour affiner lâ€™espace au-dessus de chaque titre
               de section.
             </p>
             <input
@@ -2982,6 +3051,47 @@ function GlobalSettingsPanel({
             <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
               <span>{GLOBAL_SECTION_TITLE_TOP_EXTRA_PX_MIN}px</span>
               <span>{GLOBAL_SECTION_TITLE_TOP_EXTRA_PX_MAX}px</span>
+            </div>
+          </div>
+          <OptionGrid
+            label="Space below sections"
+            options={PORTFOLIO_GLOBAL_SECTION_BOTTOM_SPACING_OPTIONS}
+            value={global.sectionTitleBottomSpacing}
+            onChange={(sectionTitleBottomSpacing) => onGlobalChange({ sectionTitleBottomSpacing })}
+            columns={2}
+          />
+          <div>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Extra bottom spacing (px)
+              </p>
+              <span className="tabular-nums text-sm font-semibold text-neutral-700">
+                {clampGlobalSectionTitleBottomExtraPx(global.sectionTitleBottomExtraPx, 0)}px
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-neutral-500">
+              Ajoute des pixels au preset ci-dessus pour affiner lâ€™espace sous chaque section
+              (Stack, Tools, Portfolio, etc.).
+            </p>
+            <input
+              type="range"
+              min={GLOBAL_SECTION_TITLE_BOTTOM_EXTRA_PX_MIN}
+              max={GLOBAL_SECTION_TITLE_BOTTOM_EXTRA_PX_MAX}
+              step={4}
+              value={clampGlobalSectionTitleBottomExtraPx(global.sectionTitleBottomExtraPx, 0)}
+              onChange={(event) =>
+                onGlobalChange({
+                  sectionTitleBottomExtraPx: clampGlobalSectionTitleBottomExtraPx(
+                    Number(event.target.value),
+                    0
+                  ),
+                })
+              }
+              className="mt-3 w-full accent-neutral-900"
+            />
+            <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
+              <span>{GLOBAL_SECTION_TITLE_BOTTOM_EXTRA_PX_MIN}px</span>
+              <span>{GLOBAL_SECTION_TITLE_BOTTOM_EXTRA_PX_MAX}px</span>
             </div>
           </div>
           </div>
@@ -3077,8 +3187,8 @@ function ThemePickerPanel({
       if (changed) {
         pushFlashFeedback({
           variant: 'success',
-          title: 'Thème enregistré',
-          description: `« ${name} » a été sauvegardé avec toutes vos personnalisations.`,
+          title: 'ThÃ¨me enregistrÃ©',
+          description: `Â« ${name} Â» a Ã©tÃ© sauvegardÃ© avec toutes vos personnalisations.`,
           durationMs: 4500,
         });
       }
@@ -3087,12 +3197,12 @@ function ThemePickerPanel({
       if (changed) {
         pushFlashFeedback({
           variant: 'success',
-          title: 'Thème renommé',
-          description: `Le thème s’appelle maintenant « ${name} ».`,
+          title: 'ThÃ¨me renommÃ©',
+          description: `Le thÃ¨me sâ€™appelle maintenant Â« ${name} Â».`,
           durationMs: 4000,
         });
       }
-      // Same name → close quietly, no toast (nothing happened).
+      // Same name â†’ close quietly, no toast (nothing happened).
     }
     setNameEditor(null);
   };
@@ -3140,8 +3250,8 @@ function ThemePickerPanel({
                   onDuplicateTheme(theme.id);
                   pushFlashFeedback({
                     variant: 'success',
-                    title: 'Thème dupliqué',
-                    description: `Une copie personnalisable a été créée à partir de « ${theme.label} ».`,
+                    title: 'ThÃ¨me dupliquÃ©',
+                    description: `Une copie personnalisable a Ã©tÃ© crÃ©Ã©e Ã  partir de Â« ${theme.label} Â».`,
                     durationMs: 4000,
                   });
                 }}
@@ -3149,13 +3259,13 @@ function ThemePickerPanel({
               />
               {theme.id === 'noir' ? (
                 <ThemeActionButton
-                  label="Réinitialiser"
+                  label="RÃ©initialiser"
                   onClick={() => {
                     onResetBuiltinTheme('noir');
                     pushFlashFeedback({
                       variant: 'success',
-                      title: 'Noir / Blanc réinitialisé',
-                      description: 'Le thème a été restauré à ses réglages d’usine.',
+                      title: 'Noir / Blanc rÃ©initialisÃ©',
+                      description: 'Le thÃ¨me a Ã©tÃ© restaurÃ© Ã  ses rÃ©glages dâ€™usine.',
                       durationMs: 4000,
                     });
                   }}
@@ -3174,10 +3284,10 @@ function ThemePickerPanel({
         const deletePending = pendingDeleteId === theme.id;
         const statusLabel = source?.saved
           ? active
-            ? 'Actif · Enregistré'
-            : 'Enregistré'
+            ? 'Actif Â· EnregistrÃ©'
+            : 'EnregistrÃ©'
           : active
-            ? 'Actif · Brouillon'
+            ? 'Actif Â· Brouillon'
             : 'Brouillon';
         const hasPendingChanges = source
           ? customThemeHasPendingChanges(source, settings)
@@ -3231,7 +3341,7 @@ function ThemePickerPanel({
                 onClick={(event) => event.stopPropagation()}
               >
                 <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                  {nameEditor.mode === 'save' ? 'Nommer et enregistrer' : 'Renommer le thème'}
+                  {nameEditor.mode === 'save' ? 'Nommer et enregistrer' : 'Renommer le thÃ¨me'}
                 </p>
                 <div className="flex items-center gap-2">
                   <input
@@ -3249,7 +3359,7 @@ function ThemePickerPanel({
                         closeNameEditor();
                       }
                     }}
-                    placeholder="Nom du thème"
+                    placeholder="Nom du thÃ¨me"
                     className="min-w-0 flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-semibold text-neutral-950 outline-none ring-orange-500/30 focus:border-orange-400 focus:ring-2"
                     autoFocus
                   />
@@ -3280,7 +3390,7 @@ function ThemePickerPanel({
                 onClick={(event) => event.stopPropagation()}
               >
                 <p className="text-xs font-medium text-red-700">
-                  Supprimer « {source?.name || theme.label} » ?
+                  Supprimer Â« {source?.name || theme.label} Â» ?
                 </p>
                 <div className="mt-2 flex items-center gap-2">
                   <button
@@ -3291,8 +3401,8 @@ function ThemePickerPanel({
                       setPendingDeleteId(null);
                       pushFlashFeedback({
                         variant: 'info',
-                        title: 'Thème supprimé',
-                        description: `« ${deletedName} » a été retiré de votre palette.`,
+                        title: 'ThÃ¨me supprimÃ©',
+                        description: `Â« ${deletedName} Â» a Ã©tÃ© retirÃ© de votre palette.`,
                         durationMs: 4000,
                       });
                     }}
@@ -3313,7 +3423,7 @@ function ThemePickerPanel({
             ) : (
               <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-neutral-100 pt-3">
                 {/*
-                  Save / Update only for the ACTIVE theme — inactive themes must not
+                  Save / Update only for the ACTIVE theme â€” inactive themes must not
                   absorb the live settings (avoids overwriting an unselected snapshot).
                 */}
                 {active ? (
@@ -3326,15 +3436,15 @@ function ThemePickerPanel({
                     />
                   ) : (
                     <ThemeActionButton
-                      label={hasPendingChanges ? 'Mettre à jour' : 'À jour'}
+                      label={hasPendingChanges ? 'Mettre Ã  jour' : 'Ã€ jour'}
                       disabled={!hasPendingChanges}
                       onClick={() => {
                         const changed = onSaveCustomTheme(theme.id);
                         if (!changed) return;
                         pushFlashFeedback({
                           variant: 'success',
-                          title: 'Thème mis à jour',
-                          description: `« ${source?.name || theme.label} » a été synchronisé avec vos réglages actuels.`,
+                          title: 'ThÃ¨me mis Ã  jour',
+                          description: `Â« ${source?.name || theme.label} Â» a Ã©tÃ© synchronisÃ© avec vos rÃ©glages actuels.`,
                           durationMs: 4500,
                         });
                       }}
@@ -3353,8 +3463,8 @@ function ThemePickerPanel({
                     onDuplicateTheme(theme.id);
                     pushFlashFeedback({
                       variant: 'success',
-                      title: 'Thème dupliqué',
-                      description: `Une copie de « ${source?.name || theme.label} » a été créée.`,
+                      title: 'ThÃ¨me dupliquÃ©',
+                      description: `Une copie de Â« ${source?.name || theme.label} Â» a Ã©tÃ© crÃ©Ã©e.`,
                       durationMs: 4000,
                     });
                   }}
@@ -3406,7 +3516,7 @@ function ThemeActionButton({
       onClick={onClick}
       disabled={disabled}
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:border-neutral-100 disabled:bg-neutral-50 disabled:text-neutral-400 disabled:hover:bg-neutral-50 ${toneClass}`}
-      title={disabled ? 'Aucune modification à enregistrer' : label}
+      title={disabled ? 'Aucune modification Ã  enregistrer' : label}
     >
       {icon}
       <span>{label}</span>
@@ -3783,6 +3893,1652 @@ function NavLookPresetPreview({
   );
 }
 
+function NavLayoutDesignPreview({
+  design,
+  accent,
+  strongText,
+  muted,
+}: {
+  design: PortfolioNavLayoutDesign;
+  accent: string;
+  strongText: string;
+  muted: string;
+}) {
+  if (design === 'classic') {
+    return (
+      <div className="mt-3 flex justify-center">
+        <div className="flex gap-2 rounded-full border border-neutral-200 bg-white/90 px-3 py-1.5 shadow-sm">
+          <span className="h-2 w-7 rounded-full bg-neutral-300" />
+          <span className="h-2 w-7 rounded-full bg-neutral-300" />
+          <span className="h-2 w-7 rounded-full bg-neutral-300" />
+        </div>
+      </div>
+    );
+  }
+
+  if (design === 'floating-pill') {
+    return (
+      <div className="mt-3 flex justify-center">
+        <div className="grid w-full max-w-[280px] grid-cols-[auto_1fr_auto] items-center gap-2 rounded-full bg-[#1a1a1a] px-2.5 py-2 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
+          <span className="text-[10px] font-bold text-white">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
+          <div className="flex items-center justify-center gap-1.5 text-white">
+            <span className="h-2.5 w-2.5 rounded-full bg-white/90" />
+            <span className="h-2.5 w-2.5 rounded-full bg-white/45" />
+            <span className="h-2.5 w-2.5 rounded-full bg-white/45" />
+          </div>
+          <span className="rounded-full bg-white px-2 py-0.5 text-[7px] font-medium text-[#1a1a1a]">
+            email
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (design === 'nav-logo-social') {
+    return (
+      <div className="mt-3 overflow-hidden rounded-none border-y border-neutral-200 bg-white">
+        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 px-2.5 py-2">
+          <div className="flex items-center gap-1.5 text-[8px] text-neutral-800">
+            <span>Stack</span>
+            <span className="text-neutral-400">Tools</span>
+          </div>
+          <span className="text-[10px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
+          <div className="flex items-center justify-end gap-1">
+            <span className="h-4 w-4 rounded-full border border-neutral-200 bg-white" />
+            <span className="h-4 w-4 rounded-full border border-neutral-200 bg-white" />
+            <span className="h-4 w-4 rounded-full border border-neutral-200 bg-white" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (design === 'center-logo-split') {
+    return (
+      <div className="mt-3 overflow-hidden rounded-lg bg-neutral-900/90 px-2.5 py-2">
+        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <div className="flex items-center justify-end gap-2 text-[8px] text-white/90">
+            <span>Home</span>
+            <span className="text-white/60">About</span>
+          </div>
+          <span className="text-[10px] font-bold text-white">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
+          <div className="flex items-center justify-start gap-2 text-[8px] text-white/90">
+            <span className="text-white/60">Work</span>
+            <span>Contact</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (design === 'logo-left-nav-contact') {
+    return (
+      <div className="mt-3 overflow-hidden rounded-xl border border-neutral-200 bg-white px-2.5 py-2 shadow-sm">
+        <div className="flex w-full items-center justify-between gap-3">
+          <span className="text-[11px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
+          <div className="flex items-center gap-2 text-[8px] text-neutral-700">
+            <span className="border-b border-neutral-900 pb-px">About</span>
+            <span>Blog</span>
+            <span className="rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
+              Contact
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (design === 'case-overlay') {
+    return (
+      <div className="mt-3 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2.5">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <span className="text-[8px] font-semibold uppercase tracking-[0.14em]" style={{ color: accent }}>
+            Stack
+          </span>
+          <span
+            className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[7px] font-bold text-white"
+            style={{ backgroundColor: accent }}
+          >
+            L
+          </span>
+          <span className="justify-self-end text-[8px] font-semibold uppercase tracking-[0.14em] text-white">
+            Menu
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (design === 'duten-panel') {
+    return (
+      <div className="mt-3 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 p-2">
+        <div className="rounded-full border border-neutral-300/80 bg-neutral-50 px-3 py-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[7px] text-neutral-400">Stack</span>
+            <span className="text-[8px] font-bold text-neutral-900">Logo</span>
+            <span className="text-[7px] font-medium uppercase tracking-[0.12em] text-neutral-700">Menu</span>
+          </div>
+        </div>
+        <p className="mt-1.5 text-center text-[7px] text-neutral-400">La pilule se déplie en panneau</p>
+      </div>
+    );
+  }
+
+  if (design === 'half-panel-left') {
+    return (
+      <div className="mt-3 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100">
+        <div className="grid grid-cols-2">
+          <div className="bg-neutral-300/40 p-2 text-[6px] text-neutral-500">Page</div>
+          <div className="space-y-1.5 bg-[#C8C9B8] p-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[7px] font-bold text-neutral-900">Logo</span>
+              <span className="text-[7px] text-neutral-700">×</span>
+            </div>
+            <p className="text-[6px] text-neutral-600">Discover Pages</p>
+            <div className="grid grid-cols-2 gap-1 text-[6px] text-neutral-800">
+              <span className="underline">Home</span>
+              <span>Work</span>
+            </div>
+          </div>
+        </div>
+        <p className="py-1 text-center text-[6px] text-neutral-400">Icône menu en haut à droite</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2.5">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+        <span className="truncate text-[11px] font-bold" style={{ color: strongText }}>
+          {PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}
+        </span>
+        <div className="flex items-center gap-2 text-[9px]">
+          <span
+            className="border-b pb-px font-medium"
+            style={{ color: accent, borderColor: accent }}
+          >
+            Stack
+          </span>
+          <span style={{ color: muted }}>Tools</span>
+        </div>
+        <span
+          className="justify-self-end rounded border px-1.5 py-0.5 text-[9px]"
+          style={{ color: strongText, borderColor: muted }}
+        >
+          Call me
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function NavTriZoneSocialLinkPicker({
+  options,
+  selectedIds,
+  onChange,
+  maxLinks = 3,
+}: {
+  options: PortfolioNavChromeLink[];
+  selectedIds: string[];
+  onChange: (ids: string[]) => void;
+  maxLinks?: number;
+}) {
+  if (options.length === 0) {
+    return (
+      <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
+        Aucun lien trouvé dans la section Links du profil. Ajoutez-les dans Creator Studio pour les
+        afficher dans la barre.
+      </p>
+    );
+  }
+
+  const toggle = (id: string) => {
+    if (selectedIds.includes(id)) {
+      onChange(selectedIds.filter((value) => value !== id));
+      return;
+    }
+    if (selectedIds.length >= maxLinks) return;
+    onChange([...selectedIds, id]);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Liens affichés
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Choisissez jusqu&apos;à {maxLinks} liens de la section Links. Laissez tout désélectionné pour
+          afficher automatiquement les premiers liens disponibles.
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {options.map((link) => {
+          const selected = selectedIds.includes(link.id);
+          const disabled = !selected && selectedIds.length >= maxLinks;
+          return (
+            <button
+              key={link.id}
+              type="button"
+              onClick={() => toggle(link.id)}
+              disabled={disabled}
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
+                selected
+                  ? 'border-neutral-900 bg-neutral-900 text-white'
+                  : disabled
+                    ? 'cursor-not-allowed border-neutral-200 bg-white text-neutral-300'
+                    : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+              }`}
+            >
+              <LinkBrandIcon
+                url={link.href}
+                platform={link.platform}
+                iconUrl={link.iconUrl}
+                size="compact"
+              />
+              <span>{link.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      {selectedIds.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => onChange([])}
+          className="text-sm text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
+        >
+          Réinitialiser (affichage automatique)
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function NavTriZoneSocialLinkStyleEditor({
+  navigation,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const size = navigation.triZoneSocialLinkSize ?? 'sm';
+  const gap = navigation.triZoneSocialLinkGap ?? 'md';
+  const monochrome = navigation.triZoneSocialLinkMonochrome ?? false;
+
+  const chipClass = (active: boolean) =>
+    `rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+      active
+        ? 'border-neutral-900 bg-neutral-900 text-white'
+        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+    }`;
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-4">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Style des icônes de lien
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Taille, espacement et rendu noir &amp; blanc des logos de profil (max. 3).
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-neutral-700">Taille</p>
+        <div className="flex flex-wrap gap-2">
+          {PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_SIZE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={chipClass(size === option.value)}
+              onClick={() => onChange({ triZoneSocialLinkSize: option.value })}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-neutral-700">Espacement</p>
+        <div className="flex flex-wrap gap-2">
+          {PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_GAP_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={chipClass(gap === option.value)}
+              onClick={() => onChange({ triZoneSocialLinkGap: option.value })}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-neutral-200/80 bg-neutral-50/60 px-3 py-2.5">
+        <div>
+          <p className="text-sm font-medium text-neutral-800">Noir &amp; blanc</p>
+          <p className="text-xs text-neutral-500">Désactive les couleurs de marque des plateformes.</p>
+        </div>
+        <input
+          type="checkbox"
+          checked={monochrome}
+          onChange={(event) => onChange({ triZoneSocialLinkMonochrome: event.target.checked })}
+          className="h-4 w-4 rounded border-neutral-300"
+        />
+      </label>
+    </div>
+  );
+}
+
+function NavContactButtonProfileEditor({
+  title,
+  profile,
+  onChange,
+  editorialChannel,
+}: {
+  title: string;
+  profile: PortfolioNavEditorialBarContactChannelSettings;
+  onChange: (patch: Partial<PortfolioNavEditorialBarContactChannelSettings>) => void;
+  /** When set, icon picker is limited to phone or mail glyphs only. */
+  editorialChannel?: 'phone' | 'mail';
+}) {
+  const display = profile.display;
+  const iconPosition = profile.iconPosition;
+  const shape = profile.shape;
+  const iconOptions = editorialChannel
+    ? portfolioNavContactCtaIconOptionsForEditorialChannel(editorialChannel)
+    : PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS;
+
+  const chipClass = (active: boolean) =>
+    `rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+      active
+        ? 'border-neutral-900 bg-neutral-900 text-white'
+        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+    }`;
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{title}</p>
+
+      <label className="block text-sm">
+        <span className="mb-1 block font-medium text-neutral-700">Libellé</span>
+        <input
+          type="text"
+          value={profile.label}
+          maxLength={32}
+          onChange={(event) => onChange({ label: event.target.value.slice(0, 32) })}
+          className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
+        />
+      </label>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-neutral-700">Affichage</span>
+          <select
+            value={display}
+            onChange={(event) =>
+              onChange({
+                display: event.target.value as PortfolioNavContactButtonDisplay,
+              })
+            }
+            className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
+          >
+            <option value="icon">Icône seule</option>
+            <option value="button">Bouton avec libellé</option>
+          </select>
+        </label>
+        {display === 'button' ? (
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-neutral-700">Position icône</span>
+            <select
+              value={iconPosition}
+              onChange={(event) =>
+                onChange({
+                  iconPosition: event.target.value as PortfolioNavContactButtonIconPosition,
+                })
+              }
+              className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
+            >
+              {PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-neutral-700">Cadre du bouton</p>
+        <div className="flex flex-wrap gap-2">
+          {PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              title={option.description}
+              className={chipClass(shape === option.value)}
+              onClick={() => onChange({ shape: option.value })}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {display === 'icon' || (display === 'button' && iconPosition !== 'none') ? (
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icône</p>
+          <div className="flex flex-wrap gap-2">
+            {iconOptions.map((option) => {
+              const active = profile.icon === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  title={option.description}
+                  onClick={() =>
+                    onChange({
+                      icon: option.value as PortfolioNavContactCtaIcon,
+                    })
+                  }
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${
+                    active
+                      ? 'border-neutral-900 bg-neutral-900 text-white'
+                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                  }`}
+                >
+                  <PortfolioNavContactCtaGlyph variant={option.value} className="h-4 w-4" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function NavEditorialBarContactChannelsEditor({
+  navigation,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const phoneProfile = mergeEditorialBarContactChannelSettings(
+    navigation.editorialBarPhoneContact,
+    undefined,
+    DEFAULT_EDITORIAL_BAR_PHONE_CONTACT
+  );
+  const mailProfile = mergeEditorialBarContactChannelSettings(
+    navigation.editorialBarMailContact,
+    undefined,
+    DEFAULT_EDITORIAL_BAR_MAIL_CONTACT
+  );
+
+  return (
+    <div className="space-y-4">
+      <NavContactButtonProfileEditor
+        title="Réglages · Téléphone"
+        profile={phoneProfile}
+        editorialChannel="phone"
+        onChange={(patch) =>
+          onChange({
+            editorialBarPhoneContact: { ...phoneProfile, ...patch },
+          })
+        }
+      />
+
+      <NavContactButtonProfileEditor
+        title="Réglages · E-mail"
+        profile={mailProfile}
+        editorialChannel="mail"
+        onChange={(patch) =>
+          onChange({
+            editorialBarMailContact: { ...mailProfile, ...patch },
+          })
+        }
+      />
+    </div>
+  );
+}
+
+function NavEditorialBarVisibilityToggles({
+  navigation,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const showSocial = navigation.editorialBarShowSocial ?? false;
+  const showPhone = navigation.editorialBarShowPhone ?? false;
+  const showMail = navigation.editorialBarShowMail ?? false;
+
+  const chipClass = (active: boolean) =>
+    `rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+      active
+        ? 'border-neutral-900 bg-neutral-900 text-white'
+        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+    }`;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+        Afficher dans la barre
+      </p>
+      <p className="text-sm text-neutral-500">
+        Activez un ou plusieurs éléments — liens sociaux, téléphone et e-mail peuvent coexister.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={chipClass(showSocial)}
+          onClick={() =>
+            onChange({
+              editorialBarShowSocial: !showSocial,
+              linkIconsEnabled: !showSocial ? true : navigation.linkIconsEnabled,
+            })
+          }
+        >
+          Liens sociaux
+        </button>
+        <button
+          type="button"
+          className={chipClass(showPhone)}
+          onClick={() =>
+            onChange({
+              editorialBarShowPhone: !showPhone,
+              contactButtonEnabled: !showPhone ? true : navigation.contactButtonEnabled,
+            })
+          }
+        >
+          Téléphone
+        </button>
+        <button
+          type="button"
+          className={chipClass(showMail)}
+          onClick={() =>
+            onChange({
+              editorialBarShowMail: !showMail,
+              contactButtonEnabled: !showMail ? true : navigation.contactButtonEnabled,
+            })
+          }
+        >
+          E-mail
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function NavContactButtonStyleEditor({
+  navigation,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const display = navigation.contactButtonDisplay ?? 'button';
+  const iconPosition = navigation.contactButtonIconPosition ?? 'left';
+  const shape = navigation.contactButtonShape ?? 'rounded';
+
+  const chipClass = (active: boolean) =>
+    `rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+      active
+        ? 'border-neutral-900 bg-neutral-900 text-white'
+        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+    }`;
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-4">
+      <label className="block text-sm">
+        <span className="mb-1 block font-medium text-neutral-700">Libellé</span>
+        <input
+          type="text"
+          value={navigation.contactButtonLabel ?? 'Contact'}
+          maxLength={32}
+          onChange={(event) =>
+            onChange({ contactButtonLabel: event.target.value.slice(0, 32) })
+          }
+          className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
+        />
+      </label>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-neutral-700">Affichage</span>
+          <select
+            value={display}
+            onChange={(event) =>
+              onChange({
+                contactButtonDisplay: event.target.value as PortfolioNavContactButtonDisplay,
+              })
+            }
+            className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
+          >
+            <option value="icon">Icône seule</option>
+            <option value="button">Bouton avec libellé</option>
+          </select>
+        </label>
+        {display === 'button' ? (
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-neutral-700">Position icône</span>
+            <select
+              value={iconPosition}
+              onChange={(event) =>
+                onChange({
+                  contactButtonIconPosition: event.target.value as PortfolioNavContactButtonIconPosition,
+                })
+              }
+              className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
+            >
+              {PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-neutral-700">Cadre du bouton</p>
+        <div className="flex flex-wrap gap-2">
+          {PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              title={option.description}
+              className={chipClass(shape === option.value)}
+              onClick={() => onChange({ contactButtonShape: option.value })}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {display === 'icon' || (display === 'button' && iconPosition !== 'none') ? (
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icône</p>
+          <div className="flex flex-wrap gap-2">
+            {PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS.map((option) => {
+              const active = (navigation.contactButtonIcon ?? 'phone') === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  title={option.description}
+                  onClick={() =>
+                    onChange({
+                      contactButtonIcon: option.value as PortfolioNavContactCtaIcon,
+                    })
+                  }
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${
+                    active
+                      ? 'border-neutral-900 bg-neutral-900 text-white'
+                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                  }`}
+                >
+                  <PortfolioNavContactCtaGlyph variant={option.value} className="h-4 w-4" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function NavCaseOverlayLogoEditor({
+  navigation,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const menuTrigger = navigation.caseOverlayMenuTrigger ?? 'text';
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Barre du menu plein écran
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Logo, emplacement du bouton menu et style du déclencheur.
+        </p>
+      </div>
+
+      <PortfolioBackgroundImageUpload
+        label="Logo"
+        url={navigation.customExtraLogoUrl ?? ''}
+        onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
+        helperText="PNG, SVG ou WebP recommandé — fond transparent de préférence."
+      />
+      <label className="block">
+        <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+          Taille du logo
+        </span>
+        <input
+          type="range"
+          min={18}
+          max={48}
+          step={1}
+          value={navigation.customExtraLogoSizePx ?? 28}
+          onChange={(event) =>
+            onChange({
+              customExtraLogoSizePx: clampPortfolioNavCustomExtraLogoSizePx(
+                Number(event.target.value),
+                28
+              ),
+            })
+          }
+          className="mt-2 w-full"
+        />
+        <p className="mt-1 text-xs text-neutral-500">
+          {navigation.customExtraLogoSizePx ?? 28}px
+        </p>
+      </label>
+
+      <OptionGrid
+        label="Emplacement menu / logo"
+        options={[
+          {
+            value: 'right',
+            label: 'Menu à droite',
+            description: 'Logo au centre, menu à droite (défaut).',
+          },
+          {
+            value: 'left',
+            label: 'Menu à gauche',
+            description: 'Menu à gauche, logo à droite — section active au centre.',
+          },
+        ]}
+        value={navigation.caseOverlayMenuSide ?? 'right'}
+        onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
+        columns={2}
+      />
+
+      <OptionGrid
+        label="Bouton menu"
+        options={[
+          {
+            value: 'text',
+            label: 'Texte',
+            description: 'Menu / Close avec animation.',
+          },
+          {
+            value: 'icon',
+            label: 'Icône',
+            description: 'Hamburger, points ou autre glyphe simple.',
+          },
+        ]}
+        value={menuTrigger}
+        onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
+        columns={2}
+      />
+
+      {menuTrigger === 'icon' ? (
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icône du menu</p>
+          <div className="flex flex-wrap gap-2">
+            {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
+              const active = (navigation.menuControlIcon ?? 'menu') === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  title={option.description}
+                  onClick={() => onChange({ menuControlIcon: option.value })}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    active
+                      ? 'border-neutral-900 bg-neutral-900 text-white'
+                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function NavDutenPanelEditor({
+  navigation,
+  options,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  options: PortfolioNavChromeLink[];
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const menuTrigger = navigation.caseOverlayMenuTrigger ?? 'text';
+  const showContact = navigation.dutenPanelShowContact ?? false;
+  const showSocial = navigation.dutenPanelShowSocial ?? false;
+
+  const chipClass = (active: boolean) =>
+    `rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+      active
+        ? 'border-neutral-900 bg-neutral-900 text-white'
+        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+    }`;
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Panneau Duten
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Panneau clair arrondi : logo, colonnes de liens, marge extérieure et déclencheur menu.
+        </p>
+      </div>
+
+      <PortfolioBackgroundImageUpload
+        label="Logo"
+        url={navigation.customExtraLogoUrl ?? ''}
+        onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
+        helperText="PNG, SVG ou WebP recommandé — fond transparent de préférence."
+      />
+      <label className="block">
+        <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+          Taille du logo
+        </span>
+        <input
+          type="range"
+          min={18}
+          max={56}
+          step={1}
+          value={navigation.customExtraLogoSizePx ?? 32}
+          onChange={(event) =>
+            onChange({
+              customExtraLogoSizePx: clampPortfolioNavCustomExtraLogoSizePx(
+                Number(event.target.value),
+                32
+              ),
+            })
+          }
+          className="mt-2 w-full"
+        />
+        <p className="mt-1 text-xs text-neutral-500">
+          {navigation.customExtraLogoSizePx ?? 32}px
+        </p>
+      </label>
+
+      <OptionGrid
+        label="Colonnes de liens"
+        options={[
+          {
+            value: '2',
+            label: '2 colonnes',
+            description: 'Grille éditoriale comme la référence Duten.',
+          },
+          {
+            value: '1',
+            label: '1 colonne',
+            description: 'Liste verticale pour peu de sections.',
+          },
+        ]}
+        value={String(navigation.dutenPanelColumns ?? 2)}
+        onChange={(value) =>
+          onChange({ dutenPanelColumns: value === '1' ? 1 : 2 })
+        }
+        columns={2}
+      />
+
+      <OptionGrid
+        label="Marge du panneau"
+        options={[
+          {
+            value: 'sm',
+            label: 'Serrée',
+            description: 'Panneau plus large, peu de marge autour.',
+          },
+          {
+            value: 'md',
+            label: 'Standard',
+            description: 'Équilibre entre inset et surface utile.',
+          },
+          {
+            value: 'lg',
+            label: 'Large',
+            description: 'Cadre généreux autour du panneau.',
+          },
+        ]}
+        value={navigation.dutenPanelInset ?? 'md'}
+        onChange={(dutenPanelInset) => onChange({ dutenPanelInset })}
+        columns={3}
+      />
+
+      <OptionGrid
+        label="Emplacement menu / logo"
+        options={[
+          {
+            value: 'right',
+            label: 'Menu à droite',
+            description: 'Logo au centre, menu à droite (défaut).',
+          },
+          {
+            value: 'left',
+            label: 'Menu à gauche',
+            description: 'Menu à gauche, logo à droite.',
+          },
+        ]}
+        value={navigation.caseOverlayMenuSide ?? 'right'}
+        onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
+        columns={2}
+      />
+
+      <OptionGrid
+        label="Bouton menu"
+        options={[
+          {
+            value: 'text',
+            label: 'Texte',
+            description: 'Menu / Close avec animation.',
+          },
+          {
+            value: 'icon',
+            label: 'Icône',
+            description: 'Hamburger, points ou autre glyphe simple.',
+          },
+        ]}
+        value={menuTrigger}
+        onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
+        columns={2}
+      />
+
+      {menuTrigger === 'icon' ? (
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icône du menu</p>
+          <div className="flex flex-wrap gap-2">
+            {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
+              const active = (navigation.menuControlIcon ?? 'menu') === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  title={option.description}
+                  onClick={() => onChange({ menuControlIcon: option.value })}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    active
+                      ? 'border-neutral-900 bg-neutral-900 text-white'
+                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="space-y-2 border-t border-neutral-200/80 pt-4">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Bas du panneau ouvert
+        </p>
+        <p className="text-sm text-neutral-500">
+          Contact et réseaux sociaux en bas du menu déplié — activables séparément.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={chipClass(showContact)}
+            onClick={() => onChange({ dutenPanelShowContact: !showContact })}
+          >
+            Contact
+          </button>
+          <button
+            type="button"
+            className={chipClass(showSocial)}
+            onClick={() => onChange({ dutenPanelShowSocial: !showSocial })}
+          >
+            Social links
+          </button>
+        </div>
+      </div>
+
+      {showSocial ? (
+        <NavTriZoneSocialLinkPicker
+          options={options}
+          selectedIds={navigation.dutenPanelSocialLinkIds ?? []}
+          onChange={(dutenPanelSocialLinkIds) => onChange({ dutenPanelSocialLinkIds })}
+          maxLinks={5}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function NavHalfPanelEditor({
+  navigation,
+  options,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  options: PortfolioNavChromeLink[];
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const menuTrigger = navigation.caseOverlayMenuTrigger ?? 'text';
+  const showContact = navigation.dutenPanelShowContact ?? false;
+  const showSocial = navigation.dutenPanelShowSocial ?? false;
+
+  const chipClass = (active: boolean) =>
+    `rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+      active
+        ? 'border-neutral-900 bg-neutral-900 text-white'
+        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+    }`;
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Demi-panneau droit
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Icône menu en haut à droite — tiroir éditorial depuis la droite (50 %), contact et réseaux en bas.
+        </p>
+      </div>
+
+      <PortfolioBackgroundImageUpload
+        label="Logo"
+        url={navigation.customExtraLogoUrl ?? ''}
+        onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
+        helperText="PNG, SVG ou WebP recommandé — fond transparent de préférence."
+      />
+      <label className="block">
+        <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+          Taille du logo
+        </span>
+        <input
+          type="range"
+          min={18}
+          max={56}
+          step={1}
+          value={navigation.customExtraLogoSizePx ?? 32}
+          onChange={(event) =>
+            onChange({
+              customExtraLogoSizePx: clampPortfolioNavCustomExtraLogoSizePx(
+                Number(event.target.value),
+                32
+              ),
+            })
+          }
+          className="mt-2 w-full"
+        />
+        <p className="mt-1 text-xs text-neutral-500">
+          {navigation.customExtraLogoSizePx ?? 32}px
+        </p>
+      </label>
+
+      <label className="block">
+        <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+          Titre au-dessus des liens
+        </span>
+        <input
+          type="text"
+          value={navigation.halfPanelDiscoverLabel ?? 'Discover Pages'}
+          onChange={(event) => onChange({ halfPanelDiscoverLabel: event.target.value })}
+          placeholder="Discover Pages"
+          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
+        />
+      </label>
+
+      <OptionGrid
+        label="Colonnes de liens"
+        options={[
+          {
+            value: '2',
+            label: '2 colonnes',
+            description: 'Grille éditoriale comme la référence.',
+          },
+          {
+            value: '1',
+            label: '1 colonne',
+            description: 'Liste verticale pour peu de sections.',
+          },
+        ]}
+        value={String(navigation.dutenPanelColumns ?? 2)}
+        onChange={(value) =>
+          onChange({ dutenPanelColumns: value === '1' ? 1 : 2 })
+        }
+        columns={2}
+      />
+
+      <OptionGrid
+        label="Emplacement menu / logo"
+        options={[
+          {
+            value: 'right',
+            label: 'Menu à droite',
+            description: 'Logo au centre, menu à droite (défaut).',
+          },
+          {
+            value: 'left',
+            label: 'Menu à gauche',
+            description: 'Menu à gauche, logo à droite.',
+          },
+        ]}
+        value={navigation.caseOverlayMenuSide ?? 'right'}
+        onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
+        columns={2}
+      />
+
+      <OptionGrid
+        label="Bouton menu"
+        options={[
+          {
+            value: 'text',
+            label: 'Texte',
+            description: 'Menu / Close avec animation.',
+          },
+          {
+            value: 'icon',
+            label: 'Icône',
+            description: 'Hamburger, points ou autre glyphe simple.',
+          },
+        ]}
+        value={menuTrigger}
+        onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
+        columns={2}
+      />
+
+      {menuTrigger === 'icon' ? (
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icône du menu</p>
+          <div className="flex flex-wrap gap-2">
+            {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
+              const active = (navigation.menuControlIcon ?? 'menu') === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  title={option.description}
+                  onClick={() => onChange({ menuControlIcon: option.value })}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    active
+                      ? 'border-neutral-900 bg-neutral-900 text-white'
+                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="space-y-2 border-t border-neutral-200/80 pt-4">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Bas du panneau ouvert
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={chipClass(showContact)}
+            onClick={() => onChange({ dutenPanelShowContact: !showContact })}
+          >
+            Contact
+          </button>
+          <button
+            type="button"
+            className={chipClass(showSocial)}
+            onClick={() => onChange({ dutenPanelShowSocial: !showSocial })}
+          >
+            Social links
+          </button>
+        </div>
+      </div>
+
+      {showSocial ? (
+        <NavTriZoneSocialLinkPicker
+          options={options}
+          selectedIds={navigation.dutenPanelSocialLinkIds ?? []}
+          onChange={(dutenPanelSocialLinkIds) => onChange({ dutenPanelSocialLinkIds })}
+          maxLinks={5}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function NavFloatingPillMenuEditor({
+  navigation,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const menuMode = normalizePortfolioNavFloatingPillMenuMode(navigation.contentMode);
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Menu de navigation
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Affichage des liens de section au centre de la capsule — texte ou icônes seules (pas les
+          liens sociaux).
+        </p>
+      </div>
+      <OptionGrid
+        label="Style du menu"
+        options={PORTFOLIO_NAV_FLOATING_PILL_MENU_MODE_OPTIONS}
+        value={menuMode}
+        onChange={(contentMode) => onChange({ contentMode })}
+        columns={2}
+      />
+    </div>
+  );
+}
+
+function NavEditorialBarSlotEditor({
+  navigation,
+  options,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  options: PortfolioNavChromeLink[];
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const showSocial = navigation.editorialBarShowSocial ?? false;
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Zone droite (Barre éditoriale)
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Liens sociaux, téléphone et e-mail — affichez ce que vous voulez, en même temps si besoin.
+        </p>
+      </div>
+
+      <NavEditorialBarVisibilityToggles navigation={navigation} onChange={onChange} />
+
+      {showSocial ? (
+        <>
+          <NavTriZoneSocialLinkPicker
+            options={options}
+            selectedIds={navigation.triZoneSocialLinkIds ?? []}
+            onChange={(triZoneSocialLinkIds) => onChange({ triZoneSocialLinkIds })}
+          />
+          <NavTriZoneSocialLinkStyleEditor navigation={navigation} onChange={onChange} />
+        </>
+      ) : null}
+
+      <NavEditorialBarContactChannelsEditor navigation={navigation} onChange={onChange} />
+    </div>
+  );
+}
+
+function NavTriZoneVisibilityToggles({
+  navigation,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const showSocial = navigation.triZoneShowSocial ?? false;
+  const showPhone = navigation.triZoneShowPhone ?? false;
+  const showMail = navigation.triZoneShowMail ?? false;
+
+  const chipClass = (active: boolean) =>
+    `rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+      active
+        ? 'border-neutral-900 bg-neutral-900 text-white'
+        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+    }`;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+        Afficher dans la barre
+      </p>
+      <p className="text-sm text-neutral-500">
+        Activez un ou plusieurs éléments — liens sociaux, téléphone et e-mail peuvent coexister.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={chipClass(showSocial)}
+          onClick={() =>
+            onChange({
+              triZoneShowSocial: !showSocial,
+              linkIconsEnabled: !showSocial ? true : navigation.linkIconsEnabled,
+            })
+          }
+        >
+          Liens sociaux
+        </button>
+        <button
+          type="button"
+          className={chipClass(showPhone)}
+          onClick={() =>
+            onChange({
+              triZoneShowPhone: !showPhone,
+              contactButtonEnabled: !showPhone ? true : navigation.contactButtonEnabled,
+            })
+          }
+        >
+          Téléphone
+        </button>
+        <button
+          type="button"
+          className={chipClass(showMail)}
+          onClick={() =>
+            onChange({
+              triZoneShowMail: !showMail,
+              contactButtonEnabled: !showMail ? true : navigation.contactButtonEnabled,
+            })
+          }
+        >
+          E-mail
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function NavTriZoneSideSlotEditor({
+  navigation,
+  options,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  options: PortfolioNavChromeLink[];
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const showSocial = navigation.triZoneShowSocial ?? false;
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Zone latérale (Nav · logo · social)
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Liens sociaux, téléphone et e-mail — affichez ce que vous voulez, en même temps si besoin.
+        </p>
+      </div>
+
+      <NavTriZoneVisibilityToggles navigation={navigation} onChange={onChange} />
+
+      {showSocial ? (
+        <>
+          <NavTriZoneSocialLinkPicker
+            options={options}
+            selectedIds={navigation.triZoneSocialLinkIds ?? []}
+            onChange={(triZoneSocialLinkIds) => onChange({ triZoneSocialLinkIds })}
+          />
+          <NavTriZoneSocialLinkStyleEditor navigation={navigation} onChange={onChange} />
+        </>
+      ) : null}
+
+      <NavEditorialBarContactChannelsEditor navigation={navigation} onChange={onChange} />
+    </div>
+  );
+}
+
+function NavLogoLeftContactPlacementEditor({
+  navigation,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const logoSide = navigation.logoLeftNavContactLogoSide ?? 'left';
+
+  const modeButtonClass = (active: boolean) =>
+    `rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+      active
+        ? 'border-neutral-900 bg-neutral-900 text-white'
+        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+    }`;
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Placement logo / navigation
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Logo à gauche et menus + contact à droite, ou l&apos;inverse. Le bouton Contact reste
+          toujours au bord extérieur (premier élément côté gauche, dernier côté droite).
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={modeButtonClass(logoSide === 'left')}
+          onClick={() => onChange({ logoLeftNavContactLogoSide: 'left' })}
+        >
+          Logo à gauche
+        </button>
+        <button
+          type="button"
+          className={modeButtonClass(logoSide === 'right')}
+          onClick={() => onChange({ logoLeftNavContactLogoSide: 'right' })}
+        >
+          Logo à droite
+        </button>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white px-2.5 py-2 shadow-sm">
+        {logoSide === 'left' ? (
+          <div className="flex w-full items-center justify-between gap-3">
+            <span className="text-[11px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
+            <div className="flex items-center gap-2 text-[8px] text-neutral-700">
+              <span className="border-b border-neutral-900 pb-px">About</span>
+              <span>Blog</span>
+              <span className="rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
+                Contact
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex w-full items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-[8px] text-neutral-700">
+              <span className="rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
+                Contact
+              </span>
+              <span className="border-b border-neutral-900 pb-px">About</span>
+              <span>Blog</span>
+            </div>
+            <span className="text-[11px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-white p-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+            Bouton Contact
+          </p>
+          <p className="mt-1 text-sm text-neutral-500">
+            Libellé du bouton au bord de la barre (ex. Contact, Let&apos;s talk).
+          </p>
+        </div>
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-neutral-700">Libellé</span>
+          <input
+            type="text"
+            value={navigation.contactButtonLabel ?? 'Contact'}
+            maxLength={32}
+            onChange={(event) =>
+              onChange({ contactButtonLabel: event.target.value.slice(0, 32) })
+            }
+            className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function NavSplitLogoSectionEditor({
+  navigation,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const leftKeys = navigation.splitNavLeftSectionKeys ?? [];
+  const autoSplit = leftKeys.length === 0;
+
+  const modeButtonClass = (active: boolean) =>
+    `rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+      active
+        ? 'border-neutral-900 bg-neutral-900 text-white'
+        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+    }`;
+
+  const setSide = (sectionKey: PortfolioNavSectionKey, side: 'left' | 'right') => {
+    if (autoSplit) {
+      if (side === 'left') {
+        onChange({ splitNavLeftSectionKeys: [sectionKey] });
+        return;
+      }
+      const allLeft = PORTFOLIO_NAV_SECTION_META.map((section) => section.key).filter(
+        (key) => key !== sectionKey
+      );
+      onChange({ splitNavLeftSectionKeys: allLeft });
+      return;
+    }
+
+    const next = new Set(leftKeys);
+    if (side === 'left') next.add(sectionKey);
+    else next.delete(sectionKey);
+    onChange({ splitNavLeftSectionKeys: Array.from(next) });
+  };
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Répartition gauche / droite
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Choisissez quels liens de section apparaissent à gauche ou à droite du logo centré.
+          Laissez tout en automatique pour une répartition 50/50 selon l&apos;ordre des sections.
+        </p>
+      </div>
+
+      {autoSplit ? (
+        <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-500">
+          Répartition automatique active.
+        </p>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onChange({ splitNavLeftSectionKeys: [] })}
+          className="text-sm text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
+        >
+          Réinitialiser (répartition automatique)
+        </button>
+      )}
+
+      <div className="space-y-2">
+        {PORTFOLIO_NAV_SECTION_META.map((section) => {
+          const label = navigation.itemLabels[section.key] || section.title;
+          const onLeft = leftKeys.includes(section.key);
+          return (
+            <div
+              key={section.key}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-neutral-200/80 bg-white px-3 py-2"
+            >
+              <span className="text-sm font-medium text-neutral-800">{label}</span>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  className={modeButtonClass(!autoSplit && onLeft)}
+                  onClick={() => setSide(section.key, 'left')}
+                >
+                  Gauche
+                </button>
+                <button
+                  type="button"
+                  className={modeButtonClass(!autoSplit && !onLeft)}
+                  onClick={() => setSide(section.key, 'right')}
+                >
+                  Droite
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function NavLayoutDesignGrid({
+  value,
+  navigation,
+  onChange,
+}: {
+  value: PortfolioNavLayoutDesign;
+  navigation: PortfolioNavSettings;
+  onChange: (design: PortfolioNavLayoutDesign) => void;
+}) {
+  const palette = mergeNavPalette(DEFAULT_NAV_PALETTE, navigation.navPalette);
+  const accent = resolveHeroPaletteColor(palette, 'principal');
+  const strongText = resolveHeroPaletteColor(palette, 'texteFort');
+  const muted = resolveHeroPaletteColor(palette, 'texteMuted');
+
+  return (
+    <div>
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+        Designs navigation
+      </p>
+      <p className="mt-1 text-sm text-neutral-500">
+        Mise en page prÃªte Ã  l&apos;emploi : logo ou nom, liens de section et contact. Les marges
+        latÃ©rales suivent le gutter global du portfolio.
+      </p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange(option.value)}
+              className={`rounded-2xl border px-4 py-3 text-left transition ${
+                active
+                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+              }`}
+            >
+              <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
+              <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
+              <NavLayoutDesignPreview
+                design={option.value}
+                accent={accent}
+                strongText={strongText}
+                muted={muted}
+              />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function NavLookPresetGrid({
   value,
   navigation,
@@ -3811,8 +5567,8 @@ function NavLookPresetGrid({
         Maquettes navigation
       </p>
       <p className="mt-1 text-sm text-neutral-500">
-        Structure réutilisable (classic + icons + active style). Survolez les pastilles grises pour
-        prévisualiser le hover — couleurs liées à la palette Nav.
+        Structure rÃ©utilisable (classic + icons + active style). Survolez les pastilles grises pour
+        prÃ©visualiser le hover â€” couleurs liÃ©es Ã  la palette Nav.
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {PORTFOLIO_NAV_LOOK_PRESET_OPTIONS.map((option) => {
@@ -3851,7 +5607,7 @@ function NavLookPresetGrid({
   );
 }
 
-type NavSettingsTab = 'general' | 'layout' | 'style' | 'palette' | 'reveal' | 'extras' | 'labels';
+type NavSettingsTab = 'general' | 'design';
 
 const NAV_SETTINGS_TABS: { id: NavSettingsTab; label: string; description: string }[] = [
   {
@@ -3860,35 +5616,9 @@ const NAV_SETTINGS_TABS: { id: NavSettingsTab; label: string; description: strin
     description: 'Visibility, navigation type, and when the menu appears.',
   },
   {
-    id: 'layout',
-    label: 'Layout',
-    description: 'Placement, bar width, thickness, spacing, and mobile behavior.',
-  },
-  {
-    id: 'style',
-    label: 'Bar & buttons',
-    description: 'Bar design, shell colors, button chrome, and active state.',
-  },
-  {
-    id: 'palette',
-    label: 'Palette',
-    description: 'Semantic color tokens — nav colors bind to these, like the Hero.',
-  },
-  {
-    id: 'reveal',
-    label: 'Reveal & handle',
-    description: 'Idle behavior and the open / close handle control.',
-  },
-  {
-    id: 'extras',
-    label: 'Extras',
-    description:
-      'Contact, icônes de liens et extra personnalisé — côté libre ou collé aux boutons de navigation.',
-  },
-  {
-    id: 'labels',
-    label: 'Labels & icons',
-    description: 'Per-section labels, icon glyphs, and label casing.',
+    id: 'design',
+    label: 'Design',
+    description: 'ModÃ¨les de mise en page : logo, liens de section, contact ou rÃ©seaux sociaux.',
   },
 ];
 
@@ -3912,7 +5642,7 @@ function patchNavColorField(
   return patchNavSlotColor(navigation, slot, hex);
 }
 
-/** Same Use-color-palette control as Hero — shown in Navigation color subsections. */
+/** Same Use-color-palette control as Hero â€” shown in Navigation color subsections. */
 function NavUsePaletteToggle({
   navigation,
   onChange,
@@ -3940,19 +5670,19 @@ function NavUsePaletteToggle({
       description={description}
       enabledHint={
         enabledHint ??
-        'Palette mode — pick which Global token each color uses (edit tokens under Global → Theme). Free hex pickers stay locked.'
+        'Palette mode â€” pick which Global token each color uses (edit tokens under Global â†’ Theme). Free hex pickers stay locked.'
       }
       disabledHint={
         disabledHint ??
-        'Manual mode — color pickers set hex values directly and are no longer overwritten by the global palette.'
+        'Manual mode â€” color pickers set hex values directly and are no longer overwritten by the global palette.'
       }
     />
   );
 }
 
 /**
- * Palette on → token binding only (hex locked).
- * Palette off → free hex picker.
+ * Palette on â†’ token binding only (hex locked).
+ * Palette off â†’ free hex picker.
  */
 function NavColorField({
   navigation,
@@ -4018,8 +5748,8 @@ function NavColorField({
         ))}
       </select>
       <p className="text-xs text-neutral-500">
-        Bound to token · edit hex under{' '}
-        <span className="font-semibold text-neutral-700">Global → Theme</span>
+        Bound to token Â· edit hex under{' '}
+        <span className="font-semibold text-neutral-700">Global â†’ Theme</span>
       </p>
     </div>
   );
@@ -4042,12 +5772,12 @@ function NavPalettePanel({
         navigation={navigation}
         onChange={onChange}
         description="When on, Navigation colors follow the Global site palette. Turn off to edit colors manually in Bar & buttons, Reveal, and Extras."
-        enabledHint="Edit the dark/light token pair under Global → Theme. Bindings below pick which token each nav color uses."
+        enabledHint="Edit the dark/light token pair under Global â†’ Theme. Bindings below pick which token each nav color uses."
         disabledHint="Global palette tokens still exist, but Navigation uses manual hex colors until you turn this back on."
       />
 
       <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-600">
-        The site color palette lives in <span className="font-semibold">Global → Theme</span> as a
+        The site color palette lives in <span className="font-semibold">Global â†’ Theme</span> as a
         coupled dark / light pair. Navigation no longer has its own Mode sombre / Mode clair editor.
       </p>
 
@@ -4102,7 +5832,7 @@ function NavPalettePanel({
         </div>
       ) : (
         <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
-          Palette is off — slot bindings are hidden. Turn it back on to bind colors to Global tokens,
+          Palette is off â€” slot bindings are hidden. Turn it back on to bind colors to Global tokens,
           or edit hex fields under Bar & buttons / Reveal / Extras.
         </p>
       )}
@@ -4110,18 +5840,161 @@ function NavPalettePanel({
   );
 }
 
+function NavMenuGroupsEditor({
+  groups,
+  itemLabels,
+  onChange,
+}: {
+  groups: PortfolioNavMenuGroup[];
+  itemLabels: PortfolioNavItemLabels;
+  onChange: (groups: PortfolioNavMenuGroup[]) => void;
+}) {
+  const assignedElsewhere = (groupId: string, sectionKey: PortfolioNavSectionKey) =>
+    groups.some((group) => group.id !== groupId && group.sectionKeys.includes(sectionKey));
+
+  const toggleSection = (groupId: string, sectionKey: PortfolioNavSectionKey) => {
+    onChange(
+      groups.map((group) => {
+        if (group.id !== groupId) {
+          return {
+            ...group,
+            sectionKeys: group.sectionKeys.filter((key) => key !== sectionKey),
+          };
+        }
+        const has = group.sectionKeys.includes(sectionKey);
+        return {
+          ...group,
+          sectionKeys: has
+            ? group.sectionKeys.filter((key) => key !== sectionKey)
+            : [...group.sectionKeys, sectionKey],
+        };
+      })
+    );
+  };
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Groupes de menu (dropdown)
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Regroupez plusieurs sections sous un même libellé. Chaque groupe devient un menu déroulant
+          dans tous les designs de navigation.
+        </p>
+      </div>
+
+      {groups.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
+          Aucun groupe pour le moment. Ajoutez un groupe et choisissez au moins 2 sections.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {groups.map((group) => (
+            <div
+              key={group.id}
+              className="space-y-3 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-950"
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="min-w-0 flex-1">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+                    Libellé du menu
+                  </span>
+                  <input
+                    type="text"
+                    value={group.label}
+                    maxLength={48}
+                    onChange={(event) =>
+                      onChange(
+                        groups.map((entry) =>
+                          entry.id === group.id
+                            ? { ...entry, label: event.target.value }
+                            : entry
+                        )
+                      )
+                    }
+                    placeholder="ex. Portfolio, Ressources…"
+                    className="mt-1.5 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 outline-none ring-orange-500/30 focus:border-orange-400 focus:ring-2 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => onChange(groups.filter((entry) => entry.id !== group.id))}
+                  className="rounded-full px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                >
+                  Supprimer
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {PORTFOLIO_NAV_SECTION_META.map((section) => {
+                  const selected = group.sectionKeys.includes(section.key);
+                  const disabled = !selected && assignedElsewhere(group.id, section.key);
+                  const sectionLabel =
+                    itemLabels[section.key]?.trim() || section.title;
+                  return (
+                    <button
+                      key={section.key}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => toggleSection(group.id, section.key)}
+                      className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                        selected
+                          ? 'border-neutral-900 bg-neutral-900 text-white'
+                          : disabled
+                            ? 'cursor-not-allowed border-neutral-200 bg-white text-neutral-300'
+                            : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                      }`}
+                    >
+                      {sectionLabel}
+                    </button>
+                  );
+                })}
+              </div>
+              {group.sectionKeys.length < 2 ? (
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  Sélectionnez au moins 2 sections pour activer ce dropdown.
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() =>
+          onChange([
+            ...groups,
+            {
+              id: crypto.randomUUID(),
+              label: 'Menu',
+              sectionKeys: [],
+            },
+          ])
+        }
+        disabled={groups.length >= 8}
+        className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Ajouter un groupe
+      </button>
+    </div>
+  );
+}
+
 function NavigationPanel({
   navigation,
   onChange,
+  navSocialLinkOptions = [],
 }: {
   navigation: PortfolioNavSettings;
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
+  navSocialLinkOptions?: PortfolioNavChromeLink[];
 }) {
   const [navTab, setNavTab] = useState<NavSettingsTab>('general');
   const navMode = navigation.navMode ?? 'default';
   const usesFloatingNavChrome =
     navMode === 'default' || navMode === 'pages' || navMode === 'split';
-  const activeLookPreset = resolvePortfolioNavLookPreset(navigation);
   const activeTabMeta = NAV_SETTINGS_TABS.find((tab) => tab.id === navTab) ?? NAV_SETTINGS_TABS[0];
 
   return (
@@ -4161,8 +6034,27 @@ function NavigationPanel({
       <NavUsePaletteToggle
         navigation={navigation}
         onChange={onChange}
-        description="When on, Navigation colors follow the semantic palette (Principal, Fond, Bordure…). Turn off to set each color manually in Bar & buttons, Reveal, Extras."
+        description="When on, Navigation colors follow the semantic palette (Principal, Fond, Bordureâ€¦). Turn off to set each color manually."
       />
+
+      {navigation.enabled ? (
+        <>
+        <OptionGrid
+          label="Fond de la barre"
+          options={PORTFOLIO_NAV_BAR_SURFACE_OPTIONS}
+          value={navigation.navBarSurface ?? 'neutre'}
+          onChange={(navBarSurface) => onChange({ navBarSurface })}
+          columns={3}
+        />
+        <OptionGrid
+          label="Hauteur de la barre"
+          options={PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS}
+          value={navigation.navBarHeight ?? 'md'}
+          onChange={(navBarHeight) => onChange({ navBarHeight })}
+          columns={3}
+        />
+        </>
+      ) : null}
 
       <OptionGrid
         label="Navigation type"
@@ -4174,7 +6066,7 @@ function NavigationPanel({
 
       {navMode === 'pages' ? (
         <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-          Pages mode shows one section at a time. Use the nav bar buttons to switch pages — there is no
+          Pages mode shows one section at a time. Use the nav bar buttons to switch pages â€” there is no
           scrolling between sections. Bar design options below still apply.
         </p>
       ) : null}
@@ -4210,1283 +6102,98 @@ function NavigationPanel({
         onChange={(hideWhenSingle) => onChange({ hideWhenSingle })}
       />
 
-      <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-        Menu items are built automatically from visible sections. Reorder or rename them via each
-        section&apos;s settings and Creator Studio content.
-      </p>
-        </div>
-      ) : null}
-
-      {navTab === 'layout' ? (
-        usesFloatingNavChrome ? (
-          <div className="space-y-6">
-      <OptionGrid
-        label="Placement"
-        options={PORTFOLIO_NAV_PLACEMENT_OPTIONS}
-        value={navigation.placement}
-        onChange={(placement) => onChange({ placement })}
-        columns={3}
-      />
-
-      <OptionGrid
-        label="Bar width"
-        options={PORTFOLIO_NAV_BAR_WIDTH_OPTIONS}
-        value={
-          navigation.barWidth === 'full' || navigation.barWidth === 'hug'
-            ? navigation.barWidth
-            : 'hug'
-        }
-        onChange={(barWidth) => onChange({ barWidth })}
-        columns={2}
-      />
-
-      <div className="grid gap-4 sm:grid-cols-2">
+      {navigation.enabled ? (
         <OptionGrid
-          label="Thickness"
-          options={PORTFOLIO_NAV_BAR_THICKNESS_OPTIONS}
-          value={navigation.barThickness}
-          onChange={(barThickness) => onChange({ barThickness })}
-          columns={2}
-        />
-        <OptionGrid
-          label="Bar padding"
-          options={PORTFOLIO_NAV_BAR_PADDING_OPTIONS}
-          value={navigation.barPadding ?? 'md'}
-          onChange={(barPadding) => onChange({ barPadding })}
-          columns={2}
-        />
-      </div>
-      <OptionGrid
-        label="Button padding"
-        options={PORTFOLIO_NAV_BUTTON_PADDING_OPTIONS}
-        value={navigation.buttonPadding ?? 'md'}
-        onChange={(buttonPadding) => onChange({ buttonPadding })}
-        columns={3}
-      />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <OptionGrid
-          label="Edge offset"
-          options={PORTFOLIO_NAV_EDGE_OFFSET_OPTIONS}
-          value={navigation.edgeOffset}
-          onChange={(edgeOffset) => onChange({ edgeOffset })}
-          columns={2}
-        />
-        <OptionGrid
-          label="Item spacing"
-          options={PORTFOLIO_NAV_ITEM_GAP_OPTIONS}
-          value={navigation.itemGap}
-          onChange={(itemGap) => onChange({ itemGap })}
+          label="Indicateur actif"
+          options={PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS}
+          value={
+            PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS.some(
+              (option) => option.value === navigation.activeStyle
+            )
+              ? navigation.activeStyle
+              : ''
+          }
+          onChange={(activeStyle) => onChange({ activeStyle })}
           columns={3}
         />
-      </div>
-      <ToggleRow
-        label="Close edge on mobile & tablet"
-        description="Force Close (flush) below the large breakpoint. Desktop keeps the Edge offset chosen above. Turn off to use the same offset on all screen sizes."
-        checked={navigation.edgeOffsetCloseOnMobile ?? true}
-        onChange={(edgeOffsetCloseOnMobile) => onChange({ edgeOffsetCloseOnMobile })}
-      />
+      ) : null}
 
-      <div className="space-y-3">
+      {navigation.enabled ? (
         <OptionGrid
-          label="Mobile layout"
-          options={PORTFOLIO_NAV_MOBILE_LAYOUT_OPTIONS}
-          value={navigation.mobileLayout ?? 'auto'}
-          onChange={(mobileLayout) => onChange({ mobileLayout })}
-          columns={2}
+          label="Taille du texte"
+          options={PORTFOLIO_NAV_LABEL_FONT_SIZE_OPTIONS}
+          value={navigation.labelFontSize ?? 'md'}
+          onChange={(labelFontSize) => onChange({ labelFontSize })}
+          columns={4}
         />
-        {navigation.mobileLayout === 'drawer' ? (
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Menu drawer
-            </p>
-            <p className="text-sm text-neutral-500">
-              On mobile and tablet, only a slim top bar with a menu icon is shown. Tapping it opens a
-              sidebar of section links.
-            </p>
-            <OptionGrid
-              label="Mobile brand"
-              options={PORTFOLIO_NAV_MOBILE_BRAND_OPTIONS}
-              value={navigation.mobileBrand ?? 'none'}
-              onChange={(mobileBrand) => onChange({ mobileBrand })}
-              columns={3}
-            />
-            {(navigation.mobileBrand ?? 'none') === 'word' ? (
-              <TextField
-                label="Brand word"
-                value={navigation.mobileBrandWord ?? ''}
-                onChange={(mobileBrandWord) => onChange({ mobileBrandWord })}
-                placeholder="First name or Menu"
-              />
-            ) : null}
-            <OptionGrid
-              label="Drawer side"
-              options={PORTFOLIO_NAV_MOBILE_DRAWER_SIDE_OPTIONS}
-              value={navigation.mobileDrawerSide ?? 'right'}
-              onChange={(mobileDrawerSide) => onChange({ mobileDrawerSide })}
-            />
-            <OptionGrid
-              label="Menu icon"
-              options={PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS}
-              value={navigation.menuControlIcon ?? 'dots-h'}
-              onChange={(menuControlIcon) => onChange({ menuControlIcon })}
-              columns={3}
-            />
-            <OptionGrid
-              label="Menu bar align"
-              options={PORTFOLIO_NAV_MENU_CONTROL_ALIGN_OPTIONS}
-              value={
-                navigation.menuControlAlign === 'left' ||
-                navigation.menuControlAlign === 'center' ||
-                navigation.menuControlAlign === 'right'
-                  ? navigation.menuControlAlign
-                  : 'right'
-              }
-              onChange={(menuControlAlign) => onChange({ menuControlAlign })}
-              columns={3}
-            />
-          </div>
-        ) : null}
-        <ToggleRow
-          label="Compact sizes on mobile"
-          description="Smaller icon boxes and padding on narrow screens (works with Mobile layout)."
-          checked={navigation.compactOnMobile}
-          onChange={(compactOnMobile) => onChange({ compactOnMobile })}
-        />
-      </div>
+      ) : null}
+
+      <NavMenuGroupsEditor
+        groups={navigation.navMenuGroups ?? []}
+        itemLabels={navigation.itemLabels}
+        onChange={(navMenuGroups) => onChange({ navMenuGroups })}
+      />
 
       <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-        Left/right placement aligns the items inside the bar — bar width, spacing, and other options stay
-        available. Full width spans edge-to-edge; use placement to shift the links left, center, or right.
+        Les sections visibles alimentent le menu. Réordonnez-les dans Global → Section display order.
       </p>
-          </div>
-        ) : (
-          <NavFloatingOnlyNote />
-        )
+        </div>
       ) : null}
 
-      {navTab === 'style' ? (
-        usesFloatingNavChrome ? (
-          <div className="space-y-6">
-      <NavUsePaletteToggle
-        navigation={navigation}
-        onChange={onChange}
-        description="When on, bar / button / accent colors follow palette tokens — hex pickers are locked. Turn off to pick colors freely below."
-      />
 
-      {navigation.barDesign !== 'dock' ? (
-        <div className="space-y-4">
-          <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-            <strong className="font-semibold text-neutral-700">Classic pill</strong> and{' '}
-            <strong className="font-semibold text-neutral-700">Editorial rail</strong> have two layers:
-            the <em>bar shell</em> (background / border below) and each <em>button</em> inside (Button
-            colors + Active accent). Full width makes the shell edge-to-edge; Hug keeps a floating capsule.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <NavColorField
+      {navTab === 'design' ? (
+        <div className="space-y-6">
+          {usesFloatingNavChrome ? (
+            <NavLayoutDesignGrid
+              value={navigation.navLayoutDesign ?? 'classic'}
               navigation={navigation}
-              onChange={onChange}
-              slot="barBackground"
-              label="Bar background"
-              description="Fill of the outer bar / capsule (not each pill)."
-              value={navigation.barBackgroundColor}
-            />
-            <div className="space-y-3">
-              <ToggleRow
-                label="Bar border"
-                description="Show or hide the outline around the navigation bar."
-                checked={navigation.barBorderEnabled ?? true}
-                onChange={(barBorderEnabled) => onChange({ barBorderEnabled })}
-              />
-              {navigation.barBorderEnabled !== false ? (
-                <NavColorField
-                  navigation={navigation}
-                  onChange={onChange}
-                  slot="barBorder"
-                  label="Bar border color"
-                  description="Outline color around the outer bar / capsule."
-                  value={navigation.barBorderColor}
-                />
-              ) : null}
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <ToggleRow
-                label="Glass / blur"
-                description="Frosted bar — translucent fill + backdrop blur behind the shell."
-                checked={navigation.glassEffect}
-                onChange={(glassEffect) => onChange({ glassEffect })}
-              />
-              <ToggleRow
-                label="Bar shadow"
-                description="Soft drop shadow / halo around the bar (the fuzzy edge)."
-                checked={navigation.barShadowEnabled ?? true}
-                onChange={(barShadowEnabled) => onChange({ barShadowEnabled })}
-              />
-            </div>
-            {navigation.glassEffect ? (
-              <OptionGrid
-                label="Blur thickness"
-                options={PORTFOLIO_NAV_EFFECT_STRENGTH_OPTIONS}
-                value={navigation.barBlurStrength ?? 'md'}
-                onChange={(barBlurStrength) => onChange({ barBlurStrength })}
-                columns={2}
-              />
-            ) : null}
-            {navigation.barShadowEnabled !== false ? (
-              <OptionGrid
-                label="Shadow thickness"
-                options={PORTFOLIO_NAV_EFFECT_STRENGTH_OPTIONS}
-                value={navigation.barShadowStrength ?? 'md'}
-                onChange={(barShadowStrength) => onChange({ barShadowStrength })}
-                columns={2}
-              />
-            ) : null}
-          </div>
-          <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-500">
-            Soft glow on each pill comes from <strong className="font-semibold text-neutral-700">Button design → Glow</strong>.
-            Switch to Clean / Outlined to remove that halo on the buttons.
-          </p>
-        </div>
-      ) : (
-        <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-500">
-          Background and border colors apply to Classic pill and Editorial rail. Icon dock uses separate
-          button chrome.
-        </p>
-      )}
-
-      <OptionGrid
-        label="Bar design"
-        options={PORTFOLIO_NAV_BAR_DESIGN_OPTIONS}
-        value={navigation.barDesign}
-        onChange={(barDesign) => onChange({ barDesign })}
-        columns={3}
-      />
-
-      {usesFloatingNavChrome && navigation.barDesign === 'classic' ? (
-        <NavLookPresetGrid
-          value={activeLookPreset}
-          navigation={navigation}
-          onChange={(preset) => onChange(portfolioNavLookPresetPatch(preset, navigation))}
-        />
-      ) : null}
-
-      <OptionGrid
-        label="Button content"
-        options={PORTFOLIO_NAV_CONTENT_MODE_OPTIONS}
-        value={navigation.contentMode}
-        onChange={(contentMode) => onChange({ contentMode })}
-        columns={3}
-      />
-
-      <OptionGrid
-        label="Button design"
-        options={PORTFOLIO_NAV_BUTTON_DESIGN_OPTIONS}
-        value={navigation.buttonDesign}
-        onChange={(buttonDesign) => onChange({ buttonDesign })}
-        columns={2}
-      />
-
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Button colors</p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Colors for inactive items (each pill / rail cell). Hover colors stay synced with the
-          palette. Active highlight uses Active accent below.
-        </p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <NavColorField
-            navigation={navigation}
-            onChange={onChange}
-            slot="itemIcon"
-            label="Icon color"
-            description="Color of the navigation icons."
-            value={navigation.itemIconColor ?? '#525252'}
-          />
-          <NavColorField
-            navigation={navigation}
-            onChange={onChange}
-            slot="itemText"
-            label="Text color"
-            description="Color of the navigation labels."
-            value={navigation.itemTextColor ?? '#525252'}
-          />
-          <NavColorField
-            navigation={navigation}
-            onChange={onChange}
-            slot="itemBackground"
-            label="Button background"
-            description="Fill color behind each nav item."
-            value={navigation.itemBackgroundColor ?? '#ffffff'}
-          />
-          <div className="space-y-3">
-            <ToggleRow
-              label="Button border"
-              description="Show or hide the outline around each nav pill / button."
-              checked={navigation.itemBorderEnabled ?? true}
-              onChange={(itemBorderEnabled) => onChange({ itemBorderEnabled })}
-            />
-            {navigation.itemBorderEnabled !== false ? (
-              <NavColorField
-                navigation={navigation}
-                onChange={onChange}
-                slot="itemBorder"
-                label="Button border color"
-                description="Outline color around each nav item."
-                value={navigation.itemBorderColor ?? '#e5e5e5'}
-              />
-            ) : null}
-          </div>
-        </div>
-        <div className="mt-5 space-y-3 rounded-2xl border border-neutral-200/80 bg-white/70 p-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Hover effect
-            </p>
-            <p className="mt-1 text-sm text-neutral-500">
-              Soft feedback when the pointer rests on an inactive item — bound to palette tokens by
-              default (Principal / Texte fort).
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <NavColorField
-              navigation={navigation}
-              onChange={onChange}
-              slot="itemHoverIcon"
-              label="Hover icon"
-              description="Icon color on hover."
-              value={navigation.itemHoverIconColor ?? '#e2572e'}
-            />
-            <NavColorField
-              navigation={navigation}
-              onChange={onChange}
-              slot="itemHoverText"
-              label="Hover text"
-              description="Label color on hover."
-              value={navigation.itemHoverTextColor ?? '#f4f3ef'}
-            />
-            <NavColorField
-              navigation={navigation}
-              onChange={onChange}
-              slot="itemHoverBackground"
-              label="Hover background"
-              description="Soft translucent wash behind the item on hover."
-              value={navigation.itemHoverBackgroundColor ?? '#e2572e'}
-            />
-            {navigation.itemBorderEnabled !== false ? (
-              <NavColorField
-                navigation={navigation}
-                onChange={onChange}
-                slot="itemHoverBorder"
-                label="Hover border"
-                description="Outline color on hover."
-                value={navigation.itemHoverBorderColor ?? '#e2572e'}
-              />
-            ) : null}
-          </div>
-        </div>
-      </div>
-
-      {navigation.barDesign === 'classic' || navigation.barDesign === 'rail' ? (
-        <div className="space-y-4">
-          {navigation.barDesign === 'classic' ? (
-            <OptionGrid
-              label="Active link style"
-              options={PORTFOLIO_NAV_ACTIVE_OPTIONS}
-              value={navigation.activeStyle}
-              onChange={(activeStyle) => onChange({ activeStyle })}
-              columns={2}
+              onChange={(design) =>
+                onChange(portfolioNavLayoutDesignPatch(design, navigation))
+              }
             />
           ) : (
-            <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-500">
-              Editorial rail keeps a structured active cell (inset accent). Use{' '}
-              <strong className="font-semibold text-neutral-700">Active accent</strong> to change that
-              highlight color.
-            </p>
+            <NavFloatingOnlyNote />
           )}
-          <NavColorField
-            navigation={navigation}
-            onChange={onChange}
-            slot="activeAccent"
-            label="Active accent"
-            description="Glow ring, rail highlight, underline, or accent text on the active item."
-            value={navigation.activeAccentColor ?? '#f97316'}
-          />
-        </div>
-      ) : (
-        <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-500">
-          Active state styling is built into the Icon dock design.
-        </p>
-      )}
-          </div>
-        ) : (
-          <NavFloatingOnlyNote />
-        )
-      ) : null}
-
-      {navTab === 'palette' ? <NavPalettePanel navigation={navigation} onChange={onChange} /> : null}
-
-      {navTab === 'reveal' ? (
-        usesFloatingNavChrome ? (
-          <div className="space-y-6">
-          <NavUsePaletteToggle
-            navigation={navigation}
-            onChange={onChange}
-            description="When on, handle colors follow palette tokens. Turn off to pick them freely below."
-          />
-          <OptionGrid
-            label="Idle / reveal"
-            options={PORTFOLIO_NAV_PRESENCE_OPTIONS}
-            value={navigation.presence ?? 'full'}
-            onChange={(presence) => onChange({ presence })}
-            columns={2}
-          />
-          <OptionGrid
-            label="Menu handle"
-            options={PORTFOLIO_NAV_MENU_HANDLE_OPTIONS}
-            value={navigation.menuHandleContent ?? 'both'}
-            onChange={(menuHandleContent) => onChange({ menuHandleContent })}
-            columns={3}
-          />
-          <OptionGrid
-            label="Handle icon"
-            options={PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS}
-            value={navigation.menuControlIcon ?? 'dots-h'}
-            onChange={(menuControlIcon) => onChange({ menuControlIcon })}
-            columns={3}
-          />
-          <OptionGrid
-            label="Handle position"
-            options={PORTFOLIO_NAV_MENU_CONTROL_ALIGN_OPTIONS}
-            value={
-              navigation.menuControlAlign === 'left' ||
-              navigation.menuControlAlign === 'center' ||
-              navigation.menuControlAlign === 'right'
-                ? navigation.menuControlAlign
-                : 'right'
-            }
-            onChange={(menuControlAlign) => onChange({ menuControlAlign })}
-            columns={3}
-          />
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Handle colors
-            </p>
-            <p className="mt-1 text-sm text-neutral-500">
-              Independent from bar / button colors so the open-close control stays readable.
-            </p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <NavColorField
-                navigation={navigation}
-                onChange={onChange}
-                slot="handleBackground"
-                label="Handle background"
-                value={navigation.menuHandleBackgroundColor ?? '#ffffff'}
-              />
-              <NavColorField
-                navigation={navigation}
-                onChange={onChange}
-                slot="handleIcon"
-                label="Handle icon"
-                value={navigation.menuHandleIconColor ?? '#171717'}
-              />
-              <div className="space-y-3">
-                <ToggleRow
-                  label="Handle border"
-                  description="Outline around the handle button."
-                  checked={navigation.menuHandleBorderEnabled ?? true}
-                  onChange={(menuHandleBorderEnabled) => onChange({ menuHandleBorderEnabled })}
-                />
-                {navigation.menuHandleBorderEnabled !== false ? (
-                  <NavColorField
-                    navigation={navigation}
-                    onChange={onChange}
-                    slot="handleBorder"
-                    label="Handle border color"
-                    value={navigation.menuHandleBorderColor ?? '#d4d4d4'}
-                  />
-                ) : null}
-              </div>
-            </div>
-          </div>
-          <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-            Handle options apply to{' '}
-            <strong className="font-semibold text-neutral-700">Reveal on tap</strong> /{' '}
-            <strong className="font-semibold text-neutral-700">Reveal on hover</strong> — and to the
-            mobile <strong className="font-semibold text-neutral-700">Menu drawer</strong> top bar
-            (icon style, left / center / right, colors).
-          </p>
-          </div>
-        ) : (
-          <NavFloatingOnlyNote />
-        )
-      ) : null}
-
-      {navTab === 'extras' ? (
-        usesFloatingNavChrome ? (
-        <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-          <NavUsePaletteToggle
-            navigation={navigation}
-            onChange={onChange}
-            description="When on, Contact and link icon colors follow palette tokens. Turn off to pick them freely below. Les couleurs de l’extra personnalisé restent manuelles."
-          />
-
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Extras</p>
-            <p className="mt-1 text-sm text-neutral-500">
-              Contact et l’extra personnalisé ont chacun leur propre emplacement (côté libre /
-              avant / après la nav) et leur côté (gauche / droite). Les icônes de liens gardent
-              un emplacement séparé. En mode côté libre, la largeur Full width reste requise.
-            </p>
-          </div>
-
-          <ToggleRow
-            label="Contact button"
-            description="Contact CTA in the extras group. Desktop: with icons. Tablet: Contact only if enabled. Mobile: hidden."
-            checked={navigation.contactButtonEnabled ?? false}
-            onChange={(contactButtonEnabled) => onChange({ contactButtonEnabled })}
-          />
-
-          {navigation.contactButtonEnabled ? (
-            <div className="space-y-4 rounded-xl border border-neutral-200/70 bg-white/80 p-3">
-              <TextField
-                label="Contact button label"
-                value={navigation.contactButtonLabel ?? 'Contact'}
-                onChange={(contactButtonLabel) => onChange({ contactButtonLabel })}
-                placeholder="Contact"
-              />
-              <OptionGrid
-                label="Contact display"
-                columns={2}
-                value={(navigation.contactButtonDisplay ?? 'icon') as PortfolioNavContactButtonDisplay}
-                onChange={(contactButtonDisplay) => onChange({ contactButtonDisplay })}
-                options={[
-                  {
-                    value: 'icon',
-                    label: 'Icon',
-                    description: 'Round icon button — pick the glyph below.',
-                  },
-                  {
-                    value: 'button',
-                    label: 'Labeled button',
-                    description:
-                      'Pill with label + icon. On Left / Right center nav, Contact stays icon-only so it does not clip the edge.',
-                  },
-                ]}
-              />
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Contact icon
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Phone glyph variants for the Contact CTA (independent from the mail link icon).
-                </p>
-                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
-                  {PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS.map((option) => {
-                    const selected =
-                      (navigation.contactButtonIcon ?? 'phone') === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        title={option.description}
-                        onClick={() =>
-                          onChange({
-                            contactButtonIcon: option.value as PortfolioNavContactCtaIcon,
-                          })
-                        }
-                        className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-2.5 text-center text-[0.65rem] transition ${
-                          selected
-                            ? 'border-neutral-900 bg-white font-semibold text-neutral-950'
-                            : 'border-neutral-200 bg-white/70 text-neutral-600 hover:border-neutral-300'
-                        }`}
-                      >
-                        <PortfolioNavContactCtaGlyph
-                          variant={option.value}
-                          className="h-5 w-5"
-                        />
-                        <span>{option.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <OptionGrid
-                label="Emplacement Contact"
-                columns={3}
-                value={
-                  (navigation.contactExtrasPlacement ??
-                    navigation.extrasPlacement ??
-                    'free-side') as PortfolioNavExtrasPlacement
-                }
-                onChange={(contactExtrasPlacement) => onChange({ contactExtrasPlacement })}
-                options={PORTFOLIO_NAV_EXTRAS_PLACEMENT_OPTIONS}
-              />
-              <OptionGrid
-                label="Côté Contact"
-                columns={3}
-                value={(navigation.contactButtonSide ?? 'auto') as PortfolioNavExtrasSide}
-                onChange={(contactButtonSide) => onChange({ contactButtonSide })}
-                options={
-                  (navigation.contactExtrasPlacement ??
-                    navigation.extrasPlacement ??
-                    'free-side') === 'free-side'
-                    ? [
-                        {
-                          value: 'left',
-                          label: 'Gauche',
-                          description: 'Côté libre gauche quand disponible.',
-                        },
-                        {
-                          value: 'auto',
-                          label: 'Auto',
-                          description: 'Choisit un côté libre (souvent opposé aux icônes).',
-                        },
-                        {
-                          value: 'right',
-                          label: 'Droite',
-                          description: 'Côté libre droit quand disponible.',
-                        },
-                      ]
-                    : [
-                        {
-                          value: 'left',
-                          label: 'Gauche',
-                          description: 'Avant les boutons de section.',
-                        },
-                        {
-                          value: 'auto',
-                          label: 'Auto',
-                          description: 'Suit Avant / Après choisi ci-dessus.',
-                        },
-                        {
-                          value: 'right',
-                          label: 'Droite',
-                          description: 'Après les boutons de section.',
-                        },
-                      ]
-                }
-              />
-              {(navigation.contactExtrasPlacement ??
-                navigation.extrasPlacement ??
-                'free-side') === 'free-side' && navigation.linkIconsEnabled ? (
-                <ToggleRow
-                  label="Détacher Contact des icônes"
-                  description="Quand les deux côtés sont libres (menu centré), Contact peut occuper l’autre côté que les icônes."
-                  checked={navigation.contactButtonDetached ?? false}
-                  onChange={(contactButtonDetached) => onChange({ contactButtonDetached })}
-                />
-              ) : null}
-              <OptionGrid
-                label="Contact button shape"
-                columns={2}
-                value={
-                  (navigation.contactButtonShape ?? 'pill') as PortfolioNavContactButtonShape
-                }
-                onChange={(contactButtonShape) => onChange({ contactButtonShape })}
-                options={PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS}
-              />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <ToggleRow
-                  label="Contact border"
-                  description="Outline around the Contact CTA."
-                  checked={navigation.contactButtonBorderEnabled ?? false}
-                  onChange={(contactButtonBorderEnabled) => onChange({ contactButtonBorderEnabled })}
-                />
-                <ToggleRow
-                  label="Contact glass / blur"
-                  description="Frosted backdrop on the Contact CTA."
-                  checked={navigation.contactButtonGlassEffect ?? false}
-                  onChange={(contactButtonGlassEffect) => onChange({ contactButtonGlassEffect })}
-                />
-                <ToggleRow
-                  label="Contact shadow"
-                  description="Soft drop shadow under the Contact CTA."
-                  checked={navigation.contactButtonShadowEnabled ?? true}
-                  onChange={(contactButtonShadowEnabled) => onChange({ contactButtonShadowEnabled })}
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <NavColorField
-                  navigation={navigation}
-                  onChange={onChange}
-                  slot="contactBackground"
-                  label="Contact background"
-                  description="Fill behind the Contact icon or labeled button."
-                  value={navigation.contactButtonBackgroundColor ?? '#171717'}
-                />
-                <NavColorField
-                  navigation={navigation}
-                  onChange={onChange}
-                  slot="contactText"
-                  label="Contact color"
-                  description="Glyph and label color."
-                  value={navigation.contactButtonColor ?? '#ffffff'}
-                />
-                <NavColorField
-                  navigation={navigation}
-                  onChange={onChange}
-                  slot="contactBorder"
-                  label="Contact border color"
-                  description="Used when Contact border is on."
-                  value={navigation.contactButtonBorderColor ?? '#171717'}
-                />
-              </div>
-            </div>
-          ) : null}
-
-          <ToggleRow
-            label="Link icons in free space"
-            description="Mail / social icons in the same group as Contact. Tablet: icons only if Contact is off. Mobile: hidden."
-            checked={navigation.linkIconsEnabled ?? false}
-            onChange={(linkIconsEnabled) => onChange({ linkIconsEnabled })}
-          />
-
-          {navigation.linkIconsEnabled ? (
-            <div className="space-y-4 rounded-xl border border-neutral-200/70 bg-white/80 p-3">
-              <OptionGrid
-                label="Emplacement des icônes"
-                columns={3}
-                value={(navigation.extrasPlacement ?? 'free-side') as PortfolioNavExtrasPlacement}
-                onChange={(extrasPlacement) => onChange({ extrasPlacement })}
-                options={PORTFOLIO_NAV_EXTRAS_PLACEMENT_OPTIONS}
-              />
-              <OptionGrid
-                label="Côté des icônes"
-                columns={3}
-                value={(navigation.extrasSide ?? 'auto') as PortfolioNavExtrasSide}
-                onChange={(extrasSide) => onChange({ extrasSide })}
-                options={
-                  (navigation.extrasPlacement ?? 'free-side') === 'free-side'
-                    ? [
-                        {
-                          value: 'left',
-                          label: 'Gauche',
-                          description: 'Côté libre gauche quand disponible.',
-                        },
-                        {
-                          value: 'auto',
-                          label: 'Auto',
-                          description: 'Détecte l’espace libre (préfère la droite si centré).',
-                        },
-                        {
-                          value: 'right',
-                          label: 'Droite',
-                          description: 'Côté libre droit quand disponible.',
-                        },
-                      ]
-                    : [
-                        {
-                          value: 'left',
-                          label: 'Gauche',
-                          description: 'Avant les boutons de section.',
-                        },
-                        {
-                          value: 'auto',
-                          label: 'Auto',
-                          description: 'Suit Avant / Après choisi ci-dessus.',
-                        },
-                        {
-                          value: 'right',
-                          label: 'Droite',
-                          description: 'Après les boutons de section.',
-                        },
-                      ]
-                }
-              />
-            </div>
-          ) : null}
-
-          {navigation.linkIconsEnabled ? (
-            <div className="grid gap-4 sm:grid-cols-3">
-              <NavColorField
-                navigation={navigation}
-                onChange={onChange}
-                slot="linkIconBackground"
-                label="Link icon background"
-                description="Circle fill behind mail / social icons only."
-                value={navigation.linkIconBackgroundColor ?? '#ffffff'}
-              />
-              <NavColorField
-                navigation={navigation}
-                onChange={onChange}
-                slot="linkIconColor"
-                label="Link icon color"
-                description="Glyph color for mail, YouTube, X, etc."
-                value={navigation.linkIconColor ?? '#404040'}
-              />
-              <NavColorField
-                navigation={navigation}
-                onChange={onChange}
-                slot="linkIconBorder"
-                label="Link icon border"
-                description="Outline around each link icon button."
-                value={navigation.linkIconBorderColor ?? '#e5e5e5'}
-              />
-            </div>
-          ) : null}
-
-          {navigation.linkIconsEnabled ? (
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Icons to include
-              </p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Only icons with a matching profile email or social URL will appear.
-              </p>
-              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {(
-                  [
-                    { id: 'mail', label: 'Mail' },
-                    { id: 'youtube', label: 'YouTube' },
-                    { id: 'twitter', label: 'X / Twitter' },
-                    { id: 'linkedin', label: 'LinkedIn' },
-                    { id: 'github', label: 'GitHub' },
-                    { id: 'instagram', label: 'Instagram' },
-                    { id: 'tiktok', label: 'TikTok' },
-                    { id: 'other', label: 'Other' },
-                  ] as const satisfies ReadonlyArray<{ id: PortfolioNavLinkIconSource; label: string }>
-                ).map((option) => {
-                  const selected = (
-                    navigation.linkIconSources ?? DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES
-                  ).includes(option.id);
-                  return (
-                    <label
-                      key={option.id}
-                      className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition ${
-                        selected
-                          ? 'border-neutral-900 bg-white font-semibold text-neutral-950'
-                          : 'border-neutral-200 bg-white/70 text-neutral-600 hover:border-neutral-300'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={(event) => {
-                          const current =
-                            navigation.linkIconSources ?? DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES;
-                          const next = event.target.checked
-                            ? Array.from(new Set([...current, option.id]))
-                            : current.filter((item) => item !== option.id);
-                          onChange({
-                            linkIconSources:
-                              next.length > 0 ? next : [...DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES],
-                          });
-                        }}
-                        className="h-4 w-4 rounded border-neutral-300 text-neutral-900"
-                      />
-                      {option.label}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-
-          <div className="space-y-4 rounded-xl border border-neutral-200/70 bg-white/80 p-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Extra personnalisé
-              </p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Petit logo et/ou texte avec son propre emplacement (indépendant de Contact et des
-                icônes).
-              </p>
-            </div>
-
-            <ToggleRow
-              label="Activer l’extra personnalisé"
-              description="Affiche le chip personnalisé dans le cluster d’extras (côté libre ou avant/après la nav)."
-              checked={navigation.customExtraEnabled ?? false}
-              onChange={(customExtraEnabled) => onChange({ customExtraEnabled })}
+          {navigation.navLayoutDesign === 'editorial-bar' ? (
+            <NavEditorialBarSlotEditor
+              navigation={navigation}
+              options={navSocialLinkOptions}
+              onChange={onChange}
             />
-
-            {navigation.customExtraEnabled ? (
-              <>
-                <OptionGrid
-                  label="Affichage"
-                  columns={3}
-                  value={(navigation.customExtraDisplay ?? 'both') as PortfolioNavCustomExtraDisplay}
-                  onChange={(customExtraDisplay) => onChange({ customExtraDisplay })}
-                  options={PORTFOLIO_NAV_CUSTOM_EXTRA_DISPLAY_OPTIONS}
-                />
-                <OptionGrid
-                  label="Emplacement"
-                  columns={3}
-                  value={
-                    (navigation.customExtraLayoutPlacement ??
-                      navigation.extrasPlacement ??
-                      'free-side') as PortfolioNavExtrasPlacement
-                  }
-                  onChange={(customExtraLayoutPlacement) =>
-                    onChange({ customExtraLayoutPlacement })
-                  }
-                  options={PORTFOLIO_NAV_EXTRAS_PLACEMENT_OPTIONS}
-                />
-                <OptionGrid
-                  label="Côté"
-                  columns={3}
-                  value={(navigation.customExtraSide ?? 'auto') as PortfolioNavExtrasSide}
-                  onChange={(customExtraSide) => onChange({ customExtraSide })}
-                  options={
-                    (navigation.customExtraLayoutPlacement ??
-                      navigation.extrasPlacement ??
-                      'free-side') === 'free-side'
-                      ? [
-                          {
-                            value: 'left',
-                            label: 'Gauche',
-                            description: 'Côté libre gauche quand disponible.',
-                          },
-                          {
-                            value: 'auto',
-                            label: 'Auto',
-                            description: 'Détecte l’espace libre selon le menu.',
-                          },
-                          {
-                            value: 'right',
-                            label: 'Droite',
-                            description: 'Côté libre droit quand disponible.',
-                          },
-                        ]
-                      : [
-                          {
-                            value: 'left',
-                            label: 'Gauche',
-                            description: 'Avant les boutons de section.',
-                          },
-                          {
-                            value: 'auto',
-                            label: 'Auto',
-                            description: 'Suit Avant / Après choisi ci-dessus.',
-                          },
-                          {
-                            value: 'right',
-                            label: 'Droite',
-                            description: 'Après les boutons de section.',
-                          },
-                        ]
-                  }
-                />
-                <OptionGrid
-                  label="Ordre si co-localisé"
-                  columns={2}
-                  value={(navigation.customExtraPlacement ?? 'after') as PortfolioNavCustomExtraPlacement}
-                  onChange={(customExtraPlacement) => onChange({ customExtraPlacement })}
-                  options={[
-                    {
-                      value: 'before',
-                      label: 'Avant',
-                      description: 'Avant Contact / icônes quand ils partagent le même slot.',
-                    },
-                    {
-                      value: 'after',
-                      label: 'Après',
-                      description: 'Après Contact / icônes quand ils partagent le même slot.',
-                    },
-                  ]}
-                />
-                <TextField
-                  label="Texte"
-                  value={navigation.customExtraText ?? ''}
-                  onChange={(customExtraText) => onChange({ customExtraText })}
-                  placeholder="Studio"
-                />
-                <TextField
-                  label="URL du logo / icône"
-                  value={navigation.customExtraLogoUrl ?? ''}
-                  onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
-                  placeholder="https://…"
-                />
-                <PortfolioBackgroundImageUpload
-                  url={navigation.customExtraLogoUrl ?? ''}
-                  onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
-                  label="Uploader un logo"
-                  helperText="JPEG, PNG, WebP ou GIF. Vous pouvez aussi coller une URL ci-dessus."
-                />
-                {(navigation.customExtraLogoUrl ?? '').trim() ? (
-                  <div className="flex items-center gap-3 rounded-xl border border-dashed border-neutral-200 bg-neutral-50/80 px-3 py-2.5">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={(navigation.customExtraLogoUrl ?? '').trim()}
-                      alt=""
-                      className="h-10 w-10 object-contain"
-                    />
-                    <p className="text-sm text-neutral-500">Aperçu du logo</p>
-                  </div>
-                ) : null}
-                <TextField
-                  label="Lien (optionnel)"
-                  value={navigation.customExtraHref ?? ''}
-                  onChange={(customExtraHref) => onChange({ customExtraHref })}
-                  placeholder="https://… ou #contact ou mailto:"
-                />
-                <ToggleRow
-                  label="Ouvrir le lien dans un nouvel onglet"
-                  description="Uniquement pour les liens http(s)."
-                  checked={navigation.customExtraOpenNewTab ?? true}
-                  onChange={(customExtraOpenNewTab) => onChange({ customExtraOpenNewTab })}
-                />
-                <OptionGrid
-                  label="Graisse du texte"
-                  columns={4}
-                  value={
-                    (navigation.customExtraFontWeight ?? 'semibold') as PortfolioNavCustomExtraFontWeight
-                  }
-                  onChange={(customExtraFontWeight) => onChange({ customExtraFontWeight })}
-                  options={PORTFOLIO_NAV_CUSTOM_EXTRA_FONT_WEIGHT_OPTIONS}
-                />
-                <OptionGrid
-                  label="Forme"
-                  columns={2}
-                  value={(navigation.customExtraShape ?? 'soft') as PortfolioNavCustomExtraShape}
-                  onChange={(customExtraShape) => onChange({ customExtraShape })}
-                  options={PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS}
-                />
-                <div>
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Taille du texte
-                    </p>
-                    <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                      {clampPortfolioNavCustomExtraFontSizePx(navigation.customExtraFontSizePx, 12)}
-                      px
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={9}
-                    max={24}
-                    step={1}
-                    value={clampPortfolioNavCustomExtraFontSizePx(navigation.customExtraFontSizePx, 12)}
-                    onChange={(event) =>
-                      onChange({
-                        customExtraFontSizePx: clampPortfolioNavCustomExtraFontSizePx(
-                          Number(event.target.value),
-                          12
-                        ),
-                      })
-                    }
-                    className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                    aria-label="Taille du texte"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Taille du logo
-                    </p>
-                    <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                      {clampPortfolioNavCustomExtraLogoSizePx(navigation.customExtraLogoSizePx, 20)}
-                      px
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={12}
-                    max={40}
-                    step={1}
-                    value={clampPortfolioNavCustomExtraLogoSizePx(navigation.customExtraLogoSizePx, 20)}
-                    onChange={(event) =>
-                      onChange({
-                        customExtraLogoSizePx: clampPortfolioNavCustomExtraLogoSizePx(
-                          Number(event.target.value),
-                          20
-                        ),
-                      })
-                    }
-                    className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                    aria-label="Taille du logo"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Espacement logo / texte
-                    </p>
-                    <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                      {clampPortfolioNavCustomExtraGapPx(navigation.customExtraGapPx, 6)}px
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={20}
-                    step={1}
-                    value={clampPortfolioNavCustomExtraGapPx(navigation.customExtraGapPx, 6)}
-                    onChange={(event) =>
-                      onChange({
-                        customExtraGapPx: clampPortfolioNavCustomExtraGapPx(
-                          Number(event.target.value),
-                          6
-                        ),
-                      })
-                    }
-                    className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                    aria-label="Espacement logo texte"
-                  />
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Padding horizontal
-                      </p>
-                      <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                        {clampPortfolioNavCustomExtraPaddingX(navigation.customExtraPaddingX, 10)}px
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={24}
-                      step={1}
-                      value={clampPortfolioNavCustomExtraPaddingX(navigation.customExtraPaddingX, 10)}
-                      onChange={(event) =>
-                        onChange({
-                          customExtraPaddingX: clampPortfolioNavCustomExtraPaddingX(
-                            Number(event.target.value),
-                            10
-                          ),
-                        })
-                      }
-                      className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                      aria-label="Padding horizontal"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Padding vertical
-                      </p>
-                      <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                        {clampPortfolioNavCustomExtraPaddingY(navigation.customExtraPaddingY, 6)}px
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={16}
-                      step={1}
-                      value={clampPortfolioNavCustomExtraPaddingY(navigation.customExtraPaddingY, 6)}
-                      onChange={(event) =>
-                        onChange({
-                          customExtraPaddingY: clampPortfolioNavCustomExtraPaddingY(
-                            Number(event.target.value),
-                            6
-                          ),
-                        })
-                      }
-                      className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                      aria-label="Padding vertical"
-                    />
-                  </div>
-                </div>
-                <ToggleRow
-                  label="Bordure"
-                  description="Contour autour de l’extra personnalisé."
-                  checked={navigation.customExtraBorderEnabled ?? false}
-                  onChange={(customExtraBorderEnabled) => onChange({ customExtraBorderEnabled })}
-                />
-                <ToggleRow
-                  label="Couleurs manuelles"
-                  description="Désactivé : les couleurs suivent la palette et restent lisibles en mode clair comme en mode sombre."
-                  checked={navigation.customExtraColorsManual === true}
-                  onChange={(customExtraColorsManual) =>
-                    onChange(
-                      customExtraColorsManual
-                        ? { customExtraColorsManual }
-                        : {
-                            customExtraColorsManual,
-                            ...applyNavPaletteToSettings({
-                              ...navigation,
-                              customExtraColorsManual: false,
-                            }),
-                          }
-                    )
-                  }
-                />
-                <div className="grid gap-4 sm:grid-cols-3">
-                  {navigation.customExtraColorsManual === true ? (
-                    <>
-                      <GlobalColorField
-                        label="Couleur du texte"
-                        description="Manuelle — non liée à la palette nav."
-                        value={navigation.customExtraTextColor ?? '#171717'}
-                        onChange={(customExtraTextColor) => onChange({ customExtraTextColor })}
-                      />
-                      <GlobalColorField
-                        label="Fond"
-                        description="Manuelle — non liée à la palette nav."
-                        value={navigation.customExtraBackgroundColor ?? '#ffffff'}
-                        onChange={(customExtraBackgroundColor) =>
-                          onChange({ customExtraBackgroundColor })
-                        }
-                      />
-                      <GlobalColorField
-                        label="Bordure"
-                        description="Utilisée si la bordure est activée."
-                        value={navigation.customExtraBorderColor ?? '#e5e5e5'}
-                        onChange={(customExtraBorderColor) => onChange({ customExtraBorderColor })}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <NavColorField
-                        navigation={navigation}
-                        onChange={onChange}
-                        slot="customExtraText"
-                        label="Couleur du texte"
-                        description="Jeton de palette — suit le thème clair / sombre."
-                        value={navigation.customExtraTextColor ?? '#171717'}
-                      />
-                      <NavColorField
-                        navigation={navigation}
-                        onChange={onChange}
-                        slot="customExtraBackground"
-                        label="Fond"
-                        description="Jeton de palette — suit le thème clair / sombre."
-                        value={navigation.customExtraBackgroundColor ?? '#ffffff'}
-                      />
-                      <NavColorField
-                        navigation={navigation}
-                        onChange={onChange}
-                        slot="customExtraBorder"
-                        label="Bordure"
-                        description="Utilisée si la bordure est activée."
-                        value={navigation.customExtraBorderColor ?? '#e5e5e5'}
-                      />
-                    </>
-                  )}
-                </div>
-              </>
-            ) : null}
-          </div>
-        </div>
-        ) : (
-          <NavFloatingOnlyNote />
-        )
-      ) : null}
-
-      {navTab === 'labels' ? (
-        <div className="space-y-6">
-      <NavigationLabelsIconsPanel
-        itemLabels={navigation.itemLabels}
-        itemIcons={navigation.itemIcons}
-        onChange={onChange}
-      />
-
-      {(navigation.contentMode === 'text' ||
-        navigation.contentMode === 'both' ||
-        navMode === 'per-page' ||
-        navMode === 'pages') ? (
-        <OptionGrid
-          label="Label casing"
-          options={PORTFOLIO_NAV_LABEL_CASE_OPTIONS}
-          value={navigation.labelCase}
-          onChange={(labelCase) => onChange({ labelCase })}
-          columns={3}
-        />
-      ) : null}
+          ) : null}
+          {navigation.navLayoutDesign === 'floating-pill' ? (
+            <NavFloatingPillMenuEditor navigation={navigation} onChange={onChange} />
+          ) : null}
+          {navigation.navLayoutDesign === 'nav-logo-social' ? (
+            <NavTriZoneSideSlotEditor
+              navigation={navigation}
+              options={navSocialLinkOptions}
+              onChange={onChange}
+            />
+          ) : null}
+          {navigation.navLayoutDesign === 'center-logo-split' ? (
+            <NavSplitLogoSectionEditor navigation={navigation} onChange={onChange} />
+          ) : null}
+          {navigation.navLayoutDesign === 'logo-left-nav-contact' ? (
+            <NavLogoLeftContactPlacementEditor navigation={navigation} onChange={onChange} />
+          ) : null}
+          {navigation.navLayoutDesign === 'case-overlay' ? (
+            <NavCaseOverlayLogoEditor navigation={navigation} onChange={onChange} />
+          ) : null}
+          {navigation.navLayoutDesign === 'duten-panel' ? (
+            <NavDutenPanelEditor
+              navigation={navigation}
+              options={navSocialLinkOptions}
+              onChange={onChange}
+            />
+          ) : null}
+          {navigation.navLayoutDesign === 'half-panel-left' ? (
+            <NavHalfPanelEditor
+              navigation={navigation}
+              options={navSocialLinkOptions}
+              onChange={onChange}
+            />
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -5510,6 +6217,7 @@ function SectionPanel({
   onDeleteCustomTheme,
   availableTools,
   availableWorks,
+  navSocialLinkOptions = [],
   panelSubSections,
   onPanelSubSectionChange,
 }: {
@@ -5536,6 +6244,7 @@ function SectionPanel({
   onDeleteCustomTheme: (themeId: string) => void;
   availableTools: string[];
   availableWorks: { id: string; title: string; imageUrl: string }[];
+  navSocialLinkOptions?: PortfolioNavChromeLink[];
   panelSubSections: PanelSubSections;
   onPanelSubSectionChange: <K extends keyof PanelSubSections>(
     sectionId: K,
@@ -5569,7 +6278,13 @@ function SectionPanel({
   }
 
   if (sectionId === 'navigation') {
-    return <NavigationPanel navigation={settings.navigation} onChange={onNavigationChange} />;
+    return (
+      <NavigationPanel
+        navigation={settings.navigation}
+        onChange={onNavigationChange}
+        navSocialLinkOptions={navSocialLinkOptions}
+      />
+    );
   }
 
   if (sectionId === 'footer') {
@@ -5579,6 +6294,17 @@ function SectionPanel({
         onChange={(patch) => onChange('footer', patch)}
         subSection={panelSubSections.footer ?? 'general'}
         onSubSectionChange={(value) => onPanelSubSectionChange('footer', value)}
+      />
+    );
+  }
+
+  if (sectionId === 'stack') {
+    return (
+      <StackSettingsPanel
+        stack={settings.stack}
+        onChange={(patch) => onChange('stack', patch)}
+        subSection={panelSubSections.stack ?? 'general'}
+        onSubSectionChange={(value) => onPanelSubSectionChange('stack', value)}
       />
     );
   }
@@ -5606,30 +6332,6 @@ function SectionPanel({
     );
   }
 
-  if (sectionId === 'infos') {
-    return (
-      <AboutSettingsPanel
-        about={settings.about}
-        onChange={(patch) => onChange('about', patch)}
-        settingsFocus="infos"
-        subSection={panelSubSections.infos ?? 'sidePanel'}
-        onSubSectionChange={(value) => onPanelSubSectionChange('infos', value)}
-      />
-    );
-  }
-
-  if (sectionId === 'whyChooseMe') {
-    return (
-      <AboutSettingsPanel
-        about={settings.about}
-        onChange={(patch) => onChange('about', patch)}
-        settingsFocus="whyChooseMe"
-        subSection={panelSubSections.whyChooseMe ?? 'whyMe'}
-        onSubSectionChange={(value) => onPanelSubSectionChange('whyChooseMe', value)}
-      />
-    );
-  }
-
   const copy = settings[sectionId];
 
   if (sectionId === 'hero') {
@@ -5642,6 +6344,12 @@ function SectionPanel({
         subSection={panelSubSections.hero ?? 'general'}
         onSubSectionChange={(value) => onPanelSubSectionChange('hero', value)}
       />
+    );
+  }
+
+  if (sectionId === 'info') {
+    return (
+      <InfoSettingsPanel info={settings.info} onChange={(patch) => onChange('info', patch)} />
     );
   }
 
@@ -5751,7 +6459,7 @@ function SectionPanel({
       ) : null}
 
       <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-        Content for this section is edited in Creator Studio → Information. These settings control visibility and
+        Content for this section is edited in Creator Studio â†’ Information. These settings control visibility and
         presentation on the portfolio page.
       </p>
     </div>
@@ -5789,6 +6497,7 @@ type PortfolioSettingsModalProps = {
   canRedo?: boolean;
   availableTools: string[];
   availableWorks?: { id: string; title: string; imageUrl: string }[];
+  navSocialLinkOptions?: PortfolioNavChromeLink[];
 };
 
 export function PortfolioSettingsModal({
@@ -5815,6 +6524,7 @@ export function PortfolioSettingsModal({
   canRedo = false,
   availableTools,
   availableWorks = [],
+  navSocialLinkOptions = [],
 }: PortfolioSettingsModalProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -5911,16 +6621,6 @@ export function PortfolioSettingsModal({
         ...prev,
         services: normalizeServicesSubSection(entry.subSection, 'services'),
       }));
-    } else if (entry.sectionId === 'infos') {
-      setPanelSubSections((prev) => ({
-        ...prev,
-        infos: normalizeAboutSubSection(entry.subSection, 'infos'),
-      }));
-    } else if (entry.sectionId === 'whyChooseMe') {
-      setPanelSubSections((prev) => ({
-        ...prev,
-        whyChooseMe: normalizeAboutSubSection(entry.subSection, 'whyChooseMe'),
-      }));
     } else if (entry.sectionId === 'aboutUs') {
       setPanelSubSections((prev) => ({
         ...prev,
@@ -5933,6 +6633,11 @@ export function PortfolioSettingsModal({
       }));
     } else if (entry.sectionId === 'faq') {
       setPanelSubSections((prev) => ({ ...prev, faq: normalizeFaqSubSection(entry.subSection) }));
+    } else if (entry.sectionId === 'stack') {
+      setPanelSubSections((prev) => ({
+        ...prev,
+        stack: normalizeStackSubSection(entry.subSection),
+      }));
     } else if (entry.sectionId === 'tools') {
       setPanelSubSections((prev) => ({
         ...prev,
@@ -6069,11 +6774,11 @@ export function PortfolioSettingsModal({
                 aria-live="polite"
               >
                 {persistStatus === 'saving'
-                  ? 'Saving to your account…'
+                  ? 'Saving to your accountâ€¦'
                   : persistStatus === 'saved'
                     ? 'Saved to your account'
                     : persistStatus === 'error'
-                      ? 'Not saved — kept on this device, retrying…'
+                      ? 'Not saved â€” kept on this device, retryingâ€¦'
                       : 'Synced with your account'}
               </p>
             </div>
@@ -6159,7 +6864,7 @@ export function PortfolioSettingsModal({
                 >
                   <span>Upgrade</span>
                   <span aria-hidden className="text-xs font-bold opacity-70">
-                    ↗
+                    â†—
                   </span>
                 </button>
               </li>
@@ -6194,6 +6899,7 @@ export function PortfolioSettingsModal({
                 onDeleteCustomTheme={onDeleteCustomTheme}
                 availableTools={availableTools}
                 availableWorks={availableWorks}
+                navSocialLinkOptions={navSocialLinkOptions}
                 panelSubSections={panelSubSections}
                 onPanelSubSectionChange={setPanelSubSection}
               />

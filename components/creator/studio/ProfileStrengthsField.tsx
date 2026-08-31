@@ -4,7 +4,6 @@ import { useMemo, useRef, useState } from 'react';
 import type { Control, UseFormSetValue } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
-import { SkillTagsEditor } from '@/components/creator/studio/SkillTagsEditor';
 import { resolveCreatorToolSimpleIcon } from '@/components/creator/studio/creator-tool-simple-icons';
 import type {
   ProfileFormValues,
@@ -39,6 +38,8 @@ type ProfileStrengthsFieldProps = {
   readOnly?: boolean;
   values?: StrengthFormItem[];
   allowedSpecialties?: string[];
+  /** `stack` — rich stack list; `tools` — proficiency list only; `all` — both (default). */
+  mode?: 'all' | 'stack' | 'tools';
 };
 
 function emptyStrengthItem(value: string, category = ''): StrengthFormItem {
@@ -75,9 +76,10 @@ export function ProfileStrengthsField({
   readOnly = false,
   values = [],
   allowedSpecialties: _allowedSpecialties = [],
+  mode = 'all',
 }: ProfileStrengthsFieldProps) {
   const watchedStrengths = useWatch({ control, name: 'strengthsTools' });
-  const watchedSkillTags = useWatch({ control, name: 'specialtyTags' }) ?? [];
+  const watchedStackItems = useWatch({ control, name: 'stackItems' });
   const [customDraft, setCustomDraft] = useState('');
   const [customIconUrl, setCustomIconUrl] = useState<string | null>(null);
   const [uploadingIcon, setUploadingIcon] = useState(false);
@@ -85,24 +87,13 @@ export function ProfileStrengthsField({
   const iconInputRef = useRef<HTMLInputElement>(null);
   const [useCaseDraftByLabel, setUseCaseDraftByLabel] = useState<Record<string, string>>({});
 
-  const skillTagsBlock = (
-    <section className="space-y-2">
-      <p className={profileSectionSubheadingClass}>Stack</p>
-      <p className={profileSectionMutedTextClass}>
-        Keyword tags shown under Stack in Profile info on your public profile.
-      </p>
-      <SkillTagsEditor
-        tags={Array.isArray(watchedSkillTags) ? watchedSkillTags : []}
-        onChange={(next) => setValue('specialtyTags', next, { shouldDirty: true })}
-        editable={!readOnly}
-      />
-    </section>
-  );
+  const isStackMode = mode === 'stack';
+  const fieldName = isStackMode ? 'stackItems' : 'strengthsTools';
 
   const formItems = useMemo((): StrengthFormItem[] => {
     if (readOnly) return values;
-    return watchedStrengths ?? [];
-  }, [readOnly, values, watchedStrengths]);
+    return (isStackMode ? watchedStackItems : watchedStrengths) ?? [];
+  }, [readOnly, values, watchedStackItems, watchedStrengths, isStackMode]);
 
   const selectedValues = useMemo(
     () => normalizeSelected(formItems.map((item) => item.value)),
@@ -128,10 +119,12 @@ export function ProfileStrengthsField({
     seedIconByValue?: Map<string, string | null>
   ) => {
     const previous = new Map(
-      (watchedStrengths ?? []).map((item) => [item.value.toLowerCase(), item] as const)
+      ((isStackMode ? watchedStackItems : watchedStrengths) ?? []).map(
+        (item) => [item.value.toLowerCase(), item] as const
+      )
     );
     setValue(
-      'strengthsTools',
+      fieldName,
       normalizeSelected(nextValues).map((value) => {
         const existing = previous.get(value.toLowerCase());
         if (existing) return existing;
@@ -145,10 +138,9 @@ export function ProfileStrengthsField({
   };
 
   const updateItem = (label: string, patch: Partial<StrengthFormItem>) => {
-    const next = (watchedStrengths ?? []).map((item) =>
-      item.value === label ? { ...item, ...patch } : item
-    );
-    setValue('strengthsTools', next, { shouldDirty: true, shouldValidate: true });
+    const source = (isStackMode ? watchedStackItems : watchedStrengths) ?? [];
+    const next = source.map((item) => (item.value === label ? { ...item, ...patch } : item));
+    setValue(fieldName, next, { shouldDirty: true, shouldValidate: true });
   };
 
   const addCustomTool = () => {
@@ -207,10 +199,10 @@ export function ProfileStrengthsField({
     });
   };
 
-  if (readOnly) {
-    const toolsBlock =
+  const renderReadOnlyList = (heading: string) => {
+    const listBlock =
       selectedValues.length === 0 ? (
-        <p className={profileSectionEmptyClass}>Aucun outil ajouté pour le moment.</p>
+        <p className={profileSectionEmptyClass}>Aucun élément ajouté pour le moment.</p>
       ) : (
         <div className="space-y-3">
           {selectedValues.map((item) => {
@@ -228,6 +220,11 @@ export function ProfileStrengthsField({
                     {item}
                   </p>
                 </div>
+                {data?.category?.trim() ? (
+                  <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-neutral-500">
+                    {data.category.trim()}
+                  </p>
+                ) : null}
                 {body ? (
                   <p className={`mt-2 text-sm ${profileSectionMutedTextClass}`}>{body}</p>
                 ) : null}
@@ -238,28 +235,24 @@ export function ProfileStrengthsField({
       );
 
     return (
-      <div className="space-y-6">
-        {skillTagsBlock}
-        <section className="space-y-3">
-          <p className={profileSectionSubheadingClass}>Tools</p>
-          {toolsBlock}
-        </section>
-      </div>
+      <section className="space-y-3">
+        <p className={profileSectionSubheadingClass}>{heading}</p>
+        {listBlock}
+      </section>
     );
-  }
+  };
 
-  return (
-    <div className="space-y-6">
-      {skillTagsBlock}
-      <section className="space-y-5">
-        <p className={profileSectionSubheadingClass}>Tools</p>
+  const renderEditor = (heading: string, addLabel: string, showUseCases: boolean) => (
+    <section className="space-y-5">
+      <p className={profileSectionSubheadingClass}>{heading}</p>
       {selectedValues.length > 0 && (
         <div className="space-y-3">
           <div>
             <p className={`mb-1 ${profileSectionSubheadingClass}`}>Sélection</p>
             <p className={profileSectionMutedTextClass}>
-              Affinez chaque outil : niveau, cas d&apos;usage et description. Sans logo uploadé,
-              la première lettre s&apos;affiche.
+              {showUseCases
+                ? "Affinez chaque outil : niveau, cas d'usage et description. Sans logo uploadé, la première lettre s'affiche."
+                : 'Affinez chaque élément : niveau et description. Sans logo uploadé, la première lettre s’affiche.'}
             </p>
           </div>
           {selectedValues.map((label) => {
@@ -292,6 +285,23 @@ export function ProfileStrengthsField({
                 </div>
 
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {isStackMode ? (
+                    <label className="block sm:col-span-2">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+                        Catégorie
+                      </span>
+                      <input
+                        type="text"
+                        maxLength={80}
+                        value={item.category ?? ''}
+                        onChange={(event) =>
+                          updateItem(label, { category: event.target.value.slice(0, 80) })
+                        }
+                        placeholder="ex. Frontend, Backend, DevOps"
+                        className={`mt-1.5 ${profileFormInputClass}`}
+                      />
+                    </label>
+                  ) : null}
                   <label className="block sm:col-span-2">
                     <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
                       Niveau
@@ -334,63 +344,65 @@ export function ProfileStrengthsField({
                     : `Auto : ${autoPreview}`}
                 </p>
 
-                <div className="mt-3">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                    Cas d&apos;usage
-                  </span>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {useCases.map((useCase) => (
-                      <span
-                        key={useCase}
-                        className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-xs font-medium text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                      >
-                        {useCase}
-                        <button
-                          type="button"
-                          onClick={() => removeUseCase(label, useCase)}
-                          className="text-neutral-400 hover:text-red-500"
-                          aria-label={`Retirer ${useCase}`}
+                {showUseCases ? (
+                  <div className="mt-3">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+                      Cas d&apos;usage
+                    </span>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {useCases.map((useCase) => (
+                        <span
+                          key={useCase}
+                          className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-xs font-medium text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
                         >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                    <input
-                      type="text"
-                      value={useCaseDraft}
-                      maxLength={60}
-                      disabled={useCases.length >= MAX_USE_CASES}
-                      onChange={(event) =>
-                        setUseCaseDraftByLabel((prev) => ({
-                          ...prev,
-                          [label]: event.target.value,
-                        }))
-                      }
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          addUseCase(label);
+                          {useCase}
+                          <button
+                            type="button"
+                            onClick={() => removeUseCase(label, useCase)}
+                            className="text-neutral-400 hover:text-red-500"
+                            aria-label={`Retirer ${useCase}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                      <input
+                        type="text"
+                        value={useCaseDraft}
+                        maxLength={60}
+                        disabled={useCases.length >= MAX_USE_CASES}
+                        onChange={(event) =>
+                          setUseCaseDraftByLabel((prev) => ({
+                            ...prev,
+                            [label]: event.target.value,
+                          }))
                         }
-                      }}
-                      placeholder={
-                        useCases.length >= MAX_USE_CASES
-                          ? 'Maximum 8 cas d’usage'
-                          : 'Ajouter un cas d’usage'
-                      }
-                      className={profileFormInputClass}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => addUseCase(label)}
-                      disabled={!useCaseDraft.trim() || useCases.length >= MAX_USE_CASES}
-                      className="rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900"
-                    >
-                      Ajouter
-                    </button>
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            addUseCase(label);
+                          }
+                        }}
+                        placeholder={
+                          useCases.length >= MAX_USE_CASES
+                            ? 'Maximum 8 cas d’usage'
+                            : 'Ajouter un cas d’usage'
+                        }
+                        className={profileFormInputClass}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addUseCase(label)}
+                        disabled={!useCaseDraft.trim() || useCases.length >= MAX_USE_CASES}
+                        className="rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900"
+                      >
+                        Ajouter
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : null}
               </div>
             );
           })}
@@ -398,9 +410,7 @@ export function ProfileStrengthsField({
       )}
 
       <div className="rounded-2xl border border-dashed border-neutral-200 p-4 dark:border-neutral-700">
-        <p className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">
-          Ajouter un outil
-        </p>
+        <p className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">{addLabel}</p>
         <p className={`mt-1 ${profileSectionMutedTextClass}`}>
           Nom + logo optionnel ({selectedValues.length}/{MAX_STRENGTHS}). Logo auto si le nom est
           reconnu ; sinon première lettre. Upload = priorité.
@@ -440,7 +450,7 @@ export function ProfileStrengthsField({
                 addCustomTool();
               }
             }}
-            placeholder="Nom de l’outil"
+            placeholder={isStackMode ? 'Nom de l’élément' : 'Nom de l’outil'}
             className={profileFormInputClass}
           />
           <button
@@ -468,7 +478,40 @@ export function ProfileStrengthsField({
         ) : null}
         {uploadError ? <p className="mt-2 text-xs text-red-600 dark:text-red-400">{uploadError}</p> : null}
       </div>
-      </section>
+    </section>
+  );
+
+  if (readOnly) {
+    if (mode === 'stack') {
+      return <div className="space-y-6">{renderReadOnlyList('Stack')}</div>;
+    }
+    if (mode === 'tools') {
+      return <div className="space-y-6">{renderReadOnlyList('Tools')}</div>;
+    }
+
+    return (
+      <div className="space-y-6">
+        {renderReadOnlyList('Stack')}
+        {renderReadOnlyList('Tools')}
+      </div>
+    );
+  }
+
+  if (mode === 'stack') {
+    return (
+      <div className="space-y-6">{renderEditor('Stack', 'Ajouter un élément de stack', false)}</div>
+    );
+  }
+  if (mode === 'tools') {
+    return (
+      <div className="space-y-6">{renderEditor('Tools', 'Ajouter un outil', true)}</div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {renderEditor('Stack', 'Ajouter un élément de stack', false)}
+      {renderEditor('Tools', 'Ajouter un outil', true)}
     </div>
   );
 }

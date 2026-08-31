@@ -9,8 +9,9 @@
     "lan:reset": "powershell -ExecutionPolicy Bypass -File ./scripts/lan-reset.ps1",
     "dev:webpack": "next dev --webpack",
     "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev",
-    "build": "next build",
-    "build:webpack": "next build --webpack",
+    "build": "npm run generate:tool-icons && next build",
+    "build:webpack": "npm run generate:tool-icons && next build --webpack",
+    "generate:tool-icons": "node scripts/generate-tool-tech-icons-manifest.mjs",
     "build:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next build",
     "start": "next start",
     "lint": "eslint ."

@@ -34,8 +34,8 @@ const EMPLOYMENT_OPTIONS: { value: NonNullable<ProfileFormValues['experienceBloc
 
 type ProfileMediaBlocksFieldProps = {
   control: Control<ProfileFormValues>;
-  name: 'whyMeBlocks' | 'experienceBlocks';
-  fields: FieldArrayWithId<ProfileFormValues, 'whyMeBlocks' | 'experienceBlocks', 'id'>[];
+  name: 'experienceBlocks';
+  fields: FieldArrayWithId<ProfileFormValues, 'experienceBlocks', 'id'>[];
   append: (value: ReturnType<typeof createEmptyProfileBlock>) => void;
   remove: (index: number) => void;
   move: (from: number, to: number) => void;
@@ -43,7 +43,7 @@ type ProfileMediaBlocksFieldProps = {
   watch: UseFormWatch<ProfileFormValues>;
   setValue: UseFormSetValue<ProfileFormValues>;
   readOnly?: boolean;
-  /** Why choose me is text-only — no image/video upload or preview. */
+  /** Experience blocks are text-only in portfolio chrome — no image/video upload. */
   allowMedia?: boolean;
 };
 
@@ -71,7 +71,7 @@ function ProfileMediaBlockRow({
   canMoveDown,
 }: {
   index: number;
-  name: 'whyMeBlocks' | 'experienceBlocks';
+  name: 'experienceBlocks';
   control: Control<ProfileFormValues>;
   register: UseFormRegister<ProfileFormValues>;
   watch: UseFormWatch<ProfileFormValues>;
@@ -84,15 +84,11 @@ function ProfileMediaBlockRow({
   canMoveUp: boolean;
   canMoveDown: boolean;
 }) {
-  const isExperience = name === 'experienceBlocks';
   const mediaUrl = allowMedia ? watch(`${name}.${index}.mediaUrl`) ?? '' : '';
   const mediaType = allowMedia ? watch(`${name}.${index}.mediaType`) : null;
   const status = watch(`${name}.${index}.status`);
   const { errors } = useFormState({ control });
-  const blockLinkErrors =
-    name === 'experienceBlocks'
-      ? errors.experienceBlocks?.[index]?.links
-      : errors.whyMeBlocks?.[index]?.links;
+  const blockLinkErrors = errors.experienceBlocks?.[index]?.links;
   const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
     control,
     name: `${name}.${index}.subtitles`,
@@ -156,8 +152,7 @@ function ProfileMediaBlockRow({
         )}
       </div>
 
-      {isExperience ? (
-        <div className="space-y-3">
+      <div className="space-y-3">
           <div>
             <BlockFieldLabel>Status</BlockFieldLabel>
             <div className="flex flex-wrap gap-2">
@@ -454,15 +449,6 @@ function ProfileMediaBlockRow({
             )}
           </div>
         </div>
-      ) : (
-        <textarea
-          rows={4}
-          readOnly={readOnly}
-          placeholder="Describe what makes you stand out…"
-          className={`${profileFormInputClass} mt-0 ${readOnlyClass}`}
-          {...register(`${name}.${index}.text`)}
-        />
-      )}
 
       {allowMedia && mediaUrl ? (
         <div className="mt-3 space-y-2">

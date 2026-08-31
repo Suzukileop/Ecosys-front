@@ -348,6 +348,13 @@ export interface ProfileServiceItem {
 
 export type ProfileStrengthToolLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
+export type LanguageProficiencyLevel = ProfileStrengthToolLevel;
+
+export interface ProfileSpokenLanguage {
+  name: string;
+  level?: LanguageProficiencyLevel | null;
+}
+
 /** Skill / tool listed under Creator Studio → Skills & tools. */
 export interface ProfileStrengthTool {
   name: string;
@@ -444,6 +451,15 @@ export interface ProfileAboutUs {
   founder?: ProfileAboutUsFounder | null;
 }
 
+/** Education entry on Creator Studio → About page. */
+export interface ProfileEducationEntry {
+  id: string;
+  sortOrder: number;
+  schoolYear: string;
+  title: string;
+  institution: string;
+}
+
 export type ProfileLinkType = 'WEBSITE' | 'CTA' | 'CUSTOM' | 'SOCIAL';
 
 export interface ProfileLink {
@@ -453,6 +469,7 @@ export interface ProfileLink {
   url: string;
   sortOrder: number;
   platform?: string | null;
+  iconUrl?: string | null;
 }
 
 export interface CreatorProfileDto {
@@ -500,9 +517,10 @@ export interface CreatorProfileDto {
   shopSellingFocus?: string | null;
   shopDescription?: string | null;
   shopCoverUrl?: string | null;
-  whyMeBlocks?: ProfileMediaBlock[];
   experienceBlocks?: ProfileMediaBlock[];
   yearsOfExperience?: number | null;
+  /** Rich stack items (Skills & tools → Stack). */
+  profileStack?: ProfileStrengthTool[];
   strengthsToolsMastered?: ProfileStrengthTool[];
   reputation?: CreatorReputationDto | null;
   profileVisits?: number;
@@ -511,7 +529,12 @@ export interface CreatorProfileDto {
   nationality?: string | null;
   /** App UX role: GENERAL_MEMBER | SERVICE_PROVIDER | FREELANCER_STUDENT | SELLER | RH_RECRUITER */
   appRole?: string | null;
-  spokenLanguages?: string[];
+  spokenLanguages?: ProfileSpokenLanguage[];
+  aboutSkills?: string[];
+  aboutStrengths?: string[];
+  aboutSystemsTools?: string[];
+  aboutInterests?: string[];
+  aboutEducation?: ProfileEducationEntry[];
   profileServices?: ProfileServiceItem[];
   faqItems?: FaqItem[];
   teamMembers?: ProfileTeamMember[];
@@ -541,7 +564,12 @@ export interface CreatorProfileUpdateBody {
   nationality?: string;
   /** App UX role: GENERAL_MEMBER | SERVICE_PROVIDER | FREELANCER_STUDENT | SELLER | RH_RECRUITER */
   appRole?: string;
-  spokenLanguages?: string[];
+  spokenLanguages?: ProfileSpokenLanguage[];
+  aboutSkills?: string[];
+  aboutStrengths?: string[];
+  aboutSystemsTools?: string[];
+  aboutInterests?: string[];
+  aboutEducation?: ProfileEducationEntry[];
   profileServices?: ProfileServiceItem[];
   faqItems?: FaqItem[];
   teamMembers?: ProfileTeamMember[];
@@ -573,9 +601,9 @@ export interface CreatorProfileUpdateBody {
   shopSellingFocus?: string | null;
   shopDescription?: string | null;
   shopCoverUrl?: string | null;
-  whyMeBlocks?: ProfileMediaBlock[];
   experienceBlocks?: ProfileMediaBlock[];
   yearsOfExperience?: number | null;
+  profileStack?: ProfileStrengthTool[];
   strengthsToolsMastered?: ProfileStrengthTool[];
 }
 

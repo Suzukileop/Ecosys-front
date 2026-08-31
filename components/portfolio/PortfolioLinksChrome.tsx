@@ -9,6 +9,8 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { deriveProfileLinkLabel, getHttpUrlFieldError, toAbsoluteHttpUrl } from '@/components/creator/studio/profile-form-schema';
+import { uploadContentMedia } from '@/lib/marketplace-api';
+import { getApiErrorMessage } from '@/lib/api-error';
 import {
   SocialPlatformIcon,
   socialPlatformBrandClass,
@@ -18,6 +20,10 @@ import {
   portfolioInlineInputClass,
   portfolioInlineInputErrorClass,
 } from '@/components/portfolio/portfolio-section-shared';
+import {
+  resolveLinkBrandIconMetrics,
+  type LinkBrandIconVisualSize,
+} from '@/components/portfolio/portfolio-nav-tri-zone-social';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export type PortfolioLinkItem = {
@@ -26,10 +32,12 @@ export type PortfolioLinkItem = {
   url: string;
   type: string;
   platform?: string | null;
+  iconUrl?: string | null;
 };
 
 export type PortfolioLinkDraft = {
   url: string;
+  iconUrl?: string | null;
 };
 
 /** Visible on touch devices; hover/focus only on fine-pointer desktops. */
@@ -40,7 +48,7 @@ const itemActionVisibilityClass =
   '[@media(hover:hover)_and_(pointer:fine)]:group-focus-within:opacity-100';
 
 function toDraft(link: PortfolioLinkItem): PortfolioLinkDraft {
-  return { url: link.url };
+  return { url: link.url, iconUrl: link.iconUrl ?? null };
 }
 
 function normalizeDraft(draft: PortfolioLinkDraft): PortfolioLinkDraft {
@@ -49,7 +57,10 @@ function normalizeDraft(draft: PortfolioLinkDraft): PortfolioLinkDraft {
 }
 
 function draftsEqual(left: PortfolioLinkDraft, right: PortfolioLinkDraft): boolean {
-  return normalizeDraft(left).url === normalizeDraft(right).url;
+  return (
+    normalizeDraft(left).url === normalizeDraft(right).url &&
+    (left.iconUrl?.trim() || null) === (right.iconUrl?.trim() || null)
+  );
 }
 
 function isLinkEmpty(draft: PortfolioLinkDraft): boolean {
@@ -136,16 +147,48 @@ function FacebookLogo({ className }: { className?: string }) {
 function LinkBrandIcon({
   url,
   platform,
+  iconUrl,
+  size = 'card',
+  monochrome = false,
 }: {
   url: string;
   platform?: string | null;
+  iconUrl?: string | null;
+  size?: LinkBrandIconVisualSize;
+  monochrome?: boolean;
 }) {
+  const metrics = resolveLinkBrandIconMetrics(size);
+  const shell = metrics.shell;
+  const monoClass = monochrome ? 'grayscale text-neutral-800 dark:text-neutral-100' : '';
+  const customIcon = iconUrl?.trim();
+  if (customIcon) {
+    return (
+      <span
+        className={`inline-flex ${shell} shrink-0 overflow-hidden rounded-full ${monoClass}`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={customIcon}
+          alt=""
+          className={`h-full w-full object-cover ${monochrome ? 'grayscale' : ''}`}
+        />
+      </span>
+    );
+  }
+
   const brand = inferLinkBrand(url, platform);
-  const glyph = 'h-7 w-7';
+  const glyph = metrics.glyph;
+  const facebookGlyph = metrics.facebook;
 
   if (brand === 'WEBSITE') {
     return (
-      <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+      <span
+        className={`inline-flex ${shell} shrink-0 items-center justify-center rounded-full ${
+          monochrome
+            ? 'bg-neutral-200/80 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-100'
+            : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
+        }`}
+      >
         <BrowserLogo className={glyph} />
       </span>
     );
@@ -153,20 +196,28 @@ function LinkBrandIcon({
 
   if (brand === 'FACEBOOK') {
     return (
-      <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[#1877F2]">
-        <FacebookLogo className="h-11 w-11" />
+      <span
+        className={`inline-flex ${shell} shrink-0 items-center justify-center rounded-full ${
+          monochrome ? monoClass : 'text-[#1877F2]'
+        }`}
+      >
+        <FacebookLogo className={facebookGlyph} />
       </span>
     );
   }
 
   return (
     <span
-      className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${socialPlatformBrandClass(brand)}`}
+      className={`inline-flex ${shell} shrink-0 items-center justify-center rounded-full ${
+        monochrome ? `bg-neutral-100 ${monoClass} dark:bg-neutral-800` : socialPlatformBrandClass(brand)
+      }`}
     >
       <SocialPlatformIcon platform={brand} className={glyph} />
     </span>
   );
 }
+
+export { LinkBrandIcon };
 
 function IconButton({
   label,
@@ -208,7 +259,15 @@ function IconButton({
   );
 }
 
-function LinkPreview({ url, platform }: { url: string; platform?: string | null }) {
+function LinkPreview({
+  url,
+  platform,
+  iconUrl,
+}: {
+  url: string;
+  platform?: string | null;
+  iconUrl?: string | null;
+}) {
   const trimmed = url.trim();
   const hostname = displayHostname(trimmed);
 
@@ -220,7 +279,7 @@ function LinkPreview({ url, platform }: { url: string; platform?: string | null 
 
   return (
     <div className="flex min-w-0 items-center gap-3.5">
-      <LinkBrandIcon url={trimmed} platform={platform} />
+      <LinkBrandIcon url={trimmed} platform={platform} iconUrl={iconUrl} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-[15px] font-semibold text-neutral-900 dark:text-white sm:text-base">
           {hostname}
@@ -271,6 +330,9 @@ export function PortfolioLinksReadOnly({
   const [drafts, setDrafts] = useState<PortfolioLinkDraft[]>(() => links.map(toDraft));
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [uploadingIcon, setUploadingIcon] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const iconInputRef = useRef<HTMLInputElement>(null);
   const prevItemsLengthRef = useRef(links.length);
   const editingCardRef = useRef<HTMLDivElement | null>(null);
   const cancelEditRef = useRef<() => Promise<void>>(async () => undefined);
@@ -336,6 +398,7 @@ export function PortfolioLinksReadOnly({
     if (!canEdit || fieldSaving) return;
     setPendingDeleteIndex(null);
     setUrlError(null);
+    setUploadError(null);
     syncDraftsFromItems();
     setEditingIndex(index);
   };
@@ -367,9 +430,30 @@ export function PortfolioLinksReadOnly({
 
   const updateDraft = (index: number, patch: Partial<PortfolioLinkDraft>) => {
     if (patch.url !== undefined) setUrlError(null);
+    if (patch.iconUrl !== undefined) setUploadError(null);
     setDrafts((prev) =>
       prev.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item))
     );
+  };
+
+  const onIconFileChange = async (
+    index: number,
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setUploadingIcon(true);
+    setUploadError(null);
+    try {
+      const uploaded = await uploadContentMedia(file);
+      const draft = drafts[index];
+      if (draft) updateDraft(index, { ...draft, iconUrl: uploaded });
+    } catch (e) {
+      setUploadError(getApiErrorMessage(e, 'Unable to upload logo.'));
+    } finally {
+      setUploadingIcon(false);
+    }
   };
 
   const fieldHasChanges =
@@ -564,16 +648,68 @@ export function PortfolioLinksReadOnly({
                     />
                     {urlError ? <p className={portfolioFieldErrorTextClass}>{urlError}</p> : null}
                     {draft.url.trim() ? (
-                      <div className="flex items-center gap-3 pt-1">
-                        <LinkBrandIcon url={draft.url} platform={item.platform} />
-                        <p className="text-xs text-neutral-400">
-                          Shown as {displayHostname(draft.url)}
-                        </p>
+                      <div className="space-y-2 pt-1">
+                        <div className="flex items-center gap-3">
+                          <input
+                            ref={editingIndex === index ? iconInputRef : undefined}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                            className="sr-only"
+                            onChange={(event) => void onIconFileChange(index, event)}
+                          />
+                          <button
+                            type="button"
+                            disabled={fieldSaving || uploadingIcon}
+                            onClick={() => iconInputRef.current?.click()}
+                            title="Upload custom icon"
+                            aria-label="Upload custom icon"
+                            className="relative inline-flex shrink-0 items-center justify-center transition hover:opacity-90 disabled:opacity-50"
+                          >
+                            {uploadingIcon && editingIndex === index ? (
+                              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
+                                <LoadingSpinner size="sm" />
+                              </span>
+                            ) : (
+                              <LinkBrandIcon
+                                url={draft.url}
+                                platform={item.platform}
+                                iconUrl={draft.iconUrl}
+                              />
+                            )}
+                          </button>
+                          <div className="min-w-0">
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                              Shown as {displayHostname(draft.url)}
+                            </p>
+                            <p className="text-[11px] text-neutral-400">
+                              {draft.iconUrl
+                                ? 'Custom icon · click to replace'
+                                : 'Auto-detected · click icon to upload yours'}
+                            </p>
+                          </div>
+                        </div>
+                        {draft.iconUrl ? (
+                          <button
+                            type="button"
+                            disabled={fieldSaving || uploadingIcon}
+                            onClick={() => updateDraft(index, { ...draft, iconUrl: null })}
+                            className="text-xs font-medium text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline dark:text-neutral-400 dark:hover:text-neutral-200"
+                          >
+                            Use auto-detected icon
+                          </button>
+                        ) : null}
+                        {uploadError && editingIndex === index ? (
+                          <p className={portfolioFieldErrorTextClass}>{uploadError}</p>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
                 ) : (
-                  <LinkPreview url={item.url} platform={item.platform} />
+                  <LinkPreview
+                    url={item.url}
+                    platform={item.platform}
+                    iconUrl={item.iconUrl}
+                  />
                 )}
               </div>
             </div>

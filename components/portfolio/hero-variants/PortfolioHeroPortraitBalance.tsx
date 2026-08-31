@@ -179,7 +179,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
 
       {/* —— Desktop — global content width + gutter only —— */}
       <div
-        className={`relative z-[1] hidden md:grid ${shellX}`}
+        className={`relative z-[1] hidden md:grid lg:min-h-[100dvh] ${shellX}`}
         style={{
           paddingTop: 'calc(8.75rem + env(safe-area-inset-top, 0px))',
           paddingBottom: 'clamp(2.5rem, 5vh, 4rem)',

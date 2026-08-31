@@ -1,6 +1,7 @@
 'use client';
 
 import type { ComponentType, SVGProps } from 'react';
+import { buildCreatorToolIconLookupKeys, normalizeCreatorToolIconKey } from '@/components/creator/studio/creator-tool-icon-keys';
 import {
   SiAndroid,
   SiAndroidstudio,
@@ -219,15 +220,6 @@ type IconEntry = {
   keys: string[];
 };
 
-function normalizeToolKey(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '');
-}
-
 function entry(
   name: string,
   Icon: SimpleIconComponent,
@@ -235,7 +227,7 @@ function entry(
   ...aliases: string[]
 ): IconEntry {
   const keys = Array.from(
-    new Set([name, ...aliases].map(normalizeToolKey).filter(Boolean))
+    new Set([name, ...aliases].map(normalizeCreatorToolIconKey).filter(Boolean))
   );
   return { name, Icon, hex: hex.startsWith('#') ? hex : `#${hex}`, keys };
 }
@@ -360,29 +352,29 @@ for (const item of TOOL_ICON_ENTRIES) {
   }
 }
 
-/** Exact / alias match, then longest keyword contained in the label. */
+/** Exact / alias match on label tokens, then longest exact keyword match. */
 export function resolveCreatorToolSimpleIcon(
   label: string
 ): ResolvedCreatorToolIcon | null {
-  const key = normalizeToolKey(label);
-  if (!key) return null;
-
-  const exact = BY_KEY.get(key);
-  if (exact) {
-    return { matchedName: exact.name, Icon: exact.Icon, hex: exact.hex };
-  }
+  const lookupKeys = buildCreatorToolIconLookupKeys(label);
+  if (lookupKeys.length === 0) return null;
 
   let best: IconEntry | null = null;
-  let bestLen = 0;
-  for (const [alias, item] of BY_KEY) {
-    if (alias.length < 2) continue;
-    if (key.includes(alias) && alias.length > bestLen) {
-      best = item;
-      bestLen = alias.length;
+  let bestKeyLen = 0;
+
+  for (const key of lookupKeys) {
+    const exact = BY_KEY.get(key);
+    if (exact && key.length > bestKeyLen) {
+      best = exact;
+      bestKeyLen = key.length;
     }
   }
-  if (!best) return null;
-  return { matchedName: best.name, Icon: best.Icon, hex: best.hex };
+
+  if (best) {
+    return { matchedName: best.name, Icon: best.Icon, hex: best.hex };
+  }
+
+  return null;
 }
 
 export function creatorToolHasAutoIcon(label: string): boolean {

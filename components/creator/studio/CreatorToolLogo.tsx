@@ -1,12 +1,14 @@
 'use client';
 
 import { resolveCreatorToolSimpleIcon } from '@/components/creator/studio/creator-tool-simple-icons';
+import { resolveCreatorToolTechIconUrl } from '@/components/creator/studio/creator-tool-tech-icons';
 
 /**
  * Tool mark priority:
  * 1. User-uploaded `iconUrl`
- * 2. Auto Simple Icons match from tool name / keywords
- * 3. First letter fallback
+ * 2. Bundled TechIcons PNG (public/tool-icons/png-512)
+ * 3. Auto Simple Icons match from tool name / keywords
+ * 4. First letter fallback
  */
 type CreatorToolLogoProps = {
   label: string;
@@ -20,8 +22,10 @@ type CreatorToolLogoProps = {
   colorMode?: 'light' | 'dark';
   /** User-uploaded logo URL — always wins over auto detection. */
   iconUrl?: string | null;
-  /** Disable Simple Icons auto-match (letter only if no upload). */
+  /** Disable bundled PNG + Simple Icons auto-match (letter only if no upload). */
   disableAutoIcon?: boolean;
+  /** Apply grayscale (noir & blanc) to the mark. */
+  grayscale?: boolean;
 };
 
 function hexLuminance(hex: string): number {
@@ -59,17 +63,19 @@ export function CreatorToolLogo({
   colorMode,
   iconUrl,
   disableAutoIcon = false,
+  grayscale = false,
 }: CreatorToolLogoProps) {
-  const url = iconUrl?.trim() || null;
+  const uploadedUrl = iconUrl?.trim() || null;
   const shell = `pf-tool-logo flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-transparent ${className}`;
   const dark = isDarkSurface(bgColor, colorMode);
+  const markFilter = grayscale ? { filter: 'grayscale(1)' } : undefined;
 
-  if (url) {
+  if (uploadedUrl) {
     return (
-      <span className={shell} style={{ width: size, height: size }}>
+      <span className={shell} style={{ width: size, height: size, ...markFilter }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={url}
+          src={uploadedUrl}
           alt=""
           width={size}
           height={size}
@@ -79,28 +85,53 @@ export function CreatorToolLogo({
     );
   }
 
-  const auto = disableAutoIcon ? null : resolveCreatorToolSimpleIcon(label);
-  if (auto) {
-    const color = contrastSafeBrand(brandColor?.trim() || auto.hex, dark);
-    const Icon = auto.Icon;
-    return (
-      <span className={shell} style={{ width: size, height: size }} title={auto.matchedName}>
-        <Icon size={size} color={color} title="" aria-hidden />
-      </span>
-    );
+  if (!disableAutoIcon) {
+    const techUrl = resolveCreatorToolTechIconUrl(label);
+    if (techUrl) {
+      return (
+        <span className={shell} style={{ width: size, height: size, ...markFilter }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={techUrl}
+            alt=""
+            width={size}
+            height={size}
+            className="h-full w-full object-contain"
+          />
+        </span>
+      );
+    }
+
+    const auto = resolveCreatorToolSimpleIcon(label);
+    if (auto) {
+      const color = contrastSafeBrand(brandColor?.trim() || auto.hex, dark);
+      const Icon = auto.Icon;
+      return (
+        <span
+          className={shell}
+          style={{ width: size, height: size, ...markFilter }}
+          title={auto.matchedName}
+        >
+          <Icon size={size} color={color} title="" aria-hidden />
+        </span>
+      );
+    }
   }
 
   const letterColor =
     brandColor?.trim() || (dark ? '#f4f3ef' : '#17171b');
+  /** Cap height reads smaller than SVG logos — use ~84% of the tile for visual parity. */
+  const letterPx = Math.max(16, Math.round(size * 0.84));
 
   return (
     <span
-      className={`${shell} font-bold uppercase leading-none`}
+      className={`${shell} font-bold uppercase leading-none tracking-tight`}
       style={{
         width: size,
         height: size,
-        fontSize: Math.max(14, Math.round(size * 0.55)),
+        fontSize: letterPx,
         color: letterColor,
+        ...markFilter,
       }}
       aria-hidden
     >

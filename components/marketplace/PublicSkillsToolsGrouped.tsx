@@ -3,10 +3,14 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import { groupBySpecialty } from '@/lib/specialties';
+import { resolveSkillLevelLabel } from '@/components/portfolio/skill-usage-descriptions';
 import type { ProfileStrengthTool } from '@/types/ecosystem';
 
 type PublicSkillsToolsGroupedProps = {
-  skillTags: string[];
+  /** Rich stack items (preferred). */
+  stack?: ProfileStrengthTool[];
+  /** Legacy plain tags — shown only when `stack` is empty. */
+  skillTags?: string[];
   tools: ProfileStrengthTool[];
   allowedSpecialties?: string[];
 };
@@ -15,20 +19,27 @@ function MetaChip({
   label,
   iconUrl,
   showLogo,
+  levelLabel,
 }: {
   label: string;
   iconUrl?: string | null;
   showLogo?: boolean;
+  levelLabel?: string | null;
 }) {
   return (
     <span
       className={`inline-flex max-w-full items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 py-1.5 text-xs font-medium text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 ${
         showLogo ? 'pl-1.5 pr-3' : 'px-3'
       }`}
-      title={label}
+      title={levelLabel ? `${label} — ${levelLabel}` : label}
     >
       {showLogo ? <CreatorToolLogo label={label} iconUrl={iconUrl} size={22} /> : null}
       <span className="min-w-0 truncate">{label}</span>
+      {levelLabel ? (
+        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-[#EA580C] dark:text-[#FB923C]">
+          {levelLabel}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -71,14 +82,29 @@ function SpecialtyGroup({
  * (`specialtyGroupLabel` / `groupBySpecialty`), with unified chip styling.
  */
 export function PublicSkillsToolsGrouped({
-  skillTags,
+  stack = [],
+  skillTags = [],
   tools,
   allowedSpecialties = [],
 }: PublicSkillsToolsGroupedProps) {
-  const tags = useMemo(
+  const normalizedStack = useMemo(
+    () =>
+      stack
+        .map((item) => ({
+          name: (typeof item === 'string' ? item : item.name)?.trim() ?? '',
+          category: typeof item === 'string' ? null : item.category,
+          iconUrl: typeof item === 'string' ? null : item.iconUrl,
+          level: typeof item === 'string' ? null : item.level,
+        }))
+        .filter((item) => item.name),
+    [stack]
+  );
+
+  const legacyTags = useMemo(
     () => skillTags.map((tag) => tag.trim()).filter(Boolean),
     [skillTags]
   );
+
   const normalizedTools = useMemo(
     () =>
       tools
@@ -96,19 +122,29 @@ export function PublicSkillsToolsGrouped({
     [normalizedTools, allowedSpecialties]
   );
 
-  if (tags.length === 0 && normalizedTools.length === 0) return null;
+  const hasStack = normalizedStack.length > 0 || legacyTags.length > 0;
+
+  if (!hasStack && normalizedTools.length === 0) return null;
 
   return (
     <div className="space-y-5">
-      {tags.length > 0 ? (
+      {hasStack ? (
         <section className="space-y-2">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
             Stack
           </p>
           <div className="flex flex-wrap gap-2">
-            {tags.map((label) => (
-              <MetaChip key={label} label={label} />
-            ))}
+            {normalizedStack.length > 0
+              ? normalizedStack.map((item) => (
+                  <MetaChip
+                    key={item.name}
+                    label={item.name}
+                    iconUrl={item.iconUrl}
+                    showLogo
+                    levelLabel={resolveSkillLevelLabel(item)}
+                  />
+                ))
+              : legacyTags.map((label) => <MetaChip key={label} label={label} />)}
           </div>
         </section>
       ) : null}

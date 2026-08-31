@@ -9,10 +9,10 @@ export type ContactVisibilitySettings = {
   social: ContactVisibilityLevel;
   languages: ContactVisibilityLevel;
   cta: ContactVisibilityLevel;
-  whyMe: ContactVisibilityLevel;
   experience: ContactVisibilityLevel;
   yearsOfExperience: ContactVisibilityLevel;
   strengthsTools: ContactVisibilityLevel;
+  profileStack: ContactVisibilityLevel;
   services: ContactVisibilityLevel;
   faq: ContactVisibilityLevel;
   links: ContactVisibilityLevel;
@@ -24,6 +24,11 @@ export type ContactVisibilitySettings = {
   portfolio: ContactVisibilityLevel;
   location: ContactVisibilityLevel;
   reputation: ContactVisibilityLevel;
+  aboutSkills: ContactVisibilityLevel;
+  aboutStrengths: ContactVisibilityLevel;
+  aboutSystemsTools: ContactVisibilityLevel;
+  aboutInterests: ContactVisibilityLevel;
+  aboutEducation: ContactVisibilityLevel;
 };
 
 export const DEFAULT_CONTACT_VISIBILITY: ContactVisibilitySettings = {
@@ -35,10 +40,10 @@ export const DEFAULT_CONTACT_VISIBILITY: ContactVisibilitySettings = {
   social: 'PUBLIC',
   languages: 'PUBLIC',
   cta: 'PUBLIC',
-  whyMe: 'PUBLIC',
   experience: 'PUBLIC',
   yearsOfExperience: 'PUBLIC',
   strengthsTools: 'PUBLIC',
+  profileStack: 'PUBLIC',
   services: 'PUBLIC',
   faq: 'PUBLIC',
   links: 'PUBLIC',
@@ -50,6 +55,11 @@ export const DEFAULT_CONTACT_VISIBILITY: ContactVisibilitySettings = {
   portfolio: 'PUBLIC',
   location: 'PUBLIC',
   reputation: 'PUBLIC',
+  aboutSkills: 'PUBLIC',
+  aboutStrengths: 'PUBLIC',
+  aboutSystemsTools: 'PUBLIC',
+  aboutInterests: 'PUBLIC',
+  aboutEducation: 'PUBLIC',
 };
 
 export const CONTACT_VISIBILITY_OPTIONS: { value: ContactVisibilityLevel; label: string }[] = [
@@ -85,10 +95,10 @@ export function parseContactVisibility(raw: unknown): ContactVisibilitySettings 
     social: level('social'),
     languages: level('languages'),
     cta: level('cta'),
-    whyMe: level('whyMe'),
     experience: level('experience'),
     yearsOfExperience: level('yearsOfExperience'),
     strengthsTools: level('strengthsTools'),
+    profileStack: level('profileStack'),
     services: level('services'),
     faq: level('faq'),
     links: level('links'),
@@ -100,5 +110,10 @@ export function parseContactVisibility(raw: unknown): ContactVisibilitySettings 
     portfolio: level('portfolio'),
     location: level('location'),
     reputation: level('reputation'),
+    aboutSkills: level('aboutSkills'),
+    aboutStrengths: level('aboutStrengths'),
+    aboutSystemsTools: level('aboutSystemsTools'),
+    aboutInterests: level('aboutInterests'),
+    aboutEducation: level('aboutEducation'),
   };
 }

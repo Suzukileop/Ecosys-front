@@ -189,7 +189,7 @@ export const DEFAULT_NAV_COLOR_BINDINGS: PortfolioNavColorBindings = {
   handleIcon: 'texteFort',
   handleBorder: 'bordure',
   contactBackground: 'principal',
-  contactText: 'neutre',
+  contactText: 'texteFort',
   contactBorder: 'bordure',
   linkIconBackground: 'neutre',
   linkIconColor: 'texteMuted',

@@ -38,7 +38,6 @@ import type { PortfolioHeroPalette } from '@/components/portfolio/portfolio-hero
 import { applyNavPaletteToSettings } from '@/components/portfolio/portfolio-nav-palette-settings';
 import { applyWorkPaletteToSettings } from '@/components/portfolio/portfolio-work-palette-settings';
 import { applyExperiencePaletteToSettings } from '@/components/portfolio/portfolio-experience-palette-settings';
-import { applyAboutPaletteToSettings } from '@/components/portfolio/portfolio-about-palette-settings';
 import {
   isPortfolioSettingsEmpty,
   migrateLocalPortfolioSettingsIfNeeded,
@@ -49,10 +48,7 @@ import {
 } from '@/lib/portfolio-settings-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 
-type PortfolioContentSectionId = Exclude<
-  PortfolioSettingsSectionId,
-  'theme' | 'navigation' | 'infos' | 'whyChooseMe'
->;
+type PortfolioContentSectionId = Exclude<PortfolioSettingsSectionId, 'theme' | 'navigation'>;
 
 const SAVE_DEBOUNCE_MS = 400;
 const HISTORY_LIMIT = 50;
@@ -424,19 +420,6 @@ export function usePortfolioSettings(
                   useHeroPalette: true,
                 } as typeof next);
           return forkBuiltinOnPersonalization({ ...current, experience });
-        }
-
-        if (sectionId === 'about') {
-          const next = { ...current.about, ...patch };
-          const about =
-            next.useHeroPalette === false
-              ? next
-              : ({
-                  ...next,
-                  ...applyAboutPaletteToSettings(next),
-                  useHeroPalette: true,
-                } as typeof next);
-          return forkBuiltinOnPersonalization({ ...current, about });
         }
 
         const withPatch = {

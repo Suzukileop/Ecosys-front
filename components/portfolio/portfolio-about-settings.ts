@@ -92,7 +92,7 @@ export type PortfolioAboutSidePanelTwinAlign = 'left' | 'center' | 'right';
  * Width split for twin-columns (Why me | Infos).
  * Default favors Why me — never forced 50/50 unless the creator picks Equal.
  */
-export type PortfolioAboutTwinColumnsSplit = 'equal' | 'why-me-70' | 'auto';
+export type PortfolioAboutTwinColumnsSplit = 'equal' | 'main-70' | 'auto';
 
 /** Horizontal place of the Infos + Why me pair on the page (when both are shown). */
 export type PortfolioAboutContentPairAlign = 'start' | 'center' | 'end';
@@ -128,36 +128,6 @@ export type PortfolioAboutSidePanelFullWidthLayout =
 /** Icon vs text for side-panel info cells. */
 export type PortfolioAboutSidePanelIconPlacement = 'left' | 'top' | 'right';
 
-export type PortfolioAboutWhyMeDesign = 'timeline' | 'split' | 'lined-list' | 'media-aside';
-
-/** How many Why me cards per row on large screens (not Stack). */
-export type PortfolioAboutWhyMeItemsPerRow = 1 | 2 | 3 | 4;
-
-export type PortfolioAboutWhyMeMediaPlacement =
-  | 'alternate'
-  | 'media-left'
-  | 'media-right'
-  | 'media-top'
-  | 'text-only';
-
-export type PortfolioAboutWhyMeContentAlign = 'left' | 'center' | 'right';
-
-/** How header chrome (number / icon) sits relative to the phrase. */
-export type PortfolioAboutWhyMeBodyLayout = 'stack' | 'inline';
-
-export type PortfolioAboutWhyMeHeadingPreset =
-  | 'default'
-  | 'why-work-with-me'
-  | 'why-choose-me'
-  | 'my-approach'
-  | 'strengths'
-  | 'value'
-  | 'custom';
-
-export type PortfolioAboutWhyMeHeadingSize = 'sm' | 'md' | 'lg';
-
-export type PortfolioAboutWhyMeGap = 'sm' | 'md' | 'lg' | 'custom';
-
 /** Card index marker: digits, roman, or hyper-style list bullets (circled puce set). */
 export type PortfolioAboutWhyMeMarkerStyle =
   | 'number'
@@ -174,9 +144,6 @@ export type PortfolioAboutWhyMeMarkerStyle =
   | 'chevron-double'
   | 'triangle'
   | 'none';
-
-/** Where the Why me marker sits: header row (current) or leading before each card. */
-export type PortfolioAboutWhyMeMarkerPlacement = 'top' | 'before';
 
 export type PortfolioAboutWhyMeMarkerSize = 'sm' | 'md' | 'lg' | 'xl' | 'custom';
 
@@ -198,8 +165,6 @@ export type AboutStatValueSizeContext = 'featured' | 'bar' | 'band' | 'editorial
 
 /** Which about text element can be styled independently (color, font, size, weight). */
 export type PortfolioAboutStyleTarget =
-  | 'whyMeBody'
-  | 'whyMeBullet'
   | 'sideLabel'
   | 'sideTitle'
   | 'sideSubtitle';
@@ -216,10 +181,15 @@ export type PortfolioAboutPresentationSettings = PortfolioSectionBackgroundSetti
   subtitleFont: PortfolioAboutHeaderFont;
   titleColor: string;
   subtitleColor: string;
+  accentColor: string;
   subtitleSerif: boolean;
   headerAlignment: PortfolioAboutHeaderAlignment;
-  /** When false, hide the About section sticky title (Infos / Why choose me keep their own). */
+  /** When false, hide the About section sticky title. */
   showAboutHeading: boolean;
+  /** When false, hide the stats band under the About header. */
+  showStats: boolean;
+  /** When false, hide the Infos / side panel block. */
+  showSidePanel: boolean;
   /**
    * `stacked` — title above content (default).
    * `aside-left` / `aside-right` — title beside content on large screens.
@@ -322,69 +292,6 @@ export type PortfolioAboutPresentationSettings = PortfolioSectionBackgroundSetti
   twinColumnsSplit: PortfolioAboutTwinColumnsSplit;
   /** Place Infos + Why me as a pair: start, center, or end of the section width. */
   contentPairAlign: PortfolioAboutContentPairAlign;
-  whyMeMediaPlacement: PortfolioAboutWhyMeMediaPlacement;
-  whyMeContentAlign: PortfolioAboutWhyMeContentAlign;
-  /** Stack = phrase under number/icon; inline = phrase on the same row. */
-  whyMeBodyLayout: PortfolioAboutWhyMeBodyLayout;
-  whyMeGap: PortfolioAboutWhyMeGap;
-  /** Exact gap in px when whyMeGap is `custom` (or synced from presets). */
-  whyMeGapPx: number;
-  whyMeBorder: PortfolioServicesCardBorder;
-  whyMeBorderColor: string;
-  whyMeBackgroundEnabled: boolean;
-  whyMeBackgroundColor: string;
-  whyMeBorderRadius: PortfolioServicesCardRadius;
-  whyMePadding: PortfolioServicesCardPadding;
-  whyMeBackgroundFill: PortfolioServicesCardBackgroundSettings['cardBackgroundFill'];
-  whyMeBackgroundColorA: string;
-  whyMeBackgroundColorB: string;
-  whyMeBackgroundSplitAxis: PortfolioServicesCardBackgroundSettings['cardBackgroundSplitAxis'];
-  whyMeBackgroundSplitPosition: number;
-  whyMeDividerEnabled: boolean;
-  whyMeDividerShape: PortfolioServicesCardBackgroundSettings['cardDividerShape'];
-  whyMeDividerAngle: number;
-  whyMeDividerCurveDepth: number;
-  whyMeDividerColor: string;
-  whyMeDividerThickness: number;
-  whyMeDividerOpacity: number;
-  whyMeDecorEnabled: boolean;
-  whyMeDecorShape: PortfolioServicesCardDecorSettings['cardDecorShape'];
-  whyMeDecorColor: string;
-  whyMeDecorOpacity: number;
-  whyMeDecorSize: number;
-  whyMeDecorX: number;
-  whyMeDecorY: number;
-  whyMeDecorRotation: number;
-  whyMeDecorAlternation: PortfolioServicesCardDecorSettings['cardDecorAlternation'];
-  whyMeDesign: PortfolioAboutWhyMeDesign;
-  /** Cards per row on large screens (editorial / compact / minimal / grid). */
-  whyMeItemsPerRow: PortfolioAboutWhyMeItemsPerRow;
-  /** Index marker on Why me cards: 01 / I / hyper bullets / none. */
-  whyMeMarkerStyle: PortfolioAboutWhyMeMarkerStyle;
-  /** Marker in the header row, or leading in front of each card. */
-  whyMeMarkerPlacement: PortfolioAboutWhyMeMarkerPlacement;
-  /** Icon chip + accent rule after the marker (circled chrome). */
-  whyMeShowHeaderAccent: boolean;
-  /** Glyph / number size for the Why me index marker. */
-  whyMeMarkerSize: PortfolioAboutWhyMeMarkerSize;
-  whyMeMarkerSizePx: number;
-  whyMeMarkerWeight: PortfolioListMarkerWeight;
-  whyMeMarkerWeightAmount: number;
-  /** Marker color (defaults to section accent). */
-  whyMeMarkerColor: string;
-  whyMeHeadingPreset: PortfolioAboutWhyMeHeadingPreset;
-  whyMeHeadingCustom: string;
-  whyMeHeadingAlignment: PortfolioAboutWhyMeContentAlign;
-  whyMeHeadingFont: PortfolioAboutHeaderFont;
-  whyMeHeadingColor: string;
-  whyMeHeadingSize: PortfolioAboutWhyMeHeadingSize;
-  whyMeHeadingUppercase: boolean;
-  accentColor: string;
-  showStats: boolean;
-  showSidePanel: boolean;
-  showWhyMe: boolean;
-  showWhyMeHeading: boolean;
-  whyMeHeading: string;
   /** When true, section colors follow the Hero semantic palette. */
   useHeroPalette: boolean;
   /**
@@ -412,97 +319,10 @@ export const DEFAULT_ABOUT_STATS_LABEL_COLOR = '#525252';
 export const DEFAULT_ABOUT_STATS_ICON_COLOR = '#525252';
 export const DEFAULT_ABOUT_SIDE_PANEL_BORDER_COLOR = '#e5e5e5';
 export const DEFAULT_ABOUT_SIDE_PANEL_BACKGROUND_COLOR = '#f5f5f5';
+export const DEFAULT_ABOUT_SIDE_PANEL_HEADING_COLOR = '#0a0a0a';
 /** v2: profile side panel is borderless by default. */
 export const ABOUT_SIDE_PANEL_SETTINGS_REVISION = 3;
-export const DEFAULT_ABOUT_WHY_ME_BORDER_COLOR = '#e5e5e5';
-export const DEFAULT_ABOUT_WHY_ME_BACKGROUND_COLOR = '#ffffff';
-export const DEFAULT_ABOUT_WHY_ME_HEADING_COLOR = '#a3a3a3';
-export const DEFAULT_ABOUT_SIDE_PANEL_HEADING_COLOR = '#171717';
-/** Previous factory default (soft accent circle on every card) — migrate off. */
-const LEGACY_DEFAULT_ABOUT_WHY_ME_DECOR: Pick<
-  PortfolioAboutPresentationSettings,
-  | 'whyMeDecorEnabled'
-  | 'whyMeDecorShape'
-  | 'whyMeDecorColor'
-  | 'whyMeDecorOpacity'
-  | 'whyMeDecorSize'
-  | 'whyMeDecorX'
-  | 'whyMeDecorY'
-  | 'whyMeDecorRotation'
-  | 'whyMeDecorAlternation'
-> = {
-  whyMeDecorEnabled: true,
-  whyMeDecorShape: 'circle',
-  whyMeDecorColor: DEFAULT_ABOUT_ACCENT_COLOR,
-  whyMeDecorOpacity: 8,
-  whyMeDecorSize: 48,
-  whyMeDecorX: 92,
-  whyMeDecorY: 8,
-  whyMeDecorRotation: 0,
-  whyMeDecorAlternation: 'none',
-};
 
-const DEFAULT_ABOUT_WHY_ME_DECOR: typeof LEGACY_DEFAULT_ABOUT_WHY_ME_DECOR = {
-  ...LEGACY_DEFAULT_ABOUT_WHY_ME_DECOR,
-  whyMeDecorEnabled: false,
-};
-
-function isLegacyDefaultWhyMeDecor(
-  p: Pick<
-    PortfolioAboutPresentationSettings,
-    | 'whyMeDecorEnabled'
-    | 'whyMeDecorShape'
-    | 'whyMeDecorColor'
-    | 'whyMeDecorOpacity'
-    | 'whyMeDecorSize'
-    | 'whyMeDecorX'
-    | 'whyMeDecorY'
-    | 'whyMeDecorRotation'
-    | 'whyMeDecorAlternation'
-  >
-): boolean {
-  const hex = (value: string) => value.trim().toLowerCase();
-  return (
-    p.whyMeDecorEnabled === LEGACY_DEFAULT_ABOUT_WHY_ME_DECOR.whyMeDecorEnabled &&
-    p.whyMeDecorShape === LEGACY_DEFAULT_ABOUT_WHY_ME_DECOR.whyMeDecorShape &&
-    hex(p.whyMeDecorColor) === hex(LEGACY_DEFAULT_ABOUT_WHY_ME_DECOR.whyMeDecorColor) &&
-    p.whyMeDecorOpacity === LEGACY_DEFAULT_ABOUT_WHY_ME_DECOR.whyMeDecorOpacity &&
-    p.whyMeDecorSize === LEGACY_DEFAULT_ABOUT_WHY_ME_DECOR.whyMeDecorSize &&
-    p.whyMeDecorX === LEGACY_DEFAULT_ABOUT_WHY_ME_DECOR.whyMeDecorX &&
-    p.whyMeDecorY === LEGACY_DEFAULT_ABOUT_WHY_ME_DECOR.whyMeDecorY &&
-    p.whyMeDecorRotation === LEGACY_DEFAULT_ABOUT_WHY_ME_DECOR.whyMeDecorRotation &&
-    p.whyMeDecorAlternation === LEGACY_DEFAULT_ABOUT_WHY_ME_DECOR.whyMeDecorAlternation
-  );
-}
-
-const DEFAULT_ABOUT_WHY_ME_BACKGROUND: Pick<
-  PortfolioAboutPresentationSettings,
-  | 'whyMeBackgroundFill'
-  | 'whyMeBackgroundColorA'
-  | 'whyMeBackgroundColorB'
-  | 'whyMeBackgroundSplitAxis'
-  | 'whyMeBackgroundSplitPosition'
-  | 'whyMeDividerEnabled'
-  | 'whyMeDividerShape'
-  | 'whyMeDividerAngle'
-  | 'whyMeDividerCurveDepth'
-  | 'whyMeDividerColor'
-  | 'whyMeDividerThickness'
-  | 'whyMeDividerOpacity'
-> = {
-  whyMeBackgroundFill: 'solid',
-  whyMeBackgroundColorA: '#ffffff',
-  whyMeBackgroundColorB: '#fafafa',
-  whyMeBackgroundSplitAxis: 'y',
-  whyMeBackgroundSplitPosition: 55,
-  whyMeDividerEnabled: false,
-  whyMeDividerShape: 'straight',
-  whyMeDividerAngle: 165,
-  whyMeDividerCurveDepth: 14,
-  whyMeDividerColor: '#e5e5e5',
-  whyMeDividerThickness: 1,
-  whyMeDividerOpacity: 70,
-};
 
 const DEFAULT_ABOUT_SIDE_PANEL_BACKGROUND: Pick<
   PortfolioAboutPresentationSettings,
@@ -631,16 +451,12 @@ export function isIllegibleDarkAboutStatsCard(
 }
 
 export const ABOUT_STYLE_TARGET_IDS: PortfolioAboutStyleTarget[] = [
-  'whyMeBody',
-  'whyMeBullet',
   'sideLabel',
   'sideTitle',
   'sideSubtitle',
 ];
 
 export const DEFAULT_ABOUT_ELEMENT_STYLES: PortfolioAboutElementStyles = {
-  whyMeBody: createElementTextStyle({ color: DEFAULT_ELEMENT_BODY_COLOR, size: 'md' }),
-  whyMeBullet: createElementTextStyle({ color: DEFAULT_ELEMENT_BODY_COLOR, size: 'sm' }),
   sideLabel: createElementTextStyle({
     color: DEFAULT_ELEMENT_MUTED_COLOR,
     size: 'sm',
@@ -656,8 +472,6 @@ export const PORTFOLIO_ABOUT_STYLE_TARGET_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'whyMeBody', label: 'Why me text', description: 'Paragraph text inside each Why me block.' },
-  { value: 'whyMeBullet', label: 'Why me bullets', description: 'Bullet list items inside Why me blocks.' },
   {
     value: 'sideLabel',
     label: 'Side panel label',
@@ -686,9 +500,12 @@ export const DEFAULT_ABOUT_PRESENTATION: PortfolioAboutPresentationSettings = {
   subtitleFont: 'serif',
   titleColor: DEFAULT_ABOUT_TITLE_COLOR,
   subtitleColor: DEFAULT_ABOUT_SUBTITLE_COLOR,
+  accentColor: DEFAULT_ABOUT_ACCENT_COLOR,
   subtitleSerif: true,
   headerAlignment: 'left',
   showAboutHeading: false,
+  showStats: true,
+  showSidePanel: true,
   sectionLayout: 'stacked',
   illustrationVariant: 'none',
   illustrationPlacement: 'right',
@@ -754,44 +571,8 @@ export const DEFAULT_ABOUT_PRESENTATION: PortfolioAboutPresentationSettings = {
   showSidePanelResponseTime: false,
   sidePanelAutoCenter: false,
   sidePanelTwinAlign: 'right',
-  twinColumnsSplit: 'why-me-70',
+  twinColumnsSplit: 'equal',
   contentPairAlign: 'start',
-  whyMeMediaPlacement: 'text-only',
-  whyMeContentAlign: 'left',
-  whyMeBodyLayout: 'stack',
-  whyMeGap: 'md',
-  whyMeGapPx: 24,
-  whyMeBorder: 'soft',
-  whyMeBorderColor: DEFAULT_ABOUT_WHY_ME_BORDER_COLOR,
-  whyMeBackgroundEnabled: true,
-  whyMeBackgroundColor: DEFAULT_ABOUT_WHY_ME_BACKGROUND_COLOR,
-  whyMeBorderRadius: 'lg',
-  whyMePadding: 'lg',
-  ...DEFAULT_ABOUT_WHY_ME_BACKGROUND,
-  ...DEFAULT_ABOUT_WHY_ME_DECOR,
-  whyMeDesign: 'timeline',
-  whyMeItemsPerRow: 1,
-  whyMeMarkerStyle: 'number',
-  whyMeMarkerPlacement: 'top',
-  whyMeShowHeaderAccent: true,
-  whyMeMarkerSize: 'md',
-  whyMeMarkerSizePx: ABOUT_WHY_ME_MARKER_SIZE_PRESET_PX.md,
-  whyMeMarkerWeight: 'regular',
-  whyMeMarkerWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
-  whyMeMarkerColor: DEFAULT_ABOUT_ACCENT_COLOR,
-  whyMeHeadingPreset: 'default',
-  whyMeHeadingCustom: '',
-  whyMeHeadingAlignment: 'left',
-  whyMeHeadingFont: 'sans',
-  whyMeHeadingColor: DEFAULT_ABOUT_WHY_ME_HEADING_COLOR,
-  whyMeHeadingSize: 'sm',
-  whyMeHeadingUppercase: true,
-  accentColor: DEFAULT_ABOUT_ACCENT_COLOR,
-  showStats: false,
-  showSidePanel: true,
-  showWhyMe: true,
-  showWhyMeHeading: true,
-  whyMeHeading: 'Why work with me',
   useHeroPalette: true,
   aboutPalette: { ...DEFAULT_ABOUT_PALETTE },
   aboutColorBindings: { ...DEFAULT_ABOUT_COLOR_BINDINGS },
@@ -957,7 +738,7 @@ export const PORTFOLIO_ABOUT_TWIN_COLUMNS_SPLIT_OPTIONS: {
     description: '50 / 50 — Why me et Infos partagent la même largeur.',
   },
   {
-    value: 'why-me-70',
+    value: 'main-70',
     label: '70 / 30',
     description: 'Why me ~70 %, panneau Infos ~30 %.',
   },
@@ -1305,280 +1086,6 @@ export const PORTFOLIO_ABOUT_SIDE_PANEL_FULL_WIDTH_LAYOUT_OPTIONS: {
   },
 ];
 
-export const PORTFOLIO_ABOUT_WHY_ME_DESIGN_OPTIONS: {
-  value: PortfolioAboutWhyMeDesign;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'timeline',
-    label: 'Timeline',
-    description: 'Ligne verticale minimaliste avec jalons numérotés et texte alterné.',
-  },
-  {
-    value: 'split',
-    label: 'Split statistique',
-    description:
-      'Grand titre à gauche, liste numérotée à droite (01…) — pleine largeur, sans filets horizontaux.',
-  },
-  {
-    value: 'lined-list',
-    label: 'Liste séparée',
-    description:
-      'Grand titre centré « The value I bring », puces simples et filets horizontaux fins entre chaque ligne.',
-  },
-  {
-    value: 'media-aside',
-    label: 'SVG + liste',
-    description:
-      'Illustration et titre à gauche, liste numérotée à droite (numéros avant le texte) — disposition type FAQ.',
-  },
-];
-
-export const PORTFOLIO_ABOUT_WHY_ME_ITEMS_PER_ROW_OPTIONS: {
-  value: `${PortfolioAboutWhyMeItemsPerRow}`;
-  label: string;
-  description: string;
-}[] = [
-  { value: '1', label: '1 par ligne', description: 'Pleine largeur — idéal textes longs et média latéral.' },
-  { value: '2', label: '2 par ligne', description: '2 colonnes dès tablette (md / lg).' },
-  { value: '3', label: '3 par ligne', description: '2 dès md, 3 dès xl — dense sur grand écran.' },
-  { value: '4', label: '4 par ligne', description: 'Jusqu’à 4 sur très grand écran — très compact.' },
-];
-
-export function whyMeDesignSupportsItemsPerRow(_design: PortfolioAboutWhyMeDesign): boolean {
-  return false;
-}
-
-/** Designs that own the whole Why me section layout (custom grid / timeline / split). */
-export function whyMeDesignOwnsListLayout(design: PortfolioAboutWhyMeDesign): boolean {
-  return (
-    design === 'timeline' ||
-    design === 'split' ||
-    design === 'lined-list' ||
-    design === 'media-aside'
-  );
-}
-
-/** Heading lives in the left column for split / media-aside. */
-export function whyMeDesignEmbedsHeading(design: PortfolioAboutWhyMeDesign): boolean {
-  return design === 'split' || design === 'media-aside';
-}
-
-/** Large centered section titles (timeline + lined-list). */
-export function whyMeDesignUsesHeroHeading(design: PortfolioAboutWhyMeDesign): boolean {
-  return design === 'timeline' || design === 'lined-list';
-}
-
-/**
- * Defaults applied when picking a structural Why me design.
- */
-export function whyMeDesignSettingsPatch(
-  design: PortfolioAboutWhyMeDesign
-): Partial<PortfolioAboutPresentationSettings> {
-  switch (design) {
-    case 'timeline':
-      return {
-        whyMeDesign: design,
-        whyMeContentAlign: 'center',
-        whyMeMarkerStyle: 'number',
-        whyMeMarkerPlacement: 'top',
-        whyMeBackgroundEnabled: false,
-        whyMeShowHeaderAccent: false,
-        whyMeHeadingSize: 'lg',
-        whyMeHeadingFont: 'sans',
-        whyMeHeadingUppercase: false,
-        whyMeHeadingAlignment: 'center',
-        whyMeHeadingColor: '#171717',
-        whyMeGap: 'lg',
-      };
-    case 'split':
-      return {
-        whyMeDesign: design,
-        whyMeContentAlign: 'left',
-        whyMeMarkerStyle: 'number',
-        whyMeMarkerPlacement: 'top',
-        whyMeBackgroundEnabled: false,
-        whyMeShowHeaderAccent: false,
-        whyMeHeadingSize: 'lg',
-        whyMeHeadingFont: 'serif',
-        whyMeHeadingUppercase: false,
-        whyMeHeadingAlignment: 'left',
-        whyMeHeadingColor: '#0a0a0a',
-        whyMeHeadingPreset: 'why-choose-me',
-        whyMeGap: 'lg',
-      };
-    case 'lined-list':
-      return {
-        whyMeDesign: design,
-        whyMeContentAlign: 'center',
-        whyMeMarkerStyle: 'disc',
-        whyMeMarkerPlacement: 'before',
-        whyMeBackgroundEnabled: false,
-        whyMeShowHeaderAccent: false,
-        whyMeHeadingSize: 'lg',
-        whyMeHeadingFont: 'sans',
-        whyMeHeadingUppercase: false,
-        whyMeHeadingAlignment: 'center',
-        whyMeHeadingColor: '#171717',
-        whyMeHeadingPreset: 'value',
-        whyMeGap: 'lg',
-      };
-    case 'media-aside':
-      return {
-        whyMeDesign: design,
-        whyMeContentAlign: 'left',
-        whyMeMarkerStyle: 'number',
-        whyMeMarkerPlacement: 'before',
-        whyMeBackgroundEnabled: false,
-        whyMeShowHeaderAccent: false,
-        whyMeHeadingSize: 'lg',
-        whyMeHeadingFont: 'sans',
-        whyMeHeadingUppercase: false,
-        whyMeHeadingAlignment: 'left',
-        whyMeHeadingColor: '#171717',
-        whyMeHeadingPreset: 'why-choose-me',
-        whyMeGap: 'lg',
-      };
-  }
-}
-
-export function resolveWhyMeItemsPerRow(
-  _design: PortfolioAboutWhyMeDesign,
-  itemsPerRow: PortfolioAboutWhyMeItemsPerRow | undefined
-): PortfolioAboutWhyMeItemsPerRow {
-  if (itemsPerRow === 1 || itemsPerRow === 2 || itemsPerRow === 3 || itemsPerRow === 4) {
-    return itemsPerRow;
-  }
-  return 1;
-}
-
-/**
- * Responsive Why me grid. Mobile always 1 column; higher counts from tablet / desktop up.
- */
-export function whyMeItemsPerRowGridClass(itemsPerRow: PortfolioAboutWhyMeItemsPerRow): string {
-  switch (itemsPerRow) {
-    case 2:
-      return 'grid w-full grid-cols-1 lg:grid-cols-2';
-    case 3:
-      return 'grid w-full grid-cols-1 md:grid-cols-2 xl:grid-cols-3';
-    case 4:
-      return 'grid w-full grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4';
-    default:
-      return 'grid w-full grid-cols-1';
-  }
-}
-
-export function whyMeItemsPerRowResponsiveHint(
-  itemsPerRow: PortfolioAboutWhyMeItemsPerRow
-): string | null {
-  switch (itemsPerRow) {
-    case 2:
-      return 'Sur mobile, les blocs restent sur 1 colonne. 2 colonnes à partir des grands écrans (lg).';
-    case 3:
-      return 'Sur mobile : 1 colonne. Tablette : 2. Grand écran (xl) : 3.';
-    case 4:
-      return '4 colonnes uniquement sur très grand écran (2xl). Sur laptop max 3 ; tablette 2 ; mobile 1.';
-    default:
-      return null;
-  }
-}
-export const PORTFOLIO_ABOUT_WHY_ME_MEDIA_PLACEMENT_OPTIONS: {
-  value: PortfolioAboutWhyMeMediaPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'alternate', label: 'Alterné', description: 'Média à droite puis à gauche — défaut éditorial.' },
-  { value: 'media-left', label: 'Média à gauche', description: 'Image toujours à gauche du texte.' },
-  { value: 'media-right', label: 'Média à droite', description: 'Image toujours à droite du texte.' },
-  { value: 'media-top', label: 'Média au-dessus', description: 'Image au-dessus du texte dans chaque carte.' },
-  { value: 'text-only', label: 'Texte seul', description: 'Masquer les médias — texte et icônes uniquement.' },
-];
-
-export const PORTFOLIO_ABOUT_WHY_ME_CONTENT_ALIGN_OPTIONS: {
-  value: PortfolioAboutWhyMeContentAlign;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'left',
-    label: 'Gauche',
-    description: 'Toute la colonne Why me démarre à gauche — même bord pour chaque bloc.',
-  },
-  {
-    value: 'center',
-    label: 'Centre',
-    description: 'La colonne est centrée, mais chaque bloc garde le même bord de départ.',
-  },
-  {
-    value: 'right',
-    label: 'Droite',
-    description: 'La colonne est à droite, avec le même bord de départ pour chaque bloc.',
-  },
-];
-
-export const PORTFOLIO_ABOUT_WHY_ME_BODY_LAYOUT_OPTIONS: {
-  value: PortfolioAboutWhyMeBodyLayout;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'stack',
-    label: 'Empilé',
-    description: 'Numéro / icône au-dessus, phrase juste en dessous — lien vertical serré.',
-  },
-  {
-    value: 'inline',
-    label: 'En ligne',
-    description: 'Numéro / icône et phrase sur la même ligne — comble l’espace horizontal.',
-  },
-];
-
-export const PORTFOLIO_ABOUT_WHY_ME_GAP_OPTIONS: {
-  value: Exclude<PortfolioAboutWhyMeGap, 'custom'>;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Serré', description: 'Peu d’espace entre les blocs.' },
-  { value: 'md', label: 'Moyen', description: 'Espacement équilibré.' },
-  { value: 'lg', label: 'Large', description: 'Espacement généreux.' },
-];
-
-export const ABOUT_WHY_ME_GAP_PRESET_PX: Record<Exclude<PortfolioAboutWhyMeGap, 'custom'>, number> = {
-  sm: 16,
-  md: 24,
-  lg: 40,
-};
-
-export const ABOUT_WHY_ME_GAP_PX_MIN = 0;
-/** Allow stretching tall layouts (timeline, list, grids). */
-export const ABOUT_WHY_ME_GAP_PX_MAX = 160;
-
-export function clampAboutWhyMeGapPx(value: unknown, fallback = 24): number {
-  const n = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.max(ABOUT_WHY_ME_GAP_PX_MIN, Math.min(ABOUT_WHY_ME_GAP_PX_MAX, Math.round(n)));
-}
-
-export function resolveWhyMeGapPx(
-  p: Pick<PortfolioAboutPresentationSettings, 'whyMeGap' | 'whyMeGapPx' | 'whyMeDesign'>
-): number {
-  const gap = p.whyMeGap ?? 'md';
-  if (gap === 'custom') {
-    return clampAboutWhyMeGapPx(p.whyMeGapPx, 24);
-  }
-
-  let resolved: Exclude<PortfolioAboutWhyMeGap, 'custom'> = gap;
-
-  return ABOUT_WHY_ME_GAP_PRESET_PX[resolved] ?? 24;
-}
-
-export function whyMeGapStyle(
-  p: Pick<PortfolioAboutPresentationSettings, 'whyMeGap' | 'whyMeGapPx' | 'whyMeDesign'>
-): CSSProperties {
-  return { gap: `${resolveWhyMeGapPx(p)}px` };
-}
-
 export const PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS: {
   value: PortfolioAboutWhyMeMarkerStyle;
   label: string;
@@ -1605,22 +1112,6 @@ export const PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS: {
 export const PORTFOLIO_ABOUT_SIDE_PANEL_MARKER_STYLE_OPTIONS =
   PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS;
 
-export const PORTFOLIO_ABOUT_WHY_ME_MARKER_PLACEMENT_OPTIONS: {
-  value: PortfolioAboutWhyMeMarkerPlacement;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'top',
-    label: 'En haut',
-    description: 'À la place du numéro dans l’en-tête de chaque carte.',
-  },
-  {
-    value: 'before',
-    label: 'Devant chaque',
-    description: 'Marqueur devant le contenu de chaque bloc Why me.',
-  },
-];
 
 export const PORTFOLIO_ABOUT_WHY_ME_MARKER_SIZE_OPTIONS: {
   value: PortfolioAboutWhyMeMarkerSize;
@@ -1635,17 +1126,6 @@ export const PORTFOLIO_ABOUT_WHY_ME_MARKER_SIZE_OPTIONS: {
 
 export { PORTFOLIO_LIST_MARKER_WEIGHT_OPTIONS as PORTFOLIO_ABOUT_WHY_ME_MARKER_WEIGHT_OPTIONS } from '@/components/portfolio/portfolio-list-marker';
 
-export function resolveWhyMeMarkerColor(
-  presentation: Pick<
-    PortfolioAboutPresentationSettings,
-    'whyMeMarkerColor' | 'accentColor' | 'useHeroPalette' | 'aboutPalette'
-  >
-): string {
-  if (presentation.useHeroPalette !== false) {
-    return aboutPalettePrincipalColor(presentation);
-  }
-  return sanitizeHex(presentation.whyMeMarkerColor, aboutAccentColor(presentation.accentColor));
-}
 
 export function resolveSidePanelMarkerColor(
   presentation: Pick<
@@ -1685,40 +1165,6 @@ export function aboutActiveColorMode(
  * Page / section fill behind the timeline spine — macaron discs must match this
  * so the vertical line is cleanly masked in both light and dark.
  */
-export function resolveWhyMeTimelineSurfaceColor(
-  p: Pick<
-    PortfolioAboutPresentationSettings,
-    | 'useHeroPalette'
-    | 'aboutPalette'
-    | 'activeColorMode'
-    | 'sectionBackgroundEnabled'
-    | 'sectionBackgroundFill'
-    | 'sectionBackgroundColor'
-    | 'sectionBackgroundGradientFrom'
-    | 'sectionBackgroundColorA'
-  >
-): string {
-  if (p.sectionBackgroundEnabled) {
-    return sectionBackgroundBlockColor(p);
-  }
-  if (p.useHeroPalette !== false || p.aboutPalette) {
-    return resolveHeroPaletteColor(mergeAboutPalette(DEFAULT_ABOUT_PALETTE, p.aboutPalette), 'fond');
-  }
-  return p.activeColorMode === 'light' ? '#ffffff' : '#0a0a0a';
-}
-
-/** Spine / support line — follows palette `bordure` (or Why me border in manual). */
-export function resolveWhyMeTimelineLineColor(
-  p: Pick<
-    PortfolioAboutPresentationSettings,
-    'useHeroPalette' | 'aboutPalette' | 'whyMeBorderColor'
-  >
-): string {
-  if (p.useHeroPalette !== false) {
-    return resolveHeroPaletteColor(mergeAboutPalette(DEFAULT_ABOUT_PALETTE, p.aboutPalette), 'bordure');
-  }
-  return sanitizeHex(p.whyMeBorderColor, DEFAULT_ABOUT_WHY_ME_BORDER_COLOR);
-}
 
 /**
  * Micro-labels (LOCATION, LANGUAGES…) stay muted — accent color is reserved for icons.
@@ -1744,6 +1190,34 @@ export function aboutSidePanelMicroLabelColor(
   return sanitizeHex(raw, '#71717a');
 }
 
+export function sidePanelHeadingClass(): string {
+  return 'text-lg font-bold tracking-tight sm:text-xl';
+}
+
+export function sidePanelHeadingStyle(
+  p: Pick<
+    PortfolioAboutPresentationSettings,
+    'sidePanelHeadingColor' | 'useHeroPalette' | 'aboutPalette'
+  >
+): CSSProperties {
+  if (p.useHeroPalette !== false) {
+    return {
+      color: resolveHeroPaletteColor(
+        mergeAboutPalette(DEFAULT_ABOUT_PALETTE, p.aboutPalette),
+        'texteFort'
+      ),
+    };
+  }
+  return { color: sanitizeHex(p.sidePanelHeadingColor, DEFAULT_ABOUT_SIDE_PANEL_HEADING_COLOR) };
+}
+
+export function resolveSidePanelHeading(
+  p: Pick<PortfolioAboutPresentationSettings, 'sidePanelHeading'>
+): string {
+  const trimmed = p.sidePanelHeading?.trim();
+  return trimmed || 'Infos';
+}
+
 const WHY_ME_MARKER_STYLE_VALUES = PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS.map(
   (option) => option.value
 ) as PortfolioAboutWhyMeMarkerStyle[];
@@ -1752,12 +1226,6 @@ export function isPortfolioAboutWhyMeMarkerStyle(
   value: unknown
 ): value is PortfolioAboutWhyMeMarkerStyle {
   return typeof value === 'string' && (WHY_ME_MARKER_STYLE_VALUES as string[]).includes(value);
-}
-
-export function isPortfolioAboutWhyMeMarkerPlacement(
-  value: unknown
-): value is PortfolioAboutWhyMeMarkerPlacement {
-  return value === 'top' || value === 'before';
 }
 
 /** True when the marker is a glyph bullet (not digits / roman / none). */
@@ -1804,28 +1272,6 @@ export function formatWhyMeIndexLabel(
   return null;
 }
 
-export const PORTFOLIO_ABOUT_WHY_ME_HEADING_PRESET_OPTIONS: {
-  value: PortfolioAboutWhyMeHeadingPreset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'default', label: 'Personnalisé', description: 'Utilise le titre saisi ci-dessous.' },
-  { value: 'why-work-with-me', label: 'Why work with me', description: 'Libellé par défaut en anglais.' },
-  { value: 'why-choose-me', label: 'Why choose me', description: 'Titre éditorial du layout Split statistique.' },
-  { value: 'my-approach', label: 'My approach', description: 'Approche et méthode.' },
-  { value: 'strengths', label: 'Strengths', description: 'Points forts.' },
-  { value: 'value', label: 'The value I bring', description: 'Valeur apportée au client.' },
-  { value: 'custom', label: 'Custom', description: 'Votre propre titre.' },
-];
-
-export const PORTFOLIO_ABOUT_WHY_ME_HEADING_SIZE_OPTIONS: {
-  value: PortfolioAboutWhyMeHeadingSize;
-  label: string;
-}[] = [
-  { value: 'sm', label: 'Petit' },
-  { value: 'md', label: 'Moyen' },
-  { value: 'lg', label: 'Grand' },
-];
 
 const SUBTITLE_PRESET_COPY: Record<
   Exclude<PortfolioAboutSubtitlePreset, 'default' | 'custom' | 'minimal'>,
@@ -1960,7 +1406,7 @@ export function aboutMainGridClass(
   layoutMode: PortfolioAboutLayoutMode,
   hasSidebar: boolean,
   contentPairAlign: PortfolioAboutContentPairAlign = 'start',
-  twinColumnsSplit: PortfolioAboutTwinColumnsSplit = 'why-me-70'
+  twinColumnsSplit: PortfolioAboutTwinColumnsSplit = 'equal'
 ): string {
   if (!hasSidebar || layoutMode === 'full-width') return '';
   const pairCentered = contentPairAlign === 'center' || contentPairAlign === 'end';
@@ -2506,416 +1952,6 @@ export function aboutSidePanelAccentSoftBackground(accent: string): string {
   return `color-mix(in srgb, ${aboutAccentColor(accent)} 16%, transparent)`;
 }
 
-export function aboutWhyMeBlockClass(_design: PortfolioAboutWhyMeDesign): string {
-  return 'group relative transition duration-200';
-}
-
-/** Effective padding for Why Me cards — design can tighten without changing saved settings. */
-export function aboutWhyMeEffectivePadding(
-  p: Pick<
-    PortfolioAboutPresentationSettings,
-    'whyMePadding' | 'whyMeDesign' | 'whyMeBackgroundEnabled'
-  >
-): PortfolioServicesCardPadding {
-  // No fill → drop card padding so content sits flush left (fond removed completely).
-  if (p.whyMeBackgroundEnabled === false) {
-    return 'none';
-  }
-  return p.whyMePadding;
-}
-
-export function aboutWhyMeContentPaddingClass(
-  p: Pick<
-    PortfolioAboutPresentationSettings,
-    'whyMePadding' | 'whyMeDesign' | 'whyMeBackgroundEnabled'
-  >
-): string {
-  return servicesCardPaddingClass(aboutWhyMeEffectivePadding(p));
-}
-
-const WHY_ME_HEADING_PRESET_COPY: Record<
-  Exclude<PortfolioAboutWhyMeHeadingPreset, 'default' | 'custom'>,
-  string
-> = {
-  'why-work-with-me': 'Why work with me',
-  'why-choose-me': 'Why choose me',
-  'my-approach': 'My approach',
-  strengths: 'Strengths',
-  value: 'The value I bring',
-};
-
-export function resolveWhyMeHeading(
-  settings: Pick<
-    PortfolioAboutPresentationSettings,
-    'whyMeHeadingPreset' | 'whyMeHeadingCustom' | 'whyMeHeading'
-  >
-): string {
-  switch (settings.whyMeHeadingPreset) {
-    case 'custom':
-      return settings.whyMeHeadingCustom.trim() || settings.whyMeHeading.trim() || 'Why work with me';
-    case 'why-work-with-me':
-    case 'why-choose-me':
-    case 'my-approach':
-    case 'strengths':
-    case 'value':
-      return WHY_ME_HEADING_PRESET_COPY[settings.whyMeHeadingPreset];
-    default:
-      return settings.whyMeHeading.trim() || 'Why work with me';
-  }
-}
-
-export function whyMeHeadingClass(
-  settings: Pick<
-    PortfolioAboutPresentationSettings,
-    'whyMeHeadingAlignment' | 'whyMeHeadingFont' | 'whyMeHeadingSize' | 'whyMeHeadingUppercase'
-  >
-): string {
-  const parts = ['font-bold tracking-[0.18em]', aboutHeaderFontClass(settings.whyMeHeadingFont, 'title')];
-
-  switch (settings.whyMeHeadingSize) {
-    case 'lg':
-      parts.push('text-sm sm:text-base');
-      break;
-    case 'md':
-      parts.push('text-xs sm:text-sm');
-      break;
-    default:
-      parts.push('text-[10px] sm:text-xs');
-  }
-
-  if (settings.whyMeHeadingUppercase) parts.push('uppercase');
-
-  switch (settings.whyMeHeadingAlignment) {
-    case 'center':
-      parts.push('text-center');
-      break;
-    case 'right':
-      parts.push('text-right');
-      break;
-    default:
-      parts.push('text-left');
-  }
-
-  return parts.join(' ');
-}
-
-export function whyMeHeadingStyle(
-  settings: Pick<PortfolioAboutPresentationSettings, 'whyMeHeadingColor' | 'whyMeHeadingFont'>
-): CSSProperties {
-  return {
-    color: sanitizeHex(settings.whyMeHeadingColor, DEFAULT_ABOUT_WHY_ME_HEADING_COLOR),
-    ...aboutHeaderFontStyle(settings.whyMeHeadingFont, false, 'title'),
-  };
-}
-
-/** Infos block title — independent from About section title and Why choose me heading. */
-export function sidePanelHeadingClass(): string {
-  return 'text-left text-2xl font-bold tracking-[-0.03em] sm:text-3xl lg:text-[2rem]';
-}
-
-export function sidePanelHeadingStyle(
-  settings: Pick<PortfolioAboutPresentationSettings, 'sidePanelHeadingColor'>
-): CSSProperties {
-  return {
-    color: sanitizeHex(settings.sidePanelHeadingColor, DEFAULT_ABOUT_SIDE_PANEL_HEADING_COLOR),
-  };
-}
-
-export function resolveSidePanelHeading(
-  settings: Pick<PortfolioAboutPresentationSettings, 'sidePanelHeading'>
-): string {
-  return settings.sidePanelHeading?.trim() || 'Infos';
-}
-
-export function whyMeContentAlignClass(align: PortfolioAboutWhyMeContentAlign): {
-  /** Place the Why me column in the available width. */
-  column: string;
-  /** Card / block width so center/right can hug content while keeping a shared start edge. */
-  track: string;
-  /** Always start-aligned inside the track so 01 / text share one vertical edge. */
-  text: string;
-  items: string;
-  header: string;
-} {
-  switch (align) {
-    case 'center':
-      return {
-        column: 'items-center',
-        track: 'w-fit max-w-full',
-        text: 'text-left',
-        items: 'items-start',
-        header: 'justify-start',
-      };
-    case 'right':
-      return {
-        column: 'items-end',
-        track: 'w-fit max-w-full',
-        text: 'text-left',
-        items: 'items-start',
-        header: 'justify-start',
-      };
-    default:
-      return {
-        column: 'items-stretch',
-        track: 'w-full',
-        text: 'text-left',
-        items: 'items-start',
-        header: 'justify-start',
-      };
-  }
-}
-
-export function whyMeGapClass(gap: PortfolioAboutWhyMeGap): string {
-  switch (gap) {
-    case 'sm':
-      return 'gap-4';
-    case 'lg':
-      return 'gap-8';
-    case 'custom':
-      return '';
-    default:
-      return 'gap-6';
-  }
-}
-
-export function resolveWhyMeMediaLayout(
-  _placement: PortfolioAboutWhyMeMediaPlacement,
-  _index: number
-): 'left' | 'right' | 'top' | 'hidden' {
-  // Why choose me is text-only — media insertion removed from studio + portfolio.
-  return 'hidden';
-}
-
-/** Always false: Why choose me no longer supports block media. */
-export function whyMeBlockHasMedia(
-  _block: { mediaUrl?: string | null },
-  _placement?: PortfolioAboutWhyMeMediaPlacement
-): boolean {
-  return false;
-}
-
-export function aboutWhyMeCardBackgroundSettings(
-  p: PortfolioAboutPresentationSettings
-): PortfolioServicesCardBackgroundSettings {
-  return {
-    cardBackgroundFill: p.whyMeBackgroundFill,
-    cardBackgroundColorA: p.whyMeBackgroundColorA,
-    cardBackgroundColorB: p.whyMeBackgroundColorB,
-    cardBackgroundSplitAxis: p.whyMeBackgroundSplitAxis,
-    cardBackgroundSplitPosition: p.whyMeBackgroundSplitPosition,
-    cardDividerEnabled: p.whyMeDividerEnabled,
-    cardDividerShape: p.whyMeDividerShape,
-    cardDividerAngle: p.whyMeDividerAngle,
-    cardDividerCurveDepth: p.whyMeDividerCurveDepth,
-    cardDividerColor: p.whyMeDividerColor,
-    cardDividerThickness: p.whyMeDividerThickness,
-    cardDividerOpacity: p.whyMeDividerOpacity,
-  };
-}
-
-export function aboutWhyMeCardDecorSettings(
-  p: PortfolioAboutPresentationSettings
-): PortfolioServicesCardDecorSettings {
-  return {
-    cardDecorEnabled: p.whyMeDecorEnabled,
-    cardDecorShape: p.whyMeDecorShape,
-    cardDecorColor: p.whyMeDecorColor,
-    cardDecorOpacity: p.whyMeDecorOpacity,
-    cardDecorSize: p.whyMeDecorSize,
-    cardDecorX: p.whyMeDecorX,
-    cardDecorY: p.whyMeDecorY,
-    cardDecorRotation: p.whyMeDecorRotation,
-    cardDecorAlternation: p.whyMeDecorAlternation,
-  };
-}
-
-export function aboutWhyMeLayersSettings(
-  p: PortfolioAboutPresentationSettings
-): PortfolioServicesCardBackgroundSettings & PortfolioServicesCardDecorSettings {
-  const background = aboutWhyMeCardBackgroundSettings(p);
-  return {
-    ...(p.whyMeBackgroundEnabled
-      ? background
-      : {
-          ...background,
-          // Solid + disabled skips fill; force solid so split layers also stay off.
-          cardBackgroundFill: 'solid',
-          cardDividerEnabled: false,
-        }),
-    ...aboutWhyMeCardDecorSettings(p),
-  };
-}
-
-export function aboutWhyMeToCardFrameSettings(
-  p: PortfolioAboutPresentationSettings
-): PortfolioCardFrameSettings {
-  return {
-    ...aboutWhyMeCardBackgroundSettings(p),
-    cardBorder: p.whyMeBorder,
-    cardBorderColor: p.whyMeBorderColor,
-    cardBackgroundEnabled: p.whyMeBackgroundEnabled,
-    cardBackgroundColor: p.whyMeBackgroundColor,
-    cardBorderRadius: p.whyMeBorderRadius,
-    cardPadding: p.whyMePadding,
-  };
-}
-
-export function patchAboutWhyMeFromCardFrame(
-  patch: Partial<PortfolioCardFrameSettings>
-): Partial<PortfolioAboutPresentationSettings> {
-  const next: Partial<PortfolioAboutPresentationSettings> = {};
-  if (patch.cardBorder !== undefined) next.whyMeBorder = patch.cardBorder;
-  if (patch.cardBorderColor !== undefined) next.whyMeBorderColor = patch.cardBorderColor;
-  if (patch.cardBackgroundEnabled !== undefined) next.whyMeBackgroundEnabled = patch.cardBackgroundEnabled;
-  if (patch.cardBackgroundColor !== undefined) next.whyMeBackgroundColor = patch.cardBackgroundColor;
-  if (patch.cardBorderRadius !== undefined) next.whyMeBorderRadius = patch.cardBorderRadius;
-  if (patch.cardPadding !== undefined) next.whyMePadding = patch.cardPadding;
-  if (patch.cardBackgroundFill !== undefined) next.whyMeBackgroundFill = patch.cardBackgroundFill;
-  if (patch.cardBackgroundColorA !== undefined) next.whyMeBackgroundColorA = patch.cardBackgroundColorA;
-  if (patch.cardBackgroundColorB !== undefined) next.whyMeBackgroundColorB = patch.cardBackgroundColorB;
-  if (patch.cardBackgroundSplitAxis !== undefined) next.whyMeBackgroundSplitAxis = patch.cardBackgroundSplitAxis;
-  if (patch.cardBackgroundSplitPosition !== undefined) {
-    next.whyMeBackgroundSplitPosition = patch.cardBackgroundSplitPosition;
-  }
-  if (patch.cardDividerEnabled !== undefined) next.whyMeDividerEnabled = patch.cardDividerEnabled;
-  if (patch.cardDividerShape !== undefined) next.whyMeDividerShape = patch.cardDividerShape;
-  if (patch.cardDividerAngle !== undefined) next.whyMeDividerAngle = patch.cardDividerAngle;
-  if (patch.cardDividerCurveDepth !== undefined) next.whyMeDividerCurveDepth = patch.cardDividerCurveDepth;
-  if (patch.cardDividerColor !== undefined) next.whyMeDividerColor = patch.cardDividerColor;
-  if (patch.cardDividerThickness !== undefined) next.whyMeDividerThickness = patch.cardDividerThickness;
-  if (patch.cardDividerOpacity !== undefined) next.whyMeDividerOpacity = patch.cardDividerOpacity;
-  return next;
-}
-
-function mergeWhyMeBackgroundFields(
-  base: PortfolioAboutPresentationSettings,
-  record: Record<string, unknown>
-): Pick<
-  PortfolioAboutPresentationSettings,
-  | 'whyMeBackgroundFill'
-  | 'whyMeBackgroundColorA'
-  | 'whyMeBackgroundColorB'
-  | 'whyMeBackgroundSplitAxis'
-  | 'whyMeBackgroundSplitPosition'
-  | 'whyMeDividerEnabled'
-  | 'whyMeDividerShape'
-  | 'whyMeDividerAngle'
-  | 'whyMeDividerCurveDepth'
-  | 'whyMeDividerColor'
-  | 'whyMeDividerThickness'
-  | 'whyMeDividerOpacity'
-> {
-  const merged = mergeServicesCardBackgroundSettings(aboutWhyMeCardBackgroundSettings(base), {
-    cardBackgroundFill: record.whyMeBackgroundFill,
-    cardBackgroundColorA: record.whyMeBackgroundColorA,
-    cardBackgroundColorB: record.whyMeBackgroundColorB,
-    cardBackgroundSplitAxis: record.whyMeBackgroundSplitAxis,
-    cardBackgroundSplitPosition: record.whyMeBackgroundSplitPosition,
-    cardDividerEnabled: record.whyMeDividerEnabled,
-    cardDividerShape: record.whyMeDividerShape,
-    cardDividerAngle: record.whyMeDividerAngle,
-    cardDividerCurveDepth: record.whyMeDividerCurveDepth,
-    cardDividerColor: record.whyMeDividerColor,
-    cardDividerThickness: record.whyMeDividerThickness,
-    cardDividerOpacity: record.whyMeDividerOpacity,
-  });
-
-  return {
-    whyMeBackgroundFill: merged.cardBackgroundFill,
-    whyMeBackgroundColorA: merged.cardBackgroundColorA,
-    whyMeBackgroundColorB: merged.cardBackgroundColorB,
-    whyMeBackgroundSplitAxis: merged.cardBackgroundSplitAxis,
-    whyMeBackgroundSplitPosition: merged.cardBackgroundSplitPosition,
-    whyMeDividerEnabled: merged.cardDividerEnabled,
-    whyMeDividerShape: merged.cardDividerShape,
-    whyMeDividerAngle: merged.cardDividerAngle,
-    whyMeDividerCurveDepth: merged.cardDividerCurveDepth,
-    whyMeDividerColor: merged.cardDividerColor,
-    whyMeDividerThickness: merged.cardDividerThickness,
-    whyMeDividerOpacity: merged.cardDividerOpacity,
-  };
-}
-
-function mergeWhyMeDecorFields(
-  base: PortfolioAboutPresentationSettings,
-  record: Record<string, unknown>
-): Pick<
-  PortfolioAboutPresentationSettings,
-  | 'whyMeDecorEnabled'
-  | 'whyMeDecorShape'
-  | 'whyMeDecorColor'
-  | 'whyMeDecorOpacity'
-  | 'whyMeDecorSize'
-  | 'whyMeDecorX'
-  | 'whyMeDecorY'
-  | 'whyMeDecorRotation'
-  | 'whyMeDecorAlternation'
-> {
-  const merged = mergeServicesCardDecorSettings(aboutWhyMeCardDecorSettings(base), {
-    cardDecorEnabled: record.whyMeDecorEnabled,
-    cardDecorShape: record.whyMeDecorShape,
-    cardDecorColor: record.whyMeDecorColor,
-    cardDecorOpacity: record.whyMeDecorOpacity,
-    cardDecorSize: record.whyMeDecorSize,
-    cardDecorX: record.whyMeDecorX,
-    cardDecorY: record.whyMeDecorY,
-    cardDecorRotation: record.whyMeDecorRotation,
-    cardDecorAlternation: record.whyMeDecorAlternation,
-  });
-
-  return {
-    whyMeDecorEnabled: merged.cardDecorEnabled,
-    whyMeDecorShape: merged.cardDecorShape,
-    whyMeDecorColor: merged.cardDecorColor,
-    whyMeDecorOpacity: merged.cardDecorOpacity,
-    whyMeDecorSize: merged.cardDecorSize,
-    whyMeDecorX: merged.cardDecorX,
-    whyMeDecorY: merged.cardDecorY,
-    whyMeDecorRotation: merged.cardDecorRotation,
-    whyMeDecorAlternation: merged.cardDecorAlternation,
-  };
-}
-
-export function aboutWhyMeFrameClass(
-  p: Pick<
-    PortfolioAboutPresentationSettings,
-    'whyMeBorder' | 'whyMeBorderRadius' | 'whyMePadding' | 'whyMeBackgroundEnabled'
-  >,
-  options?: { includePadding?: boolean }
-): string {
-  const parts: string[] = [];
-  // Radius only matters when there is a visible surface (fill or border).
-  if (p.whyMeBackgroundEnabled !== false || p.whyMeBorder !== 'none') {
-    parts.push(servicesCardRadiusClass(p.whyMeBorderRadius));
-  }
-  if (options?.includePadding !== false) {
-    // Callers pass shell with whyMePadding already resolved via aboutWhyMeEffectivePadding.
-    parts.push(servicesCardPaddingClass(p.whyMePadding));
-  }
-  if (p.whyMeBorder !== 'none') {
-    parts.push(aboutCardBorderWidthClass(p.whyMeBorder));
-    if (p.whyMeBorder === 'soft') parts.push('shadow-sm');
-  }
-  return parts.filter(Boolean).join(' ');
-}
-
-export function aboutWhyMeFrameStyle(p: PortfolioAboutPresentationSettings): CSSProperties {
-  const style: CSSProperties = {};
-
-  if (p.whyMeBackgroundFill === 'solid' && p.whyMeBackgroundEnabled) {
-    style.backgroundColor = sanitizeHex(p.whyMeBackgroundColor, DEFAULT_ABOUT_WHY_ME_BACKGROUND_COLOR);
-  }
-
-  if (p.whyMeBorder === 'accent') {
-    style.borderColor = sanitizeHex(p.accentColor, DEFAULT_ABOUT_ACCENT_COLOR);
-  } else if (p.whyMeBorder === 'soft' || p.whyMeBorder === 'solid') {
-    style.borderStyle = 'solid';
-    style.borderColor = sanitizeHex(p.whyMeBorderColor, DEFAULT_ABOUT_WHY_ME_BORDER_COLOR);
-  }
-
-  return style;
-}
-
 export function patchAboutElementStyle(
   styles: PortfolioAboutElementStyles,
   target: PortfolioAboutStyleTarget,
@@ -2960,9 +1996,12 @@ export function mergeAboutPresentation(
     subtitleFont: pick(record.subtitleFont, ['sans', 'serif', 'display'], base.subtitleFont),
     titleColor: sanitizeHex(record.titleColor, base.titleColor),
     subtitleColor: sanitizeHex(record.subtitleColor, base.subtitleColor),
+    accentColor: sanitizeHex(record.accentColor, base.accentColor),
     subtitleSerif: typeof record.subtitleSerif === 'boolean' ? record.subtitleSerif : base.subtitleSerif,
     headerAlignment: pick(record.headerAlignment, ['left', 'center'], base.headerAlignment),
     showAboutHeading: false,
+    showStats: typeof record.showStats === 'boolean' ? record.showStats : base.showStats,
+    showSidePanel: typeof record.showSidePanel === 'boolean' ? record.showSidePanel : base.showSidePanel,
     sectionLayout: isPortfolioAboutSectionLayout(record.sectionLayout)
       ? record.sectionLayout
       : (base.sectionLayout ?? 'stacked'),
@@ -3151,104 +2190,16 @@ export function mergeAboutPresentation(
       ['left', 'center', 'right'],
       base.sidePanelTwinAlign ?? 'right'
     ),
-    twinColumnsSplit: pick(
-      record.twinColumnsSplit,
-      ['equal', 'why-me-70', 'auto'],
-      base.twinColumnsSplit ?? 'why-me-70'
-    ),
+    twinColumnsSplit: (() => {
+      const raw = record.twinColumnsSplit;
+      if (raw === 'why-me-70') return 'main-70';
+      return pick(raw, ['equal', 'main-70', 'auto'], base.twinColumnsSplit ?? 'equal');
+    })(),
     contentPairAlign: pick(
       record.contentPairAlign,
       ['start', 'center', 'end'],
       base.contentPairAlign ?? 'start'
     ),
-    whyMeMediaPlacement: 'text-only',
-    whyMeContentAlign: pick(record.whyMeContentAlign, ['left', 'center', 'right'], base.whyMeContentAlign),
-    whyMeBodyLayout: pick(record.whyMeBodyLayout, ['stack', 'inline'], base.whyMeBodyLayout ?? 'stack'),
-    whyMeGap: pick(record.whyMeGap, ['sm', 'md', 'lg', 'custom'], base.whyMeGap),
-    whyMeGapPx: clampAboutWhyMeGapPx(
-      record.whyMeGapPx,
-      record.whyMeGap === 'sm'
-        ? 16
-        : record.whyMeGap === 'lg'
-          ? 32
-          : base.whyMeGapPx ?? 24
-    ),
-    whyMeBorder: pick(record.whyMeBorder, ['none', 'soft', 'solid', 'accent'], base.whyMeBorder),
-    whyMeBorderColor: sanitizeHex(record.whyMeBorderColor, base.whyMeBorderColor),
-    whyMeBackgroundEnabled:
-      typeof record.whyMeBackgroundEnabled === 'boolean'
-        ? record.whyMeBackgroundEnabled
-        : base.whyMeBackgroundEnabled,
-    whyMeBackgroundColor: sanitizeHex(record.whyMeBackgroundColor, base.whyMeBackgroundColor),
-    whyMeBorderRadius: pick(record.whyMeBorderRadius, ['none', 'sm', 'md', 'lg', 'xl'], base.whyMeBorderRadius),
-    whyMePadding: pick(record.whyMePadding, ['none', 'sm', 'md', 'lg'], base.whyMePadding),
-    ...mergeWhyMeBackgroundFields(base, record),
-    ...mergeWhyMeDecorFields(base, record),
-    whyMeDesign: pick(
-      record.whyMeDesign,
-      ['timeline', 'split', 'lined-list', 'media-aside'],
-      'timeline'
-    ),
-    whyMeItemsPerRow: (() => {
-      const raw = record.whyMeItemsPerRow;
-      if (raw === 1 || raw === 2 || raw === 3 || raw === 4) return raw;
-      if (raw === '1' || raw === '2' || raw === '3' || raw === '4') {
-        return Number(raw) as PortfolioAboutWhyMeItemsPerRow;
-      }
-      return base.whyMeItemsPerRow;
-    })(),
-    whyMeMarkerStyle: isPortfolioAboutWhyMeMarkerStyle(record.whyMeMarkerStyle)
-      ? record.whyMeMarkerStyle
-      : base.whyMeMarkerStyle,
-    whyMeMarkerPlacement: isPortfolioAboutWhyMeMarkerPlacement(record.whyMeMarkerPlacement)
-      ? record.whyMeMarkerPlacement
-      : base.whyMeMarkerPlacement,
-    whyMeShowHeaderAccent:
-      typeof record.whyMeShowHeaderAccent === 'boolean'
-        ? record.whyMeShowHeaderAccent
-        : base.whyMeShowHeaderAccent,
-    whyMeMarkerSize: pick(
-      record.whyMeMarkerSize,
-      ['sm', 'md', 'lg', 'xl', 'custom'],
-      base.whyMeMarkerSize
-    ),
-    whyMeMarkerSizePx: clampListMarkerSizePx(
-      record.whyMeMarkerSizePx,
-      base.whyMeMarkerSizePx ?? ABOUT_WHY_ME_MARKER_SIZE_PRESET_PX.md
-    ),
-    whyMeMarkerWeight: isPortfolioListMarkerWeight(record.whyMeMarkerWeight)
-      ? record.whyMeMarkerWeight
-      : base.whyMeMarkerWeight ?? 'regular',
-    whyMeMarkerWeightAmount: clampListMarkerWeightAmount(
-      record.whyMeMarkerWeightAmount,
-      base.whyMeMarkerWeightAmount ?? LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular
-    ),
-    whyMeMarkerColor: sanitizeHex(record.whyMeMarkerColor, base.whyMeMarkerColor),
-    whyMeHeadingPreset: pick(
-      record.whyMeHeadingPreset,
-      ['default', 'why-work-with-me', 'why-choose-me', 'my-approach', 'strengths', 'value', 'custom'],
-      base.whyMeHeadingPreset
-    ),
-    whyMeHeadingCustom:
-      typeof record.whyMeHeadingCustom === 'string' ? record.whyMeHeadingCustom : base.whyMeHeadingCustom,
-    whyMeHeadingAlignment: pick(record.whyMeHeadingAlignment, ['left', 'center', 'right'], base.whyMeHeadingAlignment),
-    whyMeHeadingFont: pick(record.whyMeHeadingFont, ['sans', 'serif', 'display'], base.whyMeHeadingFont),
-    whyMeHeadingColor: sanitizeHex(record.whyMeHeadingColor, base.whyMeHeadingColor),
-    whyMeHeadingSize: pick(record.whyMeHeadingSize, ['sm', 'md', 'lg'], base.whyMeHeadingSize),
-    whyMeHeadingUppercase:
-      typeof record.whyMeHeadingUppercase === 'boolean'
-        ? record.whyMeHeadingUppercase
-        : base.whyMeHeadingUppercase,
-    accentColor: sanitizeHex(record.accentColor, base.accentColor),
-    showStats: false,
-    showSidePanel: typeof record.showSidePanel === 'boolean' ? record.showSidePanel : base.showSidePanel,
-    showWhyMe: typeof record.showWhyMe === 'boolean' ? record.showWhyMe : base.showWhyMe,
-    showWhyMeHeading:
-      typeof record.showWhyMeHeading === 'boolean' ? record.showWhyMeHeading : base.showWhyMeHeading,
-    whyMeHeading:
-      typeof record.whyMeHeading === 'string' && record.whyMeHeading.trim()
-        ? record.whyMeHeading.trim()
-        : base.whyMeHeading,
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     aboutPalette: mergeAboutPalette(
       mergeAboutPalette(DEFAULT_ABOUT_PALETTE, base.aboutPalette),
@@ -3309,12 +2260,6 @@ export function mergeAboutPresentation(
     };
   }
 
-  if (isLegacyDefaultWhyMeDecor(next)) {
-    next = {
-      ...next,
-      ...DEFAULT_ABOUT_WHY_ME_DECOR,
-    };
-  }
 
   if (next.useHeroPalette === false) {
     return next;

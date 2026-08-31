@@ -1,6 +1,6 @@
 import api from '@/lib/api';
 import { normalizeSpringPage } from '@/lib/ecosystem';
-import { dedupeSpokenLanguages } from '@/lib/spoken-languages';
+import { parseSpokenLanguageEntries } from '@/lib/spoken-languages';
 import { normalizeCreatorGender } from '@/lib/creator-gender';
 import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
 import {
@@ -405,7 +405,32 @@ function mapProfileLink(raw: RawRecord, index: number) {
     url: raw.url != null ? String(raw.url) : '',
     sortOrder: typeof raw.sortOrder === 'number' ? raw.sortOrder : index,
     platform: raw.platform != null ? String(raw.platform) : null,
+    iconUrl:
+      typeof raw.iconUrl === 'string' && raw.iconUrl.trim() ? raw.iconUrl.trim() : null,
   };
+}
+
+function mapProfileEducationEntry(raw: unknown, index: number): import('@/types/ecosystem').ProfileEducationEntry | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const row = raw as RawRecord;
+  const schoolYear = row.schoolYear != null ? String(row.schoolYear).trim() : '';
+  const title = row.title != null ? String(row.title).trim() : '';
+  const institution = row.institution != null ? String(row.institution).trim() : '';
+  if (!schoolYear && !title && !institution) return null;
+  return {
+    id: row.id != null ? String(row.id) : `education-${index}`,
+    sortOrder: typeof row.sortOrder === 'number' ? row.sortOrder : index,
+    schoolYear,
+    title,
+    institution,
+  };
+}
+
+function mapAboutStringList(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => (typeof item === 'string' ? item.trim() : String(item ?? '').trim()))
+    .filter(Boolean);
 }
 
 export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPublicProfile {
@@ -611,13 +636,19 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     ctaLabel: raw.ctaLabel != null ? String(raw.ctaLabel) : null,
     ctaUrl: raw.ctaUrl != null ? String(raw.ctaUrl) : null,
     timezoneId: raw.timezoneId != null ? String(raw.timezoneId) : null,
-    whyMeBlocks: Array.isArray(raw.whyMeBlocks)
-      ? raw.whyMeBlocks.map((item, index) => mapProfileMediaBlock(item as RawRecord, index))
-      : [],
     experienceBlocks: Array.isArray(raw.experienceBlocks)
       ? raw.experienceBlocks.map((item, index) => mapProfileMediaBlock(item as RawRecord, index))
       : [],
     yearsOfExperience: raw.yearsOfExperience != null ? Number(raw.yearsOfExperience) : null,
+    profileStack: Array.isArray(raw.profileStack)
+      ? raw.profileStack
+          .map((item) => mapProfileStrengthTool(item))
+          .filter((item): item is import('@/types/ecosystem').ProfileStrengthTool => Boolean(item))
+      : Array.isArray(raw.stack)
+        ? raw.stack
+            .map((item) => mapProfileStrengthTool(item))
+            .filter((item): item is import('@/types/ecosystem').ProfileStrengthTool => Boolean(item))
+        : [],
     strengthsToolsMastered: Array.isArray(raw.strengthsToolsMastered)
       ? raw.strengthsToolsMastered
           .map((item) => mapProfileStrengthTool(item))
@@ -628,11 +659,23 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     gender: normalizeCreatorGender(raw.gender ?? raw.pronouns),
     nationality: raw.nationality != null ? String(raw.nationality) : null,
     appRole: raw.appRole != null ? String(raw.appRole) : null,
-    spokenLanguages: dedupeSpokenLanguages(
-      Array.isArray(raw.spokenLanguages)
-        ? raw.spokenLanguages.map((item) => String(item)).filter(Boolean)
-        : [],
-    ),
+    spokenLanguages: parseSpokenLanguageEntries(
+      raw.spokenLanguages,
+      typeof raw.languages === 'string' ? raw.languages : undefined
+    ).map((item) => ({
+      name: item.value,
+      level: item.level ?? null,
+    })),
+    aboutSkills: mapAboutStringList(raw.aboutSkills),
+    aboutStrengths: mapAboutStringList(raw.aboutStrengths),
+    aboutSystemsTools: mapAboutStringList(raw.aboutSystemsTools),
+    aboutInterests: mapAboutStringList(raw.aboutInterests),
+    aboutEducation: Array.isArray(raw.aboutEducation)
+      ? raw.aboutEducation
+          .map((item, index) => mapProfileEducationEntry(item, index))
+          .filter((item): item is import('@/types/ecosystem').ProfileEducationEntry => Boolean(item))
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+      : [],
     profileServices: Array.isArray(raw.profileServices)
       ? raw.profileServices
           .map((item, index) => mapProfileServiceItem(item as RawRecord, index))

@@ -1,6 +1,6 @@
 /**
  * Lightweight tool helpers — no built-in logo catalog.
- * Logos are user-uploaded; display falls back to the first letter via CreatorToolLogo.
+ * Logos: user upload → TechIcons PNG bundle → Simple Icons → letter (see CreatorToolLogo).
  */
 
 export type CreatorToolCategoryId =

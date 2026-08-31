@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { ContactVisibilitySettings } from '@/lib/contact-visibility';
-import { dedupeSpokenLanguages } from '@/lib/spoken-languages';
+import { parseSpokenLanguageEntries, serializeSpokenLanguagesForApi } from '@/lib/spoken-languages';
 import { CREATOR_GENDER_VALUES } from '@/lib/creator-gender';
 import { CREATOR_APP_ROLE_VALUES, DEFAULT_CREATOR_APP_ROLE } from '@/lib/creator-app-role';
 import { toStoredPhoneNumber } from '@/lib/phone';
@@ -99,6 +99,7 @@ export const profileLinkSchema = z
     url: z.string().max(500),
     sortOrder: z.number().int().min(0),
     platform: platformEnum.nullable().optional(),
+    iconUrl: z.string().max(500).optional().or(z.literal('')).nullable(),
   })
   .superRefine((data, ctx) => {
     const url = data.url.trim();
@@ -321,6 +322,34 @@ export const subtitleItemSchema = z.object({
   value: z.string().max(500),
 });
 
+export const aboutStringItemSchema = z.object({
+  value: z.string().max(120),
+});
+
+export const aboutEducationEntrySchema = z
+  .object({
+    id: z.string().uuid(),
+    sortOrder: z.number().int().min(0),
+    schoolYear: z.string().max(40),
+    title: z.string().max(150),
+    institution: z.string().max(200),
+  })
+  .superRefine((data, ctx) => {
+    const schoolYear = data.schoolYear.trim();
+    const title = data.title.trim();
+    const institution = data.institution.trim();
+    if (!schoolYear && !title && !institution) return;
+    if (!title) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Degree or title is required.',
+        path: ['title'],
+      });
+    }
+  });
+
+export type AboutEducationForm = z.infer<typeof aboutEducationEntrySchema>;
+
 export const taskItemSchema = z.object({
   value: z.string().max(300),
 });
@@ -443,6 +472,7 @@ export const profileMediaBlockSchema = z
 export const spokenLanguageSchema = z
   .object({
     value: z.string().max(50),
+    level: strengthToolLevelEnum.nullable().optional(),
   })
   .superRefine((data, ctx) => {
     // Empty draft language rows are ignored on serialize; only reject whitespace-only.
@@ -491,10 +521,15 @@ export const profileSchema = z
     teamMembers: z.array(teamMemberSchema).max(12),
     galleryItems: z.array(galleryItemSchema).max(24),
     aboutUs: aboutUsSchema,
-    whyMeBlocks: z.array(profileMediaBlockSchema).max(50),
     experienceBlocks: z.array(profileMediaBlockSchema).max(50),
     yearsOfExperience: z.number().int().min(0).max(80).nullable().optional(),
+    stackItems: z.array(strengthItemSchema).max(12),
     strengthsTools: z.array(strengthItemSchema).max(12),
+    aboutSkills: z.array(aboutStringItemSchema).max(12),
+    aboutStrengths: z.array(aboutStringItemSchema).max(12),
+    aboutSystemsTools: z.array(aboutStringItemSchema).max(16),
+    aboutInterests: z.array(aboutStringItemSchema).max(12),
+    aboutEducation: z.array(aboutEducationEntrySchema).max(8),
   })
   .superRefine((data, ctx) => {
     // Only require complete geolocation when the user started filling location fields.
@@ -566,9 +601,22 @@ export function profileErrorPathToSection(path: string): ProfileSectionIdForErro
   if (path.startsWith('aboutUs')) return 'aboutUs';
   if (path.startsWith('profileLinks')) return 'links';
   if (path.startsWith('serviceOffers')) return 'services';
-  if (path.startsWith('whyMeBlocks')) return 'whyMe';
-  if (path.startsWith('experienceBlocks') || path === 'yearsOfExperience') return 'experience';
-  if (path.startsWith('strengthsTools')) return 'strengths';
+  if (path.startsWith('experienceBlocks')) return 'experience';
+  if (path === 'yearsOfExperience' || path === 'specialite' || path.startsWith('specialties') || path.startsWith('spokenLanguages')) {
+    return 'aboutPage';
+  }
+  if (path.startsWith('specialtyTags')) return 'strengths';
+  if (path.startsWith('stackItems')) return 'strengths';
+  if (
+    path.startsWith('aboutSkills') ||
+    path.startsWith('aboutStrengths') ||
+    path.startsWith('aboutSystemsTools') ||
+    path.startsWith('aboutInterests') ||
+    path.startsWith('aboutEducation')
+  ) {
+    return 'aboutPage';
+  }
+  if (path.startsWith('strengthsTools')) return 'tools';
   if (
     path.startsWith('location') ||
     path === 'timezoneId' ||
@@ -591,11 +639,12 @@ export function profileErrorPathToSection(path: string): ProfileSectionIdForErro
 
 export type ProfileSectionIdForErrors =
   | 'about'
+  | 'aboutPage'
   | 'aboutUs'
   | 'myRole'
-  | 'whyMe'
   | 'experience'
   | 'strengths'
+  | 'tools'
   | 'services'
   | 'faq'
   | 'team'
@@ -691,6 +740,7 @@ export function createEmptyProfileLink(sortOrder: number): ProfileLinkForm {
     url: '',
     sortOrder,
     platform: null,
+    iconUrl: null,
   };
 }
 
@@ -864,6 +914,70 @@ export function createEmptyGalleryItem(sortOrder: number): GalleryItemForm {
   };
 }
 
+export function createEmptyAboutEducationEntry(sortOrder: number): AboutEducationForm {
+  return {
+    id: crypto.randomUUID(),
+    sortOrder,
+    schoolYear: '',
+    title: '',
+    institution: '',
+  };
+}
+
+export function parseAboutStringList(raw: unknown): Array<{ value: string }> {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (typeof item === 'string') return { value: item.trim() };
+      if (item && typeof item === 'object' && 'value' in item) {
+        return { value: String((item as { value: unknown }).value).trim() };
+      }
+      return null;
+    })
+    .filter((item): item is { value: string } => Boolean(item?.value));
+}
+
+export function serializeAboutStringList(items: Array<{ value?: string | null }>): string[] {
+  return items
+    .map((item) => item.value?.trim() ?? '')
+    .filter(Boolean)
+    .slice(0, 16);
+}
+
+export function parseAboutEducation(raw: unknown): AboutEducationForm[] {
+  if (!Array.isArray(raw)) return [];
+  const entries: AboutEducationForm[] = [];
+  raw.forEach((item, index) => {
+    if (!item || typeof item !== 'object') return;
+    const entry = item as Record<string, unknown>;
+    entries.push({
+      id: entry.id != null ? String(entry.id) : crypto.randomUUID(),
+      sortOrder: typeof entry.sortOrder === 'number' ? entry.sortOrder : index,
+      schoolYear: entry.schoolYear != null ? String(entry.schoolYear) : '',
+      title: entry.title != null ? String(entry.title) : '',
+      institution: entry.institution != null ? String(entry.institution) : '',
+    });
+  });
+  return entries.sort((a, b) => a.sortOrder - b.sortOrder).slice(0, 8);
+}
+
+export function serializeAboutEducation(items: AboutEducationForm[]) {
+  return items
+    .filter(
+      (item) =>
+        item.schoolYear.trim().length > 0 ||
+        item.title.trim().length > 0 ||
+        item.institution.trim().length > 0
+    )
+    .map((item, index) => ({
+      id: item.id,
+      sortOrder: index,
+      schoolYear: item.schoolYear.trim(),
+      title: item.title.trim(),
+      institution: item.institution.trim(),
+    }));
+}
+
 export function parseSubtitleItems(raw: unknown): Array<{ value: string }> {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -877,30 +991,11 @@ export function parseSubtitleItems(raw: unknown): Array<{ value: string }> {
     .filter((item): item is { value: string } => Boolean(item?.value));
 }
 
-export function parseSpokenLanguages(raw: unknown, legacyLanguages?: string | null): Array<{ value: string }> {
-  let parsed: string[] = [];
-
-  if (Array.isArray(raw) && raw.length > 0) {
-    parsed = raw
-      .map((item) => {
-        if (typeof item === 'string') return item.trim();
-        if (item && typeof item === 'object' && 'value' in item) {
-          return String((item as { value: unknown }).value).trim();
-        }
-        return '';
-      })
-      .filter(Boolean);
-  } else {
-    const legacy = legacyLanguages?.trim();
-    if (legacy) {
-      parsed = legacy
-        .split(/[,;|/]+/)
-        .map((part) => part.trim())
-        .filter(Boolean);
-    }
-  }
-
-  return dedupeSpokenLanguages(parsed).map((value) => ({ value }));
+export function parseSpokenLanguages(
+  raw: unknown,
+  legacyLanguages?: string | null
+): Array<{ value: string; level?: StrengthToolLevel | null }> {
+  return parseSpokenLanguageEntries(raw, legacyLanguages);
 }
 
 export function parseProfileLinks(raw: unknown): ProfileLinkForm[] {
@@ -920,6 +1015,8 @@ export function parseProfileLinks(raw: unknown): ProfileLinkForm[] {
       url: link.url != null ? String(link.url) : '',
       sortOrder: typeof link.sortOrder === 'number' ? link.sortOrder : index,
       platform: platformParsed?.success ? platformParsed.data : null,
+      iconUrl:
+        typeof link.iconUrl === 'string' && link.iconUrl.trim() ? link.iconUrl.trim() : null,
     });
   });
   return links.sort((a, b) => a.sortOrder - b.sortOrder);
@@ -1450,6 +1547,7 @@ export function serializeProfileLinks(links: ProfileLinkForm[]) {
         url,
         sortOrder: index,
         platform: link.type === 'SOCIAL' ? link.platform ?? null : null,
+        iconUrl: link.iconUrl?.trim() ? link.iconUrl.trim() : null,
       };
     });
 }
@@ -1578,9 +1676,7 @@ function normalizeProfileComparable(values: ProfileFormValues, availabilityHours
     gender: trimOptional(values.gender),
     nationality: trimOptional(values.nationality).toUpperCase(),
     appRole: values.appRole ?? DEFAULT_CREATOR_APP_ROLE,
-    spokenLanguages: dedupeSpokenLanguages(
-      values.spokenLanguages.map((item) => trimOptional(item.value)).filter(Boolean)
-    ).sort(),
+    spokenLanguages: serializeSpokenLanguagesForApi(values.spokenLanguages),
     locationCity: trimOptional(values.locationCity),
     locationCountry: trimOptional(values.locationCountry),
     locationLat: values.locationLat ?? null,
@@ -1605,14 +1701,27 @@ function normalizeProfileComparable(values: ProfileFormValues, availabilityHours
     teamMembers: serializeTeamMembers(values.teamMembers),
     galleryItems: serializeGalleryItems(values.galleryItems),
     aboutUs: serializeAboutUs(values.aboutUs),
-    whyMeBlocks: serializeProfileBlocks(values.whyMeBlocks),
     experienceBlocks: serializeProfileBlocks(values.experienceBlocks),
     yearsOfExperience: values.yearsOfExperience ?? null,
+    stackItems: values.stackItems
+      .map((item) => ({
+        value: trimOptional(item.value),
+        description: trimOptional(item.description ?? ''),
+        category: trimOptional(item.category ?? ''),
+        level: item.level ?? null,
+        useCases: [] as string[],
+        experienceYears: null,
+        experienceLabel: null,
+        currentlyUsed: null,
+        iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,
+      }))
+      .filter((item) => Boolean(item.value))
+      .sort((a, b) => a.value.localeCompare(b.value)),
     strengthsTools: values.strengthsTools
       .map((item) => ({
         value: trimOptional(item.value),
         description: trimOptional(item.description ?? ''),
-        category: null,
+        category: '',
         level: item.level ?? null,
         useCases: (item.useCases ?? []).map((entry) => entry.trim()).filter(Boolean).slice(0, 8),
         experienceYears: null,
@@ -1622,6 +1731,11 @@ function normalizeProfileComparable(values: ProfileFormValues, availabilityHours
       }))
       .filter((item) => Boolean(item.value))
       .sort((a, b) => a.value.localeCompare(b.value)),
+    aboutSkills: serializeAboutStringList(values.aboutSkills),
+    aboutStrengths: serializeAboutStringList(values.aboutStrengths),
+    aboutSystemsTools: serializeAboutStringList(values.aboutSystemsTools),
+    aboutInterests: serializeAboutStringList(values.aboutInterests),
+    aboutEducation: serializeAboutEducation(values.aboutEducation),
   };
 }
 
@@ -1642,6 +1756,7 @@ export function normalizeStrengthsToolsComparable(
     .map((item) => ({
       value: trimOptional(item.value),
       description: trimOptional(item.description ?? ''),
+      category: trimOptional(item.category ?? ''),
       level: item.level ?? null,
       useCases: (item.useCases ?? []).map((entry) => entry.trim()).filter(Boolean).slice(0, 8),
       iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,

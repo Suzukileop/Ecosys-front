@@ -10,10 +10,14 @@ import {
   profileSectionMutedTextClass,
   profileSectionSubheadingClass,
 } from '@/components/creator/studio/profile-section-ui';
+import { fetchLanguageProficiencyLevels } from '@/lib/reference-api';
 import {
-  dedupeSpokenLanguages,
+  DEFAULT_LANGUAGE_PROFICIENCY_LEVELS,
+  dedupeSpokenLanguageEntries,
+  resolveSpokenLanguageLevelLabel,
   SPOKEN_LANGUAGE_PRESETS,
   spokenLanguageMatchKey,
+  type SpokenLanguageEntry,
 } from '@/lib/spoken-languages';
 
 const MAX_LANGUAGES = 20;
@@ -22,7 +26,7 @@ type ProfileLanguagesFieldProps = {
   control: Control<ProfileFormValues>;
   setValue: UseFormSetValue<ProfileFormValues>;
   readOnly?: boolean;
-  values?: string[];
+  values?: SpokenLanguageEntry[];
 };
 
 export function ProfileLanguagesField({
@@ -33,46 +37,64 @@ export function ProfileLanguagesField({
 }: ProfileLanguagesFieldProps) {
   const watched = useWatch({ control, name: 'spokenLanguages' });
   const [customDraft, setCustomDraft] = useState('');
+  const [levelOptions, setLevelOptions] = useState(DEFAULT_LANGUAGE_PROFICIENCY_LEVELS);
+
+  useEffect(() => {
+    void fetchLanguageProficiencyLevels().then(setLevelOptions);
+  }, []);
 
   const selected = useMemo(() => {
-    const source = readOnly ? values : (watched ?? []).map((item) => item.value);
-    return dedupeSpokenLanguages(source);
+    const source = readOnly ? values : (watched ?? []);
+    return dedupeSpokenLanguageEntries(
+      source.map((item) => ({
+        value: item.value,
+        level: item.level ?? null,
+      }))
+    );
   }, [readOnly, values, watched]);
 
   const selectedKeys = useMemo(
-    () => new Set(selected.map((value) => spokenLanguageMatchKey(value))),
+    () => new Set(selected.map((value) => spokenLanguageMatchKey(value.value))),
     [selected]
   );
 
   useEffect(() => {
     if (readOnly) return;
-    const raw = (watched ?? []).map((item) => item.value);
-    const deduped = dedupeSpokenLanguages(raw);
-    if (raw.length !== deduped.length || raw.some((value, index) => value !== deduped[index])) {
-      setValue(
-        'spokenLanguages',
-        deduped.map((value) => ({ value })),
-        { shouldDirty: false, shouldValidate: true }
-      );
+    const raw = (watched ?? []).map((item) => ({
+      value: item.value,
+      level: item.level ?? null,
+    }));
+    const deduped = dedupeSpokenLanguageEntries(raw);
+    const changed =
+      raw.length !== deduped.length ||
+      raw.some((item, index) => {
+        const next = deduped[index];
+        return (
+          !next ||
+          item.value !== next.value ||
+          (item.level ?? null) !== (next.level ?? null)
+        );
+      });
+    if (changed) {
+      setValue('spokenLanguages', deduped, { shouldDirty: false, shouldValidate: true });
     }
   }, [readOnly, setValue, watched]);
 
-  const sync = (next: string[]) => {
-    setValue(
-      'spokenLanguages',
-      dedupeSpokenLanguages(next).map((value) => ({ value })),
-      { shouldDirty: true, shouldValidate: true }
-    );
+  const sync = (next: SpokenLanguageEntry[]) => {
+    setValue('spokenLanguages', dedupeSpokenLanguageEntries(next), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const togglePreset = (language: string) => {
     const key = spokenLanguageMatchKey(language);
     if (selectedKeys.has(key)) {
-      sync(selected.filter((value) => spokenLanguageMatchKey(value) !== key));
+      sync(selected.filter((value) => spokenLanguageMatchKey(value.value) !== key));
       return;
     }
     if (selected.length >= MAX_LANGUAGES) return;
-    sync([...selected, language]);
+    sync([...selected, { value: language, level: null }]);
   };
 
   const customSelected = useMemo(
@@ -80,7 +102,7 @@ export function ProfileLanguagesField({
       selected.filter(
         (language) =>
           !SPOKEN_LANGUAGE_PRESETS.some(
-            (preset) => spokenLanguageMatchKey(preset) === spokenLanguageMatchKey(language)
+            (preset) => spokenLanguageMatchKey(preset) === spokenLanguageMatchKey(language.value)
           )
       ),
     [selected]
@@ -88,7 +110,16 @@ export function ProfileLanguagesField({
 
   const removeLanguage = (language: string) => {
     const key = spokenLanguageMatchKey(language);
-    sync(selected.filter((value) => spokenLanguageMatchKey(value) !== key));
+    sync(selected.filter((value) => spokenLanguageMatchKey(value.value) !== key));
+  };
+
+  const updateLevel = (language: string, level: SpokenLanguageEntry['level']) => {
+    const key = spokenLanguageMatchKey(language);
+    sync(
+      selected.map((item) =>
+        spokenLanguageMatchKey(item.value) === key ? { ...item, level: level ?? null } : item
+      )
+    );
   };
 
   const addCustom = () => {
@@ -96,7 +127,7 @@ export function ProfileLanguagesField({
     if (!trimmed || selectedKeys.has(spokenLanguageMatchKey(trimmed)) || selected.length >= MAX_LANGUAGES) {
       return;
     }
-    sync([...selected, trimmed]);
+    sync([...selected, { value: trimmed, level: null }]);
     setCustomDraft('');
   };
 
@@ -106,14 +137,22 @@ export function ProfileLanguagesField({
     }
     return (
       <div className="flex flex-wrap gap-2">
-        {selected.map((language) => (
-          <span
-            key={spokenLanguageMatchKey(language)}
-            className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm font-medium text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          >
-            {language}
-          </span>
-        ))}
+        {selected.map((language) => {
+          const levelLabel = resolveSpokenLanguageLevelLabel(language.level, levelOptions);
+          return (
+            <span
+              key={spokenLanguageMatchKey(language.value)}
+              className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm font-medium text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            >
+              {language.value}
+              {levelLabel ? (
+                <span className="ml-1.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                  · {levelLabel}
+                </span>
+              ) : null}
+            </span>
+          );
+        })}
       </div>
     );
   }
@@ -123,21 +162,62 @@ export function ProfileLanguagesField({
       <div>
         <p className={profileSectionSubheadingClass}>Langues de travail</p>
         <p className={`mt-1 ${profileSectionMutedTextClass}`}>
-          Sélectionnez les langues dans lesquelles vous travaillez. {selected.length}/{MAX_LANGUAGES}{' '}
-          ajoutées.
+          Sélectionnez les langues dans lesquelles vous travaillez et indiquez votre niveau.{' '}
+          {selected.length}/{MAX_LANGUAGES} ajoutées.
         </p>
       </div>
+
+      {selected.length > 0 ? (
+        <div className="space-y-2">
+          {selected.map((language) => (
+            <div
+              key={spokenLanguageMatchKey(language.value)}
+              className="flex flex-col gap-2 rounded-xl border border-neutral-200 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-700"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                  {language.value}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeLanguage(language.value)}
+                  className="text-xs font-medium text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+                >
+                  Retirer
+                </button>
+              </div>
+              <select
+                value={language.level ?? ''}
+                onChange={(event) =>
+                  updateLevel(
+                    language.value,
+                    event.target.value ? (event.target.value as SpokenLanguageEntry['level']) : null
+                  )
+                }
+                className={`${profileFormInputClass} w-full sm:max-w-[220px]`}
+              >
+                <option value="">Niveau (optionnel)</option>
+                {levelOptions.map((option) => (
+                  <option key={option.code} value={option.code}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {customSelected.length > 0 ? (
         <div className="flex flex-wrap gap-2">
           {customSelected.map((language) => (
             <button
-              key={spokenLanguageMatchKey(language)}
+              key={spokenLanguageMatchKey(language.value)}
               type="button"
-              onClick={() => removeLanguage(language)}
+              onClick={() => removeLanguage(language.value)}
               className="inline-flex items-center gap-1.5 rounded-full border border-orange-300 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-200"
             >
-              {language}
+              {language.value}
               <span aria-hidden>×</span>
             </button>
           ))}

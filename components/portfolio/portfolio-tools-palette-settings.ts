@@ -80,7 +80,7 @@ export const DEFAULT_TOOLS_COLOR_BINDINGS: PortfolioToolsColorBindings = {
   tileBackground: 'neutre',
   label: 'texteFort',
   description: 'texteMuted',
-  cardBackground: 'fond',
+  cardBackground: 'neutre',
   cardBorder: 'bordure',
   chipBackground: 'neutre',
   chipText: 'texteMuted',
