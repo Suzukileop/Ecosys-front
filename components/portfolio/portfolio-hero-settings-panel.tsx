@@ -68,6 +68,7 @@ import {
   PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS,
   heroBannerDesignSettingsPatch,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
+import { HeroBannerDesignPreview } from '@/components/portfolio/portfolio-hero-banner-skeletons';
 import {
   HERO_COPY_ELEMENT_BACKGROUND_OPACITY_MAX,
   HERO_COPY_ELEMENT_BACKGROUND_OPACITY_MIN,
@@ -1621,7 +1622,7 @@ export function HeroSettingsPanel({
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS.map((option) => {
-                const active = (hero.heroBannerDesign ?? 'classic') === option.value;
+                const active = (hero.heroBannerDesign ?? 'swiss-editorial') === option.value;
                 return (
                   <button
                     key={option.value}
@@ -1633,7 +1634,8 @@ export function HeroSettingsPanel({
                         : 'border-neutral-200 bg-white hover:border-neutral-300'
                     }`}
                   >
-                    <span className="block text-sm font-semibold text-neutral-950">{option.label}</span>
+                    <HeroBannerDesignPreview design={option.value} />
+                    <span className="mt-3 block text-sm font-semibold text-neutral-950">{option.label}</span>
                     <span className="mt-1 block text-sm text-neutral-500">{option.description}</span>
                   </button>
                 );
@@ -1648,7 +1650,7 @@ export function HeroSettingsPanel({
             onChange={(heroImageGrayscale) => onChange({ heroImageGrayscale })}
           />
 
-          {(hero.heroBannerDesign ?? 'classic') === 'swiss-editorial' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'swiss-editorial' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Swiss editorial
@@ -1701,7 +1703,7 @@ export function HeroSettingsPanel({
             </div>
           ) : null}
 
-          {(hero.heroBannerDesign ?? 'classic') === 'portrait-identity' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'portrait-identity' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Portrait identity
@@ -1810,7 +1812,7 @@ export function HeroSettingsPanel({
             ) : null}
           </div>
 
-          {(hero.heroBannerDesign ?? 'classic') === 'editorial-rail' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'editorial-rail' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Editorial rail
@@ -1906,7 +1908,7 @@ export function HeroSettingsPanel({
             </div>
           ) : null}
 
-          {(hero.heroBannerDesign ?? 'classic') === 'statement-cta' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'statement-cta' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Statement CTA
@@ -2042,7 +2044,7 @@ export function HeroSettingsPanel({
             </div>
           ) : null}
 
-          {(hero.heroBannerDesign ?? 'classic') === 'portrait-balance' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'portrait-balance' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Portrait balance
@@ -2116,7 +2118,7 @@ export function HeroSettingsPanel({
             </div>
           ) : null}
 
-          {(hero.heroBannerDesign ?? 'classic') === 'left-portrait' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'left-portrait' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Left portrait
@@ -2137,7 +2139,7 @@ export function HeroSettingsPanel({
             </div>
           ) : null}
 
-          {(hero.heroBannerDesign ?? 'classic') === 'circle-portrait' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'circle-portrait' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Circle portrait
@@ -2166,7 +2168,7 @@ export function HeroSettingsPanel({
             </div>
           ) : null}
 
-          {(hero.heroBannerDesign ?? 'classic') === 'experience-split' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'experience-split' ? (
             <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Experience split
@@ -2194,7 +2196,7 @@ export function HeroSettingsPanel({
             </div>
           ) : null}
 
-          {(hero.heroBannerDesign ?? 'classic') === 'editorial-overlap' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'editorial-overlap' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Editorial overlap
@@ -2251,7 +2253,7 @@ export function HeroSettingsPanel({
             </div>
           ) : null}
 
-          {(hero.heroBannerDesign ?? 'classic') === 'selected-works' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'selected-works' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Selected works
@@ -2282,7 +2284,7 @@ export function HeroSettingsPanel({
             </div>
           ) : null}
 
-          {(hero.heroBannerDesign ?? 'classic') === 'identity-index' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'identity-index' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Identity index
@@ -2348,7 +2350,7 @@ export function HeroSettingsPanel({
             </div>
           ) : null}
 
-          {(hero.heroBannerDesign ?? 'classic') === 'studio-split' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'studio-split' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Studio split
@@ -2386,7 +2388,7 @@ export function HeroSettingsPanel({
             </div>
           ) : null}
 
-          {(hero.heroBannerDesign ?? 'classic') === 'work-duo' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'work-duo' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Work duo
@@ -2471,7 +2473,7 @@ export function HeroSettingsPanel({
             </div>
           ) : null}
 
-          {(hero.heroBannerDesign ?? 'classic') === 'bowl-intro' ? (
+          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'bowl-intro' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Contenu Bowl intro

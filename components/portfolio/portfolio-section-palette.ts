@@ -29,6 +29,7 @@ import type { PortfolioStackPresentationSettings } from '@/components/portfolio/
 import type { PortfolioToolsPresentationSettings } from '@/components/portfolio/portfolio-tools-settings';
 import { applyToolsPaletteToSettings } from '@/components/portfolio/portfolio-tools-palette-settings';
 import type { PortfolioAboutUsPresentationSettings } from '@/components/portfolio/portfolio-about-us-settings';
+import type { PortfolioInfoPresentationSettings } from '@/components/portfolio/portfolio-info-settings';
 
 /**
  * Per-section flag: when true, the section’s colors follow the Hero semantic
@@ -258,6 +259,30 @@ export function applyHeroPaletteToAboutUs(
     founderNameColor: color('texteFort'),
     founderFunctionColor: color('texteMuted'),
     accentColor: color('principal'),
+    cardBackgroundColor: color('neutre'),
+    cardBorderColor: color('bordure'),
+    useHeroPalette: true,
+  };
+}
+
+export function applyHeroPaletteToInfo(
+  presentation: PortfolioInfoPresentationSettings,
+  palette: PortfolioHeroPalette
+): PortfolioInfoPresentationSettings {
+  if (presentation.useHeroPalette === false) return presentation;
+  const color = (token: HeroPaletteTokenId) => resolveHeroPaletteColor(palette, token);
+  return {
+    ...presentation,
+    sectionBackgroundColor: color('fond'),
+    sectionBackgroundGradientFrom: color('fond'),
+    sectionBackgroundGradientTo: color('neutre'),
+    sectionBackgroundColorA: color('fond'),
+    sectionBackgroundColorB: color('neutre'),
+    sectionBackgroundDividerColor: color('bordure'),
+    accentColor: color('principal'),
+    titleColor: color('principal'),
+    subtitleColor: color('texteFort'),
+    bodyColor: color('texteMuted'),
     cardBackgroundColor: color('neutre'),
     cardBorderColor: color('bordure'),
     useHeroPalette: true,

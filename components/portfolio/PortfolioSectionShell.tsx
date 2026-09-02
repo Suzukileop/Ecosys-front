@@ -78,7 +78,7 @@ export function PortfolioSectionShell({
           {fullyOpaque ? (
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2"
+              className="pf-theme-layer pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2"
               style={{
                 backgroundColor:
                   background?.sectionBackgroundColor?.trim() ||
@@ -89,7 +89,7 @@ export function PortfolioSectionShell({
           ) : null}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2"
+            className="pf-theme-layer pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2"
             style={bgStyle}
           />
         </>

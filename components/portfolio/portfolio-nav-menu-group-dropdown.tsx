@@ -8,7 +8,13 @@ import {
   DEFAULT_NAV_PALETTE,
   mergeNavPalette,
 } from '@/components/portfolio/portfolio-nav-palette-settings';
-import { formatNavLabel, portfolioNavInkOnAccentFill } from '@/components/portfolio/portfolio-nav-settings';
+import {
+  formatNavLabel,
+  portfolioNavInkOnAccentFill,
+  portfolioNavPageIsDark,
+  portfolioNavTexteFortInk,
+  resolvePortfolioNavMenuGroupActiveStyle,
+} from '@/components/portfolio/portfolio-nav-settings';
 import { scrollToPortfolioSection } from '@/components/portfolio/portfolio-nav-top-clearance';
 import type { PortfolioNavSettings } from '@/components/portfolio/portfolio-settings-types';
 
@@ -100,11 +106,15 @@ export function PortfolioNavMenuGroupDropdown({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const label = formatNavLabel(groupLabel, settings.labelCase);
   const groupActive = items.some((item) => item.id === activeId);
-  const accent = settings.activeAccentColor ?? '#f97316';
   const navPalette = mergeNavPalette(DEFAULT_NAV_PALETTE, settings.navPalette);
+  const groupActiveStyle = resolvePortfolioNavMenuGroupActiveStyle(settings, navPalette);
   const panelBackground = settings.barBackgroundColor ?? '#ffffff';
-  const panelInk = pickReadableInk(panelBackground, settings.itemTextColor);
-  const activeInk = portfolioNavInkOnAccentFill(accent, navPalette);
+  const strongInk = portfolioNavTexteFortInk(navPalette);
+  const pageIsDark = portfolioNavPageIsDark(navPalette);
+  const panelInk = pageIsDark
+    ? strongInk
+    : pickReadableInk(panelBackground, settings.itemTextColor);
+  const triggerInk = pageIsDark ? strongInk : (settings.itemTextColor ?? panelInk);
 
   useEffect(() => {
     setMounted(true);
@@ -215,7 +225,7 @@ export function PortfolioNavMenuGroupDropdown({
         {contentMode !== 'text' ? (
           <span
             className="inline-flex h-5 w-5 shrink-0 items-center justify-center opacity-90"
-            style={{ color: active ? activeInk : panelInk }}
+            style={{ color: active ? groupActiveStyle.color : panelInk }}
           >
             {renderItemIcon ? (
               renderItemIcon(item, active)
@@ -246,7 +256,10 @@ export function PortfolioNavMenuGroupDropdown({
           className={`${itemClass} ${active ? '' : 'hover:bg-black/[0.05] dark:hover:bg-white/[0.06]'}`}
           style={
             active
-              ? { backgroundColor: accent, color: activeInk }
+              ? {
+                  backgroundColor: groupActiveStyle.backgroundColor,
+                  color: groupActiveStyle.color,
+                }
               : { color: panelInk }
           }
         >
@@ -269,7 +282,10 @@ export function PortfolioNavMenuGroupDropdown({
         className={`${itemClass} no-underline ${active ? '' : 'hover:bg-black/[0.05] dark:hover:bg-white/[0.06]'}`}
         style={
           active
-            ? { backgroundColor: accent, color: activeInk }
+            ? {
+                backgroundColor: groupActiveStyle.backgroundColor,
+                color: groupActiveStyle.color,
+              }
             : { color: panelInk }
         }
       >
@@ -319,7 +335,9 @@ export function PortfolioNavMenuGroupDropdown({
           aria-current={groupActive ? 'true' : undefined}
           title={contentMode === 'icons' ? label : undefined}
           className={triggerClassName}
-          style={triggerStyle}
+          style={
+            groupActive ? triggerStyle : { ...triggerStyle, color: triggerInk }
+          }
           onClick={() => {
             setOpen((value) => {
               const next = !value;

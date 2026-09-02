@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Fragment, createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode, type RefObject } from 'react';
+import { Fragment, createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type FocusEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
@@ -88,20 +88,31 @@ import {
   portfolioNavItemHoverCssVars,
   portfolioNavItemHoverIconClass,
   portfolioNavItemHoverPresentation,
+  portfolioNavEditorialBarItemHoverPresentation,
+  portfolioNavTriZoneItemHoverPresentation,
+  portfolioNavLogoLeftNavContactItemHoverPresentation,
+  portfolioNavFloatingPillItemHoverPresentation,
+  portfolioNavCenterLogoSplitItemHoverPresentation,
   portfolioNavItemHoverTextClass,
   portfolioNavDrawerItemHoverClass,
   portfolioNavActiveItemStyle,
   portfolioNavActiveIndicatorSlot,
   portfolioNavUsesFlatMenuIndicatorLayout,
+  portfolioNavTextIndicatorReserveClass,
+  portfolioNavUsesTextIndicatorReserve,
   portfolioNavDockGlyphClass,
   portfolioNavEffectiveContentMode,
   portfolioNavInkOnAccentFill,
+  applyPortfolioNavEditorialBarActiveInk,
+  resolvePortfolioNavEditorialBarMenuAccentColor,
+  resolvePortfolioNavMenuGroupActiveStyle,
   portfolioNavPlacementClass,
   portfolioNavRailDividerClass,
   portfolioNavBarHostsInlineExtras,
   portfolioNavItemGapClass,
   portfolioNavTriZoneItemGapClass,
   resolveNavBarSurfaceBackground,
+  resolveNavDrawerPanelBackground,
   resolvePortfolioNavMobileChrome,
   type PortfolioNavMenuControlAlign,
   type PortfolioNavMenuControlIcon,
@@ -110,6 +121,8 @@ import {
   portfolioNavUsesCenterLogoSplitLayout,
   portfolioNavUsesEditorialBarLayout,
   portfolioNavUsesFloatingPillLayout,
+  portfolioNavFloatingPillShowsLogo,
+  portfolioNavFloatingPillShowsContact,
   portfolioNavUsesLogoLeftNavContactLayout,
   portfolioNavUsesStructuredBarLayout,
   portfolioNavUsesTriZoneLayout,
@@ -174,8 +187,11 @@ import {
 import {
   PortfolioNavAdjacentExtras,
   PortfolioNavCenterBrand,
+  PortfolioNavColorModeToggleButton,
+  PortfolioNavColorModeToggleProvider,
   PortfolioNavContactCta,
   PortfolioNavEditorialRightSlot,
+  PortfolioNavFloatingPillRightSlot,
   PortfolioNavFreeSpaceLinks,
   PortfolioNavInlineExtras,
   PortfolioNavSocialIconStrip,
@@ -3074,15 +3090,16 @@ function useNavVisibility(
 
 /** Match Tailwind `lg` / `xl` for layout remaps that need JS. */
 function usePortfolioMinWidth(px: number) {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia(`(min-width: ${px}px)`);
-    const update = () => setMatches(mq.matches);
-    update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
-  }, [px]);
-  return matches;
+  const query = `(min-width: ${px}px)`;
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      const mq = window.matchMedia(query);
+      mq.addEventListener('change', onStoreChange);
+      return () => mq.removeEventListener('change', onStoreChange);
+    },
+    () => window.matchMedia(query).matches,
+    () => false
+  );
 }
 
 /** lg breakpoint (1024) — used to remap side nav / icon labels on small–mid screens. */
@@ -3098,8 +3115,10 @@ function usePortfolioXlUp() {
 type NavPresenceState = {
   /** Combined with display visibility — false when reveal mode is collapsed. */
   expanded: boolean;
-  /** Opacity for the bar chrome (0–1). */
+  /** Opacity for hide/reveal chrome (hover/tap) — not used for dim mode. */
   chromeOpacity: number;
+  /** Dim mode at rest: soften labels only; bar background stays opaque. */
+  dimResting: boolean;
   /** Show the peek / menu handle. */
   showHandle: boolean;
   /** Dim mode: currently brightened by interaction. */
@@ -3115,7 +3134,8 @@ type NavPresenceState = {
 };
 
 const DIM_IDLE_MS = 1600;
-const DIM_REST_OPACITY = 0.32;
+/** Foreground (labels/icons) opacity in discreet nav — shell background stays opaque. */
+const DIM_FOREGROUND_OPACITY = 0.38;
 /** Time to cross the gap between a detached nav rail and free-space link icons. */
 const HOVER_LEAVE_GRACE_MS = 1200;
 
@@ -3251,14 +3271,18 @@ function useNavPresence(
   if (!displayVisible) {
     chromeOpacity = 0;
   } else if (mode === 'dim') {
-    chromeOpacity = isDimActive ? 1 : DIM_REST_OPACITY;
+    // Keep shell opaque — dim only menu foreground (see dimResting + CSS).
+    chromeOpacity = 1;
   } else if (mode === 'hover' || mode === 'tap') {
     chromeOpacity = isRevealed || showHandle ? 1 : 0;
   }
 
+  const dimResting = displayVisible && mode === 'dim' && !isDimActive;
+
   return {
     expanded: isRevealed,
     chromeOpacity,
+    dimResting,
     showHandle,
     isDimActive,
     onMouseEnter: () => {
@@ -3320,6 +3344,9 @@ export function PortfolioFloatingNav({
   avatarUrl,
   brandName,
   contentGutter = DEFAULT_CONTENT_GUTTER,
+  showColorModeToggle = false,
+  colorMode = 'dark',
+  onColorModeToggle,
 }: {
   items: NavItem[];
   settings: PortfolioNavSettings;
@@ -3342,6 +3369,10 @@ export function PortfolioFloatingNav({
   brandName?: string;
   /** Global side gutters — aligns in-bar brand / CTA with hero and sections. */
   contentGutter?: PortfolioContentGutter;
+  /** Global → Theme: show sun/moon control in the navigation bar. */
+  showColorModeToggle?: boolean;
+  colorMode?: 'light' | 'dark';
+  onColorModeToggle?: () => void;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isControlled = typeof onNavigate === 'function';
@@ -3399,6 +3430,8 @@ export function PortfolioFloatingNav({
   const allowWrap = mobileChrome.allowWrap;
   const allowScroll = mobileChrome.allowScroll || autoNeedsScroll;
   const useDrawer = mobileChrome.useDrawer;
+  const useBrandBar = mobileChrome.useBrandBar;
+  const useMobileMenu = useDrawer || useBrandBar;
   const navPalette = useMemo(
     () => mergeNavPalette(DEFAULT_NAV_PALETTE, settings.navPalette),
     [settings.navPalette]
@@ -3413,13 +3446,24 @@ export function PortfolioFloatingNav({
       navPalette,
     ]
   );
+  const drawerPanelBackground = useMemo(
+    () => resolveNavDrawerPanelBackground(settings, navPalette),
+    [
+      settings.navBarSurface,
+      settings.barBackgroundColor,
+      settings.useNavPalette,
+      settings.navPalette,
+      navPalette,
+    ]
+  );
   const navBarSurfaceTransparent = (settings.navBarSurface ?? 'neutre') === 'transparent';
   const navStrongTextColor = resolveHeroPaletteColor(navPalette, 'texteFort');
+  const navNeutreColor = resolveHeroPaletteColor(navPalette, 'neutre');
   const navPageFillColor = resolveHeroPaletteColor(navPalette, 'fond');
 
   useEffect(() => {
-    if (!useDrawer) setDrawerOpen(false);
-  }, [useDrawer]);
+    if (!useMobileMenu) setDrawerOpen(false);
+  }, [useMobileMenu]);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -3449,29 +3493,6 @@ export function PortfolioFloatingNav({
     return () => window.cancelAnimationFrame(id);
   }, [drawerOpen]);
 
-  // Auto mode: if icons still overflow after tight gap, enable swipe.
-  useEffect(() => {
-    const isAuto = (settings.mobileLayout ?? 'auto') === 'auto';
-    if (isLgUp || !isAuto || allowWrap) {
-      setAutoNeedsScroll(false);
-      return;
-    }
-    const el = innerRef.current;
-    if (!el) return;
-
-    const measure = () => {
-      setAutoNeedsScroll(el.scrollWidth > el.clientWidth + 2);
-    };
-    measure();
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
-    ro?.observe(el);
-    window.addEventListener('resize', measure);
-    return () => {
-      ro?.disconnect();
-      window.removeEventListener('resize', measure);
-    };
-  }, [isLgUp, settings.mobileLayout, allowWrap, sectionItems.length, itemGap, contentMode, barWidth]);
-
   /**
    * Keep the outer shell at bar size while the bar is fading out, then hug the handle.
    * Expanding grows the shell immediately so the bar has room — avoids a layout jump mid-fold.
@@ -3495,7 +3516,7 @@ export function PortfolioFloatingNav({
   usePortfolioNavTopClearanceSync({
     rootRef: navRootRef,
     active: topClearanceActive,
-    visible: useDrawer
+    visible: useMobileMenu
       ? visible
       : visible &&
         presence.chromeOpacity > 0.05 &&
@@ -3522,13 +3543,14 @@ export function PortfolioFloatingNav({
   const handleChromeClass =
     'inline-flex shrink-0 items-center justify-center rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.12)] backdrop-blur-md transition hover:opacity-90';
 
-  if (useDrawer) {
+  if (useMobileMenu) {
     const mobileBrand = settings.mobileBrand ?? 'none';
     const drawerSide = settings.mobileDrawerSide ?? 'right';
     const drawerLabelSizeClass = portfolioNavLabelFontSizeClass(settings.labelFontSize ?? 'sm', true);
     const brandWord =
       (settings.mobileBrandWord ?? '').trim() ||
       (brandName ?? '').trim() ||
+      (settings.customExtraText ?? '').trim() ||
       'Menu';
     const showAvatar = mobileBrand === 'avatar';
     const showWord = mobileBrand === 'word';
@@ -3539,6 +3561,23 @@ export function PortfolioFloatingNav({
           ? 'justify-center'
           : 'justify-end';
     const avatarSrc = avatarUrl?.trim() || '';
+    const brandBarInk = settings.itemTextColor ?? navStrongTextColor;
+    const brandBarLogoUrl = (settings.customExtraLogoUrl ?? '').trim();
+    const brandBarText =
+      (settings.customExtraText ?? '').trim() || (brandName ?? '').trim() || 'Logo';
+    const brandBarSettings: PortfolioNavSettings = {
+      ...settings,
+      customExtraEnabled: true,
+      customExtraDisplay: brandBarLogoUrl ? 'logo' : 'text',
+      customExtraLogoUrl: brandBarLogoUrl,
+      customExtraText: brandBarText,
+      customExtraBackgroundColor: 'transparent',
+      customExtraBorderEnabled: false,
+      customExtraPaddingX: 0,
+      customExtraPaddingY: 0,
+      customExtraTextColor: brandBarInk,
+      customExtraFontWeight: settings.customExtraFontWeight ?? 'semibold',
+    };
     const brandEl = showAvatar ? (
       avatarSrc ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -3567,28 +3606,32 @@ export function PortfolioFloatingNav({
         {brandWord}
       </span>
     ) : null;
-    const menuButton = (
+    const openMenuButton = (
       <button
         type="button"
         onClick={() => setDrawerOpen(true)}
         aria-expanded={drawerOpen}
         aria-controls="portfolio-nav-drawer"
         aria-label="Open navigation menu"
-        className={`${handleChromeClass} h-11 w-11 min-h-11`}
-        style={handleChromeStyle}
+        className={
+          useBrandBar
+            ? 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition hover:bg-black/5'
+            : `${handleChromeClass} h-11 w-11 min-h-11`
+        }
+        style={useBrandBar ? { color: brandBarInk } : handleChromeStyle}
       >
         <NavMenuControlGlyph icon={menuControlIcon} />
       </button>
     );
-    const controls =
+    const drawerControls =
       menuControlAlign === 'right' ? (
         <>
           {brandEl}
-          {menuButton}
+          {openMenuButton}
         </>
       ) : (
         <>
-          {menuButton}
+          {openMenuButton}
           {brandEl}
         </>
       );
@@ -3604,23 +3647,51 @@ export function PortfolioFloatingNav({
           aria-hidden={!visible}
           style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
         >
-          <div
-            data-portfolio-nav-clearance-box
-            className={`pointer-events-auto flex w-full items-center gap-2.5 px-3 py-2.5 ${barJustify}`}
-          >
-            {menuControlAlign === 'center' ? (
-              <div className="inline-flex items-center gap-2.5">{controls}</div>
-            ) : (
-              controls
-            )}
-          </div>
+          {useBrandBar ? (
+            <div
+              data-portfolio-nav-clearance-box
+              className="pointer-events-auto flex w-full items-center justify-between gap-3 border-b px-4 py-3.5 sm:gap-4 sm:px-5"
+              style={{
+                backgroundColor: effectiveBarBackground,
+                color: brandBarInk,
+                borderColor: navBarSurfaceTransparent
+                  ? 'transparent'
+                  : `${settings.barBorderColor ?? '#e5e5e5'}55`,
+                boxShadow: settings.barShadowEnabled !== false ? '0 1px 0 rgba(0,0,0,0.04)' : undefined,
+              }}
+            >
+              <div className="min-w-0 flex-1">
+                <PortfolioNavCenterBrand settings={brandBarSettings} compact />
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                <PortfolioNavColorModeToggleButton
+                  settings={settings}
+                  compact
+                  overlayInteraction
+                  inkColor={brandBarInk}
+                />
+                {openMenuButton}
+              </div>
+            </div>
+          ) : (
+            <div
+              data-portfolio-nav-clearance-box
+              className={`pointer-events-auto flex w-full items-center gap-2.5 px-3 py-2.5 ${barJustify}`}
+            >
+              {menuControlAlign === 'center' ? (
+                <div className="inline-flex items-center gap-2.5">{drawerControls}</div>
+              ) : (
+                drawerControls
+              )}
+            </div>
+          )}
         </nav>
 
         {drawerOpen ? (
-          <div className="fixed inset-0 z-[110]" role="presentation">
+          <div className="fixed inset-0 z-[225] isolate" role="presentation">
             <button
               type="button"
-              className="absolute inset-0 bg-neutral-950/45 backdrop-blur-[2px] transition-opacity"
+              className="absolute inset-0 z-0 bg-neutral-950/50 backdrop-blur-[2px] transition-opacity"
               aria-label="Close navigation menu"
               onClick={() => setDrawerOpen(false)}
             />
@@ -3629,7 +3700,7 @@ export function PortfolioFloatingNav({
               role="dialog"
               aria-modal="true"
               aria-label="Navigation"
-              className={`absolute top-0 flex h-full w-[min(18.5rem,86vw)] flex-col shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              className={`absolute top-0 z-10 flex h-full w-[min(18.5rem,86vw)] flex-col shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 drawerSide === 'left' ? 'left-0' : 'right-0'
               } ${
                 drawerEntered
@@ -3639,10 +3710,10 @@ export function PortfolioFloatingNav({
                     : 'translate-x-full'
               }`}
               style={{
-                backgroundColor: effectiveBarBackground,
+                backgroundColor: drawerPanelBackground,
                 color: settings.itemTextColor ?? '#525252',
                 borderColor: navBarSurfaceTransparent
-                  ? 'transparent'
+                  ? `${settings.barBorderColor ?? '#e5e5e5'}55`
                   : settings.barBorderColor ?? '#e5e5e5',
                 borderLeftWidth:
                   drawerSide === 'right' && (settings.barBorderEnabled ?? true) && !navBarSurfaceTransparent
@@ -3708,7 +3779,7 @@ export function PortfolioFloatingNav({
                         settings.itemHoverBackgroundColor ?? accent,
                       hoverBorderColor: settings.itemHoverBorderColor ?? accent,
                       borderEnabled: settings.itemBorderEnabled ?? true,
-                      barBackgroundColor: effectiveBarBackground,
+                      barBackgroundColor: drawerPanelBackground,
                       activeStyle: settings.activeStyle,
                     });
                     const drawerHoverClass = portfolioNavDrawerItemHoverClass(
@@ -3738,7 +3809,7 @@ export function PortfolioFloatingNav({
                             <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center ${active ? 'opacity-90' : 'opacity-85 transition-opacity duration-200 group-hover:opacity-100 group-hover:[color:var(--nav-item-hover-icon)]'}`}>
                               <PortfolioNavIcon variant={item.icon} className="h-5 w-5" />
                             </span>
-                            <span className={`min-w-0 flex-1 truncate ${active ? '' : 'transition-colors duration-200 group-hover:[color:var(--nav-item-hover-text)] group-hover:font-bold'}`}>{label}</span>
+                            <span className={`min-w-0 flex-1 truncate ${active ? '' : 'transition-colors duration-200 group-hover:[color:var(--nav-item-hover-text)]'}`}>{label}</span>
                           </button>
                         ) : (
                           <a
@@ -3761,7 +3832,7 @@ export function PortfolioFloatingNav({
                             <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center ${active ? 'opacity-90' : 'opacity-85 transition-opacity duration-200 group-hover:opacity-100 group-hover:[color:var(--nav-item-hover-icon)]'}`}>
                               <PortfolioNavIcon variant={item.icon} className="h-5 w-5" />
                             </span>
-                            <span className={`min-w-0 flex-1 truncate ${active ? '' : 'transition-colors duration-200 group-hover:[color:var(--nav-item-hover-text)] group-hover:font-bold'}`}>{label}</span>
+                            <span className={`min-w-0 flex-1 truncate ${active ? '' : 'transition-colors duration-200 group-hover:[color:var(--nav-item-hover-text)]'}`}>{label}</span>
                           </a>
                         )}
                       </li>
@@ -3778,6 +3849,7 @@ export function PortfolioFloatingNav({
   }
 
   const vertical = portfolioNavIsVertical(effectivePlacement);
+  const floatingPillLayout = portfolioNavUsesFloatingPillLayout(settings);
   /** Collapsed reveal handle must hug its content so top-center stays centered (wide bars otherwise pin the handle left). */
   const collapsedToHandle = shellHugged && presence.showHandle;
   const placementClass = portfolioNavPlacementClass(
@@ -3819,6 +3891,15 @@ export function PortfolioFloatingNav({
           navBarSurfaceTransparent ? false : settings.glassEffect,
           navBarSurfaceTransparent ? false : (settings.barBorderEnabled ?? true)
         );
+  const dimShellStyle: CSSProperties | undefined =
+    shellStyle && presence.dimResting && navBarSurfaceTransparent
+      ? {
+          ...shellStyle,
+          backgroundColor: `${navNeutreColor}f2`,
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+        }
+      : shellStyle;
   const itemBaseClass = portfolioNavItemBaseClass(
     settings.barDesign,
     effectiveContentMode,
@@ -3854,7 +3935,22 @@ export function PortfolioFloatingNav({
     contactPlacementMode === 'free-side' ||
     customPlacementMode === 'free-side';
   const editorialBarLayout = portfolioNavUsesEditorialBarLayout(settings);
-  const floatingPillLayout = portfolioNavUsesFloatingPillLayout(settings);
+  const floatingPillShowsLogo =
+    portfolioNavFloatingPillShowsLogo(settings);
+  const floatingPillShowsContact = portfolioNavFloatingPillShowsContact(settings);
+  const floatingPillHasRightColumn =
+    floatingPillLayout &&
+    (showColorModeToggle ||
+      floatingPillShowsContact ||
+      (showExpandedToggle && (menuControlAlign === 'right' || menuControlAlign === 'center')));
+  const floatingPillGridColsClass =
+    floatingPillShowsLogo && floatingPillHasRightColumn
+      ? 'grid-cols-[auto_minmax(0,1fr)_auto]'
+      : floatingPillShowsLogo
+        ? 'grid-cols-[auto_minmax(0,1fr)]'
+        : floatingPillHasRightColumn
+          ? 'grid-cols-[minmax(0,1fr)_auto]'
+          : 'grid-cols-[minmax(0,1fr)]';
   const triZoneLayout = portfolioNavUsesTriZoneLayout(settings);
   const centerLogoSplitLayout = portfolioNavUsesCenterLogoSplitLayout(settings);
   const logoLeftNavContactLayout = portfolioNavUsesLogoLeftNavContactLayout(settings);
@@ -3892,7 +3988,7 @@ export function PortfolioFloatingNav({
             : 'grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]'
         }`
       : floatingPillLayout
-        ? `grid w-fit max-w-[calc(100vw-1.5rem)] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 sm:gap-x-6 lg:gap-x-8 !px-2 sm:!px-3 ${structuredBarHeightClass}`
+        ? `grid w-fit max-w-[calc(100vw-1.5rem)] ${floatingPillGridColsClass} items-center gap-x-4 sm:gap-x-6 lg:gap-x-8 !px-2 sm:!px-3 ${structuredBarHeightClass}`
         : innerWidthClass;
 
   const expandedToggleButton = showExpandedToggle ? (
@@ -3941,8 +4037,16 @@ export function PortfolioFloatingNav({
   const foldMotion =
     'transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform';
 
-  const renderNavSectionItem = (item: NavItem, index: number) => {
+  const renderNavSectionItem = (item: NavItem, index: number, splitSide?: 'left' | 'right') => {
       const active = activeId === item.id;
+      const menuAccentColor =
+        editorialBarLayout || floatingPillLayout
+          ? resolvePortfolioNavEditorialBarMenuAccentColor(settings, navPalette)
+          : logoLeftNavContactLayout
+            ? (settings.activeAccentColor ?? '#171717')
+          : settings.activeAccentColor ?? '#f97316';
+      const splitHeroBarHover =
+        editorialBarLayout || centerLogoSplitLayout || floatingPillLayout || triZoneLayout || logoLeftNavContactLayout;
       const label = formatNavLabel(item.label, settings.labelCase);
       const itemColors = portfolioNavItemColorStyles(
         settings.itemIconColor ?? '#525252',
@@ -3958,38 +4062,79 @@ export function PortfolioFloatingNav({
         borderColor: settings.itemBorderColor ?? '#e5e5e5',
         iconColor: settings.itemIconColor ?? '#525252',
         textColor: settings.itemTextColor ?? '#525252',
-        hoverIconColor: settings.itemHoverIconColor ?? settings.activeAccentColor ?? '#e2572e',
-        hoverTextColor: settings.itemHoverTextColor ?? '#f4f3ef',
+        hoverIconColor:
+          settings.itemHoverIconColor ??
+          (splitHeroBarHover ? menuAccentColor : settings.activeAccentColor ?? '#e2572e'),
+        hoverTextColor:
+          settings.itemHoverTextColor ??
+          (splitHeroBarHover ? menuAccentColor : '#f4f3ef'),
         hoverBackgroundColor:
-          settings.itemHoverBackgroundColor ?? settings.activeAccentColor ?? '#e2572e',
+          settings.itemHoverBackgroundColor ??
+          (splitHeroBarHover ? menuAccentColor : settings.activeAccentColor ?? '#e2572e'),
         hoverBorderColor:
-          settings.itemHoverBorderColor ?? settings.activeAccentColor ?? '#e2572e',
+          settings.itemHoverBorderColor ??
+          (splitHeroBarHover ? menuAccentColor : settings.activeAccentColor ?? '#e2572e'),
         borderEnabled: settings.itemBorderEnabled ?? true,
         barBackgroundColor: effectiveBarBackground,
         activeStyle: settings.activeStyle,
       });
-      const itemHoverPresentation = portfolioNavItemHoverPresentation({
-        active,
-        design: settings.barDesign,
-        buttonDesign: effectiveButtonDesign,
-        activeStyle: settings.activeStyle,
-        contentMode: effectiveContentMode,
-        vertical,
-      });
+      const itemHoverPresentation = editorialBarLayout
+        ? portfolioNavEditorialBarItemHoverPresentation({
+            active,
+            activeStyle: settings.activeStyle,
+            contentMode: effectiveContentMode,
+          })
+        : triZoneLayout
+          ? portfolioNavTriZoneItemHoverPresentation({
+              active,
+              activeStyle: settings.activeStyle,
+              contentMode: effectiveContentMode,
+            })
+          : floatingPillLayout
+            ? portfolioNavFloatingPillItemHoverPresentation({
+                active,
+                activeStyle: settings.activeStyle,
+                contentMode: effectiveContentMode,
+              })
+            : logoLeftNavContactLayout
+              ? portfolioNavLogoLeftNavContactItemHoverPresentation({
+                  active,
+                  contentMode: effectiveContentMode,
+                })
+            : centerLogoSplitLayout && splitSide
+              ? portfolioNavCenterLogoSplitItemHoverPresentation({
+                  active,
+                  activeStyle: settings.activeStyle,
+                  contentMode: effectiveContentMode,
+                  splitSide,
+                })
+              : portfolioNavItemHoverPresentation({
+                active,
+                design: settings.barDesign,
+                buttonDesign: effectiveButtonDesign,
+                activeStyle: settings.activeStyle,
+                contentMode: effectiveContentMode,
+                vertical,
+              });
       const isBottomLine = effectiveButtonDesign === 'bottom-line';
       const dockWithLabel =
         settings.barDesign === 'dock' && effectiveContentMode === 'both' && !isBottomLine;
-      const activeAccentStyle = portfolioNavActiveItemStyle({
-        active,
-        design: settings.barDesign,
-        buttonDesign: effectiveButtonDesign,
-        activeStyle: settings.activeStyle,
-        accentColor: settings.activeAccentColor ?? '#f97316',
-        surfaceColor: settings.itemBackgroundColor ?? '#ffffff',
-        strongTextColor: navStrongTextColor,
-        pageFillColor: navPageFillColor,
-        vertical,
-      });
+      const activeAccentStyle = applyPortfolioNavEditorialBarActiveInk(
+        portfolioNavActiveItemStyle({
+          active,
+          design: settings.barDesign,
+          buttonDesign: effectiveButtonDesign,
+          activeStyle: settings.activeStyle,
+          accentColor: menuAccentColor,
+          surfaceColor: navNeutreColor,
+          strongTextColor: navStrongTextColor,
+          pageFillColor: navPageFillColor,
+          vertical,
+        }),
+        settings,
+        navPalette,
+        active
+      );
       const usesFlatIndicator = portfolioNavUsesFlatMenuIndicatorLayout(settings.activeStyle);
       const usesIndicatorShell =
         usesFlatIndicator || settings.activeStyle === 'filled-pill';
@@ -4042,12 +4187,23 @@ export function PortfolioFloatingNav({
       const activeTextStyle =
         active && activeAccentStyle?.color
           ? { color: activeAccentStyle.color }
-          : !active && (usesFlatIndicator || settings.activeStyle === 'filled-pill')
+          : !active &&
+              !editorialBarLayout &&
+              !centerLogoSplitLayout &&
+              !floatingPillLayout &&
+              !triZoneLayout &&
+              (usesFlatIndicator || settings.activeStyle === 'filled-pill')
             ? { color: settings.itemTextColor ?? '#525252', opacity: 0.55 }
             : undefined;
-      const accentColor = settings.activeAccentColor ?? '#f97316';
+      const accentColor = menuAccentColor;
+      const usesTextIndicatorReserve = portfolioNavUsesTextIndicatorReserve(
+        settings.activeStyle,
+        effectiveContentMode
+      );
+      const textIndicatorReserveClass = portfolioNavTextIndicatorReserveClass(settings.activeStyle);
       const activeIndicatorSlot = portfolioNavActiveIndicatorSlot(settings.activeStyle, active);
       const activeIndicator = (() => {
+        if (!active) return null;
         switch (activeIndicatorSlot) {
           case 'dot-below':
             return (
@@ -4085,16 +4241,6 @@ export function PortfolioFloatingNav({
             return null;
         }
       })();
-      const inlineTextIndicator =
-        effectiveContentMode === 'text' && activeIndicator !== null;
-      const textIndicatorWrapClass =
-        activeIndicatorSlot === 'dot-left'
-          ? 'relative inline-block pl-2.5'
-          : activeIndicatorSlot === 'dot-below'
-            ? 'relative inline-block pb-1.5'
-            : activeIndicatorSlot === 'underline-bar' || activeIndicatorSlot === 'underline-animated'
-              ? 'relative inline-block pb-0.5'
-              : '';
       const itemClassName = `${itemBaseClass} ${
         dockWithLabel
           ? ''
@@ -4110,7 +4256,7 @@ export function PortfolioFloatingNav({
               effectiveButtonDesign,
               vertical,
               itemHoverPresentation
-            )} ${inlineTextIndicator ? '' : portfolioNavActiveIndicatorSlot(settings.activeStyle, active) ? 'relative' : ''} ${allowScroll ? 'shrink-0' : ''}`.trim();
+            )} ${usesTextIndicatorReserve ? '' : activeIndicatorSlot ? 'relative' : ''} ${allowScroll ? 'shrink-0' : ''}`.trim();
       const hoverDot =
         itemHoverPresentation.showHoverDot ? (
           <span
@@ -4184,9 +4330,8 @@ export function PortfolioFloatingNav({
               </span>
             </>
           )
-        ) : (
-          inlineTextIndicator ? (
-            <span className={textIndicatorWrapClass}>
+        ) : usesTextIndicatorReserve ? (
+            <span className={textIndicatorReserveClass}>
               <span
                 className={portfolioNavItemHoverTextClass(active, itemHoverPresentation)}
                 style={activeTextStyle}
@@ -4202,8 +4347,7 @@ export function PortfolioFloatingNav({
             >
               {label}
             </span>
-          )
-        );
+          );
 
       return (
         <Fragment key={item.id}>
@@ -4221,7 +4365,7 @@ export function PortfolioFloatingNav({
               style={itemShellStyle}
             >
               {itemContent}
-              {inlineTextIndicator ? null : activeIndicator}
+              {usesTextIndicatorReserve ? null : activeIndicator}
               {hoverDot}
             </button>
           ) : (
@@ -4234,7 +4378,7 @@ export function PortfolioFloatingNav({
               onClick={(event) => handleNavigate(item.id, event)}
             >
               {itemContent}
-              {inlineTextIndicator ? null : activeIndicator}
+              {usesTextIndicatorReserve ? null : activeIndicator}
               {hoverDot}
             </a>
           )}
@@ -4244,14 +4388,16 @@ export function PortfolioFloatingNav({
 
   const renderNavSectionButtonsForEntries = (
     entries: typeof menuEntries,
-    indexOffset = 0
+    indexOffset = 0,
+    splitSide?: 'left' | 'right'
   ) =>
     entries.map((entry, index) => {
       const globalIndex = indexOffset + index;
       if (entry.type === 'group') {
         const groupActive = entry.items.some((child) => child.id === activeId);
-        const accent = settings.activeAccentColor ?? '#f97316';
-        const accentFillInk = portfolioNavInkOnAccentFill(accent, navPalette);
+        const groupActiveStyle = groupActive
+          ? resolvePortfolioNavMenuGroupActiveStyle(settings, navPalette)
+          : null;
         const triggerClassName = `${itemBaseClass} ${portfolioNavItemHoverClass(
           groupActive,
           settings.buttonDesign,
@@ -4259,8 +4405,8 @@ export function PortfolioFloatingNav({
         )} ${allowScroll ? 'shrink-0' : ''}`.trim();
         const triggerStyle: CSSProperties = groupActive
           ? {
-              backgroundColor: accent,
-              color: accentFillInk,
+              backgroundColor: groupActiveStyle?.backgroundColor,
+              color: groupActiveStyle?.color,
               borderWidth: 0,
               borderStyle: 'solid',
             }
@@ -4294,7 +4440,7 @@ export function PortfolioFloatingNav({
         );
       }
 
-      return renderNavSectionItem(entry.item, globalIndex);
+      return renderNavSectionItem(entry.item, globalIndex, splitSide);
     });
 
   const renderNavSectionButtons = () => renderNavSectionButtonsForEntries(menuEntries);
@@ -4304,6 +4450,11 @@ export function PortfolioFloatingNav({
     : '';
 
   return createPortal(
+    <PortfolioNavColorModeToggleProvider
+      show={showColorModeToggle}
+      colorMode={colorMode}
+      onToggle={() => onColorModeToggle?.()}
+    >
     <>
     <nav
       ref={navRootRef}
@@ -4365,11 +4516,22 @@ export function PortfolioFloatingNav({
             } ${
               inlineExtras && !structuredBarLayout && !triZoneShell ? '!justify-start' : ''
             } ${navContentGutterClass} ${
+              presence.dimResting ? 'portfolio-nav-dim-rest' : ''
+            } ${
               presence.expanded
                 ? 'relative z-0 translate-x-0 translate-y-0 scale-100 opacity-100 delay-75'
                 : `pointer-events-none absolute z-0 delay-0 ${foldExitClass}`
             }`}
-            style={shellStyle}
+            style={{
+              ...dimShellStyle,
+              ...(presence.dimResting
+                ? ({
+                    ['--portfolio-nav-dim-foreground-opacity' as string]: String(
+                      DIM_FOREGROUND_OPACITY
+                    ),
+                  } as CSSProperties)
+                : null),
+            }}
             aria-hidden={!presence.expanded}
           >
           {logoLeftNavContactLayout ? (
@@ -4383,6 +4545,7 @@ export function PortfolioFloatingNav({
                     onContactNavigate={onContactNavigate}
                     compact
                   />
+                  <PortfolioNavColorModeToggleButton settings={settings} compact />
                   <div
                     className={`flex min-w-0 items-center justify-start ${itemsGapClass} ${splitNavScrollClass}`}
                   >
@@ -4414,6 +4577,7 @@ export function PortfolioFloatingNav({
                     onContactNavigate={onContactNavigate}
                     compact
                   />
+                  <PortfolioNavColorModeToggleButton settings={settings} compact />
                   {menuControlAlign === 'right' || menuControlAlign === 'center'
                     ? expandedToggleButton
                     : null}
@@ -4427,7 +4591,7 @@ export function PortfolioFloatingNav({
                 <div
                   className={`flex min-w-0 items-center justify-start ${itemsGapClass} ${splitNavScrollClass}`}
                 >
-                  {renderNavSectionButtonsForEntries(splitMenuRails.left)}
+                  {renderNavSectionButtonsForEntries(splitMenuRails.left, 0, 'left')}
                 </div>
               </div>
               <div className="flex shrink-0 items-center justify-center justify-self-center px-2 sm:px-3">
@@ -4439,9 +4603,11 @@ export function PortfolioFloatingNav({
                 >
                   {renderNavSectionButtonsForEntries(
                     splitMenuRails.right,
-                    splitMenuRails.left.length
+                    splitMenuRails.left.length,
+                    'right'
                   )}
                 </div>
+                <PortfolioNavColorModeToggleButton settings={settings} compact />
                 {menuControlAlign === 'right' || menuControlAlign === 'center'
                   ? expandedToggleButton
                   : null}
@@ -4472,6 +4638,32 @@ export function PortfolioFloatingNav({
                   ? expandedToggleButton
                   : null}
               </div>
+            </>
+          ) : floatingPillLayout ? (
+            <>
+              {floatingPillShowsLogo ? (
+                <div className="flex min-w-0 items-center justify-self-start">
+                  <PortfolioNavCenterBrand settings={settings} compact />
+                </div>
+              ) : null}
+              <div
+                className={`flex min-w-0 items-center justify-center justify-self-center ${itemsGapClass} ${splitNavScrollClass}`}
+              >
+                {renderNavSectionButtons()}
+              </div>
+              {floatingPillHasRightColumn ? (
+                <div className="flex min-w-0 items-center justify-end justify-self-end gap-2">
+                  <PortfolioNavFloatingPillRightSlot
+                    settings={settings}
+                    contactHref={contactHref}
+                    onContactNavigate={onContactNavigate}
+                    compact
+                  />
+                  {menuControlAlign === 'right' || menuControlAlign === 'center'
+                    ? expandedToggleButton
+                    : null}
+                </div>
+              ) : null}
             </>
           ) : triZoneLayout ? (
             <>
@@ -4589,8 +4781,13 @@ export function PortfolioFloatingNav({
                 ? expandedToggleButton
                 : null}
             </div>
-          ) : menuControlAlign === 'right' || menuControlAlign === 'center' ? (
-            expandedToggleButton
+          ) : showColorModeToggle || menuControlAlign === 'right' || menuControlAlign === 'center' ? (
+            <div className="flex shrink-0 items-center justify-end gap-2">
+              <PortfolioNavColorModeToggleButton settings={settings} compact />
+              {menuControlAlign === 'right' || menuControlAlign === 'center'
+                ? expandedToggleButton
+                : null}
+            </div>
           ) : null}
             </>
           )}
@@ -4602,7 +4799,8 @@ export function PortfolioFloatingNav({
       !triZoneLayout &&
       !editorialBarLayout &&
       !centerLogoSplitLayout &&
-      !logoLeftNavContactLayout ? (
+      !logoLeftNavContactLayout &&
+      !floatingPillLayout ? (
         <PortfolioNavFreeSpaceLinks
           settings={settings}
           links={chromeLinks}
@@ -4618,7 +4816,8 @@ export function PortfolioFloatingNav({
           onBlurCapture={presence.onBlurCapture}
         />
       ) : null}
-    </>,
+    </>
+    </PortfolioNavColorModeToggleProvider>,
     document.body
   );
 }

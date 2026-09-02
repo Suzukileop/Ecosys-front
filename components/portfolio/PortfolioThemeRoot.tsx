@@ -1,6 +1,6 @@
 'use client';
 
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import type { PortfolioThemeId } from '@/components/portfolio/portfolio-themes';
 import {
   portfolioThemeCssVars,
@@ -13,6 +13,8 @@ import {
   resolvePortfolioGlobalBodyFont,
   type PortfolioGlobalBodyFont,
 } from '@/components/portfolio/portfolio-global-settings';
+import type { PortfolioHeroPalette } from '@/components/portfolio/portfolio-hero-palette-settings';
+import { portfolioPaletteCssVars } from '@/components/portfolio/portfolio-color-mode';
 
 export function PortfolioThemeRoot({
   themeId,
@@ -21,6 +23,7 @@ export function PortfolioThemeRoot({
   bodyFont,
   bodyFontForceAll = false,
   colorMode = 'dark',
+  activePalette,
   globalStyle,
   fixedBackgroundStyle,
   patternBackgroundStyle,
@@ -41,6 +44,8 @@ export function PortfolioThemeRoot({
   bodyFontForceAll?: boolean;
   /** Global appearance — drives light vs dark float / chrome recipes. */
   colorMode?: 'dark' | 'light';
+  /** Active global palette — drives animatable CSS vars on the root. */
+  activePalette?: PortfolioHeroPalette;
   globalStyle?: CSSProperties;
   /** Fixed viewport background image layer (insets applied via top/right/bottom/left). */
   fixedBackgroundStyle?: CSSProperties;
@@ -70,39 +75,57 @@ export function PortfolioThemeRoot({
     typeof solidPageColor === 'string' && solidPageColor.trim().length > 0;
   const bodyFontStyle = globalBodyFontRootStyle(bodyFont);
   const resolvedBodyFont = resolvePortfolioGlobalBodyFont(bodyFont);
+  const paletteVars = activePalette ? portfolioPaletteCssVars(activePalette) : undefined;
+  /** Arm color transitions after first paint — avoids animating the initial load. */
+  const [colorTransitionsReady, setColorTransitionsReady] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setColorTransitionsReady(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute('data-portfolio-color-mode', colorMode === 'light' ? 'light' : 'dark');
+    return () => {
+      root.removeAttribute('data-portfolio-color-mode');
+    };
+  }, [colorMode]);
 
   return (
     <div
-      className={`pf-theme-root relative isolate min-h-screen min-h-[100dvh] overflow-x-clip ${useCustomBackground ? '' : 'bg-white'}`}
+      className={`pf-theme-root relative isolate min-h-screen min-h-[100dvh] overflow-x-clip ${useCustomBackground ? '' : 'pf-theme-page-fill'}`}
       data-portfolio-theme={themeId}
       data-portfolio-mono={mono ? 'true' : undefined}
       data-portfolio-color-mode={colorMode === 'light' ? 'light' : 'dark'}
+      data-pf-color-transitions={colorTransitionsReady ? 'true' : undefined}
       data-portfolio-body-font={resolvedBodyFont}
       data-portfolio-force-font="true"
       style={{
         ...portfolioThemeCssVars(themeId, pickerThemes, monochromeUi),
+        ...paletteVars,
         ...bodyFontStyle,
         ...rootGlobalStyle,
+        colorScheme: colorMode === 'light' ? 'light' : 'dark',
       }}
     >
       {hasSolidPageColor ? (
         <div
           aria-hidden
-          className="pointer-events-none fixed inset-0 -z-30"
+          className="pf-theme-layer pointer-events-none fixed inset-0 -z-30"
           style={{ backgroundColor: solidPageColor }}
         />
       ) : null}
       {fixedBackgroundStyle ? (
         <div
           aria-hidden
-          className="pointer-events-none fixed -z-20 bg-no-repeat"
+          className="pf-theme-layer pointer-events-none fixed -z-20 bg-no-repeat"
           style={fixedBackgroundStyle}
         />
       ) : null}
       {patternBackgroundStyle ? (
         <div
           aria-hidden
-          className="pointer-events-none fixed -z-10"
+          className="pf-theme-layer pointer-events-none fixed -z-10"
           style={patternBackgroundStyle}
         />
       ) : null}
@@ -115,7 +138,7 @@ export function PortfolioThemeRoot({
           {fixedMotifsLayer}
         </div>
       ) : null}
-      <div className="relative z-0">{children}</div>
+      <div className="pf-theme-content relative z-0">{children}</div>
     </div>
   );
 }

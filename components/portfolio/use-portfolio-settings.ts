@@ -34,6 +34,7 @@ import {
   patchActiveGlobalPalette,
   type PortfolioColorMode,
 } from '@/components/portfolio/portfolio-color-mode';
+import { runPortfolioColorModeTransition } from '@/components/portfolio/portfolio-color-mode-transition';
 import type { PortfolioHeroPalette } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { applyNavPaletteToSettings } from '@/components/portfolio/portfolio-nav-palette-settings';
 import { applyWorkPaletteToSettings } from '@/components/portfolio/portfolio-work-palette-settings';
@@ -488,9 +489,11 @@ export function usePortfolioSettings(
   /** Dark / light: select Global palette pair slot and paint linked sections. */
   const setColorMode = useCallback(
     (mode: PortfolioColorMode) => {
-      applySettings((current) =>
-        forkBuiltinOnPersonalization(applyPortfolioColorMode(current, mode))
-      );
+      runPortfolioColorModeTransition(() => {
+        applySettings((current) =>
+          forkBuiltinOnPersonalization(applyPortfolioColorMode(current, mode))
+        );
+      });
     },
     [applySettings]
   );

@@ -17,7 +17,11 @@ import {
   mergeNavPalette,
 } from '@/components/portfolio/portfolio-nav-palette-settings';
 import { formatNavLabel } from '@/components/portfolio/portfolio-nav-settings';
-import { PortfolioNavCenterBrand } from '@/components/portfolio/portfolio-nav-extras';
+import {
+  PortfolioNavCenterBrand,
+  PortfolioNavColorModeToggleButton,
+  PortfolioNavColorModeToggleProvider,
+} from '@/components/portfolio/portfolio-nav-extras';
 import {
   deferAfterPortfolioNavOverlayClose,
   scrollToPortfolioSection,
@@ -46,6 +50,9 @@ type PortfolioCaseOverlayNavProps = {
   avatarUrl?: string | null;
   contentGutter?: PortfolioContentGutter;
   visible?: boolean;
+  showColorModeToggle?: boolean;
+  colorMode?: 'light' | 'dark';
+  onColorModeToggle?: () => void;
 };
 
 const ROW_STAGGER = 0.06;
@@ -134,7 +141,7 @@ function CaseOverlayMenuTrigger({
   open,
   triggerStyle,
   menuIcon,
-  ink,
+  openInk,
   triggerInk,
   accent,
   reduceMotion,
@@ -143,7 +150,7 @@ function CaseOverlayMenuTrigger({
   open: boolean;
   triggerStyle: 'text' | 'icon';
   menuIcon: PortfolioNavMenuControlIcon;
-  ink: string;
+  openInk: string;
   triggerInk: string;
   accent: string;
   reduceMotion: boolean | null;
@@ -151,6 +158,7 @@ function CaseOverlayMenuTrigger({
 }) {
   const useIcon = triggerStyle === 'icon';
   const label = open ? 'Close' : 'Menu';
+  const ink = open ? openInk : triggerInk;
 
   return (
     <button
@@ -162,7 +170,7 @@ function CaseOverlayMenuTrigger({
       className={`group relative inline-flex min-h-11 items-center justify-center transition ${
         useIcon ? 'h-11 w-11 rounded-full' : 'px-1 text-sm font-semibold uppercase tracking-[0.22em]'
       }`}
-      style={{ color: open ? ink : triggerInk }}
+      style={{ color: ink }}
     >
       {useIcon ? (
         <CaseOverlayMenuGlyph icon={menuIcon} open={open} />
@@ -196,18 +204,21 @@ function CaseOverlayMenuTrigger({
 function CaseOverlayRowHintLine({
   active,
   accent,
-  mutedInk,
+  ink,
+  divider,
 }: {
   active: boolean;
   accent: string;
-  mutedInk: string;
+  ink: string;
+  divider: string;
 }) {
   return (
     <span
       className="hidden h-px w-10 shrink-0 transition-[width,opacity] duration-300 group-hover:w-14 sm:block sm:w-12 sm:group-hover:w-16"
       style={{
-        backgroundColor: active ? accent : mutedInk,
-        opacity: active ? 1 : 0.35,
+        backgroundColor: active ? accent : ink,
+        opacity: active ? 1 : 0.72,
+        boxShadow: active ? undefined : `0 0 0 1px ${divider}44`,
       }}
       aria-hidden
     />
@@ -280,7 +291,7 @@ function CaseOverlayRow({
           </span>
         </span>
         <span className="hidden items-center justify-end sm:flex">
-          <CaseOverlayRowHintLine active={active} accent={accent} mutedInk={mutedInk} />
+          <CaseOverlayRowHintLine active={active} accent={accent} ink={ink} divider={divider} />
         </span>
       </button>
     </motion.li>
@@ -296,6 +307,9 @@ export function PortfolioCaseOverlayNav({
   avatarUrl,
   contentGutter = DEFAULT_CONTENT_GUTTER,
   visible = true,
+  showColorModeToggle = false,
+  colorMode = 'dark',
+  onColorModeToggle,
 }: PortfolioCaseOverlayNavProps) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -337,8 +351,9 @@ export function PortfolioCaseOverlayNav({
       customExtraBorderEnabled: false,
       customExtraPaddingX: 0,
       customExtraPaddingY: 0,
+      customExtraTextColor: ink,
     };
-  }, [settings, avatarUrl]);
+  }, [settings, avatarUrl, ink]);
   const activeItem = sectionItems.find((item) => item.id === activeId);
   const activeLabel = activeItem
     ? formatNavLabel(activeItem.label, settings.labelCase ?? 'uppercase')
@@ -402,7 +417,7 @@ export function PortfolioCaseOverlayNav({
       open={open}
       triggerStyle={menuTrigger}
       menuIcon={menuIcon}
-      ink={ink}
+      openInk={ink}
       triggerInk={triggerInk}
       accent={accent}
       reduceMotion={reduceMotion}
@@ -423,16 +438,46 @@ export function PortfolioCaseOverlayNav({
 
   const logoNode = <PortfolioNavCenterBrand settings={brandSettings} compact />;
 
-  const leftSlot = menuSide === 'left' ? menuButton : activeSection;
+  const barInk = open ? ink : triggerInk;
+  const colorModeToggle = (
+    <PortfolioNavColorModeToggleButton
+      settings={settings}
+      compact
+      overlayInteraction
+      inkColor={barInk}
+    />
+  );
+  const menuCluster = (
+    <div className="flex items-center gap-2">
+      {menuSide === 'left' ? (
+        <>
+          {menuButton}
+          {colorModeToggle}
+        </>
+      ) : (
+        <>
+          {colorModeToggle}
+          {menuButton}
+        </>
+      )}
+    </div>
+  );
+
+  const leftSlot = menuSide === 'left' ? menuCluster : activeSection;
   const centerSlot = menuSide === 'left' ? activeSection : logoNode;
-  const rightSlot = menuSide === 'left' ? logoNode : menuButton;
+  const rightSlot = menuSide === 'left' ? logoNode : menuCluster;
 
   return createPortal(
+    <PortfolioNavColorModeToggleProvider
+      show={showColorModeToggle}
+      colorMode={colorMode}
+      onToggle={() => onColorModeToggle?.()}
+    >
     <>
       <nav
         ref={navRootRef}
         className={`pointer-events-none fixed inset-x-0 top-0 transition-opacity duration-300 ${
-          open ? 'z-[230]' : 'z-[120]'
+          open ? 'z-[240]' : 'z-[120]'
         } ${visible ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
         aria-label="Portfolio navigation"
         aria-hidden={!visible}
@@ -442,7 +487,7 @@ export function PortfolioCaseOverlayNav({
           data-portfolio-nav-clearance-box
           className={`pointer-events-auto grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 py-3 backdrop-blur-md sm:gap-4 ${gutterClass}`}
           style={{
-            backgroundColor: open ? `${overlayBg}ee` : triggerBg,
+            backgroundColor: open ? `${overlayBg}f2` : triggerBg,
             color: open ? ink : triggerInk,
             borderBottom: `1px solid ${open ? divider : `${divider}33`}`,
           }}
@@ -462,7 +507,7 @@ export function PortfolioCaseOverlayNav({
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className="fixed inset-0 z-[230] flex flex-col"
+            className="fixed inset-0 z-[228] flex flex-col"
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={reduceMotion ? undefined : { opacity: 0 }}
@@ -473,7 +518,7 @@ export function PortfolioCaseOverlayNav({
               aria-label="Close navigation menu"
               className="absolute inset-0"
               style={{
-                background: `linear-gradient(165deg, ${overlayBg} 0%, ${overlayBg}ee 42%, #050505 100%)`,
+                backgroundColor: overlayBg,
               }}
               onClick={() => setOpen(false)}
             />
@@ -516,7 +561,8 @@ export function PortfolioCaseOverlayNav({
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </>,
+    </>
+    </PortfolioNavColorModeToggleProvider>,
     document.body
   );
 }

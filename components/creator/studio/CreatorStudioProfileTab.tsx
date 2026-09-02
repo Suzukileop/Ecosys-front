@@ -27,6 +27,7 @@ import { CREATOR_GENDER_VALUES, normalizeCreatorGender } from '@/lib/creator-gen
 import { NATIONALITY_SELECT_OPTIONS, nationalityLabel, normalizeNationalityCode } from '@/lib/countries';
 import { parseSpecialtyList, parseSpecialtyTags } from '@/lib/specialties';
 import { serializeSpokenLanguagesForApi } from '@/lib/spoken-languages';
+import { parseAboutSkills, serializeAboutSkills } from '@/lib/about-skills';
 import { collapseRepeatedBio, isRepeatedBioContent } from '@/lib/profile-bio';
 import {
   DEFAULT_CREATOR_APP_ROLE,
@@ -50,6 +51,7 @@ import { ProfileStrengthsField } from '@/components/creator/studio/ProfileStreng
 import { SpecialtyMultiSelect } from '@/components/creator/studio/SpecialtyMultiSelect';
 import { ProfileLanguagesField } from '@/components/creator/studio/ProfileLanguagesField';
 import { AboutStringListField } from '@/components/creator/studio/AboutStringListField';
+import { AboutSkillsField } from '@/components/creator/studio/AboutSkillsField';
 import {
   AboutEducationField,
 } from '@/components/creator/studio/AboutEducationField';
@@ -681,6 +683,12 @@ export function CreatorStudioProfileTab({
     remove: removeAboutEducation,
     move: moveAboutEducation,
   } = useFieldArray({ control: form.control, name: 'aboutEducation' });
+  const {
+    fields: aboutSkillsFields,
+    append: appendAboutSkill,
+    remove: removeAboutSkill,
+    move: moveAboutSkill,
+  } = useFieldArray({ control: form.control, name: 'aboutSkills' });
 
   const exitFaqChrome = useCallback(() => {
     const current = form.getValues('faqItems');
@@ -1358,7 +1366,7 @@ export function CreatorStudioProfileTab({
         yearsOfExperience: p.yearsOfExperience ?? null,
         stackItems: parseStrengthsTools(p.profileStack),
         strengthsTools: parseStrengthsTools(p.strengthsToolsMastered),
-        aboutSkills: parseAboutStringList(p.aboutSkills),
+        aboutSkills: parseAboutSkills(p.aboutSkills),
         aboutStrengths: parseAboutStringList(p.aboutStrengths),
         aboutSystemsTools: parseAboutStringList(p.aboutSystemsTools),
         aboutInterests: parseAboutStringList(p.aboutInterests),
@@ -1435,7 +1443,7 @@ export function CreatorStudioProfileTab({
         experienceBlocks: raw.experienceBlocks.filter((block) => block.text.trim().length > 0),
         stackItems: raw.stackItems.filter((item) => item.value.trim().length > 0),
         strengthsTools: raw.strengthsTools.filter((item) => item.value.trim().length > 0),
-        aboutSkills: raw.aboutSkills.filter((item) => item.value.trim().length > 0),
+        aboutSkills: raw.aboutSkills.filter((item) => item.title.trim().length > 0),
         aboutStrengths: raw.aboutStrengths.filter((item) => item.value.trim().length > 0),
         aboutSystemsTools: raw.aboutSystemsTools.filter((item) => item.value.trim().length > 0),
         aboutInterests: raw.aboutInterests.filter((item) => item.value.trim().length > 0),
@@ -1576,7 +1584,7 @@ export function CreatorStudioProfileTab({
           currentlyUsed: null,
           iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,
         })),
-        aboutSkills: serializeAboutStringList(parsed.aboutSkills),
+        aboutSkills: serializeAboutSkills(parsed.aboutSkills),
         aboutStrengths: serializeAboutStringList(parsed.aboutStrengths),
         aboutSystemsTools: serializeAboutStringList(parsed.aboutSystemsTools),
         aboutInterests: serializeAboutStringList(parsed.aboutInterests),
@@ -1914,7 +1922,7 @@ export function CreatorStudioProfileTab({
           currentlyUsed: null,
           iconUrl: item.iconUrl?.trim() ? item.iconUrl.trim() : null,
         })),
-        aboutSkills: serializeAboutStringList(parsed.aboutSkills),
+        aboutSkills: serializeAboutSkills(parsed.aboutSkills),
         aboutStrengths: serializeAboutStringList(parsed.aboutStrengths),
         aboutSystemsTools: serializeAboutStringList(parsed.aboutSystemsTools),
         aboutInterests: serializeAboutStringList(parsed.aboutInterests),
@@ -2020,11 +2028,9 @@ export function CreatorStudioProfileTab({
           const languages = value as PortfolioAboutFieldValue['spokenLanguages'];
           form.setValue('spokenLanguages', languages, { shouldDirty: true });
         } else if (field === 'aboutSkills') {
-          form.setValue(
-            'aboutSkills',
-            (value as string[]).map((item) => ({ value: item })),
-            { shouldDirty: true }
-          );
+          form.setValue('aboutSkills', value as PortfolioAboutFieldValue['aboutSkills'], {
+            shouldDirty: true,
+          });
         } else if (field === 'aboutStrengths') {
           form.setValue(
             'aboutStrengths',
@@ -2104,7 +2110,7 @@ export function CreatorStudioProfileTab({
             ? { spokenLanguages: value as PortfolioAboutFieldValue['spokenLanguages'] }
             : {}),
           ...(field === 'aboutSkills'
-            ? { aboutSkills: (value as string[]).map((item) => ({ value: item })) }
+            ? { aboutSkills: value as PortfolioAboutFieldValue['aboutSkills'] }
             : {}),
           ...(field === 'aboutStrengths'
             ? { aboutStrengths: (value as string[]).map((item) => ({ value: item })) }
@@ -2176,9 +2182,7 @@ export function CreatorStudioProfileTab({
           });
         } else if (field === 'aboutSkills') {
           await updateCreatorProfile({
-            aboutSkills: serializeAboutStringList(
-              (value as string[]).map((item) => ({ value: item }))
-            ),
+            aboutSkills: serializeAboutSkills(value as PortfolioAboutFieldValue['aboutSkills']),
           });
         } else if (field === 'aboutStrengths') {
           await updateCreatorProfile({
@@ -2265,11 +2269,7 @@ export function CreatorStudioProfileTab({
         form.setValue('nationality', normalizeNationalityCode(values.nationality) ?? '', { shouldDirty: true });
         form.setValue('yearsOfExperience', values.yearsOfExperience ?? null, { shouldDirty: true });
         form.setValue('spokenLanguages', values.spokenLanguages, { shouldDirty: true });
-        form.setValue(
-          'aboutSkills',
-          values.aboutSkills.map((item) => ({ value: item })),
-          { shouldDirty: true }
-        );
+        form.setValue('aboutSkills', values.aboutSkills, { shouldDirty: true });
         form.setValue(
           'aboutStrengths',
           values.aboutStrengths.map((item) => ({ value: item })),
@@ -2329,9 +2329,7 @@ export function CreatorStudioProfileTab({
           nationality: normalizeNationalityCode(values.nationality) ?? '',
           yearsOfExperience: values.yearsOfExperience ?? null,
           spokenLanguages: serializeSpokenLanguagesForApi(values.spokenLanguages),
-          aboutSkills: serializeAboutStringList(
-            values.aboutSkills.map((item) => ({ value: item }))
-          ),
+          aboutSkills: serializeAboutSkills(values.aboutSkills),
           aboutStrengths: serializeAboutStringList(
             values.aboutStrengths.map((item) => ({ value: item }))
           ),
@@ -3551,7 +3549,7 @@ export function CreatorStudioProfileTab({
               nationality={values.nationality ?? ''}
               yearsOfExperience={values.yearsOfExperience ?? null}
               languages={values.spokenLanguages.filter((item) => item.value.trim().length > 0)}
-              aboutSkills={serializeAboutStringList(values.aboutSkills)}
+              aboutSkills={values.aboutSkills}
               aboutStrengths={serializeAboutStringList(values.aboutStrengths)}
               aboutSystemsTools={serializeAboutStringList(values.aboutSystemsTools)}
               aboutInterests={serializeAboutStringList(values.aboutInterests)}
@@ -3884,7 +3882,7 @@ export function CreatorStudioProfileTab({
               nationality={values.nationality ?? ''}
               yearsOfExperience={values.yearsOfExperience ?? null}
               languages={values.spokenLanguages.filter((item) => item.value.trim().length > 0)}
-              aboutSkills={serializeAboutStringList(values.aboutSkills)}
+              aboutSkills={values.aboutSkills}
               aboutStrengths={serializeAboutStringList(values.aboutStrengths)}
               aboutSystemsTools={serializeAboutStringList(values.aboutSystemsTools)}
               aboutInterests={serializeAboutStringList(values.aboutInterests)}
@@ -3974,16 +3972,17 @@ export function CreatorStudioProfileTab({
                 readOnly
                 values={serializeAboutEducation(values.aboutEducation)}
               />
+              <AboutSkillsField
+                control={form.control}
+                fields={aboutSkillsFields}
+                append={appendAboutSkill}
+                remove={removeAboutSkill}
+                move={moveAboutSkill}
+                register={form.register}
+                readOnly
+                values={serializeAboutSkills(values.aboutSkills)}
+              />
               <div className="grid gap-4 sm:grid-cols-2">
-                <AboutStringListField
-                  control={form.control}
-                  register={form.register}
-                  name="aboutSkills"
-                  label="Skills"
-                  maxItems={12}
-                  readOnly
-                  values={serializeAboutStringList(values.aboutSkills)}
-                />
                 <AboutStringListField
                   control={form.control}
                   register={form.register}
@@ -4084,13 +4083,13 @@ export function CreatorStudioProfileTab({
             />
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-3">
-                <AboutStringListField
+                <AboutSkillsField
                   control={form.control}
+                  fields={aboutSkillsFields}
+                  append={appendAboutSkill}
+                  remove={removeAboutSkill}
+                  move={moveAboutSkill}
                   register={form.register}
-                  name="aboutSkills"
-                  label="Skills"
-                  description="Highlight core skills for your About page."
-                  maxItems={12}
                 />
                 <ContactVisibilitySelect
                   id="visibility-about-skills"

@@ -19,20 +19,7 @@ export type PortfolioNavExperienceIcon = 'briefcase' | 'list' | 'id-card';
 export type PortfolioNavFaqIcon = 'help-circle' | 'message' | 'list';
 export type PortfolioNavContactIcon = 'mail' | 'send' | 'phone';
 
-export type PortfolioNavItemIcons = {
-  info: PortfolioNavAboutIcon;
-  work: PortfolioNavWorkIcon;
-  services: PortfolioNavServicesIcon;
-  about: PortfolioNavAboutIcon;
-  aboutUs: PortfolioNavAboutIcon;
-  experience: PortfolioNavExperienceIcon;
-  team: PortfolioNavAboutIcon;
-  gallery: PortfolioNavWorkIcon;
-  faq: PortfolioNavFaqIcon;
-  contact: PortfolioNavContactIcon;
-  stack: PortfolioNavServicesIcon;
-  tools: PortfolioNavServicesIcon;
-};
+export type PortfolioNavItemIcons = Record<PortfolioNavSectionKey, PortfolioNavIconVariant>;
 
 export type PortfolioNavItemLabels = Record<PortfolioNavSectionKey, string>;
 
@@ -145,8 +132,8 @@ export const PORTFOLIO_NAV_LABEL_PRESETS: Record<
   gallery: [
     { value: 'Gallery', label: 'Gallery' },
     { value: 'Galerie', label: 'Galerie' },
-    { value: 'Gallery', label: 'Gallery' },
     { value: 'Journal', label: 'Journal visuel' },
+    { value: 'Photos', label: 'Photos' },
   ],
   faq: [
     { value: 'FAQ', label: 'FAQ' },
@@ -180,73 +167,110 @@ export const PORTFOLIO_NAV_ICON_OPTIONS: Record<
   { value: PortfolioNavIconVariant; label: string }[]
 > = {
   info: [
-    { value: 'id-card', label: 'ID card' },
-    { value: 'user', label: 'User' },
-    { value: 'list', label: 'List' },
+    { value: 'id-card', label: 'Carte ID' },
+    { value: 'user', label: 'Profil' },
+    { value: 'heart', label: 'Cœur' },
+    { value: 'list', label: 'Liste' },
+    { value: 'message', label: 'Message' },
+    { value: 'help-circle', label: 'Aide' },
   ],
   work: [
-    { value: 'grid', label: 'Grid' },
-    { value: 'briefcase', label: 'Briefcase' },
+    { value: 'grid', label: 'Grille' },
+    { value: 'briefcase', label: 'Portfolio' },
     { value: 'image', label: 'Image' },
+    { value: 'star', label: 'Étoile' },
+    { value: 'sparkles', label: 'Éclat' },
+    { value: 'list', label: 'Liste' },
   ],
   services: [
-    { value: 'star', label: 'Star' },
-    { value: 'sparkles', label: 'Sparkles' },
-    { value: 'wrench', label: 'Wrench' },
+    { value: 'star', label: 'Étoile' },
+    { value: 'sparkles', label: 'Éclat' },
+    { value: 'wrench', label: 'Clé' },
+    { value: 'grid', label: 'Grille' },
+    { value: 'heart', label: 'Cœur' },
+    { value: 'briefcase', label: 'Portfolio' },
   ],
   about: [
-    { value: 'user', label: 'User' },
-    { value: 'id-card', label: 'ID card' },
-    { value: 'heart', label: 'Heart' },
+    { value: 'user', label: 'Profil' },
+    { value: 'id-card', label: 'Carte ID' },
+    { value: 'heart', label: 'Cœur' },
+    { value: 'message', label: 'Message' },
+    { value: 'star', label: 'Étoile' },
+    { value: 'list', label: 'Liste' },
   ],
   aboutUs: [
-    { value: 'id-card', label: 'ID card' },
-    { value: 'user', label: 'User' },
-    { value: 'heart', label: 'Heart' },
+    { value: 'id-card', label: 'Carte ID' },
+    { value: 'user', label: 'Profil' },
+    { value: 'heart', label: 'Cœur' },
+    { value: 'briefcase', label: 'Portfolio' },
+    { value: 'star', label: 'Étoile' },
+    { value: 'grid', label: 'Grille' },
   ],
   experience: [
-    { value: 'briefcase', label: 'Briefcase' },
-    { value: 'list', label: 'List' },
-    { value: 'id-card', label: 'ID card' },
+    { value: 'briefcase', label: 'Portfolio' },
+    { value: 'list', label: 'Liste' },
+    { value: 'id-card', label: 'Carte ID' },
+    { value: 'grid', label: 'Grille' },
+    { value: 'star', label: 'Étoile' },
+    { value: 'wrench', label: 'Clé' },
   ],
   team: [
-    { value: 'user', label: 'User' },
-    { value: 'id-card', label: 'ID card' },
-    { value: 'heart', label: 'Heart' },
+    { value: 'user', label: 'Profil' },
+    { value: 'id-card', label: 'Carte ID' },
+    { value: 'heart', label: 'Cœur' },
+    { value: 'star', label: 'Étoile' },
+    { value: 'message', label: 'Message' },
+    { value: 'grid', label: 'Grille' },
   ],
   gallery: [
     { value: 'image', label: 'Image' },
-    { value: 'grid', label: 'Grid' },
+    { value: 'grid', label: 'Grille' },
     { value: 'briefcase', label: 'Portfolio' },
+    { value: 'star', label: 'Étoile' },
+    { value: 'sparkles', label: 'Éclat' },
+    { value: 'heart', label: 'Cœur' },
   ],
   faq: [
-    { value: 'help-circle', label: 'Help' },
+    { value: 'help-circle', label: 'Aide' },
     { value: 'message', label: 'Chat' },
-    { value: 'list', label: 'List' },
+    { value: 'list', label: 'Liste' },
+    { value: 'mail', label: 'Mail' },
+    { value: 'phone', label: 'Téléphone' },
+    { value: 'send', label: 'Envoi' },
   ],
   contact: [
     { value: 'mail', label: 'Mail' },
-    { value: 'send', label: 'Send' },
-    { value: 'phone', label: 'Phone' },
+    { value: 'send', label: 'Envoi' },
+    { value: 'phone', label: 'Téléphone' },
+    { value: 'message', label: 'Message' },
+    { value: 'help-circle', label: 'Aide' },
+    { value: 'user', label: 'Profil' },
   ],
   stack: [
-    { value: 'sparkles', label: 'Sparkles' },
-    { value: 'star', label: 'Star' },
-    { value: 'wrench', label: 'Wrench' },
+    { value: 'sparkles', label: 'Éclat' },
+    { value: 'star', label: 'Étoile' },
+    { value: 'wrench', label: 'Clé' },
+    { value: 'grid', label: 'Grille' },
+    { value: 'briefcase', label: 'Portfolio' },
+    { value: 'list', label: 'Liste' },
   ],
   tools: [
-    { value: 'wrench', label: 'Wrench' },
-    { value: 'sparkles', label: 'Sparkles' },
-    { value: 'star', label: 'Star' },
+    { value: 'wrench', label: 'Clé' },
+    { value: 'sparkles', label: 'Éclat' },
+    { value: 'star', label: 'Étoile' },
+    { value: 'grid', label: 'Grille' },
+    { value: 'briefcase', label: 'Portfolio' },
+    { value: 'list', label: 'Liste' },
   ],
 };
 
-const WORK_ICONS = new Set<PortfolioNavWorkIcon>(['grid', 'briefcase', 'image']);
-const SERVICES_ICONS = new Set<PortfolioNavServicesIcon>(['star', 'sparkles', 'wrench']);
-const ABOUT_ICONS = new Set<PortfolioNavAboutIcon>(['user', 'id-card', 'heart']);
-const EXPERIENCE_ICONS = new Set<PortfolioNavExperienceIcon>(['briefcase', 'list', 'id-card']);
-const FAQ_ICONS = new Set<PortfolioNavFaqIcon>(['help-circle', 'message', 'list']);
-const CONTACT_ICONS = new Set<PortfolioNavContactIcon>(['mail', 'send', 'phone']);
+const NAV_ICON_OPTION_VALUES: Record<PortfolioNavSectionKey, Set<PortfolioNavIconVariant>> =
+  Object.fromEntries(
+    (Object.keys(PORTFOLIO_NAV_ICON_OPTIONS) as PortfolioNavSectionKey[]).map((key) => [
+      key,
+      new Set(PORTFOLIO_NAV_ICON_OPTIONS[key].map((option) => option.value)),
+    ])
+  ) as Record<PortfolioNavSectionKey, Set<PortfolioNavIconVariant>>;
 
 const LEGACY_NAV_LABELS: Partial<Record<PortfolioNavSectionKey, Record<string, string>>> = {
   team: { Équipe: 'Team' },
@@ -275,45 +299,16 @@ export function mergeNavItemLabels(
 export function mergeNavItemIcons(base: PortfolioNavItemIcons, patch: unknown): PortfolioNavItemIcons {
   if (!patch || typeof patch !== 'object') return base;
   const record = patch as Record<string, unknown>;
+  const next = { ...base };
 
-  return {
-    info: ABOUT_ICONS.has(record.info as PortfolioNavAboutIcon)
-      ? (record.info as PortfolioNavAboutIcon)
-      : base.info,
-    work: WORK_ICONS.has(record.work as PortfolioNavWorkIcon)
-      ? (record.work as PortfolioNavWorkIcon)
-      : base.work,
-    services: SERVICES_ICONS.has(record.services as PortfolioNavServicesIcon)
-      ? (record.services as PortfolioNavServicesIcon)
-      : base.services,
-    about: ABOUT_ICONS.has(record.about as PortfolioNavAboutIcon)
-      ? (record.about as PortfolioNavAboutIcon)
-      : base.about,
-    aboutUs: ABOUT_ICONS.has(record.aboutUs as PortfolioNavAboutIcon)
-      ? (record.aboutUs as PortfolioNavAboutIcon)
-      : base.aboutUs,
-    experience: EXPERIENCE_ICONS.has(record.experience as PortfolioNavExperienceIcon)
-      ? (record.experience as PortfolioNavExperienceIcon)
-      : base.experience,
-    team: ABOUT_ICONS.has(record.team as PortfolioNavAboutIcon)
-      ? (record.team as PortfolioNavAboutIcon)
-      : base.team,
-    gallery: WORK_ICONS.has(record.gallery as PortfolioNavWorkIcon)
-      ? (record.gallery as PortfolioNavWorkIcon)
-      : base.gallery,
-    faq: FAQ_ICONS.has(record.faq as PortfolioNavFaqIcon)
-      ? (record.faq as PortfolioNavFaqIcon)
-      : base.faq,
-    contact: CONTACT_ICONS.has(record.contact as PortfolioNavContactIcon)
-      ? (record.contact as PortfolioNavContactIcon)
-      : base.contact,
-    stack: SERVICES_ICONS.has(record.stack as PortfolioNavServicesIcon)
-      ? (record.stack as PortfolioNavServicesIcon)
-      : base.stack ?? base.tools,
-    tools: SERVICES_ICONS.has(record.tools as PortfolioNavServicesIcon)
-      ? (record.tools as PortfolioNavServicesIcon)
-      : base.tools ?? base.services,
-  };
+  for (const key of Object.keys(base) as PortfolioNavSectionKey[]) {
+    const value = record[key];
+    if (typeof value === 'string' && NAV_ICON_OPTION_VALUES[key].has(value as PortfolioNavIconVariant)) {
+      next[key] = value as PortfolioNavIconVariant;
+    }
+  }
+
+  return next;
 }
 
 export function resolveNavItemLabel(

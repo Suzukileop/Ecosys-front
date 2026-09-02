@@ -1,5 +1,11 @@
-import { PublicCreatorPortfolioSkeleton } from '@/components/portfolio/PublicCreatorPortfolioSkeleton';
+'use client';
 
-export default function PortfolioLoading() {
-  return <PublicCreatorPortfolioSkeleton />;
+import { PortfolioLoadingPage } from '@/components/portfolio/PortfolioLoadingPage';
+
+/**
+ * Route loading UI — same per-banner hero skeletons as
+ * Hero → Design Banner in settings.
+ */
+export default function PortfolioCreatorLoading() {
+  return <PortfolioLoadingPage />;
 }

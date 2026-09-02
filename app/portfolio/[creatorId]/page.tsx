@@ -1,8 +1,9 @@
-import { cache } from 'react';
+import { Suspense, cache } from 'react';
 import { cookies } from 'next/headers';
 import { notFound, permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { PublicCreatorPortfolioPage } from '@/components/portfolio/PublicCreatorPortfolioPage';
+import { PublicCreatorPortfolioSkeleton } from '@/components/portfolio/PublicCreatorPortfolioSkeleton';
 import { formatLocationLabel } from '@/lib/geolocation';
 import {
   buildCreatorPortfolioPath,
@@ -13,6 +14,11 @@ import {
   serverMarketplaceFetch,
 } from '@/lib/marketplace-api';
 import type { MarketplaceCreatorPublicProfile } from '@/types/marketplace';
+import {
+  DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN,
+  normalizePortfolioHeroBannerDesign,
+  type PortfolioHeroBannerDesign,
+} from '@/components/portfolio/portfolio-hero-banner-settings';
 
 const getCreatorProfileServer = cache(
   async (creatorId: string, refreshToken?: string): Promise<MarketplaceCreatorPublicProfile | null> => {
@@ -24,6 +30,16 @@ const getCreatorProfileServer = cache(
     return normalizeCreatorProfile(rawProfile);
   }
 );
+
+function designFromCookie(
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
+  creatorKey: string
+): PortfolioHeroBannerDesign | null {
+  const safe = creatorKey.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64);
+  const value = cookieStore.get(`pf_hb_${safe}`)?.value;
+  if (value == null) return null;
+  return normalizePortfolioHeroBannerDesign(value);
+}
 
 export async function generateMetadata({
   params,
@@ -57,12 +73,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function CreatorPortfolioPage({
-  params,
-}: {
-  params: Promise<{ creatorId: string }>;
-}) {
-  const { creatorId } = await params;
+async function CreatorPortfolioBody({ creatorId }: { creatorId: string }) {
   const refreshToken = (await cookies()).get('refresh_token')?.value;
   const isAuthenticated = Boolean(refreshToken);
 
@@ -84,5 +95,26 @@ export default async function CreatorPortfolioPage({
       locationLabel={locationLabel}
       portfolioPosts={profile.portfolioPosts}
     />
+  );
+}
+
+export default async function CreatorPortfolioPage({
+  params,
+}: {
+  params: Promise<{ creatorId: string }>;
+}) {
+  const { creatorId } = await params;
+  const cookieStore = await cookies();
+  const initialDesign =
+    designFromCookie(cookieStore, creatorId) ?? DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN;
+
+  // Do NOT await the profile here — that would skip the Suspense fallback.
+  return (
+    <Suspense
+      key={creatorId}
+      fallback={<PublicCreatorPortfolioSkeleton heroBannerDesign={initialDesign} />}
+    >
+      <CreatorPortfolioBody creatorId={creatorId} />
+    </Suspense>
   );
 }

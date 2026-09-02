@@ -7,6 +7,7 @@ import type {
   ProfileLink,
   ProfileMediaBlock,
   ProfileServiceItem,
+  ProfileSkillEntry,
   ProfileStrengthTool,
   ProfileTeamMember,
 } from '@/types/ecosystem';
@@ -123,7 +124,7 @@ export interface MarketplaceCreatorPublicProfile {
   profileVisits?: number;
   gender?: string | null;
   spokenLanguages?: import('@/types/ecosystem').ProfileSpokenLanguage[];
-  aboutSkills?: string[];
+  aboutSkills?: ProfileSkillEntry[];
   aboutStrengths?: string[];
   aboutSystemsTools?: string[];
   aboutInterests?: string[];

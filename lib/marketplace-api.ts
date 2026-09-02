@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { parseAboutSkills } from '@/lib/about-skills';
 import { normalizeSpringPage } from '@/lib/ecosystem';
 import { parseSpokenLanguageEntries } from '@/lib/spoken-languages';
 import { normalizeCreatorGender } from '@/lib/creator-gender';
@@ -426,6 +427,10 @@ function mapProfileEducationEntry(raw: unknown, index: number): import('@/types/
   };
 }
 
+function mapAboutSkills(raw: unknown) {
+  return parseAboutSkills(raw);
+}
+
 function mapAboutStringList(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -666,7 +671,7 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
       name: item.value,
       level: item.level ?? null,
     })),
-    aboutSkills: mapAboutStringList(raw.aboutSkills),
+    aboutSkills: mapAboutSkills(raw.aboutSkills),
     aboutStrengths: mapAboutStringList(raw.aboutStrengths),
     aboutSystemsTools: mapAboutStringList(raw.aboutSystemsTools),
     aboutInterests: mapAboutStringList(raw.aboutInterests),

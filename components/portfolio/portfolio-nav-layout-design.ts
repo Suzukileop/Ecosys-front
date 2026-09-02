@@ -18,10 +18,10 @@ import {
 
 export type { PortfolioNavLayoutDesign };
 
-const FLOATING_PILL_BAR_FILL = '#1a1a1a';
-const FLOATING_PILL_INK = '#ffffff';
-const FLOATING_PILL_CONTACT_FILL = '#ffffff';
-const FLOATING_PILL_CONTACT_INK = '#1a1a1a';
+const FLOATING_PILL_BAR_FILL = '#ffffff';
+const FLOATING_PILL_INK = '#1a1a1a';
+const FLOATING_PILL_CONTACT_FILL = '#1a1a1a';
+const FLOATING_PILL_CONTACT_INK = '#ffffff';
 
 const TRI_ZONE_BAR_FILL = '#ffffff';
 const TRI_ZONE_INK = '#1a1a1a';
@@ -58,7 +58,7 @@ export const PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS: {
     value: 'floating-pill',
     label: '2 — Capsule flottante',
     description:
-      'Pilule sombre flottante : logo rond à gauche, liens au centre, contact blanc à droite.',
+      'Pilule flottante neutre : logo à gauche, liens au centre, bouton contact contrasté à droite.',
   },
   {
     value: 'nav-logo-social',
@@ -114,6 +114,22 @@ export function portfolioNavUsesFloatingPillLayout(
   settings: Pick<PortfolioNavSettings, 'navLayoutDesign' | 'enabled'>
 ): boolean {
   return settings.enabled && portfolioNavLayoutDesignId(settings) === 'floating-pill';
+}
+
+export function portfolioNavFloatingPillShowsLogo(
+  settings: Pick<PortfolioNavSettings, 'navLayoutDesign' | 'enabled' | 'floatingPillShowLogo'>
+): boolean {
+  return portfolioNavUsesFloatingPillLayout(settings) && (settings.floatingPillShowLogo ?? false);
+}
+
+export function portfolioNavFloatingPillShowsContact(
+  settings: Pick<
+    PortfolioNavSettings,
+    'navLayoutDesign' | 'enabled' | 'floatingPillShowContact' | 'contactButtonEnabled'
+  >
+): boolean {
+  if (!portfolioNavUsesFloatingPillLayout(settings)) return false;
+  return (settings.floatingPillShowContact ?? true) && (settings.contactButtonEnabled ?? false);
 }
 
 export function portfolioNavUsesTriZoneLayout(
@@ -190,13 +206,15 @@ export function portfolioNavUsesInBarBrandLayout(
 }
 
 function editorialBarBindings(
-  navigation?: Pick<PortfolioNavSettings, 'navColorBindings'>
+  navigation?: Pick<PortfolioNavSettings, 'navColorBindings' | 'editorialBarButtonInk'>
 ) {
+  const buttonInk = navigation?.editorialBarButtonInk ?? 'principal';
   return {
     ...mergeNavColorBindings(DEFAULT_NAV_COLOR_BINDINGS, navigation?.navColorBindings),
+    activeAccent: buttonInk,
     contactBackground: 'fond' as const,
-    contactText: 'texteFort' as const,
-    contactBorder: 'bordure' as const,
+    contactText: buttonInk,
+    contactBorder: buttonInk,
   };
 }
 
@@ -300,23 +318,30 @@ function buildEditorialBarPatch(
     contactButtonSide: 'right',
     contactExtrasPlacement: 'free-side',
     contactButtonDisplay: 'button',
-    contactButtonShape: 'rounded',
-    contactButtonIcon: 'phone',
-    contactButtonIconPosition: 'left',
+    contactButtonShape: 'bottom-line',
+    contactButtonIcon: 'arrow-up-right',
+    contactButtonIconPosition: 'right',
     contactButtonBorderEnabled: true,
     contactButtonGlassEffect: false,
     contactButtonShadowEnabled: false,
     contactButtonLabel: contactLabel,
-    linkIconsEnabled: true,
+    linkIconsEnabled: false,
     editorialBarSlotMode: 'contact',
-    editorialBarShowSocial: true,
+    editorialBarShowSocial: false,
     editorialBarShowPhone: true,
-    editorialBarShowMail: true,
+    editorialBarShowMail: false,
     editorialBarContactLink: 'phone',
-    editorialBarPhoneContact: { ...DEFAULT_EDITORIAL_BAR_PHONE_CONTACT },
+    editorialBarPhoneContact: {
+      label: "Let's Talk",
+      display: 'button',
+      icon: 'arrow-up-right',
+      iconPosition: 'right',
+      shape: 'bottom-line',
+    },
     editorialBarMailContact: { ...DEFAULT_EDITORIAL_BAR_MAIL_CONTACT },
+    editorialBarButtonInk: 'principal',
     extrasPlacement: 'free-side',
-    navColorBindings: editorialBarBindings(navigation),
+    navColorBindings: editorialBarBindings({ ...navigation, editorialBarButtonInk: 'principal' }),
   };
 
   if (navigation?.useNavPalette === false) {
@@ -330,7 +355,7 @@ function buildEditorialBarPatch(
 
   const paletteSync = applyNavPaletteToSettings({
     ...navigation,
-    navColorBindings: editorialBarBindings(navigation),
+    navColorBindings: editorialBarBindings({ ...navigation, editorialBarButtonInk: 'principal' }),
     customExtraColorsManual: true,
   });
   const palette = mergeNavPalette(DEFAULT_NAV_PALETTE, navigation?.navPalette);
@@ -375,13 +400,14 @@ function buildFloatingPillPatch(
     barShadowEnabled: true,
     barShadowStrength: 'md',
     glassEffect: false,
+    navBarSurface: 'neutre',
     barPadding: 'md',
     buttonPadding: 'sm',
     itemBorderEnabled: false,
     presence: 'full',
     displayMode: 'always',
     edgeOffset: 'md',
-    customExtraEnabled: true,
+    customExtraEnabled: false,
     customExtraLayoutPlacement: 'free-side',
     customExtraSide: 'left',
     customExtraDisplay: 'text',
@@ -410,6 +436,9 @@ function buildFloatingPillPatch(
     contactButtonLabel: contactLabel,
     linkIconsEnabled: false,
     extrasPlacement: 'free-side',
+    floatingPillShowLogo: false,
+    floatingPillShowContact: true,
+    mobileLayout: 'brand-bar',
     navColorBindings: floatingPillBindings(navigation),
   };
 
@@ -546,6 +575,7 @@ function buildLogoLeftNavContactPatch(
     contactButtonDisplay: 'button',
     contactButtonShape: 'rounded',
     contactButtonIcon: 'phone',
+    contactButtonIconPosition: 'left',
     contactButtonBorderEnabled: false,
     contactButtonGlassEffect: false,
     contactButtonShadowEnabled: false,
@@ -568,6 +598,7 @@ function buildLogoLeftNavContactPatch(
       contactButtonBackgroundColor: LOGO_LEFT_CONTACT_FILL,
       contactButtonColor: LOGO_LEFT_CONTACT_INK,
       contactButtonBorderColor: LOGO_LEFT_CONTACT_FILL,
+      contactButtonIconPosition: 'left',
     };
   }
 
@@ -601,6 +632,7 @@ function buildLogoLeftNavContactPatch(
     contactButtonColor: onAccent,
     contactButtonBorderColor: accent,
     contactButtonBorderEnabled: false,
+    contactButtonIconPosition: 'left',
   };
 }
 
@@ -717,6 +749,7 @@ function buildTriZonePatch(
     glassEffect: false,
     barPadding: 'md',
     buttonPadding: 'sm',
+    navBarHeight: 'sm',
     itemBorderEnabled: false,
     presence: 'full',
     displayMode: 'always',
@@ -747,8 +780,8 @@ function buildTriZonePatch(
     triZoneSocialLinkMonochrome: false,
     triZoneSocialLinkGap: 'md',
     triZoneShowSocial: true,
-    triZoneShowPhone: true,
-    triZoneShowMail: true,
+    triZoneShowPhone: false,
+    triZoneShowMail: false,
     editorialBarPhoneContact: { ...DEFAULT_EDITORIAL_BAR_PHONE_CONTACT },
     editorialBarMailContact: { ...DEFAULT_EDITORIAL_BAR_MAIL_CONTACT },
     extrasPlacement: 'free-side',
@@ -930,10 +963,11 @@ function buildDutenPanelPatch(
     caseOverlayMenuTrigger: 'text',
     menuControlIcon: 'menu',
     dutenPanelColumns: 2,
-    dutenPanelInset: 'md',
     dutenPanelShowContact: false,
     dutenPanelShowSocial: false,
     dutenPanelSocialLinkIds: [],
+    dutenPanelShowHeroWord: false,
+    dutenPanelHeroWord: '',
   };
 
   if (navigation?.useNavPalette === false) {
@@ -1016,7 +1050,6 @@ function buildHalfPanelLeftPatch(
     caseOverlayMenuTrigger: 'icon',
     menuControlIcon: 'menu',
     dutenPanelColumns: 2,
-    dutenPanelInset: 'md',
     dutenPanelShowContact: true,
     dutenPanelShowSocial: true,
     dutenPanelSocialLinkIds: [],
@@ -1031,14 +1064,14 @@ function buildHalfPanelLeftPatch(
       itemIconColor: '#1a1a1a',
       activeAccentColor: '#1a1a1a',
       customExtraTextColor: '#1a1a1a',
-      navPalette: {
+      navPalette: mergeNavPalette(DEFAULT_NAV_PALETTE, {
         neutre: HALF_PANEL_SAGE_NEUTRE,
         bordure: HALF_PANEL_SAGE_BORDER,
         texteFort: '#1a1a1a',
         texteMuted: '#4a4a44',
         fond: '#1a1a1a',
         principal: '#1a1a1a',
-      },
+      }),
     };
   }
 
@@ -1121,6 +1154,6 @@ export function portfolioNavLayoutDesignPatch(
     return buildHalfPanelLeftPatch(brandText, navigation);
   }
 
-  const contactLabel = (navigation?.contactButtonLabel ?? 'Call me').trim() || 'Call me';
+  const contactLabel = (navigation?.contactButtonLabel ?? "Let's Talk").trim() || "Let's Talk";
   return buildEditorialBarPatch(brandText, contactLabel, navigation);
 }

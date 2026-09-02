@@ -1,6 +1,14 @@
 'use client';
 
-import { useEffect, useState, type CSSProperties, type FocusEvent, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type CSSProperties,
+  type FocusEvent,
+  type ReactNode,
+} from 'react';
 import {
   SocialPlatformIcon,
   normalizeSocialPlatformKey,
@@ -11,6 +19,7 @@ import {
   type LinkBrandIconVisualSize,
 } from '@/components/portfolio/portfolio-nav-tri-zone-social';
 import { PortfolioNavContactCtaGlyph, resolvePortfolioNavContactCtaIcon } from '@/components/portfolio/portfolio-nav-contact-cta-icons';
+import type { PortfolioColorMode } from '@/components/portfolio/portfolio-color-mode';
 import {
   DEFAULT_CONTENT_GUTTER,
   portfolioEditorialGutterInsetLeft,
@@ -19,11 +28,14 @@ import {
 } from '@/components/portfolio/portfolio-editorial-layout';
 import {
   PORTFOLIO_NAV_IN_BAR_BRAND_LABEL,
+  portfolioNavFloatingPillShowsContact,
   portfolioNavUsesEditorialBarLayout,
   portfolioNavUsesFloatingPillLayout,
   portfolioNavUsesInBarBrandLayout,
+  portfolioNavUsesLogoLeftNavContactLayout,
   portfolioNavUsesStructuredBarLayout,
   portfolioNavUsesTriZoneLayout,
+  portfolioNavUsesCenterLogoSplitLayout,
 } from '@/components/portfolio/portfolio-nav-layout-design';
 import { LinkBrandIcon } from '@/components/portfolio/PortfolioLinksChrome';
 import {
@@ -40,9 +52,18 @@ import {
   portfolioNavFreeSpaceSides,
   portfolioNavInkOnAccentFill,
   portfolioNavIsVertical,
+  portfolioNavPageIsDark,
+  portfolioNavTexteFortInk,
   portfolioNavResolveExtrasPlacement,
   portfolioNavResolveExtrasSide,
+  resolveNavBarSurfaceBackground,
+  resolvePortfolioNavEditorialBarButtonInk,
   resolvePortfolioNavMobileChrome,
+  PORTFOLIO_NAV_EDITORIAL_INTERACTION,
+  PORTFOLIO_NAV_TRI_ZONE_INTERACTION,
+  PORTFOLIO_NAV_CENTER_SPLIT_INTERACTION,
+  PORTFOLIO_NAV_FLOATING_PILL_INTERACTION,
+  PORTFOLIO_NAV_LOGO_LEFT_INTERACTION,
 } from '@/components/portfolio/portfolio-nav-settings';
 import type {
   PortfolioNavContactButtonDisplay,
@@ -273,11 +294,13 @@ function editorialBarContactChannelButton({
   href,
   settings,
   compact,
+  triZoneInteraction = false,
 }: {
   profile: PortfolioNavEditorialBarContactChannelSettings;
   href: string;
   settings: PortfolioNavSettings;
   compact?: boolean;
+  triZoneInteraction?: boolean;
 }) {
   const contactLabel = profile.label.trim() || 'Contact';
   const contactDisplay = profile.display;
@@ -300,6 +323,8 @@ function editorialBarContactChannelButton({
       shape={contactShape}
       chrome={contactChrome}
       compact={compact}
+      editorialInteraction={!triZoneInteraction}
+      triZoneInteraction={triZoneInteraction}
     />
   );
 }
@@ -396,9 +421,156 @@ function navReadableInk(ink: string, background: string): string {
   return backgroundLuminance > 0.5 ? '#0a0a0a' : '#ffffff';
 }
 
+type PortfolioNavColorModeToggleContextValue = {
+  show: boolean;
+  colorMode: PortfolioColorMode;
+  onToggle: () => void;
+};
+
+const PortfolioNavColorModeToggleContext =
+  createContext<PortfolioNavColorModeToggleContextValue | null>(null);
+
+export function PortfolioNavColorModeToggleProvider({
+  show,
+  colorMode,
+  onToggle,
+  children,
+}: {
+  show: boolean;
+  colorMode: PortfolioColorMode;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <PortfolioNavColorModeToggleContext.Provider value={{ show, colorMode, onToggle }}>
+      {children}
+    </PortfolioNavColorModeToggleContext.Provider>
+  );
+}
+
+function usePortfolioNavColorModeToggleContext() {
+  return useContext(PortfolioNavColorModeToggleContext);
+}
+
+function PortfolioNavColorModeGlyph({
+  mode,
+  className,
+}: {
+  mode: PortfolioColorMode;
+  className?: string;
+}) {
+  if (mode === 'light') {
+    return (
+      <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" aria-hidden>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.75}
+          d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" aria-hidden>
+      <circle cx="12" cy="12" r="4" strokeWidth={1.75} />
+      <path
+        strokeLinecap="round"
+        strokeWidth={1.75}
+        d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+      />
+    </svg>
+  );
+}
+
+/** Sun / moon control — visibility driven by Global → Theme. */
+export function PortfolioNavColorModeToggleButton({
+  settings,
+  compact,
+  editorialInteraction = false,
+  floatingPillInteraction = false,
+  overlayInteraction = false,
+  inkColor,
+}: {
+  settings: PortfolioNavSettings;
+  compact?: boolean;
+  editorialInteraction?: boolean;
+  floatingPillInteraction?: boolean;
+  overlayInteraction?: boolean;
+  inkColor?: string;
+}) {
+  const ctx = usePortfolioNavColorModeToggleContext();
+  if (!ctx?.show) return null;
+
+  const colors = resolveLinkIconColors(settings);
+  const size = compact ? 'h-9 w-9' : 'h-10 w-10';
+  const hoverClass = editorialInteraction
+    ? PORTFOLIO_NAV_EDITORIAL_INTERACTION.icon
+    : floatingPillInteraction
+      ? PORTFOLIO_NAV_FLOATING_PILL_INTERACTION.icon
+      : overlayInteraction
+        ? 'transition hover:opacity-80'
+        : 'transition hover:opacity-90';
+  const isLight = ctx.colorMode === 'light';
+  const label = isLight ? 'Activer le mode sombre' : 'Activer le mode clair';
+  const iconInk = inkColor ?? colors.icon;
+
+  if (editorialInteraction || floatingPillInteraction || overlayInteraction) {
+    return (
+      <button
+        type="button"
+        onClick={ctx.onToggle}
+        aria-label={label}
+        title={label}
+        style={{ color: iconInk }}
+        className={`inline-flex h-9 w-9 shrink-0 items-center justify-center ${hoverClass}`}
+      >
+        <PortfolioNavColorModeGlyph mode={isLight ? 'light' : 'dark'} className="h-[1.125rem] w-[1.125rem]" />
+      </button>
+    );
+  }
+
+  const shellStyle = {
+    backgroundColor: colors.background,
+    borderColor: colors.border,
+    color: colors.icon,
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={ctx.onToggle}
+      aria-label={label}
+      title={label}
+      style={shellStyle}
+      className={`inline-flex ${size} shrink-0 items-center justify-center rounded-full border shadow-[0_8px_24px_rgba(0,0,0,0.08)] backdrop-blur-md ${hoverClass}`}
+    >
+      <PortfolioNavColorModeGlyph mode={isLight ? 'light' : 'dark'} className="h-4 w-4" />
+    </button>
+  );
+}
+
 function resolveContactLabelInk(settings: PortfolioNavSettings, background: string): string {
-  const configured = settings.contactButtonColor ?? '#ffffff';
   const palette = mergeNavPalette(DEFAULT_NAV_PALETTE, settings.navPalette);
+
+  if (portfolioNavUsesEditorialBarLayout(settings)) {
+    const surface =
+      background === 'transparent'
+        ? resolveNavBarSurfaceBackground(settings, palette)
+        : background;
+    const ink = resolvePortfolioNavEditorialBarButtonInk(settings, palette, {
+      background: surface,
+    });
+    return navReadableInk(ink, background === 'transparent' ? surface : background);
+  }
+
+  const configured = settings.contactButtonColor ?? '#ffffff';
+
+  if (settings.useNavPalette !== false && portfolioNavPageIsDark(palette)) {
+    return navReadableInk(portfolioNavTexteFortInk(palette), background);
+  }
+
   let color = configured;
 
   if (portfolioNavContrastRatio(configured, background) < 4.5) {
@@ -465,18 +637,27 @@ function NavBrandLinkButton({
   link,
   iconSize = 'md',
   monochrome = false,
+  editorialInteraction = false,
+  triZoneInteraction = false,
 }: {
   link: PortfolioNavChromeLink;
   iconSize?: LinkBrandIconVisualSize;
   monochrome?: boolean;
+  editorialInteraction?: boolean;
+  triZoneInteraction?: boolean;
 }) {
   const external = link.source !== 'mail';
+  const hoverClass = editorialInteraction
+    ? PORTFOLIO_NAV_EDITORIAL_INTERACTION.icon
+    : triZoneInteraction
+      ? PORTFOLIO_NAV_TRI_ZONE_INTERACTION.socialIcon
+      : 'transition hover:opacity-90';
   return (
     <a
       href={link.href}
       aria-label={link.label}
       title={link.label}
-      className="inline-flex shrink-0 transition hover:opacity-90"
+      className={`inline-flex shrink-0 ${hoverClass}`}
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
     >
       <LinkBrandIcon
@@ -494,12 +675,24 @@ export function PortfolioNavBrandLinkButton({
   link,
   iconSize = 'md',
   monochrome = false,
+  editorialInteraction = false,
+  triZoneInteraction = false,
 }: {
   link: PortfolioNavChromeLink;
   iconSize?: LinkBrandIconVisualSize;
   monochrome?: boolean;
+  editorialInteraction?: boolean;
+  triZoneInteraction?: boolean;
 }) {
-  return <NavBrandLinkButton link={link} iconSize={iconSize} monochrome={monochrome} />;
+  return (
+    <NavBrandLinkButton
+      link={link}
+      iconSize={iconSize}
+      monochrome={monochrome}
+      editorialInteraction={editorialInteraction}
+      triZoneInteraction={triZoneInteraction}
+    />
+  );
 }
 
 function LinkIconButton({
@@ -560,6 +753,10 @@ function ContactFreeSpaceButton({
   shape = 'pill',
   chrome,
   compact,
+  editorialInteraction = false,
+  floatingPillInteraction = false,
+  logoLeftInteraction = false,
+  triZoneInteraction = false,
 }: {
   label: string;
   labelCase: PortfolioNavSettings['labelCase'];
@@ -572,6 +769,10 @@ function ContactFreeSpaceButton({
   shape?: PortfolioNavContactButtonShape;
   chrome: ReturnType<typeof resolveContactButtonChrome>;
   compact?: boolean;
+  editorialInteraction?: boolean;
+  floatingPillInteraction?: boolean;
+  logoLeftInteraction?: boolean;
+  triZoneInteraction?: boolean;
 }) {
   const frame = portfolioNavContactButtonShellPresentation(shape, {
     background: chrome.background,
@@ -590,18 +791,29 @@ function ContactFreeSpaceButton({
     display === 'button' &&
     resolvedIcon !== 'none' &&
     resolvedIconPosition !== 'none';
-  const shellStyle = frame.style;
+  const editorialAccentStyle = editorialInteraction
+    ? ({ '--nav-editorial-accent': chrome.color } as CSSProperties)
+    : undefined;
+  const shellStyle = { ...frame.style, ...editorialAccentStyle };
   const normalizedShape = shape ?? 'pill';
   const isMinimalFrame = normalizedShape === 'frameless' || normalizedShape === 'bottom-line';
   const buttonIconClass = compact ? 'h-4 w-4' : 'h-[1.125rem] w-[1.125rem]';
   const iconOnlyGlyphClass = compact ? 'h-5 w-5' : 'h-[1.375rem] w-[1.375rem]';
+  const editorialHoverClass = editorialInteraction
+    ? normalizedShape === 'bottom-line'
+      ? PORTFOLIO_NAV_EDITORIAL_INTERACTION.ctaBottomLine
+      : PORTFOLIO_NAV_EDITORIAL_INTERACTION.cta
+    : triZoneInteraction
+      ? PORTFOLIO_NAV_TRI_ZONE_INTERACTION.cta
+      : floatingPillInteraction
+        ? PORTFOLIO_NAV_FLOATING_PILL_INTERACTION.cta
+        : logoLeftInteraction
+          ? PORTFOLIO_NAV_LOGO_LEFT_INTERACTION.cta
+          : 'transition hover:opacity-90';
 
   if (display !== 'button') {
     const size = isMinimalFrame ? '' : compact ? 'h-9 w-9' : 'h-10 w-10';
-    const roundClass = isMinimalFrame ? '' : 'rounded-full';
-    const borderClass =
-      isMinimalFrame || !chrome.borderEnabled ? '' : 'border';
-    const iconClassName = `inline-flex ${size} items-center justify-center ${roundClass} ${borderClass} transition hover:opacity-90 ${shadowClass} ${glassClass} ${frame.className}`;
+    const iconClassName = `inline-flex ${size} items-center justify-center ${editorialHoverClass} ${shadowClass} ${glassClass} ${frame.className}`;
     const glyph = <ContactGlyph icon={resolvedIcon} className={iconOnlyGlyphClass} />;
     if (onNavigate) {
       return (
@@ -629,17 +841,30 @@ function ContactFreeSpaceButton({
       ? 'uppercase tracking-[0.14em]'
       : 'normal-case tracking-normal';
   const paddingClass = isMinimalFrame
-    ? compact
-      ? 'px-0 py-1'
-      : 'px-0 py-1.5'
+    ? normalizedShape === 'bottom-line'
+      ? 'px-0 py-0'
+      : compact
+        ? 'px-0 py-1'
+        : 'px-0 py-1.5'
     : compact
       ? 'min-h-9 px-3.5 py-1.5 text-sm'
       : 'min-h-10 px-4 py-2';
   const labelSizeClass = portfolioNavLabelFontSizeClass(labelFontSize, compact);
-  const className = `inline-flex shrink-0 items-center justify-center gap-2.5 font-semibold ${labelSizeClass} ${caseClass} transition hover:opacity-90 ${shadowClass} ${glassClass} ${frame.className} ${paddingClass}`;
+  const className = `inline-flex shrink-0 items-center justify-center gap-2.5 font-semibold ${labelSizeClass} ${caseClass} ${editorialHoverClass} ${shadowClass} ${glassClass} ${frame.className} ${paddingClass}`;
   const labelNode = <span>{formatNavLabel(label, labelCase)}</span>;
   const iconNode = showIconInButton ? (
-    <ContactGlyph icon={resolvedIcon} className={buttonIconClass} />
+    <ContactGlyph
+      icon={resolvedIcon}
+      className={`${buttonIconClass}${
+        editorialInteraction
+          ? ` ${PORTFOLIO_NAV_EDITORIAL_INTERACTION.ctaIcon}`
+          : floatingPillInteraction
+            ? ` ${PORTFOLIO_NAV_FLOATING_PILL_INTERACTION.ctaIcon}`
+            : logoLeftInteraction
+              ? ` ${PORTFOLIO_NAV_LOGO_LEFT_INTERACTION.ctaIcon}`
+              : ''
+      }`}
+    />
   ) : null;
   const content =
     resolvedIconPosition === 'right' ? (
@@ -681,8 +906,23 @@ function InBarBrandLogo({
   const label = PORTFOLIO_NAV_IN_BAR_BRAND_LABEL;
   const ink = settings.itemTextColor ?? settings.customExtraTextColor ?? '#171717';
   const fontSize = compact ? 24 : 28;
-  const className =
-    'inline-flex shrink-0 items-center font-bold tracking-tight transition hover:opacity-90';
+  const editorialBar = portfolioNavUsesEditorialBarLayout(settings);
+  const floatingPill = portfolioNavUsesFloatingPillLayout(settings);
+  const centerLogoSplit = portfolioNavUsesCenterLogoSplitLayout(settings);
+  const logoLeftLayout = portfolioNavUsesLogoLeftNavContactLayout(settings);
+  const brandHoverClass = editorialBar
+    ? PORTFOLIO_NAV_EDITORIAL_INTERACTION.brand
+    : floatingPill
+      ? PORTFOLIO_NAV_FLOATING_PILL_INTERACTION.brand
+      : centerLogoSplit
+        ? PORTFOLIO_NAV_CENTER_SPLIT_INTERACTION.brand
+        : logoLeftLayout
+          ? PORTFOLIO_NAV_LOGO_LEFT_INTERACTION.brand
+          : 'transition hover:opacity-90';
+  const className = [
+    'inline-flex shrink-0 items-center font-bold tracking-tight',
+    brandHoverClass,
+  ].join(' ');
   const style: CSSProperties = {
     color: ink,
     fontSize,
@@ -748,6 +988,20 @@ function CustomExtraChip({ settings, compact }: { settings: PortfolioNavSettings
   const label = text || 'Extra';
   const floatingPill = portfolioNavUsesFloatingPillLayout(settings);
   const triZone = portfolioNavUsesTriZoneLayout(settings);
+  const editorialBar = portfolioNavUsesEditorialBarLayout(settings);
+  const logoLeftLayout = portfolioNavUsesLogoLeftNavContactLayout(settings);
+  const centerLogoSplit = portfolioNavUsesCenterLogoSplitLayout(settings);
+  const brandHoverClass = editorialBar
+    ? PORTFOLIO_NAV_EDITORIAL_INTERACTION.brand
+    : triZone
+      ? PORTFOLIO_NAV_TRI_ZONE_INTERACTION.brand
+      : floatingPill
+        ? PORTFOLIO_NAV_FLOATING_PILL_INTERACTION.brand
+        : centerLogoSplit
+          ? PORTFOLIO_NAV_CENTER_SPLIT_INTERACTION.brand
+          : logoLeftLayout
+            ? PORTFOLIO_NAV_LOGO_LEFT_INTERACTION.brand
+            : 'transition hover:opacity-90';
 
   const background = settings.customExtraBackgroundColor ?? '#ffffff';
   const ink = navReadableInk(settings.customExtraTextColor ?? '#171717', background);
@@ -810,7 +1064,7 @@ function CustomExtraChip({ settings, compact }: { settings: PortfolioNavSettings
     (floatingPill && wantsLogo && !showText) || (triZone && wantsLogo && !showText)
       ? '!aspect-square !rounded-full'
       : ''
-  } transition hover:opacity-90`;
+  } ${brandHoverClass}`;
 
   if (href) {
     const external = /^https?:\/\//i.test(href);
@@ -1035,7 +1289,9 @@ export function PortfolioNavExtrasCluster({
   const icons = includeIcons ? model.iconLinks : [];
   const showContact = includeContact && model.showContact;
   const showCustom = includeCustom && model.showCustomExtra;
-  if (!showContact && icons.length === 0 && !showCustom) return null;
+  const colorModeToggle = usePortfolioNavColorModeToggleContext();
+  const showColorModeToggle = colorModeToggle?.show ?? false;
+  if (!showContact && icons.length === 0 && !showCustom && !showColorModeToggle) return null;
   const colors = resolveLinkIconColors(settings);
   const contactChrome = resolveContactButtonChrome(settings);
   /** Side rails (left/right nav) only have a narrow edge band — labeled pills clip off-screen. */
@@ -1051,6 +1307,7 @@ export function PortfolioNavExtrasCluster({
   const contactShape = (settings.contactButtonShape ?? 'pill') as PortfolioNavContactButtonShape;
   const customPlacement = normalizePortfolioNavCustomExtraPlacement(settings.customExtraPlacement);
   const customNode = showCustom ? <CustomExtraChip settings={settings} compact={compact} /> : null;
+  const floatingPillInteraction = portfolioNavUsesFloatingPillLayout(settings);
 
   const legacyNodes: ReactNode[] = [
     ...icons.map((link) => (
@@ -1071,6 +1328,7 @@ export function PortfolioNavExtrasCluster({
             shape={contactShape}
             chrome={contactChrome}
             compact={compact}
+            floatingPillInteraction={floatingPillInteraction}
           />,
         ]
       : []),
@@ -1129,16 +1387,21 @@ export function PortfolioNavFreeSpaceLinks({
   const isXlUp = useMinWidth(1280);
   const mobileChrome = resolvePortfolioNavMobileChrome(settings, isLgUp, isXlUp);
   const model = usePortfolioNavExtrasModel(settings, links);
+  const colorModeToggle = usePortfolioNavColorModeToggleContext();
+  const showColorModeToggle = colorModeToggle?.show ?? false;
 
   if (!navRevealed) return null;
   if (!settings.enabled) return null;
   if (model.inlineInBar) return null;
-  if (!model.freeSideExtras) return null;
-  if (!model.hasAnyExtras) return null;
+  if (!model.freeSideExtras && !showColorModeToggle) return null;
+  if (!model.hasAnyExtras && !showColorModeToggle) return null;
 
   const sides = Array.from(
     new Set(
-      [model.iconsSide, model.contactSide, model.customSide].filter(Boolean) as Array<'left' | 'right'>
+      [
+        ...[model.iconsSide, model.contactSide, model.customSide].filter(Boolean),
+        ...(showColorModeToggle ? (['right'] as const) : []),
+      ] as Array<'left' | 'right'>
     )
   );
   if (sides.length === 0) return null;
@@ -1186,7 +1449,11 @@ export function PortfolioNavFreeSpaceLinks({
             includeIcons={model.iconsSide === side}
             includeContact={model.contactSide === side}
             includeCustom={model.customSide === side}
+            compact
           />
+          {showColorModeToggle && side === 'right' ? (
+            <PortfolioNavColorModeToggleButton settings={settings} compact />
+          ) : null}
         </div>
       ))}
     </div>
@@ -1213,6 +1480,7 @@ export function PortfolioNavSocialIconStrip({
   compact: _compact,
   className = '',
   forceVisible = false,
+  triZoneInteraction = false,
 }: {
   settings: PortfolioNavSettings;
   links: PortfolioNavChromeLink[];
@@ -1221,9 +1489,11 @@ export function PortfolioNavSocialIconStrip({
   className?: string;
   /** Skip tri-zone / legacy slot-mode gate (editorial bar combines items). */
   forceVisible?: boolean;
+  /** Tri-zone social icons — playful scale + rotate hover (not editorial). */
+  triZoneInteraction?: boolean;
 }) {
-  if (!forceVisible && !navShowsSocialSlot(settings)) return null;
-  if (!(settings.linkIconsEnabled ?? false) && !forceVisible) return null;
+  if (!forceVisible && !triZoneInteraction && !navShowsSocialSlot(settings)) return null;
+  if (!(settings.linkIconsEnabled ?? false) && !forceVisible && !triZoneInteraction) return null;
   const visible = resolveTriZoneSocialLinks(links, settings, maxLinks);
   if (visible.length === 0) return null;
 
@@ -1239,6 +1509,8 @@ export function PortfolioNavSocialIconStrip({
           link={link}
           iconSize={iconSize}
           monochrome={monochrome}
+          editorialInteraction={forceVisible}
+          triZoneInteraction={triZoneInteraction}
         />
       ))}
     </div>
@@ -1249,6 +1521,7 @@ export function PortfolioNavSocialIconStrip({
 export function PortfolioNavEditorialRightSlot({
   settings,
   links,
+  contactHref = '#contact',
   contactPhone,
   contactEmail,
   compact,
@@ -1277,8 +1550,13 @@ export function PortfolioNavEditorialRightSlot({
     undefined,
     DEFAULT_EDITORIAL_BAR_MAIL_CONTACT
   );
-  const phoneHref = showPhone ? resolveEditorialBarContactHref('phone', { phone: contactPhone }) : null;
-  const mailHref = showMail ? resolveEditorialBarContactHref('mail', { email: contactEmail }) : null;
+  const fallbackHref = contactHref.trim() || '#contact';
+  const phoneHref = showPhone
+    ? resolveEditorialBarContactHref('phone', { phone: contactPhone }) ?? fallbackHref
+    : null;
+  const mailHref = showMail
+    ? resolveEditorialBarContactHref('mail', { email: contactEmail }) ?? fallbackHref
+    : null;
 
   const nodes: ReactNode[] = [];
 
@@ -1321,11 +1599,19 @@ export function PortfolioNavEditorialRightSlot({
     );
   }
 
-  if (nodes.length === 0) return null;
+  const colorModeToggle = usePortfolioNavColorModeToggleContext();
+  const showColorModeToggle = colorModeToggle?.show ?? false;
+
+  if (nodes.length === 0 && !showColorModeToggle) return null;
 
   return (
     <div className={`flex min-w-0 shrink-0 items-center justify-end gap-2 sm:gap-3 ${className}`}>
       {nodes}
+      <PortfolioNavColorModeToggleButton
+        settings={settings}
+        compact={compact}
+        editorialInteraction
+      />
     </div>
   );
 }
@@ -1373,7 +1659,7 @@ export function PortfolioNavTriZoneSideSlot({
         links={links}
         maxLinks={3}
         compact={compact}
-        forceVisible
+        triZoneInteraction
       />
     );
   }
@@ -1386,6 +1672,7 @@ export function PortfolioNavTriZoneSideSlot({
           href: phoneHref,
           settings,
           compact,
+          triZoneInteraction: true,
         })}
       </div>
     );
@@ -1399,16 +1686,21 @@ export function PortfolioNavTriZoneSideSlot({
           href: mailHref,
           settings,
           compact,
+          triZoneInteraction: true,
         })}
       </div>
     );
   }
 
-  if (nodes.length === 0) return null;
+  const colorModeToggle = usePortfolioNavColorModeToggleContext();
+  const showColorModeToggle = colorModeToggle?.show ?? false;
+
+  if (nodes.length === 0 && !showColorModeToggle) return null;
 
   return (
     <div className={`flex min-w-0 shrink-0 items-center justify-end gap-2 sm:gap-3 ${className}`}>
       {nodes}
+      <PortfolioNavColorModeToggleButton settings={settings} compact={compact} />
     </div>
   );
 }
@@ -1488,6 +1780,8 @@ export function PortfolioNavContactCta({
   );
   const contactShape = (settings.contactButtonShape ?? 'pill') as PortfolioNavContactButtonShape;
   const contactChrome = resolveContactButtonChrome(settings);
+  const floatingPillInteraction = portfolioNavUsesFloatingPillLayout(settings);
+  const logoLeftInteraction = portfolioNavUsesLogoLeftNavContactLayout(settings);
 
   return (
     <div className={`flex shrink-0 items-center ${className}`}>
@@ -1503,7 +1797,49 @@ export function PortfolioNavContactCta({
         shape={contactShape}
         chrome={contactChrome}
         compact={compact}
+        floatingPillInteraction={floatingPillInteraction}
+        logoLeftInteraction={logoLeftInteraction}
       />
+    </div>
+  );
+}
+
+/** Capsule flottante — bascule clair/sombre + contact dans la pilule (colonne droite). */
+export function PortfolioNavFloatingPillRightSlot({
+  settings,
+  contactHref = '#contact',
+  onContactNavigate,
+  compact,
+  className = '',
+}: {
+  settings: PortfolioNavSettings;
+  contactHref?: string;
+  onContactNavigate?: () => void;
+  compact?: boolean;
+  className?: string;
+}) {
+  const colorModeToggle = usePortfolioNavColorModeToggleContext();
+  const showColorModeToggle = colorModeToggle?.show ?? false;
+  const showContact = portfolioNavFloatingPillShowsContact(settings);
+  if (!showContact && !showColorModeToggle) return null;
+
+  return (
+    <div className={`flex min-w-0 shrink-0 items-center justify-end gap-2 sm:gap-2.5 ${className}`}>
+      {showColorModeToggle ? (
+        <PortfolioNavColorModeToggleButton
+          settings={settings}
+          compact={compact}
+          floatingPillInteraction
+        />
+      ) : null}
+      {showContact ? (
+        <PortfolioNavContactCta
+          settings={settings}
+          contactHref={contactHref}
+          onContactNavigate={onContactNavigate}
+          compact={compact}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1530,7 +1866,9 @@ export function PortfolioNavInlineExtras({
   const includeIcons = model.iconsSide === side;
   const includeContact = model.contactSide === side;
   const includeCustom = model.customSide === side;
-  if (!includeIcons && !includeContact && !includeCustom) return null;
+  const colorModeToggle = usePortfolioNavColorModeToggleContext();
+  const showColorModeToggle = colorModeToggle?.show ?? false;
+  if (!includeIcons && !includeContact && !includeCustom && !showColorModeToggle) return null;
 
   return (
     <PortfolioNavExtrasCluster
@@ -1581,7 +1919,9 @@ export function PortfolioNavAdjacentExtras({
   const includeIcons = model.iconsAdjacent === position;
   const includeContact = model.contactAdjacent === position;
   const includeCustom = model.customAdjacent === position;
-  if (!includeIcons && !includeContact && !includeCustom) return null;
+  const colorModeToggle = usePortfolioNavColorModeToggleContext();
+  const showColorModeToggle = colorModeToggle?.show ?? false;
+  if (!includeIcons && !includeContact && !includeCustom && !showColorModeToggle) return null;
 
   return (
     <PortfolioNavExtrasCluster

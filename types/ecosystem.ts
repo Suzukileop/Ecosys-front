@@ -451,6 +451,14 @@ export interface ProfileAboutUs {
   founder?: ProfileAboutUsFounder | null;
 }
 
+/** Skill entry on Creator Studio → About page. */
+export interface ProfileSkillEntry {
+  id: string;
+  sortOrder: number;
+  title: string;
+  description: string;
+}
+
 /** Education entry on Creator Studio → About page. */
 export interface ProfileEducationEntry {
   id: string;
@@ -530,7 +538,7 @@ export interface CreatorProfileDto {
   /** App UX role: GENERAL_MEMBER | SERVICE_PROVIDER | FREELANCER_STUDENT | SELLER | RH_RECRUITER */
   appRole?: string | null;
   spokenLanguages?: ProfileSpokenLanguage[];
-  aboutSkills?: string[];
+  aboutSkills?: ProfileSkillEntry[];
   aboutStrengths?: string[];
   aboutSystemsTools?: string[];
   aboutInterests?: string[];
@@ -565,7 +573,7 @@ export interface CreatorProfileUpdateBody {
   /** App UX role: GENERAL_MEMBER | SERVICE_PROVIDER | FREELANCER_STUDENT | SELLER | RH_RECRUITER */
   appRole?: string;
   spokenLanguages?: ProfileSpokenLanguage[];
-  aboutSkills?: string[];
+  aboutSkills?: ProfileSkillEntry[];
   aboutStrengths?: string[];
   aboutSystemsTools?: string[];
   aboutInterests?: string[];

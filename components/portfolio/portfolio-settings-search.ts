@@ -284,6 +284,66 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   entry('navigation', 'Button padding', ['button padding', 'pill', 'padding', 'bouton'], undefined),
   entry('navigation', 'Bar padding', ['bar padding', 'shell', 'padding'], undefined),
   entry('navigation', 'Hauteur de la barre', ['hauteur', 'bar height', 'compact', 'aéré', 'navbar'], undefined),
+  entry(
+    'navigation',
+    'Comportement mobile',
+    ['mobile', 'drawer', 'tiroir', 'phone', 'responsive', 'brand', 'barre', 'logo'],
+    'general'
+  ),
+  entry(
+    'navigation',
+    'Barre logo pleine largeur',
+    ['mobile', 'brand', 'bar', 'logo', 'slite', 'pleine largeur', 'header'],
+    'general'
+  ),
+  entry(
+    'navigation',
+    'Tiroir menu mobile',
+    ['drawer', 'tiroir', 'sidebar', 'mobile', 'menu'],
+    'general'
+  ),
+  entry(
+    'navigation',
+    'Bascule clair / sombre dans la barre',
+    ['toggle', 'theme', 'sun', 'moon', 'soleil', 'lune', 'mode', 'clair', 'sombre', 'dark', 'light'],
+    undefined
+  ),
+  entry(
+    'navigation',
+    'Bascule clair / sombre capsule flottante',
+    ['floating', 'pill', 'capsule', 'toggle', 'soleil', 'lune', 'mode'],
+    'design'
+  ),
+  entry(
+    'navigation',
+    'Logo capsule flottante',
+    ['floating', 'pill', 'capsule', 'logo', 'marque', 'brand'],
+    'design'
+  ),
+  entry(
+    'navigation',
+    'Contact capsule flottante',
+    ['floating', 'pill', 'capsule', 'contact', 'bouton', 'email'],
+    'design'
+  ),
+  entry(
+    'navigation',
+    'Bascule clair / sombre menu plein écran',
+    ['case', 'overlay', 'fullscreen', 'toggle', 'soleil', 'lune', 'mode'],
+    'design'
+  ),
+  entry(
+    'navigation',
+    'Bascule clair / sombre panneau Duten',
+    ['duten', 'panel', 'toggle', 'soleil', 'lune', 'mode'],
+    'design'
+  ),
+  entry(
+    'navigation',
+    'Bascule clair / sombre demi-panneau',
+    ['half', 'panel', 'drawer', 'toggle', 'soleil', 'lune', 'mode'],
+    'design'
+  ),
 
   // Hero
   entry('hero', 'General', ['visibility', 'title', 'subtitle', 'flip', 'division', 'layout', 'écran', 'général'], 'general'),
@@ -295,7 +355,6 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
       'design',
       'swiss',
       'editorial',
-      'classic',
       'portrait',
       'identity',
       'editorial',
@@ -702,7 +761,45 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ),
   entry('services', 'Background', ['fill', 'gradient', 'fond'], 'background'),
 
-  entry('info', 'Info', ['info', 'profile', 'details', 'hero'], undefined),
+  entry('info', 'Info', ['info', 'profile', 'details', 'about me', 'about'], undefined),
+  entry('info', 'General', ['visibility', 'title', 'subtitle', 'about me', 'languages', 'level', 'étoiles', 'stars', 'niveau'], 'general'),
+  entry(
+    'info',
+    'Design',
+    [
+      'design',
+      'about me',
+      'trait',
+      'split',
+      'manifesto',
+      'about manifesto',
+      'déclaration',
+      'statement',
+      'awwwards',
+      'portrait',
+      'education',
+      'skills',
+      'strengths',
+      'languages',
+      'tools',
+      'framer',
+      'asymétrique',
+      'terminal',
+      'console',
+      'credits',
+      'film',
+      'value',
+      'my value',
+      'puces',
+    ],
+    'design'
+  ),
+  entry(
+    'info',
+    'Education design',
+    ['education', 'timeline', 'editorial', 'panels', 'cascade', 'awwwards', 'webflow', 'framer'],
+    'design'
+  ),
 
   entry('aboutUs', 'General', ['visibility', 'about us', 'company', 'layout', 'title', 'subtitle', 'à propos', 'design', 'split', 'overlap', 'founder', 'liste', 'cadre', 'image gauche', 'media left', 'quote', 'citation', 'inverser', 'bordure', 'ombre', 'arrondi', 'fond', 'transparent', 'svg', 'illustration', 'globe', 'photo', 'image'], 'general'),
 

@@ -13,6 +13,7 @@ import {
   parseSpecialtyList,
 } from '@/lib/specialties';
 import { isRepeatedBioContent } from '@/lib/profile-bio';
+import { parseAboutSkills, serializeAboutSkills } from '@/lib/about-skills';
 
 export const platformEnum = z.enum([
   'INSTAGRAM',
@@ -326,6 +327,28 @@ export const aboutStringItemSchema = z.object({
   value: z.string().max(120),
 });
 
+export const aboutSkillEntrySchema = z
+  .object({
+    id: z.string().uuid(),
+    sortOrder: z.number().int().min(0),
+    title: z.string().max(120),
+    description: z.string().max(280),
+  })
+  .superRefine((data, ctx) => {
+    const title = data.title.trim();
+    const description = data.description.trim();
+    if (!title && !description) return;
+    if (!title) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Skill title is required.',
+        path: ['title'],
+      });
+    }
+  });
+
+export type AboutSkillForm = z.infer<typeof aboutSkillEntrySchema>;
+
 export const aboutEducationEntrySchema = z
   .object({
     id: z.string().uuid(),
@@ -525,7 +548,7 @@ export const profileSchema = z
     yearsOfExperience: z.number().int().min(0).max(80).nullable().optional(),
     stackItems: z.array(strengthItemSchema).max(12),
     strengthsTools: z.array(strengthItemSchema).max(12),
-    aboutSkills: z.array(aboutStringItemSchema).max(12),
+    aboutSkills: z.array(aboutSkillEntrySchema).max(12),
     aboutStrengths: z.array(aboutStringItemSchema).max(12),
     aboutSystemsTools: z.array(aboutStringItemSchema).max(16),
     aboutInterests: z.array(aboutStringItemSchema).max(12),
@@ -1731,7 +1754,7 @@ function normalizeProfileComparable(values: ProfileFormValues, availabilityHours
       }))
       .filter((item) => Boolean(item.value))
       .sort((a, b) => a.value.localeCompare(b.value)),
-    aboutSkills: serializeAboutStringList(values.aboutSkills),
+    aboutSkills: serializeAboutSkills(values.aboutSkills),
     aboutStrengths: serializeAboutStringList(values.aboutStrengths),
     aboutSystemsTools: serializeAboutStringList(values.aboutSystemsTools),
     aboutInterests: serializeAboutStringList(values.aboutInterests),

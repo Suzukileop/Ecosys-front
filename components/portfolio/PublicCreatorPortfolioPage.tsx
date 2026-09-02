@@ -42,6 +42,11 @@ import { PortfolioSettingsButton, PortfolioSettingsModal } from '@/components/po
 import { PortfolioThemeRoot } from '@/components/portfolio/PortfolioThemeRoot';
 import { FaqSectionIllustration } from '@/components/portfolio/FaqSectionIllustration';
 import { usePortfolioSettings } from '@/components/portfolio/use-portfolio-settings';
+import { writeHeroBannerDesignHint } from '@/components/portfolio/portfolio-hero-banner-hint';
+import {
+  DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN,
+  normalizePortfolioHeroBannerDesign,
+} from '@/components/portfolio/portfolio-hero-banner-settings';
 import { resolveHeroLayoutDivision } from '@/components/portfolio/portfolio-hero-layout-division';
 import {
   EditorialContactSection,
@@ -215,7 +220,10 @@ import {
 } from '@/components/portfolio/portfolio-team-settings';
 import {
   pickInfoPresentationSettings,
+  resolveInfoSectionSubtitle,
+  resolveInfoSectionTitle,
 } from '@/components/portfolio/portfolio-info-settings';
+import { EditorialAboutMeSection } from '@/components/portfolio/EditorialAboutMeSection';
 import {
   pickToolsPresentationSettings,
   resolveToolsSectionSubtitle,
@@ -281,6 +289,7 @@ import {
   applyHeroPaletteToExperience,
   applyHeroPaletteToFaq,
   applyHeroPaletteToFooter,
+  applyHeroPaletteToInfo,
   applyHeroPaletteToServices,
   applyHeroPaletteToStack,
   applyHeroPaletteToTeam,
@@ -696,6 +705,13 @@ export function PublicCreatorPortfolioPage({
     });
 
   useEffect(() => {
+    const design = normalizePortfolioHeroBannerDesign(
+      settings.hero.heroBannerDesign ?? DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN
+    );
+    writeHeroBannerDesignHint([creatorId, profile.id, profile.username], design);
+  }, [creatorId, profile.id, profile.username, settings.hero.heroBannerDesign]);
+
+  useEffect(() => {
     if (!isPortfolioOwner) return;
     if (!(settings.global.settingsShortcutEnabled ?? true)) return;
 
@@ -756,7 +772,9 @@ export function PublicCreatorPortfolioPage({
     [workItems]
   );
   const heroFeaturedWorks = useMemo(() => {
-    const banner = settings.hero.heroBannerDesign ?? 'classic';
+    const banner = normalizePortfolioHeroBannerDesign(
+      settings.hero.heroBannerDesign ?? DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN
+    );
     if (banner === 'work-duo') {
       const selectedIds = settings.hero.heroWorkDuoSelectedWorkIds ?? [];
       if (selectedIds.length > 0) {
@@ -976,6 +994,10 @@ export function PublicCreatorPortfolioPage({
     () => resolveHeroPaletteFromSettings(heroPresentation.palette),
     [heroPresentation.palette]
   );
+  const activeGlobalPalette = useMemo(
+    () => resolveActivePortfolioPalette(settings.global),
+    [settings.global]
+  );
   const workPresentation = useMemo(
     () => applyHeroPaletteToWork(pickWorkPresentationSettings(settings.work), heroPalette),
     [settings.work, heroPalette]
@@ -1120,7 +1142,15 @@ export function PublicCreatorPortfolioPage({
   const teamSectionTitle = useMemo(() => resolveTeamSectionTitle(settings.team), [settings.team]);
   const teamSectionSubtitle = useMemo(() => resolveTeamSectionSubtitle(settings.team), [settings.team]);
   const infoPresentation = useMemo(
-    () => pickInfoPresentationSettings(settings.info),
+    () => ({
+      ...applyHeroPaletteToInfo(pickInfoPresentationSettings(settings.info), heroPalette),
+      activeColorMode: (settings.global.colorMode ?? 'dark') as 'light' | 'dark',
+    }),
+    [settings.info, settings.global.colorMode, heroPalette]
+  );
+  const infoSectionTitle = useMemo(() => resolveInfoSectionTitle(settings.info), [settings.info]);
+  const infoSectionSubtitle = useMemo(
+    () => resolveInfoSectionSubtitle(settings.info),
     [settings.info]
   );
   const toolsPresentation = useMemo(
@@ -2044,7 +2074,22 @@ export function PublicCreatorPortfolioPage({
             bottomSpacingStyle={sectionBottomSpacingStyle}
             contentLayout={sectionContentLayout}
           >
-            {null}
+            <EditorialAboutMeSection
+              title={infoSectionTitle}
+              subtitle={infoSectionSubtitle}
+              bio={profile.bio}
+              avatarUrl={profile.avatarUrl}
+              fullName={profile.fullName}
+              education={profile.aboutEducation}
+              skills={profile.aboutSkills}
+              strengths={profile.aboutStrengths}
+              interests={profile.aboutInterests}
+              languages={profile.spokenLanguages}
+              languagesFallback={profile.languages}
+              systemsTools={profile.aboutSystemsTools}
+              presentation={infoPresentation}
+              heroPalette={heroPalette}
+            />
           </PortfolioSectionShell>
         );
       case 'work': {
@@ -3233,6 +3278,7 @@ export function PublicCreatorPortfolioPage({
       bodyFont={settings.global.bodyFont}
       bodyFontForceAll={settings.global.bodyFontForceAll}
       colorMode={(settings.global.colorMode ?? 'dark') as 'dark' | 'light'}
+      activePalette={activeGlobalPalette}
       globalStyle={globalBgStyle}
       fixedBackgroundStyle={globalFixedBgStyle}
       patternBackgroundStyle={globalPatternStyle}
@@ -3266,6 +3312,13 @@ export function PublicCreatorPortfolioPage({
           brandName={(profile.fullName ?? '').trim().split(/\s+/).filter(Boolean)[0] ?? ''}
           avatarUrl={profile.avatarUrl}
           contentGutter={settings.global.contentGutter}
+          showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
+          colorMode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
+          onColorModeToggle={() =>
+            setColorMode(
+              (settings.global.colorMode ?? 'dark') === 'light' ? 'dark' : 'light'
+            )
+          }
         />
       ) : isDutenPanelNav ? (
         <PortfolioDutenPanelNav
@@ -3282,6 +3335,13 @@ export function PublicCreatorPortfolioPage({
           socialLinkOptions={navProfileLinkOptions}
           contactPhone={profile.phone}
           contactEmail={resolvedContactEmail}
+          showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
+          colorMode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
+          onColorModeToggle={() =>
+            setColorMode(
+              (settings.global.colorMode ?? 'dark') === 'light' ? 'dark' : 'light'
+            )
+          }
         />
       ) : isHalfPanelNav ? (
         <PortfolioHalfPanelNav
@@ -3298,6 +3358,13 @@ export function PublicCreatorPortfolioPage({
           socialLinkOptions={navProfileLinkOptions}
           contactPhone={profile.phone}
           contactEmail={resolvedContactEmail}
+          showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
+          colorMode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
+          onColorModeToggle={() =>
+            setColorMode(
+              (settings.global.colorMode ?? 'dark') === 'light' ? 'dark' : 'light'
+            )
+          }
         />
       ) : (
         <>
@@ -3321,6 +3388,13 @@ export function PublicCreatorPortfolioPage({
             avatarUrl={profile.avatarUrl}
             brandName={(profile.fullName ?? '').trim().split(/\s+/).filter(Boolean)[0] ?? ''}
             contentGutter={settings.global.contentGutter}
+            showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
+            colorMode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
+            onColorModeToggle={() =>
+              setColorMode(
+                (settings.global.colorMode ?? 'dark') === 'light' ? 'dark' : 'light'
+              )
+            }
           />
         </>
       )}

@@ -17,6 +17,8 @@ import { resolveHeroPaletteColor } from '@/components/portfolio/portfolio-hero-p
 import {
   PortfolioNavCenterBrand,
   PortfolioNavBrandLinkButton,
+  PortfolioNavColorModeToggleButton,
+  PortfolioNavColorModeToggleProvider,
   resolveDutenPanelSocialLinks,
   resolveEditorialBarContactHref,
   type PortfolioNavChromeLink,
@@ -36,7 +38,6 @@ import { usePortfolioSectionSpy } from '@/components/portfolio/portfolio-nav-sec
 import type { PortfolioNavIconVariant } from '@/components/portfolio/portfolio-nav-items';
 import type {
   PortfolioNavMenuControlIcon,
-  PortfolioNavDutenPanelInset,
   PortfolioNavSettings,
 } from '@/components/portfolio/portfolio-settings-types';
 
@@ -58,6 +59,9 @@ type PortfolioDutenPanelNavProps = {
   socialLinkOptions?: PortfolioNavChromeLink[];
   contactPhone?: string | null;
   contactEmail?: string | null;
+  showColorModeToggle?: boolean;
+  colorMode?: 'light' | 'dark';
+  onColorModeToggle?: () => void;
 };
 
 const HEADER_ROW_CLASS =
@@ -76,20 +80,54 @@ const EXPANDED_RADIUS = 18;
 const COLLAPSED_HORIZONTAL_INSET = 10;
 /** Breathing room above the pill when the page is at the top — removed on scroll. */
 const COLLAPSED_TOP_GAP_PX = 12;
+/** Near page top — always show the breathing gap. */
 const DOCK_SCROLL_THRESHOLD_PX = 8;
+/** Ignore tiny scroll jitter when detecting direction. */
+const SCROLL_DIRECTION_DELTA_PX = 4;
 const SAFE_AREA_TOP = 'env(safe-area-inset-top, 0px)';
+/** Pill glide when docking / undocking on scroll — numeric y, not top calc. */
+const DOCK_GLIDE_TRANSITION = { duration: 0.46, ease: [0.22, 1, 0.36, 1] as const };
+const PANEL_BOTTOM_INSET_PX = 16;
+/** Scroll inside open panel — bar hidden, wheel / touch still work. */
+const PANEL_SCROLL_CLASS =
+  'min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden';
+/** Hero word — max cap before single-line fit scales down. */
+const HERO_WORD_MAX_FONT_PX = 416;
+const HERO_WORD_MIN_FONT_PX = 22;
 
-type InsetPx = { top: number; right: number; bottom: number; left: number };
+function measureDutenHeroWordFontPx(
+  containerWidth: number,
+  textEl: HTMLElement
+): number {
+  if (containerWidth <= 0) return HERO_WORD_MIN_FONT_PX;
 
-function dutenPanelInsetPx(inset: PortfolioNavDutenPanelInset | undefined): InsetPx {
-  switch (inset ?? 'md') {
-    case 'sm':
-      return { top: 8, right: 8, bottom: 8, left: 8 };
-    case 'lg':
-      return { top: 40, right: 40, bottom: 40, left: 40 };
-    default:
-      return { top: 24, right: 24, bottom: 24, left: 24 };
+  const maxPx = Math.min(
+    window.innerWidth * 0.32,
+    window.innerHeight * 0.42,
+    HERO_WORD_MAX_FONT_PX
+  );
+  const minPx = HERO_WORD_MIN_FONT_PX;
+
+  textEl.style.whiteSpace = 'nowrap';
+  textEl.style.wordBreak = 'normal';
+  textEl.style.overflowWrap = 'normal';
+
+  let lo = minPx;
+  let hi = maxPx;
+  let best = minPx;
+
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    textEl.style.fontSize = `${mid}px`;
+    if (textEl.scrollWidth <= containerWidth) {
+      best = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
   }
+
+  return best;
 }
 
 function DelayedSideLabel({
@@ -248,6 +286,7 @@ function DutenPanelFooter({
   strongInk,
   mutedInk,
   reduceMotion,
+  placement = 'bottom',
 }: {
   settings: PortfolioNavSettings;
   socialLinkOptions: PortfolioNavChromeLink[];
@@ -256,6 +295,8 @@ function DutenPanelFooter({
   strongInk: string;
   mutedInk: string;
   reduceMotion: boolean | null;
+  /** When stacked above the hero word, use tighter padding. */
+  placement?: 'bottom' | 'aboveHero';
 }) {
   const showContact = settings.dutenPanelShowContact ?? false;
   const showSocial = settings.dutenPanelShowSocial ?? false;
@@ -271,9 +312,15 @@ function DutenPanelFooter({
   if (!showContact && socialLinks.length === 0) return null;
   if (showContact && !mailHref && !phoneHref && socialLinks.length === 0) return null;
 
+  const aboveHero = placement === 'aboveHero';
+
   return (
     <motion.footer
-      className="shrink-0 border-t px-6 pb-10 pt-8 sm:px-10 sm:pb-12 sm:pt-10"
+      className={`shrink-0 border-t ${
+        aboveHero
+          ? 'px-6 pb-4 pt-6 sm:px-10 sm:pb-5 sm:pt-8'
+          : 'px-6 pb-10 pt-8 sm:px-10 sm:pb-12 sm:pt-10'
+      }`}
       style={{ borderColor: `${mutedInk}22` }}
       initial={reduceMotion ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -334,6 +381,82 @@ function DutenPanelFooter({
   );
 }
 
+function DutenPanelHeroWord({
+  text,
+  strongInk,
+  divider,
+  reduceMotion,
+  showTopBorder = true,
+}: {
+  text: string;
+  strongInk: string;
+  divider: string;
+  reduceMotion: boolean | null;
+  showTopBorder?: boolean;
+}) {
+  const display = text.trim();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLParagraphElement>(null);
+
+  useLayoutEffect(() => {
+    if (!display) return;
+    const container = containerRef.current;
+    const textEl = textRef.current;
+    if (!container || !textEl) return;
+
+    const fit = () => {
+      const next = measureDutenHeroWordFontPx(container.clientWidth, textEl);
+      textEl.style.fontSize = `${next}px`;
+    };
+
+    fit();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
+    ro?.observe(container);
+    window.addEventListener('resize', fit);
+
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', fit);
+    };
+  }, [display]);
+
+  if (!display) return null;
+
+  return (
+    <motion.div
+      className={`flex min-h-0 flex-1 flex-col justify-end px-4 pb-3 pt-4 sm:px-8 sm:pb-5 sm:pt-5 ${
+        showTopBorder ? 'border-t' : ''
+      }`}
+      style={showTopBorder ? { borderColor: `${divider}55` } : undefined}
+      initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: reduceMotion ? 0 : 0.12, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div ref={containerRef} className="w-full min-w-0 overflow-hidden">
+        <p
+          ref={textRef}
+          aria-label={display}
+          className="w-full select-none whitespace-nowrap font-semibold uppercase leading-[0.76] tracking-[-0.06em]"
+          style={{
+            color: strongInk,
+            fontSize: `${HERO_WORD_MIN_FONT_PX}px`,
+          }}
+        >
+          {display}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+function DutenPanelLinkRedirectIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7h-8M17 7v8" />
+    </svg>
+  );
+}
+
 function DutenPanelLink({
   item,
   index,
@@ -341,6 +464,7 @@ function DutenPanelLink({
   labelCase,
   strongInk,
   mutedInk,
+  accent,
   reduceMotion,
   onNavigate,
 }: {
@@ -350,6 +474,7 @@ function DutenPanelLink({
   labelCase: PortfolioNavSettings['labelCase'];
   strongInk: string;
   mutedInk: string;
+  accent: string;
   reduceMotion: boolean | null;
   onNavigate: (id: string, event?: ReactMouseEvent) => void;
 }) {
@@ -365,15 +490,21 @@ function DutenPanelLink({
         type="button"
         onClick={(event) => onNavigate(item.id, event)}
         aria-current={active ? 'page' : undefined}
-        className="group/link block w-full py-2 text-left sm:py-2.5"
+        className="group/link flex w-full items-baseline py-2 text-left sm:py-2.5"
       >
         <span
-          className={`block text-[clamp(1.65rem,4.5vw,2.85rem)] leading-[1.08] tracking-[-0.02em] transition-[color,font-weight,transform] duration-300 group-hover/link:translate-x-1 ${
+          className={`inline text-[clamp(1.65rem,4.5vw,2.85rem)] leading-[1.08] tracking-[-0.02em] transition-[color,font-weight] duration-300 ${
             active ? 'font-semibold' : 'font-normal'
           }`}
           style={{ color: active ? strongInk : mutedInk }}
         >
           {label}
+        </span>
+        <span
+          className="inline-flex max-w-0 shrink-0 -translate-x-1.5 items-baseline overflow-hidden opacity-0 transition-[max-width,opacity,transform,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/link:max-w-[3rem] group-hover/link:translate-x-0 group-hover/link:opacity-100 group-hover/link:ml-2 group-focus-visible/link:max-w-[3rem] group-focus-visible/link:translate-x-0 group-focus-visible/link:opacity-100 group-focus-visible/link:ml-2 sm:group-hover/link:ml-2.5 sm:group-focus-visible/link:ml-2.5"
+          style={{ color: active ? accent : mutedInk }}
+        >
+          <DutenPanelLinkRedirectIcon className="h-[clamp(1.35rem,3.4vw,2.25rem)] w-[clamp(1.35rem,3.4vw,2.25rem)] min-w-[clamp(1.35rem,3.4vw,2.25rem)]" />
         </span>
       </button>
     </motion.li>
@@ -391,6 +522,9 @@ export function PortfolioDutenPanelNav({
   socialLinkOptions = [],
   contactPhone,
   contactEmail,
+  showColorModeToggle = false,
+  colorMode = 'dark',
+  onColorModeToggle,
 }: PortfolioDutenPanelNavProps) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -398,6 +532,7 @@ export function PortfolioDutenPanelNav({
   const [dockedToTop, setDockedToTop] = useState(false);
   const navRootRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
+  const lastScrollYRef = useRef(0);
   const isControlled = typeof onNavigate === 'function';
   const sectionIds = useMemo(() => items.map((item) => item.id), [items]);
   const {
@@ -420,7 +555,6 @@ export function PortfolioDutenPanelNav({
   const panelBorder = resolveHeroPaletteColor(navPalette, 'bordure');
   const scrim = resolveHeroPaletteColor(navPalette, 'fond');
   const barInk = settings.itemTextColor ?? strongInk;
-  const insetPx = dutenPanelInsetPx(settings.dutenPanelInset);
   const columns = settings.dutenPanelColumns ?? 2;
   const menuSide = settings.caseOverlayMenuSide ?? 'right';
   const menuTrigger = settings.caseOverlayMenuTrigger ?? 'text';
@@ -482,8 +616,24 @@ export function PortfolioDutenPanelNav({
 
   useEffect(() => {
     const syncDock = () => {
-      setDockedToTop(window.scrollY > DOCK_SCROLL_THRESHOLD_PX);
+      const y = window.scrollY;
+      const lastY = lastScrollYRef.current;
+      const delta = y - lastY;
+      lastScrollYRef.current = y;
+
+      if (y <= DOCK_SCROLL_THRESHOLD_PX) {
+        setDockedToTop(false);
+        return;
+      }
+
+      if (delta > SCROLL_DIRECTION_DELTA_PX) {
+        setDockedToTop(true);
+      } else if (delta < -SCROLL_DIRECTION_DELTA_PX) {
+        setDockedToTop(false);
+      }
     };
+
+    lastScrollYRef.current = window.scrollY;
     syncDock();
     window.addEventListener('scroll', syncDock, { passive: true });
     return () => window.removeEventListener('scroll', syncDock);
@@ -491,7 +641,10 @@ export function PortfolioDutenPanelNav({
 
   useEffect(() => {
     if (open) return;
-    setDockedToTop(window.scrollY > DOCK_SCROLL_THRESHOLD_PX);
+    lastScrollYRef.current = window.scrollY;
+    if (window.scrollY <= DOCK_SCROLL_THRESHOLD_PX) {
+      setDockedToTop(false);
+    }
   }, [open]);
 
   usePortfolioNavTopClearanceSync({
@@ -563,32 +716,77 @@ export function PortfolioDutenPanelNav({
 
   const centerPlaceholder = <span className="inline-block h-4 w-px shrink-0 opacity-0" aria-hidden />;
 
+  const colorModeToggle = (
+    <PortfolioNavColorModeToggleButton
+      settings={settings}
+      compact
+      overlayInteraction
+      inkColor={barInk}
+    />
+  );
+  const menuCluster = (
+    <div className="flex items-center gap-2">
+      {menuSide === 'left' ? (
+        <>
+          {menuButton}
+          {colorModeToggle}
+        </>
+      ) : (
+        <>
+          {colorModeToggle}
+          {menuButton}
+        </>
+      )}
+    </div>
+  );
+
   let headerLeft: ReactNode;
   let headerCenter: ReactNode;
   let headerRight: ReactNode;
 
   if (menuSide === 'left') {
-    headerLeft = open ? logoNode : menuButton;
+    headerLeft = open ? logoNode : menuCluster;
     headerCenter = open ? centerPlaceholder : sideLabel;
-    headerRight = open ? menuButton : logoNode;
+    headerRight = open ? menuCluster : logoNode;
   } else {
     headerLeft = open ? logoNode : sideLabel;
     headerCenter = open ? centerPlaceholder : logoNode;
-    headerRight = menuButton;
+    headerRight = menuCluster;
   }
 
   const leftColumn = sectionItems.filter((_, index) => index % columns === 0);
   const rightColumn = columns === 2 ? sectionItems.filter((_, index) => index % columns === 1) : [];
 
-  const collapsedTop = dockedToTop
-    ? SAFE_AREA_TOP
-    : `calc(${SAFE_AREA_TOP} + ${COLLAPSED_TOP_GAP_PX}px)`;
-  const openTop = `calc(${SAFE_AREA_TOP} + ${insetPx.top}px)`;
-  const expandedHeight = `calc(100dvh - ${SAFE_AREA_TOP} - ${insetPx.top}px - ${insetPx.bottom}px)`;
+  const collapsedTop = SAFE_AREA_TOP;
+  const collapsedYOffset = dockedToTop ? 0 : COLLAPSED_TOP_GAP_PX;
+  const topGapPx = dockedToTop ? 0 : COLLAPSED_TOP_GAP_PX;
+  const expandedHeight = `calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - ${topGapPx + PANEL_BOTTOM_INSET_PX}px)`;
   const showFooter =
     (settings.dutenPanelShowContact ?? false) || (settings.dutenPanelShowSocial ?? false);
+  const showHeroWord = settings.dutenPanelShowHeroWord ?? false;
+  const heroWord = (settings.dutenPanelHeroWord ?? '').trim();
+  const hasHeroWord = showHeroWord && heroWord.length > 0;
+  const footerAboveHero = showFooter && hasHeroWord;
+
+  const footerNode = showFooter ? (
+    <DutenPanelFooter
+      settings={settings}
+      socialLinkOptions={socialLinkOptions}
+      contactPhone={contactPhone}
+      contactEmail={contactEmail}
+      strongInk={strongInk}
+      mutedInk={mutedInk}
+      reduceMotion={reduceMotion}
+      placement={footerAboveHero ? 'aboveHero' : 'bottom'}
+    />
+  ) : null;
 
   return createPortal(
+    <PortfolioNavColorModeToggleProvider
+      show={showColorModeToggle}
+      colorMode={colorMode}
+      onToggle={() => onColorModeToggle?.()}
+    >
     <LayoutGroup id="portfolio-duten-nav">
       <AnimatePresence>
         {open ? (
@@ -629,15 +827,17 @@ export function PortfolioDutenPanelNav({
         }}
         initial={false}
         animate={{
-          top: open ? openTop : collapsedTop,
-          left: open ? insetPx.left : COLLAPSED_HORIZONTAL_INSET,
-          right: open ? insetPx.right : COLLAPSED_HORIZONTAL_INSET,
+          top: collapsedTop,
+          y: collapsedYOffset,
+          left: COLLAPSED_HORIZONTAL_INSET,
+          right: COLLAPSED_HORIZONTAL_INSET,
           height: open ? expandedHeight : collapsedHeight,
           borderRadius: open ? EXPANDED_RADIUS : COLLAPSED_RADIUS,
         }}
         transition={{
-          ...shellTransition,
-          top: reduceMotion ? { duration: 0 } : { duration: 0.32, ease: [0.22, 1, 0.36, 1] },
+          height: reduceMotion ? { duration: 0 } : PANEL_TRANSITION,
+          borderRadius: reduceMotion ? { duration: 0 } : PANEL_TRANSITION,
+          y: reduceMotion ? { duration: 0 } : DOCK_GLIDE_TRANSITION,
         }}
       >
         <nav
@@ -655,68 +855,75 @@ export function PortfolioDutenPanelNav({
           {open ? (
             <motion.div
               key="duten-links"
-              className="flex min-h-0 flex-1 flex-col"
+              className={PANEL_SCROLL_CLASS}
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={reduceMotion ? undefined : { opacity: 0 }}
               transition={{ delay: reduceMotion ? 0 : 0.06, duration: 0.22 }}
             >
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-4 pt-1 sm:px-10 sm:pb-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                <div
-                  className={`grid gap-x-10 gap-y-1 sm:gap-x-16 md:gap-x-24 ${
-                    columns === 2 ? 'sm:grid-cols-2' : 'grid-cols-1'
-                  }`}
-                >
-                  <ul className="space-y-1">
-                    {leftColumn.map((item, index) => (
-                      <DutenPanelLink
-                        key={item.id}
-                        item={item}
-                        index={index}
-                        active={activeId === item.id}
-                        labelCase={settings.labelCase ?? 'titlecase'}
-                        strongInk={strongInk}
-                        mutedInk={mutedInk}
-                        reduceMotion={reduceMotion}
-                        onNavigate={handleNavigate}
-                      />
-                    ))}
-                  </ul>
-                  {columns === 2 ? (
+              <div className="flex min-h-full min-w-0 flex-col">
+                <div className="shrink-0 px-6 pb-2 pt-1 sm:px-10 sm:pb-3">
+                  <div
+                    className={`grid gap-x-10 gap-y-1 sm:gap-x-16 md:gap-x-24 ${
+                      columns === 2 ? 'sm:grid-cols-2' : 'grid-cols-1'
+                    }`}
+                  >
                     <ul className="space-y-1">
-                      {rightColumn.map((item, index) => (
+                      {leftColumn.map((item, index) => (
                         <DutenPanelLink
                           key={item.id}
                           item={item}
-                          index={leftColumn.length + index}
+                          index={index}
                           active={activeId === item.id}
                           labelCase={settings.labelCase ?? 'titlecase'}
                           strongInk={strongInk}
                           mutedInk={mutedInk}
+                          accent={accent}
                           reduceMotion={reduceMotion}
                           onNavigate={handleNavigate}
                         />
                       ))}
                     </ul>
-                  ) : null}
+                    {columns === 2 ? (
+                      <ul className="space-y-1">
+                        {rightColumn.map((item, index) => (
+                          <DutenPanelLink
+                            key={item.id}
+                            item={item}
+                            index={leftColumn.length + index}
+                            active={activeId === item.id}
+                            labelCase={settings.labelCase ?? 'titlecase'}
+                            strongInk={strongInk}
+                            mutedInk={mutedInk}
+                            accent={accent}
+                            reduceMotion={reduceMotion}
+                            onNavigate={handleNavigate}
+                          />
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
                 </div>
+                {footerAboveHero ? footerNode : null}
+                {hasHeroWord ? (
+                  <DutenPanelHeroWord
+                    text={heroWord}
+                    strongInk={strongInk}
+                    divider={panelBorder}
+                    reduceMotion={reduceMotion}
+                    showTopBorder={!footerAboveHero}
+                  />
+                ) : (
+                  <div className="min-h-0 flex-1" aria-hidden />
+                )}
+                {!footerAboveHero ? footerNode : null}
               </div>
-              {showFooter ? (
-                <DutenPanelFooter
-                  settings={settings}
-                  socialLinkOptions={socialLinkOptions}
-                  contactPhone={contactPhone}
-                  contactEmail={contactEmail}
-                  strongInk={strongInk}
-                  mutedInk={mutedInk}
-                  reduceMotion={reduceMotion}
-                />
-              ) : null}
             </motion.div>
           ) : null}
         </AnimatePresence>
       </motion.div>
-    </LayoutGroup>,
+    </LayoutGroup>
+    </PortfolioNavColorModeToggleProvider>,
     document.body
   );
 }

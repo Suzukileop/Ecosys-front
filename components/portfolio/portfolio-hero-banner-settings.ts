@@ -107,7 +107,6 @@ export const PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS: {
  */
 
 export type PortfolioHeroBannerDesign =
-  | 'classic'
   | 'swiss-editorial'
   | 'portrait-identity'
   | 'editorial-rail'
@@ -123,16 +122,15 @@ export type PortfolioHeroBannerDesign =
   | 'work-duo'
   | 'bowl-intro';
 
+/** Default banner after Classic was removed permanently. */
+export const DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN: PortfolioHeroBannerDesign =
+  'swiss-editorial';
+
 export const PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS: {
   value: PortfolioHeroBannerDesign;
   label: string;
   description: string;
 }[] = [
-  {
-    value: 'classic',
-    label: 'Classic',
-    description: 'Disposition Hero actuelle — copy, portrait, outils et CTA.',
-  },
   {
     value: 'swiss-editorial',
     label: 'Swiss editorial',
@@ -221,7 +219,6 @@ export const PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS: {
 
 export function isPortfolioHeroBannerDesign(value: unknown): value is PortfolioHeroBannerDesign {
   return (
-    value === 'classic' ||
     value === 'swiss-editorial' ||
     value === 'portrait-identity' ||
     value === 'editorial-rail' ||
@@ -237,6 +234,15 @@ export function isPortfolioHeroBannerDesign(value: unknown): value is PortfolioH
     value === 'work-duo' ||
     value === 'bowl-intro'
   );
+}
+
+/** Maps legacy `classic` (removed) and invalid values to the current default. */
+export function normalizePortfolioHeroBannerDesign(
+  value: unknown
+): PortfolioHeroBannerDesign {
+  if (value === 'classic') return DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN;
+  if (isPortfolioHeroBannerDesign(value)) return value;
+  return DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN;
 }
 
 /** Defaults applied when picking a banner design. */

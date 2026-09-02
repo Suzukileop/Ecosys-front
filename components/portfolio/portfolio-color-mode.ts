@@ -23,6 +23,7 @@ import {
   mergeHeroPalette,
   type PortfolioHeroPalette,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
+import type { CSSProperties } from 'react';
 import { patchNavPalette } from '@/components/portfolio/portfolio-nav-palette-settings';
 import { patchWorkPalette } from '@/components/portfolio/portfolio-work-palette-settings';
 import { applyGalleryPaletteToSettings } from '@/components/portfolio/portfolio-gallery-palette-settings';
@@ -76,6 +77,26 @@ export const PORTFOLIO_COLOR_MODE_OPTIONS: {
 /** Classic defaults only — prefer resolveActivePortfolioPalette for live settings. */
 export function resolveColorModePalette(mode: PortfolioColorMode): PortfolioHeroPalette {
   return mode === 'light' ? { ...LIGHT_HERO_PALETTE } : { ...DEFAULT_HERO_PALETTE };
+}
+
+/** Active global palette tokens as CSS vars on `.pf-theme-root` — animatable via @property. */
+export function portfolioPaletteCssVars(palette: PortfolioHeroPalette): CSSProperties {
+  return {
+    '--pf-palette-principal': palette.principal,
+    '--pf-palette-secondaire': palette.secondaire,
+    '--pf-palette-texte-fort': palette.texteFort,
+    '--pf-palette-texte-muted': palette.texteMuted,
+    '--pf-palette-texte-faint': palette.texteFaint,
+    '--pf-palette-neutre': palette.neutre,
+    '--pf-palette-fond': palette.fond,
+    '--pf-palette-bordure': palette.bordure,
+    '--pf-accent': palette.principal,
+    '--pf-surface': palette.neutre,
+    '--pf-muted-surface': palette.neutre,
+    '--pf-motif': palette.bordure,
+    '--pf-cta': palette.texteFort,
+    '--pf-cta-hover': palette.texteMuted,
+  } as CSSProperties;
 }
 
 export function resolveActivePortfolioPalette(

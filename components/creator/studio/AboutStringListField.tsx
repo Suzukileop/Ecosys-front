@@ -13,7 +13,6 @@ import {
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 
 type AboutStringListFieldName =
-  | 'aboutSkills'
   | 'aboutStrengths'
   | 'aboutSystemsTools'
   | 'aboutInterests';
@@ -41,7 +40,7 @@ export function AboutStringListField({
 }: AboutStringListFieldProps) {
   const { fields, append, remove, move } = useFieldArray({
     control,
-    name: name as 'aboutSkills' | 'aboutStrengths' | 'aboutSystemsTools' | 'aboutInterests',
+    name: name as 'aboutStrengths' | 'aboutSystemsTools' | 'aboutInterests',
   });
 
   if (readOnly) {

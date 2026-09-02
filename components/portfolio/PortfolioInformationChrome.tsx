@@ -45,7 +45,12 @@ import {
 } from '@/lib/availability-status';
 import { SpecialtyMultiSelect } from '@/components/creator/studio/SpecialtyMultiSelect';
 import { parseSpecialtyList, parseSpecialtyTags } from '@/lib/specialties';
-import type { ProfileEducationEntry } from '@/types/ecosystem';
+import type { ProfileEducationEntry, ProfileSkillEntry } from '@/types/ecosystem';
+import {
+  createEmptyAboutSkillEntry,
+  MAX_ABOUT_SKILLS,
+  sameAboutSkills,
+} from '@/lib/about-skills';
 import { PortfolioLocationReadOnly } from '@/components/portfolio/PortfolioLocationChrome';
 import { PORTFOLIO_UPGRADE_PATH } from '@/components/portfolio/portfolio-pricing-upgrade-panel';
 import { brandCtaClass } from '@/components/landing/landingBrand';
@@ -902,7 +907,7 @@ export type PortfolioAboutFieldValue = {
   nationality: string;
   yearsOfExperience: number | null;
   spokenLanguages: SpokenLanguageEntry[];
-  aboutSkills: string[];
+  aboutSkills: ProfileSkillEntry[];
   aboutStrengths: string[];
   aboutSystemsTools: string[];
   aboutInterests: string[];
@@ -915,6 +920,31 @@ export type PortfolioAboutFieldValue = {
 
 const aboutCardClass =
   'rounded-xl border border-neutral-200 bg-neutral-50/70 p-4 dark:border-neutral-700/40 dark:bg-[#141414]';
+
+function PortfolioAboutSkillsBulletList({ items }: { items: ProfileSkillEntry[] }) {
+  const filled = items.filter((item) => item.title.trim());
+  if (filled.length === 0) {
+    return <p className="text-[15px] italic text-neutral-500 dark:text-neutral-400">Not set</p>;
+  }
+  return (
+    <ul className="space-y-3">
+      {filled.map((item) => (
+        <li
+          key={item.id}
+          className="flex items-start gap-2 text-sm text-neutral-800 dark:text-neutral-200"
+        >
+          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#F97316]" aria-hidden />
+          <div className="min-w-0">
+            <p className="font-medium">{item.title}</p>
+            {item.description.trim() ? (
+              <p className="mt-0.5 text-neutral-600 dark:text-neutral-400">{item.description}</p>
+            ) : null}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function PortfolioAboutBulletList({ items }: { items: string[] }) {
   const filled = items.filter((item) => item.trim());
@@ -1180,6 +1210,189 @@ function PortfolioInlineEducationEditor({
   );
 }
 
+function PortfolioInlineSkillsEditor({
+  value,
+  onChange,
+  maxItems = MAX_ABOUT_SKILLS,
+}: {
+  value: ProfileSkillEntry[];
+  onChange: (value: ProfileSkillEntry[]) => void;
+  maxItems?: number;
+}) {
+  const updateEntry = (index: number, patch: Partial<ProfileSkillEntry>) => {
+    onChange(value.map((entry, entryIndex) => (entryIndex === index ? { ...entry, ...patch } : entry)));
+  };
+
+  const removeEntry = (index: number) => {
+    onChange(value.filter((_, entryIndex) => entryIndex !== index));
+  };
+
+  const moveEntry = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= value.length) return;
+    const next = [...value];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next.map((entry, entryIndex) => ({ ...entry, sortOrder: entryIndex })));
+  };
+
+  const addEntry = () => {
+    if (value.length >= maxItems) return;
+    onChange([...value, createEmptyAboutSkillEntry(value.length)]);
+  };
+
+  return (
+    <div className="w-full space-y-3">
+      {value.map((entry, index) => (
+        <div
+          key={entry.id}
+          className="space-y-2 rounded-xl border border-neutral-200 p-3 dark:border-neutral-700"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+              Skill {index + 1}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={index === 0}
+                onClick={() => moveEntry(index, -1)}
+                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+                aria-label="Move up"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                disabled={index === value.length - 1}
+                onClick={() => moveEntry(index, 1)}
+                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+                aria-label="Move down"
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                onClick={() => removeEntry(index)}
+                className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-700 dark:border-red-500/30 dark:text-red-400"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+          <input
+            type="text"
+            value={entry.title}
+            onChange={(event) => updateEntry(index, { title: event.target.value })}
+            placeholder="Skill title"
+            className={inlineInputClass}
+          />
+          <textarea
+            value={entry.description}
+            onChange={(event) => updateEntry(index, { description: event.target.value })}
+            placeholder="Description (optional)"
+            rows={2}
+            className={inlineInputClass}
+          />
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={addEntry}
+        disabled={value.length >= maxItems}
+        className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-900"
+      >
+        Add skill
+      </button>
+    </div>
+  );
+}
+
+function PortfolioAboutSkillsSection({
+  entries,
+  editing,
+  editControl,
+  onEdit,
+  onConfirm,
+  onCancelEdit,
+  confirming = false,
+  canConfirm = true,
+  showVisibility = false,
+  visibility,
+  onVisibilityChange,
+  className = '',
+}: {
+  entries: ProfileSkillEntry[];
+  editing?: boolean;
+  editControl?: ReactNode;
+  onEdit?: () => void;
+  onConfirm?: () => void;
+  onCancelEdit?: () => void;
+  confirming?: boolean;
+  canConfirm?: boolean;
+  showVisibility?: boolean;
+  visibility?: ContactVisibilityLevel;
+  onVisibilityChange?: (value: ContactVisibilityLevel) => void;
+  className?: string;
+}) {
+  const showVisibilityAction = Boolean(
+    showVisibility && visibility && onVisibilityChange && (editing ? !onConfirm : true)
+  );
+  const showEditActions = Boolean(editing ? onConfirm : onEdit);
+  const showActions = showVisibilityAction || showEditActions;
+
+  return (
+    <div className={`py-5 ${className}`}>
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F97316]">
+          Skills
+        </p>
+        {showActions ? (
+          <div className="inline-flex h-8 shrink-0 items-center gap-1.5">
+            {showVisibilityAction ? (
+              <PortfolioFieldVisibilityMenu value={visibility!} onChange={onVisibilityChange!} />
+            ) : null}
+            {editing && onConfirm ? (
+              <>
+                <PortfolioFieldIconButton
+                  label={canConfirm ? 'Confirm Skills' : 'No changes to Skills'}
+                  tone={canConfirm ? 'confirm' : 'neutral'}
+                  disabled={!canConfirm || confirming}
+                  onClick={() => onConfirm()}
+                >
+                  {confirming ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    <FontAwesomeIcon icon={faCircleCheck} className="h-4 w-4" fixedWidth />
+                  )}
+                </PortfolioFieldIconButton>
+                <PortfolioFieldIconButton
+                  label="Cancel Skills"
+                  tone="cancel"
+                  disabled={confirming}
+                  onClick={() => onCancelEdit?.()}
+                >
+                  <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" fixedWidth />
+                </PortfolioFieldIconButton>
+              </>
+            ) : onEdit ? (
+              <PortfolioFieldIconButton label="Edit Skills" onClick={onEdit}>
+                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" fixedWidth />
+              </PortfolioFieldIconButton>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+      <div className={aboutCardClass}>
+        {editing ? (
+          editControl ?? <PortfolioInlineSkillsEditor value={entries} onChange={() => undefined} />
+        ) : (
+          <PortfolioAboutSkillsBulletList items={entries} />
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PortfolioAboutCardSection({
   label,
   items,
@@ -1406,7 +1619,7 @@ export function PortfolioAboutReadOnly({
   nationality?: string;
   yearsOfExperience?: number | null;
   languages: SpokenLanguageEntry[];
-  aboutSkills?: string[];
+  aboutSkills?: ProfileSkillEntry[];
   aboutStrengths?: string[];
   aboutSystemsTools?: string[];
   aboutInterests?: string[];
@@ -1602,7 +1815,7 @@ export function PortfolioAboutReadOnly({
       case 'spokenLanguages':
         return !sameLanguages(draftLanguages, languages);
       case 'aboutSkills':
-        return !sameList(draftAboutSkills, aboutSkills);
+        return !sameAboutSkills(draftAboutSkills, aboutSkills);
       case 'aboutStrengths':
         return !sameList(draftAboutStrengths, aboutStrengths);
       case 'aboutSystemsTools':
@@ -1648,7 +1861,7 @@ export function PortfolioAboutReadOnly({
           })()
       : false) ||
     (isAboutDetails ? !sameLanguages(draftLanguages, languages) : false) ||
-    (isAboutDetails ? !sameList(draftAboutSkills, aboutSkills) : false) ||
+    (isAboutDetails ? !sameAboutSkills(draftAboutSkills, aboutSkills) : false) ||
     (isAboutDetails ? !sameList(draftAboutStrengths, aboutStrengths) : false) ||
     (isAboutDetails ? !sameList(draftAboutSystemsTools, aboutSystemsTools) : false) ||
     (isAboutDetails ? !sameList(draftAboutInterests, aboutInterests) : false) ||
@@ -1710,7 +1923,14 @@ export function PortfolioAboutReadOnly({
         case 'aboutSkills':
           await onFieldSave(
             'aboutSkills',
-            draftAboutSkills.map((item) => item.trim()).filter(Boolean)
+            draftAboutSkills
+              .filter((item) => item.title.trim())
+              .map((entry, index) => ({
+                ...entry,
+                sortOrder: index,
+                title: entry.title.trim(),
+                description: entry.description.trim(),
+              }))
           );
           break;
         case 'aboutStrengths':
@@ -1784,7 +2004,14 @@ export function PortfolioAboutReadOnly({
           return parsed == null || Number.isNaN(parsed) ? null : parsed;
         })(),
         spokenLanguages: dedupeSpokenLanguageEntries(draftLanguages),
-        aboutSkills: draftAboutSkills.map((item) => item.trim()).filter(Boolean),
+        aboutSkills: draftAboutSkills
+          .filter((item) => item.title.trim())
+          .map((entry, index) => ({
+            ...entry,
+            sortOrder: index,
+            title: entry.title.trim(),
+            description: entry.description.trim(),
+          })),
         aboutStrengths: draftAboutStrengths.map((item) => item.trim()).filter(Boolean),
         aboutSystemsTools: draftAboutSystemsTools.map((item) => item.trim()).filter(Boolean),
         aboutInterests: draftAboutInterests.map((item) => item.trim()).filter(Boolean),
@@ -1956,9 +2183,8 @@ export function PortfolioAboutReadOnly({
             }
           />
           <div className="grid gap-0 sm:grid-cols-2 sm:gap-x-6">
-            <PortfolioAboutCardSection
-              label="Skills"
-              items={aboutSkills}
+            <PortfolioAboutSkillsSection
+              entries={aboutSkills}
               editing={fieldEditing('aboutSkills')}
               onEdit={fieldOnEdit('aboutSkills')}
               onConfirm={fieldOnConfirm}
@@ -1971,11 +2197,9 @@ export function PortfolioAboutReadOnly({
                 onVisibilityChange ? (value) => onVisibilityChange('aboutSkills', value) : undefined
               }
               editControl={
-                <PortfolioInlineStringListEditor
+                <PortfolioInlineSkillsEditor
                   value={draftAboutSkills}
                   onChange={setDraftAboutSkills}
-                  maxItems={12}
-                  placeholder="Add skill…"
                 />
               }
               className="sm:pr-3"

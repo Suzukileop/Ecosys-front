@@ -32,6 +32,8 @@ import {
 import {
   isPortfolioHeroBannerDesign,
   isPortfolioHeroBowlIntroMotif,
+  normalizePortfolioHeroBannerDesign,
+  DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN,
   type PortfolioHeroBannerDesign,
   type PortfolioHeroBowlIntroMotif,
   type PortfolioHeroIdentityIndexPortraitRadius,
@@ -944,7 +946,7 @@ export const DEFAULT_HERO_MOTIFS: HeroMotifInstance[] = migrateLegacyHeroMotifs(
 });
 
 export const DEFAULT_HERO_PRESENTATION: PortfolioHeroPresentationSettings = {
-  heroBannerDesign: 'classic',
+  heroBannerDesign: 'swiss-editorial',
   heroSignatureWord: '',
   heroCurrentlyLabel: 'Currently',
   heroSpecializedInLabel: 'Specialized in',
@@ -2332,9 +2334,9 @@ export function mergeHeroPresentation(
     : {};
 
   const merged: PortfolioHeroPresentationSettings = {
-    heroBannerDesign: isPortfolioHeroBannerDesign(record.heroBannerDesign)
-      ? record.heroBannerDesign
-      : base.heroBannerDesign ?? 'classic',
+    heroBannerDesign: normalizePortfolioHeroBannerDesign(
+      record.heroBannerDesign ?? base.heroBannerDesign ?? DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN
+    ),
     heroSignatureWord:
       typeof record.heroSignatureWord === 'string'
         ? record.heroSignatureWord

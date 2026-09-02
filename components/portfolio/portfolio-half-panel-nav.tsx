@@ -15,6 +15,8 @@ import { resolveHeroPaletteColor } from '@/components/portfolio/portfolio-hero-p
 import {
   PortfolioNavCenterBrand,
   PortfolioNavBrandLinkButton,
+  PortfolioNavColorModeToggleButton,
+  PortfolioNavColorModeToggleProvider,
   resolveDutenPanelSocialLinks,
   resolveEditorialBarContactHref,
   type PortfolioNavChromeLink,
@@ -54,6 +56,9 @@ type PortfolioHalfPanelNavProps = {
   socialLinkOptions?: PortfolioNavChromeLink[];
   contactPhone?: string | null;
   contactEmail?: string | null;
+  showColorModeToggle?: boolean;
+  colorMode?: 'light' | 'dark';
+  onColorModeToggle?: () => void;
 };
 
 const DRAWER_TRANSITION = { duration: 0.42, ease: [0.22, 1, 0.36, 1] as const };
@@ -276,6 +281,9 @@ export function PortfolioHalfPanelNav({
   socialLinkOptions = [],
   contactPhone,
   contactEmail,
+  showColorModeToggle = false,
+  colorMode = 'dark',
+  onColorModeToggle,
 }: PortfolioHalfPanelNavProps) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -382,7 +390,21 @@ export function PortfolioHalfPanelNav({
 
   const triggerTop = `calc(${SAFE_AREA_TOP} + ${COLLAPSED_TOP_GAP_PX}px)`;
 
+  const colorModeToggle = (
+    <PortfolioNavColorModeToggleButton
+      settings={settings}
+      compact
+      overlayInteraction
+      inkColor={open ? strongInk : triggerInk}
+    />
+  );
+
   return createPortal(
+    <PortfolioNavColorModeToggleProvider
+      show={showColorModeToggle}
+      colorMode={colorMode}
+      onToggle={() => onColorModeToggle?.()}
+    >
     <>
       <AnimatePresence>
         {open ? (
@@ -425,7 +447,9 @@ export function PortfolioHalfPanelNav({
               <div className="min-w-0">
                 <PortfolioNavCenterBrand settings={brandSettings} compact />
               </div>
-              <button
+              <div className="flex shrink-0 items-center gap-2">
+                {colorModeToggle}
+                <button
                 type="button"
                 aria-label="Close navigation menu"
                 onClick={() => setOpen(false)}
@@ -434,6 +458,7 @@ export function PortfolioHalfPanelNav({
               >
                 <OverlayMenuGlyph icon="x" open />
               </button>
+              </div>
             </header>
 
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-8 pb-6 sm:px-10 md:px-12 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
@@ -507,7 +532,9 @@ export function PortfolioHalfPanelNav({
         }`}
         style={{ top: triggerTop, right: TRIGGER_INSET_PX }}
       >
-        <button
+        <div className="flex items-center gap-2">
+          {colorModeToggle}
+          <button
           type="button"
           aria-expanded={open}
           aria-controls="portfolio-half-panel-drawer"
@@ -531,8 +558,10 @@ export function PortfolioHalfPanelNav({
             'Menu'
           )}
         </button>
+        </div>
       </motion.div>
-    </>,
+    </>
+    </PortfolioNavColorModeToggleProvider>,
     document.body
   );
 }

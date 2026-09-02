@@ -58,6 +58,7 @@ import {
   type PortfolioSettings,
   type PortfolioSettingsSectionId,
   type PortfolioSettingsSectionMeta,
+  PORTFOLIO_NAV_EDITORIAL_BAR_BUTTON_INK_OPTIONS,
 } from '@/components/portfolio/portfolio-settings-types';
 import {
   PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS,
@@ -71,7 +72,8 @@ import {
   PORTFOLIO_NAV_FLOATING_PILL_MENU_MODE_OPTIONS,
   normalizePortfolioNavFloatingPillMenuMode,
   PORTFOLIO_NAV_DISPLAY_OPTIONS,
-  PORTFOLIO_NAV_PRESENCE_OPTIONS,
+  PORTFOLIO_NAV_VISIBILITY_MODE_OPTIONS,
+  resolvePortfolioNavVisibilityMode,
   PORTFOLIO_NAV_MENU_HANDLE_OPTIONS,
   PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS,
   PORTFOLIO_NAV_MENU_CONTROL_ALIGN_OPTIONS,
@@ -172,6 +174,7 @@ import {
 } from '@/components/portfolio/portfolio-about-us-settings-panel';
 import {
   InfoSettingsPanel,
+  type InfoSubSection,
 } from '@/components/portfolio/portfolio-info-settings-panel';
 import {
   ExperienceSettingsPanel,
@@ -335,6 +338,7 @@ type PanelSubSections = {
   work?: WorkSettingsSubSection;
   services?: ServicesSubSection;
   aboutUs?: AboutUsSubSection;
+  info?: InfoSubSection;
   experience?: ExperienceSubSection;
   team?: TeamSubSection;
   stack?: StackSubSection;
@@ -3662,6 +3666,8 @@ function NavItemCustomizer({
 }) {
   const labelPresets = PORTFOLIO_NAV_LABEL_PRESETS[sectionKey];
   const iconOptions = PORTFOLIO_NAV_ICON_OPTIONS[sectionKey];
+  const presetValues = new Set(labelPresets.map((preset) => preset.value));
+  const usesCustomLabel = label.trim().length > 0 && !presetValues.has(label);
 
   return (
     <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
@@ -3677,13 +3683,26 @@ function NavItemCustomizer({
 
       <div className="space-y-4">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">Display word</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+            Nom dans le menu
+          </p>
+          <input
+            type="text"
+            value={label}
+            maxLength={32}
+            onChange={(event) => onLabelChange(event.target.value)}
+            placeholder="Ex. Projects, Expertise…"
+            className="mt-2 w-full rounded-xl border border-neutral-200/80 bg-white px-3 py-2.5 text-sm font-medium text-neutral-900 shadow-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-900/10"
+          />
+          <p className="mt-1.5 text-[11px] text-neutral-500">
+            {usesCustomLabel ? 'Libellé personnalisé actif.' : 'Suggestions rapides :'}
+          </p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {labelPresets.map((preset) => {
+            {labelPresets.map((preset, presetIndex) => {
               const active = label === preset.value;
               return (
                 <button
-                  key={preset.value}
+                  key={`${sectionKey}-label-${presetIndex}-${preset.value}`}
                   type="button"
                   onClick={() => onLabelChange(preset.value)}
                   className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
@@ -3700,8 +3719,10 @@ function NavItemCustomizer({
         </div>
 
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">Icon</p>
-          <div className="mt-2 grid grid-cols-3 gap-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+            Icône ({iconOptions.length} choix)
+          </p>
+          <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
             {iconOptions.map((option) => {
               const active = icon === option.value;
               return (
@@ -3709,14 +3730,16 @@ function NavItemCustomizer({
                   key={option.value}
                   type="button"
                   onClick={() => onIconChange(option.value)}
-                  className={`flex flex-col items-center gap-2 rounded-xl border px-2 py-3 transition ${
+                  className={`flex flex-col items-center gap-1.5 rounded-xl border px-1.5 py-2.5 transition ${
                     active
                       ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
                       : 'border-neutral-200/80 bg-white hover:border-neutral-300'
                   }`}
                 >
                   <PortfolioNavIcon variant={option.value} className="h-5 w-5 text-neutral-800" />
-                  <span className="text-[10px] font-semibold text-neutral-600">{option.label}</span>
+                  <span className="text-center text-[9px] font-semibold leading-tight text-neutral-600">
+                    {option.label}
+                  </span>
                 </button>
               );
             })}
@@ -3737,29 +3760,34 @@ function NavigationLabelsIconsPanel({
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-4">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Menu labels & icons</p>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Libellés & icônes du menu
+        </p>
         <p className="mt-1 text-sm text-neutral-500">
-          Pick an alternative word and icon for each navigation destination.
+          Personnalisez le nom affiché et l&apos;icône de chaque section dans la barre de navigation et
+          le menu mobile.
         </p>
       </div>
-      {PORTFOLIO_NAV_SECTION_META.map((section) => (
-        <NavItemCustomizer
-          key={section.key}
-          sectionKey={section.key}
-          title={section.title}
-          description={section.description}
-          label={itemLabels[section.key]}
-          icon={itemIcons[section.key]}
-          onLabelChange={(label) =>
-            onChange({ itemLabels: { ...itemLabels, [section.key]: label } })
-          }
-          onIconChange={(icon) =>
-            onChange({ itemIcons: { ...itemIcons, [section.key]: icon } })
-          }
-        />
-      ))}
+      <div className="space-y-3">
+        {PORTFOLIO_NAV_SECTION_META.map((section) => (
+          <NavItemCustomizer
+            key={section.key}
+            sectionKey={section.key}
+            title={section.title}
+            description={section.description}
+            label={itemLabels[section.key]}
+            icon={itemIcons[section.key]}
+            onLabelChange={(nextLabel) =>
+              onChange({ itemLabels: { ...itemLabels, [section.key]: nextLabel } })
+            }
+            onIconChange={(nextIcon) =>
+              onChange({ itemIcons: { ...itemIcons, [section.key]: nextIcon } })
+            }
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -3919,16 +3947,21 @@ function NavLayoutDesignPreview({
   if (design === 'floating-pill') {
     return (
       <div className="mt-3 flex justify-center">
-        <div className="grid w-full max-w-[280px] grid-cols-[auto_1fr_auto] items-center gap-2 rounded-full bg-[#1a1a1a] px-2.5 py-2 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
-          <span className="text-[10px] font-bold text-white">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
-          <div className="flex items-center justify-center gap-1.5 text-white">
-            <span className="h-2.5 w-2.5 rounded-full bg-white/90" />
-            <span className="h-2.5 w-2.5 rounded-full bg-white/45" />
-            <span className="h-2.5 w-2.5 rounded-full bg-white/45" />
+        <div className="grid w-full max-w-[280px] grid-cols-[auto_1fr_auto] items-center gap-2 rounded-full border border-neutral-200 bg-white px-2.5 py-2 shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
+          <span className="text-[10px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
+          <div className="flex items-center justify-center gap-1.5 text-neutral-800">
+            <span className="h-2.5 w-2.5 rounded-full bg-neutral-900" />
+            <span className="h-2.5 w-2.5 rounded-full bg-neutral-300" />
+            <span className="h-2.5 w-2.5 rounded-full bg-neutral-300" />
           </div>
-          <span className="rounded-full bg-white px-2 py-0.5 text-[7px] font-medium text-[#1a1a1a]">
-            email
-          </span>
+          <div className="flex items-center gap-1">
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-neutral-300 text-[8px] text-neutral-700">
+              ☀
+            </span>
+            <span className="rounded-full bg-neutral-900 px-2 py-0.5 text-[7px] font-medium text-white">
+              email
+            </span>
+          </div>
         </div>
       </div>
     );
@@ -3979,7 +4012,8 @@ function NavLayoutDesignPreview({
           <div className="flex items-center gap-2 text-[8px] text-neutral-700">
             <span className="border-b border-neutral-900 pb-px">About</span>
             <span>Blog</span>
-            <span className="rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
+            <span className="inline-flex items-center gap-0.5 rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
+              <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden />
               Contact
             </span>
           </div>
@@ -4597,9 +4631,13 @@ function NavContactButtonStyleEditor({
 function NavCaseOverlayLogoEditor({
   navigation,
   onChange,
+  showColorModeToggleInNav = false,
+  onGlobalChange,
 }: {
   navigation: PortfolioNavSettings;
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
+  showColorModeToggleInNav?: boolean;
+  onGlobalChange?: (patch: PortfolioGlobalSettingsPatch) => void;
 }) {
   const menuTrigger = navigation.caseOverlayMenuTrigger ?? 'text';
 
@@ -4708,6 +4746,13 @@ function NavCaseOverlayLogoEditor({
           </div>
         </div>
       ) : null}
+
+      <ToggleRow
+        label="Bascule clair / sombre dans la barre"
+        description="Affiche une icône soleil / lune à côté du bouton menu."
+        checked={showColorModeToggleInNav}
+        onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
+      />
     </div>
   );
 }
@@ -4716,14 +4761,19 @@ function NavDutenPanelEditor({
   navigation,
   options,
   onChange,
+  showColorModeToggleInNav = false,
+  onGlobalChange,
 }: {
   navigation: PortfolioNavSettings;
   options: PortfolioNavChromeLink[];
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
+  showColorModeToggleInNav?: boolean;
+  onGlobalChange?: (patch: PortfolioGlobalSettingsPatch) => void;
 }) {
   const menuTrigger = navigation.caseOverlayMenuTrigger ?? 'text';
   const showContact = navigation.dutenPanelShowContact ?? false;
   const showSocial = navigation.dutenPanelShowSocial ?? false;
+  const showHeroWord = navigation.dutenPanelShowHeroWord ?? false;
 
   const chipClass = (active: boolean) =>
     `rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
@@ -4796,30 +4846,6 @@ function NavDutenPanelEditor({
       />
 
       <OptionGrid
-        label="Marge du panneau"
-        options={[
-          {
-            value: 'sm',
-            label: 'Serrée',
-            description: 'Panneau plus large, peu de marge autour.',
-          },
-          {
-            value: 'md',
-            label: 'Standard',
-            description: 'Équilibre entre inset et surface utile.',
-          },
-          {
-            value: 'lg',
-            label: 'Large',
-            description: 'Cadre généreux autour du panneau.',
-          },
-        ]}
-        value={navigation.dutenPanelInset ?? 'md'}
-        onChange={(dutenPanelInset) => onChange({ dutenPanelInset })}
-        columns={3}
-      />
-
-      <OptionGrid
         label="Emplacement menu / logo"
         options={[
           {
@@ -4883,6 +4909,46 @@ function NavDutenPanelEditor({
         </div>
       ) : null}
 
+      <div className="space-y-3 border-t border-neutral-200/80 pt-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+            Mot d&apos;affichage
+          </p>
+          <p className="mt-1 text-sm text-neutral-500">
+            Grand mot personnalisable sous les liens — comme un sigle ou un nom de marque.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={chipClass(showHeroWord)}
+            onClick={() => onChange({ dutenPanelShowHeroWord: !showHeroWord })}
+          >
+            Afficher le mot
+          </button>
+        </div>
+        {showHeroWord ? (
+          <label className="block">
+            <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+              Texte affiché
+            </span>
+            <input
+              type="text"
+              value={navigation.dutenPanelHeroWord ?? ''}
+              onChange={(event) =>
+                onChange({ dutenPanelHeroWord: event.target.value.slice(0, 32) })
+              }
+              placeholder="VSIUX"
+              maxLength={32}
+              className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
+            />
+            <p className="mt-1 text-xs text-neutral-500">
+              Jusqu&apos;à 32 caractères — affiché en très grande taille en bas du panneau.
+            </p>
+          </label>
+        ) : null}
+      </div>
+
       <div className="space-y-2 border-t border-neutral-200/80 pt-4">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
           Bas du panneau ouvert
@@ -4916,6 +4982,13 @@ function NavDutenPanelEditor({
           maxLinks={5}
         />
       ) : null}
+
+      <ToggleRow
+        label="Bascule clair / sombre dans le panneau"
+        description="Affiche une icône soleil / lune à côté du bouton menu."
+        checked={showColorModeToggleInNav}
+        onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
+      />
     </div>
   );
 }
@@ -4924,10 +4997,14 @@ function NavHalfPanelEditor({
   navigation,
   options,
   onChange,
+  showColorModeToggleInNav = false,
+  onGlobalChange,
 }: {
   navigation: PortfolioNavSettings;
   options: PortfolioNavChromeLink[];
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
+  showColorModeToggleInNav?: boolean;
+  onGlobalChange?: (patch: PortfolioGlobalSettingsPatch) => void;
 }) {
   const menuTrigger = navigation.caseOverlayMenuTrigger ?? 'text';
   const showContact = navigation.dutenPanelShowContact ?? false;
@@ -5110,6 +5187,68 @@ function NavHalfPanelEditor({
           maxLinks={5}
         />
       ) : null}
+
+      <ToggleRow
+        label="Bascule clair / sombre dans le panneau"
+        description="Affiche une icône soleil / lune à côté du bouton menu."
+        checked={showColorModeToggleInNav}
+        onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
+      />
+    </div>
+  );
+}
+
+function NavFloatingPillVisibilityToggles({
+  navigation,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const showLogo = navigation.floatingPillShowLogo ?? false;
+  const showContact = navigation.floatingPillShowContact ?? true;
+
+  const chipClass = (active: boolean) =>
+    `rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+      active
+        ? 'border-neutral-900 bg-neutral-900 text-white'
+        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+    }`;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+        Afficher dans la capsule
+      </p>
+      <p className="text-sm text-neutral-500">
+        Le logo est masqué par défaut. Activez logo et/ou contact selon vos besoins.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={chipClass(showLogo)}
+          onClick={() =>
+            onChange({
+              floatingPillShowLogo: !showLogo,
+              customExtraEnabled: !showLogo ? true : navigation.customExtraEnabled,
+            })
+          }
+        >
+          Logo
+        </button>
+        <button
+          type="button"
+          className={chipClass(showContact)}
+          onClick={() =>
+            onChange({
+              floatingPillShowContact: !showContact,
+              contactButtonEnabled: !showContact ? true : navigation.contactButtonEnabled,
+            })
+          }
+        >
+          Contact
+        </button>
+      </div>
     </div>
   );
 }
@@ -5117,9 +5256,13 @@ function NavHalfPanelEditor({
 function NavFloatingPillMenuEditor({
   navigation,
   onChange,
+  showColorModeToggleInNav = false,
+  onGlobalChange,
 }: {
   navigation: PortfolioNavSettings;
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
+  showColorModeToggleInNav?: boolean;
+  onGlobalChange?: (patch: PortfolioGlobalSettingsPatch) => void;
 }) {
   const menuMode = normalizePortfolioNavFloatingPillMenuMode(navigation.contentMode);
 
@@ -5131,7 +5274,7 @@ function NavFloatingPillMenuEditor({
         </p>
         <p className="mt-1 text-sm text-neutral-500">
           Affichage des liens de section au centre de la capsule — texte ou icônes seules (pas les
-          liens sociaux).
+          liens sociaux). Sur mobile : barre logo pleine largeur ou tiroir menu (réglage dans Général).
         </p>
       </div>
       <OptionGrid
@@ -5140,6 +5283,13 @@ function NavFloatingPillMenuEditor({
         value={menuMode}
         onChange={(contentMode) => onChange({ contentMode })}
         columns={2}
+      />
+      <NavFloatingPillVisibilityToggles navigation={navigation} onChange={onChange} />
+      <ToggleRow
+        label="Bascule clair / sombre dans la capsule"
+        description="Affiche une icône soleil / lune à droite du menu, avant le bouton contact."
+        checked={showColorModeToggleInNav}
+        onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
       />
     </div>
   );
@@ -5345,7 +5495,8 @@ function NavLogoLeftContactPlacementEditor({
             <div className="flex items-center gap-2 text-[8px] text-neutral-700">
               <span className="border-b border-neutral-900 pb-px">About</span>
               <span>Blog</span>
-              <span className="rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
+              <span className="inline-flex items-center gap-0.5 rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
+                <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden />
                 Contact
               </span>
             </div>
@@ -5353,7 +5504,8 @@ function NavLogoLeftContactPlacementEditor({
         ) : (
           <div className="flex w-full items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-[8px] text-neutral-700">
-              <span className="rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
+              <span className="inline-flex items-center gap-0.5 rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
+                <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden />
                 Contact
               </span>
               <span className="border-b border-neutral-900 pb-px">About</span>
@@ -5364,27 +5516,16 @@ function NavLogoLeftContactPlacementEditor({
         )}
       </div>
 
-      <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-white p-4">
+      <div className="space-y-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
             Bouton Contact
           </p>
           <p className="mt-1 text-sm text-neutral-500">
-            Libellé du bouton au bord de la barre (ex. Contact, Let&apos;s talk).
+            Libellé, icône, cadre et mode d&apos;affichage — comme sur les autres designs de barre.
           </p>
         </div>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-neutral-700">Libellé</span>
-          <input
-            type="text"
-            value={navigation.contactButtonLabel ?? 'Contact'}
-            maxLength={32}
-            onChange={(event) =>
-              onChange({ contactButtonLabel: event.target.value.slice(0, 32) })
-            }
-            className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
-          />
-        </label>
+        <NavContactButtonStyleEditor navigation={navigation} onChange={onChange} />
       </div>
     </div>
   );
@@ -5982,14 +6123,20 @@ function NavMenuGroupsEditor({
   );
 }
 
+const NAV_MOBILE_LAYOUT_OPTIONS_FR = PORTFOLIO_NAV_MOBILE_LAYOUT_OPTIONS;
+
 function NavigationPanel({
   navigation,
   onChange,
   navSocialLinkOptions = [],
+  showColorModeToggleInNav = false,
+  onGlobalChange,
 }: {
   navigation: PortfolioNavSettings;
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
   navSocialLinkOptions?: PortfolioNavChromeLink[];
+  showColorModeToggleInNav?: boolean;
+  onGlobalChange?: (patch: PortfolioGlobalSettingsPatch) => void;
 }) {
   const [navTab, setNavTab] = useState<NavSettingsTab>('general');
   const navMode = navigation.navMode ?? 'default';
@@ -6053,6 +6200,71 @@ function NavigationPanel({
           onChange={(navBarHeight) => onChange({ navBarHeight })}
           columns={3}
         />
+        <ToggleRow
+          label="Bascule clair / sombre dans la barre"
+          description="Affiche une icône soleil / lune dans la navigation pour basculer entre mode clair et sombre."
+          checked={showColorModeToggleInNav}
+          onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
+        />
+
+        {usesFloatingNavChrome ? (
+          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Mobile
+              </p>
+              <p className="mt-1 text-sm text-neutral-500">
+                Deux comportements sur écran étroit (&lt; 1024 px) : barre logo pleine largeur ou
+                tiroir menu compact. Les deux ouvrent le même panneau de liens.
+              </p>
+            </div>
+            <OptionGrid
+              label="Comportement mobile"
+              options={NAV_MOBILE_LAYOUT_OPTIONS_FR}
+              value={navigation.mobileLayout ?? 'brand-bar'}
+              onChange={(mobileLayout) => onChange({ mobileLayout })}
+              columns={2}
+            />
+            {(navigation.mobileLayout ?? 'brand-bar') === 'drawer' ? (
+              <>
+                <OptionGrid
+                  label="Marque à côté du menu"
+                  options={PORTFOLIO_NAV_MOBILE_BRAND_OPTIONS}
+                  value={navigation.mobileBrand ?? 'none'}
+                  onChange={(mobileBrand) => onChange({ mobileBrand })}
+                  columns={3}
+                />
+                {(navigation.mobileBrand ?? 'none') === 'word' ? (
+                  <label className="block">
+                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+                      Texte de marque
+                    </span>
+                    <input
+                      type="text"
+                      value={navigation.mobileBrandWord ?? ''}
+                      onChange={(event) => onChange({ mobileBrandWord: event.target.value })}
+                      placeholder="Prénom ou nom court"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
+                    />
+                  </label>
+                ) : null}
+                <OptionGrid
+                  label="Côté du tiroir"
+                  options={PORTFOLIO_NAV_MOBILE_DRAWER_SIDE_OPTIONS}
+                  value={navigation.mobileDrawerSide ?? 'right'}
+                  onChange={(mobileDrawerSide) => onChange({ mobileDrawerSide })}
+                  columns={2}
+                />
+              </>
+            ) : null}
+            {(navigation.mobileLayout ?? 'brand-bar') === 'brand-bar' ? (
+              <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-500">
+                Barre pleine largeur : logo à gauche, menu à droite (style éditorial). Le logo utilise
+                le texte / image de marque de la navigation.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         </>
       ) : null}
 
@@ -6095,6 +6307,16 @@ function NavigationPanel({
         columns={3}
       />
 
+      {navigation.enabled && usesFloatingNavChrome ? (
+        <OptionGrid
+          label="Mode de visibilité de la barre"
+          options={PORTFOLIO_NAV_VISIBILITY_MODE_OPTIONS}
+          value={resolvePortfolioNavVisibilityMode(navigation.presence)}
+          onChange={(presence) => onChange({ presence })}
+          columns={2}
+        />
+      ) : null}
+
       <ToggleRow
         label="Hide when only one section"
         description="Do not show the menu if a single destination is available."
@@ -6118,6 +6340,37 @@ function NavigationPanel({
         />
       ) : null}
 
+      {navigation.enabled && navigation.navLayoutDesign === 'editorial-bar' ? (
+        <OptionGrid
+          label="Couleur du texte des boutons"
+          options={PORTFOLIO_NAV_EDITORIAL_BAR_BUTTON_INK_OPTIONS}
+          value={navigation.editorialBarButtonInk ?? 'principal'}
+          onChange={(editorialBarButtonInk) => {
+            const bindings = mergeNavColorBindings(
+              DEFAULT_NAV_COLOR_BINDINGS,
+              navigation.navColorBindings
+            );
+            const nextBindings = {
+              ...bindings,
+              activeAccent: editorialBarButtonInk,
+              contactText: editorialBarButtonInk,
+              contactBorder: editorialBarButtonInk,
+            };
+            onChange({
+              editorialBarButtonInk,
+              navColorBindings: nextBindings,
+              ...(navigation.useNavPalette !== false
+                ? applyNavPaletteToSettings({
+                    ...navigation,
+                    navColorBindings: nextBindings,
+                  })
+                : null),
+            });
+          }}
+          columns={2}
+        />
+      ) : null}
+
       {navigation.enabled ? (
         <OptionGrid
           label="Taille du texte"
@@ -6134,6 +6387,12 @@ function NavigationPanel({
         onChange={(navMenuGroups) => onChange({ navMenuGroups })}
       />
 
+      <NavigationLabelsIconsPanel
+        itemLabels={navigation.itemLabels}
+        itemIcons={navigation.itemIcons}
+        onChange={onChange}
+      />
+
       <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
         Les sections visibles alimentent le menu. Réordonnez-les dans Global → Section display order.
       </p>
@@ -6147,9 +6406,13 @@ function NavigationPanel({
             <NavLayoutDesignGrid
               value={navigation.navLayoutDesign ?? 'classic'}
               navigation={navigation}
-              onChange={(design) =>
-                onChange(portfolioNavLayoutDesignPatch(design, navigation))
-              }
+              onChange={(design) => {
+                onChange(portfolioNavLayoutDesignPatch(design, navigation));
+                if (design === 'floating-pill') {
+                  onGlobalChange?.({ showColorModeToggleInNav: true });
+                  onChange({ mobileLayout: 'brand-bar' });
+                }
+              }}
             />
           ) : (
             <NavFloatingOnlyNote />
@@ -6162,7 +6425,12 @@ function NavigationPanel({
             />
           ) : null}
           {navigation.navLayoutDesign === 'floating-pill' ? (
-            <NavFloatingPillMenuEditor navigation={navigation} onChange={onChange} />
+            <NavFloatingPillMenuEditor
+              navigation={navigation}
+              onChange={onChange}
+              showColorModeToggleInNav={showColorModeToggleInNav}
+              onGlobalChange={onGlobalChange}
+            />
           ) : null}
           {navigation.navLayoutDesign === 'nav-logo-social' ? (
             <NavTriZoneSideSlotEditor
@@ -6178,13 +6446,20 @@ function NavigationPanel({
             <NavLogoLeftContactPlacementEditor navigation={navigation} onChange={onChange} />
           ) : null}
           {navigation.navLayoutDesign === 'case-overlay' ? (
-            <NavCaseOverlayLogoEditor navigation={navigation} onChange={onChange} />
+            <NavCaseOverlayLogoEditor
+              navigation={navigation}
+              onChange={onChange}
+              showColorModeToggleInNav={showColorModeToggleInNav}
+              onGlobalChange={onGlobalChange}
+            />
           ) : null}
           {navigation.navLayoutDesign === 'duten-panel' ? (
             <NavDutenPanelEditor
               navigation={navigation}
               options={navSocialLinkOptions}
               onChange={onChange}
+              showColorModeToggleInNav={showColorModeToggleInNav}
+              onGlobalChange={onGlobalChange}
             />
           ) : null}
           {navigation.navLayoutDesign === 'half-panel-left' ? (
@@ -6192,6 +6467,8 @@ function NavigationPanel({
               navigation={navigation}
               options={navSocialLinkOptions}
               onChange={onChange}
+              showColorModeToggleInNav={showColorModeToggleInNav}
+              onGlobalChange={onGlobalChange}
             />
           ) : null}
         </div>
@@ -6283,6 +6560,8 @@ function SectionPanel({
         navigation={settings.navigation}
         onChange={onNavigationChange}
         navSocialLinkOptions={navSocialLinkOptions}
+        showColorModeToggleInNav={settings.global.showColorModeToggleInNav ?? false}
+        onGlobalChange={onGlobalChange}
       />
     );
   }
@@ -6349,7 +6628,13 @@ function SectionPanel({
 
   if (sectionId === 'info') {
     return (
-      <InfoSettingsPanel info={settings.info} onChange={(patch) => onChange('info', patch)} />
+      <InfoSettingsPanel
+        info={settings.info}
+        onChange={(patch) => onChange('info', patch)}
+        subSection={panelSubSections.info ?? 'general'}
+        onSubSectionChange={(value) => onPanelSubSectionChange('info', value)}
+        heroPalette={settings.hero.palette}
+      />
     );
   }
 
@@ -6625,6 +6910,11 @@ export function PortfolioSettingsModal({
       setPanelSubSections((prev) => ({
         ...prev,
         aboutUs: (entry.subSection as AboutUsSubSection) ?? 'general',
+      }));
+    } else if (entry.sectionId === 'info') {
+      setPanelSubSections((prev) => ({
+        ...prev,
+        info: (entry.subSection as InfoSubSection) ?? 'general',
       }));
     } else if (entry.sectionId === 'experience') {
       setPanelSubSections((prev) => ({

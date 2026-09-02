@@ -237,15 +237,10 @@ export type PortfolioNavEffectStrength = 'sm' | 'md' | 'lg' | 'xl';
 /**
  * How the floating nav adapts below the lg breakpoint so items stay on-screen.
  * Desktop placement / gap / contentMode stay as configured above lg.
- * `drawer` = menu icon opens a sidebar of links (hides the full icon bar).
+ * `drawer` = menu icon opens a sidebar of links (minimal top trigger).
+ * `brand-bar` = full-width top bar with logo left and menu icon right (opens the same drawer).
  */
-export type PortfolioNavMobileLayout =
-  | 'auto'
-  | 'icons-compact'
-  | 'scroll'
-  | 'wrap'
-  | 'drawer'
-  | 'off';
+export type PortfolioNavMobileLayout = 'drawer' | 'brand-bar';
 
 /** Optional brand next to the mobile drawer menu icon. */
 export type PortfolioNavMobileBrand = 'none' | 'avatar' | 'word';
@@ -270,6 +265,34 @@ export type PortfolioNavTriZoneContactSide = 'left' | 'right';
 export type PortfolioNavEditorialBarSlotMode = PortfolioNavTriZoneSlotMode;
 /** editorial-bar contact mode: tel: or mailto: from profile. */
 export type PortfolioNavEditorialBarContactLink = 'phone' | 'mail';
+/** editorial-bar: ink for active menu labels + contact / mail CTAs. */
+export type PortfolioNavEditorialBarButtonInk = 'principal' | 'texteFort';
+
+export const PORTFOLIO_NAV_EDITORIAL_BAR_BUTTON_INK_OPTIONS: {
+  value: PortfolioNavEditorialBarButtonInk;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'principal',
+    label: 'Principal',
+    description:
+      'Pilule active en couleur principale (texte contrasté) · Contact / e-mail en principal.',
+  },
+  {
+    value: 'texteFort',
+    label: 'Texte fort',
+    description: 'Texte fort partout — aucune trace de la couleur principale sur le menu.',
+  },
+];
+
+export function normalizePortfolioNavEditorialBarButtonInk(
+  value: unknown,
+  fallback: PortfolioNavEditorialBarButtonInk = 'principal'
+): PortfolioNavEditorialBarButtonInk {
+  if (value === 'principal' || value === 'texteFort') return value;
+  return fallback;
+}
 
 /** Per-channel contact button chrome for editorial bar (phone vs e-mail). */
 export type PortfolioNavEditorialBarContactChannelSettings = {
@@ -282,9 +305,9 @@ export type PortfolioNavEditorialBarContactChannelSettings = {
 
 export const DEFAULT_EDITORIAL_BAR_PHONE_CONTACT: PortfolioNavEditorialBarContactChannelSettings =
   {
-    label: 'Call me',
+    label: "Let's Talk",
     display: 'button',
-    icon: 'phone',
+    icon: 'arrow-up-right',
     iconPosition: 'right',
     shape: 'bottom-line',
   };
@@ -462,6 +485,82 @@ export type PortfolioNavContactButtonChromeInput = {
   borderEnabled: boolean;
 };
 
+function portfolioNavContactButtonBackgroundIsTransparent(background: string): boolean {
+  const normalized = background.trim().toLowerCase();
+  return (
+    normalized === 'transparent' ||
+    normalized === 'rgba(0,0,0,0)' ||
+    normalized === 'rgba(0, 0, 0, 0)'
+  );
+}
+
+/** Longhand-only borders — avoids React warnings when switching contact button shapes. */
+function portfolioNavContactButtonBorderStyle(
+  width: number,
+  color: string
+): Pick<
+  CSSProperties,
+  | 'borderTopWidth'
+  | 'borderRightWidth'
+  | 'borderBottomWidth'
+  | 'borderLeftWidth'
+  | 'borderTopColor'
+  | 'borderRightColor'
+  | 'borderBottomColor'
+  | 'borderLeftColor'
+  | 'borderStyle'
+> {
+  return {
+    borderTopWidth: width,
+    borderRightWidth: width,
+    borderBottomWidth: width,
+    borderLeftWidth: width,
+    borderTopColor: color,
+    borderRightColor: color,
+    borderBottomColor: color,
+    borderLeftColor: color,
+    borderStyle: 'solid',
+  };
+}
+
+function portfolioNavContactButtonBottomLineBorderStyle(color: string): Pick<
+  CSSProperties,
+  | 'borderTopWidth'
+  | 'borderRightWidth'
+  | 'borderBottomWidth'
+  | 'borderLeftWidth'
+  | 'borderTopColor'
+  | 'borderRightColor'
+  | 'borderBottomColor'
+  | 'borderLeftColor'
+  | 'borderStyle'
+> {
+  return {
+    borderTopWidth: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 2,
+    borderLeftWidth: 0,
+    borderTopColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: color,
+    borderLeftColor: 'transparent',
+    borderStyle: 'solid',
+  };
+}
+
+/** Framed contact shapes (square / rounded / soft / pill) that need a visible outline on transparent shells. */
+export function portfolioNavContactButtonShapeUsesOutline(
+  shape: PortfolioNavContactButtonShape | undefined
+): boolean {
+  const normalized = normalizePortfolioNavContactButtonShape(shape);
+  return (
+    normalized === 'square' ||
+    normalized === 'rounded' ||
+    normalized === 'soft' ||
+    normalized === 'pill'
+  );
+}
+
 /** Shell paint for contact CTA — handles frameless / bottom-line variants. */
 export function portfolioNavContactButtonShellPresentation(
   shape: PortfolioNavContactButtonShape | undefined,
@@ -469,6 +568,7 @@ export function portfolioNavContactButtonShellPresentation(
 ): { className: string; style: CSSProperties; useShadow: boolean; useGlass: boolean } {
   const normalized = normalizePortfolioNavContactButtonShape(shape);
   const baseClass = portfolioNavContactButtonShapeClass(normalized);
+  const transparentBackground = portfolioNavContactButtonBackgroundIsTransparent(chrome.background);
 
   if (normalized === 'frameless') {
     return {
@@ -476,9 +576,7 @@ export function portfolioNavContactButtonShellPresentation(
       style: {
         backgroundColor: 'transparent',
         color: chrome.color,
-        borderWidth: 0,
-        borderStyle: 'solid',
-        borderColor: 'transparent',
+        ...portfolioNavContactButtonBorderStyle(0, 'transparent'),
       },
       useShadow: false,
       useGlass: false,
@@ -492,11 +590,7 @@ export function portfolioNavContactButtonShellPresentation(
       style: {
         backgroundColor: 'transparent',
         color: chrome.color,
-        borderWidth: 0,
-        borderStyle: 'solid',
-        borderColor: 'transparent',
-        borderBottomWidth: 2,
-        borderBottomColor: lineColor,
+        ...portfolioNavContactButtonBottomLineBorderStyle(lineColor),
         paddingBottom: 2,
       },
       useShadow: false,
@@ -504,14 +598,15 @@ export function portfolioNavContactButtonShellPresentation(
     };
   }
 
+  const showOutline = transparentBackground || chrome.borderEnabled;
+  const outlineColor = chrome.borderEnabled ? chrome.border : chrome.color;
+
   return {
-    className: baseClass,
+    className: `${baseClass} box-border`,
     style: {
       backgroundColor: chrome.background,
       color: chrome.color,
-      borderColor: chrome.borderEnabled ? chrome.border : 'transparent',
-      borderWidth: chrome.borderEnabled ? 1 : 0,
-      borderStyle: 'solid',
+      ...portfolioNavContactButtonBorderStyle(showOutline ? 1 : 0, showOutline ? outlineColor : 'transparent'),
     },
     useShadow: true,
     useGlass: true,
@@ -945,6 +1040,10 @@ export type PortfolioNavSettings = {
   dutenPanelShowSocial: boolean;
   /** Duten panel — profile link ids for the social row (empty = first links). */
   dutenPanelSocialLinkIds: string[];
+  /** Duten panel — large display word below the link grid when open. */
+  dutenPanelShowHeroWord: boolean;
+  /** Duten panel — customizable text for the large bottom word (e.g. brand acronym). */
+  dutenPanelHeroWord: string;
   /** Half panel — small heading above the link grid (e.g. Discover Pages). */
   halfPanelDiscoverLabel: string;
   /** Handle / collapse control background (independent from nav buttons). */
@@ -1095,6 +1194,12 @@ export type PortfolioNavSettings = {
   editorialBarPhoneContact: PortfolioNavEditorialBarContactChannelSettings;
   /** editorial-bar: e-mail channel label, icon, frame, etc. */
   editorialBarMailContact: PortfolioNavEditorialBarContactChannelSettings;
+  /** editorial-bar: text color token for active menu + contact CTAs. */
+  editorialBarButtonInk: PortfolioNavEditorialBarButtonInk;
+  /** floating-pill: show brand name / logo in the left capsule column. */
+  floatingPillShowLogo: boolean;
+  /** floating-pill: show contact CTA in the right capsule column. */
+  floatingPillShowContact: boolean;
   /** center-logo-split: section keys pinned to the left rail (empty = auto half/half). */
   splitNavLeftSectionKeys: PortfolioNavSectionKey[];
   /** logo-left-nav-contact: logo rail — left (nav+contact right) or right (nav+contact left). */
@@ -1255,7 +1360,7 @@ export const PORTFOLIO_SETTINGS_SECTIONS: PortfolioSettingsSectionMeta[] = [
   {
     id: 'info',
     label: 'Info',
-    description: 'Profile details section — placed below Hero (coming soon).',
+    description: 'About me — titre, bio, education, skills and more.',
   },
   {
     id: 'work',
@@ -1337,6 +1442,8 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       dutenPanelShowContact: false,
       dutenPanelShowSocial: false,
       dutenPanelSocialLinkIds: [],
+      dutenPanelShowHeroWord: false,
+      dutenPanelHeroWord: '',
       halfPanelDiscoverLabel: 'Discover Pages',
       menuHandleBackgroundColor: '#ffffff',
       menuHandleIconColor: '#171717',
@@ -1371,7 +1478,7 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       activeAccentColor: '#f97316',
       glassEffect: true,
       compactOnMobile: false,
-      mobileLayout: 'auto',
+      mobileLayout: 'brand-bar',
       mobileBrand: 'none',
       mobileBrandWord: '',
       mobileDrawerSide: 'right',
@@ -1399,15 +1506,18 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       triZoneSocialLinkMonochrome: false,
       triZoneSocialLinkGap: 'md',
       triZoneShowSocial: true,
-      triZoneShowPhone: true,
-      triZoneShowMail: true,
+      triZoneShowPhone: false,
+      triZoneShowMail: false,
       editorialBarSlotMode: 'contact',
-      editorialBarShowSocial: true,
+      editorialBarShowSocial: false,
       editorialBarShowPhone: true,
-      editorialBarShowMail: true,
+      editorialBarShowMail: false,
       editorialBarContactLink: 'phone',
       editorialBarPhoneContact: { ...DEFAULT_EDITORIAL_BAR_PHONE_CONTACT },
       editorialBarMailContact: { ...DEFAULT_EDITORIAL_BAR_MAIL_CONTACT },
+      editorialBarButtonInk: 'principal',
+      floatingPillShowLogo: false,
+      floatingPillShowContact: true,
       splitNavLeftSectionKeys: [],
       logoLeftNavContactLogoSide: 'left',
       linkIconBackgroundColor: '#ffffff',
@@ -1458,9 +1568,9 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       ...DEFAULT_HERO_PRESENTATION,
     },
     info: {
-      enabled: false,
-      title: 'Info',
-      subtitle: '',
+      enabled: true,
+      title: 'About me',
+      subtitle: 'Background, education and how I work.',
       ...DEFAULT_INFO_PRESENTATION,
     },
     work: {
@@ -1717,6 +1827,14 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
           .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
           .slice(0, 5)
       : base.dutenPanelSocialLinkIds ?? [],
+    dutenPanelShowHeroWord:
+      typeof patch.dutenPanelShowHeroWord === 'boolean'
+        ? patch.dutenPanelShowHeroWord
+        : base.dutenPanelShowHeroWord ?? false,
+    dutenPanelHeroWord:
+      typeof patch.dutenPanelHeroWord === 'string'
+        ? patch.dutenPanelHeroWord.slice(0, 32)
+        : base.dutenPanelHeroWord ?? '',
     halfPanelDiscoverLabel:
       typeof patch.halfPanelDiscoverLabel === 'string'
         ? patch.halfPanelDiscoverLabel
@@ -1891,15 +2009,11 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
     glassEffect: typeof patch.glassEffect === 'boolean' ? patch.glassEffect : base.glassEffect,
     compactOnMobile:
       typeof patch.compactOnMobile === 'boolean' ? patch.compactOnMobile : base.compactOnMobile,
-    mobileLayout:
-      patch.mobileLayout === 'auto' ||
-      patch.mobileLayout === 'icons-compact' ||
-      patch.mobileLayout === 'scroll' ||
-      patch.mobileLayout === 'wrap' ||
-      patch.mobileLayout === 'drawer' ||
-      patch.mobileLayout === 'off'
-        ? patch.mobileLayout
-        : base.mobileLayout ?? 'auto',
+    mobileLayout: (() => {
+      const raw = patch.mobileLayout ?? base.mobileLayout ?? 'brand-bar';
+      if (raw === 'drawer' || raw === 'brand-bar') return raw;
+      return 'brand-bar';
+    })(),
     mobileBrand:
       patch.mobileBrand === 'none' ||
       patch.mobileBrand === 'avatar' ||
@@ -2057,6 +2171,18 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
           : (base.editorialBarSlotMode ?? 'contact') === 'contact' &&
             normalizePortfolioNavEditorialBarContactLink(base.editorialBarContactLink, 'phone') ===
               'mail',
+    floatingPillShowLogo:
+      typeof patch.floatingPillShowLogo === 'boolean'
+        ? patch.floatingPillShowLogo
+        : typeof base.floatingPillShowLogo === 'boolean'
+          ? base.floatingPillShowLogo
+          : false,
+    floatingPillShowContact:
+      typeof patch.floatingPillShowContact === 'boolean'
+        ? patch.floatingPillShowContact
+        : typeof base.floatingPillShowContact === 'boolean'
+          ? base.floatingPillShowContact
+          : true,
     editorialBarContactLink: normalizePortfolioNavEditorialBarContactLink(
       patch.editorialBarContactLink,
       base.editorialBarContactLink ?? 'phone'
@@ -2077,6 +2203,10 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
       base.editorialBarMailContact,
       patch.editorialBarMailContact,
       DEFAULT_EDITORIAL_BAR_MAIL_CONTACT
+    ),
+    editorialBarButtonInk: normalizePortfolioNavEditorialBarButtonInk(
+      patch.editorialBarButtonInk,
+      base.editorialBarButtonInk ?? 'principal'
     ),
     splitNavLeftSectionKeys:
       patch.splitNavLeftSectionKeys !== undefined
@@ -2330,6 +2460,30 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
         }
         if (!('customExtraSide' in navPatch)) {
           navPatch.customExtraSide = sharedSide;
+        }
+        // logo-left-nav-contact: icon before label (distinct from editorial-bar default).
+        if (
+          navPatch.navLayoutDesign === 'logo-left-nav-contact' &&
+          !('contactButtonIconPosition' in stored.navigation)
+        ) {
+          navPatch.contactButtonIconPosition = 'left';
+        }
+        if (navPatch.navLayoutDesign === 'editorial-bar') {
+          const buttonInk = normalizePortfolioNavEditorialBarButtonInk(
+            navPatch.editorialBarButtonInk,
+            'principal'
+          );
+          const bindings = mergeNavColorBindings(
+            DEFAULT_NAV_COLOR_BINDINGS,
+            navPatch.navColorBindings
+          );
+          navPatch.editorialBarButtonInk = buttonInk;
+          navPatch.navColorBindings = {
+            ...bindings,
+            activeAccent: buttonInk,
+            contactText: buttonInk,
+            contactBorder: buttonInk,
+          };
         }
         return navPatch;
       })()

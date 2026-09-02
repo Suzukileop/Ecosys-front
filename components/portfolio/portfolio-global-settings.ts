@@ -273,6 +273,8 @@ export type PortfolioGlobalSettings = {
   paletteLight: PortfolioHeroPalette;
   /** Owner-only: Ctrl+, (⌘,) opens portfolio settings. */
   settingsShortcutEnabled: boolean;
+  /** When true, show a sun/moon control in the navigation bar to flip Global color mode. */
+  showColorModeToggleInNav: boolean;
   titleAlignment: PortfolioGlobalTitleAlignment;
   titleOrientation: PortfolioGlobalTitleOrientation;
   titleOrientationTargets: PortfolioGlobalTitleOrientationTargets;
@@ -666,6 +668,7 @@ export const DEFAULT_GLOBAL_SETTINGS: PortfolioGlobalSettings = {
   paletteDark: { ...DEFAULT_HERO_PALETTE },
   paletteLight: { ...LIGHT_HERO_PALETTE },
   settingsShortcutEnabled: true,
+  showColorModeToggleInNav: false,
   titleAlignment: 'section',
   titleOrientation: 'horizontal',
   titleOrientationTargets: { ...DEFAULT_GLOBAL_TITLE_ORIENTATION_TARGETS },
@@ -2797,6 +2800,10 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
       typeof record.settingsShortcutEnabled === 'boolean'
         ? record.settingsShortcutEnabled
         : base.settingsShortcutEnabled ?? true,
+    showColorModeToggleInNav:
+      typeof record.showColorModeToggleInNav === 'boolean'
+        ? record.showColorModeToggleInNav
+        : base.showColorModeToggleInNav ?? false,
     titleAlignment:
       titleAlignment === 'section' ||
       titleAlignment === 'left' ||
