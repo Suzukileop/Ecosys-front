@@ -301,8 +301,6 @@ export interface ProfileMediaBlock {
   mediaType?: 'IMAGE' | 'VIDEO' | null;
   /** Date range, e.g. 2021 — present */
   period?: string | null;
-  /** Skill / topic tags shown as pills on experience blocks. */
-  subtitles?: string[];
   /** Ongoing vs finished role/project. */
   status?: ExperienceBlockStatus | null;
   /** Bullet list of responsibilities / tasks. */
@@ -311,8 +309,6 @@ export interface ProfileMediaBlock {
   tools?: Array<string | { name?: string; value?: string; iconUrl?: string | null }>;
   /** Proof links (GitHub, Facebook, case study, etc.). */
   links?: ExperienceProofLink[];
-  /** Short remark / caveat. */
-  remarks?: string | null;
   /** City or remote. */
   location?: string | null;
   /** Employment / engagement type. */

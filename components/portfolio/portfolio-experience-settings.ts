@@ -45,14 +45,20 @@ import {
   type PortfolioListMarkerWeight,
 } from '@/components/portfolio/portfolio-list-marker';
 
-export type PortfolioExperienceDesign =
-  | 'timeline'
-  | 'timeline-accent'
-  | 'timeline-editorial'
-  | 'timeline-stepped'
-  | 'stacked'
-  | 'compact'
-  | 'large';
+export type PortfolioExperienceDesign = 'editorial' | 'milestone';
+
+/** Legacy design ids persisted in older portfolios — coerced to `editorial` on merge. */
+export const REMOVED_EXPERIENCE_DESIGNS = [
+  'timeline',
+  'timeline-accent',
+  'timeline-editorial',
+  'timeline-stepped',
+  'stacked',
+  'compact',
+  'large',
+] as const;
+
+export type RemovedPortfolioExperienceDesign = (typeof REMOVED_EXPERIENCE_DESIGNS)[number];
 
 export type PortfolioExperienceTitlePreset =
   | 'experience'
@@ -114,6 +120,15 @@ export type PortfolioExperienceStatusBadgeStyle =
   | 'accent'
   | 'square'
   | 'dot';
+
+/** Where the Ongoing / Finished status appears on editorial entries. */
+export type PortfolioExperienceStatusPlacement = 'inline' | 'rail-right';
+
+/** Left-column period / timeline chrome on editorial entries. */
+export type PortfolioExperiencePeriodDesign = 'plain' | 'rail' | 'rail-accent' | 'badge' | 'rule';
+
+/** Editorial: accordion (one open) or every entry expanded with no toggle. */
+export type PortfolioExperienceEntryExpandMode = 'accordion' | 'all-open';
 
 export type PortfolioExperienceItemDensity = 'comfortable' | 'compact';
 
@@ -294,9 +309,6 @@ export function mergeExperienceToolsChrome(
   };
 }
 
-/** Visual style for skill tags inside an experience entry. */
-export type PortfolioExperienceSkillsTagStyle = 'soft' | 'pill' | 'outline' | 'plain';
-
 /** Visual style for proof / portfolio links inside an experience entry. */
 export type PortfolioExperienceProofLinkStyle =
   | 'pill'
@@ -333,8 +345,6 @@ export type PortfolioExperienceStyleTarget =
   | 'blockLabel'
   | 'tasks'
   | 'proof'
-  | 'note'
-  | 'skills'
   | 'tools';
 
 export type PortfolioExperienceElementStyles = Record<
@@ -353,9 +363,7 @@ export type PortfolioExperienceElementId =
   | 'description'
   | 'tasks'
   | 'tools'
-  | 'proof'
-  | 'note'
-  | 'skills';
+  | 'proof';
 
 /** Per-element assignment to the story card or details card. */
 export type PortfolioExperienceElementZones = Record<
@@ -367,8 +375,6 @@ export type PortfolioExperienceElementZones = Record<
 export type PortfolioExperienceBlockLabelId =
   | 'tasks'
   | 'proof'
-  | 'note'
-  | 'skills'
   | 'tools';
 
 export type PortfolioExperienceBlockLabelVisibility = Record<
@@ -379,16 +385,12 @@ export type PortfolioExperienceBlockLabelVisibility = Record<
 export const DEFAULT_EXPERIENCE_BLOCK_LABEL_VISIBILITY: PortfolioExperienceBlockLabelVisibility = {
   tasks: true,
   proof: true,
-  note: true,
-  skills: true,
   tools: true,
 };
 
 export const EXPERIENCE_BLOCK_LABEL_IDS: PortfolioExperienceBlockLabelId[] = [
   'tasks',
   'proof',
-  'note',
-  'skills',
   'tools',
 ];
 
@@ -437,7 +439,7 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   storyContentGap: PortfolioExperienceStoryContentGap;
   /** Manual px when storyContentGap is `custom`. */
   storyContentGapPx: number;
-  /** Vertical gap between tasks / proof / note / skills / tools in the details column. */
+  /** Vertical gap between tasks / proof / skills / tools in the details column. */
   detailsContentGap: PortfolioExperienceStoryContentGap;
   /** Manual px when detailsContentGap is `custom`. */
   detailsContentGapPx: number;
@@ -499,8 +501,6 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   taskItemGap: PortfolioExperienceTaskItemGap;
   showTools: boolean;
   showProof: boolean;
-  showNote: boolean;
-  showSkills: boolean;
   asidePlacement: PortfolioExperienceAsidePlacement;
   /**
    * Large / bento: `aside` keeps Tasks + Proof in their own column;
@@ -533,15 +533,18 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   /** Custom block headings (empty = default English labels). */
   tasksLabel: string;
   proofLabel: string;
-  noteLabel: string;
-  skillsLabel: string;
   toolsLabel: string;
   showBlockLabels: boolean;
-  /** Per-block visibility for Tasks / Proof / Note / Skills / Tools headings (when showBlockLabels is on). */
+  /** Per-block visibility for Tasks / Proof / Tools headings (when showBlockLabels is on). */
   blockLabelVisibility: PortfolioExperienceBlockLabelVisibility;
-  skillsTagStyle: PortfolioExperienceSkillsTagStyle;
   /** Visual chrome for ONGOING / FINISHED status badges. */
   statusBadgeStyle: PortfolioExperienceStatusBadgeStyle;
+  /** Editorial: status pill beside the title, or vertical rail on the right. */
+  statusPlacement: PortfolioExperienceStatusPlacement;
+  /** Editorial: left-column period label style (plain text, timeline rail, badge, …). */
+  periodDesign: PortfolioExperiencePeriodDesign;
+  /** Editorial: accordion with + toggle, or all entries always expanded. */
+  entryExpandMode: PortfolioExperienceEntryExpandMode;
   /** Visual chrome for proof / portfolio links. */
   proofLinkStyle: PortfolioExperienceProofLinkStyle;
   /** Which column / layer renders the tools block. */
@@ -589,7 +592,10 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
 export type PortfolioExperienceSectionSettings = PortfolioSectionCopy & PortfolioExperiencePresentationSettings;
 
 export const DEFAULT_EXPERIENCE_TITLE_COLOR = '#0a0a0a';
+/** Readable title ink on dark section surfaces (editorial + dark theme). */
+export const DEFAULT_EXPERIENCE_TITLE_COLOR_DARK = '#F4F4F5';
 export const DEFAULT_EXPERIENCE_SUBTITLE_COLOR = '#737373';
+export const DEFAULT_EXPERIENCE_SUBTITLE_COLOR_DARK = '#A1A1AA';
 export const DEFAULT_EXPERIENCE_ACCENT_COLOR = '#ea580c';
 export const DEFAULT_EXPERIENCE_YEARS_COLOR = '#0a0a0a';
 export const DEFAULT_EXPERIENCE_YEARS_HIGHLIGHT_COLOR = '#0a0a0a';
@@ -599,8 +605,9 @@ export const DEFAULT_EXPERIENCE_ENTRY_BACKGROUND_COLOR = '#f5f5f5';
 export const DEFAULT_EXPERIENCE_CHIP_BACKGROUND_COLOR = '#ffffff';
 export const DEFAULT_EXPERIENCE_CHIP_BORDER_COLOR = '#e5e5e5';
 export const DEFAULT_EXPERIENCE_BODY_COLOR = '#525252';
+export const DEFAULT_EXPERIENCE_BODY_COLOR_DARK = '#D4D4D8';
 export const DEFAULT_EXPERIENCE_MUTED_COLOR = '#a3a3a3';
-export const DEFAULT_EXPERIENCE_NOTE_COLOR = '#737373';
+export const DEFAULT_EXPERIENCE_MUTED_COLOR_DARK = '#A1A1AA';
 
 export const DEFAULT_EXPERIENCE_TOOLS_CHROME: PortfolioExperienceToolsChromeSettings = {
   enabled: false,
@@ -626,60 +633,57 @@ function createExperienceTextStyle(
     uppercase: false,
     ...overrides,
     color,
-    colorDark: overrides.colorDark ?? color,
+    colorDark: overrides.colorDark ?? DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
   };
 }
 
 export const DEFAULT_EXPERIENCE_ELEMENT_STYLES: PortfolioExperienceElementStyles = {
   title: createExperienceTextStyle({
     color: DEFAULT_EXPERIENCE_TITLE_COLOR,
+    colorDark: DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
     font: 'serif',
     size: 'xl',
     bold: true,
   }),
   organization: createExperienceTextStyle({
     color: DEFAULT_EXPERIENCE_ACCENT_COLOR,
+    colorDark: DEFAULT_EXPERIENCE_ACCENT_COLOR,
     size: 'md',
     bold: true,
   }),
   meta: createExperienceTextStyle({
     color: DEFAULT_EXPERIENCE_BODY_COLOR,
+    colorDark: DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
     size: 'sm',
     bold: true,
     uppercase: true,
   }),
   description: createExperienceTextStyle({
     color: DEFAULT_EXPERIENCE_BODY_COLOR,
+    colorDark: DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
     size: 'md',
   }),
   blockLabel: createExperienceTextStyle({
     color: DEFAULT_EXPERIENCE_MUTED_COLOR,
+    colorDark: DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
     size: 'sm',
     bold: true,
     uppercase: true,
   }),
   tasks: createExperienceTextStyle({
     color: DEFAULT_EXPERIENCE_BODY_COLOR,
+    colorDark: DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
     size: 'md',
   }),
   proof: createExperienceTextStyle({
     color: '#404040',
-    size: 'sm',
-    bold: true,
-  }),
-  note: createExperienceTextStyle({
-    color: DEFAULT_EXPERIENCE_NOTE_COLOR,
-    font: 'serif',
-    size: 'md',
-    italic: true,
-  }),
-  skills: createExperienceTextStyle({
-    color: DEFAULT_EXPERIENCE_BODY_COLOR,
+    colorDark: DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
     size: 'sm',
     bold: true,
   }),
   tools: createExperienceTextStyle({
     color: '#404040',
+    colorDark: DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
     size: 'sm',
     bold: true,
   }),
@@ -693,8 +697,6 @@ export const EXPERIENCE_STYLE_TARGET_IDS: PortfolioExperienceStyleTarget[] = [
   'blockLabel',
   'tasks',
   'proof',
-  'note',
-  'skills',
   'tools',
 ];
 
@@ -706,8 +708,6 @@ export const EXPERIENCE_ELEMENT_IDS: PortfolioExperienceElementId[] = [
   'tools',
   'tasks',
   'proof',
-  'skills',
-  'note',
 ];
 
 export const EXPERIENCE_STORY_ELEMENT_IDS: PortfolioExperienceElementId[] = [
@@ -721,8 +721,6 @@ export const EXPERIENCE_DETAILS_ELEMENT_IDS: PortfolioExperienceElementId[] = [
   'tools',
   'tasks',
   'proof',
-  'skills',
-  'note',
 ];
 
 export const DEFAULT_EXPERIENCE_ELEMENT_ORDER: PortfolioExperienceElementId[] = [...EXPERIENCE_ELEMENT_IDS];
@@ -735,8 +733,6 @@ export const DEFAULT_EXPERIENCE_ELEMENT_ZONES: PortfolioExperienceElementZones =
   tasks: 'details',
   tools: 'details',
   proof: 'details',
-  note: 'details',
-  skills: 'details',
 };
 
 export const PORTFOLIO_EXPERIENCE_ELEMENT_OPTIONS: {
@@ -751,8 +747,6 @@ export const PORTFOLIO_EXPERIENCE_ELEMENT_OPTIONS: {
   { value: 'tasks', label: 'Tasks', zone: 'details' },
   { value: 'tools', label: 'Tools', zone: 'details' },
   { value: 'proof', label: 'Proof links', zone: 'details' },
-  { value: 'note', label: 'Note', zone: 'details' },
-  { value: 'skills', label: 'Skills tags', zone: 'details' },
 ];
 
 function createExperienceLayerFrame(
@@ -771,15 +765,15 @@ function createExperienceLayerFrame(
   };
 }
 
-const EXPERIENCE_DESIGNS = [
-  'timeline',
-  'timeline-accent',
-  'timeline-editorial',
-  'timeline-stepped',
-  'stacked',
-  'compact',
-  'large',
-] as const;
+const EXPERIENCE_DESIGNS = ['editorial', 'milestone'] as const satisfies readonly PortfolioExperienceDesign[];
+
+export function coerceExperienceDesign(value: unknown): PortfolioExperienceDesign {
+  if (typeof value === 'string' && (EXPERIENCE_DESIGNS as readonly string[]).includes(value)) {
+    return value as PortfolioExperienceDesign;
+  }
+  // Legacy / unknown ids (timeline, stacked, compact, large, …) → editorial
+  return 'editorial';
+}
 
 export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSettings = {
   ...DEFAULT_SECTION_BACKGROUND,
@@ -797,7 +791,7 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   sectionLayout: 'stacked',
   illustrationVariant: 'none',
   illustrationPlacement: 'right',
-  experienceDesign: 'timeline-editorial',
+  experienceDesign: 'editorial',
   listMaxWidth: 'full',
   listPlacement: 'left',
   itemsPerRow: 1,
@@ -853,8 +847,6 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   taskItemGap: 'md',
   showTools: true,
   showProof: true,
-  showNote: false,
-  showSkills: true,
   asidePlacement: 'right',
   bentoDetailsPlacement: 'aside',
   showEntryMedia: true,
@@ -873,13 +865,13 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   elementZones: DEFAULT_EXPERIENCE_ELEMENT_ZONES,
   tasksLabel: '',
   proofLabel: '',
-  noteLabel: '',
-  skillsLabel: '',
   toolsLabel: '',
   showBlockLabels: true,
   blockLabelVisibility: { ...DEFAULT_EXPERIENCE_BLOCK_LABEL_VISIBILITY },
-  skillsTagStyle: 'soft',
   statusBadgeStyle: 'pill',
+  statusPlacement: 'inline',
+  periodDesign: 'plain',
+  entryExpandMode: 'accordion',
   proofLinkStyle: 'pill',
   toolsZone: 'details',
   proofZone: 'details',
@@ -1053,42 +1045,16 @@ export const PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS: {
   description: string;
 }[] = [
   {
-    value: 'timeline-editorial',
-    label: 'Magazine',
+    value: 'editorial',
+    label: 'Editorial',
     description:
-      '3 equal columns on large screens — story, tech sheet, media — with optional details under the description.',
+      'Period left, story right — expand a role for responsibilities, tools, and proof. Serif title + soft Ongoing badge.',
   },
   {
-    value: 'large',
-    label: 'Bento',
-    description: 'Full-bleed showcase with oversized type and zones.',
-  },
-  {
-    value: 'timeline-accent',
-    label: 'Accent rail',
-    description: 'Bold timeline with a dual-column content panel.',
-  },
-  {
-    value: 'timeline',
-    label: 'Classic rail',
-    description: 'Clean vertical rail using the full section width.',
-  },
-  {
-    value: 'timeline-stepped',
-    label: 'Stepped cards',
+    value: 'milestone',
+    label: 'Milestone',
     description:
-      'Bandeau média panoramique en tête, puis texte à gauche et fiche technique à droite.',
-  },
-  {
-    value: 'stacked',
-    label: 'Panel cards',
-    description:
-      'Elevated panels and wide grids. Hover lift/shadow follow Global → Motion (Dynamique only).',
-  },
-  {
-    value: 'compact',
-    label: 'Dense rows',
-    description: 'Horizontal meta row + two-column body — high density.',
+      'Framer Continuum–style timeline — oversized years, connected rail, card blocks with numbered tasks.',
   },
 ];
 
@@ -1143,6 +1109,72 @@ export const PORTFOLIO_EXPERIENCE_TASK_ITEM_GAP_OPTIONS: {
   { value: 'md', label: 'Standard', description: 'Espacement équilibré entre les puces.' },
   { value: 'lg', label: 'Large', description: 'Plus d’air entre chaque tâche.' },
   { value: 'xl', label: 'Très large', description: 'Fort écart vertical entre les tâches.' },
+];
+
+export const PORTFOLIO_EXPERIENCE_STATUS_PLACEMENT_OPTIONS: {
+  value: PortfolioExperienceStatusPlacement;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'inline',
+    label: 'Beside title',
+    description: 'Status pill next to the role title (current).',
+  },
+  {
+    value: 'rail-right',
+    label: 'Right rail',
+    description: 'Quiet vertical status spanning the full entry height on the right.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_PERIOD_DESIGN_OPTIONS: {
+  value: PortfolioExperiencePeriodDesign;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'plain',
+    label: 'Plain text',
+    description: 'Simple year label on the left (current).',
+  },
+  {
+    value: 'rail',
+    label: 'Timeline rail',
+    description: 'Vertical line with hollow nodes linking each entry.',
+  },
+  {
+    value: 'rail-accent',
+    label: 'Accent rail',
+    description: 'Vertical line with filled accent dots on each entry.',
+  },
+  {
+    value: 'badge',
+    label: 'Accent badge',
+    description: 'Small uppercase accent label for the period.',
+  },
+  {
+    value: 'rule',
+    label: 'Hairline rule',
+    description: 'Period with a subtle horizontal rule beneath.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_ENTRY_EXPAND_MODE_OPTIONS: {
+  value: PortfolioExperienceEntryExpandMode;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'accordion',
+    label: 'Accordion',
+    description: 'One entry open at a time — click + to expand or collapse.',
+  },
+  {
+    value: 'all-open',
+    label: 'All open',
+    description: 'Every entry expanded — no accordion button.',
+  },
 ];
 
 export const PORTFOLIO_EXPERIENCE_STATUS_BADGE_STYLE_OPTIONS: {
@@ -1216,7 +1248,7 @@ export const PORTFOLIO_EXPERIENCE_STORY_CONTENT_GAP_OPTIONS: {
   { value: 'xl', label: 'Extra large', description: '32px — editorial breathing room.' },
 ];
 
-/** Same presets as story — gap between details blocks (tasks, note, skills, tools…). */
+/** Same presets as story — gap between details blocks (tasks, skills, tools…). */
 export const PORTFOLIO_EXPERIENCE_DETAILS_CONTENT_GAP_OPTIONS: {
   value: Exclude<PortfolioExperienceStoryContentGap, 'custom'>;
   label: string;
@@ -1460,6 +1492,27 @@ export function ensureExperiencePeriodRuleContrast(ruleHex: string, surfaceHex: 
   const surfaceLum = experiencePeriodRuleLuminance(surfaceHex);
   if (Math.abs(ruleLum - surfaceLum) >= 0.16) return ruleHex;
   return surfaceLum > 0.55 ? '#a3a3a3' : '#e5e5e5';
+}
+
+/**
+ * Rescue entry ink that still carries light-theme hex on a dark surface
+ * (common when Global title chrome is light but section `titleColor` stayed near-black).
+ */
+export function ensureExperienceInkContrast(
+  candidate: string | null | undefined,
+  isDark: boolean,
+  lightFallback: string,
+  darkFallback: string
+): string {
+  const fallback = isDark ? darkFallback : lightFallback;
+  const raw = typeof candidate === 'string' ? candidate.trim() : '';
+  if (!raw) return fallback;
+  // rgba()/hsl() — trust the author; only rescue solid hex that fights the surface.
+  if (!raw.startsWith('#')) return raw;
+  const lum = experiencePeriodRuleLuminance(raw);
+  if (isDark && lum < 0.38) return darkFallback;
+  if (!isDark && lum > 0.72) return lightFallback;
+  return raw;
 }
 
 /**
@@ -2110,33 +2163,6 @@ export const PORTFOLIO_EXPERIENCE_TOOLS_CHROME_PADDING_OPTIONS: {
   { value: 'lg', label: 'Comfortable', description: '36px inner padding.' },
 ];
 
-export const PORTFOLIO_EXPERIENCE_SKILLS_TAG_STYLE_OPTIONS: {
-  value: PortfolioExperienceSkillsTagStyle;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'soft',
-    label: 'Soft chips',
-    description: 'Muted gray pills — current default.',
-  },
-  {
-    value: 'pill',
-    label: 'Accent pills',
-    description: 'White pills with a small accent mark.',
-  },
-  {
-    value: 'outline',
-    label: 'Outlined',
-    description: 'Bordered white chips, similar to tool labels.',
-  },
-  {
-    value: 'plain',
-    label: 'Plain text',
-    description: 'Minimal text tags without chrome.',
-  },
-];
-
 export const PORTFOLIO_EXPERIENCE_PROOF_LINK_STYLE_OPTIONS: {
   value: PortfolioExperienceProofLinkStyle;
   label: string;
@@ -2194,11 +2220,9 @@ export const PORTFOLIO_EXPERIENCE_STYLE_TARGET_OPTIONS: {
   { value: 'organization', label: 'Organization', description: 'Company or freelance label.' },
   { value: 'meta', label: 'Meta chips', description: 'Status, employment, location.' },
   { value: 'description', label: 'Description', description: 'Role summary paragraph.' },
-  { value: 'blockLabel', label: 'Block labels', description: 'TASKS, PROOF, NOTE, SKILLS, TOOLS headings.' },
+  { value: 'blockLabel', label: 'Block labels', description: 'TASKS, PROOF, TOOLS headings.' },
   { value: 'tasks', label: 'Tasks', description: 'Bullet list items.' },
   { value: 'proof', label: 'Proof links', description: 'Proof pill labels.' },
-  { value: 'note', label: 'Note', description: 'Remarks / italic note.' },
-  { value: 'skills', label: 'Skills tags', description: 'Skill tag text.' },
   { value: 'tools', label: 'Tools text', description: 'Tool chip labels (when shown).' },
 ];
 
@@ -2273,8 +2297,6 @@ export function normalizeExperienceElementStyles(raw: unknown): PortfolioExperie
     blockLabel: { ...DEFAULT_EXPERIENCE_ELEMENT_STYLES.blockLabel },
     tasks: { ...DEFAULT_EXPERIENCE_ELEMENT_STYLES.tasks },
     proof: { ...DEFAULT_EXPERIENCE_ELEMENT_STYLES.proof },
-    note: { ...DEFAULT_EXPERIENCE_ELEMENT_STYLES.note },
-    skills: { ...DEFAULT_EXPERIENCE_ELEMENT_STYLES.skills },
     tools: { ...DEFAULT_EXPERIENCE_ELEMENT_STYLES.tools },
   };
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return next;
@@ -2354,9 +2376,40 @@ export function experienceTextStyleClass(
   return parts.join(' ');
 }
 
-export function experienceTextInlineStyle(style: PortfolioExperienceTextStyle): CSSProperties {
+/** Pick light or dark text color for experience element styles. */
+export function resolveExperienceTextColor(
+  style: PortfolioExperienceTextStyle,
+  mode: 'light' | 'dark' = 'light'
+): string {
+  if (mode === 'dark') {
+    const dark = (style.colorDark || '').trim();
+    // Prefer an explicit dark ink; if missing or identical to a near-black light color, use dark fallback.
+    if (dark && experiencePeriodRuleLuminance(dark) >= 0.38) {
+      return sanitizeHex(dark, DEFAULT_EXPERIENCE_BODY_COLOR_DARK);
+    }
+    const light = sanitizeHex(style.color, DEFAULT_EXPERIENCE_BODY_COLOR);
+    if (experiencePeriodRuleLuminance(light) >= 0.38) return light;
+    return DEFAULT_EXPERIENCE_BODY_COLOR_DARK;
+  }
+  return sanitizeHex(style.color, DEFAULT_EXPERIENCE_BODY_COLOR);
+}
+
+/**
+ * Prefer the live Global theme. Hero-painted `color` is still read in light mode;
+ * dark mode always consults `colorDark` / contrast rescue so near-black titles never sit on black.
+ */
+export function resolveExperienceColorMode(
+  p: Pick<PortfolioExperiencePresentationSettings, 'useHeroPalette' | 'activeColorMode'>
+): 'light' | 'dark' {
+  return p.activeColorMode !== 'light' ? 'dark' : 'light';
+}
+
+export function experienceTextInlineStyle(
+  style: PortfolioExperienceTextStyle,
+  mode: 'light' | 'dark' = 'light'
+): CSSProperties {
   return {
-    color: sanitizeHex(style.color, DEFAULT_EXPERIENCE_BODY_COLOR),
+    color: resolveExperienceTextColor(style, mode),
     ...experienceHeaderFontStyle(style.font),
   };
 }
@@ -2512,14 +2565,14 @@ export function experienceToolsChromeStyle(
   return Object.keys(style).length > 0 ? style : undefined;
 }
 
-/** Card-style designs that can sit in a multi-column grid. */
-export function experienceDesignSupportsItemsPerRow(design: PortfolioExperienceDesign): boolean {
-  return design === 'stacked' || design === 'timeline-stepped' || design === 'large';
+/** Editorial is a single-column list — never a multi-column card grid. */
+export function experienceDesignSupportsItemsPerRow(_design: PortfolioExperienceDesign): boolean {
+  return false;
 }
 
-/** Designs that already use an entry card shell by default. */
-export function experienceDesignUsesEntryCard(design: PortfolioExperienceDesign): boolean {
-  return design === 'stacked' || design === 'large' || design === 'timeline-stepped';
+/** Editorial entries are bare period/story rows, not card shells. */
+export function experienceDesignUsesEntryCard(_design: PortfolioExperienceDesign): boolean {
+  return false;
 }
 
 export function normalizeExperienceElementZones(raw: unknown): PortfolioExperienceElementZones {
@@ -2851,8 +2904,14 @@ export function experienceAccentColor(accent: string): string {
   return sanitizeHex(accent, DEFAULT_EXPERIENCE_ACCENT_COLOR);
 }
 
+/** Editorial hides the sticky section title and uses the years line as the lead. */
+export function experienceDesignUsesFlatHeader(design: PortfolioExperienceDesign): boolean {
+  return design === 'editorial';
+}
+
+/** Editorial uses a period gutter, not a timeline rail. */
 export function isExperienceTimelineDesign(design: PortfolioExperienceDesign): boolean {
-  return design === 'timeline' || design.startsWith('timeline-');
+  return design === 'milestone';
 }
 
 export function resolveExperienceYearsTemplate(
@@ -2874,23 +2933,43 @@ export function resolveExperienceYearsTemplate(
 export function experienceYearsClass(
   settings: Pick<
     PortfolioExperiencePresentationSettings,
-    'yearsFont' | 'yearsSize' | 'yearsItalic' | 'yearsAlignment'
+    'yearsFont' | 'yearsSize' | 'yearsItalic' | 'yearsAlignment' | 'experienceDesign'
   >
 ): string {
-  const parts = ['mb-10 max-w-2xl leading-relaxed', experienceHeaderFontClass(settings.yearsFont, 'title')];
+  const isEditorial = settings.experienceDesign === 'editorial';
+  const parts = [
+    isEditorial
+      ? 'relative mb-0 max-w-none bg-transparent leading-[1.15] font-semibold tracking-[-0.035em] whitespace-nowrap'
+      : 'mb-10 max-w-2xl leading-relaxed',
+  ];
 
-  switch (settings.yearsSize) {
-    case 'sm':
-      parts.push('text-base sm:text-lg');
-      break;
-    case 'lg':
-      parts.push('text-xl sm:text-2xl lg:text-3xl');
-      break;
-    case 'xl':
-      parts.push('text-2xl sm:text-3xl lg:text-4xl');
-      break;
-    default:
-      parts.push('text-lg sm:text-xl lg:text-2xl');
+  if (isEditorial) {
+    switch (settings.yearsFont) {
+      case 'serif':
+        parts.push('font-serif');
+        break;
+      case 'display':
+        parts.push('uppercase tracking-[0.06em]');
+        break;
+      default:
+        break;
+    }
+    parts.push('text-3xl sm:text-4xl lg:text-5xl xl:text-6xl');
+  } else {
+    parts.push(experienceHeaderFontClass(settings.yearsFont, 'title'));
+    switch (settings.yearsSize) {
+      case 'sm':
+        parts.push('text-base sm:text-lg');
+        break;
+      case 'lg':
+        parts.push('text-xl sm:text-2xl lg:text-3xl');
+        break;
+      case 'xl':
+        parts.push('text-2xl sm:text-3xl lg:text-4xl');
+        break;
+      default:
+        parts.push('text-lg sm:text-xl lg:text-2xl');
+    }
   }
 
   if (settings.yearsItalic) parts.push('italic');
@@ -2906,42 +2985,44 @@ export function experienceYearsClass(
       parts.push('text-left');
   }
 
-  return parts.join(' ');
+  return parts.filter(Boolean).join(' ');
 }
 
 export function experienceYearsStyle(
-  settings: Pick<PortfolioExperiencePresentationSettings, 'yearsColor' | 'yearsFont'>
+  settings: Pick<PortfolioExperiencePresentationSettings, 'yearsColor' | 'yearsFont' | 'activeColorMode'>
 ): CSSProperties {
+  const isDark = settings.activeColorMode !== 'light';
   return {
-    color: sanitizeHex(settings.yearsColor, DEFAULT_EXPERIENCE_YEARS_COLOR),
+    color: ensureExperienceInkContrast(
+      settings.yearsColor,
+      isDark,
+      DEFAULT_EXPERIENCE_YEARS_COLOR,
+      DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    ),
     ...experienceHeaderFontStyle(settings.yearsFont),
   };
 }
 
 export function experienceYearsHighlightStyle(
-  settings: Pick<PortfolioExperiencePresentationSettings, 'yearsHighlightColor' | 'yearsFont'>
+  settings: Pick<
+    PortfolioExperiencePresentationSettings,
+    'yearsHighlightColor' | 'yearsFont' | 'activeColorMode'
+  >
 ): CSSProperties {
+  const isDark = settings.activeColorMode !== 'light';
   return {
-    color: sanitizeHex(settings.yearsHighlightColor, DEFAULT_EXPERIENCE_YEARS_HIGHLIGHT_COLOR),
+    color: ensureExperienceInkContrast(
+      settings.yearsHighlightColor,
+      isDark,
+      DEFAULT_EXPERIENCE_YEARS_HIGHLIGHT_COLOR,
+      DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    ),
     ...experienceHeaderFontStyle(settings.yearsFont),
   };
 }
 
-export function experienceBlockClass(design: PortfolioExperienceDesign): string {
-  switch (design) {
-    case 'stacked':
-      // Hover lift/shadow come from PortfolioMotionItem + Global motion (Dynamique).
-      // Do not hardcode Tailwind hover here — it ignored Motion = None.
-      return '';
-    case 'compact':
-      return 'border-b border-neutral-200/70 py-7 last:border-b-0 last:pb-0 first:pt-0';
-    case 'large':
-      return '';
-    case 'timeline-stepped':
-      return '';
-    default:
-      return '';
-  }
+export function experienceBlockClass(_design: PortfolioExperienceDesign): string {
+  return '';
 }
 
 function experienceCardBorderWidthClass(border: PortfolioServicesCardBorder): string {
@@ -3107,10 +3188,10 @@ function mergeExperienceLayerFrame(
 export function experienceEntryShellUsesFrame(
   p: Pick<PortfolioExperiencePresentationSettings, 'experienceDesign' | 'entryFrame'>
 ): boolean {
-  const design = p.experienceDesign;
-  if (design === 'compact' && !p.entryFrame.enabled) return false;
+  // Editorial / Milestone are always flush — card chrome lives inside the design components.
+  if (p.experienceDesign === 'editorial' || p.experienceDesign === 'milestone') return false;
   if (p.entryFrame.enabled) return true;
-  return experienceDesignUsesEntryCard(design) || design === 'large';
+  return experienceDesignUsesEntryCard(p.experienceDesign);
 }
 
 export function experienceEntryShellClass(
@@ -3212,18 +3293,12 @@ export function experienceTaskItemGapClass(gap: PortfolioExperienceTaskItemGap):
 }
 
 export function resolveExperienceBodyLayout(
-  p: Pick<PortfolioExperiencePresentationSettings, 'asidePlacement' | 'experienceDesign'>,
-  inMultiColumn: boolean
+  _p: Pick<PortfolioExperiencePresentationSettings, 'asidePlacement' | 'experienceDesign'>,
+  _inMultiColumn: boolean
 ): 'stack' | 'split' | 'bento' | 'compact' | 'magazine' | 'stepped' {
-  const design = p.experienceDesign;
-  if (design === 'compact') return 'compact';
-  if (design === 'large' && !inMultiColumn) return 'bento';
-  if (design === 'timeline-editorial' && !inMultiColumn) return 'magazine';
-  if (design === 'timeline-stepped' && !inMultiColumn) return 'stepped';
-  if (inMultiColumn || p.asidePlacement === 'stacked' || p.asidePlacement === 'inline') {
-    return 'stack';
-  }
-  return 'split';
+  // Editorial renders its own period/story layout — stack is the safe default
+  // for any leftover shared body helpers.
+  return 'stack';
 }
 
 export function experienceListMaxWidthClass(width: PortfolioExperienceListMaxWidth): string {
@@ -3367,6 +3442,19 @@ export function mergeExperiencePresentation(
     record.detailsSecondaryFrame
   );
 
+  const experienceDesign = coerceExperienceDesign(
+    typeof record.experienceDesign === 'string' ? record.experienceDesign : base.experienceDesign
+  );
+
+  // Editorial / Milestone are bare rows — strip legacy card/frame chrome permanently.
+  const editorialFramesOff = experienceDesign === 'editorial' || experienceDesign === 'milestone';
+  const resolvedEntryFrame = editorialFramesOff ? { ...entryFrame, enabled: false } : entryFrame;
+  const resolvedStoryFrame = editorialFramesOff ? { ...storyFrame, enabled: false } : storyFrame;
+  const resolvedDetailsFrame = editorialFramesOff ? { ...detailsFrame, enabled: false } : detailsFrame;
+  const resolvedDetailsSecondaryFrame = editorialFramesOff
+    ? { ...detailsSecondaryFrame, enabled: false }
+    : detailsSecondaryFrame;
+
   const merged: PortfolioExperiencePresentationSettings = {
     ...background,
     titlePreset: pick(
@@ -3402,7 +3490,7 @@ export function mergeExperiencePresentation(
       EXPERIENCE_ILLUSTRATION_PLACEMENTS,
       base.illustrationPlacement ?? 'right'
     ),
-    experienceDesign: pick(record.experienceDesign, EXPERIENCE_DESIGNS, base.experienceDesign),
+    experienceDesign,
     listMaxWidth: pick(record.listMaxWidth, ['narrow', 'default', 'wide', 'full'], base.listMaxWidth),
     listPlacement: pick(record.listPlacement, ['left', 'center', 'right'], base.listPlacement),
     itemsPerRow: (() => {
@@ -3530,8 +3618,6 @@ export function mergeExperiencePresentation(
     taskItemGap: pick(record.taskItemGap, ['sm', 'md', 'lg', 'xl'], base.taskItemGap ?? 'md'),
     showTools: typeof record.showTools === 'boolean' ? record.showTools : base.showTools,
     showProof: typeof record.showProof === 'boolean' ? record.showProof : base.showProof,
-    showNote: typeof record.showNote === 'boolean' ? record.showNote : base.showNote,
-    showSkills: typeof record.showSkills === 'boolean' ? record.showSkills : base.showSkills,
     asidePlacement,
     bentoDetailsPlacement: pick(
       record.bentoDetailsPlacement,
@@ -3630,8 +3716,6 @@ export function mergeExperiencePresentation(
     })(),
     tasksLabel: typeof record.tasksLabel === 'string' ? record.tasksLabel : base.tasksLabel,
     proofLabel: typeof record.proofLabel === 'string' ? record.proofLabel : base.proofLabel,
-    noteLabel: typeof record.noteLabel === 'string' ? record.noteLabel : base.noteLabel,
-    skillsLabel: typeof record.skillsLabel === 'string' ? record.skillsLabel : base.skillsLabel,
     toolsLabel: typeof record.toolsLabel === 'string' ? record.toolsLabel : base.toolsLabel,
     showBlockLabels:
       typeof record.showBlockLabels === 'boolean' ? record.showBlockLabels : base.showBlockLabels,
@@ -3639,15 +3723,25 @@ export function mergeExperiencePresentation(
       record.blockLabelVisibility,
       base.blockLabelVisibility ?? DEFAULT_EXPERIENCE_BLOCK_LABEL_VISIBILITY
     ),
-    skillsTagStyle: pick(
-      record.skillsTagStyle,
-      ['soft', 'pill', 'outline', 'plain'],
-      base.skillsTagStyle
-    ),
     statusBadgeStyle: pick(
       record.statusBadgeStyle,
       ['pill', 'soft', 'outline', 'plain', 'accent', 'square', 'dot'],
       base.statusBadgeStyle ?? 'pill'
+    ),
+    statusPlacement: pick(
+      record.statusPlacement,
+      ['inline', 'rail-right'],
+      base.statusPlacement ?? 'inline'
+    ),
+    periodDesign: pick(
+      record.periodDesign,
+      ['plain', 'rail', 'rail-accent', 'badge', 'rule'],
+      base.periodDesign ?? 'plain'
+    ),
+    entryExpandMode: pick(
+      record.entryExpandMode,
+      ['accordion', 'all-open'],
+      base.entryExpandMode ?? 'accordion'
     ),
     proofLinkStyle: pick(
       record.proofLinkStyle,
@@ -3703,10 +3797,10 @@ export function mergeExperiencePresentation(
       record.experienceColorBindings
     ),
     elementStyles: normalizeExperienceElementStyles(record.elementStyles ?? base.elementStyles),
-    entryFrame,
-    storyFrame,
-    detailsFrame,
-    detailsSecondaryFrame,
+    entryFrame: resolvedEntryFrame,
+    storyFrame: resolvedStoryFrame,
+    detailsFrame: resolvedDetailsFrame,
+    detailsSecondaryFrame: resolvedDetailsSecondaryFrame,
   };
 
   if (merged.useHeroPalette === false) {

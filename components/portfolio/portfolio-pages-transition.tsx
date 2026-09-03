@@ -24,7 +24,7 @@ export function PortfolioPagesSlideViewport({
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={pageId}
-          className="absolute inset-0 min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain"
+          className="absolute inset-0 min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain [scrollbar-gutter:stable]"
           initial={reduceMotion ? false : { opacity: 0, x: enterX }}
           animate={{ opacity: 1, x: 0 }}
           exit={reduceMotion ? undefined : { opacity: 0, x: exitX }}

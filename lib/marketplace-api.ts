@@ -792,9 +792,6 @@ function mapProfileMediaBlock(raw: RawRecord, index: number): import('@/types/ec
     mediaUrl,
     mediaType: mediaUrl ? (mediaType as 'IMAGE' | 'VIDEO' | null) : null,
     period: raw.period != null ? String(raw.period).trim() || null : null,
-    subtitles: Array.isArray(raw.subtitles)
-      ? raw.subtitles.map((item) => String(item).trim()).filter(Boolean)
-      : [],
     status,
     tasks: Array.isArray(raw.tasks)
       ? raw.tasks.map((item) => String(item).trim()).filter(Boolean)
@@ -819,7 +816,6 @@ function mapProfileMediaBlock(raw: RawRecord, index: number): import('@/types/ec
           .filter((item): item is { name: string; iconUrl: string | null } => item != null)
       : [],
     links,
-    remarks: raw.remarks != null ? String(raw.remarks).trim() || null : null,
     location: raw.location != null ? String(raw.location).trim() || null : null,
     employmentType,
   };

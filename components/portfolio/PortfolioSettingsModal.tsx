@@ -6665,7 +6665,7 @@ function SectionPanel({
       <ExperienceSettingsPanel
         experience={settings.experience}
         onChange={(patch) => onChange('experience', patch)}
-        subSection={panelSubSections.experience ?? 'general'}
+        subSection={panelSubSections.experience ?? 'design'}
         onSubSectionChange={(value) => onPanelSubSectionChange('experience', value)}
       />
     );

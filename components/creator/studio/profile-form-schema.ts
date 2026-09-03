@@ -462,12 +462,10 @@ export const profileMediaBlockSchema = z
     title: z.string().max(200).optional().or(z.literal('')),
     organization: z.string().max(120).optional().or(z.literal('')),
     period: z.string().max(80).optional().or(z.literal('')),
-    subtitles: z.array(subtitleItemSchema).max(10),
     status: experienceStatusEnum.nullable().optional(),
     tasks: z.array(taskItemSchema).max(12),
     tools: z.array(strengthItemSchema).max(8),
     links: z.array(experienceProofLinkSchema).max(5),
-    remarks: z.string().max(500).optional().or(z.literal('')),
     location: z.string().max(120).optional().or(z.literal('')),
     employmentType: experienceEmploymentTypeEnum.nullable().optional(),
   })
@@ -478,9 +476,7 @@ export const profileMediaBlockSchema = z
       Boolean(data.title?.trim()) ||
       Boolean(data.organization?.trim()) ||
       Boolean(data.period?.trim()) ||
-      Boolean(data.remarks?.trim()) ||
       Boolean(data.location?.trim()) ||
-      (data.subtitles?.some((item) => item.value.trim()) ?? false) ||
       (data.tasks?.some((item) => item.value.trim()) ?? false) ||
       (data.tools?.some((item) => item.value.trim() || item.description?.trim()) ?? false) ||
       (data.links?.some((item) => item.url.trim() || item.label.trim()) ?? false) ||
@@ -734,12 +730,10 @@ export function createEmptyProfileBlock(sortOrder: number): ProfileMediaBlockFor
     title: '',
     organization: '',
     period: '',
-    subtitles: [],
     status: null,
     tasks: [],
     tools: [],
     links: [],
-    remarks: '',
     location: '',
     employmentType: null,
   };
@@ -1348,6 +1342,11 @@ export function parseProfileBlocks(raw: unknown): ProfileMediaBlockForm[] {
       employmentRaw === 'INTERNSHIP'
         ? employmentRaw
         : null;
+    // Legacy: first subtitle was sometimes used as the period when period was empty.
+    const periodRaw = block.period != null ? String(block.period) : '';
+    const legacySubtitles = parseSubtitleItems(block.subtitles);
+    const period =
+      periodRaw.trim() || legacySubtitles[0]?.value?.trim() || '';
     blocks.push({
       id: block.id != null ? String(block.id) : crypto.randomUUID(),
       sortOrder: typeof block.sortOrder === 'number' ? block.sortOrder : index,
@@ -1356,15 +1355,13 @@ export function parseProfileBlocks(raw: unknown): ProfileMediaBlockForm[] {
       text: block.text != null ? String(block.text) : '',
       mediaUrl,
       mediaType: mediaUrl ? mediaType ?? inferProfileMediaType(mediaUrl) : null,
-      period: block.period != null ? String(block.period) : '',
-      subtitles: parseSubtitleItems(block.subtitles),
+      period,
       status,
       tasks: parseSubtitleItems(block.tasks).map((item) => ({
         value: item.value.slice(0, 300),
       })),
       tools: parseStrengthsTools(block.tools).slice(0, 8),
       links: parseExperienceProofLinks(block.links),
-      remarks: block.remarks != null ? String(block.remarks) : '',
       location: block.location != null ? String(block.location) : '',
       employmentType,
     });
@@ -1410,12 +1407,6 @@ export function parseExperienceBlocks(raw: unknown): ProfileMediaBlockForm[] {
     let title = block.title?.trim() ?? '';
     const organization = block.organization?.trim() ?? '';
     let text = block.text?.trim() ?? '';
-    let subtitles = [...block.subtitles];
-
-    if (!period && subtitles[0]?.value?.trim()) {
-      period = subtitles[0].value.trim();
-      subtitles = subtitles.slice(1);
-    }
 
     if (!title && text.includes('\n')) {
       const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
@@ -1431,7 +1422,6 @@ export function parseExperienceBlocks(raw: unknown): ProfileMediaBlockForm[] {
       title,
       organization,
       text,
-      subtitles,
     };
   });
 }
@@ -1515,7 +1505,6 @@ export function serializeProfileBlocks(
       const title = block.title?.trim() || null;
       const organization = block.organization?.trim() || null;
       const period = block.period?.trim() || null;
-      const remarks = block.remarks?.trim() || null;
       const location = block.location?.trim() || null;
       return {
         id: block.id,
@@ -1526,7 +1515,6 @@ export function serializeProfileBlocks(
         mediaUrl,
         mediaType: mediaUrl ? block.mediaType ?? inferProfileMediaType(mediaUrl) : null,
         period,
-        subtitles: block.subtitles?.map((item) => item.value.trim()).filter(Boolean) ?? [],
         status: block.status ?? null,
         tasks: block.tasks?.map((item) => item.value.trim()).filter(Boolean) ?? [],
         tools:
@@ -1550,7 +1538,6 @@ export function serializeProfileBlocks(
               sortOrder: linkIndex,
             };
           }),
-        remarks,
         location,
         employmentType: block.employmentType ?? null,
       };

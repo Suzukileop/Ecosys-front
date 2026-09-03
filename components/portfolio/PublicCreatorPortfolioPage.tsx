@@ -46,12 +46,14 @@ import { writeHeroBannerDesignHint } from '@/components/portfolio/portfolio-hero
 import {
   DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN,
   normalizePortfolioHeroBannerDesign,
+  resolveHeroSpecialtyValue,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
 import { resolveHeroLayoutDivision } from '@/components/portfolio/portfolio-hero-layout-division';
 import {
   EditorialContactSection,
   EditorialExperienceList,
   EditorialExperienceYears,
+  MilestoneExperienceList,
   EditorialFaqList,
   EditorialGallerySection,
   EditorialPortfolioFooter,
@@ -267,6 +269,7 @@ import {
   pickExperiencePresentationSettings,
   resolveExperienceSectionSubtitle,
   resolveExperienceSectionTitle,
+  experienceDesignUsesFlatHeader,
   experienceHeaderFontClass,
   experienceHeaderFontStyle,
   experienceSubtitleColorStyle,
@@ -1153,6 +1156,9 @@ export function PublicCreatorPortfolioPage({
     () => resolveInfoSectionSubtitle(settings.info),
     [settings.info]
   );
+  const isAboutSplitInfo = infoPresentation.design === 'about-split';
+  const isAboutBannerInfo = infoPresentation.design === 'about-banner';
+  const isAboutHeroInfo = isAboutSplitInfo || isAboutBannerInfo;
   const toolsPresentation = useMemo(
     () => ({
       ...applyHeroPaletteToTools(pickToolsPresentationSettings(settings.tools), heroPalette),
@@ -2068,16 +2074,23 @@ export function PublicCreatorPortfolioPage({
             fitContent
             fillAvailableHeight={isPagesMode}
             suppressBackground={suppressSectionBackground(infoPresentation)}
-            topSpacingClass={sectionTopSpacingClass}
-            topSpacingStyle={sectionTopSpacingStyle}
-            bottomSpacingClass={sectionBottomSpacingClass}
-            bottomSpacingStyle={sectionBottomSpacingStyle}
+            topSpacingClass={
+              isAboutBannerInfo
+                ? 'pt-[calc(var(--portfolio-nav-top-clearance,5.5rem)+0.5rem)]'
+                : isAboutSplitInfo
+                  ? 'pt-[calc(var(--portfolio-nav-top-clearance,5.5rem)+1.25rem)]'
+                  : sectionTopSpacingClass
+            }
+            topSpacingStyle={isAboutHeroInfo ? undefined : sectionTopSpacingStyle}
+            bottomSpacingClass={isAboutHeroInfo ? 'pb-0' : sectionBottomSpacingClass}
+            bottomSpacingStyle={isAboutHeroInfo ? undefined : sectionBottomSpacingStyle}
             contentLayout={sectionContentLayout}
           >
             <EditorialAboutMeSection
               title={infoSectionTitle}
               subtitle={infoSectionSubtitle}
               bio={profile.bio}
+              specialty={resolveHeroSpecialtyValue(profile.specialite)}
               avatarUrl={profile.avatarUrl}
               fullName={profile.fullName}
               education={profile.aboutEducation}
@@ -2627,8 +2640,27 @@ export function PublicCreatorPortfolioPage({
       }
       case 'experience': {
         const layout = experiencePresentation.sectionLayout ?? 'stacked';
-        const aside = !isSplitMode && faqSectionLayoutIsAside(layout);
-        const headerBlock = (
+        const usesFlatExperienceHeader = experienceDesignUsesFlatHeader(
+          experiencePresentation.experienceDesign
+        );
+        const aside = !usesFlatExperienceHeader && !isSplitMode && faqSectionLayoutIsAside(layout);
+        const showExperienceYears =
+          settings.experience.showYears &&
+          profile.yearsOfExperience != null &&
+          profile.yearsOfExperience > 0;
+        const experienceYearsNode = showExperienceYears ? (
+          <EditorialExperienceYears
+            years={profile.yearsOfExperience!}
+            presentation={experiencePresentation}
+          />
+        ) : null;
+        // Editorial: years line is the real static section lead — no sticky title shell left behind.
+        // In split mode keep years in the content pane (left rail is for short section names).
+        const headerBlock = usesFlatExperienceHeader ? (
+          !isSplitMode && experienceYearsNode ? (
+            <div className="relative mb-12 w-full lg:mb-16">{experienceYearsNode}</div>
+          ) : null
+        ) : (
           <EditorialSectionStickyHeader
             title={experienceSectionTitle}
             subtitle={experienceSectionSubtitle || undefined}
@@ -2659,19 +2691,31 @@ export function PublicCreatorPortfolioPage({
             ink={experiencePresentation.titleColor}
             surface={experiencePresentation.entryFrame.cardBackgroundColor}
           >
-            {settings.experience.showYears &&
-            profile.yearsOfExperience != null &&
-            profile.yearsOfExperience > 0 ? (
-              <PortfolioMotionItem profile={motionProfile} index={0}>
-                <EditorialExperienceYears years={profile.yearsOfExperience} presentation={experiencePresentation} />
-              </PortfolioMotionItem>
+            {experienceYearsNode &&
+            (!usesFlatExperienceHeader || isSplitMode) ? (
+              usesFlatExperienceHeader ? (
+                experienceYearsNode
+              ) : (
+                <PortfolioMotionItem profile={motionProfile} index={0}>
+                  {experienceYearsNode}
+                </PortfolioMotionItem>
+              )
             ) : null}
-            <EditorialExperienceList
-              blocks={experienceBlocks}
-              presentation={experiencePresentation}
-              motionProfile={motionProfile}
-              forceSingleColumn={isSplitMode}
-            />
+            {experiencePresentation.experienceDesign === 'milestone' ? (
+              <MilestoneExperienceList
+                blocks={experienceBlocks}
+                presentation={experiencePresentation}
+                motionProfile={motionProfile}
+                forceSingleColumn={isSplitMode}
+              />
+            ) : (
+              <EditorialExperienceList
+                blocks={experienceBlocks}
+                presentation={experiencePresentation}
+                motionProfile={motionProfile}
+                forceSingleColumn={isSplitMode}
+              />
+            )}
           </SectionIllustratedContent>
         );
         return (
@@ -2686,9 +2730,9 @@ export function PublicCreatorPortfolioPage({
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
             contentLayout={sectionContentLayout}
-            header={aside ? undefined : headerBlock}
+            header={aside || !headerBlock ? undefined : headerBlock}
           >
-            {aside ? (
+            {aside && headerBlock ? (
               <SectionAsideContent layout={layout} header={headerBlock}>
                 {contentBlock}
               </SectionAsideContent>

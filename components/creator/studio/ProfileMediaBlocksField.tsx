@@ -89,10 +89,6 @@ function ProfileMediaBlockRow({
   const status = watch(`${name}.${index}.status`);
   const { errors } = useFormState({ control });
   const blockLinkErrors = errors.experienceBlocks?.[index]?.links;
-  const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
-    control,
-    name: `${name}.${index}.subtitles`,
-  });
   const { fields: taskFields, append: appendTask, remove: removeTask } = useFieldArray({
     control,
     name: `${name}.${index}.tasks`,
@@ -389,60 +385,6 @@ function ProfileMediaBlockRow({
                         </p>
                       ) : null}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <BlockFieldLabel>Remarks</BlockFieldLabel>
-            <textarea
-              rows={2}
-              readOnly={readOnly}
-              placeholder="Optional note — NDAs, confidential client, still shipping…"
-              className={`${profileFormInputClass} mt-0 ${readOnlyClass}`}
-              {...register(`${name}.${index}.remarks`)}
-            />
-          </div>
-
-          <div>
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <BlockFieldLabel>Tags</BlockFieldLabel>
-              {!readOnly && (
-                <button
-                  type="button"
-                  disabled={tagFields.length >= 10}
-                  onClick={() => appendTag({ value: '' })}
-                  className="text-sm font-semibold text-orange-600 hover:text-orange-700 disabled:opacity-40 dark:text-orange-400"
-                >
-                  + Add tag
-                </button>
-              )}
-            </div>
-            {tagFields.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-neutral-200 px-3 py-3 text-xs text-neutral-500 dark:border-neutral-700">
-                No tags yet — e.g. Editing, Motion design, After Effects
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {tagFields.map((field, tagIndex) => (
-                  <div key={field.id} className="flex items-center gap-2">
-                    <input
-                      readOnly={readOnly}
-                      placeholder={`Tag ${tagIndex + 1}`}
-                      className={`${profileFormInputClass} mt-0 min-w-0 flex-1 ${readOnlyClass}`}
-                      {...register(`${name}.${index}.subtitles.${tagIndex}.value`)}
-                    />
-                    {!readOnly && (
-                      <button
-                        type="button"
-                        onClick={() => removeTag(tagIndex)}
-                        className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400"
-                      >
-                        Remove
-                      </button>
-                    )}
                   </div>
                 ))}
               </div>

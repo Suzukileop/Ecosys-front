@@ -806,51 +806,20 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   // Experience
   entry(
     'experience',
-    'Use global color palette',
-    ['palette', 'hero palette', 'sync colors', 'couleurs', 'palette hero'],
-    'general'
-  ),
-  entry('experience', 'General', ['visibility', 'timeline', 'spacing', 'entry spacing', 'espacement', 'gap'], 'general'),
-  entry(
-    'experience',
-    'Media',
+    'Design',
     [
-      'image',
-      'photo',
-      'video',
-      'media',
-      'sticky',
-      'outside',
-      'hors carte',
-      'emplacement',
-      'placement',
-      'entry media',
-      'taille',
-      'size',
-      'agrandir',
-      'manuel',
-      'proof',
-      'liens',
-      'sous média',
-      'sous le média',
+      'design',
+      'editorial',
+      'milestone',
+      'continuum',
+      'timeline',
+      'framer',
+      'webflow',
+      'layout',
+      'experience design',
     ],
-    'media'
+    'design'
   ),
-  entry('experience', 'Palette', ['tokens', 'bindings', 'semantic colors'], 'palette'),
-  entry('experience', 'Header', ['title', 'subtitle'], 'header'),
-  entry('experience', 'Years', ['years', 'summary', 'années'], 'years'),
-  entry('experience', 'Content', ['fields', 'labels', 'order', 'roles', 'tools', 'icon border', 'bento', 'photo', 'details', 'sous', 'status', 'finished', 'ongoing', 'badge', 'tasks', 'tâches', 'espacement'], 'content'),
-  entry('experience', 'Style entry', ['title', 'organization', 'meta', 'description', 'status', 'finished', 'badge'], 'styleEntry'),
-  entry('experience', 'Style years', ['years color', 'highlight'], 'styleYears'),
-  entry('experience', 'Style blocks', ['tasks', 'proof', 'skills', 'tools', 'icon border', 'bordure', 'proof link', 'lien', 'puce'], 'styleBlocks'),
-  entry(
-    'experience',
-    'Proof link style',
-    ['proof', 'lien', 'link style', 'chrome', 'pill', 'underline', 'accent', 'puce'],
-    'content'
-  ),
-  entry('experience', 'Frame', ['entry', 'story', 'details', 'tasks', 'proof', 'card'], 'frame'),
-  entry('experience', 'Background', ['fill', 'gradient', 'fond'], 'background'),
 
   // FAQ
   entry(

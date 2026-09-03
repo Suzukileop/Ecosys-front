@@ -69,7 +69,10 @@ import {
 import { usePortfolioTaskListMarkerGlobal } from '@/components/portfolio/portfolio-task-list-marker-context';
 import { PortfolioSplitScreenTitle } from '@/components/portfolio/portfolio-split-screen';
 import type { PortfolioGlobalMotionProfile } from '@/components/portfolio/portfolio-motion-settings';
-import { DEFAULT_MOTION_PROFILE } from '@/components/portfolio/portfolio-motion-settings';
+import {
+  DEFAULT_MOTION_PROFILE,
+  defaultMotionTimingForProfile,
+} from '@/components/portfolio/portfolio-motion-settings';
 import type { PortfolioNavSettings } from '@/components/portfolio/portfolio-settings-types';
 import {
   formatNavLabel,
@@ -257,6 +260,13 @@ import {
 } from '@/components/portfolio/portfolio-element-text-style';
 import {
   DEFAULT_EXPERIENCE_PRESENTATION,
+  DEFAULT_EXPERIENCE_TITLE_COLOR,
+  DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+  DEFAULT_EXPERIENCE_BODY_COLOR,
+  DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
+  DEFAULT_EXPERIENCE_MUTED_COLOR,
+  DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+  ensureExperienceInkContrast,
   experienceAccentColor,
   experienceChipChromeStyle,
   experienceSoftChipChromeStyle,
@@ -264,7 +274,6 @@ import {
   experienceDetailsPanelStyle,
   experienceDetailsSecondaryPanelClass,
   experienceDetailsSecondaryPanelStyle,
-  experienceDesignUsesEntryCard,
   experienceEntryHasMedia,
   experienceEntryMediaAspectClass,
   experienceEntryMediaIsOutside,
@@ -274,7 +283,6 @@ import {
   experienceEntryMediaSizeStyle,
   experienceEntryMediaHeightStyle,
   experienceEntryMediaUsesFixedHeight,
-  resolveExperienceSteppedBannerHeightPx,
   experienceEntryShellClass,
   experienceEntryShellStyle,
   experienceEntryShellUsesFrame,
@@ -286,7 +294,6 @@ import {
   experienceLayerFrameClass,
   experienceLayerFrameStyle,
   experienceListShellClass,
-  experiencePeriodRuleStyle,
   experienceStoryContentGapStyle,
   experienceDetailsContentGapStyle,
   experienceStoryPanelClass,
@@ -302,10 +309,12 @@ import {
   experienceToolsSeparatorStyle,
   experienceHairlineBorderTopStyle,
   experienceHairlineBorderBottomStyle,
-  resolveExperienceHairlineColor,
+  experiencePeriodRuleStyle,
   experienceTimelineRailLineStyle,
   experienceTimelineRailNodeStyle,
-  experienceMagazineRailStyle,
+  resolveExperienceHairlineColor,
+  resolveExperienceColorMode,
+  resolveExperienceTextColor,
   experienceYearsClass,
   experienceYearsHighlightStyle,
   experienceYearsStyle,
@@ -315,7 +324,6 @@ import {
   normalizeExperienceElementStyles,
   normalizeExperienceElementZones,
   resolveExperienceBlockLabel,
-  resolveExperienceBodyLayout,
   resolveExperienceItemsPerRow,
   resolveExperienceYearsTemplate,
   type PortfolioExperienceAsidePlacement,
@@ -323,9 +331,9 @@ import {
   type PortfolioExperienceElementStyles,
   type PortfolioExperienceElementZones,
   type PortfolioExperiencePresentationSettings,
+  type PortfolioExperiencePeriodDesign,
   type PortfolioExperienceProofLinkStyle,
   type PortfolioExperienceProofZone,
-  type PortfolioExperienceSkillsTagStyle,
   type PortfolioExperienceStatusBadgeStyle,
   type PortfolioExperienceTaskItemGap,
   type PortfolioExperienceTextStyle,
@@ -12987,19 +12995,15 @@ function resolveExperienceContent(block: ProfileMediaBlock): {
   title: string | null;
   organization: string | null;
   description: string | null;
-  tags: string[];
   status: ExperienceBlockStatus | null;
   tasks: string[];
   tools: string[];
   toolIcons: Record<string, string>;
   links: ExperienceProofLink[];
-  remarks: string | null;
   location: string | null;
   employmentType: ExperienceEmploymentType | null;
 } {
-  const subtitles = (block.subtitles ?? []).map((item) => item.trim()).filter(Boolean);
-  const period = block.period?.trim() || subtitles[0] || null;
-  const tags = block.period?.trim() ? subtitles : subtitles.slice(1);
+  const period = block.period?.trim() || null;
   const organization = block.organization?.trim() || null;
   const status =
     block.status === 'ONGOING' || block.status === 'FINISHED' ? block.status : null;
@@ -13034,7 +13038,6 @@ function resolveExperienceContent(block: ProfileMediaBlock): {
       sortOrder: typeof link.sortOrder === 'number' ? link.sortOrder : index,
     }))
     .sort((a, b) => a.sortOrder - b.sortOrder);
-  const remarks = block.remarks?.trim() || null;
   const location = block.location?.trim() || null;
   const employmentType = block.employmentType ?? null;
 
@@ -13045,13 +13048,11 @@ function resolveExperienceContent(block: ProfileMediaBlock): {
       title: dedicatedTitle,
       organization,
       description: block.text?.trim() || null,
-      tags,
       status,
       tasks,
       tools,
       toolIcons,
       links,
-      remarks,
       location,
       employmentType,
     };
@@ -13063,13 +13064,11 @@ function resolveExperienceContent(block: ProfileMediaBlock): {
     title: split.title,
     organization,
     description: split.body,
-    tags,
     status,
     tasks,
     tools,
     toolIcons,
     links,
-    remarks,
     location,
     employmentType,
   };
@@ -13087,13 +13086,11 @@ type ExperienceBodyProps = {
   title: string | null;
   organization: string | null;
   description: string | null;
-  tags: string[];
   status: ExperienceBlockStatus | null;
   tasks: string[];
   tools: string[];
   toolIcons?: Record<string, string>;
   links: ExperienceProofLink[];
-  remarks: string | null;
   location: string | null;
   employmentType: ExperienceEmploymentType | null;
   accent: string;
@@ -13109,7 +13106,7 @@ type ExperienceBodyProps = {
   stackColumnsForSplitNav?: boolean;
   detailsPanelClassName?: string;
   detailsPanelStyle?: CSSProperties;
-  /** Frame for proof / skills secondary details card (bento / split stack). */
+  /** Frame for proof secondary details card (bento / split stack). */
   detailsSecondaryPanelClassName?: string;
   detailsSecondaryPanelStyle?: CSSProperties;
   storyPanelClassName?: string;
@@ -13118,7 +13115,7 @@ type ExperienceBodyProps = {
   storyCardBackground?: import('@/components/portfolio/portfolio-services-card-background-settings').PortfolioServicesCardBackgroundSettings | null;
   /** Split / divider layers for the details card (when frame is enabled). */
   detailsCardBackground?: import('@/components/portfolio/portfolio-services-card-background-settings').PortfolioServicesCardBackgroundSettings | null;
-  /** Split / divider layers for the proof / skills card (when frame is enabled). */
+  /** Split / divider layers for the proof card (when frame is enabled). */
   detailsSecondaryCardBackground?: import('@/components/portfolio/portfolio-services-card-background-settings').PortfolioServicesCardBackgroundSettings | null;
   /** Hairline above Tools (color + opacity from settings). */
   toolsSeparatorStyle?: CSSProperties | null;
@@ -13131,7 +13128,7 @@ type ExperienceBodyProps = {
   hairlineColor?: string | null;
   /** Vertical gap style for the story (left) column — overrides density space-y. */
   storyContentGapStyle?: CSSProperties;
-  /** Vertical gap style for the details column (tasks, note, skills, tools…). */
+  /** Vertical gap style for the details column (tasks, skills, tools…). */
   detailsContentGapStyle?: CSSProperties;
   density?: 'comfortable' | 'compact';
   elementOrder?: PortfolioExperienceElementId[];
@@ -13149,10 +13146,7 @@ type ExperienceBodyProps = {
   showBlockLabels?: boolean;
   tasksLabel?: string;
   proofLabel?: string;
-  noteLabel?: string;
-  skillsLabel?: string;
   toolsLabel?: string;
-  skillsTagStyle?: PortfolioExperienceSkillsTagStyle;
   statusBadgeStyle?: PortfolioExperienceStatusBadgeStyle;
   proofLinkStyle?: PortfolioExperienceProofLinkStyle;
   elementStyles?: PortfolioExperienceElementStyles;
@@ -13204,84 +13198,17 @@ function ExperienceBlockHeading({
   );
 }
 
-function ExperienceEntryNote({
-  remarks,
-  label,
-  showLabel,
-  labelStyle,
-  textStyle,
-}: {
-  remarks: string | null;
-  label: string;
-  showLabel: boolean;
-  labelStyle?: PortfolioExperienceTextStyle;
-  textStyle?: PortfolioExperienceTextStyle;
-}) {
-  const text = remarks?.trim() || '';
-  if (!text) return null;
-  return (
-    <div>
-      <ExperienceBlockHeading label={label} show={showLabel} textStyle={labelStyle} />
-      <p
-        className={`leading-relaxed ${textStyle ? experienceTextStyleClass(textStyle, 'body') : 'text-base italic text-neutral-500'}`}
-        style={textStyle ? experienceTextInlineStyle(textStyle) : { fontFamily: SERIF }}
-      >
-        {text}
-      </p>
-    </div>
-  );
-}
-
-function ExperienceEntrySkillsBlock({
-  tags,
-  label,
-  showLabel,
-  tagStyle,
-  accent,
-  labelStyle,
-  textStyle,
-  chipChrome,
-  softChipChrome,
-}: {
-  tags: string[];
-  label: string;
-  showLabel: boolean;
-  tagStyle: PortfolioExperienceSkillsTagStyle;
-  accent: string;
-  labelStyle?: PortfolioExperienceTextStyle;
-  textStyle?: PortfolioExperienceTextStyle;
-  chipChrome?: CSSProperties;
-  softChipChrome?: CSSProperties;
-}) {
-  if (tags.length === 0) return null;
-  return (
-    <div>
-      <ExperienceBlockHeading label={label} show={showLabel} textStyle={labelStyle} />
-      <ExperienceEntryTags
-        tags={tags}
-        tagStyle={tagStyle}
-        accent={accent}
-        textStyle={textStyle}
-        chipChrome={chipChrome}
-        softChipChrome={softChipChrome}
-      />
-    </div>
-  );
-}
-
 function renderExperienceElement(
   id: PortfolioExperienceElementId,
   ctx: {
     title: string | null;
     organization: string | null;
     description: string | null;
-    tags: string[];
     status: ExperienceBlockStatus | null;
     tasks: string[];
     tools: string[];
     toolIcons?: Record<string, string>;
     links: ExperienceProofLink[];
-    remarks: string | null;
     location: string | null;
     employmentType: ExperienceEmploymentType | null;
     accent: string;
@@ -13299,10 +13226,7 @@ function renderExperienceElement(
     showBlockLabels?: boolean;
     tasksLabel?: string;
     proofLabel?: string;
-    noteLabel?: string;
-    skillsLabel?: string;
     toolsLabel?: string;
-    skillsTagStyle?: PortfolioExperienceSkillsTagStyle;
     statusBadgeStyle?: PortfolioExperienceStatusBadgeStyle;
     proofLinkStyle?: PortfolioExperienceProofLinkStyle;
     elementStyles?: PortfolioExperienceElementStyles;
@@ -13474,30 +13398,6 @@ function renderExperienceElement(
           linkStyle={ctx.proofLinkStyle ?? 'pill'}
         />
       );
-    case 'note':
-      return (
-        <ExperienceEntryNote
-          remarks={ctx.remarks}
-          label={resolveExperienceBlockLabel(ctx.noteLabel, 'Note')}
-          showLabel={experienceBlockLabelVisible(labelFlags, 'note')}
-          labelStyle={styles.blockLabel}
-          textStyle={styles.note}
-        />
-      );
-    case 'skills':
-      return (
-        <ExperienceEntrySkillsBlock
-          tags={ctx.tags}
-          label={resolveExperienceBlockLabel(ctx.skillsLabel, 'Skills')}
-          showLabel={experienceBlockLabelVisible(labelFlags, 'skills')}
-          tagStyle={ctx.skillsTagStyle ?? 'soft'}
-          accent={ctx.accent}
-          labelStyle={styles.blockLabel}
-          textStyle={styles.skills}
-          chipChrome={ctx.chipChrome}
-          softChipChrome={ctx.softChipChrome}
-        />
-      );
     default:
       return null;
   }
@@ -13612,76 +13512,6 @@ function ExperienceOrderedColumn({
       >
         {items}
       </ServicesCardForeground>
-    </div>
-  );
-}
-
-function ExperienceEntryTags({
-  tags,
-  tagStyle = 'soft',
-  accent,
-  textStyle,
-  chipChrome,
-  softChipChrome,
-}: {
-  tags: string[];
-  tagStyle?: PortfolioExperienceSkillsTagStyle;
-  accent?: string;
-  textStyle?: PortfolioExperienceTextStyle;
-  chipChrome?: CSSProperties;
-  softChipChrome?: CSSProperties;
-}) {
-  if (tags.length === 0) return null;
-  const typeClass = textStyle ? experienceTextStyleClass(textStyle, 'body') : 'text-sm font-medium';
-  const typeStyle = textStyle ? experienceTextInlineStyle(textStyle) : undefined;
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {tags.map((tag) => {
-        if (tagStyle === 'plain') {
-          return (
-            <span key={tag} className={typeClass} style={typeStyle}>
-              {tag}
-            </span>
-          );
-        }
-        if (tagStyle === 'pill') {
-          return (
-            <span
-              key={tag}
-              className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 ${typeClass}`}
-              style={{ ...chipChrome, ...typeStyle }}
-            >
-              <span
-                className="h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: accent ?? '#ea580c' }}
-                aria-hidden
-              />
-              {tag}
-            </span>
-          );
-        }
-        if (tagStyle === 'outline') {
-          return (
-            <span
-              key={tag}
-              className={`inline-flex items-center rounded-full border px-3.5 py-2 ${typeClass}`}
-              style={{ ...chipChrome, ...typeStyle }}
-            >
-              {tag}
-            </span>
-          );
-        }
-        return (
-          <span
-            key={tag}
-            className={`rounded-full px-3.5 py-1.5 transition ${typeClass}`}
-            style={{ ...softChipChrome, ...typeStyle }}
-          >
-            {tag}
-          </span>
-        );
-      })}
     </div>
   );
 }
@@ -14439,13 +14269,11 @@ function ExperienceEntryBody({
   title,
   organization,
   description,
-  tags,
   status,
   tasks,
   tools,
   toolIcons,
   links,
-  remarks,
   location,
   employmentType,
   accent,
@@ -14485,10 +14313,7 @@ function ExperienceEntryBody({
   showBlockLabels = true,
   tasksLabel = '',
   proofLabel = '',
-  noteLabel = '',
-  skillsLabel = '',
   toolsLabel = '',
-  skillsTagStyle = 'soft',
   statusBadgeStyle = 'pill',
   proofLinkStyle = 'pill',
   elementStyles,
@@ -14532,13 +14357,11 @@ function ExperienceEntryBody({
     title,
     organization,
     description,
-    tags,
     status,
     tasks,
     tools,
     toolIcons,
     links,
-    remarks,
     location,
     employmentType,
     accent,
@@ -14554,10 +14377,7 @@ function ExperienceEntryBody({
     showBlockLabels,
     tasksLabel,
     proofLabel,
-    noteLabel,
-    skillsLabel,
     toolsLabel,
-    skillsTagStyle,
     statusBadgeStyle,
     proofLinkStyle,
     elementStyles: styles,
@@ -14677,12 +14497,11 @@ function ExperienceEntryBody({
     </div>
   );
 
-  /** Stepped cards — story left + unified technical fiche right (skills footer + proof CTA). */
+  /** Stepped cards — story left + unified technical fiche right (proof CTA). */
   if (layout === 'stepped') {
     const storyIds = order.filter(
       (id) => id === 'title' || id === 'organization' || id === 'description'
     );
-    const showSkills = tags.length > 0;
     const showProof = links.length > 0;
     const hairlineTop = hairlineBorderTopStyle ?? undefined;
     const ficheBorderColor = hairlineColor ?? undefined;
@@ -14701,15 +14520,14 @@ function ExperienceEntryBody({
 
     const ficheCtx = { ...elementCtx, denseTasks: true as const, status: null };
     // Gate on data, not JSX — renderExperienceElement always returns an element,
-    // even when Tasks/Tools/Note later render null (which left empty bordered wrappers).
+    // even when Tasks/Tools later render null (which left empty bordered wrappers).
     const ficheHasContent = (id: PortfolioExperienceElementId): boolean => {
       if (id === 'tasks') return tasks.length > 0;
       if (id === 'tools') return tools.length > 0;
-      if (id === 'note') return Boolean(remarks?.trim());
       return false;
     };
     const visibleFicheItems = order
-      .filter((id) => id === 'tasks' || id === 'tools' || id === 'note')
+      .filter((id) => id === 'tasks' || id === 'tools')
       .filter(ficheHasContent)
       .map((id) => ({ id, node: renderExperienceElement(id, ficheCtx) }));
     const hasFicheAboveProof = visibleFicheItems.length > 0;
@@ -14725,16 +14543,6 @@ function ExperienceEntryBody({
           toolsSeparatorStyle={null}
           render={(id) => renderExperienceElement(id, { ...elementCtx, status: null })}
         />
-        {showSkills ? (
-          <div className="mt-auto pt-4 sm:pt-5" style={hairlineTop}>
-            <p
-              className={`leading-relaxed opacity-70 ${experienceTextStyleClass(styles.skills, 'body')}`}
-              style={experienceTextInlineStyle(styles.skills)}
-            >
-              {tags.join(' · ')}
-            </p>
-          </div>
-        ) : null}
       </div>
     );
 
@@ -14997,7 +14805,7 @@ function ExperienceEntryBody({
         <ExperienceOrderedColumn
           ids={[
             ...storyOrder,
-            ...detailsOrder.filter((id) => id === 'note' || id === 'skills' || id === 'tools'),
+            ...detailsOrder.filter((id) => id === 'tools'),
           ]}
           className={storyClassName}
           style={storyPanelStyle}
@@ -15020,10 +14828,10 @@ function ExperienceEntryBody({
     const secondaryZoneClass = `${secondaryAsideClassName}${detailsNotAside ? '' : ' h-full'}`.trim();
     const storyIds = [
       ...storyOrder.filter((id) => id === 'description' || id === 'tools'),
-      ...detailsOrder.filter((id) => id === 'note' || id === 'tools'),
+      ...detailsOrder.filter((id) => id === 'tools'),
     ];
     const tasksIds = detailsOrder.filter((id) => id === 'tasks');
-    const proofSkillsIds = detailsOrder.filter((id) => id === 'proof' || id === 'skills');
+    const proofSkillsIds = detailsOrder.filter((id) => id === 'proof');
 
     const storyColumnNode = (
       <ExperienceOrderedColumn
@@ -15270,53 +15078,6 @@ function ExperienceEntryBody({
   );
 }
 
-function ExperienceTimelineRail({
-  presentation,
-  isLast,
-  filled = false,
-}: {
-  presentation: PortfolioExperiencePresentationSettings;
-  isLast: boolean;
-  filled?: boolean;
-}) {
-  if (presentation.timelineRailEnabled === false) {
-    return (
-      <div className="relative flex h-full min-h-[5rem] justify-center">
-        <div
-          className={`relative z-[1] mt-1.5 shrink-0 rounded-full ${
-            filled
-              ? 'h-3.5 w-3.5 shadow-[0_0_0_4px_rgba(255,255,255,1)]'
-              : 'h-3.5 w-3.5 border-2 bg-white'
-          }`}
-          style={experienceTimelineRailNodeStyle(presentation, filled)}
-          aria-hidden
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative flex h-full min-h-[5rem] justify-center">
-      {!isLast ? (
-        <div
-          className="absolute bottom-0 top-3 w-px"
-          style={experienceTimelineRailLineStyle(presentation, filled)}
-          aria-hidden
-        />
-      ) : null}
-      <div
-        className={`relative z-[1] mt-1.5 shrink-0 rounded-full ${
-          filled
-            ? 'h-3.5 w-3.5 shadow-[0_0_0_4px_rgba(255,255,255,1)]'
-            : 'h-3.5 w-3.5 border-2 bg-white'
-        }`}
-        style={experienceTimelineRailNodeStyle(presentation, filled)}
-        aria-hidden
-      />
-    </div>
-  );
-}
-
 export function EditorialExperienceYears({
   years,
   presentation = DEFAULT_EXPERIENCE_PRESENTATION,
@@ -15327,10 +15088,42 @@ export function EditorialExperienceYears({
   const template = resolveExperienceYearsTemplate(presentation);
   const marker = '{years}';
   const markerIndex = template.indexOf(marker);
+  const isEditorial = presentation.experienceDesign === 'editorial';
+  const isDark = presentation.activeColorMode !== 'light';
+  const colorMode = resolveExperienceColorMode(presentation);
+  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
+  const yearsClass = experienceYearsClass(presentation);
+  // Soft surrounding copy → entryBlockLabel / texteFaint (quieter than subtitle / texteMuted).
+  const mutedInk = ensureExperienceInkContrast(
+    resolveExperienceTextColor(styles.blockLabel, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_MUTED_COLOR,
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+  );
+  const brightInk = ensureExperienceInkContrast(
+    presentation.yearsHighlightColor?.trim() || presentation.titleColor?.trim(),
+    isDark,
+    DEFAULT_EXPERIENCE_TITLE_COLOR,
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+  );
+  const yearsStyle: CSSProperties = {
+    ...(isEditorial
+      ? {
+          color: mutedInk,
+          border: 'none',
+          boxShadow: 'none',
+          outline: 'none',
+          backgroundColor: 'transparent',
+          position: 'relative',
+          transform: 'none',
+          willChange: 'auto',
+        }
+      : experienceYearsStyle(presentation)),
+  };
 
   if (markerIndex === -1) {
     return (
-      <p className={experienceYearsClass(presentation)} style={experienceYearsStyle(presentation)}>
+      <p className={yearsClass} style={yearsStyle}>
         {template.replaceAll(marker, String(years))}
       </p>
     );
@@ -15338,20 +15131,500 @@ export function EditorialExperienceYears({
 
   const before = template.slice(0, markerIndex);
   const after = template.slice(markerIndex + marker.length);
-  const yearsNode = presentation.yearsBoldYears ? (
-    <span className="font-bold" style={experienceYearsHighlightStyle(presentation)}>
-      {years}
+  // Highlight "{years} years" / "{years}+ years" as one bright phrase on editorial.
+  const yearsPhraseMatch = isEditorial ? after.match(/^(\+?\s*years?\b)/i) : null;
+  const highlightTail = yearsPhraseMatch?.[1] ?? '';
+  const restAfter = after.slice(highlightTail.length);
+  const highlightStyle = isEditorial
+    ? { color: brightInk }
+    : experienceYearsHighlightStyle(presentation);
+  const yearsNode =
+    presentation.yearsBoldYears && !isEditorial ? (
+      <span className="font-bold" style={highlightStyle}>
+        {years}
+        {highlightTail}
+      </span>
+    ) : (
+      <span className={isEditorial ? 'font-semibold' : undefined} style={highlightStyle}>
+        {years}
+        {highlightTail}
+      </span>
+    );
+
+  return (
+    <p className={yearsClass} style={yearsStyle}>
+      {before}
+      {yearsNode}
+      {restAfter}
+    </p>
+  );
+}
+
+function ExperienceEditorialOngoingBadge({
+  status,
+  isDark,
+}: {
+  status: ExperienceBlockStatus | null;
+  isDark: boolean;
+}) {
+  if (status !== 'ONGOING' && status !== 'FINISHED') return null;
+  const isOngoing = status === 'ONGOING';
+  return (
+    <span
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.75rem] font-semibold tracking-[-0.01em]"
+      style={
+        isOngoing
+          ? isDark
+            ? { backgroundColor: '#143D28', color: '#6EE7A0' }
+            : { backgroundColor: '#E8F5EC', color: '#1B7A3D' }
+          : isDark
+            ? { backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)' }
+            : { backgroundColor: 'rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.55)' }
+      }
+    >
+      <span
+        className="h-1.5 w-1.5 rounded-full"
+        style={{
+          backgroundColor: isOngoing ? (isDark ? '#6EE7A0' : '#1B7A3D') : 'currentColor',
+        }}
+        aria-hidden
+      />
+      {isOngoing ? 'Ongoing' : 'Finished'}
     </span>
+  );
+}
+
+/** Quiet vertical status under the fold control — same height as left details, upright letters. */
+function ExperienceEditorialStatusRail({
+  status,
+  color,
+}: {
+  status: ExperienceBlockStatus | null;
+  color: string;
+}) {
+  if (status !== 'ONGOING' && status !== 'FINISHED') return null;
+  const label = status === 'ONGOING' ? 'Ongoing' : 'Finished';
+  return (
+    <div
+      className="flex h-full min-h-0 w-full flex-1 items-center justify-center overflow-hidden pt-2"
+      aria-label={label}
+    >
+      <span
+        className="max-h-full text-2xl font-semibold uppercase tracking-[0.24em] sm:text-3xl sm:tracking-[0.26em]"
+        style={{
+          color,
+          writingMode: 'vertical-rl',
+          textOrientation: 'upright',
+        }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function ExperienceEditorialPeriodColumn({
+  period,
+  periodDesign,
+  presentation,
+  accent,
+  mutedColor,
+  isLast,
+}: {
+  period: string | null;
+  periodDesign: PortfolioExperiencePeriodDesign;
+  presentation: PortfolioExperiencePresentationSettings;
+  accent: string;
+  mutedColor: string;
+  isLast: boolean;
+}) {
+  const label = period || '—';
+  const textClass = 'text-[0.9375rem] font-medium tabular-nums tracking-[-0.01em] sm:text-base';
+
+  if (periodDesign === 'badge') {
+    return (
+      <p
+        className="pt-1 text-[11px] font-semibold uppercase tracking-[0.18em] sm:text-xs"
+        style={{ color: accent, opacity: 0.92 }}
+      >
+        {label}
+      </p>
+    );
+  }
+
+  if (periodDesign === 'rule') {
+    return (
+      <div className="flex min-w-0 flex-col gap-2.5 pt-1">
+        <p className={textClass} style={{ color: mutedColor }}>
+          {label}
+        </p>
+        <div
+          className="h-px w-full max-w-[4.5rem] sm:max-w-none"
+          style={experiencePeriodRuleStyle(presentation)}
+        />
+      </div>
+    );
+  }
+
+  if (periodDesign === 'rail' || periodDesign === 'rail-accent') {
+    const filled = periodDesign === 'rail-accent';
+    const lineStyle = experienceTimelineRailLineStyle(presentation, filled);
+    const nodeStyle = experienceTimelineRailNodeStyle(presentation, filled);
+    return (
+      <div className="relative flex self-stretch">
+        <div className="relative mr-2.5 flex w-3 shrink-0 justify-center sm:mr-3">
+          <div
+            className={`relative z-10 mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${
+              filled ? '' : 'border-2 bg-transparent'
+            }`}
+            style={nodeStyle}
+          />
+          {!isLast ? (
+            <div
+              className="absolute top-[1.125rem] bottom-0 left-1/2 w-px -translate-x-1/2"
+              style={lineStyle}
+            />
+          ) : null}
+        </div>
+        <p className={`${textClass} pt-1`} style={{ color: mutedColor }}>
+          {label}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <p className={`${textClass} pt-1`} style={{ color: mutedColor }}>
+      {label}
+    </p>
+  );
+}
+
+function ExperienceEditorialEntry({
+  period,
+  title,
+  organization,
+  description,
+  status,
+  tasks,
+  tools,
+  toolsLabel,
+  links,
+  location,
+  employmentType,
+  accent,
+  titleColor,
+  mutedColor,
+  bodyColor,
+  isDark,
+  isLast,
+  expanded,
+  onExpandedChange,
+  statusPlacement = 'inline',
+  periodDesign = 'plain',
+  presentation,
+}: {
+  period: string | null;
+  title: string | null;
+  organization: string | null;
+  description: string | null;
+  status: ExperienceBlockStatus | null;
+  tasks: string[];
+  tools: string[];
+  toolsLabel: string;
+  links: ExperienceProofLink[];
+  location: string | null;
+  employmentType: ExperienceEmploymentType | null;
+  accent: string;
+  titleColor: string;
+  mutedColor: string;
+  bodyColor: string;
+  isDark: boolean;
+  isLast: boolean;
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
+  statusPlacement?: import('@/components/portfolio/portfolio-experience-settings').PortfolioExperienceStatusPlacement;
+  periodDesign?: PortfolioExperiencePeriodDesign;
+  presentation: PortfolioExperiencePresentationSettings;
+}) {
+  const reduceMotion = useReducedMotion();
+  const motionDisabled = reduceMotion === true;
+  const metaParts = [
+    organization?.trim() || '',
+    location?.trim() || '',
+    employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : '',
+  ].filter(Boolean);
+  const hasDetails =
+    Boolean(description?.trim()) ||
+    tasks.length > 0 ||
+    tools.length > 0 ||
+    links.length > 0 ||
+    metaParts.length > 0;
+  const showStatusRail = statusPlacement === 'rail-right' && (status === 'ONGOING' || status === 'FINISHED');
+  const showInlineStatus = statusPlacement !== 'rail-right';
+  const isAllOpen = (presentation.entryExpandMode ?? 'accordion') === 'all-open';
+  const effectiveExpanded = isAllOpen ? hasDetails : expanded;
+  const showExpandControl = !isAllOpen && hasDetails;
+  const usesTimelineRail = periodDesign === 'rail' || periodDesign === 'rail-accent';
+  const periodGridClass = usesTimelineRail
+    ? 'sm:grid-cols-[8.5rem_minmax(0,1fr)] lg:grid-cols-[9.5rem_minmax(0,1fr)]'
+    : 'sm:grid-cols-[7.5rem_minmax(0,1fr)] lg:grid-cols-[8.5rem_minmax(0,1fr)]';
+
+  const expandHoverBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  const toolTagStyle: CSSProperties = isDark
+    ? {
+        borderColor: 'rgba(255,255,255,0.16)',
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        color: bodyColor,
+      }
+    : {
+        borderColor: 'rgba(0,0,0,0.12)',
+        backgroundColor: 'rgba(0,0,0,0.04)',
+        color: bodyColor,
+      };
+  const stackLabel = resolveExperienceBlockLabel(toolsLabel, 'Stack');
+  const panelTransition = motionDisabled
+    ? { duration: 0 }
+    : {
+        height: { duration: 0.38, ease: [0.22, 1, 0.36, 1] as const },
+        opacity: { duration: 0.26, ease: 'easeOut' as const },
+      };
+  const toggleExpanded = () => onExpandedChange(!expanded);
+
+  const expandControl = showExpandControl ? (
+    <button
+      type="button"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 sm:h-11 sm:w-11"
+      style={{ color: mutedColor }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = expandHoverBg;
+        e.currentTarget.style.color = titleColor;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'transparent';
+        e.currentTarget.style.color = mutedColor;
+      }}
+      aria-label={effectiveExpanded ? 'Collapse role details' : 'Expand role details'}
+      onClick={toggleExpanded}
+    >
+      <motion.span
+        className="block text-2xl leading-none font-light sm:text-3xl"
+        aria-hidden
+        animate={{ rotate: effectiveExpanded ? 45 : 0 }}
+        transition={
+          motionDisabled ? { duration: 0 } : { duration: 0.28, ease: [0.22, 1, 0.36, 1] }
+        }
+      >
+        +
+      </motion.span>
+    </button>
+  ) : null;
+
+  const detailsInner = effectiveExpanded ? (
+    <div className="mt-3 space-y-6 sm:mt-4 sm:space-y-7">
+      {metaParts.length > 0 ? (
+        <p className="text-[0.9375rem] sm:text-base" style={{ color: mutedColor }}>
+          {metaParts.join(' · ')}
+        </p>
+      ) : null}
+
+      {description ? (
+        <p
+          className="max-w-2xl text-base leading-[1.7] sm:text-[1.0625rem]"
+          style={{ color: bodyColor }}
+        >
+          {description}
+        </p>
+      ) : null}
+
+      {tasks.length > 0 ? (
+        <ul className="my-2 space-y-2.5 py-2 sm:my-3 sm:py-3">
+          {tasks.map((task) => (
+            <li
+              key={task}
+              className="flex gap-3 text-base leading-relaxed sm:text-[1.0625rem]"
+              style={{ color: bodyColor }}
+            >
+              <span className="mt-0.5 shrink-0" style={{ color: mutedColor }} aria-hidden>
+                →
+              </span>
+              <span>{task}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {tools.length > 0 ? (
+        <div>
+          {stackLabel ? (
+            <p
+              className="mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]"
+              style={{ color: mutedColor }}
+            >
+              {stackLabel}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            {tools.map((tool) => (
+              <span
+                key={tool}
+                className="inline-flex rounded-full border px-3.5 py-1.5 text-[0.9375rem] font-medium sm:text-base"
+                style={toolTagStyle}
+              >
+                {tool}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {links.length > 0 ? (
+        <div className="flex flex-col items-start gap-2 pt-1">
+          {links.map((link) => (
+            <a
+              key={link.id}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-base font-semibold transition hover:opacity-80"
+              style={{ color: accent }}
+            >
+              <span>{link.label}</span>
+              <span aria-hidden>↗</span>
+            </a>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  ) : null;
+
+  const detailsPanel = isAllOpen ? (
+    detailsInner
   ) : (
-    <span style={experienceYearsHighlightStyle(presentation)}>{years}</span>
+    <AnimatePresence initial={false}>
+      {effectiveExpanded ? (
+        <motion.div
+          key="experience-editorial-panel"
+          initial={motionDisabled ? false : { height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={motionDisabled ? { opacity: 0 } : { height: 0, opacity: 0 }}
+          transition={panelTransition}
+          className="overflow-hidden"
+        >
+          {detailsInner}
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+
+  const titleHeading = title ? (
+    <h4
+      className="font-serif text-[1.65rem] font-bold leading-[1.15] tracking-[-0.025em] sm:text-[1.9rem] lg:text-[2.15rem]"
+      style={{ color: titleColor }}
+    >
+      {title}
+    </h4>
+  ) : null;
+
+  const titleBlock = (
+    <>
+      <div
+        className={`flex flex-wrap items-center gap-x-3 gap-y-2 ${
+          showStatusRail ? 'min-h-10 sm:min-h-11' : ''
+        }`}
+      >
+        {titleHeading}
+        {!showStatusRail && showInlineStatus ? (
+          <ExperienceEditorialOngoingBadge status={status} isDark={isDark} />
+        ) : null}
+      </div>
+      {!effectiveExpanded && metaParts.length > 0 ? (
+        <p className="mt-1.5 text-[0.9375rem] sm:text-base" style={{ color: mutedColor }}>
+          {metaParts.join(' · ')}
+        </p>
+      ) : null}
+    </>
+  );
+
+  const titleHeader = isAllOpen ? (
+    <div className="w-full min-w-0 text-left">{titleBlock}</div>
+  ) : (
+    <button
+      type="button"
+      className="w-full min-w-0 text-left"
+      onClick={toggleExpanded}
+      aria-expanded={effectiveExpanded}
+    >
+      {titleBlock}
+    </button>
   );
 
   return (
-    <p className={experienceYearsClass(presentation)} style={experienceYearsStyle(presentation)}>
-      {before}
-      {yearsNode}
-      {after}
-    </p>
+    <article
+      className={`grid grid-cols-1 gap-3 bg-transparent ${periodGridClass} sm:gap-x-8 lg:gap-x-10 ${
+        isLast ? 'pb-2' : 'pb-10 sm:pb-12'
+      }`}
+      style={{
+        border: 'none',
+        boxShadow: 'none',
+        outline: 'none',
+        backgroundColor: 'transparent',
+      }}
+    >
+      <ExperienceEditorialPeriodColumn
+        period={period}
+        periodDesign={periodDesign}
+        presentation={presentation}
+        accent={accent}
+        mutedColor={mutedColor}
+        isLast={isLast}
+      />
+
+      {showStatusRail ? (
+        <div className="flex min-w-0 items-stretch gap-3 sm:gap-4">
+          <div className="flex min-w-0 flex-1 flex-col">
+            {titleHeader}
+            {detailsPanel}
+          </div>
+
+          <div className="flex w-14 shrink-0 flex-col items-center self-stretch sm:w-16">
+            {showExpandControl ? (
+              <div className="flex h-10 shrink-0 items-center justify-center sm:h-11">
+                {expandControl}
+              </div>
+            ) : null}
+            {effectiveExpanded ? (
+              <div
+                className={`hidden min-h-0 w-full overflow-hidden sm:flex ${
+                  showExpandControl ? 'flex-1' : 'h-full'
+                }`}
+              >
+                <ExperienceEditorialStatusRail status={status} color={mutedColor} />
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : (
+        <div className="min-w-0">
+          <div className="flex items-start gap-3">
+            {isAllOpen ? (
+              <div className="min-w-0 flex-1">{titleBlock}</div>
+            ) : (
+              <button
+                type="button"
+                className="min-w-0 flex-1 text-left"
+                onClick={toggleExpanded}
+                aria-expanded={effectiveExpanded}
+              >
+                {titleBlock}
+              </button>
+            )}
+            {showExpandControl ? expandControl : null}
+          </div>
+          {detailsPanel}
+        </div>
+      )}
+    </article>
   );
 }
 
@@ -15360,19 +15633,18 @@ export function EditorialExperienceBlock({
   index = 0,
   isLast = false,
   presentation = DEFAULT_EXPERIENCE_PRESENTATION,
-  inMultiColumn = false,
-  stackColumnsForSplitNav = false,
+  expanded = false,
+  onExpandedChange,
 }: {
   block: ProfileMediaBlock;
   index?: number;
   isLast?: boolean;
   presentation?: PortfolioExperiencePresentationSettings;
-  /** When true, prefer stacked body layout (cards in a 2–3 column grid). */
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
+  /** @deprecated Editorial is always single-column. */
   inMultiColumn?: boolean;
-  /**
-   * Split-screen nav only: stack former right column on top, left column below
-   * (story/details stay the same assignment — only orientation changes).
-   */
+  /** @deprecated Unused for editorial entries. */
   stackColumnsForSplitNav?: boolean;
 }) {
   const {
@@ -15380,465 +15652,64 @@ export function EditorialExperienceBlock({
     title,
     organization,
     description,
-    tags,
     status,
     tasks,
     tools,
-    toolIcons,
     links,
-    remarks,
     location,
     employmentType,
   } = resolveExperienceContent(block);
+
   const accent = experienceAccentColor(presentation.accentColor);
-  const design = presentation.experienceDesign;
-  const entryLayers = experienceEntryShellUsesFrame(presentation)
-    ? experienceLayerToCardFrameSettings({ ...presentation.entryFrame, enabled: true })
-    : null;
-  const shellClassBase = experienceEntryShellClass(presentation);
-  const shellClass = entryLayers ? stripTailwindSpaceY(shellClassBase) : shellClassBase;
-  const shellStyle = experienceEntryShellStyle(presentation);
-  const bodyLayout = resolveExperienceBodyLayout(presentation, inMultiColumn);
-  const detailsClass = experienceDetailsPanelClass(presentation);
-  const detailsStyle = experienceDetailsPanelStyle(presentation);
-  const detailsSecondaryClass = experienceDetailsSecondaryPanelClass(presentation);
-  const detailsSecondaryStyle = experienceDetailsSecondaryPanelStyle(presentation);
-  const storyClass = experienceStoryPanelClass(presentation);
-  const storyStyle = experienceStoryPanelStyle(presentation);
-  const hasEntryMedia = experienceEntryHasMedia(block, presentation);
-  const effectiveProofZone =
-    presentation.proofZone === 'under-media' && !hasEntryMedia
-      ? 'details'
-      : (presentation.proofZone ?? 'details');
-  const bodyProps: ExperienceBodyProps = {
-    title: presentation.showTitle ? title : null,
-    organization: presentation.showOrganization ? organization : null,
-    description: presentation.showDescription ? description : null,
-    tags: presentation.showSkills ? tags : [],
-    status: presentation.showMeta ? status : null,
-    tasks: presentation.showTasks ? tasks : [],
-    tools: presentation.showTools ? tools : [],
-    toolIcons: presentation.showTools ? toolIcons : {},
-    links: presentation.showProof ? links : [],
-    remarks: design === 'timeline-editorial' ? null : presentation.showNote ? remarks : null,
-    location: presentation.showMeta ? location : null,
-    employmentType: presentation.showMeta ? employmentType : null,
-    accent,
-    asidePlacement: presentation.asidePlacement,
-    stackColumnsForSplitNav,
-    detailsPanelClassName: detailsClass || undefined,
-    detailsPanelStyle: detailsStyle,
-    detailsSecondaryPanelClassName: detailsSecondaryClass || undefined,
-    detailsSecondaryPanelStyle: detailsSecondaryStyle,
-    storyPanelClassName: storyClass || undefined,
-    storyPanelStyle: storyStyle,
-    storyCardBackground: presentation.storyFrame.enabled
-      ? experienceLayerToCardFrameSettings(presentation.storyFrame)
-      : null,
-    detailsCardBackground:
-      presentation.asidePlacement !== 'inline' &&
-      presentation.detailsFrame.enabled &&
-      presentation.detailsFrame.cardBackgroundEnabled
-        ? experienceLayerToCardFrameSettings(presentation.detailsFrame)
-        : null,
-    detailsSecondaryCardBackground:
-      presentation.asidePlacement !== 'inline' &&
-      presentation.detailsSecondaryFrame.enabled &&
-      presentation.detailsSecondaryFrame.cardBackgroundEnabled
-        ? experienceLayerToCardFrameSettings(presentation.detailsSecondaryFrame)
-        : null,
-    toolsSeparatorStyle: experienceToolsSeparatorStyle(presentation) ?? null,
-    hairlineBorderTopStyle: experienceHairlineBorderTopStyle(presentation),
-    hairlineBorderBottomStyle: experienceHairlineBorderBottomStyle(presentation),
-    hairlineColor: resolveExperienceHairlineColor(presentation),
-    storyContentGapStyle: experienceStoryContentGapStyle(presentation),
-    detailsContentGapStyle: experienceDetailsContentGapStyle(presentation),
-    density: presentation.itemDensity,
-    elementOrder: presentation.elementOrder,
-    elementZones: presentation.elementZones,
-    toolsZone: presentation.toolsZone,
-    proofZone: effectiveProofZone,
-    toolsEntrySide: presentation.toolsEntrySide,
-    toolsDisplay: presentation.toolsDisplay,
-    toolsIconSize: presentation.toolsIconSize,
-    toolsIconBorder: presentation.toolsIconBorder ?? 'solid',
-    toolsIconChrome: experienceToolsIconChromeStyle(presentation),
-    toolsIconPaddingPx: presentation.toolsIconPaddingPx,
-    toolsIconGapPx: presentation.toolsIconGapPx,
-    toolsChrome: presentation.toolsChrome,
-    showBlockLabels: presentation.showBlockLabels,
-    blockLabelVisibility: presentation.blockLabelVisibility,
-    tasksLabel: presentation.tasksLabel,
-    proofLabel: presentation.proofLabel,
-    noteLabel: presentation.noteLabel,
-    skillsLabel: presentation.skillsLabel,
-    toolsLabel: presentation.toolsLabel,
-    skillsTagStyle: presentation.skillsTagStyle,
-    statusBadgeStyle: presentation.statusBadgeStyle ?? 'pill',
-    proofLinkStyle: presentation.proofLinkStyle,
-    elementStyles: presentation.elementStyles,
-    chipChrome: experienceChipChromeStyle(presentation),
-    softChipChrome: experienceSoftChipChromeStyle(presentation),
-    taskBulletSource: 'section',
-    taskBulletStyle: presentation.taskBulletStyle,
-    taskBulletColor: presentation.taskBulletColor,
-    taskBulletSize: presentation.taskBulletSize,
-    taskBulletSizePx: presentation.taskBulletSizePx,
-    taskBulletWeight: presentation.taskBulletWeight,
-    taskBulletWeightAmount: presentation.taskBulletWeightAmount,
-    taskItemGap: presentation.taskItemGap ?? 'sm',
-    bentoDetailsPlacement: presentation.bentoDetailsPlacement ?? 'aside',
-    entryMediaSize: presentation.entryMediaSize ?? 'sm',
-    magazineColumnRatio: presentation.magazineColumnRatio ?? 'media-wide',
-  };
-  const visiblePeriod = presentation.showPeriod ? period : null;
-  const wrapEntryChrome = (content: React.ReactNode) =>
-    entryLayers ? (
-      <>
-        <ServicesCardBackgroundLayers presentation={entryLayers} />
-        <ServicesCardForeground>{content}</ServicesCardForeground>
-      </>
-    ) : (
-      content
-    );
-  const wrapBody = (content: React.ReactNode) =>
-    wrapExperienceEntryWithMedia(content, block, presentation);
-  const wrapOuter = (shell: React.ReactNode) =>
-    wrapExperienceEntryOuterMedia(shell, block, presentation);
+  const isDark = presentation.activeColorMode !== 'light';
+  const colorMode = resolveExperienceColorMode(presentation);
+  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
 
-  if (design === 'large') {
-    const mediaPlacement = presentation.entryMediaPlacement ?? 'aside-right';
-    const bentoAsideMedia =
-      !inMultiColumn &&
-      experienceEntryHasMedia(block, presentation) &&
-      (mediaPlacement === 'aside-right' || mediaPlacement === 'aside-left') ? (
-        <div
-          className={
-            presentation.entryMediaSticky !== false
-              ? 'flex w-full justify-center lg:sticky lg:top-24 lg:w-auto lg:self-center'
-              : 'flex w-full justify-center lg:w-auto'
-          }
-        >
-          <ExperienceMediaWithOptionalProof block={block} presentation={presentation} />
-        </div>
-      ) : null;
-    const useIntegratedBentoMedia = Boolean(bentoAsideMedia);
-
-    return wrapOuter(
-      <article
-        className={`${shellClass} h-full`}
-        style={shellStyle}
-      >
-        {wrapEntryChrome(
-          <>
-            <div className="mb-5 flex flex-wrap items-center gap-3 sm:mb-6">
-              {visiblePeriod ? (
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 sm:text-sm">
-                  {visiblePeriod}
-                </p>
-              ) : null}
-              {presentation.periodRuleEnabled !== false ? (
-                <span
-                  className="min-w-[3rem] flex-1"
-                  style={experiencePeriodRuleStyle(presentation)}
-                  aria-hidden
-                />
-              ) : null}
-            </div>
-            {useIntegratedBentoMedia ? (
-              <ExperienceEntryBody
-                {...bodyProps}
-                layout="bento"
-                mediaSlot={bentoAsideMedia}
-                mediaAside={mediaPlacement === 'aside-left' ? 'left' : 'right'}
-                titleClassName="text-3xl font-bold leading-[1.05] tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl"
-              />
-            ) : (
-              wrapBody(
-                <ExperienceEntryBody
-                  {...bodyProps}
-                  layout={inMultiColumn ? 'stack' : bodyLayout === 'stack' ? 'stack' : 'bento'}
-                  titleClassName={
-                    inMultiColumn
-                      ? 'text-2xl font-bold leading-snug tracking-[-0.02em] text-neutral-950 sm:text-3xl'
-                      : 'text-3xl font-bold leading-[1.05] tracking-[-0.03em] text-neutral-950 sm:text-4xl lg:text-5xl'
-                  }
-                />
-              )
-            )}
-          </>
-        )}
-      </article>
-    );
-  }
-
-  if (design === 'stacked') {
-    return wrapOuter(
-      <article className={`${shellClass} h-full`} style={shellStyle}>
-        {wrapEntryChrome(
-          <>
-            <div className="mb-4 flex flex-wrap items-center gap-3 sm:mb-5">
-              {visiblePeriod ? (
-                <span
-                  className="inline-flex rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em]"
-                  style={{ backgroundColor: `${accent}14`, color: accent }}
-                >
-                  {visiblePeriod}
-                </span>
-              ) : null}
-            </div>
-            {wrapBody(
-              <ExperienceEntryBody
-                {...bodyProps}
-                layout={bodyLayout}
-                titleClassName="text-xl font-bold leading-snug tracking-[-0.02em] text-neutral-950 sm:text-2xl lg:text-3xl"
-              />
-            )}
-          </>
-        )}
-      </article>
-    );
-  }
-
-  if (design === 'compact') {
-    return wrapOuter(
-      <article className={shellClass} style={shellStyle}>
-        {wrapEntryChrome(
-          <div className="grid gap-3 sm:gap-4 md:grid-cols-[6.5rem_minmax(0,1fr)] lg:grid-cols-[7.5rem_minmax(0,1fr)] lg:gap-8">
-            <p className="text-sm font-semibold tabular-nums text-neutral-400 md:pt-1">
-              {visiblePeriod ?? '—'}
-            </p>
-            {wrapBody(<ExperienceEntryBody {...bodyProps} layout="compact" />)}
-          </div>
-        )}
-      </article>
-    );
-  }
-
-  if (design === 'timeline-accent') {
-    return (
-      <article className="grid grid-cols-1 gap-4 pb-8 sm:grid-cols-[5.5rem_1.5rem_minmax(0,1fr)] sm:gap-x-4 sm:pb-2 md:grid-cols-[7rem_2rem_minmax(0,1fr)] md:gap-x-6 lg:grid-cols-[8.5rem_2.25rem_minmax(0,1fr)]">
-        <p className="text-sm font-semibold tabular-nums leading-snug sm:pt-1 sm:text-base" style={{ color: accent }}>
-          {visiblePeriod ?? '—'}
-        </p>
-        <div className="hidden sm:block">
-          <ExperienceTimelineRail presentation={presentation} isLast={isLast} filled />
-        </div>
-        {wrapOuter(
-          <div className={`min-w-0 sm:pb-12 ${shellClass}`} style={shellStyle}>
-            {wrapEntryChrome(wrapBody(<ExperienceEntryBody {...bodyProps} layout={bodyLayout} />))}
-          </div>
-        )}
-      </article>
-    );
-  }
-
-  if (design === 'timeline-editorial') {
-    const mediaPlacement = presentation.entryMediaPlacement ?? 'aside-right';
-    const magazineAsideMedia =
-      !inMultiColumn &&
-      experienceEntryHasMedia(block, presentation) &&
-      (mediaPlacement === 'aside-right' || mediaPlacement === 'aside-left') ? (
-        <div
-          className={
-            presentation.entryMediaSticky !== false
-              ? 'flex h-full min-w-0 w-full lg:sticky lg:top-24 lg:self-stretch'
-              : 'flex h-full min-w-0 w-full lg:self-stretch'
-          }
-        >
-          <ExperienceMediaWithOptionalProof
-            block={block}
-            presentation={presentation}
-            fillHeight
-          />
-        </div>
-      ) : null;
-    const useIntegratedMagazineMedia = Boolean(magazineAsideMedia);
-    const magazineRailStyle = experienceMagazineRailStyle(presentation);
-    const magazineSeparatorSpacingPx = Math.max(
-      32,
-      Math.min(160, Math.round(presentation.magazineSeparatorSpacingPx ?? 64))
-    );
-    const magazineEntryStyle: CSSProperties | undefined = isLast
-      ? undefined
-      : {
-          ...experienceHairlineBorderBottomStyle(presentation, 50),
-          paddingBottom: `${magazineSeparatorSpacingPx}px`,
-        };
-
-    return (
-      <article
-        className="relative mb-4 last:mb-0"
-        style={magazineEntryStyle}
-      >
-        {magazineRailStyle ? (
-          <div
-            className="absolute bottom-0 left-0 top-0 hidden w-1 rounded-full lg:block"
-            style={magazineRailStyle}
-            aria-hidden
-          />
-        ) : null}
-        {wrapOuter(
-          <div className={`lg:pl-8 ${shellClass}`} style={shellStyle}>
-            {wrapEntryChrome(
-              useIntegratedMagazineMedia ? (
-                <ExperienceEntryBody
-                  {...bodyProps}
-                  period={visiblePeriod}
-                  layout={inMultiColumn ? 'stack' : 'magazine'}
-                  mediaSlot={magazineAsideMedia}
-                  mediaAside={mediaPlacement === 'aside-left' ? 'left' : 'right'}
-                  titleClassName="text-2xl font-bold leading-[1.1] tracking-[-0.03em] text-neutral-950 sm:text-3xl lg:text-4xl"
-                />
-              ) : (
-                wrapBody(
-                  <ExperienceEntryBody
-                    {...bodyProps}
-                    period={visiblePeriod}
-                    layout={inMultiColumn ? 'stack' : bodyLayout === 'stack' ? 'stack' : 'magazine'}
-                    titleClassName="text-2xl font-bold leading-[1.1] tracking-[-0.03em] text-neutral-950 sm:text-3xl lg:text-4xl"
-                  />
-                )
-              )
-            )}
-          </div>
-        )}
-      </article>
-    );
-  }
-
-  if (design === 'timeline-stepped') {
-    const step = String(index + 1).padStart(2, '0');
-    const hasBannerMedia = experienceEntryHasMedia(block, presentation);
-    const mediaUrl =
-      typeof block.mediaUrl === 'string' && block.mediaUrl.trim() ? block.mediaUrl.trim() : '';
-    const statusForBanner =
-      presentation.showMeta && (status === 'ONGOING' || status === 'FINISHED') ? status : null;
-    const styles = normalizeExperienceElementStyles(presentation.elementStyles);
-    // Edge-to-edge banner: strip entry padding / vertical rhythm from the shell.
-    const steppedFrameEnabled = experienceEntryShellUsesFrame(presentation);
-    const steppedFrame = steppedFrameEnabled
-      ? { ...presentation.entryFrame, enabled: true as const, cardPadding: 'none' as const }
-      : null;
-    const steppedShellClass = [
-      steppedFrame
-        ? experienceLayerFrameClass(steppedFrame, presentation.itemDensity)
-            .split(/\s+/)
-            .filter((token) => token && !token.startsWith('space-y-') && !/^p-/.test(token) && !/^sm:p-/.test(token) && !/^md:p-/.test(token) && !/^lg:p-/.test(token))
-            .join(' ')
-        : 'relative overflow-hidden rounded-2xl border border-neutral-200/80',
-      'h-full',
-    ]
-      .filter(Boolean)
-      .join(' ');
-    const steppedShellStyle = steppedFrame
-      ? experienceLayerFrameStyle(steppedFrame, accent)
-      : shellStyle;
-    const steppedChrome = (content: React.ReactNode) =>
-      steppedFrame ? (
-        <>
-          <ServicesCardBackgroundLayers
-            presentation={experienceLayerToCardFrameSettings(steppedFrame)}
-          />
-          <ServicesCardForeground>{content}</ServicesCardForeground>
-        </>
-      ) : (
-        content
-      );
-    const statusBannerLabel =
-      statusForBanner === 'ONGOING'
-        ? 'Ongoing'
-        : statusForBanner === 'FINISHED'
-          ? 'Finished'
-          : null;
-
-    return (
-      <article className={steppedShellClass} style={steppedShellStyle}>
-        {steppedChrome(
-          <div className="flex min-h-0 w-full flex-col">
-            {hasBannerMedia && mediaUrl ? (
-              <div
-                className="relative w-full shrink-0 overflow-hidden"
-                style={experienceHairlineBorderBottomStyle(presentation, 70)}
-              >
-                <div
-                  className="w-full overflow-hidden bg-neutral-950/10"
-                  style={{
-                    height: `${resolveExperienceSteppedBannerHeightPx(presentation)}px`,
-                  }}
-                >
-                  <ProductThumbnailMedia
-                    url={mediaUrl}
-                    alt={title?.trim() || block.title?.trim() || 'Experience media'}
-                    fit={presentation.entryMediaFit ?? 'cover'}
-                    className={`h-full w-full ${experienceEntryMediaPositionClass(
-                      presentation.entryMediaPosition ?? 'center'
-                    )}`}
-                  />
-                </div>
-                {statusBannerLabel ? (
-                  <span
-                    className="absolute bottom-3 left-3 inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-sm"
-                    style={{ backgroundColor: accent }}
-                  >
-                    {statusBannerLabel}
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
-
-            <div className="p-6">
-              <div className="mb-5 flex flex-wrap items-center gap-3 sm:gap-4">
-                <span
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-xs font-black tabular-nums tracking-[0.08em] sm:h-11 sm:w-11 sm:text-sm"
-                  style={{ borderColor: accent, color: accent }}
-                >
-                  {step}
-                </span>
-                {visiblePeriod ? (
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-400">
-                    {visiblePeriod}
-                  </p>
-                ) : null}
-                {/* Status lives on the banner when media exists; otherwise keep a compact chip here. */}
-                {!hasBannerMedia && statusForBanner ? (
-                  <ExperienceStatusBadge
-                    status={statusForBanner}
-                    accent={accent}
-                    textStyle={styles.meta}
-                    softChipChrome={experienceSoftChipChromeStyle(presentation)}
-                    badgeStyle={presentation.statusBadgeStyle ?? 'pill'}
-                  />
-                ) : null}
-              </div>
-
-              <ExperienceEntryBody
-                {...bodyProps}
-                status={null}
-                layout={inMultiColumn ? 'stack' : 'stepped'}
-                titleClassName="text-xl font-bold leading-snug tracking-[-0.02em] text-neutral-950 sm:text-2xl lg:text-[1.75rem]"
-              />
-            </div>
-          </div>
-        )}
-      </article>
-    );
-  }
+  const titleColor = ensureExperienceInkContrast(
+    presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_TITLE_COLOR,
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+  );
+  const mutedColor = ensureExperienceInkContrast(
+    presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_MUTED_COLOR,
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+  );
+  const bodyColor = ensureExperienceInkContrast(
+    resolveExperienceTextColor(styles.tasks, colorMode) ||
+      resolveExperienceTextColor(styles.description, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_BODY_COLOR,
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+  );
 
   return (
-    <article className="grid grid-cols-1 gap-4 pb-8 sm:grid-cols-[5.5rem_1.5rem_minmax(0,1fr)] sm:gap-x-4 md:grid-cols-[7rem_2rem_minmax(0,1fr)] md:gap-x-6 lg:grid-cols-[8.5rem_2.25rem_minmax(0,1fr)]">
-      <p className="text-sm font-medium tabular-nums leading-snug text-neutral-400 sm:pt-1 sm:text-base">
-        {visiblePeriod ?? '—'}
-      </p>
-      <div className="hidden sm:block">
-        <ExperienceTimelineRail presentation={presentation} isLast={isLast} />
-      </div>
-      {wrapOuter(
-        <div className={`min-w-0 sm:pb-12 ${shellClass}`} style={shellStyle}>
-          {wrapEntryChrome(wrapBody(<ExperienceEntryBody {...bodyProps} layout={bodyLayout} />))}
-        </div>
-      )}
-    </article>
+    <ExperienceEditorialEntry
+      period={presentation.showPeriod ? period : null}
+      title={presentation.showTitle ? title : null}
+      organization={presentation.showOrganization ? organization : null}
+      description={presentation.showDescription ? description : null}
+      status={presentation.showMeta ? status : null}
+      tasks={presentation.showTasks ? tasks : []}
+      tools={presentation.showTools ? tools : []}
+      toolsLabel={presentation.toolsLabel}
+      links={presentation.showProof ? links : []}
+      location={presentation.showMeta ? location : null}
+      employmentType={presentation.showMeta ? employmentType : null}
+      accent={accent}
+      titleColor={titleColor}
+      mutedColor={mutedColor}
+      bodyColor={bodyColor}
+      isDark={isDark}
+      isLast={isLast}
+      expanded={expanded}
+      onExpandedChange={onExpandedChange ?? (() => undefined)}
+      statusPlacement={presentation.statusPlacement ?? 'inline'}
+      periodDesign={presentation.periodDesign ?? 'plain'}
+      presentation={presentation}
+    />
   );
 }
 
@@ -15854,19 +15725,34 @@ export function EditorialExperienceList({
   /** Split-screen nav: one experience entry per row in the right pane. */
   forceSingleColumn?: boolean;
 }) {
+  const [openBlockId, setOpenBlockId] = useState<string | null>(() => blocks[0]?.id ?? null);
+
+  useEffect(() => {
+    if (blocks.length === 0) {
+      setOpenBlockId(null);
+      return;
+    }
+    setOpenBlockId((current) => {
+      if (current && blocks.some((block) => block.id === current)) return current;
+      return blocks[0]?.id ?? null;
+    });
+  }, [blocks]);
+
   if (blocks.length === 0) return null;
 
+  const isAllOpen = (presentation.entryExpandMode ?? 'accordion') === 'all-open';
   const design = presentation.experienceDesign;
   const itemsPerRow = forceSingleColumn
     ? 1
     : resolveExperienceItemsPerRow(design, presentation.itemsPerRow);
-  const inMultiColumn = itemsPerRow > 1;
   const gridClass = experienceItemsPerRowGridClass(itemsPerRow, design, presentation.itemGap);
-  const listGap = inMultiColumn
-    ? ''
-    : experienceDesignUsesEntryCard(design) || design === 'large' || design === 'compact'
-      ? `flex flex-col ${experienceItemGapClass(presentation.itemGap)}`
-      : 'space-y-0';
+  // Editorial rows are flush on the page — no card lift / orange hover shadow frame.
+  const flatMotionTiming = {
+    ...defaultMotionTimingForProfile(motionProfile),
+    hoverLift: 0,
+    hoverShadowSize: 0,
+    hoverShadowOpacity: 0,
+  };
 
   return (
     <div
@@ -15875,16 +15761,376 @@ export function EditorialExperienceList({
         forceSingleColumn ? 'left' : presentation.listPlacement
       )}
     >
-      <div className={`${gridClass} ${listGap}`.trim()}>
+      <div className={`${gridClass} space-y-0`.trim()}>
         {blocks.map((block, index) => (
-          <PortfolioMotionItem key={block.id} profile={motionProfile} index={index} className="h-full">
+          <PortfolioMotionItem
+            key={block.id}
+            profile={motionProfile}
+            index={index}
+            className="h-full"
+            timing={flatMotionTiming}
+          >
             <EditorialExperienceBlock
               block={block}
               index={index}
               isLast={index === blocks.length - 1}
               presentation={presentation}
-              inMultiColumn={inMultiColumn}
-              stackColumnsForSplitNav={forceSingleColumn}
+              expanded={isAllOpen || openBlockId === block.id}
+              onExpandedChange={
+                isAllOpen ? undefined : (next) => setOpenBlockId(next ? block.id : null)
+              }
+            />
+          </PortfolioMotionItem>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function extractMilestoneDisplayYear(period: string | null): string {
+  if (!period?.trim()) return '—';
+  const match = period.match(/\d{4}/);
+  return match?.[0] ?? period.trim();
+}
+
+function MilestoneExperienceEntry({
+  period,
+  title,
+  organization,
+  description,
+  status,
+  tasks,
+  tools,
+  toolsLabel,
+  links,
+  location,
+  employmentType,
+  accent,
+  titleColor,
+  mutedColor,
+  bodyColor,
+  isDark,
+  isLast,
+  index,
+  presentation,
+}: {
+  period: string | null;
+  title: string | null;
+  organization: string | null;
+  description: string | null;
+  status: ExperienceBlockStatus | null;
+  tasks: string[];
+  tools: string[];
+  toolsLabel: string;
+  links: ExperienceProofLink[];
+  location: string | null;
+  employmentType: ExperienceEmploymentType | null;
+  accent: string;
+  titleColor: string;
+  mutedColor: string;
+  bodyColor: string;
+  isDark: boolean;
+  isLast: boolean;
+  index: number;
+  presentation: PortfolioExperiencePresentationSettings;
+}) {
+  const displayYear = extractMilestoneDisplayYear(period);
+  const lineStyle = experienceTimelineRailLineStyle(presentation, true);
+  const nodeStyle = experienceTimelineRailNodeStyle(presentation, true);
+  const stackLabel = resolveExperienceBlockLabel(toolsLabel, 'Stack');
+  const metaParts = [
+    organization?.trim() || '',
+    location?.trim() || '',
+    employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : '',
+  ].filter(Boolean);
+  const cardStyle: CSSProperties = isDark
+    ? {
+        borderColor: 'rgba(255,255,255,0.1)',
+        backgroundColor: 'rgba(255,255,255,0.04)',
+      }
+    : {
+        borderColor: 'rgba(0,0,0,0.08)',
+        backgroundColor: 'rgba(0,0,0,0.025)',
+      };
+  const toolTagStyle: CSSProperties = isDark
+    ? {
+        borderColor: 'rgba(255,255,255,0.14)',
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        color: bodyColor,
+      }
+    : {
+        borderColor: 'rgba(0,0,0,0.1)',
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        color: bodyColor,
+      };
+  const indexLabel = String(index + 1).padStart(2, '0');
+
+  return (
+    <article
+      className={`grid grid-cols-1 gap-4 sm:grid-cols-[5.5rem_1.25rem_minmax(0,1fr)] sm:gap-x-5 lg:grid-cols-[6.5rem_1.5rem_minmax(0,1fr)] lg:gap-x-6 ${
+        isLast ? 'pb-2' : 'pb-12 sm:pb-16'
+      }`}
+    >
+      <div className="flex items-start gap-3 sm:block sm:pt-2">
+        <span
+          className="text-[0.65rem] font-bold uppercase tracking-[0.22em] sm:hidden"
+          style={{ color: mutedColor }}
+          aria-hidden
+        >
+          {indexLabel}
+        </span>
+        <div className="min-w-0">
+          <p
+            className="font-semibold tabular-nums leading-none tracking-[-0.04em] text-[clamp(2.5rem,6vw,3.75rem)]"
+            style={{ color: titleColor, opacity: 0.92 }}
+          >
+            {displayYear}
+          </p>
+          {period && period !== displayYear ? (
+            <p
+              className="mt-2 hidden text-[0.72rem] font-medium uppercase tracking-[0.14em] sm:block"
+              style={{ color: mutedColor }}
+            >
+              {period}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="relative hidden justify-center sm:flex">
+        <div
+          className="relative z-10 mt-3 h-3 w-3 shrink-0 rounded-full"
+          style={nodeStyle}
+          aria-hidden
+        />
+        {!isLast ? (
+          <div
+            className="absolute top-[1.35rem] bottom-0 left-1/2 w-px -translate-x-1/2"
+            style={lineStyle}
+            aria-hidden
+          />
+        ) : null}
+      </div>
+
+      <div
+        className="min-w-0 rounded-[1.35rem] border px-5 py-5 sm:rounded-[1.5rem] sm:px-7 sm:py-6 lg:px-8 lg:py-7"
+        style={cardStyle}
+      >
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <span
+            className="text-[0.68rem] font-bold uppercase tracking-[0.2em]"
+            style={{ color: accent }}
+          >
+            {indexLabel}
+          </span>
+          {metaParts.length > 0 ? (
+            <p className="text-[0.8125rem] font-medium sm:text-sm" style={{ color: mutedColor }}>
+              {metaParts.join(' · ')}
+            </p>
+          ) : null}
+          <ExperienceEditorialOngoingBadge status={status} isDark={isDark} />
+        </div>
+
+        {title ? (
+          <h4
+            className="mt-3 text-[1.45rem] font-semibold leading-[1.15] tracking-[-0.03em] sm:mt-4 sm:text-[1.75rem] lg:text-[2rem]"
+            style={{ color: titleColor }}
+          >
+            {title}
+          </h4>
+        ) : null}
+
+        {description ? (
+          <p
+            className="mt-4 max-w-2xl text-[0.98rem] leading-[1.72] sm:text-[1.05rem]"
+            style={{ color: bodyColor }}
+          >
+            {description}
+          </p>
+        ) : null}
+
+        {tasks.length > 0 ? (
+          <ol className="mt-5 space-y-3 sm:mt-6">
+            {tasks.map((task, taskIndex) => (
+              <li key={task} className="flex gap-3 sm:gap-4">
+                <span
+                  className="mt-0.5 shrink-0 text-[0.72rem] font-bold tabular-nums tracking-[0.08em]"
+                  style={{ color: accent, opacity: 0.85 }}
+                >
+                  {String(taskIndex + 1).padStart(2, '0')}
+                </span>
+                <span
+                  className="text-[0.95rem] leading-relaxed sm:text-[1.02rem]"
+                  style={{ color: bodyColor }}
+                >
+                  {task}
+                </span>
+              </li>
+            ))}
+          </ol>
+        ) : null}
+
+        {tools.length > 0 ? (
+          <div className="mt-6 border-t pt-5 sm:mt-7 sm:pt-6" style={{ borderColor: cardStyle.borderColor }}>
+            {stackLabel ? (
+              <p
+                className="mb-3 text-[0.68rem] font-bold uppercase tracking-[0.18em]"
+                style={{ color: mutedColor }}
+              >
+                {stackLabel}
+              </p>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              {tools.map((tool) => (
+                <span
+                  key={tool}
+                  className="inline-flex rounded-full border px-3 py-1.5 text-[0.875rem] font-medium"
+                  style={toolTagStyle}
+                >
+                  {tool}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {links.length > 0 ? (
+          <div className="mt-5 flex flex-col items-start gap-2 sm:mt-6">
+            {links.map((link) => (
+              <a
+                key={link.id}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-80 sm:text-base"
+                style={{ color: accent }}
+              >
+                <span>{link.label}</span>
+                <span aria-hidden>↗</span>
+              </a>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function MilestoneExperienceBlock({
+  block,
+  index = 0,
+  isLast = false,
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+}: {
+  block: ProfileMediaBlock;
+  index?: number;
+  isLast?: boolean;
+  presentation?: PortfolioExperiencePresentationSettings;
+}) {
+  const {
+    period,
+    title,
+    organization,
+    description,
+    status,
+    tasks,
+    tools,
+    links,
+    location,
+    employmentType,
+  } = resolveExperienceContent(block);
+
+  const accent = experienceAccentColor(presentation.accentColor);
+  const isDark = presentation.activeColorMode !== 'light';
+  const colorMode = resolveExperienceColorMode(presentation);
+  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
+
+  const titleColor = ensureExperienceInkContrast(
+    presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_TITLE_COLOR,
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+  );
+  const mutedColor = ensureExperienceInkContrast(
+    presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_MUTED_COLOR,
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+  );
+  const bodyColor = ensureExperienceInkContrast(
+    resolveExperienceTextColor(styles.tasks, colorMode) ||
+      resolveExperienceTextColor(styles.description, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_BODY_COLOR,
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+  );
+
+  return (
+    <MilestoneExperienceEntry
+      period={presentation.showPeriod ? period : null}
+      title={presentation.showTitle ? title : null}
+      organization={presentation.showOrganization ? organization : null}
+      description={presentation.showDescription ? description : null}
+      status={presentation.showMeta ? status : null}
+      tasks={presentation.showTasks ? tasks : []}
+      tools={presentation.showTools ? tools : []}
+      toolsLabel={presentation.toolsLabel}
+      links={presentation.showProof ? links : []}
+      location={presentation.showMeta ? location : null}
+      employmentType={presentation.showMeta ? employmentType : null}
+      accent={accent}
+      titleColor={titleColor}
+      mutedColor={mutedColor}
+      bodyColor={bodyColor}
+      isDark={isDark}
+      isLast={isLast}
+      index={index}
+      presentation={presentation}
+    />
+  );
+}
+
+export function MilestoneExperienceList({
+  blocks,
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+  motionProfile = DEFAULT_MOTION_PROFILE,
+  forceSingleColumn = false,
+}: {
+  blocks: ProfileMediaBlock[];
+  presentation?: PortfolioExperiencePresentationSettings;
+  motionProfile?: PortfolioGlobalMotionProfile;
+  forceSingleColumn?: boolean;
+}) {
+  if (blocks.length === 0) return null;
+
+  const flatMotionTiming = {
+    ...defaultMotionTimingForProfile(motionProfile),
+    hoverLift: 0,
+    hoverShadowSize: 0,
+    hoverShadowOpacity: 0,
+  };
+
+  return (
+    <div
+      className={experienceListShellClass(
+        forceSingleColumn ? 'full' : presentation.listMaxWidth,
+        forceSingleColumn ? 'left' : presentation.listPlacement
+      )}
+    >
+      <div className="space-y-0">
+        {blocks.map((block, index) => (
+          <PortfolioMotionItem
+            key={block.id}
+            profile={motionProfile}
+            index={index}
+            className="h-full"
+            timing={flatMotionTiming}
+          >
+            <MilestoneExperienceBlock
+              block={block}
+              index={index}
+              isLast={index === blocks.length - 1}
+              presentation={presentation}
             />
           </PortfolioMotionItem>
         ))}

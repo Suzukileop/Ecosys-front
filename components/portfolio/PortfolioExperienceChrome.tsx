@@ -98,10 +98,8 @@ export type PortfolioExperienceBlock = {
   status: PortfolioExperienceStatus | null;
   location: string;
   employmentType: PortfolioExperienceEmploymentType | null;
-  remarks: string;
   mediaUrl: string;
   mediaType: 'IMAGE' | 'VIDEO' | null;
-  subtitles: Array<{ value: string }>;
   tasks: Array<{ value: string }>;
   tools: Array<{ value: string; description?: string; iconUrl?: string | null }>;
   links: PortfolioExperienceProofLink[];
@@ -115,10 +113,8 @@ export type PortfolioExperienceBlockDraft = {
   status: PortfolioExperienceStatus | null;
   location: string;
   employmentType: PortfolioExperienceEmploymentType | null;
-  remarks: string;
   mediaUrl: string;
   mediaType: 'IMAGE' | 'VIDEO' | null;
-  subtitles: Array<{ value: string }>;
   tasks: Array<{ value: string }>;
   tools: Array<{ value: string; description?: string; iconUrl?: string | null }>;
   links: PortfolioExperienceProofLink[];
@@ -135,8 +131,6 @@ type ExperienceFieldKey =
   | 'tasks'
   | 'tools'
   | 'links'
-  | 'remarks'
-  | 'subtitles'
   | 'media';
 
 const EXPERIENCE_MEDIA_ACCEPT =
@@ -241,10 +235,8 @@ function toDraft(block: PortfolioExperienceBlock): PortfolioExperienceBlockDraft
     status: block.status,
     location: block.location,
     employmentType: block.employmentType,
-    remarks: block.remarks,
     mediaUrl: block.mediaUrl,
     mediaType: block.mediaType,
-    subtitles: block.subtitles.map((item) => ({ value: item.value })),
     tasks: block.tasks.map((item) => ({ value: item.value })),
     tools: block.tools.map((item) => ({
       value: item.value,
@@ -267,10 +259,8 @@ export function mapProfileBlockToExperienceBlock(
     status: block.status ?? null,
     location: block.location ?? '',
     employmentType: block.employmentType ?? null,
-    remarks: block.remarks ?? '',
     mediaUrl: block.mediaUrl ?? '',
     mediaType: block.mediaType ?? null,
-    subtitles: (block.subtitles ?? []).map((item) => ({ value: item.value ?? '' })),
     tasks: (block.tasks ?? []).map((item) => ({ value: item.value ?? '' })),
     tools: (block.tools ?? []).map((item) => ({
       value: item.value ?? '',
@@ -345,10 +335,8 @@ function cleanDraft(draft: PortfolioExperienceBlockDraft): PortfolioExperienceBl
     status: draft.status,
     location: draft.location.trim(),
     employmentType: draft.employmentType,
-    remarks: draft.remarks.trim(),
     mediaUrl: draft.mediaUrl.trim(),
     mediaType: draft.mediaUrl.trim() ? draft.mediaType : null,
-    subtitles: normalizeStringList(draft.subtitles).map((value) => ({ value })),
     tasks: normalizeStringList(draft.tasks).map((value) => ({ value })),
     tools: normalizeTools(draft.tools),
     links: normalizeLinks(draft.links),
@@ -369,10 +357,8 @@ function draftsEqual(
     a.status === b.status &&
     a.location === b.location &&
     a.employmentType === b.employmentType &&
-    a.remarks === b.remarks &&
     a.mediaUrl === b.mediaUrl &&
     a.mediaType === b.mediaType &&
-    JSON.stringify(a.subtitles) === JSON.stringify(b.subtitles) &&
     JSON.stringify(a.tasks) === JSON.stringify(b.tasks) &&
     JSON.stringify(a.tools) === JSON.stringify(b.tools) &&
     JSON.stringify(a.links) === JSON.stringify(b.links)
@@ -387,9 +373,7 @@ function blockHasContent(block: {
   status: PortfolioExperienceStatus | null;
   location: string;
   employmentType: PortfolioExperienceEmploymentType | null;
-  remarks: string;
   mediaUrl: string;
-  subtitles: Array<{ value: string }>;
   tasks: Array<{ value: string }>;
   tools: Array<{ value: string; description?: string }>;
   links: PortfolioExperienceProofLink[];
@@ -399,12 +383,10 @@ function blockHasContent(block: {
     Boolean(block.title.trim()) ||
     Boolean(block.organization.trim()) ||
     Boolean(block.period.trim()) ||
-    Boolean(block.remarks.trim()) ||
     Boolean(block.location.trim()) ||
     Boolean(block.mediaUrl.trim()) ||
     block.status != null ||
     block.employmentType != null ||
-    block.subtitles.some((item) => item.value.trim()) ||
     block.tasks.some((item) => item.value.trim()) ||
     block.tools.some((item) => item.value.trim() || item.description?.trim()) ||
     block.links.some((item) => item.url.trim() || item.label.trim())
@@ -906,51 +888,6 @@ function ExperienceEntryFields({
         }
       >
         <ProofLinksDisplay links={display.links} />
-      </PortfolioFlatField>
-
-      <PortfolioFlatField
-        label="Remarks"
-        value={display.remarks}
-        emptyLabel="Not set"
-        editing={fieldEditing('remarks')}
-        onEdit={fieldOnEdit('remarks')}
-        onConfirm={fieldOnConfirm}
-        onCancelEdit={fieldOnCancel}
-        confirming={confirming && editingField === 'remarks'}
-        canConfirm={fieldHasChanges}
-        editControl={
-          <textarea
-            value={display.remarks}
-            onChange={(event) => patch({ remarks: event.target.value })}
-            rows={2}
-            placeholder="Optional note — NDAs, confidential client…"
-            className={`${portfolioInlineInputClass} resize-y font-medium leading-relaxed`}
-            autoFocus={editingField === 'remarks'}
-            disabled={fieldSaving}
-          />
-        }
-      />
-
-      <PortfolioFlatField
-        label="Tags"
-        editing={fieldEditing('subtitles')}
-        onEdit={fieldOnEdit('subtitles')}
-        onConfirm={fieldOnConfirm}
-        onCancelEdit={fieldOnCancel}
-        confirming={confirming && editingField === 'subtitles'}
-        canConfirm={fieldHasChanges}
-        editControl={
-          <StringListEditor
-            values={display.subtitles}
-            onChange={(subtitles) => patch({ subtitles })}
-            placeholder="Tag"
-            addLabel="+ Add tag"
-            max={10}
-            disabled={fieldSaving}
-          />
-        }
-      >
-        <ChipRow values={normalizeStringList(display.subtitles)} emptyLabel="Not set" />
       </PortfolioFlatField>
 
       <PortfolioFlatField

@@ -240,12 +240,10 @@ function experienceBlockHasContent(
     block.title.trim().length > 0 ||
     block.organization.trim().length > 0 ||
     block.period.trim().length > 0 ||
-    block.remarks.trim().length > 0 ||
     block.location.trim().length > 0 ||
     block.mediaUrl.trim().length > 0 ||
     block.status != null ||
     block.employmentType != null ||
-    block.subtitles.some((item) => item.value.trim()) ||
     block.tasks.some((item) => item.value.trim()) ||
     block.tools.some((item) => item.value.trim()) ||
     block.links.some((item) => item.url.trim() || item.label.trim())
@@ -2686,12 +2684,10 @@ export function CreatorStudioProfileTab({
             Boolean(block.title?.trim()) ||
             Boolean(block.organization?.trim()) ||
             Boolean(block.period?.trim()) ||
-            Boolean(block.remarks?.trim()) ||
             Boolean(block.location?.trim()) ||
             Boolean(block.mediaUrl?.trim()) ||
             block.status != null ||
             block.employmentType != null ||
-            (block.subtitles?.some((item) => item.value.trim()) ?? false) ||
             (block.tasks?.some((item) => item.value.trim()) ?? false) ||
             (block.tools?.some((item) => item.value.trim()) ?? false) ||
             (block.links?.some((item) => item.url.trim() || item.label.trim()) ?? false)
@@ -2705,12 +2701,8 @@ export function CreatorStudioProfileTab({
             status: block.status,
             location: block.location.trim(),
             employmentType: block.employmentType,
-            remarks: block.remarks.trim(),
             mediaUrl: block.mediaUrl.trim(),
             mediaType: block.mediaUrl.trim() ? block.mediaType : null,
-            subtitles: (block.subtitles ?? [])
-              .map((item) => ({ value: item.value.trim() }))
-              .filter((item) => item.value.length > 0),
             tasks: (block.tasks ?? [])
               .map((item) => ({ value: item.value.trim() }))
               .filter((item) => item.value.length > 0),
@@ -2737,12 +2729,10 @@ export function CreatorStudioProfileTab({
               block.title.length > 0 ||
               block.organization.length > 0 ||
               block.period.length > 0 ||
-              block.remarks.length > 0 ||
               block.location.length > 0 ||
               block.mediaUrl.length > 0 ||
               block.status != null ||
               block.employmentType != null ||
-              block.subtitles.length > 0 ||
               block.tasks.length > 0 ||
               block.tools.length > 0 ||
               block.links.length > 0
@@ -2759,13 +2749,11 @@ export function CreatorStudioProfileTab({
             status: block.status,
             location: block.location,
             employmentType: block.employmentType,
-            remarks: block.remarks,
             mediaUrl: block.mediaUrl || existing.mediaUrl || '',
             mediaType:
               block.mediaUrl || existing.mediaUrl
                 ? block.mediaType ?? existing.mediaType ?? null
                 : null,
-            subtitles: block.subtitles,
             tasks: block.tasks,
             tools: block.tools.map((tool) => {
               const previous = (existing.tools ?? []).find(
@@ -5409,12 +5397,10 @@ export function CreatorStudioProfileTab({
                                   block.title.trim().length > 0 ||
                                   block.organization.trim().length > 0 ||
                                   block.period.trim().length > 0 ||
-                                  block.remarks.trim().length > 0 ||
                                   block.location.trim().length > 0 ||
                                   block.mediaUrl.trim().length > 0 ||
                                   block.status != null ||
                                   block.employmentType != null ||
-                                  block.subtitles.some((item) => item.value.trim()) ||
                                   block.tasks.some((item) => item.value.trim()) ||
                                   block.tools.some((item) => item.value.trim()) ||
                                   block.links.some((item) => item.url.trim() || item.label.trim());
@@ -5437,10 +5423,8 @@ export function CreatorStudioProfileTab({
                                         status: block.status,
                                         location: block.location,
                                         employmentType: block.employmentType,
-                                        remarks: block.remarks,
                                         mediaUrl: block.mediaUrl,
                                         mediaType: block.mediaType,
-                                        subtitles: block.subtitles,
                                         tasks: block.tasks,
                                         tools: block.tools,
                                         links: block.links,

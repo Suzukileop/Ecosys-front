@@ -972,6 +972,11 @@ html.ecosystem-geo-bg [data-dashboard-content] {
 }
 
 /* Portfolio public page — viewport scrollbar follows light/dark mode (set on <html>). */
+/* Reserve gutter so accordion expand does not shift layout when the bar appears. */
+html[data-portfolio-color-mode='dark'],
+html[data-portfolio-color-mode='light'] {
+  scrollbar-gutter: stable;
+}
 html[data-portfolio-color-mode='dark'] {
   scrollbar-width: thin;
   scrollbar-color: rgba(82, 82, 82, 0.55) transparent;

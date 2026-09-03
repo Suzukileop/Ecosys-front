@@ -4,28 +4,29 @@ import { useState } from 'react';
 import {
   DEFAULT_INFO_SUBTITLE,
   DEFAULT_INFO_TITLE,
-  defaultsForInfoDesign,
+  infoDesignSettingsPatch,
+  portfolioInfoDesignHasPortrait,
+  resolveInfoPortraitGrayscale,
   PORTFOLIO_INFO_ABOUT_ME_TRAIT_HEADLINE_PRESETS,
+  PORTFOLIO_INFO_ABOUT_BANNER_HEADLINE_PRESETS,
+  PORTFOLIO_INFO_ABOUT_FEATURE_INTRO_PRESETS,
+  PORTFOLIO_INFO_ABOUT_PLATFORM_HEADLINE_PRESETS,
+  isAboutFeatureIntroPresetActive,
+  DEFAULT_ABOUT_BANNER_HEADLINE,
   PORTFOLIO_INFO_ABOUT_MANIFESTO_BLOCKS_LAYOUT_OPTIONS,
   PORTFOLIO_INFO_ABOUT_MANIFESTO_PORTRAIT_FRAME_OPTIONS,
-  PORTFOLIO_INFO_ABOUT_VALUE_BLOCKS_LAYOUT_OPTIONS,
-  PORTFOLIO_INFO_ABOUT_VALUE_VALUES_LAYOUT_OPTIONS,
+  PORTFOLIO_INFO_ABOUT_SPLIT_PORTRAIT_SIDE_OPTIONS,
+  PORTFOLIO_INFO_ABOUT_SPLIT_SECTION_LABELS_OPTIONS,
+  PORTFOLIO_INFO_ABOUT_VALUE_STEPS_VALUES_LAYOUT_OPTIONS,
   PORTFOLIO_INFO_ABOUT_VALUE_LIST_MARKER_STYLE_OPTIONS,
-  PORTFOLIO_INFO_ABOUT_VALUE_BIO_ALIGN_OPTIONS,
-  PORTFOLIO_INFO_ABOUT_VALUE_BIO_COLOR_OPTIONS,
-  PORTFOLIO_INFO_ABOUT_VALUE_BIO_SIZE_OPTIONS,
-  PORTFOLIO_INFO_ABOUT_VALUE_BIO_WIDTH_OPTIONS,
   PORTFOLIO_INFO_CONTENT_SIZE_OPTIONS,
   PORTFOLIO_INFO_DESIGN_OPTIONS,
   PORTFOLIO_INFO_EDUCATION_DISPLAY_OPTIONS,
   PORTFOLIO_INFO_LANGUAGE_LEVEL_DISPLAY_OPTIONS,
-  type PortfolioInfoAboutValueBioAlign,
-  type PortfolioInfoAboutValueBioColorToken,
-  type PortfolioInfoAboutValueBioSize,
-  type PortfolioInfoAboutValueBioWidth,
   type PortfolioInfoAboutManifestoBlocksLayout,
   type PortfolioInfoAboutManifestoPortraitFrame,
-  type PortfolioInfoAboutValueBlocksLayout,
+  type PortfolioInfoAboutSplitPortraitSide,
+  type PortfolioInfoAboutSplitSectionLabelsStyle,
   type PortfolioInfoAboutValueValuesLayout,
   type PortfolioInfoAboutValueListMarkerStyle,
   type PortfolioInfoContentSize,
@@ -33,12 +34,12 @@ import {
   type PortfolioInfoEducationDisplayStyle,
   type PortfolioInfoLanguageLevelDisplayStyle,
   type PortfolioInfoSectionSettings,
+  resolveInfoAboutValueValuesLayout,
 } from '@/components/portfolio/portfolio-info-settings';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionHeroPaletteToggle } from '@/components/portfolio/SectionHeroPaletteToggle';
 import { applyHeroPaletteToInfo } from '@/components/portfolio/portfolio-section-palette';
 import {
-  resolveHeroPaletteColor,
   type PortfolioHeroPalette,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 
@@ -283,6 +284,21 @@ export function InfoSettingsPanel({
               onChange={(showLanguageFlags) => onChange({ showLanguageFlags })}
             />
           </div>
+          {portfolioInfoDesignHasPortrait(info.design) ? (
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 p-4">
+              <Toggle
+                label="Portrait noir & blanc"
+                description="Applique un filtre grayscale sur la photo de profil — tous les designs Info avec portrait."
+                checked={resolveInfoPortraitGrayscale(info)}
+                onChange={(infoPortraitGrayscale) =>
+                  onChange({
+                    infoPortraitGrayscale,
+                    aboutManifestoAvatarGrayscale: infoPortraitGrayscale,
+                  })
+                }
+              />
+            </div>
+          ) : null}
           <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50/80 px-4 py-3 text-sm text-neutral-600">
             Le contenu (bio, éducation, skills…) vient de Creator Studio → Information / About.
           </p>
@@ -303,7 +319,7 @@ export function InfoSettingsPanel({
                     key={option.value}
                     type="button"
                     onClick={() =>
-                      onChange(defaultsForInfoDesign(option.value as PortfolioInfoDesign))
+                      onChange(infoDesignSettingsPatch(option.value as PortfolioInfoDesign))
                     }
                     className={`rounded-2xl border px-4 py-3 text-left transition ${
                       active
@@ -328,18 +344,17 @@ export function InfoSettingsPanel({
             onChange={(contentSize) => onChange({ contentSize })}
           />
 
-          {(info.design ?? 'about-me') === 'about-value' ? (
+          {(info.design ?? 'about-me') === 'about-value-steps' ? (
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Affichage des values
               </p>
               <p className="mt-1 text-sm text-neutral-500">
-                About · value — éditorial, grille numérotée ou liste indexée (001 · titre · texte).
+                Steps natifs (My Values sticky), éditorial, grille numérotée ou liste indexée.
               </p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {PORTFOLIO_INFO_ABOUT_VALUE_VALUES_LAYOUT_OPTIONS.map((option) => {
-                  const active =
-                    (info.aboutValueValuesLayout ?? 'editorial') === option.value;
+                {PORTFOLIO_INFO_ABOUT_VALUE_STEPS_VALUES_LAYOUT_OPTIONS.map((option) => {
+                  const active = resolveInfoAboutValueValuesLayout(info) === option.value;
                   return (
                     <button
                       key={option.value}
@@ -369,60 +384,14 @@ export function InfoSettingsPanel({
             </div>
           ) : null}
 
-          {(info.design ?? 'about-me') === 'about-value' ? (
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Disposition des blocs
-              </p>
-              <p className="mt-1 text-sm text-neutral-500">
-                About · value — split (titre à gauche) ou grille 2 colonnes pour Strengths,
-                Languages, etc.
-                {(info.aboutValueValuesLayout ?? 'editorial') === 'numbered-grid' ||
-                (info.aboutValueValuesLayout ?? 'editorial') === 'indexed-list'
-                  ? ' L’affichage alternatif des skills remplace la liste éditoriale.'
-                  : ''}
-              </p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {PORTFOLIO_INFO_ABOUT_VALUE_BLOCKS_LAYOUT_OPTIONS.map((option) => {
-                  const active =
-                    (info.aboutValueBlocksLayout ?? 'split') === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() =>
-                        onChange({
-                          aboutValueBlocksLayout:
-                            option.value as PortfolioInfoAboutValueBlocksLayout,
-                        })
-                      }
-                      className={`rounded-2xl border px-4 py-3 text-left transition ${
-                        active
-                          ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                          : 'border-neutral-200 bg-white hover:border-neutral-300'
-                      }`}
-                    >
-                      <span className="block text-sm font-semibold text-neutral-950">
-                        {option.label}
-                      </span>
-                      <span className="mt-1 block text-sm text-neutral-500">
-                        {option.description}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-
-          {(info.design ?? 'about-me') === 'about-value' ? (
+          {(info.design ?? 'about-me') === 'about-value-steps' &&
+          resolveInfoAboutValueValuesLayout(info) === 'editorial' ? (
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                 Puces de liste
               </p>
               <p className="mt-1 text-sm text-neutral-500">
-                Style des marqueurs pour My Values, Strengths, Languages (sans drapeau), Education,
-                etc.
+                Style des marqueurs pour My Values en mode éditorial.
               </p>
               <div className="mt-3 grid grid-cols-5 gap-2">
                 {PORTFOLIO_INFO_ABOUT_VALUE_LIST_MARKER_STYLE_OPTIONS.map((option) => {
@@ -454,6 +423,347 @@ export function InfoSettingsPanel({
                     </button>
                   );
                 })}
+              </div>
+            </div>
+          ) : null}
+
+          {(info.design ?? 'about-me') === 'about-split' ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Position du portrait
+              </p>
+              <p className="mt-1 text-sm text-neutral-500">
+                About · split — colonne photo sticky à gauche ou à droite (grand écran).
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {PORTFOLIO_INFO_ABOUT_SPLIT_PORTRAIT_SIDE_OPTIONS.map((option) => {
+                  const active = (info.aboutSplitPortraitSide ?? 'left') === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() =>
+                        onChange({
+                          aboutSplitPortraitSide:
+                            option.value as PortfolioInfoAboutSplitPortraitSide,
+                        })
+                      }
+                      className={`rounded-2xl border px-4 py-3 text-left transition ${
+                        active
+                          ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                          : 'border-neutral-200 bg-white hover:border-neutral-300'
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold text-neutral-950">
+                        {option.label}
+                      </span>
+                      <span className="mt-1 block text-sm text-neutral-500">
+                        {option.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {(info.design ?? 'about-me') === 'about-split' ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Titres des blocs
+              </p>
+              <p className="mt-1 text-sm text-neutral-500">
+                About · split — variations de labels pour Skills, Strengths et Languages.
+              </p>
+              <div className="mt-3 grid gap-2">
+                {PORTFOLIO_INFO_ABOUT_SPLIT_SECTION_LABELS_OPTIONS.map((option) => {
+                  const active = (info.aboutSplitSectionLabelsStyle ?? 'default') === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() =>
+                        onChange({
+                          aboutSplitSectionLabelsStyle:
+                            option.value as PortfolioInfoAboutSplitSectionLabelsStyle,
+                        })
+                      }
+                      className={`rounded-2xl border px-4 py-3 text-left transition ${
+                        active
+                          ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                          : 'border-neutral-200 bg-white hover:border-neutral-300'
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold text-neutral-950">
+                        {option.label}
+                      </span>
+                      <span className="mt-1 block text-sm text-neutral-500">{option.description}</span>
+                      <span className="mt-2 block text-xs font-medium text-neutral-400">
+                        {option.preview.skills} · {option.preview.strengths} · {option.preview.languages}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {(info.design ?? 'about-me') === 'about-banner' ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Titres des blocs
+              </p>
+              <p className="mt-1 text-sm text-neutral-500">
+                About · banner — variations de labels pour Skills et Strengths (indépendant du split).
+              </p>
+              <div className="mt-3 grid gap-2">
+                {PORTFOLIO_INFO_ABOUT_SPLIT_SECTION_LABELS_OPTIONS.map((option) => {
+                  const active = (info.aboutBannerSectionLabelsStyle ?? 'conversational') === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() =>
+                        onChange({
+                          aboutBannerSectionLabelsStyle:
+                            option.value as PortfolioInfoAboutSplitSectionLabelsStyle,
+                        })
+                      }
+                      className={`rounded-2xl border px-4 py-3 text-left transition ${
+                        active
+                          ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                          : 'border-neutral-200 bg-white hover:border-neutral-300'
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold text-neutral-950">
+                        {option.label}
+                      </span>
+                      <span className="mt-1 block text-sm text-neutral-500">{option.description}</span>
+                      <span className="mt-2 block text-xs font-medium text-neutral-400">
+                        {option.preview.skills} · {option.preview.strengths}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {(info.design ?? 'about-me') === 'about-feature-panel' ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-200 bg-neutral-50/60 p-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Intro bicolore
+                </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Deux lignes à droite du titre — chaque ligne en deux couleurs (fort + muted).
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Variations
+                </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Cliquez pour appliquer une intro — vous pouvez ensuite ajuster chaque partie.
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {PORTFOLIO_INFO_ABOUT_FEATURE_INTRO_PRESETS.map((preset) => {
+                    const active = isAboutFeatureIntroPresetActive(info, preset);
+                    const previewLine1 = `${preset.line1Primary} ${preset.line1Secondary}`.trim();
+                    const previewLine2 = `${preset.line2Primary} ${preset.line2Secondary}`.trim();
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() =>
+                          onChange({
+                            aboutFeatureIntroLine1Primary: preset.line1Primary,
+                            aboutFeatureIntroLine1Secondary: preset.line1Secondary,
+                            aboutFeatureIntroLine2Primary: preset.line2Primary,
+                            aboutFeatureIntroLine2Secondary: preset.line2Secondary,
+                          })
+                        }
+                        className={`rounded-2xl border px-4 py-3 text-left transition ${
+                          active
+                            ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                            : 'border-neutral-200 bg-white hover:border-neutral-300'
+                        }`}
+                      >
+                        <span className="block text-sm font-semibold text-neutral-950">
+                          {preset.label}
+                        </span>
+                        <span className="mt-1 block text-xs text-neutral-500">{preset.description}</span>
+                        <span className="mt-2 block text-xs font-medium uppercase leading-snug tracking-wide text-neutral-400">
+                          {previewLine1}
+                          <br />
+                          {previewLine2}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                    Ligne 1 — partie forte
+                  </p>
+                  <input
+                    value={info.aboutFeatureIntroLine1Primary ?? ''}
+                    onChange={(event) =>
+                      onChange({ aboutFeatureIntroLine1Primary: event.target.value })
+                    }
+                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                    Ligne 1 — partie muted
+                  </p>
+                  <input
+                    value={info.aboutFeatureIntroLine1Secondary ?? ''}
+                    onChange={(event) =>
+                      onChange({ aboutFeatureIntroLine1Secondary: event.target.value })
+                    }
+                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                    Ligne 2 — partie forte
+                  </p>
+                  <input
+                    value={info.aboutFeatureIntroLine2Primary ?? ''}
+                    onChange={(event) =>
+                      onChange({ aboutFeatureIntroLine2Primary: event.target.value })
+                    }
+                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                    Ligne 2 — partie muted
+                  </p>
+                  <input
+                    value={info.aboutFeatureIntroLine2Secondary ?? ''}
+                    onChange={(event) =>
+                      onChange({ aboutFeatureIntroLine2Secondary: event.target.value })
+                    }
+                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {(info.design ?? 'about-me') === 'about-portrait-skills' ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-200 bg-neutral-50/60 p-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Intérêts + langues
+                </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Phrase placée juste avant les langues — intérêts et langues séparés par des
+                  virgules, couleurs variées.
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Phrase d’intro
+                </p>
+                <textarea
+                  value={info.aboutPortraitSkillsMetaLead ?? ''}
+                  onChange={(event) =>
+                    onChange({ aboutPortraitSkillsMetaLead: event.target.value })
+                  }
+                  rows={3}
+                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                  placeholder="Lorem ipsum dolor sit amet…"
+                />
+              </div>
+            </div>
+          ) : null}
+
+          {(info.design ?? 'about-me') === 'about-platform' ? (
+            <div className="space-y-4 rounded-2xl border border-neutral-200 bg-neutral-50/60 p-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Hero platform
+                </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Titre à gauche, bio à droite — puis grille de skills en cartes.
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Variations de titre
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {PORTFOLIO_INFO_ABOUT_PLATFORM_HEADLINE_PRESETS.map((preset) => {
+                    const active =
+                      (info.aboutPlatformHeadlineCustomText ?? '').trim() === preset.text;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() =>
+                          onChange({ aboutPlatformHeadlineCustomText: preset.text })
+                        }
+                        className={`rounded-2xl border px-4 py-3 text-left transition ${
+                          active
+                            ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                            : 'border-neutral-200 bg-white hover:border-neutral-300'
+                        }`}
+                      >
+                        <span className="block text-sm font-semibold text-neutral-950">
+                          {preset.label}
+                        </span>
+                        <span className="mt-1 block text-xs text-neutral-500">{preset.description}</span>
+                        <span className="mt-2 block whitespace-pre-line text-xs font-medium leading-snug text-neutral-400">
+                          {preset.text}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Titre principal (gauche)
+                </p>
+                <textarea
+                  value={info.aboutPlatformHeadlineCustomText ?? ''}
+                  onChange={(event) =>
+                    onChange({ aboutPlatformHeadlineCustomText: event.target.value })
+                  }
+                  rows={3}
+                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                />
+                <p className="mt-1 text-xs text-neutral-500">Saut de ligne = nouvelle ligne de titre.</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Titre strengths (gauche)
+                </p>
+                <input
+                  value={info.aboutPlatformStrengthsSectionTitle ?? ''}
+                  onChange={(event) =>
+                    onChange({ aboutPlatformStrengthsSectionTitle: event.target.value })
+                  }
+                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                />
+              </div>
+              <div className="rounded-2xl border border-neutral-200 bg-white p-4">
+                <Toggle
+                  label="Décalage zigzag (droite)"
+                  checked={info.aboutPlatformStaggerLayout !== false}
+                  onChange={(aboutPlatformStaggerLayout) => onChange({ aboutPlatformStaggerLayout })}
+                />
+                <p className="mt-2 text-sm text-neutral-500">
+                  Bio et liste strengths passent sur la ligne du bas à droite — plus sur la même
+                  ligne que les titres à gauche. Les cartes skills descendent en escalier de gauche
+                  à droite.
+                </p>
               </div>
             </div>
           ) : null}
@@ -551,19 +861,6 @@ export function InfoSettingsPanel({
                   })}
                 </div>
               </div>
-
-              <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 p-4">
-                <Toggle
-                  label="Portrait noir & blanc"
-                  checked={info.aboutManifestoAvatarGrayscale === true}
-                  onChange={(aboutManifestoAvatarGrayscale) =>
-                    onChange({ aboutManifestoAvatarGrayscale })
-                  }
-                />
-                <p className="mt-2 text-sm text-neutral-500">
-                  Applique un filtre grayscale sur la photo de profil (grand écran).
-                </p>
-              </div>
             </div>
           ) : null}
 
@@ -615,170 +912,6 @@ export function InfoSettingsPanel({
             </div>
           ) : null}
 
-          {(info.design ?? 'about-me') === 'about-value' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200 bg-neutral-50/60 p-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Bio description
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Statement éditorial au-dessus des blocs My Values — texte, taille, largeur et
-                  couleur.
-                </p>
-              </div>
-              <Toggle
-                label="Afficher la bio"
-                checked={info.aboutValueBioEnabled !== false}
-                onChange={(aboutValueBioEnabled) => onChange({ aboutValueBioEnabled })}
-              />
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Texte personnalisé
-                </p>
-                <textarea
-                  value={info.aboutValueBioCustomText ?? ''}
-                  placeholder="Laisser vide pour utiliser la bio du profil (Creator Studio → Information)."
-                  onChange={(event) => onChange({ aboutValueBioCustomText: event.target.value })}
-                  rows={3}
-                  className="mt-2 w-full resize-y rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-neutral-900"
-                />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Taille
-                </p>
-                <div className="mt-3 grid grid-cols-4 gap-2">
-                  {PORTFOLIO_INFO_ABOUT_VALUE_BIO_SIZE_OPTIONS.map((option) => {
-                    const active = (info.aboutValueBioSize ?? 'xl') === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        title={option.description}
-                        onClick={() =>
-                          onChange({ aboutValueBioSize: option.value as PortfolioInfoAboutValueBioSize })
-                        }
-                        className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
-                          active
-                            ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
-                            : 'border-neutral-200 bg-white hover:border-neutral-300'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Largeur
-                </p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {PORTFOLIO_INFO_ABOUT_VALUE_BIO_WIDTH_OPTIONS.map((option) => {
-                    const active = (info.aboutValueBioWidth ?? 'full') === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() =>
-                          onChange({ aboutValueBioWidth: option.value as PortfolioInfoAboutValueBioWidth })
-                        }
-                        className={`rounded-2xl border px-4 py-3 text-left transition ${
-                          active
-                            ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
-                            : 'border-neutral-200 bg-white hover:border-neutral-300'
-                        }`}
-                      >
-                        <span className="block text-sm font-semibold text-neutral-950">
-                          {option.label}
-                        </span>
-                        <span className="mt-1 block text-xs text-neutral-500">
-                          {option.description}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {(info.aboutValueBioWidth ?? 'full') === 'half' ? (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Alignement (demi largeur)
-                  </p>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    {PORTFOLIO_INFO_ABOUT_VALUE_BIO_ALIGN_OPTIONS.map((option) => {
-                      const active = (info.aboutValueBioAlign ?? 'left') === option.value;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() =>
-                            onChange({
-                              aboutValueBioAlign: option.value as PortfolioInfoAboutValueBioAlign,
-                            })
-                          }
-                          className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
-                            active
-                              ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
-                              : 'border-neutral-200 bg-white hover:border-neutral-300'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Couleur (token palette)
-                </p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {PORTFOLIO_INFO_ABOUT_VALUE_BIO_COLOR_OPTIONS.map((option) => {
-                    const active =
-                      (info.aboutValueBioColorToken ?? 'texteMuted') === option.value;
-                    const swatch = heroPalette
-                      ? resolveHeroPaletteColor(heroPalette, option.value)
-                      : '#94A3B8';
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() =>
-                          onChange({
-                            aboutValueBioColorToken:
-                              option.value as PortfolioInfoAboutValueBioColorToken,
-                          })
-                        }
-                        className={`rounded-2xl border px-4 py-3 text-left transition ${
-                          active
-                            ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
-                            : 'border-neutral-200 bg-white hover:border-neutral-300'
-                        }`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span
-                            className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/10"
-                            style={{ backgroundColor: swatch }}
-                            aria-hidden
-                          />
-                          <span className="text-sm font-semibold text-neutral-950">
-                            {option.label}
-                          </span>
-                        </span>
-                        <span className="mt-1 block text-xs text-neutral-500">
-                          {option.description}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          ) : null}
-
           <SectionHeroPaletteToggle
             enabled={info.useHeroPalette !== false}
             onChange={(useHeroPalette) =>
@@ -794,18 +927,20 @@ export function InfoSettingsPanel({
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
               Blocs affichés
             </p>
-            <Toggle
-              label="Education"
-              checked={
-                (info.design ?? 'about-me') === 'about-value' ||
-                (info.design ?? 'about-me') === 'about-value-steps' ||
-                (info.design ?? 'about-me') === 'about-manifesto'
-                  ? info.showEducation === true
-                  : info.showEducation !== false
-              }
-              onChange={(showEducation) => onChange({ showEducation })}
-            />
-            {(info.design ?? 'about-me') === 'about-me-trait' ? (
+            {(info.design ?? 'about-me') !== 'about-portrait-skills' ? (
+              <Toggle
+                label="Education"
+                checked={
+                  (info.design ?? 'about-me') === 'about-value-steps' ||
+                  (info.design ?? 'about-me') === 'about-manifesto'
+                    ? info.showEducation === true
+                    : info.showEducation !== false
+                }
+                onChange={(showEducation) => onChange({ showEducation })}
+              />
+            ) : null}
+            {(info.design ?? 'about-me') === 'about-me-trait' ||
+            (info.design ?? 'about-me') === 'about-banner' ? (
               <div className="space-y-4">
               <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 p-4">
                 <div>
@@ -813,15 +948,24 @@ export function InfoSettingsPanel({
                     Grand titre
                   </p>
                   <p className="mt-1 text-sm text-neutral-500">
-                    Texte éditorial à droite du portrait — remplace la bio. Utilisez des retours à
-                    la ligne pour créer plusieurs lignes.
+                    {(info.design ?? 'about-me') === 'about-banner'
+                      ? 'Titre XXL centré — utilisez des retours à la ligne pour plusieurs lignes. Sinon, la spécialité du profil est utilisée.'
+                      : 'Texte éditorial à droite du portrait — remplace la bio. Utilisez des retours à la ligne pour créer plusieurs lignes.'}
                   </p>
                 </div>
                 <Toggle
                   label="Afficher le grand titre"
-                  checked={info.aboutMeTraitHeadlineEnabled !== false}
-                  onChange={(aboutMeTraitHeadlineEnabled) =>
-                    onChange({ aboutMeTraitHeadlineEnabled })
+                  checked={
+                    (info.design ?? 'about-me') === 'about-banner'
+                      ? info.aboutBannerHeadlineEnabled !== false
+                      : info.aboutMeTraitHeadlineEnabled !== false
+                  }
+                  onChange={(enabled) =>
+                    onChange(
+                      (info.design ?? 'about-me') === 'about-banner'
+                        ? { aboutBannerHeadlineEnabled: enabled }
+                        : { aboutMeTraitHeadlineEnabled: enabled }
+                    )
                   }
                 />
                 <div>
@@ -829,17 +973,31 @@ export function InfoSettingsPanel({
                     Phrases introductives
                   </p>
                   <p className="mt-1 text-sm text-neutral-500">
-                    Variations éditoriales en 3 lignes — cliquez pour appliquer.
+                    {(info.design ?? 'about-me') === 'about-banner'
+                      ? 'Variations hero XXL en 3 lignes — cliquez pour appliquer.'
+                      : 'Variations éditoriales en 3 lignes — cliquez pour appliquer.'}
                   </p>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                    {PORTFOLIO_INFO_ABOUT_ME_TRAIT_HEADLINE_PRESETS.map((preset) => {
-                      const active =
-                        (info.aboutMeTraitHeadlineCustomText ?? '').trim() === preset.text;
+                    {((info.design ?? 'about-me') === 'about-banner'
+                      ? PORTFOLIO_INFO_ABOUT_BANNER_HEADLINE_PRESETS
+                      : PORTFOLIO_INFO_ABOUT_ME_TRAIT_HEADLINE_PRESETS
+                    ).map((preset) => {
+                      const active = (
+                        ((info.design ?? 'about-me') === 'about-banner'
+                          ? info.aboutBannerHeadlineCustomText
+                          : info.aboutMeTraitHeadlineCustomText) ?? ''
+                      ).trim() === preset.text;
                       return (
                         <button
                           key={preset.id}
                           type="button"
-                          onClick={() => onChange({ aboutMeTraitHeadlineCustomText: preset.text })}
+                          onClick={() =>
+                            onChange(
+                              (info.design ?? 'about-me') === 'about-banner'
+                                ? { aboutBannerHeadlineCustomText: preset.text }
+                                : { aboutMeTraitHeadlineCustomText: preset.text }
+                            )
+                          }
                           className={`rounded-2xl border px-4 py-3 text-left transition ${
                             active
                               ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
@@ -862,10 +1020,22 @@ export function InfoSettingsPanel({
                     Texte personnalisé
                   </p>
                   <textarea
-                    value={info.aboutMeTraitHeadlineCustomText ?? ''}
-                    placeholder={'Turning Hard\nProblems Into\nSimple Software'}
+                    value={
+                      (info.design ?? 'about-me') === 'about-banner'
+                        ? (info.aboutBannerHeadlineCustomText ?? '')
+                        : (info.aboutMeTraitHeadlineCustomText ?? '')
+                    }
+                    placeholder={
+                      (info.design ?? 'about-me') === 'about-banner'
+                        ? DEFAULT_ABOUT_BANNER_HEADLINE
+                        : 'Turning Hard\nProblems Into\nSimple Software'
+                    }
                     onChange={(event) =>
-                      onChange({ aboutMeTraitHeadlineCustomText: event.target.value })
+                      onChange(
+                        (info.design ?? 'about-me') === 'about-banner'
+                          ? { aboutBannerHeadlineCustomText: event.target.value }
+                          : { aboutMeTraitHeadlineCustomText: event.target.value }
+                      )
                     }
                     rows={4}
                     className="mt-2 w-full resize-y rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-neutral-900"
@@ -940,41 +1110,44 @@ export function InfoSettingsPanel({
             />
             <Toggle
               label="Strengths"
-              checked={
-                (info.design ?? 'about-me') === 'about-value-steps'
-                  ? info.showStrengths === true
-                  : info.showStrengths !== false
-              }
+              checked={info.showStrengths !== false}
               onChange={(showStrengths) => onChange({ showStrengths })}
             />
-            <Toggle
-              label="Interests"
-              checked={
-                (info.design ?? 'about-me') === 'about-value'
-                  ? info.showInterests === true
-                  : info.showInterests !== false
-              }
-              onChange={(showInterests) => onChange({ showInterests })}
-            />
-            <Toggle
-              label="Languages"
-              checked={
-                (info.design ?? 'about-me') === 'about-value-steps'
-                  ? info.showLanguages === true
-                  : info.showLanguages !== false
-              }
-              onChange={(showLanguages) => onChange({ showLanguages })}
-            />
-            <Toggle
-              label="Systems & tools"
-              checked={
-                (info.design ?? 'about-me') === 'about-value' ||
-                (info.design ?? 'about-me') === 'about-value-steps'
-                  ? info.showSystemsTools === true
-                  : info.showSystemsTools !== false
-              }
-              onChange={(showSystemsTools) => onChange({ showSystemsTools })}
-            />
+            {(info.design ?? 'about-me') === 'about-portrait-skills' ? (
+              <Toggle
+                label="Intérêts + langues"
+                checked={info.aboutPortraitSkillsMetaEnabled !== false}
+                onChange={(aboutPortraitSkillsMetaEnabled) =>
+                  onChange({ aboutPortraitSkillsMetaEnabled })
+                }
+              />
+            ) : (
+              <>
+                <Toggle
+                  label="Interests"
+                  checked={info.showInterests !== false}
+                  onChange={(showInterests) => onChange({ showInterests })}
+                />
+                <Toggle
+                  label="Languages"
+                  checked={
+                    (info.design ?? 'about-me') === 'about-value-steps'
+                      ? info.showLanguages === true
+                      : info.showLanguages !== false
+                  }
+                  onChange={(showLanguages) => onChange({ showLanguages })}
+                />
+                <Toggle
+                  label="Systems & tools"
+                  checked={
+                    (info.design ?? 'about-me') === 'about-value-steps'
+                      ? info.showSystemsTools === true
+                      : info.showSystemsTools !== false
+                  }
+                  onChange={(showSystemsTools) => onChange({ showSystemsTools })}
+                />
+              </>
+            )}
           </div>
 
           {info.useHeroPalette === false ? (

@@ -22,8 +22,6 @@ export type ExperienceElementStyleTarget =
   | 'blockLabel'
   | 'tasks'
   | 'proof'
-  | 'note'
-  | 'skills'
   | 'tools';
 
 type ExperienceTextStyle = {
@@ -83,8 +81,6 @@ export type ExperienceColorSlot =
   | 'entryBlockLabel'
   | 'entryTasks'
   | 'entryProof'
-  | 'entryNote'
-  | 'entrySkills'
   | 'entryTools'
   | 'entryChipBackground'
   | 'entryChipBorder'
@@ -162,8 +158,6 @@ export const EXPERIENCE_COLOR_SLOT_IDS: ExperienceColorSlot[] = [
   'entryBlockLabel',
   'entryTasks',
   'entryProof',
-  'entryNote',
-  'entrySkills',
   'entryTools',
   'entryChipBackground',
   'entryChipBorder',
@@ -213,18 +207,16 @@ export const PORTFOLIO_EXPERIENCE_COLOR_SLOT_OPTIONS: {
   { value: 'entryBlockLabel', label: 'Block labels', description: 'TASKS / PROOF headings.' },
   { value: 'entryTasks', label: 'Tasks', description: 'Bullet list items.' },
   { value: 'entryProof', label: 'Proof links', description: 'Proof pill labels.' },
-  { value: 'entryNote', label: 'Note', description: 'Remarks / italic note.' },
-  { value: 'entrySkills', label: 'Skills tags', description: 'Skill tag text.' },
   { value: 'entryTools', label: 'Tools text', description: 'Tool chip labels.' },
   {
     value: 'entryChipBackground',
     label: 'Chip background',
-    description: 'Fill behind Tools, Proof and Skills pills — follows light/dark palette.',
+    description: 'Fill behind Tools and Proof pills — follows light/dark palette.',
   },
   {
     value: 'entryChipBorder',
     label: 'Chip border',
-    description: 'Outline on Tools, Proof and Skills pills.',
+    description: 'Outline on Tools and Proof pills.',
   },
   {
     value: 'toolsIconBackground',
@@ -301,8 +293,6 @@ export const DEFAULT_EXPERIENCE_COLOR_BINDINGS: PortfolioExperienceColorBindings
   entryBlockLabel: 'texteFaint',
   entryTasks: 'texteMuted',
   entryProof: 'texteMuted',
-  entryNote: 'texteMuted',
-  entrySkills: 'texteMuted',
   entryTools: 'texteMuted',
   /** Slightly recessed vs details surface so chips read in dark and light. */
   entryChipBackground: 'fond',
@@ -326,8 +316,6 @@ const EXPERIENCE_ELEMENT_STYLE_SLOT: Record<
   blockLabel: 'entryBlockLabel',
   tasks: 'entryTasks',
   proof: 'entryProof',
-  note: 'entryNote',
-  skills: 'entrySkills',
   tools: 'entryTools',
 };
 
@@ -468,7 +456,7 @@ export function applyExperiencePaletteToSettings(
       resolve('detailsBackgroundB'),
       resolve('detailsDivider')
     ),
-    // Proof / skills card reuses the details palette tokens until it has its own slots.
+    // Proof card reuses the details palette tokens until it has its own slots.
     detailsSecondaryFrame: paintFrameChrome(
       experience.detailsSecondaryFrame,
       resolve('detailsBorder'),
@@ -657,7 +645,5 @@ export const EXPERIENCE_BLOCK_STYLE_TARGETS: ExperienceElementStyleTarget[] = [
   'blockLabel',
   'tasks',
   'proof',
-  'note',
-  'skills',
   'tools',
 ];
