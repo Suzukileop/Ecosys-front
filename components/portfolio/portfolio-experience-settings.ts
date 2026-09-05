@@ -45,7 +45,7 @@ import {
   type PortfolioListMarkerWeight,
 } from '@/components/portfolio/portfolio-list-marker';
 
-export type PortfolioExperienceDesign = 'editorial' | 'milestone';
+export type PortfolioExperienceDesign = 'editorial' | 'milestone' | 'table' | 'cards';
 
 /** Legacy design ids persisted in older portfolios — coerced to `editorial` on merge. */
 export const REMOVED_EXPERIENCE_DESIGNS = [
@@ -129,6 +129,20 @@ export type PortfolioExperiencePeriodDesign = 'plain' | 'rail' | 'rail-accent' |
 
 /** Editorial: accordion (one open) or every entry expanded with no toggle. */
 export type PortfolioExperienceEntryExpandMode = 'accordion' | 'all-open';
+
+/** How responsibilities / tasks render inside an experience entry. */
+export type PortfolioExperienceTasksDisplay =
+  | 'arrows'
+  | 'dashes'
+  | 'checkmarks'
+  | 'chips'
+  | 'summary';
+
+/** Cards design: corner radius of each experience card. */
+export type PortfolioExperienceCardsBorderRadius = 'none' | 'md' | 'xl';
+
+/** Cards design: one gap value for both row and column spacing. */
+export type PortfolioExperienceCardsGridGap = 'sm' | 'md' | 'lg' | 'xl' | 'custom';
 
 export type PortfolioExperienceItemDensity = 'comfortable' | 'compact';
 
@@ -545,6 +559,16 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   periodDesign: PortfolioExperiencePeriodDesign;
   /** Editorial: accordion with + toggle, or all entries always expanded. */
   entryExpandMode: PortfolioExperienceEntryExpandMode;
+  /** How responsibilities / tasks are displayed inside entries. */
+  tasksDisplay: PortfolioExperienceTasksDisplay;
+  /** Table design: alternate row background for easier scanning. */
+  tableStripedRows: boolean;
+  /** Cards design: shared row + column gap between cards. */
+  cardsGridGap: PortfolioExperienceCardsGridGap;
+  /** Manual px when cardsGridGap is `custom`. */
+  cardsGridGapPx: number;
+  /** Cards design: corner radius of the card frame. */
+  cardsBorderRadius: PortfolioExperienceCardsBorderRadius;
   /** Visual chrome for proof / portfolio links. */
   proofLinkStyle: PortfolioExperienceProofLinkStyle;
   /** Which column / layer renders the tools block. */
@@ -765,7 +789,7 @@ function createExperienceLayerFrame(
   };
 }
 
-const EXPERIENCE_DESIGNS = ['editorial', 'milestone'] as const satisfies readonly PortfolioExperienceDesign[];
+const EXPERIENCE_DESIGNS = ['editorial', 'milestone', 'table', 'cards'] as const satisfies readonly PortfolioExperienceDesign[];
 
 export function coerceExperienceDesign(value: unknown): PortfolioExperienceDesign {
   if (typeof value === 'string' && (EXPERIENCE_DESIGNS as readonly string[]).includes(value)) {
@@ -872,6 +896,11 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   statusPlacement: 'inline',
   periodDesign: 'plain',
   entryExpandMode: 'accordion',
+  tasksDisplay: 'arrows',
+  tableStripedRows: false,
+  cardsGridGap: 'md',
+  cardsGridGapPx: 36,
+  cardsBorderRadius: 'none',
   proofLinkStyle: 'pill',
   toolsZone: 'details',
   proofZone: 'details',
@@ -1056,6 +1085,18 @@ export const PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS: {
     description:
       'Framer Continuum–style timeline — oversized years, connected rail, card blocks with numbered tasks.',
   },
+  {
+    value: 'table',
+    label: 'Table',
+    description:
+      'Ledger-style table — Period, Role, Organization, Status. Expand a row for details and stack.',
+  },
+  {
+    value: 'cards',
+    label: 'Cards',
+    description:
+      'Card grid — 2 per row on large screens. Title, meta, period, status, description, tasks, and stack.',
+  },
 ];
 
 export const PORTFOLIO_EXPERIENCE_LIST_MAX_WIDTH_OPTIONS: {
@@ -1094,11 +1135,83 @@ export const PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Serré', description: 'Peu d’espace entre les expériences.' },
-  { value: 'md', label: 'Standard', description: 'Espacement équilibré.' },
-  { value: 'lg', label: 'Large', description: 'Respiration claire entre chaque entrée.' },
-  { value: 'xl', label: 'Très large', description: 'Fort écart vertical entre les expériences.' },
+  { value: 'sm', label: 'Tight', description: 'Same small gap between cards, horizontally and vertically.' },
+  { value: 'md', label: 'Standard', description: 'Balanced gap on both axes.' },
+  { value: 'lg', label: 'Large', description: 'More air between cards on both axes.' },
+  { value: 'xl', label: 'Extra large', description: 'Wide gap between cards on both axes.' },
 ];
+
+export const PORTFOLIO_EXPERIENCE_CARDS_GRID_GAP_OPTIONS: {
+  value: Exclude<PortfolioExperienceCardsGridGap, 'custom'>;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'sm',
+    label: 'Tight',
+    description: 'Same small gap between cards, horizontally and vertically.',
+  },
+  {
+    value: 'md',
+    label: 'Standard',
+    description: 'Balanced gap on both axes.',
+  },
+  {
+    value: 'lg',
+    label: 'Large',
+    description: 'More air between cards on both axes.',
+  },
+  {
+    value: 'xl',
+    label: 'Extra large',
+    description: 'Wide gap between cards on both axes.',
+  },
+];
+
+export const EXPERIENCE_CARDS_GRID_GAP_PRESET_PX: Record<
+  Exclude<PortfolioExperienceCardsGridGap, 'custom'>,
+  number
+> = {
+  sm: 20,
+  md: 36,
+  lg: 48,
+  xl: 72,
+};
+
+export const EXPERIENCE_CARDS_GRID_GAP_PX_MIN = 0;
+export const EXPERIENCE_CARDS_GRID_GAP_PX_MAX = 96;
+
+export function clampExperienceCardsGridGapPx(value: unknown, fallback = 36): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(
+    EXPERIENCE_CARDS_GRID_GAP_PX_MIN,
+    Math.min(EXPERIENCE_CARDS_GRID_GAP_PX_MAX, Math.round(n))
+  );
+}
+
+export function isPortfolioExperienceCardsGridGap(
+  value: unknown
+): value is PortfolioExperienceCardsGridGap {
+  return value === 'sm' || value === 'md' || value === 'lg' || value === 'xl' || value === 'custom';
+}
+
+export function resolveExperienceCardsGridGapPx(
+  p: Pick<PortfolioExperiencePresentationSettings, 'cardsGridGap' | 'cardsGridGapPx' | 'itemGap'>
+): number {
+  const gap = p.cardsGridGap ?? (p.itemGap === 'sm' || p.itemGap === 'lg' || p.itemGap === 'xl' ? p.itemGap : 'md');
+  if (gap === 'custom') {
+    return clampExperienceCardsGridGapPx(p.cardsGridGapPx, 36);
+  }
+  return EXPERIENCE_CARDS_GRID_GAP_PRESET_PX[gap] ?? 36;
+}
+
+/** One CSS `gap` drives horizontal and vertical card spacing together. */
+export function experienceCardsGridGapStyle(
+  p: Pick<PortfolioExperiencePresentationSettings, 'cardsGridGap' | 'cardsGridGapPx' | 'itemGap'>
+): CSSProperties {
+  return { gap: `${resolveExperienceCardsGridGapPx(p)}px` };
+}
 
 export const PORTFOLIO_EXPERIENCE_TASK_ITEM_GAP_OPTIONS: {
   value: PortfolioExperienceTaskItemGap;
@@ -1176,6 +1289,74 @@ export const PORTFOLIO_EXPERIENCE_ENTRY_EXPAND_MODE_OPTIONS: {
     description: 'Every entry expanded — no accordion button.',
   },
 ];
+
+export const PORTFOLIO_EXPERIENCE_TASKS_DISPLAY_OPTIONS: {
+  value: PortfolioExperienceTasksDisplay;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'arrows',
+    label: 'Arrow list',
+    description: 'Responsibilities as a vertical list with → markers.',
+  },
+  {
+    value: 'dashes',
+    label: 'Dash list',
+    description: 'Clean dashed list under a Responsibilities label.',
+  },
+  {
+    value: 'checkmarks',
+    label: 'Checkmark list',
+    description: 'Each task preceded by a checkmark.',
+  },
+  {
+    value: 'chips',
+    label: 'Chip tags',
+    description: 'Tasks as compact pill chips in a wrapping row.',
+  },
+  {
+    value: 'summary',
+    label: 'Collapsed summary',
+    description: '“N responsibilities” header — click to expand the list.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS: {
+  value: PortfolioExperienceCardsBorderRadius;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'none',
+    label: 'None',
+    description: 'Sharp corners — no border radius on the card (default).',
+  },
+  {
+    value: 'md',
+    label: 'Medium',
+    description: 'Soft rounded corners.',
+  },
+  {
+    value: 'xl',
+    label: 'Large',
+    description: 'More rounded card frame.',
+  },
+];
+
+export function experienceCardsBorderRadiusClass(
+  radius: PortfolioExperienceCardsBorderRadius | undefined
+): string {
+  switch (radius) {
+    case 'md':
+      return 'rounded-2xl';
+    case 'xl':
+      return 'rounded-[1.35rem] sm:rounded-[1.5rem]';
+    case 'none':
+    default:
+      return 'rounded-none';
+  }
+}
 
 export const PORTFOLIO_EXPERIENCE_STATUS_BADGE_STYLE_OPTIONS: {
   value: PortfolioExperienceStatusBadgeStyle;
@@ -2565,9 +2746,9 @@ export function experienceToolsChromeStyle(
   return Object.keys(style).length > 0 ? style : undefined;
 }
 
-/** Editorial is a single-column list — never a multi-column card grid. */
-export function experienceDesignSupportsItemsPerRow(_design: PortfolioExperienceDesign): boolean {
-  return false;
+/** Cards design uses a multi-column grid on large screens. */
+export function experienceDesignSupportsItemsPerRow(design: PortfolioExperienceDesign): boolean {
+  return design === 'cards';
 }
 
 /** Editorial entries are bare period/story rows, not card shells. */
@@ -2909,6 +3090,16 @@ export function experienceDesignUsesFlatHeader(design: PortfolioExperienceDesign
   return design === 'editorial';
 }
 
+/** Table design owns its own header (small section label + years intro). */
+export function experienceDesignUsesTableHeader(design: PortfolioExperienceDesign): boolean {
+  return design === 'table';
+}
+
+/** Cards design owns its own header (small title left + large years right). */
+export function experienceDesignUsesCardsHeader(design: PortfolioExperienceDesign): boolean {
+  return design === 'cards';
+}
+
 /** Editorial uses a period gutter, not a timeline rail. */
 export function isExperienceTimelineDesign(design: PortfolioExperienceDesign): boolean {
   return design === 'milestone';
@@ -2940,7 +3131,7 @@ export function experienceYearsClass(
   const parts = [
     isEditorial
       ? 'relative mb-0 max-w-none bg-transparent leading-[1.15] font-semibold tracking-[-0.035em] whitespace-nowrap'
-      : 'mb-10 max-w-2xl leading-relaxed',
+      : 'relative mb-8 max-w-2xl border-0 bg-transparent p-0 leading-relaxed shadow-none',
   ];
 
   if (isEditorial) {
@@ -3188,8 +3379,13 @@ function mergeExperienceLayerFrame(
 export function experienceEntryShellUsesFrame(
   p: Pick<PortfolioExperiencePresentationSettings, 'experienceDesign' | 'entryFrame'>
 ): boolean {
-  // Editorial / Milestone are always flush — card chrome lives inside the design components.
-  if (p.experienceDesign === 'editorial' || p.experienceDesign === 'milestone') return false;
+  if (
+    p.experienceDesign === 'editorial' ||
+    p.experienceDesign === 'milestone' ||
+    p.experienceDesign === 'table' ||
+    p.experienceDesign === 'cards'
+  )
+    return false;
   if (p.entryFrame.enabled) return true;
   return experienceDesignUsesEntryCard(p.experienceDesign);
 }
@@ -3446,8 +3642,12 @@ export function mergeExperiencePresentation(
     typeof record.experienceDesign === 'string' ? record.experienceDesign : base.experienceDesign
   );
 
-  // Editorial / Milestone are bare rows — strip legacy card/frame chrome permanently.
-  const editorialFramesOff = experienceDesign === 'editorial' || experienceDesign === 'milestone';
+  // Editorial / Milestone / Table / Cards manage their own chrome — strip legacy frames.
+  const editorialFramesOff =
+    experienceDesign === 'editorial' ||
+    experienceDesign === 'milestone' ||
+    experienceDesign === 'table' ||
+    experienceDesign === 'cards';
   const resolvedEntryFrame = editorialFramesOff ? { ...entryFrame, enabled: false } : entryFrame;
   const resolvedStoryFrame = editorialFramesOff ? { ...storyFrame, enabled: false } : storyFrame;
   const resolvedDetailsFrame = editorialFramesOff ? { ...detailsFrame, enabled: false } : detailsFrame;
@@ -3500,6 +3700,13 @@ export function mergeExperiencePresentation(
       return base.itemsPerRow;
     })(),
     itemGap: pick(record.itemGap, ['sm', 'md', 'lg', 'xl'], base.itemGap),
+    cardsGridGap: isPortfolioExperienceCardsGridGap(record.cardsGridGap)
+      ? record.cardsGridGap
+      : pick(record.itemGap, ['sm', 'md', 'lg', 'xl'], base.cardsGridGap ?? 'md'),
+    cardsGridGapPx: clampExperienceCardsGridGapPx(
+      record.cardsGridGapPx,
+      base.cardsGridGapPx ?? 36
+    ),
     itemDensity: pick(record.itemDensity, ['comfortable', 'compact'], base.itemDensity),
     storyContentGap: isPortfolioExperienceStoryContentGap(record.storyContentGap)
       ? record.storyContentGap
@@ -3742,6 +3949,20 @@ export function mergeExperiencePresentation(
       record.entryExpandMode,
       ['accordion', 'all-open'],
       base.entryExpandMode ?? 'accordion'
+    ),
+    tasksDisplay: pick(
+      record.tasksDisplay,
+      ['arrows', 'dashes', 'checkmarks', 'chips', 'summary'],
+      base.tasksDisplay ?? 'arrows'
+    ),
+    tableStripedRows:
+      typeof record.tableStripedRows === 'boolean'
+        ? record.tableStripedRows
+        : base.tableStripedRows ?? false,
+    cardsBorderRadius: pick(
+      record.cardsBorderRadius,
+      ['none', 'md', 'xl'],
+      base.cardsBorderRadius ?? 'none'
     ),
     proofLinkStyle: pick(
       record.proofLinkStyle,

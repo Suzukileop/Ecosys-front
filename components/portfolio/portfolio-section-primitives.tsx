@@ -266,6 +266,7 @@ import {
   DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
   DEFAULT_EXPERIENCE_MUTED_COLOR,
   DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+  DEFAULT_EXPERIENCE_YEARS_COLOR,
   ensureExperienceInkContrast,
   experienceAccentColor,
   experienceChipChromeStyle,
@@ -318,6 +319,8 @@ import {
   experienceYearsClass,
   experienceYearsHighlightStyle,
   experienceYearsStyle,
+  experienceCardsBorderRadiusClass,
+  experienceCardsGridGapStyle,
   isExperienceDetailsElement,
   isExperienceStoryElement,
   normalizeExperienceElementOrder,
@@ -332,6 +335,7 @@ import {
   type PortfolioExperienceElementZones,
   type PortfolioExperiencePresentationSettings,
   type PortfolioExperiencePeriodDesign,
+  type PortfolioExperienceTasksDisplay,
   type PortfolioExperienceProofLinkStyle,
   type PortfolioExperienceProofZone,
   type PortfolioExperienceStatusBadgeStyle,
@@ -15106,19 +15110,30 @@ export function EditorialExperienceYears({
     DEFAULT_EXPERIENCE_TITLE_COLOR,
     DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
   );
+  // Always plain text — never a card / border / shadow around the years line.
   const yearsStyle: CSSProperties = {
     ...(isEditorial
-      ? {
-          color: mutedInk,
-          border: 'none',
-          boxShadow: 'none',
-          outline: 'none',
-          backgroundColor: 'transparent',
-          position: 'relative',
-          transform: 'none',
-          willChange: 'auto',
-        }
-      : experienceYearsStyle(presentation)),
+      ? { color: mutedInk }
+      : {
+          ...experienceYearsStyle(presentation),
+          color: ensureExperienceInkContrast(
+            presentation.yearsColor?.trim() || mutedInk,
+            isDark,
+            DEFAULT_EXPERIENCE_YEARS_COLOR,
+            DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+          ),
+        }),
+    border: 'none',
+    borderWidth: 0,
+    boxShadow: 'none',
+    outline: 'none',
+    backgroundColor: 'transparent',
+    background: 'none',
+    position: 'relative',
+    transform: 'none',
+    willChange: 'auto',
+    padding: 0,
+    marginInline: 0,
   };
 
   if (markerIndex === -1) {
@@ -15157,6 +15172,169 @@ export function EditorialExperienceYears({
       {yearsNode}
       {restAfter}
     </p>
+  );
+}
+
+function ExperienceTasksDisplay({
+  tasks,
+  display = 'arrows',
+  bodyColor,
+  mutedColor,
+  isDark,
+  label = 'Responsibilities',
+  size = 'md',
+}: {
+  tasks: string[];
+  display?: PortfolioExperienceTasksDisplay;
+  bodyColor: string;
+  mutedColor: string;
+  isDark: boolean;
+  label?: string;
+  size?: 'md' | 'lg';
+}) {
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
+  const motionDisabled = reduceMotion === true;
+
+  if (tasks.length === 0) return null;
+
+  const textClass =
+    size === 'lg'
+      ? 'text-[0.98rem] leading-relaxed sm:text-[1.05rem]'
+      : 'text-base leading-relaxed sm:text-[1.0625rem]';
+  const labelClass =
+    size === 'lg'
+      ? 'mb-2.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]'
+      : 'mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]';
+  const chipStyle: CSSProperties = isDark
+    ? {
+        borderColor: 'rgba(255,255,255,0.16)',
+        backgroundColor: 'transparent',
+        color: bodyColor,
+      }
+    : {
+        borderColor: 'rgba(0,0,0,0.14)',
+        backgroundColor: 'transparent',
+        color: bodyColor,
+      };
+
+  const sectionLabel =
+    !label.trim() || display === 'arrows' || display === 'summary' ? null : (
+      <p className={labelClass} style={{ color: mutedColor }}>
+        {label}
+      </p>
+    );
+
+  if (display === 'chips') {
+    return (
+      <div>
+        {sectionLabel}
+        <div className="flex flex-wrap gap-2">
+          {tasks.map((task) => (
+            <span
+              key={task}
+              className={`inline-flex rounded-full border px-3.5 py-1.5 font-medium ${
+                size === 'lg' ? 'text-[0.9375rem] sm:text-base' : 'text-[0.9375rem] sm:text-base'
+              }`}
+              style={chipStyle}
+            >
+              {task}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (display === 'summary') {
+    const countLabel =
+      tasks.length === 1 ? '1 responsibility' : `${tasks.length} responsibilities`;
+    return (
+      <div>
+        <button
+          type="button"
+          className="flex w-full items-center justify-between gap-3 text-left"
+          onClick={() => setSummaryOpen((open) => !open)}
+          aria-expanded={summaryOpen}
+        >
+          <span
+            className={`font-semibold tracking-[-0.02em] ${
+              size === 'lg' ? 'text-[1.05rem] sm:text-[1.15rem]' : 'text-base sm:text-[1.05rem]'
+            }`}
+            style={{ color: bodyColor }}
+          >
+            {countLabel}
+          </span>
+          <motion.span
+            className="block text-base leading-none"
+            style={{ color: mutedColor }}
+            animate={{ rotate: summaryOpen ? 180 : 0 }}
+            transition={motionDisabled ? { duration: 0 } : { duration: 0.2 }}
+            aria-hidden
+          >
+            ▾
+          </motion.span>
+        </button>
+        <AnimatePresence initial={false}>
+          {summaryOpen ? (
+            <motion.div
+              key="experience-tasks-summary"
+              initial={motionDisabled ? false : { height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={motionDisabled ? { opacity: 0 } : { height: 0, opacity: 0 }}
+              transition={
+                motionDisabled
+                  ? { duration: 0 }
+                  : { height: { duration: 0.28 }, opacity: { duration: 0.2 } }
+              }
+              className="overflow-hidden"
+            >
+              <ul className="mt-3 space-y-2.5">
+                {tasks.map((task) => (
+                  <li key={task} className={`flex gap-2.5 ${textClass}`} style={{ color: bodyColor }}>
+                    <span className="shrink-0" style={{ color: mutedColor }} aria-hidden>
+                      –
+                    </span>
+                    <span>{task}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  const marker =
+    display === 'checkmarks' ? '✓' : display === 'dashes' ? '–' : '→';
+
+  return (
+    <div>
+      {sectionLabel}
+      <ul
+        className={
+          display === 'arrows'
+            ? 'my-2 space-y-2.5 py-2 sm:my-3 sm:py-3'
+            : size === 'lg'
+              ? 'space-y-2.5 sm:space-y-3'
+              : 'space-y-2.5'
+        }
+      >
+        {tasks.map((task) => (
+          <li key={task} className={`flex gap-3 ${textClass}`} style={{ color: bodyColor }}>
+            <span
+              className={`mt-0.5 shrink-0 ${display === 'checkmarks' ? 'font-semibold' : ''}`}
+              style={{ color: mutedColor }}
+              aria-hidden
+            >
+              {marker}
+            </span>
+            <span>{task}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -15438,20 +15616,15 @@ function ExperienceEditorialEntry({
       ) : null}
 
       {tasks.length > 0 ? (
-        <ul className="my-2 space-y-2.5 py-2 sm:my-3 sm:py-3">
-          {tasks.map((task) => (
-            <li
-              key={task}
-              className="flex gap-3 text-base leading-relaxed sm:text-[1.0625rem]"
-              style={{ color: bodyColor }}
-            >
-              <span className="mt-0.5 shrink-0" style={{ color: mutedColor }} aria-hidden>
-                →
-              </span>
-              <span>{task}</span>
-            </li>
-          ))}
-        </ul>
+        <ExperienceTasksDisplay
+          tasks={tasks}
+          display={presentation.tasksDisplay ?? 'arrows'}
+          bodyColor={bodyColor}
+          mutedColor={mutedColor}
+          isDark={isDark}
+          label={resolveExperienceBlockLabel(presentation.tasksLabel, 'Responsibilities')}
+          size="md"
+        />
       ) : null}
 
       {tools.length > 0 ? (
@@ -15867,11 +16040,11 @@ function MilestoneExperienceEntry({
 
   return (
     <article
-      className={`grid grid-cols-1 gap-4 sm:grid-cols-[5.5rem_1.25rem_minmax(0,1fr)] sm:gap-x-5 lg:grid-cols-[6.5rem_1.5rem_minmax(0,1fr)] lg:gap-x-6 ${
+      className={`grid grid-cols-1 gap-4 sm:grid-cols-[7.5rem_1.5rem_minmax(0,1fr)] sm:gap-x-6 lg:grid-cols-[8.5rem_1.75rem_minmax(0,1fr)] lg:gap-x-8 ${
         isLast ? 'pb-2' : 'pb-12 sm:pb-16'
       }`}
     >
-      <div className="flex items-start gap-3 sm:block sm:pt-2">
+      <div className="flex items-start gap-3 sm:flex sm:flex-col sm:items-end sm:pt-2 sm:pr-1">
         <span
           className="text-[0.65rem] font-bold uppercase tracking-[0.22em] sm:hidden"
           style={{ color: mutedColor }}
@@ -15879,9 +16052,9 @@ function MilestoneExperienceEntry({
         >
           {indexLabel}
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 w-full text-left sm:text-right">
           <p
-            className="font-semibold tabular-nums leading-none tracking-[-0.04em] text-[clamp(2.5rem,6vw,3.75rem)]"
+            className="font-semibold tabular-nums leading-none tracking-[-0.02em] text-[clamp(2.35rem,5.5vw,3.35rem)]"
             style={{ color: titleColor, opacity: 0.92 }}
           >
             {displayYear}
@@ -15950,24 +16123,17 @@ function MilestoneExperienceEntry({
         ) : null}
 
         {tasks.length > 0 ? (
-          <ol className="mt-5 space-y-3 sm:mt-6">
-            {tasks.map((task, taskIndex) => (
-              <li key={task} className="flex gap-3 sm:gap-4">
-                <span
-                  className="mt-0.5 shrink-0 text-[0.72rem] font-bold tabular-nums tracking-[0.08em]"
-                  style={{ color: accent, opacity: 0.85 }}
-                >
-                  {String(taskIndex + 1).padStart(2, '0')}
-                </span>
-                <span
-                  className="text-[0.95rem] leading-relaxed sm:text-[1.02rem]"
-                  style={{ color: bodyColor }}
-                >
-                  {task}
-                </span>
-              </li>
-            ))}
-          </ol>
+          <div className="mt-5 sm:mt-6">
+            <ExperienceTasksDisplay
+              tasks={tasks}
+              display={presentation.tasksDisplay ?? 'arrows'}
+              bodyColor={bodyColor}
+              mutedColor={mutedColor}
+              isDark={isDark}
+              label={resolveExperienceBlockLabel(presentation.tasksLabel, 'Responsibilities')}
+              size="lg"
+            />
+          </div>
         ) : null}
 
         {tools.length > 0 ? (
@@ -16132,6 +16298,805 @@ export function MilestoneExperienceList({
               isLast={index === blocks.length - 1}
               presentation={presentation}
             />
+          </PortfolioMotionItem>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TableExperienceStatusCell({
+  status,
+  titleColor,
+  mutedColor,
+}: {
+  status: ExperienceBlockStatus | null;
+  titleColor: string;
+  mutedColor: string;
+}) {
+  if (status !== 'ONGOING' && status !== 'FINISHED') {
+    return <span style={{ color: mutedColor }}>—</span>;
+  }
+  const isOngoing = status === 'ONGOING';
+  return (
+    <span
+      className="inline-flex items-center gap-2.5 text-[0.98rem] font-medium sm:text-[1.05rem]"
+      style={{ color: isOngoing ? titleColor : mutedColor }}
+    >
+      <span
+        className="h-2 w-2 shrink-0 rounded-full"
+        style={{ backgroundColor: isOngoing ? titleColor : mutedColor }}
+        aria-hidden
+      />
+      {isOngoing ? 'Ongoing' : 'Completed'}
+    </span>
+  );
+}
+
+function TableExperienceRow({
+  period,
+  title,
+  organization,
+  description,
+  status,
+  tasks,
+  tools,
+  links,
+  location,
+  employmentType,
+  accent,
+  titleColor,
+  mutedColor,
+  bodyColor,
+  isDark,
+  expanded,
+  onExpandedChange,
+  hairlineColor,
+  tasksDisplay = 'arrows',
+  striped = false,
+  rowIndex = 0,
+}: {
+  period: string | null;
+  title: string | null;
+  organization: string | null;
+  description: string | null;
+  status: ExperienceBlockStatus | null;
+  tasks: string[];
+  tools: string[];
+  links: ExperienceProofLink[];
+  location: string | null;
+  employmentType: ExperienceEmploymentType | null;
+  accent: string;
+  titleColor: string;
+  mutedColor: string;
+  bodyColor: string;
+  isDark: boolean;
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
+  hairlineColor: string;
+  tasksDisplay?: PortfolioExperienceTasksDisplay;
+  striped?: boolean;
+  rowIndex?: number;
+}) {
+  const reduceMotion = useReducedMotion();
+  const motionDisabled = reduceMotion === true;
+  const orgMeta = [
+    location?.trim() || '',
+    employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const hasDetails =
+    Boolean(description?.trim()) || tasks.length > 0 || tools.length > 0 || links.length > 0;
+  const toolTagStyle: CSSProperties = isDark
+    ? {
+        borderColor: 'rgba(255,255,255,0.14)',
+        backgroundColor: 'transparent',
+        color: mutedColor,
+      }
+    : {
+        borderColor: 'rgba(0,0,0,0.12)',
+        backgroundColor: 'transparent',
+        color: mutedColor,
+      };
+  const panelTransition = motionDisabled
+    ? { duration: 0 }
+    : {
+        height: { duration: 0.34, ease: [0.22, 1, 0.36, 1] as const },
+        opacity: { duration: 0.22, ease: 'easeOut' as const },
+      };
+  const stripeBackground =
+    striped && rowIndex % 2 === 1
+      ? isDark
+        ? 'rgba(255,255,255,0.035)'
+        : 'rgba(0,0,0,0.03)'
+      : 'transparent';
+
+  const toggle = () => {
+    if (!hasDetails) return;
+    onExpandedChange(!expanded);
+  };
+
+  return (
+    <div
+      style={{
+        borderBottom: `1px solid ${hairlineColor}`,
+        backgroundColor: stripeBackground,
+      }}
+    >
+      <button
+        type="button"
+        className="grid w-full grid-cols-1 gap-3 py-7 text-left sm:grid-cols-[8.5rem_minmax(0,1.4fr)_minmax(0,0.9fr)_8.5rem_2rem] sm:items-start sm:gap-x-5 sm:py-8 lg:grid-cols-[9.5rem_minmax(0,1.5fr)_minmax(0,1fr)_9rem_2.25rem] lg:gap-x-6"
+        onClick={toggle}
+        aria-expanded={hasDetails ? expanded : undefined}
+        disabled={!hasDetails}
+      >
+        <p
+          className="text-[1rem] tabular-nums leading-snug sm:pt-1 sm:text-[1.05rem]"
+          style={{ color: mutedColor }}
+        >
+          {period || '—'}
+        </p>
+
+        <div className="min-w-0">
+          {title ? (
+            <p
+              className="text-[1.45rem] font-semibold leading-[1.15] tracking-[-0.03em] sm:text-[1.75rem] lg:text-[2rem]"
+              style={{ color: titleColor }}
+            >
+              {title}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="min-w-0 sm:pt-1">
+          {organization ? (
+            <p
+              className="text-[1.02rem] font-medium leading-snug sm:text-[1.08rem]"
+              style={{ color: mutedColor }}
+            >
+              {organization}
+            </p>
+          ) : null}
+          {orgMeta ? (
+            <p
+              className="mt-1.5 text-[0.9rem] sm:text-[0.95rem]"
+              style={{ color: mutedColor, opacity: 0.85 }}
+            >
+              {orgMeta}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="sm:pt-1">
+          <TableExperienceStatusCell
+            status={status}
+            titleColor={titleColor}
+            mutedColor={mutedColor}
+          />
+        </div>
+
+        <div className="hidden items-start justify-end pt-1 sm:flex" aria-hidden>
+          {hasDetails ? (
+            <motion.span
+              className="block text-lg leading-none sm:text-xl"
+              style={{ color: mutedColor }}
+              animate={{ rotate: expanded ? 180 : 0 }}
+              transition={motionDisabled ? { duration: 0 } : { duration: 0.22 }}
+            >
+              ▾
+            </motion.span>
+          ) : null}
+        </div>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {expanded && hasDetails ? (
+          <motion.div
+            key="table-experience-panel"
+            initial={motionDisabled ? false : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={motionDisabled ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            transition={panelTransition}
+            className="overflow-hidden"
+          >
+            <div className="pb-8 sm:grid sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:gap-x-5 sm:pb-9 lg:grid-cols-[9.5rem_minmax(0,1fr)] lg:gap-x-6">
+              <div className="hidden sm:block" aria-hidden />
+              <div className="max-w-2xl space-y-6 sm:space-y-7">
+                {description ? (
+                  <p
+                    className="text-[0.98rem] leading-[1.72] sm:text-[1.05rem]"
+                    style={{ color: bodyColor }}
+                  >
+                    {description}
+                  </p>
+                ) : null}
+
+                {tasks.length > 0 ? (
+                  <ExperienceTasksDisplay
+                    tasks={tasks}
+                    display={tasksDisplay}
+                    bodyColor={bodyColor}
+                    mutedColor={mutedColor}
+                    isDark={isDark}
+                    label=""
+                    size="lg"
+                  />
+                ) : null}
+
+                {tools.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {tools.map((tool) => (
+                      <span
+                        key={tool}
+                        className="inline-flex rounded-full border px-3.5 py-1.5 text-[0.9375rem] font-medium sm:text-base"
+                        style={toolTagStyle}
+                      >
+                        {tool}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+
+                {links.length > 0 ? (
+                  <div className="flex flex-col items-start gap-2">
+                    {links.map((link) => (
+                      <a
+                        key={link.id}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-base font-semibold transition hover:opacity-80 sm:text-[1.0625rem]"
+                        style={{ color: accent }}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <span>{link.label}</span>
+                        <span aria-hidden>↗</span>
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function TableExperienceBlock({
+  block,
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+  expanded,
+  onExpandedChange,
+  hairlineColor,
+  rowIndex = 0,
+}: {
+  block: ProfileMediaBlock;
+  presentation?: PortfolioExperiencePresentationSettings;
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
+  hairlineColor: string;
+  rowIndex?: number;
+}) {
+  const {
+    period,
+    title,
+    organization,
+    description,
+    status,
+    tasks,
+    tools,
+    links,
+    location,
+    employmentType,
+  } = resolveExperienceContent(block);
+
+  const accent = experienceAccentColor(presentation.accentColor);
+  const isDark = presentation.activeColorMode !== 'light';
+  const colorMode = resolveExperienceColorMode(presentation);
+  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
+
+  const titleColor = ensureExperienceInkContrast(
+    presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_TITLE_COLOR,
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+  );
+  const mutedColor = ensureExperienceInkContrast(
+    presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_MUTED_COLOR,
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+  );
+  const bodyColor = ensureExperienceInkContrast(
+    resolveExperienceTextColor(styles.tasks, colorMode) ||
+      resolveExperienceTextColor(styles.description, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_BODY_COLOR,
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+  );
+
+  return (
+    <TableExperienceRow
+      period={presentation.showPeriod ? period : null}
+      title={presentation.showTitle ? title : null}
+      organization={presentation.showOrganization ? organization : null}
+      description={presentation.showDescription ? description : null}
+      status={presentation.showMeta ? status : null}
+      tasks={presentation.showTasks ? tasks : []}
+      tools={presentation.showTools ? tools : []}
+      links={presentation.showProof ? links : []}
+      location={presentation.showMeta ? location : null}
+      employmentType={presentation.showMeta ? employmentType : null}
+      accent={accent}
+      titleColor={titleColor}
+      mutedColor={mutedColor}
+      bodyColor={bodyColor}
+      isDark={isDark}
+      expanded={expanded}
+      onExpandedChange={onExpandedChange}
+      hairlineColor={hairlineColor}
+      tasksDisplay={presentation.tasksDisplay ?? 'arrows'}
+      striped={presentation.tableStripedRows === true}
+      rowIndex={rowIndex}
+    />
+  );
+}
+
+export function TableExperienceHeader({
+  sectionTitle,
+  years,
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+}: {
+  sectionTitle: string;
+  years?: number | null;
+  presentation?: PortfolioExperiencePresentationSettings;
+}) {
+  const isDark = presentation.activeColorMode !== 'light';
+  const colorMode = resolveExperienceColorMode(presentation);
+  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
+  const titleColor = ensureExperienceInkContrast(
+    presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_TITLE_COLOR,
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+  );
+  const mutedColor = ensureExperienceInkContrast(
+    presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_MUTED_COLOR,
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+  );
+
+  const showYears = presentation.showYears && years != null && years > 0;
+  const template = resolveExperienceYearsTemplate(presentation);
+  const intro = showYears
+    ? template.replaceAll('{years}', String(years))
+    : presentation.subtitleCustom?.trim() ||
+      'A clear record of roles, teams, and the work behind them.';
+
+  return (
+    <header className="mb-14 w-full max-w-4xl lg:mb-20">
+      <p
+        className="text-[0.95rem] font-medium tracking-[-0.01em] sm:text-[1.05rem]"
+        style={{ color: mutedColor }}
+      >
+        {sectionTitle || 'Experience'}
+      </p>
+      <h2
+        className="mt-4 font-serif text-[clamp(2.15rem,4.8vw,3.35rem)] font-medium leading-[1.12] tracking-[-0.035em]"
+        style={{ color: titleColor, fontFamily: SERIF }}
+      >
+        {intro}
+      </h2>
+    </header>
+  );
+}
+
+export function CardsExperienceHeader({
+  sectionTitle,
+  years,
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+}: {
+  sectionTitle: string;
+  years?: number | null;
+  presentation?: PortfolioExperiencePresentationSettings;
+}) {
+  const isDark = presentation.activeColorMode !== 'light';
+  const colorMode = resolveExperienceColorMode(presentation);
+  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
+  const titleColor = ensureExperienceInkContrast(
+    presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_TITLE_COLOR,
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+  );
+  const mutedColor = ensureExperienceInkContrast(
+    presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_MUTED_COLOR,
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+  );
+
+  const showYears = presentation.showYears && years != null && years > 0;
+  const template = resolveExperienceYearsTemplate(presentation);
+  const intro = showYears ? template.replaceAll('{years}', String(years)) : null;
+
+  const hairlineColor = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
+
+  return (
+    <header
+      className="mb-10 flex w-full flex-row items-baseline justify-between gap-4 border-b pb-6 sm:mb-12 sm:gap-6 sm:pb-7 lg:mb-14 lg:pb-8"
+      style={{ borderColor: hairlineColor }}
+    >
+      <p
+        className="shrink-0 text-[0.95rem] font-medium tracking-[-0.01em] sm:text-[1.05rem]"
+        style={{ color: mutedColor }}
+      >
+        {sectionTitle || 'Experience'}
+      </p>
+      {intro ? (
+        <h2
+          className="min-w-0 flex-1 text-right font-serif text-[clamp(2.15rem,4.8vw,3.35rem)] font-medium leading-[1.12] tracking-[-0.035em]"
+          style={{ color: titleColor, fontFamily: SERIF }}
+        >
+          {intro}
+        </h2>
+      ) : null}
+    </header>
+  );
+}
+
+export function TableExperienceList({
+  blocks,
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+  motionProfile = DEFAULT_MOTION_PROFILE,
+  forceSingleColumn = false,
+}: {
+  blocks: ProfileMediaBlock[];
+  presentation?: PortfolioExperiencePresentationSettings;
+  motionProfile?: PortfolioGlobalMotionProfile;
+  forceSingleColumn?: boolean;
+}) {
+  const [openBlockId, setOpenBlockId] = useState<string | null>(() => blocks[0]?.id ?? null);
+  const isDark = presentation.activeColorMode !== 'light';
+  const colorMode = resolveExperienceColorMode(presentation);
+  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
+  const mutedColor = ensureExperienceInkContrast(
+    presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_MUTED_COLOR,
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+  );
+  const hairlineColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
+
+  useEffect(() => {
+    if (blocks.length === 0) {
+      setOpenBlockId(null);
+      return;
+    }
+    setOpenBlockId((current) => {
+      if (current && blocks.some((block) => block.id === current)) return current;
+      return blocks[0]?.id ?? null;
+    });
+  }, [blocks]);
+
+  if (blocks.length === 0) return null;
+
+  const flatMotionTiming = {
+    ...defaultMotionTimingForProfile(motionProfile),
+    hoverLift: 0,
+    hoverShadowSize: 0,
+    hoverShadowOpacity: 0,
+  };
+
+  return (
+    <div
+      className={experienceListShellClass(
+        forceSingleColumn ? 'full' : presentation.listMaxWidth,
+        forceSingleColumn ? 'left' : presentation.listPlacement
+      )}
+    >
+      <div
+        className="hidden border-b sm:grid sm:grid-cols-[8.5rem_minmax(0,1.4fr)_minmax(0,0.9fr)_8.5rem_2rem] sm:gap-x-5 sm:pb-3.5 lg:grid-cols-[9.5rem_minmax(0,1.5fr)_minmax(0,1fr)_9rem_2.25rem] lg:gap-x-6"
+        style={{ borderColor: hairlineColor }}
+      >
+        {['Period', 'Role', 'Organization', 'Status', ''].map((label) => (
+          <p
+            key={label || 'chevron'}
+            className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]"
+            style={{ color: mutedColor }}
+          >
+            {label}
+          </p>
+        ))}
+      </div>
+
+      <div>
+        {blocks.map((block, index) => (
+          <PortfolioMotionItem
+            key={block.id}
+            profile={motionProfile}
+            index={index}
+            timing={flatMotionTiming}
+          >
+            <TableExperienceBlock
+              block={block}
+              presentation={presentation}
+              expanded={openBlockId === block.id}
+              onExpandedChange={(next) => setOpenBlockId(next ? block.id : null)}
+              hairlineColor={hairlineColor}
+              rowIndex={index}
+            />
+          </PortfolioMotionItem>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CardsExperienceEntry({
+  period,
+  title,
+  organization,
+  description,
+  status,
+  tasks,
+  tools,
+  links,
+  location,
+  employmentType,
+  accent,
+  titleColor,
+  mutedColor,
+  bodyColor,
+  isDark,
+  presentation,
+}: {
+  period: string | null;
+  title: string | null;
+  organization: string | null;
+  description: string | null;
+  status: ExperienceBlockStatus | null;
+  tasks: string[];
+  tools: string[];
+  links: ExperienceProofLink[];
+  location: string | null;
+  employmentType: ExperienceEmploymentType | null;
+  accent: string;
+  titleColor: string;
+  mutedColor: string;
+  bodyColor: string;
+  isDark: boolean;
+  presentation: PortfolioExperiencePresentationSettings;
+}) {
+  const metaParts = [
+    organization?.trim() || '',
+    location?.trim() || '',
+    employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : '',
+  ].filter(Boolean);
+  const cardStyle: CSSProperties = isDark
+    ? {
+        borderColor: 'rgba(255,255,255,0.1)',
+        backgroundColor: 'rgba(255,255,255,0.04)',
+      }
+    : {
+        borderColor: 'rgba(0,0,0,0.08)',
+        backgroundColor: '#ffffff',
+      };
+  const toolTagStyle: CSSProperties = isDark
+    ? {
+        borderColor: 'rgba(255,255,255,0.14)',
+        backgroundColor: 'transparent',
+        color: bodyColor,
+      }
+    : {
+        borderColor: 'rgba(0,0,0,0.12)',
+        backgroundColor: 'transparent',
+        color: bodyColor,
+      };
+
+  return (
+    <article
+      className={`flex h-full min-w-0 flex-col border px-5 py-5 sm:px-6 sm:py-6 lg:px-7 lg:py-7 ${experienceCardsBorderRadiusClass(presentation.cardsBorderRadius)}`}
+      style={cardStyle}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          {title ? (
+            <h4
+              className="font-serif text-[1.35rem] font-bold leading-[1.2] tracking-[-0.025em] sm:text-[1.55rem] lg:text-[1.7rem]"
+              style={{ color: titleColor, fontFamily: SERIF }}
+            >
+              {title}
+            </h4>
+          ) : null}
+          {metaParts.length > 0 ? (
+            <p className="mt-1.5 text-[0.9rem] sm:text-[0.95rem]" style={{ color: mutedColor }}>
+              {metaParts.join(' · ')}
+            </p>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          {period ? (
+            <p className="text-[0.875rem] tabular-nums sm:text-[0.95rem]" style={{ color: mutedColor }}>
+              {period}
+            </p>
+          ) : null}
+          <ExperienceEditorialOngoingBadge status={status} isDark={isDark} />
+        </div>
+      </div>
+
+      {description ? (
+        <p
+          className="mt-8 text-[0.98rem] leading-[1.7] sm:mt-9 sm:text-[1.02rem]"
+          style={{ color: bodyColor }}
+        >
+          {description}
+        </p>
+      ) : null}
+
+      {tasks.length > 0 ? (
+        <div className="mt-8 sm:mt-9">
+          <ExperienceTasksDisplay
+            tasks={tasks}
+            display={presentation.tasksDisplay ?? 'dashes'}
+            bodyColor={bodyColor}
+            mutedColor={mutedColor}
+            isDark={isDark}
+            label=""
+            size="md"
+          />
+        </div>
+      ) : null}
+
+      {tools.length > 0 ? (
+        <div className="mt-auto pt-8 sm:pt-9">
+          <div className="flex flex-wrap gap-2">
+            {tools.map((tool) => (
+              <span
+                key={tool}
+                className="inline-flex rounded-full border px-3 py-1.5 text-[0.875rem] font-medium sm:text-[0.9375rem]"
+                style={toolTagStyle}
+              >
+                {tool}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {links.length > 0 ? (
+        <div className="mt-7 flex flex-col items-start gap-2.5 sm:mt-8">
+          {links.map((link) => (
+            <a
+              key={link.id}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-80 sm:text-base"
+              style={{ color: accent }}
+            >
+              <span>{link.label}</span>
+              <span aria-hidden>↗</span>
+            </a>
+          ))}
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function CardsExperienceBlock({
+  block,
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+}: {
+  block: ProfileMediaBlock;
+  presentation?: PortfolioExperiencePresentationSettings;
+}) {
+  const {
+    period,
+    title,
+    organization,
+    description,
+    status,
+    tasks,
+    tools,
+    links,
+    location,
+    employmentType,
+  } = resolveExperienceContent(block);
+
+  const accent = experienceAccentColor(presentation.accentColor);
+  const isDark = presentation.activeColorMode !== 'light';
+  const colorMode = resolveExperienceColorMode(presentation);
+  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
+
+  const titleColor = ensureExperienceInkContrast(
+    presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_TITLE_COLOR,
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+  );
+  const mutedColor = ensureExperienceInkContrast(
+    presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_MUTED_COLOR,
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+  );
+  const bodyColor = ensureExperienceInkContrast(
+    resolveExperienceTextColor(styles.tasks, colorMode) ||
+      resolveExperienceTextColor(styles.description, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_BODY_COLOR,
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+  );
+
+  return (
+    <CardsExperienceEntry
+      period={presentation.showPeriod ? period : null}
+      title={presentation.showTitle ? title : null}
+      organization={presentation.showOrganization ? organization : null}
+      description={presentation.showDescription ? description : null}
+      status={presentation.showMeta ? status : null}
+      tasks={presentation.showTasks ? tasks : []}
+      tools={presentation.showTools ? tools : []}
+      links={presentation.showProof ? links : []}
+      location={presentation.showMeta ? location : null}
+      employmentType={presentation.showMeta ? employmentType : null}
+      accent={accent}
+      titleColor={titleColor}
+      mutedColor={mutedColor}
+      bodyColor={bodyColor}
+      isDark={isDark}
+      presentation={presentation}
+    />
+  );
+}
+
+export function CardsExperienceList({
+  blocks,
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+  motionProfile = DEFAULT_MOTION_PROFILE,
+  forceSingleColumn = false,
+}: {
+  blocks: ProfileMediaBlock[];
+  presentation?: PortfolioExperiencePresentationSettings;
+  motionProfile?: PortfolioGlobalMotionProfile;
+  forceSingleColumn?: boolean;
+}) {
+  if (blocks.length === 0) return null;
+
+  const flatMotionTiming = {
+    ...defaultMotionTimingForProfile(motionProfile),
+    hoverLift: 0,
+    hoverShadowSize: 0,
+    hoverShadowOpacity: 0,
+  };
+
+  const gridClass = forceSingleColumn
+    ? 'grid grid-cols-1'
+    : 'grid grid-cols-1 md:grid-cols-2';
+
+  return (
+    <div
+      className={experienceListShellClass(
+        forceSingleColumn ? 'full' : presentation.listMaxWidth,
+        forceSingleColumn ? 'left' : presentation.listPlacement
+      )}
+    >
+      <div className={gridClass} style={experienceCardsGridGapStyle(presentation)}>
+        {blocks.map((block, index) => (
+          <PortfolioMotionItem
+            key={block.id}
+            profile={motionProfile}
+            index={index}
+            className="h-full"
+            timing={flatMotionTiming}
+          >
+            <CardsExperienceBlock block={block} presentation={presentation} />
           </PortfolioMotionItem>
         ))}
       </div>

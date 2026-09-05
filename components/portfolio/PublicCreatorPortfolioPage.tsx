@@ -54,6 +54,10 @@ import {
   EditorialExperienceList,
   EditorialExperienceYears,
   MilestoneExperienceList,
+  TableExperienceHeader,
+  TableExperienceList,
+  CardsExperienceHeader,
+  CardsExperienceList,
   EditorialFaqList,
   EditorialGallerySection,
   EditorialPortfolioFooter,
@@ -270,6 +274,8 @@ import {
   resolveExperienceSectionSubtitle,
   resolveExperienceSectionTitle,
   experienceDesignUsesFlatHeader,
+  experienceDesignUsesTableHeader,
+  experienceDesignUsesCardsHeader,
   experienceHeaderFontClass,
   experienceHeaderFontStyle,
   experienceSubtitleColorStyle,
@@ -2643,7 +2649,18 @@ export function PublicCreatorPortfolioPage({
         const usesFlatExperienceHeader = experienceDesignUsesFlatHeader(
           experiencePresentation.experienceDesign
         );
-        const aside = !usesFlatExperienceHeader && !isSplitMode && faqSectionLayoutIsAside(layout);
+        const usesTableExperienceHeader = experienceDesignUsesTableHeader(
+          experiencePresentation.experienceDesign
+        );
+        const usesCardsExperienceHeader = experienceDesignUsesCardsHeader(
+          experiencePresentation.experienceDesign
+        );
+        const usesCustomExperienceHeader = usesTableExperienceHeader || usesCardsExperienceHeader;
+        const aside =
+          !usesFlatExperienceHeader &&
+          !usesCustomExperienceHeader &&
+          !isSplitMode &&
+          faqSectionLayoutIsAside(layout);
         const showExperienceYears =
           settings.experience.showYears &&
           profile.yearsOfExperience != null &&
@@ -2654,12 +2671,31 @@ export function PublicCreatorPortfolioPage({
             presentation={experiencePresentation}
           />
         ) : null;
+        const tableExperienceHeader = usesTableExperienceHeader ? (
+          <TableExperienceHeader
+            sectionTitle={experienceSectionTitle}
+            years={profile.yearsOfExperience}
+            presentation={experiencePresentation}
+          />
+        ) : null;
+        const cardsExperienceHeader = usesCardsExperienceHeader ? (
+          <CardsExperienceHeader
+            sectionTitle={experienceSectionTitle}
+            years={profile.yearsOfExperience}
+            presentation={experiencePresentation}
+          />
+        ) : null;
         // Editorial: years line is the real static section lead — no sticky title shell left behind.
-        // In split mode keep years in the content pane (left rail is for short section names).
+        // Table / Cards: custom section headers (no sticky chrome).
+        // In split mode keep years / custom header in the content pane (left rail is for short section names).
         const headerBlock = usesFlatExperienceHeader ? (
           !isSplitMode && experienceYearsNode ? (
             <div className="relative mb-12 w-full lg:mb-16">{experienceYearsNode}</div>
           ) : null
+        ) : usesTableExperienceHeader ? (
+          !isSplitMode && tableExperienceHeader ? tableExperienceHeader : null
+        ) : usesCardsExperienceHeader ? (
+          !isSplitMode && cardsExperienceHeader ? cardsExperienceHeader : null
         ) : (
           <EditorialSectionStickyHeader
             title={experienceSectionTitle}
@@ -2691,18 +2727,33 @@ export function PublicCreatorPortfolioPage({
             ink={experiencePresentation.titleColor}
             surface={experiencePresentation.entryFrame.cardBackgroundColor}
           >
+            {usesTableExperienceHeader && isSplitMode && tableExperienceHeader
+              ? tableExperienceHeader
+              : null}
+            {usesCardsExperienceHeader && isSplitMode && cardsExperienceHeader
+              ? cardsExperienceHeader
+              : null}
             {experienceYearsNode &&
-            (!usesFlatExperienceHeader || isSplitMode) ? (
-              usesFlatExperienceHeader ? (
-                experienceYearsNode
-              ) : (
-                <PortfolioMotionItem profile={motionProfile} index={0}>
-                  {experienceYearsNode}
-                </PortfolioMotionItem>
-              )
-            ) : null}
+            !usesCustomExperienceHeader &&
+            (!usesFlatExperienceHeader || isSplitMode)
+              ? experienceYearsNode
+              : null}
             {experiencePresentation.experienceDesign === 'milestone' ? (
               <MilestoneExperienceList
+                blocks={experienceBlocks}
+                presentation={experiencePresentation}
+                motionProfile={motionProfile}
+                forceSingleColumn={isSplitMode}
+              />
+            ) : experiencePresentation.experienceDesign === 'table' ? (
+              <TableExperienceList
+                blocks={experienceBlocks}
+                presentation={experiencePresentation}
+                motionProfile={motionProfile}
+                forceSingleColumn={isSplitMode}
+              />
+            ) : experiencePresentation.experienceDesign === 'cards' ? (
+              <CardsExperienceList
                 blocks={experienceBlocks}
                 presentation={experiencePresentation}
                 motionProfile={motionProfile}

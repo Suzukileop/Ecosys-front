@@ -806,17 +806,58 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   // Experience
   entry(
     'experience',
+    'General',
+    [
+      'general',
+      'visibility',
+      'show section',
+      'tasks',
+      'tasks display',
+      'responsibilities',
+      'checkmarks',
+      'chips',
+      'summary',
+    ],
+    'general'
+  ),
+  entry(
+    'experience',
     'Design',
     [
       'design',
       'editorial',
       'milestone',
+      'table',
+      'cards',
+      'ledger',
+      'striped',
       'continuum',
       'timeline',
       'framer',
       'webflow',
       'layout',
       'experience design',
+      'card gap',
+      'gap',
+      'spacing',
+      'espacement',
+      'gutter',
+    ],
+    'design'
+  ),
+  entry(
+    'experience',
+    'Card gap',
+    [
+      'card gap',
+      'gap',
+      'spacing',
+      'espacement',
+      'gutter',
+      'horizontal',
+      'vertical',
+      'cards',
+      'grille',
     ],
     'design'
   ),
