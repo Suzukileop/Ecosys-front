@@ -126,11 +126,13 @@ function AccordionConsultLink({
         rel="noopener noreferrer"
         className="group inline-flex shrink-0 items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] transition-opacity hover:opacity-80"
         style={{ color: accent || ink }}
+        data-pf-no-color-transition=""
       >
         <span>{label}</span>
         <span
           aria-hidden
           className="inline-block transition-transform duration-300 group-hover:translate-x-1"
+          data-pf-no-color-transition=""
         >
           →
         </span>

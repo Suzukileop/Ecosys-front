@@ -2039,7 +2039,10 @@ export function HeroSideNav({ items }: { items: PortfolioHeroData['navItems'] })
           href={`#${item.id}`}
           className="group flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-400 transition hover:text-orange-600"
         >
-          <span className="h-px w-6 bg-neutral-300 transition group-hover:w-10 group-hover:bg-orange-500" />
+          <span
+            className="h-px w-6 bg-neutral-300 transition group-hover:w-10 group-hover:bg-orange-500"
+            data-pf-no-color-transition=""
+          />
           {item.label}
         </a>
       ))}

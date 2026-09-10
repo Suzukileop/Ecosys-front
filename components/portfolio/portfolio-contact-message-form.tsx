@@ -427,6 +427,7 @@ export function ContactMessageForm({
             type="submit"
             disabled={isSubmitting || !creatorId.trim()}
             className="mt-auto inline-flex w-full items-center justify-center rounded-xl px-6 py-3.5 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            data-pf-no-color-transition=""
             style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
           >
             {isSubmitting ? 'Sending…' : submitLabel}
@@ -504,6 +505,7 @@ export function ContactMessageForm({
             type="submit"
             disabled={isSubmitting || !creatorId.trim()}
             className="mt-auto inline-flex w-full items-center justify-center rounded-xl px-7 py-3.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            data-pf-no-color-transition=""
             style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
           >
             {isSubmitting ? 'Envoi…' : submitLabel.trim() || 'Envoyer le message'}
@@ -582,6 +584,7 @@ export function ContactMessageForm({
             type="submit"
             disabled={isSubmitting || !creatorId.trim()}
             className="inline-flex w-full items-center justify-center rounded-lg px-6 py-3.5 text-[18px] font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            data-pf-no-color-transition=""
             style={{ backgroundColor: 'var(--contact-accent, #1E4FD6)' }}
           >
             {isSubmitting ? 'Sending…' : submitLabel.trim() || 'Send message'}
@@ -676,6 +679,7 @@ export function ContactMessageForm({
               type="submit"
               disabled={isSubmitting || !creatorId.trim()}
               className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-xs font-bold uppercase tracking-[0.08em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              data-pf-no-color-transition=""
               style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
             >
               {isSubmitting ? 'Sending…' : submitLabel}
@@ -881,6 +885,7 @@ export function ContactMessageForm({
               type="submit"
               disabled={isSubmitting || !creatorId.trim()}
               className="inline-flex w-full items-center justify-center rounded-xl px-6 py-3.5 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              data-pf-no-color-transition=""
               style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
             >
               {isSubmitting ? 'Sending…' : submitLabel}
@@ -1067,6 +1072,7 @@ export function ContactMessageForm({
                 type="submit"
                 disabled={isSubmitting || !creatorId.trim()}
                 className="inline-flex flex-1 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                data-pf-no-color-transition=""
                 style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
               >
                 {isSubmitting ? 'Sending…' : submitLabel}
@@ -1077,6 +1083,7 @@ export function ContactMessageForm({
                 disabled={isSubmitting}
                 onClick={() => void advanceStepped()}
                 className="inline-flex flex-1 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                data-pf-no-color-transition=""
                 style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
               >
                 Next
@@ -1220,6 +1227,7 @@ export function ContactMessageForm({
               type="submit"
               disabled={isSubmitting || !creatorId.trim()}
               className="inline-flex items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              data-pf-no-color-transition=""
               style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
             >
               {isSubmitting ? 'Sending…' : workspaceCta}
@@ -1314,6 +1322,7 @@ export function ContactMessageForm({
               type="submit"
               disabled={isSubmitting || !creatorId.trim()}
               className="inline-flex items-center justify-center rounded-full px-7 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              data-pf-no-color-transition=""
               style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
             >
               {isSubmitting ? 'Sending…' : submitLabel}
@@ -1413,6 +1422,7 @@ export function ContactMessageForm({
           type="submit"
           disabled={isSubmitting || !creatorId.trim()}
           className="inline-flex w-full items-center justify-center rounded-full px-6 py-3 text-base font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          data-pf-no-color-transition=""
           style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
         >
           {isSubmitting ? 'Sending…' : submitLabel}

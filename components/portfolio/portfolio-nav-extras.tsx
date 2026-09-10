@@ -525,6 +525,7 @@ export function PortfolioNavColorModeToggleButton({
         title={label}
         style={{ color: iconInk }}
         className={`inline-flex h-9 w-9 shrink-0 items-center justify-center ${hoverClass}`}
+        data-pf-no-color-transition=""
       >
         <PortfolioNavColorModeGlyph mode={isLight ? 'light' : 'dark'} className="h-[1.125rem] w-[1.125rem]" />
       </button>
@@ -545,6 +546,7 @@ export function PortfolioNavColorModeToggleButton({
       title={label}
       style={shellStyle}
       className={`inline-flex ${size} shrink-0 items-center justify-center rounded-full border shadow-[0_8px_24px_rgba(0,0,0,0.08)] backdrop-blur-md ${hoverClass}`}
+      data-pf-no-color-transition=""
     >
       <PortfolioNavColorModeGlyph mode={isLight ? 'light' : 'dark'} className="h-4 w-4" />
     </button>
@@ -658,6 +660,7 @@ function NavBrandLinkButton({
       aria-label={link.label}
       title={link.label}
       className={`inline-flex shrink-0 ${hoverClass}`}
+      data-pf-no-color-transition=""
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
     >
       <LinkBrandIcon
@@ -719,6 +722,7 @@ function LinkIconButton({
         title={link.label}
         style={shellStyle}
         className={`inline-flex ${size} items-center justify-center rounded-full border shadow-[0_8px_24px_rgba(0,0,0,0.08)] backdrop-blur-md transition hover:opacity-90`}
+        data-pf-no-color-transition=""
       >
         <MailGlyph className="h-4 w-4" />
       </a>
@@ -735,6 +739,7 @@ function LinkIconButton({
       title={link.label}
       style={shellStyle}
       className={`inline-flex ${size} items-center justify-center rounded-full border shadow-[0_8px_24px_rgba(0,0,0,0.08)] backdrop-blur-md transition hover:opacity-90`}
+      data-pf-no-color-transition=""
     >
       <SocialPlatformIcon platform={platform} className="h-3.5 w-3.5" />
     </a>
@@ -824,13 +829,21 @@ function ContactFreeSpaceButton({
           title={label}
           className={iconClassName}
           style={shellStyle}
+          data-pf-no-color-transition=""
         >
           {glyph}
         </button>
       );
     }
     return (
-      <a href={href} aria-label={label} title={label} className={iconClassName} style={shellStyle}>
+      <a
+        href={href}
+        aria-label={label}
+        title={label}
+        className={iconClassName}
+        style={shellStyle}
+        data-pf-no-color-transition=""
+      >
         {glyph}
       </a>
     );
@@ -881,14 +894,27 @@ function ContactFreeSpaceButton({
 
   if (onNavigate) {
     return (
-      <button type="button" onClick={onNavigate} aria-label={label} className={className} style={shellStyle}>
+      <button
+        type="button"
+        onClick={onNavigate}
+        aria-label={label}
+        className={className}
+        style={shellStyle}
+        data-pf-no-color-transition=""
+      >
         {content}
       </button>
     );
   }
 
   return (
-    <a href={href} aria-label={label} className={className} style={shellStyle}>
+    <a
+      href={href}
+      aria-label={label}
+      className={className}
+      style={shellStyle}
+      data-pf-no-color-transition=""
+    >
       {content}
     </a>
   );
@@ -939,6 +965,7 @@ function InBarBrandLogo({
         title={label}
         className={className}
         style={style}
+        data-pf-no-color-transition=""
         {...(external && openNewTab
           ? { target: '_blank', rel: 'noopener noreferrer' }
           : null)}
@@ -949,7 +976,13 @@ function InBarBrandLogo({
   }
 
   return (
-    <span aria-label={label} title={label} className={className} style={style}>
+    <span
+      aria-label={label}
+      title={label}
+      className={className}
+      style={style}
+      data-pf-no-color-transition=""
+    >
       {label}
     </span>
   );
@@ -1075,6 +1108,7 @@ function CustomExtraChip({ settings, compact }: { settings: PortfolioNavSettings
         title={label}
         className={className}
         style={shellStyle}
+        data-pf-no-color-transition=""
         {...(external && openNewTab
           ? { target: '_blank', rel: 'noopener noreferrer' }
           : null)}
@@ -1085,7 +1119,13 @@ function CustomExtraChip({ settings, compact }: { settings: PortfolioNavSettings
   }
 
   return (
-    <span aria-label={label} title={label} className={className} style={shellStyle}>
+    <span
+      aria-label={label}
+      title={label}
+      className={className}
+      style={shellStyle}
+      data-pf-no-color-transition=""
+    >
       {inner}
     </span>
   );

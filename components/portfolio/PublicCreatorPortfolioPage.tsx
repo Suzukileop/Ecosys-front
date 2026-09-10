@@ -58,6 +58,13 @@ import {
   TableExperienceList,
   CardsExperienceHeader,
   CardsExperienceList,
+  ReelExperienceList,
+  DuotoneExperienceList,
+  GalleryExperienceList,
+  SpotlightExperienceList,
+  LoftExperienceList,
+  PressExperienceList,
+  LegacyExperienceList,
   EditorialFaqList,
   EditorialGallerySection,
   EditorialPortfolioFooter,
@@ -2645,6 +2652,128 @@ export function PublicCreatorPortfolioPage({
         );
       }
       case 'experience': {
+        if (experiencePresentation.experienceDesign === 'reel') {
+          return (
+            <PortfolioSectionShell
+              id="experience"
+              background={experiencePresentation}
+              fitContent
+              fillAvailableHeight={isPagesMode}
+              suppressBackground={suppressSectionBackground(experiencePresentation)}
+              topSpacingClass=""
+              bottomSpacingClass=""
+              contentLayout={sectionContentLayout}
+            >
+              <ReelExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
+            </PortfolioSectionShell>
+          );
+        }
+        if (experiencePresentation.experienceDesign === 'duotone') {
+          return (
+            <PortfolioSectionShell
+              id="experience"
+              background={experiencePresentation}
+              fitContent
+              fillAvailableHeight={isPagesMode}
+              suppressBackground={suppressSectionBackground(experiencePresentation)}
+              topSpacingClass=""
+              bottomSpacingClass=""
+              contentLayout={sectionContentLayout}
+            >
+              <DuotoneExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
+            </PortfolioSectionShell>
+          );
+        }
+        if (experiencePresentation.experienceDesign === 'gallery') {
+          return (
+            <PortfolioSectionShell
+              id="experience"
+              background={experiencePresentation}
+              fitContent
+              fillAvailableHeight={isPagesMode}
+              suppressBackground={suppressSectionBackground(experiencePresentation)}
+              topSpacingClass={sectionTopSpacingClass}
+              topSpacingStyle={sectionTopSpacingStyle}
+              bottomSpacingClass={sectionBottomSpacingClass}
+              bottomSpacingStyle={sectionBottomSpacingStyle}
+              contentLayout={sectionContentLayout}
+            >
+              <GalleryExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
+            </PortfolioSectionShell>
+          );
+        }
+        if (experiencePresentation.experienceDesign === 'spotlight') {
+          return (
+            <PortfolioSectionShell
+              id="experience"
+              background={experiencePresentation}
+              fitContent
+              fillAvailableHeight={isPagesMode}
+              suppressBackground={suppressSectionBackground(experiencePresentation)}
+              topSpacingClass={sectionTopSpacingClass}
+              topSpacingStyle={sectionTopSpacingStyle}
+              bottomSpacingClass={sectionBottomSpacingClass}
+              bottomSpacingStyle={sectionBottomSpacingStyle}
+              contentLayout={sectionContentLayout}
+            >
+              <SpotlightExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
+            </PortfolioSectionShell>
+          );
+        }
+        if (experiencePresentation.experienceDesign === 'loft') {
+          return (
+            <PortfolioSectionShell
+              id="experience"
+              background={experiencePresentation}
+              fitContent
+              fillAvailableHeight={isPagesMode}
+              suppressBackground={suppressSectionBackground(experiencePresentation)}
+              topSpacingClass={sectionTopSpacingClass}
+              topSpacingStyle={sectionTopSpacingStyle}
+              bottomSpacingClass={sectionBottomSpacingClass}
+              bottomSpacingStyle={sectionBottomSpacingStyle}
+              contentLayout={sectionContentLayout}
+            >
+              <LoftExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
+            </PortfolioSectionShell>
+          );
+        }
+        if (experiencePresentation.experienceDesign === 'press') {
+          return (
+            <PortfolioSectionShell
+              id="experience"
+              background={experiencePresentation}
+              fitContent
+              fillAvailableHeight={isPagesMode}
+              suppressBackground={suppressSectionBackground(experiencePresentation)}
+              topSpacingClass={sectionTopSpacingClass}
+              topSpacingStyle={sectionTopSpacingStyle}
+              bottomSpacingClass={sectionBottomSpacingClass}
+              bottomSpacingStyle={sectionBottomSpacingStyle}
+              contentLayout={sectionContentLayout}
+            >
+              <PressExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
+            </PortfolioSectionShell>
+          );
+        }
+        if (experiencePresentation.experienceDesign === 'legacy') {
+          return (
+            <PortfolioSectionShell
+              id="experience"
+              background={experiencePresentation}
+              fitContent
+              fillAvailableHeight={isPagesMode}
+              suppressBackground={suppressSectionBackground(experiencePresentation)}
+              topSpacingClass={sectionTopSpacingClass}
+              topSpacingStyle={sectionTopSpacingStyle}
+              bottomSpacingClass={sectionBottomSpacingClass}
+              bottomSpacingStyle={sectionBottomSpacingStyle}
+              contentLayout={sectionContentLayout}
+            >
+              <LegacyExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
+            </PortfolioSectionShell>
+          );
+        }
         const layout = experiencePresentation.sectionLayout ?? 'stacked';
         const usesFlatExperienceHeader = experienceDesignUsesFlatHeader(
           experiencePresentation.experienceDesign
@@ -2688,6 +2817,9 @@ export function PublicCreatorPortfolioPage({
         // Editorial: years line is the real static section lead — no sticky title shell left behind.
         // Table / Cards: custom section headers (no sticky chrome).
         // In split mode keep years / custom header in the content pane (left rail is for short section names).
+        // Milestone: the years line moves up here, directly under the title, instead of its usual
+        // spot above the entry list — so it reads as a proper centered subtitle, not a floating line.
+        const isMilestoneDesign = experiencePresentation.experienceDesign === 'milestone';
         const headerBlock = usesFlatExperienceHeader ? (
           !isSplitMode && experienceYearsNode ? (
             <div className="relative mb-12 w-full lg:mb-16">{experienceYearsNode}</div>
@@ -2697,27 +2829,35 @@ export function PublicCreatorPortfolioPage({
         ) : usesCardsExperienceHeader ? (
           !isSplitMode && cardsExperienceHeader ? cardsExperienceHeader : null
         ) : (
-          <EditorialSectionStickyHeader
-            title={experienceSectionTitle}
-            subtitle={experienceSectionSubtitle || undefined}
-            editorialLayout={isEditorialLayout}
-            centered={experienceHeaderAlign.centered}
-            alignRight={experienceHeaderAlign.alignRight}
-            alwaysCentered={experienceHeaderAlign.alwaysCentered}
-            className={aside ? 'mb-0 w-full' : undefined}
-            titleTypographyClass={experienceHeaderTypography.title.className}
-            titleTypographyStyle={experienceHeaderTypography.title.style}
-            titleDecorationStyle={experienceHeaderTypography.title.decorationStyle}
-            titleChromeClass={titleChrome.className}
-            titleChromeStyle={titleChrome.style}
-            customTitleSizing={experienceHeaderTypography.title.customSizing}
-            subtitleTypographyClass={experienceHeaderTypography.subtitle.className}
-            subtitleTypographyStyle={experienceHeaderTypography.subtitle.style}
-            subtitleDecorationStyle={experienceHeaderTypography.subtitle.decorationStyle}
-            customSubtitleSizing={experienceHeaderTypography.subtitle.customSizing}
-            scrollBehavior={effectiveTitleScroll}
-            orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'experience')}
-          />
+          <>
+            <EditorialSectionStickyHeader
+              title={experienceSectionTitle}
+              subtitle={experienceSectionSubtitle || undefined}
+              editorialLayout={isEditorialLayout}
+              centered={experienceHeaderAlign.centered}
+              alignRight={experienceHeaderAlign.alignRight}
+              alwaysCentered={experienceHeaderAlign.alwaysCentered}
+              className={aside ? 'mb-0 w-full' : undefined}
+              titleTypographyClass={experienceHeaderTypography.title.className}
+              titleTypographyStyle={experienceHeaderTypography.title.style}
+              titleDecorationStyle={experienceHeaderTypography.title.decorationStyle}
+              titleChromeClass={titleChrome.className}
+              titleChromeStyle={titleChrome.style}
+              customTitleSizing={experienceHeaderTypography.title.customSizing}
+              subtitleTypographyClass={experienceHeaderTypography.subtitle.className}
+              subtitleTypographyStyle={experienceHeaderTypography.subtitle.style}
+              subtitleDecorationStyle={experienceHeaderTypography.subtitle.decorationStyle}
+              customSubtitleSizing={experienceHeaderTypography.subtitle.customSizing}
+              scrollBehavior={effectiveTitleScroll}
+              orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'experience')}
+            />
+            {isMilestoneDesign && !isSplitMode && experienceYearsNode ? (
+              // flex + justify-center instead of relying on the paragraph's own mx-auto —
+              // this parent's layout mode doesn't leave mx-auto any room to distribute,
+              // which is why the line was sticking to the left edge instead of centering.
+              <div className="flex w-full justify-center">{experienceYearsNode}</div>
+            ) : null}
+          </>
         );
         const contentBlock = (
           <SectionIllustratedContent
@@ -2735,6 +2875,7 @@ export function PublicCreatorPortfolioPage({
               : null}
             {experienceYearsNode &&
             !usesCustomExperienceHeader &&
+            !isMilestoneDesign &&
             (!usesFlatExperienceHeader || isSplitMode)
               ? experienceYearsNode
               : null}

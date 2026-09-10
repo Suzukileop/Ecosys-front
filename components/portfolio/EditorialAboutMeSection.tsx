@@ -1766,6 +1766,7 @@ function AboutFeaturePanelLayout({
                 <li key={skill.id}>
                   <button
                     type="button"
+                    data-pf-no-color-transition=""
                     className={`block w-full text-left font-normal transition-opacity duration-300 ${skillTitleClass} ${
                       isActive ? 'opacity-100' : 'opacity-40 hover:opacity-65'
                     }`}

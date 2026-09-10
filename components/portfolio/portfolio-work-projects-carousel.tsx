@@ -75,6 +75,7 @@ function ProjectsCarouselNavButtons({
             type="button"
             onClick={direction === -1 ? onPrev : onNext}
             disabled={!enabled}
+            data-pf-no-color-transition=""
             className="flex h-12 w-12 items-center justify-center rounded-full border text-2xl transition duration-300 ease-out hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-current disabled:pointer-events-none disabled:opacity-35 sm:h-14 sm:w-14 sm:text-3xl"
             style={{
               color,
@@ -216,6 +217,7 @@ function CarouselSlide({
             alt={title || 'Project'}
             fill
             sizes="(max-width: 640px) 90vw, (max-width: 1024px) 50vw, 40vw"
+            data-pf-no-color-transition=""
             className={`object-cover object-center transition-transform duration-500 ease-out ${
               hoverReveal ? 'group-hover:scale-125 group-focus-within:scale-125' : ''
             }`}
@@ -234,7 +236,10 @@ function CarouselSlide({
               className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-500 ease-out group-hover:bg-black/45 group-focus-within:bg-black/45"
               aria-hidden
             />
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 px-5 text-center opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100 group-focus-within:opacity-100 sm:gap-3 sm:px-8">
+            <div
+              data-pf-no-color-transition=""
+              className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 px-5 text-center opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100 group-focus-within:opacity-100 sm:gap-3 sm:px-8"
+            >
               {title ? (
                 <p className="max-w-md text-base font-semibold leading-snug tracking-[-0.02em] text-white sm:text-lg lg:text-xl">
                   {title}
@@ -250,7 +255,10 @@ function CarouselSlide({
         ) : null}
       </div>
       {hoverStack ? (
-        <div className="mt-3 min-h-[1.75rem] opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100 group-focus-within:opacity-100">
+        <div
+          data-pf-no-color-transition=""
+          className="mt-3 min-h-[1.75rem] opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100 group-focus-within:opacity-100"
+        >
           <CarouselStackStrip tools={tools} ink={stackInk} rule={`${stackInk}55`} />
         </div>
       ) : null}
@@ -434,6 +442,7 @@ export function ProjectsCarouselSection({
             <div
               key={item.id}
               data-projects-carousel-item
+              data-pf-no-color-transition=""
               className={`shrink-0 transition-[filter,opacity] duration-500 ease-out ${
                 focusBlurSiblings
                   ? 'group-hover/carousel:opacity-70 group-hover/carousel:blur-[1.5px] group-focus-within/carousel:opacity-70 group-focus-within/carousel:blur-[1.5px] hover:!opacity-100 hover:!blur-none focus-within:!opacity-100 focus-within:!blur-none'

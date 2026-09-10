@@ -278,6 +278,7 @@ function AboutUsSplitOverlapDesign({
               <a
                 href="#contact"
                 className="mt-10 inline-flex items-center justify-center rounded-full px-9 py-4 text-base font-semibold text-white transition hover:opacity-90"
+                data-pf-no-color-transition=""
                 style={{ backgroundColor: accent }}
               >
                 {ctaLabel}
@@ -419,6 +420,7 @@ function AboutUsSplitMediaLeftDesign({
               <a
                 href="#contact"
                 className="mt-10 inline-flex items-center justify-center rounded-full px-9 py-4 text-base font-semibold text-white transition hover:opacity-90"
+                data-pf-no-color-transition=""
                 style={{ backgroundColor: accent }}
               >
                 {ctaLabel}
@@ -728,6 +730,7 @@ function AboutUsSplitFounderDesign({
             <a
               href="#contact"
               className="mt-9 inline-flex items-center justify-center rounded-2xl px-8 py-3.5 text-base font-semibold text-white transition hover:opacity-90"
+              data-pf-no-color-transition=""
               style={{ backgroundColor: accent }}
             >
               {ctaLabel}
@@ -873,6 +876,7 @@ function AboutUsSplitCardDesign({
               <a
                 href="#contact"
                 className="mt-8 inline-flex w-fit items-center justify-center rounded-full px-8 py-3.5 text-base font-semibold text-white transition hover:opacity-90"
+                data-pf-no-color-transition=""
                 style={{ backgroundColor: accent }}
               >
                 {ctaLabel}
@@ -1162,6 +1166,7 @@ function AboutUsSplitQuoteDesign({
             <a
               href="#contact"
               className="mt-10 inline-flex w-fit items-center justify-center rounded-full px-8 py-3.5 text-base font-semibold text-white transition hover:opacity-90"
+              data-pf-no-color-transition=""
               style={{ backgroundColor: accent }}
             >
               {ctaLabel}

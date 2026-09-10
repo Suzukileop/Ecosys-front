@@ -140,6 +140,7 @@ function ProjectsGridNavButtons({
             onClick={direction === -1 ? onPrev : onNext}
             disabled={!enabled}
             className="flex h-12 w-12 items-center justify-center rounded-full border text-2xl transition duration-300 ease-out hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-current disabled:pointer-events-none disabled:opacity-35 sm:h-14 sm:w-14 sm:text-3xl"
+            data-pf-no-color-transition=""
             style={{
               color,
               borderColor,

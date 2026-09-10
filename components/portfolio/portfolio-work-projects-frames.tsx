@@ -296,12 +296,14 @@ function FramesCard({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
+            data-pf-no-color-transition=""
             className="group inline-flex w-fit items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] transition-opacity hover:opacity-80"
             style={{ color: accent || titleColor }}
           >
             <span>{consultLabel}</span>
             <span
               aria-hidden
+              data-pf-no-color-transition=""
               className="inline-block transition-transform duration-300 group-hover:translate-x-1"
             >
               →

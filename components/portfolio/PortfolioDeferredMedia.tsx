@@ -22,6 +22,7 @@ export function PortfolioDeferredMedia({
   controls = false,
   showPlayBadge = false,
   fillParent = true,
+  noColorTransition = false,
 }: {
   src: string;
   alt: string;
@@ -37,6 +38,7 @@ export function PortfolioDeferredMedia({
   controls?: boolean;
   showPlayBadge?: boolean;
   fillParent?: boolean;
+  noColorTransition?: boolean;
 }) {
   const resolved = resolveStorageMediaUrl(src);
   const mountImmediately = eager || highPriority;
@@ -137,6 +139,7 @@ export function PortfolioDeferredMedia({
           controls={controls}
           preload={mountImmediately ? 'metadata' : 'none'}
           onLoadedData={() => setLoaded(true)}
+          {...(noColorTransition ? { 'data-pf-no-color-transition': '' } : {})}
         />
       ) : null}
       {kind !== 'video' && inView ? (
@@ -151,6 +154,7 @@ export function PortfolioDeferredMedia({
           decoding="async"
           fetchPriority={mountImmediately ? 'high' : 'auto'}
           onLoad={() => setLoaded(true)}
+          {...(noColorTransition ? { 'data-pf-no-color-transition': '' } : {})}
         />
       ) : null}
       {kind === 'video' && showPlayBadge ? (

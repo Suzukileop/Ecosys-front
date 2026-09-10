@@ -260,6 +260,7 @@ function ClosedBarTrigger({
       {!useIcon ? (
         <span
           className="absolute inset-x-0 -bottom-0.5 h-px origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100"
+          data-pf-no-color-transition=""
           style={{ backgroundColor: accent }}
           aria-hidden
         />
@@ -339,7 +340,7 @@ function DutenPanelFooter({
             style={{ color: strongInk }}
           >
             {mailHref && mailLabel ? (
-              <a href={mailHref} className="transition hover:opacity-70">
+              <a href={mailHref} className="transition hover:opacity-70" data-pf-no-color-transition="">
                 {mailLabel}
               </a>
             ) : null}
@@ -349,7 +350,7 @@ function DutenPanelFooter({
               </span>
             ) : null}
             {phoneHref && phoneLabel ? (
-              <a href={phoneHref} className="transition hover:opacity-70">
+              <a href={phoneHref} className="transition hover:opacity-70" data-pf-no-color-transition="">
                 {phoneLabel}
               </a>
             ) : null}
@@ -502,6 +503,7 @@ function DutenPanelLink({
         </span>
         <span
           className="inline-flex max-w-0 shrink-0 -translate-x-1.5 items-baseline overflow-hidden opacity-0 transition-[max-width,opacity,transform,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/link:max-w-[3rem] group-hover/link:translate-x-0 group-hover/link:opacity-100 group-hover/link:ml-2 group-focus-visible/link:max-w-[3rem] group-focus-visible/link:translate-x-0 group-focus-visible/link:opacity-100 group-focus-visible/link:ml-2 sm:group-hover/link:ml-2.5 sm:group-focus-visible/link:ml-2.5"
+          data-pf-no-color-transition=""
           style={{ color: active ? accent : mutedInk }}
         >
           <DutenPanelLinkRedirectIcon className="h-[clamp(1.35rem,3.4vw,2.25rem)] w-[clamp(1.35rem,3.4vw,2.25rem)] min-w-[clamp(1.35rem,3.4vw,2.25rem)]" />

@@ -45,7 +45,18 @@ import {
   type PortfolioListMarkerWeight,
 } from '@/components/portfolio/portfolio-list-marker';
 
-export type PortfolioExperienceDesign = 'editorial' | 'milestone' | 'table' | 'cards';
+export type PortfolioExperienceDesign =
+  | 'editorial'
+  | 'milestone'
+  | 'table'
+  | 'cards'
+  | 'reel'
+  | 'duotone'
+  | 'gallery'
+  | 'spotlight'
+  | 'loft'
+  | 'press'
+  | 'legacy';
 
 /** Legacy design ids persisted in older portfolios — coerced to `editorial` on merge. */
 export const REMOVED_EXPERIENCE_DESIGNS = [
@@ -108,6 +119,130 @@ export type PortfolioExperienceItemsPerRow = 1 | 2 | 3;
 
 export type PortfolioExperienceItemGap = 'sm' | 'md' | 'lg' | 'xl';
 
+/** Gallery design: how many thumbnail cards per row on large screens. */
+export type PortfolioExperienceGalleryColumns = 2 | 3;
+
+export const PORTFOLIO_EXPERIENCE_GALLERY_COLUMNS_OPTIONS: {
+  value: PortfolioExperienceGalleryColumns;
+  label: string;
+  description: string;
+}[] = [
+  { value: 2, label: '2 per row', description: 'Fewer, larger thumbnails.' },
+  { value: 3, label: '3 per row', description: 'The default — more cards visible at once.' },
+];
+
+/** Loft design: how many cards per row on large screens. */
+export type PortfolioExperienceLoftColumns = 2 | 3 | 4;
+
+export const PORTFOLIO_EXPERIENCE_LOFT_COLUMNS_OPTIONS: {
+  value: PortfolioExperienceLoftColumns;
+  label: string;
+  description: string;
+}[] = [
+  { value: 2, label: '2 per row', description: 'Fewer, larger cards.' },
+  { value: 3, label: '3 per row', description: 'The default.' },
+  { value: 4, label: '4 per row', description: 'More cards visible at once.' },
+];
+
+/** Gallery design: how the thumbnail image fits its frame. */
+export type PortfolioExperienceGalleryThumbnailFit = 'cover' | 'contain';
+
+export const PORTFOLIO_EXPERIENCE_GALLERY_THUMBNAIL_FIT_OPTIONS: {
+  value: PortfolioExperienceGalleryThumbnailFit;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'cover', label: 'Cover', description: 'Fills the frame — the default. May crop the image.' },
+  { value: 'contain', label: 'Contain', description: 'Full image, never cropped — letterboxed to fit.' },
+];
+
+/** Gallery design: the full-bleed word above the section (e.g. "EXPERIENCE"). */
+export type PortfolioExperienceGalleryBigTitleStyle = 'outline' | 'fill';
+
+export const PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_STYLE_OPTIONS: {
+  value: PortfolioExperienceGalleryBigTitleStyle;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'outline', label: 'Outline', description: 'Letters drawn as an outline only — the default.' },
+  { value: 'fill', label: 'Fill', description: 'Solid, fully filled letters.' },
+];
+
+export type PortfolioExperienceGalleryBigTitleColor = 'current' | 'accent' | 'simple';
+
+export const PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_COLOR_OPTIONS: {
+  value: PortfolioExperienceGalleryBigTitleColor;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'current', label: 'Current', description: 'The design’s own discreet tone — the default.' },
+  { value: 'accent', label: 'Accent', description: 'Your section’s accent / primary color.' },
+  { value: 'simple', label: 'Simple', description: 'Plain, flat color — same as the “Roles I’ve taken on” heading.' },
+];
+
+/** Spotlight design: color treatment for the scrolling marquee title. */
+export type PortfolioExperienceSpotlightTitleColor = 'ink' | 'accent' | 'alternating' | 'muted';
+
+export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_TITLE_COLOR_OPTIONS: {
+  value: PortfolioExperienceSpotlightTitleColor;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'ink', label: 'Ink', description: 'Words in ink, dots in accent — the default.' },
+  { value: 'accent', label: 'Accent', description: 'Words in accent, dots in ink.' },
+  { value: 'alternating', label: 'Alternating', description: 'Each word alternates between ink and accent.' },
+  { value: 'muted', label: 'Muted', description: 'Words and dots both in the quiet secondary tone — no accent.' },
+];
+
+/** Spotlight design: how each row's thumbnail is presented. */
+export type PortfolioExperienceSpotlightThumbnailFit = 'cover' | 'glass';
+
+export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_THUMBNAIL_FIT_OPTIONS: {
+  value: PortfolioExperienceSpotlightThumbnailFit;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'cover', label: 'Current', description: 'Fills the frame — the default, cropped to fit.' },
+  { value: 'glass', label: 'Glassmorphism', description: 'Full image, never cropped — frosted glass backdrop.' },
+];
+
+/** Loft design: how each row's thumbnail is presented. */
+export type PortfolioExperienceLoftThumbnailFit = 'cover' | 'glass';
+
+export const PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS: {
+  value: PortfolioExperienceLoftThumbnailFit;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'cover', label: 'Current', description: 'Fills the frame — the default, cropped to fit.' },
+  { value: 'glass', label: 'Glassmorphism', description: 'Full image, never cropped — frosted glass backdrop.' },
+];
+
+/** Loft design: corner radius of the thumbnail frame. */
+export type PortfolioExperienceLoftThumbnailRadius = 'none' | 'md' | 'xl';
+
+export const PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_RADIUS_OPTIONS: {
+  value: PortfolioExperienceLoftThumbnailRadius;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: 'None', description: 'Sharp corners — no border radius on the thumbnail.' },
+  { value: 'md', label: 'Medium', description: 'Soft rounded corners — the default.' },
+  { value: 'xl', label: 'Large', description: 'More rounded thumbnail frame.' },
+];
+
+export function experienceLoftThumbnailRadiusClass(radius: PortfolioExperienceLoftThumbnailRadius | undefined): string {
+  switch (radius) {
+    case 'none':
+      return 'rounded-none';
+    case 'xl':
+      return 'rounded-[1.35rem] sm:rounded-[1.5rem]';
+    case 'md':
+    default:
+      return 'rounded-2xl';
+  }
+}
+
 /** Vertical gap between individual task list rows. */
 export type PortfolioExperienceTaskItemGap = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -121,11 +256,8 @@ export type PortfolioExperienceStatusBadgeStyle =
   | 'square'
   | 'dot';
 
-/** Where the Ongoing / Finished status appears on editorial entries. */
-export type PortfolioExperienceStatusPlacement = 'inline' | 'rail-right';
-
 /** Left-column period / timeline chrome on editorial entries. */
-export type PortfolioExperiencePeriodDesign = 'plain' | 'rail' | 'rail-accent' | 'badge' | 'rule';
+export type PortfolioExperiencePeriodDesign = 'plain' | 'rail' | 'badge' | 'rule';
 
 /** Editorial: accordion (one open) or every entry expanded with no toggle. */
 export type PortfolioExperienceEntryExpandMode = 'accordion' | 'all-open';
@@ -140,6 +272,18 @@ export type PortfolioExperienceTasksDisplay =
 
 /** Cards design: corner radius of each experience card. */
 export type PortfolioExperienceCardsBorderRadius = 'none' | 'md' | 'xl';
+
+/** Legacy design: image height proportion — 'lg' (tallest) is the current default. */
+export type PortfolioExperienceLegacyThumbnailHeight = 'sm' | 'md' | 'lg';
+
+/** Legacy design: image width within its column — 'lg' (full width) is the current default. */
+export type PortfolioExperienceLegacyThumbnailWidth = 'sm' | 'md' | 'lg';
+
+/** Legacy design: vertical gap between feature blocks — 'md' (current default), 'lg' is 2x that. */
+export type PortfolioExperienceLegacyItemGap = 'sm' | 'md' | 'lg' | 'xl';
+
+/** Legacy design: which side the image sits on when alternating is turned off. */
+export type PortfolioExperienceLegacySide = 'left' | 'right';
 
 /** Cards design: one gap value for both row and column spacing. */
 export type PortfolioExperienceCardsGridGap = 'sm' | 'md' | 'lg' | 'xl' | 'custom';
@@ -332,6 +476,203 @@ export type PortfolioExperienceProofLinkStyle =
   | 'accent'
   | 'underline';
 
+/** Ready-made button presentations for the repository link (Reel design). */
+export type PortfolioExperienceRepoLinkStyle = 'underline' | 'icon' | 'solid' | 'ghost';
+
+export const PORTFOLIO_EXPERIENCE_REPO_LINK_STYLE_OPTIONS: {
+  value: PortfolioExperienceRepoLinkStyle;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'icon',
+    label: 'Icon',
+    description: 'Round icon-only button with a GitHub mark — compact and iconic.',
+  },
+  {
+    value: 'underline',
+    label: 'Underline',
+    description: 'Plain text with a thin underline — turns accent on hover. The quietest option.',
+  },
+  {
+    value: 'ghost',
+    label: 'Ghost',
+    description: 'Text + arrow, no fill — the arrow slides on hover.',
+  },
+  {
+    value: 'solid',
+    label: 'Solid',
+    description: 'Filled button, ink background — the strongest option for a single key action.',
+  },
+];
+
+/** Reel design: how the Ongoing / Completed status is presented under "Period & status". */
+export type PortfolioExperienceReelStatusStyle = 'minimal' | 'badge' | 'bar' | 'square' | 'plain';
+
+export const PORTFOLIO_EXPERIENCE_REEL_STATUS_STYLE_OPTIONS: {
+  value: PortfolioExperienceReelStatusStyle;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'minimal',
+    label: 'Minimal',
+    description: 'A small blinking dot with a monospaced label — the default.',
+  },
+  {
+    value: 'badge',
+    label: 'Badge',
+    description: 'Pill chip with a checkmark / dot icon.',
+  },
+  {
+    value: 'bar',
+    label: 'Progress bar',
+    description: 'Short horizontal bar instead of a badge.',
+  },
+  {
+    value: 'square',
+    label: 'Square dot',
+    description: 'Small square marker, no background pill.',
+  },
+  {
+    value: 'plain',
+    label: 'Plain text',
+    description: 'Just the label, colored by status — no icon, no chrome.',
+  },
+];
+
+/** Duotone design: how you move between roles. */
+export type PortfolioExperienceDuotoneScrollMode = 'sticky' | 'scroll' | 'slide';
+
+export const PORTFOLIO_EXPERIENCE_DUOTONE_SCROLL_MODE_OPTIONS: {
+  value: PortfolioExperienceDuotoneScrollMode;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'sticky',
+    label: 'Sticky',
+    description: 'The story card stays pinned centered while the role list scrolls past it.',
+  },
+  {
+    value: 'scroll',
+    label: 'Scroll',
+    description: 'Plain scroll — no pinning, each role and its story move together.',
+  },
+  {
+    value: 'slide',
+    label: 'Slide',
+    description: 'One role at a time — navigate with the chevron arrows, a smooth slide transition.',
+  },
+];
+
+/** Duotone design, Slide mode: how the prev/next control is presented. */
+export type PortfolioExperienceDuotoneSlideNavStyle = 'chevron' | 'text';
+
+export const PORTFOLIO_EXPERIENCE_DUOTONE_SLIDE_NAV_STYLE_OPTIONS: {
+  value: PortfolioExperienceDuotoneSlideNavStyle;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'chevron',
+    label: 'Chevron',
+    description: 'Round prev/next arrow buttons — the original, quietest option.',
+  },
+  {
+    value: 'text',
+    label: 'Text',
+    description: '"Previous / Next" text links — no icons.',
+  },
+];
+
+/** Duotone design, Scroll / Slide modes only: color of the frame drawn around each full screen. */
+export type PortfolioExperienceDuotoneFrameColor = 'none' | 'neutral' | 'muted';
+
+export const PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_COLOR_OPTIONS: {
+  value: PortfolioExperienceDuotoneFrameColor;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: 'None', description: 'No frame — the default.' },
+  { value: 'neutral', label: 'Neutral', description: 'The same discreet hairline color used elsewhere in this design.' },
+  { value: 'muted', label: 'Muted', description: 'The secondary text color — a touch more visible than Neutral.' },
+];
+
+/** Duotone design, Scroll / Slide modes only: corner rounding of that same frame. */
+export type PortfolioExperienceDuotoneFrameRadius = 'none' | 'sm' | 'lg';
+
+export const PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_RADIUS_OPTIONS: {
+  value: PortfolioExperienceDuotoneFrameRadius;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: 'None', description: 'Square corners.' },
+  { value: 'sm', label: 'Small', description: 'A subtle 16px rounding.' },
+  { value: 'lg', label: 'Large', description: 'A more pronounced 28px rounding.' },
+];
+
+/** Duotone design, Sticky mode only: filter applied to the left-column thumbnail. */
+export type PortfolioExperienceDuotoneThumbnailEffect = 'grayscale' | 'tint' | 'none';
+
+export const PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_EFFECT_OPTIONS: {
+  value: PortfolioExperienceDuotoneThumbnailEffect;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'grayscale', label: 'Black & white', description: 'Desaturated image (default).' },
+  { value: 'tint', label: 'Accent tint', description: 'Desaturated image tinted with the accent color.' },
+  { value: 'none', label: 'None', description: 'Plain image, no filter.' },
+];
+
+/** Duotone design, Sticky mode only: height proportion of the left-column thumbnail. */
+export type PortfolioExperienceDuotoneThumbnailHeight = 'sm' | 'md' | 'lg';
+
+export const PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS: {
+  value: PortfolioExperienceDuotoneThumbnailHeight;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'sm', label: 'Short', description: 'A wider, shorter image.' },
+  { value: 'md', label: 'Balanced', description: 'Current proportions (default).' },
+  { value: 'lg', label: 'Tall', description: 'A taller, more square image.' },
+];
+
+/** CSS aspect-ratio value for the Duotone sticky-mode thumbnail — kept as an inline style,
+ * not a Tailwind class (arbitrary-value classes silently fail to compile in this very large
+ * file, the same issue documented on experienceLegacyThumbnailAspectRatio). */
+export function experienceDuotoneThumbnailAspectRatio(
+  height: PortfolioExperienceDuotoneThumbnailHeight | undefined
+): string {
+  switch (height) {
+    case 'sm':
+      return '16 / 9';
+    case 'lg':
+      return '1 / 1';
+    case 'md':
+    default:
+      return '4 / 3';
+  }
+}
+
+/** Caps the thumbnail's rendered height so a tall aspect ratio on a narrow column can never
+ * push the title + thumbnail group past the screen's own min-h-screen budget — that overflow
+ * used to get squeezed and clipped by the sticky column's fixed total height, which read as
+ * the thumbnail overlapping the title. */
+export function experienceDuotoneThumbnailMaxHeight(
+  height: PortfolioExperienceDuotoneThumbnailHeight | undefined
+): string {
+  switch (height) {
+    case 'sm':
+      return '32vh';
+    case 'lg':
+      return '52vh';
+    case 'md':
+    default:
+      return '42vh';
+  }
+}
+
 /** Font size scale for entry content elements. */
 export type PortfolioExperienceTextSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -447,6 +788,72 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   listMaxWidth: PortfolioExperienceListMaxWidth;
   listPlacement: PortfolioExperienceListPlacement;
   itemsPerRow: PortfolioExperienceItemsPerRow;
+  /** Gallery design: how many thumbnail cards per row on large screens. */
+  galleryColumns: PortfolioExperienceGalleryColumns;
+  /** Gallery design: how the thumbnail image fits its frame. */
+  galleryThumbnailFit: PortfolioExperienceGalleryThumbnailFit;
+  /** Gallery design: show the full-bleed word above the section (e.g. "EXPERIENCE"). */
+  galleryBigTitleEnabled: boolean;
+  /** Gallery design: the word itself. */
+  galleryBigTitleText: string;
+  /** Gallery design: outline vs fully filled letters. */
+  galleryBigTitleStyle: PortfolioExperienceGalleryBigTitleStyle;
+  /** Gallery design: color source for the word. */
+  galleryBigTitleColor: PortfolioExperienceGalleryBigTitleColor;
+  /** Spotlight design: show the scrolling marquee title above the section. */
+  spotlightBigTitleEnabled: boolean;
+  /** Spotlight design: the first word in the marquee cycle. */
+  spotlightBigTitleText: string;
+  /** Spotlight design: additional words cycled into the marquee — all optional. */
+  spotlightBigTitleWord2: string;
+  spotlightBigTitleWord3: string;
+  spotlightBigTitleWord4: string;
+  /** Spotlight design: color treatment for the marquee title. */
+  spotlightBigTitleColor: PortfolioExperienceSpotlightTitleColor;
+  /** Spotlight design: how each row's thumbnail is presented. */
+  spotlightThumbnailFit: PortfolioExperienceSpotlightThumbnailFit;
+  /** Loft design: show the plain static heading above the list. */
+  loftHeadingEnabled: boolean;
+  /** Loft design: the heading text. */
+  loftHeadingText: string;
+  /** Loft design: how each row's thumbnail is presented. */
+  loftThumbnailFit: PortfolioExperienceLoftThumbnailFit;
+  /** Loft design: corner radius of the thumbnail frame. */
+  loftThumbnailRadius: PortfolioExperienceLoftThumbnailRadius;
+  /** Loft design: how many cards per row on large screens. */
+  loftColumns: PortfolioExperienceLoftColumns;
+  /** Loft design: gap between cards, both axes at once. */
+  loftGap: PortfolioExperienceItemGap;
+  /** Press design: show the bold headline above the two-column layout. */
+  pressHeadingEnabled: boolean;
+  /** Press design: the bold headline text. */
+  pressHeadingText: string;
+  /** Press design: small intro blurb in the left column, above the entry list. */
+  pressIntroText: string;
+  /** Press design: corner radius of each row's thumbnail. */
+  pressThumbnailRadius: PortfolioExperienceCardsBorderRadius;
+  /** Legacy design: show the two-tone hero title above the feature blocks. */
+  legacyHeadingEnabled: boolean;
+  /** Legacy design: hero title, plain part — shown in ink. */
+  legacyHeadingText: string;
+  /** Legacy design: hero title, accent part — shown in accent, after the plain part. */
+  legacyHeadingAccentText: string;
+  /** Legacy design: intro sentence centered under the hero title. */
+  legacyIntroText: string;
+  /** Legacy design: corner radius of each feature block's image. */
+  legacyThumbnailRadius: PortfolioExperienceCardsBorderRadius;
+  /** Legacy design: image height proportion — 3 tiers, tallest ('lg') is the current default. */
+  legacyThumbnailHeight: PortfolioExperienceLegacyThumbnailHeight;
+  /** Legacy design: image width within its column — 3 tiers, full ('lg') is the current default. */
+  legacyThumbnailWidth: PortfolioExperienceLegacyThumbnailWidth;
+  /** Legacy design: vertical gap between feature blocks — 3 tiers, 'md' is the current default. */
+  legacyItemGap: PortfolioExperienceLegacyItemGap;
+  /** Legacy design: alternate the image side (left/right) per entry — true (default) matches current behavior. */
+  legacyAlternateSides: boolean;
+  /** Legacy design: fixed image side used when legacyAlternateSides is off. */
+  legacyFixedSide: PortfolioExperienceLegacySide;
+  /** Legacy design: show the task list — off by default, unlike every other design. */
+  legacyShowTasks: boolean;
   itemGap: PortfolioExperienceItemGap;
   itemDensity: PortfolioExperienceItemDensity;
   /** Vertical gap between elements in the left / story column. */
@@ -553,8 +960,6 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   blockLabelVisibility: PortfolioExperienceBlockLabelVisibility;
   /** Visual chrome for ONGOING / FINISHED status badges. */
   statusBadgeStyle: PortfolioExperienceStatusBadgeStyle;
-  /** Editorial: status pill beside the title, or vertical rail on the right. */
-  statusPlacement: PortfolioExperienceStatusPlacement;
   /** Editorial: left-column period label style (plain text, timeline rail, badge, …). */
   periodDesign: PortfolioExperiencePeriodDesign;
   /** Editorial: accordion with + toggle, or all entries always expanded. */
@@ -571,6 +976,26 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   cardsBorderRadius: PortfolioExperienceCardsBorderRadius;
   /** Visual chrome for proof / portfolio links. */
   proofLinkStyle: PortfolioExperienceProofLinkStyle;
+  /** Reel design: which ready-made button presents the repository link. */
+  repoLinkButtonStyle: PortfolioExperienceRepoLinkStyle;
+  /** Reel design: how the Ongoing / Completed status is presented. */
+  reelStatusStyle: PortfolioExperienceReelStatusStyle;
+  /** Duotone design: how you move between roles. */
+  duotoneScrollMode: PortfolioExperienceDuotoneScrollMode;
+  /** Duotone design, Slide mode: how the prev/next control is presented. */
+  duotoneSlideNavStyle: PortfolioExperienceDuotoneSlideNavStyle;
+  /** Duotone design, Scroll / Slide modes only: color of the frame around each full screen. */
+  duotoneFrameColor: PortfolioExperienceDuotoneFrameColor;
+  /** Duotone design, Scroll / Slide modes only: corner rounding of that same frame. */
+  duotoneFrameRadius: PortfolioExperienceDuotoneFrameRadius;
+  /** Duotone design, Slide mode only: auto-advance every 5s, paused while the frame is hovered. */
+  duotoneAutoAdvance: boolean;
+  /** Duotone design, Sticky mode only: filter applied to the left-column thumbnail. */
+  duotoneThumbnailEffect: PortfolioExperienceDuotoneThumbnailEffect;
+  /** Duotone design, Sticky mode only: height proportion of the left-column thumbnail. */
+  duotoneThumbnailHeight: PortfolioExperienceDuotoneThumbnailHeight;
+  /** Duotone design, Sticky mode only: swap columns — title/thumbnail on the right, info card on the left. */
+  duotoneStickySwapSides: boolean;
   /** Which column / layer renders the tools block. */
   toolsZone: PortfolioExperienceToolsZone;
   /** Where proof links render: story card, details card, or under the entry media. */
@@ -789,7 +1214,19 @@ function createExperienceLayerFrame(
   };
 }
 
-const EXPERIENCE_DESIGNS = ['editorial', 'milestone', 'table', 'cards'] as const satisfies readonly PortfolioExperienceDesign[];
+const EXPERIENCE_DESIGNS = [
+  'editorial',
+  'milestone',
+  'table',
+  'cards',
+  'reel',
+  'duotone',
+  'gallery',
+  'spotlight',
+  'loft',
+  'press',
+  'legacy',
+] as const satisfies readonly PortfolioExperienceDesign[];
 
 export function coerceExperienceDesign(value: unknown): PortfolioExperienceDesign {
   if (typeof value === 'string' && (EXPERIENCE_DESIGNS as readonly string[]).includes(value)) {
@@ -819,6 +1256,40 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   listMaxWidth: 'full',
   listPlacement: 'left',
   itemsPerRow: 1,
+  galleryColumns: 3,
+  galleryThumbnailFit: 'cover',
+  galleryBigTitleEnabled: true,
+  galleryBigTitleText: 'Experience',
+  galleryBigTitleStyle: 'outline',
+  galleryBigTitleColor: 'current',
+  spotlightBigTitleEnabled: true,
+  spotlightBigTitleText: 'Experience',
+  spotlightBigTitleWord2: '',
+  spotlightBigTitleWord3: '',
+  spotlightBigTitleWord4: '',
+  spotlightBigTitleColor: 'ink',
+  spotlightThumbnailFit: 'cover',
+  loftHeadingEnabled: true,
+  loftHeadingText: "Roles I've taken on",
+  loftThumbnailFit: 'cover',
+  loftThumbnailRadius: 'md',
+  loftColumns: 3,
+  loftGap: 'md',
+  pressHeadingEnabled: true,
+  pressHeadingText: 'Roles taken. Skills sharpened. Impact delivered.',
+  pressIntroText: 'Selected roles, projects, and outcomes.',
+  pressThumbnailRadius: 'md',
+  legacyHeadingEnabled: true,
+  legacyHeadingText: 'A Career Built on',
+  legacyHeadingAccentText: 'Craft',
+  legacyIntroText: 'A selection of roles, teams, and problems solved along the way.',
+  legacyThumbnailRadius: 'xl',
+  legacyThumbnailHeight: 'lg',
+  legacyThumbnailWidth: 'lg',
+  legacyItemGap: 'md',
+  legacyAlternateSides: true,
+  legacyFixedSide: 'left',
+  legacyShowTasks: false,
   itemGap: 'md',
   itemDensity: 'comfortable',
   storyContentGap: 'md',
@@ -893,7 +1364,6 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   showBlockLabels: true,
   blockLabelVisibility: { ...DEFAULT_EXPERIENCE_BLOCK_LABEL_VISIBILITY },
   statusBadgeStyle: 'pill',
-  statusPlacement: 'inline',
   periodDesign: 'plain',
   entryExpandMode: 'accordion',
   tasksDisplay: 'arrows',
@@ -902,6 +1372,16 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   cardsGridGapPx: 36,
   cardsBorderRadius: 'none',
   proofLinkStyle: 'pill',
+  repoLinkButtonStyle: 'icon',
+  reelStatusStyle: 'minimal',
+  duotoneScrollMode: 'sticky',
+  duotoneSlideNavStyle: 'chevron',
+  duotoneFrameColor: 'none',
+  duotoneFrameRadius: 'sm',
+  duotoneAutoAdvance: false,
+  duotoneThumbnailEffect: 'grayscale',
+  duotoneThumbnailHeight: 'md',
+  duotoneStickySwapSides: false,
   toolsZone: 'details',
   proofZone: 'details',
   toolsEntrySide: 'left',
@@ -1097,6 +1577,48 @@ export const PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS: {
     description:
       'Card grid — 2 per row on large screens. Title, meta, period, status, description, tasks, and stack.',
   },
+  {
+    value: 'reel',
+    label: 'Reel',
+    description:
+      'One role per screen — full-height sections with a Fraunces headline, period, stack, and story.',
+  },
+  {
+    value: 'duotone',
+    label: 'Duotone',
+    description:
+      'One role per screen, split 50/50 — role details on the left, a framed story card on the right.',
+  },
+  {
+    value: 'gallery',
+    label: 'Gallery',
+    description:
+      'Airy thumbnail grid — Framer/Webflow-style cards with hover zoom. Click a card for the full story.',
+  },
+  {
+    value: 'spotlight',
+    label: 'Spotlight',
+    description:
+      'Editorial media showcase — alternating full-bleed image/story rows under a scrolling marquee title.',
+  },
+  {
+    value: 'loft',
+    label: 'Loft',
+    description:
+      'Calm, airy Webflow-style list — a plain static heading, thumbnail-left rows with generous space and hairline dividers.',
+  },
+  {
+    value: 'press',
+    label: 'Press',
+    description:
+      'Newsroom feed — a bold headline over a two-column layout, thumbnail rows with just a label, date, and title.',
+  },
+  {
+    value: 'legacy',
+    label: 'Legacy',
+    description:
+      'Premium showcase — a two-tone hero title, then alternating image/story feature blocks with a pill badge, icon accent, and CTA button.',
+  },
 ];
 
 export const PORTFOLIO_EXPERIENCE_LIST_MAX_WIDTH_OPTIONS: {
@@ -1224,23 +1746,6 @@ export const PORTFOLIO_EXPERIENCE_TASK_ITEM_GAP_OPTIONS: {
   { value: 'xl', label: 'Très large', description: 'Fort écart vertical entre les tâches.' },
 ];
 
-export const PORTFOLIO_EXPERIENCE_STATUS_PLACEMENT_OPTIONS: {
-  value: PortfolioExperienceStatusPlacement;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'inline',
-    label: 'Beside title',
-    description: 'Status pill next to the role title (current).',
-  },
-  {
-    value: 'rail-right',
-    label: 'Right rail',
-    description: 'Quiet vertical status spanning the full entry height on the right.',
-  },
-];
-
 export const PORTFOLIO_EXPERIENCE_PERIOD_DESIGN_OPTIONS: {
   value: PortfolioExperiencePeriodDesign;
   label: string;
@@ -1255,11 +1760,6 @@ export const PORTFOLIO_EXPERIENCE_PERIOD_DESIGN_OPTIONS: {
     value: 'rail',
     label: 'Timeline rail',
     description: 'Vertical line with hollow nodes linking each entry.',
-  },
-  {
-    value: 'rail-accent',
-    label: 'Accent rail',
-    description: 'Vertical line with filled accent dots on each entry.',
   },
   {
     value: 'badge',
@@ -1357,6 +1857,141 @@ export function experienceCardsBorderRadiusClass(
       return 'rounded-none';
   }
 }
+
+export const PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_HEIGHT_OPTIONS: {
+  value: PortfolioExperienceLegacyThumbnailHeight;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'sm',
+    label: 'Compact',
+    description: 'Shorter image, closer to landscape.',
+  },
+  {
+    value: 'md',
+    label: 'Balanced',
+    description: 'Square-ish proportions.',
+  },
+  {
+    value: 'lg',
+    label: 'Tall',
+    description: 'Tallest image (default).',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_WIDTH_OPTIONS: {
+  value: PortfolioExperienceLegacyThumbnailWidth;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'sm',
+    label: 'Narrow',
+    description: 'Fills about 70% of the column.',
+  },
+  {
+    value: 'md',
+    label: 'Medium',
+    description: 'Fills about 85% of the column.',
+  },
+  {
+    value: 'lg',
+    label: 'Full',
+    description: 'Fills the whole column (default).',
+  },
+];
+
+/** CSS aspect-ratio value — kept as an inline style, not a Tailwind class, since
+ * arbitrary-value classes silently fail to compile in this very large file. */
+export function experienceLegacyThumbnailAspectRatio(
+  height: PortfolioExperienceLegacyThumbnailHeight | undefined
+): string {
+  switch (height) {
+    case 'sm':
+      return '4 / 3';
+    case 'md':
+      return '1 / 1';
+    case 'lg':
+    default:
+      return '8 / 9';
+  }
+}
+
+/** CSS max-width value — kept as an inline style for the same reason. */
+export function experienceLegacyThumbnailMaxWidth(
+  width: PortfolioExperienceLegacyThumbnailWidth | undefined
+): string {
+  switch (width) {
+    case 'sm':
+      return '70%';
+    case 'md':
+      return '85%';
+    case 'lg':
+    default:
+      return '100%';
+  }
+}
+
+export const PORTFOLIO_EXPERIENCE_LEGACY_ITEM_GAP_OPTIONS: {
+  value: PortfolioExperienceLegacyItemGap;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'sm',
+    label: 'Compact',
+    description: 'Tighter spacing between entries.',
+  },
+  {
+    value: 'md',
+    label: 'Balanced',
+    description: 'Current spacing between entries (default).',
+  },
+  {
+    value: 'lg',
+    label: 'Spacious',
+    description: 'Twice the current spacing between entries.',
+  },
+  {
+    value: 'xl',
+    label: 'Extra spacious',
+    description: 'The most room between entries.',
+  },
+];
+
+/** Bottom-padding class on each non-last feature block — plain Tailwind presets, not
+ * arbitrary values (see the note on experienceLegacyThumbnailAspectRatio above). */
+export function experienceLegacyItemGapClass(gap: PortfolioExperienceLegacyItemGap | undefined): string {
+  switch (gap) {
+    case 'sm':
+      return 'pb-7 sm:pb-10';
+    case 'lg':
+      return 'pb-28 sm:pb-40';
+    case 'xl':
+      return 'pb-48 sm:pb-72';
+    case 'md':
+    default:
+      return 'pb-14 sm:pb-20';
+  }
+}
+
+export const PORTFOLIO_EXPERIENCE_LEGACY_FIXED_SIDE_OPTIONS: {
+  value: PortfolioExperienceLegacySide;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'left',
+    label: 'Left',
+    description: 'The image always stays on the left.',
+  },
+  {
+    value: 'right',
+    label: 'Right',
+    description: 'The image always stays on the right.',
+  },
+];
 
 export const PORTFOLIO_EXPERIENCE_STATUS_BADGE_STYLE_OPTIONS: {
   value: PortfolioExperienceStatusBadgeStyle;
@@ -3130,7 +3765,7 @@ export function experienceYearsClass(
   const isEditorial = settings.experienceDesign === 'editorial';
   const parts = [
     isEditorial
-      ? 'relative mb-0 max-w-none bg-transparent leading-[1.15] font-semibold tracking-[-0.035em] whitespace-nowrap'
+      ? 'relative mb-0 max-w-3xl bg-transparent leading-[1.15] font-bold tracking-[-0.035em]'
       : 'relative mb-8 max-w-2xl border-0 bg-transparent p-0 leading-relaxed shadow-none',
   ];
 
@@ -3383,7 +4018,10 @@ export function experienceEntryShellUsesFrame(
     p.experienceDesign === 'editorial' ||
     p.experienceDesign === 'milestone' ||
     p.experienceDesign === 'table' ||
-    p.experienceDesign === 'cards'
+    p.experienceDesign === 'cards' ||
+    p.experienceDesign === 'reel' ||
+    p.experienceDesign === 'duotone' ||
+    p.experienceDesign === 'gallery'
   )
     return false;
   if (p.entryFrame.enabled) return true;
@@ -3642,12 +4280,16 @@ export function mergeExperiencePresentation(
     typeof record.experienceDesign === 'string' ? record.experienceDesign : base.experienceDesign
   );
 
-  // Editorial / Milestone / Table / Cards manage their own chrome — strip legacy frames.
+  // Editorial / Milestone / Table / Cards / Reel / Duotone / Gallery manage their own chrome —
+  // strip legacy frames.
   const editorialFramesOff =
     experienceDesign === 'editorial' ||
     experienceDesign === 'milestone' ||
     experienceDesign === 'table' ||
-    experienceDesign === 'cards';
+    experienceDesign === 'cards' ||
+    experienceDesign === 'reel' ||
+    experienceDesign === 'duotone' ||
+    experienceDesign === 'gallery';
   const resolvedEntryFrame = editorialFramesOff ? { ...entryFrame, enabled: false } : entryFrame;
   const resolvedStoryFrame = editorialFramesOff ? { ...storyFrame, enabled: false } : storyFrame;
   const resolvedDetailsFrame = editorialFramesOff ? { ...detailsFrame, enabled: false } : detailsFrame;
@@ -3699,6 +4341,144 @@ export function mergeExperiencePresentation(
       if (raw === '1' || raw === '2' || raw === '3') return Number(raw) as PortfolioExperienceItemsPerRow;
       return base.itemsPerRow;
     })(),
+    galleryColumns: (() => {
+      const raw = record.galleryColumns;
+      if (raw === 2 || raw === 3) return raw;
+      if (raw === '2' || raw === '3') return Number(raw) as PortfolioExperienceGalleryColumns;
+      return base.galleryColumns ?? 3;
+    })(),
+    galleryThumbnailFit: pick(
+      record.galleryThumbnailFit,
+      ['cover', 'contain'],
+      base.galleryThumbnailFit ?? 'cover'
+    ),
+    galleryBigTitleEnabled:
+      typeof record.galleryBigTitleEnabled === 'boolean'
+        ? record.galleryBigTitleEnabled
+        : (base.galleryBigTitleEnabled ?? true),
+    galleryBigTitleText:
+      typeof record.galleryBigTitleText === 'string' && record.galleryBigTitleText.trim()
+        ? record.galleryBigTitleText
+        : (base.galleryBigTitleText ?? 'Experience'),
+    galleryBigTitleStyle: pick(
+      record.galleryBigTitleStyle,
+      ['outline', 'fill'],
+      base.galleryBigTitleStyle ?? 'outline'
+    ),
+    galleryBigTitleColor: pick(
+      record.galleryBigTitleColor,
+      ['current', 'accent', 'simple'],
+      base.galleryBigTitleColor ?? 'current'
+    ),
+    spotlightBigTitleEnabled:
+      typeof record.spotlightBigTitleEnabled === 'boolean'
+        ? record.spotlightBigTitleEnabled
+        : (base.spotlightBigTitleEnabled ?? true),
+    spotlightBigTitleText:
+      typeof record.spotlightBigTitleText === 'string' && record.spotlightBigTitleText.trim()
+        ? record.spotlightBigTitleText
+        : (base.spotlightBigTitleText ?? 'Experience'),
+    spotlightBigTitleWord2:
+      typeof record.spotlightBigTitleWord2 === 'string'
+        ? record.spotlightBigTitleWord2
+        : (base.spotlightBigTitleWord2 ?? ''),
+    spotlightBigTitleWord3:
+      typeof record.spotlightBigTitleWord3 === 'string'
+        ? record.spotlightBigTitleWord3
+        : (base.spotlightBigTitleWord3 ?? ''),
+    spotlightBigTitleWord4:
+      typeof record.spotlightBigTitleWord4 === 'string'
+        ? record.spotlightBigTitleWord4
+        : (base.spotlightBigTitleWord4 ?? ''),
+    spotlightBigTitleColor: pick(
+      record.spotlightBigTitleColor,
+      ['ink', 'accent', 'alternating', 'muted'],
+      base.spotlightBigTitleColor ?? 'ink'
+    ),
+    spotlightThumbnailFit: pick(
+      record.spotlightThumbnailFit,
+      ['cover', 'glass'],
+      base.spotlightThumbnailFit ?? 'cover'
+    ),
+    loftHeadingEnabled:
+      typeof record.loftHeadingEnabled === 'boolean'
+        ? record.loftHeadingEnabled
+        : (base.loftHeadingEnabled ?? true),
+    loftHeadingText:
+      typeof record.loftHeadingText === 'string' && record.loftHeadingText.trim()
+        ? record.loftHeadingText
+        : (base.loftHeadingText ?? "Roles I've taken on"),
+    loftThumbnailFit: pick(record.loftThumbnailFit, ['cover', 'glass'], base.loftThumbnailFit ?? 'cover'),
+    loftThumbnailRadius: pick(
+      record.loftThumbnailRadius,
+      ['none', 'md', 'xl'],
+      base.loftThumbnailRadius ?? 'md'
+    ),
+    loftColumns: (() => {
+      const raw = record.loftColumns;
+      if (raw === 2 || raw === 3 || raw === 4) return raw;
+      if (raw === '2' || raw === '3' || raw === '4') return Number(raw) as PortfolioExperienceLoftColumns;
+      return base.loftColumns ?? 3;
+    })(),
+    loftGap: pick(record.loftGap, ['sm', 'md', 'lg', 'xl'], base.loftGap ?? 'md'),
+    pressHeadingEnabled:
+      typeof record.pressHeadingEnabled === 'boolean'
+        ? record.pressHeadingEnabled
+        : (base.pressHeadingEnabled ?? true),
+    pressHeadingText:
+      typeof record.pressHeadingText === 'string' && record.pressHeadingText.trim()
+        ? record.pressHeadingText
+        : (base.pressHeadingText ?? 'Roles taken. Skills sharpened. Impact delivered.'),
+    pressIntroText:
+      typeof record.pressIntroText === 'string'
+        ? record.pressIntroText
+        : (base.pressIntroText ?? 'Selected roles, projects, and outcomes.'),
+    pressThumbnailRadius: pick(
+      record.pressThumbnailRadius,
+      ['none', 'md', 'xl'],
+      base.pressThumbnailRadius ?? 'md'
+    ),
+    legacyHeadingEnabled:
+      typeof record.legacyHeadingEnabled === 'boolean'
+        ? record.legacyHeadingEnabled
+        : (base.legacyHeadingEnabled ?? true),
+    legacyHeadingText:
+      typeof record.legacyHeadingText === 'string' && record.legacyHeadingText.trim()
+        ? record.legacyHeadingText
+        : (base.legacyHeadingText ?? 'A Career Built on'),
+    legacyHeadingAccentText:
+      typeof record.legacyHeadingAccentText === 'string' && record.legacyHeadingAccentText.trim()
+        ? record.legacyHeadingAccentText
+        : (base.legacyHeadingAccentText ?? 'Craft'),
+    legacyIntroText:
+      typeof record.legacyIntroText === 'string'
+        ? record.legacyIntroText
+        : (base.legacyIntroText ?? 'A selection of roles, teams, and problems solved along the way.'),
+    legacyThumbnailRadius: pick(
+      record.legacyThumbnailRadius,
+      ['none', 'md', 'xl'],
+      base.legacyThumbnailRadius ?? 'xl'
+    ),
+    legacyThumbnailHeight: pick(
+      record.legacyThumbnailHeight,
+      ['sm', 'md', 'lg'],
+      base.legacyThumbnailHeight ?? 'lg'
+    ),
+    legacyThumbnailWidth: pick(
+      record.legacyThumbnailWidth,
+      ['sm', 'md', 'lg'],
+      base.legacyThumbnailWidth ?? 'lg'
+    ),
+    legacyItemGap: pick(record.legacyItemGap, ['sm', 'md', 'lg', 'xl'], base.legacyItemGap ?? 'md'),
+    legacyAlternateSides:
+      typeof record.legacyAlternateSides === 'boolean'
+        ? record.legacyAlternateSides
+        : (base.legacyAlternateSides ?? true),
+    legacyFixedSide: pick(record.legacyFixedSide, ['left', 'right'], base.legacyFixedSide ?? 'left'),
+    legacyShowTasks:
+      typeof record.legacyShowTasks === 'boolean'
+        ? record.legacyShowTasks
+        : (base.legacyShowTasks ?? false),
     itemGap: pick(record.itemGap, ['sm', 'md', 'lg', 'xl'], base.itemGap),
     cardsGridGap: isPortfolioExperienceCardsGridGap(record.cardsGridGap)
       ? record.cardsGridGap
@@ -3935,14 +4715,9 @@ export function mergeExperiencePresentation(
       ['pill', 'soft', 'outline', 'plain', 'accent', 'square', 'dot'],
       base.statusBadgeStyle ?? 'pill'
     ),
-    statusPlacement: pick(
-      record.statusPlacement,
-      ['inline', 'rail-right'],
-      base.statusPlacement ?? 'inline'
-    ),
     periodDesign: pick(
       record.periodDesign,
-      ['plain', 'rail', 'rail-accent', 'badge', 'rule'],
+      ['plain', 'rail', 'badge', 'rule'],
       base.periodDesign ?? 'plain'
     ),
     entryExpandMode: pick(
@@ -3969,6 +4744,54 @@ export function mergeExperiencePresentation(
       ['pill', 'soft', 'outline', 'plain', 'accent', 'underline'],
       base.proofLinkStyle ?? 'pill'
     ),
+    repoLinkButtonStyle: pick(
+      record.repoLinkButtonStyle,
+      ['underline', 'icon', 'solid', 'ghost'],
+      base.repoLinkButtonStyle ?? 'icon'
+    ),
+    reelStatusStyle: pick(
+      record.reelStatusStyle,
+      ['minimal', 'badge', 'bar', 'square', 'plain'],
+      base.reelStatusStyle ?? 'minimal'
+    ),
+    duotoneScrollMode: pick(
+      record.duotoneScrollMode,
+      ['sticky', 'scroll', 'slide'],
+      base.duotoneScrollMode ?? 'sticky'
+    ),
+    duotoneSlideNavStyle: pick(
+      record.duotoneSlideNavStyle,
+      ['chevron', 'text'],
+      base.duotoneSlideNavStyle ?? 'chevron'
+    ),
+    duotoneFrameColor: pick(
+      record.duotoneFrameColor,
+      ['none', 'neutral', 'muted'],
+      base.duotoneFrameColor ?? 'none'
+    ),
+    duotoneFrameRadius: pick(
+      record.duotoneFrameRadius,
+      ['none', 'sm', 'lg'],
+      base.duotoneFrameRadius ?? 'sm'
+    ),
+    duotoneAutoAdvance:
+      typeof record.duotoneAutoAdvance === 'boolean'
+        ? record.duotoneAutoAdvance
+        : (base.duotoneAutoAdvance ?? false),
+    duotoneThumbnailEffect: pick(
+      record.duotoneThumbnailEffect,
+      ['grayscale', 'tint', 'none'],
+      base.duotoneThumbnailEffect ?? 'grayscale'
+    ),
+    duotoneThumbnailHeight: pick(
+      record.duotoneThumbnailHeight,
+      ['sm', 'md', 'lg'],
+      base.duotoneThumbnailHeight ?? 'md'
+    ),
+    duotoneStickySwapSides:
+      typeof record.duotoneStickySwapSides === 'boolean'
+        ? record.duotoneStickySwapSides
+        : (base.duotoneStickySwapSides ?? false),
     toolsZone: pick(record.toolsZone, ['story', 'details', 'entry'], base.toolsZone),
     proofZone: (() => {
       const proofZoneRaw = record.proofZone;

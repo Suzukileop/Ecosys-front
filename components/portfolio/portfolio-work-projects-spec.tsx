@@ -43,22 +43,38 @@ function SpecConsultAnchor({
   className,
   style,
   children,
+  noColorTransition = false,
 }: {
   href: string;
   className: string;
   style?: CSSProperties;
   children: ReactNode;
+  /** True when `className` carries a transition (e.g. opacity) that the global
+   * .pf-theme-root color-transition rule would otherwise clobber. */
+  noColorTransition?: boolean;
 }) {
   const external = /^https?:\/\//i.test(href);
   if (external) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className} style={style}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+        style={style}
+        {...(noColorTransition ? { 'data-pf-no-color-transition': '' } : null)}
+      >
         {children}
       </a>
     );
   }
   return (
-    <Link href={href} className={className} style={style}>
+    <Link
+      href={href}
+      className={className}
+      style={style}
+      {...(noColorTransition ? { 'data-pf-no-color-transition': '' } : null)}
+    >
       {children}
     </Link>
   );
@@ -89,11 +105,13 @@ function SpecConsultControl({
         <span>{label}</span>
         <span
           aria-hidden
+          data-pf-no-color-transition=""
           className="absolute bottom-0 left-0 h-px w-full origin-left scale-x-100 transition-transform duration-400 ease-out group-hover/consult:scale-x-0"
           style={{ backgroundColor: ink, opacity: 0.45 }}
         />
         <span
           aria-hidden
+          data-pf-no-color-transition=""
           className="absolute bottom-0 left-0 h-px w-full origin-left scale-x-0 transition-transform duration-400 ease-out group-hover/consult:scale-x-100"
           style={{ backgroundColor: accent }}
         />
@@ -107,12 +125,14 @@ function SpecConsultControl({
         href={href}
         className="group/consult inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-opacity duration-300 hover:opacity-70 focus:outline-none sm:text-xs"
         style={{ color: ink }}
+        noColorTransition
       >
         <span aria-hidden>[</span>
         <span className="normal-case tracking-[-0.01em]">{label}</span>
         <span
           className="transition-transform duration-300 group-hover/consult:translate-x-0.5"
           aria-hidden
+          data-pf-no-color-transition=""
         >
           →
         </span>
@@ -127,12 +147,14 @@ function SpecConsultControl({
         href={href}
         className="group/consult inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.18em] transition-opacity duration-300 hover:opacity-70 focus:outline-none sm:text-xs"
         style={{ color: accent }}
+        noColorTransition
       >
         <span>{label}</span>
         <span
           className="inline-block h-px w-8 origin-left transition-transform duration-400 ease-out group-hover/consult:scale-x-150"
           style={{ backgroundColor: accent }}
           aria-hidden
+          data-pf-no-color-transition=""
         />
       </SpecConsultAnchor>
     );
@@ -170,12 +192,14 @@ function SpecConsultControl({
         href={href}
         className="group/consult inline-flex items-center gap-2 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition-opacity duration-300 hover:opacity-80 focus:outline-none sm:text-xs"
         style={buttonStyle}
+        noColorTransition
       >
         <span className="normal-case tracking-[-0.01em]">{label}</span>
         <FontAwesomeIcon
           icon={faArrowUp}
           className="size-3 rotate-45 transition-transform duration-300 group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
           aria-hidden
+          data-pf-no-color-transition=""
         />
       </SpecConsultAnchor>
     );
@@ -187,12 +211,14 @@ function SpecConsultControl({
       href={href}
       className="group/consult inline-flex items-center gap-2 text-sm tracking-[-0.01em] transition-opacity duration-300 hover:opacity-70 focus:outline-none focus-visible:opacity-70"
       style={{ color: accent }}
+      noColorTransition
     >
       <span>{label}</span>
       <FontAwesomeIcon
         icon={faArrowUp}
         className="size-3 rotate-45 transition-transform duration-300 group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
         aria-hidden
+        data-pf-no-color-transition=""
       />
     </SpecConsultAnchor>
   );
@@ -222,6 +248,7 @@ function SpecThumbnail({
         fill
         sizes={compact ? '(max-width: 1024px) 40vw, 18vw' : '(max-width: 768px) 100vw, 28vw'}
         className="object-cover object-center transition-transform duration-500 ease-out will-change-transform group-hover/sheet:scale-[1.04]"
+        data-pf-no-color-transition=""
       />
     </div>
   );
@@ -405,6 +432,7 @@ function SpecSheet({
         className={`font-semibold leading-[1.08] tracking-[-0.04em] transition-[letter-spacing,font-size] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/sheet:tracking-[-0.045em] ${
           showCategory || showRole ? 'mt-4 sm:mt-5' : framed ? 'mt-0' : 'mt-4 sm:mt-5'
         }`}
+        data-pf-no-color-transition=""
         style={{
           color: ink,
           fontSize: showThumb
@@ -458,6 +486,7 @@ function SpecSheet({
       className={`group/sheet flex flex-col gap-5 opacity-[0.92] transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-100 sm:flex-row sm:items-stretch sm:gap-6 lg:gap-8 ${
         showThumb ? '' : ''
       }`}
+      data-pf-no-color-transition=""
     >
       {/* Thumbnail outside, always on the left */}
       {showThumb && mediaUrl ? (
@@ -479,6 +508,7 @@ function SpecSheet({
               ? ''
               : 'pl-0 hover:pl-3 sm:hover:pl-3.5'
         }`}
+        data-pf-no-color-transition=""
         style={
           framed
             ? {
@@ -493,6 +523,7 @@ function SpecSheet({
         {!framed && !showThumb ? (
           <span
             aria-hidden
+            data-pf-no-color-transition=""
             className="pointer-events-none absolute bottom-0 left-0 top-0 w-[1.5px] origin-top scale-y-0 opacity-0 transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/sheet:scale-y-100 group-hover/sheet:opacity-100"
             style={{ backgroundColor: accent }}
           />

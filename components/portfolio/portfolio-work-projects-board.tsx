@@ -115,13 +115,19 @@ function ConsultHoverButton({
 
   if (external) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+        data-pf-no-color-transition=""
+      >
         {content}
       </a>
     );
   }
   return (
-    <Link href={href} className={className}>
+    <Link href={href} className={className} data-pf-no-color-transition="">
       {content}
     </Link>
   );
@@ -155,6 +161,7 @@ function ProjectsBoardThumbnail({
         fill
         sizes="(max-width: 1024px) 100vw, 50vw"
         className="object-cover object-center transition-transform duration-500 ease-out will-change-transform group-hover/thumb:scale-[1.12]"
+        data-pf-no-color-transition=""
       />
       {consult ? (
         <div

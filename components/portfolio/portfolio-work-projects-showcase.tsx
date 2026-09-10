@@ -66,6 +66,7 @@ function ShowcaseChevron({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
+      data-pf-no-color-transition=""
       className="inline-flex h-11 w-11 items-center justify-center rounded-full transition duration-200 ease-out hover:opacity-70 focus:outline-none focus-visible:ring-2 focus-visible:ring-current disabled:pointer-events-none disabled:opacity-40"
       style={{ color }}
     >

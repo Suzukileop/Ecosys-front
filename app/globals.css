@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=Dancing+Script:wght@400;700&family=Pacifico&family=Playfair+Display:wght@400;500;600;700;800;900&family=Anton&family=Raleway:wght@400;500;600;700;800&family=Permanent+Marker&family=Righteous&family=Lobster&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=Dancing+Script:wght@400;700&family=Pacifico&family=Playfair+Display:wght@400;500;600;700;800;900&family=Anton&family=Raleway:wght@400;500;600;700;800&family=Permanent+Marker&family=Righteous&family=Lobster&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,300..600&family=Inter:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -1273,6 +1273,108 @@ html[data-portfolio-color-mode='light']::-webkit-scrollbar-thumb:hover {
   transform: translateY(0);
 }
 
+/* Duotone design, sticky mode: desaturated background image, tinted via mix-blend-mode
+   by a sibling overlay — keeps the "duotone" look while working with any accent color. */
+.pf-duotone-media-filter {
+  filter: grayscale(1) contrast(1.05);
+}
+
+/* Legacy design: subtle zoom on the thumbnail when the card is hovered. A plain named
+   class + .group:hover, not Tailwind's group-hover:scale-[...] — that combination (a
+   variant + an arbitrary value) doesn't reliably compile in
+   portfolio-section-primitives.tsx (see the .pf-reel-grid note below for why). */
+.pf-legacy-thumb-zoom {
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.group:hover .pf-legacy-thumb-zoom {
+  transform: scale(1.025);
+}
+
+/* Legacy design: task-row em-dash marker and repo link — dynamic (per-theme) hover colors
+   read from CSS custom properties set inline, since Tailwind can't express a runtime color
+   in a class name. Plain named classes (not group-hover: utilities) so the transition
+   survives the global color-transition rule's specificity — see the thumb-zoom note above. */
+.pf-legacy-task-dash {
+  display: inline-block;
+  color: var(--pf-legacy-muted);
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+.pf-legacy-task-row:hover .pf-legacy-task-dash {
+  color: var(--pf-legacy-accent);
+  transform: translateX(0.25rem);
+}
+.pf-legacy-repo-link {
+  color: var(--pf-legacy-muted);
+  border-color: color-mix(in srgb, var(--pf-legacy-muted) 40%, transparent);
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+.pf-legacy-repo-link:hover {
+  color: var(--pf-legacy-accent);
+  border-color: var(--pf-legacy-accent);
+}
+
+/* Reel design: asymmetric 4/8 grid for the meta / story columns. A plain named class
+   instead of Tailwind's grid-cols-12 + sm:col-span-* utilities — those combinations don't
+   reliably compile in portfolio-section-primitives.tsx (it's past Tailwind's per-file
+   scanning size where genuinely new utility+variant combinations can silently drop). */
+.pf-reel-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: 2.5rem;
+  row-gap: 2.5rem;
+}
+.pf-reel-grid-meta,
+.pf-reel-grid-flow {
+  grid-column: 1 / -1;
+}
+@media (min-width: 640px) {
+  .pf-reel-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+  .pf-reel-grid-meta {
+    grid-column: span 4 / span 4;
+  }
+  .pf-reel-grid-flow {
+    grid-column: span 8 / span 8;
+  }
+}
+
+/* Press design: the description / tasks / stack reveal must trigger only when the
+   thumbnail image itself is hovered, not anywhere else in the row. A plain :has()
+   selector scoped from the row down to the thumbnail, instead of Tailwind's
+   group-hover: (which would fire for the whole .group ancestor — the entire row). */
+.pf-press-thumb {
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pf-press-thumb:hover {
+  width: 20rem;
+}
+@media (min-width: 640px) {
+  .pf-press-thumb:hover {
+    width: 24rem;
+  }
+}
+@media (min-width: 1024px) {
+  .pf-press-thumb:hover {
+    width: 28rem;
+  }
+}
+.pf-press-stack {
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+}
+.pf-press-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.5s ease-out;
+}
+.pf-press-row:has(.pf-press-thumb:hover) .pf-press-stack {
+  opacity: 1;
+}
+.pf-press-row:has(.pf-press-thumb:hover) .pf-press-reveal {
+  grid-template-rows: 1fr;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pf-faq-answer-fold,
   .pf-faq-answer-fold-inner > * {
@@ -1280,6 +1382,18 @@ html[data-portfolio-color-mode='light']::-webkit-scrollbar-thumb:hover {
   }
   .pf-faq-answer-fold-inner > * {
     transform: none;
+  }
+
+  .pf-legacy-thumb-zoom,
+  .pf-legacy-task-dash,
+  .pf-legacy-repo-link {
+    transition: none;
+  }
+
+  .pf-press-thumb,
+  .pf-press-stack,
+  .pf-press-reveal {
+    transition: none;
   }
 
   .portfolio-marquee {

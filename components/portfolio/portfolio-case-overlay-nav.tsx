@@ -193,6 +193,7 @@ function CaseOverlayMenuTrigger({
       {!useIcon ? (
         <span
           className="absolute inset-x-0 -bottom-1 h-px origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100"
+          data-pf-no-color-transition=""
           style={{ backgroundColor: accent }}
           aria-hidden
         />
@@ -215,6 +216,7 @@ function CaseOverlayRowHintLine({
   return (
     <span
       className="hidden h-px w-10 shrink-0 transition-[width,opacity] duration-300 group-hover:w-14 sm:block sm:w-12 sm:group-hover:w-16"
+      data-pf-no-color-transition=""
       style={{
         backgroundColor: active ? accent : ink,
         opacity: active ? 1 : 0.72,
@@ -266,6 +268,7 @@ function CaseOverlayRow({
       >
         <span
           className="pointer-events-none absolute bottom-[18%] left-0 top-[18%] w-px origin-left scale-y-0 opacity-0 transition duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-y-100 group-hover:opacity-100 group-focus-visible:scale-y-100 group-focus-visible:opacity-100"
+          data-pf-no-color-transition=""
           style={{ backgroundColor: accent }}
           aria-hidden
         />
@@ -276,7 +279,10 @@ function CaseOverlayRow({
             aria-hidden
           />
         ) : null}
-        <span className="flex min-w-0 items-baseline gap-4 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-1.5 group-focus-visible:translate-x-1.5 sm:gap-6">
+        <span
+          className="flex min-w-0 items-baseline gap-4 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-1.5 group-focus-visible:translate-x-1.5 sm:gap-6"
+          data-pf-no-color-transition=""
+        >
           <span
             className="w-7 shrink-0 text-[11px] font-semibold tracking-[0.22em] sm:w-8 sm:text-xs"
             style={{ color: accent }}

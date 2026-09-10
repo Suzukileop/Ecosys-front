@@ -278,13 +278,25 @@ function EditorialConsultPill({
 
   if (external) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className} style={style}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+        style={style}
+        data-pf-no-color-transition={tone === 'panel' ? '' : undefined}
+      >
         {content}
       </a>
     );
   }
   return (
-    <Link href={href} className={className} style={style}>
+    <Link
+      href={href}
+      className={className}
+      style={style}
+      data-pf-no-color-transition={tone === 'panel' ? '' : undefined}
+    >
       {content}
     </Link>
   );
@@ -342,6 +354,7 @@ function EditorialThumbnailPanel({
             sizes="(max-width: 640px) 100vw, 40vw"
             className="rounded-none object-cover object-center transition duration-500 ease-out group-hover:scale-[1.03]"
             priority={false}
+            data-pf-no-color-transition=""
           />
         ) : (
           <div
@@ -362,9 +375,13 @@ function EditorialThumbnailPanel({
                   'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.12) 72%, transparent 100%)',
               }}
               aria-hidden
+              data-pf-no-color-transition=""
             />
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex translate-y-3 flex-col gap-4 px-5 pb-5 pt-16 opacity-0 transition duration-500 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 sm:gap-5 sm:px-6 sm:pb-6">
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex translate-y-3 flex-col gap-4 px-5 pb-5 pt-16 opacity-0 transition duration-500 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 sm:gap-5 sm:px-6 sm:pb-6"
+              data-pf-no-color-transition=""
+            >
               {showDescription ? (
                 <p className="max-w-md text-sm leading-relaxed text-white/90 sm:text-base">
                   {description}

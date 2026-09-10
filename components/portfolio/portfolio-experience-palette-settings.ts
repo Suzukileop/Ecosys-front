@@ -375,6 +375,17 @@ export function mergeExperiencePalette(
   return mergeHeroPalette(base, patch);
 }
 
+/**
+ * The theme's "secondaire" token, straight from the active palette — used to color the
+ * Finished status across every design (Ongoing keeps accent / "principal").
+ */
+export function experienceSecondaryStatusColor(presentation: {
+  experiencePalette?: PortfolioExperiencePalette;
+}): string {
+  const palette = mergeExperiencePalette(DEFAULT_EXPERIENCE_PALETTE, presentation.experiencePalette);
+  return resolveHeroPaletteColor(palette, 'secondaire');
+}
+
 export function mergeExperienceColorBindings(
   base: PortfolioExperienceColorBindings,
   patch: unknown

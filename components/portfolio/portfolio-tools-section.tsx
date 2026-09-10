@@ -420,6 +420,7 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
         const logoTile = (
           <div
             className={`flex shrink-0 items-center justify-center rounded-2xl ${isHorizontal ? 'self-start transition duration-300 group-hover:scale-[1.03]' : ''}`}
+            data-pf-no-color-transition=""
             style={{
               width: framePx,
               height: framePx,
@@ -536,6 +537,7 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
                   ? 'flex h-full gap-5 rounded-[1.35rem] border p-4 transition duration-300 hover:-translate-y-0.5 sm:gap-6 sm:p-5'
                   : 'flex h-full flex-col gap-4 rounded-[1.35rem] border p-5 transition duration-300 hover:-translate-y-0.5 sm:p-6'
               }
+              data-pf-no-color-transition=""
               style={{
                 backgroundColor: presentation.cardBackgroundColor,
                 borderColor: presentation.cardBorderColor,
@@ -619,6 +621,7 @@ export function EditorialToolsBrandDirectory({ tools, presentation }: ToolsGalle
             >
               <div
                 className="flex shrink-0 items-center justify-center rounded-2xl transition duration-300 group-hover:scale-[1.03]"
+                data-pf-no-color-transition=""
                 style={{
                   width: framePx,
                   height: framePx,
@@ -968,6 +971,7 @@ function ToolsBrandFloatDescription({
           id={tooltipId}
           role="tooltip"
           className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 w-[min(100%,18rem)] -translate-x-1/2 rounded-xl border px-3.5 py-2.5 text-left text-[0.8125rem] leading-relaxed opacity-0 shadow-[0_16px_40px_-24px_rgba(0,0,0,0.65)] transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 sm:text-[0.875rem]"
+          data-pf-no-color-transition=""
           style={{
             color: descriptionColor,
             backgroundColor: surfaceColor,
@@ -1032,6 +1036,7 @@ export function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryPr
                   ? 'border hover:-translate-y-1 hover:shadow-[0_24px_48px_-28px_rgba(0,0,0,0.45)]'
                   : 'border border-transparent'
               }`}
+              data-pf-no-color-transition=""
               style={{
                 backgroundColor: framed ? presentation.cardBackgroundColor : 'transparent',
                 borderColor: framed ? border : 'transparent',
@@ -1040,6 +1045,7 @@ export function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryPr
               {framed ? (
                 <div
                   className="pointer-events-none absolute inset-0 rounded-[1.35rem] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  data-pf-no-color-transition=""
                   style={{
                     boxShadow: `inset 0 0 0 1px ${border}55, 0 0 0 1px ${border}22`,
                   }}
@@ -1063,6 +1069,7 @@ export function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryPr
 
               <div
                 className="relative z-[1] mb-4 flex shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 ease-out group-hover:scale-[1.04] sm:mb-5"
+                data-pf-no-color-transition=""
                 style={{
                   width: framePx,
                   height: framePx,
@@ -1175,6 +1182,7 @@ function ToolLevelStatBarCardItem({
       className={`group flex h-full flex-col items-center rounded-[1.125rem] p-4 transition duration-300 sm:p-[1.125rem] ${
         framed ? 'border hover:-translate-y-0.5 hover:shadow-sm' : 'border border-transparent'
       }`}
+      data-pf-no-color-transition=""
       style={{
         backgroundColor: framed ? cardSurface : 'transparent',
         borderColor: framed ? presentation.cardBorderColor : 'transparent',
@@ -1274,6 +1282,7 @@ function ToolLevelCircularCardItem({
       className={`flex h-full flex-col items-center rounded-[1.35rem] px-4 py-6 text-center transition duration-300 sm:px-5 sm:py-7 ${
         framed ? 'border hover:-translate-y-0.5' : 'border border-transparent'
       }`}
+      data-pf-no-color-transition=""
       style={{
         backgroundColor: framed ? cardSurface : 'transparent',
         borderColor: framed ? presentation.cardBorderColor : 'transparent',
@@ -1400,6 +1409,7 @@ function ToolLevelStarCardItem({
       className={`flex min-h-[3.25rem] items-center justify-between gap-3 rounded-[1.25rem] px-4 py-3.5 transition duration-300 sm:gap-4 sm:px-5 sm:py-4 ${
         framed ? 'border hover:-translate-y-0.5' : 'border border-transparent'
       }`}
+      data-pf-no-color-transition=""
       style={{
         backgroundColor: framed ? cardSurface : 'transparent',
         borderColor: framed ? presentation.cardBorderColor : 'transparent',

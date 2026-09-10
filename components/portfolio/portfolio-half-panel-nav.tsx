@@ -177,7 +177,11 @@ function HalfPanelFooter({
             style={{ color: strongInk }}
           >
             {mailHref && mailLabel ? (
-              <a href={mailHref} className="transition hover:opacity-70">
+              <a
+                href={mailHref}
+                className="transition hover:opacity-70"
+                data-pf-no-color-transition=""
+              >
                 {mailLabel}
               </a>
             ) : null}
@@ -187,7 +191,11 @@ function HalfPanelFooter({
               </span>
             ) : null}
             {phoneHref && phoneLabel ? (
-              <a href={phoneHref} className="transition hover:opacity-70">
+              <a
+                href={phoneHref}
+                className="transition hover:opacity-70"
+                data-pf-no-color-transition=""
+              >
                 {phoneLabel}
               </a>
             ) : null}
@@ -256,6 +264,7 @@ function HalfPanelLink({
             active ? 'font-medium' : 'font-normal'
           }`}
           style={{ color: active ? strongInk : mutedInk }}
+          data-pf-no-color-transition=""
         >
           {label}
           <span
@@ -263,6 +272,7 @@ function HalfPanelLink({
               active ? 'w-full' : 'w-0 group-hover/link:w-full'
             }`}
             style={{ backgroundColor: active ? accent : `${mutedInk}88` }}
+            data-pf-no-color-transition=""
           />
         </span>
       </button>
@@ -545,6 +555,7 @@ export function PortfolioHalfPanelNav({
               ? 'h-11 w-11 rounded-full'
               : 'h-10 rounded-full px-4 text-xs font-medium tracking-[0.14em] sm:text-sm'
           }`}
+          data-pf-no-color-transition=""
           style={{
             color: triggerInk,
             backgroundColor: `${triggerFill}ee`,
