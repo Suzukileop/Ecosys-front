@@ -18,12 +18,6 @@ import {
   SERVICES_CONTENT_GAP_PX_MAX,
   SERVICES_CONTENT_GAP_PX_MIN,
   clampServicesContentGapPx,
-  PORTFOLIO_SERVICES_CTA_ALIGNMENT_OPTIONS,
-  PORTFOLIO_SERVICES_CTA_BORDER_RADIUS_OPTIONS,
-  PORTFOLIO_SERVICES_CTA_BORDER_WIDTH_OPTIONS,
-  PORTFOLIO_SERVICES_CTA_DESIGN_OPTIONS,
-  PORTFOLIO_SERVICES_CTA_ICON_OPTIONS,
-  PORTFOLIO_SERVICES_CTA_ICON_POSITION_OPTIONS,
   PORTFOLIO_SERVICES_DISPLAY_MODE_OPTIONS,
   PORTFOLIO_SERVICES_MARQUEE_DIRECTION_OPTIONS,
   PORTFOLIO_SERVICES_DECK_ENTRANCE_EFFECT_OPTIONS,
@@ -43,13 +37,6 @@ import {
   SKILLS_ICON_BORDER_WIDTH_PX_MIN,
   SKILLS_ICON_BORDER_WIDTH_PX_MAX,
   clampSkillsIconBorderWidthPx,
-  PORTFOLIO_SERVICES_PRICE_PLACEMENT_OPTIONS,
-  PORTFOLIO_SERVICES_PRICE_ALIGN_OPTIONS,
-  PORTFOLIO_SERVICES_CURRENCY_OPTIONS,
-  PORTFOLIO_SERVICES_CURRENCY_PLACEMENT_OPTIONS,
-  SERVICE_PRICE_MARGIN_PX_MIN,
-  SERVICE_PRICE_MARGIN_PX_MAX,
-  clampServicePriceMarginPx,
   PORTFOLIO_SERVICES_STAGE_BORDER_OPTIONS,
   PORTFOLIO_SERVICES_STAGE_CORNERS_OPTIONS,
   PORTFOLIO_SERVICES_STAGE_DESIGN_OPTIONS,
@@ -143,10 +130,6 @@ export type ServicesSubSection =
   | 'title'
   | 'description'
   | 'icon'
-  | 'price'
-  | 'delivery'
-  | 'tasks'
-  | 'cta'
   | 'background'
   | 'palette'
   /** @deprecated Mapped by normalizeServicesSubSection */
@@ -199,53 +182,24 @@ const SERVICES_SUB_SECTIONS_SERVICES: ServicesSubSectionMeta[] = [
     label: 'Cards',
     description: 'Design, grille, cadre et alignement des cartes services.',
   },
-  { id: 'title', label: 'Title', description: 'Show, typography and background for the service title.' },
-  {
-    id: 'description',
-    label: 'Description',
-    description: 'Show, typography and background for the description.',
-  },
-  {
-    id: 'tasks',
-    label: 'Tasks',
-    description: 'Show, typography and background for the deliverables checklist.',
-  },
-  { id: 'price', label: 'Price', description: 'Show, placement and typography for the price.' },
-  {
-    id: 'delivery',
-    label: 'Delivery',
-    description: 'Show and typography for the delivery time.',
-  },
-  {
-    id: 'cta',
-    label: 'CTA',
-    description: 'Order button — style, colors, hover and typography.',
-  },
-  { id: 'background', label: 'Background', description: 'Section fill, gradients, and opacity.' },
-  {
-    id: 'palette',
-    label: 'Palette',
-    description: 'Use the Global site palette and bind section colors to tokens.',
-  },
 ];
 
 function subSectionsForFocus(focus: ServicesSettingsFocus): ServicesSubSectionMeta[] {
   return focus === 'skills' ? SERVICES_SUB_SECTIONS_SKILLS : SERVICES_SUB_SECTIONS_SERVICES;
 }
 
-/** @deprecated Prefer subSectionsForFocus */
-const SERVICES_SUB_SECTIONS = [...SERVICES_SUB_SECTIONS_SKILLS, ...SERVICES_SUB_SECTIONS_SERVICES];
-
-/** Map legacy subsection ids (saved UI state / search) to the element menus. */
+/** Map legacy subsection ids (saved UI state / search) to the remaining menus. */
 export function normalizeServicesSubSection(
   value: string | undefined,
   focus: ServicesSettingsFocus = 'services'
 ): ServicesSubSection {
   if (value === 'layout' || value === 'frame') return 'cards';
-  if (value === 'skills' || value === 'servicesText' || value === 'style') return 'title';
-  if (value === 'content' || value === 'ergonomics') {
-    return focus === 'skills' ? 'icon' : 'title';
+  if (focus === 'services') {
+    if (value === 'general' || value === 'header' || value === 'cards') return value;
+    return 'general';
   }
+  if (value === 'skills' || value === 'servicesText' || value === 'style') return 'title';
+  if (value === 'content' || value === 'ergonomics') return 'icon';
   if (
     value === 'general' ||
     value === 'header' ||
@@ -253,10 +207,6 @@ export function normalizeServicesSubSection(
     value === 'title' ||
     value === 'description' ||
     value === 'icon' ||
-    value === 'price' ||
-    value === 'delivery' ||
-    value === 'tasks' ||
-    value === 'cta' ||
     value === 'background' ||
     value === 'palette'
   ) {
@@ -632,7 +582,6 @@ function ServicesOptionGrid<T extends string | number>({
     </div>
   );
 }
-
 
 function ServicesManualColorField({
   label,
@@ -3173,72 +3122,45 @@ export function ServicesSettingsPanel({
         </div>
       ) : null}
 
-      {subSection === 'title' ? (
+      {subSection === 'title' && settingsFocus === 'skills' ? (
         <div className="space-y-6">
-          {settingsFocus === 'skills' ? (
-            <>
-              <ServicesToggleRow
-                label="Skill title"
-                description="Afficher le titre sur chaque carte skill."
-                checked={services.showSkillTitle}
-                onChange={(showSkillTitle) => onChange({ showSkillTitle })}
-              />
-              {isPillCloudLayout ? (
-                <p className="rounded-2xl border border-sky-200/80 bg-sky-50/60 px-4 py-3 text-sm text-neutral-600">
-                  Le fond individuel du titre est désactivé : la pilule fournit déjà sa surface.
-                </p>
-              ) : (
-                <ServicesElementChromeControls
-                  services={services}
-                  chromeId="skillTitle"
-                  onChange={onChange}
-                  title="Fond du titre"
-                  description="Fond derrière le titre de la carte skill."
-                />
-              )}
-              <ServicesInlineTypography
-                services={services}
-                onChange={onChange}
-                target="skillTitle"
-                title="Typographie du titre"
-              />
-            </>
+          <ServicesToggleRow
+            label="Skill title"
+            description="Afficher le titre sur chaque carte skill."
+            checked={services.showSkillTitle}
+            onChange={(showSkillTitle) => onChange({ showSkillTitle })}
+          />
+          {isPillCloudLayout ? (
+            <p className="rounded-2xl border border-sky-200/80 bg-sky-50/60 px-4 py-3 text-sm text-neutral-600">
+              Le fond individuel du titre est désactivé : la pilule fournit déjà sa surface.
+            </p>
           ) : (
-            <>
-              <ServicesToggleRow
-                label="Service title"
-                description="Afficher le titre sur chaque carte service."
-                checked={services.showServiceTitle}
-                onChange={(showServiceTitle) => onChange({ showServiceTitle })}
-              />
-              <ServicesElementChromeControls
-                services={services}
-                chromeId="cardTitle"
-                onChange={onChange}
-                title="Fond du titre"
-                description="Fond derrière le titre de la carte service."
-              />
-              <ServicesInlineTypography
-                services={services}
-                onChange={onChange}
-                target="cardTitle"
-                title="Typographie du titre"
-              />
-            </>
+            <ServicesElementChromeControls
+              services={services}
+              chromeId="skillTitle"
+              onChange={onChange}
+              title="Fond du titre"
+              description="Fond derrière le titre de la carte skill."
+            />
           )}
+          <ServicesInlineTypography
+            services={services}
+            onChange={onChange}
+            target="skillTitle"
+            title="Typographie du titre"
+          />
         </div>
       ) : null}
 
-      {subSection === 'description' ? (
+      {subSection === 'description' && settingsFocus === 'skills' ? (
         <div className="space-y-6">
-          {settingsFocus === 'skills' ? (
-            isPillCloudLayout ? (
-              <p className="rounded-2xl border border-sky-200/80 bg-sky-50/60 px-4 py-3 text-sm text-neutral-600">
-                Le nuage de pilules n&apos;affiche pas les descriptions afin de conserver des
-                capsules compactes.
-              </p>
-            ) : (
-              <>
+          {isPillCloudLayout ? (
+            <p className="rounded-2xl border border-sky-200/80 bg-sky-50/60 px-4 py-3 text-sm text-neutral-600">
+              Le nuage de pilules n&apos;affiche pas les descriptions afin de conserver des
+              capsules compactes.
+            </p>
+          ) : (
+            <>
               <ServicesToggleRow
                 label="Skill description"
                 description="Afficher la description sur chaque carte skill."
@@ -3258,126 +3180,8 @@ export function ServicesSettingsPanel({
                 target="skillBody"
                 title="Typographie de la description"
               />
-              </>
-            )
-          ) : (
-            <>
-              <ServicesToggleRow
-                label="Service description"
-                description="Afficher la description sur chaque carte service."
-                checked={services.showServiceDescription}
-                onChange={(showServiceDescription) => onChange({ showServiceDescription })}
-              />
-              <ServicesElementChromeControls
-                services={services}
-                chromeId="cardBody"
-                onChange={onChange}
-                title="Fond de la description"
-                description="Fond derrière la description de la carte service."
-              />
-              <ServicesInlineTypography
-                services={services}
-                onChange={onChange}
-                target="cardBody"
-                title="Typographie de la description"
-              />
             </>
           )}
-        </div>
-      ) : null}
-
-      {subSection === 'tasks' && settingsFocus === 'services' ? (
-        <div className="space-y-6">
-          <ServicesToggleRow
-            label="Tasks"
-            description="Show the deliverables checklist on each service card. Edit task text in Creator Studio → Base → Portfolio → Services."
-            checked={services.showServiceTasks !== false}
-            onChange={(showServiceTasks) => onChange({ showServiceTasks })}
-          />
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Task bullet style
-            </p>
-            <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
-              {PORTFOLIO_SERVICES_TASK_BULLET_STYLE_OPTIONS.map((option) => {
-                const active = (services.servicesTaskBulletStyle ?? 'check') === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    title={`${option.label} — ${option.description}`}
-                    onClick={() =>
-                      onChange({
-                        servicesTaskBulletSource: 'section',
-                        servicesTaskBulletStyle: option.value,
-                      })
-                    }
-                    className={`flex flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2.5 transition ${
-                      active
-                        ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                        : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-                    }`}
-                  >
-                    <span className="text-base font-semibold leading-none text-neutral-900">
-                      {option.preview}
-                    </span>
-                    <span className="max-w-full truncate text-[10px] font-medium text-neutral-500">
-                      {option.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          {(services.servicesTaskBulletStyle ?? 'check') !== 'none' ? (
-            <>
-              <PortfolioListMarkerSizeWeightControls
-                size={services.servicesTaskBulletSize ?? 'md'}
-                sizePx={services.servicesTaskBulletSizePx}
-                weight={services.servicesTaskBulletWeight ?? 'regular'}
-                weightAmount={services.servicesTaskBulletWeightAmount}
-                OptionGrid={ServicesOptionGrid}
-                onChange={(patch) =>
-                  onChange({
-                    servicesTaskBulletSource: 'section',
-                    ...(patch.size !== undefined
-                      ? { servicesTaskBulletSize: patch.size }
-                      : null),
-                    ...(patch.sizePx !== undefined
-                      ? { servicesTaskBulletSizePx: patch.sizePx }
-                      : null),
-                    ...(patch.weight !== undefined
-                      ? { servicesTaskBulletWeight: patch.weight }
-                      : null),
-                    ...(patch.weightAmount !== undefined
-                      ? { servicesTaskBulletWeightAmount: patch.weightAmount }
-                      : null),
-                  })
-                }
-              />
-              <ServicesColorField
-                services={services}
-                onChange={onChange}
-                slot="tasksBullet"
-                label="Task bullet color"
-                description="Marker color before each task line."
-                value={services.servicesTaskBulletColor}
-              />
-            </>
-          ) : null}
-          <ServicesElementChromeControls
-            services={services}
-            chromeId="tasks"
-            onChange={onChange}
-            title="Tasks background"
-            description="Background behind the tasks list on the card."
-          />
-          <ServicesInlineTypography
-            services={services}
-            onChange={onChange}
-            target="tasks"
-            title="Tasks typography"
-          />
         </div>
       ) : null}
 
@@ -3529,351 +3333,11 @@ export function ServicesSettingsPanel({
         </div>
       ) : null}
 
-      {subSection === 'price' && settingsFocus === 'services' ? (
-        <div className="space-y-6">
-          <ServicesToggleRow
-            label="Price"
-            description="Afficher le prix sur chaque carte service."
-            checked={services.showServicePrice}
-            onChange={(showServicePrice) => onChange({ showServicePrice })}
-          />
-          <ServicesOptionGrid
-            label="Emplacement prix"
-            options={PORTFOLIO_SERVICES_PRICE_PLACEMENT_OPTIONS}
-            value={readBlock('pricePlacement')}
-            onChange={(pricePlacement) => patchBlock({ pricePlacement })}
-            columns={3}
-          />
-          <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Unité monétaire
-            </p>
-            <p className="text-sm text-neutral-500">
-              Symbole affiché avant ou après le prix — adapte la devise à ton pays (€, $, MAD…).
-            </p>
-            <select
-              value={services.servicesCurrency || 'EUR'}
-              onChange={(event) => onChange({ servicesCurrency: event.target.value })}
-              className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
-              aria-label="Unité monétaire"
-            >
-              {PORTFOLIO_SERVICES_CURRENCY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label} — {option.description}
-                </option>
-              ))}
-            </select>
-          </div>
-          <ServicesOptionGrid
-            label="Position du symbole"
-            options={PORTFOLIO_SERVICES_CURRENCY_PLACEMENT_OPTIONS}
-            value={services.serviceCurrencyPlacement ?? 'after'}
-            onChange={(serviceCurrencyPlacement) => onChange({ serviceCurrencyPlacement })}
-            columns={2}
-          />
-          <ServicesToggleRow
-            label="Show From label"
-            description="Préfixe avant le montant (From, À partir de…). Désactivé par défaut — active pour l’afficher."
-            checked={services.servicePricePrefixEnabled === true}
-            onChange={(servicePricePrefixEnabled) => onChange({ servicePricePrefixEnabled })}
-          />
-          {services.servicePricePrefixEnabled === true ? (
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Texte du préfixe
-              </p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Laisse vide pour garder « From » par défaut.
-              </p>
-              <input
-                type="text"
-                value={services.servicePricePrefix ?? 'From'}
-                onChange={(event) => onChange({ servicePricePrefix: event.target.value })}
-                placeholder="From"
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                aria-label="Texte du préfixe prix"
-              />
-            </div>
-          ) : null}
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Suffixe période
-            </p>
-            <p className="mt-1 text-sm text-neutral-500">
-              Affiché à côté du prix (ex. « / mois », « / first month ») — utile pour Plan tarifaire.
-            </p>
-            <input
-              type="text"
-              value={services.servicePricePeriodSuffix ?? ''}
-              onChange={(event) => onChange({ servicePricePeriodSuffix: event.target.value })}
-              placeholder="/ mois"
-              className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-              aria-label="Suffixe période du prix"
-            />
-          </div>
-          <ServicesOptionGrid
-            label="Alignement du prix"
-            options={PORTFOLIO_SERVICES_PRICE_ALIGN_OPTIONS}
-            value={services.servicePriceAlign ?? 'left'}
-            onChange={(servicePriceAlign) => onChange({ servicePriceAlign })}
-            columns={3}
-          />
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Marge haute (px)
-                </p>
-                <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                  {clampServicePriceMarginPx(services.servicePriceMarginTopPx, 0)}px
-                </span>
-              </div>
-              <input
-                type="range"
-                min={SERVICE_PRICE_MARGIN_PX_MIN}
-                max={SERVICE_PRICE_MARGIN_PX_MAX}
-                step={1}
-                value={clampServicePriceMarginPx(services.servicePriceMarginTopPx, 0)}
-                onChange={(event) =>
-                  onChange({
-                    servicePriceMarginTopPx: clampServicePriceMarginPx(Number(event.target.value), 0),
-                  })
-                }
-                className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                aria-label="Marge haute du prix en pixels"
-              />
-              <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
-                <span>{SERVICE_PRICE_MARGIN_PX_MIN}px</span>
-                <span>{SERVICE_PRICE_MARGIN_PX_MAX}px</span>
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Marge basse (px)
-                </p>
-                <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                  {clampServicePriceMarginPx(services.servicePriceMarginBottomPx, 0)}px
-                </span>
-              </div>
-              <input
-                type="range"
-                min={SERVICE_PRICE_MARGIN_PX_MIN}
-                max={SERVICE_PRICE_MARGIN_PX_MAX}
-                step={1}
-                value={clampServicePriceMarginPx(services.servicePriceMarginBottomPx, 0)}
-                onChange={(event) =>
-                  onChange({
-                    servicePriceMarginBottomPx: clampServicePriceMarginPx(
-                      Number(event.target.value),
-                      0
-                    ),
-                  })
-                }
-                className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                aria-label="Marge basse du prix en pixels"
-              />
-              <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
-                <span>{SERVICE_PRICE_MARGIN_PX_MIN}px</span>
-                <span>{SERVICE_PRICE_MARGIN_PX_MAX}px</span>
-              </div>
-            </div>
-          </div>
-          <ServicesElementChromeControls
-            services={services}
-            chromeId="price"
-            onChange={onChange}
-            title="Fond du prix"
-            description="Fond derrière le prix affiché sur la carte."
-          />
-          <ServicesInlineTypography
-            services={services}
-            onChange={onChange}
-            target="price"
-            title="Typographie du prix"
-          />
-        </div>
-      ) : null}
-
-      {subSection === 'delivery' && settingsFocus === 'services' ? (
-        <div className="space-y-6">
-          <ServicesToggleRow
-            label="Delivery time"
-            description="Afficher le délai de livraison sur chaque carte service."
-            checked={services.showServiceDelivery}
-            onChange={(showServiceDelivery) => onChange({ showServiceDelivery })}
-          />
-          <ServicesElementChromeControls
-            services={services}
-            chromeId="delivery"
-            onChange={onChange}
-            title="Fond de la livraison"
-            description="Fond derrière le badge de délai de livraison."
-          />
-          <ServicesInlineTypography
-            services={services}
-            onChange={onChange}
-            target="delivery"
-            title="Typographie de la livraison"
-          />
-        </div>
-      ) : null}
-
-      {subSection === 'cta' && settingsFocus === 'services' ? (
-        <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-          <div>
-            <p className="text-sm font-semibold text-neutral-950">Bouton Commander</p>
-            <p className="mt-1 text-sm text-neutral-500">
-              Mêmes designs que le bouton <span className="font-semibold text-neutral-700">View project</span> du
-              Portfolio.
-            </p>
-          </div>
-
-          <ServicesToggleRow
-            label="Afficher le bouton"
-            checked={services.showServiceCta !== false}
-            onChange={(showServiceCta) => onChange({ showServiceCta })}
-          />
-
-          {services.showServiceCta !== false ? (
-            <>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Libellé du bouton
-                </p>
-                <input
-                  type="text"
-                  value={services.ctaLabel ?? 'Get started'}
-                  onChange={(event) => onChange({ ctaLabel: event.target.value })}
-                  placeholder="Get started"
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                />
-              </div>
-
-              <ServicesOptionGrid
-                label="Style du bouton"
-                options={PORTFOLIO_SERVICES_CTA_DESIGN_OPTIONS}
-                value={services.ctaDesign ?? 'pill-accent'}
-                onChange={(ctaDesign) => onChange({ ctaDesign })}
-                columns={2}
-              />
-
-              <ServicesToggleRow
-                label="Afficher l’icône CTA"
-                description="Glyphe à côté du libellé (flèche, play, plus…)."
-                checked={services.ctaShowIcon !== false}
-                onChange={(ctaShowIcon) => onChange({ ctaShowIcon })}
-              />
-
-              {services.ctaShowIcon !== false ? (
-                <>
-                  <ServicesOptionGrid
-                    label="Position de l’icône"
-                    options={PORTFOLIO_SERVICES_CTA_ICON_POSITION_OPTIONS}
-                    value={services.ctaIconPosition ?? 'right'}
-                    onChange={(ctaIconPosition) => onChange({ ctaIconPosition })}
-                    columns={2}
-                  />
-                  <ServicesOptionGrid
-                    label="Icône CTA"
-                    options={PORTFOLIO_SERVICES_CTA_ICON_OPTIONS}
-                    value={services.ctaIcon ?? 'arrow-up-right'}
-                    onChange={(ctaIcon) => onChange({ ctaIcon })}
-                    columns={2}
-                  />
-                </>
-              ) : null}
-
-              <ServicesOptionGrid
-                label="Épaisseur de bordure"
-                options={PORTFOLIO_SERVICES_CTA_BORDER_WIDTH_OPTIONS}
-                value={services.ctaBorderWidth ?? 'thin'}
-                onChange={(ctaBorderWidth) => onChange({ ctaBorderWidth })}
-                columns={2}
-              />
-
-              <ServicesOptionGrid
-                label="Coins arrondis (CTA)"
-                options={PORTFOLIO_SERVICES_CTA_BORDER_RADIUS_OPTIONS}
-                value={services.ctaBorderRadius ?? 'full'}
-                onChange={(ctaBorderRadius) => onChange({ ctaBorderRadius })}
-                columns={3}
-              />
-
-              <ServicesColorField
-                services={services}
-                onChange={onChange}
-                slot="ctaAccent"
-                label="Couleur accent (fill / outline)"
-                value={services.ctaColor ?? services.cardAccentColor}
-              />
-
-              <ServicesColorField
-                services={services}
-                onChange={onChange}
-                slot="ctaBorder"
-                label="Bordure du bouton"
-                value={services.ctaBorderColor ?? services.cardBorderColor}
-              />
-
-              <div className="space-y-4 rounded-2xl border border-neutral-200/60 bg-white/70 p-4">
-                <ServicesToggleRow
-                  label="Activer le hover"
-                  description="Au survol, le bouton bascule vers les couleurs ci-dessous."
-                  checked={services.ctaHoverEnabled !== false}
-                  onChange={(ctaHoverEnabled) => onChange({ ctaHoverEnabled })}
-                />
-                {services.ctaHoverEnabled !== false ? (
-                  <>
-                    <ServicesColorField
-                      services={services}
-                      onChange={onChange}
-                      slot="ctaHoverBackground"
-                      label="Fond au survol"
-                      value={services.ctaHoverBackgroundColor ?? services.ctaColor}
-                    />
-                    <ServicesColorField
-                      services={services}
-                      onChange={onChange}
-                      slot="ctaHoverText"
-                      label="Texte au survol"
-                      value={services.ctaHoverTextColor ?? '#0b0b0d'}
-                    />
-                    <ServicesColorField
-                      services={services}
-                      onChange={onChange}
-                      slot="ctaHoverBorder"
-                      label="Bordure au survol"
-                      value={services.ctaHoverBorderColor ?? services.ctaColor}
-                    />
-                  </>
-                ) : null}
-              </div>
-
-              <ServicesOptionGrid
-                label="Alignement du bouton"
-                options={PORTFOLIO_SERVICES_CTA_ALIGNMENT_OPTIONS}
-                value={services.ctaAlignment ?? 'left'}
-                onChange={(ctaAlignment) => onChange({ ctaAlignment })}
-                columns={3}
-              />
-
-              <ServicesInlineTypography
-                services={services}
-                onChange={onChange}
-                target="cta"
-                title="Typographie du bouton"
-              />
-            </>
-          ) : null}
-        </div>
-      ) : null}
-
-      {subSection === 'palette' ? (
+      {subSection === 'palette' && settingsFocus === 'skills' ? (
         <ServicesPalettePanel services={services} onChange={onChange} />
       ) : null}
 
-      {subSection === 'background' ? (
+      {subSection === 'background' && settingsFocus === 'skills' ? (
         <div className="space-y-6">
           <ServicesUsePaletteToggle
             services={services}

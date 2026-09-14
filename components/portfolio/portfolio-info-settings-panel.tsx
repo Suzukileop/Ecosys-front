@@ -557,6 +557,8 @@ export function InfoSettingsPanel({
                 </p>
                 <p className="mt-1 text-sm text-neutral-500">
                   Deux lignes à droite du titre — chaque ligne en deux couleurs (fort + muted).
+                  Le pied reprend le même rythme éditorial : bio en chapô sous « Shaped by »,
+                  puis trois colonnes.
                 </p>
               </div>
               <div>
@@ -663,23 +665,9 @@ export function InfoSettingsPanel({
                   Intérêts + langues
                 </p>
                 <p className="mt-1 text-sm text-neutral-500">
-                  Phrase placée juste avant les langues — intérêts et langues séparés par des
-                  virgules, couleurs variées.
+                  Pied éditorial en colonnes : Interests à gauche, Languages au centre-droit
+                  (code ISO + niveau), respiration à droite.
                 </p>
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Phrase d’intro
-                </p>
-                <textarea
-                  value={info.aboutPortraitSkillsMetaLead ?? ''}
-                  onChange={(event) =>
-                    onChange({ aboutPortraitSkillsMetaLead: event.target.value })
-                  }
-                  rows={3}
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                  placeholder="Lorem ipsum dolor sit amet…"
-                />
               </div>
             </div>
           ) : null}
@@ -828,12 +816,12 @@ export function InfoSettingsPanel({
                   Cadre du portrait
                 </p>
                 <p className="mt-1 text-sm text-neutral-500">
-                  Forme de la photo de profil — colonne droite du manifesto (grand écran).
+                  Cadre à droite du manifesto (grand écran) — photo recadrée, ou initiales sans portrait.
                 </p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {PORTFOLIO_INFO_ABOUT_MANIFESTO_PORTRAIT_FRAME_OPTIONS.map((option) => {
                     const active =
-                      (info.aboutManifestoPortraitFrame ?? 'circle') === option.value;
+                      (info.aboutManifestoPortraitFrame ?? 'square') === option.value;
                     return (
                       <button
                         key={option.value}

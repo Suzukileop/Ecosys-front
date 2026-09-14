@@ -9,6 +9,7 @@ import {
   buildCreatorPortfolioPath,
   looksLikeUuid,
 } from '@/lib/portfolio-url';
+import { isPortfolioStudioEmbedParam, withPortfolioStudioEmbed } from '@/lib/portfolio-studio-preview';
 import {
   normalizeCreatorProfile,
   serverMarketplaceFetch,
@@ -73,7 +74,13 @@ export async function generateMetadata({
   };
 }
 
-async function CreatorPortfolioBody({ creatorId }: { creatorId: string }) {
+async function CreatorPortfolioBody({
+  creatorId,
+  studioEmbed = false,
+}: {
+  creatorId: string;
+  studioEmbed?: boolean;
+}) {
   const refreshToken = (await cookies()).get('refresh_token')?.value;
   const isAuthenticated = Boolean(refreshToken);
 
@@ -82,7 +89,8 @@ async function CreatorPortfolioBody({ creatorId }: { creatorId: string }) {
 
   const preferredSlug = profile.username?.trim();
   if (preferredSlug && looksLikeUuid(creatorId) && creatorId !== preferredSlug) {
-    permanentRedirect(buildCreatorPortfolioPath(profile.id, preferredSlug));
+    const dest = buildCreatorPortfolioPath(profile.id, preferredSlug);
+    permanentRedirect(studioEmbed ? withPortfolioStudioEmbed(dest) : dest);
   }
 
   const locationLabel = formatLocationLabel(profile.locationCity, profile.locationCountry);
@@ -94,16 +102,20 @@ async function CreatorPortfolioBody({ creatorId }: { creatorId: string }) {
       isAuthenticated={isAuthenticated}
       locationLabel={locationLabel}
       portfolioPosts={profile.portfolioPosts}
+      studioEmbed={studioEmbed}
     />
   );
 }
 
 export default async function CreatorPortfolioPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ creatorId: string }>;
+  searchParams: Promise<{ embed?: string }>;
 }) {
   const { creatorId } = await params;
+  const { embed } = await searchParams;
   const cookieStore = await cookies();
   const initialDesign =
     designFromCookie(cookieStore, creatorId) ?? DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN;
@@ -114,7 +126,10 @@ export default async function CreatorPortfolioPage({
       key={creatorId}
       fallback={<PublicCreatorPortfolioSkeleton heroBannerDesign={initialDesign} />}
     >
-      <CreatorPortfolioBody creatorId={creatorId} />
+      <CreatorPortfolioBody
+        creatorId={creatorId}
+        studioEmbed={isPortfolioStudioEmbedParam(embed)}
+      />
     </Suspense>
   );
 }

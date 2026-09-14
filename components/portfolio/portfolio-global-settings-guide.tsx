@@ -46,10 +46,9 @@ export const GLOBAL_SETTINGS_SUB_SECTIONS: {
   },
   {
     id: 'typography',
-    label: 'Typography & title box',
-    description:
-      'Site-wide body font (all text), section title & subtitle styles, and optional title chrome box.',
-    tip: 'Font is only chosen in Police principale and applied everywhere.',
+    label: 'Police principale',
+    description: 'Unique typeface for the public portfolio, applied everywhere.',
+    tip: 'This font is applied across hero, titles, cards, contact, and footer.',
   },
 ];
 

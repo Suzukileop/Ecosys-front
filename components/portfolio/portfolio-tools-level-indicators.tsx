@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { resolveToolLevelPercent } from '@/components/creator/studio/creator-tool-logo-color';
 import type {
   PortfolioToolsBrandDirectoryLevelStyle,
@@ -98,14 +98,19 @@ export function ToolsLevelStatBar({
       aria-valuemax={4}
       aria-valuenow={filled}
       aria-label={`${toolName} proficiency`}
-      className={`flex w-14 gap-[3px] ${className ?? ''}`}
+      className={`flex w-14 max-w-[4.25rem] gap-[2px] ${className ?? ''}`}
     >
       {Array.from({ length: 4 }, (_, index) => (
         <span
           key={index}
           aria-hidden="true"
-          className="h-1.5 flex-1 rounded-[2px] transition-colors duration-200"
-          style={{ backgroundColor: index < filled ? fillColor : trackColor }}
+          className="h-[3px] flex-1 rounded-px transition-colors duration-200"
+          style={{
+            backgroundColor:
+              index < filled
+                ? fillColor
+                : `color-mix(in srgb, ${trackColor} 38%, transparent)`,
+          }}
         />
       ))}
     </div>
@@ -227,6 +232,13 @@ export function ToolsLevelSvgRingWithLabel({
   trackColor,
   size = 120,
   className,
+  strokeWidth,
+  opticalOffsetY,
+  labelColor,
+  labelClassName,
+  labelWrapperClassName,
+  fillCircleClassName,
+  trackCircleClassName,
 }: {
   label: string;
   percent: number;
@@ -234,27 +246,39 @@ export function ToolsLevelSvgRingWithLabel({
   trackColor: string;
   size?: number;
   className?: string;
+  /** Hairline override. Default keeps the original thicker ring. */
+  strokeWidth?: number;
+  /** Extra lift in px (negative = up) for optical centering. */
+  opticalOffsetY?: number;
+  /** Inner label fill. Defaults to the ring fill color. */
+  labelColor?: string;
+  labelClassName?: string;
+  labelWrapperClassName?: string;
+  fillCircleClassName?: string;
+  trackCircleClassName?: string;
 }) {
-  const stroke = Math.max(4, Math.round(size * 0.042));
+  const stroke = strokeWidth ?? Math.max(4, Math.round(size * 0.042));
   const radius = (size - stroke) / 2;
   const center = size / 2;
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference - (percent / 100) * circumference;
   const fontSize = Math.max(10, Math.round(size * 0.12));
   const useSmallText = label.length > 12;
+  const ink = labelColor ?? fillColor;
+  const editorialLabel = Boolean(labelClassName);
 
   return (
     <div
       className={`relative shrink-0 ${className ?? ''}`}
       style={{ width: size, height: size }}
       role="img"
-      aria-label={`${label}, ${percent}% proficiency`}
+      aria-label={label ? `${label}, ${percent}% proficiency` : `${percent}% proficiency`}
     >
       <svg
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
-        className="absolute inset-0"
+        className="absolute inset-0 overflow-visible"
         aria-hidden
       >
         <circle
@@ -264,6 +288,8 @@ export function ToolsLevelSvgRingWithLabel({
           fill="none"
           stroke={trackColor}
           strokeWidth={stroke}
+          strokeLinecap="round"
+          className={trackCircleClassName}
         />
         {percent > 0 ? (
           <circle
@@ -277,16 +303,26 @@ export function ToolsLevelSvgRingWithLabel({
             strokeDashoffset={dashOffset}
             strokeLinecap="round"
             transform={`rotate(-90 ${center} ${center})`}
-            className="transition-[stroke-dashoffset] duration-500"
+            className={fillCircleClassName ?? 'transition-[stroke-dashoffset] duration-500'}
+            data-circumference={circumference}
+            data-target-offset={dashOffset}
           />
         ) : null}
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center px-2">
+      <div
+        className={
+          labelWrapperClassName ?? 'absolute inset-0 flex items-center justify-center px-2'
+        }
+      >
         <span
-          className={`max-w-full truncate text-center font-semibold leading-tight ${useSmallText ? 'text-xs' : ''}`}
+          className={
+            labelClassName ??
+            `max-w-full truncate text-center font-semibold leading-tight ${useSmallText ? 'text-xs' : ''}`
+          }
           style={{
-            color: fillColor,
-            fontSize: useSmallText ? undefined : fontSize,
+            color: ink,
+            fontSize: editorialLabel || useSmallText ? undefined : fontSize,
+            transform: opticalOffsetY != null ? `translateY(${opticalOffsetY}px)` : undefined,
           }}
         >
           {label}
@@ -372,6 +408,7 @@ export function ToolsLevelProgressBar({
   barSize = 'small',
   barHeightVariant = 'default',
   className,
+  fillClassName,
 }: {
   level: ProfileStrengthToolLevel | null | undefined;
   toolName: string;
@@ -383,6 +420,8 @@ export function ToolsLevelProgressBar({
   barSize?: PortfolioToolsLevelBarSize;
   barHeightVariant?: 'default' | 'thin';
   className?: string;
+  /** Applied to the fill (or filled segments). Defaults to current look. */
+  fillClassName?: string;
 }) {
   const filled = resolveLevelSegmentCount(level);
   if (!level || filled === 0) return null;
@@ -390,6 +429,7 @@ export function ToolsLevelProgressBar({
   const widthPercent = resolveProgressBarPercent(level, percent);
   const radiusClass = progressBarRadiusClass(barStyle);
   const heightClass = toolsLevelBarHeightClass(barSize, barHeightVariant);
+  const fillClass = fillClassName?.trim() ? ` ${fillClassName.trim()}` : '';
 
   if (barStyle === 'segments') {
     const filledSegments = resolveProgressBarFilledSegments(widthPercent);
@@ -407,7 +447,9 @@ export function ToolsLevelProgressBar({
           <span
             key={index}
             aria-hidden="true"
-            className="h-full min-w-0 flex-1 rounded-full transition-colors duration-200"
+            className={`h-full min-w-0 flex-1 rounded-full transition-colors duration-200${
+              index < filledSegments ? fillClass : ''
+            }`}
             style={{
               backgroundColor: index < filledSegments ? fillColor : trackColor,
             }}
@@ -428,7 +470,7 @@ export function ToolsLevelProgressBar({
       style={{ backgroundColor: trackColor }}
     >
       <div
-        className={`h-full transition-[width] duration-300 ${radiusClass}`}
+        className={`h-full transition-[width] duration-300 ${radiusClass}${fillClass}`}
         style={{
           width: `${widthPercent}%`,
           background: progressBarFillBackground(fillColor, barStyle),
@@ -472,7 +514,11 @@ export function resolveLevelDotCount(level: ProfileStrengthToolLevel | null | un
   return Math.min(5, Math.max(1, Math.round(percent / 20)));
 }
 
-/** 5-star rating — no text level label. */
+/** Geometric 5-point star — hairline strokes are scoped via `.pf-stack-stars-*`. */
+const LEVEL_STAR_PATH =
+  'M12 2.12l2.62 6.48 7.08.62-5.4 4.72 1.62 6.94L12 17.46 6.08 20.88l1.62-6.94-5.4-4.72 7.08-.62z';
+
+/** 5-star rating — no text level label. Vector glyphs; `className` stays backward-compatible. */
 export function ToolsLevelStarRating({
   level,
   toolName,
@@ -496,18 +542,33 @@ export function ToolsLevelStarRating({
       aria-valuemax={5}
       aria-valuenow={filled}
       aria-label={`${toolName} proficiency`}
-      className={`flex items-center gap-0.5 text-sm leading-none sm:text-base ${className ?? ''}`}
+      className={`inline-flex items-center gap-0.5 text-sm leading-none sm:text-base ${className ?? ''}`}
+      data-pf-no-color-transition=""
+      style={
+        {
+          '--pf-stack-stars-fill': fillColor,
+          '--pf-stack-stars-track': trackColor,
+        } as CSSProperties
+      }
     >
-      {Array.from({ length: 5 }, (_, index) => (
-        <span
-          key={index}
-          aria-hidden="true"
-          className="transition-colors duration-200"
-          style={{ color: index < filled ? fillColor : trackColor }}
-        >
-          {index < filled ? '★' : '☆'}
-        </span>
-      ))}
+      {Array.from({ length: 5 }, (_, index) => {
+        const active = index < filled;
+        return (
+          <svg
+            key={index}
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className={
+              active
+                ? 'pf-stack-stars-glyph pf-stack-stars-glyph--filled'
+                : 'pf-stack-stars-glyph pf-stack-stars-glyph--empty'
+            }
+            data-pf-no-color-transition=""
+          >
+            <path d={LEVEL_STAR_PATH} />
+          </svg>
+        );
+      })}
     </div>
   );
 }

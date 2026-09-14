@@ -135,7 +135,7 @@ export const PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS: {
     value: 'swiss-editorial',
     label: 'Swiss editorial',
     description:
-      'Papier éditorial : statement + portrait, rail Currently / Specialized in, signature géante.',
+      'Éditorial équilibré : statement à gauche, portrait dans le tiers droit, signature pleine largeur en calque.',
   },
   {
     value: 'portrait-identity',
@@ -488,9 +488,19 @@ export function resolveHeroAvailabilityValue(
   return availableLabel.trim() || 'Available for new projects';
 }
 
+/**
+ * Display-only polish for the recurring “scientist” misspelling in hero titles.
+ * Does not rewrite the stored profile value.
+ */
+export function polishHeroSpecialtyCopy(value: string): string {
+  return value.replace(/\bscientis\b/gi, (match) =>
+    match[0] === 'S' ? 'Scientist' : 'scientist'
+  );
+}
+
 export function resolveHeroSpecialtyValue(specialite?: string | null): string {
   const value = specialite?.trim();
-  return value || 'UI/UX, Websites, Branding';
+  return polishHeroSpecialtyCopy(value || 'UI/UX, Websites, Branding');
 }
 
 /** Tailwind class for hero media when noir & blanc is enabled. */

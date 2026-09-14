@@ -10,6 +10,8 @@ export type PortfolioSettingsSearchEntry = {
   keywords: string[];
 };
 
+let searchEntrySeq = 0;
+
 function entry(
   sectionId: PortfolioSettingsSectionId,
   label: string,
@@ -18,8 +20,9 @@ function entry(
 ): PortfolioSettingsSearchEntry {
   const sectionLabel =
     PORTFOLIO_SETTINGS_SECTIONS.find((section) => section.id === sectionId)?.label ?? sectionId;
+  searchEntrySeq += 1;
   return {
-    id: subSection ? `${sectionId}:${subSection}:${label}` : `${sectionId}:${label}`,
+    id: `${sectionId}:${subSection ?? '_'}:${label}:${searchEntrySeq}`,
     sectionId,
     subSection,
     label,
@@ -28,10 +31,20 @@ function entry(
   };
 }
 
+const SECTION_SEARCH_KEYWORDS: Partial<Record<PortfolioSettingsSectionId, string[]>> = {
+  stack: ['tech', 'pile', 'workflow', 'section'],
+  tools: ['outils', 'workflow', 'section'],
+  info: ['profile', 'details', 'about me', 'about'],
+};
+
 /** Searchable settings destinations (sections, subsections, and common controls). */
 export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ...PORTFOLIO_SETTINGS_SECTIONS.map((section) =>
-    entry(section.id, section.label, [section.description, section.label])
+    entry(section.id, section.label, [
+      section.description,
+      section.label,
+      ...(SECTION_SEARCH_KEYWORDS[section.id] ?? []),
+    ])
   ),
 
   // Global
@@ -120,33 +133,20 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ),
   entry(
     'theme',
-    'Typography & title box',
-    [
-      'typography',
-      'font',
-      'subtitle',
-      'chrome',
-      'title box',
-      'typo',
-      'police',
-      'body font',
-      'maison neue',
-      'plus jakarta',
-      'geist',
-      'caractères',
-    ],
-    'typography'
-  ),
-  entry(
-    'theme',
     'Police principale',
     [
+      'typography',
+      'typography & title box',
+      'title box',
+      'font',
+      'typo',
+      'police',
+      'police principale',
       'body font',
       'site font',
-      'police',
+      'maison neue',
       'plus jakarta',
       'geist',
-      'maison neue',
       'montserrat',
       'raleway',
       'roboto',
@@ -399,120 +399,9 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ),
   entry(
     'hero',
-    'Use color palette (Fond)',
-    ['palette', 'manual', 'fond', 'background', 'manuel'],
-    'background'
-  ),
-  entry(
-    'hero',
-    'Use color palette (elements)',
-    [
-      'palette',
-      'manual',
-      'manuel',
-      'tokens',
-      'titre',
-      'description',
-      'cta',
-      'outils',
-      'portrait',
-      'stats',
-      'disponibilité',
-      'motifs',
-    ],
-    'title'
-  ),
-  entry(
-    'hero',
     'Screen division',
     ['division', 'layout', 'flip', 'horizontal', 'vertical', 'stack', 'copy', 'visual', 'gauche', 'droite'],
     'general'
-  ),
-  entry(
-    'hero',
-    'Palette',
-    ['palette', 'color', 'couleur', 'tokens', 'semantic', 'bound colors'],
-    'palette'
-  ),
-  entry('hero', 'Background', ['fill', 'gradient', 'opacity', 'fond', 'arrière-plan'], 'background'),
-  entry(
-    'hero',
-    'Motifs',
-    [
-      'motif',
-      'motifs',
-      'pattern',
-      'patterns',
-      'shape',
-      'shapes',
-      'geometric',
-      'background pattern',
-      'left',
-      'right',
-      'size',
-      'placement',
-      'responsive',
-      'mobile',
-      'desktop',
-    ],
-    'motifs'
-  ),
-  entry(
-    'hero',
-    'Availability badge',
-    [
-      'availability',
-      'badge',
-      'disponible',
-      'disponibilité',
-      'placement',
-      'mobile',
-      'tablet',
-      'desktop',
-      'top-center',
-      'top left',
-      'top right',
-      'phrase',
-      'dot',
-      'typography',
-    ],
-    'availability'
-  ),
-  entry(
-    'hero',
-    'Titre',
-    ['headline', 'title', 'prefix', 'accent', 'font', 'typography', 'titre', 'préfixe', 'free placement', 'alignment', 'desktop alignment', 'alignement'],
-    'title'
-  ),
-  entry(
-    'hero',
-    'Description',
-    ['description', 'pitch', 'paragraph', 'typography', 'alignment', 'desktop alignment', 'alignement'],
-    'description'
-  ),
-  entry(
-    'hero',
-    'Outils',
-    ['tools', 'tools label', 'preferred tools', 'outils', 'label', 'caption', 'icon', 'chip', 'alignment', 'desktop alignment', 'alignement'],
-    'tools'
-  ),
-  entry(
-    'hero',
-    'CTA',
-    ['contact button', 'cta', 'design', 'placement', 'surface', 'typography', 'bouton', 'alignment', 'desktop alignment', 'alignement'],
-    'cta'
-  ),
-  entry(
-    'hero',
-    'Portrait',
-    ['photo', 'image', 'frame', 'creator name', 'portrait', 'typography', 'status dot', 'blinking dot', 'point clignotant'],
-    'portrait'
-  ),
-  entry(
-    'hero',
-    'Stat cards',
-    ['stats', 'years', 'projects', 'location', 'badges', 'cartes', 'typography', 'accent'],
-    'stats'
   ),
 
   // Portfolio / work
@@ -642,7 +531,6 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   entry('work', 'Background', ['fill', 'gradient', 'opacity', 'fond'], 'background'),
 
   // Stack
-  entry('stack', 'Stack', ['stack', 'tech', 'pile', 'workflow', 'section']),
   entry('stack', 'General', ['visibility', 'show stack', 'workflow rail', 'titre', 'sous-titre', 'alignement'], 'general'),
   entry('stack', 'Alignement titre', ['alignement', 'gauche', 'centre', 'droite', 'titre', 'header'], 'general'),
   entry('stack', 'Taille du titre', ['taille', 'titre', 'font', 'petite', 'moyenne', 'grande'], 'general'),
@@ -655,7 +543,6 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   entry('stack', 'Background', ['fill', 'gradient', 'fond'], 'background'),
 
   // Tools
-  entry('tools', 'Tools', ['tools', 'outils', 'workflow', 'section']),
   entry('tools', 'General', ['visibility', 'show tools', 'design', 'workflow rail', 'brand cards', 'brand index', 'brand row', 'brand float', 'titre', 'sous-titre', 'alignement'], 'general'),
   entry('tools', 'Alignement titre', ['alignement', 'gauche', 'centre', 'droite', 'titre', 'header'], 'general'),
   entry('tools', 'Sous-titre Tools', ['sous-titre', 'subtitle', 'aucun', 'personnalisé'], 'general'),
@@ -697,12 +584,6 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
     ['palette', 'manual', 'manuel', 'tokens', 'couleurs', 'désactiver palette'],
     'general'
   ),
-  entry(
-    'services',
-    'Palette',
-    ['palette', 'color', 'couleur', 'tokens', 'semantic', 'bound colors'],
-    'palette'
-  ),
   entry('services', 'General', ['visibility', 'show services', 'response time'], 'general'),
   entry('services', 'Header', ['title', 'subtitle', 'titre'], 'header'),
   entry(
@@ -743,25 +624,7 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
     ],
     'cards'
   ),
-  entry('services', 'Titre', ['title', 'service title', 'card title', 'typography', 'titre'], 'title'),
-  entry('services', 'Description', ['description', 'body', 'typography', 'texte'], 'description'),
-  entry(
-    'services',
-    'Tasks',
-    ['tasks', 'tâches', 'checklist', 'deliverables', 'typography', 'show tasks', 'bullet', 'puce', 'marker'],
-    'tasks'
-  ),
-  entry('services', 'Prix', ['price', 'prix', 'placement', 'typography', 'currency', 'devise', 'euro', 'dollar', 'monnaie'], 'price'),
-  entry('services', 'Livraison', ['delivery', 'livraison', 'typography'], 'delivery'),
-  entry(
-    'services',
-    'CTA',
-    ['commander', 'cta', 'bouton', 'button', 'order', 'placement', 'typography'],
-    'cta'
-  ),
-  entry('services', 'Background', ['fill', 'gradient', 'fond'], 'background'),
 
-  entry('info', 'Info', ['info', 'profile', 'details', 'about me', 'about'], undefined),
   entry('info', 'General', ['visibility', 'title', 'subtitle', 'about me', 'languages', 'level', 'étoiles', 'stars', 'niveau'], 'general'),
   entry(
     'info',
@@ -814,11 +677,89 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
       'tasks',
       'tasks display',
       'responsibilities',
-      'checkmarks',
-      'chips',
-      'summary',
+      'engineering grid',
+      'cinematic timeline',
+      'editorial dash',
+      'lined stack',
+      'accordion stack',
+      'architectural index',
+      'index structural',
+      'sticky vertical',
+      'espacement sticky',
+      'tâches',
+      'arrow',
+      'flèche',
+      'link arrow',
+      '↗',
     ],
     'general'
+  ),
+  entry(
+    'experience',
+    'Header',
+    [
+      'header',
+      'header designs',
+      'accent years',
+      'centered',
+      'serif lead',
+      'title stack',
+      'billboard',
+      'marquee',
+      'split heading',
+      'masthead',
+      'accent title',
+      'editorial',
+      'milestone',
+      'table',
+      'reel',
+      'gallery',
+      'spotlight',
+      'loft',
+      'press',
+      'legacy',
+      'badge',
+      'font size',
+      'radius',
+      'advanced',
+      'centered layout',
+      'title',
+      'sub-title',
+      'subtitle',
+      'alignment',
+      'left',
+      'right',
+      'center',
+      'weight',
+      'opacity',
+      'muted',
+      'monumental',
+      'compact',
+      'max width',
+      'line height',
+      'aery',
+      'divider',
+      'ghost',
+      'serif lead configuration',
+      'label',
+      'italic',
+      'letter spacing',
+      'tracking',
+      'ink',
+      'principal',
+      'secondaire',
+      'motion',
+      'animation',
+      'scroll',
+      'marquee configuration',
+      'outline',
+      'fill',
+      'speed',
+      'edge fade',
+      'separator',
+      'velocity',
+    ],
+    'header'
   ),
   entry(
     'experience',
@@ -837,6 +778,14 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
       'webflow',
       'layout',
       'experience design',
+      'asymmetric',
+      'asymmetric split',
+      'kinetic',
+      'kinetic typo',
+      'split',
+      'typo',
+      'brutalist',
+      'nouveau',
       'card gap',
       'gap',
       'spacing',
@@ -870,14 +819,9 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
     'general'
   ),
   entry('faq', 'General', ['visibility', 'accordion', 'spacing'], 'general'),
-  entry('faq', 'Palette', ['tokens', 'bindings', 'semantic colors'], 'palette'),
   entry('faq', 'Header', ['title', 'subtitle'], 'header'),
-  entry('faq', 'Frame', ['card', 'border', 'radius'], 'frame'),
   entry('faq', 'Items', ['questions', 'answers', 'icons'], 'items'),
-  entry('faq', 'Style question', ['question', 'typography'], 'styleQuestion'),
-  entry('faq', 'Style answer', ['answer', 'typography'], 'styleAnswer'),
-  entry('faq', 'Style number', ['number', 'typography'], 'styleNumber'),
-  entry('faq', 'Background', ['fill', 'gradient', 'fond'], 'background'),
+  entry('faq', 'Frame', ['card', 'border', 'radius'], 'frame'),
 
   // Contact
   entry(
@@ -1016,5 +960,9 @@ export function searchPortfolioSettings(
   }))
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label))
+    .filter((item, index, list) => {
+      const dest = `${item.sectionId}:${item.subSection ?? '_'}:${item.label}`;
+      return list.findIndex((other) => `${other.sectionId}:${other.subSection ?? '_'}:${other.label}` === dest) === index;
+    })
     .slice(0, limit);
 }

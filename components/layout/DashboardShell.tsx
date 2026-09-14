@@ -147,6 +147,7 @@ export function DashboardShell({
     contentCreatorsPattern;
   const compactContentTop = isMarketplaceCreatorProfilePath(pathname);
   const discussionsLayout = pathname.startsWith('/dashboard/discussions');
+  const portfolioWorkspace = pathname.startsWith('/dashboard/portfolio');
   const fillMainLayout = discussionsLayout || myProductPattern || myServicePattern;
 
   // Only redirect to /login when the session is definitively gone.
@@ -249,6 +250,8 @@ export function DashboardShell({
           className={`relative z-10 min-w-0 flex-1 ${
             discussionsLayout
               ? 'flex min-h-0 flex-col overflow-hidden p-0'
+              : portfolioWorkspace
+              ? 'overflow-x-clip px-0 pb-0 pt-4'
               : fillMainLayout
               ? 'flex min-h-0 flex-col overflow-hidden px-6 pb-4 pt-4'
               : `overflow-x-clip pb-6 ${compactContentTop ? 'pt-2' : 'pt-6'} ${

@@ -3,7 +3,16 @@
 import Link from 'next/link';
 import { Fragment, createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type FocusEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import {
+  AnimatePresence,
+  motion,
+  useMotionTemplate,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from 'framer-motion';
 import {
   normalizeSocialPlatformKey,
   SocialPlatformIcon,
@@ -268,6 +277,10 @@ import {
   DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
   DEFAULT_EXPERIENCE_YEARS_COLOR,
   ensureExperienceInkContrast,
+  CENTERED_LEAD_LINE_HEIGHT,
+  CENTERED_LEAD_OPACITY,
+  CENTERED_LEAD_WEIGHT,
+  CENTERED_LEAD_WIDTH,
   experienceAccentColor,
   experienceChipChromeStyle,
   experienceSoftChipChromeStyle,
@@ -319,7 +332,14 @@ import {
   experienceYearsClass,
   experienceYearsHighlightStyle,
   experienceYearsStyle,
+  resolveAccentYearsCopy,
+  resolveAccentYearsBadgeColor,
+  accentYearsCssVars,
+  accentYearsGridAnchorEnabled,
   experienceCardsBorderRadiusClass,
+  experienceCardsCardWidthClass,
+  experienceCardsElementSpacingClasses,
+  resolveExperienceCardsVerticalGapPx,
   type PortfolioExperienceCardsBorderRadius,
   experienceLegacyThumbnailAspectRatio,
   experienceLegacyThumbnailMaxWidth,
@@ -330,8 +350,16 @@ import {
   type PortfolioExperienceLegacySide,
   experienceDuotoneThumbnailAspectRatio,
   experienceDuotoneThumbnailMaxHeight,
+  experienceDuotoneStickyLeftGapClass,
+  experienceDuotoneStickyEditorialSpacing,
+  experienceDuotoneScrollTitleThumbGapClass,
+  experienceDuotoneScrollEditorialSpacing,
+  experienceDuotoneScrollRoleStackClass,
+  experienceDuotoneStickySectionVh,
   type PortfolioExperienceDuotoneThumbnailEffect,
   type PortfolioExperienceDuotoneThumbnailHeight,
+  type PortfolioExperienceDuotoneStickyVerticalGap,
+  type PortfolioExperienceDuotoneRepoCtaMode,
   experienceCardsGridGapStyle,
   isExperienceDetailsElement,
   isExperienceStoryElement,
@@ -340,17 +368,29 @@ import {
   normalizeExperienceElementZones,
   resolveExperienceBlockLabel,
   resolveExperienceItemsPerRow,
+  resolveExperienceRepoLinkStyle,
+  resolveCenteredHeaderCopy,
   resolveExperienceYearsTemplate,
+  resolveSerifLeadCopy,
+  resolveSerifLeadInkColor,
+  splitSerifLeadLines,
+  SERIF_LEAD_LABEL_OPACITY,
+  SERIF_LEAD_LINE_HEIGHT,
+  SERIF_LEAD_TRACKING,
+  SERIF_LEAD_WEIGHT,
+  SERIF_LEAD_WIDTH,
   type PortfolioExperienceAsidePlacement,
   type PortfolioExperienceElementId,
   type PortfolioExperienceElementStyles,
   type PortfolioExperienceElementZones,
+  type PortfolioExperienceCenteredMaxWidth,
   type PortfolioExperiencePresentationSettings,
   type PortfolioExperiencePeriodDesign,
   type PortfolioExperienceTasksDisplay,
   type PortfolioExperienceProofLinkStyle,
   type PortfolioExperienceRepoLinkStyle,
   type PortfolioExperienceReelStatusStyle,
+  type PortfolioExperienceReelScrollMotion,
   type PortfolioExperienceDuotoneSlideNavStyle,
   type PortfolioExperienceGalleryThumbnailFit,
   type PortfolioExperienceGalleryBigTitleStyle,
@@ -360,6 +400,7 @@ import {
   type PortfolioExperienceItemGap,
   type PortfolioExperienceLoftThumbnailFit,
   type PortfolioExperienceLoftThumbnailRadius,
+  type PortfolioExperienceLoftHoverEffect,
   experienceLoftThumbnailRadiusClass,
   type PortfolioExperienceLoftColumns,
   type PortfolioExperienceProofZone,
@@ -650,7 +691,10 @@ import {
   sectionBackgroundStyle,
   DEFAULT_SECTION_BACKGROUND_COLOR,
 } from '@/components/portfolio/portfolio-section-background-settings';
-import { PortfolioLinkButton } from '@/components/portfolio/portfolio-link-buttons';
+import {
+  experienceLinkButtonPalette,
+  PortfolioLinkButton,
+} from '@/components/portfolio/portfolio-link-buttons';
 import {
   DEFAULT_CONTENT_GUTTER,
   PORTFOLIO_EDITORIAL_GUTTER_X,
@@ -15206,6 +15250,31 @@ export function EditorialExperienceYears({
     marginInline: 0,
   };
 
+  const highlightStyle = isEditorial
+    ? { backgroundColor: resolveAccentYearsBadgeColor(presentation), color: '#ffffff' }
+    : isMilestone
+      ? { color: yearsStyle.color }
+      : experienceYearsHighlightStyle(presentation);
+
+  if (isEditorial) {
+    const copy = resolveAccentYearsCopy(years, presentation);
+    return (
+      <p className={yearsClass} style={{ ...yearsStyle, ...accentYearsCssVars(presentation) }}>
+        {copy.badge ? (
+          <span className="pf-exp-accent-years-badge" style={highlightStyle}>
+            {copy.badge}
+          </span>
+        ) : null}
+        {copy.lead ? (
+          <>
+            {copy.badge ? ' ' : null}
+            {copy.lead}
+          </>
+        ) : null}
+      </p>
+    );
+  }
+
   if (markerIndex === -1) {
     return (
       <p className={yearsClass} style={yearsStyle}>
@@ -15216,47 +15285,310 @@ export function EditorialExperienceYears({
 
   const before = template.slice(0, markerIndex);
   const after = template.slice(markerIndex + marker.length);
-  // Highlight "{years} years" / "{years}+ years" as one bright phrase on editorial.
-  const yearsPhraseMatch = isEditorial ? after.match(/^(\+?\s*years?\b)/i) : null;
-  const highlightTail = yearsPhraseMatch?.[1] ?? '';
-  const restAfter = after.slice(highlightTail.length);
-  const highlightStyle = isEditorial
-    ? { backgroundColor: experienceAccentColor(presentation.accentColor), color: '#ffffff' }
-    : isMilestone
-      ? { color: yearsStyle.color }
-      : experienceYearsHighlightStyle(presentation);
   const yearsNode =
-    presentation.yearsBoldYears && !isEditorial && !isMilestone ? (
+    presentation.yearsBoldYears && !isMilestone ? (
       <span className="font-bold" style={highlightStyle}>
         {years}
-        {highlightTail}
       </span>
     ) : (
-      <span
-        className={isEditorial ? 'inline-block rounded-md px-2 py-0.5 font-bold' : undefined}
-        style={highlightStyle}
-      >
-        {years}
-        {highlightTail}
-      </span>
+      <span style={highlightStyle}>{years}</span>
     );
 
   return (
     <p className={yearsClass} style={yearsStyle}>
       {before}
       {yearsNode}
-      {restAfter}
+      {after}
     </p>
   );
 }
 
+/** Shared with Accent years so the lead and the 2022 column share one left edge. */
+const MILESTONE_ENTRY_GRID_CLASS =
+  'grid w-full grid-cols-1 sm:grid-cols-[7.5rem_1.5rem_minmax(0,1fr)] sm:items-start sm:gap-x-6 lg:grid-cols-[8.5rem_1.75rem_minmax(0,1fr)] lg:gap-x-8';
+
+/**
+ * Experience → Header design for Editorial: years lead with accent highlight.
+ * Mounted in a zone above the design-owned header when `headerDesign === 'editorial'`.
+ */
+export function ExperienceEditorialHeader({
+  years,
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+}: {
+  years: number;
+  presentation?: PortfolioExperiencePresentationSettings;
+}) {
+  const itemDesign = presentation.experienceDesign;
+  const yearsLead = (
+    <EditorialExperienceYears
+      years={years}
+      presentation={{
+        ...presentation,
+        experienceDesign: 'editorial',
+        yearsAlignment: 'left',
+      }}
+    />
+  );
+
+  return (
+    <div
+      className={experienceListShellClass(
+        presentation.listMaxWidth,
+        presentation.listPlacement
+      )}
+    >
+      {itemDesign === 'milestone' && accentYearsGridAnchorEnabled(presentation) ? (
+        <div className={MILESTONE_ENTRY_GRID_CLASS}>
+          <div className="min-w-0 sm:col-span-3">{yearsLead}</div>
+        </div>
+      ) : (
+        yearsLead
+      )}
+    </div>
+  );
+}
+
+function renderCenteredYearsLead(
+  text: string,
+  width: PortfolioExperienceCenteredMaxWidth = 'balanced'
+): ReactNode {
+  const trimmed = text.trim();
+  if (width === 'wide') return trimmed;
+
+  const fieldTail = trimmed.match(/^(.*?)\s+(in my field\.?)$/i);
+  if (width === 'narrow') {
+    if (fieldTail?.[1] && fieldTail[2]) {
+      const head = fieldTail[1];
+      const handsOn = head.match(/^(.*?)\s+(hands-on experience)$/i);
+      if (handsOn?.[1] && handsOn[2]) {
+        return (
+          <>
+            {handsOn[1]}
+            <br />
+            {handsOn[2]}
+            <br />
+            {fieldTail[2]}
+          </>
+        );
+      }
+      const words = head.split(/\s+/);
+      const cut = Math.max(1, Math.ceil(words.length / 2));
+      return (
+        <>
+          {words.slice(0, cut).join(' ')}
+          <br />
+          {words.slice(cut).join(' ')}
+          <br />
+          {fieldTail[2]}
+        </>
+      );
+    }
+    const words = trimmed.split(/\s+/);
+    if (words.length < 5) return trimmed;
+    const first = Math.ceil(words.length / 3);
+    const second = Math.ceil((words.length * 2) / 3);
+    return (
+      <>
+        {words.slice(0, first).join(' ')}
+        <br />
+        {words.slice(first, second).join(' ')}
+        <br />
+        {words.slice(second).join(' ')}
+      </>
+    );
+  }
+
+  if (fieldTail?.[1] && fieldTail[2]) {
+    return (
+      <>
+        {fieldTail[1]}
+        <br />
+        {fieldTail[2]}
+      </>
+    );
+  }
+  const words = trimmed.split(/\s+/);
+  if (words.length < 6) return trimmed;
+  return (
+    <>
+      {words.slice(0, -3).join(' ')}
+      <br />
+      {words.slice(-3).join(' ')}
+    </>
+  );
+}
+
+/**
+ * Experience → Header design for Milestone: centered section title + years line underneath.
+ * Mounted in a zone above the design-owned sticky header when `headerDesign === 'milestone'`.
+ */
+export function ExperienceMilestoneHeader({
+  sectionTitle,
+  years,
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+}: {
+  sectionTitle: string;
+  sectionSubtitle?: string;
+  years?: number | null;
+  presentation?: PortfolioExperiencePresentationSettings;
+}) {
+  const headerRef = useRef<HTMLElement>(null);
+  const parallaxRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const leadRef = useRef<HTMLParagraphElement>(null);
+  const introPlayedRef = useRef(false);
+  const reduceMotion = useReducedMotion();
+
+  const isDark = presentation.activeColorMode !== 'light';
+  const colorMode = resolveExperienceColorMode(presentation);
+  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
+  const titleColor = ensureExperienceInkContrast(
+    presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_TITLE_COLOR,
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+  );
+  const { title: displayTitle, lead: yearsLead } = resolveCenteredHeaderCopy(
+    years,
+    sectionTitle,
+    presentation
+  );
+  const hasLead = Boolean(yearsLead);
+
+  const leadWeight = presentation.centeredLeadWeight ?? 'light';
+  const leadOpacity = presentation.centeredLeadOpacity ?? 'balanced';
+  const scale = presentation.centeredScale ?? 'monumental';
+  const maxWidth = presentation.centeredMaxWidth ?? 'balanced';
+  const lineHeight = presentation.centeredLineHeight ?? 'aery';
+  const align = presentation.centeredAlign ?? 'center';
+  const divider = presentation.centeredDivider ?? 'none';
+  const dividerOpacity = presentation.centeredDividerOpacity ?? 'ghost';
+  const leadAlpha = CENTERED_LEAD_OPACITY[leadOpacity] ?? CENTERED_LEAD_OPACITY.balanced;
+  const accent = experienceAccentColor(presentation.accentColor);
+  const dividerColor =
+    dividerOpacity === 'accent'
+      ? accent
+      : dividerOpacity === 'subtle'
+        ? `color-mix(in srgb, ${titleColor} 15%, transparent)`
+        : `color-mix(in srgb, ${titleColor} 5%, transparent)`;
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    const header = headerRef.current;
+    const title = titleRef.current;
+    const parallax = parallaxRef.current;
+    if (!header || !title || !parallax) return;
+
+    gsap.registerPlugin(ScrollTrigger);
+    const reduced = reduceMotion === true;
+    const lead = leadRef.current;
+    const scroller = getScrollParent(header) ?? undefined;
+
+    const ctx = gsap.context(() => {
+      const bindScrollMotion = () => {
+        const fade = gsap.timeline({
+          scrollTrigger: {
+            trigger: header,
+            scroller,
+            start: 'top 40%',
+            end: 'top 8%',
+            scrub: true,
+            invalidateOnRefresh: true,
+          },
+        });
+        fade.fromTo(parallax, { y: 0 }, { y: -44, ease: 'none' }, 0);
+        if (lead) fade.fromTo(lead, { opacity: 1 }, { opacity: 0, ease: 'none' }, 0);
+      };
+
+      if (introPlayedRef.current || reduced) {
+        gsap.set(title, { yPercent: 0 });
+        if (lead) gsap.set(lead, { opacity: 1 });
+        introPlayedRef.current = true;
+        bindScrollMotion();
+        return;
+      }
+
+      introPlayedRef.current = true;
+      gsap.set(title, { yPercent: 110 });
+      if (lead) gsap.set(lead, { opacity: 0 });
+
+      const intro = gsap.timeline({
+        defaults: { overwrite: true },
+        onComplete: bindScrollMotion,
+      });
+      intro.to(title, { yPercent: 0, duration: 0.95, ease: 'power3.out' });
+      if (lead) {
+        intro.to(lead, { opacity: 1, duration: 0.9, ease: 'power2.out' }, 0.32);
+      }
+    }, header);
+
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+    return () => {
+      window.clearTimeout(refreshId);
+      ctx.revert();
+      if (!header.isConnected) introPlayedRef.current = false;
+    };
+  }, [hasLead, reduceMotion]);
+
+  useLayoutEffect(() => {
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 40);
+    return () => window.clearTimeout(refreshId);
+  }, [divider, lineHeight, maxWidth, scale]);
+
+  return (
+    <header
+      ref={headerRef}
+      className="pf-exp-centered-header w-full"
+      data-scale={scale}
+      data-align={align}
+      data-divider={divider}
+      style={
+        {
+          '--pf-exp-centered-lead-weight': String(CENTERED_LEAD_WEIGHT[leadWeight]),
+          '--pf-exp-centered-lead-width': CENTERED_LEAD_WIDTH[maxWidth],
+          '--pf-exp-centered-lead-lh': String(CENTERED_LEAD_LINE_HEIGHT[lineHeight]),
+          '--pf-exp-centered-divider-color': dividerColor,
+        } as CSSProperties
+      }
+    >
+      <div ref={parallaxRef} className="pf-exp-centered-parallax">
+        <div className="pf-exp-centered-title-mask">
+          <h2 ref={titleRef} className="pf-exp-centered-title" style={{ color: titleColor }}>
+            {displayTitle}
+          </h2>
+        </div>
+      </div>
+      {yearsLead ? (
+        <p
+          ref={leadRef}
+          className="pf-exp-centered-lead"
+          style={{
+            color: `color-mix(in srgb, ${titleColor} ${Math.round(leadAlpha * 100)}%, transparent)`,
+          }}
+        >
+          {renderCenteredYearsLead(yearsLead, maxWidth)}
+        </p>
+      ) : null}
+      {divider !== 'none' ? (
+        <div
+          className="pf-exp-centered-divider"
+          data-style={divider}
+          aria-hidden
+        />
+      ) : null}
+    </header>
+  );
+}
+
+/** Shared Award-level task presentations — synced from General → Tasks display
+ * across every Experience design. */
 function ExperienceTasksDisplay({
   tasks,
-  display = 'arrows',
+  display = 'editorial-dash',
   bodyColor,
   mutedColor,
   isDark,
-  label = 'Responsibilities',
+  label = '',
   size = 'md',
 }: {
   tasks: string[];
@@ -15266,160 +15598,198 @@ function ExperienceTasksDisplay({
   isDark: boolean;
   label?: string;
   size?: 'md' | 'lg';
+  /** Kept for callers that still pass entry tools. */
+  tools?: string[];
 }) {
-  const [summaryOpen, setSummaryOpen] = useState(false);
-  const reduceMotion = useReducedMotion();
-  const motionDisabled = reduceMotion === true;
-
   if (tasks.length === 0) return null;
 
   const textClass =
     size === 'lg'
       ? 'text-[0.98rem] leading-relaxed sm:text-[1.05rem]'
-      : 'text-base leading-relaxed sm:text-[1.0625rem]';
-  const labelClass =
-    size === 'lg'
-      ? 'mb-2.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]'
-      : 'mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]';
-  const chipStyle: CSSProperties = isDark
-    ? {
-        borderColor: 'rgba(255,255,255,0.16)',
-        backgroundColor: 'transparent',
-        color: bodyColor,
+      : 'text-[0.95rem] leading-relaxed sm:text-[1.02rem]';
+  const hoverWash = isDark ? 'rgba(255,255,255,0.045)' : 'rgba(0,0,0,0.035)';
+  const railColor = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
+  const dashIdle = isDark ? 'rgb(113 113 122)' : 'rgb(161 161 170)';
+  const dashHover = isDark ? 'rgb(244 244 245)' : 'rgb(39 39 42)';
+  const activeInk = isDark ? '#ffffff' : bodyColor;
+  const indexInk = isDark
+    ? 'color-mix(in srgb, #ffffff 40%, transparent)'
+    : 'color-mix(in srgb, #171717 40%, transparent)';
+
+  const sectionLabel = label.trim() ? (
+    <p
+      className={
+        size === 'lg'
+          ? 'mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]'
+          : 'mb-2.5 text-[0.7rem] font-semibold uppercase tracking-[0.18em]'
       }
-    : {
-        borderColor: 'rgba(0,0,0,0.14)',
-        backgroundColor: 'transparent',
-        color: bodyColor,
-      };
+      style={{ color: mutedColor }}
+    >
+      {label}
+    </p>
+  ) : null;
 
-  const sectionLabel =
-    !label.trim() || display === 'arrows' || display === 'summary' ? null : (
-      <p className={labelClass} style={{ color: mutedColor }}>
-        {label}
-      </p>
-    );
-
-  if (display === 'chips') {
+  if (display === 'engineering-grid') {
     return (
       <div>
         {sectionLabel}
-        <div className="flex flex-wrap gap-2">
-          {tasks.map((task) => (
-            <span
-              key={task}
-              className={`inline-flex rounded-full border px-3.5 py-1.5 font-medium ${
-                size === 'lg' ? 'text-[0.9375rem] sm:text-base' : 'text-[0.9375rem] sm:text-base'
-              }`}
-              style={chipStyle}
+        <ul className="pf-exp-tasks-grid grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-2.5">
+          {tasks.map((task, index) => (
+            <li
+              key={`${task}-${index}`}
+              data-pf-no-color-transition=""
+              className="pf-exp-tasks-grid-cell group/task flex gap-3 px-3 py-3 sm:px-3.5 sm:py-3.5"
+              style={
+                {
+                  color: bodyColor,
+                  ['--exp-task-wash' as string]: hoverWash,
+                } as CSSProperties
+              }
             >
-              {task}
-            </span>
+              <span
+                className="pf-exp-task-index mt-0.5 shrink-0 font-mono text-[0.65rem] tracking-[0.08em]"
+                style={{ color: indexInk }}
+                aria-hidden
+              >
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span className={`${textClass} min-w-0`}>{task}</span>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     );
   }
 
-  if (display === 'summary') {
-    const countLabel =
-      tasks.length === 1 ? '1 responsibility' : `${tasks.length} responsibilities`;
+  if (display === 'cinematic-timeline') {
     return (
       <div>
-        <button
-          type="button"
-          className="flex w-full items-center justify-between gap-3 text-left"
-          onClick={() => setSummaryOpen((open) => !open)}
-          aria-expanded={summaryOpen}
+        {sectionLabel}
+        <ul
+          data-pf-no-color-transition=""
+          className="pf-exp-tasks-timeline relative space-y-0"
+          style={
+            {
+              ['--exp-task-rail' as string]: railColor,
+              ['--exp-task-active' as string]: activeInk,
+            } as CSSProperties
+          }
         >
-          <span
-            className={`font-semibold tracking-[-0.02em] ${
-              size === 'lg' ? 'text-[1.05rem] sm:text-[1.15rem]' : 'text-base sm:text-[1.05rem]'
-            }`}
-            style={{ color: bodyColor }}
-          >
-            {countLabel}
-          </span>
-          <motion.span
-            className="block text-base leading-none"
-            style={{ color: mutedColor }}
-            animate={{ rotate: summaryOpen ? 180 : 0 }}
-            transition={motionDisabled ? { duration: 0 } : { duration: 0.2 }}
-            aria-hidden
-          >
-            ▾
-          </motion.span>
-        </button>
-        <AnimatePresence initial={false}>
-          {summaryOpen ? (
-            <motion.div
-              key="experience-tasks-summary"
-              initial={motionDisabled ? false : { height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={motionDisabled ? { opacity: 0 } : { height: 0, opacity: 0 }}
-              transition={
-                motionDisabled
-                  ? { duration: 0 }
-                  : { height: { duration: 0.28 }, opacity: { duration: 0.2 } }
+          {tasks.map((task, index) => (
+            <li
+              key={`${task}-${index}`}
+              data-pf-no-color-transition=""
+              className="pf-exp-tasks-timeline-item group/task relative flex gap-4 py-3.5 pl-1 first:pt-0 last:pb-0"
+              style={
+                {
+                  color: bodyColor,
+                  ['--exp-task-active' as string]: activeInk,
+                } as CSSProperties
               }
-              className="overflow-hidden"
             >
-              <ul className="mt-3 space-y-2.5">
-                {tasks.map((task) => (
-                  <li key={task} className={`flex gap-2.5 ${textClass}`} style={{ color: bodyColor }}>
-                    <span className="shrink-0" style={{ color: mutedColor }} aria-hidden>
-                      –
-                    </span>
-                    <span>{task}</span>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+              <span
+                className="pf-exp-tasks-timeline-dot relative z-[1] mt-2 h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{ backgroundColor: mutedColor }}
+                aria-hidden
+              />
+              <span
+                className="pf-exp-task-index mt-0.5 shrink-0 font-mono text-[0.68rem] tracking-[0.1em]"
+                style={{ color: indexInk }}
+                aria-hidden
+              >
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span className={`pf-exp-tasks-timeline-copy ${textClass} min-w-0 transition-colors duration-500`}>
+                {task}
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
     );
   }
 
-  const marker =
-    display === 'checkmarks' ? '✓' : display === 'dashes' ? '–' : '→';
+  if (display === 'accordion-stack') {
+    return (
+      <div>
+        {sectionLabel}
+        <ul className="pf-exp-tasks-lined">
+          {tasks.map((task, index) => (
+            <li
+              key={`${task}-${index}`}
+              data-pf-no-color-transition=""
+              className="flex items-baseline gap-3 border-b py-3.5 last:border-b-0"
+              style={{ color: bodyColor, borderColor: railColor }}
+            >
+              <span
+                className="pf-exp-task-index shrink-0 font-mono text-[0.65rem] tracking-[0.1em]"
+                style={{ color: indexInk }}
+                aria-hidden
+              >
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span className={`${textClass} min-w-0`}>{task}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
 
+  if (display === 'architectural-index') {
+    return (
+      <div>
+        {sectionLabel}
+        <ul className={size === 'lg' ? 'space-y-3.5 sm:space-y-4' : 'space-y-3.5'}>
+          {tasks.map((task, index) => (
+            <li
+              key={`${task}-${index}`}
+              data-pf-no-color-transition=""
+              className="group/arch flex items-baseline gap-4"
+              style={{ color: bodyColor }}
+            >
+              <span
+                className="pf-exp-task-index pf-exp-tasks-arch-index shrink-0 font-mono text-[0.72rem] tracking-[0.06em] sm:text-[0.78rem]"
+                style={{ color: indexInk }}
+                aria-hidden
+              >
+                {String(index + 1).padStart(2, '0')}
+                <span className="pf-exp-tasks-arch-slash"> /</span>
+              </span>
+              <span className={`${textClass} min-w-0`}>{task}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  /* editorial-dash — default Award list */
   return (
     <div>
       {sectionLabel}
-      <ul
-        className={
-          display === 'arrows'
-            ? 'my-2 space-y-2.5 py-2 sm:my-3 sm:py-3'
-            : size === 'lg'
-              ? 'space-y-2.5 sm:space-y-3'
-              : 'space-y-2.5'
-        }
-      >
-        {tasks.map((task) => (
-          <li key={task} className={`flex gap-3 ${textClass}`} style={{ color: bodyColor }}>
-            {display === 'checkmarks' ? (
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                className="mt-1 h-3.5 w-3.5 shrink-0"
-                style={{ color: mutedColor }}
-                aria-hidden
-              >
-                <path
-                  d="M3.5 8.5L6.5 11.5L12.5 4.5"
-                  stroke="currentColor"
-                  strokeWidth={1.6}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            ) : (
-              <span className="mt-0.5 shrink-0" style={{ color: mutedColor }} aria-hidden>
-                {marker}
-              </span>
-            )}
-            <span>{task}</span>
+      <ul className={size === 'lg' ? 'space-y-3.5 sm:space-y-4' : 'space-y-3.5'}>
+        {tasks.map((task, index) => (
+          <li
+            key={`${task}-${index}`}
+            data-pf-no-color-transition=""
+            className="group/task flex gap-3"
+            style={
+              {
+                color: bodyColor,
+                ['--exp-task-dash' as string]: dashIdle,
+                ['--exp-task-dash-hover' as string]: dashHover,
+              } as CSSProperties
+            }
+          >
+            <span
+              data-pf-no-color-transition=""
+              className="pf-exp-task-dash mt-0.5 shrink-0 font-light"
+              aria-hidden
+            >
+              —
+            </span>
+            <span className={`${textClass} min-w-0`}>{task}</span>
           </li>
         ))}
       </ul>
@@ -15445,7 +15815,7 @@ function ExperienceEditorialOngoingBadge({
   const dotColor = isOngoing ? (accentColor ?? (isDark ? '#6EE7A0' : '#1B7A3D')) : 'currentColor';
   return (
     <span
-      className="inline-flex w-fit shrink-0 self-start items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.75rem] font-semibold tracking-[-0.01em]"
+      className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.75rem] font-semibold tracking-[-0.01em]"
       style={
         isOngoing
           ? accentColor
@@ -15473,6 +15843,7 @@ function ExperienceEditorialPeriodColumn({
   accent,
   textColor,
   isLast,
+  drawRail = false,
 }: {
   period: string | null;
   periodDesign: PortfolioExperiencePeriodDesign;
@@ -15481,6 +15852,8 @@ function ExperienceEditorialPeriodColumn({
   /** Body-tier ink (not the fainter muted/label tier) — the year needs to stay readable. */
   textColor: string;
   isLast: boolean;
+  /** Draw the descending rail even on the last/only entry so GSAP can trace it. */
+  drawRail?: boolean;
 }) {
   const label = period || '—';
   const textClass = 'text-[0.9rem] font-medium tabular-nums tracking-[-0.01em]';
@@ -15526,10 +15899,11 @@ function ExperienceEditorialPeriodColumn({
             className="relative z-10 mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full border-2 bg-transparent"
             style={nodeStyle}
           />
-          {!isLast ? (
+          {!isLast || drawRail ? (
             <div
-              className="absolute top-[1.125rem] bottom-0 left-1/2 w-px -translate-x-1/2"
-              style={lineStyle}
+              className="pf-exp-ed-rail-line pf-exp-lead-rail absolute top-[1.125rem] bottom-0 left-1/2 w-px"
+              style={{ ...lineStyle, marginLeft: -0.5, transformOrigin: 'top center' }}
+              data-pf-no-color-transition=""
             />
           ) : null}
         </div>
@@ -15538,7 +15912,7 @@ function ExperienceEditorialPeriodColumn({
   }
 
   return (
-    <p className={`${textClass} pt-1`} style={{ color: textColor }}>
+    <p className={textClass} style={{ color: textColor }}>
       {label}
     </p>
   );
@@ -15562,6 +15936,7 @@ function ExperienceEditorialEntry({
   bodyColor,
   isDark,
   isLast,
+  isLead = false,
   expanded,
   onExpandedChange,
   periodDesign = 'plain',
@@ -15584,6 +15959,7 @@ function ExperienceEditorialEntry({
   bodyColor: string;
   isDark: boolean;
   isLast: boolean;
+  isLead?: boolean;
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
   periodDesign?: PortfolioExperiencePeriodDesign;
@@ -15593,6 +15969,15 @@ function ExperienceEditorialEntry({
   const motionDisabled = reduceMotion === true;
   const secondary = experienceSecondaryStatusColor(presentation);
   const hairline = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
+  const linkVariant = resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'editorial');
+  const linkPalette = experienceLinkButtonPalette({
+    ink: titleColor,
+    muted: mutedColor,
+    accent,
+    background: presentation.sectionBackgroundColor?.trim(),
+    border: hairline,
+    isDark,
+  });
   const metaParts = [
     organization?.trim() || '',
     location?.trim() || '',
@@ -15625,6 +16010,12 @@ function ExperienceEditorialEntry({
         color: bodyColor,
       };
   const stackLabel = resolveExperienceBlockLabel(toolsLabel, 'Stack');
+  const showTasksHeading = experienceBlockLabelVisible(presentation, 'tasks');
+  const showStackHeading = experienceBlockLabelVisible(presentation, 'tools');
+  const tasksHeading = showTasksHeading
+    ? resolveExperienceBlockLabel(presentation.tasksLabel, 'Responsibilities')
+    : '';
+  const stackHeading = showStackHeading ? stackLabel : '';
   const panelTransition = motionDisabled
     ? { duration: 0 }
     : {
@@ -15636,7 +16027,7 @@ function ExperienceEditorialEntry({
   const expandControl = showExpandControl ? (
     <button
       type="button"
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 sm:h-11 sm:w-11"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 sm:h-9 sm:w-9"
       style={{ color: mutedColor }}
       onMouseEnter={(e) => {
         e.currentTarget.style.backgroundColor = expandHoverBg;
@@ -15650,7 +16041,7 @@ function ExperienceEditorialEntry({
       onClick={toggleExpanded}
     >
       <motion.span
-        className="block text-2xl leading-none font-light sm:text-3xl"
+        className="block text-xl leading-none font-light sm:text-2xl"
         aria-hidden
         animate={{ rotate: effectiveExpanded ? 45 : 0 }}
         transition={
@@ -15662,86 +16053,145 @@ function ExperienceEditorialEntry({
     </button>
   ) : null;
 
-  const detailsInner = effectiveExpanded ? (
-    <div className="mt-4 space-y-7 sm:mt-5 sm:space-y-8">
-      {metaParts.length > 0 ? (
-        <p className="text-[0.9rem]" style={{ color: bodyColor }}>
-          {metaParts.join(' · ')}
-        </p>
-      ) : null}
+  const softCopy = `color-mix(in srgb, ${titleColor} 60%, transparent)`;
+  const detailLayout = presentation.editorialDetailLayout ?? 'split-actions';
+  const splitActions = detailLayout === 'split-actions';
+  const hasStatusBadge = status === 'ONGOING' || status === 'FINISHED';
+  const showDataColumn =
+    splitActions &&
+    effectiveExpanded &&
+    (metaParts.length > 0 || hasStatusBadge || links.length > 0 || showExpandControl);
 
-      {description ? (
-        <p
-          className="max-w-2xl text-[1rem] leading-[1.7]"
-          style={{ color: bodyColor }}
-        >
-          {description}
-        </p>
-      ) : null}
-
-      {tasks.length > 0 ? (
-        <ExperienceTasksDisplay
-          tasks={tasks}
-          display={presentation.tasksDisplay ?? 'arrows'}
-          bodyColor={bodyColor}
-          mutedColor={mutedColor}
-          isDark={isDark}
-          label=""
-          size="md"
-        />
-      ) : null}
-
-      {tools.length > 0 || links.length > 0 ? (
-        // Stack chips and the repository link share one row, link pushed to the far
-        // right (items-end so it lines up with the chips, not the "Stack" label above
-        // them) — fills the dead space that used to sit empty beside the chips, and
-        // keeps the link from reading as a stranded, isolated line of its own.
-        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
-          {tools.length > 0 ? (
-            <div className="min-w-0">
-              {stackLabel ? (
-                <p
-                  className="mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]"
-                  style={{ color: `color-mix(in srgb, ${mutedColor} 65%, transparent)` }}
-                >
-                  {stackLabel}
-                </p>
-              ) : null}
-              <div className="flex flex-wrap gap-2">
-                {tools.map((tool) => (
-                  <span
-                    key={tool}
-                    className="inline-flex rounded-full border px-4 py-2 text-[0.82rem] font-medium"
-                    style={toolTagStyle}
-                  >
-                    {tool}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {links.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2">
-              {links.map((link) => (
-                <a
-                  key={link.id}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[0.82rem] font-semibold transition hover:opacity-80"
-                  data-pf-no-color-transition=""
-                  style={{ borderColor: accent, color: accent }}
-                >
-                  <span>{link.label}</span>
-                  <span aria-hidden>↗</span>
-                </a>
-              ))}
-            </div>
-          ) : null}
+  const stackBlock =
+    tools.length > 0 ? (
+      <div className="min-w-0 pt-1">
+        {stackHeading ? (
+          <p
+            className="mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]"
+            style={{ color: `color-mix(in srgb, ${mutedColor} 65%, transparent)` }}
+          >
+            {stackHeading}
+          </p>
+        ) : null}
+        <div className="flex flex-wrap gap-2">
+          {tools.map((tool) => (
+            <span
+              key={tool}
+              className="inline-flex rounded-full border px-4 py-2 text-[0.82rem] font-medium"
+              style={toolTagStyle}
+            >
+              {tool}
+            </span>
+          ))}
         </div>
-      ) : null}
+      </div>
+    ) : null;
+
+  const repoLinks = links.length > 0 ? (
+    <div className="flex flex-wrap items-center gap-2">
+      {links.map((link) => (
+        <PortfolioLinkButton
+          key={link.id}
+          variant={linkVariant}
+          href={link.url}
+          label={link.label || 'View repository'}
+          palette={linkPalette}
+        />
+      ))}
     </div>
+  ) : null;
+
+  const detailsInner = effectiveExpanded ? (
+    splitActions ? (
+      <div className={`${showDataColumn ? 'mt-5 sm:mt-6 lg:mt-0' : 'mt-5 sm:mt-6'} space-y-9 sm:space-y-11`}>
+        {description ? (
+          <p
+            className="pf-exp-lead-reveal pf-exp-ed-copy m-0 max-w-2xl p-0 text-left text-[1rem] leading-[1.8]"
+            style={{ color: softCopy }}
+            data-pf-lead-step="2"
+            data-pf-no-color-transition=""
+          >
+            {description}
+          </p>
+        ) : null}
+        {tasks.length > 0 ? (
+          <div
+            className="pf-exp-lead-reveal"
+            data-pf-lead-step="4"
+            data-pf-no-color-transition=""
+          >
+            {tasksHeading ? (
+              <p
+                className="mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]"
+                style={{ color: `color-mix(in srgb, ${mutedColor} 65%, transparent)` }}
+              >
+                {tasksHeading}
+              </p>
+            ) : null}
+            <div className="[&_ul]:space-y-4 sm:[&_ul]:space-y-5">
+              <ExperienceTasksDisplay
+                tasks={tasks}
+                display={presentation.tasksDisplay ?? 'editorial-dash'}
+                bodyColor={softCopy}
+                mutedColor={`color-mix(in srgb, ${titleColor} 40%, transparent)`}
+                isDark={isDark}
+                label=""
+                size="md"
+              />
+            </div>
+          </div>
+        ) : null}
+        {stackBlock}
+      </div>
+    ) : (
+      <div className="mt-5 space-y-9 sm:mt-6 sm:space-y-11">
+        {metaParts.length > 0 ? (
+          <p className="text-[0.9rem]" style={{ color: softCopy }}>
+            {metaParts.join(' · ')}
+          </p>
+        ) : null}
+        {description ? (
+          <p
+            className="pf-exp-lead-reveal pf-exp-ed-copy m-0 max-w-2xl p-0 text-left text-[1rem] leading-[1.8]"
+            style={{ color: softCopy }}
+            data-pf-lead-step="2"
+            data-pf-no-color-transition=""
+          >
+            {description}
+          </p>
+        ) : null}
+        {tasks.length > 0 ? (
+          <div
+            className="pf-exp-lead-reveal"
+            data-pf-lead-step="4"
+            data-pf-no-color-transition=""
+          >
+            {tasksHeading ? (
+              <p
+                className="mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]"
+                style={{ color: `color-mix(in srgb, ${mutedColor} 65%, transparent)` }}
+              >
+                {tasksHeading}
+              </p>
+            ) : null}
+            <div className="[&_ul]:space-y-4 sm:[&_ul]:space-y-5">
+              <ExperienceTasksDisplay
+                tasks={tasks}
+                display={presentation.tasksDisplay ?? 'editorial-dash'}
+                bodyColor={softCopy}
+                mutedColor={`color-mix(in srgb, ${titleColor} 40%, transparent)`}
+                isDark={isDark}
+                label=""
+                size="md"
+              />
+            </div>
+          </div>
+        ) : null}
+        {stackBlock}
+        {/* Stacked: repo CTA sits under STACK, in the same left column flow. */}
+        {repoLinks ? <div className="pt-1">{repoLinks}</div> : null}
+      </div>
+    )
   ) : null;
 
   const detailsPanel = isAllOpen ? (
@@ -15765,23 +16215,30 @@ function ExperienceEditorialEntry({
 
   const titleHeading = title ? (
     <h4
-      className="font-serif text-[1.35rem] font-bold leading-[1.18] tracking-[-0.02em] sm:text-[1.5rem] lg:text-[1.65rem]"
+      className="pf-exp-lead-reveal pf-exp-ed-copy m-0 p-0 text-left font-serif text-[1.35rem] font-bold leading-[1.18] tracking-[-0.02em] sm:text-[1.5rem] lg:text-[1.65rem]"
       style={{ color: titleColor }}
+      data-pf-lead-step="1"
+      data-pf-no-color-transition=""
     >
       {title}
     </h4>
   ) : null;
 
+  const showBadgeBesideTitle = !splitActions || !effectiveExpanded;
+  // Collapsed always shows meta under title. Expanded stacked keeps meta in the
+  // vertical details. Expanded split moves meta to the data column.
   const titleBlock = (
     <>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {titleHeading}
-        <ExperienceEditorialOngoingBadge
-          status={status}
-          isDark={isDark}
-          accentColor={accent}
-          secondaryColor={secondary}
-        />
+        {showBadgeBesideTitle ? (
+          <ExperienceEditorialOngoingBadge
+            status={status}
+            isDark={isDark}
+            accentColor={accent}
+            secondaryColor={secondary}
+          />
+        ) : null}
       </div>
       {!effectiveExpanded && metaParts.length > 0 ? (
         <p className="mt-2.5 text-[0.9rem]" style={{ color: bodyColor }}>
@@ -15791,13 +16248,48 @@ function ExperienceEditorialEntry({
     </>
   );
 
+  const dataColumn = showDataColumn ? (
+    <aside className="mt-6 flex min-h-[14rem] flex-col items-stretch sm:mt-7 lg:col-start-2 lg:row-start-2 lg:mt-0 lg:min-h-full lg:self-stretch">
+      {showExpandControl ? (
+        <div className="mb-3 flex justify-end lg:hidden">{expandControl}</div>
+      ) : null}
+
+      {/* Sits on the description row, not against the iframe / close control. */}
+      <div
+        className="pf-exp-lead-reveal pf-exp-ed-meta flex flex-wrap items-center justify-end gap-x-2.5 gap-y-1.5 lg:pt-[0.4rem]"
+        style={{ color: softCopy }}
+        data-pf-lead-step="3"
+        data-pf-no-color-transition=""
+      >
+        {metaParts.length > 0 ? (
+          <p className="max-w-full text-right text-[0.82rem] leading-none tracking-[-0.01em] sm:text-[0.86rem]">
+            {metaParts.join(' · ')}
+          </p>
+        ) : null}
+        <ExperienceEditorialOngoingBadge
+          status={status}
+          isDark={isDark}
+          accentColor={accent}
+          secondaryColor={secondary}
+        />
+      </div>
+
+      <div className="min-h-[2.5rem] flex-1" aria-hidden />
+
+      {links.length > 0 ? (
+        <div className="mt-auto flex flex-col items-end gap-2 pt-8">{repoLinks}</div>
+      ) : null}
+    </aside>
+  ) : null;
+
   return (
     <article
-      className={`grid grid-cols-1 gap-3 bg-transparent ${periodGridClass} sm:gap-x-8 lg:gap-x-10 ${
-        isLast ? 'pb-2' : 'pb-10 sm:pb-12'
-      }`}
+      className={`grid grid-cols-1 bg-transparent py-7 sm:py-8 ${periodGridClass} sm:gap-x-8 lg:gap-x-10`}
+      {...(isLead ? { 'data-pf-exp-lead-card': '' } : {})}
       style={{
         border: 'none',
+        borderBottom:
+          !isLast && !usesTimelineRail ? `1px solid ${hairline}` : 'none',
         boxShadow: 'none',
         outline: 'none',
         backgroundColor: 'transparent',
@@ -15810,32 +16302,43 @@ function ExperienceEditorialEntry({
         accent={accent}
         textColor={bodyColor}
         isLast={isLast}
+        drawRail={isLead && usesTimelineRail}
       />
 
       <div className="min-w-0">
-        <div className="flex items-start gap-3">
-          {isAllOpen ? (
-            <div className="min-w-0 flex-1">{titleBlock}</div>
-          ) : (
-            <button
-              type="button"
-              className="min-w-0 flex-1 text-left"
-              onClick={toggleExpanded}
-              aria-expanded={effectiveExpanded}
-            >
-              {titleBlock}
-            </button>
-          )}
-          {showExpandControl ? expandControl : null}
+        <div
+          className={
+            showDataColumn
+              ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(11.5rem,15rem)] lg:grid-rows-[auto_minmax(0,1fr)] lg:items-start lg:gap-x-10 lg:gap-y-6 xl:gap-x-14'
+              : undefined
+          }
+        >
+          <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+            <div className="flex items-start gap-3">
+              {isAllOpen ? (
+                <div className="min-w-0 flex-1">{titleBlock}</div>
+              ) : (
+                <button
+                  type="button"
+                  className="m-0 min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-left"
+                  onClick={toggleExpanded}
+                  aria-expanded={effectiveExpanded}
+                >
+                  {titleBlock}
+                </button>
+              )}
+              {(!splitActions || !effectiveExpanded) && showExpandControl ? expandControl : null}
+            </div>
+          </div>
+          {showDataColumn && showExpandControl ? (
+            <div className="hidden justify-end self-start lg:col-start-2 lg:row-start-1 lg:flex">
+              {expandControl}
+            </div>
+          ) : null}
+          <div className="min-w-0 lg:col-start-1 lg:row-start-2">{detailsPanel}</div>
+          {dataColumn}
         </div>
-        {detailsPanel}
       </div>
-
-      {/* The timeline rail's own vertical line already separates entries — a horizontal
-          divider on top of it would be redundant clutter. */}
-      {!isLast && !usesTimelineRail ? (
-        <div className="mt-8 h-px w-full sm:col-span-2 sm:mt-10" style={{ backgroundColor: hairline }} aria-hidden />
-      ) : null}
     </article>
   );
 }
@@ -15916,6 +16419,7 @@ export function EditorialExperienceBlock({
       bodyColor={bodyColor}
       isDark={isDark}
       isLast={isLast}
+      isLead={index === 0}
       expanded={expanded}
       onExpandedChange={onExpandedChange ?? (() => undefined)}
       periodDesign={presentation.periodDesign ?? 'plain'}
@@ -15972,15 +16476,9 @@ export function EditorialExperienceList({
         forceSingleColumn ? 'left' : presentation.listPlacement
       )}
     >
-      <div className={`${gridClass} space-y-0`.trim()}>
-        {blocks.map((block, index) => (
-          <PortfolioMotionItem
-            key={block.id}
-            profile={motionProfile}
-            index={index}
-            className="h-full"
-            timing={flatMotionTiming}
-          >
+      <div className={`${gridClass} !gap-0 space-y-0`.trim()}>
+        {blocks.map((block, index) => {
+          const entry = (
             <EditorialExperienceBlock
               block={block}
               index={index}
@@ -15991,8 +16489,26 @@ export function EditorialExperienceList({
                 isAllOpen ? undefined : (next) => setOpenBlockId(next ? block.id : null)
               }
             />
-          </PortfolioMotionItem>
-        ))}
+          );
+          if (index === 0) {
+            return (
+              <div key={block.id} className="h-full">
+                {entry}
+              </div>
+            );
+          }
+          return (
+            <PortfolioMotionItem
+              key={block.id}
+              profile={motionProfile}
+              index={index}
+              className="h-full"
+              timing={flatMotionTiming}
+            >
+              {entry}
+            </PortfolioMotionItem>
+          );
+        })}
       </div>
     </div>
   );
@@ -16002,6 +16518,123 @@ function extractMilestoneDisplayYear(period: string | null): string {
   if (!period?.trim()) return '—';
   const match = period.match(/\d{4}/);
   return match?.[0] ?? period.trim();
+}
+
+/** Subtle rail track + bright progress fill driven by the card’s scroll position. */
+function MilestoneTimelineRail({
+  articleRef,
+  isLast,
+  isDark,
+  isLead = false,
+}: {
+  articleRef: RefObject<HTMLElement | null>;
+  isLast: boolean;
+  isDark: boolean;
+  isLead?: boolean;
+}) {
+  const reduceMotion = useReducedMotion();
+  const [progress, setProgress] = useState(0);
+  const [motionOwned, setMotionOwned] = useState(false);
+  const motionOwnedRef = useRef(false);
+  const active = progress > 0.04 || motionOwned;
+
+  useLayoutEffect(() => {
+    if (!isLead || reduceMotion) return;
+    const article = articleRef.current;
+    if (!article) return;
+    const section = article.closest('#experience');
+    if (!section?.querySelector('.pf-exp-reel-header')) return;
+
+    motionOwnedRef.current = true;
+    setMotionOwned(true);
+    const done = () => {
+      motionOwnedRef.current = false;
+      setMotionOwned(false);
+    };
+    section.addEventListener('pf-exp-lead-motion-done', done);
+    const timeoutId = window.setTimeout(done, 3200);
+    return () => {
+      motionOwnedRef.current = false;
+      section.removeEventListener('pf-exp-lead-motion-done', done);
+      window.clearTimeout(timeoutId);
+    };
+  }, [articleRef, isLead, reduceMotion]);
+
+  useEffect(() => {
+    const article = articleRef.current;
+    if (!article) return;
+
+    const scroller = getScrollParent(article);
+
+    const update = () => {
+      if (motionOwnedRef.current) return;
+      if (reduceMotion) {
+        setProgress(1);
+        return;
+      }
+      const rect = article.getBoundingClientRect();
+      let viewH: number;
+      let top: number;
+      if (scroller) {
+        const scrollerRect = scroller.getBoundingClientRect();
+        viewH = scroller.clientHeight;
+        top = rect.top - scrollerRect.top;
+      } else {
+        viewH = window.innerHeight;
+        top = rect.top;
+      }
+      // Fill grows as the card travels through the upper half of the viewport.
+      const start = viewH * 0.72;
+      const end = viewH * 0.28;
+      const raw = (start - top) / Math.max(start - end + rect.height * 0.35, 1);
+      setProgress(Math.max(0, Math.min(1, raw)));
+    };
+
+    update();
+    const onScroll = () => update();
+    const target: HTMLElement | Window = scroller ?? window;
+    target.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      target.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [articleRef, reduceMotion, motionOwned]);
+
+  const trackColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
+  const fillColor = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.72)';
+  const nodeIdle = isDark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.22)';
+  const nodeActive = isDark ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.88)';
+
+  return (
+    <div className="pf-exp-milestone-rail" aria-hidden>
+      <div
+        className={`pf-exp-milestone-rail-node${active ? ' is-active' : ''}`}
+        style={{
+          backgroundColor: active ? nodeActive : nodeIdle,
+          boxShadow: active
+            ? isDark
+              ? '0 0 0 4px rgba(255,255,255,0.08)'
+              : '0 0 0 4px rgba(0,0,0,0.06)'
+            : undefined,
+        }}
+      />
+      <div
+        className={`pf-exp-milestone-rail-track${isLast ? ' is-last' : ''}`}
+        style={{ backgroundColor: trackColor }}
+      >
+        <div
+          className="pf-exp-milestone-rail-progress pf-exp-lead-rail"
+          style={{
+            backgroundColor: fillColor,
+            transform: motionOwned ? 'scaleY(0)' : `scaleY(${progress})`,
+            transformOrigin: 'top center',
+          }}
+          data-pf-no-color-transition=""
+        />
+      </div>
+    </div>
+  );
 }
 
 function MilestoneExperienceEntry({
@@ -16045,10 +16678,9 @@ function MilestoneExperienceEntry({
   index: number;
   presentation: PortfolioExperiencePresentationSettings;
 }) {
+  const articleRef = useRef<HTMLElement | null>(null);
   const displayYear = extractMilestoneDisplayYear(period);
   const secondary = experienceSecondaryStatusColor(presentation);
-  const lineStyle = experienceTimelineRailLineStyle(presentation, true);
-  const nodeStyle = experienceTimelineRailNodeStyle(presentation, true);
   const stackLabel = resolveExperienceBlockLabel(toolsLabel, 'Stack');
   const metaParts = [
     organization?.trim() || '',
@@ -16064,35 +16696,55 @@ function MilestoneExperienceEntry({
         borderColor: 'rgba(0,0,0,0.08)',
         backgroundColor: 'rgba(0,0,0,0.025)',
       };
+  const softBodyColor = `color-mix(in srgb, ${bodyColor} 68%, transparent)`;
+  const softTaskMuted = `color-mix(in srgb, ${mutedColor} 75%, transparent)`;
+  const softMetaColor = `color-mix(in srgb, ${mutedColor} 88%, transparent)`;
   const toolTagStyle: CSSProperties = isDark
     ? {
-        borderColor: 'rgba(255,255,255,0.14)',
-        backgroundColor: 'rgba(255,255,255,0.06)',
-        color: bodyColor,
+        borderColor: 'rgba(255,255,255,0.1)',
+        backgroundColor: 'rgba(255,255,255,0.04)',
+        color: `color-mix(in srgb, ${bodyColor} 42%, transparent)`,
       }
     : {
-        borderColor: 'rgba(0,0,0,0.1)',
-        backgroundColor: 'rgba(255,255,255,0.7)',
-        color: bodyColor,
+        borderColor: 'rgba(0,0,0,0.08)',
+        backgroundColor: 'rgba(255,255,255,0.55)',
+        color: `color-mix(in srgb, ${bodyColor} 55%, transparent)`,
       };
+  const linkVariant = resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'milestone');
+  const linkPalette = experienceLinkButtonPalette({
+    ink: titleColor,
+    muted: mutedColor,
+    accent,
+    background: presentation.sectionBackgroundColor?.trim(),
+    isDark,
+  });
   return (
     <article
-      className={`grid grid-cols-1 gap-4 sm:grid-cols-[7.5rem_1.5rem_minmax(0,1fr)] sm:gap-x-6 lg:grid-cols-[8.5rem_1.75rem_minmax(0,1fr)] lg:gap-x-8 ${
-        isLast ? 'pb-2' : 'pb-12 sm:pb-16'
-      }`}
+      ref={articleRef}
+      className={`${MILESTONE_ENTRY_GRID_CLASS} gap-4 ${isLast ? 'pb-2' : 'pb-12 sm:pb-16'}`}
+      {...(index === 0 ? { 'data-pf-exp-lead-card': '' } : {})}
     >
-      <div className="flex items-start gap-3 sm:flex sm:flex-col sm:items-end sm:pt-2 sm:pr-1">
-        <div className="min-w-0 w-full text-left sm:text-right">
+      {/* Top padding mirrors the card so 2022 sits on the title’s first line. */}
+      <div
+        className={`flex items-start gap-3 pt-5 sm:flex sm:flex-col sm:pt-6 lg:pt-7 ${
+          accentYearsGridAnchorEnabled(presentation) ? 'sm:items-start' : 'sm:items-end'
+        }`}
+      >
+        <div
+          className={`min-w-0 w-full text-left ${
+            accentYearsGridAnchorEnabled(presentation) ? '' : 'sm:pr-1 sm:text-right'
+          }`}
+        >
           <p
-            className="font-semibold tabular-nums leading-none tracking-[-0.02em] text-[clamp(2.35rem,5.5vw,3.35rem)]"
-            style={{ color: titleColor, opacity: 0.92 }}
+            className="font-semibold tabular-nums leading-none tracking-[-0.035em] text-[clamp(2.35rem,5.5vw,3.35rem)]"
+            style={{ color: titleColor, opacity: 0.96 }}
           >
             {displayYear}
           </p>
           {period && period !== displayYear ? (
             <p
-              className="mt-2 hidden text-[0.72rem] font-medium uppercase tracking-[0.14em] sm:block"
-              style={{ color: mutedColor }}
+              className="mt-2.5 hidden text-[0.72rem] font-medium uppercase tracking-[0.14em] sm:block"
+              style={{ color: softMetaColor }}
             >
               {period}
             </p>
@@ -16100,113 +16752,132 @@ function MilestoneExperienceEntry({
         </div>
       </div>
 
-      <div className="relative hidden justify-center sm:flex">
-        <div
-          className="relative z-10 mt-3 h-3 w-3 shrink-0 rounded-full"
-          style={nodeStyle}
-          aria-hidden
-        />
-        {!isLast ? (
-          <div
-            className="absolute top-[1.35rem] bottom-0 left-1/2 w-px -translate-x-1/2"
-            style={lineStyle}
-            aria-hidden
-          />
-        ) : null}
-      </div>
+      <MilestoneTimelineRail
+        articleRef={articleRef}
+        isLast={isLast}
+        isDark={isDark}
+        isLead={index === 0}
+      />
 
       <div
         className="min-w-0 max-w-3xl rounded-[1.35rem] border px-5 py-5 sm:rounded-[1.5rem] sm:px-7 sm:py-6 lg:px-8 lg:py-7"
         style={cardStyle}
       >
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          {metaParts.length > 0 ? (
-            <p className="text-[0.8125rem] font-medium sm:text-sm" style={{ color: mutedColor }}>
-              {metaParts.join(' · ')}
+        <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(10rem,13rem)] lg:items-start lg:gap-x-8 xl:gap-x-10">
+          {title ? (
+            <h4
+              className="pf-exp-lead-reveal pf-exp-ms-copy m-0 p-0 text-left text-[1.45rem] font-semibold leading-[1.12] tracking-[-0.035em] sm:text-[1.75rem] lg:col-start-1 lg:row-start-1 lg:text-[2rem]"
+              style={{ color: titleColor }}
+              data-pf-lead-step="1"
+              data-pf-no-color-transition=""
+            >
+              {title}
+            </h4>
+          ) : null}
+
+          {metaParts.length > 0 || status === 'ONGOING' || status === 'FINISHED' ? (
+            <aside
+              className={`pf-exp-lead-reveal pf-exp-ms-meta flex flex-wrap items-center gap-x-3 gap-y-2 ${
+                title ? 'mt-3.5' : ''
+              } lg:col-start-2 ${
+                description
+                  ? 'lg:row-start-2 lg:mt-6 lg:pt-[0.4rem]'
+                  : 'lg:row-start-1 lg:mt-0 lg:self-center'
+              } lg:flex-col lg:items-end lg:justify-start lg:self-start`}
+              data-pf-lead-step="3"
+              data-pf-no-color-transition=""
+            >
+              {metaParts.length > 0 ? (
+                <p
+                  className="text-[0.8125rem] font-medium lg:text-right sm:text-sm"
+                  style={{ color: softMetaColor }}
+                >
+                  {metaParts.join(' · ')}
+                </p>
+              ) : null}
+              <ExperienceEditorialOngoingBadge
+                status={status}
+                isDark={isDark}
+                accentColor={accent}
+                secondaryColor={secondary}
+              />
+            </aside>
+          ) : null}
+
+          {description ? (
+            <p
+              className={`pf-exp-lead-reveal pf-exp-ms-copy m-0 max-w-2xl p-0 text-left text-[0.98rem] leading-[1.8] sm:text-[1.05rem] ${
+                title ? 'mt-5 sm:mt-6' : ''
+              } lg:col-start-1 lg:row-start-2`}
+              style={{ color: softBodyColor }}
+              data-pf-lead-step="2"
+              data-pf-no-color-transition=""
+            >
+              {description}
             </p>
           ) : null}
-          <ExperienceEditorialOngoingBadge
-            status={status}
-            isDark={isDark}
-            accentColor={accent}
-            secondaryColor={secondary}
-          />
-        </div>
 
-        {title ? (
-          <h4
-            className="mt-3 text-[1.45rem] font-semibold leading-[1.15] tracking-[-0.03em] sm:mt-4 sm:text-[1.75rem] lg:text-[2rem]"
-            style={{ color: titleColor }}
-          >
-            {title}
-          </h4>
-        ) : null}
-
-        {description ? (
-          <p
-            className="mt-4 max-w-2xl text-[0.98rem] leading-[1.72] sm:text-[1.05rem]"
-            style={{ color: bodyColor }}
-          >
-            {description}
-          </p>
-        ) : null}
-
-        {tasks.length > 0 ? (
-          <div className="mt-5 sm:mt-6">
-            <ExperienceTasksDisplay
-              tasks={tasks}
-              display={presentation.tasksDisplay ?? 'arrows'}
-              bodyColor={bodyColor}
-              mutedColor={mutedColor}
-              isDark={isDark}
-              label={resolveExperienceBlockLabel(presentation.tasksLabel, 'Responsibilities')}
-              size="lg"
-            />
-          </div>
-        ) : null}
-
-        {tools.length > 0 ? (
-          <div className="mt-6 border-t pt-5 sm:mt-7 sm:pt-6" style={{ borderColor: cardStyle.borderColor }}>
-            {stackLabel ? (
-              <p
-                className="mb-3 text-[0.68rem] font-bold uppercase tracking-[0.18em]"
-                style={{ color: mutedColor }}
-              >
-                {stackLabel}
-              </p>
-            ) : null}
-            <div className="flex flex-wrap gap-2">
-              {tools.map((tool) => (
-                <span
-                  key={tool}
-                  className="inline-flex rounded-full border px-3 py-1.5 text-[0.875rem] font-medium"
-                  style={toolTagStyle}
-                >
-                  {tool}
-                </span>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {links.length > 0 ? (
-          <div className="mt-5 flex flex-col items-start gap-2 sm:mt-6">
-            {links.map((link) => (
-              <a
-                key={link.id}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-80 sm:text-base"
+          <div className="lg:col-start-1 lg:row-start-3">
+            {tasks.length > 0 ? (
+              <div
+                className="pf-exp-lead-reveal mt-7 sm:mt-8 [&_ul]:space-y-3.5 sm:[&_ul]:space-y-4"
+                data-pf-lead-step="4"
                 data-pf-no-color-transition=""
-                style={{ color: accent }}
               >
-                <span>{link.label}</span>
-                <span aria-hidden>↗</span>
-              </a>
-            ))}
+                <ExperienceTasksDisplay
+                  tasks={tasks}
+                  display={presentation.tasksDisplay ?? 'editorial-dash'}
+                  bodyColor={softBodyColor}
+                  mutedColor={softTaskMuted}
+                  isDark={isDark}
+                  label={resolveExperienceBlockLabel(presentation.tasksLabel, 'Responsibilities')}
+                  size="lg"
+                />
+              </div>
+            ) : null}
+
+            {tools.length > 0 ? (
+              <div
+                className="mt-8 border-t pt-6 sm:mt-9 sm:pt-7"
+                style={{ borderColor: cardStyle.borderColor }}
+              >
+                {stackLabel ? (
+                  <p
+                    className="mb-3.5 text-[0.68rem] font-bold uppercase tracking-[0.18em]"
+                    style={{ color: softMetaColor }}
+                  >
+                    {stackLabel}
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  {tools.map((tool) => (
+                    <span
+                      key={tool}
+                      className="inline-flex rounded-full border px-3 py-1.5 text-[0.875rem] font-medium"
+                      style={toolTagStyle}
+                    >
+                      {tool}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {links.length > 0 ? (
+              <div className="mt-7 flex flex-col items-start gap-2.5 sm:mt-8">
+                {links.map((link) => (
+                  <PortfolioLinkButton
+                    key={link.id}
+                    variant={linkVariant}
+                    href={link.url}
+                    label={link.label || 'View repository'}
+                    palette={linkPalette}
+                  />
+                ))}
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        </div>
       </div>
     </article>
   );
@@ -16314,22 +16985,34 @@ export function MilestoneExperienceList({
       )}
     >
       <div className="space-y-0">
-        {blocks.map((block, index) => (
-          <PortfolioMotionItem
-            key={block.id}
-            profile={motionProfile}
-            index={index}
-            className="h-full"
-            timing={flatMotionTiming}
-          >
+        {blocks.map((block, index) => {
+          const entry = (
             <MilestoneExperienceBlock
               block={block}
               index={index}
               isLast={index === blocks.length - 1}
               presentation={presentation}
             />
-          </PortfolioMotionItem>
-        ))}
+          );
+          if (index === 0) {
+            return (
+              <div key={block.id} className="h-full">
+                {entry}
+              </div>
+            );
+          }
+          return (
+            <PortfolioMotionItem
+              key={block.id}
+              profile={motionProfile}
+              index={index}
+              className="h-full"
+              timing={flatMotionTiming}
+            >
+              {entry}
+            </PortfolioMotionItem>
+          );
+        })}
       </div>
     </div>
   );
@@ -16385,9 +17068,11 @@ function TableExperienceRow({
   expanded,
   onExpandedChange,
   hairlineColor,
-  tasksDisplay = 'arrows',
+  tasksDisplay = 'editorial-dash',
   striped = false,
   rowIndex = 0,
+  repoLinkButtonStyle = 'icon',
+  background,
 }: {
   period: string | null;
   title: string | null;
@@ -16411,6 +17096,8 @@ function TableExperienceRow({
   tasksDisplay?: PortfolioExperienceTasksDisplay;
   striped?: boolean;
   rowIndex?: number;
+  repoLinkButtonStyle?: PortfolioExperienceRepoLinkStyle;
+  background?: string;
 }) {
   const reduceMotion = useReducedMotion();
   const motionDisabled = reduceMotion === true;
@@ -16535,32 +17222,36 @@ function TableExperienceRow({
             transition={panelTransition}
             className="overflow-hidden"
           >
-            <div className="pb-8 sm:grid sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:gap-x-5 sm:pb-9 lg:grid-cols-[9.5rem_minmax(0,1fr)] lg:gap-x-6">
+            <div className="pb-10 sm:grid sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:gap-x-5 sm:pb-11 lg:grid-cols-[9.5rem_minmax(0,1fr)] lg:gap-x-6">
               <div className="hidden sm:block" aria-hidden />
-              <div className="max-w-2xl space-y-6 sm:space-y-7">
+              <div className="max-w-2xl space-y-9 sm:space-y-11">
                 {description ? (
                   <p
-                    className="text-[0.98rem] leading-[1.72] sm:text-[1.05rem]"
-                    style={{ color: bodyColor }}
+                    className="text-[0.98rem] leading-[1.8] sm:text-[1.05rem]"
+                    style={{
+                      color: `color-mix(in srgb, ${titleColor} 58%, transparent)`,
+                    }}
                   >
                     {description}
                   </p>
                 ) : null}
 
                 {tasks.length > 0 ? (
-                  <ExperienceTasksDisplay
-                    tasks={tasks}
-                    display={tasksDisplay}
-                    bodyColor={bodyColor}
-                    mutedColor={mutedColor}
-                    isDark={isDark}
-                    label=""
-                    size="lg"
-                  />
+                  <div className="[&_ul]:space-y-5 sm:[&_ul]:space-y-6 [&_.pf-exp-tasks-timeline]:space-y-1 [&_.pf-exp-tasks-grid]:gap-3">
+                    <ExperienceTasksDisplay
+                      tasks={tasks}
+                      display={tasksDisplay}
+                      bodyColor={`color-mix(in srgb, ${titleColor} 58%, transparent)`}
+                      mutedColor={`color-mix(in srgb, ${titleColor} 42%, transparent)`}
+                      isDark={isDark}
+                      label=""
+                      size="lg"
+                    />
+                  </div>
                 ) : null}
 
                 {tools.length > 0 ? (
-                  <div className="flex flex-wrap gap-2 pt-1">
+                  <div className="flex flex-wrap gap-2.5 pt-1">
                     {tools.map((tool) => (
                       <span
                         key={tool}
@@ -16574,21 +17265,23 @@ function TableExperienceRow({
                 ) : null}
 
                 {links.length > 0 ? (
-                  <div className="flex flex-col items-start gap-2">
+                  <div className="flex flex-col items-start gap-2.5 pt-1">
                     {links.map((link) => (
-                      <a
+                      <PortfolioLinkButton
                         key={link.id}
+                        variant={repoLinkButtonStyle}
                         href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-base font-semibold transition hover:opacity-80 sm:text-[1.0625rem]"
-                        data-pf-no-color-transition=""
-                        style={{ color: accent }}
+                        label={link.label || 'View repository'}
+                        palette={experienceLinkButtonPalette({
+                          ink: titleColor,
+                          muted: mutedColor,
+                          accent,
+                          background,
+                          border: hairlineColor,
+                          isDark,
+                        })}
                         onClick={(event) => event.stopPropagation()}
-                      >
-                        <span>{link.label}</span>
-                        <span aria-hidden>↗</span>
-                      </a>
+                      />
                     ))}
                   </div>
                 ) : null}
@@ -16676,9 +17369,11 @@ function TableExperienceBlock({
       expanded={expanded}
       onExpandedChange={onExpandedChange}
       hairlineColor={hairlineColor}
-      tasksDisplay={presentation.tasksDisplay ?? 'arrows'}
+      tasksDisplay={presentation.tasksDisplay ?? 'editorial-dash'}
       striped={presentation.tableStripedRows === true}
       rowIndex={rowIndex}
+      repoLinkButtonStyle={resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'table')}
+      background={presentation.sectionBackgroundColor?.trim()}
     />
   );
 }
@@ -16689,9 +17384,17 @@ export function TableExperienceHeader({
   presentation = DEFAULT_EXPERIENCE_PRESENTATION,
 }: {
   sectionTitle: string;
+  sectionSubtitle?: string;
   years?: number | null;
   presentation?: PortfolioExperiencePresentationSettings;
 }) {
+  const headerRef = useRef<HTMLElement>(null);
+  const labelRef = useRef<HTMLParagraphElement>(null);
+  const leadRef = useRef<HTMLHeadingElement>(null);
+  const lineRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const introPlayedRef = useRef(false);
+  const reduceMotion = useReducedMotion();
+
   const isDark = presentation.activeColorMode !== 'light';
   const colorMode = resolveExperienceColorMode(presentation);
   const styles = normalizeExperienceElementStyles(presentation.elementStyles);
@@ -16701,44 +17404,169 @@ export function TableExperienceHeader({
     DEFAULT_EXPERIENCE_TITLE_COLOR,
     DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
   );
-  const mutedColor = ensureExperienceInkContrast(
-    presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
-    isDark,
-    DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
-  );
+  const ink = resolveSerifLeadInkColor(presentation, titleColor);
+  const { label, title } = resolveSerifLeadCopy(years, sectionTitle, presentation);
+  const lines = splitSerifLeadLines(title);
+  const lineKey = lines.join('\n');
 
-  const showYears = presentation.showYears && years != null && years > 0;
-  const template = resolveExperienceYearsTemplate(presentation);
-  const intro = showYears
-    ? template.replaceAll('{years}', String(years))
-    : presentation.subtitleCustom?.trim() ||
-      'A clear record of roles, teams, and the work behind them.';
+  const align = presentation.serifLeadAlign ?? 'left';
+  const weight = presentation.serifLeadWeight ?? 'medium';
+  const scale = presentation.serifLeadScale ?? 'default';
+  const maxWidth = presentation.serifLeadMaxWidth ?? 'narrow';
+  const lineHeight = presentation.serifLeadLineHeight ?? 'tight';
+  const tracking = presentation.serifLeadTracking ?? 'editorial';
+  const italic = presentation.serifLeadItalic === true;
+  const motionEnabled = presentation.serifLeadMotion !== false;
+  const labelOpacity = presentation.serifLeadLabelOpacity ?? 'muted';
+  const divider = presentation.serifLeadDivider ?? 'none';
+  const dividerOpacity = presentation.serifLeadDividerOpacity ?? 'ghost';
+  const labelAlpha = SERIF_LEAD_LABEL_OPACITY[labelOpacity] ?? SERIF_LEAD_LABEL_OPACITY.muted;
+  const accent = experienceAccentColor(presentation.accentColor);
+  const dividerColor =
+    dividerOpacity === 'accent'
+      ? accent
+      : dividerOpacity === 'subtle'
+        ? `color-mix(in srgb, ${ink} 18%, transparent)`
+        : `color-mix(in srgb, ${ink} 8%, transparent)`;
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    const header = headerRef.current;
+    const labelEl = labelRef.current;
+    const leadBlock = leadRef.current;
+    if (!header || !labelEl) return;
+
+    gsap.registerPlugin(ScrollTrigger);
+    const reduced = reduceMotion === true;
+    const scroller = getScrollParent(header) ?? undefined;
+    const lineEls = lineRefs.current.filter((node): node is HTMLSpanElement => Boolean(node));
+
+    const ctx = gsap.context(() => {
+      const bindScrollMotion = () => {
+        if (reduced || !motionEnabled) return;
+        const fade = gsap.timeline({
+          scrollTrigger: {
+            trigger: header,
+            scroller,
+            start: 'top 52%',
+            end: 'top 0%',
+            scrub: 0.45,
+            invalidateOnRefresh: true,
+          },
+        });
+        fade.fromTo(labelEl, { y: 0 }, { y: -26, ease: 'none' }, 0);
+        if (leadBlock) {
+          const slideX = align === 'right' ? 16 : align === 'center' ? 0 : -16;
+          fade.fromTo(
+            leadBlock,
+            { x: 0, opacity: 1 },
+            { x: 0, opacity: 1, duration: 0.22, ease: 'none' },
+            0
+          );
+          fade.to(leadBlock, { x: slideX, opacity: 0, duration: 0.78, ease: 'power1.in' }, 0.22);
+        }
+      };
+
+      if (!motionEnabled || introPlayedRef.current || reduced) {
+        gsap.set(labelEl, { opacity: 1, y: 0 });
+        if (lineEls.length) gsap.set(lineEls, { yPercent: 0 });
+        if (leadBlock) gsap.set(leadBlock, { x: 0, opacity: 1 });
+        introPlayedRef.current = true;
+        bindScrollMotion();
+        return;
+      }
+
+      introPlayedRef.current = true;
+      gsap.set(labelEl, { opacity: 0 });
+      if (lineEls.length) gsap.set(lineEls, { yPercent: 110 });
+      if (leadBlock) gsap.set(leadBlock, { x: 0, opacity: 1 });
+
+      const intro = gsap.timeline({
+        defaults: { overwrite: true },
+        onComplete: bindScrollMotion,
+      });
+      intro.to(labelEl, { opacity: 1, duration: 0.7, ease: 'power2.out' });
+      if (lineEls.length) {
+        intro.to(
+          lineEls,
+          { yPercent: 0, duration: 0.95, ease: 'power3.out', stagger: 0.14 },
+          0.12
+        );
+      }
+    }, header);
+
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+    return () => {
+      window.clearTimeout(refreshId);
+      ctx.revert();
+      if (!header.isConnected) introPlayedRef.current = false;
+    };
+  }, [align, lineKey, motionEnabled, reduceMotion]);
+
+  useLayoutEffect(() => {
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 40);
+    return () => window.clearTimeout(refreshId);
+  }, [align, divider, italic, lineHeight, maxWidth, scale, tracking, weight]);
 
   return (
-    <header className="mb-14 w-full max-w-4xl lg:mb-20">
+    <header
+      ref={headerRef}
+      className="pf-exp-serif-header"
+      data-align={align}
+      data-scale={scale}
+      data-italic={italic ? 'true' : 'false'}
+      style={
+        {
+          '--pf-exp-serif-lead-weight': String(SERIF_LEAD_WEIGHT[weight]),
+          '--pf-exp-serif-lead-width': SERIF_LEAD_WIDTH[maxWidth],
+          '--pf-exp-serif-lead-lh': String(SERIF_LEAD_LINE_HEIGHT[lineHeight]),
+          '--pf-exp-serif-lead-tracking': SERIF_LEAD_TRACKING[tracking],
+          '--pf-exp-serif-divider-color': dividerColor,
+        } as CSSProperties
+      }
+    >
       <p
-        className="text-[0.95rem] font-medium tracking-[-0.01em] sm:text-[1.05rem]"
-        style={{ color: mutedColor }}
+        ref={labelRef}
+        className="pf-exp-serif-label"
+        style={{ color: `color-mix(in srgb, ${ink} ${Math.round(labelAlpha * 100)}%, transparent)` }}
       >
-        {sectionTitle || 'Experience'}
+        {label}
       </p>
-      <h2
-        className="mt-4 font-serif text-[clamp(2.15rem,4.8vw,3.35rem)] font-medium leading-[1.12] tracking-[-0.035em]"
-        style={{ color: titleColor, fontFamily: SERIF }}
-      >
-        {intro}
-      </h2>
+      {lines.length > 0 ? (
+        <h2
+          ref={leadRef}
+          className="pf-exp-serif-lead"
+          style={{ color: ink, fontFamily: SERIF }}
+        >
+          {lines.map((line, index) => (
+            <span key={`${line}-${index}`} className="pf-exp-serif-line-mask">
+              <span
+                ref={(node) => {
+                  lineRefs.current[index] = node;
+                }}
+                className="pf-exp-serif-line"
+              >
+                {line}
+              </span>
+            </span>
+          ))}
+        </h2>
+      ) : null}
+      {divider !== 'none' ? (
+        <div className="pf-exp-serif-divider" data-style={divider} aria-hidden />
+      ) : null}
     </header>
   );
 }
 
 export function CardsExperienceHeader({
   sectionTitle,
+  sectionSubtitle,
   years,
   presentation = DEFAULT_EXPERIENCE_PRESENTATION,
 }: {
   sectionTitle: string;
+  sectionSubtitle?: string;
   years?: number | null;
   presentation?: PortfolioExperiencePresentationSettings;
 }) {
@@ -16761,27 +17589,38 @@ export function CardsExperienceHeader({
   const showYears = presentation.showYears && years != null && years > 0;
   const template = resolveExperienceYearsTemplate(presentation);
   const intro = showYears ? template.replaceAll('{years}', String(years)) : null;
+  const subtitle = sectionSubtitle?.trim() || '';
 
   const hairlineColor = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
 
   return (
     <header
-      className="mb-10 flex w-full flex-row items-baseline justify-between gap-4 border-b pb-6 sm:mb-12 sm:gap-6 sm:pb-7 lg:mb-14 lg:pb-8"
+      className="mb-10 w-full border-b pb-6 sm:mb-12 sm:pb-7 lg:mb-14 lg:pb-8"
       style={{ borderColor: hairlineColor }}
     >
-      <p
-        className="shrink-0 text-[0.95rem] font-medium tracking-[-0.01em] sm:text-[1.05rem]"
-        style={{ color: mutedColor }}
-      >
-        {sectionTitle || 'Experience'}
-      </p>
-      {intro ? (
-        <h2
-          className="min-w-0 flex-1 text-right font-serif text-[clamp(2.15rem,4.8vw,3.35rem)] font-medium leading-[1.12] tracking-[-0.035em]"
-          style={{ color: titleColor, fontFamily: SERIF }}
+      <div className="flex w-full flex-row items-baseline justify-between gap-4 sm:gap-6">
+        <p
+          className="shrink-0 text-[0.95rem] font-medium tracking-[-0.01em] sm:text-[1.05rem]"
+          style={{ color: mutedColor }}
         >
-          {intro}
-        </h2>
+          {sectionTitle || 'Experience'}
+        </p>
+        {intro ? (
+          <h2
+            className="min-w-0 flex-1 text-right font-serif text-[clamp(2.15rem,4.8vw,3.35rem)] font-medium leading-[1.12] tracking-[-0.035em]"
+            style={{ color: titleColor, fontFamily: SERIF }}
+          >
+            {intro}
+          </h2>
+        ) : null}
+      </div>
+      {subtitle ? (
+        <p
+          className="mt-3 max-w-2xl text-[0.95rem] leading-relaxed sm:text-[1.02rem]"
+          style={{ color: mutedColor }}
+        >
+          {subtitle}
+        </p>
       ) : null}
     </header>
   );
@@ -16875,6 +17714,12 @@ export function TableExperienceList({
   );
 }
 
+function formatExperienceCardTitle(title: string): string {
+  const trimmed = title.trim();
+  if (!trimmed) return trimmed;
+  return trimmed.charAt(0).toLocaleUpperCase('fr-FR') + trimmed.slice(1);
+}
+
 function CardsExperienceEntry({
   period,
   title,
@@ -16892,6 +17737,7 @@ function CardsExperienceEntry({
   bodyColor,
   isDark,
   presentation,
+  stackIndex = 0,
 }: {
   period: string | null;
   title: string | null;
@@ -16909,6 +17755,7 @@ function CardsExperienceEntry({
   bodyColor: string;
   isDark: boolean;
   presentation: PortfolioExperiencePresentationSettings;
+  stackIndex?: number;
 }) {
   const secondary = experienceSecondaryStatusColor(presentation);
   const metaParts = [
@@ -16916,10 +17763,12 @@ function CardsExperienceEntry({
     location?.trim() || '',
     employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : '',
   ].filter(Boolean);
+  const sectionBg = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
+  // Opaque fill so stacked cards cleanly cover the one underneath.
   const cardStyle: CSSProperties = isDark
     ? {
         borderColor: 'rgba(255,255,255,0.1)',
-        backgroundColor: 'rgba(255,255,255,0.04)',
+        backgroundColor: `color-mix(in srgb, ${sectionBg} 92%, white 8%)`,
       }
     : {
         borderColor: 'rgba(0,0,0,0.08)',
@@ -16936,20 +17785,27 @@ function CardsExperienceEntry({
         backgroundColor: 'transparent',
         color: bodyColor,
       };
+  const softTaskColor = `color-mix(in srgb, ${bodyColor} 60%, transparent)`;
+  const softTaskMuted = `color-mix(in srgb, ${mutedColor} 70%, transparent)`;
+  const tasksDisplay =
+    presentation.tasksDisplay === 'editorial-dash' || !presentation.tasksDisplay
+      ? 'architectural-index'
+      : presentation.tasksDisplay;
+  const spacing = experienceCardsElementSpacingClasses(presentation.cardsElementSpacing);
 
   return (
     <article
-      className={`flex h-full min-w-0 flex-col border px-5 py-5 sm:px-6 sm:py-6 lg:px-7 lg:py-7 ${experienceCardsBorderRadiusClass(presentation.cardsBorderRadius)}`}
-      style={cardStyle}
+      className={`pf-exp-cards-stack-card flex min-w-0 flex-col border ${spacing.cardPad} ${experienceCardsBorderRadiusClass(presentation.cardsBorderRadius)}`}
+      style={{ ...cardStyle, zIndex: stackIndex + 1 }}
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="pf-exp-cards-stack-header flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           {title ? (
             <h4
               className="font-serif text-[1.35rem] font-bold leading-[1.2] tracking-[-0.025em] sm:text-[1.55rem] lg:text-[1.7rem]"
               style={{ color: titleColor, fontFamily: SERIF }}
             >
-              {title}
+              {formatExperienceCardTitle(title)}
             </h4>
           ) : null}
           {metaParts.length > 0 ? (
@@ -16975,7 +17831,7 @@ function CardsExperienceEntry({
 
       {description ? (
         <p
-          className="mt-8 text-[0.98rem] leading-[1.7] sm:mt-9 sm:text-[1.02rem]"
+          className={`${spacing.sectionGap} text-[0.98rem] leading-[1.7] sm:text-[1.02rem]`}
           style={{ color: bodyColor }}
         >
           {description}
@@ -16983,12 +17839,12 @@ function CardsExperienceEntry({
       ) : null}
 
       {tasks.length > 0 ? (
-        <div className="mt-8 sm:mt-9">
+        <div className={`${spacing.sectionGap} ${spacing.tasksSpace}`}>
           <ExperienceTasksDisplay
             tasks={tasks}
-            display={presentation.tasksDisplay ?? 'dashes'}
-            bodyColor={bodyColor}
-            mutedColor={mutedColor}
+            display={tasksDisplay}
+            bodyColor={softTaskColor}
+            mutedColor={softTaskMuted}
             isDark={isDark}
             label=""
             size="md"
@@ -16997,7 +17853,7 @@ function CardsExperienceEntry({
       ) : null}
 
       {tools.length > 0 ? (
-        <div className="mt-auto pt-8 sm:pt-9">
+        <div className={spacing.toolsGap}>
           <div className="flex flex-wrap gap-2">
             {tools.map((tool) => (
               <span
@@ -17013,20 +17869,21 @@ function CardsExperienceEntry({
       ) : null}
 
       {links.length > 0 ? (
-        <div className="mt-7 flex flex-col items-start gap-2.5 sm:mt-8">
+        <div className={`${spacing.linksGap} flex flex-col items-start gap-2.5`}>
           {links.map((link) => (
-            <a
+            <PortfolioLinkButton
               key={link.id}
+              variant={resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'cards')}
               href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-80 sm:text-base"
-              data-pf-no-color-transition=""
-              style={{ color: accent }}
-            >
-              <span>{link.label}</span>
-              <span aria-hidden>↗</span>
-            </a>
+              label={link.label || 'View repository'}
+              palette={experienceLinkButtonPalette({
+                ink: titleColor,
+                muted: mutedColor,
+                accent,
+                background: sectionBg,
+                isDark,
+              })}
+            />
           ))}
         </div>
       ) : null}
@@ -17037,9 +17894,11 @@ function CardsExperienceEntry({
 function CardsExperienceBlock({
   block,
   presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+  stackIndex = 0,
 }: {
   block: ProfileMediaBlock;
   presentation?: PortfolioExperiencePresentationSettings;
+  stackIndex?: number;
 }) {
   const {
     period,
@@ -17097,6 +17956,7 @@ function CardsExperienceBlock({
       bodyColor={bodyColor}
       isDark={isDark}
       presentation={presentation}
+      stackIndex={stackIndex}
     />
   );
 }
@@ -17114,36 +17974,43 @@ export function CardsExperienceList({
 }) {
   if (blocks.length === 0) return null;
 
-  const flatMotionTiming = {
-    ...defaultMotionTimingForProfile(motionProfile),
-    hoverLift: 0,
-    hoverShadowSize: 0,
-    hoverShadowOpacity: 0,
-  };
-
-  const gridClass = forceSingleColumn
-    ? 'grid grid-cols-1'
-    : 'grid grid-cols-1 md:grid-cols-2';
-
   return (
     <div
-      className={experienceListShellClass(
-        forceSingleColumn ? 'full' : presentation.listMaxWidth,
-        forceSingleColumn ? 'left' : presentation.listPlacement
+      className={experienceCardsCardWidthClass(
+        forceSingleColumn ? 'full' : presentation.cardsCardWidth
       )}
     >
-      <div className={gridClass} style={experienceCardsGridGapStyle(presentation)}>
+      <div
+        className="pf-exp-cards-stack"
+        style={
+          {
+            ['--pf-exp-cards-vertical-gap' as string]: `${resolveExperienceCardsVerticalGapPx(
+              presentation.cardsVerticalGap
+            )}px`,
+          } as CSSProperties
+        }
+      >
         {blocks.map((block, index) => (
-          <PortfolioMotionItem
+          <div
             key={block.id}
-            profile={motionProfile}
-            index={index}
-            className="h-full"
-            timing={flatMotionTiming}
+            className="pf-exp-cards-stack-item"
+            style={
+              {
+                zIndex: index + 1,
+                // Progressive offset = prior title headers stay visible in the cascade.
+                ['--pf-exp-cards-stack-index' as string]: index,
+              } as CSSProperties
+            }
           >
-            <CardsExperienceBlock block={block} presentation={presentation} />
-          </PortfolioMotionItem>
+            <CardsExperienceBlock
+              block={block}
+              presentation={presentation}
+              stackIndex={index}
+            />
+          </div>
         ))}
+        {/* Keeps the last card pinned for the same scroll beat as the others. */}
+        <div className="pf-exp-cards-stack-end" aria-hidden />
       </div>
     </div>
   );
@@ -17259,6 +18126,162 @@ function ReelStatusIndicator({
   );
 }
 
+/** Scroll-driven warp on the faint index watermark — enters / settles / exits distorted. */
+function ReelIndexWatermark({
+  index,
+  titleColor,
+  sectionRef,
+  enabled,
+}: {
+  index: number;
+  titleColor: string;
+  sectionRef: RefObject<HTMLElement | null>;
+  enabled: boolean;
+}) {
+  const reduceMotion = useReducedMotion();
+  const digits = String(index + 1).padStart(2, '0').split('');
+  const ink = `color-mix(in srgb, ${titleColor} 5%, transparent)`;
+  const animate = enabled && !reduceMotion;
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start end', 'end start'],
+  });
+
+  const skewX = useTransform(scrollYProgress, [0, 0.32, 0.5, 0.68, 1], [22, 5, 0, -5, -20]);
+  const scaleY = useTransform(scrollYProgress, [0, 0.32, 0.5, 0.68, 1], [1.55, 1.1, 1, 1.1, 1.5]);
+  const scaleX = useTransform(scrollYProgress, [0, 0.5, 1], [0.78, 1, 0.8]);
+  const y = useTransform(scrollYProgress, [0, 0.5, 1], [96, 0, -110]);
+  const rotate = useTransform(scrollYProgress, [0, 0.5, 1], [-7, 0, 6]);
+  const blurPx = useTransform(scrollYProgress, [0, 0.3, 0.5, 0.7, 1], [12, 2.5, 0, 2.5, 10]);
+  const filter = useMotionTemplate`blur(${blurPx}px)`;
+  const opacity = useTransform(scrollYProgress, [0, 0.22, 0.5, 0.78, 1], [0.15, 0.9, 1, 0.9, 0.12]);
+  const tracking = useTransform(scrollYProgress, [0, 0.5, 1], ['0.18em', '0em', '0.14em']);
+
+  // Second digit lags slightly — classic editorial “liquid type” feel.
+  const digit1Y = useTransform(scrollYProgress, [0, 0.5, 1], [28, 0, -36]);
+  const digit1Skew = useTransform(scrollYProgress, [0, 0.5, 1], [8, 0, -10]);
+
+  if (!animate) {
+    return (
+      <div className="relative h-0">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute bottom-[1.5rem] right-[6vw] select-none text-[6rem] leading-none sm:bottom-[1.75rem] sm:text-[8.5rem]"
+          style={{ color: ink, fontFamily: REEL_SERIF, fontWeight: 450 }}
+        >
+          {digits.join('')}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-0">
+      <motion.span
+        aria-hidden
+        className="pointer-events-none absolute bottom-[1.5rem] right-[6vw] flex select-none text-[6rem] leading-none will-change-transform sm:bottom-[1.75rem] sm:text-[8.5rem]"
+        style={{
+          color: ink,
+          fontFamily: REEL_SERIF,
+          fontWeight: 450,
+          skewX,
+          scaleX,
+          scaleY,
+          y,
+          rotate,
+          filter,
+          opacity,
+          letterSpacing: tracking,
+          transformOrigin: '100% 100%',
+        }}
+      >
+        <motion.span style={{ display: 'inline-block' }}>{digits[0]}</motion.span>
+        <motion.span style={{ display: 'inline-block', y: digit1Y, skewX: digit1Skew }}>
+          {digits[1]}
+        </motion.span>
+      </motion.span>
+    </div>
+  );
+}
+
+const REEL_REVEAL_EASE = [0.22, 1, 0.36, 1] as const;
+
+const reelRevealContainer = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.11, delayChildren: 0.06 },
+  },
+};
+
+/** Pass stagger through layout wrappers (grid / columns) without animating the shell itself. */
+const reelRevealPassThrough = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.11 },
+  },
+};
+
+const reelRevealItem = {
+  hidden: { opacity: 0, y: 42, filter: 'blur(10px)' },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    transition: { duration: 0.85, ease: REEL_REVEAL_EASE },
+  },
+};
+
+function ReelRevealItem({
+  children,
+  className,
+  enabled,
+}: {
+  children: ReactNode;
+  className?: string;
+  enabled: boolean;
+}) {
+  if (!enabled) {
+    return <div className={className}>{children}</div>;
+  }
+  return (
+    <motion.div className={className} variants={reelRevealItem}>
+      {children}
+    </motion.div>
+  );
+}
+
+function ReelRevealGroup({
+  children,
+  className,
+  enabled,
+}: {
+  children: ReactNode;
+  className?: string;
+  enabled: boolean;
+}) {
+  if (!enabled) {
+    return <div className={className}>{children}</div>;
+  }
+  return (
+    <motion.div className={className} variants={reelRevealPassThrough}>
+      {children}
+    </motion.div>
+  );
+}
+
+function reelTwoToneTitle(title: string, titleColor: string, mutedColor: string) {
+  const words = title.trim().split(/\s+/);
+  const lastWord = words.pop();
+  const rest = words.join(' ');
+  return (
+    <>
+      {rest ? <span style={{ color: titleColor }}>{rest} </span> : null}
+      <span style={{ color: mutedColor }}>{lastWord}</span>
+    </>
+  );
+}
+
 function ReelExperienceEntry({
   index,
   block,
@@ -17268,8 +18291,11 @@ function ReelExperienceEntry({
   mutedColor,
   bodyColor,
   hairline,
-  background,
   statusStyle,
+  scrollMotion,
+  background,
+  repoLinkButtonStyle = 'icon',
+  showProof = true,
 }: {
   index: number;
   block: ProfileMediaBlock;
@@ -17279,9 +18305,17 @@ function ReelExperienceEntry({
   mutedColor: string;
   bodyColor: string;
   hairline: string;
-  background: string;
   statusStyle: PortfolioExperienceReelStatusStyle;
+  scrollMotion: PortfolioExperienceReelScrollMotion;
+  background: string;
+  repoLinkButtonStyle?: PortfolioExperienceRepoLinkStyle;
+  showProof?: boolean;
 }) {
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const reduceMotion = useReducedMotion();
+  const fadeReveal = scrollMotion === 'fade-reveal' && !reduceMotion;
+  const indexDistort = scrollMotion === 'index-distort';
+
   const { period, title, organization, description, status, tasks, tools, links, location, employmentType } =
     resolveExperienceContent(block);
 
@@ -17290,87 +18324,66 @@ function ReelExperienceEntry({
     .join('  ·  ');
 
   const hasStatus = status === 'ONGOING' || status === 'FINISHED';
-  const repoLink = links[0] ?? null;
+  const repoLink = showProof ? (links[0] ?? null) : null;
+
+  const SectionTag = fadeReveal ? motion.section : 'section';
 
   return (
-    <section
+    <SectionTag
+      ref={sectionRef}
       className="relative flex w-full flex-col justify-center px-[6vw] py-[6vh]"
       style={{ minHeight: '100vh' }}
+      {...(index === 0 ? { 'data-pf-exp-lead-card': '' } : {})}
+      {...(fadeReveal
+        ? {
+            variants: reelRevealContainer,
+            initial: 'hidden' as const,
+            whileInView: 'show' as const,
+            viewport: { once: false, amount: 0.32, margin: '0px 0px -10% 0px' },
+          }
+        : {})}
     >
-      {/* Faint index watermark — the only element left in this zone now that the
-          kicker, counter, and dots are gone. The section centers its content
-          vertically (justify-center), so the hairline below never sits at a
-          fixed offset from the section's own top edge — positioning the
-          watermark from a zero-height anchor placed right before the hairline
-          (rather than from the section itself) tracks the hairline's actual
-          rendered position exactly, whatever that turns out to be. */}
-      <div className="relative h-0">
-        <span
-          aria-hidden
-          className="pointer-events-none absolute bottom-[1.5rem] right-[6vw] select-none text-[6rem] leading-none sm:bottom-[1.75rem] sm:text-[8.5rem]"
-          style={{
-            color: `color-mix(in srgb, ${titleColor} 5%, transparent)`,
-            fontFamily: REEL_SERIF,
-            fontWeight: 450,
-          }}
-        >
-          {String(index + 1).padStart(2, '0')}
-        </span>
-      </div>
+      <ReelIndexWatermark
+        index={index}
+        titleColor={titleColor}
+        sectionRef={sectionRef}
+        enabled={indexDistort}
+      />
 
-      <div className="h-px w-full shrink-0" style={{ backgroundColor: hairline }} aria-hidden />
+      <ReelRevealItem enabled={fadeReveal}>
+        <div className="h-px w-full shrink-0" style={{ backgroundColor: hairline }} aria-hidden />
+      </ReelRevealItem>
 
       {title ? (
-        <h3
-          className="mt-10 max-w-[18ch] text-[clamp(2.6rem,6vw,5rem)] max-[800px]:text-[2.2rem]"
-          style={{
-            fontFamily: REEL_SERIF,
-            fontWeight: 450,
-            lineHeight: 1.04,
-            letterSpacing: '-0.015em',
-          }}
-        >
-          {/* Subtle two-tone title: the last word shifts to a softer nuance instead of the
-              full title color, for a touch of depth without reaching for the accent color. */}
-          {(() => {
-            const words = title.trim().split(/\s+/);
-            const lastWord = words.pop();
-            const rest = words.join(' ');
-            return (
-              <>
-                {rest ? <span style={{ color: titleColor }}>{rest} </span> : null}
-                <span style={{ color: mutedColor }}>{lastWord}</span>
-              </>
-            );
-          })()}
-        </h3>
+        <ReelRevealItem enabled={fadeReveal}>
+          <h3
+            className="pf-exp-lead-reveal mt-10 max-w-[18ch] text-[clamp(2.6rem,6vw,5rem)] max-[800px]:text-[2.2rem]"
+            style={{
+              fontFamily: REEL_SERIF,
+              fontWeight: 450,
+              lineHeight: 1.04,
+              letterSpacing: '-0.015em',
+            }}
+            data-pf-lead-step="1"
+            data-pf-no-color-transition=""
+          >
+            {reelTwoToneTitle(title, titleColor, mutedColor)}
+          </h3>
+        </ReelRevealItem>
       ) : null}
 
-      <div className="my-[2.4rem] h-px w-full shrink-0" style={{ backgroundColor: hairline }} aria-hidden />
+      <ReelRevealItem enabled={fadeReveal}>
+        <div className="my-[2.4rem] h-px w-full shrink-0" style={{ backgroundColor: hairline }} aria-hidden />
+      </ReelRevealItem>
 
-      {/* Asymmetric 4/8 split, no boxed card — the right column's content sits directly on
-          the section background, not inside a bordered panel. */}
-      <div className="pf-reel-grid">
-        <div className="pf-reel-grid-meta">
-          <p
-            className="text-[0.72rem] font-bold uppercase"
-            style={{ color: mutedColor, fontFamily: REEL_SANS, letterSpacing: '0.14em' }}
-          >
-            Period &amp; status
-          </p>
-
+      <ReelRevealGroup enabled={fadeReveal} className="pf-reel-grid">
+        <ReelRevealItem enabled={fadeReveal} className="pf-reel-grid-meta">
           {period ? (
             <p
-              className="mt-3 text-[1.6rem] font-semibold"
+              className="text-[1.6rem] font-semibold"
               style={{ color: titleColor, fontFamily: REEL_SANS }}
             >
               {period}
-            </p>
-          ) : null}
-
-          {metaLine ? (
-            <p className="mt-1.5 text-[0.95rem]" style={{ color: mutedColor, fontFamily: REEL_SANS }}>
-              {metaLine}
             </p>
           ) : null}
 
@@ -17384,79 +18397,514 @@ function ReelExperienceEntry({
               hairline={hairline}
             />
           ) : null}
-        </div>
+        </ReelRevealItem>
 
-        <div className="pf-reel-grid-flow">
+        <ReelRevealGroup enabled={fadeReveal} className="pf-reel-grid-flow">
           {description ? (
-            <p className="text-[1.05rem] leading-[1.85]" style={{ color: bodyColor, fontFamily: REEL_SANS }}>
-              {description}
-            </p>
+            <ReelRevealItem enabled={fadeReveal}>
+              <p
+                className="pf-exp-lead-reveal m-0 p-0 text-left text-[1.05rem] leading-[1.85]"
+                style={{ color: bodyColor, fontFamily: REEL_SANS }}
+                data-pf-lead-step="2"
+                data-pf-no-color-transition=""
+              >
+                {description}
+              </p>
+            </ReelRevealItem>
           ) : null}
 
           {tasks.length > 0 ? (
-            <div className={description ? 'mt-9 space-y-3' : 'space-y-3'}>
+            <ReelRevealGroup enabled={fadeReveal} className={description ? 'mt-9 space-y-3' : 'space-y-3'}>
               {tasks.map((task, taskIndex) => (
-                <div key={taskIndex} className="flex items-baseline gap-4">
-                  <span className="shrink-0 font-mono" style={{ color: secondaryColor, fontSize: '0.78rem' }}>
-                    {String(taskIndex + 1).padStart(2, '0')} /
-                  </span>
-                  <span
-                    className="text-[0.98rem] leading-snug"
-                    style={{ color: bodyColor, fontFamily: REEL_SANS }}
+                <ReelRevealItem key={taskIndex} enabled={fadeReveal}>
+                  <div
+                    className="pf-exp-lead-reveal flex items-baseline gap-4"
+                    data-pf-lead-step="4"
+                    data-pf-no-color-transition=""
                   >
-                    {task}
-                  </span>
-                </div>
+                    <span
+                      className="pf-exp-task-index shrink-0 font-mono"
+                      style={{
+                        color: `color-mix(in srgb, ${titleColor} 40%, transparent)`,
+                        fontSize: '0.78rem',
+                      }}
+                    >
+                      {String(taskIndex + 1).padStart(2, '0')} /
+                    </span>
+                    <span
+                      className="text-[0.98rem] leading-snug"
+                      style={{ color: bodyColor, fontFamily: REEL_SANS }}
+                    >
+                      {task}
+                    </span>
+                  </div>
+                </ReelRevealItem>
               ))}
-            </div>
+            </ReelRevealGroup>
           ) : null}
 
-          {tools.length > 0 || repoLink ? (
-            <div
-              className="mt-12 flex flex-col gap-8 border-t pt-8"
-              style={{ borderColor: hairline }}
-            >
-              {tools.length > 0 ? (
-                <p className="text-[0.9rem]" style={{ color: mutedColor, fontFamily: REEL_SANS }}>
-                  {tools.join('   •   ')}
-                </p>
-              ) : null}
-              {repoLink ? (
-                <a
-                  href={repoLink.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-pf-no-color-transition=""
-                  className="group/repo inline-flex w-fit items-center gap-2.5 self-start border-b pb-1 font-semibold"
-                  style={{
-                    color: titleColor,
-                    borderColor: `color-mix(in srgb, ${titleColor} 35%, transparent)`,
-                    fontSize: '1.05rem',
-                    fontFamily: REEL_SANS,
-                  }}
-                >
-                  {repoLink.label || 'View repository'}
-                  <svg
-                    viewBox="0 0 16 16"
-                    className="h-4 w-4 transition-transform duration-200 ease-out group-hover/repo:translate-x-0.5 group-hover/repo:-translate-y-0.5"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M4.5 11.5 11.5 4.5M5.5 4.5h6v6"
-                      stroke="currentColor"
-                      strokeWidth={1.4}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </a>
-              ) : null}
-            </div>
+          {tools.length > 0 || repoLink || metaLine ? (
+            <ReelRevealItem enabled={fadeReveal}>
+              <div
+                className="mt-12 flex flex-col gap-8 border-t pt-8"
+                style={{ borderColor: hairline }}
+              >
+                {tools.length > 0 ? (
+                  <p className="text-[0.9rem]" style={{ color: mutedColor, fontFamily: REEL_SANS }}>
+                    {tools.join('   •   ')}
+                  </p>
+                ) : null}
+
+                {repoLink || metaLine ? (
+                  <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+                    {repoLink ? (
+                      <PortfolioLinkButton
+                        variant={repoLinkButtonStyle}
+                        href={repoLink.url}
+                        label={repoLink.label || 'View repository'}
+                        palette={experienceLinkButtonPalette({
+                          ink: titleColor,
+                          muted: mutedColor,
+                          accent,
+                          background,
+                          border: hairline,
+                        })}
+                      />
+                    ) : (
+                      <span aria-hidden />
+                    )}
+                    {metaLine ? (
+                      <p
+                        className="ml-auto text-right text-[0.95rem]"
+                        style={{ color: mutedColor, fontFamily: REEL_SANS }}
+                      >
+                        {metaLine}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            </ReelRevealItem>
           ) : null}
+        </ReelRevealGroup>
+      </ReelRevealGroup>
+    </SectionTag>
+  );
+}
+
+/** Sticky vertical: pinned story panel + ScrollTrigger-driven title morph between roles. */
+function ReelStickyVerticalExperience({
+  blocks,
+  accent,
+  secondaryColor,
+  titleColor,
+  mutedColor,
+  bodyColor,
+  hairline,
+  background,
+  statusStyle,
+  repoLinkButtonStyle = 'icon',
+  showProof = true,
+}: {
+  blocks: ProfileMediaBlock[];
+  accent: string;
+  secondaryColor: string;
+  titleColor: string;
+  mutedColor: string;
+  bodyColor: string;
+  hairline: string;
+  background: string;
+  statusStyle: PortfolioExperienceReelStatusStyle;
+  repoLinkButtonStyle?: PortfolioExperienceRepoLinkStyle;
+  showProof?: boolean;
+}) {
+  const reduceMotion = useReducedMotion();
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
+  const indexRef = useRef<HTMLSpanElement | null>(null);
+  const footerRef = useRef<HTMLDivElement | null>(null);
+  const activeRef = useRef(0);
+  const directionRef = useRef(1);
+  const titleSwapToken = useRef(0);
+  const skipEnterOnMount = useRef(true);
+  const introPlayedRef = useRef(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [displayIndex, setDisplayIndex] = useState(0);
+  const [introDone, setIntroDone] = useState(false);
+
+  const entries = useMemo(
+    () => blocks.map((block) => resolveExperienceContent(block)),
+    [blocks]
+  );
+
+  const active = entries[displayIndex] ?? entries[0];
+  const metaLine = active
+    ? [active.organization, active.location, active.employmentType ? EMPLOYMENT_TYPE_LABELS[active.employmentType] : null]
+        .filter((part): part is string => Boolean(part))
+        .join('  ·  ')
+    : '';
+  const hasStatus = active?.status === 'ONGOING' || active?.status === 'FINISHED';
+  const repoLink = showProof ? (active?.links[0] ?? null) : null;
+  const title = active?.title ?? '';
+  const period = active?.period ?? null;
+  const description = active?.description ?? null;
+  const tasks = active?.tasks ?? [];
+  const tools = active?.tools ?? [];
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined' || blocks.length === 0) return;
+    const track = trackRef.current;
+    if (!track) return;
+
+    gsap.registerPlugin(ScrollTrigger);
+    const scroller = getScrollParent(track) ?? undefined;
+
+    const playIntro = () => {
+      if (introPlayedRef.current) return;
+      introPlayedRef.current = true;
+
+      const titleEl = titleRef.current;
+      const indexEl = indexRef.current;
+      const footerEl = footerRef.current;
+
+      // Unlock CSS opacity gate first; title stays at natural left (x:0).
+      setIntroDone(true);
+
+      if (reduceMotion || !titleEl) {
+        if (titleEl) gsap.set(titleEl, { clearProps: 'transform,opacity' });
+        if (indexEl) gsap.set(indexEl, { clearProps: 'transform,opacity' });
+        if (footerEl) gsap.set(footerEl, { clearProps: 'opacity' });
+        return;
+      }
+
+      // Start from the right in GSAP only — rest position is always flush left (x:0).
+      gsap.fromTo(
+        titleEl,
+        { x: 120, opacity: 0 },
+        {
+          x: 0,
+          opacity: 1,
+          duration: 1.05,
+          ease: 'power2.out',
+          overwrite: true,
+          onComplete: () => {
+            gsap.set(titleEl, { clearProps: 'transform' });
+          },
+        }
+      );
+      if (indexEl) {
+        gsap.fromTo(
+          indexEl,
+          { x: 40, opacity: 0 },
+          {
+            x: 0,
+            opacity: 1,
+            duration: 0.95,
+            ease: 'power2.out',
+            delay: 0.04,
+            overwrite: true,
+            onComplete: () => {
+              gsap.set(indexEl, { clearProps: 'transform' });
+            },
+          }
+        );
+      }
+      if (footerEl) {
+        gsap.fromTo(
+          footerEl,
+          { opacity: 0.2 },
+          { opacity: 1, duration: 0.8, ease: 'power2.out', delay: 0.08, overwrite: true }
+        );
+      }
+    };
+
+    if (reduceMotion) {
+      playIntro();
+    }
+
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: track,
+        scroller: scroller || undefined,
+        start: 'top top',
+        end: 'bottom bottom',
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          const n = blocks.length;
+          const next = Math.min(n - 1, Math.max(0, Math.floor(self.progress * n - 1e-9)));
+          if (next === activeRef.current) return;
+          directionRef.current = self.direction >= 0 ? 1 : -1;
+          activeRef.current = next;
+          setActiveIndex(next);
+        },
+      });
+
+      ScrollTrigger.create({
+        trigger: track,
+        scroller: scroller || undefined,
+        start: 'top 85%',
+        once: true,
+        onEnter: playIntro,
+        // If the section is already on screen at mount, still run intro.
+        onRefresh: (self) => {
+          if (self.isActive || self.progress > 0) playIntro();
+        },
+      });
+    }, track);
+
+    // Failsafe: never leave the title parked / invisible / mid-transform.
+    const failsafe = window.setTimeout(() => {
+      if (!introPlayedRef.current) playIntro();
+      const titleEl = titleRef.current;
+      if (titleEl) gsap.set(titleEl, { x: 0, xPercent: 0, clearProps: 'transform' });
+    }, 1200);
+
+    ScrollTrigger.refresh();
+    return () => {
+      window.clearTimeout(failsafe);
+      ctx.revert();
+    };
+  }, [blocks.length, reduceMotion]);
+
+  // Soft exit → swap copy → soft enter (short travel, no remount flash).
+  useEffect(() => {
+    if (activeIndex === displayIndex) return;
+
+    const dir = directionRef.current;
+    const titleEl = titleRef.current;
+    const indexEl = indexRef.current;
+    const footerEl = footerRef.current;
+    const token = ++titleSwapToken.current;
+
+    if (reduceMotion || !titleEl) {
+      setDisplayIndex(activeIndex);
+      return;
+    }
+
+    const tl = gsap.timeline({
+      defaults: { overwrite: 'auto' },
+      onComplete: () => {
+        if (token !== titleSwapToken.current) return;
+        setDisplayIndex(activeIndex);
+      },
+    });
+
+    tl.to(
+      titleEl,
+      {
+        x: dir >= 0 ? -72 : 72,
+        opacity: 0,
+        duration: 0.55,
+        ease: 'power2.inOut',
+      },
+      0
+    );
+    if (indexEl) {
+      tl.to(
+        indexEl,
+        {
+          x: dir >= 0 ? -28 : 28,
+          opacity: 0,
+          duration: 0.45,
+          ease: 'power2.inOut',
+        },
+        0
+      );
+    }
+    if (footerEl) tl.to(footerEl, { opacity: 0.45, duration: 0.4, ease: 'power1.inOut' }, 0);
+
+    return () => {
+      tl.kill();
+    };
+  }, [activeIndex, displayIndex, reduceMotion]);
+
+  useLayoutEffect(() => {
+    if (skipEnterOnMount.current) {
+      skipEnterOnMount.current = false;
+      return;
+    }
+    if (reduceMotion) return;
+    const titleEl = titleRef.current;
+    const indexEl = indexRef.current;
+    const footerEl = footerRef.current;
+    if (!titleEl) return;
+
+    const dir = directionRef.current;
+    gsap.fromTo(
+      titleEl,
+      { x: dir >= 0 ? 88 : -88, opacity: 0 },
+      {
+        x: 0,
+        opacity: 1,
+        duration: 0.85,
+        ease: 'power2.out',
+        overwrite: 'auto',
+        onComplete: () => {
+          gsap.set(titleEl, { clearProps: 'transform' });
+        },
+      }
+    );
+    if (indexEl) {
+      gsap.fromTo(
+        indexEl,
+        { x: dir >= 0 ? 36 : -36, opacity: 0 },
+        {
+          x: 0,
+          opacity: 1,
+          duration: 0.8,
+          ease: 'power2.out',
+          overwrite: 'auto',
+          onComplete: () => {
+            gsap.set(indexEl, { clearProps: 'transform' });
+          },
+        }
+      );
+    }
+    if (footerEl) {
+      gsap.to(footerEl, { opacity: 1, duration: 0.65, ease: 'power2.out', overwrite: 'auto' });
+    }
+  }, [displayIndex, reduceMotion]);
+
+  const trackHeightVh = Math.max(1, blocks.length) * 100;
+
+  return (
+    <div
+      ref={trackRef}
+      className="pf-reel-sticky-v-track relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2"
+      style={{ height: `${trackHeightVh}vh` }}
+    >
+      <div
+        className={`pf-reel-sticky-v-pin${introDone || reduceMotion ? ' is-intro-done' : ''}`}
+        style={{ backgroundColor: background }}
+      >
+        {/* Large index — top-right, same visual weight as Index distort watermark. */}
+        <span
+          ref={indexRef}
+          aria-hidden
+          className="pf-reel-sticky-v-index"
+          style={{
+            color: `color-mix(in srgb, ${titleColor} 7%, transparent)`,
+            fontFamily: REEL_SERIF,
+          }}
+        >
+          {String(displayIndex + 1).padStart(2, '0')}
+        </span>
+
+        {/* Title frame locked for the whole sticky run — hairlines never reflow with copy. */}
+        <div className="pf-reel-sticky-v-title-frame">
+          <div className="h-px w-full shrink-0" style={{ backgroundColor: hairline }} aria-hidden />
+          <div className="pf-reel-sticky-v-title-slot">
+            {title ? (
+              <h3
+                ref={titleRef}
+                className="whitespace-nowrap text-[clamp(2.2rem,5.2vw,4.5rem)] max-[800px]:text-[1.85rem]"
+                style={{
+                  fontFamily: REEL_SERIF,
+                  fontWeight: 450,
+                  lineHeight: 1.08,
+                  letterSpacing: '-0.015em',
+                }}
+              >
+                {reelTwoToneTitle(title, titleColor, mutedColor)}
+              </h3>
+            ) : null}
+          </div>
+          <div className="h-px w-full shrink-0" style={{ backgroundColor: hairline }} aria-hidden />
         </div>
+
+        <div ref={footerRef} className="pf-reel-sticky-v-footer">
+            <div className="pf-reel-grid">
+              <div className="pf-reel-grid-meta">
+                {period ? (
+                  <p
+                    className="text-[1.6rem] font-semibold"
+                    style={{ color: titleColor, fontFamily: REEL_SANS }}
+                  >
+                    {period}
+                  </p>
+                ) : null}
+                {hasStatus && active ? (
+                  <ReelStatusIndicator
+                    status={active.status as 'ONGOING' | 'FINISHED'}
+                    presentationStyle={statusStyle}
+                    accent={accent}
+                    secondaryColor={secondaryColor}
+                    bodyColor={bodyColor}
+                    hairline={hairline}
+                  />
+                ) : null}
+              </div>
+
+              <div className="pf-reel-grid-flow">
+                {description ? (
+                  <p className="text-[1.05rem] leading-[1.85]" style={{ color: bodyColor, fontFamily: REEL_SANS }}>
+                    {description}
+                  </p>
+                ) : null}
+
+                {tasks.length > 0 ? (
+                  <div className={description ? 'mt-9 space-y-3' : 'space-y-3'}>
+                    {tasks.map((task, taskIndex) => (
+                      <div key={taskIndex} className="flex items-baseline gap-4">
+                        <span className="shrink-0 font-mono" style={{ color: secondaryColor, fontSize: '0.78rem' }}>
+                          {String(taskIndex + 1).padStart(2, '0')} /
+                        </span>
+                        <span
+                          className="text-[0.98rem] leading-snug"
+                          style={{ color: bodyColor, fontFamily: REEL_SANS }}
+                        >
+                          {task}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {tools.length > 0 || repoLink || metaLine ? (
+                  <div
+                    className="mt-12 flex flex-col gap-8 border-t pt-8"
+                    style={{ borderColor: hairline }}
+                  >
+                    {tools.length > 0 ? (
+                      <p className="text-[0.9rem]" style={{ color: mutedColor, fontFamily: REEL_SANS }}>
+                        {tools.join('   •   ')}
+                      </p>
+                    ) : null}
+                    {repoLink || metaLine ? (
+                      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+                        {repoLink ? (
+                          <PortfolioLinkButton
+                            variant={repoLinkButtonStyle}
+                            href={repoLink.url}
+                            label={repoLink.label || 'View repository'}
+                            palette={experienceLinkButtonPalette({
+                              ink: titleColor,
+                              muted: mutedColor,
+                              accent,
+                              background,
+                              border: hairline,
+                            })}
+                          />
+                        ) : (
+                          <span aria-hidden />
+                        )}
+                        {metaLine ? (
+                          <p
+                            className="ml-auto text-right text-[0.95rem]"
+                            style={{ color: mutedColor, fontFamily: REEL_SANS }}
+                          >
+                            {metaLine}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -17498,6 +18946,25 @@ export function ReelExperienceList({
   const hairline = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
   const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
   const statusStyle = presentation.reelStatusStyle ?? 'badge';
+  const scrollMotion = presentation.reelScrollMotion ?? 'fade-reveal';
+
+  if (scrollMotion === 'sticky-vertical') {
+    return (
+      <ReelStickyVerticalExperience
+        blocks={blocks}
+        accent={accent}
+        secondaryColor={secondary}
+        titleColor={titleColor}
+        mutedColor={mutedColor}
+        bodyColor={bodyColor}
+        hairline={hairline}
+        background={background}
+        statusStyle={statusStyle}
+        repoLinkButtonStyle={resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'reel')}
+        showProof={presentation.showProof !== false}
+      />
+    );
+  }
 
   return (
     <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2">
@@ -17512,11 +18979,119 @@ export function ReelExperienceList({
           mutedColor={mutedColor}
           bodyColor={bodyColor}
           hairline={hairline}
-          background={background}
           statusStyle={statusStyle}
+          scrollMotion={scrollMotion}
+          background={background}
+          repoLinkButtonStyle={resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'reel')}
+          showProof={presentation.showProof !== false}
         />
       ))}
     </div>
+  );
+}
+
+/** Duotone thumbnail Consult pill — same liquid-inertia follow as LegacyStatusCursor. */
+function DuotoneConsultCursor({
+  anchor,
+  containerRef,
+  onDismiss,
+  isDark,
+}: {
+  anchor: { x: number; y: number } | null;
+  containerRef: RefObject<HTMLDivElement | null>;
+  onDismiss: () => void;
+  isDark: boolean;
+}) {
+  const elRef = useRef<HTMLDivElement>(null);
+  const target = useRef({ x: 0, y: 0 });
+  const current = useRef({ x: 0, y: 0 });
+  const rafId = useRef<number | null>(null);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (!anchor) return;
+    target.current = anchor;
+    current.current = anchor;
+    if (elRef.current) {
+      elRef.current.style.transform = `translate3d(${anchor.x}px, ${anchor.y}px, 0) translate(-50%, -50%)`;
+    }
+
+    const handleMove = (event: MouseEvent) => {
+      target.current = { x: event.clientX, y: event.clientY };
+    };
+    window.addEventListener('mousemove', handleMove);
+
+    const lerpFactor = reduceMotion ? 1 : 0.18;
+    const tick = () => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      const stillInside =
+        rect &&
+        target.current.x >= rect.left &&
+        target.current.x <= rect.right &&
+        target.current.y >= rect.top &&
+        target.current.y <= rect.bottom;
+      if (!stillInside) {
+        onDismiss();
+        return;
+      }
+
+      current.current = {
+        x: current.current.x + (target.current.x - current.current.x) * lerpFactor,
+        y: current.current.y + (target.current.y - current.current.y) * lerpFactor,
+      };
+      if (elRef.current) {
+        elRef.current.style.transform = `translate3d(${current.current.x}px, ${current.current.y}px, 0) translate(-50%, -50%)`;
+      }
+      rafId.current = requestAnimationFrame(tick);
+    };
+    rafId.current = requestAnimationFrame(tick);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+    };
+  }, [anchor, reduceMotion, containerRef, onDismiss]);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      ref={elRef}
+      aria-hidden="true"
+      data-pf-no-color-transition=""
+      className="pointer-events-none fixed left-0 top-0 z-[999] transition-opacity duration-200 ease-out"
+      style={{ opacity: anchor ? 1 : 0 }}
+    >
+      <div
+        className="flex items-center gap-2.5 whitespace-nowrap rounded-full px-5 py-2.5 font-semibold uppercase"
+        style={{
+          backgroundColor: isDark ? 'rgba(255,255,255,0.94)' : 'rgba(12,12,14,0.94)',
+          color: isDark ? '#0b0b0c' : '#ffffff',
+          fontSize: '0.72rem',
+          letterSpacing: '0.16em',
+          fontFamily: REEL_SANS,
+          boxShadow: '0 10px 28px -12px rgba(0,0,0,0.45)',
+        }}
+      >
+        <span>Consult</span>
+        <svg
+          viewBox="0 0 24 24"
+          className="h-3 w-3 shrink-0 opacity-80"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.6}
+          aria-hidden
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M9 7h8v8" />
+        </svg>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -17536,6 +19111,13 @@ function DuotoneLeftPanel({
   accent,
   thumbnailEffect = 'grayscale',
   thumbnailHeight = 'md',
+  stickyVerticalGap,
+  inView = false,
+  /** Scroll mode: render only the title, only the thumb, or the full stacked panel. */
+  scrollPart = 'all',
+  repoCtaMode = 'footer',
+  consultHref,
+  isDark = true,
 }: {
   block: ProfileMediaBlock;
   ink: string;
@@ -17559,6 +19141,15 @@ function DuotoneLeftPanel({
   accent?: string;
   thumbnailEffect?: PortfolioExperienceDuotoneThumbnailEffect;
   thumbnailHeight?: PortfolioExperienceDuotoneThumbnailHeight;
+  /** Sticky mode only — when set, drives title ↔ media vertical air. */
+  stickyVerticalGap?: PortfolioExperienceDuotoneStickyVerticalGap;
+  /** Sticky mode: this panel is the centered active role — drives image reveal. */
+  inView?: boolean;
+  scrollPart?: 'all' | 'title' | 'thumb';
+  repoCtaMode?: PortfolioExperienceDuotoneRepoCtaMode;
+  /** Repository URL used when repoCtaMode is thumb-cursor. */
+  consultHref?: string | null;
+  isDark?: boolean;
 }) {
   const { period, title, organization, status, location, employmentType } = resolveExperienceContent(block);
 
@@ -17573,55 +19164,147 @@ function DuotoneLeftPanel({
   const metaContent = displayPeriod || displayMetaLine || displayStatusLabel;
   const mediaUrl =
     premium && showEntryMedia && typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
+  const showTitleBlock = scrollPart !== 'thumb' && showTitle && Boolean(title);
+  const showThumbBlock = scrollPart !== 'title' && premium && Boolean(mediaUrl);
+  const enableConsultCursor =
+    Boolean(consultHref) && repoCtaMode === 'thumb-cursor' && showThumbBlock;
+  const [cursorAnchor, setCursorAnchor] = useState<{ x: number; y: number } | null>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
+  const dismissCursor = useCallback(() => setCursorAnchor(null), []);
+  const premiumGapClass =
+    premium && scrollPart === 'all'
+      ? stickyVerticalGap
+        ? experienceDuotoneStickyLeftGapClass(stickyVerticalGap)
+        : 'gap-10 sm:gap-14'
+      : '';
+  const panelMinHeight =
+    !naturalHeight && stickyVerticalGap && scrollPart === 'all'
+      ? `${experienceDuotoneStickySectionVh(stickyVerticalGap)}vh`
+      : undefined;
 
-  return (
-    <div
-      ref={registerRef}
-      className={`relative flex w-full flex-col justify-center overflow-hidden max-[800px]:min-h-0 ${
-        naturalHeight ? '' : 'min-h-screen'
-      } ${premium ? 'gap-16 sm:gap-24' : ''}`}
+  const titleNode = showTitleBlock ? (
+    <h3
+      data-pf-no-color-transition=""
+      className="pf-duotone-left-title max-[800px]:text-[1.9rem]"
+      style={{
+        color: ink,
+        fontFamily: REEL_SERIF,
+        fontWeight: premium ? 400 : 640,
+        lineHeight: premium ? 0.95 : 1.08,
+        letterSpacing: '-0.02em',
+        fontSize: premium ? 'clamp(3rem, 6vw, 5.5rem)' : 'clamp(2rem, 3vw, 3.1rem)',
+      }}
     >
-      {showTitle && title ? (
-        <h3
-          className="max-[800px]:text-[1.9rem]"
-          style={{
-            color: ink,
-            fontFamily: REEL_SERIF,
-            fontWeight: premium ? 400 : 640,
-            lineHeight: premium ? 0.95 : 1.08,
-            letterSpacing: '-0.02em',
-            fontSize: premium ? 'clamp(3rem, 6vw, 5.5rem)' : 'clamp(2rem, 3vw, 3.1rem)',
-          }}
-        >
-          {title}
-        </h3>
-      ) : null}
+      {title}
+    </h3>
+  ) : null;
 
-      {/* Premium (sticky mode): the thumbnail is its own block below the title — never an
-          overlapping background behind the text. */}
-      {premium && mediaUrl ? (
-        <div
-          className="relative w-full shrink-0 overflow-hidden"
-          style={{
-            aspectRatio: experienceDuotoneThumbnailAspectRatio(thumbnailHeight),
-            maxHeight: experienceDuotoneThumbnailMaxHeight(thumbnailHeight),
-          }}
-        >
+  const thumbNode = showThumbBlock ? (
+    <div
+      ref={thumbRef}
+      className="pf-duotone-thumb-frame relative w-full shrink-0 overflow-hidden"
+      style={{
+        aspectRatio: experienceDuotoneThumbnailAspectRatio(thumbnailHeight),
+        maxHeight: experienceDuotoneThumbnailMaxHeight(thumbnailHeight),
+        cursor: enableConsultCursor ? 'none' : undefined,
+      }}
+      onMouseEnter={
+        enableConsultCursor
+          ? (event) => setCursorAnchor({ x: event.clientX, y: event.clientY })
+          : undefined
+      }
+      onMouseLeave={enableConsultCursor ? dismissCursor : undefined}
+    >
+      <div
+        data-pf-no-color-transition=""
+        className="pf-duotone-thumb-reveal absolute inset-0 origin-center"
+      >
+        {/* Zoom on this wrapper — same opt-out pattern as sticky settle / Legacy —
+            ProductThumbnailMedia's <img> cannot carry data-pf-no-color-transition. */}
+        <div data-pf-no-color-transition="" className="pf-duotone-thumb-zoom">
           <ProductThumbnailMedia
             url={mediaUrl}
             alt={title || 'Experience'}
             fit="cover"
-            className={thumbnailEffect === 'none' ? 'h-full w-full' : 'pf-duotone-media-filter h-full w-full'}
+            className={
+              thumbnailEffect === 'none'
+                ? 'h-full w-full'
+                : 'pf-duotone-media-filter h-full w-full'
+            }
           />
-          {thumbnailEffect === 'tint' ? (
-            <div
-              className="absolute inset-0"
-              style={{ backgroundColor: accent, mixBlendMode: 'color', opacity: 0.65 }}
-              aria-hidden
-            />
-          ) : null}
         </div>
+        {thumbnailEffect === 'tint' ? (
+          <div
+            className="absolute inset-0"
+            style={{ backgroundColor: accent, mixBlendMode: 'color', opacity: 0.65 }}
+            aria-hidden
+          />
+        ) : null}
+      </div>
+      {enableConsultCursor && consultHref ? (
+        <a
+          href={consultHref}
+          target="_blank"
+          rel="noreferrer"
+          className="absolute inset-0 z-[2]"
+          aria-label="Consult"
+        />
       ) : null}
+    </div>
+  ) : null;
+
+  const consultCursorNode = enableConsultCursor ? (
+    <DuotoneConsultCursor
+      anchor={cursorAnchor}
+      containerRef={thumbRef}
+      onDismiss={dismissCursor}
+      isDark={isDark}
+    />
+  ) : null;
+
+  if (scrollPart === 'title') {
+    return titleNode ? (
+      <div
+        ref={registerRef}
+        data-pf-no-color-transition=""
+        className="pf-duotone-left-panel w-full"
+      >
+        {titleNode}
+      </div>
+    ) : (
+      <div ref={registerRef} className="hidden" />
+    );
+  }
+
+  if (scrollPart === 'thumb') {
+    return thumbNode ? (
+      <div
+        data-pf-no-color-transition=""
+        data-in-view="true"
+        className="pf-duotone-left-panel w-full"
+      >
+        {thumbNode}
+        {consultCursorNode}
+      </div>
+    ) : null;
+  }
+
+  return (
+    <div
+      ref={registerRef}
+      data-pf-no-color-transition=""
+      data-in-view={premium && inView ? 'true' : 'false'}
+      className={`pf-duotone-left-panel relative flex w-full flex-col justify-center overflow-hidden max-[800px]:min-h-0 ${
+        naturalHeight || panelMinHeight ? '' : 'min-h-screen'
+      } ${premiumGapClass}`}
+      style={panelMinHeight ? { minHeight: panelMinHeight } : undefined}
+    >
+      {titleNode}
+
+      {/* Premium (sticky mode): the thumbnail is its own block below the title — never an
+          overlapping background behind the text. */}
+      {thumbNode}
+      {consultCursorNode}
 
       {!premium ? (
         <div className="my-4 h-px w-full shrink-0" style={{ backgroundColor: border }} aria-hidden />
@@ -17668,7 +19351,7 @@ function DuotoneRightPanel({
   className = '',
   enhanced = false,
   bare = false,
-  tasksDisplay = 'dashes',
+  tasksDisplay = 'editorial-dash',
   showDescription = true,
   showTasks = true,
   showTools = true,
@@ -17677,6 +19360,10 @@ function DuotoneRightPanel({
   showMeta = true,
   repoLinkButtonStyle = 'icon',
   premium = false,
+  stickyVerticalGap,
+  lane = 'active',
+  flushTop = false,
+  hideRepoButton = false,
 }: {
   block: ProfileMediaBlock;
   ink: string;
@@ -17705,15 +19392,23 @@ function DuotoneRightPanel({
   /** Premium (sticky-mode) meta row only. */
   showPeriod?: boolean;
   showMeta?: boolean;
-  /** General → "Repository link button" setting — same one Reel uses. */
+  /** General → Link button setting — harvested from each Experience design. */
   repoLinkButtonStyle?: PortfolioExperienceRepoLinkStyle;
   /** Sticky scroll mode only: squared, discreet stack chips instead of rounded pills, and the
    * period / org / status row (moved here from the left panel) laid out horizontally. */
   premium?: boolean;
+  /** Sticky mode only — vertical editorial rhythm between description / tasks / stack. */
+  stickyVerticalGap?: PortfolioExperienceDuotoneStickyVerticalGap;
+  /** Sticky fade direction: above = already scrolled past, below = still ahead. */
+  lane?: 'active' | 'above' | 'below';
+  /** Scroll mode: drop top padding so editorial top edges align with the thumbnail. */
+  flushTop?: boolean;
+  /** When thumb-cursor CTA is on, hide the footer repository button. */
+  hideRepoButton?: boolean;
 }) {
   const { description, tasks, tools, links, period, organization, status, location, employmentType } =
     resolveExperienceContent(block);
-  const repoLink = showProof ? links[0] ?? null : null;
+  const repoLink = showProof && !hideRepoButton ? links[0] ?? null : null;
   const displayDescription = showDescription ? description : null;
   const displayTasks = showTasks ? tasks : [];
   const displayTools = showTools ? tools : [];
@@ -17729,15 +19424,23 @@ function DuotoneRightPanel({
   // both mixed from the same ink/background tokens, no new colors introduced.
   const cardBg = `color-mix(in srgb, ${ink} 4%, ${background})`;
   const chipBg = `color-mix(in srgb, ${ink} 9%, ${background})`;
+  const stickySpacing = flushTop
+    ? experienceDuotoneScrollEditorialSpacing(stickyVerticalGap ?? 'md')
+    : experienceDuotoneStickyEditorialSpacing(stickyVerticalGap ?? 'md');
+  const tasksMtClass = stickyVerticalGap || flushTop ? stickySpacing.tasksMt : 'mt-10';
+  const stackMtClass = stickyVerticalGap || flushTop ? stickySpacing.stackMt : 'mt-9';
+  const stackGapClass = stickyVerticalGap || flushTop ? stickySpacing.stackGap : 'gap-6';
+  const stackPtClass = stickyVerticalGap || flushTop ? stickySpacing.stackPt : 'pt-7';
 
   return (
     <div
+      data-pf-no-color-transition=""
+      data-active={active === undefined ? undefined : active ? 'true' : 'false'}
+      data-lane={active === undefined ? undefined : lane}
       className={
         active === undefined
           ? `flex w-full flex-col justify-center ${className}`
-          : `absolute inset-0 flex flex-col justify-center pl-6 transition-opacity duration-500 ease-out ${
-              active ? 'opacity-100' : 'pointer-events-none opacity-0'
-            }`
+          : 'pf-duotone-right-panel absolute inset-0 flex flex-col justify-center pl-10 lg:pl-14 xl:pl-16'
       }
       aria-hidden={active === false}
     >
@@ -17746,7 +19449,7 @@ function DuotoneRightPanel({
           bare
             ? 'w-full'
             : premium
-              ? 'w-full p-10 max-[800px]:p-6'
+              ? `w-full ${flushTop ? 'p-0' : 'p-10 max-[800px]:p-6'}`
               : `w-full rounded-[14px] border p-10 max-[800px]:p-6 ${
                   enhanced ? 'transition-shadow duration-300' : ''
                 }`
@@ -17761,128 +19464,130 @@ function DuotoneRightPanel({
               }
         }
       >
-        {hasMetaRow ? (
-          <div className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-            {displayPeriod ? (
-              <span className="text-[0.85rem]" style={{ color: muted, fontFamily: REEL_SANS }}>
-                {displayPeriod}
-              </span>
-            ) : null}
-            {displayMetaLine ? (
-              <span className="text-[0.85rem]" style={{ color: muted, fontFamily: REEL_SANS }}>
-                {displayMetaLine}
-              </span>
-            ) : null}
-            {displayStatusLabel ? (
-              <span
-                className="inline-flex items-center gap-1.5 text-[0.85rem] font-bold"
-                style={{ color: status === 'FINISHED' ? secondary : ink, fontFamily: REEL_SANS }}
-              >
-                <span
-                  className="h-1.5 w-1.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: status === 'FINISHED' ? secondary : ink }}
-                  aria-hidden
-                />
-                {displayStatusLabel}
-              </span>
-            ) : null}
-          </div>
-        ) : null}
+        {(() => {
+          const animate = active !== undefined;
+          const layerProps = (index: 0 | 1 | 2 | 3, extraClass = '') =>
+            animate
+              ? {
+                  'data-pf-no-color-transition': '' as const,
+                  'data-layer': String(index),
+                  className: `pf-duotone-story-layer${extraClass ? ` ${extraClass}` : ''}`,
+                }
+              : { className: extraClass || undefined };
 
-        {premium ? (
-          // One single vertical flow, no side-by-side split — the eye reads straight down:
-          // description, then each task as a full-width line with a monospaced index, then
-          // the stack pills and the repo button sealed together on one closing row.
-          <>
-            {displayDescription ? (
-              <p className="text-[1.02rem] leading-[1.85]" style={{ color: ink, fontFamily: REEL_SANS }}>
-                {displayDescription}
-              </p>
-            ) : null}
-
-            {displayTasks.length > 0 ? (
-              <div className={displayDescription ? 'mt-10 space-y-3.5' : 'space-y-3.5'}>
-                {displayTasks.map((task, taskIndex) => (
-                  <div key={taskIndex} className="flex items-baseline gap-4">
-                    <span className="shrink-0 font-mono" style={{ color: secondary, fontSize: '0.78rem' }}>
-                      {String(taskIndex + 1).padStart(2, '0')} /
-                    </span>
-                    <span
-                      className="text-[0.95rem] leading-snug"
-                      style={{ color: ink, fontFamily: REEL_SANS }}
-                    >
-                      {task}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-
-            {displayTools.length > 0 || repoLink ? (
-              <div
-                className="mt-9 flex flex-col gap-6 border-t pt-7"
-                style={{ borderColor: `color-mix(in srgb, ${muted} 12%, transparent)` }}
-              >
-                {displayTools.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {displayTools.map((tool) => (
+          return (
+            <>
+              {hasMetaRow ? (
+                <div {...layerProps(0, 'mb-8')}>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                    {displayPeriod ? (
+                      <span className="text-[0.85rem]" style={{ color: muted, fontFamily: REEL_SANS }}>
+                        {displayPeriod}
+                      </span>
+                    ) : null}
+                    {displayMetaLine ? (
+                      <span className="text-[0.85rem]" style={{ color: muted, fontFamily: REEL_SANS }}>
+                        {displayMetaLine}
+                      </span>
+                    ) : null}
+                    {displayStatusLabel ? (
                       <span
-                        key={tool}
-                        className="rounded-none border px-3 py-1 font-medium uppercase transition-opacity duration-200 hover:opacity-100"
-                        data-pf-no-color-transition=""
+                        className="inline-flex items-center gap-1.5 text-[0.85rem] font-bold"
                         style={{
-                          borderColor: `color-mix(in srgb, ${muted} 45%, transparent)`,
-                          color: muted,
-                          fontSize: '0.72rem',
-                          letterSpacing: '0.04em',
+                          color: status === 'FINISHED' ? secondary : ink,
                           fontFamily: REEL_SANS,
-                          opacity: 0.4,
                         }}
                       >
-                        {tool}
+                        <span
+                          className="h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: status === 'FINISHED' ? secondary : ink }}
+                          aria-hidden
+                        />
+                        {displayStatusLabel}
                       </span>
-                    ))}
+                    ) : null}
                   </div>
-                ) : null}
-                {repoLink ? (
-                  <div className="self-start">
-                    <PortfolioLinkButton
-                      variant={repoLinkButtonStyle}
-                      href={repoLink.url}
-                      label={repoLink.label || 'View repository'}
-                      palette={{ background: cardBg, ink, muted, accent, border }}
-                      radiusClass="rounded-[14px]"
-                    />
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </>
+                </div>
+              ) : null}
+
+              {displayDescription ? (
+                <div {...layerProps(1)}>
+                  <p
+                    className="text-[1.02rem] leading-[1.85]"
+                    style={{ color: ink, fontFamily: REEL_SANS }}
+                  >
+                    {displayDescription}
+                  </p>
+                </div>
+              ) : null}
+
+              {displayTasks.length > 0 ? (
+                <div
+                  {...layerProps(
+                    2,
+                    premium ? (displayDescription ? tasksMtClass : '') : 'mt-9'
+                  )}
+                >
+                  <ExperienceTasksDisplay
+                    tasks={displayTasks}
+                    display={tasksDisplay}
+                    bodyColor={premium ? ink : ink}
+                    mutedColor={`color-mix(in srgb, ${accent} 78%, ${muted} 22%)`}
+                    isDark={isDark}
+                    label=""
+                    size="lg"
+                    tools={premium ? displayTools : undefined}
+                  />
+                </div>
+              ) : null}
+            </>
+          );
+        })()}
+
+        {premium ? (
+          displayTools.length > 0 || repoLink ? (
+            <div
+              data-pf-no-color-transition=""
+              data-layer={active !== undefined ? '3' : undefined}
+              className={`${active !== undefined ? 'pf-duotone-story-layer ' : ''}pf-duotone-chrome ${stackMtClass} flex flex-col ${stackGapClass} border-t ${stackPtClass}`}
+              style={{ borderColor: `color-mix(in srgb, ${muted} 12%, transparent)` }}
+            >
+              {displayTools.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {displayTools.map((tool) => (
+                    <span
+                      key={tool}
+                      className="rounded-none border px-3 py-1 font-medium uppercase transition-opacity duration-200 hover:opacity-100"
+                      data-pf-no-color-transition=""
+                      style={{
+                        borderColor: `color-mix(in srgb, ${muted} 62%, transparent)`,
+                        color: `color-mix(in srgb, ${ink} 48%, ${muted} 52%)`,
+                        fontSize: '0.72rem',
+                        letterSpacing: '0.04em',
+                        fontFamily: REEL_SANS,
+                        opacity: 0.78,
+                      }}
+                    >
+                      {tool}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {repoLink ? (
+                <div className="self-start">
+                  <PortfolioLinkButton
+                    variant={repoLinkButtonStyle}
+                    href={repoLink.url}
+                    label={repoLink.label || 'View repository'}
+                    palette={{ background: cardBg, ink, muted, accent, border }}
+                    radiusClass="rounded-[14px]"
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null
         ) : (
           <>
-            {displayDescription ? (
-              <p className="text-[1.02rem] leading-[1.85]" style={{ color: ink, fontFamily: REEL_SANS }}>
-                {displayDescription}
-              </p>
-            ) : null}
-
-            {displayTasks.length > 0 ? (
-              <div className="mt-9">
-                {/* Same shared component + same "Tasks display" setting every other design uses —
-                    the marker is a toned-down accent (not the raw, fully-saturated color) so the
-                    bullets stay recognizably on-brand without being harsh to look at. */}
-                <ExperienceTasksDisplay
-                  tasks={displayTasks}
-                  display={tasksDisplay}
-                  bodyColor={ink}
-                  mutedColor={`color-mix(in srgb, ${accent} 78%, ${muted} 22%)`}
-                  isDark={isDark}
-                  label=""
-                  size="lg"
-                />
-              </div>
-            ) : null}
-
             {displayTools.length > 0 ? (
               <div className="mt-9 flex flex-wrap gap-2">
                 {displayTools.map((tool) => (
@@ -17907,8 +19612,6 @@ function DuotoneRightPanel({
 
             {repoLink ? (
               <div className="mt-9">
-                {/* Same General → "Repository link button" setting Reel uses — the Ghost variant
-                    already gives the sliding-arrow hover this design had hardcoded before. */}
                 <PortfolioLinkButton
                   variant={repoLinkButtonStyle}
                   href={repoLink.url}
@@ -17993,6 +19696,11 @@ function DuotoneScrollRoles({
   flags,
   thumbnailEffect,
   thumbnailHeight,
+  swapSides = false,
+  alternateSides = false,
+  verticalGap = 'md',
+  repoCtaMode = 'footer',
+  fullWidthTitle = false,
 }: {
   blocks: ProfileMediaBlock[];
   ink: string;
@@ -18004,43 +19712,104 @@ function DuotoneScrollRoles({
   flags: DuotoneContentFlags;
   thumbnailEffect: PortfolioExperienceDuotoneThumbnailEffect;
   thumbnailHeight: PortfolioExperienceDuotoneThumbnailHeight;
+  swapSides?: boolean;
+  alternateSides?: boolean;
+  verticalGap?: PortfolioExperienceDuotoneStickyVerticalGap;
+  repoCtaMode?: PortfolioExperienceDuotoneRepoCtaMode;
+  /** When true, the role title spans both columns above thumb + editorial. */
+  fullWidthTitle?: boolean;
 }) {
-  // Same premium treatment as the Sticky mode's screens — massive title, thumbnail as its own
-  // block below it, no card chrome on the right, unified vertical info flow — just without the
-  // pinning: entries simply scroll past one another instead of being pinned/crossfaded.
+  // Title above the media column only (or full-bleed when fullWidthTitle); thumbnail +
+  // editorial share the next row with items-start so their tops align.
+  const titleThumbRowGap = experienceDuotoneScrollTitleThumbGapClass(verticalGap);
+  const roleStackGap = experienceDuotoneScrollRoleStackClass(verticalGap);
+  const thumbCursor = repoCtaMode === 'thumb-cursor';
   return (
-    <div className="flex w-full flex-col">
-      {blocks.map((block) => (
-        <div key={block.id} className="flex w-full">
-          <div className="flex w-[50%] shrink-0 flex-col pr-12">
-            <DuotoneLeftPanel
-              block={block}
-              ink={ink}
-              muted={muted}
-              secondary={secondary}
-              border={border}
-              premium
-              accent={accent}
-              thumbnailEffect={thumbnailEffect}
-              thumbnailHeight={thumbnailHeight}
-              {...flags}
-            />
+    <div className={`flex w-full flex-col ${roleStackGap}`}>
+      {blocks.map((block, index) => {
+        const flipped = alternateSides && index % 2 === 1;
+        const infoFirst = flipped ? !swapSides : swapSides;
+        const { links } = resolveExperienceContent(block);
+        const consultHref =
+          flags.showProof && thumbCursor && links[0]?.url ? links[0].url : null;
+        const mediaCol = infoFirst ? 2 : 1;
+        const infoCol = infoFirst ? 1 : 2;
+        return (
+          <div
+            key={block.id}
+            className={`grid w-full items-start gap-x-14 lg:gap-x-20 xl:gap-x-28 ${titleThumbRowGap}`}
+            style={{
+              gridTemplateColumns: infoFirst
+                ? 'minmax(0,0.95fr) minmax(0,1.1fr)'
+                : 'minmax(0,1.1fr) minmax(0,0.95fr)',
+            }}
+          >
+            <div
+              className="w-full"
+              style={
+                fullWidthTitle
+                  ? { gridColumn: '1 / -1', gridRow: 1 }
+                  : { gridColumn: mediaCol, gridRow: 1 }
+              }
+            >
+              <DuotoneLeftPanel
+                block={block}
+                ink={ink}
+                muted={muted}
+                secondary={secondary}
+                border={border}
+                premium
+                accent={accent}
+                thumbnailEffect={thumbnailEffect}
+                thumbnailHeight={thumbnailHeight}
+                naturalHeight
+                scrollPart="title"
+                {...flags}
+              />
+            </div>
+            <div
+              className="w-full self-start"
+              style={{ gridColumn: mediaCol, gridRow: 2 }}
+            >
+              <DuotoneLeftPanel
+                block={block}
+                ink={ink}
+                muted={muted}
+                secondary={secondary}
+                border={border}
+                premium
+                accent={accent}
+                thumbnailEffect={thumbnailEffect}
+                thumbnailHeight={thumbnailHeight}
+                naturalHeight
+                scrollPart="thumb"
+                repoCtaMode={repoCtaMode}
+                consultHref={consultHref}
+                {...flags}
+              />
+            </div>
+            <div
+              className="min-w-0 w-full self-start"
+              style={{ gridColumn: infoCol, gridRow: 2 }}
+            >
+              <DuotoneRightPanel
+                block={block}
+                ink={ink}
+                muted={muted}
+                secondary={secondary}
+                accent={accent}
+                border={border}
+                background={background}
+                premium
+                flushTop
+                hideRepoButton={thumbCursor}
+                stickyVerticalGap={verticalGap}
+                {...flags}
+              />
+            </div>
           </div>
-          <div className="flex w-[50%] flex-1 flex-col justify-center">
-            <DuotoneRightPanel
-              block={block}
-              ink={ink}
-              muted={muted}
-              secondary={secondary}
-              accent={accent}
-              border={border}
-              background={background}
-              premium
-              {...flags}
-            />
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -18323,6 +20092,8 @@ export function DuotoneExperienceList({
     if (scrollMode !== 'sticky') return;
     const sections = sectionRefs.current.filter((el): el is HTMLElement => Boolean(el));
     if (sections.length === 0) return;
+    // Center-band observer: switch roles when a left panel owns the middle of the viewport,
+    // with fine thresholds so the handoff stays smooth instead of snapping at a hard 50%.
     const observer = new IntersectionObserver(
       (entries) => {
         let best: { index: number; ratio: number } | null = null;
@@ -18334,9 +20105,14 @@ export function DuotoneExperienceList({
             best = { index: entryIndex, ratio: entry.intersectionRatio };
           }
         }
-        if (best) setActiveIndex(best.index);
+        if (best) {
+          setActiveIndex((current) => (current === best!.index ? current : best!.index));
+        }
       },
-      { threshold: 0.5 }
+      {
+        threshold: [0.2, 0.35, 0.5, 0.65, 0.8],
+        rootMargin: '-18% 0px -18% 0px',
+      }
     );
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
@@ -18386,7 +20162,7 @@ export function DuotoneExperienceList({
     showProof: presentation.showProof !== false,
     showEntryMedia: presentation.showEntryMedia !== false,
     tasksDisplay: presentation.tasksDisplay,
-    repoLinkButtonStyle: presentation.repoLinkButtonStyle ?? 'icon',
+    repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'icon'),
     isDark,
   };
 
@@ -18401,6 +20177,10 @@ export function DuotoneExperienceList({
   const thumbnailEffect = presentation.duotoneThumbnailEffect ?? 'grayscale';
   const thumbnailHeight = presentation.duotoneThumbnailHeight ?? 'md';
   const stickySwapSides = presentation.duotoneStickySwapSides === true;
+  const stickyVerticalGap = presentation.duotoneStickyVerticalGap ?? 'md';
+  const stickySectionVh = experienceDuotoneStickySectionVh(stickyVerticalGap);
+  const repoCtaMode = presentation.duotoneRepoCtaMode ?? 'footer';
+  const thumbCursorCta = repoCtaMode === 'thumb-cursor';
 
   return (
     // No full-bleed escape hatch here: content stays within the page's own gutter / max-width,
@@ -18419,18 +20199,26 @@ export function DuotoneExperienceList({
       <div className="relative z-[1] flex w-full flex-col max-[800px]:hidden">
         <DuotoneIntroPanel ink={ink} muted={muted} accent={accent} />
         {scrollMode === 'scroll' ? (
-          <DuotoneScrollRoles
-            blocks={blocks}
-            ink={ink}
-            muted={muted}
-            accent={accent}
-            secondary={secondary}
-            border={border}
-            background={background}
-            flags={flags}
-            thumbnailEffect={thumbnailEffect}
-            thumbnailHeight={thumbnailHeight}
-          />
+          // Same breathing room below the section intro as Sticky before the role list.
+          <div style={{ marginTop: '10vh' }}>
+            <DuotoneScrollRoles
+              blocks={blocks}
+              ink={ink}
+              muted={muted}
+              accent={accent}
+              secondary={secondary}
+              border={border}
+              background={background}
+              flags={flags}
+              thumbnailEffect={thumbnailEffect}
+              thumbnailHeight={thumbnailHeight}
+              swapSides={stickySwapSides}
+              alternateSides={presentation.duotoneAlternateSides === true}
+              verticalGap={stickyVerticalGap}
+              repoCtaMode={repoCtaMode}
+              fullWidthTitle={presentation.duotoneScrollFullWidthTitle === true}
+            />
+          </div>
         ) : scrollMode === 'slide' ? (
           <DuotoneSlideRoles
             blocks={blocks}
@@ -18453,16 +20241,18 @@ export function DuotoneExperienceList({
           <div style={{ marginTop: '10vh' }}>
             {/* Explicit height (not min-height/auto) so the sticky panel always ends exactly
                 at the last entry, regardless of how an ancestor stretches or sizes this section. */}
-            <div className="relative flex w-full" style={{ height: `${blocks.length * 100}vh` }}>
+            <div
+              className="relative flex w-full gap-16 lg:gap-24 xl:gap-36"
+              style={{ height: `${blocks.length * stickySectionVh}vh` }}
+            >
               {(() => {
                 const titleColumn = (
-                  <div
-                    key="title"
-                    className={`flex h-full w-[50%] shrink-0 flex-col ${
-                      stickySwapSides ? 'pl-12' : 'pr-12'
-                    }`}
-                  >
-                    {blocks.map((block, index) => (
+                  <div key="title" className="flex h-full w-[46%] shrink-0 flex-col lg:w-[48%]">
+                    {blocks.map((block, index) => {
+                      const { links } = resolveExperienceContent(block);
+                      const consultHref =
+                        flags.showProof && thumbCursorCta && links[0]?.url ? links[0].url : null;
+                      return (
                       <DuotoneLeftPanel
                         key={block.id}
                         block={block}
@@ -18477,13 +20267,18 @@ export function DuotoneExperienceList({
                         accent={accent}
                         thumbnailEffect={thumbnailEffect}
                         thumbnailHeight={thumbnailHeight}
+                        stickyVerticalGap={stickyVerticalGap}
+                        inView={index === activeIndex}
+                        repoCtaMode={repoCtaMode}
+                        consultHref={consultHref}
                         {...flags}
                       />
-                    ))}
+                      );
+                    })}
                   </div>
                 );
                 const infoColumn = (
-                  <div key="info" className="relative h-full w-[50%] flex-1">
+                  <div key="info" className="relative h-full min-w-0 flex-1">
                     <div className="sticky top-0 h-screen w-full">
                       {blocks.map((block, index) => (
                         <DuotoneRightPanel
@@ -18496,7 +20291,16 @@ export function DuotoneExperienceList({
                           border={border}
                           background={background}
                           active={index === activeIndex}
+                          lane={
+                            index === activeIndex
+                              ? 'active'
+                              : index < activeIndex
+                                ? 'above'
+                                : 'below'
+                          }
                           premium
+                          stickyVerticalGap={stickyVerticalGap}
+                          hideRepoButton={thumbCursorCta}
                           {...flags}
                         />
                       ))}
@@ -19104,7 +20908,7 @@ function useFitWidthTextSize(
 }
 
 /** Gallery design's full-bleed outline/fill word (see {@link useFitWidthTextSize}). */
-function GalleryFitWidthTitle({
+export function GalleryFitWidthTitle({
   text,
   ink,
   accent,
@@ -19281,16 +21085,12 @@ export function GalleryExperienceList({
     showProof: presentation.showProof !== false,
     showEntryMedia: presentation.showEntryMedia !== false,
     tasksDisplay: presentation.tasksDisplay,
-    repoLinkButtonStyle: presentation.repoLinkButtonStyle ?? 'icon',
+    repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'icon'),
     isDark,
   };
 
   const columns = presentation.galleryColumns ?? 3;
   const thumbnailFit = presentation.galleryThumbnailFit ?? 'cover';
-  const bigTitleEnabled = presentation.galleryBigTitleEnabled !== false;
-  const bigTitleText = presentation.galleryBigTitleText?.trim() || 'Experience';
-  const bigTitleStyle = presentation.galleryBigTitleStyle ?? 'outline';
-  const bigTitleColor = presentation.galleryBigTitleColor ?? 'current';
   const gridClass = forceSingleColumn
     ? 'grid grid-cols-1'
     : columns === 2
@@ -19305,17 +21105,6 @@ export function GalleryExperienceList({
           forceSingleColumn ? 'left' : presentation.listPlacement
         )}
       >
-        <GalleryIntroPanel
-          ink={ink}
-          muted={muted}
-          accent={accent}
-          isDark={isDark}
-          count={blocks.length}
-          bigTitleEnabled={bigTitleEnabled}
-          bigTitleText={bigTitleText}
-          bigTitleStyle={bigTitleStyle}
-          bigTitleColor={bigTitleColor}
-        />
         <div className={gridClass} style={experienceCardsGridGapStyle(presentation)}>
           {blocks.map((block, index) => (
             <div key={block.id} className="h-full">
@@ -19497,7 +21286,7 @@ function SpotlightExperienceRow({
 
       <div
         data-pf-no-color-transition=""
-        className={`flex flex-col gap-10 transition-transform duration-500 ease-out hover:-translate-y-1 sm:gap-14 lg:items-center lg:gap-20 ${
+        className={`flex flex-col gap-12 transition-transform duration-500 ease-out hover:-translate-y-1 sm:gap-16 lg:items-center lg:gap-24 ${
           reverse ? 'lg:flex-row-reverse' : 'lg:flex-row'
         }`}
       >
@@ -19553,19 +21342,25 @@ function SpotlightExperienceRow({
         </div>
       ) : null}
 
-      <div className="relative z-[1] flex min-w-0 flex-1 flex-col">
-        {/* Status as a quiet kicker line — dot + label, no pill chrome — rather
-            than the badge used everywhere else. */}
+      <div className="relative z-[1] flex min-w-0 flex-1 flex-col lg:pl-2 xl:pl-4">
+        {/* Contrast ladder (Awwwards): status accent → title ink → meta quiet →
+            body soft-ink → tasks softer → tools whisper → CTA max contrast. */}
         {flags.showMeta && (status === 'ONGOING' || status === 'FINISHED') ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <span
               className="h-1.5 w-1.5 rounded-full"
-              style={{ backgroundColor: status === 'ONGOING' ? accent : secondary }}
+              style={{
+                backgroundColor: status === 'ONGOING' ? accent : secondary,
+                opacity: 0.9,
+              }}
               aria-hidden
             />
             <span
-              className="text-[0.72rem] font-bold uppercase tracking-[0.18em]"
-              style={{ color: status === 'ONGOING' ? accent : secondary }}
+              className="text-[0.7rem] font-semibold uppercase tracking-[0.2em]"
+              style={{
+                color: status === 'ONGOING' ? accent : secondary,
+                opacity: 0.92,
+              }}
             >
               {status === 'ONGOING' ? 'Ongoing' : 'Finished'}
             </span>
@@ -19573,76 +21368,66 @@ function SpotlightExperienceRow({
         ) : null}
         {flags.showTitle && title ? (
           <h3
-            className="mt-5 text-[1.9rem] font-semibold leading-[1.1] tracking-[-0.02em] sm:text-[2.4rem]"
+            className="mt-8 text-[1.9rem] font-semibold leading-[1.08] tracking-[-0.025em] sm:mt-9 sm:text-[2.45rem]"
             style={{ color: ink }}
           >
             {title}
           </h3>
         ) : null}
         {combinedMeta ? (
-          <p className="mt-5 text-[0.95rem]" style={{ color: muted }}>
+          <p
+            className="mt-6 text-[0.9rem] tracking-[0.01em] sm:mt-7 sm:text-[0.92rem]"
+            style={{ color: `color-mix(in srgb, ${muted} 78%, transparent)` }}
+          >
             {combinedMeta}
           </p>
         ) : null}
         {flags.showDescription && description ? (
-          <p className="mt-7 max-w-xl text-[1rem] leading-relaxed" style={{ color: bodyColor }}>
+          <p
+            className="mt-10 max-w-xl text-[1.02rem] leading-[1.85] sm:mt-11"
+            style={{ color: `color-mix(in srgb, ${bodyColor} 86%, ${muted} 14%)` }}
+          >
             {description}
           </p>
         ) : null}
         {displayTasks.length > 0 ? (
-          <div className="mt-8">
+          <div className="mt-11 sm:mt-12">
             <ExperienceTasksDisplay
               tasks={displayTasks}
               display={flags.tasksDisplay}
-              bodyColor={bodyColor}
-              mutedColor={ink}
+              bodyColor={`color-mix(in srgb, ${bodyColor} 64%, ${muted} 36%)`}
+              mutedColor={`color-mix(in srgb, ${muted} 88%, transparent)`}
               isDark={isDark}
               label=""
-              size="md"
+              size="lg"
+              tools={displayTools}
             />
           </div>
         ) : null}
-        {/* Tools as a plain slash-separated line instead of pill tags — quieter, airier. */}
+        {/* Tools: mid-dot separators — quietest editorial line before the CTA. */}
         {displayTools.length > 0 ? (
           <p
-            className="mt-8 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[0.82rem] uppercase tracking-[0.06em]"
-            style={{ color: muted }}
+            className="mt-12 max-w-xl font-mono text-[0.7rem] font-normal uppercase tracking-[0.12em] sm:mt-14 sm:text-[0.74rem]"
+            style={{ color: `color-mix(in srgb, ${muted} 58%, transparent)` }}
           >
-            {displayTools.map((tool, toolIndex) => (
-              <span key={tool} className="inline-flex items-center gap-2.5">
-                {tool}
-                {toolIndex < displayTools.length - 1 ? (
-                  <span aria-hidden style={{ color: border }}>
-                    /
-                  </span>
-                ) : null}
-              </span>
-            ))}
+            {displayTools.join('  ·  ')}
           </p>
         ) : null}
-        {/* Solid filled pill, inverted off the ink token — not the accent color. */}
         {repoLink ? (
-          <a
-            href={repoLink.url}
-            target="_blank"
-            rel="noreferrer"
-            data-pf-no-color-transition=""
-            className="group/link mt-9 inline-flex w-fit items-center gap-2 rounded-full px-6 py-3 text-[0.9rem] font-semibold transition-transform duration-300 ease-out hover:-translate-y-0.5"
-            style={{ backgroundColor: ink, color: isDark ? '#0b0b0c' : '#ffffff' }}
-          >
-            {repoLink.label || 'View repository'}
-            <svg
-              viewBox="0 0 24 24"
-              className="h-4 w-4 transition-transform duration-300 ease-out group-hover/link:translate-x-1"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.8}
-              aria-hidden
-              data-pf-no-color-transition=""
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M9 7h8v8" />
-            </svg>
-          </a>
+          <div className="mt-12 sm:mt-14">
+            <PortfolioLinkButton
+              variant={flags.repoLinkButtonStyle}
+              href={repoLink.url}
+              label={repoLink.label || 'View repository'}
+              palette={experienceLinkButtonPalette({
+                ink,
+                muted,
+                accent,
+                border,
+                isDark,
+              })}
+            />
+          </div>
         ) : null}
       </div>
       </div>
@@ -19697,21 +21482,11 @@ export function SpotlightExperienceList({
     showProof: presentation.showProof !== false,
     showEntryMedia: presentation.showEntryMedia !== false,
     tasksDisplay: presentation.tasksDisplay,
-    repoLinkButtonStyle: presentation.repoLinkButtonStyle ?? 'icon',
+    repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'spotlight'),
     isDark,
   };
 
-  const bigTitleWords = [
-    presentation.spotlightBigTitleText?.trim() || 'Experience',
-    presentation.spotlightBigTitleWord2,
-    presentation.spotlightBigTitleWord3,
-    presentation.spotlightBigTitleWord4,
-  ]
-    .map((word) => word?.trim())
-    .filter((word): word is string => Boolean(word));
-  const bigTitleColor = presentation.spotlightBigTitleColor ?? 'ink';
   const thumbnailFit = presentation.spotlightThumbnailFit ?? 'cover';
-  const bigTitleEnabled = presentation.spotlightBigTitleEnabled !== false && bigTitleWords.length > 0;
 
   return (
     <div
@@ -19720,10 +21495,7 @@ export function SpotlightExperienceList({
         forceSingleColumn ? 'left' : presentation.listPlacement
       )}
     >
-      {bigTitleEnabled ? (
-        <SpotlightBigTitle words={bigTitleWords} ink={ink} muted={muted} accent={accent} colorMode={bigTitleColor} />
-      ) : null}
-      <div className={`flex flex-col gap-24 sm:gap-32 ${bigTitleEnabled ? 'mt-10 sm:mt-16' : ''}`}>
+      <div className="flex flex-col gap-24 sm:gap-32">
         {blocks.map((block, index) => (
           <SpotlightExperienceRow
             key={block.id}
@@ -19845,6 +21617,7 @@ function LoftCard({
   flags,
   thumbnailFit,
   thumbnailRadius,
+  hoverEffect,
   onOpen,
 }: {
   block: ProfileMediaBlock;
@@ -19854,24 +21627,87 @@ function LoftCard({
   flags: DuotoneContentFlags;
   thumbnailFit: PortfolioExperienceLoftThumbnailFit;
   thumbnailRadius: PortfolioExperienceLoftThumbnailRadius;
+  hoverEffect: PortfolioExperienceLoftHoverEffect;
   onOpen: () => void;
 }) {
   const { title, organization } = resolveExperienceContent(block);
   const mediaUrl = flags.showEntryMedia && typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
   const initial = (title || organization || '•').trim().charAt(0).toUpperCase();
+  const rimColor = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.22)';
+  const veilColor = isDark ? 'rgba(0,0,0,0.34)' : 'rgba(0,0,0,0.16)';
 
   return (
-    <button type="button" onClick={onOpen} className="flex w-full flex-col text-left">
+    <button
+      type="button"
+      onClick={onOpen}
+      data-pf-no-color-transition=""
+      className={`pf-loft-card pf-loft-hover-${hoverEffect} flex w-full flex-col text-left`}
+      style={
+        {
+          ['--loft-glow' as string]: `color-mix(in srgb, ${accent} 32%, transparent)`,
+          ['--loft-rim' as string]: rimColor,
+          ['--loft-veil' as string]: veilColor,
+        } as CSSProperties
+      }
+    >
       {flags.showEntryMedia ? (
         <div
-          className={`relative w-full overflow-hidden ${experienceLoftThumbnailRadiusClass(thumbnailRadius)} ${thumbnailFit === 'glass' ? 'aspect-[3/2]' : 'aspect-[4/3]'}`}
+          data-pf-no-color-transition=""
+          className={`pf-loft-card-thumb relative w-full overflow-hidden ${experienceLoftThumbnailRadiusClass(thumbnailRadius)} ${thumbnailFit === 'glass' ? 'aspect-[3/2]' : 'aspect-[4/3]'}`}
           style={{ backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)` }}
         >
-          <LoftCardMedia mediaUrl={mediaUrl} thumbnailFit={thumbnailFit} isDark={isDark} accent={accent} title={title ?? ''} initial={initial} />
+          <div data-pf-no-color-transition="" className="pf-loft-card-media absolute inset-0">
+            <LoftCardMedia
+              mediaUrl={mediaUrl}
+              thumbnailFit={thumbnailFit}
+              isDark={isDark}
+              accent={accent}
+              title={title ?? ''}
+              initial={initial}
+            />
+          </div>
+
+          {hoverEffect === 'curtain' ? (
+            <>
+              <div
+                data-pf-no-color-transition=""
+                className="pf-loft-curtain-veil pointer-events-none absolute inset-0"
+                aria-hidden
+              />
+              <div
+                data-pf-no-color-transition=""
+                className="pf-loft-curtain-glow pointer-events-none absolute inset-0"
+                aria-hidden
+              />
+            </>
+          ) : null}
+
+          {hoverEffect === 'magnetic' ? (
+            <div
+              data-pf-no-color-transition=""
+              className="pf-loft-magnetic-cue pointer-events-none absolute inset-0 flex items-center justify-center"
+              aria-hidden
+            >
+              <span
+                data-pf-no-color-transition=""
+                className="pf-loft-magnetic-pill rounded-full px-3.5 py-1.5 font-mono text-[0.68rem] font-medium uppercase tracking-[0.14em]"
+                style={{
+                  color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.88)',
+                  backgroundColor: isDark ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.4)',
+                }}
+              >
+                [ View case ↗ ]
+              </span>
+            </div>
+          ) : null}
         </div>
       ) : null}
       {flags.showTitle && title ? (
-        <p className="mt-4 text-left text-[0.98rem] font-semibold leading-snug" style={{ color: ink }}>
+        <p
+          data-pf-no-color-transition=""
+          className="pf-loft-card-title mt-4 text-left text-[0.98rem] font-semibold leading-snug"
+          style={{ color: ink }}
+        >
           {title}
         </p>
       ) : null}
@@ -19879,12 +21715,10 @@ function LoftCard({
   );
 }
 
-/** Full detail view for a Loft card, opened on click — a near-full-screen
- * modal in the spirit of Dribbble's shot page: title and identity on top,
- * the thumbnail as the centerpiece below it, then the full story beneath
- * that. Escapes PortfolioThemeRoot's `isolate` wrapper via a body portal —
- * without it, no z-index here could ever out-rank the site nav, which
- * escapes that same stacking context the same way. */
+/** Full detail view for a Loft card, opened on click — premium split layout:
+ * the thumbnail anchors the left; identity and story flow on the right, sealed
+ * by stack + proof link. Escapes PortfolioThemeRoot's `isolate` wrapper via a
+ * body portal — without it, no z-index here could ever out-rank the site nav. */
 function LoftExperienceModal({
   block,
   ink,
@@ -19944,21 +21778,21 @@ function LoftExperienceModal({
   const initial = (title || organization || '•').trim().charAt(0).toUpperCase();
   const cardBg = `color-mix(in srgb, ${ink} 4%, ${background})`;
   const overlayBg = isDark ? 'rgba(0,0,0,0.72)' : 'rgba(15,15,15,0.55)';
-  const dividerColor = `color-mix(in srgb, ${ink} 10%, transparent)`;
+  const showStatus = flags.showMeta && (status === 'ONGOING' || status === 'FINISHED');
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[150] flex items-center justify-center py-4 backdrop-blur-md transition-opacity duration-300 ease-out sm:py-8"
+      className="fixed inset-0 z-[150] flex items-center justify-center py-3 backdrop-blur-md transition-opacity duration-300 ease-out sm:py-6"
       style={{ backgroundColor: overlayBg, opacity: entered ? 1 : 0 }}
       onClick={onClose}
       role="presentation"
     >
       <div
-        className={`relative flex w-full flex-col overflow-hidden rounded-none ${isDark ? 'border' : 'border-0'} shadow-2xl transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]`}
+        className={`relative flex h-full w-full flex-col overflow-hidden rounded-none ${isDark ? 'border' : 'border-0'} shadow-2xl transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]`}
         style={{
           borderColor: isDark ? border : 'transparent',
           backgroundColor: cardBg,
-          maxHeight: '92vh',
+          maxHeight: '94vh',
           opacity: entered ? 1 : 0,
           transform: entered ? 'scale(1)' : 'scale(0.96)',
         }}
@@ -19971,7 +21805,7 @@ function LoftExperienceModal({
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full opacity-70 transition hover:opacity-100"
+          className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full opacity-70 transition hover:opacity-100 sm:right-6 sm:top-6"
           data-pf-no-color-transition=""
           style={{ backgroundColor: `color-mix(in srgb, ${ink} 8%, transparent)`, color: ink }}
         >
@@ -19980,84 +21814,127 @@ function LoftExperienceModal({
           </svg>
         </button>
 
-        <div className="overflow-y-auto p-6 sm:p-10">
-        <div className="mx-auto w-full max-w-4xl">
-          <div className="mx-auto max-w-2xl text-center">
-            {flags.showMeta && (status === 'ONGOING' || status === 'FINISHED') ? (
-              <ExperienceEditorialOngoingBadge status={status} isDark={isDark} accentColor={accent} secondaryColor={secondary} />
-            ) : null}
-            {flags.showTitle && title ? (
-              <h2
-                className="mt-3 font-serif text-[1.9rem] font-medium leading-tight tracking-tight sm:text-[2.4rem]"
-                style={{ color: ink }}
-              >
-                {title}
-              </h2>
-            ) : null}
-            {combinedMeta ? (
-              <p className="mt-2.5 text-[1.02rem]" style={{ color: muted }}>
-                {combinedMeta}
-              </p>
-            ) : null}
-          </div>
-
-          {flags.showEntryMedia ? (
-            <div className="relative mt-8 w-full sm:mt-10" style={{ aspectRatio: '16 / 10' }}>
-              {/* No framing chrome here — no background fill, no shadow, no rounded
-                  corners, no glassmorphism — just the full, uncropped image, plainly. */}
-              {mediaUrl ? (
-                <ProductThumbnailMedia url={mediaUrl} alt={title || 'Experience'} fit="contain" className="h-full w-full" />
-              ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="mx-auto grid min-h-full w-full grid-cols-1 items-center gap-10 px-6 py-10 sm:gap-12 sm:px-10 sm:py-12 lg:grid-cols-12 lg:gap-14 lg:px-14 lg:py-16 xl:gap-16 xl:px-16">
+            {flags.showEntryMedia ? (
+              <div className="relative w-full lg:col-span-6">
                 <div
-                  className="flex h-full w-full items-center justify-center text-[3rem] font-semibold"
-                  style={{ color: `color-mix(in srgb, ${accent} 55%, transparent)` }}
-                  aria-hidden
+                  className="pf-loft-modal-thumb relative w-full overflow-hidden rounded-2xl"
+                  style={{
+                    aspectRatio: '4 / 3',
+                    backgroundColor: `color-mix(in srgb, ${accent} 8%, transparent)`,
+                  }}
                 >
-                  {initial}
+                  <div className="pf-loft-modal-thumb-media h-full w-full">
+                    {mediaUrl ? (
+                      <ProductThumbnailMedia
+                        url={mediaUrl}
+                        alt={title || 'Experience'}
+                        fit="cover"
+                        className="h-full w-full"
+                      />
+                    ) : (
+                      <div
+                        className="flex h-full w-full items-center justify-center text-[4.5rem] font-semibold"
+                        style={{ color: `color-mix(in srgb, ${accent} 55%, transparent)` }}
+                        aria-hidden
+                      >
+                        {initial}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-          ) : null}
+              </div>
+            ) : null}
 
-          <div className="mx-auto mt-8 max-w-2xl text-center sm:mt-10">
-            {flags.showDescription && description ? (
-              <p className="text-[1.08rem] leading-relaxed" style={{ color: bodyColor }}>
-                {description}
-              </p>
-            ) : null}
-            {displayTasks.length > 0 ? (
-              <div className={`mx-auto w-fit text-left ${flags.showDescription && description ? 'mt-6' : ''}`}>
-                <ExperienceTasksDisplay
-                  tasks={displayTasks}
-                  display={flags.tasksDisplay}
-                  bodyColor={bodyColor}
-                  mutedColor={accent}
-                  isDark={isDark}
-                  label=""
-                  size="lg"
-                />
-              </div>
-            ) : null}
-            {displayTools.length > 0 ? (
-              <>
-                <div className="mx-auto mt-7 h-px w-full" style={{ backgroundColor: dividerColor }} aria-hidden />
-                <p className="mt-7 text-[0.98rem]" style={{ color: muted }}>
-                  {displayTools.join('  ·  ')}
+            <div
+              className={`flex min-h-0 flex-col justify-center ${
+                flags.showEntryMedia ? 'lg:col-span-6' : 'lg:col-span-12 lg:max-w-2xl'
+              }`}
+            >
+              {showStatus ? (
+                <div className="mb-5 sm:mb-6">
+                  <ExperienceEditorialOngoingBadge
+                    status={status}
+                    isDark={isDark}
+                    accentColor={accent}
+                    secondaryColor={secondary}
+                  />
+                </div>
+              ) : null}
+
+              {flags.showTitle && title ? (
+                <h2
+                  className="max-w-[22ch] font-serif text-[clamp(1.85rem,3.4vw,3.05rem)] font-medium leading-[1.12] tracking-[-0.03em]"
+                  style={{ color: ink, fontFamily: SERIF }}
+                >
+                  {title}
+                </h2>
+              ) : null}
+
+              {combinedMeta ? (
+                <p
+                  className={`text-[0.92rem] tracking-[0.02em] sm:text-[1rem] ${flags.showTitle && title ? 'mt-5 sm:mt-6' : ''}`}
+                  style={{ color: muted }}
+                >
+                  {combinedMeta}
                 </p>
-              </>
-            ) : null}
-            {repoLink ? (
-              <div className={`flex justify-center ${displayTools.length > 0 ? 'mt-7' : 'mt-9'}`}>
-                <PortfolioLinkButton
-                  variant={flags.repoLinkButtonStyle}
-                  href={repoLink.url}
-                  label={repoLink.label || 'View repository'}
-                  palette={{ background: cardBg, ink, muted, accent, border }}
-                />
-              </div>
-            ) : null}
+              ) : null}
+
+              {flags.showDescription && description ? (
+                <p
+                  className={`max-w-xl text-[1.02rem] leading-[1.75] sm:text-[1.08rem] ${
+                    combinedMeta || (flags.showTitle && title) || showStatus ? 'mt-8 sm:mt-10' : ''
+                  }`}
+                  style={{ color: bodyColor }}
+                >
+                  {description}
+                </p>
+              ) : null}
+
+              {displayTasks.length > 0 ? (
+                <div
+                  className={`max-w-xl ${
+                    flags.showDescription && description ? 'mt-8 sm:mt-9' : 'mt-8 sm:mt-10'
+                  }`}
+                >
+                  <ExperienceTasksDisplay
+                    tasks={displayTasks}
+                    display={flags.tasksDisplay}
+                    bodyColor={bodyColor}
+                    mutedColor={muted}
+                    isDark={isDark}
+                    label=""
+                    size="lg"
+                    tools={displayTools}
+                  />
+                </div>
+              ) : null}
+
+              {displayTools.length > 0 || repoLink ? (
+                <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4 sm:mt-12">
+                  {displayTools.length > 0 ? (
+                    <p
+                      className="min-w-0 flex-1 font-mono text-[0.7rem] font-normal uppercase tracking-[0.08em] sm:text-[0.74rem]"
+                      style={{ color: muted }}
+                    >
+                      {displayTools.join('  ·  ')}
+                    </p>
+                  ) : null}
+                  {repoLink ? (
+                    <div className="shrink-0">
+                      <PortfolioLinkButton
+                        variant={flags.repoLinkButtonStyle}
+                        href={repoLink.url}
+                        label={repoLink.label || 'View repository'}
+                        palette={{ background: cardBg, ink, muted, accent, border }}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           </div>
-        </div>
         </div>
       </div>
     </div>,
@@ -20115,14 +21992,13 @@ export function LoftExperienceList({
     showProof: presentation.showProof !== false,
     showEntryMedia: presentation.showEntryMedia !== false,
     tasksDisplay: presentation.tasksDisplay,
-    repoLinkButtonStyle: presentation.repoLinkButtonStyle ?? 'icon',
+    repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'icon'),
     isDark,
   };
 
-  const headingEnabled = presentation.loftHeadingEnabled !== false;
-  const headingText = presentation.loftHeadingText?.trim() || "Roles I've taken on";
   const thumbnailFit = presentation.loftThumbnailFit ?? 'cover';
   const thumbnailRadius = presentation.loftThumbnailRadius ?? 'md';
+  const hoverEffect = presentation.loftHoverEffect ?? 'curtain';
   const columns = presentation.loftColumns ?? 3;
   const columnsClass: Record<PortfolioExperienceLoftColumns, string> = {
     2: 'xl:grid-cols-2',
@@ -20145,7 +22021,6 @@ export function LoftExperienceList({
           forceSingleColumn ? 'left' : presentation.listPlacement
         )}
       >
-        <LoftHeader muted={muted} ink={ink} border={border} headingEnabled={headingEnabled} headingText={headingText} />
         <div
           className={
             forceSingleColumn
@@ -20163,6 +22038,7 @@ export function LoftExperienceList({
               flags={flags}
               thumbnailFit={thumbnailFit}
               thumbnailRadius={thumbnailRadius}
+              hoverEffect={hoverEffect}
               onOpen={() => setOpenIndex(index)}
             />
           ))}
@@ -20198,7 +22074,6 @@ function PressExperienceRow({
   muted,
   bodyColor,
   accent,
-  secondary,
   flags,
   thumbnailRadius,
 }: {
@@ -20207,7 +22082,6 @@ function PressExperienceRow({
   muted: string;
   bodyColor: string;
   accent: string;
-  secondary: string;
   flags: DuotoneContentFlags;
   thumbnailRadius: PortfolioExperienceCardsBorderRadius;
 }) {
@@ -20265,33 +22139,10 @@ function PressExperienceRow({
   ) : null;
 
   return (
-    <div className="pf-press-row flex items-start gap-5 sm:gap-7">
-      {displayTools.length > 0 || media ? (
-        <div className="flex shrink-0 items-end gap-3 sm:gap-4">
-          {displayTools.length > 0 ? (
-            <div
-              data-pf-no-color-transition=""
-              className="pf-press-stack hidden max-w-[min(100%,28rem)] shrink flex-row flex-wrap-reverse justify-end gap-2 text-right lg:flex"
-            >
-              {displayTools.map((tool) => (
-                <span
-                  key={tool}
-                  className="rounded-none border px-3 py-1 text-[0.7rem] font-medium uppercase tracking-[0.04em]"
-                  style={{
-                    borderColor: `color-mix(in srgb, ${muted} 45%, transparent)`,
-                    color: muted,
-                  }}
-                >
-                  {tool}
-                </span>
-              ))}
-            </div>
-          ) : null}
-          {media}
-        </div>
-      ) : null}
+    <div className="pf-press-row flex items-stretch gap-5 sm:gap-7">
+      {media}
 
-      <div className="min-w-0 flex-1 pt-0.5">
+      <div className="flex min-w-0 flex-1 flex-col pt-0.5">
         {label || date ? (
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
             {label ? (
@@ -20331,22 +22182,40 @@ function PressExperienceRow({
               ) : null}
 
               {displayTasks.length > 0 ? (
-                <ul className="mt-8 space-y-3">
-                  {displayTasks.map((task, taskIndex) => (
-                    <li
-                      key={taskIndex}
-                      className="flex gap-2 text-[0.88rem] leading-snug"
-                      style={{ color: bodyColor }}
-                    >
-                      <span className="shrink-0" style={{ color: secondary }} aria-hidden>
-                        –
-                      </span>
-                      <span>{task}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="mt-8">
+                  <ExperienceTasksDisplay
+                    tasks={displayTasks}
+                    display={flags.tasksDisplay}
+                    bodyColor={bodyColor}
+                    mutedColor={muted}
+                    isDark={flags.isDark}
+                    label=""
+                    size="md"
+                    tools={displayTools}
+                  />
+                </div>
               ) : null}
             </div>
+          </div>
+        ) : null}
+
+        {displayTools.length > 0 ? (
+          <div
+            data-pf-no-color-transition=""
+            className="pf-press-stack mt-auto hidden flex-row flex-wrap gap-2 pt-8 lg:flex"
+          >
+            {displayTools.map((tool) => (
+              <span
+                key={tool}
+                className="rounded-none border px-3 py-1 text-[0.7rem] font-medium uppercase tracking-[0.04em]"
+                style={{
+                  borderColor: `color-mix(in srgb, ${muted} 45%, transparent)`,
+                  color: muted,
+                }}
+              >
+                {tool}
+              </span>
+            ))}
           </div>
         ) : null}
       </div>
@@ -20370,7 +22239,6 @@ export function PressExperienceList({
   const colorMode = resolveExperienceColorMode(presentation);
   const styles = normalizeExperienceElementStyles(presentation.elementStyles);
   const accent = experienceAccentColor(presentation.accentColor);
-  const secondary = experienceSecondaryStatusColor(presentation);
   const ink = ensureExperienceInkContrast(
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
@@ -20401,13 +22269,10 @@ export function PressExperienceList({
     showProof: presentation.showProof !== false,
     showEntryMedia: presentation.showEntryMedia !== false,
     tasksDisplay: presentation.tasksDisplay,
-    repoLinkButtonStyle: presentation.repoLinkButtonStyle ?? 'icon',
+    repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'icon'),
     isDark,
   };
 
-  const headingEnabled = presentation.pressHeadingEnabled !== false;
-  const headingText =
-    presentation.pressHeadingText?.trim() || 'Roles taken. Skills sharpened. Impact delivered.';
   const introText = presentation.pressIntroText?.trim() || '';
   const thumbnailRadius = presentation.pressThumbnailRadius ?? 'md';
   const showTwoColumn = Boolean(introText) && !forceSingleColumn;
@@ -20418,16 +22283,7 @@ export function PressExperienceList({
         forceSingleColumn ? 'left' : presentation.listPlacement
       )}
     >
-      {headingEnabled && headingText ? (
-        <h2
-          className="max-w-5xl text-[clamp(2.2rem,6vw,4.2rem)] font-black uppercase leading-[1.02] tracking-[-0.02em]"
-          style={{ color: ink }}
-        >
-          {headingText}
-        </h2>
-      ) : null}
-
-      <div className="mt-10 h-px w-full sm:mt-14" style={{ backgroundColor: border }} aria-hidden />
+      <div className="h-px w-full" style={{ backgroundColor: border }} aria-hidden />
 
       <div
         className={`mt-10 grid grid-cols-1 gap-10 sm:mt-14 ${
@@ -20451,7 +22307,6 @@ export function PressExperienceList({
               muted={muted}
               bodyColor={bodyColor}
               accent={accent}
-              secondary={secondary}
               flags={flags}
               thumbnailRadius={thumbnailRadius}
             />
@@ -20781,22 +22636,18 @@ function LegacyExperienceCard({
               ) : null}
 
               {repoLink ? (
-                <a
+                <PortfolioLinkButton
+                  variant={flags.repoLinkButtonStyle}
                   href={repoLink.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-pf-no-color-transition=""
-                  className="pf-legacy-repo-link inline-flex w-fit items-center gap-2 border-b pb-1 font-mono uppercase"
-                  style={{
-                    fontSize: '0.72rem',
-                    letterSpacing: '0.18em',
-                    ['--pf-legacy-muted' as string]: muted,
-                    ['--pf-legacy-accent' as string]: accent,
-                  }}
-                >
-                  {repoLink.label || 'View repository'}
-                  <span aria-hidden>↗</span>
-                </a>
+                  label={repoLink.label || 'View repository'}
+                  palette={experienceLinkButtonPalette({
+                    ink,
+                    muted,
+                    accent,
+                    border,
+                    isDark: flags.isDark,
+                  })}
+                />
               ) : null}
             </div>
           ) : null}
@@ -20886,15 +22737,10 @@ export function LegacyExperienceList({
     showProof: presentation.showProof !== false,
     showEntryMedia: presentation.showEntryMedia !== false,
     tasksDisplay: presentation.tasksDisplay,
-    repoLinkButtonStyle: presentation.repoLinkButtonStyle ?? 'icon',
+    repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'legacy'),
     isDark,
   };
 
-  const headingEnabled = presentation.legacyHeadingEnabled !== false;
-  const headingText = presentation.legacyHeadingText?.trim() || 'A Career Built on';
-  const headingAccentText = presentation.legacyHeadingAccentText?.trim() || 'Craft';
-  const introText =
-    presentation.legacyIntroText?.trim() || 'A selection of roles, teams, and problems solved along the way.';
   const thumbnailRadius = presentation.legacyThumbnailRadius ?? 'xl';
   const thumbnailHeight = presentation.legacyThumbnailHeight ?? 'lg';
   const thumbnailWidth = presentation.legacyThumbnailWidth ?? 'lg';
@@ -20910,29 +22756,7 @@ export function LegacyExperienceList({
         forceSingleColumn ? 'left' : presentation.listPlacement
       )}
     >
-      {headingEnabled ? (
-        <div className="text-center">
-          <h2
-            className="mx-auto max-w-3xl text-[clamp(2.4rem,6vw,4rem)] font-black leading-[1.05] tracking-tight"
-            style={{ color: ink }}
-          >
-            {headingText}
-            {headingAccentText ? (
-              <>
-                {' '}
-                <span style={{ color: accent }}>{headingAccentText}</span>
-              </>
-            ) : null}
-          </h2>
-          {introText ? (
-            <p className="mx-auto mt-5 max-w-lg text-[1.02rem] leading-relaxed" style={{ color: muted }}>
-              {introText}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className={headingEnabled ? 'mt-16 sm:mt-24' : ''}>
+      <div>
         {blocks.map((block, index) => (
           <LegacyExperienceCard
             key={block.id}
@@ -20956,6 +22780,400 @@ export function LegacyExperienceList({
           />
         ))}
       </div>
+    </div>
+  );
+}
+
+function experienceContentFlags(
+  presentation: PortfolioExperiencePresentationSettings,
+  isDark: boolean,
+  nativeLink: Parameters<typeof resolveExperienceRepoLinkStyle>[1]
+): DuotoneContentFlags {
+  return {
+    showTitle: presentation.showTitle !== false,
+    showPeriod: presentation.showPeriod !== false,
+    showMeta: presentation.showMeta !== false,
+    showDescription: presentation.showDescription !== false,
+    showTasks: presentation.showTasks !== false,
+    showTools: presentation.showTools !== false,
+    showProof: presentation.showProof !== false,
+    showEntryMedia: presentation.showEntryMedia !== false,
+    tasksDisplay: presentation.tasksDisplay,
+    repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, nativeLink),
+    isDark,
+  };
+}
+
+function AsymmetricExperienceRow({
+  block,
+  ink,
+  muted,
+  bodyColor,
+  accent,
+  border,
+  background,
+  flags,
+  stacked,
+}: {
+  block: ProfileMediaBlock;
+  ink: string;
+  muted: string;
+  bodyColor: string;
+  accent: string;
+  border: string;
+  background: string;
+  flags: DuotoneContentFlags;
+  stacked: boolean;
+}) {
+  const { period, title, organization, description, status, tasks, tools, links, location, employmentType } =
+    resolveExperienceContent(block);
+  const mediaUrl = flags.showEntryMedia && typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
+  const initial = (title || organization || '•').trim().charAt(0).toUpperCase();
+  const repoLink = flags.showProof ? (links[0] ?? null) : null;
+  const displayTasks = flags.showTasks ? tasks : [];
+  const displayTools = flags.showTools ? tools : [];
+  const metaLine = [organization, location, employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : null]
+    .filter((part): part is string => Boolean(part))
+    .join('  ·  ');
+  const statusLabel = status === 'ONGOING' ? 'Ongoing' : status === 'FINISHED' ? 'Completed' : null;
+
+  const visual = (
+    <div
+      className={`relative overflow-hidden ${
+        stacked ? 'aspect-[4/5]' : 'min-h-[22rem] sm:min-h-[28rem] lg:h-full lg:min-h-[32rem]'
+      }`}
+      style={{ backgroundColor: `color-mix(in srgb, ${accent} 10%, ${background})` }}
+    >
+      {mediaUrl ? (
+        <ProductThumbnailMedia
+          url={mediaUrl}
+          alt={title || 'Experience'}
+          fit="cover"
+          className="h-full w-full"
+        />
+      ) : (
+        <div
+          className="flex h-full w-full items-center justify-center text-[7rem] font-semibold"
+          style={{ color: `color-mix(in srgb, ${ink} 18%, transparent)` }}
+          aria-hidden
+        >
+          {initial}
+        </div>
+      )}
+    </div>
+  );
+
+  const showVisual = flags.showEntryMedia;
+  const split = !stacked && showVisual;
+
+  return (
+    <article
+      className={split ? 'relative grid grid-cols-1 lg:grid-cols-2 lg:items-stretch' : 'grid grid-cols-1'}
+      style={{ borderBottom: `1px solid ${border}` }}
+    >
+      {showVisual ? <div className={split ? 'lg:min-h-0' : ''}>{visual}</div> : null}
+      <div
+        className={`flex flex-col justify-center py-10 sm:py-12 ${
+          split ? 'lg:border-l lg:py-16 lg:pl-12 xl:pl-16 lg:pr-0' : ''
+        }`}
+        style={split ? { borderColor: border } : undefined}
+      >
+        {flags.showPeriod && period ? (
+          <p className="font-mono text-[0.72rem] uppercase tracking-[0.18em]" style={{ color: muted }}>
+            {period}
+          </p>
+        ) : null}
+        {flags.showTitle && title ? (
+          <h3
+            className="mt-5 max-w-[14ch] text-[clamp(2.1rem,4.6vw,4.4rem)] font-semibold leading-[1.02] tracking-[-0.045em]"
+            style={{ color: ink }}
+          >
+            {title}
+          </h3>
+        ) : null}
+        {flags.showMeta && (metaLine || statusLabel) ? (
+          <p className="mt-5 text-[0.92rem]" style={{ color: muted }}>
+            {[metaLine, statusLabel].filter(Boolean).join('  ·  ')}
+          </p>
+        ) : null}
+        {flags.showDescription && description ? (
+          <p className="mt-10 max-w-md text-[1.02rem] leading-[1.75]" style={{ color: bodyColor }}>
+            {description}
+          </p>
+        ) : null}
+        {displayTasks.length > 0 ? (
+          <div className="mt-12 max-w-md">
+            <ExperienceTasksDisplay
+              tasks={displayTasks}
+              display={flags.tasksDisplay}
+              bodyColor={bodyColor}
+              mutedColor={muted}
+              isDark={flags.isDark}
+              label=""
+              size="md"
+            />
+          </div>
+        ) : null}
+        {displayTools.length > 0 ? (
+          <p className="mt-12 font-mono text-[0.7rem] uppercase tracking-[0.14em]" style={{ color: muted }}>
+            {displayTools.join('  ·  ')}
+          </p>
+        ) : null}
+        {repoLink ? (
+          <div className="mt-12">
+            <PortfolioLinkButton
+              variant={flags.repoLinkButtonStyle}
+              href={repoLink.url}
+              label={repoLink.label || 'View repository'}
+              palette={experienceLinkButtonPalette({
+                ink,
+                muted,
+                accent,
+                border,
+                background,
+                isDark: flags.isDark,
+              })}
+            />
+          </div>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+export function AsymmetricExperienceList({
+  blocks,
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+  forceSingleColumn = false,
+}: {
+  blocks: ProfileMediaBlock[];
+  presentation?: PortfolioExperiencePresentationSettings;
+  motionProfile?: PortfolioGlobalMotionProfile;
+  forceSingleColumn?: boolean;
+}) {
+  if (blocks.length === 0) return null;
+
+  const isDark = presentation.activeColorMode !== 'light';
+  const colorMode = resolveExperienceColorMode(presentation);
+  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
+  const accent = experienceAccentColor(presentation.accentColor);
+  const ink = ensureExperienceInkContrast(
+    presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_TITLE_COLOR,
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+  );
+  const muted = ensureExperienceInkContrast(
+    presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_MUTED_COLOR,
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+  );
+  const bodyColor = ensureExperienceInkContrast(
+    resolveExperienceTextColor(styles.tasks, colorMode) || resolveExperienceTextColor(styles.description, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_BODY_COLOR,
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+  );
+  const border = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
+  const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
+  const flags = experienceContentFlags(presentation, isDark, 'reel');
+  const stacked = forceSingleColumn;
+
+  return (
+    <div
+      className={experienceListShellClass(
+        stacked ? 'full' : presentation.listMaxWidth,
+        stacked ? 'left' : presentation.listPlacement
+      )}
+    >
+      {blocks.map((block) => (
+        <AsymmetricExperienceRow
+          key={block.id}
+          block={block}
+          ink={ink}
+          muted={muted}
+          bodyColor={bodyColor}
+          accent={accent}
+          border={border}
+          background={background}
+          flags={flags}
+          stacked={stacked}
+        />
+      ))}
+    </div>
+  );
+}
+
+function KineticExperienceRow({
+  block,
+  ink,
+  muted,
+  bodyColor,
+  accent,
+  border,
+  background,
+  flags,
+  isLast,
+}: {
+  block: ProfileMediaBlock;
+  ink: string;
+  muted: string;
+  bodyColor: string;
+  accent: string;
+  border: string;
+  background: string;
+  flags: DuotoneContentFlags;
+  isLast: boolean;
+}) {
+  const { period, title, organization, description, status, tasks, tools, links } = resolveExperienceContent(block);
+  const repoLink = flags.showProof ? (links[0] ?? null) : null;
+  const displayTasks = flags.showTasks ? tasks.slice(0, 4) : [];
+  const displayTools = flags.showTools ? tools : [];
+  const statusLabel = status === 'ONGOING' ? 'Ongoing' : status === 'FINISHED' ? 'Done' : null;
+
+  return (
+    <article
+      className="relative py-12 sm:py-16 first:pt-0 last:pb-0"
+      style={{ borderBottom: isLast ? undefined : `1px solid ${border}` }}
+    >
+      <div className="flex items-baseline justify-between gap-6">
+        {flags.showPeriod && period ? (
+          <p className="font-mono text-[0.68rem] uppercase tracking-[0.22em]" style={{ color: muted }}>
+            {period}
+          </p>
+        ) : (
+          <span />
+        )}
+        {flags.showMeta && statusLabel ? (
+          <p className="font-mono text-[0.68rem] uppercase tracking-[0.22em]" style={{ color: accent }}>
+            {statusLabel}
+          </p>
+        ) : null}
+      </div>
+      {flags.showTitle && title ? (
+        <h3
+          className="mt-8 max-w-[12ch] text-[clamp(3.1rem,12vw,8.75rem)] font-semibold leading-[0.84] tracking-[-0.07em]"
+          style={{ color: ink }}
+        >
+          {title}
+        </h3>
+      ) : null}
+      <div className="mt-10 grid grid-cols-1 gap-10 sm:mt-14 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] sm:items-end">
+        <div>
+          {flags.showMeta && organization ? (
+            <p className="text-[0.95rem]" style={{ color: muted }}>
+              {organization}
+            </p>
+          ) : null}
+          {flags.showDescription && description ? (
+            <p className="mt-5 max-w-sm text-[0.95rem] leading-relaxed" style={{ color: bodyColor }}>
+              {description}
+            </p>
+          ) : null}
+          {displayTasks.length > 0 ? (
+            <div className="mt-8 max-w-sm">
+              <ExperienceTasksDisplay
+                tasks={displayTasks}
+                display={flags.tasksDisplay}
+                bodyColor={bodyColor}
+                mutedColor={muted}
+                isDark={flags.isDark}
+                label=""
+                size="md"
+              />
+            </div>
+          ) : null}
+        </div>
+        <div className="flex flex-col items-start gap-8 sm:items-end">
+          {displayTools.length > 0 ? (
+            <p
+              className="max-w-xs font-mono text-[0.68rem] uppercase tracking-[0.16em] sm:text-right"
+              style={{ color: muted }}
+            >
+              {displayTools.join('  ·  ')}
+            </p>
+          ) : null}
+          {repoLink ? (
+            <PortfolioLinkButton
+              variant={flags.repoLinkButtonStyle}
+              href={repoLink.url}
+              label={repoLink.label || 'View repository'}
+              palette={experienceLinkButtonPalette({
+                ink,
+                muted,
+                accent,
+                border,
+                background,
+                isDark: flags.isDark,
+              })}
+            />
+          ) : null}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export function KineticExperienceList({
+  blocks,
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+  forceSingleColumn = false,
+}: {
+  blocks: ProfileMediaBlock[];
+  presentation?: PortfolioExperiencePresentationSettings;
+  motionProfile?: PortfolioGlobalMotionProfile;
+  forceSingleColumn?: boolean;
+}) {
+  if (blocks.length === 0) return null;
+
+  const isDark = presentation.activeColorMode !== 'light';
+  const colorMode = resolveExperienceColorMode(presentation);
+  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
+  const accent = experienceAccentColor(presentation.accentColor);
+  const ink = ensureExperienceInkContrast(
+    presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_TITLE_COLOR,
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+  );
+  const muted = ensureExperienceInkContrast(
+    presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_MUTED_COLOR,
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+  );
+  const bodyColor = ensureExperienceInkContrast(
+    resolveExperienceTextColor(styles.tasks, colorMode) || resolveExperienceTextColor(styles.description, colorMode),
+    isDark,
+    DEFAULT_EXPERIENCE_BODY_COLOR,
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+  );
+  const border = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
+  const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
+  const flags = experienceContentFlags(presentation, isDark, 'legacy');
+
+  return (
+    <div
+      className={experienceListShellClass(
+        forceSingleColumn ? 'full' : presentation.listMaxWidth,
+        forceSingleColumn ? 'left' : presentation.listPlacement
+      )}
+    >
+      {blocks.map((block, index) => (
+        <KineticExperienceRow
+          key={block.id}
+          block={block}
+          ink={ink}
+          muted={muted}
+          bodyColor={bodyColor}
+          accent={accent}
+          border={border}
+          background={background}
+          flags={flags}
+          isLast={index === blocks.length - 1}
+        />
+      ))}
     </div>
   );
 }

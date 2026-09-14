@@ -54,7 +54,8 @@ export type PortfolioInfoAboutManifestoPortraitFrame =
   | 'circle'
   | 'square'
   | 'rectangle'
-  | 'instagram';
+  | 'instagram'
+  | 'monogram';
 
 /** About · split — sticky portrait column on left or right (desktop). */
 export type PortfolioInfoAboutSplitPortraitSide = 'left' | 'right';
@@ -183,7 +184,7 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   aboutPlatformStrengthsSectionTitle: string;
   /** About · platform — stagger bio + strengths list on the right (zigzag). */
   aboutPlatformStaggerLayout: boolean;
-  /** About · portrait skills — lead sentence before interests + languages paragraph. */
+  /** About · portrait skills — intro label above the languages list. */
   aboutPortraitSkillsMetaLead: string;
   /** About · portrait skills — show interests + languages paragraph at the bottom. */
   aboutPortraitSkillsMetaEnabled: boolean;
@@ -206,18 +207,20 @@ export const DEFAULT_ABOUT_ME_TRAIT_HEADLINE =
 /** About · banner — default XXL centered headline (3 lines). */
 export const DEFAULT_ABOUT_BANNER_HEADLINE = 'Built To Ship\nDesigned To\nScale';
 
-/** About · feature panel — default two-tone intro lines (Apollo-style). */
-export const DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY = 'THE BREAKTHROUGH';
-export const DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY = 'FOUNDATION MODEL';
-export const DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY = 'Built for clarity';
-export const DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY = 'and real-world impact';
+/** About · feature panel — default two-tone intro (web craft, not AI-model copy). */
+export const DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY = 'FROM INTERFACE';
+export const DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY = 'TO INFRASTRUCTURE';
+export const DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY = 'Web apps, APIs,';
+export const DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY = 'and delivery that lasts';
 
 export const DEFAULT_ABOUT_PLATFORM_HEADLINE = 'Built for clarity\nand real-world impact';
 export const DEFAULT_ABOUT_PLATFORM_SKILLS_TITLE = 'Skills I have';
 export const DEFAULT_ABOUT_PLATFORM_STRENGTHS_TITLE = 'What I bring';
 
-/** About · portrait skills — lead sentence before interests + languages. */
-export const DEFAULT_ABOUT_PORTRAIT_SKILLS_META_LEAD =
+/** About · portrait skills — intro label above the languages list. */
+export const DEFAULT_ABOUT_PORTRAIT_SKILLS_META_LEAD = 'I speak';
+
+const LEGACY_ABOUT_PORTRAIT_SKILLS_META_LEAD =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit — beyond the craft,';
 
 /** About · platform — headline presets (Jasper-style hero). */
@@ -264,13 +267,22 @@ export const PORTFOLIO_INFO_ABOUT_FEATURE_INTRO_PRESETS: {
   line2Secondary: string;
 }[] = [
   {
+    id: 'web-craft',
+    label: 'Web Craft',
+    description: 'Applications, APIs et mise en production.',
+    line1Primary: 'FROM INTERFACE',
+    line1Secondary: 'TO INFRASTRUCTURE',
+    line2Primary: 'Web apps, APIs,',
+    line2Secondary: 'and delivery that lasts',
+  },
+  {
     id: 'breakthrough',
     label: 'Breakthrough',
-    description: 'Apollo-style — foundation model, clarity & impact.',
+    description: 'Apollo-style — foundation model, intelligence & products.',
     line1Primary: 'THE BREAKTHROUGH',
     line1Secondary: 'FOUNDATION MODEL',
-    line2Primary: 'Built for clarity',
-    line2Secondary: 'and real-world impact',
+    line2Primary: 'Intelligence, systems,',
+    line2Secondary: 'and products that ship',
   },
   {
     id: 'ship-scale',
@@ -468,7 +480,7 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   aboutValueStepsIntroParagraph2: DEFAULT_ABOUT_VALUE_STEPS_INTRO_PARAGRAPH_2,
   aboutManifestoAvatarGrayscale: false,
   infoPortraitGrayscale: false,
-  aboutManifestoPortraitFrame: 'circle',
+  aboutManifestoPortraitFrame: 'square',
   aboutSplitPortraitSide: 'left',
   aboutSplitSectionLabelsStyle: 'default',
   aboutBannerHeadlineEnabled: true,
@@ -629,7 +641,12 @@ export const PORTFOLIO_INFO_ABOUT_MANIFESTO_PORTRAIT_FRAME_OPTIONS: {
   {
     value: 'instagram',
     label: 'Instagram',
-    description: 'Anneau unicolore (couleur principale) décollé du portrait.',
+        description: 'Anneau unicolore (couleur principale) décollé du portrait.',
+  },
+  {
+    value: 'monogram',
+    label: 'Initiales',
+    description: 'Monogramme typographique — initiales en serif, sans photo.',
   },
 ];
 
@@ -640,7 +657,8 @@ export function isPortfolioInfoAboutManifestoPortraitFrame(
     value === 'circle' ||
     value === 'square' ||
     value === 'rectangle' ||
-    value === 'instagram'
+    value === 'instagram' ||
+    value === 'monogram'
   );
 }
 
@@ -649,7 +667,7 @@ export function resolveInfoAboutManifestoPortraitFrame(
 ): PortfolioInfoAboutManifestoPortraitFrame {
   return isPortfolioInfoAboutManifestoPortraitFrame(presentation.aboutManifestoPortraitFrame)
     ? presentation.aboutManifestoPortraitFrame
-    : 'circle';
+    : 'square';
 }
 
 export const PORTFOLIO_INFO_ABOUT_SPLIT_PORTRAIT_SIDE_OPTIONS: {
@@ -855,7 +873,7 @@ export function resolveInfoAboutValueListMarkerStyle(
 }
 
 const ABOUT_VALUE_TO_STEPS_REVISION = 1;
-const MANIFESTO_VISIBILITY_REVISION = 3;
+const MANIFESTO_VISIBILITY_REVISION = 5;
 const ABOUT_VALUE_STEPS_VISIBILITY_REVISION = 6;
 
 /** About · value steps / manifesto — education is opt-in (default off). Other designs opt-out. */
@@ -1051,6 +1069,13 @@ export function resolveAboutBannerHeadlineText(
 
 export type AboutFeatureIntroLine = { primary: string; secondary: string };
 
+/** Previous default copy — remapped so live portfolios follow the web-craft title.
+ *  The Breakthrough preset uses a different line 2 so it is not swallowed. */
+const LEGACY_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY = 'THE BREAKTHROUGH';
+const LEGACY_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY = 'FOUNDATION MODEL';
+const LEGACY_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY = 'Built for clarity';
+const LEGACY_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY = 'and real-world impact';
+
 export function resolveAboutFeatureIntroLines(
   presentation: Pick<
     PortfolioInfoPresentationSettings,
@@ -1060,23 +1085,38 @@ export function resolveAboutFeatureIntroLines(
     | 'aboutFeatureIntroLine2Secondary'
   >
 ): { line1: AboutFeatureIntroLine; line2: AboutFeatureIntroLine } {
+  const line1Primary =
+    presentation.aboutFeatureIntroLine1Primary?.trim() || DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY;
+  const line1Secondary =
+    presentation.aboutFeatureIntroLine1Secondary?.trim() ||
+    DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY;
+  const line2Primary =
+    presentation.aboutFeatureIntroLine2Primary?.trim() || DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY;
+  const line2Secondary =
+    presentation.aboutFeatureIntroLine2Secondary?.trim() ||
+    DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY;
+  const isLegacyBreakthrough =
+    line1Primary === LEGACY_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY &&
+    line1Secondary === LEGACY_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY &&
+    line2Primary === LEGACY_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY &&
+    line2Secondary === LEGACY_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY;
+
+  if (isLegacyBreakthrough) {
+    return {
+      line1: {
+        primary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY,
+        secondary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY,
+      },
+      line2: {
+        primary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY,
+        secondary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY,
+      },
+    };
+  }
+
   return {
-    line1: {
-      primary:
-        presentation.aboutFeatureIntroLine1Primary?.trim() ||
-        DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY,
-      secondary:
-        presentation.aboutFeatureIntroLine1Secondary?.trim() ||
-        DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY,
-    },
-    line2: {
-      primary:
-        presentation.aboutFeatureIntroLine2Primary?.trim() ||
-        DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY,
-      secondary:
-        presentation.aboutFeatureIntroLine2Secondary?.trim() ||
-        DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY,
-    },
+    line1: { primary: line1Primary, secondary: line1Secondary },
+    line2: { primary: line2Primary, secondary: line2Secondary },
   };
 }
 
@@ -1474,7 +1514,10 @@ export function resolveAboutPortraitSkillsMetaLead(
   presentation: Pick<PortfolioInfoPresentationSettings, 'aboutPortraitSkillsMetaLead'>
 ): string {
   const custom = presentation.aboutPortraitSkillsMetaLead?.trim();
-  return custom || DEFAULT_ABOUT_PORTRAIT_SKILLS_META_LEAD;
+  if (!custom || custom === LEGACY_ABOUT_PORTRAIT_SKILLS_META_LEAD) {
+    return DEFAULT_ABOUT_PORTRAIT_SKILLS_META_LEAD;
+  }
+  return custom;
 }
 
 export function resolveAboutPortraitSkillsMetaEnabled(
@@ -1526,12 +1569,12 @@ export function aboutPlatformHeadlineSizeClass(size: PortfolioInfoContentSize): 
 export function aboutPlatformLeadSizeClass(size: PortfolioInfoContentSize): string {
   switch (size) {
     case 'sm':
-      return 'text-2xl sm:text-[1.75rem]';
+      return 'text-[1.5rem] sm:text-[1.75rem]';
     case 'lg':
-      return 'text-3xl sm:text-4xl lg:text-[2.5rem]';
+      return 'text-[1.875rem] sm:text-[2.25rem] lg:text-[2.5rem]';
     case 'md':
     default:
-      return 'text-[1.75rem] sm:text-3xl lg:text-[2.25rem]';
+      return 'text-[1.75rem] sm:text-[1.875rem] lg:text-[2.25rem]';
   }
 }
 
@@ -1798,7 +1841,7 @@ export const PORTFOLIO_INFO_DESIGN_OPTIONS: {
     value: 'about-feature-panel',
     label: 'About · feature panel',
     description:
-      'Titre + intro bicolore — liste de skills à gauche, panneau description au survol/clic, bio en bas.',
+      'Titre + intro bicolore — rail de skills, panneau citation éditorial, pied magazine (bio en chapô, Background / What I bring / I speak).',
   },
   {
     value: 'about-platform',
@@ -1810,7 +1853,7 @@ export const PORTFOLIO_INFO_DESIGN_OPTIONS: {
     value: 'about-portrait-skills',
     label: 'About · portrait skills',
     description:
-      'Portrait grand à droite — petit titre + liste de skills XXL à gauche (titres seuls), bio en bas à gauche.',
+      'Feature panel à portrait fixe — rail de skills XXL à gauche, photo épinglée à droite, badges ghost et bloc Interests & languages.',
   },
   {
     value: 'about-manifesto',
@@ -1981,7 +2024,7 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         showSystemsTools: false,
         aboutManifestoSettingsRevision: MANIFESTO_VISIBILITY_REVISION,
         aboutManifestoAvatarGrayscale: false,
-        aboutManifestoPortraitFrame: 'circle',
+        aboutManifestoPortraitFrame: 'square',
         aboutManifestoBlocksLayout: 'grid',
         aboutManifestoBlocksScrollFocus: false,
         contentSize: 'md',
@@ -2228,10 +2271,22 @@ export function mergeInfoPresentation(
     aboutValueSettingsRevision = ABOUT_VALUE_TO_STEPS_REVISION;
   }
 
-  if (design === 'about-manifesto' && manifestoRevision < MANIFESTO_VISIBILITY_REVISION) {
-    showEducation = designDefaults.showEducation ?? false;
-    showSkills = designDefaults.showSkills ?? true;
-    showStrengths = true;
+  let aboutManifestoPortraitFrame: PortfolioInfoAboutManifestoPortraitFrame =
+    isPortfolioInfoAboutManifestoPortraitFrame(record.aboutManifestoPortraitFrame)
+      ? record.aboutManifestoPortraitFrame
+      : isPortfolioInfoAboutManifestoPortraitFrame(base.aboutManifestoPortraitFrame)
+        ? base.aboutManifestoPortraitFrame
+        : 'square';
+
+  if (manifestoRevision < MANIFESTO_VISIBILITY_REVISION) {
+    if (aboutManifestoPortraitFrame === 'monogram') {
+      aboutManifestoPortraitFrame = 'square';
+    }
+    if (design === 'about-manifesto') {
+      showEducation = designDefaults.showEducation ?? false;
+      showSkills = designDefaults.showSkills ?? true;
+      showStrengths = true;
+    }
     aboutManifestoSettingsRevision = MANIFESTO_VISIBILITY_REVISION;
   }
 
@@ -2345,11 +2400,7 @@ export function mergeInfoPresentation(
             record.aboutManifestoAvatarGrayscale
           ? true
           : base.infoPortraitGrayscale,
-    aboutManifestoPortraitFrame: isPortfolioInfoAboutManifestoPortraitFrame(
-      record.aboutManifestoPortraitFrame
-    )
-      ? record.aboutManifestoPortraitFrame
-      : base.aboutManifestoPortraitFrame,
+    aboutManifestoPortraitFrame,
     aboutSplitPortraitSide: isPortfolioInfoAboutSplitPortraitSide(record.aboutSplitPortraitSide)
       ? record.aboutSplitPortraitSide
       : base.aboutSplitPortraitSide,

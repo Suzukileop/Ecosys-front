@@ -1,6 +1,8 @@
 'use client';
 
 import Image from 'next/image';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
@@ -19,10 +21,30 @@ import {
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 
+const SWISS_SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
+const SWISS_EDGE = 'rgba(255, 255, 255, 0.05)';
+
+type SwissSignatureSize = 'desktop' | 'tablet' | 'mobile';
+
+function swissScrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
+}
+
 /**
- * Swiss editorial Hero banner — paper canvas, statement + portrait,
- * Currently / Specialized-in rail between hairlines, cropped signature word.
- * Colors follow the Hero / Global palette (fond, texteFort, texteMuted, bordure).
+ * Swiss editorial Hero — Option A (editorial balance):
+ * copy + meta on a shared left rail, organic portrait in the right third,
+ * full-width wordmark layered in front of the photo. Grain field on top.
  */
 export function PortfolioHeroSwissEditorial({ data }: { data: PortfolioHeroData }) {
   const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
@@ -30,9 +52,9 @@ export function PortfolioHeroSwissEditorial({ data }: { data: PortfolioHeroData 
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
   const muted = resolveHeroPaletteColor(palette, 'texteMuted');
-  const faint = resolveHeroPaletteColor(palette, 'texteFaint');
   const bordure = resolveHeroPaletteColor(palette, 'bordure');
   const neutre = resolveHeroPaletteColor(palette, 'neutre');
+  const principal = resolveHeroPaletteColor(palette, 'principal');
   const imageBw = data.presentation.heroImageGrayscale === true;
 
   const statement =
@@ -59,174 +81,339 @@ export function PortfolioHeroSwissEditorial({ data }: { data: PortfolioHeroData 
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
 
-  const hairline: CSSProperties = {
-    borderColor: `color-mix(in srgb, ${bordure} 70%, transparent)`,
+  const atmosphere: CSSProperties = {
+    backgroundImage: [
+      `radial-gradient(ellipse 34% 26% at 12% 54%, color-mix(in srgb, ${ink} 6%, transparent), transparent 66%)`,
+      `radial-gradient(ellipse 22% 16% at 32% 14%, color-mix(in srgb, ${neutre} 9%, transparent), transparent 72%)`,
+    ].join(', '),
   };
+
+  const heroRef = useRef<HTMLDivElement>(null);
+  const portrait = {
+    avatarUrl,
+    initials,
+    ink,
+    neutre,
+    imageBw,
+  };
+
+  useLayoutEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      // Still show elements for reduced motion
+      hero.querySelectorAll<HTMLElement>('.pf-swiss-editorial-statement, .pf-swiss-editorial-rail, .pf-swiss-editorial-sign, .pf-swiss-editorial-photo-frame').forEach((el) => {
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      });
+      return;
+    }
+
+    gsap.registerPlugin(ScrollTrigger);
+    const scroller = swissScrollParent(hero);
+    const signs = hero.querySelectorAll<HTMLElement>('.pf-swiss-editorial-sign');
+    const photos = hero.querySelectorAll<HTMLElement>('.pf-swiss-editorial-photo-shift');
+    const photoFrames = hero.querySelectorAll<HTMLElement>('.pf-swiss-editorial-photo-frame');
+    const statements = hero.querySelectorAll<HTMLElement>('.pf-swiss-editorial-serif');
+    const metaRails = hero.querySelectorAll<HTMLElement>('.pf-swiss-editorial-rail');
+    const infoBlocks = hero.querySelectorAll<HTMLElement>('.pf-swiss-info-block');
+    const fond = hero.querySelector<HTMLElement>('.pf-swiss-editorial-fond');
+    const atmosphere = hero.querySelector<HTMLElement>('.pf-swiss-editorial-atmosphere');
+
+    // Mark hero as GSAP-controlled to disable CSS safety animations
+    hero.setAttribute('data-pf-gsap', 'active');
+
+    const ctx = gsap.context(() => {
+      // ═══════════════════════════════════════════════════════════════════════════
+      // ENTRY ANIMATIONS — Swiss Editorial precision entrance
+      // ═══════════════════════════════════════════════════════════════════════════
+      
+      const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+      // 1. Background fond + atmosphere fade in subtly
+      if (fond) {
+        gsap.set(fond, { opacity: 0 });
+        tl.to(fond, { opacity: 1, duration: 0.8 }, 0);
+      }
+      if (atmosphere) {
+        gsap.set(atmosphere, { opacity: 0 });
+        tl.to(atmosphere, { opacity: 1, duration: 1.2 }, 0.15);
+      }
+
+      // 2. Statement text — elegant line reveal from below
+      statements.forEach((statement, i) => {
+        gsap.set(statement, { 
+          y: 48, 
+          opacity: 0,
+          clipPath: 'inset(100% 0 0 0)',
+        });
+        tl.to(statement, {
+          y: 0,
+          opacity: 1,
+          clipPath: 'inset(0% 0 0 0)',
+          duration: 1.1,
+          ease: 'power4.out',
+        }, 0.2 + i * 0.08);
+      });
+
+      // 3. Portrait — organic clip-path reveal + subtle scale
+      photoFrames.forEach((frame, i) => {
+        gsap.set(frame, {
+          scale: 0.88,
+          opacity: 0,
+          clipPath: 'inset(8% 12% 8% 12% round 1.5rem)',
+        });
+        tl.to(frame, {
+          scale: 1,
+          opacity: 1,
+          clipPath: 'inset(0% 0% 0% 0% round 0rem)',
+          duration: 1.35,
+          ease: 'power3.out',
+        }, 0.35 + i * 0.1);
+      });
+
+      // 4. Meta rail — slide up with stagger
+      metaRails.forEach((rail, i) => {
+        gsap.set(rail, { y: 32, opacity: 0 });
+        tl.to(rail, {
+          y: 0,
+          opacity: 1,
+          duration: 0.9,
+          ease: 'power3.out',
+        }, 0.55 + i * 0.12);
+      });
+
+      // 5. Info blocks inside meta — fine stagger
+      infoBlocks.forEach((block, i) => {
+        gsap.set(block, { y: 18, opacity: 0 });
+        tl.to(block, {
+          y: 0,
+          opacity: 1,
+          duration: 0.75,
+          ease: 'power2.out',
+        }, 0.7 + i * 0.1);
+      });
+
+      // 6. Signature — dramatic scale reveal from center
+      signs.forEach((sign, i) => {
+        const signText = sign.querySelector<HTMLElement>('.pf-swiss-editorial-serif');
+        if (signText) {
+          gsap.set(signText, {
+            scale: 0.75,
+            opacity: 0,
+            transformOrigin: 'left bottom',
+          });
+          tl.to(signText, {
+            scale: 1,
+            opacity: 1,
+            duration: 1.4,
+            ease: 'power4.out',
+          }, 0.5 + i * 0.15);
+        }
+      });
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // SCROLL ANIMATIONS — Parallax on scroll (existing)
+      // ═══════════════════════════════════════════════════════════════════════════
+      
+      signs.forEach((sign) => {
+        gsap.fromTo(
+          sign,
+          { x: 0 },
+          {
+            x: '-11vw',
+            opacity: 0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: hero,
+              scroller,
+              start: 'top top',
+              end: '68% top',
+              scrub: true,
+              invalidateOnRefresh: true,
+            },
+          }
+        );
+      });
+
+      photos.forEach((photo) => {
+        gsap.fromTo(
+          photo,
+          { y: 0 },
+          {
+            y: '14%',
+            ease: 'none',
+            scrollTrigger: {
+              trigger: hero,
+              scroller,
+              start: 'top top',
+              end: 'bottom top',
+              scrub: 0.65,
+              invalidateOnRefresh: true,
+            },
+          }
+        );
+      });
+    }, hero);
+
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 80);
+    return () => {
+      window.clearTimeout(refreshId);
+      ctx.revert();
+    };
+  }, []);
+
+  const metaRow = (
+    <SwissMetaRail
+      currentlyLabel={currentlyLabel}
+      specializedLabel={specializedLabel}
+      availabilityValue={availabilityValue}
+      specialtyValue={specialtyValue}
+      muted={muted}
+      ink={ink}
+      bordure={bordure}
+      principal={principal}
+    />
+  );
+
+  const metaStack = (
+    <SwissMetaRail
+      currentlyLabel={currentlyLabel}
+      specializedLabel={specializedLabel}
+      availabilityValue={availabilityValue}
+      specialtyValue={specialtyValue}
+      muted={muted}
+      ink={ink}
+      bordure={bordure}
+      principal={principal}
+      stacked
+    />
+  );
 
   return (
     <div
-      className="relative isolate flex min-h-[100dvh] min-h-screen w-full flex-col overflow-hidden"
-      style={{ backgroundColor: fond, color: ink }}
+      ref={heroRef}
+      className="pf-swiss-editorial-hero relative isolate flex min-h-[100dvh] min-h-screen w-full flex-col overflow-x-clip overflow-y-visible"
+      style={{ color: ink }}
     >
-      {/* Full-bleed paper so Global wallpaper never peeks through Swiss banner */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2"
+        className="pf-swiss-editorial-fond pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2"
         style={{ backgroundColor: fond }}
+      />
+      <div
+        aria-hidden
+        className="pf-swiss-editorial-atmosphere pointer-events-none absolute inset-0 z-0"
+        style={atmosphere}
       />
 
       <div
-        className={`relative z-[1] flex flex-1 flex-col pb-0 pt-[calc(5.5rem+env(safe-area-inset-top,0px))] md:pt-[calc(6.25rem+env(safe-area-inset-top,0px))] lg:pt-[calc(6.75rem+env(safe-area-inset-top,0px))] ${shellX}`}
+        className={`relative z-[2] flex flex-1 flex-col pb-[max(2.25rem,calc(env(safe-area-inset-bottom,0px)+1.35rem))] pt-[calc(5.5rem+env(safe-area-inset-top,0px))] md:pb-[max(2rem,calc(env(safe-area-inset-bottom,0px)+1.5rem))] md:pt-[calc(6.25rem+env(safe-area-inset-top,0px))] lg:pb-[clamp(1.85rem,4.2vh,3.25rem)] lg:pt-[calc(6.75rem+env(safe-area-inset-top,0px))] ${shellX}`}
       >
-        {/* —— Desktop / tablet: statement left · portrait right —— */}
-        <div className="hidden min-h-0 flex-1 flex-col md:flex">
-          {/* Top hero content */}
-          <div className="flex w-full shrink-0 items-start justify-between gap-[clamp(2.5rem,10%,7rem)]">
-            {swapBioName ? (
-              <div
-                className="min-w-0 basis-[60%]"
-                style={{ maxWidth: '62%', width: '60%' }}
-              >
-                <p
-                  className="m-0 font-sans font-normal uppercase leading-[0.92] tracking-[-0.05em]"
-                  style={{
-                    color: ink,
-                    fontSize: 'clamp(2.5rem, 5.5vw, 5.5rem)',
-                  }}
-                >
-                  {signature}
-                </p>
-              </div>
-            ) : (
-              <p
-                className="min-w-0 basis-[60%] text-[clamp(1.35rem,2.4vw,2.15rem)] font-medium leading-[1.4] tracking-[-0.02em] [text-wrap:pretty]"
-                style={{
-                  color: ink,
-                  maxWidth: '62%',
-                  width: '60%',
-                }}
-              >
-                {statement}
-              </p>
-            )}
-            <div className="shrink-0">
-              <SwissPortrait
-                avatarUrl={avatarUrl}
-                initials={initials}
-                ink={ink}
-                neutre={neutre}
-                imageBw={imageBw}
-                className="aspect-[3/4] w-[min(28vw,22rem)] overflow-hidden"
-                radiusClass="rounded-none"
-              />
+        {/* —— Desktop (lg+): left copy rail, portrait in the right third, full-width wordmark —— */}
+        <div className="pf-swiss-editorial-desktop relative hidden min-h-0 flex-1 lg:grid" data-swap={swapBioName ? 'true' : 'false'}>
+          <div className="pf-swiss-editorial-copy flex h-full min-h-0 flex-col justify-between pt-[clamp(0.15rem,1.2vh,0.75rem)]">
+            <div className="pf-swiss-editorial-rail">
+              {swapBioName ? (
+                <SwissDisplayWord word={signature} ink={ink} />
+              ) : (
+                <SwissStatement text={statement} ink={ink} className="max-w-none" />
+              )}
+            </div>
+            <div className="pf-swiss-editorial-rail pb-[clamp(0.65rem,1.8vh,1.25rem)] pt-[clamp(1.75rem,4.5vh,3.75rem)]">
+              {metaRow}
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col justify-center px-0 py-[clamp(1.75rem,4vh,3.5rem)]">
-            <div className="w-full">
-              <div className="border-t" style={hairline} />
-              <div className="grid grid-cols-[minmax(0,0.55fr)_minmax(0,1fr)] gap-x-10 py-[clamp(1.25rem,2.5vh,2rem)] sm:gap-x-16 lg:grid-cols-[minmax(0,0.42fr)_minmax(0,1fr)]">
-                <SwissInfoBlock
-                  label={currentlyLabel}
-                  value={availabilityValue}
-                  showBullet
-                  muted={muted}
-                  ink={ink}
-                />
-                <SwissInfoBlock
-                  label={specializedLabel}
-                  value={specialtyValue}
-                  muted={muted}
-                  ink={ink}
+          <div className="pf-swiss-editorial-photo">
+            <div className="pf-swiss-editorial-photo-shift">
+              <div className="pf-swiss-editorial-photo-frame">
+                <SwissPortrait
+                  {...portrait}
+                  className="pf-swiss-editorial-portrait aspect-[3/4] w-full overflow-hidden"
+                  radius="1.15rem 44% 1.85rem 28%"
                 />
               </div>
-              <div className="border-t" style={hairline} />
             </div>
           </div>
 
-          <div className="w-full shrink-0">
+          <div className="pf-swiss-editorial-sign">
             {swapBioName ? (
-              <p
-                className="pb-8 pt-3 font-sans font-medium leading-[1.25] tracking-[-0.02em] [text-wrap:pretty] sm:pb-10"
-                style={{
-                  color: ink,
-                  fontSize: 'clamp(1.35rem, 2.4vw, 2.15rem)',
-                }}
-              >
-                {statement}
-              </p>
+              <SwissStatement text={statement} ink={ink} className="max-w-[36rem] pt-2" />
             ) : (
-              <SwissSignature word={signature} ink={ink} faint={faint} />
+              <SwissSignature word={signature} ink={ink} size="desktop" />
             )}
           </div>
         </div>
 
-        {/* —— Mobile: stacked —— */}
-        <div className="flex min-h-0 flex-1 flex-col md:hidden">
-          {swapBioName ? (
-            <p
-              className="m-0 font-sans font-normal uppercase leading-[0.92] tracking-[-0.05em]"
-              style={{
-                color: ink,
-                fontSize: 'clamp(2.25rem, 12vw, 3.5rem)',
-              }}
-            >
-              {signature}
-            </p>
-          ) : (
-            <p
-              className="max-w-full text-[clamp(1.35rem,6.2vw,1.85rem)] font-medium leading-[1.4] tracking-[-0.02em] [text-wrap:pretty]"
-              style={{ color: ink }}
-            >
-              {statement}
-            </p>
-          )}
-
-          <div className="mt-[5vh] w-full shrink-0">
-            <SwissPortrait
-              avatarUrl={avatarUrl}
-              initials={initials}
-              ink={ink}
-              neutre={neutre}
-              imageBw={imageBw}
-              className="aspect-[4/5] w-full overflow-hidden"
-              radiusClass="rounded-[1.25rem]"
-            />
-          </div>
-
-          <div className="flex min-h-0 flex-1 flex-col justify-center py-8">
-            <div className="grid grid-cols-2 gap-x-4">
-              <SwissInfoBlock
-                label={currentlyLabel}
-                value={availabilityValue}
-                showBullet
-                muted={muted}
-                ink={ink}
-              />
-              <SwissInfoBlock
-                label={specializedLabel}
-                value={specialtyValue}
-                muted={muted}
-                ink={ink}
-              />
+        {/* —— Tablet (md–lg): same editorial split, slightly tighter portrait —— */}
+        <div className="pf-swiss-editorial-tablet relative hidden min-h-0 flex-1 md:grid lg:hidden" data-swap={swapBioName ? 'true' : 'false'}>
+          <div className="pf-swiss-editorial-copy flex h-full min-h-0 flex-col justify-between">
+            <div className="pf-swiss-editorial-rail">
+              {swapBioName ? (
+                <SwissDisplayWord word={signature} ink={ink} />
+              ) : (
+                <SwissStatement text={statement} ink={ink} className="max-w-none" />
+              )}
             </div>
-            <div className="mt-6 border-t" style={hairline} />
+            <div className="pf-swiss-editorial-rail pb-2 pt-8">
+              {metaRow}
+            </div>
           </div>
 
-          <div className="shrink-0">
+          <div className="pf-swiss-editorial-photo">
+            <div className="pf-swiss-editorial-photo-shift">
+              <div className="pf-swiss-editorial-photo-frame">
+                <SwissPortrait
+                  {...portrait}
+                  className="pf-swiss-editorial-portrait aspect-[3/4] w-full overflow-hidden"
+                  radius="1.2rem 42% 1.7rem 26%"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="pf-swiss-editorial-sign">
             {swapBioName ? (
-              <p
-                className="pb-[max(1.75rem,env(safe-area-inset-bottom))] font-sans font-medium leading-[1.35] tracking-[-0.02em] [text-wrap:pretty]"
-                style={{
-                  color: ink,
-                  fontSize: 'clamp(1.35rem, 6.2vw, 1.85rem)',
-                }}
-              >
-                {statement}
-              </p>
+              <SwissStatement text={statement} ink={ink} />
             ) : (
-              <SwissSignature word={signature} ink={ink} faint={faint} mobile />
+              <SwissSignature word={signature} ink={ink} size="tablet" />
             )}
+          </div>
+        </div>
+
+        {/* —— Mobile: headline → centered photo → metadata → wordmark —— */}
+        <div className="flex min-h-0 flex-1 flex-col md:hidden">
+          <div className="relative z-[3]">
+            {swapBioName ? (
+              <SwissDisplayWord word={signature} ink={ink} compact />
+            ) : (
+              <SwissStatement text={statement} ink={ink} />
+            )}
+          </div>
+
+          <div className="relative mt-6 flex flex-col">
+            <div className="pf-swiss-editorial-photo-shift relative z-[2] mx-auto w-[min(82%,18.5rem)]">
+              <div className="pf-swiss-editorial-photo-frame">
+                <SwissPortrait
+                  {...portrait}
+                  className="pf-swiss-editorial-portrait aspect-[4/5] w-full overflow-hidden"
+                  radius="1.35rem 38% 1.5rem 22%"
+                />
+              </div>
+            </div>
+
+            <div className="relative z-[3] mt-6">{metaStack}</div>
+
+            <div className="pf-swiss-editorial-sign relative z-[4] mt-6">
+              {swapBioName ? (
+                <SwissStatement text={statement} ink={ink} />
+              ) : (
+                <SwissSignature word={signature} ink={ink} size="mobile" />
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -234,35 +421,149 @@ export function PortfolioHeroSwissEditorial({ data }: { data: PortfolioHeroData 
   );
 }
 
+function SwissStatement({
+  text,
+  ink,
+  className = '',
+}: {
+  text: string;
+  ink: string;
+  className?: string;
+}) {
+  return (
+    <p
+      className={`pf-swiss-editorial-serif m-0 max-w-[34.5rem] text-[clamp(1.32rem,1.02rem+2.1vw,2.15rem)] font-medium italic leading-[1.28] tracking-[-0.016em] [text-wrap:pretty] ${className}`.trim()}
+      style={{
+        color: ink,
+        fontFamily: SWISS_SERIF,
+        opacity: 0.94,
+      }}
+    >
+      {text}
+    </p>
+  );
+}
+
+function SwissDisplayWord({
+  word,
+  ink,
+  compact = false,
+}: {
+  word: string;
+  ink: string;
+  compact?: boolean;
+}) {
+  return (
+    <p
+      className={`pf-swiss-editorial-serif m-0 font-normal uppercase leading-[0.88] tracking-[-0.045em] ${
+        compact
+          ? 'text-[clamp(2.35rem,13vw,3.65rem)]'
+          : 'text-[clamp(2.75rem,6.4vw,6.25rem)]'
+      }`}
+      style={{
+        color: ink,
+        fontFamily: SWISS_SERIF,
+        opacity: 0.96,
+      }}
+    >
+      {word}
+    </p>
+  );
+}
+
+function SwissMetaRail({
+  currentlyLabel,
+  specializedLabel,
+  availabilityValue,
+  specialtyValue,
+  muted,
+  ink,
+  bordure,
+  principal,
+  stacked = false,
+}: {
+  currentlyLabel: string;
+  specializedLabel: string;
+  availabilityValue: string;
+  specialtyValue: string;
+  muted: string;
+  ink: string;
+  bordure: string;
+  principal: string;
+  stacked?: boolean;
+}) {
+  return (
+    <div
+      className={
+        stacked
+          ? 'flex w-full max-w-[22rem] flex-col gap-5'
+          : 'grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-x-[clamp(1.25rem,3.2vw,2.25rem)]'
+      }
+    >
+      <SwissInfoBlock
+        label={currentlyLabel}
+        value={availabilityValue}
+        showMark
+        muted={muted}
+        ink={ink}
+        principal={principal}
+      />
+      {stacked ? null : (
+        <div
+          aria-hidden
+          className="w-px shrink-0 self-stretch min-h-[2.75rem]"
+          style={{
+            background: `linear-gradient(to bottom, transparent, color-mix(in srgb, ${bordure} 55%, transparent) 18%, color-mix(in srgb, ${bordure} 55%, transparent) 82%, transparent)`,
+          }}
+        />
+      )}
+      <SwissInfoBlock
+        label={specializedLabel}
+        value={specialtyValue}
+        muted={muted}
+        ink={ink}
+        principal={principal}
+      />
+    </div>
+  );
+}
+
 function SwissInfoBlock({
   label,
   value,
-  showBullet = false,
+  showMark = false,
   muted,
   ink,
+  principal,
 }: {
   label: string;
   value: string;
-  showBullet?: boolean;
+  showMark?: boolean;
   muted: string;
   ink: string;
+  principal: string;
 }) {
   return (
-    <div className="min-w-0">
+    <div className="pf-swiss-info-block min-w-0">
       <p
-        className="text-[0.8rem] font-medium uppercase tracking-[0.12em] sm:text-[0.875rem] sm:normal-case sm:tracking-[0.02em]"
-        style={{ color: muted }}
+        className="text-[0.64rem] font-normal uppercase leading-none tracking-[0.26em] sm:text-[0.7rem]"
+        style={{ color: `color-mix(in srgb, ${ink} 72%, ${muted})` }}
       >
         {label}
       </p>
       <p
-        className="mt-1.5 text-[0.95rem] font-medium leading-snug tracking-[-0.01em] sm:text-[1.05rem]"
-        style={{ color: ink }}
+        className="mt-2.5 text-[0.92rem] font-normal leading-snug tracking-[0.01em] sm:text-[1rem]"
+        style={{ color: `color-mix(in srgb, ${ink} 92%, ${muted})` }}
       >
-        {showBullet ? (
-          <span className="mr-1.5 inline-block" aria-hidden>
-            •
-          </span>
+        {showMark ? (
+          <span
+            className="mr-2 inline-block h-[0.42em] w-[0.42em] translate-y-[-0.08em] rounded-full align-middle"
+            style={{
+              backgroundColor: principal,
+              boxShadow: `0 0 0 3px color-mix(in srgb, ${principal} 18%, transparent)`,
+            }}
+            aria-hidden
+          />
         ) : null}
         {value}
       </p>
@@ -277,7 +578,7 @@ function SwissPortrait({
   neutre,
   imageBw,
   className,
-  radiusClass,
+  radius,
 }: {
   avatarUrl: string | null;
   initials: string;
@@ -285,31 +586,37 @@ function SwissPortrait({
   neutre: string;
   imageBw: boolean;
   className: string;
-  radiusClass: string;
+  radius: string;
 }) {
   return (
-    <div
-      className={`relative ${radiusClass} ${className}`.trim()}
-      style={{ backgroundColor: neutre }}
-    >
-      {avatarUrl ? (
-        <Image
-          src={avatarUrl}
-          alt=""
-          fill
-          sizes="(max-width: 768px) 90vw, 28vw"
-          className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
-          priority
-        />
-      ) : (
-        <div
-          className={`flex h-full w-full items-center justify-center text-4xl font-semibold tracking-tight sm:text-5xl ${heroImageGrayscaleClass(imageBw)}`}
-          style={{ color: ink }}
-          aria-hidden
-        >
-          {initials}
-        </div>
-      )}
+    <div className="relative">
+      <div
+        className={`relative ${className}`.trim()}
+        style={{
+          backgroundColor: neutre,
+          borderRadius: radius,
+          boxShadow: `inset 0 0 0 1px ${SWISS_EDGE}`,
+        }}
+      >
+        {avatarUrl ? (
+          <Image
+            src={avatarUrl}
+            alt=""
+            fill
+            sizes="(max-width: 768px) 86vw, (max-width: 1024px) 42vw, 32vw"
+            className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
+            priority
+          />
+        ) : (
+          <div
+            className={`flex h-full w-full items-center justify-center text-4xl font-semibold tracking-tight sm:text-5xl ${heroImageGrayscaleClass(imageBw)}`}
+            style={{ color: ink }}
+            aria-hidden
+          >
+            {initials}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -317,13 +624,11 @@ function SwissPortrait({
 function SwissSignature({
   word,
   ink,
-  faint,
-  mobile = false,
+  size,
 }: {
   word: string;
   ink: string;
-  faint: string;
-  mobile?: boolean;
+  size: SwissSignatureSize;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLParagraphElement>(null);
@@ -337,16 +642,16 @@ function SwissSignature({
       const maxWidth = container.clientWidth;
       if (maxWidth <= 0) return;
 
-      // Start large, then shrink until the full word fits in one line.
-      const maxPx = mobile ? Math.min(maxWidth * 0.42, 160) : Math.min(maxWidth * 0.28, 220);
-      const minPx = mobile ? 28 : 40;
-      let size = maxPx;
-      text.style.fontSize = `${size}px`;
-      text.style.transform = 'none';
+      const vh = window.innerHeight;
+      const vhCap =
+        size === 'mobile' ? vh * 0.11 : size === 'tablet' ? vh * 0.2 : vh * 0.42;
+      const widthCap = maxWidth * (size === 'mobile' ? 0.96 : 1);
+      const maxPx = Math.min(widthCap, vhCap);
+      const minPx = size === 'mobile' ? 28 : size === 'tablet' ? 56 : 84;
 
-      // Binary search for the largest size that fits.
+      text.style.transform = 'none';
       let lo = minPx;
-      let hi = maxPx;
+      let hi = Math.max(minPx, maxPx);
       for (let i = 0; i < 16; i += 1) {
         const mid = (lo + hi) / 2;
         text.style.fontSize = `${mid}px`;
@@ -356,10 +661,9 @@ function SwissSignature({
           hi = mid;
         }
       }
-      size = Math.floor(lo * 100) / 100;
-      text.style.fontSize = `${size}px`;
+      const next = Math.floor(lo * 100) / 100;
+      text.style.fontSize = `${next}px`;
 
-      // Safety: if still slightly over (subpixel), scale down from left.
       if (text.scrollWidth > maxWidth) {
         const scale = maxWidth / text.scrollWidth;
         text.style.transform = `scale(${scale})`;
@@ -371,27 +675,27 @@ function SwissSignature({
     };
 
     fit();
+    void document.fonts?.ready.then(fit);
     const observer = new ResizeObserver(fit);
     observer.observe(container);
     return () => observer.disconnect();
-  }, [word, mobile]);
+  }, [word, size]);
+
+  const clampClass =
+    size === 'mobile'
+      ? 'text-[clamp(2.5rem,18vw,4.25rem)]'
+      : size === 'tablet'
+        ? 'text-[clamp(3.25rem,14vw,7.5rem)]'
+        : 'text-[clamp(5.5rem,18vw,14.5rem)]';
 
   return (
-    <div
-      ref={containerRef}
-      className={`relative w-full overflow-visible ${
-        mobile
-          ? 'mt-4 pb-[max(1.75rem,env(safe-area-inset-bottom))]'
-          : 'pb-8 pt-3 sm:pb-10'
-      }`}
-      aria-hidden
-    >
+    <div ref={containerRef} className="relative z-[1] w-full overflow-visible" aria-hidden>
       <p
         ref={textRef}
-        className="inline-block max-w-none select-none whitespace-nowrap font-sans font-normal uppercase leading-none tracking-[-0.06em]"
+        className={`pf-swiss-editorial-serif inline-block max-w-none select-none whitespace-nowrap font-normal uppercase leading-[0.8] tracking-[-0.052em] ${clampClass}`}
         style={{
           color: ink,
-          textShadow: `0 0 0 ${faint}`,
+          fontFamily: SWISS_SERIF,
         }}
       >
         {word}

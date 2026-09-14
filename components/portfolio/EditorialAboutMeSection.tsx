@@ -1,6 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+  type ReactNode,
+  type RefObject,
+} from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import type {
   LanguageProficiencyLevel,
@@ -10,9 +22,9 @@ import type {
 import { resolveToolLevelPercent } from '@/components/creator/studio/creator-tool-logo-color';
 import {
   aboutMeTraitHeadlineSizeClass,
-  aboutMeTraitSectionTitleSizeClass,
   aboutBannerBioSizeClass,
   aboutBannerHeadlineSizeClass,
+  aboutFeatureIntroSizeClass,
   aboutFeatureMetaIntroSizeClass,
   aboutFeatureQuoteSizeClass,
   aboutFeatureSkillTitleSizeClass,
@@ -88,7 +100,11 @@ import {
   ToolsLevelProgressBar,
   ToolsLevelStarRating,
 } from '@/components/portfolio/portfolio-tools-level-indicators';
-import { resolveSpokenLanguageLevelLabel, resolveSpokenLanguageFlagIso2 } from '@/lib/spoken-languages';
+import {
+  resolveSpokenLanguageLevelLabel,
+  resolveSpokenLanguageFlagIso2,
+  spokenLanguageMatchKey,
+} from '@/lib/spoken-languages';
 import {
   resolveAboutSkillEntries,
   skillEntryLabels,
@@ -97,6 +113,7 @@ import {
 import { CountryFlag } from '@/components/ui/CountryFlag';
 import { PortfolioListMarker } from '@/components/portfolio/PortfolioListMarker';
 import type { PortfolioListMarkerStyle } from '@/components/portfolio/portfolio-list-marker';
+import { readPortfolioNavTopClearancePx } from '@/components/portfolio/portfolio-nav-top-clearance';
 
 export type EditorialAboutMeSectionProps = {
   title: string;
@@ -337,6 +354,44 @@ function InfoCard({
   );
 }
 
+function TraitInteractiveList({
+  items,
+  titleColor,
+  bodyColor,
+  accent,
+  bodySizeClass,
+}: {
+  items: Array<{ key: string; primary: ReactNode; secondary?: ReactNode }>;
+  titleColor: string;
+  bodyColor: string;
+  accent: string;
+  bodySizeClass?: string;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <ul
+      className="pf-about-trait-list"
+      data-pf-no-color-transition=""
+      style={
+        {
+          '--pf-about-trait-ink': titleColor,
+          '--pf-about-trait-muted': bodyColor,
+          '--pf-about-trait-accent': accent,
+        } as CSSProperties
+      }
+    >
+      {items.map((item) => (
+        <li key={item.key} className={`pf-about-trait-item ${bodySizeClass ?? ''}`} data-pf-no-color-transition="">
+          <span className="pf-about-trait-item-copy" data-pf-no-color-transition="">
+            <span className="pf-about-trait-item-primary">{item.primary}</span>
+            {item.secondary}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function TraitHeadingList({
   label,
   items,
@@ -356,18 +411,18 @@ function TraitHeadingList({
   const blockTitleClass = infoContentBlockTitleSizeClass(contentSize);
   const bodyClass = infoContentBodySizeClass(contentSize);
   return (
-    <div>
+    <div className="pf-about-trait-block">
       <h3
         className={`text-left font-bold tracking-tight ${blockTitleClass}`}
         style={{ color: titleColor }}
       >
         {label}
       </h3>
-      <InfoBulletList
-        items={items}
+      <TraitInteractiveList
+        items={items.map((item) => ({ key: item, primary: item }))}
+        titleColor={titleColor}
+        bodyColor={bodyColor}
         accent={accent}
-        body={bodyColor}
-        showBullets={false}
         bodySizeClass={bodyClass}
       />
     </div>
@@ -380,8 +435,6 @@ function TraitLanguageList({
   titleColor,
   bodyColor,
   accent,
-  track,
-  levelStyle,
   contentSize,
 }: {
   label: string;
@@ -389,31 +442,295 @@ function TraitLanguageList({
   titleColor: string;
   bodyColor: string;
   accent: string;
-  track: string;
-  levelStyle: PortfolioInfoLanguageLevelDisplayStyle;
   contentSize: PortfolioInfoContentSize;
 }) {
   if (items.length === 0) return null;
   const blockTitleClass = infoContentBlockTitleSizeClass(contentSize);
   const bodyClass = infoContentBodySizeClass(contentSize);
   return (
-    <div>
+    <div className="pf-about-trait-block">
       <h3
         className={`text-left font-bold tracking-tight ${blockTitleClass}`}
         style={{ color: titleColor }}
       >
         {label}
       </h3>
-      <InfoLanguageList
-        items={items}
+      <TraitInteractiveList
+        items={items.map((item) => {
+          const code = aboutClassicLanguageCode(item.name);
+          const levelLabel = item.level ? resolveSpokenLanguageLevelLabel(item.level) : null;
+          return {
+            key: item.name,
+            primary: (
+              <>
+                <span className="pf-about-trait-lang-code">{code}</span>
+                <span className="pf-about-trait-lang-name">{item.name}</span>
+              </>
+            ),
+            secondary: levelLabel ? (
+              <span className="pf-about-trait-lang-level">({levelLabel})</span>
+            ) : null,
+          };
+        })}
+        titleColor={titleColor}
+        bodyColor={bodyColor}
         accent={accent}
-        body={bodyColor}
-        track={track}
-        levelStyle={levelStyle}
-        showMarker={false}
         bodySizeClass={bodyClass}
       />
     </div>
+  );
+}
+
+const ABOUT_CLASSIC_EASE = [0.16, 1, 0.3, 1] as const;
+
+const ABOUT_CLASSIC_HEADER_VIEWPORT = { once: true, amount: 0.55, margin: '0px 0px -6% 0px' } as const;
+const ABOUT_CLASSIC_BLOCK_VIEWPORT = { once: true, amount: 0.16, margin: '0px 0px -8% 0px' } as const;
+
+const ABOUT_CLASSIC_FADE_UP = {
+  hidden: { opacity: 0, y: 14 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.64, ease: ABOUT_CLASSIC_EASE },
+  },
+};
+
+const ABOUT_CLASSIC_CARD_VARIANTS = {
+  hidden: { opacity: 0, y: 22 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.66, ease: ABOUT_CLASSIC_EASE },
+  },
+};
+
+const ABOUT_CLASSIC_STAGGER = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.09, delayChildren: 0.05 },
+  },
+};
+
+const ABOUT_CLASSIC_TITLE_STAGGER = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.03, delayChildren: 0.1 },
+  },
+};
+
+const ABOUT_CLASSIC_WORD_MASK = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0, delayChildren: 0 },
+  },
+};
+
+const ABOUT_CLASSIC_WORD_INNER = {
+  hidden: { y: '108%', clipPath: 'inset(0 0 100% 0)' },
+  show: {
+    y: '0%',
+    clipPath: 'inset(0 0 0% 0)',
+    transition: { duration: 0.82, ease: ABOUT_CLASSIC_EASE },
+  },
+};
+
+const ABOUT_CLASSIC_SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
+
+const ABOUT_CLASSIC_LANG_CODES: Record<string, string> = {
+  francais: 'FR',
+  french: 'FR',
+  english: 'EN',
+  espanol: 'ES',
+  spanish: 'ES',
+  deutsch: 'DE',
+  german: 'DE',
+  italiano: 'IT',
+  italian: 'IT',
+  portugues: 'PT',
+  portuguese: 'PT',
+  arabic: 'AR',
+  chinese: 'ZH',
+  japanese: 'JA',
+  korean: 'KO',
+  russian: 'RU',
+  nederlands: 'NL',
+  dutch: 'NL',
+};
+
+const ABOUT_CLASSIC_LEVEL_TONE: Record<string, number> = {
+  expert: 1,
+  advanced: 0.78,
+  intermediate: 0.56,
+  beginner: 0.4,
+};
+
+function aboutClassicLanguageCode(name: string): string {
+  const trimmed = name.trim();
+  const key = spokenLanguageMatchKey(trimmed);
+  if (ABOUT_CLASSIC_LANG_CODES[key]) return ABOUT_CLASSIC_LANG_CODES[key];
+  if (/^[a-z]{2}$/i.test(trimmed)) return trimmed.toUpperCase();
+  const locale = trimmed.match(/^([a-z]{2})[-_][a-z]{2}$/i);
+  if (locale) return locale[1].toUpperCase();
+  const latin = trimmed.replace(/[^a-zA-Z]/g, '');
+  if (latin.length >= 2) return latin.slice(0, 2).toUpperCase();
+  return trimmed.slice(0, 2).toUpperCase();
+}
+
+function AboutClassicLanguageList({
+  items,
+  accent,
+  body,
+  bodySizeClass,
+}: {
+  items: LanguageDisplayItem[];
+  accent: string;
+  body: string;
+  bodySizeClass?: string;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <ul className="pf-about-classic-langs">
+      {items.map((item) => {
+        const code = aboutClassicLanguageCode(item.name);
+        const levelLabel = item.level ? resolveSpokenLanguageLevelLabel(item.level) : null;
+        const tone = item.level ? ABOUT_CLASSIC_LEVEL_TONE[item.level] ?? 0.72 : 0.72;
+        return (
+          <li
+            key={item.name}
+            className={`pf-about-classic-lang ${bodySizeClass ?? ''}`}
+            style={{ color: body, opacity: tone }}
+          >
+            <span className="pf-about-classic-lang-code" style={{ color: accent }}>
+              {code}
+            </span>
+            <span className="pf-about-classic-lang-name">{item.name}</span>
+            {levelLabel ? (
+              <span className="pf-about-classic-lang-level">({levelLabel})</span>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function AboutClassicItemList({
+  items,
+  body,
+  bodySizeClass,
+}: {
+  items: string[];
+  body: string;
+  bodySizeClass?: string;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <ul className="pf-about-classic-list">
+      {items.map((item) => (
+        <li
+          key={item}
+          className={`pf-about-classic-list-item leading-relaxed ${bodySizeClass ?? 'text-[0.95rem]'}`}
+          style={{ color: body }}
+        >
+          <span aria-hidden className="pf-about-classic-list-dash" />
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AboutClassicBentoCard({
+  cardKey,
+  children,
+}: {
+  cardKey?: string;
+  children: ReactNode;
+}) {
+  const cardRef = useRef<HTMLElement>(null);
+  const frameRef = useRef(0);
+  const pointRef = useRef({ x: 0, y: 0 });
+
+  const flushGlow = useCallback(() => {
+    frameRef.current = 0;
+    const node = cardRef.current;
+    if (!node) return;
+    node.style.setProperty('--pf-about-classic-glow-x', `${pointRef.current.x}px`);
+    node.style.setProperty('--pf-about-classic-glow-y', `${pointRef.current.y}px`);
+  }, []);
+
+  const onMove = useCallback(
+    (event: MouseEvent<HTMLElement>) => {
+      const rect = event.currentTarget.getBoundingClientRect();
+      pointRef.current = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+      if (frameRef.current) return;
+      frameRef.current = window.requestAnimationFrame(flushGlow);
+    },
+    [flushGlow]
+  );
+
+  useEffect(
+    () => () => {
+      if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
+    },
+    []
+  );
+
+  return (
+    <article
+      ref={cardRef}
+      data-card={cardKey}
+      className={`pf-about-classic-card${cardKey ? ` pf-about-classic-card--${cardKey}` : ''}`}
+      onMouseMove={onMove}
+    >
+      <div className="pf-about-classic-card-inner">{children}</div>
+    </article>
+  );
+}
+
+function AboutClassicTitleReveal({
+  text,
+  className,
+  color,
+  motionOff,
+}: {
+  text: string;
+  className: string;
+  color: string;
+  motionOff: boolean;
+}) {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const titleStyle = { color, fontFamily: ABOUT_CLASSIC_SERIF } as CSSProperties;
+  if (motionOff || words.length === 0) {
+    return (
+      <h2 className={`pf-about-classic-title ${className}`} style={titleStyle}>
+        {text}
+      </h2>
+    );
+  }
+
+  return (
+    <h2 className={`pf-about-classic-title ${className}`} style={titleStyle} aria-label={text}>
+      <motion.span
+        className="pf-about-classic-title-lines"
+        aria-hidden="true"
+        initial="hidden"
+        whileInView="show"
+        viewport={ABOUT_CLASSIC_HEADER_VIEWPORT}
+        variants={ABOUT_CLASSIC_TITLE_STAGGER}
+      >
+        {words.map((word, index) => (
+          <motion.span key={`${index}-${word}`} className="pf-about-classic-word" variants={ABOUT_CLASSIC_WORD_MASK}>
+            <motion.span className="pf-about-classic-word-inner" variants={ABOUT_CLASSIC_WORD_INNER}>
+              {word}
+            </motion.span>
+          </motion.span>
+        ))}
+      </motion.span>
+    </h2>
   );
 }
 
@@ -431,7 +748,7 @@ function AboutMeClassicLayout({
   showStrengths,
   showLanguages,
   showSystemsTools,
-  languageLevelStyle,
+  languageLevelStyle: _languageLevelStyle,
   accent,
   titleColor,
   subtitleColor,
@@ -462,12 +779,19 @@ function AboutMeClassicLayout({
   cardBorder: string;
   contentSize: PortfolioInfoContentSize;
 }) {
+  const reduceMotion = useReducedMotion();
+  const motionOff = reduceMotion === true;
+  const rootRef = useRef<HTMLDivElement>(null);
   const labelClass = infoContentLabelSizeClass(contentSize);
   const sectionTitleClass = infoContentSectionTitleSizeClass(contentSize);
   const bodyClass = infoContentBodySizeClass(contentSize);
   const blockTitleClass = infoContentBlockTitleSizeClass(contentSize);
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
   const cardLabelClass = infoContentLabelSizeClass(contentSize);
+
+  useEffect(() => {
+    rootRef.current?.setAttribute('data-pf-js', 'true');
+  }, []);
 
   const gridCards: Array<{
     key: string;
@@ -509,120 +833,170 @@ function AboutMeClassicLayout({
     });
   }
 
-  const dividerStyle: CSSProperties = {
-    backgroundColor: cardBorder,
-  };
+  const bioText = bio?.trim() || '';
+  const rootStyle = {
+    '--pf-about-classic-accent': accent,
+    '--pf-about-classic-border': cardBorder,
+    '--pf-about-classic-card': cardBg,
+  } as CSSProperties;
 
   return (
-    <div className="w-full">
-      <header className="max-w-3xl">
-        <p
-          className={`font-bold uppercase tracking-[0.2em] ${labelClass}`}
+    <div
+      ref={rootRef}
+      className="pf-about-classic w-full"
+      data-pf-entry={motionOff ? 'static' : 'armed'}
+      style={rootStyle}
+    >
+      <header className="pf-about-classic-header">
+        <motion.p
+          className={`pf-about-classic-kicker font-bold uppercase tracking-[0.18em] ${labelClass}`}
           style={{ color: titleColor }}
+          initial={motionOff ? false : { opacity: 0, y: 10 }}
+          whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+          viewport={ABOUT_CLASSIC_HEADER_VIEWPORT}
+          transition={{ duration: 0.55, ease: ABOUT_CLASSIC_EASE }}
         >
-          {title}
-        </p>
+          <span aria-hidden className="pf-about-classic-kicker-mark" />
+          <span>{title}</span>
+        </motion.p>
         {subtitle ? (
-          <h2
-            className={`mt-4 font-semibold tracking-tight ${sectionTitleClass}`}
-            style={{ color: subtitleColor }}
-          >
-            {subtitle}
-          </h2>
+          <AboutClassicTitleReveal
+            text={subtitle}
+            className={`font-serif font-medium italic tracking-tight ${sectionTitleClass}`}
+            color={subtitleColor}
+            motionOff={motionOff}
+          />
         ) : null}
-        <div className="mt-8 h-px w-full" style={dividerStyle} />
-        {bio?.trim() ? (
-          <p
-            className={`mt-8 max-w-3xl leading-relaxed ${bodyClass}`}
+        <motion.div
+          className="pf-about-classic-rule"
+          style={{ backgroundColor: cardBorder }}
+          initial={motionOff ? false : { scaleX: 0 }}
+          whileInView={motionOff ? undefined : { scaleX: 1 }}
+          viewport={ABOUT_CLASSIC_HEADER_VIEWPORT}
+          transition={{ duration: 0.82, delay: motionOff ? 0 : 0.28, ease: ABOUT_CLASSIC_EASE }}
+        />
+        {bioText ? (
+          <motion.p
+            className={`pf-about-classic-bio leading-relaxed ${bodyClass}`}
             style={{ color: bodyColor }}
+            initial={motionOff ? false : { opacity: 0, y: 18 }}
+            whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+            viewport={ABOUT_CLASSIC_HEADER_VIEWPORT}
+            transition={{ duration: 0.72, delay: motionOff ? 0 : 0.4, ease: ABOUT_CLASSIC_EASE }}
           >
-            {bio.trim()}
-          </p>
+            {bioText}
+          </motion.p>
         ) : null}
       </header>
 
       {showEducation ? (
-        <section className="mt-14 sm:mt-16">
-          <p
-            className={`font-bold uppercase tracking-[0.18em] ${labelClass}`}
+        <motion.section
+          className="pf-about-classic-edu"
+          initial={motionOff ? false : 'hidden'}
+          whileInView={motionOff ? undefined : 'show'}
+          viewport={ABOUT_CLASSIC_BLOCK_VIEWPORT}
+          variants={ABOUT_CLASSIC_STAGGER}
+        >
+          <motion.p
+            className={`pf-about-classic-section-kicker font-bold uppercase tracking-[0.18em] ${labelClass}`}
             style={{ color: accent }}
+            variants={motionOff ? undefined : ABOUT_CLASSIC_FADE_UP}
           >
-            Education
-          </p>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <span aria-hidden className="pf-about-classic-kicker-mark" />
+            <span>Education</span>
+          </motion.p>
+          <motion.div
+            className="pf-about-classic-edu-grid"
+            data-count={educationItems.length}
+            variants={motionOff ? undefined : ABOUT_CLASSIC_STAGGER}
+          >
             {educationItems.map((entry) => (
-              <div
+              <motion.div
                 key={entry.id || `${entry.title}-${entry.schoolYear}`}
-                className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border p-5 sm:p-6"
-                style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+                className="h-full min-h-0"
+                variants={motionOff ? undefined : ABOUT_CLASSIC_CARD_VARIANTS}
               >
-                {entry.schoolYear?.trim() ? (
-                  <p className={metaClass} style={{ color: bodyColor }}>
-                    {entry.schoolYear.trim()}
-                  </p>
-                ) : null}
-                {entry.title?.trim() ? (
-                  <p
-                    className={`mt-2 font-semibold leading-snug ${blockTitleClass}`}
-                    style={{ color: subtitleColor }}
-                  >
-                    {entry.title.trim()}
-                  </p>
-                ) : null}
-                {entry.institution?.trim() ? (
-                  <p className={`mt-2 leading-relaxed ${bodyClass}`} style={{ color: bodyColor }}>
-                    {entry.institution.trim()}
-                  </p>
-                ) : null}
-              </div>
+                <AboutClassicBentoCard>
+                  {entry.schoolYear?.trim() ? (
+                    <p className={`pf-about-classic-edu-year ${metaClass}`} style={{ color: bodyColor }}>
+                      {entry.schoolYear.trim()}
+                    </p>
+                  ) : null}
+                  {entry.title?.trim() ? (
+                    <p
+                      className={`pf-about-classic-edu-title font-semibold leading-snug ${blockTitleClass}`}
+                      style={{ color: subtitleColor }}
+                    >
+                      {entry.title.trim()}
+                    </p>
+                  ) : null}
+                  {entry.institution?.trim() ? (
+                    <p className={`pf-about-classic-edu-school leading-relaxed ${bodyClass}`} style={{ color: bodyColor }}>
+                      {entry.institution.trim()}
+                    </p>
+                  ) : null}
+                </AboutClassicBentoCard>
+              </motion.div>
             ))}
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
       ) : null}
 
       {gridCards.length > 0 ? (
-        <section className="mt-10 grid gap-4 sm:mt-12 sm:grid-cols-2">
+        <motion.section
+          className="pf-about-classic-skills pf-about-classic-skills-grid"
+          data-count={gridCards.length}
+          initial={motionOff ? false : 'hidden'}
+          whileInView={motionOff ? undefined : 'show'}
+          viewport={ABOUT_CLASSIC_BLOCK_VIEWPORT}
+          variants={ABOUT_CLASSIC_STAGGER}
+        >
           {gridCards.map((card) => (
-            <InfoCard
+            <motion.div
               key={card.key}
-              label={card.label}
-              accent={accent}
-              cardBg={cardBg}
-              cardBorder={cardBorder}
-              labelSizeClass={cardLabelClass}
+              className="h-full min-h-0"
+              data-card={card.key}
+              variants={motionOff ? undefined : ABOUT_CLASSIC_CARD_VARIANTS}
             >
-              {card.kind === 'languages' ? (
-                <InfoLanguageList
-                  items={card.languageItems ?? []}
-                  accent={accent}
-                  body={bodyColor}
-                  track={cardBorder}
-                  levelStyle={languageLevelStyle}
-                  bodySizeClass={bodyClass}
-                />
-              ) : (
-                <InfoBulletList
-                  items={card.stringItems ?? []}
-                  accent={accent}
-                  body={bodyColor}
-                  bodySizeClass={bodyClass}
-                />
-              )}
-            </InfoCard>
+              <AboutClassicBentoCard cardKey={card.key}>
+                <p
+                  className={`pf-about-classic-card-label font-bold uppercase tracking-[0.18em] ${cardLabelClass}`}
+                  style={{ color: accent }}
+                >
+                  {card.label}
+                </p>
+                {card.kind === 'languages' ? (
+                  <AboutClassicLanguageList
+                    items={card.languageItems ?? []}
+                    accent={accent}
+                    body={bodyColor}
+                    bodySizeClass={bodyClass}
+                  />
+                ) : (
+                  <AboutClassicItemList
+                    items={card.stringItems ?? []}
+                    body={bodyColor}
+                    bodySizeClass={bodyClass}
+                  />
+                )}
+              </AboutClassicBentoCard>
+            </motion.div>
           ))}
-        </section>
+        </motion.section>
       ) : null}
     </div>
   );
 }
 
+const ABOUT_ME_TRAIT_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+const ABOUT_ME_TRAIT_VIEWPORT = { once: true, amount: 0.38, margin: '0px 0px -8% 0px' } as const;
+const ABOUT_ME_TRAIT_BLOCK_VIEWPORT = { once: true, amount: 0.22, margin: '0px 0px -10% 0px' } as const;
+
 function AboutMeTraitHeadline({
   text,
-  color,
   contentSize,
 }: {
   text: string;
-  color: string;
   contentSize: PortfolioInfoContentSize;
 }) {
   const lines = text
@@ -632,12 +1006,11 @@ function AboutMeTraitHeadline({
   const headlineClass = aboutMeTraitHeadlineSizeClass(contentSize);
 
   return (
-    <div className="flex min-h-full min-w-0 flex-col justify-center gap-3 sm:gap-4 lg:h-full lg:justify-between lg:gap-0 lg:py-1">
-      {lines.map((line, index) => (
+    <div className="pf-about-trait-headline" data-pf-no-color-transition="">
+      {lines.map((line) => (
         <p
-          key={`${index}-${line}`}
-          className={`text-left font-bold leading-[0.95] tracking-[-0.03em] ${headlineClass}`}
-          style={{ color }}
+          key={line}
+          className={`pf-about-trait-line text-left font-bold tracking-[-0.03em] ${headlineClass}`}
         >
           {line}
         </p>
@@ -646,8 +1019,30 @@ function AboutMeTraitHeadline({
   );
 }
 
-/** Symmetric vertical rhythm above and below the skills / strengths / languages row. */
-const ABOUT_ME_TRAIT_SKILLS_SECTION_RHYTHM = 'mt-28 sm:mt-32 lg:mt-36';
+/** Air between the headline block and the three columns. */
+const ABOUT_ME_TRAIT_SKILLS_SECTION_RHYTHM = 'mt-28 sm:mt-36 lg:mt-44';
+
+function aboutTraitDisplayInk(color: string, colorMode: 'light' | 'dark' = 'dark'): string {
+  const raw = color.trim();
+  const hex = raw.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i)?.[1];
+  if (!hex) {
+    if (colorMode === 'dark') return raw || '#f5f5f5';
+    return raw || '#171717';
+  }
+  const full =
+    hex.length === 3
+      ? hex
+          .split('')
+          .map((part) => part + part)
+          .join('')
+      : hex;
+  const r = Number.parseInt(full.slice(0, 2), 16);
+  const g = Number.parseInt(full.slice(2, 4), 16);
+  const b = Number.parseInt(full.slice(4, 6), 16);
+  const luma = (r * 299 + g * 587 + b * 114) / 1000;
+  if (colorMode === 'dark') return luma < 48 ? '#f5f5f5' : raw;
+  return luma > 208 ? '#171717' : raw;
+}
 /** Education — same gap as above skills, no horizontal divider. */
 const ABOUT_ME_TRAIT_EDUCATION_SECTION_TOP = 'mt-28 sm:mt-32 lg:mt-36';
 
@@ -665,7 +1060,7 @@ function AboutMeTraitLayout({
   showSkills,
   showStrengths,
   showLanguages,
-  languageLevelStyle,
+  languageLevelStyle: _languageLevelStyle,
   educationDisplayStyle,
   cascadeScrollShift = false,
   contentSize,
@@ -675,6 +1070,7 @@ function AboutMeTraitLayout({
   cardBg,
   cardBorder,
   portraitGrayscale,
+  colorMode = 'dark',
 }: {
   title: string;
   headlineText: string;
@@ -699,6 +1095,7 @@ function AboutMeTraitLayout({
   cardBg: string;
   cardBorder: string;
   portraitGrayscale: boolean;
+  colorMode?: 'light' | 'dark';
 }) {
   const initials = (fullName ?? '')
     .trim()
@@ -712,21 +1109,47 @@ function AboutMeTraitLayout({
   const showStrengthsBlock = showStrengths && strengthItems.length > 0;
   const showLanguagesBlock = showLanguages && languageItems.length > 0;
   const showEducationBlock = showEducation && educationItems.length > 0;
-  const sectionTitleClass = aboutMeTraitSectionTitleSizeClass(contentSize);
-  const placeholderBodyClass = infoContentBodySizeClass(contentSize);
+  const displayTitleClass = aboutMeTraitHeadlineSizeClass(contentSize);
+  const displayInk = aboutTraitDisplayInk(titleColor, colorMode);
+  const reduceMotion = useReducedMotion();
+  const motionOff = reduceMotion === true;
+  const [educationArmed, setEducationArmed] = useState(false);
+  const [educationEntered, setEducationEntered] = useState(false);
+
+  useEffect(() => {
+    if (motionOff) return;
+    setEducationArmed(true);
+  }, [motionOff]);
 
   return (
-    <div className="w-full">
-      <header className="flex flex-col items-start text-left">
+    <div
+      className="pf-about-trait-root w-full"
+      style={
+        {
+          '--pf-about-trait-accent': accent,
+          '--pf-about-trait-ink': displayInk,
+          '--pf-about-trait-muted': bodyColor,
+        } as CSSProperties
+      }
+    >
+      <header className="pf-about-trait-masthead flex flex-col items-start text-left">
         <h2
-          className={`font-bold uppercase tracking-[0.08em] ${sectionTitleClass}`}
-          style={{ color: titleColor }}
+          className={`pf-about-trait-display ${displayTitleClass}`}
+          style={{ color: 'var(--pf-about-trait-ink)', fontFamily: ABOUT_CLASSIC_SERIF }}
         >
-          {title}
+          <span className="pf-about-trait-index" style={{ color: accent }}>
+            02 /
+          </span>
+          <span className="pf-about-trait-display-text">Expertise & Mindset</span>
         </h2>
-        <div
-          className="mt-3 h-[4px] w-14 sm:mt-4 sm:w-16"
-          style={{ backgroundColor: accent }}
+        <motion.div
+          className="pf-about-trait-rule mt-3 h-[4px] w-14 sm:mt-4 sm:w-16"
+          style={{ backgroundColor: accent, originX: 0, originY: 0.5 }}
+          data-pf-no-color-transition=""
+          initial={motionOff ? false : { scaleX: 0 }}
+          whileInView={motionOff ? undefined : { scaleX: 1 }}
+          viewport={ABOUT_ME_TRAIT_VIEWPORT}
+          transition={{ duration: 0.92, delay: 0.16, ease: ABOUT_ME_TRAIT_EASE }}
           aria-hidden
         />
       </header>
@@ -740,105 +1163,153 @@ function AboutMeTraitLayout({
           }`}
         >
           <div
-            className={`mx-auto aspect-[4/5] w-full max-w-[26rem] overflow-hidden bg-neutral-800 sm:aspect-square lg:mx-0 lg:aspect-auto lg:h-[min(24rem,28vw)] lg:w-[min(24rem,28vw)] lg:max-w-none lg:shrink-0 ${
+            className={`pf-about-trait-portrait mx-auto aspect-[4/5] w-full max-w-[26rem] overflow-hidden bg-neutral-800 sm:aspect-square lg:mx-0 lg:aspect-auto lg:h-[min(24rem,28vw)] lg:w-[min(24rem,28vw)] lg:max-w-none lg:shrink-0 ${
               showHeadline ? '' : 'lg:h-auto lg:w-full lg:aspect-square lg:max-w-[40rem]'
             }`}
-          style={{ backgroundColor: cardBg }}
-        >
-          {avatarUrl?.trim() ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={avatarUrl.trim()}
-              alt={fullName?.trim() || 'Profile'}
-                className={infoPortraitImageClass('h-full w-full object-cover', portraitGrayscale)}
-            />
-          ) : (
-            <div
-              className="flex h-full w-full items-center justify-center text-3xl font-semibold"
-              style={{ color: bodyColor }}
-            >
-              {initials || '?'}
+            style={{ backgroundColor: cardBg }}
+          >
+            <div className="pf-about-trait-portrait-zoom h-full w-full" data-pf-no-color-transition="">
+              {avatarUrl?.trim() ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarUrl.trim()}
+                  alt={fullName?.trim() || 'Profile'}
+                  className={infoPortraitImageClass('h-full w-full object-cover', portraitGrayscale)}
+                />
+              ) : (
+                <div
+                  className="flex h-full w-full items-center justify-center text-3xl font-semibold"
+                  style={{ color: bodyColor }}
+                >
+                  {initials || '?'}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
 
           {showHeadline ? (
-            headlineText.length > 0 ? (
-              <div className="flex min-h-0 min-w-0 lg:h-full">
-                <AboutMeTraitHeadline
-                  text={headlineText}
-                  color={titleColor}
+            <div className="flex min-h-0 min-w-0 lg:h-full">
+              <AboutMeTraitHeadline
+                text={headlineText.trim() || 'Turning Hard\nProblems Into\nSimple Software'}
+                contentSize={contentSize}
+              />
+            </div>
+          ) : null}
+        </div>
+
+        {(showSkillsBlock || showStrengthsBlock || showLanguagesBlock) && (
+          <section
+            className={`pf-about-trait-columns grid gap-16 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-20 lg:gap-y-16 ${ABOUT_ME_TRAIT_SKILLS_SECTION_RHYTHM}`}
+          >
+            {showSkillsBlock ? (
+              <motion.div
+                className="pf-about-trait-col"
+                data-pf-no-color-transition=""
+                initial={motionOff ? false : { opacity: 0, y: 22 }}
+                whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+                viewport={ABOUT_ME_TRAIT_BLOCK_VIEWPORT}
+                transition={{ duration: 0.72, delay: 0.05, ease: ABOUT_ME_TRAIT_EASE }}
+              >
+                <TraitHeadingList
+                  label="Skills"
+                  items={skillEntryLabels(skillItems)}
+                  titleColor={titleColor}
+                  bodyColor={bodyColor}
+                  accent={accent}
                   contentSize={contentSize}
                 />
-              </div>
-            ) : (
-              <div className="flex min-h-full min-w-0 flex-col justify-center lg:py-2">
-                <p className={`opacity-60 ${placeholderBodyClass}`} style={{ color: bodyColor }}>
-                  Ajoute un grand titre personnalisé dans les réglages Info.
-                </p>
-        </div>
-            )
-          ) : null}
-      </div>
-
-      {(showSkillsBlock || showStrengthsBlock || showLanguagesBlock) && (
-          <section
-            className={`grid gap-10 sm:grid-cols-2 sm:gap-12 lg:grid-cols-3 ${ABOUT_ME_TRAIT_SKILLS_SECTION_RHYTHM}`}
-          >
-          {showSkillsBlock ? (
-            <TraitHeadingList
-              label="Skills"
-              items={skillEntryLabels(skillItems)}
-              titleColor={titleColor}
-              bodyColor={bodyColor}
-              accent={titleColor}
-                contentSize={contentSize}
-            />
-          ) : null}
-          {showStrengthsBlock ? (
-            <TraitHeadingList
-              label="Strengths"
-              items={strengthItems}
-              titleColor={titleColor}
-              bodyColor={bodyColor}
-              accent={titleColor}
-                contentSize={contentSize}
-            />
-          ) : null}
-          {showLanguagesBlock ? (
-            <TraitLanguageList
-              label="Languages"
-              items={languageItems}
-              titleColor={titleColor}
-              bodyColor={bodyColor}
-              accent={titleColor}
-              track={cardBorder}
-              levelStyle={languageLevelStyle}
-                contentSize={contentSize}
-            />
-          ) : null}
-        </section>
-      )}
+              </motion.div>
+            ) : null}
+            {showStrengthsBlock ? (
+              <motion.div
+                className="pf-about-trait-col"
+                data-pf-no-color-transition=""
+                initial={motionOff ? false : { opacity: 0, y: 22 }}
+                whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+                viewport={ABOUT_ME_TRAIT_BLOCK_VIEWPORT}
+                transition={{ duration: 0.72, delay: 0.16, ease: ABOUT_ME_TRAIT_EASE }}
+              >
+                <TraitHeadingList
+                  label="Strengths"
+                  items={strengthItems}
+                  titleColor={titleColor}
+                  bodyColor={bodyColor}
+                  accent={accent}
+                  contentSize={contentSize}
+                />
+              </motion.div>
+            ) : null}
+            {showLanguagesBlock ? (
+              <motion.div
+                className="pf-about-trait-col"
+                data-pf-no-color-transition=""
+                initial={motionOff ? false : { opacity: 0, y: 22 }}
+                whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+                viewport={ABOUT_ME_TRAIT_BLOCK_VIEWPORT}
+                transition={{ duration: 0.72, delay: 0.27, ease: ABOUT_ME_TRAIT_EASE }}
+              >
+                <TraitLanguageList
+                  label="Languages"
+                  items={languageItems}
+                  titleColor={titleColor}
+                  bodyColor={bodyColor}
+                  accent={accent}
+                  contentSize={contentSize}
+                />
+              </motion.div>
+            ) : null}
+          </section>
+        )}
       </div>
 
       {showEducationBlock ? (
-        <div className={ABOUT_ME_TRAIT_EDUCATION_SECTION_TOP}>
-        <TraitEducationBlock
-          items={educationItems}
-          style={educationDisplayStyle}
+        <motion.div
+          className={`pf-about-trait-edu ${ABOUT_ME_TRAIT_EDUCATION_SECTION_TOP}`}
+          data-pf-no-color-transition=""
+          data-pf-about-trait-armed={educationArmed ? 'true' : undefined}
+          data-pf-about-trait-in={educationEntered ? 'true' : undefined}
+          initial={false}
+          whileInView={{ opacity: 1 }}
+          viewport={ABOUT_ME_TRAIT_BLOCK_VIEWPORT}
+          onViewportEnter={() => {
+            if (!motionOff) setEducationEntered(true);
+          }}
+        >
+          <TraitEducationBlock
+            items={educationItems}
+            style={educationDisplayStyle}
             contentSize={contentSize}
             cascadeScrollShift={cascadeScrollShift}
             sectionClassName=""
-          titleColor={titleColor}
-          bodyColor={bodyColor}
-          accent={accent}
-          cardBg={cardBg}
-          cardBorder={cardBorder}
-        />
-        </div>
+            titleColor={titleColor}
+            bodyColor={bodyColor}
+            accent={accent}
+            cardBg={cardBg}
+            cardBorder={cardBorder}
+          />
+        </motion.div>
       ) : null}
     </div>
   );
+}
+
+const ABOUT_FEATURE_PANEL_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+const ABOUT_FEATURE_PANEL_CLIP_EASE: [number, number, number, number] = [0.83, 0, 0.17, 1];
+
+function measureAboutFeatureRailThumb(
+  wrap: HTMLElement | null,
+  selector: string
+): { top: number; height: number } | null {
+  if (!wrap) return null;
+  const active = wrap.querySelector(selector);
+  if (!(active instanceof HTMLElement)) return null;
+  const wrapRect = wrap.getBoundingClientRect();
+  const activeRect = active.getBoundingClientRect();
+  const inset = Math.max(5, Math.round(activeRect.height * 0.16));
+  return {
+    top: Math.max(0, activeRect.top - wrapRect.top + inset),
+    height: Math.max(16, activeRect.height - inset * 2),
+  };
 }
 
 function AboutFeatureIntroLine({
@@ -853,14 +1324,16 @@ function AboutFeatureIntroLine({
   introClass: string;
 }) {
   return (
-    <p
-      className={`block w-full text-left font-semibold uppercase leading-[1.14] tracking-[-0.03em] ${introClass}`}
-    >
-      <span style={{ color: titleColor }}>{line.primary}</span>
+    <p className={`pf-about-feature-intro-line block w-full text-left leading-[1.12] ${introClass}`}>
+      <span className="pf-about-feature-intro-primary" style={{ color: titleColor }}>
+        {line.primary}
+      </span>
       {line.secondary ? (
         <>
           {' '}
-          <span style={{ color: bodyColor, opacity: 0.52 }}>{line.secondary}</span>
+          <span className="pf-about-feature-intro-secondary" style={{ color: bodyColor }}>
+            {line.secondary}
+          </span>
         </>
       ) : null}
     </p>
@@ -876,6 +1349,7 @@ function AboutFeaturePanelQuote({
   bodyClass,
   isPlaceholder = false,
   hideAttribution = false,
+  align = 'center',
 }: {
   text: string;
   skillTitle: string;
@@ -885,18 +1359,26 @@ function AboutFeaturePanelQuote({
   bodyClass: string;
   isPlaceholder?: boolean;
   hideAttribution?: boolean;
+  align?: 'center' | 'start';
 }) {
   const quoteColor = isPlaceholder ? bodyColor : titleColor;
+  const startAligned = align === 'start';
 
   return (
-    <figure className="mx-auto w-full max-w-xl px-2 text-center sm:max-w-2xl sm:px-4 lg:max-w-2xl">
+    <figure
+      className={`pf-about-feature-quote w-full ${
+        startAligned
+          ? 'pf-about-feature-quote--start mx-0 w-full max-w-none px-0 text-left'
+          : 'mx-auto max-w-xl px-2 text-center sm:max-w-2xl sm:px-4 lg:max-w-2xl'
+      }`}
+    >
       <blockquote className="m-0">
         <p
-          className={`${quoteClass} font-serif font-bold leading-[1.22] tracking-[-0.02em] sm:leading-[1.24] lg:leading-[1.26]`}
+          className={`pf-about-feature-quote-text ${quoteClass} font-medium leading-[1.48] tracking-[-0.028em] sm:leading-[1.5] lg:leading-[1.52]`}
           style={{ color: quoteColor, opacity: isPlaceholder ? 0.55 : 1 }}
         >
           <span
-            className="mr-1 inline-block align-top font-serif text-[1.08em] leading-none sm:mr-1.5"
+            className="pf-about-feature-quote-mark mr-[0.08em] text-[1.08em]"
             style={{ color: titleColor, opacity: 0.72 }}
             aria-hidden
           >
@@ -904,7 +1386,7 @@ function AboutFeaturePanelQuote({
           </span>
           {text}
           <span
-            className="ml-1 inline-block align-bottom font-serif text-[1.08em] leading-none sm:ml-1.5"
+            className="pf-about-feature-quote-mark ml-[0.08em] text-[1.08em]"
             style={{ color: titleColor, opacity: 0.72 }}
             aria-hidden
           >
@@ -914,8 +1396,8 @@ function AboutFeaturePanelQuote({
       </blockquote>
       {skillTitle && !hideAttribution ? (
         <figcaption
-          className={`mt-5 text-[0.68rem] font-semibold uppercase tracking-[0.2em] sm:mt-6 sm:text-[0.72rem] ${bodyClass}`}
-          style={{ color: bodyColor, opacity: 0.72 }}
+          className={`pf-about-feature-quote-caption ${bodyClass}`}
+          style={{ color: titleColor }}
         >
           {skillTitle}
         </figcaption>
@@ -944,25 +1426,40 @@ function AboutFeaturePanelMobileAccordionPanel({
           key="panel"
           initial={motionDisabled ? false : { height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
-          exit={motionDisabled ? { opacity: 0 } : { height: 0, opacity: 0 }}
+          exit={{ height: 0, opacity: 0 }}
           transition={
             motionDisabled
               ? { duration: 0 }
               : {
-                  height: { duration: 0.42, ease: [0.22, 1, 0.36, 1] },
-                  opacity: { duration: 0.28, ease: 'easeOut' },
+                  height: { duration: 0.5, ease: ABOUT_FEATURE_PANEL_EASE },
+                  opacity: { duration: 0.32, ease: 'easeOut' },
                 }
           }
           className="overflow-hidden"
         >
-          <div className="pt-4 sm:pt-5">
+          <motion.div
+            initial={
+              motionDisabled ? false : { opacity: 0, y: 14, clipPath: 'inset(14% 0% 0% 0%)' }
+            }
+            animate={{ opacity: 1, y: 0, clipPath: 'inset(0% 0% 0% 0%)' }}
+            transition={
+              motionDisabled
+                ? { duration: 0 }
+                : {
+                    opacity: { duration: 0.36, ease: ABOUT_FEATURE_PANEL_EASE },
+                    y: { duration: 0.5, ease: ABOUT_FEATURE_PANEL_EASE },
+                    clipPath: { duration: 0.58, ease: ABOUT_FEATURE_PANEL_CLIP_EASE },
+                  }
+            }
+            className="pt-4 sm:pt-5"
+          >
             <div
-              className="rounded-2xl px-5 py-6 sm:px-6 sm:py-7"
+              className="pf-about-feature-accordion-card rounded-2xl px-5 py-6 pl-6 sm:px-6 sm:py-7 sm:pl-7"
               style={{ backgroundColor: cardBg }}
             >
               {children}
             </div>
-          </div>
+          </motion.div>
         </motion.div>
       ) : null}
     </AnimatePresence>
@@ -970,52 +1467,80 @@ function AboutFeaturePanelMobileAccordionPanel({
 }
 
 function AboutPlatformSkillIcon({ variant, color }: { variant: number; color: string }) {
-  const stroke = color;
   const common = {
-    width: 22,
-    height: 22,
+    width: 20,
+    height: 20,
     viewBox: '0 0 24 24',
     fill: 'none',
-    stroke,
-    strokeWidth: 1.6,
+    stroke: 'currentColor',
+    color,
+    strokeWidth: 1.22,
     strokeLinecap: 'round' as const,
     strokeLinejoin: 'round' as const,
     'aria-hidden': true,
   };
 
-  switch (variant % 4) {
+  switch (variant % 8) {
     case 1:
       return (
         <svg {...common}>
-          <path d="M12 3l1.9 5.8H20l-4.8 3.5 1.8 5.7L12 14.4 7 17.9l1.8-5.7L4 8.8h6.1L12 3z" />
+          <circle cx="12" cy="12" r="7.15" />
+          <path d="M12 5.65v2.15M12 16.2v2.15M5.65 12h2.15M16.2 12h2.15" />
+          <circle cx="12" cy="12" r="1.05" fill="currentColor" stroke="none" />
         </svg>
       );
     case 2:
       return (
         <svg {...common}>
-          <path d="M4 19V5" />
-          <path d="M4 19h16" />
-          <path d="M8 15V11" />
-          <path d="M12 15V8" />
-          <path d="M16 15v-5" />
+          <path d="M5.5 17.6V11.1" />
+          <path d="M12 17.6V6.4" />
+          <path d="M18.5 17.6v-4.7" />
+          <path d="M4.4 17.6h15.2" />
         </svg>
       );
     case 3:
       return (
         <svg {...common}>
-          <path d="M12 3l7 4v10l-7 4-7-4V7l7-4z" />
-          <path d="M12 11v6" />
-          <path d="M9 9h6" />
+          <path d="M12 3.7l7.15 4.05v8.5L12 20.3 4.85 16.25v-8.5L12 3.7z" />
+          <path d="M12 3.7v16.6" />
+          <path d="M5.05 8.05L12 12.05l6.95-4" />
+        </svg>
+      );
+    case 4:
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="2.85" />
+          <ellipse cx="12" cy="12" rx="9.05" ry="4.15" transform="rotate(-26 12 12)" />
+        </svg>
+      );
+    case 5:
+      return (
+        <svg {...common}>
+          <path d="M4.6 16.7H10V11.2h5.15V5.6H19.4" />
+        </svg>
+      );
+    case 6:
+      return (
+        <svg {...common}>
+          <circle cx="9.15" cy="12" r="5.05" />
+          <circle cx="14.85" cy="12" r="5.05" />
+        </svg>
+      );
+    case 7:
+      return (
+        <svg {...common}>
+          <path d="M5 9.35V5h4.35" />
+          <path d="M19 9.35V5h-4.35" />
+          <path d="M5 14.65V19h4.35" />
+          <path d="M19 14.65V19h-4.35" />
         </svg>
       );
     case 0:
     default:
       return (
         <svg {...common}>
-          <rect x="4" y="4" width="7" height="7" rx="1.5" />
-          <rect x="13" y="4" width="7" height="7" rx="1.5" />
-          <rect x="4" y="13" width="7" height="7" rx="1.5" />
-          <rect x="13" y="13" width="7" height="7" rx="1.5" />
+          <rect x="3.6" y="3.6" width="9.4" height="9.4" rx="1.15" />
+          <rect x="10.95" y="10.95" width="9.45" height="9.45" rx="1.15" />
         </svg>
       );
   }
@@ -1037,6 +1562,60 @@ function aboutPlatformSkillCascadeClass(index: number): string {
       return 'lg:translate-y-[17.5rem] xl:translate-y-[19rem]';
     default:
       return 'lg:translate-y-[21rem] xl:translate-y-[23rem]';
+  }
+}
+
+function aboutPlatformFirstGlyphTop(el: HTMLElement): number | null {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      return node.textContent && /\S/.test(node.textContent)
+        ? NodeFilter.FILTER_ACCEPT
+        : NodeFilter.FILTER_REJECT;
+    },
+  });
+  const textNode = walker.nextNode();
+  if (textNode) {
+    const value = textNode.textContent ?? '';
+    const start = value.search(/\S/);
+    if (start >= 0) {
+      const range = document.createRange();
+      range.setStart(textNode, start);
+      range.setEnd(textNode, start + 1);
+      const rect = range.getBoundingClientRect();
+      if (rect.height > 0) return rect.top;
+    }
+  }
+  const box = el.getBoundingClientRect();
+  return box.height > 0 ? box.top : null;
+}
+
+function aboutPlatformLineIsResting(el: HTMLElement): boolean {
+  const transform = getComputedStyle(el).transform;
+  if (!transform || transform === 'none') return true;
+  const match = transform.match(/matrix\(([^)]+)\)/);
+  if (!match?.[1]) return true;
+  const ty = Number(match[1].split(',')[5]);
+  return !Number.isFinite(ty) || Math.abs(ty) < 1;
+}
+
+function aboutPlatformAlignHeader(root: HTMLElement) {
+  const wrap = root.querySelector<HTMLElement>('.pf-about-platform-bio-wrap');
+  const line = root.querySelector<HTMLElement>('.pf-about-platform-headline-line');
+  const bio = root.querySelector<HTMLElement>('.pf-about-platform-bio');
+  if (!wrap) return;
+  if (window.innerWidth < 1024 || !line || !bio) {
+    wrap.style.removeProperty('margin-top');
+    return;
+  }
+  if (!aboutPlatformLineIsResting(line) || !aboutPlatformLineIsResting(bio)) return;
+  for (let i = 0; i < 3; i += 1) {
+    const titleTop = aboutPlatformFirstGlyphTop(line);
+    const bioTop = aboutPlatformFirstGlyphTop(bio);
+    if (titleTop == null || bioTop == null) return;
+    const delta = titleTop - bioTop;
+    if (Math.abs(delta) < 0.35) return;
+    const current = Number.parseFloat(getComputedStyle(wrap).marginTop) || 0;
+    wrap.style.marginTop = `${Math.round((current + delta) * 10) / 10}px`;
   }
 }
 
@@ -1062,26 +1641,37 @@ function AboutPlatformSkillCard({
   const skillTitle = skill.title?.trim() || '';
   const skillDescription = skill.description?.trim() || '';
   const isPlaceholder = !skillDescription;
+  const densityClass =
+    index % 3 === 1
+      ? 'px-5 pb-7 pt-6 sm:px-6 sm:pb-9 sm:pt-8'
+      : index % 3 === 2
+        ? 'px-4 pb-4 pt-4 sm:px-5 sm:pb-5 sm:pt-[1.05rem]'
+        : 'px-5 pb-5 pt-[1.15rem] sm:px-6 sm:pb-6 sm:pt-5';
 
   return (
     <article
-      className="flex h-full flex-col rounded-2xl border p-5 sm:p-6"
-      style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+      className={`pf-about-platform-card flex flex-col rounded-[1.15rem] border ${densityClass}`}
+      style={
+        {
+          backgroundColor: cardBg,
+          borderColor: cardBorder,
+          '--pf-about-platform-i': index,
+          '--pf-about-platform-card-title': titleColor,
+          '--pf-about-platform-card-body': bodyColor,
+          '--pf-about-platform-card-body-opacity': isPlaceholder ? 0.52 : 0.78,
+        } as CSSProperties
+      }
     >
-      <div className="flex min-h-[3.25rem] items-start justify-between gap-3 sm:min-h-[3.5rem]">
-        <h4
-          className={`min-w-0 flex-1 font-semibold leading-snug tracking-[-0.02em] ${cardTitleClass}`}
-          style={{ color: titleColor }}
-        >
-          {skillTitle}
-        </h4>
-        <span className="shrink-0 opacity-80">
-          <AboutPlatformSkillIcon variant={index} color={bodyColor} />
-        </span>
-      </div>
+      <span className="pf-about-platform-card-mark">
+        <AboutPlatformSkillIcon variant={index} color="currentColor" />
+      </span>
+      <h4
+        className={`pf-about-platform-card-title mt-5 min-w-0 font-semibold leading-[1.18] tracking-[-0.028em] sm:mt-6 ${cardTitleClass}`}
+      >
+        {skillTitle}
+      </h4>
       <p
-        className={`mt-4 min-w-0 flex-1 leading-relaxed sm:mt-5 ${cardBodyClass}`}
-        style={{ color: bodyColor, opacity: isPlaceholder ? 0.55 : 0.82 }}
+        className={`pf-about-platform-card-body mt-3 min-w-0 flex-1 leading-[1.55] sm:mt-3.5 ${cardBodyClass}`}
       >
         {skillDescription || 'Add a description for this skill in Creator Studio → Information.'}
       </p>
@@ -1095,26 +1685,39 @@ function AboutPlatformSplitSection({
   sectionTitleClass,
   titleColor,
   children,
+  index = 0,
+  wide = false,
+  className = '',
 }: {
   title: string;
   staggerLayout: boolean;
   sectionTitleClass: string;
   titleColor: string;
   children: ReactNode;
+  index?: number;
+  wide?: boolean;
+  className?: string;
 }) {
   return (
-    <section className="mt-16 grid gap-8 sm:mt-20 sm:gap-10 lg:mt-24 lg:grid-cols-2 lg:grid-rows-[auto_auto] lg:items-start lg:gap-x-14 xl:mt-28 xl:gap-x-20">
+    <section
+      className={`pf-about-platform-split mt-16 grid gap-7 sm:mt-20 sm:gap-9 lg:mt-24 lg:grid-cols-[minmax(0,1.72fr)_minmax(0,0.56fr)] lg:grid-rows-[auto_auto] lg:items-start lg:gap-x-20 xl:mt-28 xl:gap-x-[7.5rem] ${className}`}
+      style={{ '--pf-about-platform-split-i': index } as CSSProperties}
+    >
       <h3
-        className={`min-w-0 font-semibold leading-[1.06] tracking-[-0.03em] lg:col-start-1 lg:row-start-1 ${sectionTitleClass}`}
+        className={`pf-about-platform-split-title min-w-0 leading-[0.96] tracking-[-0.03em] lg:col-start-1 lg:row-start-1 ${sectionTitleClass}`}
         style={{ color: titleColor }}
       >
-        {title}
+        <span className="pf-about-platform-headline-mask">
+          <span className="pf-about-platform-split-title-line">{title}</span>
+        </span>
       </h3>
       <div
-        className={`min-w-0 ${
+        className={`pf-about-platform-split-body min-w-0 ${
           staggerLayout
-            ? 'lg:col-start-2 lg:row-start-2 lg:pt-2 xl:pt-3'
-            : 'lg:col-start-2 lg:row-start-1'
+            ? `lg:col-start-2 lg:row-start-2 lg:pt-10 xl:pt-16${wide ? ' lg:w-full lg:max-w-none' : ''}`
+            : wide
+              ? 'lg:col-start-2 lg:row-start-1 lg:w-full lg:max-w-none lg:justify-self-stretch lg:pt-8 xl:pt-10'
+              : 'lg:col-start-2 lg:row-start-1 lg:max-w-[22ch] lg:justify-self-end lg:pt-20 xl:pt-24'
         }`}
       >
         {children}
@@ -1123,7 +1726,7 @@ function AboutPlatformSplitSection({
   );
 }
 
-/** About · platform — Jasper-style hero split + skills card grid. */
+/** About · platform — Jasper split: Playfair headline, stair skills, typographic langs. */
 function AboutPlatformLayout({
   title,
   bio,
@@ -1139,8 +1742,8 @@ function AboutPlatformLayout({
   showLanguages,
   showEducation,
   showInterests,
-  showLanguageFlags,
-  languageLevelStyle,
+  showLanguageFlags: _showLanguageFlags,
+  languageLevelStyle: _languageLevelStyle,
   headlineText,
   strengthsSectionTitle,
   staggerLayout,
@@ -1177,6 +1780,11 @@ function AboutPlatformLayout({
   cardBorder: string;
   contentSize: PortfolioInfoContentSize;
 }) {
+  const reduceMotion = useReducedMotion();
+  const motionDisabled = reduceMotion === true;
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [hasEntered, setHasEntered] = useState(false);
+  const [motionState, setMotionState] = useState<'armed' | 'active' | 'done'>('armed');
   const headlineClass = aboutPlatformHeadlineSizeClass(contentSize);
   const leadClass = aboutPlatformLeadSizeClass(contentSize);
   const strengthsTitleClass = aboutPlatformSkillsTitleSizeClass(contentSize);
@@ -1203,38 +1811,365 @@ function AboutPlatformLayout({
   const showEducationBlock = showEducation && visibleEducation.length > 0;
   const showInterestsBlock = showInterests && visibleInterests.length > 0;
 
+  useEffect(() => {
+    if (motionDisabled) {
+      setHasEntered(true);
+      return;
+    }
+
+    const node = rootRef.current;
+    if (!node) return;
+    const scrollRoot = getManifestoScrollParent(node);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setHasEntered(true);
+          observer.disconnect();
+        }
+      },
+      { root: scrollRoot, threshold: 0.16, rootMargin: '0px 0px -10% 0px' }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [motionDisabled]);
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return undefined;
+    const prefersReduce =
+      motionDisabled || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduce) {
+      const alignHeader = () => aboutPlatformAlignHeader(root);
+      alignHeader();
+      void document.fonts?.ready.then(alignHeader);
+      window.addEventListener('resize', alignHeader);
+      return () => window.removeEventListener('resize', alignHeader);
+    }
+
+    const scroller = aboutBannerScrollParent(root);
+    const header = root.querySelector<HTMLElement>('.pf-about-platform-header');
+    const kicker = root.querySelector<HTMLElement>('.pf-about-platform-kicker');
+    const lines = Array.from(root.querySelectorAll<HTMLElement>('.pf-about-platform-headline-line'));
+    const bio = root.querySelector<HTMLElement>('.pf-about-platform-bio');
+    const skills = root.querySelector<HTMLElement>('.pf-about-platform-skills-grid');
+    const rises = Array.from(root.querySelectorAll<HTMLElement>('.pf-about-platform-skill-rise'));
+    const slowShifts = Array.from(
+      root.querySelectorAll<HTMLElement>('.pf-about-platform-skill-shift[data-pf-speed="slow"]')
+    );
+    const badges = Array.from(root.querySelectorAll<HTMLElement>('.pf-about-platform-badge-cell'));
+    const langs = Array.from(root.querySelectorAll<HTMLElement>('.pf-about-platform-lang'));
+    const eduRows = Array.from(root.querySelectorAll<HTMLElement>('.pf-about-platform-edu-row'));
+    const strengths = root.querySelector<HTMLElement>('.pf-about-platform-strengths');
+    const languages = root.querySelector<HTMLElement>('.pf-about-platform-languages');
+    const education = root.querySelector<HTMLElement>('.pf-about-platform-education');
+
+    const media = gsap.matchMedia();
+    let stopHeaderWatch: (() => void) | undefined;
+    let headerFallbackId: number | undefined;
+    const extraStops: Array<() => void> = [];
+    const ctx = gsap.context(() => {
+      const playWhenVisible = (trigger: HTMLElement, play: () => void) => {
+        let started = false;
+        const run = () => {
+          if (started) return;
+          started = true;
+          play();
+        };
+
+        const isInView = () => {
+          const box = trigger.getBoundingClientRect();
+          const port = scroller?.getBoundingClientRect();
+          const top = port?.top ?? 0;
+          const bottom = port ? port.bottom : window.innerHeight;
+          const height = Math.max(1, bottom - top);
+          return box.top < top + height * 0.82 && box.bottom > top + height * 0.16;
+        };
+
+        const io = new IntersectionObserver(
+          (entries) => {
+            if (entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.12)) {
+              run();
+            }
+          },
+          {
+            root: scroller ?? null,
+            threshold: [0.12, 0.24],
+            rootMargin: '0px 0px -14% 0px',
+          }
+        );
+        io.observe(trigger);
+        extraStops.push(() => io.disconnect());
+
+        ScrollTrigger.create({
+          trigger,
+          ...(scroller ? { scroller } : {}),
+          start: 'top 82%',
+          once: true,
+          onEnter: run,
+        });
+
+        const onScroll = () => {
+          if (isInView()) run();
+        };
+        const scrollTarget: HTMLElement | Window = scroller ?? window;
+        scrollTarget.addEventListener('scroll', onScroll, { passive: true });
+        extraStops.push(() => scrollTarget.removeEventListener('scroll', onScroll));
+        if (isInView()) run();
+      };
+
+      const playIn = (
+        items: HTMLElement[],
+        trigger: HTMLElement | null,
+        from: gsap.TweenVars,
+        to: gsap.TweenVars
+      ) => {
+        if (!items.length || !trigger) return;
+        gsap.set(items, { ...from, immediateRender: true });
+        const tween = gsap.to(items, {
+          ...to,
+          paused: true,
+          overwrite: 'auto',
+          immediateRender: false,
+        });
+        playWhenVisible(trigger, () => tween.play());
+      };
+
+      if (header) {
+        const headerIntro = gsap.timeline({
+          paused: true,
+          defaults: { ease: 'power3.out', force3D: true, overwrite: 'auto' },
+          onComplete: () => {
+            if (lines.length) gsap.set(lines, { willChange: 'auto' });
+            if (bio) gsap.set(bio, { willChange: 'auto' });
+            aboutPlatformAlignHeader(root);
+          },
+        });
+
+        if (kicker) gsap.set(kicker, { autoAlpha: 0, y: 0, immediateRender: true });
+        if (lines.length) gsap.set(lines, { y: '0%', autoAlpha: 0, immediateRender: true });
+        if (bio) gsap.set(bio, { y: 0, autoAlpha: 0, immediateRender: true });
+        aboutPlatformAlignHeader(root);
+
+        if (kicker) {
+          gsap.set(kicker, { autoAlpha: 0, y: 8 });
+          headerIntro.to(kicker, { autoAlpha: 1, y: 0, duration: 0.48 }, 0);
+        }
+        if (lines.length) {
+          gsap.set(lines, { y: '108%', autoAlpha: 1, willChange: 'transform' });
+          headerIntro.to(lines, { y: '0%', duration: 0.88, stagger: 0.08 }, 0.04);
+        }
+        if (bio) {
+          const risePx = Math.round((lines[0]?.offsetHeight || 48) * 1.08);
+          gsap.set(bio, { y: risePx, autoAlpha: 0, willChange: 'transform,opacity' });
+          headerIntro.to(bio, { y: 0, autoAlpha: 0.82, duration: 0.88 }, 0.04);
+        }
+
+        let headerStarted = false;
+        const playHeaderIntro = () => {
+          if (headerStarted) return;
+          headerStarted = true;
+          requestAnimationFrame(() => headerIntro.play());
+        };
+        const stopNested = aboutBannerWatchEnter(header, scroller, playHeaderIntro);
+        const stopViewport = aboutBannerWatchEnter(header, undefined, playHeaderIntro);
+        ScrollTrigger.create({
+          trigger: header,
+          start: 'top 90%',
+          once: true,
+          onEnter: playHeaderIntro,
+        });
+        if (scroller) {
+          ScrollTrigger.create({
+            trigger: header,
+            scroller,
+            start: 'top 90%',
+            once: true,
+            onEnter: playHeaderIntro,
+          });
+        }
+        const onWinScroll = () => {
+          const box = header.getBoundingClientRect();
+          if (box.top < window.innerHeight * 0.9 && box.bottom > 40) playHeaderIntro();
+        };
+        window.addEventListener('scroll', onWinScroll, { passive: true });
+        scroller?.addEventListener('scroll', onWinScroll, { passive: true });
+        headerFallbackId = window.setTimeout(onWinScroll, 280);
+        stopHeaderWatch = () => {
+          if (headerFallbackId != null) window.clearTimeout(headerFallbackId);
+          window.removeEventListener('scroll', onWinScroll);
+          scroller?.removeEventListener('scroll', onWinScroll);
+          stopNested();
+          stopViewport();
+        };
+      }
+
+      setMotionState('active');
+
+      const splitLines = Array.from(
+        root.querySelectorAll<HTMLElement>('.pf-about-platform-split-title-line')
+      );
+      splitLines.forEach((line) => {
+        const title = line.closest<HTMLElement>('.pf-about-platform-split-title') ?? line;
+        gsap.set(line, { y: '108%', immediateRender: true, force3D: true });
+        const tween = gsap.to(line, {
+          y: '0%',
+          duration: 0.88,
+          ease: 'power3.out',
+          paused: true,
+          overwrite: 'auto',
+          force3D: true,
+        });
+        playWhenVisible(title, () => tween.play());
+      });
+
+      playIn(
+        rises,
+        skills,
+        { y: 40, autoAlpha: 0 },
+        { y: 0, autoAlpha: 1, duration: 0.85, stagger: 0.12, ease: 'power3.out' }
+      );
+      playIn(
+        badges,
+        strengths,
+        { x: 36, autoAlpha: 0 },
+        { x: 0, autoAlpha: 1, duration: 0.72, stagger: 0.08, ease: 'power3.out' }
+      );
+      playIn(
+        langs,
+        languages,
+        { x: 36, autoAlpha: 0 },
+        { x: 0, autoAlpha: 1, duration: 0.72, stagger: 0.08, ease: 'power3.out' }
+      );
+      playIn(
+        eduRows,
+        education,
+        { x: 36, autoAlpha: 0 },
+        { x: 0, autoAlpha: 1, duration: 0.72, stagger: 0.08, ease: 'power3.out' }
+      );
+      const interestList = root.querySelector<HTMLElement>('.pf-about-platform-split-list');
+      playIn(
+        Array.from(root.querySelectorAll<HTMLElement>('.pf-about-platform-split-list > *')),
+        interestList?.closest('.pf-about-platform-split') ?? interestList,
+        { y: 18, autoAlpha: 0 },
+        { y: 0, autoAlpha: 1, duration: 0.72, stagger: 0.08, ease: 'power3.out' }
+      );
+
+      media.add('(min-width: 1024px)', () => {
+        if (slowShifts.length && skills) {
+          gsap.fromTo(
+            slowShifts,
+            { y: 0 },
+            {
+              y: () => Math.round(Math.max(56, (skills.offsetHeight || 240) * 0.15)),
+              ease: 'none',
+              scrollTrigger: {
+                trigger: skills,
+                ...(scroller ? { scroller } : {}),
+                start: 'top 80%',
+                end: 'bottom top',
+                scrub: 0.65,
+                invalidateOnRefresh: true,
+              },
+            }
+          );
+        }
+        if (skills) {
+          gsap.fromTo(
+            skills,
+            { autoAlpha: 1 },
+            {
+              autoAlpha: 0,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: skills,
+                ...(scroller ? { scroller } : {}),
+                start: 'bottom 32%',
+                end: 'bottom -8%',
+                scrub: 0.7,
+                invalidateOnRefresh: true,
+              },
+            }
+          );
+        }
+        return undefined;
+      });
+    }, root);
+
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+    const alignHeader = () => aboutPlatformAlignHeader(root);
+    void document.fonts?.ready.then(() => {
+      alignHeader();
+      ScrollTrigger.refresh();
+    });
+    window.addEventListener('resize', alignHeader);
+    return () => {
+      extraStops.forEach((stop) => stop());
+      stopHeaderWatch?.();
+      window.clearTimeout(refreshId);
+      window.removeEventListener('resize', alignHeader);
+      media.revert();
+      ctx.revert();
+    };
+  }, [
+    motionDisabled,
+    showSkillsBlock,
+    showStrengthsBlock,
+    showLanguagesBlock,
+    showEducationBlock,
+    showInterestsBlock,
+    visibleSkills.length,
+    visibleStrengths.length,
+    languageItems.length,
+    visibleEducation.length,
+    visibleInterests.length,
+  ]);
+
+  let nextSplitIndex = 0;
+  const strengthsSplitIndex = showStrengthsBlock ? nextSplitIndex++ : 0;
+  const languagesSplitIndex = showLanguagesBlock ? nextSplitIndex++ : 0;
+  const educationSplitIndex = showEducationBlock ? nextSplitIndex++ : 0;
+  const interestsSplitIndex = showInterestsBlock ? nextSplitIndex++ : 0;
+
   return (
-    <div className="w-full">
-      <header className="grid gap-8 sm:gap-10 lg:grid-cols-2 lg:grid-rows-[auto_auto] lg:items-start lg:gap-x-14 xl:gap-x-20">
-        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-          <p
-            className="text-[0.78rem] font-semibold uppercase tracking-[0.16em] sm:text-[0.8125rem]"
-            style={{ color: accent }}
-          >
-            {kickerLabel}
-          </p>
-          <h2
-            className={`mt-4 font-semibold leading-[1.08] tracking-[-0.03em] sm:mt-5 ${headlineClass}`}
-            style={{ color: titleColor }}
-          >
-            {displayHeadlineLines.map((line, index) => (
-              <span key={`${index}-${line}`} className="block">
-                {line}
-              </span>
-            ))}
-          </h2>
-        </div>
+    <div
+      ref={rootRef}
+      className="pf-about-platform-root w-full"
+      data-pf-entry={motionDisabled || hasEntered ? 'in' : 'armed'}
+      data-pf-motion={motionDisabled ? 'reduce' : motionState}
+      data-pf-stagger={staggerLayout ? 'on' : 'off'}
+      style={
+        {
+          '--pf-about-platform-accent': accent,
+          '--pf-about-platform-ink': titleColor,
+          '--pf-about-platform-muted': bodyColor,
+          '--pf-about-platform-line': cardBorder,
+          '--pf-about-platform-fill': cardBg,
+        } as CSSProperties
+      }
+    >
+      <header className="pf-about-platform-header grid gap-5 sm:gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)] lg:grid-rows-[auto_auto] lg:items-start lg:gap-x-16 lg:gap-y-5 xl:gap-x-24">
+        <p
+          className="pf-about-platform-kicker text-[0.78rem] font-semibold uppercase tracking-[0.2em] lg:col-start-1 lg:row-start-1 sm:text-[0.8125rem]"
+          style={{ color: accent }}
+        >
+          <span className="pf-about-platform-kicker-mark" aria-hidden />
+          {kickerLabel}
+        </p>
+        <h2
+          className={`pf-about-platform-headline leading-[0.96] tracking-[-0.03em] sm:leading-[0.94] lg:col-start-1 lg:row-start-2 ${headlineClass}`}
+          style={{ color: titleColor }}
+        >
+          {displayHeadlineLines.map((line, index) => (
+            <span key={`${index}-${line}`} className="pf-about-platform-headline-mask">
+              <span className="pf-about-platform-headline-line">{line}</span>
+            </span>
+          ))}
+        </h2>
         {bioText ? (
-          <div
-            className={`min-w-0 ${
-              staggerLayout
-                ? 'lg:col-start-2 lg:row-start-2 lg:pt-2 xl:pt-3'
-                : 'lg:col-start-2 lg:row-start-1 lg:pt-9 xl:pt-10'
-            }`}
-          >
+          <div className="pf-about-platform-bio-wrap min-w-0 lg:col-start-2 lg:row-start-2 lg:self-start">
             <p
-              className={`max-w-xl font-semibold leading-[1.12] tracking-[-0.02em] lg:max-w-none ${leadClass}`}
-              style={{ color: bodyColor, opacity: 0.88 }}
+              className={`pf-about-platform-bio min-w-0 w-full max-w-xl font-medium !leading-[1.28] tracking-[-0.018em] lg:max-w-none ${leadClass}`}
+              style={{ color: bodyColor }}
             >
               {bioText}
             </p>
@@ -1244,26 +2179,40 @@ function AboutPlatformLayout({
 
       {showSkillsBlock ? (
         <section
-          className={`mt-16 sm:mt-20 lg:mt-24 xl:mt-28 ${staggerLayout ? 'lg:pb-40 xl:pb-44' : ''}`}
+          className={`pf-about-platform-skills mt-16 sm:mt-20 lg:mt-24 xl:mt-28 ${
+            staggerLayout ? 'pf-about-platform-skills--stagger' : ''
+          }`}
+          data-count={String(visibleSkills.length)}
         >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 lg:items-stretch lg:gap-5">
+          <div
+            className="pf-about-platform-skills-grid"
+            data-count={String(visibleSkills.length)}
+          >
             {visibleSkills.map((skill, index) => (
               <div
                 key={skill.id}
-                className={`flex h-full min-h-0 flex-col ${
+                className={`pf-about-platform-skill-slot flex min-h-0 flex-col ${
                   staggerLayout ? aboutPlatformSkillCascadeClass(index) : ''
                 }`}
+                style={{ '--pf-about-platform-i': index } as CSSProperties}
               >
-                <AboutPlatformSkillCard
-                  skill={skill}
-                  index={index}
-                  titleColor={titleColor}
-                  bodyColor={bodyColor}
-                  cardBg={cardBg}
-                  cardBorder={cardBorder}
-                  cardTitleClass={cardTitleClass}
-                  cardBodyClass={cardBodyClass}
-                />
+                <div
+                  className="pf-about-platform-skill-shift"
+                  data-pf-speed={index % 2 === 1 ? 'slow' : 'sync'}
+                >
+                  <div className="pf-about-platform-skill-rise">
+                    <AboutPlatformSkillCard
+                      skill={skill}
+                      index={index}
+                      titleColor={titleColor}
+                      bodyColor={bodyColor}
+                      cardBg={cardBg}
+                      cardBorder={cardBorder}
+                      cardTitleClass={cardTitleClass}
+                      cardBodyClass={cardBodyClass}
+                    />
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -1276,15 +2225,23 @@ function AboutPlatformLayout({
           staggerLayout={staggerLayout}
           sectionTitleClass={strengthsTitleClass}
           titleColor={titleColor}
+          index={strengthsSplitIndex}
+          wide
+          className="pf-about-platform-strengths"
         >
-          <ul className="space-y-4 sm:space-y-5 lg:space-y-6">
-            {visibleStrengths.map((item) => (
+          <ul className="pf-about-platform-badges list-none">
+            {visibleStrengths.map((item, index) => (
               <li
-                key={item}
-                className={`font-semibold leading-[1.12] tracking-[-0.02em] ${leadClass}`}
-                style={{ color: bodyColor, opacity: 0.88 }}
+                key={`${index}-${item}`}
+                className="pf-about-platform-badge-cell"
+                data-pf-no-color-transition=""
               >
-                {item}
+                <span
+                  className={`pf-about-platform-badge font-medium tracking-[-0.018em] ${cardBodyClass}`}
+                  style={{ color: titleColor }}
+                >
+                  {item}
+                </span>
               </li>
             ))}
           </ul>
@@ -1297,28 +2254,48 @@ function AboutPlatformLayout({
           staggerLayout={staggerLayout}
           sectionTitleClass={strengthsTitleClass}
           titleColor={titleColor}
+          index={languagesSplitIndex}
+          wide
+          className="pf-about-platform-languages"
         >
-          <InfoLanguageList
-            items={languageItems}
-            accent={accent}
-            body={bodyColor}
-            track={bodyColor}
-            levelStyle={languageLevelStyle}
-            showMarker={showLanguageFlags}
-            bodySizeClass={leadClass}
-            className="mt-0 gap-y-4 sm:gap-y-5"
-          />
+          <ul className="pf-about-platform-langs">
+            {languageItems.map((item) => {
+              const code = aboutClassicLanguageCode(item.name);
+              const levelLabel = item.level ? resolveSpokenLanguageLevelLabel(item.level) : null;
+              return (
+                <li key={item.name} className="pf-about-platform-lang" data-pf-no-color-transition="">
+                  <span className="pf-about-platform-lang-code" style={{ color: titleColor }}>
+                    {code}
+                  </span>
+                  <span className="sr-only">{item.name}</span>
+                  {levelLabel ? (
+                    <span className="pf-about-platform-lang-level" style={{ color: bodyColor }}>
+                      {levelLabel}
+                    </span>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
         </AboutPlatformSplitSection>
       ) : null}
 
       {showEducationBlock ? (
-        <AboutPlatformSplitSection
-          title={ABOUT_VALUE_STEPS_SECTION_LABELS.education}
-          staggerLayout={staggerLayout}
-          sectionTitleClass={strengthsTitleClass}
-          titleColor={titleColor}
+        <section
+          className="pf-about-platform-education pf-about-platform-split mt-16 sm:mt-20 lg:mt-24 xl:mt-28"
+          style={{ '--pf-about-platform-split-i': educationSplitIndex } as CSSProperties}
         >
-          <ol className="space-y-6 sm:space-y-7">
+          <h3
+            className={`pf-about-platform-split-title min-w-0 leading-[0.96] tracking-[-0.03em] ${strengthsTitleClass}`}
+            style={{ color: titleColor }}
+          >
+            <span className="pf-about-platform-headline-mask">
+              <span className="pf-about-platform-split-title-line">
+                {ABOUT_VALUE_STEPS_SECTION_LABELS.education}
+              </span>
+            </span>
+          </h3>
+          <ol className="pf-about-platform-edu-list">
             {visibleEducation.map((entry, index) => {
               const degree = entry.title?.trim() || '';
               const institution = entry.institution?.trim() || '';
@@ -1327,36 +2304,37 @@ function AboutPlatformLayout({
               const detail = degree && institution ? institution : '';
 
               return (
-                <li key={entry.id || `${entry.title}-${entry.schoolYear}-${index}`}>
-                  {headline ? (
-                    <p
-                      className={`font-semibold leading-[1.12] tracking-[-0.02em] ${leadClass}`}
-                      style={{ color: bodyColor, opacity: 0.88 }}
-                    >
-                      {headline}
-                    </p>
-                  ) : null}
-                  {year ? (
-                    <p
-                      className={`mt-1.5 font-medium tabular-nums leading-none ${metaClass}`}
-                      style={{ color: bodyColor, opacity: 0.62 }}
-                    >
-                      {year}
-                    </p>
-                  ) : null}
-                  {detail ? (
-                    <p
-                      className={`mt-1.5 leading-relaxed ${metaClass}`}
-                      style={{ color: bodyColor, opacity: 0.72 }}
-                    >
-                      {detail}
-                    </p>
-                  ) : null}
+                <li
+                  key={entry.id || `${entry.title}-${entry.schoolYear}-${index}`}
+                  className="pf-about-platform-edu-row"
+                  data-pf-no-color-transition=""
+                >
+                  <span className="pf-about-platform-edu-year" style={{ color: bodyColor }}>
+                    {year || '—'}
+                  </span>
+                  <div className="pf-about-platform-edu-copy min-w-0">
+                    {headline ? (
+                      <p
+                        className={`pf-about-platform-edu-degree font-semibold leading-[1.18] tracking-[-0.025em] ${leadClass}`}
+                        style={{ color: titleColor }}
+                      >
+                        {headline}
+                      </p>
+                    ) : null}
+                    {detail ? (
+                      <p
+                        className={`pf-about-platform-edu-school mt-1.5 leading-relaxed ${metaClass}`}
+                        style={{ color: bodyColor }}
+                      >
+                        {detail}
+                      </p>
+                    ) : null}
+                  </div>
                 </li>
               );
             })}
           </ol>
-        </AboutPlatformSplitSection>
+        </section>
       ) : null}
 
       {showInterestsBlock ? (
@@ -1365,12 +2343,13 @@ function AboutPlatformLayout({
           staggerLayout={staggerLayout}
           sectionTitleClass={strengthsTitleClass}
           titleColor={titleColor}
+          index={interestsSplitIndex}
         >
-          <ul className="space-y-4 sm:space-y-5 lg:space-y-6">
+          <ul className="pf-about-platform-split-list space-y-4 sm:space-y-5 lg:space-y-6">
             {visibleInterests.map((item) => (
               <li
                 key={item}
-                className={`font-semibold leading-[1.12] tracking-[-0.02em] ${leadClass}`}
+                className={`pf-about-platform-split-item font-semibold leading-[1.14] tracking-[-0.025em] ${leadClass}`}
                 style={{ color: bodyColor, opacity: 0.88 }}
               >
                 {item}
@@ -1383,6 +2362,43 @@ function AboutPlatformLayout({
   );
 }
 
+function AboutFeaturePanelLanguageList({
+  items,
+  titleColor,
+}: {
+  items: LanguageDisplayItem[];
+  titleColor: string;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <ul className="pf-about-feature-langs" role="list">
+      {items.map((item) => {
+        const code = aboutClassicLanguageCode(item.name);
+        const levelLabel = item.level ? resolveSpokenLanguageLevelLabel(item.level) : null;
+        return (
+          <li
+            key={item.name}
+            className="pf-about-feature-lang"
+            aria-label={levelLabel ? `${item.name}, ${levelLabel}` : item.name}
+          >
+            <span className="pf-about-feature-lang-code" style={{ color: titleColor }}>
+              {code}
+            </span>
+            {levelLabel ? (
+              <>
+                <span className="pf-about-feature-lang-dot" aria-hidden>
+                  ·
+                </span>
+                <span className="pf-about-feature-lang-level">{levelLabel}</span>
+              </>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function AboutFeaturePanelMetaFooter({
   educationItems,
   strengthItems,
@@ -1390,12 +2406,11 @@ function AboutFeaturePanelMetaFooter({
   showEducation,
   showStrengths,
   showLanguages,
+  bioText,
   metaIntroLines,
-  showLanguageFlags,
   accent,
   titleColor,
   bodyColor,
-  cardBorder,
   contentSize,
 }: {
   educationItems: ProfileEducationEntry[];
@@ -1404,12 +2419,11 @@ function AboutFeaturePanelMetaFooter({
   showEducation: boolean;
   showStrengths: boolean;
   showLanguages: boolean;
+  bioText?: string;
   metaIntroLines: { line1: AboutFeatureIntroLine; line2: AboutFeatureIntroLine };
-  showLanguageFlags: boolean;
   accent: string;
   titleColor: string;
   bodyColor: string;
-  cardBorder: string;
   contentSize: PortfolioInfoContentSize;
 }) {
   const visibleEducation = educationItems.filter(
@@ -1419,6 +2433,7 @@ function AboutFeaturePanelMetaFooter({
   const showEducationBlock = showEducation && visibleEducation.length > 0;
   const showStrengthsBlock = showStrengths && visibleStrengths.length > 0;
   const showLanguagesBlock = showLanguages && languageItems.length > 0;
+  const dekText = bioText?.trim() || '';
 
   if (!showEducationBlock && !showStrengthsBlock && !showLanguagesBlock) return null;
 
@@ -1426,15 +2441,14 @@ function AboutFeaturePanelMetaFooter({
   const labelClass = infoContentLabelSizeClass(contentSize);
   const bodyClass = infoContentBodySizeClass(contentSize);
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
+  const dekClass = aboutBannerBioSizeClass(contentSize);
 
-  const sectionLabelClass = `mb-5 font-semibold uppercase tracking-[0.2em] sm:mb-6 ${labelClass}`;
-  const metaFooterBlockClass = 'min-w-0 border-b pb-8 sm:pb-9 lg:pb-10';
-  const metaFooterBlockStyle = { borderColor: cardBorder } satisfies CSSProperties;
+  const sectionLabelClass = `pf-about-feature-footer-label ${labelClass}`;
 
   return (
-    <footer className="mt-0">
-      <div className="mb-12 w-full text-left sm:mb-14 lg:mb-16">
-        <div className="space-y-4">
+    <footer className="pf-about-feature-footer mt-16 sm:mt-20 lg:mt-24">
+      <div className="pf-about-feature-footer-intro mb-10 w-full text-left sm:mb-12 lg:mb-14">
+        <div className="space-y-[0.12em]">
           <AboutFeatureIntroLine
             line={metaIntroLines.line1}
             titleColor={titleColor}
@@ -1448,58 +2462,57 @@ function AboutFeaturePanelMetaFooter({
             introClass={metaIntroClass}
           />
         </div>
+        {dekText ? (
+          <p
+            className={`pf-about-feature-footer-dek ${dekClass} ${bodyClass}`}
+            style={{ color: bodyColor }}
+          >
+            {dekText}
+          </p>
+        ) : null}
       </div>
-      <div className="grid grid-cols-1 gap-14 sm:gap-16 lg:grid-cols-3 lg:gap-x-10 xl:gap-x-12">
+      <div className="pf-about-feature-footer-meta">
         {showEducationBlock ? (
-          <section className={metaFooterBlockClass} style={metaFooterBlockStyle}>
+          <section className="pf-about-feature-footer-block min-w-0">
             <p className={sectionLabelClass} style={{ color: accent }}>
               {ABOUT_VALUE_STEPS_SECTION_LABELS.education}
             </p>
-            <ol className="space-y-6 sm:space-y-7">
+            <ol className="pf-about-feature-edu-list">
               {visibleEducation.map((entry, index) => {
                 const degree = entry.title?.trim() || '';
                 const institution = entry.institution?.trim() || '';
                 const year = entry.schoolYear?.trim() || '';
 
-                const yearInline = year ? (
-                  <>
-                    {' '}
-                    <span
-                      className="whitespace-nowrap font-medium tabular-nums"
-                      style={{ color: bodyColor, opacity: 0.62 }}
-                    >
-                      {year}
-                    </span>
-                  </>
-                ) : null;
-
                 return (
                   <li
                     key={entry.id || `${entry.title}-${entry.schoolYear}-${index}`}
-                    className="min-w-0"
+                    className="pf-about-feature-edu-item min-w-0"
                   >
                     {degree ? (
                       <p
-                        className={`font-medium leading-snug tracking-[-0.01em] ${bodyClass}`}
+                        className={`pf-about-feature-edu-degree font-medium leading-snug tracking-[-0.01em] ${bodyClass}`}
                         style={{ color: titleColor }}
                       >
                         {degree}
                       </p>
                     ) : null}
-                    {institution ? (
+                    {institution || year ? (
                       <p
-                        className={`${degree ? 'mt-1.5' : ''} leading-relaxed ${metaClass}`}
-                        style={{ color: degree ? bodyColor : titleColor, opacity: degree ? 0.72 : 1 }}
+                        className={`pf-about-feature-edu-meta ${degree ? 'mt-1.5' : ''} leading-relaxed ${metaClass}`}
+                        style={{ color: degree ? bodyColor : titleColor }}
                       >
                         {institution}
-                        {yearInline}
-                      </p>
-                    ) : year ? (
-                      <p
-                        className={`${degree ? 'mt-1.5' : ''} font-medium tabular-nums leading-none ${metaClass}`}
-                        style={{ color: bodyColor, opacity: 0.62 }}
-                      >
-                        {year}
+                        {institution && year ? (
+                          <span className="pf-about-feature-edu-dot" aria-hidden>
+                            {' '}
+                            ·{' '}
+                          </span>
+                        ) : null}
+                        {year ? (
+                          <span className="pf-about-feature-edu-year font-medium tabular-nums">
+                            {year}
+                          </span>
+                        ) : null}
                       </p>
                     ) : null}
                   </li>
@@ -1510,18 +2523,22 @@ function AboutFeaturePanelMetaFooter({
         ) : null}
 
         {showStrengthsBlock ? (
-          <section className={metaFooterBlockClass} style={metaFooterBlockStyle}>
+          <section className="pf-about-feature-footer-block min-w-0">
             <p className={sectionLabelClass} style={{ color: accent }}>
               {ABOUT_VALUE_STEPS_SECTION_LABELS.strengths}
             </p>
-            <ul className="space-y-4 sm:space-y-5">
-              {visibleStrengths.map((item) => (
-                <li
-                  key={item}
-                  className={`font-medium leading-snug tracking-[-0.01em] ${bodyClass}`}
-                  style={{ color: titleColor }}
-                >
-                  {item}
+            <ul className="pf-about-feature-strengths" role="list">
+              {visibleStrengths.map((item, index) => (
+                <li key={item} className="pf-about-feature-strength">
+                  <span className="pf-about-feature-strength-index" aria-hidden>
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span
+                    className={`pf-about-feature-strength-label font-medium leading-snug tracking-[-0.01em] ${bodyClass}`}
+                    style={{ color: titleColor }}
+                  >
+                    {item}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -1529,20 +2546,11 @@ function AboutFeaturePanelMetaFooter({
         ) : null}
 
         {showLanguagesBlock ? (
-          <section className={metaFooterBlockClass} style={metaFooterBlockStyle}>
+          <section className="pf-about-feature-footer-block min-w-0">
             <p className={sectionLabelClass} style={{ color: accent }}>
               {ABOUT_VALUE_STEPS_SECTION_LABELS.languages}
             </p>
-            <InfoLanguageList
-              items={languageItems}
-              accent={titleColor}
-              body={bodyColor}
-              track={bodyColor}
-              levelStyle="stars"
-              showMarker={showLanguageFlags}
-              bodySizeClass={bodyClass}
-              className="mt-0 gap-y-4 sm:gap-y-4"
-            />
+            <AboutFeaturePanelLanguageList items={languageItems} titleColor={titleColor} />
           </section>
         ) : null}
       </div>
@@ -1563,12 +2571,12 @@ function AboutFeaturePanelLayout({
   showEducation,
   showStrengths,
   showLanguages,
-  languageLevelStyle,
-  showLanguageFlags,
+  languageLevelStyle: _languageLevelStyle,
+  showLanguageFlags: _showLanguageFlags,
   introLines,
   accent,
   titleColor,
-  subtitleColor,
+  subtitleColor: _subtitleColor,
   bodyColor,
   cardBg,
   cardBorder,
@@ -1597,29 +2605,49 @@ function AboutFeaturePanelLayout({
   contentSize: PortfolioInfoContentSize;
 }) {
   const visibleSkills = skillItems.filter((item) => item.title?.trim());
+  const rootRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
   const skillsSectionRef = useRef<HTMLElement>(null);
+  const desktopRailWrapRef = useRef<HTMLDivElement>(null);
+  const mobileRailWrapRef = useRef<HTMLDivElement>(null);
+  const desktopThumbElRef = useRef<HTMLDivElement>(null);
+  const mobileThumbElRef = useRef<HTMLDivElement>(null);
+  const panelLayerRef = useRef<HTMLDivElement>(null);
   const [interactionIndex, setInteractionIndex] = useState<number | null>(null);
   const [mobileAccordionIndex, setMobileAccordionIndex] = useState(0);
   const [desktopScrollMode, setDesktopScrollMode] = useState(false);
-  const scrollFocusEnabled = visibleSkills.length > 1;
-  const desktopScrollIndex = useFeaturePanelScrollProgress(
-    skillsSectionRef,
-    visibleSkills.length,
-    scrollFocusEnabled && desktopScrollMode
-  );
+  const [headerMotion, setHeaderMotion] = useState<'armed' | 'active' | 'done'>('armed');
+  const [railMotion, setRailMotion] = useState<'armed' | 'active' | 'done'>('armed');
+  const [footerMotion, setFooterMotion] = useState<'armed' | 'active' | 'done'>('armed');
+  const [desktopThumb, setDesktopThumb] = useState<{ top: number; height: number } | null>(null);
+  const [mobileThumb, setMobileThumb] = useState<{ top: number; height: number } | null>(null);
+  const [panelDisplayIndex, setPanelDisplayIndex] = useState<number | null>(null);
   const reduceMotion = useReducedMotion();
-  const introClass = aboutFeatureMetaIntroSizeClass(contentSize);
+  const motionDisabled = reduceMotion === true;
+  const introClass = aboutFeatureIntroSizeClass(contentSize);
   const skillTitleClass = aboutFeatureSkillTitleSizeClass(contentSize);
   const quoteClass = aboutFeatureQuoteSizeClass(contentSize);
   const bodyClass = infoContentBodySizeClass(contentSize);
   const bioClass = aboutBannerBioSizeClass(contentSize);
   const bioText = bio?.trim() || subtitle?.trim() || '';
   const showSkillsBlock = showSkills && visibleSkills.length > 0;
+  const scrollFocusEnabled = showSkillsBlock && visibleSkills.length > 1 && !motionDisabled;
+  const desktopScrollIndex = useFeaturePanelScrollProgress(
+    skillsSectionRef,
+    visibleSkills.length,
+    scrollFocusEnabled && desktopScrollMode
+  );
   const scrollFocusedIndex = desktopScrollIndex;
   const activeIndex =
     interactionIndex ?? (scrollFocusEnabled && desktopScrollMode ? scrollFocusedIndex : 0);
   const safeIndex = visibleSkills.length > 0 ? Math.min(activeIndex, visibleSkills.length - 1) : 0;
+  const activeSkill = visibleSkills[safeIndex];
   const kickerLabel = title?.trim() || 'About me';
+  const displayedSkill =
+    panelDisplayIndex !== null
+      ? visibleSkills[Math.min(panelDisplayIndex, Math.max(visibleSkills.length - 1, 0))]
+      : activeSkill;
 
   useEffect(() => {
     let active = true;
@@ -1670,18 +2698,355 @@ function AboutFeaturePanelLayout({
     }
   }, [mobileAccordionIndex, visibleSkills.length]);
 
+  /**
+   * Mount reveal (task 4) — GSAP timeline, scoped with gsap.context and
+   * triggered once per node via the same two IntersectionObserver entry
+   * points (same thresholds/rootMargin) the previous CSS-only version used:
+   * a header group (kicker, intro lines, bio, footer) that reveals when the
+   * header scrolls into view, and a rail group (skill tabs + panel card)
+   * that reveals when the sticky rail scrolls into view.
+   *
+   * Task 6 (bounded parallax): omitted — a scrubbed y on the card would
+   * desync the left rail from the quote frame. The panel still starts
+   * ~0.14s after the tabs in this one-time timeline as a depth cue.
+   */
+  useLayoutEffect(() => {
+    if (motionDisabled) {
+      setHeaderMotion('done');
+      setRailMotion('done');
+      setFooterMotion('done');
+      return undefined;
+    }
+
+    const root = rootRef.current;
+    if (!root) return undefined;
+
+    const headerNode = headerRef.current ?? root;
+    const railNode = stickyRef.current;
+    const scrollRoot = getManifestoScrollParent(headerNode);
+    const observers: IntersectionObserver[] = [];
+
+    const ctx = gsap.context(() => {
+      const kicker = root.querySelector<HTMLElement>('.pf-about-feature-kicker');
+      const introLineEls = Array.from(
+        root.querySelectorAll<HTMLElement>('.pf-about-feature-intro .pf-about-feature-intro-line')
+      );
+      const bioEl = root.querySelector<HTMLElement>('.pf-about-feature-bio');
+      const footerRoot = root.querySelector<HTMLElement>('.pf-about-feature-footer');
+      const footerIntroLineEls = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          '.pf-about-feature-footer-intro .pf-about-feature-intro-line'
+        )
+      );
+      const footerDek = root.querySelector<HTMLElement>('.pf-about-feature-footer-dek');
+      const footerBlockEls = Array.from(
+        root.querySelectorAll<HTMLElement>('.pf-about-feature-footer-block')
+      );
+      const hasHeaderTargets = Boolean(kicker) || introLineEls.length > 0 || Boolean(bioEl);
+
+      if (hasHeaderTargets) {
+        if (kicker) gsap.set(kicker, { autoAlpha: 0, y: 14 });
+        if (introLineEls.length) {
+          gsap.set(introLineEls, { autoAlpha: 0, y: 18, clipPath: 'inset(0% 0% 100% 0%)' });
+        }
+        if (bioEl) gsap.set(bioEl, { autoAlpha: 0, y: 18 });
+
+        setHeaderMotion('active');
+
+        const headerTl = gsap.timeline({
+          paused: true,
+          defaults: { ease: 'power3.out' },
+          onComplete: () => setHeaderMotion('done'),
+        });
+
+        if (kicker) headerTl.to(kicker, { autoAlpha: 1, y: 0, duration: 0.55 }, 0);
+        introLineEls.forEach((line, index) => {
+          headerTl.to(
+            line,
+            { autoAlpha: 1, y: 0, clipPath: 'inset(0% 0% 0% 0%)', duration: 0.72 },
+            0.1 + index * 0.12
+          );
+        });
+        if (bioEl) headerTl.to(bioEl, { autoAlpha: 1, y: 0, duration: 0.6 }, 0.46);
+
+        const headerObserver = new IntersectionObserver(
+          ([entry]) => {
+            if (entry?.isIntersecting) {
+              headerTl.play();
+              headerObserver.disconnect();
+            }
+          },
+          { root: scrollRoot, threshold: 0.2, rootMargin: '0px 0px -8% 0px' }
+        );
+        headerObserver.observe(headerNode);
+        observers.push(headerObserver);
+      } else {
+        setHeaderMotion('done');
+      }
+
+      const hasFooterTargets =
+        Boolean(footerRoot) &&
+        (footerIntroLineEls.length > 0 || Boolean(footerDek) || footerBlockEls.length > 0);
+
+      if (hasFooterTargets && footerRoot) {
+        if (footerIntroLineEls.length) gsap.set(footerIntroLineEls, { autoAlpha: 0, y: 18 });
+        if (footerDek) gsap.set(footerDek, { autoAlpha: 0, y: 16 });
+        if (footerBlockEls.length) gsap.set(footerBlockEls, { autoAlpha: 0, y: 18 });
+
+        setFooterMotion('active');
+
+        const footerTl = gsap.timeline({
+          paused: true,
+          defaults: { ease: 'power3.out' },
+          onComplete: () => setFooterMotion('done'),
+        });
+
+        footerIntroLineEls.forEach((line, index) => {
+          footerTl.to(line, { autoAlpha: 1, y: 0, duration: 0.62 }, index * 0.1);
+        });
+        if (footerDek) {
+          footerTl.to(footerDek, { autoAlpha: 1, y: 0, duration: 0.55 }, 0.16);
+        }
+        if (footerBlockEls.length) {
+          footerTl.to(
+            footerBlockEls,
+            { autoAlpha: 1, y: 0, duration: 0.58, stagger: 0.08 },
+            0.22
+          );
+        }
+
+        const footerObserver = new IntersectionObserver(
+          ([entry]) => {
+            if (entry?.isIntersecting) {
+              footerTl.play();
+              footerObserver.disconnect();
+            }
+          },
+          { root: scrollRoot, threshold: 0.16, rootMargin: '0px 0px -10% 0px' }
+        );
+        footerObserver.observe(footerRoot);
+        observers.push(footerObserver);
+      } else {
+        setFooterMotion('done');
+      }
+
+      const skillEls = Array.from(root.querySelectorAll<HTMLElement>('.pf-about-feature-skill'));
+      const panelShell = root.querySelector<HTMLElement>('.pf-about-feature-panel-shell');
+      const hasRailTargets = Boolean(
+        showSkillsBlock && railNode && (skillEls.length > 0 || panelShell)
+      );
+
+      if (hasRailTargets && railNode) {
+        if (skillEls.length) gsap.set(skillEls, { autoAlpha: 0, y: 18 });
+        if (panelShell) {
+          gsap.set(panelShell, { autoAlpha: 0, y: 22, clipPath: 'inset(16% 0% 0% 0%)' });
+        }
+
+        setRailMotion('active');
+
+        const railTl = gsap.timeline({
+          paused: true,
+          defaults: { ease: 'power3.out' },
+          onComplete: () => setRailMotion('done'),
+        });
+
+        if (skillEls.length) {
+          railTl.to(skillEls, { autoAlpha: 1, y: 0, duration: 0.58, stagger: 0.06 }, 0);
+        }
+        if (panelShell) {
+          railTl.to(
+            panelShell,
+            {
+              autoAlpha: 1,
+              y: 0,
+              clipPath: 'inset(0% 0% 0% 0%)',
+              duration: 0.85,
+              ease: 'power2.out',
+            },
+            0.14
+          );
+        }
+
+        const railObserver = new IntersectionObserver(
+          ([entry]) => {
+            if (entry?.isIntersecting) {
+              railTl.play();
+              railObserver.disconnect();
+            }
+          },
+          { root: scrollRoot, threshold: 0.12, rootMargin: '0px 0px -8% 0px' }
+        );
+        railObserver.observe(railNode);
+        observers.push(railObserver);
+      } else {
+        setRailMotion('done');
+      }
+    }, root);
+
+    return () => {
+      observers.forEach((observer) => observer.disconnect());
+      ctx.revert();
+    };
+  }, [motionDisabled, showSkillsBlock, showEducation, showStrengths, showLanguages, bioText]);
+
+  useLayoutEffect(() => {
+    const desktopWrap = desktopRailWrapRef.current;
+    const mobileWrap = mobileRailWrapRef.current;
+
+    const update = () => {
+      if (desktopWrap && desktopWrap.offsetParent !== null) {
+        const next = measureAboutFeatureRailThumb(desktopWrap, '[aria-pressed="true"]');
+        if (next) setDesktopThumb(next);
+      }
+      if (mobileWrap && mobileWrap.offsetParent !== null) {
+        const next = measureAboutFeatureRailThumb(mobileWrap, '[aria-expanded="true"]');
+        setMobileThumb(next);
+      }
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    if (desktopWrap) observer.observe(desktopWrap);
+    if (mobileWrap) observer.observe(mobileWrap);
+    window.addEventListener('resize', update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [safeIndex, mobileAccordionIndex, visibleSkills.length, showSkillsBlock, contentSize]);
+
+  /**
+   * Tab rail thumb (task 5) — GSAP replacement for the framer-motion
+   * spring. Reuses the desktopThumb/mobileThumb measurement above; the
+   * first measurement snaps in place (gsap.set), every later measurement
+   * (a tab switch) glides there (gsap.to, power4.out).
+   */
+  const desktopThumbReadyRef = useRef(false);
+  useLayoutEffect(() => {
+    const el = desktopThumbElRef.current;
+    if (!el || !desktopThumb) return undefined;
+    if (motionDisabled || !desktopThumbReadyRef.current) {
+      gsap.set(el, { y: desktopThumb.top, height: desktopThumb.height });
+      desktopThumbReadyRef.current = true;
+    } else {
+      gsap.to(el, {
+        y: desktopThumb.top,
+        height: desktopThumb.height,
+        duration: 0.52,
+        ease: 'power4.out',
+        overwrite: 'auto',
+      });
+    }
+    return () => {
+      gsap.killTweensOf(el);
+    };
+  }, [desktopThumb, motionDisabled]);
+
+  const mobileThumbReadyRef = useRef(false);
+  useLayoutEffect(() => {
+    const el = mobileThumbElRef.current;
+    if (!el || !mobileThumb) return undefined;
+    if (motionDisabled || !mobileThumbReadyRef.current) {
+      gsap.set(el, { y: mobileThumb.top, height: mobileThumb.height });
+      mobileThumbReadyRef.current = true;
+    } else {
+      gsap.to(el, {
+        y: mobileThumb.top,
+        height: mobileThumb.height,
+        duration: 0.5,
+        ease: 'power4.out',
+        overwrite: 'auto',
+      });
+    }
+    return () => {
+      gsap.killTweensOf(el);
+    };
+  }, [mobileThumb, motionDisabled]);
+
+  /**
+   * Tab crossfade (task 5) — single-node swap-at-midpoint: fade the
+   * current quote out, swap the React-rendered text at the midpoint, fade
+   * the new quote in. Simpler and lower-risk than keeping two overlapped
+   * DOM nodes without AnimatePresence. A generation counter guards against
+   * a fast second tab switch resolving out of order; aria-live="polite"
+   * stays on the outer panel shell.
+   */
+  const panelDisplayIndexRef = useRef<number | null>(null);
+  const panelSwapGenRef = useRef(0);
+  useLayoutEffect(() => {
+    if (!showSkillsBlock) return undefined;
+
+    if (panelDisplayIndexRef.current === null) {
+      panelDisplayIndexRef.current = safeIndex;
+      setPanelDisplayIndex(safeIndex);
+      return undefined;
+    }
+
+    if (panelDisplayIndexRef.current === safeIndex) return undefined;
+
+    const el = panelLayerRef.current;
+    const gen = ++panelSwapGenRef.current;
+
+    if (motionDisabled || !el) {
+      panelDisplayIndexRef.current = safeIndex;
+      setPanelDisplayIndex(safeIndex);
+      return undefined;
+    }
+
+    gsap.to(el, {
+      opacity: 0,
+      y: -12,
+      duration: 0.22,
+      ease: 'power2.in',
+      overwrite: 'auto',
+      onComplete: () => {
+        if (panelSwapGenRef.current !== gen) return;
+        panelDisplayIndexRef.current = safeIndex;
+        setPanelDisplayIndex(safeIndex);
+      },
+    });
+
+    return () => {
+      gsap.killTweensOf(el);
+    };
+  }, [safeIndex, motionDisabled, showSkillsBlock]);
+
+  const panelFirstRevealRef = useRef(true);
+  useLayoutEffect(() => {
+    const el = panelLayerRef.current;
+    if (!el || panelDisplayIndex === null) return undefined;
+    if (panelFirstRevealRef.current) {
+      // Very first paint — the mount-reveal timeline above owns this
+      // appearance, so skip the crossfade-in here.
+      panelFirstRevealRef.current = false;
+      return undefined;
+    }
+    if (motionDisabled) return undefined;
+    gsap.fromTo(
+      el,
+      { opacity: 0 },
+      { opacity: 1, duration: 0.28, ease: 'power2.out', overwrite: 'auto' }
+    );
+    return () => {
+      gsap.killTweensOf(el);
+    };
+  }, [panelDisplayIndex, motionDisabled]);
+
   const featurePanelCardShellClass =
-    'relative ml-0 mr-auto w-full max-w-xl min-h-[20rem] overflow-hidden rounded-2xl sm:min-h-[22rem] sm:max-w-2xl lg:min-h-[26rem] lg:max-w-3xl lg:rounded-3xl xl:min-h-[30rem] xl:max-w-4xl';
+    'pf-about-feature-panel-shell relative w-full overflow-hidden';
 
   const featurePanelHeader = (
-    <header className="grid gap-x-8 gap-y-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start sm:gap-x-10 lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] lg:gap-x-20 xl:gap-x-28">
+    <header
+      ref={headerRef}
+      className="pf-about-feature-header grid grid-cols-1 gap-y-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start sm:gap-x-10 lg:grid-cols-[minmax(0,11rem)_minmax(0,1fr)] lg:gap-x-16 xl:gap-x-24"
+    >
       <p
-        className="row-start-1 shrink-0 self-start text-[0.78rem] font-semibold uppercase tracking-[0.16em] sm:text-[0.8125rem]"
+        className="pf-about-feature-kicker col-start-1 row-start-1 shrink-0 self-start text-[0.78rem] font-semibold uppercase tracking-[0.16em] sm:text-[0.8125rem]"
         style={{ color: accent }}
       >
         {kickerLabel}
       </p>
-      <div className="row-start-1 min-w-0 space-y-4 text-left sm:col-start-2 lg:col-start-2 lg:row-span-1">
+      <div className="pf-about-feature-intro col-start-1 row-start-2 min-w-0 space-y-[0.12em] text-left sm:col-start-2 sm:row-start-1">
         <AboutFeatureIntroLine
           line={introLines.line1}
           titleColor={titleColor}
@@ -1699,24 +3064,38 @@ function AboutFeaturePanelLayout({
   );
 
   const featurePanelSkillsGrid = (
-    <div className="mt-24 sm:mt-28 lg:mt-32 xl:mt-36">
-      <div className="relative min-w-0 pl-5 sm:pl-6 lg:hidden">
+    <div className={scrollFocusEnabled ? 'mt-20 w-full sm:mt-24 lg:mt-0' : 'mt-20 w-full sm:mt-24 lg:mt-28 xl:mt-32'}>
+      <div ref={mobileRailWrapRef} className="pf-about-feature-rail relative min-w-0 pl-6 sm:pl-7 lg:hidden">
         <div
-          className="absolute bottom-0 left-0 top-0 w-px"
+          className="pf-about-feature-rail-track absolute bottom-0 left-0 top-0 w-px"
           style={{ backgroundColor: cardBorder }}
           aria-hidden
         />
+        {mobileThumb ? (
+          <div
+            ref={mobileThumbElRef}
+            className="pf-about-feature-rail-thumb"
+            data-pf-no-color-transition=""
+            aria-hidden
+            style={{ backgroundColor: accent }}
+          />
+        ) : null}
         <ul className="space-y-8 sm:space-y-9">
           {visibleSkills.map((skill, index) => {
             const isOpen = mobileAccordionIndex === index;
             const skillTitle = skill.title?.trim() || '';
             const skillDescription = skill.description?.trim() || '';
             return (
-              <li key={skill.id} className="min-w-0">
+              <li
+                key={skill.id}
+                className="pf-about-feature-skill min-w-0"
+                style={{ '--pf-about-feature-i': index } as CSSProperties}
+              >
                 <button
                   type="button"
-                  className={`block w-full text-left font-normal transition-[opacity,color] duration-500 ease-out ${skillTitleClass} ${
-                    isOpen ? 'opacity-100' : 'opacity-40'
+                  data-pf-no-color-transition=""
+                  className={`pf-about-feature-skill-btn block w-full text-left font-normal ${skillTitleClass}${
+                    isOpen ? ' is-active' : ''
                   }`}
                   style={{ color: titleColor }}
                   aria-expanded={isOpen}
@@ -1743,6 +3122,7 @@ function AboutFeaturePanelLayout({
                     bodyClass={bodyClass}
                     isPlaceholder={!skillDescription}
                     hideAttribution
+                    align="start"
                   />
                 </AboutFeaturePanelMobileAccordionPanel>
               </li>
@@ -1751,24 +3131,37 @@ function AboutFeaturePanelLayout({
         </ul>
       </div>
 
-      <div className="hidden gap-12 lg:grid lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] lg:gap-x-20 xl:gap-x-28">
-        <div className="relative min-w-0 self-start pl-5 sm:pl-6">
+      <div className="pf-about-feature-stage hidden w-full lg:grid lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-stretch lg:gap-x-16 xl:grid-cols-[22rem_minmax(0,1fr)] xl:gap-x-20">
+        <div ref={desktopRailWrapRef} className="pf-about-feature-rail relative min-w-0 pl-8 sm:pl-9">
           <div
-            className="absolute bottom-0 left-0 top-0 w-px"
+            className="pf-about-feature-rail-track absolute bottom-0 left-0 top-0 w-px"
             style={{ backgroundColor: cardBorder }}
             aria-hidden
           />
+          {desktopThumb ? (
+            <div
+              ref={desktopThumbElRef}
+              className="pf-about-feature-rail-thumb"
+              data-pf-no-color-transition=""
+              aria-hidden
+              style={{ backgroundColor: accent }}
+            />
+          ) : null}
           <ul className="space-y-10 sm:space-y-12 lg:space-y-14 xl:space-y-16">
             {visibleSkills.map((skill, index) => {
               const isActive = index === safeIndex;
               const skillTitle = skill.title?.trim() || '';
               return (
-                <li key={skill.id}>
+                <li
+                  key={skill.id}
+                  className="pf-about-feature-skill"
+                  style={{ '--pf-about-feature-i': index } as CSSProperties}
+                >
                   <button
                     type="button"
                     data-pf-no-color-transition=""
-                    className={`block w-full text-left font-normal transition-opacity duration-300 ${skillTitleClass} ${
-                      isActive ? 'opacity-100' : 'opacity-40 hover:opacity-65'
+                    className={`pf-about-feature-skill-btn block w-full text-left font-normal ${skillTitleClass}${
+                      isActive ? ' is-active' : ''
                     }`}
                     style={{ color: titleColor }}
                     onClick={() => setInteractionIndex(index)}
@@ -1783,44 +3176,53 @@ function AboutFeaturePanelLayout({
           </ul>
         </div>
 
-        <aside className="relative min-w-0 lg:self-stretch">
-          <div className={featurePanelCardShellClass} style={{ backgroundColor: cardBg }} aria-live="polite">
-            {visibleSkills.map((skill, index) => {
-              const isVisible = index === safeIndex;
-              const skillTitle = skill.title?.trim() || '';
-              const skillDescription = skill.description?.trim() || '';
-              return (
-                <motion.div
-                  key={skill.id}
-                  className="absolute inset-0 flex items-center justify-center px-6 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12"
-                  aria-hidden={!isVisible}
-                  initial={false}
-                  animate={{ opacity: isVisible ? 1 : 0 }}
-                  transition={
-                    reduceMotion ? { duration: 0 } : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }
+        <aside className="pf-about-feature-panel relative min-w-0">
+          <div className="pf-about-feature-panel-parallax">
+            <div className={featurePanelCardShellClass} style={{ backgroundColor: cardBg }} aria-live="polite">
+            {displayedSkill ? (
+              <div
+                ref={panelLayerRef}
+                className="pf-about-feature-panel-layer relative w-full"
+              >
+                <AboutFeaturePanelQuote
+                  text={
+                    displayedSkill.description?.trim() ||
+                    'Add a description for this skill in Creator Studio → Information.'
                   }
-                  style={{ pointerEvents: isVisible ? 'auto' : 'none' }}
-                >
-                  <AboutFeaturePanelQuote
-                    text={
-                      skillDescription ||
-                      'Add a description for this skill in Creator Studio → Information.'
-                    }
-                    skillTitle={skillTitle}
-                    quoteClass={quoteClass}
-                    titleColor={titleColor}
-                    bodyColor={bodyColor}
-                    bodyClass={bodyClass}
-                    isPlaceholder={!skillDescription}
-                  />
-                </motion.div>
-              );
-            })}
+                  skillTitle={displayedSkill.title?.trim() || ''}
+                  quoteClass={quoteClass}
+                  titleColor={titleColor}
+                  bodyColor={bodyColor}
+                  bodyClass={bodyClass}
+                  isPlaceholder={!displayedSkill.description?.trim()}
+                  hideAttribution
+                  align="start"
+                />
+              </div>
+            ) : null}
+            </div>
           </div>
         </aside>
       </div>
     </div>
   );
+
+  const showMetaFooter =
+    (showEducation &&
+      educationItems.some(
+        (entry) => entry.title?.trim() || entry.institution?.trim() || entry.schoolYear?.trim()
+      )) ||
+    (showStrengths && strengthItems.some((item) => item.trim())) ||
+    (showLanguages && languageItems.length > 0);
+
+  const featurePanelBio = bioText && !showMetaFooter ? (
+    <p
+      className={`pf-about-feature-bio mt-16 max-w-2xl leading-[1.75] sm:mt-20 lg:mt-24 ${bioClass} ${bodyClass}`}
+      style={{ color: bodyColor, opacity: 0.82 }}
+    >
+      {bioText}
+    </p>
+  ) : null;
 
   const featurePanelMetaFooter = (
     <AboutFeaturePanelMetaFooter
@@ -1830,37 +3232,37 @@ function AboutFeaturePanelLayout({
       showEducation={showEducation}
       showStrengths={showStrengths}
       showLanguages={showLanguages}
+      bioText={showMetaFooter ? bioText : undefined}
       metaIntroLines={resolveAboutFeatureMetaIntroLines()}
-      showLanguageFlags={showLanguageFlags}
       accent={accent}
       titleColor={titleColor}
       bodyColor={bodyColor}
-      cardBorder={cardBorder}
       contentSize={contentSize}
     />
   );
 
   return (
-    <div className="w-full">
+    <div
+      ref={rootRef}
+      className="pf-about-feature-root w-full"
+      data-pf-entry={headerMotion}
+      data-pf-rail={railMotion}
+      data-pf-footer={footerMotion}
+      style={
+        {
+          '--pf-about-feature-accent': accent,
+          '--pf-about-feature-ink': titleColor,
+        } as CSSProperties
+      }
+    >
       {showSkillsBlock ? (
         <>
           <section ref={skillsSectionRef} className="relative">
             {featurePanelHeader}
-            {scrollFocusEnabled ? (
-              <div
-                aria-hidden
-                data-feature-panel-lead-in
-                className="pointer-events-none hidden lg:block"
-                style={{ height: FEATURE_PANEL_LEAD_IN_HEIGHT }}
-              />
-            ) : null}
             <div
+              ref={stickyRef}
               data-feature-panel-sticky
-              className={
-                scrollFocusEnabled
-                  ? 'lg:sticky lg:z-[1] lg:-translate-y-1/2'
-                  : undefined
-              }
+              className={scrollFocusEnabled ? 'pf-about-feature-pin lg:sticky lg:z-[1]' : undefined}
               style={
                 scrollFocusEnabled
                   ? ({ top: FEATURE_PANEL_STICKY_TOP } satisfies CSSProperties)
@@ -1880,19 +3282,13 @@ function AboutFeaturePanelLayout({
               />
             ) : null}
           </section>
+          {featurePanelBio}
           {featurePanelMetaFooter}
         </>
       ) : (
         <>
           {featurePanelHeader}
-          {bioText ? (
-            <p
-              className={`mt-12 max-w-xl leading-[1.75] ${bioClass} ${bodyClass}`}
-              style={{ color: bodyColor, opacity: 0.82 }}
-            >
-              {bioText}
-            </p>
-          ) : null}
+          {featurePanelBio}
           {featurePanelMetaFooter}
         </>
       )}
@@ -1900,75 +3296,71 @@ function AboutFeaturePanelLayout({
   );
 }
 
-function portraitSkillsItemStyle(
-  index: number,
-  activeIndex: number,
-  subtitleColor: string,
-  bodyColor: string,
-  titleColor: string
-): CSSProperties {
-  if (index === activeIndex) {
-    return { color: subtitleColor, opacity: 1 };
+const ABOUT_PORTRAIT_SKILLS_EASE = [0.16, 1, 0.3, 1] as const;
+const ABOUT_PORTRAIT_SKILLS_CLIP_EASE = [0.77, 0, 0.175, 1] as const;
+const ABOUT_PORTRAIT_SKILLS_CLIP_START = 'inset(0% 0% 0% 100%)';
+const ABOUT_PORTRAIT_SKILLS_CLIP_END = 'inset(0% 0% 0% 0%)';
+const ABOUT_PORTRAIT_SKILLS_INTERESTS_LABEL = 'Interests';
+const ABOUT_PORTRAIT_SKILLS_LANGUAGES_LABEL = 'Languages';
+const ABOUT_PORTRAIT_SKILLS_RUNWAY_STEP_VH = 56;
+const ABOUT_PORTRAIT_SKILLS_INDICATOR_EASE = 'power4.out';
+
+function portraitSkillsRunwayHeight(skillCount: number): string {
+  if (skillCount <= 1) return '0px';
+  return `calc(${(skillCount - 1) * ABOUT_PORTRAIT_SKILLS_RUNWAY_STEP_VH}dvh)`;
+}
+
+function aboutPortraitSkillsTween(
+  reduceMotion: boolean,
+  duration: number,
+  delay: number,
+  ease: readonly [number, number, number, number] = ABOUT_PORTRAIT_SKILLS_EASE
+) {
+  if (reduceMotion) {
+    return { duration: 0, delay: 0 };
   }
-
-  const mutedTones: CSSProperties[] = [
-    { color: bodyColor, opacity: 0.42 },
-    { color: subtitleColor, opacity: 0.3 },
-    { color: titleColor, opacity: 0.24 },
-    { color: bodyColor, opacity: 0.34 },
-    { color: subtitleColor, opacity: 0.38 },
-  ];
-
-  return mutedTones[index % mutedTones.length] ?? mutedTones[0]!;
+  return { duration, delay, ease };
 }
 
-function portraitSkillsMetaValueStyle(
-  index: number,
-  subtitleColor: string,
-  bodyColor: string,
-  titleColor: string
-): CSSProperties {
-  const tones: CSSProperties[] = [
-    { color: subtitleColor, opacity: 0.92 },
-    { color: bodyColor, opacity: 1 },
-    { color: titleColor, opacity: 0.78 },
-    { color: subtitleColor, opacity: 0.72 },
-    { color: bodyColor, opacity: 0.82 },
-  ];
-  return tones[index % tones.length] ?? tones[0]!;
-}
-
-function PortraitSkillsMetaValues({
-  values,
-  subtitleColor,
-  bodyColor,
+/** About · portrait skills — ISO code · mastery level. */
+function AboutPortraitLanguageList({
+  items,
   titleColor,
 }: {
-  values: string[];
-  subtitleColor: string;
-  bodyColor: string;
+  items: LanguageDisplayItem[];
   titleColor: string;
 }) {
+  if (items.length === 0) return null;
   return (
-    <>
-      {values.map((value, index) => (
-        <span key={`${value}-${index}`}>
-          {index > 0 ? (
-            <span style={{ color: bodyColor, opacity: 0.45 }}>, </span>
-          ) : null}
-          <span
-            className="font-medium"
-            style={portraitSkillsMetaValueStyle(index, subtitleColor, bodyColor, titleColor)}
+    <ul className="pf-about-portrait-langs" role="list">
+      {items.map((item) => {
+        const code = aboutClassicLanguageCode(item.name);
+        const levelLabel = item.level ? resolveSpokenLanguageLevelLabel(item.level) : null;
+        return (
+          <li
+            key={item.name}
+            className="pf-about-portrait-lang"
+            aria-label={levelLabel ? `${item.name}, ${levelLabel}` : item.name}
           >
-            {value}
-          </span>
-        </span>
-      ))}
-    </>
+            <span className="pf-about-portrait-lang-code" style={{ color: titleColor }}>
+              {code}
+            </span>
+            {levelLabel ? (
+              <>
+                <span className="pf-about-portrait-lang-dot" aria-hidden>
+                  ·
+                </span>
+                <span className="pf-about-portrait-lang-level">{levelLabel}</span>
+              </>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
-/** About · portrait skills — large portrait right, XXL skill rail + bio left. */
+/** About · portrait skills — sticky split frame, XXL skill rail + pinned portrait. */
 function AboutPortraitSkillsLayout({
   title,
   subtitle,
@@ -1983,7 +3375,6 @@ function AboutPortraitSkillsLayout({
   showStrengths,
   showInterests,
   showLanguages,
-  metaLead,
   metaEnabled,
   titleColor,
   subtitleColor,
@@ -2014,19 +3405,28 @@ function AboutPortraitSkillsLayout({
   contentSize: PortfolioInfoContentSize;
   portraitGrayscale?: boolean;
 }) {
-  const [activeSkillIndex, setActiveSkillIndex] = useState(0);
+  const reduceMotion = Boolean(useReducedMotion());
+  const rootRef = useRef<HTMLDivElement>(null);
+  const pinRef = useRef<HTMLElement>(null);
+  const skillsWrapRef = useRef<HTMLDivElement>(null);
+  const indicatorRef = useRef<HTMLSpanElement>(null);
+  const [scrollSkillIndex, setScrollSkillIndex] = useState(0);
+  const [interactionIndex, setInteractionIndex] = useState<number | null>(null);
+  const [afterMotion, setAfterMotion] = useState<'armed' | 'active' | 'done'>(
+    reduceMotion ? 'done' : 'armed'
+  );
   const visibleSkills = skillItems.filter((item) => item.title?.trim());
   const visibleStrengths = strengthItems.map((item) => item.trim()).filter(Boolean);
   const visibleInterests = interestItems.map((item) => item.trim()).filter(Boolean);
-  const visibleLanguages = languageItems
-    .map((item) => item.name.trim())
-    .filter(Boolean);
+  const visibleLanguageItems = languageItems.filter((item) => item.name.trim());
   const showSkillsBlock = showSkills && visibleSkills.length > 0;
   const showStrengthsBlock = showStrengths && visibleStrengths.length > 0;
   const showMetaBlock =
     metaEnabled &&
     ((showInterests && visibleInterests.length > 0) ||
-      (showLanguages && visibleLanguages.length > 0));
+      (showLanguages && visibleLanguageItems.length > 0));
+  const showAfterBlock = showStrengthsBlock || showMetaBlock;
+  const scrollFocusEnabled = showSkillsBlock && visibleSkills.length > 1 && !reduceMotion;
   const skillListClass = aboutPortraitSkillsListSizeClass(contentSize);
   const bioClass = aboutPortraitSkillsBioSizeClass(contentSize);
   const strengthsTitleClass = aboutPortraitSkillsStrengthsTitleSizeClass(contentSize);
@@ -2035,9 +3435,12 @@ function AboutPortraitSkillsLayout({
   const kickerClass = infoContentBodySizeClass(contentSize);
   const bioText = bio?.trim() || '';
   const kickerText = subtitle.trim() || title.trim() || 'About me';
-  const leadText = metaLead.trim() || '';
+  const displayedSkillIndex = interactionIndex ?? scrollSkillIndex;
   const safeActiveIndex =
-    visibleSkills.length > 0 ? Math.min(activeSkillIndex, visibleSkills.length - 1) : 0;
+    visibleSkills.length > 0 ? Math.min(displayedSkillIndex, visibleSkills.length - 1) : 0;
+  const bioDelay = reduceMotion
+    ? 0
+    : 0.58 + Math.min(showSkillsBlock ? visibleSkills.length : 1, 6) * 0.075;
 
   const avatarSrc = avatarUrl?.trim() || '';
   const portraitName = fullName?.trim() || 'Profile';
@@ -2048,162 +3451,566 @@ function AboutPortraitSkillsLayout({
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
 
+  const markEntryReady = useCallback(() => {
+    rootRef.current?.setAttribute('data-pf-entry', 'ready');
+  }, []);
+
+  const activateSkill = useCallback((index: number) => {
+    setInteractionIndex(index);
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion) return undefined;
+    const timeoutId = window.setTimeout(markEntryReady, 140);
+    return () => window.clearTimeout(timeoutId);
+  }, [markEntryReady, reduceMotion]);
+
+  useEffect(() => {
+    setScrollSkillIndex((prev) => {
+      const max = Math.max(0, visibleSkills.length - 1);
+      return prev > max ? max : prev;
+    });
+  }, [visibleSkills.length]);
+
+  useEffect(() => {
+    if (interactionIndex == null || !scrollFocusEnabled) return undefined;
+
+    let active = true;
+    let frame = 0;
+    const clearInteraction = () => {
+      if (frame || !active) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        if (active) setInteractionIndex(null);
+      });
+    };
+
+    const scrollRoot = aboutBannerScrollParent(pinRef.current ?? rootRef.current);
+    const scrollTarget: HTMLElement | Window = scrollRoot ?? window;
+    scrollTarget.addEventListener('scroll', clearInteraction, { passive: true });
+    return () => {
+      active = false;
+      if (frame) window.cancelAnimationFrame(frame);
+      scrollTarget.removeEventListener('scroll', clearInteraction);
+    };
+  }, [interactionIndex, scrollFocusEnabled]);
+
+  useLayoutEffect(() => {
+    const wrap = skillsWrapRef.current;
+    const indicator = indicatorRef.current;
+    if (!wrap || !indicator || !showSkillsBlock) return undefined;
+
+    const elastic = indicator.dataset.pfReady === 'true' && !reduceMotion;
+    const move = (animate: boolean) => {
+      const buttons = wrap.querySelectorAll<HTMLElement>('.pf-about-portrait-skill-btn');
+      const btn = buttons[safeActiveIndex];
+      if (!btn) return;
+      const wrapRect = wrap.getBoundingClientRect();
+      const rect = btn.getBoundingClientRect();
+      const inset = Math.max(7, rect.height * 0.14);
+      gsap.to(indicator, {
+        y: rect.top - wrapRect.top + inset,
+        height: Math.max(18, rect.height - inset * 2),
+        duration: animate ? 0.48 : 0,
+        ease: ABOUT_PORTRAIT_SKILLS_INDICATOR_EASE,
+        overwrite: 'auto',
+      });
+    };
+
+    move(elastic);
+    indicator.dataset.pfReady = 'true';
+
+    const observer = new ResizeObserver(() => move(false));
+    observer.observe(wrap);
+    return () => observer.disconnect();
+  }, [reduceMotion, safeActiveIndex, showSkillsBlock, visibleSkills.length]);
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    const pin = pinRef.current;
+    if (!root || !pin || reduceMotion) return undefined;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+
+    const scroller = aboutBannerScrollParent(root);
+    const skillCount = visibleSkills.length;
+    const media = gsap.matchMedia();
+    const ctx = gsap.context(() => {
+      if (scrollFocusEnabled) {
+        media.add('(min-width: 1024px)', () => {
+          const navClearance = readPortfolioNavTopClearancePx() || 88;
+          const runway = pin.querySelector<HTMLElement>('.pf-about-portrait-runway');
+          ScrollTrigger.create({
+            trigger: pin,
+            ...(scroller ? { scroller } : {}),
+            start: `top top+=${navClearance}`,
+            end: () => `+=${runway?.offsetHeight || 0}`,
+            scrub: 0.45,
+            fastScrollEnd: true,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              const next = Math.round(self.progress * (skillCount - 1));
+              setScrollSkillIndex((prev) => (prev === next ? prev : next));
+            },
+          });
+        });
+      }
+
+      const after = root.querySelector<HTMLElement>('.pf-about-portrait-after');
+      if (after) {
+        const title = after.querySelector<HTMLElement>('.pf-about-portrait-strengths-title');
+        const badges = Array.from(
+          after.querySelectorAll<HTMLElement>('.pf-about-portrait-badge-cell')
+        );
+        const cols = Array.from(
+          after.querySelectorAll<HTMLElement>(
+            '.pf-about-portrait-meta-col:not(.pf-about-portrait-meta-col--empty):not(.pf-about-portrait-meta-col--spacer)'
+          )
+        );
+
+        if (title) gsap.set(title, { autoAlpha: 0, y: 16 });
+        if (badges.length) gsap.set(badges, { autoAlpha: 0, scale: 0.95 });
+        if (cols.length) gsap.set(cols, { autoAlpha: 0, y: 15 });
+
+        root.setAttribute('data-pf-after', 'active');
+        setAfterMotion('active');
+
+        const cascade = gsap.timeline({
+          paused: true,
+          defaults: { overwrite: 'auto' },
+          onComplete: () => setAfterMotion('done'),
+        });
+
+        if (title) {
+          cascade.to(title, { autoAlpha: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 0);
+        }
+        if (badges.length) {
+          cascade.to(
+            badges,
+            {
+              autoAlpha: 1,
+              scale: 1,
+              duration: 0.36,
+              stagger: 0.05,
+              ease: 'power2.out',
+            },
+            title ? 0.08 : 0
+          );
+        }
+        if (cols.length) {
+          cascade.to(
+            cols,
+            {
+              autoAlpha: 1,
+              y: 0,
+              duration: 0.58,
+              stagger: 0.08,
+              ease: 'power2.out',
+            },
+            badges.length ? '>-0.04' : 0.06
+          );
+        }
+
+        ScrollTrigger.create({
+          trigger: after,
+          ...(scroller ? { scroller } : {}),
+          start: 'top 82%',
+          once: true,
+          onEnter: () => cascade.play(),
+        });
+
+        if (cols.length) {
+          ScrollTrigger.create({
+            trigger: after,
+            ...(scroller ? { scroller } : {}),
+            start: 'bottom 22%',
+            end: 'bottom -6%',
+            scrub: 0.45,
+            onUpdate: (self) => {
+              if (cascade.progress() < 1) return;
+              gsap.set(cols, { autoAlpha: 1 - self.progress });
+            },
+          });
+        }
+
+        const afterBox = after.getBoundingClientRect();
+        const viewRoot = scroller ?? document.documentElement;
+        const viewH =
+          viewRoot instanceof HTMLElement ? viewRoot.clientHeight : window.innerHeight;
+        if (afterBox.top < viewH * 0.88 && afterBox.bottom > 0) {
+          cascade.play();
+        }
+      }
+    }, root);
+
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+    const refreshLater = window.setTimeout(() => ScrollTrigger.refresh(), 480);
+    return () => {
+      window.clearTimeout(refreshId);
+      window.clearTimeout(refreshLater);
+      media.revert();
+      ctx.revert();
+    };
+  }, [
+    reduceMotion,
+    scrollFocusEnabled,
+    showAfterBlock,
+    visibleInterests.length,
+    visibleLanguageItems.length,
+    visibleSkills.length,
+    visibleStrengths.length,
+  ]);
+
+  const portraitThemeStyle = {
+    '--pf-about-portrait-ink': titleColor,
+    '--pf-about-portrait-soft': subtitleColor,
+    '--pf-about-portrait-muted': bodyColor,
+    '--pf-about-portrait-fill': cardBg,
+    '--pf-about-portrait-steps': String(Math.max(visibleSkills.length - 1, 0)),
+  } as CSSProperties;
+
   const portraitPanelClass =
-    'relative w-full overflow-hidden lg:sticky lg:top-[calc(var(--portfolio-nav-top-clearance,5.5rem)+1.5rem)] lg:aspect-[4/5] lg:max-h-[min(88dvh,calc(100dvh-var(--portfolio-nav-top-clearance,5.5rem)-3rem))]';
+    'pf-about-portrait-portrait relative min-h-[22rem] w-full overflow-hidden sm:min-h-[26rem] lg:min-h-0';
 
   const portraitMedia = avatarSrc ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={avatarSrc}
       alt={portraitName}
-      className={infoPortraitImageClass('block h-full w-full object-cover object-[50%_18%]', portraitGrayscale)}
+      className={infoPortraitImageClass(
+        'pf-about-portrait-img block h-full w-full object-cover object-[50%_18%]',
+        portraitGrayscale
+      )}
     />
   ) : (
     <div
-      className="flex h-full min-h-[22rem] w-full items-center justify-center text-5xl font-semibold tracking-tight sm:min-h-[26rem] lg:min-h-0"
+      className="pf-about-portrait-fallback flex h-full w-full items-center justify-center text-5xl font-semibold tracking-tight"
       style={{ backgroundColor: cardBg, color: bodyColor }}
     >
       {initials || '?'}
     </div>
   );
 
+  const bioNode = (slot: 'desktop' | 'mobile') =>
+    bioText ? (
+      <motion.p
+        key={`portrait-bio-${slot}`}
+        className={`pf-about-portrait-bio pf-about-portrait-bio--${slot} ${bioClass}`}
+        style={{ color: bodyColor }}
+        data-pf-no-color-transition=""
+        initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+        animate={{ opacity: 0.9, y: 0 }}
+        transition={aboutPortraitSkillsTween(reduceMotion, 0.82, bioDelay)}
+      >
+        {bioText}
+      </motion.p>
+    ) : null;
+
   return (
-    <div className="w-full">
-      <div className="flex w-full flex-col gap-10 sm:gap-12 lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-x-10 xl:gap-x-16">
-        <div className="order-1 flex min-w-0 flex-col justify-between lg:min-h-[min(88dvh,calc(100dvh-var(--portfolio-nav-top-clearance,5.5rem)-3rem))] lg:py-2 xl:py-4">
-          <div className="min-w-0">
-            <p
-              className={`max-w-xl leading-relaxed ${kickerClass}`}
-              style={{ color: bodyColor, opacity: 0.88 }}
+    <div
+      ref={rootRef}
+      className="pf-about-portrait-root w-full"
+      data-pf-entry={reduceMotion ? 'ready' : 'armed'}
+      data-pf-after={reduceMotion || !showAfterBlock ? 'done' : afterMotion}
+      style={portraitThemeStyle}
+    >
+      <section ref={pinRef} className="pf-about-portrait-pin">
+        <div className="pf-about-portrait-sticky">
+          <div className="pf-about-portrait-grid">
+            <motion.p
+              className="pf-about-portrait-kicker"
+              style={{ color: bodyColor }}
+              data-pf-no-color-transition=""
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 0.88, y: 0 }}
+              transition={aboutPortraitSkillsTween(reduceMotion, 0.64, 0.08)}
             >
               {kickerText}
-            </p>
+            </motion.p>
 
-            {showSkillsBlock ? (
-              <ul className="mt-8 space-y-2 sm:mt-10 sm:space-y-3 lg:mt-12">
-                {visibleSkills.map((skill, index) => {
-                  const skillTitle = skill.title?.trim() || '';
-                  const isActive = index === safeActiveIndex;
-                  return (
-                    <li key={skill.id || `${skillTitle}-${index}`}>
-                      <button
-                        type="button"
-                        className={`block w-full text-left font-semibold tracking-[-0.025em] transition-[color,opacity] duration-300 ease-out ${skillListClass}`}
-                        style={portraitSkillsItemStyle(
-                          index,
-                          safeActiveIndex,
-                          subtitleColor,
-                          bodyColor,
-                          titleColor
-                        )}
-                        onMouseEnter={() => setActiveSkillIndex(index)}
-                        onFocus={() => setActiveSkillIndex(index)}
-                        aria-pressed={isActive}
-                      >
-                        {skillTitle}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className={`mt-8 opacity-60 ${kickerClass}`} style={{ color: bodyColor }}>
-                Ajoute des skills dans Creator Studio → Information.
-              </p>
-            )}
+            <div className="pf-about-portrait-stage">
+              {showSkillsBlock ? (
+                <div ref={skillsWrapRef} className="pf-about-portrait-skills-wrap">
+                  <span
+                    ref={indicatorRef}
+                    className="pf-about-portrait-indicator"
+                    aria-hidden
+                  />
+                  <ul
+                    className="pf-about-portrait-skills"
+                    role="list"
+                    onMouseLeave={() => setInteractionIndex(null)}
+                  >
+                    {visibleSkills.map((skill, index) => {
+                      const skillTitle = skill.title?.trim() || '';
+                      const isActive = index === safeActiveIndex;
+                      return (
+                        <li
+                          key={skill.id || `${skillTitle}-${index}`}
+                          className="pf-about-portrait-skill"
+                          style={{ ['--pf-about-portrait-i' as string]: index } as CSSProperties}
+                        >
+                          <button
+                            type="button"
+                            className={`pf-about-portrait-skill-btn ${
+                              isActive ? 'is-active' : ''
+                            } ${skillListClass}`}
+                            onMouseEnter={() => activateSkill(index)}
+                            onFocus={() => activateSkill(index)}
+                            onClick={() => activateSkill(index)}
+                            aria-pressed={isActive}
+                          >
+                            <span className="pf-about-portrait-skill-index tabular-nums" aria-hidden>
+                              {String(index + 1).padStart(2, '0')}
+                            </span>
+                            <span className="pf-about-portrait-skill-mask">
+                              <motion.span
+                                className="pf-about-portrait-skill-title"
+                                style={{ fontFamily: ABOUT_CLASSIC_SERIF }}
+                                data-pf-no-color-transition=""
+                                initial={reduceMotion ? false : { y: '108%' }}
+                                animate={{ y: '0%' }}
+                                transition={aboutPortraitSkillsTween(
+                                  reduceMotion,
+                                  0.92,
+                                  0.26 + index * 0.078
+                                )}
+                              >
+                                {skillTitle}
+                              </motion.span>
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ) : (
+                <motion.p
+                  className={`pf-about-portrait-empty ${kickerClass}`}
+                  style={{ color: bodyColor }}
+                  data-pf-no-color-transition=""
+                  initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 0.6, y: 0 }}
+                  transition={aboutPortraitSkillsTween(reduceMotion, 0.7, 0.28)}
+                >
+                  Ajoute des skills dans Creator Studio → Information.
+                </motion.p>
+              )}
+
+            </div>
+
+            <div className={portraitPanelClass}>
+              <motion.div
+                className="pf-about-portrait-clip"
+                data-pf-no-color-transition=""
+                initial={reduceMotion ? false : { clipPath: ABOUT_PORTRAIT_SKILLS_CLIP_START }}
+                animate={{ clipPath: ABOUT_PORTRAIT_SKILLS_CLIP_END }}
+                transition={aboutPortraitSkillsTween(
+                  reduceMotion,
+                  1.24,
+                  0.06,
+                  ABOUT_PORTRAIT_SKILLS_CLIP_EASE
+                )}
+                onAnimationStart={markEntryReady}
+              >
+                <motion.div
+                  className="pf-about-portrait-shift"
+                  data-pf-no-color-transition=""
+                  initial={reduceMotion ? false : { scale: 1.08 }}
+                  animate={{ scale: 1 }}
+                  transition={aboutPortraitSkillsTween(reduceMotion, 1.4, 0.06)}
+                >
+                  <div className="pf-about-portrait-media" data-pf-no-color-transition="">
+                    {portraitMedia}
+                  </div>
+                </motion.div>
+              </motion.div>
+            </div>
+
+            {bioNode('desktop')}
+            {bioNode('mobile')}
           </div>
+        </div>
+        {scrollFocusEnabled ? (
+          <div
+            aria-hidden
+            className="pf-about-portrait-runway"
+            style={{ height: portraitSkillsRunwayHeight(visibleSkills.length) }}
+          />
+        ) : null}
+      </section>
 
-          {bioText ? (
-            <p
-              className={`mt-10 hidden max-w-xl lg:mt-0 lg:block ${bioClass}`}
-              style={{ color: bodyColor, opacity: 0.9 }}
+      {showAfterBlock ? (
+        <div className="pf-about-portrait-after">
+          {showStrengthsBlock ? (
+            <section
+              className="pf-about-portrait-strengths"
+              data-pf-no-color-transition=""
             >
-              {bioText}
-            </p>
+              <h3
+                className={`pf-about-portrait-strengths-title text-center font-semibold tracking-[-0.02em] ${strengthsTitleClass}`}
+                style={{ color: subtitleColor }}
+              >
+                {ABOUT_VALUE_STEPS_SECTION_LABELS.strengths}
+              </h3>
+              <ul className="pf-about-portrait-badges" role="list">
+                {visibleStrengths.map((item) => (
+                  <li
+                    key={item}
+                    className="pf-about-portrait-badge-cell"
+                    data-pf-no-color-transition=""
+                  >
+                    <span
+                      className={`pf-about-portrait-badge font-medium tracking-[-0.018em] ${strengthsItemClass}`}
+                      style={{ color: titleColor }}
+                    >
+                      {item}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {showMetaBlock ? (
+            <section
+              className={`pf-about-portrait-meta ${
+                showStrengthsBlock ? '' : 'pf-about-portrait-meta--solo'
+              }`}
+              data-pf-no-color-transition=""
+            >
+              {showInterests && visibleInterests.length > 0 ? (
+                <div className="pf-about-portrait-meta-col">
+                  <p className="pf-about-portrait-meta-kicker" style={{ color: bodyColor }}>
+                    {ABOUT_PORTRAIT_SKILLS_INTERESTS_LABEL}
+                  </p>
+                  <p
+                    className={`pf-about-portrait-meta-interests ${metaClass}`}
+                    style={{ color: bodyColor }}
+                  >
+                    {`${visibleInterests.join(', ').replace(/[.]+$/u, '')}.`}
+                  </p>
+                </div>
+              ) : (
+                <div className="pf-about-portrait-meta-col pf-about-portrait-meta-col--empty" />
+              )}
+              {showLanguages && visibleLanguageItems.length > 0 ? (
+                <div className="pf-about-portrait-meta-col">
+                  <p className="pf-about-portrait-meta-kicker" style={{ color: bodyColor }}>
+                    {ABOUT_PORTRAIT_SKILLS_LANGUAGES_LABEL}
+                  </p>
+                  <AboutPortraitLanguageList
+                    items={visibleLanguageItems}
+                    titleColor={titleColor}
+                  />
+                </div>
+              ) : (
+                <div className="pf-about-portrait-meta-col pf-about-portrait-meta-col--empty" />
+              )}
+              <div className="pf-about-portrait-meta-col pf-about-portrait-meta-col--spacer" aria-hidden />
+            </section>
           ) : null}
         </div>
-
-        <div className={`order-2 ${portraitPanelClass}`}>{portraitMedia}</div>
-
-        {bioText ? (
-          <p
-            className={`order-3 max-w-xl lg:hidden ${bioClass}`}
-            style={{ color: bodyColor, opacity: 0.9 }}
-          >
-            {bioText}
-          </p>
-        ) : null}
-      </div>
-
-      {showStrengthsBlock ? (
-        <section className="mt-20 flex w-full flex-col items-center sm:mt-24 lg:mt-28 xl:mt-32">
-          <h3
-            className={`text-center font-semibold tracking-[-0.02em] ${strengthsTitleClass}`}
-            style={{ color: subtitleColor }}
-          >
-            {ABOUT_VALUE_STEPS_SECTION_LABELS.strengths}
-          </h3>
-          <ul className="mt-8 flex w-fit max-w-2xl list-none flex-col items-start gap-3.5 text-left sm:mt-10 sm:gap-4">
-            {visibleStrengths.map((item) => (
-              <li
-                key={item}
-                className={`flex items-start gap-3 font-medium leading-[1.4] tracking-[-0.015em] ${strengthsItemClass}`}
-                style={{ color: bodyColor }}
-              >
-                <span
-                  className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: bodyColor, opacity: 0.55 }}
-                  aria-hidden
-                />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {showMetaBlock ? (
-        <section
-          className={`${
-            showStrengthsBlock ? 'mt-24 sm:mt-28 lg:mt-32 xl:mt-36' : 'mt-20 sm:mt-24 lg:mt-28'
-          } max-w-2xl text-left`}
-        >
-          <p className={metaClass}>
-            {showInterests && visibleInterests.length > 0 ? (
-              <PortraitSkillsMetaValues
-                values={visibleInterests}
-                subtitleColor={subtitleColor}
-                bodyColor={bodyColor}
-                titleColor={titleColor}
-              />
-            ) : null}
-            {showInterests &&
-            visibleInterests.length > 0 &&
-            ((showLanguages && visibleLanguages.length > 0) || leadText) ? (
-              <span style={{ color: bodyColor, opacity: 0.45 }}>. </span>
-            ) : null}
-            {showLanguages && visibleLanguages.length > 0 ? (
-              <>
-                {leadText ? (
-                  <span style={{ color: bodyColor, opacity: 0.78 }}>{leadText} </span>
-                ) : null}
-                <PortraitSkillsMetaValues
-                  values={visibleLanguages}
-                  subtitleColor={subtitleColor}
-                  bodyColor={bodyColor}
-                  titleColor={titleColor}
-                />
-              </>
-            ) : null}
-            <span style={{ color: bodyColor, opacity: 0.45 }}>.</span>
-          </p>
-        </section>
       ) : null}
     </div>
   );
 }
 
-/** About · banner — strengths footer: centered vertical list below skills. */
+const ABOUT_BANNER_PORTRAIT_CLIP_START =
+  'inset(14% 20% 10% 8% round 2.75rem 0.45rem 2.1rem 0.8rem)';
+const ABOUT_BANNER_PORTRAIT_CLIP_END = 'inset(0% 0% 0% 0% round 0rem)';
+
+const ABOUT_BANNER_LABEL_CLASS =
+  'mb-7 text-[0.72rem] font-semibold uppercase tracking-[0.22em] sm:mb-8';
+
+const ABOUT_BANNER_SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
+/** Nearest overflow scroller — pages mode and Live Preview nest overflow-y-auto shells. */
+function aboutBannerScrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  if (!el) return undefined;
+
+  const pageScroll = el.closest('.pf-page-scroll');
+  if (
+    pageScroll instanceof HTMLElement &&
+    pageScroll.scrollHeight > pageScroll.clientHeight + 1
+  ) {
+    return pageScroll;
+  }
+
+  let node = el.parentElement;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
+}
+
+function aboutBannerWatchEnter(
+  target: HTMLElement,
+  scroller: HTMLElement | undefined,
+  onEnter: () => void
+): () => void {
+  let played = false;
+  const play = () => {
+    if (played) return;
+    played = true;
+    onEnter();
+  };
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) play();
+    },
+    {
+      root: scroller ?? null,
+      threshold: 0.12,
+      rootMargin: '0px 0px -12% 0px',
+    }
+  );
+  io.observe(target);
+
+  const rootBox = scroller?.getBoundingClientRect();
+  const topBound = rootBox?.top ?? 0;
+  const viewH = rootBox?.height ?? window.innerHeight ?? 0;
+  const rect = target.getBoundingClientRect();
+  if (rect.top < topBound + viewH * 0.82 && rect.bottom > topBound + viewH * 0.12) {
+    play();
+  }
+
+  return () => {
+    io.disconnect();
+  };
+}
+
+function AboutBannerHeadlineLines({
+  lines,
+}: {
+  lines: string[];
+}) {
+  return (
+    <>
+      {lines.map((line, index) => (
+        <span key={`${index}-${line}`} className="pf-about-banner-line">
+          <span className="pf-about-banner-line-inner" data-pf-no-color-transition="">
+            {line}
+          </span>
+        </span>
+      ))}
+    </>
+  );
+}
+
+/** About · banner — strengths folio: ghost text badges, not a CV bullet list. */
 function AboutBannerStrengthsIntro({
   label,
   strengthItems,
@@ -2221,28 +4028,21 @@ function AboutBannerStrengthsIntro({
   if (visible.length === 0) return null;
 
   return (
-    <section className="-mx-6 mt-24 px-0 pb-4 sm:-mx-10 sm:mt-28 lg:-mx-16 lg:mt-32 xl:-mx-20 xl:mt-36">
+    <section className="pf-about-banner-folio-child pf-about-banner-strengths">
       {label?.trim() ? (
-        <p
-          className="mb-8 text-center text-[0.72rem] font-semibold uppercase tracking-[0.22em] sm:mb-10"
-          style={{ color: bodyColor, opacity: 0.72 }}
-        >
+        <p className={`${ABOUT_BANNER_LABEL_CLASS} text-left`} style={{ color: bodyColor, opacity: 0.72 }}>
           {label.trim()}
         </p>
       ) : null}
-      <ul className="mx-auto flex w-fit list-none flex-col gap-3 sm:gap-3.5">
+      <ul className="pf-about-banner-strength-badges list-none">
         {visible.map((item, index) => (
           <li
             key={`${index}-${item}`}
-            className="flex items-start gap-3 text-left"
+            className="pf-about-banner-strength-badge-cell"
+            data-pf-no-color-transition=""
           >
             <span
-              className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ backgroundColor: bodyColor, opacity: 0.45 }}
-              aria-hidden
-            />
-            <span
-              className={`font-medium leading-[1.45] tracking-[-0.02em] text-[1.25rem] sm:text-[1.35rem] lg:text-[1.5rem] ${bodyClass}`}
+              className={`pf-about-banner-strength-badge font-medium tracking-[-0.018em] ${bodyClass}`}
               style={{ color: textColor }}
             >
               {item}
@@ -2254,57 +4054,55 @@ function AboutBannerStrengthsIntro({
   );
 }
 
-/** About · banner — skills footer: 3-col cards, title top / description bottom, neutral tones. */
+/** About · banner — skills folio: uneven magazine columns, title / whisper description. */
 function AboutBannerSkillsFooter({
   label,
   skills,
   titleColor,
   bodyColor,
-  cardBorder,
   bodyClass,
 }: {
   label: string;
   skills: ProfileSkillEntry[];
   titleColor: string;
   bodyColor: string;
-  cardBorder: string;
   bodyClass: string;
 }) {
   const visible = skills.filter((item) => item.title?.trim());
   if (visible.length === 0) return null;
 
   return (
-    <section
-      className="-mx-6 mt-14 border-t pt-10 pb-2 sm:-mx-10 sm:mt-16 sm:pt-12 lg:-mx-16 lg:pt-14 xl:-mx-20"
-      style={{ borderColor: cardBorder }}
-    >
-      <p
-        className="mb-10 text-[0.72rem] font-semibold uppercase tracking-[0.22em] sm:mb-12 lg:mb-14"
-        style={{ color: bodyColor, opacity: 0.72 }}
-      >
+    <section className="pf-about-banner-folio-child pf-about-banner-skills">
+      <p className={ABOUT_BANNER_LABEL_CLASS} style={{ color: bodyColor, opacity: 0.72 }}>
         {label}
       </p>
 
-      <ul className="grid list-none gap-x-16 gap-y-14 sm:grid-cols-2 sm:gap-x-24 sm:gap-y-16 lg:grid-cols-3 lg:gap-x-32 lg:gap-y-20 xl:gap-x-40 xl:gap-y-24">
+      <ul className="pf-about-banner-skills-grid list-none" data-count={String(visible.length)}>
         {visible.map((skill) => {
           const skillTitle = skill.title?.trim() || '';
           const skillDescription = skill.description?.trim() || '';
           return (
-            <li key={skill.id} className="min-w-0">
-              <p
-                className={`mb-4 font-medium leading-snug tracking-[-0.01em] sm:mb-5 ${bodyClass}`}
-                style={{ color: titleColor }}
-              >
-                {skillTitle}
-              </p>
-              {skillDescription ? (
+            <li
+              key={skill.id}
+              className="pf-about-banner-skill-cell min-w-0"
+              data-pf-no-color-transition=""
+            >
+              <div className="pf-about-banner-skill min-w-0" data-pf-no-color-transition="">
                 <p
-                  className={`text-[0.92em] leading-[1.65] ${bodyClass}`}
-                  style={{ color: bodyColor, opacity: 0.82 }}
+                  className={`pf-about-banner-skill-title mb-4 font-medium leading-snug tracking-[-0.01em] sm:mb-5 ${bodyClass}`}
+                  style={{ color: titleColor }}
                 >
-                  {skillDescription}
+                  {skillTitle}
                 </p>
-              ) : null}
+                {skillDescription ? (
+                  <p
+                    className={`pf-about-banner-skill-desc text-[0.92em] leading-[1.65] ${bodyClass}`}
+                    style={{ color: bodyColor, opacity: 0.82 }}
+                  >
+                    {skillDescription}
+                  </p>
+                ) : null}
+              </div>
             </li>
           );
         })}
@@ -2336,57 +4134,60 @@ function AboutBannerEducationBlock({
   );
   if (!showEducation || visibleEducation.length === 0) return null;
 
-  const labelClass =
-    'mb-6 text-left text-[0.72rem] font-semibold uppercase tracking-[0.22em] sm:mb-7';
-  const labelStyle = { color: bodyColor, opacity: 0.72 };
-
   return (
-    <section className="-mx-6 mt-16 px-6 sm:-mx-10 sm:mt-20 lg:-mx-16 lg:mt-24 xl:-mx-20">
-      <div className="min-w-0 max-w-xl text-left">
-        <p className={labelClass} style={labelStyle}>
-          {educationLabel}
-        </p>
-        <ol className="space-y-5 text-left">
-          {visibleEducation.map((entry, index) => {
-            const title = entry.title?.trim() || '';
-            const institution = entry.institution?.trim() || '';
-            const year = entry.schoolYear?.trim() || '';
-            const headline = title || institution;
-            const detail = [institution && title ? institution : '', year]
-              .filter(Boolean)
-              .join(' · ');
+    <section className="pf-about-banner-education min-w-0 text-left">
+      <p className={`${ABOUT_BANNER_LABEL_CLASS} text-left`} style={{ color: bodyColor, opacity: 0.72 }}>
+        {educationLabel}
+      </p>
+      <ol className="space-y-5 text-left">
+        {visibleEducation.map((entry, index) => {
+          const title = entry.title?.trim() || '';
+          const institution = entry.institution?.trim() || '';
+          const year = entry.schoolYear?.trim() || '';
+          const headline = title || institution;
+          const showInstitutionLine = Boolean(institution && title);
 
-            return (
-              <li
-                key={entry.id || `${entry.title}-${entry.schoolYear}-${index}`}
-                className="min-w-0"
-              >
-                {headline ? (
-                  <p
-                    className={`font-medium leading-snug tracking-[-0.01em] text-[1.05rem] sm:text-[1.12rem] ${bodyClass}`}
-                    style={{ color: textColor }}
-                  >
-                    {headline}
-                  </p>
-                ) : null}
-                {detail ? (
-                  <p
-                    className={`mt-1.5 leading-relaxed ${metaClass}`}
-                    style={{ color: bodyColor, opacity: 0.72 }}
-                  >
-                    {detail}
-                  </p>
-                ) : null}
-              </li>
-            );
-          })}
-        </ol>
-      </div>
+          return (
+            <li
+              key={entry.id || `${entry.title}-${entry.schoolYear}-${index}`}
+              className="pf-about-banner-edu-item min-w-0"
+            >
+              {headline ? (
+                <p
+                  className={`font-medium leading-snug tracking-[-0.01em] text-[1.05rem] sm:text-[1.12rem] ${bodyClass}`}
+                  style={{ color: textColor }}
+                >
+                  {headline}
+                </p>
+              ) : null}
+              {showInstitutionLine || year ? (
+                <p className={`mt-1.5 leading-relaxed ${metaClass}`}>
+                  {showInstitutionLine ? (
+                    <span className="pf-about-banner-edu-institution" style={{ color: bodyColor }}>
+                      {institution}
+                    </span>
+                  ) : null}
+                  {showInstitutionLine && year ? (
+                    <span className="pf-about-banner-edu-sep" style={{ color: bodyColor }}>
+                      {' · '}
+                    </span>
+                  ) : null}
+                  {year ? (
+                    <span className="pf-about-banner-edu-year" style={{ color: bodyColor }}>
+                      {year}
+                    </span>
+                  ) : null}
+                </p>
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
     </section>
   );
 }
 
-/** About · banner — interests anchored bottom-left. */
+/** About · banner — interests locked with education on the folio baseline. */
 function AboutBannerInterestsBlock({
   interestItems,
   showInterests,
@@ -2405,36 +4206,30 @@ function AboutBannerInterestsBlock({
   const visibleInterests = interestItems.map((item) => item.trim()).filter(Boolean);
   if (!showInterests || visibleInterests.length === 0) return null;
 
-  const labelClass =
-    'mb-6 text-left text-[0.72rem] font-semibold uppercase tracking-[0.22em] sm:mb-7';
-  const labelStyle = { color: bodyColor, opacity: 0.72 };
-
   return (
-    <section className="-mx-6 mt-auto self-start px-6 pb-10 pt-10 sm:-mx-10 sm:pt-12 lg:-mx-16 xl:-mx-20 xl:pb-12">
-      <div className="min-w-0 max-w-xl text-left">
-        <p className={labelClass} style={labelStyle}>
-          {interestsLabel}
-        </p>
-        <p
-          className={`text-left leading-[1.85] tracking-[-0.01em] text-[1.05rem] sm:text-[1.12rem] ${bodyClass}`}
-          style={{ color: textColor }}
-        >
-          {visibleInterests.map((item, index) => (
-            <span key={item}>
-              {index > 0 ? (
-                <span
-                  aria-hidden
-                  className="mx-2.5 select-none font-light sm:mx-3"
-                  style={{ color: bodyColor, opacity: 0.45 }}
-                >
-                  /
-                </span>
-              ) : null}
-              {item}
-            </span>
-          ))}
-        </p>
-      </div>
+    <section className="pf-about-banner-interests min-w-0 text-left">
+      <p className={`${ABOUT_BANNER_LABEL_CLASS} text-left`} style={{ color: bodyColor, opacity: 0.72 }}>
+        {interestsLabel}
+      </p>
+      <p
+        className={`text-left leading-[1.85] tracking-[-0.01em] text-[1.05rem] sm:text-[1.12rem] ${bodyClass}`}
+        style={{ color: textColor }}
+      >
+        {visibleInterests.map((item, index) => (
+          <span key={item}>
+            {index > 0 ? (
+              <span
+                aria-hidden
+                className="mx-2.5 select-none font-light sm:mx-3"
+                style={{ color: bodyColor, opacity: 0.45 }}
+              >
+                /
+              </span>
+            ) : null}
+            {item}
+          </span>
+        ))}
+      </p>
     </section>
   );
 }
@@ -2515,6 +4310,177 @@ function AboutBannerLayout({
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
   const showSkillsBlock = showSkills && skillItems.some((item) => item.title?.trim());
   const showStrengthsBlock = showStrengths && strengthItems.some((item) => item.trim());
+  const showEducationBlock =
+    showEducation &&
+    educationItems.some(
+      (entry) => entry.title?.trim() || entry.institution?.trim() || entry.schoolYear?.trim()
+    );
+  const showInterestsBlock =
+    showInterests && interestItems.some((item) => item.trim());
+  const showFolio =
+    showSkillsBlock || showStrengthsBlock || showEducationBlock || showInterestsBlock;
+  const showMetaLockup = showEducationBlock || showInterestsBlock;
+
+  const reduceMotion = useReducedMotion();
+  const [motionState, setMotionState] = useState<'armed' | 'active' | 'done'>('armed');
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root || reduceMotion) return undefined;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+
+    const scroller = aboutBannerScrollParent(root);
+    const cover = root.querySelector<HTMLElement>('.pf-about-banner-cover');
+    const lines = Array.from(root.querySelectorAll<HTMLElement>('.pf-about-banner-line-inner'));
+    const portrait = root.querySelector<HTMLElement>('.pf-about-banner-portrait');
+    const portraitShift = root.querySelector<HTMLElement>('.pf-about-banner-portrait-shift');
+    const bio = root.querySelector<HTMLElement>('.pf-about-banner-bio');
+    const skills = Array.from(root.querySelectorAll<HTMLElement>('.pf-about-banner-skill-cell'));
+    const badges = Array.from(root.querySelectorAll<HTMLElement>('.pf-about-banner-strength-badge-cell'));
+    const skillsSection = root.querySelector<HTMLElement>('.pf-about-banner-skills');
+    const strengthsSection = root.querySelector<HTMLElement>('.pf-about-banner-strengths');
+    const meta = root.querySelector<HTMLElement>('.pf-about-banner-folio-meta');
+    const interestsShift = root.querySelector<HTMLElement>('.pf-about-banner-interests-shift');
+
+    const stopWatchers: Array<() => void> = [];
+    const media = gsap.matchMedia();
+
+    const ctx = gsap.context(() => {
+      if (cover) {
+        if (lines.length) {
+          gsap.set(lines, { y: '108%', clipPath: 'inset(100% 0 0 0)' });
+        }
+        if (portrait) {
+          gsap.set(portrait, { clipPath: ABOUT_BANNER_PORTRAIT_CLIP_START });
+        }
+        if (portraitShift) {
+          gsap.set(portraitShift, { scale: 1.1 });
+        }
+        if (bio) {
+          gsap.set(bio, { x: 72, autoAlpha: 0 });
+        }
+
+        /* Kill CSS safety as soon as GSAP owns the nodes — do not wait for play(). */
+        setMotionState('active');
+
+        const coverIntro = gsap.timeline({
+          paused: true,
+          defaults: { ease: 'power2.out' },
+          onComplete: () => setMotionState('done'),
+        });
+
+        if (lines.length) {
+          coverIntro.to(
+            lines,
+            {
+              y: '0%',
+              clipPath: 'inset(0% 0 0 0)',
+              duration: 0.98,
+              stagger: 0.12,
+            },
+            0
+          );
+        }
+        if (portrait) {
+          coverIntro.to(
+            portrait,
+            { clipPath: ABOUT_BANNER_PORTRAIT_CLIP_END, duration: 1.2 },
+            0.22
+          );
+        }
+        if (portraitShift) {
+          coverIntro.to(portraitShift, { scale: 1, duration: 1.28 }, 0.22);
+        }
+        if (bio) {
+          coverIntro.to(bio, { x: 0, autoAlpha: 1, duration: 0.95 }, 0.38);
+        }
+
+        stopWatchers.push(
+          aboutBannerWatchEnter(cover, scroller, () => {
+            coverIntro.play();
+          })
+        );
+      }
+
+      if (skills.length && skillsSection) {
+        gsap.set(skills, { y: 36, autoAlpha: 0 });
+        const skillsIntro = gsap.to(skills, {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.85,
+          stagger: 0.12,
+          ease: 'power2.out',
+          paused: true,
+        });
+        stopWatchers.push(
+          aboutBannerWatchEnter(skillsSection, scroller, () => {
+            skillsIntro.play();
+          })
+        );
+      }
+
+      if (badges.length && strengthsSection) {
+        gsap.set(badges, { autoAlpha: 0, scale: 0.9, transformOrigin: '50% 50%' });
+        const badgesIntro = gsap.to(badges, {
+          autoAlpha: 1,
+          scale: 1,
+          duration: 0.5,
+          stagger: 0.05,
+          ease: 'power2.out',
+          paused: true,
+        });
+        stopWatchers.push(
+          aboutBannerWatchEnter(strengthsSection, scroller, () => {
+            badgesIntro.play();
+          })
+        );
+      }
+
+      media.add('(min-width: 1024px)', () => {
+        if (!meta || !interestsShift) return undefined;
+        gsap.fromTo(
+          interestsShift,
+          { y: 0, autoAlpha: 1 },
+          {
+            y: () => -Math.round(Math.max(48, meta.offsetHeight * 0.25)),
+            autoAlpha: 0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: meta,
+              ...(scroller ? { scroller } : {}),
+              start: 'top 80%',
+              end: 'bottom top',
+              scrub: 0.7,
+              invalidateOnRefresh: true,
+            },
+          }
+        );
+        return undefined;
+      });
+    }, root);
+
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+    const refreshLater = window.setTimeout(() => ScrollTrigger.refresh(), 480);
+    return () => {
+      window.clearTimeout(refreshId);
+      window.clearTimeout(refreshLater);
+      stopWatchers.forEach((stop) => stop());
+      media.revert();
+      ctx.revert();
+    };
+  }, [
+    reduceMotion,
+    showSkillsBlock,
+    showStrengthsBlock,
+    showMetaLockup,
+    showEducationBlock,
+    showInterestsBlock,
+    skillItems.length,
+    strengthItems.length,
+  ]);
+
+  const motionMode = reduceMotion ? 'reduce' : motionState;
 
   const initials = (fullName ?? '')
     .trim()
@@ -2527,101 +4493,254 @@ function AboutBannerLayout({
   const portraitName = fullName?.trim() || 'Profile';
 
   return (
-    <div className="relative z-[1] flex w-full flex-col justify-between gap-10 px-6 sm:gap-14 sm:px-10 lg:min-h-[calc(100svh-var(--portfolio-nav-top-clearance,5.5rem)-4rem)] lg:gap-0 lg:px-16 xl:px-20">
-      <div className="flex shrink-0 items-center justify-center px-2 pt-2 pb-6 sm:pb-10 lg:flex-1 lg:py-12 xl:py-16">
-        <h2
-          className={`max-w-[18ch] text-center font-bold uppercase leading-[0.88] tracking-[-0.04em] ${headlineClass}`}
-          style={{ color: headlineColor }}
-        >
-          {displayHeadlineLines.map((line, index) => (
-            <span key={`${index}-${line}`} className="block">
-              {line}
-            </span>
-          ))}
-        </h2>
-      </div>
+    <div
+      ref={rootRef}
+      className="pf-about-banner relative z-[1] w-full"
+      data-pf-motion={motionMode}
+    >
+      <div className="pf-about-banner-cover flex w-full flex-col justify-between gap-10 px-6 sm:gap-14 sm:px-10 lg:grid lg:min-h-[calc(100svh-var(--portfolio-nav-top-clearance,5.5rem)-4rem)] lg:gap-y-0 lg:px-16 xl:px-20">
+        <div className="pf-about-banner-headline-stage flex shrink-0 items-center justify-center px-2 lg:flex-1">
+          <h2
+            className={`pf-about-banner-headline max-w-[20ch] text-center leading-[0.92] tracking-[-0.03em] ${headlineClass}`}
+            style={{ color: headlineColor, fontFamily: ABOUT_BANNER_SERIF }}
+          >
+            <AboutBannerHeadlineLines lines={displayHeadlineLines} />
+          </h2>
+        </div>
 
-      <div className="mt-auto grid grid-cols-[minmax(0,10.5rem)_minmax(0,1fr)] items-end gap-5 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] sm:gap-8 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] lg:gap-12 xl:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
-        <div
-          className="aspect-[3/4] w-full overflow-hidden"
-          style={{ backgroundColor: cardBg }}
-        >
-          {avatarUrl?.trim() ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={avatarUrl.trim()}
-              alt={portraitName}
-              className={infoPortraitImageClass(
-                'block h-full w-full object-cover object-[50%_18%]',
-                portraitGrayscale
-              )}
-            />
-          ) : (
+        <div className="pf-about-banner-pair mt-auto grid grid-cols-[minmax(0,10.5rem)_minmax(0,1fr)] items-end sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]">
+          <div className="pf-about-banner-portrait-frame">
             <div
-              className="flex h-full w-full items-center justify-center text-3xl font-semibold tracking-tight"
-              style={{ color: bodyColor }}
+              className="pf-about-banner-portrait aspect-[3/4] w-full overflow-hidden"
+              style={{ backgroundColor: cardBg }}
+              data-pf-no-color-transition=""
             >
-              {initials || '?'}
+              <div
+                className="pf-about-banner-portrait-shift h-full w-full"
+                data-pf-no-color-transition=""
+              >
+                <div
+                  className="pf-about-banner-portrait-zoom h-full w-full"
+                  data-pf-no-color-transition=""
+                >
+                  {avatarUrl?.trim() ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={avatarUrl.trim()}
+                      alt={portraitName}
+                      className={infoPortraitImageClass(
+                        'pf-about-banner-portrait-img block h-full w-full object-cover object-[50%_18%]',
+                        portraitGrayscale
+                      )}
+                    />
+                  ) : (
+                    <div
+                      className="flex h-full w-full items-center justify-center text-3xl font-semibold tracking-tight"
+                      style={{ color: bodyColor }}
+                    >
+                      {initials || '?'}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
-        </div>
+          </div>
 
-        <div className="pb-0.5 lg:max-w-md lg:justify-self-end lg:pb-1">
-          {bioText ? (
+          <div className="pf-about-banner-bio-slot min-w-0">
             <p
-              className={`leading-[1.7] ${bioClass}`}
+              className={`pf-about-banner-bio leading-[1.7] ${bioClass}`}
               style={{ color: bodyColor }}
+              data-pf-no-color-transition=""
             >
-              {bioText}
+              {bioText ? (
+                bioText
+              ) : (
+                <span className="opacity-60">Add a bio in Creator Studio → Information.</span>
+              )}
             </p>
-          ) : (
-            <p className={`opacity-60 ${bioClass}`} style={{ color: bodyColor }}>
-              Add a bio in Creator Studio → Information.
-            </p>
-          )}
+          </div>
         </div>
       </div>
 
-      {showSkillsBlock ? (
-        <AboutBannerSkillsFooter
-          label={skillsLabel}
-          skills={skillItems}
-          titleColor={skillsTitleColor}
-          bodyColor={bodyColor}
-          cardBorder={cardBorder}
-          bodyClass={bodyClass}
-        />
+      {showFolio ? (
+        <div
+          className="pf-about-banner-folio px-6 sm:px-10 lg:px-16 xl:px-20"
+          style={{ borderColor: cardBorder }}
+        >
+          {showSkillsBlock ? (
+            <AboutBannerSkillsFooter
+              label={skillsLabel}
+              skills={skillItems}
+              titleColor={skillsTitleColor}
+              bodyColor={bodyColor}
+              bodyClass={bodyClass}
+            />
+          ) : null}
+
+          {showStrengthsBlock ? (
+            <AboutBannerStrengthsIntro
+              label={strengthsLabel}
+              strengthItems={strengthItems}
+              textColor={subtitleColor}
+              bodyColor={bodyColor}
+              bodyClass={bodyClass}
+            />
+          ) : null}
+
+          {showMetaLockup ? (
+            <div className="pf-about-banner-folio-child pf-about-banner-folio-meta">
+              <AboutBannerEducationBlock
+                educationItems={educationItems}
+                showEducation={showEducation}
+                educationLabel={educationLabel}
+                textColor={subtitleColor}
+                bodyColor={bodyColor}
+                bodyClass={bodyClass}
+                metaClass={metaClass}
+              />
+              {showInterestsBlock ? (
+                <div
+                  className="pf-about-banner-interests-shift"
+                  data-pf-no-color-transition=""
+                >
+                  <AboutBannerInterestsBlock
+                    interestItems={interestItems}
+                    showInterests={showInterests}
+                    interestsLabel={interestsLabel}
+                    textColor={subtitleColor}
+                    bodyColor={bodyColor}
+                    bodyClass={bodyClass}
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       ) : null}
-
-      {showStrengthsBlock ? (
-        <AboutBannerStrengthsIntro
-          label={strengthsLabel}
-          strengthItems={strengthItems}
-          textColor={subtitleColor}
-          bodyColor={bodyColor}
-          bodyClass={bodyClass}
-        />
-      ) : null}
-
-      <AboutBannerEducationBlock
-        educationItems={educationItems}
-        showEducation={showEducation}
-        educationLabel={educationLabel}
-        textColor={subtitleColor}
-        bodyColor={bodyColor}
-        bodyClass={bodyClass}
-        metaClass={metaClass}
-      />
-
-      <AboutBannerInterestsBlock
-        interestItems={interestItems}
-        showInterests={showInterests}
-        interestsLabel={interestsLabel}
-        textColor={subtitleColor}
-        bodyColor={bodyColor}
-        bodyClass={bodyClass}
-      />
     </div>
+  );
+}
+
+const ABOUT_SPLIT_EASE = [0.16, 1, 0.3, 1] as const;
+const ABOUT_SPLIT_CLIP_EASE = [0.77, 0, 0.175, 1] as const;
+const ABOUT_SPLIT_SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
+
+const ABOUT_SPLIT_LANG_CODES: Record<string, string> = {
+  francais: 'FR',
+  french: 'FR',
+  english: 'EN',
+  espanol: 'ES',
+  spanish: 'ES',
+  deutsch: 'DE',
+  german: 'DE',
+  italiano: 'IT',
+  italian: 'IT',
+  portugues: 'PT',
+  portuguese: 'PT',
+  arabic: 'AR',
+  chinese: 'ZH',
+  japanese: 'JA',
+  korean: 'KO',
+  russian: 'RU',
+  nederlands: 'NL',
+  dutch: 'NL',
+  [spokenLanguageMatchKey('العربية')]: 'AR',
+  [spokenLanguageMatchKey('中文')]: 'ZH',
+  [spokenLanguageMatchKey('日本語')]: 'JA',
+  [spokenLanguageMatchKey('한국어')]: 'KO',
+  [spokenLanguageMatchKey('Русский')]: 'RU',
+};
+
+function aboutSplitLanguageCode(name: string): string {
+  const trimmed = name.trim();
+  const key = spokenLanguageMatchKey(trimmed);
+  if (ABOUT_SPLIT_LANG_CODES[key]) return ABOUT_SPLIT_LANG_CODES[key];
+  if (/^[a-z]{2}$/i.test(trimmed)) return trimmed.toUpperCase();
+  const locale = trimmed.match(/^([a-z]{2})[-_][a-z]{2}$/i);
+  if (locale) return locale[1].toUpperCase();
+  const latin = trimmed.replace(/[^a-zA-Z]/g, '');
+  if (latin.length >= 2) return latin.slice(0, 2).toUpperCase();
+  return trimmed.slice(0, 2).toUpperCase();
+}
+
+function splitAboutSplitHeadlineWords(value: string): string[] {
+  return value.trim().split(/\s+/).filter(Boolean);
+}
+
+function AboutSplitSectionHeading({
+  label,
+  titleColor,
+  meta,
+  metaColor,
+  metaClass,
+  metaAriaLabel,
+}: {
+  label: string;
+  titleColor: string;
+  meta?: string;
+  metaColor?: string;
+  metaClass?: string;
+  metaAriaLabel?: string;
+}) {
+  return (
+    <div className="pf-about-split-section-head">
+      <h3 className="pf-about-split-section-title" style={{ color: titleColor }}>
+        {label}
+      </h3>
+      {meta ? (
+        <span
+          className={`pf-about-split-section-meta tabular-nums ${metaClass ?? ''}`}
+          style={{ color: metaColor }}
+          aria-label={metaAriaLabel}
+        >
+          {meta}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function AboutSplitHeadline({
+  text,
+  className,
+  color,
+  reduceMotion,
+}: {
+  text: string;
+  className: string;
+  color: string;
+  reduceMotion: boolean;
+}) {
+  const words = splitAboutSplitHeadlineWords(text);
+  const italicLast = words.length > 1;
+
+  return (
+    <h2
+      className={`pf-about-split-headline font-semibold ${className}`}
+      style={{ color, fontFamily: ABOUT_SPLIT_SERIF }}
+    >
+      {words.map((word, index) => (
+        <span key={`${index}-${word}`} className="pf-about-split-line">
+          <motion.span
+            className={
+              italicLast && index === words.length - 1
+                ? 'pf-about-split-line-inner pf-about-split-line-inner--accent'
+                : 'pf-about-split-line-inner'
+            }
+            data-pf-no-color-transition=""
+            initial={reduceMotion ? false : { y: '108%' }}
+            animate={{ y: '0%' }}
+            transition={{
+              duration: 0.95,
+              delay: 0.3 + index * 0.068,
+              ease: ABOUT_SPLIT_EASE,
+            }}
+          >
+            {word}
+          </motion.span>
+        </span>
+      ))}
+    </h2>
   );
 }
 
@@ -2634,6 +4753,7 @@ function AboutSplitSkillsList({
   bodyColor,
   bodyClass,
   metaClass,
+  reduceMotion,
 }: {
   label: string;
   skills: ProfileSkillEntry[];
@@ -2642,46 +4762,50 @@ function AboutSplitSkillsList({
   bodyColor: string;
   bodyClass: string;
   metaClass: string;
+  reduceMotion: boolean;
 }) {
   const countLabel = String(skills.length).padStart(2, '0');
 
   return (
     <>
-      <div className="mb-5 flex items-baseline justify-between gap-4">
-        <h3
-          className="font-serif text-xl font-medium tracking-[-0.005em] sm:text-[1.25rem]"
-          style={{ color: titleColor }}
-        >
-          {label}
-        </h3>
-        <span
-          className={`tabular-nums ${metaClass}`}
-          style={{ color: bodyColor, opacity: 0.5 }}
-          aria-label={`${skills.length} skills`}
-        >
-          {countLabel}
-        </span>
-      </div>
-      <ul className={`space-y-3.5 sm:space-y-4 ${bodyClass}`}>
+      <AboutSplitSectionHeading
+        label={label}
+        titleColor={titleColor}
+        meta={countLabel}
+        metaColor={bodyColor}
+        metaClass={metaClass}
+        metaAriaLabel={`${skills.length} skills`}
+      />
+      <ul className={`pf-about-split-skills ${bodyClass}`} data-pf-no-color-transition="">
         {skills.map((skill, index) => {
           const skillTitle = skill.title?.trim();
           if (!skillTitle) return null;
           return (
-            <li key={skill.id} className="flex items-baseline gap-4 sm:gap-5">
+            <motion.li
+              key={skill.id}
+              className="pf-about-split-skill"
+              style={{ ['--i' as string]: index } as CSSProperties}
+              data-pf-no-color-transition=""
+              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+              whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={reduceMotion ? undefined : { once: true, amount: 0.55 }}
+              transition={{
+                duration: 0.7,
+                delay: reduceMotion ? 0 : index * 0.07,
+                ease: ABOUT_SPLIT_EASE,
+              }}
+            >
               <span
-                className={`shrink-0 tabular-nums ${metaClass}`}
-                style={{ color: accent, opacity: 0.72 }}
+                className={`pf-about-split-skill-index tabular-nums ${metaClass}`}
+                style={{ color: accent }}
                 aria-hidden
               >
                 {String(index + 1).padStart(2, '0')}
               </span>
-              <span
-                className="font-medium leading-snug tracking-[-0.01em]"
-                style={{ color: titleColor }}
-              >
+              <span className="pf-about-split-skill-title" style={{ color: titleColor }}>
                 {skillTitle}
               </span>
-            </li>
+            </motion.li>
           );
         })}
       </ul>
@@ -2689,38 +4813,86 @@ function AboutSplitSkillsList({
   );
 }
 
-/** About · split — flowing strengths line (editorial Webflow: slash-separated prose). */
+/** About · split — offset typographic tags (liseré hover, not chips). */
 function AboutSplitStrengthsList({
   items,
-  accent,
-  titleColor,
   bodyClass,
+  reduceMotion,
 }: {
   items: string[];
-  accent: string;
-  titleColor: string;
   bodyClass: string;
+  reduceMotion: boolean;
 }) {
   return (
-    <p
-      className={`max-w-[38rem] text-[1.05rem] leading-[1.85] tracking-[-0.01em] sm:text-[1.12rem] ${bodyClass}`}
-      style={{ color: titleColor }}
-    >
+    <ul className={`pf-about-split-strengths ${bodyClass}`}>
       {items.map((item, index) => (
-        <span key={item}>
-          {index > 0 ? (
-            <span
-              aria-hidden
-              className="mx-2.5 select-none font-light sm:mx-3"
-              style={{ color: accent, opacity: 0.72 }}
-            >
-              /
-            </span>
-          ) : null}
+        <motion.li
+          key={item}
+          className="pf-about-split-strength"
+          style={{ ['--i' as string]: index } as CSSProperties}
+          data-pf-no-color-transition=""
+          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+          whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+          viewport={reduceMotion ? undefined : { once: true, amount: 0.4 }}
+          transition={{
+            duration: 0.6,
+            delay: reduceMotion ? 0 : index * 0.055,
+            ease: ABOUT_SPLIT_EASE,
+          }}
+        >
           {item}
-        </span>
+        </motion.li>
       ))}
-    </p>
+    </ul>
+  );
+}
+
+/** About · split — typographic languages only (no gauges, no flags). */
+function AboutSplitLanguageList({
+  items,
+  accent,
+  bodyClass,
+  reduceMotion,
+}: {
+  items: LanguageDisplayItem[];
+  accent: string;
+  bodyClass: string;
+  reduceMotion: boolean;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <ul className={`pf-about-split-langs ${bodyClass}`}>
+      {items.map((item, index) => {
+        const code = aboutSplitLanguageCode(item.name);
+        const levelLabel = item.level ? resolveSpokenLanguageLevelLabel(item.level) : null;
+        return (
+          <motion.li
+            key={item.name}
+            className="pf-about-split-lang"
+            style={{ ['--i' as string]: index } as CSSProperties}
+            data-pf-no-color-transition=""
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+            whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={reduceMotion ? undefined : { once: true, amount: 0.45 }}
+            transition={{
+              duration: 0.58,
+              delay: reduceMotion ? 0 : index * 0.05,
+              ease: ABOUT_SPLIT_EASE,
+            }}
+          >
+            <span className="pf-about-split-lang-id">
+              <span className="pf-about-split-lang-code">{code}</span>
+              <span className="pf-about-split-lang-name">{item.name}</span>
+            </span>
+            {levelLabel ? (
+              <span className="pf-about-split-lang-level" style={{ color: accent }}>
+                {levelLabel}
+              </span>
+            ) : null}
+          </motion.li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -2741,8 +4913,8 @@ function AboutSplitLayout({
   showStrengths,
   showLanguages,
   showSystemsTools,
-  languageLevelStyle,
-  showLanguageFlags,
+  languageLevelStyle: _languageLevelStyle,
+  showLanguageFlags: _showLanguageFlags,
   accent,
   titleColor,
   subtitleColor,
@@ -2783,6 +4955,8 @@ function AboutSplitLayout({
   sectionLabels: AboutSplitSectionLabels;
   portraitGrayscale: boolean;
 }) {
+  const reduceMotion = Boolean(useReducedMotion());
+  const rootRef = useRef<HTMLDivElement>(null);
   const splitTitleClass = aboutSplitTitleSizeClass(contentSize);
   const bodyClass = infoContentBodySizeClass(contentSize);
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
@@ -2810,93 +4984,130 @@ function AboutSplitLayout({
 
   const portraitPlateMuted = 'rgba(216, 201, 181, 0.92)';
   const splitPortraitPanelClass =
-    'lg:sticky lg:self-start lg:top-[calc(var(--portfolio-nav-top-clearance,5.5rem)+1.25rem)] lg:h-[calc(100dvh-var(--portfolio-nav-top-clearance,5.5rem)-2.5rem)] lg:max-h-[calc(100dvh-var(--portfolio-nav-top-clearance,5.5rem)-2.5rem)]';
+    'lg:sticky lg:self-start lg:top-[calc(var(--portfolio-nav-top-clearance,5.5rem)+1rem)] lg:h-[calc(100dvh-var(--portfolio-nav-top-clearance,5.5rem)-2.15rem)] lg:max-h-[calc(100dvh-var(--portfolio-nav-top-clearance,5.5rem)-2.15rem)]';
 
-  const splitSectionClass = 'mt-12 border-t pt-9 sm:mt-14 sm:pt-10';
   const portraitOnRight = portraitSide === 'right';
+  const portraitClipFrom = portraitOnRight ? 'inset(0% 100% 0% 0%)' : 'inset(100% 0% 0% 0%)';
+
+  const markEntryReady = useCallback(() => {
+    rootRef.current?.setAttribute('data-pf-entry', 'ready');
+  }, []);
+
+  const splitThemeStyle = {
+    '--pf-about-split-accent': accent,
+    '--pf-about-split-ink': titleColor,
+    '--pf-about-split-soft': subtitleColor,
+    '--pf-about-split-muted': bodyColor,
+    '--pf-about-split-line': cardBorder,
+    '--pf-about-split-fill': cardBg,
+  } as CSSProperties;
+
+  const splitSectionMotion = reduceMotion
+    ? undefined
+    : { opacity: 0, y: 18 };
+  const splitSectionVisible = { opacity: 1, y: 0 };
 
   return (
-    <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 lg:static lg:w-full lg:max-w-none lg:translate-x-0">
+    <div
+      ref={rootRef}
+      className="pf-about-split relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 lg:static lg:w-full lg:max-w-none lg:translate-x-0"
+      data-pf-entry={reduceMotion ? 'ready' : 'armed'}
+      data-portrait-side={portraitOnRight ? 'end' : 'start'}
+      style={splitThemeStyle}
+    >
       <div
-        className={`flex min-h-0 flex-col lg:items-start ${
+        className={`pf-about-split-grid flex min-h-0 flex-col lg:items-start ${
           portraitOnRight ? 'lg:flex-row-reverse' : 'lg:flex-row'
         }`}
       >
-        {/* Portrait — inset below navbar, sticky while right column scrolls */}
         <div
-          className={`relative h-[calc(60vh-2rem)] w-full shrink-0 overflow-hidden mb-4 mt-4 lg:mb-0 lg:mt-0 lg:w-[46%] ${splitPortraitPanelClass}`}
+          className={`pf-about-split-portrait relative mb-3 mt-3 h-[min(58vh,36rem)] w-full shrink-0 overflow-hidden lg:mb-0 lg:mt-0 lg:w-[42%] xl:w-[40%] ${splitPortraitPanelClass}`}
+        >
+          <motion.div
+            className="pf-about-split-portrait-clip"
+            data-pf-no-color-transition=""
+            initial={reduceMotion ? false : { clipPath: portraitClipFrom }}
+            animate={{ clipPath: 'inset(0% 0% 0% 0%)' }}
+            transition={{ duration: 1.22, ease: ABOUT_SPLIT_CLIP_EASE }}
+            onAnimationStart={markEntryReady}
           >
-            {avatarUrl?.trim() ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={avatarUrl.trim()}
-              alt={portraitName}
-              className={infoPortraitImageClass(
-                'block h-full w-full object-cover object-[50%_20%]',
-                portraitGrayscale
-              )}
-              />
-            ) : (
-              <div
-                className="flex h-full w-full items-center justify-center text-4xl font-semibold tracking-tight"
-              style={{ backgroundColor: cardBg, color: bodyColor }}
-              >
-                {initials || '?'}
+            <div className="pf-about-split-portrait-shift" data-pf-no-color-transition="">
+              <div className="pf-about-split-portrait-media" data-pf-no-color-transition="">
+                {avatarUrl?.trim() ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={avatarUrl.trim()}
+                    alt={portraitName}
+                    className={infoPortraitImageClass(
+                      'block h-full w-full object-cover object-[50%_18%]',
+                      portraitGrayscale
+                    )}
+                  />
+                ) : (
+                  <div
+                    className="flex h-full w-full items-center justify-center text-4xl font-semibold tracking-tight"
+                    style={{ backgroundColor: cardBg, color: bodyColor }}
+                  >
+                    {initials || '?'}
+                  </div>
+                )}
               </div>
-            )}
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(0deg, rgba(15, 9, 5, 0.72) 0%, rgba(15, 9, 5, 0) 30%)',
-            }}
-            aria-hidden
-          />
-          <div className="absolute inset-x-0 bottom-0 z-[2] px-7 py-10 sm:px-10 sm:py-11">
-            <p
-              className="font-serif text-[2.1rem] font-medium leading-[1.05] tracking-[-0.01em]"
-              style={{ color: '#F6F1E9' }}
+            </div>
+            <div className="pf-about-split-portrait-veil" aria-hidden />
+            <motion.div
+              className="pf-about-split-plate"
+              data-pf-no-color-transition=""
+              initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.75, delay: 0.72, ease: ABOUT_SPLIT_EASE }}
             >
-              {portraitName}
-            </p>
-            <p
-              className="mt-1.5 text-[0.95rem] font-medium"
-              style={{ color: portraitPlateMuted }}
-            >
-              {specialtyHeadline}
-            </p>
-          </div>
+              <p className="pf-about-split-plate-name">{portraitName}</p>
+              <p className="pf-about-split-plate-role" style={{ color: portraitPlateMuted }}>
+                {specialtyHeadline}
+              </p>
+            </motion.div>
+          </motion.div>
         </div>
 
-        {/* Content — scrolls beside sticky portrait; all blocks live here */}
-        <div className="min-w-0 flex-1 px-6 py-12 sm:px-10 sm:py-14 lg:px-16 lg:py-16 lg:pb-24 xl:px-20">
-          <div className="mb-9 flex items-center gap-2.5 text-[0.8rem] font-semibold tracking-[0.03em]" style={{ color: accent }}>
-              <span
-                aria-hidden
-              className="h-1.5 w-1.5 shrink-0 rounded-full"
-                style={{ backgroundColor: accent }}
-              />
+        <div
+          className={`pf-about-split-copy min-w-0 flex-1 ${
+            portraitOnRight ? 'pf-about-split-copy--before-portrait' : 'pf-about-split-copy--after-portrait'
+          }`}
+        >
+          <motion.p
+            className="pf-about-split-kicker"
+            style={{ color: accent }}
+            data-pf-no-color-transition=""
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.62, delay: 0.16, ease: ABOUT_SPLIT_EASE }}
+          >
+            <span className="pf-about-split-kicker-mark" aria-hidden />
             {kickerLabel}
-          </div>
+          </motion.p>
 
-                <h2
-            className={`font-serif font-semibold leading-[0.98] tracking-[-0.015em] ${splitTitleClass}`}
-                  style={{ color: titleColor }}
-                >
-            {specialtyHeadline}
-                </h2>
+          <AboutSplitHeadline
+            text={specialtyHeadline}
+            className={splitTitleClass}
+            color={titleColor}
+            reduceMotion={reduceMotion}
+          />
 
           {ledeText ? (
-                  <p
-              className={`mt-6 max-w-[34rem] text-[1.05rem] leading-[1.6] sm:text-[1.15rem] ${bodyClass}`}
-                    style={{ color: subtitleColor }}
-                  >
+            <motion.p
+              className={`pf-about-split-lede ${bodyClass}`}
+              style={{ color: subtitleColor }}
+              data-pf-no-color-transition=""
+              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5, ease: ABOUT_SPLIT_EASE }}
+            >
               {ledeText}
-            </p>
+            </motion.p>
           ) : null}
 
           {showSkillsBlock ? (
-            <section className={splitSectionClass} style={{ borderColor: cardBorder }}>
+            <section className="pf-about-split-section pf-about-split-section--skills">
               <AboutSplitSkillsList
                 label={sectionLabels.skills}
                 skills={visibleSkills}
@@ -2905,67 +5116,57 @@ function AboutSplitLayout({
                 bodyColor={bodyColor}
                 bodyClass={bodyClass}
                 metaClass={metaClass}
+                reduceMotion={reduceMotion}
               />
             </section>
           ) : null}
 
           {showStrengthsBlock ? (
-            <section className={splitSectionClass} style={{ borderColor: cardBorder }}>
-              <div className="mb-5 flex items-baseline justify-between gap-4">
-                <h3
-                  className="font-serif text-xl font-medium tracking-[-0.005em] sm:text-[1.25rem]"
-                  style={{ color: titleColor }}
-                >
-                  {sectionLabels.strengths}
-                </h3>
-              </div>
+            <section className="pf-about-split-section pf-about-split-section--tags">
+              <AboutSplitSectionHeading label={sectionLabels.strengths} titleColor={titleColor} />
               <AboutSplitStrengthsList
                 items={visibleStrengths}
-                accent={accent}
-                titleColor={titleColor}
                 bodyClass={bodyClass}
+                reduceMotion={reduceMotion}
               />
             </section>
           ) : null}
 
           {showLanguagesBlock ? (
-            <section className={splitSectionClass} style={{ borderColor: cardBorder }}>
-              <div className="mb-5 flex items-baseline justify-between gap-4">
-                <h3
-                  className="font-serif text-xl font-medium tracking-[-0.005em] sm:text-[1.25rem]"
-                  style={{ color: titleColor }}
-                >
-                  {sectionLabels.languages}
-                </h3>
-            </div>
-              <InfoLanguageList
+            <motion.section
+              className="pf-about-split-section pf-about-split-section--langs"
+              data-pf-no-color-transition=""
+              initial={reduceMotion ? false : splitSectionMotion}
+              whileInView={reduceMotion ? undefined : splitSectionVisible}
+              viewport={reduceMotion ? undefined : { once: true, amount: 0.18 }}
+              transition={{ duration: 0.7, delay: 0.05, ease: ABOUT_SPLIT_EASE }}
+            >
+              <AboutSplitSectionHeading label={sectionLabels.languages} titleColor={titleColor} />
+              <AboutSplitLanguageList
                 items={languageItems}
                 accent={accent}
-                body={titleColor}
-                track={bodyColor}
-                levelStyle={languageLevelStyle}
-                showMarker={showLanguageFlags}
-                bodySizeClass={bodyClass}
-                className=""
+                bodyClass={bodyClass}
+                reduceMotion={reduceMotion}
               />
-            </section>
+            </motion.section>
           ) : null}
 
           {showEducationBlock ? (
-            <section className={splitSectionClass} style={{ borderColor: cardBorder }}>
-              <div className="mb-5 flex items-baseline justify-between gap-4">
-                <h3
-                  className="font-serif text-xl font-medium tracking-[-0.005em] sm:text-[1.25rem]"
-                  style={{ color: titleColor }}
-              >
-                Education
-                </h3>
-              </div>
-              <ul className={`space-y-4 ${bodyClass}`}>
+            <motion.section
+              className="pf-about-split-section"
+              style={{ borderColor: cardBorder }}
+              data-pf-no-color-transition=""
+              initial={reduceMotion ? false : splitSectionMotion}
+              whileInView={reduceMotion ? undefined : splitSectionVisible}
+              viewport={reduceMotion ? undefined : { once: true, amount: 0.16 }}
+              transition={{ duration: 0.7, ease: ABOUT_SPLIT_EASE }}
+            >
+              <AboutSplitSectionHeading label="Education" titleColor={titleColor} />
+              <ul className={`pf-about-split-edu ${bodyClass}`}>
                 {educationItems.map((entry) => (
                   <li
                     key={entry.id || `${entry.title}-${entry.schoolYear}`}
-                    className="leading-relaxed"
+                    className="pf-about-split-edu-item"
                     style={{ color: bodyColor }}
                   >
                     {entry.title?.trim() ? (
@@ -2984,19 +5185,20 @@ function AboutSplitLayout({
                   </li>
                 ))}
               </ul>
-            </section>
+            </motion.section>
           ) : null}
 
           {showSystemsBlock ? (
-            <section className={splitSectionClass} style={{ borderColor: cardBorder }}>
-              <div className="mb-5 flex items-baseline justify-between gap-4">
-                <h3
-                  className="font-serif text-xl font-medium tracking-[-0.005em] sm:text-[1.25rem]"
-                  style={{ color: titleColor }}
-              >
-                Systems & tools
-                </h3>
-            </div>
+            <motion.section
+              className="pf-about-split-section"
+              style={{ borderColor: cardBorder }}
+              data-pf-no-color-transition=""
+              initial={reduceMotion ? false : splitSectionMotion}
+              whileInView={reduceMotion ? undefined : splitSectionVisible}
+              viewport={reduceMotion ? undefined : { once: true, amount: 0.16 }}
+              transition={{ duration: 0.7, ease: ABOUT_SPLIT_EASE }}
+            >
+              <AboutSplitSectionHeading label="Systems & tools" titleColor={titleColor} />
               <InfoBulletList
                 items={toolItems}
                 accent={accent}
@@ -3004,28 +5206,42 @@ function AboutSplitLayout({
                 square
                 bodySizeClass={bodyClass}
               />
-        </section>
-      ) : null}
+            </motion.section>
+          ) : null}
         </div>
       </div>
     </div>
   );
 }
-/** Vertical rhythm between manifesto blocks — spacing only (no repeated rules). */
-const MANIFESTO_BLOCK_SPACING = 'mt-14 sm:mt-16';
-/** Single rule after bio / before first meta block. */
-const MANIFESTO_BLOCK_DIVIDER = 'mt-14 border-t pt-8 sm:mt-16';
+
+/** Vertical rhythm between manifesto folio blocks. */
+const MANIFESTO_BLOCK_SPACING = 'mt-14 sm:mt-16 lg:mt-20';
+
+const ABOUT_MANIFESTO_SERIF = ABOUT_CLASSIC_SERIF;
 
 function manifestoBlockCellClass(
   index: number,
   layout: PortfolioInfoAboutManifestoBlocksLayout
 ): string {
-  if (layout !== 'zigzag') return 'min-w-0';
-  const side =
-    index % 2 === 0
+  if (layout === 'zigzag') {
+    const even = index % 2 === 0;
+    const side = even
       ? 'lg:justify-self-start lg:mr-auto'
       : 'lg:justify-self-end lg:ml-auto';
-  return `min-w-0 w-full lg:max-w-[min(100%,42rem)] ${side}`;
+    const width = even
+      ? 'lg:max-w-[min(100%,46rem)]'
+      : 'lg:max-w-[min(100%,34rem)]';
+    const shift = even ? '' : 'lg:mt-3';
+    return `min-w-0 w-full ${width} ${side} ${shift}`.trim();
+  }
+
+  const gridSlots = [
+    'lg:col-span-7 lg:pr-[min(8%,2.25rem)]',
+    'lg:col-span-5 lg:mt-14',
+    'lg:col-span-5 lg:mt-2',
+    'lg:col-span-7 lg:mt-10 lg:pl-[min(6%,1.75rem)]',
+  ];
+  return `min-w-0 ${gridSlots[index % gridSlots.length]}`;
 }
 
 function getManifestoScrollParent(el: HTMLElement | null): HTMLElement | null {
@@ -3043,14 +5259,10 @@ function getManifestoScrollParent(el: HTMLElement | null): HTMLElement | null {
   return null;
 }
 
-const FEATURE_PANEL_STICKY_TOP =
-  'calc((100dvh + var(--portfolio-nav-top-clearance, 5.5rem)) / 2)';
+const FEATURE_PANEL_STICKY_TOP = 'var(--portfolio-nav-top-clearance, 5.5rem)';
 
-const FEATURE_PANEL_LEAD_IN_HEIGHT =
-  'calc((100dvh - var(--portfolio-nav-top-clearance, 5.5rem)) / 2 - 6rem)';
-
-/** Scroll runway per skill step — slightly shorter than the original 50dvh to tighten the footer gap. */
-const FEATURE_PANEL_RUNWAY_STEP_VH = 42;
+/** Scroll runway per skill step. The pin stays locked until the last step ends. */
+const FEATURE_PANEL_RUNWAY_STEP_VH = 52;
 
 function featurePanelRunwayHeight(skillCount: number): string {
   if (skillCount <= 1) return '0px';
@@ -3097,12 +5309,13 @@ function useFeaturePanelScrollProgress(
         '--portfolio-nav-top-clearance'
       );
       const navClearance = Number.parseFloat(navClearanceRaw) || 88;
-      const stickyCenterY = rootTop + (viewportHeight + navClearance) / 2;
+      const pinY = rootTop + navClearance;
       const rect = section.getBoundingClientRect();
       const runwayEl = section.querySelector('[data-feature-panel-runway]');
+      const stickyEl = section.querySelector('[data-feature-panel-sticky]');
       const runwayHeight = runwayEl instanceof HTMLElement ? runwayEl.offsetHeight : 0;
 
-      if (rect.bottom <= stickyCenterY + 48) {
+      if (rect.bottom <= pinY + 48) {
         setFocusedIndex((prev) => (prev === skillCount - 1 ? prev : skillCount - 1));
         return;
       }
@@ -3110,7 +5323,10 @@ function useFeaturePanelScrollProgress(
       if (!runwayEl || runwayHeight <= 0) return;
 
       const runwayRect = runwayEl.getBoundingClientRect();
-      const traveled = Math.min(Math.max(stickyCenterY - runwayRect.top, 0), runwayHeight);
+      const stickyRect =
+        stickyEl instanceof HTMLElement ? stickyEl.getBoundingClientRect() : null;
+      const originY = stickyRect ? stickyRect.bottom : rootTop + viewportHeight;
+      const traveled = Math.min(Math.max(originY - runwayRect.top, 0), runwayHeight);
       const progress = traveled / runwayHeight;
       const nextIndex = Math.min(
         skillCount - 1,
@@ -3214,7 +5430,40 @@ function manifestoBlockFocusClass(isFocused: boolean, scrollFocus: boolean): str
   if (!scrollFocus) return '';
   return isFocused
     ? 'opacity-100 blur-none'
-    : 'opacity-[0.52] blur-[2px] saturate-[0.85]';
+    : 'opacity-[0.62] blur-[1px] saturate-[0.9]';
+}
+
+function manifestoPadIndex(index: number): string {
+  return String(index + 1).padStart(2, '0');
+}
+
+function manifestoMonogramLetters(fullName?: string | null): string {
+  const parts = (fullName ?? '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  const take = Math.min(parts.length, 3);
+  return parts
+    .slice(0, take)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+/** Drop a repeated 3+ word lead on consecutive skills (01/02 "Designing and building…"). */
+function manifestoCollapseSkillLeads(labels: string[]): string[] {
+  return labels.map((label, index, all) => {
+    if (index === 0) return label;
+    const prevWords = all[index - 1].split(/\s+/).filter(Boolean);
+    const words = label.split(/\s+/).filter(Boolean);
+    let shared = 0;
+    while (
+      shared < prevWords.length &&
+      shared < words.length - 1 &&
+      prevWords[shared].toLowerCase() === words[shared].toLowerCase()
+    ) {
+      shared += 1;
+    }
+    if (shared < 3) return label;
+    return words.slice(shared).join(' ');
+  });
 }
 
 const MANIFESTO_BLOCK_FOCUS_TRANSITION =
@@ -3256,7 +5505,7 @@ function ManifestoEducationList({
         Education
         </ManifestoSectionLabel>
       ) : null}
-      <ol className={includeLabel ? 'mt-5' : 'mt-0'}>
+      <ol className={`pf-about-manifesto-edu ${includeLabel ? 'mt-5' : 'mt-0'}`}>
         {visible.map((entry, index) => {
           const year = entry.schoolYear?.trim() || '';
           const title = entry.title?.trim() || '';
@@ -3267,18 +5516,18 @@ function ManifestoEducationList({
           return (
             <li
               key={entry.id || `${entry.title}-${entry.schoolYear}-${index}`}
-              className="grid gap-x-6 gap-y-1 py-4 sm:grid-cols-[minmax(0,9.5rem)_1fr] sm:gap-x-10"
+              className="pf-about-manifesto-edu-row grid gap-x-6 gap-y-1 sm:grid-cols-[minmax(0,8.75rem)_1fr] sm:gap-x-10"
             >
               <span
-                className={`tabular-nums tracking-tight opacity-80 sm:pt-0.5 ${metaClass}`}
-                style={{ color: bodyColor }}
+                className={`pf-about-manifesto-edu-year tabular-nums tracking-[0.08em] sm:pt-0.5 ${metaClass}`}
+                style={{ color: `color-mix(in srgb, ${accent} 58%, white)` }}
               >
                 {year || '—'}
               </span>
               <div className="min-w-0">
                 {headline ? (
                   <p
-                    className={`font-medium leading-snug ${titleClass}`}
+                    className={`pf-about-manifesto-edu-title font-medium leading-snug ${titleClass}`}
                     style={{ color: subtitleColor }}
                   >
                     {headline}
@@ -3286,7 +5535,7 @@ function ManifestoEducationList({
                 ) : null}
                 {subline ? (
                   <p
-                    className={`mt-1 leading-relaxed opacity-75 ${bodyClass}`}
+                    className={`pf-about-manifesto-edu-school mt-1 leading-relaxed ${bodyClass}`}
                     style={{ color: bodyColor }}
                   >
                     {subline}
@@ -3315,10 +5564,12 @@ function ManifestoSectionLabel({
   const labelClass = infoContentLabelSizeClass(contentSize);
   return (
     <p
-      className={`font-semibold uppercase tracking-[0.2em] ${labelClass}`}
+      className={`pf-about-manifesto-label font-medium uppercase tracking-[0.22em] ${labelClass}`}
       style={{ color: color ?? accent }}
     >
-      {children}
+      <span className="pf-about-manifesto-line-mask">
+        <span className="pf-about-manifesto-line-shift">{children}</span>
+      </span>
     </p>
   );
 }
@@ -3327,79 +5578,132 @@ function ManifestoEditorialList({
   items,
   bodyColor,
   bodySizeClass,
+  numbered = false,
+  quiet = false,
+  indexColor,
 }: {
   items: string[];
   bodyColor: string;
   bodySizeClass: string;
+  numbered?: boolean;
+  quiet?: boolean;
+  indexColor?: string;
 }) {
   return (
-    <ul className="mt-5 space-y-4">
-      {items.map((item) => (
+    <ul
+      className={`pf-about-manifesto-list ${
+        numbered ? 'pf-about-manifesto-list--indexed' : ''
+      } ${quiet ? 'pf-about-manifesto-list--quiet' : ''}`}
+    >
+      {items.map((item, index) => (
         <li
-          key={item}
-          className={`leading-relaxed ${bodySizeClass}`}
-          style={{ color: bodyColor }}
+          key={`${index}-${item}`}
+          className={`pf-about-manifesto-item leading-relaxed ${bodySizeClass}`}
+          style={quiet ? undefined : { color: bodyColor }}
         >
-          {item}
+          <span className="pf-about-manifesto-line-mask">
+            <span className="pf-about-manifesto-line-shift">
+              {numbered ? (
+                <span
+                  className="pf-about-manifesto-item-index"
+                  aria-hidden
+                  style={indexColor ? { color: indexColor } : undefined}
+                >
+                  {manifestoPadIndex(index)}
+                </span>
+              ) : null}
+              <span className="pf-about-manifesto-item-text">{item}</span>
+            </span>
+          </span>
         </li>
       ))}
     </ul>
   );
 }
 
-/** Skills + Strengths side by side — default manifesto pairing. */
-function ManifestoSkillsStrengthsRow({
+/** Skills + Strengths + Languages — one aligned index row. */
+function ManifestoIndexGrid({
   skillLabels,
   strengthItems,
+  languageItems,
   showSkills,
   showStrengths,
+  showLanguages,
   accent,
   labelColor,
   bodyColor,
+  subtitleColor,
   contentSize,
+  motionOff: _motionOff = false,
 }: {
   skillLabels: string[];
   strengthItems: string[];
+  languageItems: LanguageDisplayItem[];
   showSkills: boolean;
   showStrengths: boolean;
+  showLanguages: boolean;
   accent: string;
   labelColor?: string;
   bodyColor: string;
+  subtitleColor: string;
   contentSize: PortfolioInfoContentSize;
+  motionOff?: boolean;
 }) {
   const showSkillsCol = showSkills && skillLabels.length > 0;
   const showStrengthsCol = showStrengths && strengthItems.length > 0;
-  if (!showSkillsCol && !showStrengthsCol) return null;
+  const showLangCol = showLanguages && languageItems.length > 0;
+  if (!showSkillsCol && !showStrengthsCol && !showLangCol) return null;
 
   const bodySizeClass = infoContentBodySizeClass(contentSize);
-  const paired = showSkillsCol && showStrengthsCol;
+  const langBodyClass = infoContentBodySizeClass(contentSize);
+  const colCount = [showSkillsCol, showStrengthsCol, showLangCol].filter(Boolean).length;
+  const indexColor = `color-mix(in srgb, ${accent} 58%, white)`;
 
   return (
-    <div
-      className={`grid gap-10 ${paired ? 'md:grid-cols-2 md:gap-x-10 lg:gap-x-16' : 'grid-cols-1'}`}
-    >
+    <div className="pf-about-manifesto-pair-grid" data-cols={colCount}>
       {showSkillsCol ? (
-        <div className="min-w-0">
-          <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
-            Skills
-          </ManifestoSectionLabel>
-          <ManifestoEditorialList
-            items={skillLabels}
-            bodyColor={bodyColor}
-            bodySizeClass={bodySizeClass}
-          />
+        <div className="pf-about-manifesto-col-shell min-h-0 h-full min-w-0" data-col="skills">
+          <div className="pf-about-manifesto-col">
+            <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
+              Skills
+            </ManifestoSectionLabel>
+            <ManifestoEditorialList
+              items={skillLabels}
+              bodyColor={bodyColor}
+              bodySizeClass={bodySizeClass}
+              numbered
+              indexColor={indexColor}
+            />
+          </div>
         </div>
       ) : null}
       {showStrengthsCol ? (
-        <div className="min-w-0">
-          <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
-            Strengths
-          </ManifestoSectionLabel>
-          <ManifestoEditorialList
-            items={strengthItems}
-            bodyColor={bodyColor}
-            bodySizeClass={bodySizeClass}
-          />
+        <div className="pf-about-manifesto-col-shell min-h-0 h-full min-w-0" data-col="strengths">
+          <div className="pf-about-manifesto-col">
+            <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
+              Strengths
+            </ManifestoSectionLabel>
+            <ManifestoEditorialList
+              items={strengthItems}
+              bodyColor={bodyColor}
+              bodySizeClass={bodySizeClass}
+              quiet
+            />
+          </div>
+        </div>
+      ) : null}
+      {showLangCol ? (
+        <div className="pf-about-manifesto-col-shell min-h-0 h-full min-w-0" data-col="languages">
+          <div className="pf-about-manifesto-col">
+            <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
+              Languages
+            </ManifestoSectionLabel>
+            <ManifestoLanguageRail
+              items={languageItems}
+              codeColor={subtitleColor}
+              bodySizeClass={langBodyClass}
+            />
+          </div>
         </div>
       ) : null}
     </div>
@@ -3414,6 +5718,7 @@ function ManifestoDetailsBlocks({
   blocks: { key: string; node: ReactNode }[];
   blocksLayout: PortfolioInfoAboutManifestoBlocksLayout;
   blocksScrollFocus: boolean;
+  motionOff?: boolean;
 }) {
   const scrollFocusActive = blocksScrollFocus && blocks.length > 1;
   const { setBlockRef, focusedIndex } = useManifestoBlocksScrollFocus(
@@ -3425,12 +5730,9 @@ function ManifestoDetailsBlocks({
     <div
       key={block.key}
       ref={scrollFocusActive ? setBlockRef(index) : undefined}
-      className={`${
-        blocksLayout === 'zigzag' ? manifestoBlockCellClass(index, blocksLayout) : 'min-w-0'
-      } ${scrollFocusActive ? MANIFESTO_BLOCK_FOCUS_TRANSITION : ''} ${manifestoBlockFocusClass(
-        focusedIndex === index,
-        scrollFocusActive
-      )}`}
+      className={`pf-about-manifesto-block ${manifestoBlockCellClass(index, blocksLayout)} ${
+        scrollFocusActive ? MANIFESTO_BLOCK_FOCUS_TRANSITION : ''
+      } ${manifestoBlockFocusClass(focusedIndex === index, scrollFocusActive)}`}
     >
       {block.node}
     </div>
@@ -3438,7 +5740,7 @@ function ManifestoDetailsBlocks({
 
   if (blocksLayout === 'grid') {
     return (
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:items-start lg:gap-x-16 lg:gap-y-14 xl:gap-x-24 xl:gap-y-16">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-start lg:gap-x-10 lg:gap-y-16 xl:gap-x-14 xl:gap-y-20">
         {blocks.map(renderBlock)}
       </div>
     );
@@ -3471,6 +5773,7 @@ function ManifestoDetailsSection({
   blocksLayout = 'grid',
   blocksScrollFocus = false,
   sectionTopClass = MANIFESTO_BLOCK_SPACING,
+  motionOff = false,
 }: {
   educationItems: ProfileEducationEntry[];
   skillItems: ProfileSkillEntry[];
@@ -3491,6 +5794,7 @@ function ManifestoDetailsSection({
   blocksLayout?: PortfolioInfoAboutManifestoBlocksLayout;
   blocksScrollFocus?: boolean;
   sectionTopClass?: string;
+  motionOff?: boolean;
 }) {
   const visibleEducation = educationItems.filter(
     (entry) => entry.title?.trim() || entry.institution?.trim() || entry.schoolYear?.trim()
@@ -3560,83 +5864,503 @@ function ManifestoDetailsSection({
   }
 
   return (
-    <section className={sectionTopClass}>
+    <section className={`pf-about-manifesto-details ${sectionTopClass}`}>
       <ManifestoDetailsBlocks
         blocks={blocks}
         blocksLayout={blocksLayout}
         blocksScrollFocus={blocksScrollFocus}
+        motionOff={motionOff}
       />
     </section>
   );
 }
 
-const MANIFESTO_PORTRAIT_SIZE_CLASS = 'size-72 lg:size-80 xl:size-96';
-const MANIFESTO_PORTRAIT_RECT_CLASS = 'w-72 lg:w-80 xl:w-96';
+const MANIFESTO_PORTRAIT_SIZE_CLASS = 'w-full max-w-[20rem]';
+const MANIFESTO_PORTRAIT_RECT_CLASS = 'w-full max-w-[17.5rem]';
+const MANIFESTO_PORTRAIT_COMPACT_CLASS = 'size-[4.25rem] sm:size-[4.75rem]';
+const MANIFESTO_PORTRAIT_COMPACT_RECT_CLASS = 'w-[4.25rem] sm:w-[4.75rem]';
+
+function manifestoStatementSizeClass(size: PortfolioInfoContentSize, isLong: boolean): string {
+  if (isLong) {
+    switch (size) {
+      case 'sm':
+        return 'pf-about-manifesto-statement--long text-[clamp(1.55rem,4.2vw,2.9rem)]';
+      case 'lg':
+        return 'pf-about-manifesto-statement--long text-[clamp(1.95rem,5.1vw,3.6rem)]';
+      default:
+        return 'pf-about-manifesto-statement--long text-[clamp(1.75rem,4.7vw,3.35rem)]';
+    }
+  }
+  switch (size) {
+    case 'sm':
+      return 'text-[clamp(2.2rem,6.5vw,4.2rem)]';
+    case 'lg':
+      return 'text-[clamp(2.85rem,7.8vw,5.25rem)]';
+    default:
+      return 'text-[clamp(2.5rem,7.2vw,4.85rem)]';
+  }
+}
+
+function splitManifestoStatementLines(text: string): string[] {
+  const explicit = text
+    .split('\n')
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  if (explicit.length > 1) return explicit.slice(0, 4);
+
+  const normalized = (explicit[0] ?? text.replace(/\s+/g, ' ').trim()).trim();
+  if (!normalized) return [];
+  const words = normalized.split(' ');
+  if (words.length <= 3) return [normalized];
+
+  const conjunction = normalized.match(/^(.*?)\s+(and|et|&|or|ou)\s+(.+)$/i);
+  if (conjunction && conjunction[1].length >= 14 && conjunction[3].split(' ').length >= 2) {
+    return [`${conjunction[1]}`, `${conjunction[2]} ${conjunction[3]}`].slice(0, 3);
+  }
+
+  const punct = normalized.match(/^(.{14,}?[,;—–])\s+(.+)$/);
+  if (punct && punct[2].split(' ').length >= 2) {
+    return [punct[1], punct[2]].slice(0, 3);
+  }
+
+  const maxChars = normalized.length > 72 ? 42 : 26;
+  const lines: string[] = [];
+  let current = '';
+
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (current && next.length > maxChars && lines.length < 3) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+function ManifestoStatementReveal({
+  text,
+  className,
+  color,
+}: {
+  text: string;
+  className: string;
+  color: string;
+}) {
+  const lines = splitManifestoStatementLines(text);
+
+  return (
+    <h2
+      className={`pf-about-manifesto-statement ${className}`}
+      style={{ color, fontFamily: ABOUT_MANIFESTO_SERIF }}
+      aria-label={text}
+    >
+      <span className="pf-about-manifesto-statement-lines" aria-hidden="true">
+        {lines.map((line, index) => (
+          <span key={`${index}-${line.slice(0, 28)}`} className="pf-about-manifesto-line">
+            <span className="pf-about-manifesto-line-inner">{line}</span>
+          </span>
+        ))}
+      </span>
+    </h2>
+  );
+}
 
 function ManifestoPortraitFrame({
   frame,
   avatarSrc,
   initials,
+  monogram,
   fullName,
   avatarGrayscale,
   accent,
   cardBg,
-  bodyColor,
+  subtitleColor,
+  compact = false,
 }: {
   frame: PortfolioInfoAboutManifestoPortraitFrame;
   avatarSrc: string;
   initials: string;
+  monogram: string;
   fullName?: string | null;
   avatarGrayscale: boolean;
   accent: string;
   cardBg: string;
-  bodyColor: string;
+  subtitleColor: string;
+  compact?: boolean;
 }) {
   const imageClass = `h-full w-full object-cover object-center ${avatarGrayscale ? 'grayscale' : ''}`;
+  const squareClass = compact ? MANIFESTO_PORTRAIT_COMPACT_CLASS : MANIFESTO_PORTRAIT_SIZE_CLASS;
+  const rectClass = compact ? MANIFESTO_PORTRAIT_COMPACT_RECT_CLASS : MANIFESTO_PORTRAIT_RECT_CLASS;
+  const mark = (monogram || initials).trim();
 
-  const media = avatarSrc ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={avatarSrc} alt={fullName?.trim() || 'Profile'} className={imageClass} />
-  ) : (
-    <div
-      className="flex h-full w-full items-center justify-center text-3xl font-semibold tracking-tight sm:text-4xl"
-      style={{ color: bodyColor, backgroundColor: `${accent}22` }}
-    >
-      {initials}
+  if (frame === 'monogram') {
+    return (
+      <div
+        className={`pf-about-manifesto-portrait pf-about-manifesto-portrait-clip pf-about-manifesto-monogram ${
+          compact ? 'pf-about-manifesto-monogram--compact' : ''
+        }`}
+        style={{ borderColor: accent }}
+        aria-hidden={!mark}
+      >
+        <span
+          className="pf-about-manifesto-monogram-letters"
+          style={{ color: subtitleColor, fontFamily: ABOUT_MANIFESTO_SERIF }}
+        >
+          {mark || '—'}
+        </span>
+      </div>
+    );
+  }
+
+  const media = (
+    <div className="pf-about-manifesto-portrait-media">
+      {avatarSrc ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={avatarSrc} alt={fullName?.trim() || 'Profile'} className={imageClass} />
+      ) : (
+        <div
+          className="flex h-full w-full items-center justify-center"
+          style={{ color: subtitleColor, backgroundColor: `${accent}18` }}
+        >
+          <span
+            className="pf-about-manifesto-monogram-letters pf-about-manifesto-monogram-letters--inset"
+            style={{ fontFamily: ABOUT_MANIFESTO_SERIF }}
+          >
+            {mark || initials}
+          </span>
         </div>
+      )}
+    </div>
   );
 
   if (frame === 'instagram') {
     const ringColor = `color-mix(in srgb, ${accent} 72%, transparent)`;
     return (
       <div
-        className="shrink-0 rounded-full p-[3px] shadow-[0_8px_28px_-8px_rgba(0,0,0,0.45)]"
+        className={`pf-about-manifesto-portrait shrink-0 rounded-full ${
+          compact ? 'p-[2px]' : 'p-[3px]'
+        }`}
         style={{ backgroundColor: ringColor }}
       >
-        <div className="rounded-full p-[3px]" style={{ backgroundColor: cardBg }}>
+        <div className={`rounded-full ${compact ? 'p-[2px]' : 'p-[3px]'}`} style={{ backgroundColor: cardBg }}>
           <div
-            className={`aspect-square ${MANIFESTO_PORTRAIT_SIZE_CLASS} shrink-0 overflow-hidden rounded-full`}
+            className={`pf-about-manifesto-portrait-clip aspect-square ${squareClass} shrink-0 overflow-hidden rounded-full`}
           >
             {media}
-            </div>
-            </div>
+          </div>
         </div>
+      </div>
     );
   }
 
   const shapeClass =
     frame === 'circle'
-      ? `aspect-square ${MANIFESTO_PORTRAIT_SIZE_CLASS} shrink-0 overflow-hidden rounded-full`
+      ? `aspect-square ${squareClass} shrink-0 overflow-hidden rounded-full`
       : frame === 'square'
-        ? `aspect-square ${MANIFESTO_PORTRAIT_SIZE_CLASS} shrink-0 overflow-hidden`
-        : `aspect-[4/5] ${MANIFESTO_PORTRAIT_RECT_CLASS} shrink-0 overflow-hidden rounded-2xl`;
+        ? `aspect-square ${squareClass} shrink-0 overflow-hidden`
+        : `aspect-[4/5] ${rectClass} shrink-0 overflow-hidden rounded-2xl`;
 
-  return <div className={shapeClass}>{media}</div>;
+  return (
+    <div
+      className={`pf-about-manifesto-portrait pf-about-manifesto-portrait-clip ${shapeClass}`}
+      style={frame === 'square' ? { borderColor: accent, borderWidth: 1, borderStyle: 'solid' } : undefined}
+    >
+      {media}
+    </div>
+  );
+}
+
+function ManifestoLanguageRail({
+  items,
+  codeColor,
+  bodySizeClass,
+}: {
+  items: LanguageDisplayItem[];
+  codeColor: string;
+  bodySizeClass: string;
+}) {
+  if (items.length === 0) return null;
+
+  return (
+    <ul className="pf-about-manifesto-langs pf-about-manifesto-langs--iso">
+      {items.map((item) => {
+        const code = aboutClassicLanguageCode(item.name);
+        const levelLabel = item.level ? resolveSpokenLanguageLevelLabel(item.level) : null;
+        return (
+          <li
+            key={item.name}
+            className={`pf-about-manifesto-lang ${bodySizeClass}`}
+            aria-label={levelLabel ? `${item.name}, ${levelLabel}` : item.name}
+          >
+            <span className="pf-about-manifesto-line-mask">
+              <span className="pf-about-manifesto-line-shift">
+                <span className="pf-about-manifesto-lang-code" style={{ color: codeColor }}>
+                  {code}
+                </span>
+                {levelLabel ? (
+                  <>
+                    <span className="pf-about-manifesto-lang-sep" aria-hidden>
+                      ·
+                    </span>
+                    <span className="pf-about-manifesto-lang-level">{levelLabel}</span>
+                  </>
+                ) : null}
+              </span>
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function manifestoParallaxTravel(): number {
+  return Math.min(150, Math.max(72, (window.innerHeight || 800) * 0.12));
+}
+
+function useManifestoGsapReveal(rootRef: RefObject<HTMLDivElement>, motionOff: boolean) {
+  useLayoutEffect(() => {
+    const node = rootRef.current;
+    if (!node) return undefined;
+    node.setAttribute('data-pf-js', 'true');
+    if (motionOff) {
+      node.setAttribute('data-pf-entry', 'static');
+      return undefined;
+    }
+
+    const hero = node.querySelector<HTMLElement>('.pf-about-manifesto-hero');
+    const scroller =
+      aboutBannerScrollParent(node) ?? getManifestoScrollParent(node) ?? undefined;
+    const triggerHero = hero ?? node;
+    const stBase = scroller ? { scroller } : {};
+    let stopWatch: (() => void) | undefined;
+
+    const ctx = gsap.context(() => {
+      const kicker = node.querySelector<HTMLElement>('.pf-about-manifesto-kicker');
+      const mark = node.querySelector<HTMLElement>('.pf-about-manifesto-kicker-mark');
+      const lines = Array.from(
+        node.querySelectorAll<HTMLElement>('.pf-about-manifesto-line-inner')
+      );
+      const ruleLine = node.querySelector<HTMLElement>('.pf-about-manifesto-rule-line');
+      const ruleCap = node.querySelector<HTMLElement>('.pf-about-manifesto-rule-cap');
+      const bios = Array.from(node.querySelectorAll<HTMLElement>('.pf-about-manifesto-bio'));
+      const portraits = Array.from(
+        node.querySelectorAll<HTMLElement>('.pf-about-manifesto-portrait-clip')
+      );
+      const caption = node.querySelector<HTMLElement>('.pf-about-manifesto-portrait-caption');
+      const colShells = Array.from(
+        node.querySelectorAll<HTMLElement>(
+          '.pf-about-manifesto-pair-grid .pf-about-manifesto-col-shell'
+        )
+      );
+      const folioLines = Array.from(
+        node.querySelectorAll<HTMLElement>(
+          '.pf-about-manifesto-pair-grid .pf-about-manifesto-line-shift'
+        )
+      );
+      const detailBlocks = Array.from(
+        node.querySelectorAll<HTMLElement>(
+          '.pf-about-manifesto-details .pf-about-manifesto-block'
+        )
+      );
+      const pair = node.querySelector<HTMLElement>('.pf-about-manifesto-pair');
+      const photoSlot = node.querySelector<HTMLElement>(
+        '.pf-about-manifesto-portrait-slot--desktop'
+      );
+
+      if (kicker) gsap.set(kicker, { autoAlpha: 0, y: 12, immediateRender: true });
+      if (mark) gsap.set(mark, { scaleX: 0, transformOrigin: 'left center', immediateRender: true });
+      if (lines.length) gsap.set(lines, { y: '108%', force3D: true, immediateRender: true });
+      if (ruleLine) {
+        gsap.set(ruleLine, { scaleX: 0, transformOrigin: 'left center', immediateRender: true });
+      }
+      if (ruleCap) gsap.set(ruleCap, { autoAlpha: 0, immediateRender: true });
+      if (bios.length) gsap.set(bios, { autoAlpha: 0, y: 16, immediateRender: true });
+      if (portraits.length) {
+        gsap.set(portraits, { clipPath: 'inset(0% 0% 100% 0%)', immediateRender: true });
+      }
+      if (caption) gsap.set(caption, { autoAlpha: 0, immediateRender: true });
+      if (folioLines.length) {
+        gsap.set(folioLines, { y: 15, autoAlpha: 0, force3D: true, immediateRender: true });
+      }
+      if (detailBlocks.length) {
+        gsap.set(detailBlocks, { autoAlpha: 0, y: 18, immediateRender: true });
+      }
+
+      node.setAttribute('data-pf-entry', 'active');
+
+      const heroTl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
+      if (kicker) heroTl.to(kicker, { autoAlpha: 1, y: 0, duration: 0.55 }, 0);
+      if (mark) heroTl.to(mark, { scaleX: 1, duration: 0.7 }, 0.06);
+      lines.forEach((line, index) => {
+        heroTl.to(line, { y: '0%', duration: 0.92, force3D: true }, 0.1 + index * 0.1);
+      });
+      if (ruleCap) heroTl.to(ruleCap, { autoAlpha: 1, duration: 0.45 }, 0.28);
+      if (ruleLine) heroTl.to(ruleLine, { scaleX: 1, duration: 0.88 }, 0.32);
+      if (bios.length) {
+        heroTl.to(bios, { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.08 }, 0.42);
+      }
+      if (portraits.length) {
+        heroTl.to(
+          portraits,
+          { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.16, ease: 'power2.inOut' },
+          0.14
+        );
+      }
+      if (caption) heroTl.to(caption, { autoAlpha: 0.62, duration: 0.55 }, 0.7);
+
+      const folioTl = gsap.timeline({
+        paused: true,
+        defaults: { ease: 'power3.out' },
+        onComplete: () => node.setAttribute('data-pf-entry', 'done'),
+      });
+      colShells.forEach((shell, colIndex) => {
+        const shifts = Array.from(
+          shell.querySelectorAll<HTMLElement>('.pf-about-manifesto-line-shift')
+        );
+        if (!shifts.length) return;
+        folioTl.to(
+          shifts,
+          { y: 0, autoAlpha: 1, duration: 0.78, stagger: 0.055, force3D: true },
+          colIndex * 0.12
+        );
+      });
+      if (detailBlocks.length) {
+        folioTl.to(
+          detailBlocks,
+          { autoAlpha: 1, y: 0, duration: 0.65, stagger: 0.08 },
+          colShells.length ? '>-0.18' : 0
+        );
+      }
+
+      let heroStarted = false;
+      let folioStarted = false;
+      const playHero = () => {
+        if (heroStarted) return;
+        heroStarted = true;
+        heroTl.play();
+      };
+      const playFolio = () => {
+        if (folioStarted) return;
+        folioStarted = true;
+        if (!heroStarted) playHero();
+        folioTl.play();
+      };
+
+      heroTl.eventCallback('onComplete', playFolio);
+
+      const heroInView = () => {
+        const box = triggerHero.getBoundingClientRect();
+        const viewH = window.innerHeight || 0;
+        return box.top < viewH * 0.78 && box.bottom > 48;
+      };
+
+      ScrollTrigger.create({
+        trigger: triggerHero,
+        start: 'top 78%',
+        once: true,
+        onEnter: playHero,
+        ...stBase,
+      });
+
+      const exitTrigger = pair ?? node;
+      const mm = gsap.matchMedia();
+      mm.add('(min-width: 1024px)', () => {
+        if (!photoSlot) return undefined;
+        gsap.fromTo(
+          photoSlot,
+          { y: 0 },
+          {
+            y: () => -manifestoParallaxTravel() * 0.8,
+            ease: 'none',
+            force3D: true,
+            scrollTrigger: {
+              trigger: node,
+              start: 'top top',
+              end: 'bottom top',
+              scrub: 0.55,
+              invalidateOnRefresh: true,
+              ...stBase,
+            },
+          }
+        );
+        return undefined;
+      });
+      mm.add('(min-width: 768px)', () => {
+        colShells.forEach((shell) => {
+          const kind = shell.getAttribute('data-col');
+          const speed = kind === 'strengths' ? 1 : 0.9;
+          gsap.fromTo(
+            shell,
+            { y: 0 },
+            {
+              y: () => -manifestoParallaxTravel() * speed,
+              ease: 'none',
+              force3D: true,
+              scrollTrigger: {
+                trigger: exitTrigger,
+                start: 'top 42%',
+                end: 'bottom 18%',
+                scrub: 0.55,
+                invalidateOnRefresh: true,
+                ...stBase,
+              },
+            }
+          );
+        });
+        if (pair) {
+          gsap.fromTo(
+            pair,
+            { autoAlpha: 1 },
+            {
+              autoAlpha: 0,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: pair,
+                start: 'top 42%',
+                end: 'bottom 18%',
+                scrub: true,
+                invalidateOnRefresh: true,
+                ...stBase,
+              },
+            }
+          );
+        }
+        return undefined;
+      });
+
+      const stopHeroWatch = aboutBannerWatchEnter(triggerHero, scroller, playHero);
+      const onWinScroll = () => {
+        if (heroInView()) playHero();
+      };
+      window.addEventListener('scroll', onWinScroll, { passive: true });
+      scroller?.addEventListener('scroll', onWinScroll, { passive: true });
+      onWinScroll();
+
+      stopWatch = () => {
+        stopHeroWatch();
+        window.removeEventListener('scroll', onWinScroll);
+        scroller?.removeEventListener('scroll', onWinScroll);
+      };
+    }, node);
+
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+
+    return () => {
+      window.clearTimeout(refreshId);
+      stopWatch?.();
+      ctx.revert();
+    };
+  }, [rootRef, motionOff]);
 }
 
 function AboutManifestoLayout({
   title,
   subtitle,
+  specialty,
   bio,
   avatarUrl,
   fullName,
@@ -3653,7 +6377,7 @@ function AboutManifestoLayout({
   showLanguages,
   showSystemsTools,
   avatarGrayscale = false,
-  portraitFrame = 'circle',
+  portraitFrame = 'square',
   blocksLayout = 'grid',
   blocksScrollFocus = false,
   contentSize,
@@ -3666,6 +6390,7 @@ function AboutManifestoLayout({
 }: {
   title: string;
   subtitle: string;
+  specialty?: string | null;
   bio?: string | null;
   avatarUrl?: string | null;
   fullName?: string | null;
@@ -3693,24 +6418,36 @@ function AboutManifestoLayout({
   cardBg: string;
   cardBorder: string;
 }) {
+  const reduceMotion = useReducedMotion();
+  const motionOff = reduceMotion === true;
+  const rootRef = useRef<HTMLDivElement>(null);
+
   const bioParagraphs = (bio?.trim() || '')
     .split(/\n{2,}/)
     .map((part) => part.trim())
     .filter(Boolean);
 
   const subtitleTrimmed = subtitle.trim();
-  const statement = subtitleTrimmed;
+  const specialtyTrimmed = specialty?.trim() || '';
   const supportingParagraphs = bioParagraphs;
+  const statementFromBio =
+    !subtitleTrimmed && !specialtyTrimmed && supportingParagraphs.length > 0
+      ? supportingParagraphs[0]
+      : '';
+  const statement = subtitleTrimmed || specialtyTrimmed || statementFromBio;
+  const visibleBio =
+    statementFromBio && statement === statementFromBio
+      ? supportingParagraphs.slice(1)
+      : supportingParagraphs;
 
   const statementIsLong = statement.length > 72;
-  const showLangRail = showLanguages && languageItems.length > 0;
-  const skillLabels = skillEntryLabels(skillItems);
+  const skillLabels = manifestoCollapseSkillLeads(skillEntryLabels(skillItems));
   const showSkillsCol = showSkills && skillLabels.length > 0;
   const showStrengthsCol = showStrengths && strengthItems.length > 0;
-  const showSkillsStrengthsRow = showSkillsCol || showStrengthsCol;
+  const showLangCol = showLanguages && languageItems.length > 0;
+  const showIndexRow = showSkillsCol || showStrengthsCol || showLangCol;
   const sectionLabelClass = infoContentLabelSizeClass(contentSize);
   const secondaryBodyClass = manifestoStatementSecondarySizeClass(contentSize);
-  const langBodyClass = infoContentBodySizeClass(contentSize);
 
   const avatarSrc = avatarUrl?.trim() || '';
   const initials = (fullName ?? '')
@@ -3720,157 +6457,267 @@ function AboutManifestoLayout({
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
+  const monogram = manifestoMonogramLetters(fullName);
+  const showAvatarColumn =
+    portraitFrame === 'monogram' ? Boolean(monogram || initials) : Boolean(avatarSrc || initials);
+  const visibleEducation = educationItems.filter(
+    (entry) => entry.title?.trim() || entry.institution?.trim() || entry.schoolYear?.trim()
+  );
+  const showDetails =
+    (showEducation && visibleEducation.length > 0) ||
+    (showInterests && interestItems.length > 0) ||
+    (showSystemsTools && toolItems.length > 0);
+  const showFolio = showIndexRow || showDetails;
+  const portraitCaption = fullName?.trim() || '';
 
-  const showAvatarColumn = Boolean(avatarSrc || initials);
+  useManifestoGsapReveal(rootRef, motionOff);
+
+  const rootStyle = {
+    '--pf-about-manifesto-accent': accent,
+    '--pf-about-manifesto-line': cardBorder,
+  } as CSSProperties;
+
+  const portraitFrameNode = (compact: boolean) => (
+    <ManifestoPortraitFrame
+      frame={portraitFrame}
+      avatarSrc={avatarSrc}
+      initials={initials}
+      monogram={monogram}
+      fullName={fullName}
+      avatarGrayscale={avatarGrayscale}
+      accent={accent}
+      cardBg={cardBg}
+      subtitleColor={subtitleColor}
+      compact={compact}
+    />
+  );
 
   return (
-    <div className="relative w-full">
+    <div
+      ref={rootRef}
+      className="pf-about-manifesto relative w-full"
+      data-pf-entry={motionOff ? 'static' : 'armed'}
+      style={rootStyle}
+    >
       <div
-        className={
-          showAvatarColumn
-            ? 'flex flex-col gap-10 sm:gap-12 lg:grid lg:grid-cols-2 lg:items-stretch lg:gap-12 xl:gap-16'
-            : 'flex flex-col gap-10 sm:gap-12'
-        }
+        className={`pf-about-manifesto-hero ${
+          showAvatarColumn ? '' : 'pf-about-manifesto-hero--solo'
+        }`}
       >
-        <header className="flex min-w-0 flex-col justify-center">
-          <p
-            className={`font-semibold uppercase tracking-[0.2em] ${sectionLabelClass}`}
-          style={{ color: titleColor }}
-        >
-          {title}
-        </p>
-
-        {statement ? (
-          <>
-            <h2
-              className={`mt-6 font-semibold tracking-tight ${
-                statementIsLong
-                  ? 'max-w-4xl text-[clamp(1.75rem,4.5vw,3.25rem)] leading-[1.12]'
-                  : 'max-w-[28ch] text-[clamp(2.5rem,7vw,4.5rem)] leading-[1.05]'
-              }`}
-              style={{ color: subtitleColor }}
-            >
-              {statement}
-            </h2>
-            <div
-              className="mt-7 h-px w-16 sm:mt-8 sm:w-20"
-              style={{ backgroundColor: accent }}
-              aria-hidden
-            />
-          </>
-        ) : null}
-
-        {supportingParagraphs.length > 0 ? (
-          <div
-              className={`mt-8 max-w-2xl space-y-4 leading-relaxed ${secondaryBodyClass}`}
-            style={{ color: bodyColor }}
-          >
-            {supportingParagraphs.map((paragraph) => (
-              <p key={paragraph.slice(0, 48)}>{paragraph}</p>
-            ))}
-          </div>
-        ) : null}
-
-        {!statement && supportingParagraphs.length === 0 ? (
-            <p className={`mt-8 opacity-60 ${secondaryBodyClass}`} style={{ color: bodyColor }}>
-              Ajoute un sous-titre dans Creator Studio → Information.
+        <div className="pf-about-manifesto-kicker-row">
+          <p className={`pf-about-manifesto-kicker ${sectionLabelClass}`}>
+            <span className="pf-about-manifesto-kicker-index" style={{ color: accent }}>
+              01
+            </span>
+            <span className="pf-about-manifesto-kicker-mark" aria-hidden />
+            <span className="pf-about-manifesto-kicker-label" style={{ color: titleColor }}>
+              {title}
+            </span>
           </p>
-        ) : null}
-      </header>
+          {showAvatarColumn ? (
+            <div className="pf-about-manifesto-portrait-slot pf-about-manifesto-portrait-slot--mobile">
+              {portraitFrameNode(true)}
+            </div>
+          ) : null}
+        </div>
 
-        {showAvatarColumn ? (
-          <div className="hidden min-h-[min(22rem,44vw)] lg:flex lg:items-center lg:justify-center lg:py-6">
-            <ManifestoPortraitFrame
-              frame={portraitFrame}
-              avatarSrc={avatarSrc}
-              initials={initials}
-              fullName={fullName}
-              avatarGrayscale={avatarGrayscale}
-              accent={accent}
-              cardBg={cardBg}
-              bodyColor={bodyColor}
-            />
-          </div>
-        ) : null}
+        <div
+          className={`pf-about-manifesto-spread ${
+            showAvatarColumn ? '' : 'pf-about-manifesto-spread--solo'
+          }`}
+        >
+          <header className="pf-about-manifesto-copy">
+            {statement ? (
+              <>
+                <ManifestoStatementReveal
+                  text={statement}
+                  className={manifestoStatementSizeClass(contentSize, statementIsLong)}
+                  color={subtitleColor}
+                />
+                <div className="pf-about-manifesto-rule" aria-hidden>
+                  <span
+                    className="pf-about-manifesto-rule-cap"
+                    style={{ backgroundColor: accent }}
+                  />
+                  <span
+                    className="pf-about-manifesto-rule-line"
+                    style={{ backgroundColor: accent }}
+                  />
+                </div>
+              </>
+            ) : null}
+
+            {visibleBio.length > 0 ? (
+              <div
+                className={`pf-about-manifesto-bio-wrap ${secondaryBodyClass}`}
+                style={{ color: bodyColor }}
+              >
+                {visibleBio.map((paragraph) => (
+                  <p key={paragraph.slice(0, 48)} className="pf-about-manifesto-bio">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            ) : null}
+
+            {!statement && visibleBio.length === 0 ? (
+              <p
+                className={`pf-about-manifesto-bio pf-about-manifesto-bio--empty ${secondaryBodyClass}`}
+                style={{ color: bodyColor }}
+              >
+                Ajoute un sous-titre dans Creator Studio → Information.
+              </p>
+            ) : null}
+          </header>
+
+          {showAvatarColumn ? (
+            <aside className="pf-about-manifesto-portrait-slot pf-about-manifesto-portrait-slot--desktop">
+              {portraitFrameNode(false)}
+              {portraitCaption ? (
+                <p className="pf-about-manifesto-portrait-caption" style={{ color: bodyColor }}>
+                  {portraitCaption}
+                </p>
+              ) : null}
+            </aside>
+          ) : null}
+        </div>
       </div>
 
-          {showLangRail ? (
-        <div className={MANIFESTO_BLOCK_DIVIDER} style={{ borderColor: cardBorder }}>
-          <ManifestoSectionLabel color={subtitleColor} contentSize={contentSize}>
-            Languages
-          </ManifestoSectionLabel>
-          <ul className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
-              {languageItems.map((item) => {
-                const flagIso = resolveSpokenLanguageFlagIso2(item.name);
-                return (
-                  <li
-                    key={item.name}
-                  className={`flex items-center gap-3 ${langBodyClass}`}
-                    style={{ color: bodyColor }}
-                  >
-                    {flagIso ? (
-                      <CountryFlag iso2={flagIso} size="sm" />
-                    ) : (
-                      <span
-                        aria-hidden
-                        className="h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: accent }}
-                      />
-                    )}
-                    <span className="whitespace-nowrap">{item.name}</span>
-                  </li>
-                );
-              })}
-            </ul>
-        </div>
+      {showFolio ? (
+        <div className="pf-about-manifesto-folio" style={{ borderColor: cardBorder }}>
+          {showIndexRow ? (
+            <div className="pf-about-manifesto-pair">
+              <ManifestoIndexGrid
+                skillLabels={skillLabels}
+                strengthItems={strengthItems}
+                languageItems={languageItems}
+                showSkills={showSkillsCol}
+                showStrengths={showStrengthsCol}
+                showLanguages={showLangCol}
+                accent={accent}
+                labelColor={subtitleColor}
+                bodyColor={bodyColor}
+                subtitleColor={subtitleColor}
+                contentSize={contentSize}
+                motionOff={motionOff}
+              />
+            </div>
           ) : null}
 
-      {showSkillsStrengthsRow ? (
-        <div
-          className={showLangRail ? MANIFESTO_BLOCK_SPACING : MANIFESTO_BLOCK_DIVIDER}
-          style={{ borderColor: cardBorder }}
-        >
-          <ManifestoSkillsStrengthsRow
-            skillLabels={skillLabels}
+          <ManifestoDetailsSection
+            educationItems={educationItems}
+            skillItems={skillItems}
             strengthItems={strengthItems}
-            showSkills={showSkillsCol}
-            showStrengths={showStrengthsCol}
-                accent={accent}
+            interestItems={interestItems}
+            toolItems={toolItems}
+            showEducation={showEducation}
+            showSkills={false}
+            showStrengths={false}
+            showInterests={showInterests}
+            showSystemsTools={showSystemsTools}
+            accent={accent}
             labelColor={subtitleColor}
-                bodyColor={bodyColor}
+            subtitleColor={subtitleColor}
+            bodyColor={bodyColor}
+            cardBorder={cardBorder}
             contentSize={contentSize}
-              />
+            blocksLayout={blocksLayout}
+            blocksScrollFocus={blocksScrollFocus}
+            motionOff={motionOff}
+            sectionTopClass={showIndexRow ? MANIFESTO_BLOCK_SPACING : 'mt-0'}
+          />
         </div>
       ) : null}
-
-      <ManifestoDetailsSection
-        educationItems={educationItems}
-        skillItems={skillItems}
-        strengthItems={strengthItems}
-        interestItems={interestItems}
-        toolItems={toolItems}
-        showEducation={showEducation}
-        showSkills={false}
-        showStrengths={false}
-        showInterests={showInterests}
-        showSystemsTools={showSystemsTools}
-        accent={accent}
-        labelColor={subtitleColor}
-        subtitleColor={subtitleColor}
-        bodyColor={bodyColor}
-        cardBorder={cardBorder}
-        contentSize={contentSize}
-        blocksLayout={blocksLayout}
-        blocksScrollFocus={blocksScrollFocus}
-        sectionTopClass={
-          showLangRail || showSkillsStrengthsRow
-            ? MANIFESTO_BLOCK_SPACING
-            : MANIFESTO_BLOCK_DIVIDER
-        }
-      />
     </div>
   );
 }
+
+const ABOUT_VALUE_STEPS_EASE = [0.16, 1, 0.3, 1] as const;
+
+const ABOUT_VALUE_STEPS_INTRO_VIEWPORT = {
+  once: true,
+  amount: 0.42,
+  margin: '0px 0px -8% 0px',
+} as const;
+
+const ABOUT_VALUE_STEPS_BLOCK_VIEWPORT = {
+  once: true,
+  amount: 0.18,
+  margin: '0px 0px -8% 0px',
+} as const;
+
+const ABOUT_VALUE_STEPS_STEP_VIEWPORT = {
+  once: true,
+  amount: 0.36,
+  margin: '0px 0px -6% 0px',
+} as const;
+
+const ABOUT_VALUE_STEPS_INTRO_STAGGER = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.14, delayChildren: 0.05 } },
+};
+
+const ABOUT_VALUE_STEPS_INTRO_LINE = {
+  hidden: { opacity: 0, y: 18 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.88, ease: ABOUT_VALUE_STEPS_EASE },
+  },
+};
+
+const ABOUT_VALUE_STEPS_STEP_STAGGER = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.09, delayChildren: 0.02 } },
+};
+
+const ABOUT_VALUE_STEPS_INDEX = {
+  hidden: { opacity: 0, y: 8 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.52, ease: ABOUT_VALUE_STEPS_EASE },
+  },
+};
+
+const ABOUT_VALUE_STEPS_FADE = {
+  hidden: { opacity: 0, y: 16 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.7, ease: ABOUT_VALUE_STEPS_EASE },
+  },
+};
+
+const ABOUT_VALUE_STEPS_COPY = {
+  hidden: { opacity: 0, y: 14 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.78, ease: ABOUT_VALUE_STEPS_EASE },
+  },
+};
+
+const ABOUT_VALUE_STEPS_GRID_STAGGER = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.1, delayChildren: 0.06 } },
+};
+
+const ABOUT_VALUE_STEPS_CARD = {
+  hidden: { opacity: 0, y: 22 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.72, ease: ABOUT_VALUE_STEPS_EASE },
+  },
+};
+
+const ABOUT_VALUE_STEPS_META_STAGGER = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.12, delayChildren: 0.04 } },
+};
+
+const ABOUT_VALUE_SERIF_STYLE = { fontFamily: ABOUT_CLASSIC_SERIF } as CSSProperties;
 
 function AboutValueListMarker({
   style,
@@ -3916,19 +6763,31 @@ function AboutValueSkillsList({
   itemTitleClass: string;
   itemDescriptionClass: string;
 }) {
+  const motionOff = useReducedMotion() === true;
   if (items.length === 0) return null;
   const rowGap = listMarkerStyle === 'none' ? 'gap-0' : 'gap-4';
   return (
     <ul className="space-y-24 sm:space-y-28 lg:space-y-36 xl:space-y-40">
-      {items.map((item) => (
-        <li
+      {items.map((item, index) => (
+        <motion.li
           key={item.id}
-          className={`flex ${rowGap} items-start`}
-          style={{ color: bodyColor }}
+          className={`pf-about-values-item flex ${rowGap} items-start`}
+          style={{ color: bodyColor, ['--pf-about-values-i' as string]: index } as CSSProperties}
+          data-pf-no-color-transition=""
+          initial={motionOff ? false : { opacity: 0, y: 22 }}
+          whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+          whileHover={motionOff ? undefined : { y: -4 }}
+          viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_STEP_VIEWPORT}
+          transition={{ duration: 0.74, ease: ABOUT_VALUE_STEPS_EASE }}
         >
           <AboutValueListMarker style={listMarkerStyle} accent={accent} />
           <div className="min-w-0 max-w-xl">
-            <span className={`font-semibold tracking-tight ${itemTitleClass}`}>{item.title}</span>
+            <span
+              className={`pf-about-values-serif font-semibold tracking-tight ${itemTitleClass}`}
+              style={ABOUT_VALUE_SERIF_STYLE}
+            >
+              {item.title}
+            </span>
             {item.description.trim() ? (
               <p
                 className={`mt-4 leading-relaxed opacity-80 lg:mt-5 ${itemDescriptionClass}`}
@@ -3938,7 +6797,7 @@ function AboutValueSkillsList({
               </p>
             ) : null}
           </div>
-        </li>
+        </motion.li>
       ))}
     </ul>
   );
@@ -3959,11 +6818,12 @@ function AboutValueEducationList({
   itemTitleClass: string;
   itemDescriptionClass: string;
 }) {
+  const motionOff = useReducedMotion() === true;
   if (items.length === 0) return null;
   const rowGap = listMarkerStyle === 'none' ? 'gap-0' : 'gap-4';
   return (
     <ul className="space-y-8 sm:space-y-10">
-      {items.map((entry) => {
+      {items.map((entry, index) => {
         const title = entry.title?.trim() ?? '';
         const institution = entry.institution?.trim() ?? '';
         const schoolYear = entry.schoolYear?.trim() ?? '';
@@ -3971,10 +6831,15 @@ function AboutValueEducationList({
         const key = entry.id || `${title}-${institution}-${schoolYear}`;
 
         return (
-          <li
+          <motion.li
             key={key}
-            className={`flex ${rowGap} items-start`}
-            style={{ color: bodyColor }}
+            className={`pf-about-values-item flex ${rowGap} items-start`}
+            style={{ color: bodyColor, ['--pf-about-values-i' as string]: index } as CSSProperties}
+            data-pf-no-color-transition=""
+            initial={motionOff ? false : { opacity: 0, y: 16 }}
+            whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+            viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_STEP_VIEWPORT}
+            transition={{ duration: 0.64, ease: ABOUT_VALUE_STEPS_EASE }}
           >
             <AboutValueListMarker style={listMarkerStyle} accent={accent} />
             <div className="min-w-0">
@@ -3987,7 +6852,7 @@ function AboutValueEducationList({
                 </p>
               ) : null}
             </div>
-          </li>
+          </motion.li>
         );
       })}
     </ul>
@@ -3998,53 +6863,48 @@ function AboutValueLanguageList({
   items,
   accent,
   bodyColor,
-  trackColor,
-  levelStyle,
-  showFlags,
-  listMarkerStyle,
   bodySizeClass,
 }: {
   items: LanguageDisplayItem[];
   accent: string;
   bodyColor: string;
-  trackColor: string;
-  levelStyle: PortfolioInfoLanguageLevelDisplayStyle;
-  showFlags: boolean;
-  listMarkerStyle: PortfolioInfoAboutValueListMarkerStyle;
   bodySizeClass: string;
 }) {
+  const motionOff = useReducedMotion() === true;
   if (items.length === 0) return null;
-  const rowGap = listMarkerStyle === 'none' ? 'gap-0' : 'gap-4';
   return (
-    <ul className="inline-grid w-full max-w-full grid-cols-[max-content_auto] items-center gap-x-3 gap-y-3 sm:gap-x-4">
+    <motion.ul
+      className="pf-about-values-langs"
+      data-pf-no-color-transition=""
+      initial={motionOff ? false : { opacity: 0, y: 12 }}
+      whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+      viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+      transition={{ duration: 0.68, ease: ABOUT_VALUE_STEPS_EASE }}
+    >
       {items.map((item) => {
-        const flagIso = resolveSpokenLanguageFlagIso2(item.name);
+        const code = aboutClassicLanguageCode(item.name);
+        const levelLabel = item.level ? resolveSpokenLanguageLevelLabel(item.level) : null;
+        const tone = item.level ? ABOUT_CLASSIC_LEVEL_TONE[item.level] ?? 0.72 : 0.72;
         return (
-          <li key={item.name} className="contents">
+          <li
+            key={item.name}
+            className={`pf-about-values-lang ${bodySizeClass}`}
+            style={{ color: bodyColor, opacity: tone }}
+          >
             <span
-              className={`flex min-w-0 items-center ${rowGap} leading-relaxed ${bodySizeClass}`}
-              style={{ color: bodyColor }}
+              className="pf-about-values-lang-code"
+              style={{ color: accent, ...ABOUT_VALUE_SERIF_STYLE }}
             >
-              {showFlags && flagIso ? (
-                <CountryFlag iso2={flagIso} size="sm" className="shrink-0" />
-              ) : (
-                <AboutValueListMarker style={listMarkerStyle} accent={accent} />
-              )}
-              <span>{item.name}</span>
+              {code}
             </span>
-            <span className="justify-self-start">
-              <InfoLanguageLevelIndicator
-                name={item.name}
-                level={item.level}
-                style={levelStyle}
-                accent={accent}
-                track={trackColor}
-              />
-            </span>
+            <span className="pf-about-values-lang-name">{item.name}</span>
+            {levelLabel ? (
+              <span className="pf-about-values-lang-level">({levelLabel})</span>
+            ) : null}
           </li>
         );
       })}
-    </ul>
+    </motion.ul>
   );
 }
 
@@ -4061,19 +6921,29 @@ function AboutValueTextList({
   listMarkerStyle: PortfolioInfoAboutValueListMarkerStyle;
   itemTitleClass: string;
 }) {
+  const motionOff = useReducedMotion() === true;
   if (items.length === 0) return null;
   const rowGap = listMarkerStyle === 'none' ? 'gap-0' : 'gap-4';
   return (
     <ul className="space-y-4">
-      {items.map((item) => (
-        <li
+      {items.map((item, index) => (
+        <motion.li
           key={item}
-          className={`flex ${rowGap} items-start`}
-          style={{ color: bodyColor }}
+          className={`pf-about-values-item flex ${rowGap} items-start`}
+          style={{ color: bodyColor, ['--pf-about-values-i' as string]: index } as CSSProperties}
+          data-pf-no-color-transition=""
+          initial={motionOff ? false : { opacity: 0, y: 12 }}
+          whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+          viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_STEP_VIEWPORT}
+          transition={{
+            duration: 0.58,
+            delay: motionOff ? 0 : Math.min(index, 8) * 0.05,
+            ease: ABOUT_VALUE_STEPS_EASE,
+          }}
         >
           <AboutValueListMarker style={listMarkerStyle} accent={accent} />
           <span className={`leading-relaxed ${itemTitleClass}`}>{item}</span>
-        </li>
+        </motion.li>
       ))}
     </ul>
   );
@@ -4094,31 +6964,48 @@ function AboutValueTitle({
   wide?: boolean;
   className?: string;
 }) {
+  const motionOff = useReducedMotion() === true;
+
   if (wide) {
     return (
       <div className={`w-full ${className}`}>
-        <h2
-          className={`w-full font-semibold leading-[0.95] tracking-tight ${titleSizeClass}`}
-          style={{ color: titleColor }}
+        <motion.h2
+          className={`pf-about-values-title w-full font-semibold leading-[0.95] tracking-tight ${titleSizeClass}`}
+          style={{ color: titleColor, ...ABOUT_VALUE_SERIF_STYLE }}
+          data-pf-no-color-transition=""
+          initial={motionOff ? false : { opacity: 0, y: 16 }}
+          whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+          viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+          transition={{ duration: 0.78, ease: ABOUT_VALUE_STEPS_EASE }}
         >
           {children}
-        </h2>
+        </motion.h2>
       </div>
     );
   }
 
   return (
     <div className={`min-w-0 ${className}`}>
-      <h2
-        className={`max-w-[14ch] font-semibold leading-[0.95] tracking-tight ${titleSizeClass}`}
-        style={{ color: titleColor }}
+      <motion.h2
+        className={`pf-about-values-title max-w-[14ch] font-semibold leading-[0.95] tracking-tight ${titleSizeClass}`}
+        style={{ color: titleColor, ...ABOUT_VALUE_SERIF_STYLE }}
+        data-pf-no-color-transition=""
+        initial={motionOff ? false : { opacity: 0, y: 16 }}
+        whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+        viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+        transition={{ duration: 0.78, ease: ABOUT_VALUE_STEPS_EASE }}
       >
         {children}
-      </h2>
-      <div
-        className="mt-4 h-px w-12 sm:mt-5 sm:w-14"
-            style={{ backgroundColor: accent }}
+      </motion.h2>
+      <motion.div
+        className="pf-about-values-rule mt-4 h-px w-12 origin-left sm:mt-5 sm:w-14"
+        style={{ backgroundColor: accent }}
         aria-hidden
+        data-pf-no-color-transition=""
+        initial={motionOff ? false : { scaleX: 0 }}
+        whileInView={motionOff ? undefined : { scaleX: 1 }}
+        viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+        transition={{ duration: 0.72, delay: motionOff ? 0 : 0.18, ease: ABOUT_VALUE_STEPS_EASE }}
       />
     </div>
   );
@@ -4142,6 +7029,7 @@ function AboutValueNumberedGrid({
   contentSize: PortfolioInfoContentSize;
   emptyMessage?: string;
 }) {
+  const motionOff = useReducedMotion() === true;
   const visible = items.filter((item) => item.title?.trim() || item.description?.trim());
   const blockTitleClass = aboutValueBlockTitleSizeClass(contentSize);
   const itemTitleClass = aboutValueStepsItemTitleSizeClass(contentSize);
@@ -4153,12 +7041,17 @@ function AboutValueNumberedGrid({
     if (!emptyMessage) return null;
     return (
       <div className="w-full">
-        <h2
-          className={`font-semibold leading-[0.95] tracking-tight ${blockTitleClass}`}
-          style={{ color: titleColor }}
+        <motion.h2
+          className={`pf-about-values-title font-semibold leading-[0.95] tracking-tight ${blockTitleClass}`}
+          style={{ color: titleColor, ...ABOUT_VALUE_SERIF_STYLE }}
+          data-pf-no-color-transition=""
+          initial={motionOff ? false : { opacity: 0, y: 16 }}
+          whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+          viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+          transition={{ duration: 0.78, ease: ABOUT_VALUE_STEPS_EASE }}
         >
           {title}
-        </h2>
+        </motion.h2>
         <p className={`mt-8 opacity-60 sm:mt-10 ${emptyMessageClass}`} style={{ color: bodyColor }}>
           {emptyMessage}
         </p>
@@ -4169,44 +7062,60 @@ function AboutValueNumberedGrid({
   return (
     <div className="w-full lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-10 xl:gap-x-16">
       <div className="min-w-0 lg:col-span-4 lg:pt-1">
-        <h2
-          className={`font-semibold leading-[0.95] tracking-tight ${blockTitleClass}`}
-          style={{ color: titleColor }}
+        <motion.h2
+          className={`pf-about-values-title font-semibold leading-[0.95] tracking-tight ${blockTitleClass}`}
+          style={{ color: titleColor, ...ABOUT_VALUE_SERIF_STYLE }}
+          data-pf-no-color-transition=""
+          initial={motionOff ? false : { opacity: 0, y: 16 }}
+          whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+          viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+          transition={{ duration: 0.78, ease: ABOUT_VALUE_STEPS_EASE }}
         >
           {title}
-        </h2>
+        </motion.h2>
       </div>
 
-      <div className="mt-12 min-w-0 lg:col-span-8 lg:mt-0">
-        <div className="grid grid-cols-1 gap-x-10 gap-y-14 sm:grid-cols-2 sm:gap-x-12 sm:gap-y-16 lg:gap-x-16 lg:gap-y-20">
-          {visible.map((skill, index) => (
-            <article key={skill.id} className="min-w-0">
-              <p
-                className={`font-semibold tabular-nums tracking-tight ${numberClass}`}
-                style={{ color: titleColor }}
+      <motion.div
+        className="pf-about-values-numbered mt-12 grid min-w-0 grid-cols-1 gap-x-10 gap-y-14 sm:grid-cols-12 sm:gap-x-8 sm:gap-y-16 lg:col-span-8 lg:mt-0 lg:gap-x-10 lg:gap-y-20"
+        data-pf-no-color-transition=""
+        initial={motionOff ? false : 'hidden'}
+        whileInView={motionOff ? undefined : 'show'}
+        viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+        variants={ABOUT_VALUE_STEPS_GRID_STAGGER}
+      >
+        {visible.map((skill, index) => (
+          <motion.article
+            key={skill.id}
+            className={`pf-about-values-card min-w-0 ${index % 2 === 1 ? 'sm:col-span-5' : 'sm:col-span-7'}`}
+            style={{ ['--pf-about-values-i' as string]: index } as CSSProperties}
+            variants={motionOff ? undefined : ABOUT_VALUE_STEPS_CARD}
+            whileHover={motionOff ? undefined : { y: -6 }}
+          >
+            <p
+              className={`pf-about-values-index font-semibold tabular-nums tracking-tight ${numberClass}`}
+              style={{ color: titleColor }}
+            >
+              {formatValueStepNumber(index)}
+            </p>
+            {skill.title?.trim() ? (
+              <h3
+                className={`pf-about-values-serif mt-3 font-semibold tracking-tight sm:mt-4 ${itemTitleClass}`}
+                style={{ color: subtitleColor, ...ABOUT_VALUE_SERIF_STYLE }}
               >
-                {formatValueStepNumber(index)}
+                {skill.title}
+              </h3>
+            ) : null}
+            {skill.description.trim() ? (
+              <p
+                className={`mt-3 leading-relaxed opacity-80 sm:mt-4 ${itemDescriptionClass}`}
+                style={{ color: bodyColor }}
+              >
+                {skill.description}
               </p>
-              {skill.title?.trim() ? (
-                <h3
-                  className={`mt-3 font-semibold tracking-tight sm:mt-4 ${itemTitleClass}`}
-                  style={{ color: subtitleColor }}
-                >
-                  {skill.title}
-                </h3>
-              ) : null}
-              {skill.description.trim() ? (
-                <p
-                  className={`mt-3 leading-relaxed opacity-80 sm:mt-4 ${itemDescriptionClass}`}
-                  style={{ color: bodyColor }}
-                >
-                  {skill.description}
-                </p>
-              ) : null}
-            </article>
-          ))}
-        </div>
-      </div>
+            ) : null}
+          </motion.article>
+        ))}
+      </motion.div>
     </div>
   );
 }
@@ -4231,6 +7140,7 @@ function AboutValueIndexedList({
   contentSize: PortfolioInfoContentSize;
   emptyMessage?: string;
 }) {
+  const motionOff = useReducedMotion() === true;
   const visible = items.filter((item) => item.title?.trim() || item.description?.trim());
   const blockTitleClass = aboutValueBlockTitleSizeClass(contentSize);
   const itemTitleClass = aboutValueStepsItemTitleSizeClass(contentSize);
@@ -4242,12 +7152,17 @@ function AboutValueIndexedList({
     if (!emptyMessage) return null;
     return (
       <div className="w-full">
-        <h2
-          className={`max-w-[16ch] font-semibold leading-[0.95] tracking-tight ${blockTitleClass}`}
-          style={{ color: titleColor }}
+        <motion.h2
+          className={`pf-about-values-title max-w-[16ch] font-semibold leading-[0.95] tracking-tight ${blockTitleClass}`}
+          style={{ color: titleColor, ...ABOUT_VALUE_SERIF_STYLE }}
+          data-pf-no-color-transition=""
+          initial={motionOff ? false : { opacity: 0, y: 16 }}
+          whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+          viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+          transition={{ duration: 0.78, ease: ABOUT_VALUE_STEPS_EASE }}
         >
           {title}
-        </h2>
+        </motion.h2>
         <p className={`mt-8 opacity-60 sm:mt-10 ${emptyMessageClass}`} style={{ color: bodyColor }}>
           {emptyMessage}
         </p>
@@ -4257,49 +7172,63 @@ function AboutValueIndexedList({
 
   return (
     <div className="w-full">
-      <h2
-        className={`max-w-[16ch] font-semibold leading-[0.95] tracking-tight ${blockTitleClass}`}
-        style={{ color: titleColor }}
+      <motion.h2
+        className={`pf-about-values-title max-w-[16ch] font-semibold leading-[0.95] tracking-tight ${blockTitleClass}`}
+        style={{ color: titleColor, ...ABOUT_VALUE_SERIF_STYLE }}
+        data-pf-no-color-transition=""
+        initial={motionOff ? false : { opacity: 0, y: 16 }}
+        whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+        viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+        transition={{ duration: 0.78, ease: ABOUT_VALUE_STEPS_EASE }}
       >
         {title}
-      </h2>
+      </motion.h2>
 
       <ul className="mt-10 w-full sm:mt-12">
         {visible.map((skill, index) => (
-          <li
+          <motion.li
             key={skill.id}
-            className="border-t py-10 first:border-t sm:py-12 lg:py-14"
-            style={{ borderColor: cardBorder }}
+            className="pf-about-values-row border-t py-10 first:border-t sm:py-12 lg:py-14"
+            style={{ borderColor: cardBorder, ['--pf-about-values-i' as string]: index } as CSSProperties}
+            data-pf-no-color-transition=""
+            initial={motionOff ? false : 'hidden'}
+            whileInView={motionOff ? undefined : 'show'}
+            viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_STEP_VIEWPORT}
+            variants={ABOUT_VALUE_STEPS_STEP_STAGGER}
+            whileHover={motionOff ? undefined : { y: -4 }}
           >
             <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-12 sm:gap-x-8 lg:gap-x-12">
-              <span
-                className={`tabular-nums tracking-tight opacity-70 sm:col-span-1 ${indexClass}`}
+              <motion.span
+                className={`pf-about-values-index tabular-nums tracking-tight opacity-70 sm:col-span-1 ${indexClass}`}
                 style={{ color: bodyColor }}
+                variants={motionOff ? undefined : ABOUT_VALUE_STEPS_INDEX}
               >
                 {formatValueIndexNumber(index)}
-              </span>
+              </motion.span>
               {skill.title?.trim() ? (
-                <h3
-                  className={`font-semibold tracking-tight sm:col-span-3 ${itemTitleClass}`}
-                  style={{ color: subtitleColor }}
+                <motion.h3
+                  className={`pf-about-values-serif font-semibold tracking-tight sm:col-span-3 ${itemTitleClass}`}
+                  style={{ color: subtitleColor, ...ABOUT_VALUE_SERIF_STYLE }}
+                  variants={motionOff ? undefined : ABOUT_VALUE_STEPS_FADE}
                 >
                   {skill.title}
-                </h3>
+                </motion.h3>
               ) : (
                 <span className="hidden sm:col-span-3 sm:block" aria-hidden />
               )}
               {skill.description.trim() ? (
-                <p
+                <motion.p
                   className={`leading-relaxed opacity-80 sm:col-span-8 ${itemDescriptionClass}`}
                   style={{ color: bodyColor }}
+                  variants={motionOff ? undefined : ABOUT_VALUE_STEPS_COPY}
                 >
                   {skill.description}
-                </p>
+                </motion.p>
               ) : null}
             </div>
-        </li>
-      ))}
-    </ul>
+          </motion.li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -4310,8 +7239,8 @@ function AboutValueRow({
   listMode = 'text',
   languageItems,
   educationItems,
-  languageLevelStyle,
-  showLanguageFlags = true,
+  languageLevelStyle: _languageLevelStyle,
+  showLanguageFlags: _showLanguageFlags = true,
   listMarkerStyle = 'dot',
   showList,
   emptyListMessage,
@@ -4319,7 +7248,7 @@ function AboutValueRow({
   titleColor,
   subtitleColor,
   bodyColor,
-  trackColor,
+  trackColor: _trackColor,
   blocksLayout = 'split',
   contentSize,
 }: {
@@ -4359,10 +7288,6 @@ function AboutValueRow({
         items={languageItems ?? []}
         accent={accent}
         bodyColor={subtitleColor}
-        trackColor={trackColor ?? bodyColor}
-        levelStyle={languageLevelStyle ?? 'stars'}
-        showFlags={showLanguageFlags}
-        listMarkerStyle={listMarkerStyle}
         bodySizeClass={itemDescriptionClass}
       />
     ) : showList && listMode === 'education' && (educationItems?.length ?? 0) > 0 ? (
@@ -4407,7 +7332,7 @@ function AboutValueRow({
 
   if (stacked) {
     return (
-      <div className="flex min-w-0 flex-col">
+      <div className="pf-about-values-editorial flex min-w-0 flex-col">
         {titleBlock}
         {listBlock}
       </div>
@@ -4415,7 +7340,7 @@ function AboutValueRow({
   }
 
   return (
-    <div className="flex flex-col gap-12 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-10 xl:gap-x-16">
+    <div className="pf-about-values-editorial flex flex-col gap-12 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-10 xl:gap-x-16">
       {titleBlock}
       {listBlock}
     </div>
@@ -4639,74 +7564,101 @@ function AboutValueStepsNativeValues({
   bodyColor: string;
   contentSize: PortfolioInfoContentSize;
 }) {
+  const motionOff = useReducedMotion() === true;
   const sectionTitleClass = infoContentBodySizeClass(contentSize);
   const stepTitleClass = aboutValueStepsItemTitleSizeClass(contentSize);
   const descriptionSizeClass = aboutValueStepsDescriptionSizeClass(contentSize);
 
   return (
     <>
-      <h2
-        className={`mb-10 font-semibold uppercase tracking-[0.2em] sm:mb-12 lg:hidden ${sectionTitleClass}`}
+      <motion.h2
+        className={`pf-about-values-kicker mb-10 font-semibold uppercase tracking-[0.2em] sm:mb-12 lg:hidden ${sectionTitleClass}`}
         style={{ color: titleColor }}
+        data-pf-no-color-transition=""
+        initial={motionOff ? false : { opacity: 0, y: 10 }}
+        whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+        viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+        transition={{ duration: 0.62, ease: ABOUT_VALUE_STEPS_EASE }}
       >
         ({title})
-      </h2>
+      </motion.h2>
 
       <div className="lg:grid lg:grid-cols-12 lg:gap-x-10 xl:gap-x-16">
         <div className="lg:col-span-8">
           {visibleSkills.map((skill, index) => (
-            <div
+            <motion.div
               key={skill.id}
-              className={`grid grid-cols-1 items-start gap-x-10 gap-y-4 lg:grid-cols-8 ${
+              className={`pf-about-values-step grid grid-cols-1 items-start gap-x-10 gap-y-4 lg:grid-cols-8 ${
                 index > 0 ? 'mt-24 sm:mt-28 lg:mt-36 xl:mt-40' : ''
               }`}
+              style={{ ['--pf-about-values-i' as string]: index } as CSSProperties}
+              data-pf-no-color-transition=""
+              initial={motionOff ? false : 'hidden'}
+              whileInView={motionOff ? undefined : 'show'}
+              viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_STEP_VIEWPORT}
+              variants={ABOUT_VALUE_STEPS_STEP_STAGGER}
+              whileHover={motionOff ? undefined : { y: -5 }}
             >
               <div className="flex items-baseline gap-4 lg:col-span-2 lg:pt-1.5">
-                <ValueStepsIndicator index={index} accent={accent} />
-                <h3
-                  className={`min-w-0 flex-1 font-semibold tracking-tight lg:hidden ${stepTitleClass}`}
-                  style={{ color: subtitleColor }}
+                <motion.span
+                  className="pf-about-values-index inline-flex"
+                  variants={motionOff ? undefined : ABOUT_VALUE_STEPS_INDEX}
+                >
+                  <ValueStepsIndicator index={index} accent={accent} />
+                </motion.span>
+                <motion.h3
+                  className={`pf-about-values-serif min-w-0 flex-1 font-semibold tracking-tight lg:hidden ${stepTitleClass}`}
+                  style={{ color: subtitleColor, ...ABOUT_VALUE_SERIF_STYLE }}
+                  variants={motionOff ? undefined : ABOUT_VALUE_STEPS_FADE}
                 >
                   {skill.title}
-                </h3>
-    </div>
+                </motion.h3>
+              </div>
 
               <div className="min-w-0 max-w-xl lg:col-span-6">
-                <h3
-                  className={`hidden font-semibold tracking-tight lg:block ${stepTitleClass}`}
-                  style={{ color: subtitleColor }}
+                <motion.h3
+                  className={`pf-about-values-serif hidden font-semibold tracking-tight lg:block ${stepTitleClass}`}
+                  style={{ color: subtitleColor, ...ABOUT_VALUE_SERIF_STYLE }}
+                  variants={motionOff ? undefined : ABOUT_VALUE_STEPS_FADE}
                 >
                   {skill.title}
-                </h3>
+                </motion.h3>
                 {skill.description.trim() ? (
-                  <p
-                    className={`mt-4 leading-relaxed opacity-80 lg:mt-5 ${descriptionSizeClass}`}
+                  <motion.p
+                    className={`mt-4 hidden leading-relaxed opacity-80 lg:mt-5 lg:block ${descriptionSizeClass}`}
                     style={{ color: bodyColor }}
+                    variants={motionOff ? undefined : ABOUT_VALUE_STEPS_COPY}
                   >
                     {skill.description}
-                  </p>
+                  </motion.p>
                 ) : null}
               </div>
 
               {skill.description.trim() ? (
-                <p
+                <motion.p
                   className={`max-w-xl leading-relaxed opacity-80 lg:hidden ${descriptionSizeClass}`}
                   style={{ color: bodyColor }}
+                  variants={motionOff ? undefined : ABOUT_VALUE_STEPS_COPY}
                 >
                   {skill.description}
-                </p>
+                </motion.p>
               ) : null}
-            </div>
+            </motion.div>
           ))}
         </div>
 
         <div className="hidden lg:col-span-4 lg:block">
-          <h2
-            className={`sticky top-[calc(var(--portfolio-nav-top-clearance,5.5rem)+0.5rem)] z-20 text-right font-semibold uppercase tracking-[0.2em] ${sectionTitleClass}`}
+          <motion.h2
+            className={`pf-about-values-kicker pf-about-values-kicker--sticky sticky top-[calc(var(--portfolio-nav-top-clearance,5.5rem)+0.5rem)] z-20 text-right font-semibold uppercase tracking-[0.2em] ${sectionTitleClass}`}
             style={{ color: titleColor }}
+            data-pf-no-color-transition=""
+            initial={motionOff ? false : { opacity: 0 }}
+            whileInView={motionOff ? undefined : { opacity: 1 }}
+            viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+            transition={{ duration: 0.7, ease: ABOUT_VALUE_STEPS_EASE }}
           >
             ({title})
-          </h2>
+          </motion.h2>
         </div>
       </div>
     </>
@@ -4727,8 +7679,8 @@ function AboutValueStepsLayout({
   showSystemsTools,
   showLanguages,
   showEducation,
-  showLanguageFlags,
-  languageLevelStyle,
+  showLanguageFlags: _showLanguageFlags,
+  languageLevelStyle: _languageLevelStyle,
   introEnabled,
   introParagraphs,
   avatarUrl,
@@ -4772,6 +7724,8 @@ function AboutValueStepsLayout({
   listMarkerStyle: PortfolioInfoAboutValueListMarkerStyle;
   portraitGrayscale: boolean;
 }) {
+  const motionOff = useReducedMotion() === true;
+  const rootRef = useRef<HTMLDivElement>(null);
   const stepTitleClass = aboutValueStepsItemTitleSizeClass(contentSize);
   const descriptionSizeClass = aboutValueStepsDescriptionSizeClass(contentSize);
   const emptyMessageClass = infoContentEducationMetaSizeClass(contentSize);
@@ -4847,32 +7801,66 @@ function AboutValueStepsLayout({
   const showMeta = metaBlocks.length > 0;
   const showMetaSection = showMeta || showEducationBlock || showLanguagesBlock;
 
+  useEffect(() => {
+    rootRef.current?.setAttribute('data-pf-js', 'true');
+  }, []);
+
+  const rootStyle = {
+    '--pf-about-values-accent': accent,
+    '--pf-about-values-line': cardBorder,
+  } as CSSProperties;
+
   return (
-    <div className="w-full">
+    <div
+      ref={rootRef}
+      className="pf-about-values w-full"
+      data-pf-entry={motionOff ? 'static' : 'armed'}
+      data-pf-layout={valuesLayout}
+      style={rootStyle}
+    >
       {showIntro ? (
-        <div className="max-w-3xl space-y-6 sm:max-w-4xl sm:space-y-7 lg:max-w-5xl">
-          {introParagraphs.map((paragraph) => (
-            <p
+        <motion.div
+          className="pf-about-values-intro max-w-3xl space-y-6 sm:max-w-4xl sm:space-y-7 lg:max-w-5xl"
+          data-pf-no-color-transition=""
+          initial={motionOff ? false : 'hidden'}
+          whileInView={motionOff ? undefined : 'show'}
+          viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_INTRO_VIEWPORT}
+          variants={ABOUT_VALUE_STEPS_INTRO_STAGGER}
+        >
+          {introParagraphs.map((paragraph, index) => (
+            <motion.p
               key={paragraph.slice(0, 48)}
-              className={`leading-relaxed ${stepTitleClass}`}
-              style={{ color: subtitleColor }}
+              className={`pf-about-values-intro-p leading-relaxed ${stepTitleClass}${
+                index === 0 ? ' pf-about-values-intro-p--display' : ''
+              }`}
+              style={
+                index === 0
+                  ? { color: subtitleColor, fontStyle: 'italic', fontWeight: 500, ...ABOUT_VALUE_SERIF_STYLE }
+                  : { color: subtitleColor }
+              }
+              variants={motionOff ? undefined : ABOUT_VALUE_STEPS_INTRO_LINE}
             >
               {paragraph}
-            </p>
+            </motion.p>
           ))}
-        </div>
+        </motion.div>
       ) : null}
 
       {showIntro && showValuesContent ? (
-        <div
-          className="my-14 h-px w-full sm:my-16 lg:my-20"
+        <motion.div
+          className="pf-about-values-rule my-14 h-px w-full origin-left sm:my-16 lg:my-20"
           style={{ backgroundColor: cardBorder }}
           aria-hidden
+          data-pf-no-color-transition=""
+          initial={motionOff ? false : { scaleX: 0 }}
+          whileInView={motionOff ? undefined : { scaleX: 1 }}
+          viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+          transition={{ duration: 0.86, ease: ABOUT_VALUE_STEPS_EASE }}
         />
       ) : null}
 
       {showValuesContent ? (
-        <>
+        <div className="pf-about-values-stage">
           {valuesLayout === 'value-steps' ? (
             <AboutValueStepsNativeValues
               title={title}
@@ -4923,7 +7911,7 @@ function AboutValueStepsLayout({
               emptyMessage="Ajoute des skills dans Creator Studio → Information."
             />
           ) : null}
-        </>
+        </div>
       ) : !showIntro && showSkills ? (
         <p className={`opacity-60 ${emptyMessageClass}`} style={{ color: bodyColor }}>
           Ajoute des skills dans Creator Studio → Information.
@@ -4931,15 +7919,30 @@ function AboutValueStepsLayout({
       ) : null}
 
       {showFooter ? (
-        <div className="mt-32 sm:mt-40 lg:mt-48 xl:mt-56">
-          <div
-            className="mb-14 h-px w-full sm:mb-16 lg:mb-20"
+        <div className="pf-about-values-footer mt-32 sm:mt-40 lg:mt-48 xl:mt-56">
+          <motion.div
+            className="pf-about-values-rule mb-14 h-px w-full origin-left sm:mb-16 lg:mb-20"
             style={{ backgroundColor: cardBorder }}
             aria-hidden
+            data-pf-no-color-transition=""
+            initial={motionOff ? false : { scaleX: 0 }}
+            whileInView={motionOff ? undefined : { scaleX: 1 }}
+            viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+            transition={{ duration: 0.8, ease: ABOUT_VALUE_STEPS_EASE }}
           />
-          <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-x-10 xl:gap-x-16">
+          <motion.div
+            className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-x-10 xl:gap-x-16"
+            data-pf-no-color-transition=""
+            initial={motionOff ? false : 'hidden'}
+            whileInView={motionOff ? undefined : 'show'}
+            viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+            variants={ABOUT_VALUE_STEPS_META_STAGGER}
+          >
             {showStrengthsBlock ? (
-              <div className="min-w-0 lg:col-span-6">
+              <motion.div
+                className="pf-about-values-strengths min-w-0 lg:col-span-6"
+                variants={motionOff ? undefined : ABOUT_VALUE_STEPS_FADE}
+              >
                 <ManifestoSectionLabel accent={accent} contentSize={contentSize}>
                   {ABOUT_VALUE_STEPS_SECTION_LABELS.strengths}
                 </ManifestoSectionLabel>
@@ -4948,34 +7951,51 @@ function AboutValueStepsLayout({
                   bodyColor={subtitleColor}
                   bodySizeClass={stepTitleClass}
                 />
-              </div>
+              </motion.div>
             ) : null}
 
             {showPortrait ? (
-              <div
+              <motion.div
                 className={`flex justify-center lg:col-span-6 ${
                   showStrengthsBlock ? 'lg:justify-end' : 'lg:col-start-7 lg:justify-end'
                 }`}
+                variants={motionOff ? undefined : ABOUT_VALUE_STEPS_FADE}
               >
-                <ValueStepsSquarePortrait
-                  avatarSrc={avatarSrc}
-                  initials={initials}
-                  fullName={fullName}
-                  accent={accent}
-                  bodyColor={bodyColor}
-                  portraitGrayscale={portraitGrayscale}
-                />
-              </div>
+                <motion.div
+                  className="pf-about-values-portrait inline-flex overflow-hidden"
+                  data-pf-no-color-transition=""
+                  initial={motionOff ? false : { clipPath: 'inset(100% 0% 0% 0%)' }}
+                  whileInView={motionOff ? undefined : { clipPath: 'inset(0% 0% 0% 0%)' }}
+                  viewport={motionOff ? undefined : { once: true, amount: 0.42 }}
+                  transition={{ duration: 1.08, ease: ABOUT_VALUE_STEPS_EASE }}
+                >
+                  <ValueStepsSquarePortrait
+                    avatarSrc={avatarSrc}
+                    initials={initials}
+                    fullName={fullName}
+                    accent={accent}
+                    bodyColor={bodyColor}
+                    portraitGrayscale={portraitGrayscale}
+                  />
+                </motion.div>
+              </motion.div>
             ) : null}
-          </div>
+          </motion.div>
         </div>
       ) : null}
 
       {showMetaSection ? (
-        <div className="mt-32 sm:mt-40 lg:mt-48 xl:mt-56">
-          <ValueStepsSectionRule cardBorder={cardBorder} className="mb-14 sm:mb-16 lg:mb-20" />
+        <div className="pf-about-values-meta-section mt-32 sm:mt-40 lg:mt-48 xl:mt-56">
+          <ValueStepsSectionRule cardBorder={cardBorder} className="pf-about-values-rule mb-14 sm:mb-16 lg:mb-20" />
           {showEducationBlock ? (
-            <div className={showMeta || showLanguagesBlock ? 'mb-32 sm:mb-40 lg:mb-48 xl:mb-56' : ''}>
+            <motion.div
+              className={`pf-about-values-meta ${showMeta || showLanguagesBlock ? 'mb-32 sm:mb-40 lg:mb-48 xl:mb-56' : ''}`}
+              data-pf-no-color-transition=""
+              initial={motionOff ? false : { opacity: 0, y: 22 }}
+              whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+              viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+              transition={{ duration: 0.78, ease: ABOUT_VALUE_STEPS_EASE }}
+            >
               <ValueStepsEducationList
                 items={educationItems}
                 accent={accent}
@@ -4984,29 +8004,58 @@ function AboutValueStepsLayout({
                 cardBorder={cardBorder}
                 contentSize={contentSize}
               />
-            </div>
+            </motion.div>
           ) : null}
           {showMeta ? (
-            <div className={showLanguagesBlock ? 'mb-32 sm:mb-40 lg:mb-48 xl:mb-56' : ''}>
-              <ValueStepsMetaGrid blocks={metaBlocks} />
-            </div>
+            motionOff ? (
+              <div className={showLanguagesBlock ? 'mb-32 sm:mb-40 lg:mb-48 xl:mb-56' : ''}>
+                <ValueStepsMetaGrid blocks={metaBlocks} />
+              </div>
+            ) : (
+              <motion.div
+                className={`grid grid-cols-1 gap-16 sm:gap-20 lg:grid-cols-2 lg:gap-x-10 lg:gap-y-20 xl:gap-x-16 ${
+                  showLanguagesBlock ? 'mb-32 sm:mb-40 lg:mb-48 xl:mb-56' : ''
+                }`}
+                data-pf-no-color-transition=""
+                initial="hidden"
+                whileInView="show"
+                viewport={ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+                variants={ABOUT_VALUE_STEPS_META_STAGGER}
+              >
+                {metaBlocks.map((block) => (
+                  <motion.div
+                    key={block.key}
+                    className="pf-about-values-meta min-w-0"
+                    variants={ABOUT_VALUE_STEPS_FADE}
+                  >
+                    {block.node}
+                  </motion.div>
+                ))}
+              </motion.div>
+            )
           ) : null}
           {showLanguagesBlock ? (
-            <ValueStepsMetaBlock
-              label={ABOUT_VALUE_STEPS_SECTION_LABELS.languages}
-              accent={accent}
-              contentSize={contentSize}
+            <motion.div
+              className="pf-about-values-meta min-w-0"
+              data-pf-no-color-transition=""
+              initial={motionOff ? false : { opacity: 0, y: 18 }}
+              whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
+              viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
+              transition={{ duration: 0.72, ease: ABOUT_VALUE_STEPS_EASE }}
             >
-              <InfoLanguageList
-                items={languageItems}
+              <ValueStepsMetaBlock
+                label={ABOUT_VALUE_STEPS_SECTION_LABELS.languages}
                 accent={accent}
-                body={bodyColor}
-                track={bodyColor}
-                levelStyle={languageLevelStyle}
-                showMarker={showLanguageFlags}
-                bodySizeClass={descriptionSizeClass}
-              />
-            </ValueStepsMetaBlock>
+                contentSize={contentSize}
+              >
+                <AboutValueLanguageList
+                  items={languageItems}
+                  accent={accent}
+                  bodyColor={bodyColor}
+                  bodySizeClass={descriptionSizeClass}
+                />
+              </ValueStepsMetaBlock>
+            </motion.div>
           ) : null}
         </div>
       ) : null}
@@ -5018,12 +8067,12 @@ function AboutValueStepsLayout({
  * Info section designs:
  * - about-me: label + subtitle + bio + education + cards
  * - about-me-trait: centered title + accent trait + portrait/bio + skills/strengths/languages + education timeline
- * - about-split: sticky portrait split — specialty headline, bio lede, numbered skills, strength tags, language levels
+ * - about-split: sticky portrait split — specialty headline, bio lede, numbered skills, strength tags, typographic languages
  * - about-banner: XXL centered headline — portrait bottom-left, bio bottom-right
  * - about-feature-panel: kicker + two-tone intro — skills rail + description card, bio below titles
  * - about-platform: Jasper-style — kicker + headline left, bio right ; skills card grid (4 per row)
- * - about-portrait-skills: large portrait right — small lede + XXL skill titles left, bio bottom-left
- * - about-manifesto: huge statement + accent rule + languages rail + education index + capability blocks
+ * - about-portrait-skills: sticky split frame — XXL skill rail left, pinned portrait right, ghost strength badges
+ * - about-manifesto: huge statement + accent rule + skills/strengths/languages index + education + capability blocks
  * - about-terminal: dev console shell — monospace commands, no portrait
  * - about-value-steps: My Values — steps, editorial, numbered grid or indexed list ; intro, footer, meta blocks
  */
@@ -5074,6 +8123,42 @@ export function EditorialAboutMeSection({
   const contentSize = resolveInfoContentSize(presentation);
   const infoDesign = resolveInfoDesign(presentation.design);
   const portraitGrayscale = resolveInfoPortraitGrayscale(presentation);
+
+  if (infoDesign === 'about-manifesto') {
+    return (
+      <AboutManifestoLayout
+        title={title}
+        subtitle={subtitle}
+        specialty={specialty}
+        bio={bio}
+        avatarUrl={avatarUrl}
+        fullName={fullName}
+        educationItems={educationItems}
+        skillItems={skillItems}
+        strengthItems={strengthItems}
+        interestItems={interestItems}
+        languageItems={languageItems}
+        toolItems={toolItems}
+        showEducation={resolveInfoShowEducation(presentation) && educationItems.length > 0}
+        showSkills={showSkills}
+        showStrengths={showStrengths}
+        showInterests={resolveInfoShowInterests(presentation) && interestItems.length > 0}
+        showLanguages={showLanguages}
+        showSystemsTools={showSystemsTools}
+        avatarGrayscale={portraitGrayscale}
+        portraitFrame={resolveInfoAboutManifestoPortraitFrame(presentation)}
+        blocksLayout={resolveInfoAboutManifestoBlocksLayout(presentation)}
+        blocksScrollFocus={resolveInfoAboutManifestoBlocksScrollFocus(presentation)}
+        contentSize={contentSize}
+        accent={accent}
+        titleColor={titleColor}
+        subtitleColor={subtitleColor}
+        bodyColor={bodyColor}
+        cardBg={cardBg}
+        cardBorder={cardBorder}
+      />
+    );
+  }
 
   if (infoDesign === 'about-platform') {
     return (
@@ -5264,44 +8349,10 @@ export function EditorialAboutMeSection({
     );
   }
 
-  if (presentation.design === 'about-manifesto') {
-    return (
-      <AboutManifestoLayout
-        title={title}
-        subtitle={subtitle}
-        bio={bio}
-        avatarUrl={avatarUrl}
-        fullName={fullName}
-        educationItems={educationItems}
-        skillItems={skillItems}
-        strengthItems={strengthItems}
-        interestItems={interestItems}
-        languageItems={languageItems}
-        toolItems={toolItems}
-        showEducation={resolveInfoShowEducation(presentation) && educationItems.length > 0}
-        showSkills={showSkills}
-        showStrengths={showStrengths}
-        showInterests={resolveInfoShowInterests(presentation) && interestItems.length > 0}
-        showLanguages={showLanguages}
-        showSystemsTools={showSystemsTools}
-        avatarGrayscale={portraitGrayscale}
-        portraitFrame={resolveInfoAboutManifestoPortraitFrame(presentation)}
-        blocksLayout={resolveInfoAboutManifestoBlocksLayout(presentation)}
-        blocksScrollFocus={resolveInfoAboutManifestoBlocksScrollFocus(presentation)}
-        contentSize={contentSize}
-        accent={accent}
-        titleColor={titleColor}
-        subtitleColor={subtitleColor}
-        bodyColor={bodyColor}
-        cardBg={cardBg}
-        cardBorder={cardBorder}
-      />
-    );
-  }
-
   if (presentation.design === 'about-terminal') {
     return (
       <AboutTerminalLayout
+        className="pf-about-terminal"
         title={title}
         subtitle={subtitle}
         fullName={fullName}
@@ -5410,6 +8461,7 @@ export function EditorialAboutMeSection({
         cardBg={cardBg}
         cardBorder={cardBorder}
         portraitGrayscale={portraitGrayscale}
+        colorMode={presentation.activeColorMode === 'light' ? 'light' : 'dark'}
       />
     );
   }

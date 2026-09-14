@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   createDefaultPortfolioSettings,
+  isPortfolioSettingsLocalNewer,
   mergePortfolioSettings,
   stampPortfolioSettingsUpdatedAt,
   type PortfolioNavSettings,
@@ -157,8 +158,12 @@ export function usePortfolioSettings(
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestSettingsRef = useRef<PortfolioSettings>(settings);
   const ownerSyncedRef = useRef(false);
+  const persistInFlightRef = useRef(false);
+  const persistAgainRef = useRef(false);
   const saveGenerationRef = useRef(0);
   const lastErrorFlashAtRef = useRef(0);
+  const initialSettingsRef = useRef(initialSettings);
+  initialSettingsRef.current = initialSettings;
 
   useEffect(() => {
     latestSettingsRef.current = settings;
@@ -173,22 +178,29 @@ export function usePortfolioSettings(
   );
 
   const persistToBackend = useCallback(
-    (next: PortfolioSettings, immediate = false) => {
-      if (!canEdit) return;
-      latestSettingsRef.current = next;
+    (immediate = false) => {
+      if (!canEdit || !ownerSyncedRef.current) return;
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 
-      const generation = ++saveGenerationRef.current;
-      setPersistStatus('saving');
-
       const run = async () => {
+        if (persistInFlightRef.current) {
+          persistAgainRef.current = true;
+          return;
+        }
+        persistInFlightRef.current = true;
+        setPersistStatus('saving');
         try {
-          await updateCreatorPortfolioSettingsWithRetry(next);
-          if (saveGenerationRef.current === generation) {
-            setPersistStatus('saved');
-          }
+          do {
+            persistAgainRef.current = false;
+            const generation = ++saveGenerationRef.current;
+            const payload = latestSettingsRef.current;
+            await updateCreatorPortfolioSettingsWithRetry(payload);
+            if (saveGenerationRef.current !== generation) {
+              persistAgainRef.current = true;
+            }
+          } while (persistAgainRef.current);
+          setPersistStatus('saved');
         } catch (error) {
-          if (saveGenerationRef.current !== generation) return;
           setPersistStatus('error');
           const now = Date.now();
           // Avoid toast spam while the user keeps typing.
@@ -203,6 +215,12 @@ export function usePortfolioSettings(
                   : 'Your changes are kept on this device. We will retry automatically.',
               durationMs: 6000,
             });
+          }
+        } finally {
+          persistInFlightRef.current = false;
+          if (persistAgainRef.current) {
+            persistAgainRef.current = false;
+            persistToBackend(true);
           }
         }
       };
@@ -220,12 +238,12 @@ export function usePortfolioSettings(
   );
 
   const flushPendingSave = useCallback(() => {
-    if (!canEdit) return;
+    if (!canEdit || !ownerSyncedRef.current) return;
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
     }
-    persistToBackend(latestSettingsRef.current, true);
+    persistToBackend(true);
   }, [canEdit, persistToBackend]);
 
   const commitSettings = useCallback(
@@ -234,7 +252,7 @@ export function usePortfolioSettings(
       latestSettingsRef.current = stamped;
       setSettings(stamped);
       writeLocalCache(stamped);
-      persistToBackend(stamped, immediate);
+      persistToBackend(immediate);
       return stamped;
     },
     [persistToBackend, writeLocalCache]
@@ -295,6 +313,14 @@ export function usePortfolioSettings(
     [commitSettings, pushHistory]
   );
 
+  /** Live Preview iframe: apply parent settings without persisting or touching undo history. */
+  const applyExternalSettings = useCallback((incoming: unknown) => {
+    const next = mergePortfolioSettings(incoming);
+    if (settingsContentEqual(latestSettingsRef.current, next)) return;
+    latestSettingsRef.current = next;
+    setSettings(next);
+  }, []);
+
   const undoSettings = useCallback(() => {
     if (pastRef.current.length === 0) return;
     const previous = pastRef.current[pastRef.current.length - 1];
@@ -325,42 +351,50 @@ export function usePortfolioSettings(
   const canRedo = historyTick >= 0 && futureRef.current.length > 0;
 
   useEffect(() => {
-    if (!canEdit) {
-      setSettings(resolveVisitorSettings(initialSettings));
-      setHydrated(true);
-      return;
-    }
+    if (canEdit) return;
+    setSettings(resolveVisitorSettings(initialSettings));
+    setHydrated(true);
+  }, [canEdit, initialSettings]);
+
+  useEffect(() => {
+    if (!canEdit) return;
 
     let cancelled = false;
+    ownerSyncedRef.current = false;
 
     void (async () => {
       try {
-        const resolved = await syncOwnerPortfolioSettings(creatorId, initialSettings);
-        if (!cancelled) {
-          setSettings(resolved);
-          writeLocalCache(resolved);
-          latestSettingsRef.current = resolved;
-          ownerSyncedRef.current = true;
-          setPersistStatus('idle');
-          pastRef.current = [];
-          futureRef.current = [];
-          lastHistoryPushAtRef.current = 0;
-          setHistoryTick((tick) => tick + 1);
-        }
+        const resolved = await syncOwnerPortfolioSettings(creatorId, initialSettingsRef.current);
+        if (cancelled) return;
+        const draft = latestSettingsRef.current;
+        const keepDraft = Boolean(draft?.updatedAt) && isPortfolioSettingsLocalNewer(draft, resolved);
+        const next = keepDraft ? draft : resolved;
+        latestSettingsRef.current = next;
+        ownerSyncedRef.current = true;
+        setSettings(next);
+        writeLocalCache(next);
+        setPersistStatus('idle');
+        pastRef.current = [];
+        futureRef.current = [];
+        lastHistoryPushAtRef.current = 0;
+        setHistoryTick((tick) => tick + 1);
+        if (keepDraft) persistToBackend(true);
       } catch {
-        if (!cancelled) {
-          const migrated = await migrateLocalPortfolioSettingsIfNeeded(creatorId, initialSettings);
-          const fallback = migrated ?? mergePortfolioSettings(initialSettings);
-          setSettings(fallback);
-          writeLocalCache(fallback);
-          latestSettingsRef.current = fallback;
-          ownerSyncedRef.current = true;
-          setPersistStatus('idle');
-          pastRef.current = [];
-          futureRef.current = [];
-          lastHistoryPushAtRef.current = 0;
-          setHistoryTick((tick) => tick + 1);
-        }
+        if (cancelled) return;
+        const migrated = await migrateLocalPortfolioSettingsIfNeeded(
+          creatorId,
+          initialSettingsRef.current
+        );
+        const fallback = migrated ?? mergePortfolioSettings(initialSettingsRef.current);
+        latestSettingsRef.current = fallback;
+        ownerSyncedRef.current = true;
+        setSettings(fallback);
+        writeLocalCache(fallback);
+        setPersistStatus('idle');
+        pastRef.current = [];
+        futureRef.current = [];
+        lastHistoryPushAtRef.current = 0;
+        setHistoryTick((tick) => tick + 1);
       } finally {
         if (!cancelled) setHydrated(true);
       }
@@ -369,7 +403,7 @@ export function usePortfolioSettings(
     return () => {
       cancelled = true;
     };
-  }, [creatorId, canEdit, initialSettings, writeLocalCache]);
+  }, [creatorId, canEdit, writeLocalCache, persistToBackend]);
 
   useEffect(() => {
     return () => {
@@ -626,6 +660,7 @@ export function usePortfolioSettings(
     ownerSynced: ownerSyncedRef.current,
     persist: saveSettings,
     flushPendingSave,
+    applyExternalSettings,
     updateSection,
     resetSettings,
     resetBuiltinTheme,

@@ -273,7 +273,7 @@ function EducationEditorial({
         cardBorder={cardBorder}
         contentSize={contentSize}
       />
-      <ul className="mt-2">
+      <ul className="pf-about-trait-edu-list mt-2">
         {items.map((entry, index) => {
           const year = entry.schoolYear?.trim() || '';
           const title = entry.title?.trim() || '';
@@ -283,64 +283,66 @@ function EducationEditorial({
           const parsed = year ? parseSchoolYearRange(year) : null;
 
           return (
-            <li
-              key={key}
-              className="group relative overflow-hidden border-b py-10 sm:py-14"
-              style={{ borderColor: cardBorder }}
-            >
-              {parsed?.start ? (
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute -right-2 top-1/2 -translate-y-1/2 select-none text-[clamp(4.5rem,14vw,9rem)] font-bold leading-none tracking-tighter opacity-[0.07]"
-                  style={{ color: titleColor }}
-                >
-                  {parsed.start}
+            <li key={key} className="pf-about-trait-edu-row" data-pf-no-color-transition="">
+              <div className="pf-about-trait-edu-body" data-pf-no-color-transition="">
+                <span className="pf-about-trait-edu-spine" aria-hidden data-pf-no-color-transition="">
+                  <span style={{ backgroundColor: accent }} data-pf-no-color-transition="" />
                 </span>
-              ) : null}
 
-              <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-12">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-3">
+                <div className="pf-about-trait-edu-fade" data-pf-no-color-transition="">
+                  {parsed?.start ? (
                     <span
-                      className="font-mono text-[0.7rem] tabular-nums tracking-widest"
-                      style={{ color: accent }}
-                    >
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    {yearLabel ? (
-                      <span
-                        className={`font-semibold uppercase tracking-[0.2em] ${metaClass}`}
-                        style={{ color: bodyColor }}
-                      >
-                        {yearLabel}
-                      </span>
-                    ) : null}
-                  </div>
-                  {title ? (
-                    <p
-                      className={`mt-4 max-w-4xl font-semibold leading-[1.1] tracking-tight ${entryTitleClass}`}
+                      aria-hidden
+                      className="pf-about-trait-edu-watermark"
                       style={{ color: titleColor }}
                     >
-                      {title}
-                    </p>
+                      {parsed.start}
+                    </span>
                   ) : null}
+
+                  <div className="relative z-[1] grid gap-6 pl-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-12">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span
+                          className="font-mono text-[0.7rem] tabular-nums tracking-widest"
+                          style={{ color: accent }}
+                        >
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        {yearLabel ? (
+                          <span
+                            className={`font-semibold uppercase tracking-[0.2em] ${metaClass}`}
+                            style={{ color: bodyColor }}
+                          >
+                            {yearLabel}
+                          </span>
+                        ) : null}
+                      </div>
+                      {title ? (
+                        <p
+                          className={`mt-4 max-w-4xl font-semibold leading-[1.1] tracking-tight ${entryTitleClass}`}
+                          style={{ color: titleColor }}
+                        >
+                          {title}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    {institution ? (
+                      <p
+                        className={`max-w-sm leading-relaxed lg:max-w-xs lg:text-right ${bodyClass}`}
+                        style={{ color: bodyColor }}
+                      >
+                        {institution}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="pf-about-trait-edu-rule" aria-hidden data-pf-no-color-transition="">
+                    <span style={{ backgroundColor: accent }} data-pf-no-color-transition="" />
+                  </div>
                 </div>
-
-                {institution ? (
-                  <p
-                    className={`max-w-sm leading-relaxed lg:max-w-xs lg:text-right ${bodyClass}`}
-                    style={{ color: bodyColor }}
-                  >
-                    {institution}
-                  </p>
-                ) : null}
               </div>
-
-              <div
-                className="mt-8 h-px w-12 transition-[width] duration-500 group-hover:w-28"
-                style={{ backgroundColor: accent }}
-                aria-hidden
-              />
             </li>
           );
         })}

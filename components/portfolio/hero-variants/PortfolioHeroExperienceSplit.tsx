@@ -1,7 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import { useMemo, type MouseEvent, type ReactNode } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useLayoutEffect, useMemo, useRef, type MouseEvent, type ReactNode } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
   heroImageGrayscaleClass,
@@ -14,11 +16,44 @@ import {
   resolveHeroPaletteColor,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
-import {
-  portfolioHeroContentShellClass,
-} from '@/components/portfolio/portfolio-editorial-layout';
+import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 
 type Density = 'mobile' | 'tablet' | 'desktop';
+
+const CTA_SHAPE =
+  'inline-flex h-12 min-h-12 items-center justify-center gap-2 rounded-md px-7 font-sans text-[0.75rem] font-bold uppercase tracking-[0.12em]';
+
+function experienceSplitScrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
+}
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function isLaidOut(el: HTMLElement): boolean {
+  return el.getClientRects().length > 0;
+}
+
+/** Last word of the name sits on its own line — matches the editorial wrap. */
+function splitExperienceTitle(name: string): string[] {
+  const trimmed = name.trim() || 'Lorem Ipsum';
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length <= 2) return [`Hi, I'm ${trimmed}.`];
+  const last = parts[parts.length - 1];
+  return [`Hi, I'm ${parts.slice(0, -1).join(' ')}`, `${last}.`];
+}
 
 /**
  * Experience split (default):
@@ -36,6 +71,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
   const imageBw = data.presentation.heroImageGrayscale === true;
 
   const displayName = (data.fullName || data.nameLead || 'Lorem Ipsum').trim();
+  const titleLines = useMemo(() => splitExperienceTitle(displayName), [displayName]);
   const specialty = resolveHeroSpecialtyValue(data.specialite);
   const availability = resolveHeroAvailabilityValue(
     data.isAvailable,
@@ -79,6 +115,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
   const secondaryHref = data.workHref || '#work';
   const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
   const frameColor = `color-mix(in srgb, ${bordure} 70%, transparent)`;
+  const heroRef = useRef<HTMLDivElement>(null);
 
   const onNavClick = (href: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     if (href.startsWith('#') && data.onNavigateSection) {
@@ -86,6 +123,142 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
       data.onNavigateSection(href.slice(1) || 'contact');
     }
   };
+
+  useLayoutEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+    if (prefersReducedMotion()) return;
+
+    gsap.registerPlugin(ScrollTrigger);
+    const mq = window.matchMedia('(min-width: 768px)');
+    let ctx: gsap.Context | undefined;
+    let refreshId = 0;
+
+    const setup = () => {
+      ctx?.revert();
+      const scroller = experienceSplitScrollParent(hero);
+      const pick = (selector: string) =>
+        [...hero.querySelectorAll<HTMLElement>(selector)].filter(isLaidOut);
+
+      const strokesV = pick('.pf-exp-split-stroke-v');
+      const strokesH = pick('.pf-exp-split-stroke-h');
+      const titleEls = pick('.pf-exp-split-title-line');
+      const photos = pick('.pf-exp-split-photo-inner');
+      const photoFrames = pick('.pf-exp-split-photo');
+      const eastCols = pick('.pf-exp-split-east');
+      const cascade = pick('.pf-exp-split-cascade');
+
+      ctx = gsap.context(() => {
+        const tl = gsap.timeline({ defaults: { overwrite: 'auto' } });
+
+        if (strokesV.length) {
+          gsap.set(strokesV, { scaleY: 0, transformOrigin: 'top center' });
+          tl.to(
+            strokesV,
+            { scaleY: 1, duration: 1.05, ease: 'power2.inOut', stagger: 0.08 },
+            0
+          );
+        }
+        if (strokesH.length) {
+          gsap.set(strokesH, { scaleX: 0, transformOrigin: 'left center' });
+          tl.to(
+            strokesH,
+            { scaleX: 1, duration: 1.05, ease: 'power2.inOut', stagger: 0.08 },
+            0.08
+          );
+        }
+        if (titleEls.length) {
+          tl.fromTo(
+            titleEls,
+            { yPercent: 110 },
+            {
+              yPercent: 0,
+              duration: 1.15,
+              stagger: 0.12,
+              ease: 'power3.out',
+              immediateRender: false,
+            },
+            0.42
+          );
+        }
+        if (photos.length) {
+          tl.fromTo(
+            photos,
+            { opacity: 0, y: 28 },
+            { opacity: 1, y: 0, duration: 1.18, ease: 'power3.out', immediateRender: false },
+            0.42
+          );
+        }
+        if (cascade.length) {
+          tl.fromTo(
+            cascade,
+            { opacity: 0, y: 18 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.82,
+              stagger: 0.18,
+              ease: 'power3.out',
+              immediateRender: false,
+            },
+            0.78
+          );
+        }
+
+        if (mq.matches) {
+          photoFrames.forEach((frame) => {
+            gsap.fromTo(
+              frame,
+              { y: 0 },
+              {
+                y: () => hero.offsetHeight * (1 - 0.75),
+                ease: 'none',
+                scrollTrigger: {
+                  trigger: hero,
+                  scroller,
+                  start: 'top top',
+                  end: 'bottom top',
+                  scrub: 0.55,
+                  invalidateOnRefresh: true,
+                },
+              }
+            );
+          });
+
+          eastCols.forEach((col) => {
+            gsap.fromTo(
+              col,
+              { y: 0, opacity: 1 },
+              {
+                y: () => hero.offsetHeight * (1 - 1.2),
+                opacity: 0,
+                ease: 'none',
+                scrollTrigger: {
+                  trigger: hero,
+                  scroller,
+                  start: 'top top',
+                  end: 'bottom top',
+                  scrub: 0.45,
+                  invalidateOnRefresh: true,
+                },
+              }
+            );
+          });
+        }
+      }, hero);
+
+      window.clearTimeout(refreshId);
+      refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 80);
+    };
+
+    setup();
+    mq.addEventListener('change', setup);
+    return () => {
+      mq.removeEventListener('change', setup);
+      window.clearTimeout(refreshId);
+      ctx?.revert();
+    };
+  }, [displayName, avatarUrl, bioRight]);
 
   const portrait = (density: Density) => {
     const box =
@@ -104,25 +277,36 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
         : density === 'tablet'
           ? '240px'
           : '(min-width: 1024px) 22vw, 320px';
-    /** Mobile: no principal L-corner — keeps spacing clean above Available. */
     const showLCorner = density !== 'mobile';
 
     return (
       <div
-        className="shrink-0"
+        className="pf-exp-split-photo relative shrink-0"
         style={
           showLCorner
             ? {
-                borderTop: `5px solid ${principal}`,
-                borderLeft: `5px solid ${principal}`,
                 paddingTop: pad,
                 paddingLeft: pad,
               }
             : undefined
         }
       >
+        {showLCorner ? (
+          <>
+            <span
+              className="pf-exp-split-stroke pf-exp-split-stroke-h pointer-events-none absolute left-0 top-0 z-[1]"
+              style={{ height: 5, width: '100%', backgroundColor: principal }}
+              aria-hidden
+            />
+            <span
+              className="pf-exp-split-stroke pf-exp-split-stroke-v pointer-events-none absolute left-0 top-0 z-[1]"
+              style={{ width: 5, height: '100%', backgroundColor: principal }}
+              aria-hidden
+            />
+          </>
+        ) : null}
         <div
-          className={`relative overflow-hidden ${box}`}
+          className={`pf-exp-split-photo-inner relative overflow-hidden ${box}`}
           style={{
             backgroundColor: `color-mix(in srgb, ${bordure} 28%, ${fond})`,
           }}
@@ -157,46 +341,49 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
         : density === 'tablet'
           ? 'clamp(3.25rem, 6vw, 4.25rem)'
           : 'clamp(3.75rem, 7vw, 5.5rem)';
-    const yearsMt = density === 'mobile' ? 'mt-6' : 'mt-10';
-    const bioMt = density === 'mobile' ? 'mt-6' : 'mt-10';
+    const yearsMt = density === 'mobile' ? '1.5rem' : '2.5rem';
+    const bioMt = density === 'mobile' ? '1.85rem' : '3.5rem';
     const bioSize =
-      density === 'mobile'
-        ? '1.0625rem'
-        : 'clamp(0.95rem, 1.05vw, 1.0625rem)';
-    /** Mobile: isolate Available with generous space above when it follows the portrait. */
-    const asideTop =
-      density === 'mobile' && bioRight ? 'mt-2' : '';
+      density === 'mobile' ? '1.0625rem' : 'clamp(0.95rem, 1.05vw, 1.0625rem)';
+    const asideTop = density === 'mobile' && bioRight ? 'mt-2' : '';
 
     return (
       <aside
-        className={`flex min-w-0 flex-col items-start ${asideTop} ${className}`.trim()}
+        className={`pf-exp-split-east flex min-w-0 flex-col items-start ${asideTop} ${className}`.trim()}
       >
-        <p
-          className="m-0 font-sans text-[0.7rem] font-semibold uppercase tracking-[0.16em]"
-          style={{ color: ink }}
-        >
-          {availability}
-        </p>
+        <div className="pf-exp-split-cascade flex flex-col items-start">
+          <p
+            className="pf-exp-split-avail mb-0 ml-0 mr-0 mt-0 font-sans text-[0.7rem] font-semibold uppercase leading-none tracking-[0.16em]"
+            style={{ color: ink }}
+          >
+            {availability}
+          </p>
+          <div
+            aria-hidden
+            className="mt-2.5"
+            style={{ width: '4.5rem', height: 5, backgroundColor: principal }}
+          />
+        </div>
         <div
-          aria-hidden
-          className="mt-4"
-          style={{ width: '4.5rem', height: 5, backgroundColor: principal }}
-        />
-        <p
-          className={`m-0 font-sans font-bold tracking-[-0.045em] ${yearsMt}`}
-          style={{ color: ink, fontSize: yearsSize, lineHeight: 0.92 }}
+          className="pf-exp-split-cascade flex flex-col items-start"
+          style={{ marginTop: yearsMt }}
         >
-          {yearsLabel}
-        </p>
+          <p
+            className="mb-0 ml-0 mr-0 mt-0 font-sans font-bold leading-[0.92] tracking-[-0.045em]"
+            style={{ color: ink, fontSize: yearsSize }}
+          >
+            {yearsLabel}
+          </p>
+          <p
+            className="mb-0 ml-0 mr-0 mt-2.5 font-sans text-[0.72rem] font-semibold uppercase leading-none tracking-[0.16em]"
+            style={{ color: ink }}
+          >
+            Years of experience
+          </p>
+        </div>
         <p
-          className="m-0 mt-2.5 font-sans text-[0.72rem] font-semibold uppercase tracking-[0.16em]"
-          style={{ color: ink }}
-        >
-          Years of experience
-        </p>
-        <p
-          className={`m-0 max-w-[22rem] font-sans font-normal tracking-[-0.01em] ${bioMt}`}
-          style={{ color: ink, fontSize: bioSize, lineHeight: 1.55 }}
+          className="pf-exp-split-cascade pf-exp-split-bio mb-0 ml-0 mr-0 max-w-[22rem] font-sans font-normal tracking-[-0.01em]"
+          style={{ color: ink, fontSize: bioSize, lineHeight: 1.55, marginTop: bioMt }}
         >
           {bioText}
         </p>
@@ -206,7 +393,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
 
   const title = (density: Density) => (
     <h1
-      className="m-0 w-full max-w-[16ch] font-sans font-semibold tracking-[-0.04em]"
+      className="pf-exp-split-title m-0 w-full max-w-[16ch] font-sans font-semibold tracking-[-0.04em]"
       style={{
         color: ink,
         fontSize:
@@ -218,7 +405,11 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
         lineHeight: 1.05,
       }}
     >
-      Hi, I&apos;m {displayName}.
+      {titleLines.map((line) => (
+        <span key={line} className="pf-exp-split-title-mask block overflow-hidden">
+          <span className="pf-exp-split-title-line block">{line}</span>
+        </span>
+      ))}
     </h1>
   );
 
@@ -257,9 +448,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
         <a
           href={primaryHref}
           onClick={onNavClick(primaryHref)}
-          className={`inline-flex h-12 items-center justify-center gap-2 rounded-md px-6 font-sans text-[0.75rem] font-bold uppercase tracking-[0.12em] transition hover:brightness-110 sm:px-7 ${
-            stacked ? 'w-full' : ''
-          }`}
+          className={`${CTA_SHAPE} transition hover:brightness-110 ${stacked ? 'w-full' : ''}`}
           style={{ backgroundColor: ink, color: fond }}
         >
           Let&apos;s talk
@@ -268,9 +457,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
         <a
           href={secondaryHref}
           onClick={onNavClick(secondaryHref)}
-          className={`inline-flex h-12 items-center justify-center rounded-md border px-6 font-sans text-[0.75rem] font-bold uppercase tracking-[0.12em] transition hover:opacity-80 sm:px-7 ${
-            stacked ? 'w-full' : ''
-          }`}
+          className={`${CTA_SHAPE} border transition hover:opacity-80 ${stacked ? 'w-full' : ''}`}
           style={{ borderColor: ink, color: ink, backgroundColor: 'transparent' }}
         >
           View my work
@@ -281,14 +468,22 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
 
   const leftCopyFrame = (density: Exclude<Density, 'mobile'>, children: ReactNode) => (
     <div
-      className="min-w-0 justify-self-start"
+      className="pf-exp-split-west relative min-w-0 justify-self-start"
       style={{
-        borderRight: `5px solid ${principal}`,
-        borderBottom: `5px solid ${principal}`,
         paddingRight: density === 'tablet' ? '1rem' : 'clamp(1.1rem, 1.8vw, 1.65rem)',
         paddingBottom: density === 'tablet' ? '1rem' : 'clamp(1.1rem, 1.8vw, 1.65rem)',
       }}
     >
+      <span
+        className="pf-exp-split-stroke pf-exp-split-stroke-v pointer-events-none absolute right-0 top-0 z-[1]"
+        style={{ width: 5, height: '100%', backgroundColor: principal }}
+        aria-hidden
+      />
+      <span
+        className="pf-exp-split-stroke pf-exp-split-stroke-h pointer-events-none absolute bottom-0 left-0 z-[1]"
+        style={{ height: 5, width: '100%', backgroundColor: principal }}
+        aria-hidden
+      />
       {children}
     </div>
   );
@@ -413,7 +608,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
     <a
       href={primaryHref}
       onClick={onNavClick(primaryHref)}
-      className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md px-6 font-sans text-[0.75rem] font-bold uppercase tracking-[0.12em] transition hover:brightness-110"
+      className={`${CTA_SHAPE} w-full transition hover:brightness-110`}
       style={{ backgroundColor: ink, color: fond }}
     >
       Let&apos;s talk
@@ -423,7 +618,8 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
 
   return (
     <div
-      className="relative isolate w-full overflow-x-clip font-sans"
+      ref={heroRef}
+      className="pf-exp-split-hero relative isolate w-full overflow-x-clip overflow-y-visible font-sans"
       style={{ backgroundColor: fond, color: ink }}
     >
       <div
@@ -459,7 +655,6 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
         className={`relative z-[1] flex flex-col gap-6 pb-14 pt-[calc(4.75rem+env(safe-area-inset-top,0px))] md:hidden ${shellX}`}
       >
         {withGlobalFrame(mobileBody, 'mobile')}
-        {/* Let's talk only — pinned below / outside the global frame */}
         <div className="w-full shrink-0">{mobileLetsTalk}</div>
       </div>
     </div>

@@ -92,11 +92,10 @@ export type PortfolioWorkGalleryLayout =
   | 'carousel';
 
 /**
- * Named Portfolio section designs (Settings â†’ Portfolio â†’ Design).
- * `classic` keeps the existing gallery/card controls; presets may lock layout.
+ * Named Portfolio section designs (Settings → Portfolio → Design).
+ * Legacy stored value `classic` is remapped to `projects-board`.
  */
 export type PortfolioWorkSectionDesign =
-  | 'classic'
   | 'projects-board'
   | 'projects-accordion'
   | 'projects-frames'
@@ -112,15 +111,46 @@ export type PortfolioWorkSectionDesign =
   | 'projects-spec'
   | 'projects-case';
 
+export const DEFAULT_PORTFOLIO_WORK_SECTION_DESIGN: PortfolioWorkSectionDesign = 'projects-board';
+
+const PORTFOLIO_WORK_SECTION_DESIGNS: readonly PortfolioWorkSectionDesign[] = [
+  'projects-board',
+  'projects-accordion',
+  'projects-frames',
+  'projects-index',
+  'projects-grid',
+  'projects-split',
+  'projects-carousel',
+  'projects-spotlight',
+  'projects-showcase',
+  'projects-editorial',
+  'projects-ledger',
+  'projects-folio',
+  'projects-spec',
+  'projects-case',
+];
+
+/** Maps removed `classic` (and invalid ids) onto a live named design. */
+export function resolveWorkSectionDesign(value: unknown): PortfolioWorkSectionDesign {
+  if (value === 'classic') return DEFAULT_PORTFOLIO_WORK_SECTION_DESIGN;
+  if (
+    typeof value === 'string' &&
+    (PORTFOLIO_WORK_SECTION_DESIGNS as readonly string[]).includes(value)
+  ) {
+    return value as PortfolioWorkSectionDesign;
+  }
+  return DEFAULT_PORTFOLIO_WORK_SECTION_DESIGN;
+}
+
 /** Options that apply only when `sectionDesign === 'projects-board'`. */
 export type PortfolioWorkProjectsBoardSettings = {
   /** Thumbnail above each card. */
   showThumbnail: boolean;
-  /** Role label on the left (accent). */
+  /** Role label in the card footer (accent). */
   showRole: boolean;
-  /** Category on the same row, right-aligned. */
+  /** Category in the card footer, beside the role. */
   showCategory: boolean;
-  /** Centered â€œConsultâ€ control on thumbnail hover (uses project link). */
+  /** Consult control in the same corner of every thumbnail (uses project link). */
   showConsultOnHover: boolean;
   consultLabel: string;
 };
@@ -1644,14 +1674,9 @@ export const PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS: {
   description: string;
 }[] = [
   {
-    value: 'classic',
-    label: 'Classic',
-    description: 'Full gallery controls â€” media, columns, and card chrome from Cards / Media.',
-  },
-  {
     value: 'projects-board',
     label: 'Projects board',
-    description: 'Two cards per row with design-only options: thumbnail, category, Consult hover.',
+    description: 'Two equal cards per row — thumbnail, title, description, tags at the bottom, Consult on the image.',
   },
   {
     value: 'projects-accordion',
@@ -2309,7 +2334,7 @@ export function workSectionDesignSettingsPatch(
       projectsCase: { ...DEFAULT_PROJECTS_CASE_SETTINGS },
     };
   }
-  return { sectionDesign: 'classic' };
+  return { sectionDesign: DEFAULT_PORTFOLIO_WORK_SECTION_DESIGN };
 }
 
 /** How many project cards per row (stack / grid / overlay). Mobile always collapses. */
@@ -3088,7 +3113,7 @@ export const DEFAULT_WORK_PRESENTATION: PortfolioWorkPresentationSettings = {
   illustrationPlacement: 'right',
   contentPlacement: 'side',
   galleryLayout: 'stack',
-  sectionDesign: 'classic',
+  sectionDesign: DEFAULT_PORTFOLIO_WORK_SECTION_DESIGN,
   projectsBoard: { ...DEFAULT_PROJECTS_BOARD_SETTINGS },
   projectsAccordion: { ...DEFAULT_PROJECTS_ACCORDION_SETTINGS },
   projectsFrames: { ...DEFAULT_PROJECTS_FRAMES_SETTINGS },
@@ -4971,24 +4996,7 @@ export function mergeWorkPresentation(
       galleryLayout === 'carousel'
         ? galleryLayout
         : base.galleryLayout,
-    sectionDesign:
-      sectionDesign === 'classic' ||
-      sectionDesign === 'projects-board' ||
-      sectionDesign === 'projects-accordion' ||
-      sectionDesign === 'projects-frames' ||
-      sectionDesign === 'projects-index' ||
-      sectionDesign === 'projects-grid' ||
-      sectionDesign === 'projects-split' ||
-      sectionDesign === 'projects-carousel' ||
-      sectionDesign === 'projects-spotlight' ||
-      sectionDesign === 'projects-showcase' ||
-      sectionDesign === 'projects-editorial' ||
-      sectionDesign === 'projects-ledger' ||
-      sectionDesign === 'projects-folio' ||
-      sectionDesign === 'projects-spec' ||
-      sectionDesign === 'projects-case'
-        ? sectionDesign
-        : base.sectionDesign,
+    sectionDesign: resolveWorkSectionDesign(sectionDesign ?? base.sectionDesign),
     projectsBoard: mergeProjectsBoardSettings(
       mergeProjectsBoardSettings(DEFAULT_PROJECTS_BOARD_SETTINGS, base.projectsBoard),
       record.projectsBoard

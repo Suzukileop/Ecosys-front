@@ -22,13 +22,10 @@ import {
   PORTFOLIO_FAQ_LIST_MAX_WIDTH_OPTIONS,
   PORTFOLIO_FAQ_LIST_PLACEMENT_OPTIONS,
   PORTFOLIO_FAQ_SECTION_LAYOUT_OPTIONS,
-  PORTFOLIO_FAQ_STYLE_TARGET_OPTIONS,
   PORTFOLIO_FAQ_SUBTITLE_PRESET_OPTIONS,
   PORTFOLIO_FAQ_TITLE_PRESET_OPTIONS,
   faqSectionLayoutIsAside,
-  patchFaqElementStyle,
   type PortfolioFaqSectionSettings,
-  type PortfolioFaqStyleTarget,
 } from '@/components/portfolio/portfolio-faq-settings';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import {
@@ -40,32 +37,17 @@ import {
   applyFaqPaletteToSettings,
   DEFAULT_FAQ_COLOR_BINDINGS,
   DEFAULT_FAQ_PALETTE,
-  FAQ_STYLE_TARGET_COLOR_SLOT,
   mergeFaqColorBindings,
   mergeFaqPalette,
   patchFaqColorBinding,
   patchFaqColorField,
-  PORTFOLIO_FAQ_COLOR_SLOT_OPTIONS,
   type FaqColorSlot,
 } from '@/components/portfolio/portfolio-faq-palette-settings';
 import {
   PortfolioCardFrameSettingsFields,
   type PortfolioCardFrameColorFieldKey,
 } from '@/components/portfolio/portfolio-card-frame-settings-fields';
-import { PortfolioElementStyleFields } from '@/components/portfolio/portfolio-element-style-fields';
-import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionHeroPaletteToggle } from '@/components/portfolio/SectionHeroPaletteToggle';
-
-const FAQ_BACKGROUND_LABEL_SLOTS: Record<string, FaqColorSlot> = {
-  Color: 'sectionBackground',
-  'Gradient start': 'sectionGradientFrom',
-  'Gradient end': 'sectionGradientTo',
-  'Couleur zone haut': 'sectionSplitA',
-  'Couleur zone gauche': 'sectionSplitA',
-  'Couleur zone bas': 'sectionSplitB',
-  'Couleur zone droite': 'sectionSplitB',
-  'Couleur de la ligne': 'sectionDivider',
-};
 
 const FAQ_FRAME_SLOTS: Record<PortfolioCardFrameColorFieldKey, FaqColorSlot> = {
   cardBorderColor: 'cardBorder',
@@ -75,44 +57,22 @@ const FAQ_FRAME_SLOTS: Record<PortfolioCardFrameColorFieldKey, FaqColorSlot> = {
   cardDividerColor: 'cardDivider',
 };
 
-export type FaqSubSection =
-  | 'general'
-  | 'palette'
-  | 'header'
-  | 'frame'
-  | 'items'
-  | 'styleQuestion'
-  | 'styleAnswer'
-  | 'styleNumber'
-  | 'background';
+export type FaqSubSection = 'general' | 'header' | 'items' | 'frame';
 
 const FAQ_SUB_SECTIONS: { id: FaqSubSection; label: string; description: string }[] = [
   { id: 'general', label: 'General', description: 'Section visibility, ready-to-use design, item design, and spacing.' },
-  { id: 'palette', label: 'Palette', description: 'Use the Global site palette and bind section colors to tokens.' },
   { id: 'header', label: 'Header', description: 'Title, subtitle, fonts, and colors.' },
-  { id: 'frame', label: 'Frame', description: 'Complete card frame controls (border, split background, radius).' },
   { id: 'items', label: 'Items', description: 'Alignment, visibility toggles, icons, and accent colors.' },
-  { id: 'styleQuestion', label: 'Style question', description: 'Color, font, size, and weight for question text.' },
-  { id: 'styleAnswer', label: 'Style answer', description: 'Color, font, size, and weight for answer text.' },
-  { id: 'styleNumber', label: 'Style number', description: 'Color, font, size, and weight for item numbers.' },
-  { id: 'background', label: 'Background', description: 'Optional fill behind this section.' },
+  { id: 'frame', label: 'Frame', description: 'Complete card frame controls (border, split background, radius).' },
 ];
 
-/** Legacy saved UI id `style` → Style question. */
+/** Map legacy subsection ids (saved UI state / search) onto remaining FAQ menus. */
 export function normalizeFaqSubSection(value: string | undefined): FaqSubSection {
-  if (value === 'style') return 'styleQuestion';
-  if (FAQ_SUB_SECTIONS.some((section) => section.id === value)) return value as FaqSubSection;
-  return 'header';
+  if (value === 'header' || value === 'items' || value === 'frame' || value === 'general') {
+    return value;
+  }
+  return 'general';
 }
-
-const FAQ_STYLE_BY_SUBSECTION: Record<
-  Extract<FaqSubSection, 'styleQuestion' | 'styleAnswer' | 'styleNumber'>,
-  PortfolioFaqStyleTarget
-> = {
-  styleQuestion: 'question',
-  styleAnswer: 'answer',
-  styleNumber: 'number',
-};
 
 function asFaqPatch(patch: Record<string, unknown> | object): Partial<PortfolioFaqSectionSettings> {
   return patch as Partial<PortfolioFaqSectionSettings>;
@@ -285,89 +245,6 @@ function FaqColorField({
   );
 }
 
-function FaqPalettePanel({
-  faq,
-  onChange,
-}: {
-  faq: PortfolioFaqSectionSettings;
-  onChange: (patch: Partial<PortfolioFaqSectionSettings>) => void;
-}) {
-  const palette = mergeFaqPalette(DEFAULT_FAQ_PALETTE, faq.faqPalette);
-  const bindings = mergeFaqColorBindings(DEFAULT_FAQ_COLOR_BINDINGS, faq.faqColorBindings);
-  const paletteOn = faq.useHeroPalette !== false;
-
-  return (
-    <div className="space-y-6">
-      <SectionHeroPaletteToggle
-        enabled={paletteOn}
-        onChange={(useHeroPalette) =>
-          onChange(
-            asFaqPatch(
-              useHeroPalette ? { useHeroPalette, ...applyFaqPaletteToSettings(faq) } : { useHeroPalette }
-            )
-          )
-        }
-        title="Use global color palette"
-        description="When on, FAQ colors follow the Global site palette. Turn off to edit colors manually in other tabs."
-        enabledHint="Edit the dark/light token pair under Global → Theme. Bindings below pick which token each FAQ color uses."
-        disabledHint="Global palette tokens still exist, but FAQ uses manual hex colors until you turn this back on."
-      />
-
-      <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-600">
-        The site color palette lives in <span className="font-semibold">Global → Theme</span> as a
-        coupled dark / light pair. FAQ no longer has its own Mode sombre / Mode clair editor.
-      </p>
-
-      {paletteOn ? (
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Color bindings
-          </p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Pick which Global token each FAQ color uses. Swatches preview the active mode.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {PORTFOLIO_FAQ_COLOR_SLOT_OPTIONS.map((slot) => (
-              <div key={slot.value} className="rounded-2xl border border-neutral-200/80 bg-white px-3 py-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-neutral-800">{slot.label}</span>
-                  <span
-                    className="h-5 w-5 shrink-0 rounded-full border border-neutral-200"
-                    style={{ backgroundColor: resolveHeroPaletteColor(palette, bindings[slot.value]) }}
-                    aria-hidden
-                  />
-                </div>
-                <select
-                  value={bindings[slot.value]}
-                  onChange={(event) =>
-                    onChange(
-                      asFaqPatch(
-                        patchFaqColorBinding(faq, slot.value, event.target.value as HeroPaletteTokenId)
-                      )
-                    )
-                  }
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800"
-                >
-                  {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
-                    <option key={token.value} value={token.value}>
-                      {token.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
-          Palette is off — slot bindings are hidden. Turn it back on to bind colors to Global tokens,
-          or edit hex fields in other tabs.
-        </p>
-      )}
-    </div>
-  );
-}
-
 export function FaqSettingsPanel({
   faq,
   onChange,
@@ -387,11 +264,6 @@ export function FaqSettingsPanel({
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
   const activeMeta = FAQ_SUB_SECTIONS.find((section) => section.id === subSection) ?? FAQ_SUB_SECTIONS[0];
-
-  const styleSubsection = subSection === 'styleQuestion' || subSection === 'styleAnswer' || subSection === 'styleNumber'
-    ? subSection
-    : null;
-  const styleTarget = styleSubsection ? FAQ_STYLE_BY_SUBSECTION[styleSubsection] : 'question';
 
   return (
     <div className="space-y-6">
@@ -537,8 +409,6 @@ export function FaqSettingsPanel({
           <FaqColorField faq={faq} onChange={onChange} slot="accent" label="Accent color" value={faq.accentColor} />
         </div>
       ) : null}
-
-      {subSection === 'palette' ? <FaqPalettePanel faq={faq} onChange={onChange} /> : null}
 
       {subSection === 'header' ? (
         <div className="space-y-6">
@@ -869,50 +739,6 @@ export function FaqSettingsPanel({
         </div>
       ) : null}
 
-      {styleSubsection ? (
-        <PortfolioElementStyleFields
-          targets={PORTFOLIO_FAQ_STYLE_TARGET_OPTIONS.filter((option) => option.value === styleTarget)}
-          activeTarget={styleTarget}
-          onTargetChange={() => undefined}
-          style={faq.elementStyles[styleTarget]}
-          onStyleChange={(patch) => {
-            const next = patchFaqElementStyle(faq.elementStyles, styleTarget, patch);
-            const slot = FAQ_STYLE_TARGET_COLOR_SLOT[styleTarget];
-            onChange(
-              asFaqPatch(
-                faq.useHeroPalette !== false && patch.color
-                  ? { elementStyles: next, ...patchFaqColorField(faq, slot, patch.color) }
-                  : { elementStyles: next }
-              )
-            );
-          }}
-          renderColorField={({ label, value }) => (
-            <FaqColorField
-              faq={faq}
-              onChange={onChange}
-              slot={FAQ_STYLE_TARGET_COLOR_SLOT[styleTarget]}
-              label={label}
-              value={value}
-            />
-          )}
-        />
-      ) : null}
-
-      {subSection === 'background' ? (
-        <SectionBackgroundSettingsFields
-          settings={faq}
-          onChange={onChange}
-          renderColorField={({ label, value, onChange: onBgColorChange }) => {
-            const slot = FAQ_BACKGROUND_LABEL_SLOTS[label];
-            if (!slot) {
-              return <FaqManualColorField label={label} value={value} onChange={onBgColorChange} />;
-            }
-            return (
-              <FaqColorField faq={faq} onChange={onChange} slot={slot} label={label} value={value} />
-            );
-          }}
-        />
-      ) : null}
     </div>
   );
 }

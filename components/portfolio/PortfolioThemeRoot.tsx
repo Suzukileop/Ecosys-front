@@ -85,11 +85,26 @@ export function PortfolioThemeRoot({
 
   useEffect(() => {
     const root = document.documentElement;
-    root.setAttribute('data-portfolio-color-mode', colorMode === 'light' ? 'light' : 'dark');
+    const mode = colorMode === 'light' ? 'light' : 'dark';
+    root.setAttribute('data-portfolio-color-mode', mode);
+    const assigned: string[] = [];
+    if (activePalette) {
+      const nextVars = {
+        '--pf-palette-fond': activePalette.fond,
+        '--pf-palette-texte-muted': activePalette.texteMuted,
+        '--pf-palette-bordure': activePalette.bordure,
+      } as const;
+      for (const [key, value] of Object.entries(nextVars)) {
+        if (!value) continue;
+        root.style.setProperty(key, value);
+        assigned.push(key);
+      }
+    }
     return () => {
       root.removeAttribute('data-portfolio-color-mode');
+      for (const key of assigned) root.style.removeProperty(key);
     };
-  }, [colorMode]);
+  }, [colorMode, activePalette]);
 
   return (
     <div

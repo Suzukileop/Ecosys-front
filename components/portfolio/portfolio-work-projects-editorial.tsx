@@ -22,7 +22,29 @@ import {
   mergeProjectsEditorialSettings,
 } from '@/components/portfolio/portfolio-work-settings';
 
-const DETAIL_FADE_MS = 220;
+const DETAIL_FADE_MS = 260;
+const EDITORIAL_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const EDITORIAL_HIDDEN: CSSProperties = {
+  opacity: 0,
+  transform: 'translate3d(0, 26px, 0)',
+};
+const EDITORIAL_REDUCED_CSS = `
+@media (prefers-reduced-motion: reduce) {
+  .pf-work-editorial-header,
+  .pf-work-editorial [data-editorial-item],
+  .pf-work-editorial [data-editorial-rail] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .pf-work-editorial [data-editorial-kinetic],
+  .pf-work-editorial [data-editorial-num],
+  .pf-work-editorial [data-editorial-copy],
+  .pf-work-editorial [data-editorial-media] {
+    transform: none !important;
+  }
+}
+`;
 
 function workToolLabels(item: MarketplaceContentItem, max = 12): string[] {
   return Array.from(new Set((item.toolsUsed ?? []).map((t) => t.trim()).filter(Boolean))).slice(
@@ -42,6 +64,10 @@ function formatEditorialNumber(index: number): string {
   return String(index + 1).padStart(2, '0');
 }
 
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 function getScrollParent(node: HTMLElement | null): HTMLElement | Window {
   if (!node) return window;
   let parent: HTMLElement | null = node.parentElement;
@@ -53,6 +79,68 @@ function getScrollParent(node: HTMLElement | null): HTMLElement | Window {
     parent = parent.parentElement;
   }
   return window;
+}
+
+function editorialIoRoot(node: HTMLElement | null): Element | null {
+  const parent = getScrollParent(node);
+  return parent instanceof Window ? null : parent;
+}
+
+function wordLetterCount(word: string): number {
+  return (word.match(/\p{L}/gu) ?? []).length;
+}
+
+/** Italicize the last word when it stays readable (2+ words, 4+ letters). */
+function splitEditorialTitle(title: string): { lead: string; italic: string } | null {
+  const words = title.trim().split(/\s+/).filter(Boolean);
+  if (words.length < 2) return null;
+  const last = words[words.length - 1];
+  if (wordLetterCount(last) < 4) return null;
+  return { lead: words.slice(0, -1).join(' '), italic: last };
+}
+
+function EditorialTitleText({ text, italic = true }: { text: string; italic?: boolean }) {
+  if (!italic) return <>{text}</>;
+  const parts = splitEditorialTitle(text);
+  if (!parts) {
+    return <span className="font-semibold tracking-[-0.04em]">{text}</span>;
+  }
+  return (
+    <>
+      <span className="font-light tracking-[-0.045em]">{parts.lead}</span>{' '}
+      <span className="font-semibold italic tracking-[-0.03em]">{parts.italic}</span>
+    </>
+  );
+}
+
+function revealElement(el: HTMLElement, delayMs: number): void {
+  el.style.transition = `opacity 0.9s ${EDITORIAL_EASE} ${delayMs}ms, transform 1.05s ${EDITORIAL_EASE} ${delayMs}ms`;
+  el.style.opacity = '1';
+  el.style.transform = 'translate3d(0, 0, 0)';
+  el.dataset.revealed = 'true';
+}
+
+function showElementNow(el: HTMLElement): void {
+  el.style.transition = 'none';
+  el.style.opacity = '1';
+  el.style.transform = 'none';
+  el.dataset.revealed = 'true';
+}
+
+function EditorialHairline({
+  color,
+  widthClass = 'w-8 sm:w-10',
+}: {
+  color: string;
+  widthClass?: string;
+}) {
+  return (
+    <span
+      className={`block h-px ${widthClass}`}
+      style={{ backgroundColor: color, opacity: 0.72 }}
+      aria-hidden
+    />
+  );
 }
 
 function EditorialMetaBlock({
@@ -69,17 +157,16 @@ function EditorialMetaBlock({
   return (
     <div className="min-w-0">
       <p
-        className="text-[10px] font-semibold uppercase tracking-[0.18em] sm:text-[11px]"
-        style={{ color: accent }}
+        className="text-[10px] font-medium uppercase tracking-[0.26em] sm:text-[11px]"
+        style={{ color: accent, opacity: 0.88 }}
       >
         {label}
       </p>
-      <span
-        className="mt-2.5 block h-px w-11 sm:w-14"
-        style={{ backgroundColor: accent }}
-        aria-hidden
-      />
-      <div className="mt-4 text-sm leading-relaxed sm:text-[0.95rem]" style={{ color: ink }}>
+      <EditorialHairline color={accent} widthClass="mt-2.5 w-7 sm:w-8" />
+      <div
+        className="mt-4 text-sm font-light leading-[1.7] sm:text-[0.95rem] sm:leading-[1.75]"
+        style={{ color: ink }}
+      >
         {children}
       </div>
     </div>
@@ -102,6 +189,7 @@ function EditorialIdentity({
   const accent = presentation.ctaColor || presentation.categoryActiveColor || '#2563eb';
   const projectTitleColor =
     presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
+  const muted = presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
   const role = workRoleLabel(item);
   const title = item.title?.trim() || '';
   const showRole = settings.showRole !== false && Boolean(role);
@@ -109,55 +197,62 @@ function EditorialIdentity({
     ? settings.roleLabel?.trim()
       ? `${settings.roleLabel.trim()} / ${role}`
       : role
-    : '';
+      : '';
 
   return (
-    <div
-      className="min-w-0 transition-opacity duration-300 ease-out"
-      style={{ opacity: active ? 1 : 0.18 }}
-    >
-      <div
-        className="relative w-full overflow-visible"
-        style={{ height: 'clamp(10rem, 28vw, 19rem)' }}
+    <div className="min-w-0" aria-current={active ? 'true' : undefined}>
+      <p
+        className="font-light italic tabular-nums leading-none tracking-[-0.07em]"
+        data-editorial-num=""
+        data-pf-no-color-transition=""
+        style={{
+          color: projectTitleColor,
+          fontSize: 'clamp(4.25rem, 11vw, 8.25rem)',
+          opacity: active ? 0.22 : 0.08,
+          transition: `opacity 0.55s ${EDITORIAL_EASE}`,
+        }}
       >
-        <p
-          className="absolute left-0 top-0 font-serif font-bold leading-none tracking-[-0.08em]"
-          style={{
-            color: projectTitleColor,
-            fontSize: 'clamp(6rem, 18vw, 11.5rem)',
-            transform: 'scaleY(1.75) scaleX(0.72)',
-            transformOrigin: 'left top',
-            width: 'max-content',
-          }}
-        >
-          {formatEditorialNumber(index)}
-        </p>
-      </div>
+        {formatEditorialNumber(index)}
+      </p>
 
-      {showRole ? (
-        <div className="mt-5 sm:mt-6">
-          <span
-            className="mb-3 block h-px w-10 sm:w-12"
-            style={{ backgroundColor: accent }}
-            aria-hidden
-          />
-          <p
-            className="text-[10px] font-semibold uppercase tracking-[0.18em] sm:text-[11px]"
-            style={{ color: accent }}
+      <div
+        className="min-w-0"
+        data-editorial-copy=""
+        data-pf-no-color-transition=""
+        style={{
+          opacity: active ? 1 : 0.2,
+          transition: `opacity 0.55s ${EDITORIAL_EASE}`,
+        }}
+      >
+        {showRole ? (
+          <div className="mt-5 sm:mt-6">
+            <EditorialHairline color={accent} />
+            <p
+              className="mt-3 text-[10px] font-medium uppercase tracking-[0.24em] sm:text-[11px]"
+              style={{ color: accent }}
+            >
+              {roleLine}
+            </p>
+          </div>
+        ) : null}
+
+        {title ? (
+          <h3
+            className={`max-w-xl text-[1.85rem] leading-[1.08] tracking-[-0.045em] sm:text-[2.35rem] lg:text-[2.75rem] lg:leading-[1.06] ${
+              showRole ? 'mt-6 sm:mt-7' : 'mt-6 sm:mt-8'
+            }`}
+            style={{ color: projectTitleColor }}
           >
-            {roleLine}
-          </p>
-        </div>
-      ) : null}
+            <EditorialTitleText text={title} />
+          </h3>
+        ) : null}
 
-      {title ? (
-        <h3
-          className={`max-w-xl font-serif text-3xl font-semibold tracking-[-0.03em] sm:text-4xl lg:text-[2.85rem] lg:leading-[1.15] ${showRole ? 'mt-8 sm:mt-10' : 'mt-8 sm:mt-10'}`}
-          style={{ color: projectTitleColor }}
-        >
-          {title}
-        </h3>
-      ) : null}
+        {!showRole && !title ? (
+          <p className="mt-5 text-sm font-light" style={{ color: muted }}>
+            —
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -195,19 +290,17 @@ function EditorialDetailPanel({
       className="flex flex-col gap-8 sm:gap-9 lg:gap-10"
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translate3d(0, 0, 0)' : 'translate3d(0, 8px, 0)',
-        transition: `opacity ${DETAIL_FADE_MS}ms ease-out, transform ${DETAIL_FADE_MS}ms ease-out`,
+        transform: visible ? 'translate3d(0, 0, 0)' : 'translate3d(0, 10px, 0)',
+        transition: `opacity ${DETAIL_FADE_MS}ms ${EDITORIAL_EASE}, transform ${DETAIL_FADE_MS}ms ${EDITORIAL_EASE}`,
       }}
     >
       {showDescription ? (
-        <div className="min-w-0">
-          <p
-            className="max-w-md text-base leading-relaxed sm:text-lg lg:text-[1.2rem] lg:leading-relaxed"
-            style={{ color: muted }}
-          >
-            {description || '—'}
-          </p>
-        </div>
+        <p
+          className="max-w-md text-[0.95rem] font-light leading-[1.75] sm:text-base sm:leading-[1.8]"
+          style={{ color: muted }}
+        >
+          {description || '—'}
+        </p>
       ) : null}
 
       {showStack ? (
@@ -218,11 +311,11 @@ function EditorialDetailPanel({
                 <li key={tool} className="flex items-center">
                   {toolIndex > 0 ? (
                     <span
-                      className="mx-2.5 select-none text-sm font-normal sm:mx-3"
-                      style={{ color: muted }}
+                      className="mx-2.5 select-none text-sm font-light sm:mx-3"
+                      style={{ color: muted, opacity: 0.45 }}
                       aria-hidden
                     >
-                      |
+                      ·
                     </span>
                   ) : null}
                   <span className="text-sm font-medium tracking-[-0.01em] sm:text-[0.95rem]">
@@ -238,15 +331,15 @@ function EditorialDetailPanel({
       ) : null}
 
       {showConsult && href ? (
-        <div className="pt-2">
-          <EditorialConsultPill href={href} label={consultLabel} accent={accent} tone="panel" />
+        <div className="pt-1">
+          <EditorialConsultLink href={href} label={consultLabel} accent={accent} tone="panel" />
         </div>
       ) : null}
     </div>
   );
 }
 
-function EditorialConsultPill({
+function EditorialConsultLink({
   href,
   label,
   accent,
@@ -255,24 +348,27 @@ function EditorialConsultPill({
   href: string;
   label: string;
   accent: string;
-  /** `overlay` on dark hover; `panel` on info rail. */
   tone?: 'overlay' | 'panel';
 }) {
   const external = /^https?:\/\//i.test(href);
+  const color = tone === 'overlay' ? '#f5f5f5' : accent;
   const className =
-    tone === 'overlay'
-      ? 'inline-flex w-fit items-center gap-2.5 rounded-full border border-white/80 bg-white/10 px-5 py-2.5 text-sm font-semibold tracking-[-0.01em] text-white backdrop-blur-sm transition duration-300 ease-out hover:bg-white hover:text-neutral-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white sm:px-6 sm:py-3'
-      : 'inline-flex w-fit items-center gap-2.5 rounded-full border px-5 py-2.5 text-sm font-semibold tracking-[-0.01em] text-white transition duration-300 ease-out hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-current sm:px-6 sm:py-3';
-
-  const style =
-    tone === 'panel'
-      ? { borderColor: accent, backgroundColor: accent, color: '#fff' }
-      : undefined;
+    'group/consult inline-flex w-fit items-center gap-2.5 bg-transparent text-[11px] font-semibold uppercase tracking-[0.2em] transition-opacity duration-300 hover:opacity-65 focus:outline-none focus-visible:opacity-65 sm:text-xs';
 
   const content = (
     <>
-      <span>{label}</span>
-      <FontAwesomeIcon icon={faArrowUp} className="h-3 w-3 rotate-45" aria-hidden />
+      <span
+        className="border-b pb-[0.12em] transition-[border-color,opacity] duration-300"
+        style={{ borderColor: color }}
+        data-pf-no-color-transition=""
+      >
+        {label}
+      </span>
+      <FontAwesomeIcon
+        icon={faArrowUp}
+        className="h-3 w-3 rotate-45 transition-transform duration-300 group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
+        aria-hidden
+      />
     </>
   );
 
@@ -283,8 +379,8 @@ function EditorialConsultPill({
         target="_blank"
         rel="noopener noreferrer"
         className={className}
-        style={style}
-        data-pf-no-color-transition={tone === 'panel' ? '' : undefined}
+        style={{ color, backgroundColor: 'transparent' }}
+        data-pf-no-color-transition=""
       >
         {content}
       </a>
@@ -294,8 +390,8 @@ function EditorialConsultPill({
     <Link
       href={href}
       className={className}
-      style={style}
-      data-pf-no-color-transition={tone === 'panel' ? '' : undefined}
+      style={{ color, backgroundColor: 'transparent' }}
+      data-pf-no-color-transition=""
     >
       {content}
     </Link>
@@ -336,29 +432,29 @@ function EditorialThumbnailPanel({
       className="w-full"
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translate3d(0, 0, 0)' : 'translate3d(0, 8px, 0)',
-        transition: `opacity ${DETAIL_FADE_MS}ms ease-out, transform ${DETAIL_FADE_MS}ms ease-out`,
+        transform: visible ? 'translate3d(0, 0, 0)' : 'translate3d(0, 10px, 0)',
+        transition: `opacity ${DETAIL_FADE_MS}ms ${EDITORIAL_EASE}, transform ${DETAIL_FADE_MS}ms ${EDITORIAL_EASE}`,
       }}
     >
       <div
-        className={`group relative aspect-[4/5] w-full overflow-hidden rounded-none border-0 ${
-          hoverEnabled && hasHoverContent ? '' : ''
-        }`}
+        className="group relative aspect-[4/5] w-full overflow-hidden rounded-none border-0"
         style={{ backgroundColor: `${fill}33` }}
       >
         {mediaUrl ? (
-          <Image
-            src={mediaUrl}
-            alt={item.title?.trim() || 'Project'}
-            fill
-            sizes="(max-width: 640px) 100vw, 40vw"
-            className="rounded-none object-cover object-center transition duration-500 ease-out group-hover:scale-[1.03]"
-            priority={false}
-            data-pf-no-color-transition=""
-          />
+          <div className="absolute inset-0" data-editorial-media="" data-pf-no-color-transition="">
+            <Image
+              src={mediaUrl}
+              alt={item.title?.trim() || 'Project'}
+              fill
+              sizes="(max-width: 640px) 100vw, 40vw"
+              className="rounded-none object-cover object-center transition duration-700 ease-out group-hover:scale-[1.04]"
+              priority={false}
+              data-pf-no-color-transition=""
+            />
+          </div>
         ) : (
           <div
-            className="flex h-full w-full items-center justify-center px-4 text-center text-sm"
+            className="flex h-full w-full items-center justify-center px-4 text-center text-sm font-light"
             style={{ color: muted }}
           >
             Add a thumbnail in Information → Portfolio
@@ -367,23 +463,22 @@ function EditorialThumbnailPanel({
 
         {hoverEnabled && hasHoverContent ? (
           <>
-            {/* Darken from bottom → top on hover */}
             <div
-              className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100"
+              className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-100"
               style={{
                 background:
-                  'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.12) 72%, transparent 100%)',
+                  'linear-gradient(to top, rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.42) 46%, rgba(0,0,0,0.08) 74%, transparent 100%)',
               }}
               aria-hidden
               data-pf-no-color-transition=""
             />
 
             <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex translate-y-3 flex-col gap-4 px-5 pb-5 pt-16 opacity-0 transition duration-500 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 sm:gap-5 sm:px-6 sm:pb-6"
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex translate-y-4 flex-col gap-4 px-5 pb-5 pt-16 opacity-0 transition duration-700 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 sm:gap-5 sm:px-6 sm:pb-6"
               data-pf-no-color-transition=""
             >
               {showDescription ? (
-                <p className="max-w-md text-sm leading-relaxed text-white/90 sm:text-base">
+                <p className="max-w-md text-sm font-light leading-[1.7] text-white/88 sm:text-[0.95rem]">
                   {description}
                 </p>
               ) : null}
@@ -391,22 +486,18 @@ function EditorialThumbnailPanel({
               {showStack ? (
                 <div>
                   <p
-                    className="text-[10px] font-semibold uppercase tracking-[0.18em] sm:text-[11px]"
+                    className="text-[10px] font-medium uppercase tracking-[0.24em] sm:text-[11px]"
                     style={{ color: accent }}
                   >
                     {settings.stackLabel?.trim() || 'Stack'}
                   </p>
-                  <span
-                    className="mt-2 block h-px w-10"
-                    style={{ backgroundColor: accent }}
-                    aria-hidden
-                  />
+                  <EditorialHairline color={accent} widthClass="mt-2 w-7" />
                   <ul className="mt-3 flex flex-wrap items-center gap-y-1.5" aria-label="Stack">
                     {tools.map((tool, toolIndex) => (
                       <li key={tool} className="flex items-center">
                         {toolIndex > 0 ? (
-                          <span className="mx-2 select-none text-sm text-white/45" aria-hidden>
-                            |
+                          <span className="mx-2 select-none text-sm text-white/40" aria-hidden>
+                            ·
                           </span>
                         ) : null}
                         <span
@@ -423,7 +514,7 @@ function EditorialThumbnailPanel({
 
               {showConsult && href ? (
                 <div className="pt-1">
-                  <EditorialConsultPill href={href} label={consultLabel} accent={accent} />
+                  <EditorialConsultLink href={href} label={consultLabel} accent={accent} />
                 </div>
               ) : null}
             </div>
@@ -484,10 +575,10 @@ export function ProjectsEditorialSectionHeader({
   trailing?: ReactNode;
   className?: string;
 }) {
+  const headerRef = useRef<HTMLElement>(null);
   const heading = title.trim();
   const sub = subtitle?.trim() || '';
-  if (!heading && !sub && !trailing) return null;
-
+  const isEmpty = !heading && !sub && !trailing;
   const resolvedTitleColor =
     (typeof titleStyle?.color === 'string' && titleStyle.color.trim()) || titleColor;
 
@@ -495,39 +586,97 @@ export function ProjectsEditorialSectionHeader({
     fontSize: _fs,
     lineHeight: _lh,
     letterSpacing: _ls,
+    fontStyle: incomingFontStyle,
     ...restTitleStyle
   } = titleStyle ?? {};
+  const allowItalicWord = incomingFontStyle !== 'italic';
+  const mark = subtitleColor || resolvedTitleColor;
+
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header || isEmpty) return;
+
+    if (prefersReducedMotion()) {
+      showElementNow(header);
+      return;
+    }
+
+    let revealed = false;
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      revealElement(header, 0);
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            reveal();
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.12, root: editorialIoRoot(header), rootMargin: '40px 0px' }
+    );
+    observer.observe(header);
+    const failSafe = window.setTimeout(reveal, 1600);
+
+    return () => {
+      window.clearTimeout(failSafe);
+      observer.disconnect();
+    };
+  }, [heading, sub, isEmpty]);
+
+  if (isEmpty) return null;
 
   return (
-    <header className={`mb-12 w-full sm:mb-14 ${className}`.trim()}>
-      <div className="flex items-start justify-between gap-4 sm:gap-6">
+    <header
+      ref={headerRef}
+      className={`pf-work-editorial-header mb-12 w-full sm:mb-16 lg:mb-20 ${className}`.trim()}
+      data-pf-no-color-transition=""
+      style={EDITORIAL_HIDDEN}
+    >
+      <style>{EDITORIAL_REDUCED_CSS}</style>
+      <div className="flex items-end justify-between gap-6 sm:gap-10">
         <div className="min-w-0 max-w-3xl">
           {heading ? (
-            <h2
-              className={
-                titleClassName.trim() ||
-                'font-semibold tracking-[-0.03em]'
-              }
-              style={{
-                ...restTitleStyle,
-                color: resolvedTitleColor,
-                fontSize: 'clamp(2.75rem, 7vw, 5.5rem)',
-                lineHeight: 1.06,
-              }}
-            >
-              {heading}
-            </h2>
+            <>
+              <EditorialHairline color={mark} widthClass="mb-5 w-8 sm:mb-6 sm:w-10" />
+              <h2
+                className={titleClassName.trim() || 'tracking-[-0.045em]'}
+                style={{
+                  ...restTitleStyle,
+                  color: resolvedTitleColor,
+                  fontSize: 'clamp(2.45rem, 6.2vw, 4.75rem)',
+                  lineHeight: 1.05,
+                }}
+              >
+                {allowItalicWord ? <EditorialTitleText text={heading} /> : heading}
+              </h2>
+            </>
           ) : null}
           {sub ? (
             <p
-              className={`max-w-2xl text-base leading-relaxed sm:text-lg ${heading ? 'mt-3' : ''}`}
-              style={{ color: subtitleColor }}
+              className={`max-w-xl text-[15px] font-light leading-[1.7] sm:text-base ${
+                heading ? 'mt-4' : ''
+              }`}
+              style={{ color: subtitleColor, opacity: 0.86 }}
             >
               {sub}
             </p>
           ) : null}
         </div>
-        {trailing ? <div className="pt-1 sm:pt-2">{trailing}</div> : null}
+        {trailing ? (
+          <div className="flex shrink-0 flex-col items-end gap-3 pb-1">
+            {trailing}
+            <span
+              className="hidden h-px w-14 sm:block lg:w-20"
+              style={{ backgroundColor: mark, opacity: 0.32 }}
+              aria-hidden
+            />
+          </div>
+        ) : null}
       </div>
     </header>
   );
@@ -545,8 +694,9 @@ export function ProjectsEditorialGallery({
     DEFAULT_PROJECTS_EDITORIAL_SETTINGS,
     presentation.projectsEditorial
   );
-  const rule = presentation.cardBorderColor || presentation.subtitleColor || presentation.titleColor;
   const rootRef = useRef<HTMLElement>(null);
+  const listShiftRef = useRef<HTMLDivElement>(null);
+  const railShiftRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [displayIndex, setDisplayIndex] = useState(0);
@@ -561,11 +711,54 @@ export function ProjectsEditorialGallery({
     }
     setActiveIndex((index) => Math.min(index, items.length - 1));
     setDisplayIndex((index) => Math.min(index, items.length - 1));
+    itemRefs.current = itemRefs.current.slice(0, items.length);
   }, [items.length]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const targets = [
+      ...root.querySelectorAll<HTMLElement>('[data-editorial-item]'),
+      ...root.querySelectorAll<HTMLElement>('[data-editorial-rail]'),
+    ];
+    if (targets.length === 0) return;
+
+    if (prefersReducedMotion()) {
+      targets.forEach(showElementNow);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const el = entry.target as HTMLElement;
+          const i = Number(el.dataset.editorialItem ?? el.dataset.editorialRail ?? 0);
+          revealElement(el, Math.min(i * 70, 280));
+          observer.unobserve(el);
+        });
+      },
+      { threshold: 0.12, root: editorialIoRoot(root), rootMargin: '0px 0px -6% 0px' }
+    );
+    targets.forEach((el) => observer.observe(el));
+
+    const failSafe = window.setTimeout(() => {
+      targets.forEach((el) => {
+        if (el.dataset.revealed !== 'true') showElementNow(el);
+      });
+    }, 1800);
+
+    return () => {
+      window.clearTimeout(failSafe);
+      observer.disconnect();
+    };
+  }, [items.length, settings.rightPanel]);
 
   useEffect(() => {
     if (items.length <= 1) return;
 
+    let frame = 0;
     const updateActive = () => {
       const mid = window.innerHeight * 0.42;
       let best = 0;
@@ -584,13 +777,21 @@ export function ProjectsEditorialGallery({
       setActiveIndex((current) => (current === best ? current : best));
     };
 
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        updateActive();
+      });
+    };
+
     const root = rootRef.current;
     const scrollRoot = getScrollParent(root);
     updateActive();
-    const onScroll = () => updateActive();
     scrollRoot.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll, { passive: true });
     return () => {
+      if (frame) window.cancelAnimationFrame(frame);
       scrollRoot.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
     };
@@ -612,6 +813,102 @@ export function ProjectsEditorialGallery({
     };
   }, [activeIndex, displayIndex]);
 
+  useEffect(() => {
+    const root = rootRef.current;
+    const list = listShiftRef.current;
+    const rail = railShiftRef.current;
+    if (!root || !list || !rail) return;
+
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let scroller: HTMLElement | Window | null = null;
+    let frame = 0;
+
+    const resetKinetic = () => {
+      list.style.transform = '';
+      list.style.willChange = 'auto';
+      rail.style.transform = '';
+      rail.style.willChange = 'auto';
+      root.querySelectorAll<HTMLElement>('[data-editorial-num], [data-editorial-copy]').forEach((el) => {
+        el.style.transform = '';
+      });
+      root.querySelectorAll<HTMLElement>('[data-editorial-media]').forEach((el) => {
+        el.style.transform = '';
+      });
+    };
+
+    const applyKinetic = () => {
+      const vh = window.innerHeight;
+      const rect = root.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > vh) return;
+
+      const relative = vh * 0.42 - rect.top;
+      const listY = Math.max(-18, Math.min(18, relative * 0.032));
+      const railY = Math.max(-26, Math.min(26, -relative * 0.055));
+      list.style.transform = `translate3d(0, ${listY.toFixed(2)}px, 0)`;
+      rail.style.transform = `translate3d(0, ${railY.toFixed(2)}px, 0)`;
+
+      itemRefs.current.forEach((item) => {
+        if (!item || item.dataset.revealed !== 'true') return;
+        const itemRect = item.getBoundingClientRect();
+        const t = Math.max(0, Math.min(1, (vh * 0.16 - itemRect.top) / (vh * 0.32)));
+        const num = item.querySelector<HTMLElement>('[data-editorial-num]');
+        const copy = item.querySelector<HTMLElement>('[data-editorial-copy]');
+        if (num) num.style.transform = `translate3d(0, ${(-14 * t).toFixed(2)}px, 0)`;
+        if (copy) copy.style.transform = `translate3d(0, ${(10 * t).toFixed(2)}px, 0)`;
+      });
+
+      const media = rail.querySelector<HTMLElement>('[data-editorial-media]');
+      if (media) {
+        media.style.transform = `translate3d(0, ${(railY * 0.45).toFixed(2)}px, 0)`;
+      }
+    };
+
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        applyKinetic();
+      });
+    };
+
+    const bind = () => {
+      unbind();
+      if (reduceMq.matches || !desktop.matches) {
+        resetKinetic();
+        return;
+      }
+      list.style.willChange = 'transform';
+      rail.style.willChange = 'transform';
+      scroller = getScrollParent(root);
+      scroller.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll, { passive: true });
+      applyKinetic();
+    };
+
+    const unbind = () => {
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+        frame = 0;
+      }
+      if (scroller) {
+        scroller.removeEventListener('scroll', onScroll);
+        scroller = null;
+      }
+      window.removeEventListener('resize', onScroll);
+    };
+
+    bind();
+    desktop.addEventListener('change', bind);
+    reduceMq.addEventListener('change', bind);
+    return () => {
+      desktop.removeEventListener('change', bind);
+      reduceMq.removeEventListener('change', bind);
+      unbind();
+      resetKinetic();
+    };
+  }, [items.length, settings.rightPanel]);
+
   if (items.length === 0) return null;
 
   const safeDisplay = Math.max(0, Math.min(displayIndex, items.length - 1));
@@ -619,11 +916,24 @@ export function ProjectsEditorialGallery({
   const thumbnailMode = (settings.rightPanel ?? 'info') === 'thumbnail';
 
   return (
-    <section ref={rootRef} className="w-full" aria-label="Project editorial">
+    <section
+      ref={rootRef}
+      className="pf-work-editorial w-full"
+      aria-label="Project editorial"
+      data-pf-no-color-transition=""
+    >
+      <style>{EDITORIAL_REDUCED_CSS}</style>
+
       {/* Mobile: stacked identity + details/thumbnail per project */}
-      <div className="flex flex-col gap-14 sm:hidden">
+      <div className="flex flex-col gap-16 sm:hidden">
         {items.map((item, index) => (
-          <div key={item.id} className="flex flex-col gap-8">
+          <div
+            key={item.id}
+            className="flex flex-col gap-8"
+            data-editorial-item={index}
+            data-pf-no-color-transition=""
+            style={EDITORIAL_HIDDEN}
+          >
             <EditorialIdentity
               item={item}
               index={index}
@@ -631,30 +941,23 @@ export function ProjectsEditorialGallery({
               settings={settings}
               active
             />
-            {thumbnailMode ? (
-              <EditorialRightRail
-                item={item}
-                presentation={presentation}
-                settings={settings}
-                visible
-              />
-            ) : (
-              <div className="border-t pt-8" style={{ borderColor: rule }}>
-                <EditorialRightRail
-                  item={item}
-                  presentation={presentation}
-                  settings={settings}
-                  visible
-                />
-              </div>
-            )}
+            <EditorialRightRail
+              item={item}
+              presentation={presentation}
+              settings={settings}
+              visible
+            />
           </div>
         ))}
       </div>
 
       {/* Desktop: left scroll list + sticky centered right rail */}
-      <div className="hidden sm:grid sm:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] sm:items-start sm:gap-0">
-        <div className="min-w-0 sm:pr-10 lg:pr-14 xl:pr-16">
+      <div className="hidden sm:grid sm:grid-cols-[minmax(0,1.18fr)_minmax(0,0.82fr)] sm:items-start sm:gap-x-10 lg:gap-x-14 xl:gap-x-16">
+        <div
+          ref={listShiftRef}
+          className="min-w-0"
+          data-editorial-kinetic="list"
+        >
           {items.map((item, index) => (
             <div
               key={item.id}
@@ -662,7 +965,9 @@ export function ProjectsEditorialGallery({
                 itemRefs.current[index] = node;
               }}
               data-editorial-item={index}
-              className={index > 0 ? 'mt-20 lg:mt-28' : ''}
+              className={index > 0 ? 'mt-16 lg:mt-24' : ''}
+              data-pf-no-color-transition=""
+              style={EDITORIAL_HIDDEN}
             >
               <EditorialIdentity
                 item={item}
@@ -676,18 +981,12 @@ export function ProjectsEditorialGallery({
           <div className="h-[28vh]" aria-hidden />
         </div>
 
-        <div
-          className={`relative min-h-full min-w-0 sm:pl-10 lg:pl-12 xl:pl-14 ${
-            thumbnailMode ? '' : 'border-l'
-          }`}
-          style={thumbnailMode ? undefined : { borderColor: rule }}
-        >
+        <div className="relative min-h-full min-w-0">
           <div
             className="sticky z-10"
             style={
               thumbnailMode
                 ? {
-                    // Center in the viewport *below* the navbar (exclude nav clearance).
                     top: 'calc((100dvh + var(--portfolio-nav-top-clearance, 4.75rem)) / 2)',
                     transform: 'translateY(-50%)',
                   }
@@ -696,12 +995,20 @@ export function ProjectsEditorialGallery({
                   }
             }
           >
-            <EditorialRightRail
-              item={activeItem}
-              presentation={presentation}
-              settings={settings}
-              visible={detailVisible}
-            />
+            <div
+              data-editorial-rail="0"
+              data-pf-no-color-transition=""
+              style={EDITORIAL_HIDDEN}
+            >
+              <div ref={railShiftRef} data-editorial-kinetic="rail">
+                <EditorialRightRail
+                  item={activeItem}
+                  presentation={presentation}
+                  settings={settings}
+                  visible={detailVisible}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

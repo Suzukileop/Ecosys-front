@@ -1,6 +1,8 @@
 'use client';
 
 import Image from 'next/image';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useMemo, useRef, type MouseEvent } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
@@ -23,6 +25,22 @@ const FALLBACK_INTRO =
 function resolveIntroCopy(source?: string | null) {
   const cleaned = source?.replace(/\s+/g, ' ').trim();
   return cleaned || FALLBACK_INTRO;
+}
+
+/** Nearest scrollable ancestor (pages mode nests overflow-y-auto shells). */
+function identityScrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
 }
 
 /**
@@ -70,9 +88,171 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
 
   const hairline = `1px solid color-mix(in srgb, ${bordure} 85%, transparent)`;
 
+  const heroRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      hero.dataset.pfEntry = 'off';
+      return;
+    }
+
+    gsap.registerPlugin(ScrollTrigger);
+    hero.dataset.pfEntry = 'running';
+
+    const scroller = identityScrollParent(hero);
+    const pick = (selector: string) => Array.from(hero.querySelectorAll<HTMLElement>(selector));
+    const masks = pick('.pf-identity-photo-mask');
+    const inners = pick('.pf-identity-photo-inner');
+    const names = pick('.pf-identity-entry-name');
+    const subs = pick('.pf-identity-entry-sub');
+    const ctas = pick('.pf-identity-entry-cta');
+    const shifts = pick('.pf-identity-shift');
+    const zones = pick('.pf-identity-void');
+
+    const media = gsap.matchMedia();
+
+    const ctx = gsap.context(() => {
+      /* B — entry: the portrait wipes up behind its mask, the right column cascades in. */
+      const cascade = [...names, ...subs, ...ctas];
+      if (masks.length) gsap.set(masks, { clipPath: 'inset(100% 0% 0% 0%)' });
+      if (inners.length) gsap.set(inners, { yPercent: 8 });
+      if (cascade.length) gsap.set(cascade, { y: 20, autoAlpha: 0 });
+
+      const intro = gsap.timeline({
+        defaults: { ease: 'power3.out' },
+        onComplete: () => {
+          hero.dataset.pfEntry = 'done';
+        },
+      });
+      if (masks.length) intro.to(masks, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.15 }, 0);
+      if (inners.length) intro.to(inners, { yPercent: 0, duration: 1.3, ease: 'power2.out' }, 0);
+      if (names.length) intro.to(names, { y: 0, autoAlpha: 1, duration: 0.85 }, 0.22);
+      if (subs.length) intro.to(subs, { y: 0, autoAlpha: 1, duration: 0.85 }, 0.32);
+      if (ctas.length) intro.to(ctas, { y: 0, autoAlpha: 1, duration: 0.85 }, 0.42);
+
+      /* A — magnetic cursor: the empty lower-right block swaps the system cursor for a floating dial. */
+      const detach: Array<() => void> = [];
+      if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+        zones.forEach((zone) => {
+          const dial = zone.querySelector<HTMLElement>('.pf-identity-cursor');
+          if (!dial) return;
+
+          zone.dataset.magnetic = 'on';
+          gsap.set(dial, { xPercent: -50, yPercent: -50, scale: 0.55, autoAlpha: 0 });
+          const toX = gsap.quickTo(dial, 'x', { duration: 0.55, ease: 'power3' });
+          const toY = gsap.quickTo(dial, 'y', { duration: 0.55, ease: 'power3' });
+
+          const follow = (event: PointerEvent, snap: boolean) => {
+            const box = zone.getBoundingClientRect();
+            const x = event.clientX - box.left;
+            const y = event.clientY - box.top;
+            if (snap) gsap.set(dial, { x, y });
+            else {
+              toX(x);
+              toY(y);
+            }
+          };
+          const onEnter = (event: PointerEvent) => {
+            if (event.pointerType !== 'mouse') return;
+            follow(event, true);
+            gsap.to(dial, { autoAlpha: 1, scale: 1, duration: 0.4, ease: 'power2.out' });
+          };
+          const onMove = (event: PointerEvent) => {
+            if (event.pointerType !== 'mouse') return;
+            follow(event, false);
+          };
+          const onLeave = () => {
+            gsap.to(dial, { autoAlpha: 0, scale: 0.55, duration: 0.28, ease: 'power2.in' });
+          };
+
+          zone.addEventListener('pointerenter', onEnter);
+          zone.addEventListener('pointermove', onMove);
+          zone.addEventListener('pointerleave', onLeave);
+          detach.push(() => {
+            zone.removeEventListener('pointerenter', onEnter);
+            zone.removeEventListener('pointermove', onMove);
+            zone.removeEventListener('pointerleave', onLeave);
+            delete zone.dataset.magnetic;
+          });
+        });
+      }
+
+      return () => {
+        detach.forEach((off) => off());
+      };
+    }, hero);
+
+    /* C — asymmetric exit: the portrait scrolls 1:1 while the right column trails at 0.6 and fades. */
+    media.add('(min-width: 768px)', () => {
+      shifts.forEach((shift) => {
+        const trailingZones = Array.from(shift.querySelectorAll<HTMLElement>('.pf-identity-void'));
+
+        gsap.fromTo(
+          shift,
+          { y: 0 },
+          {
+            y: () => Math.round(hero.offsetHeight * 0.4),
+            ease: 'none',
+            scrollTrigger: {
+              trigger: hero,
+              scroller,
+              start: 'top top',
+              end: 'bottom top',
+              scrub: true,
+              invalidateOnRefresh: true,
+            },
+          }
+        );
+        gsap.fromTo(
+          shift,
+          { autoAlpha: 1 },
+          {
+            autoAlpha: 0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: hero,
+              scroller,
+              start: 'top top',
+              end: '55% top',
+              scrub: true,
+              invalidateOnRefresh: true,
+              /* The trailing block drifts over the next section: keep its void inert there. */
+              onUpdate: (self: ScrollTrigger) => {
+                const inert = self.progress > 0.02 ? 'none' : '';
+                trailingZones.forEach((zone) => {
+                  zone.style.pointerEvents = inert;
+                });
+              },
+            },
+          }
+        );
+      });
+
+      return () => {
+        shifts.forEach((shift) => {
+          shift.querySelectorAll<HTMLElement>('.pf-identity-void').forEach((zone) => {
+            zone.style.pointerEvents = '';
+          });
+        });
+      };
+    });
+
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 80);
+    return () => {
+      window.clearTimeout(refreshId);
+      media.revert();
+      ctx.revert();
+    };
+  }, [showBottomBand, swapBioName]);
+
   return (
     <div
-      className="relative isolate w-full overflow-x-clip font-sans"
+      ref={heroRef}
+      data-pf-entry="armed"
+      className="pf-identity-hero relative isolate w-full overflow-x-clip font-sans"
       style={{ backgroundColor: fond, color: ink }}
     >
       <div
@@ -153,7 +333,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
             }}
           >
             <div
-              className="relative aspect-[4/5] w-[min(100%,28rem)] max-h-[min(58vh,34rem)] shrink-0 justify-self-start overflow-hidden"
+              className="pf-identity-photo-mask relative aspect-[4/5] w-[min(100%,28rem)] max-h-[min(58vh,34rem)] shrink-0 justify-self-start overflow-hidden"
               style={{ backgroundColor: neutre }}
             >
               <IdentityPortrait
@@ -161,16 +341,16 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
                 initials={initials}
                 muted={muted}
                 imageBw={imageBw}
-                className="absolute inset-0 h-full w-full"
+                className="pf-identity-photo-inner absolute inset-0 h-full w-full"
               />
             </div>
 
             <div aria-hidden />
 
-            <div className="flex min-w-0 flex-col gap-8 self-stretch">
+            <div className="pf-identity-shift flex min-w-0 flex-col self-stretch">
               {swapBioName ? (
                 <p
-                  className="m-0 max-w-full text-left font-sans font-semibold tracking-[-0.02em]"
+                  className="pf-identity-entry-name m-0 max-w-full text-left font-sans font-semibold tracking-[-0.02em]"
                   style={{
                     color: ink,
                     fontSize: 'clamp(1.05rem, 1.55vw, 1.95rem)',
@@ -182,11 +362,18 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
               ) : (
                 <div
                   className="flex min-w-0 flex-col"
-                  style={{ gap: 'clamp(0.75rem, 1.2vh, 1.15rem)' }}
+                  style={{ gap: 'clamp(0.3rem, 0.7vh, 0.6rem)' }}
                 >
-                  <IdentityName word={displayName} ink={ink} maxFontPx={108} minFontPx={56} />
+                  <IdentityName
+                    word={displayName}
+                    ink={ink}
+                    maxFontPx={108}
+                    minFontPx={56}
+                    flushTop
+                    className="pf-identity-entry-name"
+                  />
                   <p
-                    className="m-0 overflow-hidden whitespace-nowrap font-sans font-normal leading-none tracking-[-0.015em]"
+                    className="pf-identity-entry-sub m-0 overflow-hidden whitespace-nowrap font-sans font-normal leading-none tracking-[-0.015em]"
                     style={{
                       color: muted,
                       fontSize: 'clamp(1.15rem, 2vw, 2.35rem)',
@@ -197,7 +384,10 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
                 </div>
               )}
 
-              <div className="mt-auto flex shrink-0 flex-wrap items-center gap-3.5 pt-2">
+              <div
+                className="pf-identity-entry-cta flex shrink-0 flex-wrap items-center gap-3.5"
+                style={{ marginTop: 'clamp(2.25rem, 4.5vh, 3rem)' }}
+              >
                 <a
                   href={workHref}
                   onClick={onNavClick(workHref)}
@@ -224,6 +414,19 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
                   Contact me
                 </a>
               </div>
+
+              <div className="pf-identity-void relative min-h-0 w-full flex-1" aria-hidden>
+                <span
+                  className="pf-identity-cursor pointer-events-none absolute left-0 top-0 flex h-[7.25rem] w-[7.25rem] items-center justify-center whitespace-nowrap rounded-full font-sans text-[0.55rem] font-normal uppercase tracking-[0.22em]"
+                  style={{
+                    border: `1px solid color-mix(in srgb, ${ink} 26%, transparent)`,
+                    color: `color-mix(in srgb, ${ink} 72%, transparent)`,
+                    backgroundColor: `color-mix(in srgb, ${ink} 4%, transparent)`,
+                  }}
+                >
+                  Scroll ✕
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -235,9 +438,16 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
       >
         {swapBioName ? (
           <div className="min-w-0">
-            <IdentityName word={displayName} ink={ink} mobile maxFontPx={72} minFontPx={36} />
+            <IdentityName
+              word={displayName}
+              ink={ink}
+              mobile
+              maxFontPx={72}
+              minFontPx={36}
+              className="pf-identity-entry-name"
+            />
             <p
-              className="mt-3 font-sans font-normal leading-snug"
+              className="pf-identity-entry-sub mt-3 font-sans font-normal leading-snug"
               style={{ color: muted, fontSize: 'clamp(1.2rem, 4.8vw, 1.75rem)' }}
             >
               {specialty}
@@ -272,16 +482,23 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
             </p>
           ) : (
             <>
-              <IdentityName word={displayName} ink={ink} mobile maxFontPx={72} minFontPx={36} />
+              <IdentityName
+                word={displayName}
+                ink={ink}
+                mobile
+                maxFontPx={72}
+                minFontPx={36}
+                className="pf-identity-entry-name"
+              />
               <p
-                className="mt-3 font-sans font-normal leading-snug"
+                className="pf-identity-entry-sub mt-3 font-sans font-normal leading-snug"
                 style={{ color: muted, fontSize: 'clamp(1.2rem, 4.8vw, 1.75rem)' }}
               >
                 {specialty}
               </p>
             </>
           )}
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="pf-identity-entry-cta mt-6 flex flex-wrap items-center gap-3">
             <a
               href={workHref}
               onClick={onNavClick(workHref)}
@@ -306,7 +523,9 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
           </div>
         </div>
         <div
-          className={`relative w-full overflow-hidden ${showBottomBand ? 'mt-8 mb-2' : 'mt-8'}`}
+          className={`pf-identity-photo-mask relative w-full overflow-hidden ${
+            showBottomBand ? 'mt-8 mb-2' : 'mt-8'
+          }`}
           style={{ aspectRatio: '3 / 3.4', backgroundColor: neutre }}
         >
           <IdentityPortrait
@@ -314,7 +533,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
             initials={initials}
             muted={muted}
             imageBw={imageBw}
-            className="h-full w-full"
+            className="pf-identity-photo-inner h-full w-full"
           />
         </div>
       </div>
@@ -346,8 +565,8 @@ function IdentityPortrait({
           className="object-cover object-center"
           style={{
             filter: imageBw
-              ? 'grayscale(1) contrast(1.18) brightness(0.88)'
-              : 'contrast(1.18) brightness(0.88)',
+              ? 'grayscale(1) contrast(1.38) brightness(0.94) saturate(0)'
+              : 'contrast(1.24) brightness(0.9)',
           }}
           priority
         />
@@ -364,18 +583,46 @@ function IdentityPortrait({
   );
 }
 
+/**
+ * Distance between the text box top and the actual cap top of the glyphs
+ * (half-leading + the ascender space above capital letters).
+ */
+function capTopInset(text: HTMLElement, word: string): number {
+  const styles = getComputedStyle(text);
+  const fontSize = Number.parseFloat(styles.fontSize);
+  if (!Number.isFinite(fontSize) || fontSize <= 0) return 0;
+  const lineHeight = Number.parseFloat(styles.lineHeight);
+  const box = Number.isFinite(lineHeight) ? lineHeight : fontSize;
+
+  const context = document.createElement('canvas').getContext('2d');
+  if (!context) return 0;
+  context.font = `${styles.fontStyle} ${styles.fontWeight} ${fontSize}px ${styles.fontFamily}`;
+  const metrics = context.measureText(word || 'H');
+  const ascent = metrics.fontBoundingBoxAscent;
+  const descent = metrics.fontBoundingBoxDescent;
+  const capAscent = metrics.actualBoundingBoxAscent;
+  if (![ascent, descent, capAscent].every((value) => Number.isFinite(value))) return 0;
+
+  return (box - (ascent + descent)) / 2 + (ascent - capAscent);
+}
+
 function IdentityName({
   word,
   ink,
   mobile = false,
   maxFontPx,
   minFontPx,
+  flushTop = false,
+  className = '',
 }: {
   word: string;
   ink: string;
   mobile?: boolean;
   maxFontPx: number;
   minFontPx: number;
+  /** Pull the cap height flush with the container top (aligns onto the portrait edge). */
+  flushTop?: boolean;
+  className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLHeadingElement>(null);
@@ -404,16 +651,18 @@ function IdentityName({
         text.style.transform = `scale(${scale})`;
         text.style.transformOrigin = 'left center';
       }
+      text.style.marginTop = flushTop ? `${-capTopInset(text, word)}px` : '';
     };
 
     fit();
+    void document.fonts?.ready.then(fit);
     const observer = new ResizeObserver(fit);
     observer.observe(container);
     return () => observer.disconnect();
-  }, [maxFontPx, minFontPx, mobile, word]);
+  }, [flushTop, maxFontPx, minFontPx, mobile, word]);
 
   return (
-    <div ref={containerRef} className="w-full min-w-0 overflow-hidden">
+    <div ref={containerRef} className={`w-full min-w-0 overflow-hidden ${className}`.trim()}>
       <h1
         ref={textRef}
         className="m-0 inline-block max-w-none whitespace-nowrap font-sans font-normal uppercase leading-[0.92] tracking-[-0.04em]"

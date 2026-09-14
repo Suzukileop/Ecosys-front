@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -20,6 +21,80 @@ import {
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsLedgerSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+
+const LEDGER_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const LEDGER_HIDDEN: CSSProperties = {
+  opacity: 0,
+  transform: 'translate3d(0, 28px, 0)',
+};
+
+const LEDGER_CSS = `
+.pf-work-ledger-rule {
+  width: min(38%, 11rem);
+  opacity: 0.22;
+  transform-origin: left center;
+  transition:
+    width 0.55s ${LEDGER_EASE},
+    opacity 0.55s ${LEDGER_EASE};
+}
+.pf-work-ledger-row:hover .pf-work-ledger-rule,
+.pf-work-ledger-row:focus-within .pf-work-ledger-rule {
+  width: min(100%, 34rem);
+  opacity: 0.48;
+}
+.pf-work-ledger-mark {
+  transform-origin: right center;
+  transition: transform 0.55s ${LEDGER_EASE}, opacity 0.55s ${LEDGER_EASE};
+}
+.pf-work-ledger-row:hover .pf-work-ledger-mark,
+.pf-work-ledger-row:focus-within .pf-work-ledger-mark {
+  transform: scaleX(1.85);
+  opacity: 1;
+}
+.pf-work-ledger-title {
+  color: var(--pf-ledger-ink);
+  transition:
+    color 0.5s ${LEDGER_EASE},
+    transform 0.55s ${LEDGER_EASE};
+}
+.pf-work-ledger-row:hover .pf-work-ledger-title,
+.pf-work-ledger-row:focus-within .pf-work-ledger-title {
+  color: var(--pf-ledger-ink-hover);
+  transform: translate3d(0.4rem, 0, 0);
+}
+.pf-work-ledger-inner {
+  transition: opacity 0.65s ${LEDGER_EASE};
+}
+.pf-work-ledger-inner[data-dim='1'] {
+  opacity: 0.42;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pf-work-ledger[data-expand='hover'] .pf-work-ledger-list:hover .pf-work-ledger-row:not(:hover):not(:focus-within) .pf-work-ledger-inner {
+    opacity: 0.42;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-work-ledger-row,
+  .pf-work-ledger-header {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .pf-work-ledger [data-ledger-index],
+  .pf-work-ledger [data-ledger-title],
+  .pf-work-ledger [data-ledger-role],
+  .pf-work-ledger [data-ledger-mark] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .pf-work-ledger-title,
+  .pf-work-ledger-mark,
+  .pf-work-ledger-rule,
+  .pf-work-ledger-inner {
+    transition-duration: 0.01ms !important;
+  }
+}
+`;
 
 function workToolLabels(item: MarketplaceContentItem, max = 10): string[] {
   return Array.from(new Set((item.toolsUsed ?? []).map((t) => t.trim()).filter(Boolean))).slice(
@@ -39,46 +114,153 @@ function formatLedgerIndex(index: number): string {
   return String(index + 1).padStart(2, '0');
 }
 
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function ledgerScrollRoot(el: HTMLElement | null): HTMLElement | null {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return null;
+}
+
+function ledgerScrollTarget(el: HTMLElement | null): HTMLElement | Window {
+  return ledgerScrollRoot(el) ?? window;
+}
+
+function wordLetterCount(word: string): number {
+  return (word.match(/\p{L}/gu) ?? []).length;
+}
+
+/** Italicize the last word when it stays readable (2+ words, 4+ letters). */
+function splitEditorialTitle(title: string): { lead: string; italic: string } | null {
+  const words = title.trim().split(/\s+/).filter(Boolean);
+  if (words.length < 2) return null;
+  const last = words[words.length - 1];
+  if (wordLetterCount(last) < 4) return null;
+  return { lead: words.slice(0, -1).join(' '), italic: last };
+}
+
+function LedgerTitleText({ text, allowItalic }: { text: string; allowItalic: boolean }) {
+  if (!allowItalic) return <>{text}</>;
+  const parts = splitEditorialTitle(text);
+  if (!parts) return <>{text}</>;
+  return (
+    <>
+      <span className="font-medium">{parts.lead}</span>{' '}
+      <span className="font-semibold italic tracking-[-0.03em]">{parts.italic}</span>
+    </>
+  );
+}
+
+function revealElement(el: HTMLElement, delayMs: number): void {
+  el.style.transition = `opacity 0.85s ${LEDGER_EASE} ${delayMs}ms, transform 0.95s ${LEDGER_EASE} ${delayMs}ms`;
+  el.style.opacity = '1';
+  el.style.transform = 'translate3d(0, 0, 0)';
+  el.dataset.revealed = 'true';
+}
+
+function showElementNow(el: HTMLElement): void {
+  el.style.transition = 'none';
+  el.style.opacity = '1';
+  el.style.transform = 'none';
+  el.dataset.revealed = 'true';
+}
+
 function LedgerConsultLink({
   href,
   label,
   accent,
+  ink,
 }: {
   href: string;
   label: string;
   accent: string;
+  ink: string;
 }) {
   const external = /^https?:\/\//i.test(href);
   const className =
-    'group/consult inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] transition-opacity duration-300 hover:opacity-70 sm:text-xs';
+    'group/consult relative inline-flex items-center gap-2 text-sm tracking-[-0.012em] focus:outline-none focus-visible:opacity-70';
   const body = (
     <>
-      <span>{label}</span>
+      <span className="relative">
+        <span>{label}</span>
+        <span
+          aria-hidden
+          data-pf-no-color-transition=""
+          className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-100 transition-transform duration-400 ease-out group-hover/consult:scale-x-0"
+          style={{ backgroundColor: ink, opacity: 0.38 }}
+        />
+        <span
+          aria-hidden
+          data-pf-no-color-transition=""
+          className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 transition-transform duration-400 ease-out group-hover/consult:scale-x-100"
+          style={{ backgroundColor: accent }}
+        />
+      </span>
       <FontAwesomeIcon
         icon={faArrowUp}
-        className="size-3 rotate-45 transition-transform duration-300 group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
+        className="size-3 rotate-45 transition-transform duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
         aria-hidden
+        data-pf-no-color-transition=""
       />
     </>
   );
 
   if (external) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className} style={{ color: accent }}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+        style={{ color: ink }}
+        data-pf-no-color-transition=""
+      >
         {body}
       </a>
     );
   }
 
   return (
-    <Link href={href} className={className} style={{ color: accent }}>
+    <Link href={href} className={className} style={{ color: ink }} data-pf-no-color-transition="">
       {body}
     </Link>
   );
 }
 
+function LedgerHairline({
+  color,
+  indent = true,
+}: {
+  color: string;
+  indent?: boolean;
+}) {
+  return (
+    <div className="flex" aria-hidden>
+      {indent ? <span className="hidden w-[3.5rem] shrink-0 lg:block xl:w-16" /> : null}
+      {indent ? <span className="hidden w-8 shrink-0 lg:block xl:w-10" /> : null}
+      <span
+        className="pf-work-ledger-rule block h-px"
+        style={{ backgroundColor: color }}
+        data-pf-no-color-transition=""
+      />
+    </div>
+  );
+}
+
 /**
- * Ledger header — Framer/Webflow archive title + optional entry count.
+ * Ledger header — archive kicker, italic last word, quiet tabular count.
+ * Hidden in JSX (FOUC-safe), revealed via IntersectionObserver.
  */
 export function ProjectsLedgerSectionHeader({
   title,
@@ -105,9 +287,10 @@ export function ProjectsLedgerSectionHeader({
   accent?: string;
   className?: string;
 }) {
+  const headerRef = useRef<HTMLElement>(null);
   const heading = title.trim();
   const sub = subtitle?.trim() || '';
-  if (!heading && !sub && !trailing) return null;
+  const isEmpty = !heading && !sub && !trailing;
 
   const resolvedTitleColor =
     (typeof titleStyle?.color === 'string' && titleStyle.color.trim()) || titleColor;
@@ -116,50 +299,118 @@ export function ProjectsLedgerSectionHeader({
     fontSize: _fs,
     lineHeight: _lh,
     letterSpacing: _ls,
+    fontStyle: incomingFontStyle,
     ...restTitleStyle
   } = titleStyle ?? {};
+  const allowItalicWord = incomingFontStyle !== 'italic';
+  const mark = accent || subtitleColor;
+  const countVisible = showCount !== false && typeof entryCount === 'number' && entryCount > 0;
+  const countDigits = countVisible ? String(entryCount).padStart(2, '0') : '';
 
-  const countLabel =
-    showCount !== false && typeof entryCount === 'number' && entryCount > 0
-      ? `${String(entryCount).padStart(2, '0')} ${entryCount === 1 ? 'project' : 'projects'}`
-      : '';
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header || isEmpty) return;
+
+    if (prefersReducedMotion()) {
+      showElementNow(header);
+      return;
+    }
+
+    let revealed = false;
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      revealElement(header, 0);
+    };
+
+    const ioRoot = ledgerScrollRoot(header);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            reveal();
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.12, root: ioRoot, rootMargin: '40px 0px' }
+    );
+    observer.observe(header);
+    const failSafe = window.setTimeout(reveal, 1600);
+
+    return () => {
+      window.clearTimeout(failSafe);
+      observer.disconnect();
+    };
+  }, [heading, sub, isEmpty]);
+
+  if (isEmpty) return null;
 
   return (
-    <header className={`mb-8 w-full sm:mb-10 ${className}`.trim()}>
-      <div className="flex items-end justify-between gap-4 sm:gap-8">
+    <header
+      ref={headerRef}
+      className={`pf-work-ledger-header mb-12 w-full sm:mb-16 lg:mb-20 ${className}`.trim()}
+      data-pf-no-color-transition=""
+      style={LEDGER_HIDDEN}
+    >
+      <div className="flex items-end justify-between gap-6 sm:gap-10">
         <div className="min-w-0 max-w-3xl">
+          <div className="mb-5 flex items-center gap-3 sm:mb-6">
+            <span
+              className="h-px w-7 shrink-0 sm:w-9"
+              style={{ backgroundColor: mark, opacity: 0.7 }}
+              aria-hidden
+            />
+            <p
+              className="text-[10px] font-semibold uppercase tracking-[0.28em] sm:text-[11px]"
+              style={{ color: subtitleColor }}
+            >
+              Index
+            </p>
+          </div>
           {heading ? (
             <h2
-              className={titleClassName.trim() || 'font-semibold tracking-[-0.04em]'}
+              className={titleClassName.trim() || 'font-medium tracking-[-0.045em]'}
               style={{
                 ...restTitleStyle,
                 color: resolvedTitleColor,
-                fontSize: 'clamp(2.5rem, 6.5vw, 4.75rem)',
-                lineHeight: 1.05,
+                fontSize: 'clamp(2.35rem, 6vw, 4.5rem)',
+                lineHeight: 1.04,
               }}
             >
-              {heading}
+              <LedgerTitleText text={heading} allowItalic={allowItalicWord} />
             </h2>
           ) : null}
           {sub ? (
             <p
-              className={`max-w-xl text-sm leading-relaxed sm:text-base ${heading ? 'mt-3' : ''}`}
-              style={{ color: subtitleColor }}
+              className={`max-w-md text-[15px] leading-[1.7] sm:text-base sm:leading-[1.75] ${heading ? 'mt-4' : ''}`}
+              style={{ color: subtitleColor, opacity: 0.86 }}
             >
               {sub}
             </p>
           ) : null}
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-3 pb-1">
-          {countLabel ? (
+        <div className="flex shrink-0 flex-col items-end gap-4 pb-1">
+          {countDigits ? (
             <p
-              className="text-[10px] font-semibold uppercase tracking-[0.22em] sm:text-[11px]"
-              style={{ color: accent || subtitleColor }}
+              className="font-medium tabular-nums tracking-[-0.07em]"
+              style={{
+                color: mark,
+                fontSize: 'clamp(2.25rem, 5.5vw, 4.25rem)',
+                lineHeight: 0.9,
+                opacity: 0.2,
+              }}
+              aria-label={`${entryCount} ${entryCount === 1 ? 'project' : 'projects'}`}
             >
-              {countLabel}
+              {countDigits}
             </p>
           ) : null}
           {trailing}
+          <span
+            className="hidden h-px w-14 sm:block lg:w-20"
+            style={{ backgroundColor: mark, opacity: 0.32 }}
+            aria-hidden
+          />
         </div>
       </div>
     </header>
@@ -189,7 +440,10 @@ function LedgerRow({
 }) {
   const accent = presentation.ctaColor || presentation.categoryActiveColor || '#2563eb';
   const ink = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
-  const muted = presentation.subtitleColor || presentation.titleColor;
+  const muted =
+    presentation.elementStyles?.cardDescription?.color ||
+    presentation.subtitleColor ||
+    presentation.titleColor;
   const title = item.title?.trim() || 'Untitled';
   const role = workRoleLabel(item);
   const description = item.description?.trim() || '';
@@ -205,6 +459,7 @@ function LedgerRow({
   const hasDetails = showDescription || showStack || showConsult;
   const expandMode = settings.expandMode ?? 'hover';
   const interactive = expandMode !== 'always' && hasDetails;
+  const clickable = interactive && expandMode === 'click';
 
   const detailsOpen = expandMode === 'always' ? hasDetails : open && hasDetails;
 
@@ -223,120 +478,164 @@ function LedgerRow({
 
   return (
     <article
-      className="group/row relative border-t transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      className="pf-work-ledger-row group/row relative"
+      data-ledger-row=""
+      data-index={String(index)}
+      data-pf-no-color-transition=""
       style={{
-        borderColor: rule,
-        opacity: dimmed ? 0.28 : 1,
+        ...LEDGER_HIDDEN,
+        ['--pf-ledger-ink' as string]: ink,
+        ['--pf-ledger-ink-hover' as string]: `color-mix(in srgb, ${ink} 68%, ${accent} 32%)`,
       }}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
     >
       <div
-        role={interactive && expandMode === 'click' ? 'button' : undefined}
-        tabIndex={interactive && expandMode === 'click' ? 0 : undefined}
-        onClick={expandMode === 'click' ? handleClick : undefined}
-        onKeyDown={
-          expandMode === 'click'
-            ? (event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  handleClick();
-                }
-              }
-            : undefined
-        }
-        className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-2 py-6 sm:gap-x-6 sm:py-7 lg:grid-cols-[4.5rem_minmax(0,1fr)_minmax(7rem,14rem)_2rem] lg:gap-x-8 lg:py-8 ${
-          interactive && expandMode === 'click' ? 'cursor-pointer' : ''
-        }`}
+        className="pf-work-ledger-inner"
+        data-dim={dimmed ? '1' : '0'}
+        data-pf-no-color-transition=""
       >
-        {showIndex ? (
-          <span
-            className="font-mono text-[11px] tabular-nums tracking-[0.08em] sm:text-xs"
-            style={{ color: muted, opacity: 0.55 }}
-          >
-            {formatLedgerIndex(index)}
-          </span>
-        ) : (
-          <span className="hidden lg:block" aria-hidden />
-        )}
-
-        <h3
-          className="min-w-0 text-[1.35rem] font-semibold leading-[1.15] tracking-[-0.035em] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:text-2xl lg:text-[1.85rem] group-hover/row:translate-x-1"
-          style={{ color: ink }}
-        >
-          {title}
-        </h3>
-
-        {showRole ? (
-          <p
-            className="col-span-2 col-start-2 text-[11px] font-medium uppercase tracking-[0.14em] sm:text-xs lg:col-span-1 lg:col-start-auto lg:justify-self-end lg:text-right"
-            style={{ color: muted, opacity: 0.72 }}
-          >
-            {role}
-          </p>
-        ) : (
-          <span className="hidden lg:block" aria-hidden />
-        )}
-
-        <span
-          className="hidden justify-self-end text-sm transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:block group-hover/row:translate-x-1"
-          style={{ color: accent }}
-          aria-hidden
-        >
-          →
-        </span>
-      </div>
-
-      {hasDetails ? (
         <div
-          className="grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-          style={{ gridTemplateRows: detailsOpen ? '1fr' : '0fr' }}
+          role={clickable ? 'button' : undefined}
+          tabIndex={clickable ? 0 : undefined}
+          aria-expanded={clickable ? detailsOpen : undefined}
+          onClick={clickable ? handleClick : undefined}
+          onKeyDown={
+            clickable
+              ? (event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    handleClick();
+                  }
+                }
+              : undefined
+          }
+          className={`grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2 py-8 sm:gap-x-6 sm:py-10 lg:grid-cols-[3.5rem_minmax(0,1fr)_minmax(7.5rem,13rem)_1.75rem] lg:gap-x-8 lg:py-12 xl:grid-cols-[4rem_minmax(0,1fr)_minmax(8rem,14rem)_1.75rem] xl:gap-x-10 ${
+            clickable
+              ? 'cursor-pointer rounded-sm focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4'
+              : ''
+          }`}
         >
-          <div className="min-h-0 overflow-hidden">
+          {showIndex ? (
             <div
-              className={`pb-7 pl-0 sm:pb-8 lg:pl-[4.5rem] lg:pr-10 transition-opacity duration-400 ${
-                detailsOpen ? 'opacity-100 delay-75' : 'opacity-0'
-              }`}
+              className="pt-[0.55rem] lg:pt-[0.85rem] lg:text-center"
+              data-ledger-index=""
+              data-pf-no-color-transition=""
             >
-              <div className="max-w-2xl space-y-5">
-                {showDescription ? (
-                  <p
-                    className="text-sm leading-relaxed sm:text-[0.95rem] sm:leading-[1.7]"
-                    style={{ color: muted }}
-                  >
-                    {description}
-                  </p>
-                ) : null}
+              <span
+                className="font-mono text-[10px] tabular-nums tracking-[0.22em] sm:text-[11px]"
+                style={{ color: muted, opacity: 0.42 }}
+              >
+                {formatLedgerIndex(index)}
+              </span>
+            </div>
+          ) : (
+            <span className="hidden lg:block" aria-hidden />
+          )}
 
-                {showStack ? (
-                  <ul className="flex flex-wrap gap-x-3 gap-y-2" aria-label="Stack">
-                    {tools.map((tool) => (
-                      <li
-                        key={tool}
-                        className="font-mono text-[10px] uppercase tracking-[0.12em] sm:text-[11px]"
-                        style={{ color: muted, opacity: 0.65 }}
-                      >
-                        {tool}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
+          <div className="min-w-0" data-ledger-title="" data-pf-no-color-transition="">
+            <h3
+              className="pf-work-ledger-title text-[1.55rem] font-medium leading-[1.08] tracking-[-0.042em] sm:text-[1.9rem] lg:text-[2.35rem] xl:text-[2.55rem]"
+              data-pf-no-color-transition=""
+            >
+              <LedgerTitleText text={title} allowItalic />
+            </h3>
+          </div>
 
-                {showConsult && href ? (
-                  <div className="pt-1">
-                    <LedgerConsultLink href={href} label={consultLabel} accent={accent} />
-                  </div>
-                ) : null}
+          {showRole ? (
+            <div
+              className="col-span-2 col-start-2 pt-1 lg:col-span-1 lg:col-start-auto lg:justify-self-end lg:pt-[0.95rem] lg:text-right"
+              data-ledger-role=""
+              data-pf-no-color-transition=""
+            >
+              <p
+                className="text-[10px] font-medium uppercase tracking-[0.2em] sm:text-[11px]"
+                style={{ color: muted, opacity: 0.58 }}
+              >
+                {role}
+              </p>
+            </div>
+          ) : (
+            <span className="hidden lg:block" aria-hidden />
+          )}
+
+          <div
+            className="mt-[1.15rem] hidden justify-self-end lg:block"
+            aria-hidden
+            data-ledger-mark=""
+            data-pf-no-color-transition=""
+          >
+            <span
+              className="pf-work-ledger-mark block h-px w-5"
+              style={{ backgroundColor: accent, opacity: 0.55 }}
+            />
+          </div>
+        </div>
+
+        {hasDetails ? (
+          <div
+            className="grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            style={{ gridTemplateRows: detailsOpen ? '1fr' : '0fr' }}
+            data-pf-no-color-transition=""
+          >
+            <div className="min-h-0 overflow-hidden">
+              <div
+                className={`pb-8 pl-0 sm:pb-10 lg:pl-[3.5rem] lg:pr-12 xl:pl-16 transition-opacity duration-400 ${
+                  detailsOpen ? 'opacity-100 delay-75' : 'opacity-0'
+                }`}
+              >
+                <div className="max-w-xl space-y-6">
+                  {showDescription ? (
+                    <p
+                      className="text-[15px] leading-[1.8] sm:text-base sm:leading-[1.85]"
+                      style={{ color: muted }}
+                    >
+                      {description}
+                    </p>
+                  ) : null}
+
+                  {showStack ? (
+                    <p
+                      className="text-[10px] font-medium uppercase tracking-[0.16em] sm:text-[11px]"
+                      style={{ color: muted, opacity: 0.62 }}
+                      aria-label="Stack"
+                    >
+                      {tools.map((tool, toolIndex) => (
+                        <span key={tool}>
+                          {toolIndex > 0 ? (
+                            <span className="mx-2.5 opacity-40" aria-hidden>
+                              ·
+                            </span>
+                          ) : null}
+                          {tool}
+                        </span>
+                      ))}
+                    </p>
+                  ) : null}
+
+                  {showConsult && href ? (
+                    <div className="pt-1">
+                      <LedgerConsultLink
+                        href={href}
+                        label={consultLabel}
+                        accent={accent}
+                        ink={ink}
+                      />
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+
+        <LedgerHairline color={rule} indent={showIndex} />
+      </div>
     </article>
   );
 }
 
-/** Framer-style typographic ledger — data only, no media. */
+/** Typographic archive ledger — data only, no media. */
 export function ProjectsLedgerGallery({
   items,
   presentation = DEFAULT_WORK_PRESENTATION,
@@ -344,6 +643,7 @@ export function ProjectsLedgerGallery({
   items: MarketplaceContentItem[];
   presentation?: PortfolioWorkPresentationSettings;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const settings = mergeProjectsLedgerSettings(
     DEFAULT_PROJECTS_LEDGER_SETTINGS,
     presentation.projectsLedger
@@ -362,8 +662,137 @@ export function ProjectsLedgerGallery({
 
   const openRow = useCallback((index: number) => setOpenIndex(index), []);
   const closeRow = useCallback(() => {
-    if (expandMode === 'hover') setOpenIndex(null);
+    if (expandMode === 'always') return;
+    setOpenIndex(null);
   }, [expandMode]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const rows = [...root.querySelectorAll<HTMLElement>('[data-ledger-row]')];
+    if (rows.length === 0) return;
+
+    if (prefersReducedMotion()) {
+      rows.forEach(showElementNow);
+      return;
+    }
+
+    const ioRoot = ledgerScrollRoot(root);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const el = entry.target as HTMLElement;
+          const i = Number(el.dataset.index) || 0;
+          revealElement(el, Math.min(i * 70, 280));
+          observer.unobserve(el);
+        });
+      },
+      { threshold: 0.14, root: ioRoot, rootMargin: '0px 0px -6% 0px' }
+    );
+    rows.forEach((row) => observer.observe(row));
+
+    const failSafe = window.setTimeout(() => {
+      rows.forEach((row) => {
+        if (row.dataset.revealed !== 'true') showElementNow(row);
+      });
+    }, 1800);
+
+    return () => {
+      window.clearTimeout(failSafe);
+      observer.disconnect();
+    };
+  }, [items.length]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    let scroller: HTMLElement | Window | null = null;
+    let frame = 0;
+
+    const resetKinetic = () => {
+      root
+        .querySelectorAll<HTMLElement>(
+          '[data-ledger-index], [data-ledger-title], [data-ledger-role], [data-ledger-mark]'
+        )
+        .forEach((el) => {
+          el.style.transform = '';
+          el.style.opacity = '';
+        });
+    };
+
+    const applyKinetic = () => {
+      const vh = window.innerHeight;
+      const rows = root.querySelectorAll<HTMLElement>('[data-ledger-row]');
+      rows.forEach((row) => {
+        if (row.dataset.revealed !== 'true') return;
+        const indexEl = row.querySelector<HTMLElement>('[data-ledger-index]');
+        const title = row.querySelector<HTMLElement>('[data-ledger-title]');
+        const roleEl = row.querySelector<HTMLElement>('[data-ledger-role]');
+        const mark = row.querySelector<HTMLElement>('[data-ledger-mark]');
+        const rect = row.getBoundingClientRect();
+        const exitStart = vh * 0.16;
+        const t = Math.max(0, Math.min(1, (exitStart - rect.top) / (vh * 0.32)));
+        if (indexEl) {
+          indexEl.style.transform = `translate3d(0, ${(-10 * t).toFixed(2)}px, 0)`;
+          indexEl.style.opacity = String(1 - t * 0.45);
+        }
+        if (title) {
+          title.style.transform = `translate3d(0, ${(-22 * t).toFixed(2)}px, 0)`;
+        }
+        if (roleEl) {
+          roleEl.style.opacity = String(1 - t * 0.94);
+          roleEl.style.transform = `translate3d(${(16 * t).toFixed(2)}px, ${(8 * t).toFixed(2)}px, 0)`;
+        }
+        if (mark) {
+          mark.style.opacity = String(1 - t);
+          mark.style.transform = `translate3d(${(10 * t).toFixed(2)}px, 0, 0)`;
+        }
+      });
+    };
+
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        applyKinetic();
+      });
+    };
+
+    const bind = () => {
+      unbind();
+      if (prefersReducedMotion() || !desktop.matches) {
+        resetKinetic();
+        return;
+      }
+      scroller = ledgerScrollTarget(root);
+      scroller.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll, { passive: true });
+      applyKinetic();
+    };
+
+    const unbind = () => {
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+        frame = 0;
+      }
+      if (scroller) {
+        scroller.removeEventListener('scroll', onScroll);
+        scroller = null;
+      }
+      window.removeEventListener('resize', onScroll);
+    };
+
+    bind();
+    desktop.addEventListener('change', bind);
+    return () => {
+      desktop.removeEventListener('change', bind);
+      unbind();
+      resetKinetic();
+    };
+  }, [items.length]);
 
   if (items.length === 0) {
     return (
@@ -374,8 +803,22 @@ export function ProjectsLedgerGallery({
   }
 
   return (
-    <div className="w-full">
-      <div className="border-b" style={{ borderColor: rule }}>
+    <div
+      ref={rootRef}
+      className="pf-work-ledger w-full"
+      data-expand={expandMode}
+      data-pf-no-color-transition=""
+    >
+      <style>{LEDGER_CSS}</style>
+      <div className="pf-work-ledger-list">
+        <div className="flex" aria-hidden>
+          <span className="hidden w-[3.5rem] shrink-0 lg:block xl:w-16" />
+          <span className="hidden w-8 shrink-0 lg:block xl:w-10" />
+          <span
+            className="mb-1 block h-px w-[min(34%,10rem)]"
+            style={{ backgroundColor: rule, opacity: 0.2 }}
+          />
+        </div>
         {items.map((item, index) => (
           <LedgerRow
             key={item.id || `${item.title}-${index}`}
@@ -384,7 +827,7 @@ export function ProjectsLedgerGallery({
             presentation={presentation}
             settings={settings}
             open={openIndex === index}
-            dimmed={expandMode === 'hover' && openIndex != null && openIndex !== index}
+            dimmed={expandMode === 'click' && openIndex != null && openIndex !== index}
             onOpen={() => openRow(index)}
             onClose={closeRow}
             rule={rule}

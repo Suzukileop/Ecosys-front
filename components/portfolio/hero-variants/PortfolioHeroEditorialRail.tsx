@@ -1,7 +1,17 @@
 'use client';
 
 import Image from 'next/image';
-import { useMemo, type MouseEvent, type ReactNode } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import {
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
   heroImageGrayscaleClass,
@@ -15,6 +25,51 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
+
+/** Compact editorial block — tighter than the previous 1.05 leading. */
+const TITLE_LINE_HEIGHT = 0.95;
+/** Photo lags the page scroll (1.0) at this ratio. */
+const PHOTO_PARALLAX_RATIO = 0.85;
+const BIO_GAP_DESKTOP = 'mt-[clamp(2.2rem,4vh,2.9rem)]';
+const BIO_GAP_MOBILE = 'mt-9';
+
+function editorialRailScrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
+}
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function groupWordsIntoLines(words: HTMLElement[]): string[] {
+  const lines: string[][] = [];
+  let current: string[] = [];
+  let currentTop = Number.NaN;
+
+  for (const word of words) {
+    const top = word.offsetTop;
+    if (Number.isFinite(currentTop) && Math.abs(top - currentTop) > 1) {
+      lines.push(current);
+      current = [word.textContent?.trim() ?? ''];
+    } else {
+      current.push(word.textContent?.trim() ?? '');
+    }
+    currentTop = top;
+  }
+  if (current.length > 0) lines.push(current);
+  return lines.map((line) => line.filter(Boolean).join(' ')).filter(Boolean);
+}
 
 /**
  * Editorial rail — availability + headline + bio | portrait, then a tools rail.
@@ -34,6 +89,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
 
   const displayName = (data.fullName || data.nameLead || 'Lorem Ipsum').trim();
   const specialty = resolveHeroSpecialtyValue(data.specialite);
+  const headline = `Hi, I'm ${displayName} — a ${specialty}.`;
   const availability = resolveHeroAvailabilityValue(
     data.isAvailable,
     data.presentation.availabilityLabel,
@@ -77,6 +133,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
     .join('');
 
   const borderSoft = `color-mix(in srgb, ${bordure} 80%, transparent)`;
+  const heroRef = useRef<HTMLDivElement>(null);
 
   const bioStyleDesktop = {
     color: muted,
@@ -90,6 +147,80 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
     fontSize: identityUnderPortrait ? '1.35rem' : '1rem',
     lineHeight: 1.55,
   };
+
+  useLayoutEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+
+    const reduced = prefersReducedMotion();
+    if (reduced) {
+      hero.removeAttribute('data-pf-entry');
+      return;
+    }
+
+    gsap.registerPlugin(ScrollTrigger);
+    const mq = window.matchMedia('(min-width: 768px)');
+    let ctx: gsap.Context | undefined;
+    let refreshId = 0;
+
+    const setup = () => {
+      ctx?.revert();
+      const scroller = editorialRailScrollParent(hero);
+      const isLaidOut = (el: HTMLElement) => el.getClientRects().length > 0;
+      const zooms = [...hero.querySelectorAll<HTMLElement>('.pf-editorial-rail-photo-zoom')].filter(
+        isLaidOut
+      );
+      const photos = [...hero.querySelectorAll<HTMLElement>('.pf-editorial-rail-photo')].filter(
+        isLaidOut
+      );
+
+      ctx = gsap.context(() => {
+        zooms.forEach((zoom) => {
+          zoom.style.animation = 'none';
+          gsap.fromTo(
+            zoom,
+            { scale: 1.1 },
+            {
+              scale: 1,
+              duration: 1.45,
+              ease: 'power2.out',
+              overwrite: 'auto',
+            }
+          );
+        });
+
+        photos.forEach((photo) => {
+          gsap.fromTo(
+            photo,
+            { y: 0 },
+            {
+              y: () => hero.offsetHeight * (1 - PHOTO_PARALLAX_RATIO),
+              ease: 'none',
+              scrollTrigger: {
+                trigger: hero,
+                scroller,
+                start: 'top top',
+                end: 'bottom top',
+                scrub: 0.55,
+                invalidateOnRefresh: true,
+              },
+            }
+          );
+        });
+      }, hero);
+
+      window.clearTimeout(refreshId);
+      refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 80);
+    };
+
+    setup();
+    mq.addEventListener('change', setup);
+    return () => {
+      mq.removeEventListener('change', setup);
+      window.clearTimeout(refreshId);
+      ctx?.revert();
+    };
+  }, [headline, avatarUrl]);
 
   const ctaRow = (opts?: { compact?: boolean }): ReactNode => {
     if (!showCta) return null;
@@ -136,9 +267,24 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
     </div>
   );
 
+  const portrait = (className: string) => (
+    <EditorialRailPortraitFrame
+      className={className}
+      avatarUrl={avatarUrl}
+      initials={initials}
+      displayName={displayName}
+      muted={muted}
+      imageBw={imageBw}
+      neutre={neutre}
+      borderSoft={borderSoft}
+    />
+  );
+
   return (
     <div
-      className="relative isolate w-full overflow-x-clip font-sans"
+      ref={heroRef}
+      data-pf-entry="armed"
+      className="pf-editorial-rail-hero relative isolate w-full overflow-x-clip overflow-y-visible font-sans"
       style={{ backgroundColor: fond, color: ink }}
     >
       <div
@@ -154,8 +300,8 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
         {allLeft ? (
           /* Left copy centered against portrait; tools pinned to bottom of left column */
           <div className="grid w-full flex-1 grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] items-stretch gap-x-[clamp(2rem,6vw,5rem)]">
-            <div className="flex min-h-0 min-w-0 flex-col">
-              <div className="flex min-h-0 flex-1 flex-col justify-center">
+            <div className="flex min-h-0 min-w-0 flex-col overflow-visible">
+              <div className="flex min-h-0 flex-1 flex-col justify-center overflow-visible">
                 <div className="flex items-center gap-2.5">
                   <span
                     className="inline-block h-2 w-2 shrink-0 rounded-full"
@@ -170,21 +316,14 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
                   </p>
                 </div>
 
-                <h1
-                  className="m-0 mt-[clamp(2.5rem,4.5vh,3.25rem)] max-w-[22ch] font-sans font-semibold tracking-[-0.035em]"
-                  style={{
-                    color: ink,
-                    fontSize: 'clamp(2.85rem, 5.2vw, 4.75rem)',
-                    lineHeight: 1.05,
-                  }}
-                >
-                  Hi, I&apos;m {displayName} — a {specialty}.
-                </h1>
+                <EditorialRailHeadline
+                  text={headline}
+                  ink={ink}
+                  fontSize="clamp(2.85rem, 5.2vw, 4.75rem)"
+                  className="mt-[clamp(2.5rem,4.5vh,3.25rem)]"
+                />
 
-                {bioBlock(
-                  bioStyleDesktop,
-                  'mt-[clamp(1.75rem,3vh,2.25rem)] max-w-[40rem]'
-                )}
+                {bioBlock(bioStyleDesktop, `${BIO_GAP_DESKTOP} max-w-[40rem]`)}
               </div>
 
               {tools.length > 0 ? (
@@ -199,21 +338,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
               ) : null}
             </div>
 
-            <div
-              className="relative ml-auto aspect-[3/4] w-full overflow-hidden rounded-2xl"
-              style={{
-                backgroundColor: neutre,
-                border: `1px solid ${borderSoft}`,
-              }}
-            >
-              <EditorialRailPortrait
-                avatarUrl={avatarUrl}
-                initials={initials}
-                displayName={displayName}
-                muted={muted}
-                imageBw={imageBw}
-              />
-            </div>
+            {portrait('relative ml-auto aspect-[3/4] w-full')}
           </div>
         ) : (
           <div className="grid w-full flex-1 grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto] items-start gap-x-[clamp(2rem,6vw,5rem)]">
@@ -233,16 +358,12 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
               </div>
 
               {!identityUnderPortrait ? (
-                <h1
-                  className="m-0 mt-[clamp(2.5rem,4.5vh,3.25rem)] max-w-[22ch] font-sans font-semibold tracking-[-0.035em]"
-                  style={{
-                    color: ink,
-                    fontSize: 'clamp(2.85rem, 5.2vw, 4.75rem)',
-                    lineHeight: 1.05,
-                  }}
-                >
-                  Hi, I&apos;m {displayName} — a {specialty}.
-                </h1>
+                <EditorialRailHeadline
+                  text={headline}
+                  ink={ink}
+                  fontSize="clamp(2.85rem, 5.2vw, 4.75rem)"
+                  className="mt-[clamp(2.5rem,4.5vh,3.25rem)]"
+                />
               ) : null}
 
               {bioOnLeft
@@ -250,26 +371,12 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
                     bioStyleDesktop,
                     identityUnderPortrait
                       ? 'mt-[clamp(2.5rem,4.5vh,3.25rem)] max-w-[40rem]'
-                      : 'mt-[clamp(1.75rem,3vh,2.25rem)] max-w-[40rem]'
+                      : `${BIO_GAP_DESKTOP} max-w-[40rem]`
                   )
                 : null}
             </div>
 
-            <div
-              className="relative ml-auto aspect-[3/4] w-full overflow-hidden rounded-2xl"
-              style={{
-                backgroundColor: neutre,
-                border: `1px solid ${borderSoft}`,
-              }}
-            >
-              <EditorialRailPortrait
-                avatarUrl={avatarUrl}
-                initials={initials}
-                displayName={displayName}
-                muted={muted}
-                imageBw={imageBw}
-              />
-            </div>
+            {portrait('relative ml-auto aspect-[3/4] w-full')}
 
             <div className="min-w-0 self-start pt-[clamp(1.5rem,3vh,2.25rem)]">
               {tools.length > 0 ? (
@@ -323,41 +430,22 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
         </div>
 
         {!identityUnderPortrait ? (
-          <h1
-            className="m-0 mt-10 w-full max-w-full font-sans font-semibold tracking-[-0.035em]"
-            style={{
-              color: ink,
-              fontSize: 'clamp(2.65rem, 11.5vw, 4rem)',
-              lineHeight: 1.05,
-            }}
-          >
-            Hi, I&apos;m {displayName} — a {specialty}.
-          </h1>
+          <EditorialRailHeadline
+            text={headline}
+            ink={ink}
+            fontSize="clamp(2.65rem, 11.5vw, 4rem)"
+            className="mt-10 w-full"
+            fullWidth
+          />
         ) : null}
 
         {bioOnLeft
-          ? bioBlock(
-              bioStyleMobile,
-              identityUnderPortrait ? 'mt-10' : 'mt-7',
-              { compactCta: true }
-            )
+          ? bioBlock(bioStyleMobile, identityUnderPortrait ? 'mt-10' : BIO_GAP_MOBILE, {
+              compactCta: true,
+            })
           : null}
 
-        <div
-          className="relative mt-9 aspect-[3/4] w-full overflow-hidden rounded-2xl"
-          style={{
-            backgroundColor: neutre,
-            border: `1px solid ${borderSoft}`,
-          }}
-        >
-          <EditorialRailPortrait
-            avatarUrl={avatarUrl}
-            initials={initials}
-            displayName={displayName}
-            muted={muted}
-            imageBw={imageBw}
-          />
-        </div>
+        {portrait('relative mt-9 aspect-[3/4] w-full')}
 
         {identityUnderPortrait ? (
           <ul className="mt-6 list-none space-y-2 p-0 font-sans text-[1.2rem] font-medium leading-snug tracking-[-0.015em]">
@@ -372,9 +460,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
           </ul>
         ) : null}
 
-        {bioUnderPortrait
-          ? bioBlock(bioStyleMobile, 'mt-6', { compactCta: true })
-          : null}
+        {bioUnderPortrait ? bioBlock(bioStyleMobile, 'mt-6', { compactCta: true }) : null}
 
         {tools.length > 0 ? (
           <EditorialRailTools
@@ -389,6 +475,126 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
         ) : null}
       </div>
     </div>
+  );
+}
+
+function EditorialRailHeadline({
+  text,
+  ink,
+  fontSize,
+  className,
+  fullWidth = false,
+}: {
+  text: string;
+  ink: string;
+  fontSize: string;
+  className?: string;
+  fullWidth?: boolean;
+}) {
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const lastWidth = useRef(-1);
+  const [lines, setLines] = useState<string[] | null>(null);
+  const words = useMemo(() => text.split(/\s+/).filter(Boolean), [text]);
+
+  const typeStyle: CSSProperties = {
+    color: ink,
+    fontSize,
+    lineHeight: TITLE_LINE_HEIGHT,
+  };
+  const headingClass = fullWidth
+    ? 'm-0 w-full max-w-full shrink-0 font-sans font-semibold tracking-[-0.035em]'
+    : 'm-0 max-w-[22ch] shrink-0 font-sans font-semibold tracking-[-0.035em]';
+
+  useLayoutEffect(() => {
+    const heading = headingRef.current;
+    if (!heading) return;
+
+    const trySplit = () => {
+      const wordEls = [...heading.querySelectorAll<HTMLElement>('[data-rail-word]')];
+      if (wordEls.length === 0) return;
+      const next = groupWordsIntoLines(wordEls);
+      const splitFailed =
+        next.length === 0 || next.length > 6 || (words.length > 4 && next.length >= words.length);
+      setLines((prev) => {
+        const resolved = splitFailed ? null : next;
+        if (prev === resolved) return prev;
+        if (
+          prev !== null &&
+          resolved !== null &&
+          prev.length === resolved.length &&
+          prev.every((line, i) => line === resolved[i])
+        ) {
+          return prev;
+        }
+        return resolved;
+      });
+    };
+
+    if (lines === null) trySplit();
+
+    const observer = new ResizeObserver(() => {
+      const width = heading.clientWidth;
+      if (width <= 0) return;
+      if (lastWidth.current < 0) {
+        lastWidth.current = width;
+        return;
+      }
+      if (Math.abs(width - lastWidth.current) < 1) return;
+      lastWidth.current = width;
+      setLines(null);
+    });
+    observer.observe(heading);
+    void document.fonts?.ready.then(() => {
+      if (heading.querySelector('[data-rail-word]')) trySplit();
+    });
+    return () => observer.disconnect();
+  }, [text, fontSize, words, lines]);
+
+  useLayoutEffect(() => {
+    const heading = headingRef.current;
+    if (!heading || !lines?.length) return;
+    if (prefersReducedMotion()) return;
+    if (heading.getClientRects().length === 0) return;
+
+    const inners = heading.querySelectorAll<HTMLElement>('.pf-editorial-rail-line-inner');
+    if (inners.length === 0) return;
+
+    const tween = gsap.fromTo(
+      inners,
+      { yPercent: 110 },
+      {
+        yPercent: 0,
+        duration: 0.95,
+        stagger: 0.085,
+        ease: 'power3.out',
+        overwrite: 'auto',
+      }
+    );
+    return () => {
+      tween.kill();
+      gsap.set(inners, { yPercent: 0 });
+    };
+  }, [lines]);
+
+  return (
+    <h1
+      ref={headingRef}
+      className={`pf-editorial-rail-headline min-w-0 ${headingClass} ${className ?? ''}`.trim()}
+      style={typeStyle}
+    >
+      {lines && lines.length > 0
+        ? lines.map((line, index) => (
+            <span key={`${line}-${index}`} className="pf-editorial-rail-line">
+              <span className="pf-editorial-rail-line-inner">{line}</span>
+            </span>
+          ))
+        : words.map((word, index) => (
+            <span key={`${word}-${index}`} data-rail-word>
+              {word}
+              {index < words.length - 1 ? ' ' : ''}
+            </span>
+          ))}
+    </h1>
   );
 }
 
@@ -437,9 +643,51 @@ function EditorialRailTools({
               borderLeft: index > 0 ? `1px solid ${borderSoft}` : undefined,
             }}
           >
-            {tool}
+            {tool.toLowerCase()}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function EditorialRailPortraitFrame({
+  className,
+  avatarUrl,
+  initials,
+  displayName,
+  muted,
+  imageBw,
+  neutre,
+  borderSoft,
+}: {
+  className: string;
+  avatarUrl: string | null;
+  initials: string;
+  displayName: string;
+  muted: string;
+  imageBw: boolean;
+  neutre: string;
+  borderSoft: string;
+}) {
+  return (
+    <div
+      className={`pf-editorial-rail-photo overflow-hidden rounded-2xl ${className}`.trim()}
+      style={{
+        backgroundColor: neutre,
+        border: `1px solid ${borderSoft}`,
+      }}
+    >
+      <div className="pf-editorial-rail-photo-shift absolute inset-0">
+        <div className="pf-editorial-rail-photo-zoom absolute inset-0 origin-center">
+          <EditorialRailPortrait
+            avatarUrl={avatarUrl}
+            initials={initials}
+            displayName={displayName}
+            muted={muted}
+            imageBw={imageBw}
+          />
+        </div>
       </div>
     </div>
   );

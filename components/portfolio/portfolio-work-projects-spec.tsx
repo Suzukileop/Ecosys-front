@@ -1,6 +1,11 @@
 'use client';
 
-import type { CSSProperties, ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -16,6 +21,65 @@ import {
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsSpecSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+
+const SPEC_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const SPEC_HIDDEN: CSSProperties = {
+  opacity: 0,
+  transform: 'translate3d(0, 28px, 0)',
+};
+
+const SPEC_MOTION_CSS = `
+@media (prefers-reduced-motion: reduce) {
+  .pf-work-spec-sheet,
+  .pf-work-spec-header {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .pf-work-spec [data-spec-title],
+  .pf-work-spec [data-spec-body],
+  .pf-work-spec [data-spec-index],
+  .pf-work-spec [data-spec-media] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .pf-work-spec-title-shift,
+  .pf-work-spec-rule {
+    transition: none !important;
+    transform: none !important;
+  }
+  .pf-work-spec-rule {
+    width: min(44%, 12rem) !important;
+  }
+}
+.pf-work-spec-rule {
+  width: min(44%, 12rem);
+  opacity: 0.22;
+  transition: width 0.55s ${SPEC_EASE}, opacity 0.55s ${SPEC_EASE};
+}
+.pf-work-spec-sheet:hover .pf-work-spec-rule,
+.pf-work-spec-sheet:focus-within .pf-work-spec-rule {
+  width: min(78%, 20rem);
+  opacity: 0.4;
+}
+.pf-work-spec-title-shift {
+  display: inline-block;
+  max-width: 100%;
+  transition: transform 0.7s ${SPEC_EASE};
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pf-work-spec:hover .pf-work-spec-sheet[data-revealed='true']:not(:hover):not(:focus-within) {
+    opacity: 0.42 !important;
+  }
+  .pf-work-spec-sheet[data-revealed='true'] {
+    transition: opacity 0.6s ${SPEC_EASE};
+  }
+  .pf-work-spec-sheet:hover .pf-work-spec-title-shift,
+  .pf-work-spec-sheet:focus-within .pf-work-spec-title-shift {
+    transform: translate3d(0.4rem, 0, 0);
+  }
+}
+`;
 
 function workToolLabels(item: MarketplaceContentItem, max = 12): string[] {
   return Array.from(new Set((item.toolsUsed ?? []).map((t) => t.trim()).filter(Boolean))).slice(
@@ -36,6 +100,47 @@ function workCategoryLabel(item: MarketplaceContentItem): string {
   if (category) return category;
   if (item.genre?.trim()) return item.genre.trim();
   return '';
+}
+
+function formatSpecIndex(index: number): string {
+  return String(index + 1).padStart(2, '0');
+}
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function specScrollRoot(el: HTMLElement | null): HTMLElement | null {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return null;
+}
+
+function specScrollTarget(el: HTMLElement | null): HTMLElement | Window {
+  return specScrollRoot(el) ?? window;
+}
+
+function revealElement(el: HTMLElement, delayMs: number): void {
+  el.style.transition = `opacity 0.85s ${SPEC_EASE} ${delayMs}ms, transform 0.95s ${SPEC_EASE} ${delayMs}ms`;
+  el.style.opacity = '1';
+  el.style.transform = 'translate3d(0, 0, 0)';
+  el.dataset.revealed = 'true';
+}
+
+function showElementNow(el: HTMLElement): void {
+  el.style.transition = 'none';
+  el.style.opacity = '1';
+  el.style.transform = 'none';
+  el.dataset.revealed = 'true';
 }
 
 function SpecConsultAnchor({
@@ -95,11 +200,14 @@ function SpecConsultControl({
   ink: string;
   surface: string;
 }) {
+  const focusClass =
+    'focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4';
+
   if (design === 'underline') {
     return (
       <SpecConsultAnchor
         href={href}
-        className="group/consult relative inline-block text-sm tracking-[-0.01em] focus:outline-none"
+        className={`group/consult relative inline-block text-[0.9375rem] tracking-[-0.015em] ${focusClass}`}
         style={{ color: ink }}
       >
         <span>{label}</span>
@@ -107,7 +215,7 @@ function SpecConsultControl({
           aria-hidden
           data-pf-no-color-transition=""
           className="absolute bottom-0 left-0 h-px w-full origin-left scale-x-100 transition-transform duration-400 ease-out group-hover/consult:scale-x-0"
-          style={{ backgroundColor: ink, opacity: 0.45 }}
+          style={{ backgroundColor: ink, opacity: 0.28 }}
         />
         <span
           aria-hidden
@@ -123,20 +231,24 @@ function SpecConsultControl({
     return (
       <SpecConsultAnchor
         href={href}
-        className="group/consult inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-opacity duration-300 hover:opacity-70 focus:outline-none sm:text-xs"
+        className={`group/consult inline-flex items-center gap-1.5 font-mono text-[12px] tracking-[0.02em] transition-opacity duration-300 hover:opacity-60 ${focusClass}`}
         style={{ color: ink }}
         noColorTransition
       >
-        <span aria-hidden>[</span>
-        <span className="normal-case tracking-[-0.01em]">{label}</span>
+        <span aria-hidden className="opacity-45">
+          [
+        </span>
+        <span className="tracking-[-0.015em]">{label}</span>
         <span
-          className="transition-transform duration-300 group-hover/consult:translate-x-0.5"
+          className="opacity-55 transition-transform duration-300 group-hover/consult:translate-x-0.5"
           aria-hidden
           data-pf-no-color-transition=""
         >
           →
         </span>
-        <span aria-hidden>]</span>
+        <span aria-hidden className="opacity-45">
+          ]
+        </span>
       </SpecConsultAnchor>
     );
   }
@@ -145,14 +257,14 @@ function SpecConsultControl({
     return (
       <SpecConsultAnchor
         href={href}
-        className="group/consult inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.18em] transition-opacity duration-300 hover:opacity-70 focus:outline-none sm:text-xs"
-        style={{ color: accent }}
+        className={`group/consult inline-flex items-center gap-3 text-[0.9375rem] font-medium tracking-[-0.015em] transition-opacity duration-300 hover:opacity-65 ${focusClass}`}
+        style={{ color: ink }}
         noColorTransition
       >
         <span>{label}</span>
         <span
-          className="inline-block h-px w-8 origin-left transition-transform duration-400 ease-out group-hover/consult:scale-x-150"
-          style={{ backgroundColor: accent }}
+          className="inline-block h-px w-7 origin-left transition-transform duration-500 ease-out group-hover/consult:scale-x-[1.85]"
+          style={{ backgroundColor: accent, opacity: 0.85 }}
           aria-hidden
           data-pf-no-color-transition=""
         />
@@ -166,12 +278,12 @@ function SpecConsultControl({
         ? {
             color: ink,
             backgroundColor: 'transparent',
-            border: `1px solid color-mix(in srgb, ${ink} 45%, transparent)`,
+            border: `1px solid color-mix(in srgb, ${ink} 22%, transparent)`,
           }
         : design === 'ghost'
           ? {
               color: ink,
-              backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)`,
+              backgroundColor: `color-mix(in srgb, ${accent} 8%, transparent)`,
               border: '1px solid transparent',
             }
           : design === 'solid'
@@ -181,7 +293,6 @@ function SpecConsultControl({
                 border: `1px solid ${ink}`,
               }
             : {
-                // pill
                 color: '#ffffff',
                 backgroundColor: accent,
                 border: `1px solid ${accent}`,
@@ -190,14 +301,14 @@ function SpecConsultControl({
     return (
       <SpecConsultAnchor
         href={href}
-        className="group/consult inline-flex items-center gap-2 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition-opacity duration-300 hover:opacity-80 focus:outline-none sm:text-xs"
+        className={`group/consult inline-flex items-center gap-2 px-2.5 py-1 text-[13px] font-medium tracking-[-0.015em] transition-opacity duration-300 hover:opacity-75 ${focusClass}`}
         style={buttonStyle}
         noColorTransition
       >
-        <span className="normal-case tracking-[-0.01em]">{label}</span>
+        <span>{label}</span>
         <FontAwesomeIcon
           icon={faArrowUp}
-          className="size-3 rotate-45 transition-transform duration-300 group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
+          className="size-2.5 rotate-45 opacity-70 transition-transform duration-300 group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
           aria-hidden
           data-pf-no-color-transition=""
         />
@@ -205,18 +316,17 @@ function SpecConsultControl({
     );
   }
 
-  // link (default fallback)
   return (
     <SpecConsultAnchor
       href={href}
-      className="group/consult inline-flex items-center gap-2 text-sm tracking-[-0.01em] transition-opacity duration-300 hover:opacity-70 focus:outline-none focus-visible:opacity-70"
+      className={`group/consult inline-flex items-center gap-2 text-[0.9375rem] tracking-[-0.015em] transition-opacity duration-300 hover:opacity-65 ${focusClass}`}
       style={{ color: accent }}
       noColorTransition
     >
       <span>{label}</span>
       <FontAwesomeIcon
         icon={faArrowUp}
-        className="size-3 rotate-45 transition-transform duration-300 group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
+        className="size-2.5 rotate-45 opacity-70 transition-transform duration-300 group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
         aria-hidden
         data-pf-no-color-transition=""
       />
@@ -247,7 +357,7 @@ function SpecThumbnail({
         alt={alt}
         fill
         sizes={compact ? '(max-width: 1024px) 40vw, 18vw' : '(max-width: 768px) 100vw, 28vw'}
-        className="object-cover object-center transition-transform duration-500 ease-out will-change-transform group-hover/sheet:scale-[1.04]"
+        className="object-cover object-center transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover/sheet:scale-[1.03]"
         data-pf-no-color-transition=""
       />
     </div>
@@ -273,31 +383,65 @@ function SpecDefRow({
 }) {
   return (
     <div
-      className={`py-3.5 sm:py-4 ${showLabel ? 'grid grid-cols-1 gap-1.5 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:items-baseline sm:gap-x-6 sm:gap-y-0' : ''} ${
-        last ? '' : 'border-b'
+      className={`py-4 sm:py-[1.15rem] ${
+        showLabel
+          ? 'grid grid-cols-1 gap-2 sm:grid-cols-[6.25rem_minmax(0,1fr)] sm:items-baseline sm:gap-x-8 sm:gap-y-0 lg:grid-cols-[7rem_minmax(0,1fr)]'
+          : ''
       }`}
-      style={last ? undefined : { borderColor: rule }}
     >
       {showLabel ? (
         <dt
-          className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] sm:text-[11px]"
-          style={{ color: muted, opacity: 0.72 }}
+          className="text-[9px] font-normal uppercase tracking-[0.1em] sm:text-[10px]"
+          style={{ color: muted, opacity: 0.4 }}
         >
           {label}
         </dt>
       ) : null}
-      <dd
-        className={`min-w-0 text-[0.95rem] leading-relaxed sm:text-base ${showLabel ? '' : 'block'}`}
-        style={{ color: ink }}
-      >
+      <dd className={`min-w-0 ${showLabel ? '' : 'block'}`} style={{ color: ink }}>
         {children}
+        {!last ? (
+          <span
+            aria-hidden
+            data-pf-no-color-transition=""
+            className="pf-work-spec-rule mt-4 block h-px origin-left sm:mt-5"
+            style={{ backgroundColor: rule }}
+          />
+        ) : null}
       </dd>
     </div>
   );
 }
 
+function SpecStack({
+  tools,
+  ink,
+}: {
+  tools: string[];
+  ink: string;
+}) {
+  return (
+    <ul className="flex flex-wrap items-baseline" aria-label="Stack">
+      {tools.map((tool, toolIndex) => (
+        <li
+          key={tool}
+          className="flex items-baseline text-[0.8125rem] font-normal tracking-[-0.01em] sm:text-[0.875rem]"
+          style={{ color: ink }}
+        >
+          {toolIndex > 0 ? (
+            <span className="mx-2 select-none opacity-35" aria-hidden>
+              /
+            </span>
+          ) : null}
+          {tool}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function SpecSheet({
   item,
+  index,
   presentation,
   settings,
   compactTitle = false,
@@ -317,15 +461,16 @@ function SpecSheet({
     presentation.titleColor;
   const rule = presentation.cardBorderColor || muted || ink;
   const valueInk =
-    presentation.elementStyles?.cardDescription?.color || presentation.titleColor || ink;
+    presentation.elementStyles?.cardDescription?.color ||
+    presentation.subtitleColor ||
+    muted;
   const surface =
     presentation.cardBackgroundColor ||
     presentation.toolsIconBackgroundColor ||
     '#fafafa';
   const solidInk =
     presentation.elementStyles?.toolsList?.color || presentation.titleColor || ink;
-  // Same tokens as Projects Board stack tags
-  const tagInk = presentation.elementStyles?.toolsList?.color || presentation.subtitleColor || ink;
+  const stackInk = presentation.elementStyles?.toolsList?.color || muted;
   const tagSurface = presentation.cardBorderColor || rule;
 
   const title = item.title?.trim() || 'Untitled';
@@ -351,35 +496,27 @@ function SpecSheet({
   const consultInGrid = showConsult && href && consultDesign !== 'footer';
   const sheetFrame = settings.sheetFrame ?? 'none';
   const framed = sheetFrame !== 'none';
-  const frameBorderColor =
-    sheetFrame === 'accent' ? accent : rule;
+  const frameBorderColor = sheetFrame === 'accent' ? accent : rule;
   const frameBorderWidth =
     sheetFrame === 'solid' ? 2 : sheetFrame === 'thin' || sheetFrame === 'accent' ? 1 : 0;
 
   const rows: { key: string; label: string; content: ReactNode }[] = [];
   if (showDescription) {
-    rows.push({ key: 'description', label: descriptionLabel, content: description });
+    rows.push({
+      key: 'description',
+      label: descriptionLabel,
+      content: (
+        <p className="max-w-[58ch] text-[0.9375rem] font-normal leading-[1.72] sm:text-[1.02rem] sm:leading-[1.76]">
+          {description}
+        </p>
+      ),
+    });
   }
   if (showStack) {
     rows.push({
       key: 'stack',
       label: stackLabel,
-      content: (
-        <ul className="flex flex-wrap gap-2">
-          {tools.map((tool) => (
-            <li
-              key={tool}
-              className="rounded-md px-2.5 py-1 text-xs font-medium"
-              style={{
-                backgroundColor: tagSurface,
-                color: tagInk,
-              }}
-            >
-              {tool}
-            </li>
-          ))}
-        </ul>
-      ),
+      content: <SpecStack tools={tools} ink={stackInk} />,
     });
   }
   if (consultInGrid && href) {
@@ -401,81 +538,100 @@ function SpecSheet({
 
   const body = (
     <>
-      {/* Top rule + micro header */}
-      {(showCategory || showRole) && (
-        <div
-          className={`flex items-baseline justify-between gap-4 ${framed ? 'pt-0' : 'border-t pt-4 sm:pt-5'}`}
-          style={framed ? undefined : { borderColor: rule }}
-        >
-          {showCategory ? (
-            <span
-              className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-[0.16em] sm:text-[11px]"
-              style={{ color: accent }}
-            >
-              {category}
-            </span>
-          ) : (
-            <span />
-          )}
-          {showRole ? (
-            <span
-              className="max-w-[60%] truncate text-right text-[10px] font-medium uppercase tracking-[0.16em] sm:text-[11px]"
-              style={{ color: muted, opacity: 0.72 }}
-            >
-              {role}
-            </span>
-          ) : null}
+      <div className="flex items-end justify-between gap-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            data-spec-index=""
+            className="font-mono text-[10px] font-normal tabular-nums tracking-[0.16em] sm:text-[11px]"
+            style={{ color: muted, opacity: 0.42 }}
+            data-pf-no-color-transition=""
+          >
+            {formatSpecIndex(index)}
+          </span>
+          <span
+            aria-hidden
+            className="hidden h-px w-7 shrink-0 sm:block sm:w-9"
+            style={{ backgroundColor: accent, opacity: 0.7 }}
+          />
         </div>
-      )}
+        {(showCategory || showRole) && (
+          <div className="min-w-0 max-w-[62%] text-right">
+            {showCategory ? (
+              <p
+                className="truncate text-[10px] font-normal tracking-[0.08em] sm:text-[11px]"
+                style={{ color: muted, opacity: 0.55 }}
+              >
+                {category}
+              </p>
+            ) : null}
+            {showRole ? (
+              <p
+                className={`truncate text-[11px] font-normal tracking-[-0.01em] sm:text-xs ${
+                  showCategory ? 'mt-1' : ''
+                }`}
+                style={{ color: muted, opacity: 0.46 }}
+              >
+                {role}
+              </p>
+            ) : null}
+          </div>
+        )}
+      </div>
 
       <h3
-        className={`font-semibold leading-[1.08] tracking-[-0.04em] transition-[letter-spacing,font-size] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/sheet:tracking-[-0.045em] ${
-          showCategory || showRole ? 'mt-4 sm:mt-5' : framed ? 'mt-0' : 'mt-4 sm:mt-5'
-        }`}
+        data-spec-title=""
+        className="mt-5 font-medium leading-[1.06] tracking-[-0.045em] sm:mt-6"
         data-pf-no-color-transition=""
         style={{
           color: ink,
           fontSize: showThumb
-            ? 'clamp(1.45rem, 2.4vw, 2.15rem)'
+            ? 'clamp(1.55rem, 2.35vw, 2.2rem)'
             : compactTitle
-              ? 'clamp(1.35rem, 2.1vw, 1.85rem)'
-              : 'clamp(2rem, 4.5vw, 3.25rem)',
+              ? 'clamp(1.4rem, 2vw, 1.9rem)'
+              : 'clamp(2.15rem, 4.2vw, 3.35rem)',
         }}
       >
-        {title}
+        <span className="pf-work-spec-title-shift">{title}</span>
       </h3>
 
-      {rows.length > 0 ? (
-        <dl className="mt-6 sm:mt-7">
-          {rows.map((row, rowIndex) => (
-            <SpecDefRow
-              key={row.key}
-              label={row.label}
-              rule={rule}
-              muted={muted}
-              ink={valueInk}
-              last={rowIndex === rows.length - 1}
-              showLabel={showFieldLabels}
-            >
-              {row.content}
-            </SpecDefRow>
-          ))}
-        </dl>
-      ) : null}
+      {rows.length > 0 || (showConsult && href && consultDesign === 'footer') ? (
+        <div data-spec-body="" className="mt-7 sm:mt-8" data-pf-no-color-transition="">
+          {rows.length > 0 ? (
+            <dl>
+              {rows.map((row, rowIndex) => (
+                <SpecDefRow
+                  key={row.key}
+                  label={row.label}
+                  rule={rule}
+                  muted={muted}
+                  ink={valueInk}
+                  last={rowIndex === rows.length - 1}
+                  showLabel={showFieldLabels}
+                >
+                  {row.content}
+                </SpecDefRow>
+              ))}
+            </dl>
+          ) : null}
 
-      {showConsult && href && consultDesign === 'footer' ? (
-        <div
-          className={`border-t pt-5 sm:pt-6 ${rows.length > 0 ? 'mt-6 sm:mt-7' : 'mt-6 sm:mt-8'}`}
-          style={{ borderColor: rule }}
-        >
-          <SpecConsultControl
-            href={href}
-            label={consultLabel}
-            design="footer"
-            accent={accent}
-            ink={ink}
-            surface={surface}
-          />
+          {showConsult && href && consultDesign === 'footer' ? (
+            <div className={rows.length > 0 ? 'mt-6 sm:mt-7' : ''}>
+              <span
+                aria-hidden
+                data-pf-no-color-transition=""
+                className="pf-work-spec-rule mb-5 block h-px origin-left sm:mb-6"
+                style={{ backgroundColor: rule }}
+              />
+              <SpecConsultControl
+                href={href}
+                label={consultLabel}
+                design="footer"
+                accent={accent}
+                ink={ink}
+                surface={surface}
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
     </>
@@ -483,14 +639,18 @@ function SpecSheet({
 
   return (
     <div
-      className={`group/sheet flex flex-col gap-5 opacity-[0.92] transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-100 sm:flex-row sm:items-stretch sm:gap-6 lg:gap-8 ${
-        showThumb ? '' : ''
-      }`}
+      className="pf-work-spec-sheet group/sheet flex flex-col gap-6 sm:flex-row sm:items-stretch sm:gap-8 lg:gap-10"
+      data-spec-sheet=""
+      data-index={String(index)}
       data-pf-no-color-transition=""
+      style={SPEC_HIDDEN}
     >
-      {/* Thumbnail outside, always on the left */}
       {showThumb && mediaUrl ? (
-        <div className="w-full shrink-0 sm:w-[30%] sm:max-w-[15rem] lg:max-w-[17rem]">
+        <div
+          data-spec-media=""
+          className="w-full shrink-0 overflow-hidden sm:w-[28%] sm:max-w-[14.5rem] lg:max-w-[16.5rem]"
+          data-pf-no-color-transition=""
+        >
           <SpecThumbnail
             url={mediaUrl}
             alt={title}
@@ -501,13 +661,7 @@ function SpecSheet({
       ) : null}
 
       <article
-        className={`relative min-w-0 flex-1 transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          framed
-            ? 'p-5 sm:p-6 lg:p-7'
-            : showThumb
-              ? ''
-              : 'pl-0 hover:pl-3 sm:hover:pl-3.5'
-        }`}
+        className={`relative min-w-0 flex-1 ${framed ? 'p-5 sm:p-6 lg:p-8' : ''}`}
         data-pf-no-color-transition=""
         style={
           framed
@@ -519,12 +673,11 @@ function SpecSheet({
             : undefined
         }
       >
-        {/* Left accent bar — hover only (unframed, no external thumb) */}
         {!framed && !showThumb ? (
           <span
             aria-hidden
             data-pf-no-color-transition=""
-            className="pointer-events-none absolute bottom-0 left-0 top-0 w-[1.5px] origin-top scale-y-0 opacity-0 transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/sheet:scale-y-100 group-hover/sheet:opacity-100"
+            className="pointer-events-none absolute left-0 top-0 h-9 w-px origin-top scale-y-0 opacity-0 transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/sheet:scale-y-100 group-hover/sheet:opacity-100"
             style={{ backgroundColor: accent }}
           />
         ) : null}
@@ -536,6 +689,7 @@ function SpecSheet({
 
 /**
  * Spec header — datasheet section title with optional typography overrides.
+ * Hidden in JSX (FOUC-safe), revealed via IntersectionObserver.
  */
 export function ProjectsSpecSectionHeader({
   title,
@@ -556,31 +710,82 @@ export function ProjectsSpecSectionHeader({
   trailing?: ReactNode;
   className?: string;
 }) {
+  const headerRef = useRef<HTMLElement>(null);
   const heading = title.trim();
   const sub = subtitle?.trim() || '';
-  if (!heading && !sub && !trailing) return null;
+  const isEmpty = !heading && !sub && !trailing;
 
   const resolvedTitleColor =
     (typeof titleStyle?.color === 'string' && titleStyle.color.trim()) || titleColor;
 
-  const {
-    fontSize: _fs,
-    lineHeight: _lh,
-    letterSpacing: _ls,
-    ...restTitleStyle
-  } = titleStyle ?? {};
+  const restTitleStyle: CSSProperties = { ...(titleStyle ?? {}) };
+  delete restTitleStyle.fontSize;
+  delete restTitleStyle.lineHeight;
+  delete restTitleStyle.letterSpacing;
+
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header || isEmpty) return;
+
+    if (prefersReducedMotion()) {
+      showElementNow(header);
+      return;
+    }
+
+    let revealed = false;
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      revealElement(header, 0);
+    };
+
+    const ioRoot = specScrollRoot(header);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            reveal();
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.12, root: ioRoot, rootMargin: '40px 0px' }
+    );
+    observer.observe(header);
+    const failSafe = window.setTimeout(reveal, 1600);
+
+    return () => {
+      window.clearTimeout(failSafe);
+      observer.disconnect();
+    };
+  }, [heading, sub, isEmpty]);
+
+  if (isEmpty) return null;
 
   return (
-    <header className={`mb-12 w-full sm:mb-14 ${className}`.trim()}>
-      <div className="flex items-start justify-between gap-4 sm:gap-6">
+    <header
+      ref={headerRef}
+      className={`pf-work-spec-header mb-12 w-full sm:mb-16 lg:mb-20 ${className}`.trim()}
+      data-pf-no-color-transition=""
+      style={SPEC_HIDDEN}
+    >
+      <style>{SPEC_MOTION_CSS}</style>
+      <div className="flex items-end justify-between gap-6 sm:gap-10">
         <div className="min-w-0 max-w-3xl">
+          <div className="mb-5 flex items-center gap-3 sm:mb-6">
+            <span
+              className="h-px w-7 shrink-0 sm:w-9"
+              style={{ backgroundColor: resolvedTitleColor, opacity: 0.55 }}
+              aria-hidden
+            />
+          </div>
           {heading ? (
             <h2
-              className={titleClassName.trim() || 'font-semibold tracking-[-0.03em]'}
+              className={titleClassName.trim() || 'font-medium tracking-[-0.04em]'}
               style={{
                 ...restTitleStyle,
                 color: resolvedTitleColor,
-                fontSize: 'clamp(2.75rem, 7vw, 5.5rem)',
+                fontSize: 'clamp(2.35rem, 5.6vw, 4.35rem)',
                 lineHeight: 1.06,
               }}
             >
@@ -589,14 +794,16 @@ export function ProjectsSpecSectionHeader({
           ) : null}
           {sub ? (
             <p
-              className={`max-w-2xl text-base leading-relaxed sm:text-lg ${heading ? 'mt-3' : ''}`}
-              style={{ color: subtitleColor }}
+              className={`max-w-xl text-[0.95rem] leading-[1.7] sm:text-base sm:leading-[1.75] ${
+                heading ? 'mt-4' : ''
+              }`}
+              style={{ color: subtitleColor, opacity: 0.82 }}
             >
               {sub}
             </p>
           ) : null}
         </div>
-        {trailing ? <div className="pt-1 sm:pt-2">{trailing}</div> : null}
+        {trailing ? <div className="shrink-0 pb-1">{trailing}</div> : null}
       </div>
     </header>
   );
@@ -606,18 +813,150 @@ function specSheetGapClass(gap: PortfolioWorkProjectsSpecSettings['sheetGap']): 
   if (gap === 'tight') return 'mt-12 sm:mt-14 lg:mt-16';
   if (gap === 'md') return 'mt-20 sm:mt-24 lg:mt-28';
   if (gap === '2xl') return 'mt-36 sm:mt-44 lg:mt-52';
-  return 'mt-28 sm:mt-32 lg:mt-36'; // xl
+  return 'mt-28 sm:mt-32 lg:mt-36';
 }
 
 function specSheetGridGapClass(gap: PortfolioWorkProjectsSpecSettings['sheetGap']): string {
-  // Vertical rhythm + generous horizontal gutter between the two columns
   if (gap === 'tight') return 'gap-y-12 sm:gap-y-14 lg:gap-y-16 gap-x-8 sm:gap-x-10 lg:gap-x-12 xl:gap-x-16';
   if (gap === 'md') return 'gap-y-20 sm:gap-y-24 lg:gap-y-28 gap-x-10 sm:gap-x-12 lg:gap-x-14 xl:gap-x-20';
   if (gap === '2xl') return 'gap-y-36 sm:gap-y-44 lg:gap-y-52 gap-x-12 sm:gap-x-14 lg:gap-x-16 xl:gap-x-24';
-  return 'gap-y-28 sm:gap-y-32 lg:gap-y-36 gap-x-10 sm:gap-x-12 lg:gap-x-16 xl:gap-x-20'; // xl
+  return 'gap-y-28 sm:gap-y-32 lg:gap-y-36 gap-x-10 sm:gap-x-12 lg:gap-x-16 xl:gap-x-20';
 }
 
-/** Full-width technical specification sheets — data only, no media. */
+function useSpecGalleryMotion(itemsKey: number) {
+  const rootRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const sheets = [...root.querySelectorAll<HTMLElement>('[data-spec-sheet]')];
+    if (sheets.length === 0) return;
+
+    if (prefersReducedMotion()) {
+      sheets.forEach(showElementNow);
+      return;
+    }
+
+    const ioRoot = specScrollRoot(root);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const el = entry.target as HTMLElement;
+          const i = Number(el.dataset.index) || 0;
+          revealElement(el, Math.min(i * 70, 280));
+          observer.unobserve(el);
+        });
+      },
+      { threshold: 0.14, root: ioRoot, rootMargin: '0px 0px -6% 0px' }
+    );
+    sheets.forEach((sheet) => observer.observe(sheet));
+
+    const failSafe = window.setTimeout(() => {
+      sheets.forEach((sheet) => {
+        if (sheet.dataset.revealed !== 'true') showElementNow(sheet);
+      });
+    }, 1800);
+
+    return () => {
+      window.clearTimeout(failSafe);
+      observer.disconnect();
+    };
+  }, [itemsKey]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    let scroller: HTMLElement | Window | null = null;
+    let frame = 0;
+
+    const resetKinetic = () => {
+      root
+        .querySelectorAll<HTMLElement>(
+          '[data-spec-title], [data-spec-body], [data-spec-index], [data-spec-media]'
+        )
+        .forEach((el) => {
+          el.style.transform = '';
+          el.style.opacity = '';
+        });
+    };
+
+    const applyKinetic = () => {
+      const vh = window.innerHeight;
+      const sheets = root.querySelectorAll<HTMLElement>('[data-spec-sheet]');
+      sheets.forEach((sheet) => {
+        if (sheet.dataset.revealed !== 'true') return;
+        const title = sheet.querySelector<HTMLElement>('[data-spec-title]');
+        const bodies = sheet.querySelectorAll<HTMLElement>('[data-spec-body]');
+        const mark = sheet.querySelector<HTMLElement>('[data-spec-index]');
+        const media = sheet.querySelector<HTMLElement>('[data-spec-media]');
+        const rect = sheet.getBoundingClientRect();
+        const centered = (rect.top + rect.height * 0.42 - vh * 0.5) / vh;
+        const t = Math.max(-1, Math.min(1, centered));
+        const exitStart = vh * 0.12;
+        const exitT = Math.max(0, Math.min(1, (exitStart - rect.top) / (vh * 0.28)));
+
+        if (title) {
+          title.style.transform = `translate3d(0, ${(-16 * exitT).toFixed(2)}px, 0)`;
+        }
+        bodies.forEach((body) => {
+          body.style.opacity = String(1 - exitT * 0.52);
+          body.style.transform = `translate3d(${(12 * exitT).toFixed(2)}px, ${(10 * t).toFixed(2)}px, 0)`;
+        });
+        if (mark) {
+          mark.style.transform = `translate3d(0, ${(14 * t).toFixed(2)}px, 0)`;
+        }
+        if (media) {
+          media.style.transform = `translate3d(0, ${(20 * t).toFixed(2)}px, 0)`;
+        }
+      });
+    };
+
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        applyKinetic();
+      });
+    };
+
+    const bind = () => {
+      unbind();
+      if (prefersReducedMotion() || !desktop.matches) {
+        resetKinetic();
+        return;
+      }
+      scroller = specScrollTarget(root);
+      scroller.addEventListener('scroll', onScroll, { passive: true });
+      applyKinetic();
+    };
+
+    const unbind = () => {
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+        frame = 0;
+      }
+      if (scroller) {
+        scroller.removeEventListener('scroll', onScroll);
+        scroller = null;
+      }
+    };
+
+    bind();
+    desktop.addEventListener('change', bind);
+    return () => {
+      desktop.removeEventListener('change', bind);
+      unbind();
+      resetKinetic();
+    };
+  }, [itemsKey]);
+
+  return rootRef;
+}
+
+/** Full-width technical specification sheets — data first, optional left media. */
 export function ProjectsSpecGallery({
   items,
   presentation = DEFAULT_WORK_PRESENTATION,
@@ -629,20 +968,23 @@ export function ProjectsSpecGallery({
     DEFAULT_PROJECTS_SPEC_SETTINGS,
     presentation.projectsSpec
   );
-  // Thumbnail outside-left forces a single full-width row (never 2-up).
   const thumbnailForcesSingle = settings.showThumbnail === true;
   const twoColumn = !thumbnailForcesSingle && (settings.columnsPerRow ?? 1) === 2;
   const gapClass = specSheetGapClass(settings.sheetGap ?? 'xl');
   const gridGapClass = specSheetGridGapClass(settings.sheetGap ?? 'xl');
+  const rootRef = useSpecGalleryMotion(items.length);
 
   if (items.length === 0) return null;
 
   if (twoColumn) {
     return (
       <section
-        className={`grid w-full grid-cols-1 lg:grid-cols-2 ${gridGapClass}`}
+        ref={rootRef}
+        className={`pf-work-spec grid w-full grid-cols-1 lg:grid-cols-2 ${gridGapClass}`}
         aria-label="Project specifications"
+        data-pf-no-color-transition=""
       >
+        <style>{SPEC_MOTION_CSS}</style>
         {items.map((item, index) => (
           <div key={item.id} className="min-w-0">
             <SpecSheet
@@ -659,7 +1001,13 @@ export function ProjectsSpecGallery({
   }
 
   return (
-    <section className="w-full" aria-label="Project specifications">
+    <section
+      ref={rootRef}
+      className="pf-work-spec w-full"
+      aria-label="Project specifications"
+      data-pf-no-color-transition=""
+    >
+      <style>{SPEC_MOTION_CSS}</style>
       {items.map((item, index) => (
         <div key={item.id} className={index > 0 ? gapClass : ''}>
           <SpecSheet

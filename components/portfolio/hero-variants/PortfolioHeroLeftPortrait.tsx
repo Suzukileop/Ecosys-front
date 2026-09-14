@@ -1,7 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import { useMemo, type MouseEvent, type ReactNode } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useMemo, useLayoutEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
   heroImageGrayscaleClass,
@@ -16,9 +18,38 @@ import {
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 
+// Register GSAP plugins at module level
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
+/** Nearest scrollable ancestor (pages mode nests overflow-y-auto shells). */
+function leftPortraitScrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
+}
+
 /**
- * Left portrait — image left; availability + Hello I’m name — a specialty on top;
- * bio + Let’s talk / View project centered at the bottom of the remaining width.
+ * Left Portrait — Awwwards-level editorial layout.
+ * 
+ * Geometry optimisations:
+ * - Badge "Available for work" aligned with left edge of "Hello" title
+ * - Bottom horizontal line: Let's talk button bottom aligned with photo bottom
+ * - Breathing space between title and description
+ * 
+ * Motion choreography (GSAP + ScrollTrigger):
+ * - Entry: photo reveal from bottom, title line-by-line, bio/CTAs cascade
+ * - Scroll: sticky photo column, right column scrolls with parallax dissociation
  */
 export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData }) {
   const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
@@ -81,8 +112,280 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
     specialty
   );
 
+  /* ───────────────────────────────────────────────────────────────────────────
+   * GSAP Animation & ScrollTrigger
+   * ─────────────────────────────────────────────────────────────────────────── */
+  const heroRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+
+    // Reduced motion check
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      hero.dataset.pfEntry = 'off';
+      return;
+    }
+
+    hero.dataset.pfEntry = 'running';
+
+    const scroller = leftPortraitScrollParent(hero);
+    const pick = (selector: string) => Array.from(hero.querySelectorAll<HTMLElement>(selector));
+
+    // Element selections
+    const photoMasks = pick('.pf-left-photo-mask');
+    const photoInners = pick('.pf-left-photo-inner');
+    const titleLines = pick('.pf-left-title-line');
+    const titleInners = pick('.pf-left-title-inner');
+    const availabilityEl = pick('.pf-left-availability');
+    const bioElements = pick('.pf-left-bio-entry');
+    const ctaElements = pick('.pf-left-cta-entry');
+    const photoColumn = pick('.pf-left-photo-column');
+    const contentColumn = pick('.pf-left-content-column');
+    const titleBlock = pick('.pf-left-title-block');
+    const bottomBlock = pick('.pf-left-bottom-block');
+
+    const media = gsap.matchMedia();
+
+    const ctx = gsap.context(() => {
+      /* ──────────────────────────────────────────
+       * A — Entry Animation Choreography
+       * ────────────────────────────────────────── */
+
+      // 1. Photo: reveal from bottom via clip-path mask
+      if (photoMasks.length) {
+        gsap.set(photoMasks, { clipPath: 'inset(100% 0% 0% 0%)' });
+      }
+      if (photoInners.length) {
+        gsap.set(photoInners, { yPercent: 8 });
+      }
+
+      // 2. Title lines: slide up from mask
+      if (titleInners.length) {
+        gsap.set(titleInners, { yPercent: 110 });
+      }
+      
+      // Individual characters start discrete (0.4 opacity) - ready for scroll reveal
+      const titleChars = pick('.pf-left-char');
+      if (titleChars.length) {
+        gsap.set(titleChars, { 
+          opacity: 0.35,
+          filter: 'blur(0.8px)',
+        });
+      }
+
+      // 3. Availability badge
+      if (availabilityEl.length) {
+        gsap.set(availabilityEl, { autoAlpha: 0, x: -16 });
+      }
+
+      // 4. Bio + CTAs: fade + slide up cascade
+      const cascade = [...bioElements, ...ctaElements];
+      if (cascade.length) {
+        gsap.set(cascade, { y: 24, autoAlpha: 0 });
+      }
+
+      // Build the intro timeline
+      const intro = gsap.timeline({
+        defaults: { ease: 'power3.out' },
+        onComplete: () => {
+          hero.dataset.pfEntry = 'done';
+        },
+      });
+
+      // Photo reveal — mask wipe + inner parallax
+      if (photoMasks.length) {
+        intro.to(photoMasks, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.2 }, 0);
+      }
+      if (photoInners.length) {
+        intro.to(photoInners, { yPercent: 0, duration: 1.4, ease: 'power2.out' }, 0);
+      }
+
+      // Availability badge slide in
+      if (availabilityEl.length) {
+        intro.to(
+          availabilityEl,
+          { autoAlpha: 1, x: 0, duration: 0.7 },
+          0.3
+        );
+      }
+
+      // Title reveal — line by line with stagger
+      // Title stays discrete (opacity 0.4) - scroll will reveal it fully
+      if (titleInners.length) {
+        intro.to(
+          titleInners,
+          {
+            yPercent: 0,
+            duration: 1.0,
+            stagger: 0.12,
+            ease: 'power3.out',
+          },
+          0.25
+        );
+      }
+
+      // Bio cascade — staggered fade + slide (0.15s after title)
+      if (bioElements.length) {
+        intro.to(
+          bioElements,
+          {
+            y: 0,
+            autoAlpha: 1,
+            duration: 0.85,
+            stagger: 0.1,
+          },
+          0.55
+        );
+      }
+
+      // CTA buttons cascade (0.1s after bio)
+      if (ctaElements.length) {
+        intro.to(
+          ctaElements,
+          {
+            y: 0,
+            autoAlpha: 1,
+            duration: 0.75,
+            stagger: 0.08,
+          },
+          0.7
+        );
+      }
+
+      return () => {};
+    }, hero);
+
+    /* ──────────────────────────────────────────
+     * B — Scroll-Driven Sticky + Parallax (desktop only)
+     * Photo: sticky/pinned | Content: scrolls with parallax
+     * Title: starts discrete, reveals on scroll then fades
+     * ────────────────────────────────────────── */
+    media.add('(min-width: 768px)', () => {
+      // Photo column stays sticky while content scrolls
+      if (photoColumn.length) {
+        photoColumn.forEach((col) => {
+          ScrollTrigger.create({
+            trigger: hero,
+            scroller,
+            start: 'top top',
+            end: 'bottom bottom',
+            pin: col,
+            pinSpacing: false,
+          });
+        });
+      }
+
+      // Title characters: reveal one by one on scroll (typewriter effect)
+      const scrollChars = [...hero.querySelectorAll<HTMLElement>('.pf-left-char')];
+      
+      if (scrollChars.length) {
+        // Phase 1: Typewriter reveal - characters appear progressively
+        // Using ScrollTrigger with stagger for character-by-character reveal
+        ScrollTrigger.create({
+          trigger: hero,
+          scroller,
+          start: 'top top',
+          end: '25% top', // Spread the reveal over this scroll distance
+          scrub: 0.5, // Moderate scrub for smooth character reveal
+          invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            const progress = self.progress;
+            const totalChars = scrollChars.length;
+            
+            scrollChars.forEach((char, index) => {
+              // Calculate when this character should be fully revealed
+              const charProgress = index / totalChars;
+              const charVisibility = Math.min(1, Math.max(0, (progress - charProgress * 0.7) / 0.3));
+              
+              // Interpolate opacity from 0.35 to 1
+              const opacity = 0.35 + (charVisibility * 0.65);
+              // Interpolate blur from 0.8px to 0px
+              const blur = 0.8 - (charVisibility * 0.8);
+              
+              char.style.opacity = String(opacity);
+              char.style.filter = `blur(${blur}px)`;
+            });
+          },
+        });
+
+        // Phase 2: Fade out all characters together
+        gsap.to(
+          scrollChars,
+          {
+            opacity: 0,
+            y: -8,
+            stagger: 0.008, // Slight stagger for wave effect on exit
+            ease: 'none',
+            scrollTrigger: {
+              trigger: hero,
+              scroller,
+              start: '45% top',
+              end: '75% top',
+              scrub: true,
+              invalidateOnRefresh: true,
+            },
+          }
+        );
+      }
+
+      // Title block fade out (for the container)
+      titleBlock.forEach((block) => {
+        gsap.to(
+          block,
+          {
+            y: -30,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: hero,
+              scroller,
+              start: '40% top',
+              end: '75% top',
+              scrub: true,
+              invalidateOnRefresh: true,
+            },
+          }
+        );
+      });
+
+      // Bottom block (bio + CTAs) scrolls faster (1.25x) with opacity fade
+      bottomBlock.forEach((block) => {
+        gsap.fromTo(
+          block,
+          { y: 0, autoAlpha: 1 },
+          {
+            y: () => -hero.offsetHeight * 0.15,
+            autoAlpha: 0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: hero,
+              scroller,
+              start: 'top top',
+              end: '80% top',
+              scrub: true,
+              invalidateOnRefresh: true,
+            },
+          }
+        );
+      });
+
+      return () => {};
+    });
+
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 80);
+    return () => {
+      window.clearTimeout(refreshId);
+      media.revert();
+      ctx.revert();
+    };
+  }, []);
+
+  /* ───────────────────────────────────────────────────────────────────────────
+   * UI Components
+   * ─────────────────────────────────────────────────────────────────────────── */
+
   const availabilityRow = (
-    <div className="flex items-center gap-2.5">
+    <div className="pf-left-availability flex items-center gap-2.5">
       <span
         className="inline-block h-2 w-2 shrink-0 rounded-full"
         style={{ backgroundColor: principal }}
@@ -100,10 +403,26 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
     </div>
   );
 
+  // Split headline into lines for animation
+  const headlineText = `Hello, I'm ${displayName} — a ${specialty}.`;
+  const headlineLines = useMemo(() => {
+    // Split at natural break: em-dash
+    const parts = headlineText.split(/\s*—\s*/);
+    if (parts.length >= 2) {
+      return [parts[0].trim() + ' —', parts.slice(1).join(' — ').trim()];
+    }
+    return [headlineText];
+  }, [headlineText]);
+
+  // Split text into characters for typewriter reveal effect
+  const splitIntoChars = (text: string): string[] => {
+    return text.split('');
+  };
+
   const headline = (opts?: { mobile?: boolean }) => (
     <h1
-      className={`m-0 font-sans font-semibold tracking-[-0.035em] ${
-        opts?.mobile ? 'mt-8 w-full' : 'mt-[clamp(1.75rem,3.5vh,2.5rem)] max-w-[18ch]'
+      className={`pf-left-title-block m-0 font-sans font-semibold tracking-[-0.035em] ${
+        opts?.mobile ? 'mt-8 w-full' : 'max-w-[18ch]'
       }`}
       style={{
         color: ink,
@@ -113,7 +432,60 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
         lineHeight: 1.06,
       }}
     >
-      Hello, I&apos;m {displayName} — a {specialtyNode}.
+      {headlineLines.map((line, lineIdx) => (
+        <span
+          key={lineIdx}
+          className="pf-left-title-line block overflow-hidden"
+          style={{ marginBottom: lineIdx < headlineLines.length - 1 ? '0.06em' : 0 }}
+        >
+          <span className="pf-left-title-inner inline-block will-change-transform">
+            {lineIdx === headlineLines.length - 1 && markSpecialty ? (
+              <>
+                {/* "a " characters */}
+                {splitIntoChars('a ').map((char, i) => (
+                  <span 
+                    key={`pre-${i}`} 
+                    className="pf-left-char inline-block"
+                    style={{ opacity: 0.4 }}
+                  >
+                    {char === ' ' ? '\u00A0' : char}
+                  </span>
+                ))}
+                {/* Specialty word with highlight */}
+                <span
+                  className="box-decoration-clone px-[0.12em]"
+                  style={{
+                    backgroundImage: `linear-gradient(to top, color-mix(in srgb, ${principal} 42%, transparent) 0.38em, transparent 0.38em)`,
+                  }}
+                >
+                  {splitIntoChars(specialty).map((char, i) => (
+                    <span 
+                      key={`spec-${i}`} 
+                      className="pf-left-char inline-block"
+                      style={{ opacity: 0.4 }}
+                    >
+                      {char === ' ' ? '\u00A0' : char}
+                    </span>
+                  ))}
+                </span>
+                {/* Period */}
+                <span className="pf-left-char inline-block" style={{ opacity: 0.4 }}>.</span>
+              </>
+            ) : (
+              /* Regular line - split into characters */
+              splitIntoChars(line).map((char, charIdx) => (
+                <span 
+                  key={charIdx} 
+                  className="pf-left-char inline-block"
+                  style={{ opacity: 0.4 }}
+                >
+                  {char === ' ' ? '\u00A0' : char}
+                </span>
+              ))
+            )}
+          </span>
+        </span>
+      ))}
     </h1>
   );
 
@@ -123,7 +495,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
         <a
           href={secondaryHref}
           onClick={onNavClick(secondaryHref)}
-          className="inline-flex h-12 w-full items-center justify-center rounded-full font-sans text-[0.95rem] font-semibold tracking-[-0.01em] transition hover:brightness-110"
+          className="pf-left-cta-entry inline-flex h-12 w-full items-center justify-center rounded-full font-sans text-[0.95rem] font-semibold tracking-[-0.01em] transition hover:brightness-110"
           style={{ backgroundColor: ink, color: fond }}
         >
           View project
@@ -132,7 +504,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
     }
 
     return (
-      <div className="flex flex-wrap items-center justify-start gap-x-8 gap-y-3">
+      <div className="pf-left-cta-entry flex flex-wrap items-center justify-start gap-x-8 gap-y-3">
         <a
           href={primaryHref}
           onClick={onNavClick(primaryHref)}
@@ -155,12 +527,12 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
 
   const bioAndCta = (opts?: { mobile?: boolean }) => (
     <div
-      className={`flex w-full flex-col items-start text-left ${
+      className={`pf-left-bottom-block flex w-full flex-col items-start text-left ${
         opts?.mobile ? 'mt-8 max-w-none gap-6' : 'max-w-[32rem] gap-6'
       }`}
     >
       <p
-        className="m-0 font-sans font-normal tracking-[-0.01em]"
+        className="pf-left-bio-entry m-0 font-sans font-normal tracking-[-0.01em]"
         style={{
           color: muted,
           fontSize: opts?.mobile
@@ -177,36 +549,40 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
 
   const portrait = (sizes: string, className = '') => (
     <div
-      className={`relative overflow-hidden ${className}`.trim()}
+      className={`pf-left-photo-mask relative overflow-hidden ${className}`.trim()}
       style={{
         backgroundColor: neutre,
         border: `1px solid ${borderSoft}`,
       }}
     >
-      {avatarUrl ? (
-        <Image
-          src={avatarUrl}
-          alt={`Portrait of ${displayName}`}
-          fill
-          sizes={sizes}
-          className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
-          priority
-        />
-      ) : (
-        <div
-          className="flex h-full w-full items-center justify-center font-sans text-5xl font-semibold tracking-tight"
-          style={{ color: muted }}
-          aria-hidden
-        >
-          {initials}
-        </div>
-      )}
+      <div className="pf-left-photo-inner h-full w-full will-change-transform">
+        {avatarUrl ? (
+          <Image
+            src={avatarUrl}
+            alt={`Portrait of ${displayName}`}
+            fill
+            sizes={sizes}
+            className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
+            priority
+          />
+        ) : (
+          <div
+            className="flex h-full w-full items-center justify-center font-sans text-5xl font-semibold tracking-tight"
+            style={{ color: muted }}
+            aria-hidden
+          >
+            {initials}
+          </div>
+        )}
+      </div>
     </div>
   );
 
   return (
     <div
-      className="relative isolate w-full overflow-x-clip font-sans"
+      ref={heroRef}
+      data-pf-entry="armed"
+      className="pf-left-portrait-hero relative isolate w-full overflow-x-clip font-sans"
       style={{ backgroundColor: fond, color: ink }}
     >
       <div
@@ -226,19 +602,44 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
           alignItems: 'stretch',
         }}
       >
-        {portrait(
-          '(max-width: 1024px) 40vw, 34vw',
-          'h-full min-h-[28rem] w-full rounded-2xl'
-        )}
+        {/* Photo column — will be pinned on scroll */}
+        <div className="pf-left-photo-column relative">
+          {portrait(
+            '(max-width: 1024px) 40vw, 34vw',
+            'h-full min-h-[28rem] w-full rounded-2xl'
+          )}
+        </div>
 
-        <div className="flex min-h-0 min-w-0 flex-col self-stretch">
+        {/* Content column — scrolls with parallax */}
+        <div className="pf-left-content-column flex min-h-0 min-w-0 flex-col self-stretch">
+          {/* 
+            GEOMETRY FIX: Badge and title share the same left alignment
+            The badge sits directly above the title with no extra offset
+          */}
           <div className="shrink-0">
             {availabilityRow}
-            {headline()}
+            {/* 
+              GEOMETRY FIX: Added margin-top for title breathing space from badge
+              And margin-bottom for space before the bottom block
+            */}
+            <div style={{ marginTop: 'clamp(1.5rem, 3vh, 2.25rem)' }}>
+              {headline()}
+            </div>
           </div>
 
-          {/* Bio + CTAs — bottom of remaining width, text left-aligned */}
-          <div className="flex min-h-0 flex-1 flex-col items-start justify-end pb-1 pt-10">
+          {/* 
+            GEOMETRY FIX: Bio + CTAs positioned to align button bottom with photo bottom
+            Using flex-1 and justify-end ensures the CTA aligns to the bottom
+          */}
+          <div 
+            className="flex min-h-0 flex-1 flex-col items-start justify-end"
+            style={{ 
+              /* Extra breathing space between title and bio */
+              paddingTop: 'clamp(3rem, 6vh, 5rem)',
+              /* Align bottom with photo */
+              paddingBottom: 0,
+            }}
+          >
             {bioAndCta()}
           </div>
         </div>

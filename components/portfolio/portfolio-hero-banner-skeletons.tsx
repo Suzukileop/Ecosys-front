@@ -28,48 +28,41 @@ function SwissEditorialHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps =
   return (
     <section className={`${shellClass(preview)} bg-neutral-50`} aria-hidden>
       <div
-        className={`mx-auto flex w-full max-w-6xl flex-col ${
-          preview ? 'gap-2' : 'h-full flex-1 justify-center gap-8'
+        className={`relative mx-auto flex w-full max-w-6xl flex-col ${
+          preview ? 'gap-1.5' : 'h-full flex-1 justify-between gap-6'
         }`}
       >
-        {/* Top: statement ~60% left · sharp 3/4 portrait right */}
-        <div className="flex w-full items-start justify-between gap-4 sm:gap-8">
-          <div className={`min-w-0 space-y-2 ${preview ? 'w-[58%]' : 'w-[60%]'}`}>
-            <Bone className={`w-full ${preview ? 'h-6' : 'h-16 sm:h-20'}`} />
-            <Bone className={`w-[88%] ${preview ? 'h-6' : 'h-16 sm:h-20'}`} />
+        <div className={`grid w-full items-start ${preview ? 'gap-2' : 'gap-8'} grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]`}>
+          <div className={`min-w-0 space-y-2 ${preview ? '' : 'max-w-md'}`}>
+            <Bone className={`w-full rounded-sm ${preview ? 'h-4' : 'h-10 sm:h-12'}`} />
+            <Bone className={`w-[88%] rounded-sm ${preview ? 'h-4' : 'h-10 sm:h-12'}`} />
+            <Bone className={`w-[70%] rounded-sm ${preview ? 'h-4' : 'h-10 sm:h-12'}`} />
           </div>
           <div
-            className={`shrink-0 overflow-hidden rounded-none bg-neutral-100 ring-1 ring-neutral-200/80 ${
-              preview ? 'w-14' : 'w-40 sm:w-48'
+            className={`relative z-[1] justify-self-end overflow-hidden bg-neutral-100 ${
+              preview
+                ? 'w-14 translate-y-1 rounded-[0.4rem_42%_0.55rem_28%]'
+                : 'w-36 translate-y-2 rounded-[0.85rem_46%_1.1rem_26%] sm:w-44'
             }`}
           >
             <Bone className="aspect-[3/4] w-full rounded-none bg-neutral-300" />
           </div>
         </div>
 
-        {/* Mid: hairline · Currently / Specialized · hairline */}
-        <div className={preview ? 'py-0.5' : 'py-1'}>
-          <div className="border-t border-neutral-200" />
-          <div
-            className={`grid grid-cols-2 ${
-              preview ? 'gap-x-4 py-1.5' : 'gap-x-10 py-4 sm:gap-x-16'
-            }`}
-          >
-            <div className="space-y-1.5">
-              <Bone className={`w-16 ${preview ? 'h-2' : 'h-2.5'}`} />
-              <Bone className={`w-24 ${preview ? 'h-2.5' : 'h-3.5'}`} />
-            </div>
-            <div className="space-y-1.5">
-              <Bone className={`w-20 ${preview ? 'h-2' : 'h-2.5'}`} />
-              <Bone className={`w-28 ${preview ? 'h-2.5' : 'h-3.5'}`} />
-            </div>
+        <div className={`flex items-center ${preview ? 'gap-3' : 'gap-8'} ${preview ? 'w-[52%]' : 'max-w-md'}`}>
+          <div className="space-y-1.5">
+            <Bone className={`w-14 ${preview ? 'h-1.5' : 'h-2.5'}`} />
+            <Bone className={`w-20 ${preview ? 'h-2' : 'h-3.5'}`} />
           </div>
-          <div className="border-t border-neutral-200" />
+          <div className={`self-stretch bg-neutral-200 ${preview ? 'h-6 w-px' : 'h-10 w-px'}`} />
+          <div className="space-y-1.5">
+            <Bone className={`w-16 ${preview ? 'h-1.5' : 'h-2.5'}`} />
+            <Bone className={`w-24 ${preview ? 'h-2' : 'h-3.5'}`} />
+          </div>
         </div>
 
-        {/* Bottom: huge signature */}
         <Bone
-          className={`w-[min(100%,36rem)] ${preview ? 'h-7' : 'h-16 sm:h-20'}`}
+          className={`relative z-[2] w-full ${preview ? 'h-8' : 'h-[4.5rem] sm:h-24'}`}
         />
       </div>
     </section>
@@ -662,10 +655,9 @@ function IdentityIndexHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = 
               : 'mt-8 h-14 w-[min(100%,20rem)] sm:h-20 sm:w-[min(100%,28rem)]'
           }`}
         />
-        <div className={`w-full bg-neutral-200 ${preview ? 'mt-2 h-px' : 'mt-10 h-px'}`} />
         <div
           className={`grid w-full grid-cols-3 text-center ${
-            preview ? 'mt-1.5 gap-2' : 'mt-5 gap-4 sm:gap-8'
+            preview ? 'mt-2 gap-2' : 'mt-10 gap-4 sm:gap-8'
           }`}
         >
           {(['w-14', 'w-16', 'w-12'] as const).map((valueWidth, index) => (
@@ -678,6 +670,7 @@ function IdentityIndexHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = 
             </div>
           ))}
         </div>
+        <div className={`w-full bg-neutral-200 ${preview ? 'mt-1.5 h-px' : 'mt-5 h-px'}`} />
         <div
           className={`mx-auto w-full max-w-xl text-center ${
             preview ? 'mt-auto space-y-0.5 pt-1.5' : 'mt-auto space-y-2 pt-10'
@@ -800,7 +793,7 @@ function WorkDuoHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
                 : 'mt-1.5 h-10 w-[min(100%,14rem)] sm:h-12 sm:w-[min(100%,15rem)]'
             }
           />
-          <div className={preview ? 'mt-1.5 space-y-0.5' : 'mt-4 space-y-2'}>
+          <div className={preview ? 'mt-2 space-y-0.5' : 'mt-8 space-y-2'}>
             <Bone className={`w-full max-w-[22rem] ${preview ? 'h-1.5' : 'h-3'}`} />
             <Bone className={`w-[92%] max-w-[20rem] ${preview ? 'h-1.5' : 'h-3'}`} />
             {!preview ? <Bone className="h-3 w-[78%] max-w-[17rem]" /> : null}

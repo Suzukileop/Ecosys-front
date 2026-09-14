@@ -6,7 +6,7 @@ import { DashboardHomeShell } from '@/components/DashboardHomeShell';
 export default function MyPortfolioPage() {
   return (
     <DashboardHomeShell fullWidth>
-      <div className="mx-auto w-full max-w-[1400px] px-4 pb-10 pt-1 sm:px-6">
+      <div className="w-full max-w-none">
         <MyPortfolioWorkspace />
       </div>
     </DashboardHomeShell>

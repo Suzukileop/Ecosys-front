@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useMemo, type MouseEvent, type ReactNode } from 'react';
+import { useMemo, useRef, useEffect, type MouseEvent, type ReactNode } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
   heroImageGrayscaleClass,
@@ -19,9 +19,17 @@ import {
 } from '@/components/portfolio/portfolio-editorial-layout';
 
 /**
- * Circle portrait — circular portrait left with availability under it;
- * title / bio / CTAs on the right. Optional: title at bottom, bio+CTAs
- * centered on the image (vertical + horizontal).
+ * Circle portrait — Split Éclaté avec Typographie Monumentale en Bas
+ * 
+ * Restructured per Google/Awwwards critique:
+ * - Circular portrait LEFT balanced with editorial block CENTER-RIGHT
+ * - Monumental title anchors the entire composition at the BOTTOM
+ * - Geometric alignment: top of circle aligns with first line of bio
+ * - "Available for work" badge perfectly centered under portrait
+ * 
+ * GSAP Animation hooks:
+ * - On Load: Title word-by-word reveal → Photo scale(0→1) → Bio/CTAs stagger fade
+ * - Scroll: Title stays pinned, photo parallax 1.3x faster, bio 0.85x slower, both fade out
  */
 export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData }) {
   const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
@@ -33,6 +41,17 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
   const bordure = resolveHeroPaletteColor(palette, 'bordure');
   const neutre = resolveHeroPaletteColor(palette, 'neutre');
   const imageBw = data.presentation.heroImageGrayscale === true;
+
+  // Refs for GSAP animation targets
+  const sectionRef = useRef<HTMLElement>(null);
+  const titleContainerRef = useRef<HTMLDivElement>(null);
+  const titleWordsRef = useRef<HTMLSpanElement[]>([]);
+  const portraitContainerRef = useRef<HTMLDivElement>(null);
+  const portraitRef = useRef<HTMLDivElement>(null);
+  const bioContainerRef = useRef<HTMLDivElement>(null);
+  const availabilityRef = useRef<HTMLDivElement>(null);
+  const redLineTopRef = useRef<HTMLDivElement>(null);
+  const redLineBottomRef = useRef<HTMLDivElement>(null);
 
   const displayName = (data.fullName || data.nameLead || 'Lorem Ipsum').trim();
   const specialty = resolveHeroSpecialtyValue(data.specialite);
@@ -61,8 +80,12 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
   const secondaryHref = data.workHref || '#work';
   const borderSoft = `color-mix(in srgb, ${bordure} 80%, transparent)`;
   const markSpecialty = data.presentation.heroCirclePortraitSpecialtyMark === true;
-  /** Default layout is title at the bottom; toggle “Titre en haut” turns this off. */
+  /** Default layout is title at the bottom; toggle "Titre en haut" turns this off. */
   const titleBottom = data.presentation.heroCirclePortraitTitleBottom !== false;
+
+  // Split title into words for animation
+  const titleText = `${displayName} — ${specialty}`;
+  const titleWords = useMemo(() => titleText.split(/(\s+)/).filter(Boolean), [titleText]);
 
   const onNavClick = (href: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     if (href.startsWith('#') && data.onNavigateSection) {
@@ -70,6 +93,257 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
       data.onNavigateSection(href.slice(1) || 'contact');
     }
   };
+
+  // ========== ANIMATION: On Load Title Word-by-Word Reveal ==========
+  // Initial hidden states are set via inline styles in JSX to prevent FOUC
+  // This effect only triggers the reveal animations
+  useEffect(() => {
+    // Skip if not in titleBottom mode or if we're on the server
+    if (!titleBottom || typeof window === 'undefined') return;
+    
+    const section = sectionRef.current;
+    if (!section) return;
+    
+    // Query all animated elements
+    const titleWords = section.querySelectorAll('[data-gsap-word]');
+    const redLineTop = section.querySelector('[data-gsap-red-line="top"]') as HTMLElement;
+    const redLineBottom = section.querySelector('[data-gsap-red-line="bottom"]') as HTMLElement;
+    const portrait = section.querySelector('[data-gsap-portrait]') as HTMLElement;
+    const availability = section.querySelector('[data-gsap-availability]') as HTMLElement;
+    const bioElements = section.querySelectorAll('[data-gsap-bio]');
+    
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    
+    // ===== ANIMATION SEQUENCE =====
+    // Elements start hidden (via JSX inline styles), we animate them to visible
+    
+    let delay = 150; // Small initial delay for page to settle
+    
+    // 1. TITLE WORDS - Staggered reveal (word by word)
+    titleWords.forEach((word, index) => {
+      const el = word as HTMLElement;
+      const t = setTimeout(() => {
+        el.style.transition = 'opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0)';
+      }, delay + index * 70);
+      timers.push(t);
+    });
+    
+    delay += titleWords.length * 70 + 200;
+    
+    // 2. RED LINES - Scale in
+    timers.push(setTimeout(() => {
+      if (redLineTop) {
+        redLineTop.style.transition = 'transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)';
+        redLineTop.style.transform = 'scaleX(1)';
+      }
+    }, delay));
+    
+    timers.push(setTimeout(() => {
+      if (redLineBottom) {
+        redLineBottom.style.transition = 'transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)';
+        redLineBottom.style.transform = 'scaleX(1)';
+      }
+    }, delay + 200));
+    
+    delay += 400;
+    
+    // 3. PORTRAIT - Scale from center with bounce effect
+    timers.push(setTimeout(() => {
+      if (portrait) {
+        portrait.style.transition = 'transform 1s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.7s ease-out';
+        portrait.style.transform = 'scale(1)';
+        portrait.style.opacity = '1';
+      }
+    }, delay));
+    
+    delay += 500;
+    
+    // 4. AVAILABILITY BADGE - Fade up
+    timers.push(setTimeout(() => {
+      if (availability) {
+        availability.style.transition = 'opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
+        availability.style.opacity = '1';
+        availability.style.transform = 'translateY(0)';
+      }
+    }, delay));
+    
+    delay += 300;
+    
+    // 5. BIO + CTAs - Staggered cascade
+    bioElements.forEach((el, index) => {
+      const element = el as HTMLElement;
+      const t = setTimeout(() => {
+        element.style.transition = 'opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+        element.style.opacity = '1';
+        element.style.transform = 'translateY(0)';
+      }, delay + index * 150);
+      timers.push(t);
+    });
+    
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, [titleBottom]);
+
+  // ========== ANIMATION: Scroll Parallax & Sticky Title ==========
+  useEffect(() => {
+    // Skip if not in titleBottom mode or on server
+    if (!titleBottom || typeof window === 'undefined') return;
+    
+    // Only run on desktop (md+ breakpoint)
+    const mediaQuery = window.matchMedia('(min-width: 768px)');
+    if (!mediaQuery.matches) {
+      console.log('[CirclePortrait] Scroll animation skipped: viewport too narrow');
+      return;
+    }
+
+    const section = sectionRef.current;
+    if (!section) {
+      console.warn('[CirclePortrait] Section ref not found for scroll animation');
+      return;
+    }
+
+    // Query elements from the DOM
+    const titleContainer = section.querySelector('[data-gsap-title-container]') as HTMLElement;
+    const portraitColumn = section.querySelector('[data-gsap-portrait-column]') as HTMLElement;
+    const bioContainer = section.querySelector('[data-gsap-bio-container]') as HTMLElement;
+
+    console.log('[CirclePortrait] Scroll animation init:', {
+      titleContainer: !!titleContainer,
+      portraitColumn: !!portraitColumn,
+      bioContainer: !!bioContainer,
+    });
+
+    if (!titleContainer) {
+      console.warn('[CirclePortrait] Title container not found for scroll');
+      return;
+    }
+
+    let sectionTop = 0;
+    let sectionHeight = 0;
+    let viewportHeight = window.innerHeight;
+
+    const updateBounds = () => {
+      const rect = section.getBoundingClientRect();
+      sectionTop = rect.top + window.scrollY;
+      sectionHeight = rect.height;
+      viewportHeight = window.innerHeight;
+    };
+
+    // Delay initial bounds calculation to ensure layout is complete
+    setTimeout(updateBounds, 100);
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const relativeScroll = scrollY - sectionTop;
+      
+      // Don't apply effects when above section
+      if (relativeScroll < 0) {
+        // Reset transforms when scrolled above
+        if (titleContainer) titleContainer.style.transform = 'translateY(0)';
+        if (portraitColumn) {
+          portraitColumn.style.transform = 'translateY(0)';
+          portraitColumn.style.opacity = '1';
+        }
+        if (bioContainer) {
+          bioContainer.style.transform = 'translateY(0)';
+          bioContainer.style.opacity = '1';
+        }
+        return;
+      }
+      
+      // Calculate scroll progress (0 = at section top, 1 = scrolled past section)
+      const maxScroll = Math.max(1, sectionHeight - viewportHeight * 0.5);
+      const scrollProgress = Math.min(1, relativeScroll / maxScroll);
+
+      // 1. TITLE STICKY: Keep pinned at bottom during initial scroll, then release
+      const stickyThreshold = 0.6;
+      if (scrollProgress < stickyThreshold) {
+        // Pin the title by moving it down as we scroll
+        const pinAmount = Math.min(relativeScroll * 0.35, viewportHeight * 0.2);
+        titleContainer.style.transform = `translateY(${pinAmount}px)`;
+      } else {
+        // Gradually release
+        const releaseProgress = (scrollProgress - stickyThreshold) / (1 - stickyThreshold);
+        const maxPin = viewportHeight * 0.2;
+        const releaseAmount = maxPin * (1 - releaseProgress * 0.5);
+        titleContainer.style.transform = `translateY(${releaseAmount}px)`;
+      }
+
+      // 2. PORTRAIT PARALLAX: Moves up faster (1.3x speed) + fades out
+      if (portraitColumn) {
+        // Faster upward movement
+        const portraitParallax = relativeScroll * 0.3;
+        // Fade out as we scroll (complete fade at 80% progress)
+        const portraitFade = Math.max(0, 1 - (scrollProgress * 1.25));
+        portraitColumn.style.transform = `translateY(${-portraitParallax}px)`;
+        portraitColumn.style.opacity = String(portraitFade);
+      }
+
+      // 3. BIO PARALLAX: Moves up slower (0.85x speed) + fades out
+      if (bioContainer) {
+        // Slower upward movement
+        const bioParallax = relativeScroll * 0.12;
+        // Fade out slightly faster than portrait
+        const bioFade = Math.max(0, 1 - (scrollProgress * 1.4));
+        bioContainer.style.transform = `translateY(${-bioParallax}px)`;
+        bioContainer.style.opacity = String(bioFade);
+      }
+    };
+
+    // Throttled scroll handler for smooth performance
+    let ticking = false;
+    const throttledScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    // Setup smooth transitions for scroll effects
+    const setupTransitions = () => {
+      if (titleContainer) {
+        titleContainer.style.transition = 'transform 0.1s linear';
+        titleContainer.style.willChange = 'transform';
+      }
+      if (portraitColumn) {
+        portraitColumn.style.transition = 'transform 0.1s linear, opacity 0.15s linear';
+        portraitColumn.style.willChange = 'transform, opacity';
+      }
+      if (bioContainer) {
+        bioContainer.style.transition = 'transform 0.1s linear, opacity 0.15s linear';
+        bioContainer.style.willChange = 'transform, opacity';
+      }
+    };
+
+    // Wait for load animations to complete before enabling scroll effects
+    setTimeout(() => {
+      setupTransitions();
+      window.addEventListener('scroll', throttledScroll, { passive: true });
+      window.addEventListener('resize', updateBounds, { passive: true });
+      handleScroll(); // Initial call
+    }, 2500); // Wait for entry animations
+
+    return () => {
+      window.removeEventListener('scroll', throttledScroll);
+      window.removeEventListener('resize', updateBounds);
+      
+      // Cleanup styles
+      [titleContainer, portraitColumn, bioContainer].forEach((el) => {
+        if (el) {
+          el.style.transform = '';
+          el.style.opacity = '';
+          el.style.transition = '';
+          el.style.willChange = '';
+        }
+      });
+    };
+  }, [titleBottom]);
 
   const specialtyNode = markSpecialty ? (
     <span
@@ -85,11 +359,17 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     <span className="font-bold">{specialty}</span>
   );
 
+  // Availability badge — perfectly centered under portrait
+  // INITIAL HIDDEN STATE when in titleBottom mode
   const availabilityRow = (opts?: { centered?: boolean }) => (
     <div
-      className={`flex items-center gap-2.5 ${
-        opts?.centered ? 'justify-center' : ''
-      }`}
+      ref={opts?.centered ? availabilityRef : undefined}
+      className={`flex items-center gap-2.5 ${opts?.centered ? 'justify-center' : ''}`}
+      style={titleBottom && opts?.centered ? {
+        opacity: 0,
+        transform: 'translateY(15px)',
+      } : undefined}
+      data-gsap-availability
     >
       <span
         className="inline-block h-2 w-2 shrink-0 rounded-full"
@@ -133,18 +413,75 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     </h1>
   );
 
-  const titleWithRules = (opts?: { mobile?: boolean }) => (
-    <div className="flex w-full flex-col gap-4">
+  // Monumental title with word-by-word animation support
+  // CRITICAL: Initial hidden state set via inline styles to prevent FOUC
+  const monumentalTitleWithRules = (opts?: { mobile?: boolean }) => (
+    <div 
+      ref={titleContainerRef}
+      className="flex w-full flex-col gap-4"
+      data-gsap-title-container
+    >
+      {/* Top red line — aligned with start of "Leopard" */}
       <div
+        ref={redLineTopRef}
         aria-hidden
         className="w-[min(7.5rem,28%)] self-start"
-        style={{ height: 5, backgroundColor: principal }}
+        style={{ 
+          height: 5, 
+          backgroundColor: principal,
+          // INITIAL HIDDEN STATE - scaleX(0) from left
+          transform: 'scaleX(0)',
+          transformOrigin: 'left center',
+        }}
+        data-gsap-red-line="top"
       />
-      {headline({ mobile: opts?.mobile, bottom: true })}
+      
+      {/* Title with word-by-word animation */}
+      <h1
+        className={`m-0 w-full font-sans font-semibold tracking-[-0.035em] text-left`}
+        style={{
+          color: ink,
+          fontSize: opts?.mobile
+            ? 'clamp(2.35rem, 10vw, 3.35rem)'
+            : 'clamp(2.75rem, 4.2vw, 4.25rem)',
+          lineHeight: 1.08,
+        }}
+        data-gsap-title
+      >
+        {titleWords.map((word, index) => (
+          <span
+            key={index}
+            ref={(el) => {
+              if (el) titleWordsRef.current[index] = el;
+            }}
+            className="inline-block"
+            style={{ 
+              display: 'inline-block',
+              whiteSpace: word.trim() === '' ? 'pre' : 'normal',
+              // INITIAL HIDDEN STATE - opacity 0 + translateY
+              opacity: 0,
+              transform: 'translateY(50px)',
+            }}
+            data-gsap-word={index}
+          >
+            {word}
+          </span>
+        ))}
+      </h1>
+      
+      {/* Bottom red line — aligned to the right */}
       <div
+        ref={redLineBottomRef}
         aria-hidden
         className="w-[min(7.5rem,28%)] self-end"
-        style={{ height: 5, backgroundColor: principal }}
+        style={{ 
+          height: 5, 
+          backgroundColor: principal,
+          // INITIAL HIDDEN STATE - scaleX(0) from right
+          transform: 'scaleX(0)',
+          transformOrigin: 'right center',
+        }}
+        data-gsap-red-line="bottom"
       />
     </div>
   );
@@ -157,6 +494,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
           onClick={onNavClick(secondaryHref)}
           className="inline-flex h-12 w-full items-center justify-center rounded-full font-sans text-[0.95rem] font-semibold tracking-[-0.01em] transition hover:brightness-110"
           style={{ backgroundColor: ink, color: fond }}
+          data-gsap-bio="cta"
         >
           View project
         </a>
@@ -168,6 +506,12 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
         className={`flex flex-wrap items-center gap-x-8 gap-y-3 ${
           opts?.centered ? 'justify-center' : 'justify-start'
         }`}
+        style={titleBottom ? {
+          // INITIAL HIDDEN STATE
+          opacity: 0,
+          transform: 'translateY(25px)',
+        } : undefined}
+        data-gsap-bio="ctas"
       >
         <a
           href={primaryHref}
@@ -193,14 +537,20 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     <p
       className={`m-0 font-sans font-normal tracking-[-0.01em] ${
         opts?.centered ? 'text-center' : 'text-left'
-      } ${opts?.mobile ? '' : 'max-w-[36rem]'}`}
+      } ${opts?.mobile ? '' : 'max-w-[34rem]'}`}
       style={{
         color: muted,
         fontSize: opts?.mobile
           ? '1.0625rem'
           : 'clamp(1.05rem, 1.25vw, 1.1875rem)',
         lineHeight: 1.55,
+        // INITIAL HIDDEN STATE for titleBottom mode (desktop only)
+        ...(titleBottom && !opts?.mobile ? {
+          opacity: 0,
+          transform: 'translateY(25px)',
+        } : {}),
       }}
+      data-gsap-bio="paragraph"
     >
       {bio}
     </p>
@@ -220,24 +570,28 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
   );
 
   /**
-   * Title-bottom mode: bio left-aligned, CTAs stay centered.
-   * Group stays vertically centered next to the portrait.
+   * Bio + CTAs beside image (title-bottom mode)
+   * Aligned so top of bio matches top of portrait circle
    */
   const bioCtaBesideImage = (opts?: { mobile?: boolean }) => (
     <div
-      className={`flex w-full max-w-[36rem] flex-col ${
+      ref={bioContainerRef}
+      className={`flex w-full max-w-[34rem] flex-col ${
         opts?.mobile ? 'gap-8' : 'gap-10'
       }`}
+      style={{ alignSelf: 'flex-start' }} // Align to top to match portrait top
+      data-gsap-bio-container
     >
       {bioBlock({ mobile: opts?.mobile, centered: false })}
-      <div className="flex w-full justify-center">
-        {ctaRow({ mobile: opts?.mobile, centered: true })}
+      <div className="flex w-full justify-start">
+        {ctaRow({ mobile: opts?.mobile, centered: false })}
       </div>
     </div>
   );
 
   const circlePortrait = (sizeCss: string, sizes: string) => (
     <div
+      ref={portraitRef}
       className="relative shrink-0 overflow-hidden rounded-full"
       style={{
         width: sizeCss,
@@ -246,7 +600,12 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
         minHeight: sizeCss,
         backgroundColor: `color-mix(in srgb, ${neutre} 70%, ${bordure})`,
         border: `1px solid ${borderSoft}`,
+        // INITIAL HIDDEN STATE - scale(0) from center
+        transform: titleBottom ? 'scale(0)' : 'scale(1)',
+        opacity: titleBottom ? 0 : 1,
+        transformOrigin: 'center center',
       }}
+      data-gsap-portrait
     >
       {avatarUrl ? (
         <Image
@@ -269,18 +628,23 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     </div>
   );
 
+  // Portrait column with availability badge centered below
   const portraitColumn = (opts?: { mobile?: boolean; alignStart?: boolean }) => (
     <div
-      className={`flex w-full ${
-        opts?.alignStart ? 'justify-start' : 'justify-center'
-      }`}
+      ref={opts?.alignStart ? portraitContainerRef : undefined}
+      className={`flex w-full ${opts?.alignStart ? 'justify-start' : 'justify-center'}`}
+      data-gsap-portrait-column
     >
       <div className="flex flex-col items-center">
         {circlePortrait(
-          opts?.mobile ? 'clamp(16rem, 78vw, 22rem)' : 'clamp(18rem, 40vw, 30rem)',
-          opts?.mobile ? '82vw' : '(max-width: 1024px) 48vw, 30rem'
+          opts?.mobile ? 'clamp(16rem, 78vw, 22rem)' : 'clamp(18rem, 38vw, 26rem)',
+          opts?.mobile ? '82vw' : '(max-width: 1024px) 48vw, 26rem'
         )}
-        <div className={opts?.mobile ? 'mt-5' : 'mt-6'}>
+        {/* Availability badge — perfectly centered under portrait with breathing room */}
+        <div 
+          className={opts?.mobile ? 'mt-6' : 'mt-8'}
+          style={{ marginBottom: 'clamp(1.5rem, 3vh, 2.5rem)' }} // Extra space before title
+        >
           {availabilityRow({ centered: true })}
         </div>
       </div>
@@ -293,9 +657,11 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
   };
 
   return (
-    <div
+    <section
+      ref={sectionRef}
       className="relative isolate w-full overflow-x-clip font-sans"
       style={{ backgroundColor: fond, color: ink }}
+      data-hero-variant="circle-portrait"
     >
       <div
         aria-hidden
@@ -303,30 +669,43 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
         style={{ backgroundColor: fond }}
       />
 
-      {/* —— Desktop — global content width + gutter only —— */}
+      {/* —— Desktop — Split Éclaté avec Typographie Monumentale en Bas —— */}
       {titleBottom ? (
         <div
           className={`relative z-[1] hidden min-h-[100dvh] flex-col md:flex ${shellX}`}
           style={shellPad}
         >
+          {/* Main content area — Portrait left, Bio right */}
+          {/* GEOMETRIC ALIGNMENT: Top of portrait aligns with first line of bio */}
           <div
-            className="grid w-full flex-1"
+            className="grid w-full flex-1 items-start" // items-start for top alignment
             style={{
-              gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-              columnGap: 'clamp(1.75rem, 4vw, 3.5rem)',
-              alignItems: 'center',
+              gridTemplateColumns: 'minmax(0, 0.9fr) minmax(0, 1fr)',
+              columnGap: 'clamp(2.5rem, 5vw, 4.5rem)',
+              alignItems: 'start', // Critical: top-aligns portrait with bio first line
+              paddingTop: 'clamp(2rem, 6vh, 4rem)',
             }}
           >
-            {/* Image flush left — aligns with bottom title */}
-            <div className="flex w-full items-center justify-start self-center">
+            {/* Portrait flush left — top edge aligns with bio first line */}
+            <div className="flex w-full items-start justify-start self-start">
               {portraitColumn({ alignStart: true })}
             </div>
-            <div className="flex min-w-0 items-center justify-center self-center">
+            
+            {/* Bio + CTAs — top-aligned with portrait */}
+            <div 
+              className="flex min-w-0 items-start justify-start self-start"
+              style={{ paddingTop: 'clamp(0.5rem, 1.5vw, 1rem)' }} // Fine-tune alignment
+            >
               {bioCtaBesideImage()}
             </div>
           </div>
-          <div className="mt-[clamp(0.75rem,1.5vh,1.25rem)] w-full shrink-0">
-            {titleWithRules()}
+          
+          {/* Monumental title at bottom — sticky during scroll */}
+          <div 
+            className="mt-auto w-full shrink-0"
+            style={{ paddingTop: 'clamp(1rem, 2vh, 1.5rem)' }}
+          >
+            {monumentalTitleWithRules()}
           </div>
         </div>
       ) : (
@@ -356,7 +735,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
           <>
             {portraitColumn({ mobile: true, alignStart: true })}
             <div className="mt-10 w-full">{bioCtaBesideImage({ mobile: true })}</div>
-            <div className="mt-6 w-full">{titleWithRules({ mobile: true })}</div>
+            <div className="mt-8 w-full">{monumentalTitleWithRules({ mobile: true })}</div>
           </>
         ) : (
           <>
@@ -365,6 +744,6 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
           </>
         )}
       </div>
-    </div>
+    </section>
   );
 }

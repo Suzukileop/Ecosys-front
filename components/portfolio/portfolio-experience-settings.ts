@@ -56,7 +56,9 @@ export type PortfolioExperienceDesign =
   | 'spotlight'
   | 'loft'
   | 'press'
-  | 'legacy';
+  | 'legacy'
+  | 'asymmetric'
+  | 'kinetic';
 
 /** Legacy design ids persisted in older portfolios — coerced to `editorial` on merge. */
 export const REMOVED_EXPERIENCE_DESIGNS = [
@@ -83,6 +85,422 @@ export type PortfolioExperienceSubtitlePreset = 'default' | 'short' | 'career' |
 export type PortfolioExperienceHeaderFont = 'sans' | 'serif' | 'display';
 
 export type PortfolioExperienceHeaderAlignment = 'left' | 'center' | 'right';
+
+/**
+ * Header design applied from Experience → Header (above the design-owned lead).
+ * `none` keeps only the design’s own header; more designs will be added one by one.
+ */
+export type PortfolioExperienceHeaderDesign =
+  | 'none'
+  | 'editorial'
+  | 'milestone'
+  | 'table'
+  | 'cards'
+  | 'reel'
+  | 'duotone'
+  | 'gallery'
+  | 'spotlight'
+  | 'loft'
+  | 'press'
+  | 'legacy';
+
+/** Accent years header — display size mapped to text-4xl…text-7xl. */
+export type PortfolioExperienceAccentYearsFontSize = 4 | 5 | 6 | 7;
+
+/** Accent years header — badge corner radius in px. */
+export type PortfolioExperienceAccentYearsRadius = 0 | 2 | 4;
+
+/** Accent years header — badge fill from the active theme. */
+export type PortfolioExperienceAccentYearsBadgeColor = 'accent' | 'principal' | 'secondaire';
+
+export const PORTFOLIO_EXPERIENCE_ACCENT_YEARS_SIZE_OPTIONS: {
+  value: PortfolioExperienceAccentYearsFontSize;
+  label: string;
+}[] = [
+  { value: 4, label: 'Small' },
+  { value: 5, label: 'Medium' },
+  { value: 6, label: 'Large' },
+  { value: 7, label: 'XL' },
+];
+
+export const PORTFOLIO_EXPERIENCE_ACCENT_YEARS_RADIUS_OPTIONS: {
+  value: PortfolioExperienceAccentYearsRadius;
+  label: string;
+  description: string;
+}[] = [
+  { value: 0, label: 'Sharp', description: 'Square corners — architectural.' },
+  { value: 2, label: 'Soft', description: 'Noticeable 10px round.' },
+  { value: 4, label: 'Rounded', description: '20px round — clearly curved.' },
+];
+
+export const PORTFOLIO_EXPERIENCE_ACCENT_YEARS_COLOR_OPTIONS: {
+  value: PortfolioExperienceAccentYearsBadgeColor;
+  label: string;
+}[] = [
+  { value: 'accent', label: 'Accent' },
+  { value: 'principal', label: 'Principal' },
+  { value: 'secondaire', label: 'Secondaire' },
+];
+
+export const DEFAULT_ACCENT_YEARS_BADGE_TEXT = '{years}+ years';
+export const DEFAULT_ACCENT_YEARS_LEAD_TEXT = 'of hands-on experience in my field.';
+export const DEFAULT_CENTERED_TITLE_TEXT = 'Experience';
+export const DEFAULT_CENTERED_LEAD_TEXT = '{years}+ years of hands-on experience in my field.';
+export const DEFAULT_SERIF_LEAD_LABEL_TEXT = 'Experience';
+export const DEFAULT_SERIF_LEAD_TITLE_TEXT = '{years}+ years of hands-on experience in my field.';
+
+export const ACCENT_YEARS_RADIUS_CSS: Record<PortfolioExperienceAccentYearsRadius, string> = {
+  0: '0px',
+  2: '10px',
+  4: '20px',
+};
+
+export const ACCENT_YEARS_FONT_SIZE_CSS: Record<PortfolioExperienceAccentYearsFontSize, string> = {
+  4: 'clamp(1.375rem, 2.8vw, 2.25rem)',
+  5: 'clamp(1.75rem, 3.5vw, 3rem)',
+  6: 'clamp(2.25rem, 4.2vw, 3.75rem)',
+  7: 'clamp(2.75rem, 5.2vw, 4.5rem)',
+};
+
+export type PortfolioExperienceCenteredLeadWeight = 'light' | 'regular' | 'medium';
+export type PortfolioExperienceCenteredLeadOpacity = 'muted' | 'balanced' | 'vibrant';
+export type PortfolioExperienceCenteredScale = 'compact' | 'default' | 'monumental';
+export type PortfolioExperienceCenteredMaxWidth = 'narrow' | 'balanced' | 'wide';
+export type PortfolioExperienceCenteredLineHeight = 'tight' | 'aery' | 'spaced';
+export type PortfolioExperienceCenteredDivider = 'none' | 'dot' | 'full' | 'track';
+export type PortfolioExperienceCenteredDividerOpacity = 'ghost' | 'subtle' | 'accent';
+export type PortfolioExperienceCenteredAlign = 'left' | 'center' | 'right';
+
+export const PORTFOLIO_EXPERIENCE_CENTERED_WEIGHT_OPTIONS: {
+  value: PortfolioExperienceCenteredLeadWeight;
+  label: string;
+}[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'regular', label: 'Regular' },
+  { value: 'medium', label: 'Medium' },
+];
+
+export const PORTFOLIO_EXPERIENCE_CENTERED_ALIGN_OPTIONS: {
+  value: PortfolioExperienceCenteredAlign;
+  label: string;
+}[] = [
+  { value: 'left', label: 'Left' },
+  { value: 'center', label: 'Center' },
+  { value: 'right', label: 'Right' },
+];
+
+export const PORTFOLIO_EXPERIENCE_CENTERED_OPACITY_OPTIONS: {
+  value: PortfolioExperienceCenteredLeadOpacity;
+  label: string;
+}[] = [
+  { value: 'muted', label: 'Muted' },
+  { value: 'balanced', label: 'Balanced' },
+  { value: 'vibrant', label: 'Vibrant' },
+];
+
+export const PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS: {
+  value: PortfolioExperienceCenteredScale;
+  label: string;
+}[] = [
+  { value: 'compact', label: 'Compact' },
+  { value: 'default', label: 'Default' },
+  { value: 'monumental', label: 'Monumental' },
+];
+
+export const PORTFOLIO_EXPERIENCE_CENTERED_WIDTH_OPTIONS: {
+  value: PortfolioExperienceCenteredMaxWidth;
+  label: string;
+}[] = [
+  { value: 'narrow', label: 'Narrow' },
+  { value: 'balanced', label: 'Balanced' },
+  { value: 'wide', label: 'Wide' },
+];
+
+export const PORTFOLIO_EXPERIENCE_CENTERED_LEADING_OPTIONS: {
+  value: PortfolioExperienceCenteredLineHeight;
+  label: string;
+}[] = [
+  { value: 'tight', label: 'Tight' },
+  { value: 'aery', label: 'Aery' },
+  { value: 'spaced', label: 'Spaced' },
+];
+
+export const PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPTIONS: {
+  value: PortfolioExperienceCenteredDivider;
+  label: string;
+}[] = [
+  { value: 'none', label: 'None' },
+  { value: 'dot', label: 'Minimal dot' },
+  { value: 'full', label: 'Full width' },
+  { value: 'track', label: 'Centered track' },
+];
+
+export const PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPACITY_OPTIONS: {
+  value: PortfolioExperienceCenteredDividerOpacity;
+  label: string;
+}[] = [
+  { value: 'ghost', label: 'Ghost' },
+  { value: 'subtle', label: 'Subtle' },
+  { value: 'accent', label: 'Accent' },
+];
+
+export const CENTERED_LEAD_OPACITY: Record<PortfolioExperienceCenteredLeadOpacity, number> = {
+  muted: 0.4,
+  balanced: 0.65,
+  vibrant: 1,
+};
+
+export const CENTERED_LEAD_WEIGHT: Record<PortfolioExperienceCenteredLeadWeight, number> = {
+  light: 300,
+  regular: 400,
+  medium: 500,
+};
+
+export const CENTERED_LEAD_WIDTH: Record<PortfolioExperienceCenteredMaxWidth, string> = {
+  narrow: '40ch',
+  balanced: '55ch',
+  wide: '70ch',
+};
+
+export const CENTERED_LEAD_LINE_HEIGHT: Record<PortfolioExperienceCenteredLineHeight, number> = {
+  tight: 1.3,
+  aery: 1.6,
+  spaced: 1.9,
+};
+
+export type PortfolioExperienceSerifLeadInk = 'current' | 'accent' | 'principal' | 'secondaire';
+export type PortfolioExperienceSerifLeadLabelOpacity = 'ghost' | 'muted' | 'ink';
+export type PortfolioExperienceSerifLeadTracking = 'tight' | 'editorial' | 'open';
+
+export const PORTFOLIO_EXPERIENCE_SERIF_LEAD_INK_OPTIONS: {
+  value: PortfolioExperienceSerifLeadInk;
+  label: string;
+}[] = [
+  { value: 'current', label: 'Ink' },
+  { value: 'accent', label: 'Accent' },
+  { value: 'principal', label: 'Principal' },
+  { value: 'secondaire', label: 'Secondaire' },
+];
+
+export const PORTFOLIO_EXPERIENCE_SERIF_LEAD_TRACKING_OPTIONS: {
+  value: PortfolioExperienceSerifLeadTracking;
+  label: string;
+}[] = [
+  { value: 'tight', label: 'Tight' },
+  { value: 'editorial', label: 'Editorial' },
+  { value: 'open', label: 'Open' },
+];
+
+export const PORTFOLIO_EXPERIENCE_SERIF_LEAD_LABEL_OPACITY_OPTIONS: {
+  value: PortfolioExperienceSerifLeadLabelOpacity;
+  label: string;
+}[] = [
+  { value: 'ghost', label: 'Ghost' },
+  { value: 'muted', label: 'Muted' },
+  { value: 'ink', label: 'Ink' },
+];
+
+export const SERIF_LEAD_WEIGHT: Record<PortfolioExperienceCenteredLeadWeight, number> = {
+  light: 300,
+  regular: 400,
+  medium: 500,
+};
+
+export const SERIF_LEAD_WIDTH: Record<PortfolioExperienceCenteredMaxWidth, string> = {
+  narrow: '32ch',
+  balanced: '42ch',
+  wide: '54ch',
+};
+
+export const SERIF_LEAD_LINE_HEIGHT: Record<PortfolioExperienceCenteredLineHeight, number> = {
+  tight: 1.06,
+  aery: 1.16,
+  spaced: 1.3,
+};
+
+export const SERIF_LEAD_TRACKING: Record<PortfolioExperienceSerifLeadTracking, string> = {
+  tight: '-0.055em',
+  editorial: '-0.04em',
+  open: '-0.018em',
+};
+
+export const SERIF_LEAD_LABEL_OPACITY: Record<PortfolioExperienceSerifLeadLabelOpacity, number> = {
+  ghost: 0.25,
+  muted: 0.4,
+  ink: 0.72,
+};
+
+export type PortfolioExperienceMarqueeStyle = 'alternate' | 'fill' | 'outline';
+export type PortfolioExperienceMarqueeDirection = 'ltr' | 'rtl';
+export type PortfolioExperienceMarqueeSpeed = 'slow' | 'cruise' | 'fast';
+export type PortfolioExperienceMarqueeEdgeFade = 'none' | 'soft' | 'wide';
+export type PortfolioExperienceMarqueeSeparator = 'none' | 'dot';
+export type PortfolioExperienceMarqueeWeight = 'light' | 'regular' | 'medium' | 'semibold';
+
+// Spotlight Marquee Premium options
+export type PortfolioExperienceSpotlightMarqueeSpeed = 'slow' | 'medium' | 'fast';
+export type PortfolioExperienceSpotlightMarqueeDirection = 'left' | 'right';
+export type PortfolioExperienceSpotlightMarqueeWeight = 'light' | 'normal' | 'bold';
+export type PortfolioExperienceSpotlightMarqueeStyle = 'outline' | 'fill' | 'mixed';
+export type PortfolioExperienceSpotlightMarqueeGap = 'sm' | 'md' | 'lg';
+
+export const PORTFOLIO_EXPERIENCE_MARQUEE_STYLE_OPTIONS: {
+  value: PortfolioExperienceMarqueeStyle;
+  label: string;
+}[] = [
+  { value: 'alternate', label: 'Alternate' },
+  { value: 'fill', label: 'Fill' },
+  { value: 'outline', label: 'Outline' },
+];
+
+export const PORTFOLIO_EXPERIENCE_MARQUEE_DIRECTION_OPTIONS: {
+  value: PortfolioExperienceMarqueeDirection;
+  label: string;
+}[] = [
+  { value: 'ltr', label: 'Left → right' },
+  { value: 'rtl', label: 'Right → left' },
+];
+
+export const PORTFOLIO_EXPERIENCE_MARQUEE_SPEED_OPTIONS: {
+  value: PortfolioExperienceMarqueeSpeed;
+  label: string;
+}[] = [
+  { value: 'slow', label: 'Slow' },
+  { value: 'cruise', label: 'Cruise' },
+  { value: 'fast', label: 'Fast' },
+];
+
+export const PORTFOLIO_EXPERIENCE_MARQUEE_FADE_OPTIONS: {
+  value: PortfolioExperienceMarqueeEdgeFade;
+  label: string;
+}[] = [
+  { value: 'none', label: 'None' },
+  { value: 'soft', label: 'Soft' },
+  { value: 'wide', label: 'Wide' },
+];
+
+export const PORTFOLIO_EXPERIENCE_MARQUEE_SEPARATOR_OPTIONS: {
+  value: PortfolioExperienceMarqueeSeparator;
+  label: string;
+}[] = [
+  { value: 'dot', label: 'Dot' },
+  { value: 'none', label: 'None' },
+];
+
+export const PORTFOLIO_EXPERIENCE_MARQUEE_WEIGHT_OPTIONS: {
+  value: PortfolioExperienceMarqueeWeight;
+  label: string;
+}[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'regular', label: 'Regular' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'semibold', label: 'Semibold' },
+];
+
+export const MARQUEE_WEIGHT: Record<PortfolioExperienceMarqueeWeight, number> = {
+  light: 300,
+  regular: 400,
+  medium: 500,
+  semibold: 600,
+};
+
+// Spotlight Marquee Premium option arrays
+export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_SPEED_OPTIONS: {
+  value: PortfolioExperienceSpotlightMarqueeSpeed;
+  label: string;
+}[] = [
+  { value: 'slow', label: 'Slow' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'fast', label: 'Fast' },
+];
+
+export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_DIRECTION_OPTIONS: {
+  value: PortfolioExperienceSpotlightMarqueeDirection;
+  label: string;
+}[] = [
+  { value: 'left', label: 'Left' },
+  { value: 'right', label: 'Right' },
+];
+
+export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_WEIGHT_OPTIONS: {
+  value: PortfolioExperienceSpotlightMarqueeWeight;
+  label: string;
+}[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'bold', label: 'Bold' },
+];
+
+export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_STYLE_OPTIONS: {
+  value: PortfolioExperienceSpotlightMarqueeStyle;
+  label: string;
+}[] = [
+  { value: 'outline', label: 'Outline' },
+  { value: 'fill', label: 'Fill' },
+  { value: 'mixed', label: 'Mixed' },
+];
+
+export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_GAP_OPTIONS: {
+  value: PortfolioExperienceSpotlightMarqueeGap;
+  label: string;
+}[] = [
+  { value: 'sm', label: 'Small' },
+  { value: 'md', label: 'Medium' },
+  { value: 'lg', label: 'Large' },
+];
+
+// Spotlight Marquee Premium constant mappings
+export const SPOTLIGHT_MARQUEE_SPEED_PX: Record<PortfolioExperienceSpotlightMarqueeSpeed, number> = {
+  slow: 28,
+  medium: 44,
+  fast: 72,
+};
+
+export const SPOTLIGHT_MARQUEE_WEIGHT: Record<PortfolioExperienceSpotlightMarqueeWeight, number> = {
+  light: 300,
+  normal: 400,
+  bold: 700,
+};
+
+export const SPOTLIGHT_MARQUEE_GAP: Record<PortfolioExperienceSpotlightMarqueeGap, string> = {
+  sm: '0.5rem',
+  md: '1rem',
+  lg: '2rem',
+};
+
+export const MARQUEE_FILL_OPACITY: Record<PortfolioExperienceSerifLeadLabelOpacity, number> = {
+  ghost: 0.55,
+  muted: 0.85,
+  ink: 1,
+};
+
+export const MARQUEE_SPEED_PX: Record<PortfolioExperienceMarqueeSpeed, number> = {
+  slow: 28,
+  cruise: 44,
+  fast: 72,
+};
+
+export const MARQUEE_EDGE_FADE: Record<PortfolioExperienceMarqueeEdgeFade, string> = {
+  none: '0%',
+  soft: '10%',
+  wide: '18%',
+};
+
+export function resolveMarqueeInkColor(
+  presentation: Pick<PortfolioExperiencePresentationSettings, 'marqueeInk' | 'accentColor'>,
+  ink: string
+): string {
+  switch (presentation.marqueeInk) {
+    case 'accent':
+      return experienceAccentColor(presentation.accentColor);
+    case 'principal':
+      return 'var(--pf-palette-principal)';
+    case 'secondaire':
+      return 'var(--pf-palette-secondaire)';
+    default:
+      return ink;
+  }
+}
 
 /** How the section title relates to the experience list. */
 export type PortfolioExperienceSectionLayout = 'stacked' | 'aside-left' | 'aside-right';
@@ -180,6 +598,44 @@ export const PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_COLOR_OPTIONS: {
   { value: 'simple', label: 'Simple', description: 'Plain, flat color — same as the “Roles I’ve taken on” heading.' },
 ];
 
+/** Gallery / Billboard header: entrance animation intensity. */
+export type PortfolioExperienceGalleryHeaderAnimationStyle = 'dramatic' | 'subtle' | 'none';
+
+export const PORTFOLIO_EXPERIENCE_GALLERY_HEADER_ANIMATION_STYLE_OPTIONS: {
+  value: PortfolioExperienceGalleryHeaderAnimationStyle;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'dramatic', label: 'Dramatic', description: 'Scale + blur reveal — billboard lighting up.' },
+  { value: 'subtle', label: 'Subtle', description: 'Soft fade only, no scale or blur.' },
+  { value: 'none', label: 'None', description: 'No entrance animation.' },
+];
+
+/** Gallery / Billboard header: secondary title typography. */
+export type PortfolioExperienceGallerySecondaryTitleStyle = 'editorial' | 'uniform';
+
+export const PORTFOLIO_EXPERIENCE_GALLERY_SECONDARY_TITLE_STYLE_OPTIONS: {
+  value: PortfolioExperienceGallerySecondaryTitleStyle;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'editorial', label: 'Editorial', description: 'First word italic light, rest semibold.' },
+  { value: 'uniform', label: 'Uniform', description: 'Same weight on every word.' },
+];
+
+/** Gallery / Billboard header: role-count presentation. */
+export type PortfolioExperienceGalleryRoleCountStyle = 'micro' | 'normal' | 'hidden';
+
+export const PORTFOLIO_EXPERIENCE_GALLERY_ROLE_COUNT_STYLE_OPTIONS: {
+  value: PortfolioExperienceGalleryRoleCountStyle;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'micro', label: 'Micro', description: 'Uppercase, letter-spaced, small.' },
+  { value: 'normal', label: 'Normal', description: 'Regular body size, sentence case.' },
+  { value: 'hidden', label: 'Hidden', description: 'Hide the role count line.' },
+];
+
 /** Spotlight design: color treatment for the scrolling marquee title. */
 export type PortfolioExperienceSpotlightTitleColor = 'ink' | 'accent' | 'alternating' | 'muted';
 
@@ -218,6 +674,68 @@ export const PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS: {
   { value: 'glass', label: 'Glassmorphism', description: 'Full image, never cropped — frosted glass backdrop.' },
 ];
 
+/** Loft design: which word gets italic treatment. */
+export type PortfolioExperienceLoftHeadingItalicWord = 'first' | 'last' | 'none';
+
+export const PORTFOLIO_EXPERIENCE_LOFT_HEADING_ITALIC_WORD_OPTIONS: {
+  value: PortfolioExperienceLoftHeadingItalicWord;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'first', label: 'First word', description: 'First word gets italic treatment.' },
+  { value: 'last', label: 'Last word', description: 'Last word gets italic treatment.' },
+  { value: 'none', label: 'None', description: 'No italic treatment.' },
+];
+
+/** Loft design: light first word vs all same weight. */
+export type PortfolioExperienceLoftHeadingFontWeight = 'light-to-bold' | 'uniform';
+
+export const PORTFOLIO_EXPERIENCE_LOFT_HEADING_FONT_WEIGHT_OPTIONS: {
+  value: PortfolioExperienceLoftHeadingFontWeight;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'light-to-bold', label: 'Light → Bold', description: 'Italic word is lighter, rest is bold.' },
+  { value: 'uniform', label: 'Uniform', description: 'All words have the same weight.' },
+];
+
+/** Loft design: label casing style. */
+export type PortfolioExperienceLoftLabelStyle = 'uppercase' | 'lowercase' | 'capitalize';
+
+export const PORTFOLIO_EXPERIENCE_LOFT_LABEL_STYLE_OPTIONS: {
+  value: PortfolioExperienceLoftLabelStyle;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'uppercase', label: 'UPPERCASE', description: 'All caps label.' },
+  { value: 'lowercase', label: 'lowercase', description: 'All lowercase label.' },
+  { value: 'capitalize', label: 'Capitalize', description: 'First letter capitalized.' },
+];
+
+/** Loft design: vertical alignment of label with title. */
+export type PortfolioExperienceLoftLabelPosition = 'top-aligned' | 'center-aligned';
+
+export const PORTFOLIO_EXPERIENCE_LOFT_LABEL_POSITION_OPTIONS: {
+  value: PortfolioExperienceLoftLabelPosition;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'top-aligned', label: 'Top aligned', description: 'Label aligns with top of title.' },
+  { value: 'center-aligned', label: 'Center aligned', description: 'Label vertically centered with title.' },
+];
+
+/** Loft design: scroll effect style. */
+export type PortfolioExperienceLoftScrollEffectStyle = 'slide-right' | 'fade-only';
+
+export const PORTFOLIO_EXPERIENCE_LOFT_SCROLL_EFFECT_STYLE_OPTIONS: {
+  value: PortfolioExperienceLoftScrollEffectStyle;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'slide-right', label: 'Slide right', description: 'Label slides right and fades out.' },
+  { value: 'fade-only', label: 'Fade only', description: 'Label fades out without sliding.' },
+];
+
 /** Loft design: corner radius of the thumbnail frame. */
 export type PortfolioExperienceLoftThumbnailRadius = 'none' | 'md' | 'xl';
 
@@ -243,6 +761,31 @@ export function experienceLoftThumbnailRadiusClass(radius: PortfolioExperienceLo
   }
 }
 
+/** Loft design: hover interaction on grid thumbnails. */
+export type PortfolioExperienceLoftHoverEffect = 'curtain' | 'magnetic' | 'press';
+
+export const PORTFOLIO_EXPERIENCE_LOFT_HOVER_EFFECT_OPTIONS: {
+  value: PortfolioExperienceLoftHoverEffect;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'curtain',
+    label: 'Project Curtain',
+    description: 'Dimmed at rest, full light + soft scale-out and inner glow on hover.',
+  },
+  {
+    value: 'magnetic',
+    label: 'Magnetic Cue',
+    description: 'Title lifts while a blurred [ VIEW CASE ↗ ] cue appears on the thumbnail.',
+  },
+  {
+    value: 'press',
+    label: 'Press In',
+    description: 'Thumbnail eases down 4px with a translucent white rim — physical button feel.',
+  },
+];
+
 /** Vertical gap between individual task list rows. */
 export type PortfolioExperienceTaskItemGap = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -262,16 +805,62 @@ export type PortfolioExperiencePeriodDesign = 'plain' | 'rail' | 'badge' | 'rule
 /** Editorial: accordion (one open) or every entry expanded with no toggle. */
 export type PortfolioExperienceEntryExpandMode = 'accordion' | 'all-open';
 
+/** Editorial expanded body: classic vertical stack, or right-hand Données & Actions column. */
+export type PortfolioExperienceEditorialDetailLayout = 'stacked' | 'split-actions';
+
+export const PORTFOLIO_EXPERIENCE_EDITORIAL_DETAIL_LAYOUT_OPTIONS: {
+  value: PortfolioExperienceEditorialDetailLayout;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'stacked',
+    label: 'Stacked',
+    description: 'Classic vertical flow — meta, copy, stack, then repo CTA under STACK.',
+  },
+  {
+    value: 'split-actions',
+    label: 'Split actions',
+    description: 'Meta + status top-right, repo bottom-right — copy stays centered.',
+  },
+];
+
 /** How responsibilities / tasks render inside an experience entry. */
 export type PortfolioExperienceTasksDisplay =
-  | 'arrows'
-  | 'dashes'
-  | 'checkmarks'
-  | 'chips'
-  | 'summary';
+  | 'engineering-grid'
+  | 'cinematic-timeline'
+  | 'editorial-dash'
+  | 'accordion-stack'
+  | 'architectural-index';
+
+/** Map legacy task-display ids saved before the Award redesign. */
+export function migrateExperienceTasksDisplay(value: unknown): PortfolioExperienceTasksDisplay | null {
+  if (
+    value === 'engineering-grid' ||
+    value === 'cinematic-timeline' ||
+    value === 'editorial-dash' ||
+    value === 'accordion-stack' ||
+    value === 'architectural-index'
+  ) {
+    return value;
+  }
+  if (value === 'arrows' || value === 'dashes') return 'editorial-dash';
+  if (value === 'checkmarks' || value === 'chips') return 'engineering-grid';
+  if (value === 'summary') return 'accordion-stack';
+  return null;
+}
 
 /** Cards design: corner radius of each experience card. */
 export type PortfolioExperienceCardsBorderRadius = 'none' | 'md' | 'xl';
+
+/** Cards design: horizontal width of each stacked card (always centered). */
+export type PortfolioExperienceCardsCardWidth = 'full' | 'medium' | 'small';
+
+/** Cards design: vertical rhythm between title, body, tasks, tools inside a card. */
+export type PortfolioExperienceCardsElementSpacing = 'sm' | 'md' | 'lg';
+
+/** Cards design: vertical gap between stacked cards. */
+export type PortfolioExperienceCardsVerticalGap = 'sm' | 'md' | 'lg';
 
 /** Legacy design: image height proportion — 'lg' (tallest) is the current default. */
 export type PortfolioExperienceLegacyThumbnailHeight = 'sm' | 'md' | 'lg';
@@ -284,6 +873,39 @@ export type PortfolioExperienceLegacyItemGap = 'sm' | 'md' | 'lg' | 'xl';
 
 /** Legacy design: which side the image sits on when alternating is turned off. */
 export type PortfolioExperienceLegacySide = 'left' | 'right';
+
+/** Legacy header: animation effect style for the accent word. */
+export type PortfolioExperienceLegacyAnimationStyle = 'bloom' | 'slide' | 'none';
+
+/** Legacy header: font weight for the prefix text. */
+export type PortfolioExperienceLegacyPrefixWeight = 'light' | 'normal' | 'bold';
+
+/** Legacy header: styling combination for the accent word. */
+export type PortfolioExperienceLegacyAccentStyle = 'italic-bold' | 'bold' | 'italic';
+
+/** Legacy header: size difference of the accent word relative to prefix. */
+export type PortfolioExperienceLegacyAccentSize = 'dramatic' | 'subtle' | 'same';
+
+/** Legacy header: decorative underline style. */
+export type PortfolioExperienceLegacyUnderlineStyle = 'solid' | 'gradient';
+
+/** Legacy header: subtitle typography style. */
+export type PortfolioExperienceLegacySubtitleStyle = 'micro' | 'serif' | 'normal';
+
+/** Press / Masthead header: entrance animation style. */
+export type PortfolioExperiencePressAnimationStyle = 'staggered' | 'simultaneous' | 'none';
+
+/** Press / Masthead header: heading weight treatment. */
+export type PortfolioExperiencePressHeadingWeightStyle = 'alternating' | 'uniform';
+
+/** Press / Masthead header: subtitle typography. */
+export type PortfolioExperiencePressSubtitleStyle = 'micro' | 'normal' | 'hidden';
+
+/** Press / Masthead header: heading alignment. */
+export type PortfolioExperiencePressHeadingAlignment = 'left' | 'center';
+
+/** Press / Masthead header: scroll parallax intensity. */
+export type PortfolioExperiencePressParallaxIntensity = 'subtle' | 'dramatic';
 
 /** Cards design: one gap value for both row and column spacing. */
 export type PortfolioExperienceCardsGridGap = 'sm' | 'md' | 'lg' | 'xl' | 'custom';
@@ -476,35 +1098,86 @@ export type PortfolioExperienceProofLinkStyle =
   | 'accent'
   | 'underline';
 
-/** Ready-made button presentations for the repository link (Reel design). */
-export type PortfolioExperienceRepoLinkStyle = 'underline' | 'icon' | 'solid' | 'ghost';
+/** Button harvested from each Experience layout. `auto` keeps each design’s native button. */
+export type PortfolioExperienceRepoLinkStyle =
+  | 'auto'
+  | 'editorial'
+  | 'milestone'
+  | 'table'
+  | 'cards'
+  | 'reel'
+  | 'duotone'
+  | 'spotlight'
+  | 'legacy'
+  | 'icon'
+  | 'underline'
+  | 'solid'
+  | 'ghost';
+
+export const PORTFOLIO_EXPERIENCE_REPO_LINK_STYLES = [
+  'auto',
+  'editorial',
+  'milestone',
+  'table',
+  'cards',
+  'reel',
+  'duotone',
+  'spotlight',
+  'legacy',
+  'icon',
+  'underline',
+  'solid',
+  'ghost',
+] as const satisfies readonly PortfolioExperienceRepoLinkStyle[];
 
 export const PORTFOLIO_EXPERIENCE_REPO_LINK_STYLE_OPTIONS: {
-  value: PortfolioExperienceRepoLinkStyle;
+  value: Exclude<
+    PortfolioExperienceRepoLinkStyle,
+    'auto' | 'icon' | 'underline' | 'solid' | 'ghost' | 'milestone' | 'cards'
+  >;
+  label: string;
+}[] = [
+  { value: 'editorial', label: 'Editorial' },
+  { value: 'table', label: 'Table' },
+  { value: 'reel', label: 'Reel' },
+  { value: 'duotone', label: 'Duotone' },
+  { value: 'spotlight', label: 'Spotlight' },
+  { value: 'legacy', label: 'Legacy' },
+];
+
+/** Glyph used on Experience proof / repository link buttons that show an arrow. */
+export type PortfolioExperienceLinkArrowStyle = 'northeast' | 'chevron' | 'east';
+
+export const PORTFOLIO_EXPERIENCE_LINK_ARROW_STYLES = [
+  'northeast',
+  'chevron',
+  'east',
+] as const satisfies readonly PortfolioExperienceLinkArrowStyle[];
+
+export const PORTFOLIO_EXPERIENCE_LINK_ARROW_STYLE_OPTIONS: {
+  value: PortfolioExperienceLinkArrowStyle;
   label: string;
   description: string;
 }[] = [
-  {
-    value: 'icon',
-    label: 'Icon',
-    description: 'Round icon-only button with a GitHub mark — compact and iconic.',
-  },
-  {
-    value: 'underline',
-    label: 'Underline',
-    description: 'Plain text with a thin underline — turns accent on hover. The quietest option.',
-  },
-  {
-    value: 'ghost',
-    label: 'Ghost',
-    description: 'Text + arrow, no fill — the arrow slides on hover.',
-  },
-  {
-    value: 'solid',
-    label: 'Solid',
-    description: 'Filled button, ink background — the strongest option for a single key action.',
-  },
+  { value: 'northeast', label: '↗', description: 'Diagonal exit arrow.' },
+  { value: 'chevron', label: '›', description: 'Simple chevron.' },
+  { value: 'east', label: '→', description: 'Horizontal arrow.' },
 ];
+
+/** Concrete button to render. `auto` / legacy default `icon` keep the layout’s own button. */
+export function resolveExperienceRepoLinkStyle(
+  stored: PortfolioExperienceRepoLinkStyle | undefined,
+  native: Exclude<PortfolioExperienceRepoLinkStyle, 'auto' | 'duotone'>
+): Exclude<PortfolioExperienceRepoLinkStyle, 'auto' | 'duotone'> {
+  if (!stored || stored === 'auto' || stored === 'icon' || stored === 'milestone' || stored === 'cards') {
+    return native;
+  }
+  if (stored === 'duotone') return 'icon';
+  if (stored === 'ghost' || stored === 'solid' || stored === 'underline') {
+    return native === 'icon' ? stored : native;
+  }
+  return stored;
+}
 
 /** Reel design: how the Ongoing / Completed status is presented under "Period & status". */
 export type PortfolioExperienceReelStatusStyle = 'minimal' | 'badge' | 'bar' | 'square' | 'plain';
@@ -538,6 +1211,34 @@ export const PORTFOLIO_EXPERIENCE_REEL_STATUS_STYLE_OPTIONS: {
     value: 'plain',
     label: 'Plain text',
     description: 'Just the label, colored by status — no icon, no chrome.',
+  },
+];
+
+/** Reel design: scroll choreography between full-viewport roles. */
+export type PortfolioExperienceReelScrollMotion =
+  | 'index-distort'
+  | 'fade-reveal'
+  | 'sticky-vertical';
+
+export const PORTFOLIO_EXPERIENCE_REEL_SCROLL_MOTION_OPTIONS: {
+  value: PortfolioExperienceReelScrollMotion;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'index-distort',
+    label: 'Index distort',
+    description: 'Creative skew / stretch / blur on the large “01” watermark as you scroll.',
+  },
+  {
+    value: 'fade-reveal',
+    label: 'Fade & reveal',
+    description: 'Staggered fade-up of title, meta, copy, and footer — fluid block chaining.',
+  },
+  {
+    value: 'sticky-vertical',
+    label: 'Sticky vertical',
+    description: 'Bottom story stays pinned; titles morph fluidly as you scroll through roles.',
   },
 ];
 
@@ -673,6 +1374,142 @@ export function experienceDuotoneThumbnailMaxHeight(
   }
 }
 
+/** Duotone Sticky / Scroll: where the repository CTA lives. */
+export type PortfolioExperienceDuotoneRepoCtaMode = 'footer' | 'thumb-cursor';
+
+export const PORTFOLIO_EXPERIENCE_DUOTONE_REPO_CTA_MODE_OPTIONS: {
+  value: PortfolioExperienceDuotoneRepoCtaMode;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'footer',
+    label: 'Footer button',
+    description: 'Classic repository button under the stack.',
+  },
+  {
+    value: 'thumb-cursor',
+    label: 'Thumbnail cursor',
+    description: 'Rounded Consult pill that follows the pointer over the miniature.',
+  },
+];
+
+/** Duotone design, Sticky / Scroll modes: vertical air between title / media / editorial blocks. */
+export type PortfolioExperienceDuotoneStickyVerticalGap = 'sm' | 'md' | 'lg' | 'xl';
+
+export const PORTFOLIO_EXPERIENCE_DUOTONE_STICKY_VERTICAL_GAP_OPTIONS: {
+  value: PortfolioExperienceDuotoneStickyVerticalGap;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'sm', label: 'Small', description: 'Tighter title ↔ media and editorial rhythm.' },
+  { value: 'md', label: 'Medium', description: 'Balanced spacing — the default.' },
+  { value: 'lg', label: 'Large', description: 'More vertical air between elements.' },
+  { value: 'xl', label: 'Extra large', description: 'Maximum breathing room.' },
+];
+
+/** Left-column title ↔ thumbnail gap in Duotone sticky / scroll modes. */
+export function experienceDuotoneStickyLeftGapClass(
+  gap: PortfolioExperienceDuotoneStickyVerticalGap | undefined
+): string {
+  switch (gap) {
+    case 'sm':
+      return 'gap-7 sm:gap-10';
+    case 'lg':
+      return 'gap-14 sm:gap-20';
+    case 'xl':
+      return 'gap-16 sm:gap-24';
+    case 'md':
+    default:
+      return 'gap-10 sm:gap-14';
+  }
+}
+
+/** Right-column block spacing tokens for Duotone sticky / scroll modes. */
+export function experienceDuotoneStickyEditorialSpacing(
+  gap: PortfolioExperienceDuotoneStickyVerticalGap | undefined
+): { tasksMt: string; stackMt: string; stackGap: string; stackPt: string } {
+  switch (gap) {
+    case 'sm':
+      return { tasksMt: 'mt-7', stackMt: 'mt-7', stackGap: 'gap-4', stackPt: 'pt-5' };
+    case 'lg':
+      return { tasksMt: 'mt-12', stackMt: 'mt-11', stackGap: 'gap-8', stackPt: 'pt-8' };
+    case 'xl':
+      return { tasksMt: 'mt-14', stackMt: 'mt-14', stackGap: 'gap-10', stackPt: 'pt-10' };
+    case 'md':
+    default:
+      return { tasksMt: 'mt-10', stackMt: 'mt-9', stackGap: 'gap-6', stackPt: 'pt-7' };
+  }
+}
+
+/** Scroll mode: title ↔ thumbnail row gap (roomier than sticky, still tight enough to read as one unit). */
+export function experienceDuotoneScrollTitleThumbGapClass(
+  gap: PortfolioExperienceDuotoneStickyVerticalGap | undefined
+): string {
+  switch (gap) {
+    case 'sm':
+      return 'gap-y-6 sm:gap-y-8';
+    case 'lg':
+      return 'gap-y-10 sm:gap-y-14';
+    case 'xl':
+      return 'gap-y-12 sm:gap-y-16';
+    case 'md':
+    default:
+      return 'gap-y-8 sm:gap-y-10';
+  }
+}
+
+/** Scroll mode: editorial rhythm — one step roomier than sticky for the same option. */
+export function experienceDuotoneScrollEditorialSpacing(
+  gap: PortfolioExperienceDuotoneStickyVerticalGap | undefined
+): { tasksMt: string; stackMt: string; stackGap: string; stackPt: string } {
+  switch (gap) {
+    case 'sm':
+      return { tasksMt: 'mt-9', stackMt: 'mt-9', stackGap: 'gap-5', stackPt: 'pt-6' };
+    case 'lg':
+      return { tasksMt: 'mt-14', stackMt: 'mt-14', stackGap: 'gap-10', stackPt: 'pt-10' };
+    case 'xl':
+      return { tasksMt: 'mt-16', stackMt: 'mt-16', stackGap: 'gap-12', stackPt: 'pt-12' };
+    case 'md':
+    default:
+      return { tasksMt: 'mt-12', stackMt: 'mt-11', stackGap: 'gap-8', stackPt: 'pt-8' };
+  }
+}
+
+/** Scroll mode: vertical air between successive role screens. */
+export function experienceDuotoneScrollRoleStackClass(
+  gap: PortfolioExperienceDuotoneStickyVerticalGap | undefined
+): string {
+  switch (gap) {
+    case 'sm':
+      return 'gap-20 sm:gap-24';
+    case 'lg':
+      return 'gap-32 sm:gap-40';
+    case 'xl':
+      return 'gap-40 sm:gap-52';
+    case 'md':
+    default:
+      return 'gap-24 sm:gap-32';
+  }
+}
+
+/** Sticky track height per role — more gap = longer scroll between entries. */
+export function experienceDuotoneStickySectionVh(
+  gap: PortfolioExperienceDuotoneStickyVerticalGap | undefined
+): number {
+  switch (gap) {
+    case 'sm':
+      return 92;
+    case 'lg':
+      return 112;
+    case 'xl':
+      return 124;
+    case 'md':
+    default:
+      return 100;
+  }
+}
+
 /** Font size scale for entry content elements. */
 export type PortfolioExperienceTextSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -774,6 +1611,107 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   subtitleUppercase: boolean;
   headerAlignment: PortfolioExperienceHeaderAlignment;
   /**
+   * Applied Experience header design (Header subsection).
+   * Renders in a zone above the design-owned header — Editorial first.
+   */
+  headerDesign: PortfolioExperienceHeaderDesign;
+  /** Accent years only — badge copy. Empty falls back to the years template. `{years}` interpolates. */
+  accentYearsBadgeText: string;
+  /** Accent years only — sentence after the badge. Empty falls back to the years template. */
+  accentYearsLeadText: string;
+  /** Accent years only — display size, 4xl–7xl. */
+  accentYearsFontSize: PortfolioExperienceAccentYearsFontSize;
+  /** Accent years only — unitless line-height (1.00–1.20). */
+  accentYearsLineHeight: number;
+  /** Accent years only — letter-spacing in em (−0.06–0.02). */
+  accentYearsLetterSpacing: number;
+  /** Accent years only — badge horizontal padding in em. */
+  accentYearsBadgePadX: number;
+  /** Accent years only — badge vertical padding in em. */
+  accentYearsBadgePadY: number;
+  /** Accent years only — badge corner radius in px (0 / 2 / 4). */
+  accentYearsBadgeRadius: PortfolioExperienceAccentYearsRadius;
+  /** Accent years only — badge fill from the active theme. */
+  accentYearsBadgeColor: PortfolioExperienceAccentYearsBadgeColor;
+  /** Accent years only — lock the lead’s left edge to the timeline year. */
+  accentYearsGridAnchor: boolean;
+  /** Accent years only — space below the header, in rem. */
+  accentYearsBottomRem: number;
+  /** Centered header — title copy. Empty falls back to the section title. `{years}` interpolates. */
+  centeredTitleText: string;
+  /** Centered header — subtitle copy. Empty falls back to the years template. `{years}` interpolates. */
+  centeredLeadText: string;
+  /** Centered header — title + subtitle alignment. */
+  centeredAlign: PortfolioExperienceCenteredAlign;
+  /** Centered header — subtitle weight. */
+  centeredLeadWeight: PortfolioExperienceCenteredLeadWeight;
+  /** Centered header — subtitle opacity. */
+  centeredLeadOpacity: PortfolioExperienceCenteredLeadOpacity;
+  /** Centered header — title + subtitle scale. */
+  centeredScale: PortfolioExperienceCenteredScale;
+  /** Centered header — subtitle max-width / wrap. */
+  centeredMaxWidth: PortfolioExperienceCenteredMaxWidth;
+  /** Centered header — subtitle line-height. */
+  centeredLineHeight: PortfolioExperienceCenteredLineHeight;
+  /** Centered header — rule under the lead. */
+  centeredDivider: PortfolioExperienceCenteredDivider;
+  /** Centered header — divider strength / color. */
+  centeredDividerOpacity: PortfolioExperienceCenteredDividerOpacity;
+  /** Serif lead — micro-label copy. Empty falls back to the section title. `{years}` interpolates. */
+  serifLeadLabelText: string;
+  /** Serif lead — large title copy. Empty falls back to the years template. `{years}` interpolates. */
+  serifLeadTitleText: string;
+  /** Serif lead — label + title alignment. */
+  serifLeadAlign: PortfolioExperienceCenteredAlign;
+  /** Serif lead — title weight. */
+  serifLeadWeight: PortfolioExperienceCenteredLeadWeight;
+  /** Serif lead — title scale. */
+  serifLeadScale: PortfolioExperienceCenteredScale;
+  /** Serif lead — title max-width. */
+  serifLeadMaxWidth: PortfolioExperienceCenteredMaxWidth;
+  /** Serif lead — title line-height. */
+  serifLeadLineHeight: PortfolioExperienceCenteredLineHeight;
+  /** Serif lead — title letter-spacing. */
+  serifLeadTracking: PortfolioExperienceSerifLeadTracking;
+  /** Serif lead — italic title. */
+  serifLeadItalic: boolean;
+  /** Serif lead — title ink source. */
+  serifLeadInk: PortfolioExperienceSerifLeadInk;
+  /** Serif lead — micro-label opacity. */
+  serifLeadLabelOpacity: PortfolioExperienceSerifLeadLabelOpacity;
+  /** Serif lead — rule under the title. */
+  serifLeadDivider: PortfolioExperienceCenteredDivider;
+  /** Serif lead — divider strength / color. */
+  serifLeadDividerOpacity: PortfolioExperienceCenteredDividerOpacity;
+  /** Serif lead — GSAP intro + scroll fade. */
+  serifLeadMotion: boolean;
+  /** Marquee header — letter weight. */
+  marqueeWeight: PortfolioExperienceMarqueeWeight;
+  /** Marquee header — type scale. */
+  marqueeScale: PortfolioExperienceCenteredScale;
+  /** Marquee header — letter-spacing. */
+  marqueeTracking: PortfolioExperienceSerifLeadTracking;
+  /** Marquee header — word ink source. */
+  marqueeInk: PortfolioExperienceSerifLeadInk;
+  /** Marquee header — filled-word opacity. */
+  marqueeFillOpacity: PortfolioExperienceSerifLeadLabelOpacity;
+  /** Marquee header — fill / outline treatment. */
+  marqueeStyle: PortfolioExperienceMarqueeStyle;
+  /** Marquee header — travel direction. */
+  marqueeDirection: PortfolioExperienceMarqueeDirection;
+  /** Marquee header — cruise speed. */
+  marqueeSpeed: PortfolioExperienceMarqueeSpeed;
+  /** Marquee header — edge dissolve. */
+  marqueeEdgeFade: PortfolioExperienceMarqueeEdgeFade;
+  /** Marquee header — separator between words. */
+  marqueeSeparator: PortfolioExperienceMarqueeSeparator;
+  /** Marquee header — separator color. */
+  marqueeSeparatorColor: PortfolioExperienceSerifLeadInk;
+  /** Marquee header — GSAP loop + exit fade. */
+  marqueeMotion: boolean;
+  /** Marquee header — scroll velocity / reverse. */
+  marqueeScrollLink: boolean;
+  /**
    * `stacked` — title above the list (default).
    * `aside-left` / `aside-right` — title beside the list on large screens.
    */
@@ -800,6 +1738,20 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   galleryBigTitleStyle: PortfolioExperienceGalleryBigTitleStyle;
   /** Gallery design: color source for the word. */
   galleryBigTitleColor: PortfolioExperienceGalleryBigTitleColor;
+  /** Gallery design: enable/disable GSAP animations. */
+  galleryHeaderAnimationEnabled: boolean;
+  /** Gallery design: animation intensity (dramatic / subtle / none). */
+  galleryHeaderAnimationStyle: PortfolioExperienceGalleryHeaderAnimationStyle;
+  /** Gallery design: secondary title typography (editorial italic vs uniform). */
+  gallerySecondaryTitleStyle: PortfolioExperienceGallerySecondaryTitleStyle;
+  /** Gallery design: custom secondary title text (default: "Roles I've taken on"). */
+  gallerySecondaryTitleText: string;
+  /** Gallery design: role count presentation (micro / normal / hidden). */
+  galleryRoleCountStyle: PortfolioExperienceGalleryRoleCountStyle;
+  /** Gallery design: custom role count text (use {count} placeholder). */
+  galleryRoleCountText: string;
+  /** Gallery design: enable scroll parallax effect. */
+  galleryScrollParallaxEnabled: boolean;
   /** Spotlight design: show the scrolling marquee title above the section. */
   spotlightBigTitleEnabled: boolean;
   /** Spotlight design: the first word in the marquee cycle. */
@@ -812,14 +1764,50 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   spotlightBigTitleColor: PortfolioExperienceSpotlightTitleColor;
   /** Spotlight design: how each row's thumbnail is presented. */
   spotlightThumbnailFit: PortfolioExperienceSpotlightThumbnailFit;
+  /** Spotlight design: enable/disable entry animations (marquee motion). */
+  spotlightHeaderAnimationEnabled: boolean;
+  /** Spotlight design: marquee scrolling speed. */
+  spotlightMarqueeSpeed: PortfolioExperienceSpotlightMarqueeSpeed;
+  /** Spotlight design: marquee scroll direction. */
+  spotlightMarqueeDirection: PortfolioExperienceSpotlightMarqueeDirection;
+  /** Spotlight design: pause marquee when hovering. */
+  spotlightMarqueePauseOnHover: boolean;
+  /** Spotlight design: marquee text weight. */
+  spotlightMarqueeWeight: PortfolioExperienceSpotlightMarqueeWeight;
+  /** Spotlight design: marquee text rendering style. */
+  spotlightMarqueeStyle: PortfolioExperienceSpotlightMarqueeStyle;
+  /** Spotlight design: fade edges with gradient. */
+  spotlightMarqueeGradientFade: boolean;
+  /** Spotlight design: gap between repeated words. */
+  spotlightMarqueeGap: PortfolioExperienceSpotlightMarqueeGap;
+  /** Spotlight design: speed up marquee on scroll. */
+  spotlightScrollSpeedBoost: boolean;
   /** Loft design: show the plain static heading above the list. */
   loftHeadingEnabled: boolean;
   /** Loft design: the heading text. */
   loftHeadingText: string;
+  /** Loft design: enable/disable GSAP animations. */
+  loftHeaderAnimationEnabled: boolean;
+  /** Loft design: which word gets italic treatment. */
+  loftHeadingItalicWord: PortfolioExperienceLoftHeadingItalicWord;
+  /** Loft design: light first word vs all same weight. */
+  loftHeadingFontWeight: PortfolioExperienceLoftHeadingFontWeight;
+  /** Loft design: custom label text. */
+  loftLabelText: string;
+  /** Loft design: label casing style. */
+  loftLabelStyle: PortfolioExperienceLoftLabelStyle;
+  /** Loft design: vertical alignment of label with title. */
+  loftLabelPosition: PortfolioExperienceLoftLabelPosition;
+  /** Loft design: enable scroll effect. */
+  loftScrollEffectEnabled: boolean;
+  /** Loft design: scroll effect style. */
+  loftScrollEffectStyle: PortfolioExperienceLoftScrollEffectStyle;
   /** Loft design: how each row's thumbnail is presented. */
   loftThumbnailFit: PortfolioExperienceLoftThumbnailFit;
   /** Loft design: corner radius of the thumbnail frame. */
   loftThumbnailRadius: PortfolioExperienceLoftThumbnailRadius;
+  /** Loft design: hover interaction on grid thumbnails. */
+  loftHoverEffect: PortfolioExperienceLoftHoverEffect;
   /** Loft design: how many cards per row on large screens. */
   loftColumns: PortfolioExperienceLoftColumns;
   /** Loft design: gap between cards, both axes at once. */
@@ -832,6 +1820,20 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   pressIntroText: string;
   /** Press design: corner radius of each row's thumbnail. */
   pressThumbnailRadius: PortfolioExperienceCardsBorderRadius;
+  /** Press design: enable/disable GSAP entry animations. */
+  pressHeaderAnimationEnabled: boolean;
+  /** Press design: word-by-word staggered vs all at once. */
+  pressHeaderAnimationStyle: PortfolioExperiencePressAnimationStyle;
+  /** Press design: alternating light/bold weight or uniform bold. */
+  pressHeadingWeightStyle: PortfolioExperiencePressHeadingWeightStyle;
+  /** Press design: subtitle micro-typography style. */
+  pressSubtitleStyle: PortfolioExperiencePressSubtitleStyle;
+  /** Press design: heading alignment (left or center). */
+  pressHeadingAlignment: PortfolioExperiencePressHeadingAlignment;
+  /** Press design: enable scroll parallax effect. */
+  pressScrollParallaxEnabled: boolean;
+  /** Press design: parallax intensity (subtle or dramatic). */
+  pressScrollParallaxIntensity: PortfolioExperiencePressParallaxIntensity;
   /** Legacy design: show the two-tone hero title above the feature blocks. */
   legacyHeadingEnabled: boolean;
   /** Legacy design: hero title, plain part — shown in ink. */
@@ -854,6 +1856,24 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   legacyFixedSide: PortfolioExperienceLegacySide;
   /** Legacy design: show the task list — off by default, unlike every other design. */
   legacyShowTasks: boolean;
+  /** Legacy header: enable/disable GSAP entry + scroll animations. */
+  legacyHeaderAnimationEnabled: boolean;
+  /** Legacy header: accent word animation effect style. */
+  legacyHeaderAnimationStyle: PortfolioExperienceLegacyAnimationStyle;
+  /** Legacy header: font weight of the prefix text. */
+  legacyPrefixWeight: PortfolioExperienceLegacyPrefixWeight;
+  /** Legacy header: styling for the accent word (italic/bold combinations). */
+  legacyAccentStyle: PortfolioExperienceLegacyAccentStyle;
+  /** Legacy header: size difference of accent word. */
+  legacyAccentSize: PortfolioExperienceLegacyAccentSize;
+  /** Legacy header: show decorative underline under accent word. */
+  legacyAccentUnderline: boolean;
+  /** Legacy header: underline style (solid or gradient). */
+  legacyAccentUnderlineStyle: PortfolioExperienceLegacyUnderlineStyle;
+  /** Legacy header: subtitle typography style. */
+  legacySubtitleStyle: PortfolioExperienceLegacySubtitleStyle;
+  /** Legacy header: enable scroll parallax effect. */
+  legacyScrollParallaxEnabled: boolean;
   itemGap: PortfolioExperienceItemGap;
   itemDensity: PortfolioExperienceItemDensity;
   /** Vertical gap between elements in the left / story column. */
@@ -964,6 +1984,8 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   periodDesign: PortfolioExperiencePeriodDesign;
   /** Editorial: accordion with + toggle, or all entries always expanded. */
   entryExpandMode: PortfolioExperienceEntryExpandMode;
+  /** Editorial: stacked details vs right-hand Données & Actions column. */
+  editorialDetailLayout: PortfolioExperienceEditorialDetailLayout;
   /** How responsibilities / tasks are displayed inside entries. */
   tasksDisplay: PortfolioExperienceTasksDisplay;
   /** Table design: alternate row background for easier scanning. */
@@ -972,14 +1994,30 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   cardsGridGap: PortfolioExperienceCardsGridGap;
   /** Manual px when cardsGridGap is `custom`. */
   cardsGridGapPx: number;
+  /** Cards design: card frame width (full / medium / small), always centered. */
+  cardsCardWidth: PortfolioExperienceCardsCardWidth;
+  /** Cards design: spacing between elements inside each card. */
+  cardsElementSpacing: PortfolioExperienceCardsElementSpacing;
+  /** Cards design: vertical gap between stacked cards. */
+  cardsVerticalGap: PortfolioExperienceCardsVerticalGap;
   /** Cards design: corner radius of the card frame. */
   cardsBorderRadius: PortfolioExperienceCardsBorderRadius;
   /** Visual chrome for proof / portfolio links. */
   proofLinkStyle: PortfolioExperienceProofLinkStyle;
-  /** Reel design: which ready-made button presents the repository link. */
+  /** General: which harvested Experience link button presents proof / repository links. */
   repoLinkButtonStyle: PortfolioExperienceRepoLinkStyle;
+  /** General: arrow glyph on proof / repository link buttons (↗ / › / →). */
+  linkArrowStyle: PortfolioExperienceLinkArrowStyle;
+  /** Title stack header: show the micro chronology kicker. */
+  reelKickerEnabled: boolean;
+  /** Title stack header: kicker text (e.g. "02 / Chronology"). */
+  reelKickerText: string;
+  /** Title stack header: enable GSAP entrance + recede. */
+  reelHeaderAnimationEnabled: boolean;
   /** Reel design: how the Ongoing / Completed status is presented. */
   reelStatusStyle: PortfolioExperienceReelStatusStyle;
+  /** Reel design: scroll choreography (index warp vs staggered fade & reveal). */
+  reelScrollMotion: PortfolioExperienceReelScrollMotion;
   /** Duotone design: how you move between roles. */
   duotoneScrollMode: PortfolioExperienceDuotoneScrollMode;
   /** Duotone design, Slide mode: how the prev/next control is presented. */
@@ -994,8 +2032,16 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   duotoneThumbnailEffect: PortfolioExperienceDuotoneThumbnailEffect;
   /** Duotone design, Sticky mode only: height proportion of the left-column thumbnail. */
   duotoneThumbnailHeight: PortfolioExperienceDuotoneThumbnailHeight;
-  /** Duotone design, Sticky mode only: swap columns — title/thumbnail on the right, info card on the left. */
+  /** Duotone Sticky / Scroll: footer repo button, or inertia Consult pill on the thumbnail. */
+  duotoneRepoCtaMode: PortfolioExperienceDuotoneRepoCtaMode;
+  /** Duotone Scroll mode only: role title spans full width above both columns. */
+  duotoneScrollFullWidthTitle: boolean;
+  /** Duotone design, Sticky / Scroll modes: swap columns — title/thumbnail on the right, info on the left. */
   duotoneStickySwapSides: boolean;
+  /** Duotone design, Scroll mode: flip title/info sides on every other role. */
+  duotoneAlternateSides: boolean;
+  /** Duotone design, Sticky / Scroll modes: vertical spacing between title, media, and editorial blocks. */
+  duotoneStickyVerticalGap: PortfolioExperienceDuotoneStickyVerticalGap;
   /** Which column / layer renders the tools block. */
   toolsZone: PortfolioExperienceToolsZone;
   /** Where proof links render: story card, details card, or under the entry media. */
@@ -1226,6 +2272,8 @@ const EXPERIENCE_DESIGNS = [
   'loft',
   'press',
   'legacy',
+  'asymmetric',
+  'kinetic',
 ] as const satisfies readonly PortfolioExperienceDesign[];
 
 export function coerceExperienceDesign(value: unknown): PortfolioExperienceDesign {
@@ -1249,6 +2297,55 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   titleUppercase: false,
   subtitleUppercase: false,
   headerAlignment: 'left',
+  headerDesign: 'none',
+  accentYearsBadgeText: '',
+  accentYearsLeadText: '',
+  accentYearsFontSize: 6,
+  accentYearsLineHeight: 1.05,
+  accentYearsLetterSpacing: -0.02,
+  accentYearsBadgePadX: 0.5,
+  accentYearsBadgePadY: 0.1,
+  accentYearsBadgeRadius: 4,
+  accentYearsBadgeColor: 'accent',
+  accentYearsGridAnchor: true,
+  accentYearsBottomRem: 3.5,
+  centeredTitleText: '',
+  centeredLeadText: '',
+  centeredAlign: 'center',
+  centeredLeadWeight: 'light',
+  centeredLeadOpacity: 'balanced',
+  centeredScale: 'monumental',
+  centeredMaxWidth: 'balanced',
+  centeredLineHeight: 'aery',
+  centeredDivider: 'none',
+  centeredDividerOpacity: 'ghost',
+  serifLeadLabelText: '',
+  serifLeadTitleText: '',
+  serifLeadAlign: 'left',
+  serifLeadWeight: 'medium',
+  serifLeadScale: 'default',
+  serifLeadMaxWidth: 'narrow',
+  serifLeadLineHeight: 'tight',
+  serifLeadTracking: 'editorial',
+  serifLeadItalic: false,
+  serifLeadInk: 'current',
+  serifLeadLabelOpacity: 'muted',
+  serifLeadDivider: 'none',
+  serifLeadDividerOpacity: 'ghost',
+  serifLeadMotion: true,
+  marqueeWeight: 'semibold',
+  marqueeScale: 'default',
+  marqueeTracking: 'editorial',
+  marqueeInk: 'current',
+  marqueeFillOpacity: 'muted',
+  marqueeStyle: 'alternate',
+  marqueeDirection: 'ltr',
+  marqueeSpeed: 'cruise',
+  marqueeEdgeFade: 'soft',
+  marqueeSeparator: 'dot',
+  marqueeSeparatorColor: 'accent',
+  marqueeMotion: true,
+  marqueeScrollLink: true,
   sectionLayout: 'stacked',
   illustrationVariant: 'none',
   illustrationPlacement: 'right',
@@ -1262,6 +2359,13 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   galleryBigTitleText: 'Experience',
   galleryBigTitleStyle: 'outline',
   galleryBigTitleColor: 'current',
+  galleryHeaderAnimationEnabled: true,
+  galleryHeaderAnimationStyle: 'dramatic',
+  gallerySecondaryTitleStyle: 'editorial',
+  gallerySecondaryTitleText: "Roles I've taken on",
+  galleryRoleCountStyle: 'micro',
+  galleryRoleCountText: '{count} {count === 1 ? "role" : "roles"} — click any card for the full story',
+  galleryScrollParallaxEnabled: true,
   spotlightBigTitleEnabled: true,
   spotlightBigTitleText: 'Experience',
   spotlightBigTitleWord2: '',
@@ -1269,16 +2373,41 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   spotlightBigTitleWord4: '',
   spotlightBigTitleColor: 'ink',
   spotlightThumbnailFit: 'cover',
+  spotlightHeaderAnimationEnabled: true,
+  spotlightMarqueeSpeed: 'medium',
+  spotlightMarqueeDirection: 'left',
+  spotlightMarqueePauseOnHover: true,
+  spotlightMarqueeWeight: 'normal',
+  spotlightMarqueeStyle: 'mixed',
+  spotlightMarqueeGradientFade: true,
+  spotlightMarqueeGap: 'md',
+  spotlightScrollSpeedBoost: false,
   loftHeadingEnabled: true,
   loftHeadingText: "Roles I've taken on",
+  loftHeaderAnimationEnabled: true,
+  loftHeadingItalicWord: 'first',
+  loftHeadingFontWeight: 'light-to-bold',
+  loftLabelText: 'Experience',
+  loftLabelStyle: 'uppercase',
+  loftLabelPosition: 'top-aligned',
+  loftScrollEffectEnabled: true,
+  loftScrollEffectStyle: 'slide-right',
   loftThumbnailFit: 'cover',
   loftThumbnailRadius: 'md',
+  loftHoverEffect: 'curtain',
   loftColumns: 3,
   loftGap: 'md',
   pressHeadingEnabled: true,
   pressHeadingText: 'Roles taken. Skills sharpened. Impact delivered.',
   pressIntroText: 'Selected roles, projects, and outcomes.',
   pressThumbnailRadius: 'md',
+  pressHeaderAnimationEnabled: true,
+  pressHeaderAnimationStyle: 'staggered',
+  pressHeadingWeightStyle: 'alternating',
+  pressSubtitleStyle: 'micro',
+  pressHeadingAlignment: 'left',
+  pressScrollParallaxEnabled: true,
+  pressScrollParallaxIntensity: 'subtle',
   legacyHeadingEnabled: true,
   legacyHeadingText: 'A Career Built on',
   legacyHeadingAccentText: 'Craft',
@@ -1290,6 +2419,15 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   legacyAlternateSides: true,
   legacyFixedSide: 'left',
   legacyShowTasks: false,
+  legacyHeaderAnimationEnabled: true,
+  legacyHeaderAnimationStyle: 'bloom',
+  legacyPrefixWeight: 'light',
+  legacyAccentStyle: 'italic-bold',
+  legacyAccentSize: 'dramatic',
+  legacyAccentUnderline: true,
+  legacyAccentUnderlineStyle: 'solid',
+  legacySubtitleStyle: 'micro',
+  legacyScrollParallaxEnabled: true,
   itemGap: 'md',
   itemDensity: 'comfortable',
   storyContentGap: 'md',
@@ -1366,14 +2504,23 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   statusBadgeStyle: 'pill',
   periodDesign: 'plain',
   entryExpandMode: 'accordion',
-  tasksDisplay: 'arrows',
+  editorialDetailLayout: 'split-actions',
+  tasksDisplay: 'editorial-dash',
   tableStripedRows: false,
   cardsGridGap: 'md',
   cardsGridGapPx: 36,
+  cardsCardWidth: 'medium',
+  cardsElementSpacing: 'md',
+  cardsVerticalGap: 'md',
   cardsBorderRadius: 'none',
   proofLinkStyle: 'pill',
-  repoLinkButtonStyle: 'icon',
+  repoLinkButtonStyle: 'auto',
+  linkArrowStyle: 'northeast',
+  reelKickerEnabled: true,
+  reelKickerText: '02 / Chronology',
+  reelHeaderAnimationEnabled: true,
   reelStatusStyle: 'minimal',
+  reelScrollMotion: 'fade-reveal',
   duotoneScrollMode: 'sticky',
   duotoneSlideNavStyle: 'chevron',
   duotoneFrameColor: 'none',
@@ -1381,7 +2528,11 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   duotoneAutoAdvance: false,
   duotoneThumbnailEffect: 'grayscale',
   duotoneThumbnailHeight: 'md',
+  duotoneRepoCtaMode: 'footer',
+  duotoneScrollFullWidthTitle: false,
   duotoneStickySwapSides: false,
+  duotoneAlternateSides: false,
+  duotoneStickyVerticalGap: 'md',
   toolsZone: 'details',
   proofZone: 'details',
   toolsEntrySide: 'left',
@@ -1553,6 +2704,18 @@ export const PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
+  {
+    value: 'asymmetric',
+    label: 'Asymmetric Split',
+    description:
+      'Strict 50/50 split — a frozen full-height visual on the left, airy editorial copy scrolling on the right.',
+  },
+  {
+    value: 'kinetic',
+    label: 'Kinetic Typo',
+    description:
+      'Brutalist type layout — the role title owns the screen, metadata tucked into the leftover gaps. No image chrome.',
+  },
   {
     value: 'editorial',
     label: 'Editorial',
@@ -1796,29 +2959,29 @@ export const PORTFOLIO_EXPERIENCE_TASKS_DISPLAY_OPTIONS: {
   description: string;
 }[] = [
   {
-    value: 'arrows',
-    label: 'Arrow list',
-    description: 'Responsibilities as a vertical list with → markers.',
+    value: 'engineering-grid',
+    label: 'Engineering Grid',
+    description: 'Compact monochrome micro-blocks in a tight grid — technical and ordered.',
   },
   {
-    value: 'dashes',
-    label: 'Dash list',
-    description: 'Clean dashed list under a Responsibilities label.',
+    value: 'cinematic-timeline',
+    label: 'Cinematic Timeline',
+    description: 'Wire vertical rail with monospaced indexes — narrative and fluid.',
   },
   {
-    value: 'checkmarks',
-    label: 'Checkmark list',
-    description: 'Each task preceded by a checkmark.',
+    value: 'editorial-dash',
+    label: 'Editorial Dash',
+    description: 'Airy typography with long em-dashes that stretch and shift on hover.',
   },
   {
-    value: 'chips',
-    label: 'Chip tags',
-    description: 'Tasks as compact pill chips in a wrapping row.',
+    value: 'accordion-stack',
+    label: 'Lined Stack',
+    description: 'Numbered full sentences with a hairline between each task — always visible.',
   },
   {
-    value: 'summary',
-    label: 'Collapsed summary',
-    description: '“N responsibilities” header — click to expand the list.',
+    value: 'architectural-index',
+    label: 'Architectural Index',
+    description: 'Structural 01 / indexes in monospace — studio index line, dark-ready.',
   },
 ];
 
@@ -1855,6 +3018,140 @@ export function experienceCardsBorderRadiusClass(
     case 'none':
     default:
       return 'rounded-none';
+  }
+}
+
+export const PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS: {
+  value: PortfolioExperienceCardsCardWidth;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'full',
+    label: 'Plein écran',
+    description: 'La carte occupe toute la largeur disponible.',
+  },
+  {
+    value: 'medium',
+    label: 'Moyen',
+    description: 'Largeur confortable, centrée dans la section.',
+  },
+  {
+    value: 'small',
+    label: 'Petit',
+    description: 'Carte plus étroite, toujours centrée.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS: {
+  value: PortfolioExperienceCardsElementSpacing;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'sm',
+    label: 'Serré',
+    description: 'Peu d’air entre titre, texte, tâches et outils.',
+  },
+  {
+    value: 'md',
+    label: 'Standard',
+    description: 'Rythme équilibré à l’intérieur de la carte.',
+  },
+  {
+    value: 'lg',
+    label: 'Large',
+    description: 'Plus d’espace entre chaque bloc de la carte.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_CARDS_VERTICAL_GAP_OPTIONS: {
+  value: PortfolioExperienceCardsVerticalGap;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'sm',
+    label: 'Serré',
+    description: 'Peu d’espace vertical entre les cartes.',
+  },
+  {
+    value: 'md',
+    label: 'Standard',
+    description: 'Écart vertical équilibré entre chaque cadre.',
+  },
+  {
+    value: 'lg',
+    label: 'Large',
+    description: 'Plus d’air vertical entre les cartes.',
+  },
+];
+
+export function resolveExperienceCardsVerticalGapPx(
+  gap: PortfolioExperienceCardsVerticalGap | undefined
+): number {
+  switch (gap) {
+    case 'sm':
+      return 12;
+    case 'lg':
+      return 72;
+    case 'md':
+    default:
+      return 40;
+  }
+}
+
+/** Stack shell width — always centered while the card width changes. */
+export function experienceCardsCardWidthClass(
+  width: PortfolioExperienceCardsCardWidth | undefined
+): string {
+  switch (width) {
+    case 'full':
+      return 'w-full max-w-none mx-auto';
+    case 'small':
+      return 'w-full max-w-xl sm:max-w-2xl lg:max-w-3xl mx-auto';
+    case 'medium':
+    default:
+      return 'w-full max-w-3xl sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto';
+  }
+}
+
+/** Padding + section gaps inside a Cards experience card. */
+export function experienceCardsElementSpacingClasses(
+  spacing: PortfolioExperienceCardsElementSpacing | undefined
+): {
+  cardPad: string;
+  sectionGap: string;
+  toolsGap: string;
+  linksGap: string;
+  tasksSpace: string;
+} {
+  switch (spacing) {
+    case 'sm':
+      return {
+        cardPad: 'px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5',
+        sectionGap: 'mt-5 sm:mt-6',
+        toolsGap: 'mt-auto pt-5 sm:pt-6',
+        linksGap: 'mt-5 sm:mt-6',
+        tasksSpace: '[&_ul]:space-y-2.5 sm:[&_ul]:space-y-3',
+      };
+    case 'lg':
+      return {
+        cardPad: 'px-6 py-7 sm:px-8 sm:py-8 lg:px-9 lg:py-9',
+        sectionGap: 'mt-10 sm:mt-12',
+        toolsGap: 'mt-auto pt-10 sm:pt-12',
+        linksGap: 'mt-9 sm:mt-10',
+        tasksSpace: '[&_ul]:space-y-5 sm:[&_ul]:space-y-6',
+      };
+    case 'md':
+    default:
+      return {
+        cardPad: 'px-5 py-5 sm:px-6 sm:py-6 lg:px-7 lg:py-7',
+        sectionGap: 'mt-8 sm:mt-9',
+        toolsGap: 'mt-auto pt-8 sm:pt-9',
+        linksGap: 'mt-7 sm:mt-8',
+        tasksSpace: '[&_ul]:space-y-4 sm:[&_ul]:space-y-5',
+      };
   }
 }
 
@@ -1990,6 +3287,228 @@ export const PORTFOLIO_EXPERIENCE_LEGACY_FIXED_SIDE_OPTIONS: {
     value: 'right',
     label: 'Right',
     description: 'The image always stays on the right.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_LEGACY_ANIMATION_STYLE_OPTIONS: {
+  value: PortfolioExperienceLegacyAnimationStyle;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'bloom',
+    label: 'Bloom',
+    description: 'Accent word scales up with color bloom effect.',
+  },
+  {
+    value: 'slide',
+    label: 'Slide',
+    description: 'Accent word slides in from below.',
+  },
+  {
+    value: 'none',
+    label: 'None',
+    description: 'No animation on the accent word.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_LEGACY_PREFIX_WEIGHT_OPTIONS: {
+  value: PortfolioExperienceLegacyPrefixWeight;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'light',
+    label: 'Light',
+    description: 'Light weight prefix for maximum typographic contrast.',
+  },
+  {
+    value: 'normal',
+    label: 'Normal',
+    description: 'Regular weight prefix.',
+  },
+  {
+    value: 'bold',
+    label: 'Bold',
+    description: 'Bold prefix for stronger presence.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_STYLE_OPTIONS: {
+  value: PortfolioExperienceLegacyAccentStyle;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'italic-bold',
+    label: 'Italic Bold',
+    description: 'Italic and bold for maximum emphasis.',
+  },
+  {
+    value: 'bold',
+    label: 'Bold',
+    description: 'Bold only, no italic.',
+  },
+  {
+    value: 'italic',
+    label: 'Italic',
+    description: 'Italic only, no bold.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_SIZE_OPTIONS: {
+  value: PortfolioExperienceLegacyAccentSize;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'dramatic',
+    label: 'Dramatic',
+    description: 'Large size difference — accent is much bigger.',
+  },
+  {
+    value: 'subtle',
+    label: 'Subtle',
+    description: 'Moderate size difference.',
+  },
+  {
+    value: 'same',
+    label: 'Same',
+    description: 'Same size as prefix text.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_LEGACY_UNDERLINE_STYLE_OPTIONS: {
+  value: PortfolioExperienceLegacyUnderlineStyle;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'solid',
+    label: 'Solid',
+    description: 'Simple solid line in accent color.',
+  },
+  {
+    value: 'gradient',
+    label: 'Gradient',
+    description: 'Faded gradient line from accent color.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_LEGACY_SUBTITLE_STYLE_OPTIONS: {
+  value: PortfolioExperienceLegacySubtitleStyle;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'micro',
+    label: 'Micro',
+    description: 'Uppercase, letter-spaced, small text.',
+  },
+  {
+    value: 'serif',
+    label: 'Serif',
+    description: 'Elegant serif typography.',
+  },
+  {
+    value: 'normal',
+    label: 'Normal',
+    description: 'Standard body text style.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_PRESS_ANIMATION_STYLE_OPTIONS: {
+  value: PortfolioExperiencePressAnimationStyle;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'staggered',
+    label: 'Staggered',
+    description: 'Words reveal one after another.',
+  },
+  {
+    value: 'simultaneous',
+    label: 'Simultaneous',
+    description: 'The whole headline appears at once.',
+  },
+  {
+    value: 'none',
+    label: 'None',
+    description: 'No entrance animation.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_PRESS_HEADING_WEIGHT_STYLE_OPTIONS: {
+  value: PortfolioExperiencePressHeadingWeightStyle;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'alternating',
+    label: 'Alternating',
+    description: 'First word light, rest black — editorial contrast.',
+  },
+  {
+    value: 'uniform',
+    label: 'Uniform',
+    description: 'Every word the same bold weight.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_PRESS_SUBTITLE_STYLE_OPTIONS: {
+  value: PortfolioExperiencePressSubtitleStyle;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'micro',
+    label: 'Micro',
+    description: 'Uppercase, letter-spaced, small.',
+  },
+  {
+    value: 'normal',
+    label: 'Normal',
+    description: 'Regular sentence-case body text.',
+  },
+  {
+    value: 'hidden',
+    label: 'Hidden',
+    description: 'Hide the intro line.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_PRESS_HEADING_ALIGNMENT_OPTIONS: {
+  value: PortfolioExperiencePressHeadingAlignment;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'left',
+    label: 'Left',
+    description: 'Flush left — the default editorial alignment.',
+  },
+  {
+    value: 'center',
+    label: 'Center',
+    description: 'Centered masthead.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_PRESS_PARALLAX_INTENSITY_OPTIONS: {
+  value: PortfolioExperiencePressParallaxIntensity;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'subtle',
+    label: 'Subtle',
+    description: 'Gentle line-by-line drift.',
+  },
+  {
+    value: 'dramatic',
+    label: 'Dramatic',
+    description: 'Stronger cascade as you scroll.',
   },
 ];
 
@@ -3720,9 +5239,38 @@ export function experienceAccentColor(accent: string): string {
   return sanitizeHex(accent, DEFAULT_EXPERIENCE_ACCENT_COLOR);
 }
 
+export function resolveSerifLeadInkColor(
+  presentation: Pick<PortfolioExperiencePresentationSettings, 'serifLeadInk' | 'accentColor'>,
+  ink: string
+): string {
+  switch (presentation.serifLeadInk) {
+    case 'accent':
+      return experienceAccentColor(presentation.accentColor);
+    case 'principal':
+      return 'var(--pf-palette-principal)';
+    case 'secondaire':
+      return 'var(--pf-palette-secondaire)';
+    default:
+      return ink;
+  }
+}
+
 /** Editorial hides the sticky section title and uses the years line as the lead. */
 export function experienceDesignUsesFlatHeader(design: PortfolioExperienceDesign): boolean {
   return design === 'editorial';
+}
+
+/** Whether a Header-subsection design is selected (applies on every Experience layout). */
+export function experienceHeaderDesignIsApplied(
+  headerDesign: PortfolioExperienceHeaderDesign | undefined,
+  _experienceDesign?: PortfolioExperienceDesign
+): boolean {
+  return Boolean(
+    headerDesign &&
+      headerDesign !== 'none' &&
+      headerDesign !== 'cards' &&
+      headerDesign !== 'duotone'
+  );
 }
 
 /** Table design owns its own header (small section label + years intro). */
@@ -3756,6 +5304,193 @@ export function resolveExperienceYearsTemplate(
   }
 }
 
+/** Two-line split for Serif lead — avoids a one-word widow on the last line. */
+export function splitSerifLeadLines(lead: string): string[] {
+  const text = lead.replace(/\s+/g, ' ').trim();
+  if (!text) return [];
+
+  const defaultSplit = text.match(/^(.*?experience)\s+(in my field\.?)$/i);
+  if (defaultSplit?.[1] && defaultSplit[2]) {
+    return [defaultSplit[1], defaultSplit[2]];
+  }
+
+  const words = text.split(' ');
+  if (words.length <= 4) return [text];
+
+  let splitAt = Math.max(2, Math.round(words.length * 0.62));
+  if (words.length - splitAt < 2) splitAt = Math.max(2, words.length - 2);
+  if (splitAt >= words.length) return [text];
+  return [words.slice(0, splitAt).join(' '), words.slice(splitAt).join(' ')];
+}
+
+export function resolveSerifLeadCopy(
+  years: number | null | undefined,
+  sectionTitle: string,
+  presentation: Pick<
+    PortfolioExperiencePresentationSettings,
+    'serifLeadLabelText' | 'serifLeadTitleText' | 'yearsPreset' | 'yearsCustom' | 'showYears'
+  >
+): { label: string; title: string } {
+  const yearsValue = years != null && years > 0 ? String(years) : '';
+  const interpolate = (text: string) => text.replaceAll('{years}', yearsValue);
+  const customLabel = presentation.serifLeadLabelText?.trim() ?? '';
+  const label = interpolate(customLabel || sectionTitle.trim() || DEFAULT_SERIF_LEAD_LABEL_TEXT);
+  const customTitle = presentation.serifLeadTitleText?.trim() ?? '';
+  if (customTitle) return { label, title: interpolate(customTitle) };
+  const showYears = presentation.showYears !== false && Boolean(yearsValue);
+  if (!showYears) return { label, title: '' };
+  return { label, title: interpolate(resolveExperienceYearsTemplate(presentation)) };
+}
+
+export function clampAccentYearsFontSize(
+  value: unknown,
+  fallback: PortfolioExperienceAccentYearsFontSize = 6
+): PortfolioExperienceAccentYearsFontSize {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (n === 4 || n === 5 || n === 6 || n === 7) return n;
+  return fallback;
+}
+
+export function clampAccentYearsLineHeight(value: unknown, fallback = 1.05): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(1.2, Math.max(1, Math.round(n * 100) / 100));
+}
+
+export function clampAccentYearsLetterSpacing(value: unknown, fallback = -0.02): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(0.02, Math.max(-0.06, Math.round(n * 1000) / 1000));
+}
+
+export function clampAccentYearsBadgePadX(value: unknown, fallback = 0.5): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(0.9, Math.max(0.16, Math.round(n * 100) / 100));
+}
+
+export function clampAccentYearsBadgePadY(value: unknown, fallback = 0.1): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(0.28, Math.max(0.02, Math.round(n * 100) / 100));
+}
+
+export function clampAccentYearsBadgeRadius(
+  value: unknown,
+  fallback: PortfolioExperienceAccentYearsRadius = 4
+): PortfolioExperienceAccentYearsRadius {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (n === 0 || n === 2 || n === 4) return n;
+  return fallback;
+}
+
+export function clampAccentYearsBottomRem(value: unknown, fallback = 3.5): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(6.5, Math.max(1.25, Math.round(n * 4) / 4));
+}
+
+function interpolateAccentYearsToken(text: string, years: number): string {
+  return text.replaceAll('{years}', years > 0 ? String(years) : '');
+}
+
+export function resolveAccentYearsCopy(
+  years: number,
+  presentation: Pick<
+    PortfolioExperiencePresentationSettings,
+    'yearsPreset' | 'yearsCustom' | 'accentYearsBadgeText' | 'accentYearsLeadText'
+  >
+): { badge: string; lead: string } {
+  const customBadge = presentation.accentYearsBadgeText?.trim() ?? '';
+  const customLead = presentation.accentYearsLeadText?.trim() ?? '';
+  const template = resolveExperienceYearsTemplate(presentation);
+  const marker = '{years}';
+  const markerIndex = template.indexOf(marker);
+  let fallbackBadge = '';
+  let fallbackLead = interpolateAccentYearsToken(template, years);
+  if (markerIndex !== -1) {
+    const after = template.slice(markerIndex + marker.length);
+    const yearsPhraseMatch = after.match(/^(\+?\s*years?\b)/i);
+    const highlightTail = yearsPhraseMatch?.[1] ?? '';
+    fallbackBadge = interpolateAccentYearsToken(`${marker}${highlightTail}`, years);
+    fallbackLead = interpolateAccentYearsToken(after.slice(highlightTail.length), years).replace(
+      /^\s+/,
+      ''
+    );
+  }
+  return {
+    badge: customBadge ? interpolateAccentYearsToken(customBadge, years) : fallbackBadge,
+    lead: customLead ? interpolateAccentYearsToken(customLead, years) : fallbackLead,
+  };
+}
+
+export function resolveAccentYearsBadgeColor(
+  presentation: Pick<
+    PortfolioExperiencePresentationSettings,
+    'accentColor' | 'accentYearsBadgeColor'
+  >
+): string {
+  switch (presentation.accentYearsBadgeColor) {
+    case 'principal':
+      return 'var(--pf-palette-principal)';
+    case 'secondaire':
+      return 'var(--pf-palette-secondaire)';
+    default:
+      return experienceAccentColor(presentation.accentColor);
+  }
+}
+
+export function accentYearsCssVars(
+  presentation: Pick<
+    PortfolioExperiencePresentationSettings,
+    'accentYearsFontSize' | 'accentYearsBadgeRadius'
+  >
+): CSSProperties {
+  const size = clampAccentYearsFontSize(presentation.accentYearsFontSize);
+  const radius = clampAccentYearsBadgeRadius(presentation.accentYearsBadgeRadius);
+  return {
+    ['--pf-exp-accent-size' as string]: ACCENT_YEARS_FONT_SIZE_CSS[size],
+    ['--pf-exp-accent-badge-radius' as string]: ACCENT_YEARS_RADIUS_CSS[radius],
+  } as CSSProperties;
+}
+
+export function accentYearsGridAnchorEnabled(
+  presentation: Pick<PortfolioExperiencePresentationSettings, 'headerDesign'>
+): boolean {
+  return presentation.headerDesign === 'editorial';
+}
+
+export function accentYearsHasCustomCopy(
+  presentation: Pick<PortfolioExperiencePresentationSettings, 'accentYearsBadgeText' | 'accentYearsLeadText'>
+): boolean {
+  return Boolean(
+    presentation.accentYearsBadgeText?.trim() || presentation.accentYearsLeadText?.trim()
+  );
+}
+
+export function resolveCenteredHeaderCopy(
+  years: number | null | undefined,
+  sectionTitle: string,
+  presentation: Pick<
+    PortfolioExperiencePresentationSettings,
+    'centeredTitleText' | 'centeredLeadText' | 'yearsPreset' | 'yearsCustom' | 'showYears'
+  >
+): { title: string; lead: string } {
+  const yearsValue = years != null && years > 0 ? String(years) : '';
+  const interpolate = (text: string) => text.replaceAll('{years}', yearsValue);
+  const customTitle = presentation.centeredTitleText?.trim() ?? '';
+  const title = portfolioSectionTitleSentenceCase(
+    interpolate(customTitle || sectionTitle.trim() || DEFAULT_CENTERED_TITLE_TEXT)
+  );
+  const customLead = presentation.centeredLeadText?.trim() ?? '';
+  if (customLead) {
+    return { title, lead: interpolate(customLead) };
+  }
+  const showYears = presentation.showYears !== false && Boolean(yearsValue);
+  if (!showYears) return { title, lead: '' };
+  return { title, lead: interpolate(resolveExperienceYearsTemplate(presentation)) };
+}
+
 export function experienceYearsClass(
   settings: Pick<
     PortfolioExperiencePresentationSettings,
@@ -3765,7 +5500,7 @@ export function experienceYearsClass(
   const isEditorial = settings.experienceDesign === 'editorial';
   const parts = [
     isEditorial
-      ? 'relative mb-0 max-w-3xl bg-transparent leading-[1.15] font-bold tracking-[-0.035em]'
+      ? 'pf-exp-accent-years relative mb-0 max-w-3xl bg-transparent font-bold'
       : 'relative mb-8 max-w-2xl border-0 bg-transparent p-0 leading-relaxed shadow-none',
   ];
 
@@ -3780,7 +5515,6 @@ export function experienceYearsClass(
       default:
         break;
     }
-    parts.push('text-3xl sm:text-4xl lg:text-5xl xl:text-6xl');
   } else {
     parts.push(experienceHeaderFontClass(settings.yearsFont, 'title'));
     switch (settings.yearsSize) {
@@ -4021,7 +5755,9 @@ export function experienceEntryShellUsesFrame(
     p.experienceDesign === 'cards' ||
     p.experienceDesign === 'reel' ||
     p.experienceDesign === 'duotone' ||
-    p.experienceDesign === 'gallery'
+    p.experienceDesign === 'gallery' ||
+    p.experienceDesign === 'asymmetric' ||
+    p.experienceDesign === 'kinetic'
   )
     return false;
   if (p.entryFrame.enabled) return true;
@@ -4289,7 +6025,9 @@ export function mergeExperiencePresentation(
     experienceDesign === 'cards' ||
     experienceDesign === 'reel' ||
     experienceDesign === 'duotone' ||
-    experienceDesign === 'gallery';
+    experienceDesign === 'gallery' ||
+    experienceDesign === 'asymmetric' ||
+    experienceDesign === 'kinetic';
   const resolvedEntryFrame = editorialFramesOff ? { ...entryFrame, enabled: false } : entryFrame;
   const resolvedStoryFrame = editorialFramesOff ? { ...storyFrame, enabled: false } : storyFrame;
   const resolvedDetailsFrame = editorialFramesOff ? { ...detailsFrame, enabled: false } : detailsFrame;
@@ -4319,6 +6057,215 @@ export function mergeExperiencePresentation(
     subtitleUppercase:
       typeof record.subtitleUppercase === 'boolean' ? record.subtitleUppercase : base.subtitleUppercase,
     headerAlignment: pick(record.headerAlignment, ['left', 'center', 'right'], base.headerAlignment),
+    headerDesign: pick(
+      record.headerDesign,
+      [
+        'none',
+        'editorial',
+        'milestone',
+        'table',
+        'reel',
+        'gallery',
+        'spotlight',
+        'loft',
+        'press',
+        'legacy',
+      ],
+      base.headerDesign === 'cards' || base.headerDesign === 'duotone'
+        ? 'none'
+        : (base.headerDesign ?? 'none')
+    ),
+    accentYearsBadgeText:
+      typeof record.accentYearsBadgeText === 'string' ? record.accentYearsBadgeText : base.accentYearsBadgeText,
+    accentYearsLeadText:
+      typeof record.accentYearsLeadText === 'string' ? record.accentYearsLeadText : base.accentYearsLeadText,
+    accentYearsFontSize: clampAccentYearsFontSize(record.accentYearsFontSize, base.accentYearsFontSize),
+    accentYearsLineHeight: clampAccentYearsLineHeight(
+      record.accentYearsLineHeight,
+      base.accentYearsLineHeight
+    ),
+    accentYearsLetterSpacing: clampAccentYearsLetterSpacing(
+      record.accentYearsLetterSpacing,
+      base.accentYearsLetterSpacing
+    ),
+    accentYearsBadgePadX: clampAccentYearsBadgePadX(record.accentYearsBadgePadX, base.accentYearsBadgePadX),
+    accentYearsBadgePadY: clampAccentYearsBadgePadY(record.accentYearsBadgePadY, base.accentYearsBadgePadY),
+    accentYearsBadgeRadius: clampAccentYearsBadgeRadius(
+      record.accentYearsBadgeRadius,
+      base.accentYearsBadgeRadius
+    ),
+    accentYearsBadgeColor: pick(
+      record.accentYearsBadgeColor,
+      ['accent', 'principal', 'secondaire'],
+      base.accentYearsBadgeColor
+    ),
+    accentYearsGridAnchor:
+      typeof record.accentYearsGridAnchor === 'boolean'
+        ? record.accentYearsGridAnchor
+        : base.accentYearsGridAnchor,
+    accentYearsBottomRem: clampAccentYearsBottomRem(
+      record.accentYearsBottomRem,
+      base.accentYearsBottomRem
+    ),
+    centeredTitleText:
+      typeof record.centeredTitleText === 'string' ? record.centeredTitleText : base.centeredTitleText,
+    centeredLeadText:
+      typeof record.centeredLeadText === 'string' ? record.centeredLeadText : base.centeredLeadText,
+    centeredAlign: pick(
+      record.centeredAlign,
+      ['left', 'center', 'right'],
+      base.centeredAlign ?? 'center'
+    ),
+    centeredLeadWeight: pick(
+      record.centeredLeadWeight,
+      ['light', 'regular', 'medium'],
+      base.centeredLeadWeight ?? 'light'
+    ),
+    centeredLeadOpacity: pick(
+      record.centeredLeadOpacity,
+      ['muted', 'balanced', 'vibrant'],
+      base.centeredLeadOpacity ?? 'balanced'
+    ),
+    centeredScale: pick(
+      record.centeredScale,
+      ['compact', 'default', 'monumental'],
+      base.centeredScale ?? 'monumental'
+    ),
+    centeredMaxWidth: pick(
+      record.centeredMaxWidth,
+      ['narrow', 'balanced', 'wide'],
+      base.centeredMaxWidth ?? 'balanced'
+    ),
+    centeredLineHeight: pick(
+      record.centeredLineHeight,
+      ['tight', 'aery', 'spaced'],
+      base.centeredLineHeight ?? 'aery'
+    ),
+    centeredDivider: pick(
+      record.centeredDivider,
+      ['none', 'dot', 'full', 'track'],
+      base.centeredDivider ?? 'none'
+    ),
+    centeredDividerOpacity: pick(
+      record.centeredDividerOpacity,
+      ['ghost', 'subtle', 'accent'],
+      base.centeredDividerOpacity ?? 'ghost'
+    ),
+    serifLeadLabelText:
+      typeof record.serifLeadLabelText === 'string' ? record.serifLeadLabelText : base.serifLeadLabelText,
+    serifLeadTitleText:
+      typeof record.serifLeadTitleText === 'string' ? record.serifLeadTitleText : base.serifLeadTitleText,
+    serifLeadAlign: pick(
+      record.serifLeadAlign,
+      ['left', 'center', 'right'],
+      base.serifLeadAlign ?? 'left'
+    ),
+    serifLeadWeight: pick(
+      record.serifLeadWeight,
+      ['light', 'regular', 'medium'],
+      base.serifLeadWeight ?? 'medium'
+    ),
+    serifLeadScale: pick(
+      record.serifLeadScale,
+      ['compact', 'default', 'monumental'],
+      base.serifLeadScale ?? 'default'
+    ),
+    serifLeadMaxWidth: pick(
+      record.serifLeadMaxWidth,
+      ['narrow', 'balanced', 'wide'],
+      base.serifLeadMaxWidth ?? 'narrow'
+    ),
+    serifLeadLineHeight: pick(
+      record.serifLeadLineHeight,
+      ['tight', 'aery', 'spaced'],
+      base.serifLeadLineHeight ?? 'tight'
+    ),
+    serifLeadTracking: pick(
+      record.serifLeadTracking,
+      ['tight', 'editorial', 'open'],
+      base.serifLeadTracking ?? 'editorial'
+    ),
+    serifLeadItalic: typeof record.serifLeadItalic === 'boolean' ? record.serifLeadItalic : base.serifLeadItalic,
+    serifLeadInk: pick(
+      record.serifLeadInk,
+      ['current', 'accent', 'principal', 'secondaire'],
+      base.serifLeadInk ?? 'current'
+    ),
+    serifLeadLabelOpacity: pick(
+      record.serifLeadLabelOpacity,
+      ['ghost', 'muted', 'ink'],
+      base.serifLeadLabelOpacity ?? 'muted'
+    ),
+    serifLeadDivider: pick(
+      record.serifLeadDivider,
+      ['none', 'dot', 'full', 'track'],
+      base.serifLeadDivider ?? 'none'
+    ),
+    serifLeadDividerOpacity: pick(
+      record.serifLeadDividerOpacity,
+      ['ghost', 'subtle', 'accent'],
+      base.serifLeadDividerOpacity ?? 'ghost'
+    ),
+    serifLeadMotion:
+      typeof record.serifLeadMotion === 'boolean' ? record.serifLeadMotion : (base.serifLeadMotion ?? true),
+    marqueeWeight: pick(
+      record.marqueeWeight,
+      ['light', 'regular', 'medium', 'semibold'],
+      base.marqueeWeight ?? 'semibold'
+    ),
+    marqueeScale: pick(
+      record.marqueeScale,
+      ['compact', 'default', 'monumental'],
+      base.marqueeScale ?? 'default'
+    ),
+    marqueeTracking: pick(
+      record.marqueeTracking,
+      ['tight', 'editorial', 'open'],
+      base.marqueeTracking ?? 'editorial'
+    ),
+    marqueeInk: pick(
+      record.marqueeInk,
+      ['current', 'accent', 'principal', 'secondaire'],
+      base.marqueeInk ?? 'current'
+    ),
+    marqueeFillOpacity: pick(
+      record.marqueeFillOpacity,
+      ['ghost', 'muted', 'ink'],
+      base.marqueeFillOpacity ?? 'muted'
+    ),
+    marqueeStyle: pick(
+      record.marqueeStyle,
+      ['alternate', 'fill', 'outline'],
+      base.marqueeStyle ?? 'alternate'
+    ),
+    marqueeDirection: pick(
+      record.marqueeDirection,
+      ['ltr', 'rtl'],
+      base.marqueeDirection ?? 'ltr'
+    ),
+    marqueeSpeed: pick(
+      record.marqueeSpeed,
+      ['slow', 'cruise', 'fast'],
+      base.marqueeSpeed ?? 'cruise'
+    ),
+    marqueeEdgeFade: pick(
+      record.marqueeEdgeFade,
+      ['none', 'soft', 'wide'],
+      base.marqueeEdgeFade ?? 'soft'
+    ),
+    marqueeSeparator: pick(
+      record.marqueeSeparator,
+      ['none', 'dot'],
+      base.marqueeSeparator ?? 'dot'
+    ),
+    marqueeSeparatorColor: pick(
+      record.marqueeSeparatorColor,
+      ['current', 'accent', 'principal', 'secondaire'],
+      base.marqueeSeparatorColor ?? 'accent'
+    ),
+    marqueeMotion: typeof record.marqueeMotion === 'boolean' ? record.marqueeMotion : (base.marqueeMotion ?? true),
+    marqueeScrollLink:
+      typeof record.marqueeScrollLink === 'boolean' ? record.marqueeScrollLink : (base.marqueeScrollLink ?? true),
     sectionLayout: isPortfolioExperienceSectionLayout(record.sectionLayout)
       ? record.sectionLayout
       : (base.sectionLayout ?? 'stacked'),
@@ -4370,6 +6317,37 @@ export function mergeExperiencePresentation(
       ['current', 'accent', 'simple'],
       base.galleryBigTitleColor ?? 'current'
     ),
+    galleryHeaderAnimationEnabled:
+      typeof record.galleryHeaderAnimationEnabled === 'boolean'
+        ? record.galleryHeaderAnimationEnabled
+        : (base.galleryHeaderAnimationEnabled ?? true),
+    galleryHeaderAnimationStyle: pick(
+      record.galleryHeaderAnimationStyle,
+      ['dramatic', 'subtle', 'none'],
+      base.galleryHeaderAnimationStyle ?? 'dramatic'
+    ),
+    gallerySecondaryTitleStyle: pick(
+      record.gallerySecondaryTitleStyle,
+      ['editorial', 'uniform'],
+      base.gallerySecondaryTitleStyle ?? 'editorial'
+    ),
+    gallerySecondaryTitleText:
+      typeof record.gallerySecondaryTitleText === 'string'
+        ? record.gallerySecondaryTitleText
+        : (base.gallerySecondaryTitleText ?? "Roles I've taken on"),
+    galleryRoleCountStyle: pick(
+      record.galleryRoleCountStyle,
+      ['micro', 'normal', 'hidden'],
+      base.galleryRoleCountStyle ?? 'micro'
+    ),
+    galleryRoleCountText:
+      typeof record.galleryRoleCountText === 'string'
+        ? record.galleryRoleCountText
+        : (base.galleryRoleCountText ?? '{count} {count === 1 ? "role" : "roles"} — click any card for the full story'),
+    galleryScrollParallaxEnabled:
+      typeof record.galleryScrollParallaxEnabled === 'boolean'
+        ? record.galleryScrollParallaxEnabled
+        : (base.galleryScrollParallaxEnabled ?? true),
     spotlightBigTitleEnabled:
       typeof record.spotlightBigTitleEnabled === 'boolean'
         ? record.spotlightBigTitleEnabled
@@ -4400,6 +6378,47 @@ export function mergeExperiencePresentation(
       ['cover', 'glass'],
       base.spotlightThumbnailFit ?? 'cover'
     ),
+    spotlightHeaderAnimationEnabled:
+      typeof record.spotlightHeaderAnimationEnabled === 'boolean'
+        ? record.spotlightHeaderAnimationEnabled
+        : (base.spotlightHeaderAnimationEnabled ?? true),
+    spotlightMarqueeSpeed: pick(
+      record.spotlightMarqueeSpeed,
+      ['slow', 'medium', 'fast'],
+      base.spotlightMarqueeSpeed ?? 'medium'
+    ),
+    spotlightMarqueeDirection: pick(
+      record.spotlightMarqueeDirection,
+      ['left', 'right'],
+      base.spotlightMarqueeDirection ?? 'left'
+    ),
+    spotlightMarqueePauseOnHover:
+      typeof record.spotlightMarqueePauseOnHover === 'boolean'
+        ? record.spotlightMarqueePauseOnHover
+        : (base.spotlightMarqueePauseOnHover ?? true),
+    spotlightMarqueeWeight: pick(
+      record.spotlightMarqueeWeight,
+      ['light', 'normal', 'bold'],
+      base.spotlightMarqueeWeight ?? 'normal'
+    ),
+    spotlightMarqueeStyle: pick(
+      record.spotlightMarqueeStyle,
+      ['outline', 'fill', 'mixed'],
+      base.spotlightMarqueeStyle ?? 'mixed'
+    ),
+    spotlightMarqueeGradientFade:
+      typeof record.spotlightMarqueeGradientFade === 'boolean'
+        ? record.spotlightMarqueeGradientFade
+        : (base.spotlightMarqueeGradientFade ?? true),
+    spotlightMarqueeGap: pick(
+      record.spotlightMarqueeGap,
+      ['sm', 'md', 'lg'],
+      base.spotlightMarqueeGap ?? 'md'
+    ),
+    spotlightScrollSpeedBoost:
+      typeof record.spotlightScrollSpeedBoost === 'boolean'
+        ? record.spotlightScrollSpeedBoost
+        : (base.spotlightScrollSpeedBoost ?? false),
     loftHeadingEnabled:
       typeof record.loftHeadingEnabled === 'boolean'
         ? record.loftHeadingEnabled
@@ -4408,11 +6427,53 @@ export function mergeExperiencePresentation(
       typeof record.loftHeadingText === 'string' && record.loftHeadingText.trim()
         ? record.loftHeadingText
         : (base.loftHeadingText ?? "Roles I've taken on"),
+    loftHeaderAnimationEnabled:
+      typeof record.loftHeaderAnimationEnabled === 'boolean'
+        ? record.loftHeaderAnimationEnabled
+        : (base.loftHeaderAnimationEnabled ?? true),
+    loftHeadingItalicWord: pick(
+      record.loftHeadingItalicWord,
+      ['first', 'last', 'none'],
+      base.loftHeadingItalicWord ?? 'first'
+    ),
+    loftHeadingFontWeight: pick(
+      record.loftHeadingFontWeight,
+      ['light-to-bold', 'uniform'],
+      base.loftHeadingFontWeight ?? 'light-to-bold'
+    ),
+    loftLabelText:
+      typeof record.loftLabelText === 'string'
+        ? record.loftLabelText
+        : (base.loftLabelText ?? 'Experience'),
+    loftLabelStyle: pick(
+      record.loftLabelStyle,
+      ['uppercase', 'lowercase', 'capitalize'],
+      base.loftLabelStyle ?? 'uppercase'
+    ),
+    loftLabelPosition: pick(
+      record.loftLabelPosition,
+      ['top-aligned', 'center-aligned'],
+      base.loftLabelPosition ?? 'top-aligned'
+    ),
+    loftScrollEffectEnabled:
+      typeof record.loftScrollEffectEnabled === 'boolean'
+        ? record.loftScrollEffectEnabled
+        : (base.loftScrollEffectEnabled ?? true),
+    loftScrollEffectStyle: pick(
+      record.loftScrollEffectStyle,
+      ['slide-right', 'fade-only'],
+      base.loftScrollEffectStyle ?? 'slide-right'
+    ),
     loftThumbnailFit: pick(record.loftThumbnailFit, ['cover', 'glass'], base.loftThumbnailFit ?? 'cover'),
     loftThumbnailRadius: pick(
       record.loftThumbnailRadius,
       ['none', 'md', 'xl'],
       base.loftThumbnailRadius ?? 'md'
+    ),
+    loftHoverEffect: pick(
+      record.loftHoverEffect,
+      ['curtain', 'magnetic', 'press'],
+      base.loftHoverEffect ?? 'curtain'
     ),
     loftColumns: (() => {
       const raw = record.loftColumns;
@@ -4437,6 +6498,39 @@ export function mergeExperiencePresentation(
       record.pressThumbnailRadius,
       ['none', 'md', 'xl'],
       base.pressThumbnailRadius ?? 'md'
+    ),
+    pressHeaderAnimationEnabled:
+      typeof record.pressHeaderAnimationEnabled === 'boolean'
+        ? record.pressHeaderAnimationEnabled
+        : (base.pressHeaderAnimationEnabled ?? true),
+    pressHeaderAnimationStyle: pick(
+      record.pressHeaderAnimationStyle,
+      ['staggered', 'simultaneous', 'none'],
+      base.pressHeaderAnimationStyle ?? 'staggered'
+    ),
+    pressHeadingWeightStyle: pick(
+      record.pressHeadingWeightStyle,
+      ['alternating', 'uniform'],
+      base.pressHeadingWeightStyle ?? 'alternating'
+    ),
+    pressSubtitleStyle: pick(
+      record.pressSubtitleStyle,
+      ['micro', 'normal', 'hidden'],
+      base.pressSubtitleStyle ?? 'micro'
+    ),
+    pressHeadingAlignment: pick(
+      record.pressHeadingAlignment,
+      ['left', 'center'],
+      base.pressHeadingAlignment ?? 'left'
+    ),
+    pressScrollParallaxEnabled:
+      typeof record.pressScrollParallaxEnabled === 'boolean'
+        ? record.pressScrollParallaxEnabled
+        : (base.pressScrollParallaxEnabled ?? true),
+    pressScrollParallaxIntensity: pick(
+      record.pressScrollParallaxIntensity,
+      ['subtle', 'dramatic'],
+      base.pressScrollParallaxIntensity ?? 'subtle'
     ),
     legacyHeadingEnabled:
       typeof record.legacyHeadingEnabled === 'boolean'
@@ -4479,6 +6573,48 @@ export function mergeExperiencePresentation(
       typeof record.legacyShowTasks === 'boolean'
         ? record.legacyShowTasks
         : (base.legacyShowTasks ?? false),
+    legacyHeaderAnimationEnabled:
+      typeof record.legacyHeaderAnimationEnabled === 'boolean'
+        ? record.legacyHeaderAnimationEnabled
+        : (base.legacyHeaderAnimationEnabled ?? true),
+    legacyHeaderAnimationStyle: pick(
+      record.legacyHeaderAnimationStyle,
+      ['bloom', 'slide', 'none'],
+      base.legacyHeaderAnimationStyle ?? 'bloom'
+    ),
+    legacyPrefixWeight: pick(
+      record.legacyPrefixWeight,
+      ['light', 'normal', 'bold'],
+      base.legacyPrefixWeight ?? 'light'
+    ),
+    legacyAccentStyle: pick(
+      record.legacyAccentStyle,
+      ['italic-bold', 'bold', 'italic'],
+      base.legacyAccentStyle ?? 'italic-bold'
+    ),
+    legacyAccentSize: pick(
+      record.legacyAccentSize,
+      ['dramatic', 'subtle', 'same'],
+      base.legacyAccentSize ?? 'dramatic'
+    ),
+    legacyAccentUnderline:
+      typeof record.legacyAccentUnderline === 'boolean'
+        ? record.legacyAccentUnderline
+        : (base.legacyAccentUnderline ?? true),
+    legacyAccentUnderlineStyle: pick(
+      record.legacyAccentUnderlineStyle,
+      ['solid', 'gradient'],
+      base.legacyAccentUnderlineStyle ?? 'solid'
+    ),
+    legacySubtitleStyle: pick(
+      record.legacySubtitleStyle,
+      ['micro', 'serif', 'normal'],
+      base.legacySubtitleStyle ?? 'micro'
+    ),
+    legacyScrollParallaxEnabled:
+      typeof record.legacyScrollParallaxEnabled === 'boolean'
+        ? record.legacyScrollParallaxEnabled
+        : (base.legacyScrollParallaxEnabled ?? true),
     itemGap: pick(record.itemGap, ['sm', 'md', 'lg', 'xl'], base.itemGap),
     cardsGridGap: isPortfolioExperienceCardsGridGap(record.cardsGridGap)
       ? record.cardsGridGap
@@ -4725,11 +6861,15 @@ export function mergeExperiencePresentation(
       ['accordion', 'all-open'],
       base.entryExpandMode ?? 'accordion'
     ),
-    tasksDisplay: pick(
-      record.tasksDisplay,
-      ['arrows', 'dashes', 'checkmarks', 'chips', 'summary'],
-      base.tasksDisplay ?? 'arrows'
+    editorialDetailLayout: pick(
+      record.editorialDetailLayout,
+      ['stacked', 'split-actions'],
+      base.editorialDetailLayout ?? 'split-actions'
     ),
+    tasksDisplay:
+      migrateExperienceTasksDisplay(record.tasksDisplay) ??
+      migrateExperienceTasksDisplay(base.tasksDisplay) ??
+      'editorial-dash',
     tableStripedRows:
       typeof record.tableStripedRows === 'boolean'
         ? record.tableStripedRows
@@ -4739,6 +6879,21 @@ export function mergeExperiencePresentation(
       ['none', 'md', 'xl'],
       base.cardsBorderRadius ?? 'none'
     ),
+    cardsCardWidth: pick(
+      record.cardsCardWidth,
+      ['full', 'medium', 'small'],
+      base.cardsCardWidth ?? 'medium'
+    ),
+    cardsElementSpacing: pick(
+      record.cardsElementSpacing,
+      ['sm', 'md', 'lg'],
+      base.cardsElementSpacing ?? 'md'
+    ),
+    cardsVerticalGap: pick(
+      record.cardsVerticalGap,
+      ['sm', 'md', 'lg'],
+      base.cardsVerticalGap ?? 'md'
+    ),
     proofLinkStyle: pick(
       record.proofLinkStyle,
       ['pill', 'soft', 'outline', 'plain', 'accent', 'underline'],
@@ -4746,13 +6901,38 @@ export function mergeExperiencePresentation(
     ),
     repoLinkButtonStyle: pick(
       record.repoLinkButtonStyle,
-      ['underline', 'icon', 'solid', 'ghost'],
-      base.repoLinkButtonStyle ?? 'icon'
+      PORTFOLIO_EXPERIENCE_REPO_LINK_STYLES,
+      base.repoLinkButtonStyle ?? 'auto'
     ),
+    linkArrowStyle: pick(
+      record.linkArrowStyle,
+      PORTFOLIO_EXPERIENCE_LINK_ARROW_STYLES,
+      base.linkArrowStyle ?? 'northeast'
+    ),
+    reelKickerEnabled:
+      typeof record.reelKickerEnabled === 'boolean'
+        ? record.reelKickerEnabled
+        : (base.reelKickerEnabled ?? true),
+    reelKickerText:
+      typeof record.reelKickerText === 'string'
+        ? record.reelKickerText
+        : (base.reelKickerText ?? '02 / Chronology'),
+    reelHeaderAnimationEnabled:
+      typeof record.reelHeaderAnimationEnabled === 'boolean'
+        ? record.reelHeaderAnimationEnabled
+        : (base.reelHeaderAnimationEnabled ?? true),
     reelStatusStyle: pick(
       record.reelStatusStyle,
       ['minimal', 'badge', 'bar', 'square', 'plain'],
       base.reelStatusStyle ?? 'minimal'
+    ),
+    reelScrollMotion: pick(
+      record.reelScrollMotion,
+      ['index-distort', 'fade-reveal', 'sticky-vertical'],
+      // Migrate retired sticky-snap → sticky-vertical
+      record.reelScrollMotion === 'sticky-snap'
+        ? 'sticky-vertical'
+        : (base.reelScrollMotion ?? 'fade-reveal')
     ),
     duotoneScrollMode: pick(
       record.duotoneScrollMode,
@@ -4788,10 +6968,28 @@ export function mergeExperiencePresentation(
       ['sm', 'md', 'lg'],
       base.duotoneThumbnailHeight ?? 'md'
     ),
+    duotoneRepoCtaMode: pick(
+      record.duotoneRepoCtaMode,
+      ['footer', 'thumb-cursor'],
+      base.duotoneRepoCtaMode ?? 'footer'
+    ),
+    duotoneScrollFullWidthTitle:
+      typeof record.duotoneScrollFullWidthTitle === 'boolean'
+        ? record.duotoneScrollFullWidthTitle
+        : (base.duotoneScrollFullWidthTitle ?? false),
     duotoneStickySwapSides:
       typeof record.duotoneStickySwapSides === 'boolean'
         ? record.duotoneStickySwapSides
         : (base.duotoneStickySwapSides ?? false),
+    duotoneAlternateSides:
+      typeof record.duotoneAlternateSides === 'boolean'
+        ? record.duotoneAlternateSides
+        : (base.duotoneAlternateSides ?? false),
+    duotoneStickyVerticalGap: pick(
+      record.duotoneStickyVerticalGap,
+      ['sm', 'md', 'lg', 'xl'],
+      base.duotoneStickyVerticalGap ?? 'md'
+    ),
     toolsZone: pick(record.toolsZone, ['story', 'details', 'entry'], base.toolsZone),
     proofZone: (() => {
       const proofZoneRaw = record.proofZone;

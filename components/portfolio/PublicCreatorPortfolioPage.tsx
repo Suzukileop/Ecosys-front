@@ -2,8 +2,10 @@
 
 import {
   Fragment,
+  useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -38,10 +40,14 @@ import { PortfolioSectionShell } from '@/components/portfolio/PortfolioSectionSh
 import {
   PortfolioSplitScreenFrame,
 } from '@/components/portfolio/portfolio-split-screen';
-import { PortfolioSettingsButton, PortfolioSettingsModal } from '@/components/portfolio/PortfolioSettingsModal';
 import { PortfolioThemeRoot } from '@/components/portfolio/PortfolioThemeRoot';
 import { FaqSectionIllustration } from '@/components/portfolio/FaqSectionIllustration';
 import { usePortfolioSettings } from '@/components/portfolio/use-portfolio-settings';
+import {
+  isPortfolioStudioPreviewMessage,
+  PORTFOLIO_STUDIO_PREVIEW_SOURCE,
+} from '@/lib/portfolio-studio-preview';
+import { scrollToPortfolioSection } from '@/components/portfolio/portfolio-nav-top-clearance';
 import { writeHeroBannerDesignHint } from '@/components/portfolio/portfolio-hero-banner-hint';
 import {
   DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN,
@@ -52,11 +58,10 @@ import { resolveHeroLayoutDivision } from '@/components/portfolio/portfolio-hero
 import {
   EditorialContactSection,
   EditorialExperienceList,
-  EditorialExperienceYears,
+  ExperienceEditorialHeader,
+  ExperienceMilestoneHeader,
   MilestoneExperienceList,
-  TableExperienceHeader,
   TableExperienceList,
-  CardsExperienceHeader,
   CardsExperienceList,
   ReelExperienceList,
   DuotoneExperienceList,
@@ -65,6 +70,8 @@ import {
   LoftExperienceList,
   PressExperienceList,
   LegacyExperienceList,
+  AsymmetricExperienceList,
+  KineticExperienceList,
   EditorialFaqList,
   EditorialGallerySection,
   EditorialPortfolioFooter,
@@ -82,6 +89,17 @@ import {
   SIDE_INFO_ICONS,
   ServicesOrderCtaHrefProvider,
 } from '@/components/portfolio/portfolio-section-primitives';
+import {
+  ExperienceCardsHeader,
+  ExperienceDuotoneHeader,
+  ExperienceGalleryHeader,
+  ExperienceLegacyHeader,
+  ExperienceLoftHeader,
+  ExperiencePressHeader,
+  ExperienceReelHeader,
+  ExperienceSpotlightHeader,
+  ExperienceTableHeader,
+} from '@/components/portfolio/experience-header-designs';
 import {
   isProjectsBoardDesign,
   ProjectsBoardGallery,
@@ -114,6 +132,7 @@ import {
 import {
   isProjectsCarouselDesign,
   ProjectsCarouselSection,
+  ProjectsCarouselSectionHeader,
 } from '@/components/portfolio/portfolio-work-projects-carousel';
 import {
   isProjectsSpotlightDesign,
@@ -283,11 +302,14 @@ import {
   experienceDesignUsesFlatHeader,
   experienceDesignUsesTableHeader,
   experienceDesignUsesCardsHeader,
+  experienceHeaderDesignIsApplied,
+  accentYearsHasCustomCopy,
   experienceHeaderFontClass,
   experienceHeaderFontStyle,
   experienceSubtitleColorStyle,
   experienceTitleColorStyle,
 } from '@/components/portfolio/portfolio-experience-settings';
+import { PortfolioLinkArrowProvider } from '@/components/portfolio/portfolio-link-buttons';
 import {
   pickContactPresentationSettings,
   resolveContactSectionSubtitle,
@@ -363,6 +385,8 @@ type PublicCreatorPortfolioPageProps = {
   isAuthenticated: boolean;
   locationLabel: string | null;
   portfolioPosts?: MarketplaceContentItem[];
+  /** Dashboard Live Preview iframe — hide owner chrome and follow parent settings. */
+  studioEmbed?: boolean;
 };
 
 function socialLabel(platform: string): string {
@@ -687,38 +711,38 @@ export function PublicCreatorPortfolioPage({
   isAuthenticated,
   locationLabel,
   portfolioPosts,
+  studioEmbed = false,
 }: PublicCreatorPortfolioPageProps) {
   const { user, isLoading: authLoading } = useAuth();
   const isPortfolioOwner = !authLoading && user?.id === creatorId;
+  const hideOwnerChrome = studioEmbed;
   const resolvedContactEmail = primaryContactEmail(profile);
   const [profileVisits, setProfileVisits] = useState<number>(profile.profileVisits ?? 0);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const {
     settings,
-    updateSection,
-    resetSettings,
-    resetBuiltinTheme,
-    setThemeId,
-    updateNavigation,
-    updateGlobal,
-    flushPendingSave,
-    persistStatus,
-    saveCustomTheme,
-    renameCustomTheme,
-    duplicateTheme,
-    deleteCustomTheme,
     setColorMode,
-    patchGlobalPalette,
-    setGlobalPalettePair,
-    undoSettings,
-    redoSettings,
-    canUndo,
-    canRedo,
+    applyExternalSettings,
   } =
     usePortfolioSettings(creatorId, {
       initialSettings: profile.portfolioSettings,
-      canEdit: isPortfolioOwner,
+      canEdit: isPortfolioOwner && !hideOwnerChrome,
     });
+  const previewSectionFocusRef = useRef<(sectionId: string) => void>(() => {});
+
+  const cyclePortfolioColorMode = useCallback(() => {
+    const next = (settings.global.colorMode ?? 'dark') === 'light' ? 'dark' : 'light';
+    if (hideOwnerChrome && typeof window !== 'undefined' && window.parent !== window) {
+      window.parent.postMessage(
+        {
+          source: PORTFOLIO_STUDIO_PREVIEW_SOURCE,
+          type: 'color-mode-change',
+          mode: next,
+        },
+        window.location.origin
+      );
+    }
+    setColorMode(next);
+  }, [hideOwnerChrome, setColorMode, settings.global.colorMode]);
 
   useEffect(() => {
     const design = normalizePortfolioHeroBannerDesign(
@@ -726,32 +750,6 @@ export function PublicCreatorPortfolioPage({
     );
     writeHeroBannerDesignHint([creatorId, profile.id, profile.username], design);
   }, [creatorId, profile.id, profile.username, settings.hero.heroBannerDesign]);
-
-  useEffect(() => {
-    if (!isPortfolioOwner) return;
-    if (!(settings.global.settingsShortcutEnabled ?? true)) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      const isComma = event.key === ',' || event.code === 'Comma';
-      if (!isComma || !(event.metaKey || event.ctrlKey)) return;
-
-      event.preventDefault();
-      setSettingsOpen((open) => {
-        if (open) {
-          flushPendingSave();
-          return false;
-        }
-        return true;
-      });
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [
-    isPortfolioOwner,
-    settings.global.settingsShortcutEnabled,
-    flushPendingSave,
-  ]);
 
   const workItems = useMemo(() => {
     const posts = portfolioPosts ?? profile.portfolioPosts ?? [];
@@ -777,11 +775,16 @@ export function PublicCreatorPortfolioPage({
         .map((item) => {
           const raw = typeof item.mediaUrl === 'string' ? item.mediaUrl.trim() : '';
           if (!raw) return null;
+          
+          // Priority: 1) External linkUrl, 2) Section link with work ID, 3) Marketplace fallback
+          const externalUrl = item.linkUrl?.trim();
+          const workHref = externalUrl || `#work-${item.id}`;
+          
           return {
             id: item.id,
             title: item.title?.trim() || 'Untitled project',
             imageUrl: raw,
-            href: `/marketplace/content/${item.id}`,
+            href: workHref,
           };
         })
         .filter((item): item is NonNullable<typeof item> => Boolean(item)),
@@ -895,6 +898,40 @@ export function PublicCreatorPortfolioPage({
   );
 
   const navSocialLinkOptions = navProfileLinkOptions;
+
+  useEffect(() => {
+    if (!hideOwnerChrome || typeof window === 'undefined' || window.parent === window) return;
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (!isPortfolioStudioPreviewMessage(event.data)) return;
+      if (event.data.type === 'apply-settings') {
+        applyExternalSettings(event.data.settings);
+        return;
+      }
+      if (event.data.type === 'scroll-to-section') {
+        const sectionId = event.data.sectionId;
+        requestAnimationFrame(() => previewSectionFocusRef.current(sectionId));
+      }
+    };
+
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [hideOwnerChrome, applyExternalSettings]);
+
+  useEffect(() => {
+    if (!hideOwnerChrome || typeof window === 'undefined' || window.parent === window) return;
+
+    const meta = {
+      availableTools: strengthNames,
+      availableWorks: availableHeroWorks.map(({ id, title, imageUrl }) => ({ id, title, imageUrl })),
+      navSocialLinkOptions,
+    };
+    window.parent.postMessage(
+      { source: PORTFOLIO_STUDIO_PREVIEW_SOURCE, type: 'ready', meta },
+      window.location.origin
+    );
+  }, [hideOwnerChrome, strengthNames, availableHeroWorks, navSocialLinkOptions]);
 
   const navChromeLinks = useMemo(() => {
     const structuredBar =
@@ -1343,6 +1380,17 @@ export function PublicCreatorPortfolioPage({
       setPageSlideDirection(targetIndex > currentIndex ? 1 : -1);
     }
     setActivePageId(normalized);
+  };
+
+  previewSectionFocusRef.current = (sectionId: string) => {
+    if (isPagesMode) {
+      navigateToPage(sectionId);
+      return;
+    }
+    if (scrollToPortfolioSection(sectionId)) return;
+    if (sectionId === 'hero') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const heroContactHref = isPagesMode ? `#${pagesContactTarget}` : '#footer';
@@ -2188,19 +2236,37 @@ export function PublicCreatorPortfolioPage({
             subtitle={workSectionSubtitle || undefined}
             titleColor={workPresentation.titleColor}
             subtitleColor={workPresentation.subtitleColor}
+            titleClassName={workHeaderTypography.title.className}
+            titleStyle={workHeaderTypography.title.style}
+            trailing={marketplaceTrailing}
+            entryCount={workItems.length}
+            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
             className={aside ? 'w-full' : undefined}
           />
-        ) : projectsGrid ? null : projectsCarousel ? null : projectsSpotlight ? (
+        ) : projectsGrid ? null : projectsCarousel ? (
+          <ProjectsCarouselSectionHeader
+            title={workSectionTitle}
+            subtitle={workSectionSubtitle || undefined}
+            titleColor={workPresentation.titleColor}
+            subtitleColor={workPresentation.subtitleColor}
+            titleClassName={workHeaderTypography.title.className}
+            titleStyle={workHeaderTypography.title.style}
+            trailing={marketplaceTrailing}
+            entryCount={workItems.length}
+            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
+            className={aside ? 'w-full' : undefined}
+          />
+        ) : projectsSpotlight ? (
           <ProjectsSpotlightSectionHeader
             title={workSectionTitle}
             subtitle={workSectionSubtitle || undefined}
-            titleColor={
-              workPresentation.ctaColor ||
-              workPresentation.categoryActiveColor ||
-              workPresentation.titleColor
-            }
+            titleColor={workPresentation.titleColor}
             subtitleColor={workPresentation.subtitleColor}
+            titleClassName={workHeaderTypography.title.className}
+            titleStyle={workHeaderTypography.title.style}
             trailing={marketplaceTrailing}
+            entryCount={workItems.length}
+            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
             className={aside ? 'w-full' : undefined}
           />
         ) : projectsShowcase ? (
@@ -2209,7 +2275,11 @@ export function PublicCreatorPortfolioPage({
             subtitle={workSectionSubtitle || undefined}
             titleColor={workPresentation.titleColor}
             subtitleColor={workPresentation.subtitleColor}
+            titleClassName={workHeaderTypography.title.className}
+            titleStyle={workHeaderTypography.title.style}
             trailing={marketplaceTrailing}
+            entryCount={workItems.length}
+            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
             className={aside ? 'w-full' : undefined}
           />
         ) : projectsEditorial ? (
@@ -2246,6 +2316,8 @@ export function PublicCreatorPortfolioPage({
             titleClassName={workHeaderTypography.title.className}
             titleStyle={workHeaderTypography.title.style}
             trailing={marketplaceTrailing}
+            entryCount={workItems.length}
+            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
             className={aside ? 'w-full' : undefined}
           />
         ) : projectsSpec ? (
@@ -2268,6 +2340,8 @@ export function PublicCreatorPortfolioPage({
             titleClassName={workHeaderTypography.title.className}
             titleStyle={workHeaderTypography.title.style}
             trailing={marketplaceTrailing}
+            entryCount={workItems.length}
+            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
             className={aside ? 'w-full' : undefined}
           />
         ) : projectsSplit ? (
@@ -2276,6 +2350,7 @@ export function PublicCreatorPortfolioPage({
             subtitle={workSectionSubtitle || undefined}
             titleColor={workPresentation.titleColor}
             subtitleColor={workPresentation.subtitleColor}
+            trailing={marketplaceTrailing}
             className={aside ? 'w-full' : undefined}
           />
         ) : (
@@ -2336,10 +2411,6 @@ export function PublicCreatorPortfolioPage({
             ) : projectsCarousel ? (
               <ProjectsCarouselSection
                 title={workSectionTitle}
-                subtitle={workSectionSubtitle || undefined}
-                titleColor={workPresentation.titleColor}
-                subtitleColor={workPresentation.subtitleColor}
-                trailing={marketplaceTrailing}
                 items={workItems}
                 presentation={workPresentation}
               />
@@ -2652,8 +2723,121 @@ export function PublicCreatorPortfolioPage({
         );
       }
       case 'experience': {
+        const showExperienceYears =
+          settings.experience.showYears &&
+          profile.yearsOfExperience != null &&
+          profile.yearsOfExperience > 0;
+        const appliedHeaderDesign = experiencePresentation.headerDesign ?? 'none';
+        const showAppliedHeaderZone = experienceHeaderDesignIsApplied(
+          appliedHeaderDesign,
+          experiencePresentation.experienceDesign
+        );
+        const wrapAppliedExperienceHeader = (node: ReactNode) => (
+          <div className="pf-exp-applied-header relative w-full">{node}</div>
+        );
+        let appliedExperienceHeaderZone: ReactNode = null;
+        if (showAppliedHeaderZone) {
+          switch (appliedHeaderDesign) {
+            case 'editorial':
+              appliedExperienceHeaderZone =
+                showExperienceYears || accentYearsHasCustomCopy(experiencePresentation)
+                  ? wrapAppliedExperienceHeader(
+                      <ExperienceEditorialHeader
+                        years={profile.yearsOfExperience ?? 0}
+                        presentation={experiencePresentation}
+                      />
+                    )
+                  : null;
+              break;
+            case 'milestone':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
+                <ExperienceMilestoneHeader
+                  sectionTitle={experienceSectionTitle}
+                  sectionSubtitle={experienceSectionSubtitle}
+                  years={profile.yearsOfExperience}
+                  presentation={experiencePresentation}
+                />
+              );
+              break;
+            case 'table':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
+                <ExperienceTableHeader
+                  sectionTitle={experienceSectionTitle}
+                  sectionSubtitle={experienceSectionSubtitle}
+                  years={profile.yearsOfExperience}
+                  presentation={experiencePresentation}
+                />
+              );
+              break;
+            case 'cards':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
+                <ExperienceCardsHeader
+                  sectionTitle={experienceSectionTitle}
+                  sectionSubtitle={experienceSectionSubtitle}
+                  years={profile.yearsOfExperience}
+                  presentation={experiencePresentation}
+                />
+              );
+              break;
+            case 'reel':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
+                <ExperienceReelHeader
+                  sectionTitle={experienceSectionTitle}
+                  sectionSubtitle={experienceSectionSubtitle}
+                  presentation={experiencePresentation}
+                />
+              );
+              break;
+            case 'duotone':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
+                <ExperienceDuotoneHeader
+                  sectionTitle={experienceSectionTitle}
+                  sectionSubtitle={experienceSectionSubtitle}
+                  presentation={experiencePresentation}
+                />
+              );
+              break;
+            case 'gallery':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
+                <ExperienceGalleryHeader
+                  roleCount={experienceBlocks.length}
+                  presentation={experiencePresentation}
+                />
+              );
+              break;
+            case 'spotlight':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
+                <ExperienceSpotlightHeader presentation={experiencePresentation} />
+              );
+              break;
+            case 'loft':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
+                <ExperienceLoftHeader presentation={experiencePresentation} />
+              );
+              break;
+            case 'press':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
+                <ExperiencePressHeader presentation={experiencePresentation} />
+              );
+              break;
+            case 'legacy':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
+                <ExperienceLegacyHeader presentation={experiencePresentation} />
+              );
+              break;
+            default:
+              appliedExperienceHeaderZone = null;
+          }
+        }
+
+        const wrapExperienceLinks = (node: ReactNode) => (
+          <PortfolioLinkArrowProvider value={experiencePresentation.linkArrowStyle ?? 'northeast'}>
+            {node}
+          </PortfolioLinkArrowProvider>
+        );
+
         if (experiencePresentation.experienceDesign === 'reel') {
-          return (
+          return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
               background={experiencePresentation}
@@ -2664,12 +2848,13 @@ export function PublicCreatorPortfolioPage({
               bottomSpacingClass=""
               contentLayout={sectionContentLayout}
             >
+              {appliedExperienceHeaderZone}
               <ReelExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
             </PortfolioSectionShell>
           );
         }
         if (experiencePresentation.experienceDesign === 'duotone') {
-          return (
+          return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
               background={experiencePresentation}
@@ -2680,12 +2865,13 @@ export function PublicCreatorPortfolioPage({
               bottomSpacingClass=""
               contentLayout={sectionContentLayout}
             >
+              {appliedExperienceHeaderZone}
               <DuotoneExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
             </PortfolioSectionShell>
           );
         }
         if (experiencePresentation.experienceDesign === 'gallery') {
-          return (
+          return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
               background={experiencePresentation}
@@ -2698,12 +2884,13 @@ export function PublicCreatorPortfolioPage({
               bottomSpacingStyle={sectionBottomSpacingStyle}
               contentLayout={sectionContentLayout}
             >
+              {appliedExperienceHeaderZone}
               <GalleryExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
             </PortfolioSectionShell>
           );
         }
         if (experiencePresentation.experienceDesign === 'spotlight') {
-          return (
+          return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
               background={experiencePresentation}
@@ -2716,12 +2903,13 @@ export function PublicCreatorPortfolioPage({
               bottomSpacingStyle={sectionBottomSpacingStyle}
               contentLayout={sectionContentLayout}
             >
+              {appliedExperienceHeaderZone}
               <SpotlightExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
             </PortfolioSectionShell>
           );
         }
         if (experiencePresentation.experienceDesign === 'loft') {
-          return (
+          return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
               background={experiencePresentation}
@@ -2734,12 +2922,13 @@ export function PublicCreatorPortfolioPage({
               bottomSpacingStyle={sectionBottomSpacingStyle}
               contentLayout={sectionContentLayout}
             >
+              {appliedExperienceHeaderZone}
               <LoftExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
             </PortfolioSectionShell>
           );
         }
         if (experiencePresentation.experienceDesign === 'press') {
-          return (
+          return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
               background={experiencePresentation}
@@ -2752,12 +2941,13 @@ export function PublicCreatorPortfolioPage({
               bottomSpacingStyle={sectionBottomSpacingStyle}
               contentLayout={sectionContentLayout}
             >
+              {appliedExperienceHeaderZone}
               <PressExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
             </PortfolioSectionShell>
           );
         }
         if (experiencePresentation.experienceDesign === 'legacy') {
-          return (
+          return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
               background={experiencePresentation}
@@ -2770,7 +2960,54 @@ export function PublicCreatorPortfolioPage({
               bottomSpacingStyle={sectionBottomSpacingStyle}
               contentLayout={sectionContentLayout}
             >
+              {appliedExperienceHeaderZone}
               <LegacyExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
+            </PortfolioSectionShell>
+          );
+        }
+        if (experiencePresentation.experienceDesign === 'asymmetric') {
+          return wrapExperienceLinks(
+            <PortfolioSectionShell
+              id="experience"
+              background={experiencePresentation}
+              fitContent
+              fillAvailableHeight={isPagesMode}
+              suppressBackground={suppressSectionBackground(experiencePresentation)}
+              topSpacingClass={sectionTopSpacingClass}
+              topSpacingStyle={sectionTopSpacingStyle}
+              bottomSpacingClass={sectionBottomSpacingClass}
+              bottomSpacingStyle={sectionBottomSpacingStyle}
+              contentLayout={sectionContentLayout}
+            >
+              {appliedExperienceHeaderZone}
+              <AsymmetricExperienceList
+                blocks={experienceBlocks}
+                presentation={experiencePresentation}
+                forceSingleColumn={isSplitMode}
+              />
+            </PortfolioSectionShell>
+          );
+        }
+        if (experiencePresentation.experienceDesign === 'kinetic') {
+          return wrapExperienceLinks(
+            <PortfolioSectionShell
+              id="experience"
+              background={experiencePresentation}
+              fitContent
+              fillAvailableHeight={isPagesMode}
+              suppressBackground={suppressSectionBackground(experiencePresentation)}
+              topSpacingClass={sectionTopSpacingClass}
+              topSpacingStyle={sectionTopSpacingStyle}
+              bottomSpacingClass={sectionBottomSpacingClass}
+              bottomSpacingStyle={sectionBottomSpacingStyle}
+              contentLayout={sectionContentLayout}
+            >
+              {appliedExperienceHeaderZone}
+              <KineticExperienceList
+                blocks={experienceBlocks}
+                presentation={experiencePresentation}
+                forceSingleColumn={isSplitMode}
+              />
             </PortfolioSectionShell>
           );
         }
@@ -2790,75 +3027,9 @@ export function PublicCreatorPortfolioPage({
           !usesCustomExperienceHeader &&
           !isSplitMode &&
           faqSectionLayoutIsAside(layout);
-        const showExperienceYears =
-          settings.experience.showYears &&
-          profile.yearsOfExperience != null &&
-          profile.yearsOfExperience > 0;
-        const experienceYearsNode = showExperienceYears ? (
-          <EditorialExperienceYears
-            years={profile.yearsOfExperience!}
-            presentation={experiencePresentation}
-          />
-        ) : null;
-        const tableExperienceHeader = usesTableExperienceHeader ? (
-          <TableExperienceHeader
-            sectionTitle={experienceSectionTitle}
-            years={profile.yearsOfExperience}
-            presentation={experiencePresentation}
-          />
-        ) : null;
-        const cardsExperienceHeader = usesCardsExperienceHeader ? (
-          <CardsExperienceHeader
-            sectionTitle={experienceSectionTitle}
-            years={profile.yearsOfExperience}
-            presentation={experiencePresentation}
-          />
-        ) : null;
-        // Editorial: years line is the real static section lead — no sticky title shell left behind.
-        // Table / Cards: custom section headers (no sticky chrome).
-        // In split mode keep years / custom header in the content pane (left rail is for short section names).
-        // Milestone: the years line moves up here, directly under the title, instead of its usual
-        // spot above the entry list — so it reads as a proper centered subtitle, not a floating line.
-        const isMilestoneDesign = experiencePresentation.experienceDesign === 'milestone';
-        const headerBlock = usesFlatExperienceHeader ? (
-          !isSplitMode && experienceYearsNode ? (
-            <div className="relative mb-12 w-full lg:mb-16">{experienceYearsNode}</div>
-          ) : null
-        ) : usesTableExperienceHeader ? (
-          !isSplitMode && tableExperienceHeader ? tableExperienceHeader : null
-        ) : usesCardsExperienceHeader ? (
-          !isSplitMode && cardsExperienceHeader ? cardsExperienceHeader : null
-        ) : (
-          <>
-            <EditorialSectionStickyHeader
-              title={experienceSectionTitle}
-              subtitle={experienceSectionSubtitle || undefined}
-              editorialLayout={isEditorialLayout}
-              centered={experienceHeaderAlign.centered}
-              alignRight={experienceHeaderAlign.alignRight}
-              alwaysCentered={experienceHeaderAlign.alwaysCentered}
-              className={aside ? 'mb-0 w-full' : undefined}
-              titleTypographyClass={experienceHeaderTypography.title.className}
-              titleTypographyStyle={experienceHeaderTypography.title.style}
-              titleDecorationStyle={experienceHeaderTypography.title.decorationStyle}
-              titleChromeClass={titleChrome.className}
-              titleChromeStyle={titleChrome.style}
-              customTitleSizing={experienceHeaderTypography.title.customSizing}
-              subtitleTypographyClass={experienceHeaderTypography.subtitle.className}
-              subtitleTypographyStyle={experienceHeaderTypography.subtitle.style}
-              subtitleDecorationStyle={experienceHeaderTypography.subtitle.decorationStyle}
-              customSubtitleSizing={experienceHeaderTypography.subtitle.customSizing}
-              scrollBehavior={effectiveTitleScroll}
-              orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'experience')}
-            />
-            {isMilestoneDesign && !isSplitMode && experienceYearsNode ? (
-              // flex + justify-center instead of relying on the paragraph's own mx-auto —
-              // this parent's layout mode doesn't leave mx-auto any room to distribute,
-              // which is why the line was sticking to the left edge instead of centering.
-              <div className="flex w-full justify-center">{experienceYearsNode}</div>
-            ) : null}
-          </>
-        );
+        // Section lead comes only from Experience → Header (applied zone). Design-owned
+        // default headers are stripped — table/cards/years/sticky title no longer mount here.
+        const headerBlock = !isSplitMode ? appliedExperienceHeaderZone : null;
         const contentBlock = (
           <SectionIllustratedContent
             variant={experiencePresentation.illustrationVariant}
@@ -2867,18 +3038,7 @@ export function PublicCreatorPortfolioPage({
             ink={experiencePresentation.titleColor}
             surface={experiencePresentation.entryFrame.cardBackgroundColor}
           >
-            {usesTableExperienceHeader && isSplitMode && tableExperienceHeader
-              ? tableExperienceHeader
-              : null}
-            {usesCardsExperienceHeader && isSplitMode && cardsExperienceHeader
-              ? cardsExperienceHeader
-              : null}
-            {experienceYearsNode &&
-            !usesCustomExperienceHeader &&
-            !isMilestoneDesign &&
-            (!usesFlatExperienceHeader || isSplitMode)
-              ? experienceYearsNode
-              : null}
+            {isSplitMode ? appliedExperienceHeaderZone : null}
             {experiencePresentation.experienceDesign === 'milestone' ? (
               <MilestoneExperienceList
                 blocks={experienceBlocks}
@@ -2910,7 +3070,7 @@ export function PublicCreatorPortfolioPage({
             )}
           </SectionIllustratedContent>
         );
-        return (
+        return wrapExperienceLinks(
           <PortfolioSectionShell
             id="experience"
             background={experiencePresentation}
@@ -3550,11 +3710,7 @@ export function PublicCreatorPortfolioPage({
           contentGutter={settings.global.contentGutter}
           showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
           colorMode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
-          onColorModeToggle={() =>
-            setColorMode(
-              (settings.global.colorMode ?? 'dark') === 'light' ? 'dark' : 'light'
-            )
-          }
+          onColorModeToggle={cyclePortfolioColorMode}
         />
       ) : isDutenPanelNav ? (
         <PortfolioDutenPanelNav
@@ -3573,11 +3729,7 @@ export function PublicCreatorPortfolioPage({
           contactEmail={resolvedContactEmail}
           showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
           colorMode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
-          onColorModeToggle={() =>
-            setColorMode(
-              (settings.global.colorMode ?? 'dark') === 'light' ? 'dark' : 'light'
-            )
-          }
+          onColorModeToggle={cyclePortfolioColorMode}
         />
       ) : isHalfPanelNav ? (
         <PortfolioHalfPanelNav
@@ -3596,11 +3748,7 @@ export function PublicCreatorPortfolioPage({
           contactEmail={resolvedContactEmail}
           showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
           colorMode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
-          onColorModeToggle={() =>
-            setColorMode(
-              (settings.global.colorMode ?? 'dark') === 'light' ? 'dark' : 'light'
-            )
-          }
+          onColorModeToggle={cyclePortfolioColorMode}
         />
       ) : (
         <>
@@ -3626,56 +3774,10 @@ export function PublicCreatorPortfolioPage({
             contentGutter={settings.global.contentGutter}
             showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
             colorMode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
-            onColorModeToggle={() =>
-              setColorMode(
-                (settings.global.colorMode ?? 'dark') === 'light' ? 'dark' : 'light'
-              )
-            }
+            onColorModeToggle={cyclePortfolioColorMode}
           />
         </>
       )}
-
-      {isPortfolioOwner ? (
-        <PortfolioSettingsButton
-          onClick={() => setSettingsOpen(true)}
-          storageKey={`portfolio-settings-btn:${creatorId}`}
-          shortcutHint={
-            settings.global.settingsShortcutEnabled ?? true ? 'Ctrl+,' : null
-          }
-        />
-      ) : null}
-
-      {isPortfolioOwner ? (
-        <PortfolioSettingsModal
-          open={settingsOpen}
-          onClose={() => {
-            flushPendingSave();
-            setSettingsOpen(false);
-          }}
-          settings={settings}
-          persistStatus={persistStatus}
-          onChange={updateSection}
-          onThemeChange={setThemeId}
-          onNavigationChange={updateNavigation}
-          onGlobalChange={updateGlobal}
-          onColorModeChange={setColorMode}
-          onGlobalPaletteChange={patchGlobalPalette}
-          onGlobalPalettePairChange={setGlobalPalettePair}
-          onSaveCustomTheme={saveCustomTheme}
-          onRenameCustomTheme={renameCustomTheme}
-          onDuplicateTheme={duplicateTheme}
-          onResetBuiltinTheme={resetBuiltinTheme}
-          onDeleteCustomTheme={deleteCustomTheme}
-          onReset={resetSettings}
-          onUndo={undoSettings}
-          onRedo={redoSettings}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          availableTools={strengthNames}
-          availableWorks={availableHeroWorks}
-          navSocialLinkOptions={navSocialLinkOptions}
-        />
-      ) : null}
 
       {isPagesMode ? (
         <div className="relative flex h-[100dvh] flex-col overflow-hidden">

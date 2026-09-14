@@ -161,7 +161,7 @@ const WORK_SETTINGS_SUB_SECTIONS: {
   {
     id: 'design',
     label: 'Design',
-    description: 'Named Portfolio layouts — classic gallery or projects board.',
+    description: 'Named Portfolio layouts — projects board, accordion, frames, and more.',
   },
   {
     id: 'categories',
@@ -1227,12 +1227,12 @@ export function WorkSettingsPanel({
           <WorkOptionGrid
             label="Section design"
             options={PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS}
-            value={work.sectionDesign ?? 'classic'}
+            value={work.sectionDesign ?? 'projects-board'}
             onChange={(sectionDesign) => onChange(workSectionDesignSettingsPatch(sectionDesign))}
             columns={1}
           />
 
-          {(work.sectionDesign ?? 'classic') === 'projects-board' ? (
+          {(work.sectionDesign ?? 'projects-board') === 'projects-board' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -1262,7 +1262,7 @@ export function WorkSettingsPanel({
 
               <WorkToggleRow
                 label="Show role"
-                description="Role label on the left (accent color)."
+                description="Role label at the bottom of each card (accent color)."
                 checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showRole}
                 onChange={(showRole) =>
                   onChange({
@@ -1276,7 +1276,7 @@ export function WorkSettingsPanel({
 
               <WorkToggleRow
                 label="Show category"
-                description="Category on the same row as the role, aligned to the right."
+                description="Category next to the role, at the bottom of each card."
                 checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showCategory}
                 onChange={(showCategory) =>
                   onChange({
@@ -1289,8 +1289,8 @@ export function WorkSettingsPanel({
               />
 
               <WorkToggleRow
-                label="Consult on thumbnail hover"
-                description="Centered “Consult” button on the image when hovering — uses the project link."
+                label="Consult button on thumbnail"
+                description="Places the Consult button in the same corner of every project image — uses the project link."
                 checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showConsultOnHover}
                 onChange={(showConsultOnHover) =>
                   onChange({
@@ -1324,7 +1324,7 @@ export function WorkSettingsPanel({
                 </div>
               ) : null}
             </div>
-          ) : (work.sectionDesign ?? 'classic') === 'projects-accordion' ? (
+          ) : (work.sectionDesign ?? 'projects-board') === 'projects-accordion' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -1522,7 +1522,7 @@ export function WorkSettingsPanel({
                 </div>
               ) : null}
             </div>
-          ) : (work.sectionDesign ?? 'classic') === 'projects-frames' ? (
+          ) : (work.sectionDesign ?? 'projects-board') === 'projects-frames' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -1722,7 +1722,7 @@ export function WorkSettingsPanel({
                 </div>
               ) : null}
             </div>
-          ) : (work.sectionDesign ?? 'classic') === 'projects-index' ? (
+          ) : (work.sectionDesign ?? 'projects-board') === 'projects-index' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -1814,7 +1814,7 @@ export function WorkSettingsPanel({
                 }
               />
             </div>
-          ) : (work.sectionDesign ?? 'classic') === 'projects-grid' ? (
+          ) : (work.sectionDesign ?? 'projects-board') === 'projects-grid' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -1907,7 +1907,7 @@ export function WorkSettingsPanel({
                 }
               />
             </div>
-          ) : (work.sectionDesign ?? 'classic') === 'projects-split' ? (
+          ) : (work.sectionDesign ?? 'projects-board') === 'projects-split' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -2100,7 +2100,7 @@ export function WorkSettingsPanel({
                 }
               />
             </div>
-          ) : (work.sectionDesign ?? 'classic') === 'projects-carousel' ? (
+          ) : (work.sectionDesign ?? 'projects-board') === 'projects-carousel' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -2229,7 +2229,7 @@ export function WorkSettingsPanel({
                 }
               />
             </div>
-          ) : (work.sectionDesign ?? 'classic') === 'projects-spotlight' ? (
+          ) : (work.sectionDesign ?? 'projects-board') === 'projects-spotlight' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -2406,7 +2406,7 @@ export function WorkSettingsPanel({
                 columns={3}
               />
             </div>
-          ) : (work.sectionDesign ?? 'classic') === 'projects-showcase' ? (
+          ) : (work.sectionDesign ?? 'projects-board') === 'projects-showcase' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -2528,7 +2528,7 @@ export function WorkSettingsPanel({
                 </div>
               ) : null}
             </div>
-          ) : (work.sectionDesign ?? 'classic') === 'projects-editorial' ? (
+          ) : (work.sectionDesign ?? 'projects-board') === 'projects-editorial' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -2766,7 +2766,7 @@ export function WorkSettingsPanel({
                 </>
               )}
             </div>
-          ) : (work.sectionDesign ?? 'classic') === 'projects-ledger' ? (
+          ) : (work.sectionDesign ?? 'projects-board') === 'projects-ledger' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -2907,7 +2907,7 @@ export function WorkSettingsPanel({
                 </div>
               ) : null}
             </div>
-          ) : (work.sectionDesign ?? 'classic') === 'projects-folio' ? (
+          ) : (work.sectionDesign ?? 'projects-board') === 'projects-folio' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -3052,7 +3052,7 @@ export function WorkSettingsPanel({
                 </div>
               ) : null}
             </div>
-          ) : (work.sectionDesign ?? 'classic') === 'projects-spec' ? (
+          ) : (work.sectionDesign ?? 'projects-board') === 'projects-spec' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
@@ -3323,7 +3323,7 @@ export function WorkSettingsPanel({
                 </>
               ) : null}
             </div>
-          ) : (work.sectionDesign ?? 'classic') === 'projects-case' ? (
+          ) : (work.sectionDesign ?? 'projects-board') === 'projects-case' ? (
             <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">

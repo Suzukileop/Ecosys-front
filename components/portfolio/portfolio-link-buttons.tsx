@@ -1,52 +1,42 @@
 'use client';
 
+import { createContext, useContext, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import type {
+  PortfolioExperienceLinkArrowStyle,
+  PortfolioExperienceRepoLinkStyle,
+} from '@/components/portfolio/portfolio-experience-settings';
+
 /**
- * Reusable link / button presentations for the public portfolio.
- * Every variant takes the same 5 palette tokens (already resolved by the
- * caller from the site's own theme) — none of them invent a color.
+ * Link / button presentations harvested from Experience designs.
+ * Every variant takes the same 5 palette tokens — none invent a color.
  */
 
-export type PortfolioLinkButtonVariant = 'underline' | 'icon' | 'solid' | 'ghost';
+export type PortfolioLinkButtonVariant = PortfolioExperienceRepoLinkStyle;
 
 export type PortfolioLinkButtonPalette = {
-  /** Page / section background. */
   background: string;
-  /** Primary text color. */
   ink: string;
-  /** Secondary text color. */
   muted: string;
-  /** Accent color. */
   accent: string;
-  /** Discreet border / hairline color. */
   border: string;
 };
 
-export const PORTFOLIO_LINK_BUTTON_VARIANT_OPTIONS: {
-  value: PortfolioLinkButtonVariant;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'underline',
-    label: 'Underline',
-    description: 'Plain text with a thin underline — turns accent on hover. The quietest option.',
-  },
-  {
-    value: 'icon',
-    label: 'Icon',
-    description: 'Round icon-only button with a GitHub mark — compact and iconic.',
-  },
-  {
-    value: 'solid',
-    label: 'Solid',
-    description: 'Filled button, ink background — the strongest option for a single key action.',
-  },
-  {
-    value: 'ghost',
-    label: 'Ghost',
-    description: 'Text + arrow, no fill — the arrow slides on hover.',
-  },
-];
+export function experienceLinkButtonPalette(tokens: {
+  ink: string;
+  muted: string;
+  accent: string;
+  background?: string;
+  border?: string;
+  isDark?: boolean;
+}): PortfolioLinkButtonPalette {
+  return {
+    ink: tokens.ink,
+    muted: tokens.muted,
+    accent: tokens.accent,
+    background: tokens.background?.trim() || (tokens.isDark ? '#0a0a0a' : '#ffffff'),
+    border: tokens.border || (tokens.isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)'),
+  };
+}
 
 const LINK_BUTTON_FONT = "'Inter', sans-serif";
 
@@ -55,33 +45,78 @@ export type PortfolioLinkButtonProps = {
   label: string;
   palette: PortfolioLinkButtonPalette;
   className?: string;
-  /** Solid variant only — override its corner radius to match a surrounding card. Defaults to rounded-[6px]. */
+  /** Solid variant only — override its corner radius to match a surrounding card. */
   radiusClass?: string;
+  /** Render a non-interactive visual (settings catalog). */
+  preview?: boolean;
+  onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
 
-function ExternalArrowIcon({
-  className,
-  'data-pf-no-color-transition': noColorTransition,
+const LinkArrowContext = createContext<PortfolioExperienceLinkArrowStyle>('northeast');
+
+export function PortfolioLinkArrowProvider({
+  value,
+  children,
 }: {
-  className?: string;
-  'data-pf-no-color-transition'?: string;
+  value: PortfolioExperienceLinkArrowStyle;
+  children: ReactNode;
 }) {
+  return <LinkArrowContext.Provider value={value}>{children}</LinkArrowContext.Provider>;
+}
+
+function LinkArrowGlyph({
+  style,
+  className,
+}: {
+  style: PortfolioExperienceLinkArrowStyle;
+  className?: string;
+}) {
+  if (style === 'chevron') {
+    return (
+      <svg viewBox="0 0 16 16" className={className} fill="none" aria-hidden>
+        <path
+          d="M6 3.5 11 8 6 12.5"
+          stroke="currentColor"
+          strokeWidth={1.35}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  if (style === 'east') {
+    return (
+      <svg viewBox="0 0 16 16" className={className} fill="none" aria-hidden>
+        <path
+          d="M2.75 8h9.5M9 4.25 13.25 8 9 11.75"
+          stroke="currentColor"
+          strokeWidth={1.35}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
   return (
-    <svg
-      viewBox="0 0 16 16"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-      data-pf-no-color-transition={noColorTransition}
-    >
+    <svg viewBox="0 0 16 16" className={className} fill="none" aria-hidden>
       <path
-        d="M4 12L12 4M12 4H6M12 4V10"
+        d="M4.5 11.5 11.5 4.5M5.5 4.5h6v6"
         stroke="currentColor"
-        strokeWidth={1.6}
+        strokeWidth={1.35}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+function LinkExitArrow({ className = 'h-[1em] w-[1em]' }: { className?: string }) {
+  const style = useContext(LinkArrowContext);
+  return (
+    <span className={`pf-link-exit-arrow ${className}`} data-arrow={style} aria-hidden>
+      <LinkArrowGlyph style={style} className="pf-link-exit-arrow-icon is-out" />
+      <LinkArrowGlyph style={style} className="pf-link-exit-arrow-icon is-in" />
+    </span>
   );
 }
 
@@ -97,14 +132,228 @@ function GithubMarkIcon({ className }: { className?: string }) {
   );
 }
 
-/** Variant 1 — plain text, a thin underline always visible, accent on hover. */
-export function LinkUnderline({ href, label, palette, className = '' }: PortfolioLinkButtonProps) {
+function LinkShell({
+  href,
+  label,
+  className,
+  style,
+  preview,
+  onClick,
+  title,
+  onMouseEnter,
+  onMouseLeave,
+  children,
+}: {
+  href: string;
+  label: string;
+  className: string;
+  style?: CSSProperties;
+  preview?: boolean;
+  onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
+  title?: string;
+  onMouseEnter?: (event: MouseEvent<HTMLElement>) => void;
+  onMouseLeave?: (event: MouseEvent<HTMLElement>) => void;
+  children: ReactNode;
+}) {
+  if (preview) {
+    return (
+      <span
+        aria-hidden
+        className={className}
+        style={style}
+        data-pf-no-color-transition=""
+        data-pf-link=""
+      >
+        {children}
+      </span>
+    );
+  }
+
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`link-underline inline-block underline decoration-1 underline-offset-[3px] transition-colors duration-200 ${className}`}
+      title={title ?? label}
+      aria-label={title ?? label}
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      className={className}
+      style={style}
+      data-pf-no-color-transition=""
+      data-pf-link=""
+    >
+      {children}
+    </a>
+  );
+}
+
+/** Editorial — accent outline pill + ↗ */
+function LinkEditorial({ href, label, palette, className = '', preview, onClick }: PortfolioLinkButtonProps) {
+  return (
+    <LinkShell
+      href={href}
+      label={label}
+      preview={preview}
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[0.82rem] font-semibold transition hover:opacity-80 ${className}`}
+      style={{ borderColor: palette.accent, color: palette.accent }}
+    >
+      <span>{label}</span>
+      <LinkExitArrow className="h-[0.95em] w-[0.95em]" />
+    </LinkShell>
+  );
+}
+
+/** Milestone — accent text + hover-translating arrow */
+function LinkMilestone({ href, label, palette, className = '', preview, onClick }: PortfolioLinkButtonProps) {
+  return (
+    <LinkShell
+      href={href}
+      label={label}
+      preview={preview}
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-90 ${className}`}
+      style={{ color: palette.accent }}
+    >
+      <span>{label}</span>
+      <LinkExitArrow className="h-[0.95em] w-[0.95em]" />
+    </LinkShell>
+  );
+}
+
+/** Table — ink underline + arrow */
+function LinkTable({ href, label, palette, className = '', preview, onClick }: PortfolioLinkButtonProps) {
+  return (
+    <LinkShell
+      href={href}
+      label={label}
+      preview={preview}
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 text-sm font-medium underline decoration-1 underline-offset-[0.28em] transition-opacity duration-200 hover:opacity-70 ${className}`}
+      style={{ color: palette.ink }}
+    >
+      <span>{label}</span>
+      <LinkExitArrow className="h-[0.95em] w-[0.95em]" />
+    </LinkShell>
+  );
+}
+
+/** Cards — accent label + arrow */
+function LinkCards({ href, label, palette, className = '', preview, onClick }: PortfolioLinkButtonProps) {
+  return (
+    <LinkShell
+      href={href}
+      label={label}
+      preview={preview}
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-80 ${className}`}
+      style={{ color: palette.accent }}
+    >
+      <span>{label}</span>
+      <LinkExitArrow className="h-[0.95em] w-[0.95em]" />
+    </LinkShell>
+  );
+}
+
+/** Reel — hairline underline + SVG corner arrow */
+function LinkReel({ href, label, palette, className = '', preview, onClick }: PortfolioLinkButtonProps) {
+  return (
+    <LinkShell
+      href={href}
+      label={label}
+      preview={preview}
+      onClick={onClick}
+      className={`group/repo inline-flex w-fit items-center gap-2.5 border-b pb-1 font-semibold ${className}`}
+      style={{
+        color: palette.ink,
+        borderColor: `color-mix(in srgb, ${palette.ink} 35%, transparent)`,
+        fontSize: '1.05rem',
+        fontFamily: LINK_BUTTON_FONT,
+      }}
+    >
+      {label}
+      <LinkExitArrow className="h-4 w-4" />
+    </LinkShell>
+  );
+}
+
+/** Duotone / Gallery / Loft — icon-only GitHub circle */
+function BtnIcon({ href, label, palette, className = '', preview, onClick }: PortfolioLinkButtonProps) {
+  const fillBase = `color-mix(in srgb, ${palette.ink} 6%, ${palette.background})`;
+  const fillHover = `color-mix(in srgb, ${palette.ink} 12%, ${palette.background})`;
+  const borderHover = `color-mix(in srgb, ${palette.ink} 30%, ${palette.border})`;
+  return (
+    <LinkShell
+      href={href}
+      label={label}
+      preview={preview}
+      onClick={onClick}
+      title={label}
+      className={`inline-flex h-[2.6rem] w-[2.6rem] items-center justify-center rounded-full border transition-all duration-200 ${className}`}
+      style={{ backgroundColor: fillBase, borderColor: palette.border, color: palette.ink }}
+      onMouseEnter={(event) => {
+        event.currentTarget.style.backgroundColor = fillHover;
+        event.currentTarget.style.borderColor = borderHover;
+      }}
+      onMouseLeave={(event) => {
+        event.currentTarget.style.backgroundColor = fillBase;
+        event.currentTarget.style.borderColor = palette.border;
+      }}
+    >
+      <GithubMarkIcon className="h-[1.1rem] w-[1.1rem]" />
+    </LinkShell>
+  );
+}
+
+/** Spotlight — inverted uppercase pill + SVG arrow */
+function LinkSpotlight({ href, label, palette, className = '', preview, onClick }: PortfolioLinkButtonProps) {
+  return (
+    <LinkShell
+      href={href}
+      label={label}
+      preview={preview}
+      onClick={onClick}
+      className={`group/link inline-flex w-fit items-center rounded-full px-7 py-3.5 text-[0.82rem] font-semibold uppercase tracking-[0.14em] transition-transform duration-300 ease-out hover:-translate-y-0.5 ${className}`}
+      style={{ backgroundColor: palette.ink, color: palette.background }}
+    >
+      <span>{label}</span>
+      <LinkExitArrow className="ml-3.5 h-3.5 w-3.5 opacity-80" />
+    </LinkShell>
+  );
+}
+
+/** Legacy — mono uppercase hairline + ↗ */
+function LinkLegacy({ href, label, palette, className = '', preview, onClick }: PortfolioLinkButtonProps) {
+  return (
+    <LinkShell
+      href={href}
+      label={label}
+      preview={preview}
+      onClick={onClick}
+      className={`pf-legacy-repo-link inline-flex w-fit items-center gap-2 border-b pb-1 font-mono uppercase ${className}`}
+      style={{
+        fontSize: '0.72rem',
+        letterSpacing: '0.18em',
+        ['--pf-legacy-muted' as string]: palette.muted,
+        ['--pf-legacy-accent' as string]: palette.accent,
+      }}
+    >
+      {label}
+      <LinkExitArrow className="h-[0.85em] w-[0.85em]" />
+    </LinkShell>
+  );
+}
+
+function LinkUnderline({ href, label, palette, className = '', preview, onClick }: PortfolioLinkButtonProps) {
+  return (
+    <LinkShell
+      href={href}
+      label={label}
+      preview={preview}
+      onClick={onClick}
+      className={`inline-block underline decoration-1 underline-offset-[3px] transition-colors duration-200 ${className}`}
       style={{
         color: palette.ink,
         textDecorationColor: palette.muted,
@@ -120,53 +369,26 @@ export function LinkUnderline({ href, label, palette, className = '' }: Portfoli
       }}
     >
       {label}
-    </a>
+    </LinkShell>
   );
 }
 
-/** Variant 2 — icon-only circle (GitHub mark), no visible label. */
-export function BtnIcon({ href, label, palette, className = '' }: PortfolioLinkButtonProps) {
-  const fillBase = `color-mix(in srgb, ${palette.ink} 6%, ${palette.background})`;
-  const fillHover = `color-mix(in srgb, ${palette.ink} 12%, ${palette.background})`;
-  const borderHover = `color-mix(in srgb, ${palette.ink} 30%, ${palette.border})`;
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      title={label}
-      aria-label={label}
-      className={`btn-icon inline-flex h-[2.6rem] w-[2.6rem] items-center justify-center rounded-full border transition-all duration-200 ${className}`}
-      style={{ backgroundColor: fillBase, borderColor: palette.border, color: palette.ink }}
-      onMouseEnter={(event) => {
-        event.currentTarget.style.backgroundColor = fillHover;
-        event.currentTarget.style.borderColor = borderHover;
-      }}
-      onMouseLeave={(event) => {
-        event.currentTarget.style.backgroundColor = fillBase;
-        event.currentTarget.style.borderColor = palette.border;
-      }}
-    >
-      <GithubMarkIcon className="h-[1.1rem] w-[1.1rem]" />
-    </a>
-  );
-}
-
-/** Variant 3 — filled button, ink background / page-background text. Strongest of the four. */
-export function BtnSolid({
+function BtnSolid({
   href,
   label,
   palette,
   className = '',
   radiusClass = 'rounded-[6px]',
+  preview,
+  onClick,
 }: PortfolioLinkButtonProps) {
   return (
-    <a
+    <LinkShell
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`btn-solid inline-flex items-center gap-[0.55rem] ${radiusClass} px-[1.2rem] py-[0.65rem] transition-opacity duration-200 hover:opacity-[0.85] ${className}`}
-      data-pf-no-color-transition=""
+      label={label}
+      preview={preview}
+      onClick={onClick}
+      className={`inline-flex items-center gap-[0.55rem] ${radiusClass} px-[1.2rem] py-[0.65rem] transition-opacity duration-200 hover:opacity-[0.85] ${className}`}
       style={{
         backgroundColor: palette.ink,
         color: palette.background,
@@ -176,19 +398,19 @@ export function BtnSolid({
       }}
     >
       <span>{label}</span>
-      <ExternalArrowIcon className="h-[0.95em] w-[0.95em] shrink-0" />
-    </a>
+      <LinkExitArrow className="h-[0.95em] w-[0.95em]" />
+    </LinkShell>
   );
 }
 
-/** Variant 4 — ghost link, text + arrow that slides on hover. */
-export function LinkGhost({ href, label, palette, className = '' }: PortfolioLinkButtonProps) {
+function LinkGhost({ href, label, palette, className = '', preview, onClick }: PortfolioLinkButtonProps) {
   return (
-    <a
+    <LinkShell
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`link-ghost group inline-flex items-center gap-[0.4rem] transition-colors duration-200 ${className}`}
+      label={label}
+      preview={preview}
+      onClick={onClick}
+      className={`group inline-flex items-center gap-[0.4rem] transition-colors duration-200 ${className}`}
       style={{ color: palette.ink, fontFamily: LINK_BUTTON_FONT, fontWeight: 600, fontSize: '0.9rem' }}
       onMouseEnter={(event) => {
         event.currentTarget.style.color = palette.accent;
@@ -198,15 +420,11 @@ export function LinkGhost({ href, label, palette, className = '' }: PortfolioLin
       }}
     >
       <span>{label}</span>
-      <ExternalArrowIcon
-        className="h-[0.9em] w-[0.9em] shrink-0 transition-transform duration-[250ms] ease-out group-hover:translate-x-1"
-        data-pf-no-color-transition=""
-      />
-    </a>
+      <LinkExitArrow className="h-[0.9em] w-[0.9em]" />
+    </LinkShell>
   );
 }
 
-/** Renders whichever of the 4 variants is selected — the usual entry point. */
 export function PortfolioLinkButton({
   variant,
   href,
@@ -214,17 +432,35 @@ export function PortfolioLinkButton({
   palette,
   className,
   radiusClass,
+  preview,
+  onClick,
 }: PortfolioLinkButtonProps & { variant: PortfolioLinkButtonVariant }) {
+  const shared = { href, label, palette, className, preview, onClick };
   switch (variant) {
+    case 'editorial':
+      return <LinkEditorial {...shared} />;
+    case 'milestone':
+      return <LinkMilestone {...shared} />;
+    case 'table':
+      return <LinkTable {...shared} />;
+    case 'cards':
+      return <LinkCards {...shared} />;
+    case 'reel':
+      return <LinkReel {...shared} />;
     case 'icon':
-      return <BtnIcon href={href} label={label} palette={palette} className={className} />;
+    case 'duotone':
+      return <BtnIcon {...shared} />;
+    case 'spotlight':
+      return <LinkSpotlight {...shared} />;
+    case 'legacy':
+      return <LinkLegacy {...shared} />;
     case 'solid':
-      return (
-        <BtnSolid href={href} label={label} palette={palette} className={className} radiusClass={radiusClass} />
-      );
+      return <BtnSolid {...shared} radiusClass={radiusClass} />;
     case 'ghost':
-      return <LinkGhost href={href} label={label} palette={palette} className={className} />;
-    default:
-      return <LinkUnderline href={href} label={label} palette={palette} className={className} />;
+      return <LinkGhost {...shared} />;
+    case 'underline':
+      return <LinkUnderline {...shared} />;
+    case 'auto':
+      return <BtnIcon {...shared} />;
   }
 }

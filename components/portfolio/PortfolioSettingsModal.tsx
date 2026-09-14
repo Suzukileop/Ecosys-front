@@ -125,6 +125,7 @@ import {
 import {
   resolveActivePortfolioPalette,
   inferPaletteFamily,
+  portfolioPaletteCssVars,
   type PortfolioColorMode,
 } from '@/components/portfolio/portfolio-color-mode';
 import {
@@ -152,6 +153,7 @@ import {
 } from '@/components/portfolio/portfolio-nav-items';
 import {
   HeroSettingsPanel,
+  normalizeHeroSettingsSubSection,
   type HeroSettingsSubSection,
 } from '@/components/portfolio/portfolio-hero-settings-panel';
 import {
@@ -281,7 +283,6 @@ import {
   type PortfolioGlobalSettingsPatch,
   type PortfolioGlobalSubtitleTypography,
   type PortfolioGlobalTitleOrientationTargets,
-  type PortfolioGlobalTitleChrome,
   type PortfolioGlobalSplitTitleFrame,
   type PortfolioGlobalTitleTypography,
   type PortfolioGlobalHeaderFont,
@@ -354,8 +355,10 @@ type PortfolioSettingsContentKey = Exclude<PortfolioSettingsSectionId, 'theme' |
 
 function PortfolioSettingsSearchBar({
   onSelect,
+  appearance = 'pill',
 }: {
   onSelect: (entry: PortfolioSettingsSearchEntry) => void;
+  appearance?: 'pill' | 'underline';
 }) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -390,11 +393,13 @@ function PortfolioSettingsSearchBar({
       </label>
       <div className="relative">
         <svg
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
+          className={`pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 ${
+            appearance === 'underline' ? 'left-2.5' : 'left-3'
+          }`}
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth={2}
+          strokeWidth={appearance === 'underline' ? 1.5 : 2}
           aria-hidden
         >
           <circle cx="11" cy="11" r="7" />
@@ -405,7 +410,7 @@ function PortfolioSettingsSearchBar({
           type="search"
           value={query}
           autoComplete="off"
-          placeholder="Search settingsâ€¦"
+          placeholder="Search settings..."
           role="combobox"
           aria-expanded={open && suggestions.length > 0}
           aria-controls={listId}
@@ -445,7 +450,11 @@ function PortfolioSettingsSearchBar({
               }
             }
           }}
-          className="w-full rounded-full border border-neutral-200/90 bg-neutral-50/90 py-2 pl-9 pr-3.5 text-sm text-neutral-900 placeholder:text-neutral-400 transition focus:border-neutral-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900/10"
+          className={
+            appearance === 'underline'
+              ? 'portfolio-studio-dock-search w-full appearance-none border-0 bg-transparent py-2.5 pl-7 pr-1 text-sm text-neutral-900 shadow-none outline-none ring-0 placeholder:text-neutral-400 transition-[background-color] focus:outline-none focus:ring-0 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden'
+              : 'w-full rounded-full border border-neutral-200/90 bg-neutral-50/90 py-2 pl-9 pr-3.5 text-sm text-neutral-900 placeholder:text-neutral-400 transition focus:border-neutral-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-900/10'
+          }
         />
       </div>
       {open && query.trim() ? (
@@ -460,7 +469,7 @@ function PortfolioSettingsSearchBar({
             suggestions.map((item, index) => {
               const active = index === highlight;
               return (
-                <li key={item.id} role="presentation">
+                <li key={`${item.id}-${index}`} role="presentation">
                   <button
                     type="button"
                     id={`${listId}-option-${index}`}
@@ -479,6 +488,152 @@ function PortfolioSettingsSearchBar({
               );
             })
           )}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+function DockSectionDropdown({
+  sections,
+  activeId,
+  onSelect,
+  onUpgrade,
+  persistStatus = 'idle',
+}: {
+  sections: PortfolioSettingsSectionMeta[];
+  activeId: PortfolioSettingsSectionId;
+  onSelect: (sectionId: PortfolioSettingsSectionId) => void;
+  onUpgrade: () => void;
+  persistStatus?: 'idle' | 'saving' | 'saved' | 'error';
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const active = sections.find((section) => section.id === activeId) ?? sections[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative min-w-0">
+      <nav className="flex h-9 min-w-0 items-center gap-2" aria-label="Settings location">
+        <span className="shrink-0 text-[13px] font-medium leading-none tracking-tight text-[color:var(--pf-palette-texte-fort)] opacity-50">
+          Settings
+        </span>
+        <span className="shrink-0 opacity-40 text-[color:var(--pf-palette-texte-fort)]" aria-hidden>
+          /
+        </span>
+        <button
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-label="Settings section"
+          onClick={() => setOpen((current) => !current)}
+          className="flex min-w-0 items-center gap-1.5 py-0 text-left"
+        >
+          <span className="min-w-0 truncate text-[13px] font-medium leading-none tracking-tight text-[color:var(--pf-palette-texte-fort)]">
+            {active?.label ?? 'Section'}
+          </span>
+          <span
+            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+              persistStatus === 'saving' ? 'pf-dock-save-dot-saving' : ''
+            }`}
+            style={{
+              backgroundColor:
+                persistStatus === 'error'
+                  ? '#f87171'
+                  : persistStatus === 'saving'
+                    ? '#34d399'
+                    : persistStatus === 'saved'
+                      ? 'color-mix(in srgb, #34d399 40%, transparent)'
+                      : 'color-mix(in srgb, var(--pf-palette-texte-fort) 40%, transparent)',
+            }}
+            title={
+              persistStatus === 'saving'
+                ? 'Saving'
+                : persistStatus === 'saved'
+                  ? 'Saved'
+                  : persistStatus === 'error'
+                    ? 'Not saved'
+                    : 'Synced'
+            }
+            aria-hidden
+          />
+          <svg
+            className={`h-3 w-3 shrink-0 text-[color:var(--pf-palette-texte-muted)] transition-transform duration-200 ${
+              open ? 'rotate-180 text-[color:var(--pf-palette-texte-fort)]' : ''
+            }`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+      </nav>
+      {open ? (
+        <ul
+          role="listbox"
+          aria-label="Settings sections"
+          className="absolute left-0 right-0 top-[calc(100%+10px)] z-40 max-h-72 overflow-y-auto py-1"
+          style={{
+            backgroundColor: 'var(--pf-palette-fond)',
+            boxShadow: '0 16px 40px color-mix(in srgb, var(--pf-palette-texte-fort) 12%, transparent)',
+          }}
+        >
+          {sections.map((section) => {
+            const selected = section.id === activeId;
+            return (
+              <li key={section.id} role="presentation">
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  onClick={() => {
+                    onSelect(section.id);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between px-3 py-2 text-left text-[13px] transition ${
+                    selected
+                      ? 'text-[color:var(--pf-palette-texte-fort)]'
+                      : 'text-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-palette-neutre)] hover:text-[color:var(--pf-palette-texte-fort)]'
+                  }`}
+                >
+                  <span>{section.label}</span>
+                  {selected ? (
+                    <span className="h-1 w-1 rounded-full bg-[color:var(--pf-palette-principal)]" aria-hidden />
+                  ) : null}
+                </button>
+              </li>
+            );
+          })}
+          <li className="mt-1 border-t border-[color:var(--pf-palette-bordure)] pt-1" role="presentation">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onUpgrade();
+              }}
+              className="flex w-full px-3 py-2 text-left text-[13px] font-medium text-red-400 transition hover:bg-red-500/10"
+            >
+              Upgrade
+            </button>
+          </li>
         </ul>
       ) : null}
     </div>
@@ -541,12 +696,21 @@ function ModalHistoryControls({
   canRedo,
   onUndo,
   onRedo,
+  tone = 'light',
 }: {
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  tone?: 'light' | 'dark' | 'palette';
 }) {
+  const dark = tone === 'dark';
+  const palette = tone === 'palette';
+  const buttonClass = palette
+    ? 'inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--pf-palette-bordure)] bg-[color:var(--pf-palette-neutre)] text-[color:var(--pf-palette-texte-fort)] transition hover:border-[color:var(--pf-palette-principal)] disabled:cursor-not-allowed disabled:opacity-35'
+    : dark
+      ? 'inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-800 bg-neutral-900 text-neutral-200 transition hover:border-neutral-700 hover:bg-neutral-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-35'
+      : 'inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-800 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-35';
   return (
     <div className="flex items-center gap-1">
       <button
@@ -555,7 +719,7 @@ function ModalHistoryControls({
         disabled={!canUndo}
         title="Undo (Ctrl+Z)"
         aria-label="Undo"
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-800 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-35"
+        className={buttonClass}
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 14L4 9l5-5" />
@@ -568,7 +732,7 @@ function ModalHistoryControls({
         disabled={!canRedo}
         title="Redo (Ctrl+Y)"
         aria-label="Redo"
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-800 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-35"
+        className={buttonClass}
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 14l5-5-5-5" />
@@ -1027,7 +1191,7 @@ function GlobalHeaderFontMockups({
   );
 }
 
-function GlobalSectionTypographySettings({
+function GlobalPolicePrincipaleBlock({
   global,
   onGlobalChange,
 }: {
@@ -1037,55 +1201,65 @@ function GlobalSectionTypographySettings({
   const bodyFont = global.bodyFont ?? 'plusJakarta';
 
   return (
-    <>
-      <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-        <div>
-          <p className="text-sm font-semibold text-neutral-950">Police principale</p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Unique typeface du portfolio public â€” appliquÃ©e partout (hero, titres, cartes,
-            contact, footerâ€¦). Les polices par section ont Ã©tÃ© retirÃ©es.
-          </p>
-        </div>
-
-        <div className="grid gap-2 sm:grid-cols-2">
-          {PORTFOLIO_GLOBAL_BODY_FONT_OPTIONS.filter((option) => option.value !== 'default').map(
-            (option) => {
-              const active =
-                bodyFont === option.value ||
-                (option.value === 'geist' && bodyFont === 'default');
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() =>
-                    onGlobalChange({
-                      bodyFont: option.value as PortfolioGlobalBodyFont,
-                      bodyFontForceAll: true,
-                    })
-                  }
-                  className={`rounded-2xl border px-3.5 py-3 text-left transition ${
-                    active
-                      ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
-                      : 'border-neutral-200/80 bg-white hover:border-neutral-300'
-                  }`}
-                >
-                  <p
-                    className="text-base font-semibold text-neutral-950"
-                    style={option.fontFamily ? { fontFamily: option.fontFamily } : undefined}
-                  >
-                    {option.previewText}
-                  </p>
-                  <p className="mt-1.5 text-sm font-semibold text-neutral-800">{option.label}</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-neutral-500">
-                    {option.description}
-                  </p>
-                </button>
-              );
-            }
-          )}
-        </div>
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
+      <div>
+        <p className="text-sm font-semibold text-neutral-950">Police principale</p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Unique typeface du portfolio public — appliquée partout (hero, titres, cartes, contact,
+          footer…). Les polices par section ont été retirées.
+        </p>
       </div>
 
+      <div className="grid gap-2 sm:grid-cols-2">
+        {PORTFOLIO_GLOBAL_BODY_FONT_OPTIONS.filter((option) => option.value !== 'default').map(
+          (option) => {
+            const active =
+              bodyFont === option.value ||
+              (option.value === 'geist' && bodyFont === 'default');
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() =>
+                  onGlobalChange({
+                    bodyFont: option.value as PortfolioGlobalBodyFont,
+                    bodyFontForceAll: true,
+                  })
+                }
+                className={`rounded-2xl border px-3.5 py-3 text-left transition ${
+                  active
+                    ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
+                    : 'border-neutral-200/80 bg-white hover:border-neutral-300'
+                }`}
+              >
+                <p
+                  className="text-base font-semibold text-neutral-950"
+                  style={option.fontFamily ? { fontFamily: option.fontFamily } : undefined}
+                >
+                  {option.previewText}
+                </p>
+                <p className="mt-1.5 text-sm font-semibold text-neutral-800">{option.label}</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-neutral-500">
+                  {option.description}
+                </p>
+              </button>
+            );
+          }
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GlobalSectionTypographySettings({
+  global,
+  onGlobalChange,
+}: {
+  global: PortfolioGlobalSettings;
+  onGlobalChange: (patch: Partial<PortfolioGlobalSettings>) => void;
+}) {
+  return (
+    <>
       <GlobalHeaderTypographyBlock
         label="Section titles"
         typography={global.titleTypography}
@@ -1322,93 +1496,6 @@ function GlobalHeaderTypographyBlock({
               </span>
             </p>
           </div>
-        </>
-      ) : null}
-    </div>
-  );
-}
-
-function GlobalTitleChromeBlock({
-  chrome,
-  onChange,
-}: {
-  chrome: PortfolioGlobalTitleChrome;
-  onChange: (next: PortfolioGlobalTitleChrome) => void;
-}) {
-  const patch = (partial: Partial<PortfolioGlobalTitleChrome>) => onChange({ ...chrome, ...partial });
-  const globalActive = chrome.scope === 'global';
-
-  return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Section title box</p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Background, border, and padding around section titles.
-        </p>
-      </div>
-
-      <OptionGrid
-        label="Style source"
-        options={PORTFOLIO_GLOBAL_TYPOGRAPHY_SCOPE_OPTIONS}
-        value={chrome.scope}
-        onChange={(scope) => patch({ scope })}
-        columns={2}
-      />
-
-      {globalActive ? (
-        <>
-          <ToggleRow
-            label="Title background"
-            description="Fill a solid color behind the title text."
-            checked={chrome.backgroundEnabled}
-            onChange={(backgroundEnabled) => patch({ backgroundEnabled })}
-          />
-          {chrome.backgroundEnabled ? (
-            <GlobalColorField
-              label="Background color"
-              value={chrome.backgroundColor}
-              onChange={(backgroundColor) => patch({ backgroundColor })}
-            />
-          ) : null}
-
-          <ToggleRow
-            label="Title border"
-            description="Draw a stroke around the title box."
-            checked={chrome.borderEnabled}
-            onChange={(borderEnabled) => patch({ borderEnabled })}
-          />
-          {chrome.borderEnabled ? (
-            <>
-              <GlobalColorField
-                label="Border color"
-                value={chrome.borderColor}
-                onChange={(borderColor) => patch({ borderColor })}
-              />
-              <OptionGrid
-                label="Border width"
-                options={PORTFOLIO_GLOBAL_TITLE_CHROME_BORDER_WIDTH_OPTIONS}
-                value={chrome.borderWidth}
-                onChange={(borderWidth) => patch({ borderWidth })}
-                columns={2}
-              />
-            </>
-          ) : null}
-
-          <OptionGrid
-            label="Title padding"
-            options={PORTFOLIO_GLOBAL_TITLE_CHROME_PADDING_OPTIONS}
-            value={chrome.padding}
-            onChange={(padding) => patch({ padding })}
-            columns={2}
-          />
-
-          <OptionGrid
-            label="Corner radius"
-            options={PORTFOLIO_GLOBAL_TITLE_CHROME_RADIUS_OPTIONS}
-            value={chrome.borderRadius}
-            onChange={(borderRadius) => patch({ borderRadius })}
-            columns={3}
-          />
         </>
       ) : null}
     </div>
@@ -2274,8 +2361,12 @@ function GlobalSettingsPanel({
         })}
       </nav>
 
-      <GlobalSettingsGuideMockup section={subSection} />
-      <GlobalSettingsTip>{activeMeta.tip}</GlobalSettingsTip>
+      {subSection !== 'typography' ? (
+        <>
+          <GlobalSettingsGuideMockup section={subSection} />
+          <GlobalSettingsTip>{activeMeta.tip}</GlobalSettingsTip>
+        </>
+      ) : null}
 
       {subSection === 'theme' ? (
         <div className="space-y-5">
@@ -3130,14 +3221,7 @@ function GlobalSettingsPanel({
       ) : null}
 
       {subSection === 'typography' ? (
-        <div className="space-y-5">
-          <GlobalSectionTypographySettings global={global} onGlobalChange={onGlobalChange} />
-
-          <GlobalTitleChromeBlock
-            chrome={global.titleChrome}
-            onChange={(titleChrome) => onGlobalChange({ titleChrome })}
-          />
-        </div>
+        <GlobalPolicePrincipaleBlock global={global} onGlobalChange={onGlobalChange} />
       ) : null}
     </div>
   );
@@ -6754,6 +6838,8 @@ function SectionPanel({
 type PortfolioSettingsModalProps = {
   open: boolean;
   onClose: () => void;
+  /** Overlay dialog (public page) or inline atelier dock (dashboard Live Preview). */
+  variant?: 'modal' | 'dock';
   settings: PortfolioSettings;
   persistStatus?: 'idle' | 'saving' | 'saved' | 'error';
   onChange: (
@@ -6783,11 +6869,14 @@ type PortfolioSettingsModalProps = {
   availableTools: string[];
   availableWorks?: { id: string; title: string; imageUrl: string }[];
   navSocialLinkOptions?: PortfolioNavChromeLink[];
+  /** Live Preview: scroll the iframe to the matching portfolio section. */
+  onPreviewSectionFocus?: (sectionId: PortfolioSettingsSectionId) => void;
 };
 
 export function PortfolioSettingsModal({
   open,
   onClose,
+  variant = 'modal',
   settings,
   persistStatus = 'idle',
   onChange,
@@ -6810,9 +6899,10 @@ export function PortfolioSettingsModal({
   availableTools,
   availableWorks = [],
   navSocialLinkOptions = [],
+  onPreviewSectionFocus,
 }: PortfolioSettingsModalProps) {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(variant === 'dock');
   const [activeSection, setActiveSection] = useState<PortfolioSettingsSectionId>('theme');
   const [panelSubSections, setPanelSubSections] = useState<PanelSubSections>({});
   const [panelOpacity, setPanelOpacity] = useState(100);
@@ -6880,7 +6970,8 @@ export function PortfolioSettingsModal({
 
   const selectSection = useCallback((sectionId: PortfolioSettingsSectionId) => {
     setActiveSection(sectionId);
-  }, []);
+    onPreviewSectionFocus?.(sectionId);
+  }, [onPreviewSectionFocus]);
 
   const setPanelSubSection = useCallback(
     <K extends keyof PanelSubSections>(sectionId: K, value: NonNullable<PanelSubSections[K]>) => {
@@ -6891,11 +6982,15 @@ export function PortfolioSettingsModal({
 
   const handleSearchSelect = useCallback((entry: PortfolioSettingsSearchEntry) => {
     setActiveSection(entry.sectionId);
+    onPreviewSectionFocus?.(entry.sectionId);
     if (!entry.subSection) return;
     if (entry.sectionId === 'theme') {
       setPanelSubSections((prev) => ({ ...prev, theme: entry.subSection as GlobalSettingsSubSection }));
     } else if (entry.sectionId === 'hero') {
-      setPanelSubSections((prev) => ({ ...prev, hero: entry.subSection as HeroSettingsSubSection }));
+      setPanelSubSections((prev) => ({
+        ...prev,
+        hero: normalizeHeroSettingsSubSection(entry.subSection),
+      }));
     } else if (entry.sectionId === 'work') {
       setPanelSubSections((prev) => ({
         ...prev,
@@ -6938,7 +7033,7 @@ export function PortfolioSettingsModal({
     } else if (entry.sectionId === 'footer') {
       setPanelSubSections((prev) => ({ ...prev, footer: entry.subSection as FooterSubSection }));
     }
-  }, []);
+  }, [onPreviewSectionFocus]);
 
   const visibleSettingsSections = useMemo(
     () =>
@@ -6951,6 +7046,14 @@ export function PortfolioSettingsModal({
 
   useEffect(() => {
     if (!open) return;
+    if (variant === 'dock') {
+      const onKey = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') handleClose();
+      };
+      document.addEventListener('keydown', onKey);
+      return () => document.removeEventListener('keydown', onKey);
+    }
+
     const prev = document.body.style.overflow;
     document.body.style.overflow = peekPreview ? '' : 'hidden';
     const onKey = (event: KeyboardEvent) => {
@@ -6966,7 +7069,7 @@ export function PortfolioSettingsModal({
       document.body.style.overflow = prev;
       document.removeEventListener('keydown', onKey);
     };
-  }, [open, handleClose, peekPreview]);
+  }, [open, handleClose, peekPreview, variant]);
 
   if (!open || !mounted) return null;
 
@@ -6974,6 +7077,117 @@ export function PortfolioSettingsModal({
     visibleSettingsSections.find((section) => section.id === activeSection) ??
     visibleSettingsSections[0] ??
     PORTFOLIO_SETTINGS_SECTIONS[0];
+
+  const sectionPanel = (
+    <PortfolioBackgroundLibraryProvider
+      library={settings.global.backgroundImageLibrary ?? []}
+      onLibraryChange={(backgroundImageLibrary) => onGlobalChange({ backgroundImageLibrary })}
+    >
+      <SectionPanel
+        section={activeMeta}
+        settings={settings}
+        onChange={onChange}
+        onThemeChange={onThemeChange}
+        onGlobalChange={onGlobalChange}
+        onColorModeChange={onColorModeChange}
+        onGlobalPaletteChange={onGlobalPaletteChange}
+        onGlobalPalettePairChange={onGlobalPalettePairChange}
+        onNavigationChange={onNavigationChange}
+        onSaveCustomTheme={onSaveCustomTheme}
+        onRenameCustomTheme={onRenameCustomTheme}
+        onDuplicateTheme={onDuplicateTheme}
+        onResetBuiltinTheme={onResetBuiltinTheme}
+        onDeleteCustomTheme={onDeleteCustomTheme}
+        availableTools={availableTools}
+        availableWorks={availableWorks}
+        navSocialLinkOptions={navSocialLinkOptions}
+        panelSubSections={panelSubSections}
+        onPanelSubSectionChange={setPanelSubSection}
+      />
+    </PortfolioBackgroundLibraryProvider>
+  );
+
+  if (variant === 'dock') {
+    const dockPalette = resolveActivePortfolioPalette(settings.global);
+    return (
+      <div
+        className="portfolio-studio-dock flex h-full min-h-0 flex-col"
+        data-color-mode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
+        style={{
+          ...portfolioPaletteCssVars(dockPalette),
+          backgroundColor: dockPalette.fond,
+          color: dockPalette.texteFort,
+          borderColor: dockPalette.bordure,
+        }}
+      >
+        <div className="relative z-20 shrink-0 border-b px-5 py-2.5" style={{ borderColor: dockPalette.bordure }}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center">
+              <h2 id="portfolio-settings-title" className="sr-only">
+                Settings
+              </h2>
+              <DockSectionDropdown
+                sections={visibleSettingsSections}
+                activeId={activeSection}
+                onSelect={selectSection}
+                onUpgrade={openUpgradePage}
+                persistStatus={persistStatus}
+              />
+              <p className="sr-only" aria-live="polite">
+                {persistStatus === 'saving'
+                  ? 'Saving'
+                  : persistStatus === 'saved'
+                    ? 'Saved'
+                    : persistStatus === 'error'
+                      ? 'Not saved — retrying'
+                      : 'Synced with your account'}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <ModalHistoryControls
+                tone="palette"
+                canUndo={canUndo}
+                canRedo={canRedo}
+                onUndo={() => onUndo?.()}
+                onRedo={() => onRedo?.()}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="portfolio-studio-dock-surface min-h-0 flex-1 overflow-y-auto px-5 py-5"
+          style={{ backgroundColor: dockPalette.fond, color: dockPalette.texteFort }}
+        >
+          <div className="mb-8">
+            <PortfolioSettingsSearchBar appearance="underline" onSelect={handleSearchSelect} />
+          </div>
+          {sectionPanel}
+        </div>
+
+        <div
+          className="flex shrink-0 items-center justify-between gap-4 border-t px-5 py-3.5"
+          style={{ borderColor: dockPalette.bordure }}
+        >
+          <button
+            type="button"
+            onClick={onReset}
+            className="text-[10px] font-semibold uppercase tracking-[0.16em] transition hover:opacity-80"
+            style={{ color: dockPalette.texteMuted }}
+          >
+            Reset defaults
+          </button>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="portfolio-studio-dock-done rounded-full transition duration-200 ease-out hover:scale-[1.04]"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const previewMode = panelOpacity < 98;
   const backdropAlpha = previewMode ? 0.04 + (panelOpacity / 100) * 0.22 : 0.6;
@@ -7168,32 +7382,7 @@ export function PortfolioSettingsModal({
                 <p className="mt-1 text-sm leading-relaxed text-neutral-500">{activeMeta.description}</p>
               </div>
             ) : null}
-            <PortfolioBackgroundLibraryProvider
-              library={settings.global.backgroundImageLibrary ?? []}
-              onLibraryChange={(backgroundImageLibrary) => onGlobalChange({ backgroundImageLibrary })}
-            >
-              <SectionPanel
-                section={activeMeta}
-                settings={settings}
-                onChange={onChange}
-                onThemeChange={onThemeChange}
-                onGlobalChange={onGlobalChange}
-                onColorModeChange={onColorModeChange}
-                onGlobalPaletteChange={onGlobalPaletteChange}
-                onGlobalPalettePairChange={onGlobalPalettePairChange}
-                onNavigationChange={onNavigationChange}
-                onSaveCustomTheme={onSaveCustomTheme}
-                onRenameCustomTheme={onRenameCustomTheme}
-                onDuplicateTheme={onDuplicateTheme}
-                onResetBuiltinTheme={onResetBuiltinTheme}
-                onDeleteCustomTheme={onDeleteCustomTheme}
-                availableTools={availableTools}
-                availableWorks={availableWorks}
-                navSocialLinkOptions={navSocialLinkOptions}
-                panelSubSections={panelSubSections}
-                onPanelSubSectionChange={setPanelSubSection}
-              />
-            </PortfolioBackgroundLibraryProvider>
+            {sectionPanel}
           </div>
         </div>
 
