@@ -3549,7 +3549,7 @@ function NavLayoutDesignPreview({
 }) {
   if (design === 'classic') {
     return (
-      <div className="mt-3 flex justify-center">
+      <div className="flex justify-center">
         <div className="flex gap-2 rounded-full border border-neutral-200 bg-white/90 px-3 py-1.5 shadow-sm">
           <span className="h-2 w-7 rounded-full bg-neutral-300" />
           <span className="h-2 w-7 rounded-full bg-neutral-300" />
@@ -3561,7 +3561,7 @@ function NavLayoutDesignPreview({
 
   if (design === 'floating-pill') {
     return (
-      <div className="mt-3 flex justify-center">
+      <div className="flex w-full justify-center">
         <div className="grid w-full max-w-[280px] grid-cols-[auto_1fr_auto] items-center gap-2 rounded-full border border-neutral-200 bg-white px-2.5 py-2 shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
           <span className="text-[10px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
           <div className="flex items-center justify-center gap-1.5 text-neutral-800">
@@ -3584,7 +3584,7 @@ function NavLayoutDesignPreview({
 
   if (design === 'nav-logo-social') {
     return (
-      <div className="mt-3 overflow-hidden rounded-none border-y border-neutral-200 bg-white">
+      <div className="w-full overflow-hidden rounded-none border-y border-neutral-200 bg-white">
         <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 px-2.5 py-2">
           <div className="flex items-center gap-1.5 text-[8px] text-neutral-800">
             <span>Stack</span>
@@ -3603,7 +3603,7 @@ function NavLayoutDesignPreview({
 
   if (design === 'center-logo-split') {
     return (
-      <div className="mt-3 overflow-hidden rounded-lg bg-neutral-900/90 px-2.5 py-2">
+      <div className="w-full overflow-hidden rounded-lg bg-neutral-900/90 px-2.5 py-2">
         <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
           <div className="flex items-center justify-end gap-2 text-[8px] text-white/90">
             <span>Home</span>
@@ -3621,7 +3621,7 @@ function NavLayoutDesignPreview({
 
   if (design === 'logo-left-nav-contact') {
     return (
-      <div className="mt-3 overflow-hidden rounded-xl border border-neutral-200 bg-white px-2.5 py-2 shadow-sm">
+      <div className="w-full overflow-hidden rounded-xl border border-neutral-200 bg-white px-2.5 py-2 shadow-sm">
         <div className="flex w-full items-center justify-between gap-3">
           <span className="text-[11px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
           <div className="flex items-center gap-2 text-[8px] text-neutral-700">
@@ -3639,7 +3639,7 @@ function NavLayoutDesignPreview({
 
   if (design === 'case-overlay') {
     return (
-      <div className="mt-3 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2.5">
+      <div className="w-full overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2.5">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           <span className="text-[8px] font-semibold uppercase tracking-[0.14em]" style={{ color: accent }}>
             Stack
@@ -3660,7 +3660,7 @@ function NavLayoutDesignPreview({
 
   if (design === 'duten-panel') {
     return (
-      <div className="mt-3 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 p-2">
+      <div className="w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 p-2">
         <div className="rounded-full border border-neutral-300/80 bg-neutral-50 px-3 py-1.5">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[7px] text-neutral-400">Stack</span>
@@ -3668,14 +3668,13 @@ function NavLayoutDesignPreview({
             <span className="text-[7px] font-medium uppercase tracking-[0.12em] text-neutral-700">Menu</span>
           </div>
         </div>
-        <p className="mt-1.5 text-center text-[7px] text-neutral-400">The pill unfolds into a panel</p>
       </div>
     );
   }
 
   if (design === 'half-panel-left') {
     return (
-      <div className="mt-3 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100">
+      <div className="w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100">
         <div className="grid grid-cols-2">
           <div className="bg-neutral-300/40 p-2 text-[6px] text-neutral-500">Page</div>
           <div className="space-y-1.5 bg-[#C8C9B8] p-2">
@@ -3690,13 +3689,12 @@ function NavLayoutDesignPreview({
             </div>
           </div>
         </div>
-        <p className="py-1 text-center text-[6px] text-neutral-400">Menu icon top-right</p>
       </div>
     );
   }
 
   return (
-    <div className="mt-3 rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2.5">
+    <div className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2.5">
       <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
         <span className="truncate text-[11px] font-bold" style={{ color: strongText }}>
           {PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}
@@ -5247,28 +5245,46 @@ function NavLayoutDesignGrid({
   return (
     <div>
       <p className="pf-stack-block-label pf-stack-option-label">Layout</p>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         {PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS.map((option) => {
           const active = option.value === value;
           return (
             <button
               key={option.value}
               type="button"
+              aria-pressed={active}
               onClick={() => onChange(option.value)}
-              className={`rounded-2xl border px-4 py-3 text-left transition ${
-                active
-                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+              className={`relative flex h-32 flex-col rounded-2xl border-2 bg-white p-4 text-left transition ${
+                active ? '' : 'border-neutral-200/80 hover:border-neutral-300'
               }`}
+              style={active ? { borderColor: 'var(--pf-palette-principal, #f97316)' } : undefined}
             >
-              <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
-              <NavLayoutDesignPreview
-                design={option.value}
-                accent={accent}
-                strongText={strongText}
-                muted={muted}
-              />
+              {active ? (
+                <span
+                  aria-hidden
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+                  style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
+                >
+                  <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
+                    <path
+                      d="M4 10.5l3.5 3.5L16 6"
+                      stroke="white"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+              ) : null}
+              <p className="shrink-0 text-sm font-semibold text-neutral-950">{option.label}</p>
+              <div className="mt-2 flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+                <NavLayoutDesignPreview
+                  design={option.value}
+                  accent={accent}
+                  strongText={strongText}
+                  muted={muted}
+                />
+              </div>
             </button>
           );
         })}
