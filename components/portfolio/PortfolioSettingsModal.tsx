@@ -7,7 +7,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type CSSProperties,
@@ -224,7 +223,7 @@ import {
 const GLOBAL_SETTINGS_TAB_LABELS: Record<GlobalSettingsSubSection, string> = {
   theme: 'Foundations',
   background: 'Background',
-  order: 'Order',
+  order: 'Order section',
 };
 import {
   searchPortfolioSettings,
@@ -236,8 +235,6 @@ import {
   DEFAULT_GLOBAL_HIGHLIGHT_COLOR,
   DEFAULT_GLOBAL_SUBTITLE_COLOR,
   DEFAULT_GLOBAL_TITLE_COLOR,
-  PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS,
-  type PortfolioGlobalBackgroundImagePosition,
   PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS,
   PORTFOLIO_GLOBAL_CONTENT_GUTTER_OPTIONS,
   PORTFOLIO_GLOBAL_CONTENT_WIDTH_OPTIONS,
@@ -2272,6 +2269,68 @@ const PORTFOLIO_NAV_ACTIVE_INDICATOR_PREVIEW_OPTIONS = PORTFOLIO_NAV_ACTIVE_INDI
   })
 );
 
+/** Mini nav pill on the mini stage, filled / faded / dashed per surface — preview for Bar background. */
+function navBarSurfaceGlyph(mode: 'neutre' | 'fond' | 'transparent') {
+  return (active: boolean) => {
+    const barClass = active ? 'pf-stack-mini-accent' : 'pf-stack-mini-mute';
+    if (mode === 'transparent') {
+      return (
+        <rect
+          x="10"
+          y="12"
+          width="44"
+          height="10"
+          rx="5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeDasharray="2.5 2.5"
+          className={barClass}
+        />
+      );
+    }
+    return (
+      <rect
+        x="10"
+        y="12"
+        width="44"
+        height="10"
+        rx="5"
+        className={barClass}
+        opacity={mode === 'fond' ? 0.32 : 1}
+      />
+    );
+  };
+}
+
+const PORTFOLIO_NAV_BAR_SURFACE_PREVIEW_OPTIONS = PORTFOLIO_NAV_BAR_SURFACE_OPTIONS.map((option) => ({
+  value: option.value,
+  label: option.label,
+  glyph: navBarSurfaceGlyph(option.value),
+}));
+
+/** Hamburger glyph with an optional avatar circle / word chip beside it — preview for Brand next to menu. */
+function navMobileBrandGlyph(mode: 'none' | 'avatar' | 'word') {
+  return (active: boolean) => {
+    const accentClass = active ? 'pf-stack-mini-accent' : 'pf-stack-mini-mute';
+    return (
+      <>
+        {mode === 'avatar' ? <circle className={accentClass} cx="18" cy="17" r="4" /> : null}
+        {mode === 'word' ? <rect className={accentClass} x="12" y="14" width="13" height="6" rx="2" /> : null}
+        <rect className="pf-stack-mini-mute" x="38" y="12.4" width="14" height="1.6" rx="0.8" />
+        <rect className="pf-stack-mini-mute" x="38" y="16.2" width="14" height="1.6" rx="0.8" />
+        <rect className="pf-stack-mini-mute" x="38" y="20" width="14" height="1.6" rx="0.8" />
+      </>
+    );
+  };
+}
+
+const PORTFOLIO_NAV_MOBILE_BRAND_PREVIEW_OPTIONS = PORTFOLIO_NAV_MOBILE_BRAND_OPTIONS.map((option) => ({
+  value: option.value,
+  label: option.label,
+  glyph: navMobileBrandGlyph(option.value),
+}));
+
 /** Frame + "photo" rect sized/positioned per fit mode — preview for Cover/Contain/Stretch. */
 function globalImageSizeGlyph(mode: 'cover' | 'contain' | 'fill') {
   return () => {
@@ -2326,90 +2385,6 @@ const GLOBAL_BACKGROUND_IMAGE_SIZE_PREVIEW_OPTIONS = PORTFOLIO_GLOBAL_BACKGROUND
     glyph: globalImageSizeGlyph(option.value),
   })
 );
-
-/** 3×3 spatial position picker — square grid of dots, no visible text (title/aria-label carry
- *  the position name for accessibility). Arrow keys move focus between cells like a radiogroup. */
-function GlobalPositionGrid({
-  value,
-  onChange,
-}: {
-  value: PortfolioGlobalBackgroundImagePosition;
-  onChange: (value: PortfolioGlobalBackgroundImagePosition) => void;
-}) {
-  const grid: PortfolioGlobalBackgroundImagePosition[][] = [
-    ['top-left', 'top', 'top-right'],
-    ['left', 'center', 'right'],
-    ['bottom-left', 'bottom', 'bottom-right'],
-  ];
-  const labelByValue = Object.fromEntries(
-    PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS.map((option) => [option.value, option.label])
-  ) as Record<PortfolioGlobalBackgroundImagePosition, string>;
-  const cellRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-
-  const handleKeyDown = (
-    event: ReactKeyboardEvent<HTMLButtonElement>,
-    row: number,
-    col: number
-  ) => {
-    let nextRow = row;
-    let nextCol = col;
-    if (event.key === 'ArrowUp') nextRow = Math.max(0, row - 1);
-    else if (event.key === 'ArrowDown') nextRow = Math.min(2, row + 1);
-    else if (event.key === 'ArrowLeft') nextCol = Math.max(0, col - 1);
-    else if (event.key === 'ArrowRight') nextCol = Math.min(2, col + 1);
-    else return;
-    event.preventDefault();
-    const next = grid[nextRow][nextCol];
-    onChange(next);
-    cellRefs.current[next]?.focus();
-  };
-
-  return (
-    <div>
-      <p className="pf-stack-block-label pf-stack-option-label">Image position</p>
-      <div
-        role="radiogroup"
-        aria-label="Image position"
-        className="grid grid-cols-3 gap-1.5"
-        style={{ width: '140px' }}
-      >
-        {grid.map((row, rowIndex) =>
-          row.map((pos, colIndex) => {
-            const active = value === pos;
-            return (
-              <button
-                key={pos}
-                ref={(node) => {
-                  cellRefs.current[pos] = node;
-                }}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                aria-label={labelByValue[pos]}
-                title={labelByValue[pos]}
-                data-active={active ? 'true' : 'false'}
-                tabIndex={active ? 0 : -1}
-                onClick={() => onChange(pos)}
-                onKeyDown={(event) => handleKeyDown(event, rowIndex, colIndex)}
-                className="pf-stack-design-card flex aspect-square items-center justify-center rounded-lg"
-              >
-                <span
-                  aria-hidden
-                  className="block h-1.5 w-1.5 rounded-full transition-colors"
-                  style={{
-                    backgroundColor: active
-                      ? 'var(--pf-palette-principal, #f97316)'
-                      : 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 30%, transparent)',
-                  }}
-                />
-              </button>
-            );
-          })
-        )}
-      </div>
-    </div>
-  );
-}
 
 function GlobalInsetField({
   side,
@@ -2960,11 +2935,6 @@ function GlobalSettingsPanel({
                 columns={3}
               />
 
-              <GlobalPositionGrid
-                value={global.backgroundImagePosition}
-                onChange={(backgroundImagePosition) => onGlobalChange({ backgroundImagePosition })}
-              />
-
               <div>
                 <GlobalBlockLabel>Insets from edges</GlobalBlockLabel>
                 <GlobalInsetsSchema
@@ -3088,18 +3058,18 @@ function NavItemCustomizer({
       <div className="space-y-4">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Nom dans le menu
+            Menu name
           </p>
           <input
             type="text"
             value={label}
             maxLength={32}
             onChange={(event) => onLabelChange(event.target.value)}
-            placeholder="Ex. Projects, Expertise…"
+            placeholder="e.g. Projects, Expertise…"
             className="mt-2 w-full rounded-xl border border-neutral-200/80 bg-white px-3 py-2.5 text-sm font-medium text-neutral-900 shadow-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-900/10"
           />
           <p className="mt-1.5 text-[11px] text-neutral-500">
-            {usesCustomLabel ? 'Libellé personnalisé actif.' : 'Suggestions rapides :'}
+            {usesCustomLabel ? 'Custom label active.' : 'Quick suggestions:'}
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             {labelPresets.map((preset, presetIndex) => {
@@ -3124,7 +3094,7 @@ function NavItemCustomizer({
 
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Icône ({iconOptions.length} choix)
+            Icon ({iconOptions.length} options)
           </p>
           <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
             {iconOptions.map((option) => {
@@ -3164,16 +3134,8 @@ function NavigationLabelsIconsPanel({
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
 }) {
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Libellés & icônes du menu
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Personnalisez le nom affiché et l&apos;icône de chaque section dans la barre de navigation et
-          le menu mobile.
-        </p>
-      </div>
+    <div className="space-y-4">
+      <p className="pf-stack-block-label pf-stack-option-label">Menu labels & icons</p>
       <div className="space-y-3">
         {PORTFOLIO_NAV_SECTION_META.map((section) => (
           <NavItemCustomizer
@@ -5405,33 +5367,20 @@ function NavMenuGroupsEditor({
   };
 
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Groupes de menu (dropdown)
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Regroupez plusieurs sections sous un même libellé. Chaque groupe devient un menu déroulant
-          dans tous les designs de navigation.
-        </p>
-      </div>
+    <div className="space-y-4">
+      <p className="pf-stack-block-label pf-stack-option-label">Menu groups (dropdown)</p>
 
       {groups.length === 0 ? (
         <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-          Aucun groupe pour le moment. Ajoutez un groupe et choisissez au moins 2 sections.
+          No groups yet. Add a group and choose at least 2 sections.
         </p>
       ) : (
         <div className="space-y-3">
           {groups.map((group) => (
-            <div
-              key={group.id}
-              className="space-y-3 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-950"
-            >
+            <div key={group.id} className="space-y-3 rounded-xl border border-neutral-200 bg-white p-4">
               <div className="flex flex-wrap items-center gap-3">
                 <label className="min-w-0 flex-1">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                    Libellé du menu
-                  </span>
+                  <span className="pf-stack-block-label pf-stack-option-label">Menu label</span>
                   <input
                     type="text"
                     value={group.label}
@@ -5445,16 +5394,16 @@ function NavMenuGroupsEditor({
                         )
                       )
                     }
-                    placeholder="ex. Portfolio, Ressources…"
-                    className="mt-1.5 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 outline-none ring-orange-500/30 focus:border-orange-400 focus:ring-2 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                    placeholder="e.g. Portfolio, Resources…"
+                    className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 outline-none ring-orange-500/30 focus:border-orange-400 focus:ring-2"
                   />
                 </label>
                 <button
                   type="button"
                   onClick={() => onChange(groups.filter((entry) => entry.id !== group.id))}
-                  className="rounded-full px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                  className="rounded-full px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
                 >
-                  Supprimer
+                  Remove
                 </button>
               </div>
 
@@ -5484,9 +5433,7 @@ function NavMenuGroupsEditor({
                 })}
               </div>
               {group.sectionKeys.length < 2 ? (
-                <p className="text-xs text-amber-700 dark:text-amber-300">
-                  Sélectionnez au moins 2 sections pour activer ce dropdown.
-                </p>
+                <p className="text-xs text-amber-700">Select at least 2 sections to enable this dropdown.</p>
               ) : null}
             </div>
           ))}
@@ -5508,107 +5455,13 @@ function NavMenuGroupsEditor({
         disabled={groups.length >= 8}
         className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Ajouter un groupe
+        Add a group
       </button>
     </div>
   );
 }
 
-const NAV_MOBILE_LAYOUT_OPTIONS_FR = PORTFOLIO_NAV_MOBILE_LAYOUT_OPTIONS;
-
-/**
- * Ultra-minimalist toggle / segmented-pill primitives used only in the Navigation panel —
- * no description text, compact pill switch and segments, matching the site's minimalist
- * settings language (same mechanism as GlobalSwitchRow / GlobalSegmentGrid above).
- */
-function NavigationSwitchTrack({ checked }: { checked: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${
-        checked ? 'bg-neutral-900' : 'bg-neutral-300'
-      }`}
-    >
-      <span
-        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
-          checked ? 'translate-x-4' : 'translate-x-0.5'
-        }`}
-      />
-    </span>
-  );
-}
-
-function NavigationToggleRow({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="flex w-full cursor-pointer items-center justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3.5 text-left"
-    >
-      <span className="text-sm font-medium text-neutral-900">{label}</span>
-      <NavigationSwitchTrack checked={checked} />
-    </button>
-  );
-}
-
-function NavigationOptionGrid<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-  columns,
-}: {
-  label: string;
-  options: { value: T; label: string; description?: string }[];
-  value: T | '';
-  onChange: (value: T) => void;
-  columns?: number;
-}) {
-  const count = options.length;
-  const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
-  return (
-    <div>
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</p>
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="mt-2 grid gap-[3px] rounded-2xl border border-neutral-200/80 bg-neutral-100 p-[3px]"
-        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-      >
-        {options.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              title={option.description}
-              onClick={() => onChange(option.value)}
-              className={`rounded-xl px-3 py-2 text-center text-sm font-medium tracking-tight transition ${
-                active ? 'bg-white text-neutral-950 shadow-sm' : 'text-neutral-500 hover:text-neutral-800'
-              }`}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function NavigationPanel({
+export function NavigationPanel({
   navigation,
   onChange,
   navSocialLinkOptions = [],
@@ -5648,7 +5501,7 @@ function NavigationPanel({
       </div>
 
       {navTab === 'general' ? (
-        <div className="space-y-8">
+        <div>
           <GlobalSwitchRow
             label="Show navigation"
             checked={navigation.enabled}
@@ -5656,12 +5509,11 @@ function NavigationPanel({
           />
 
           {navigation.enabled ? (
-            <div className="space-y-8">
-              <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-                <GlobalBlockLabel>Bar appearance</GlobalBlockLabel>
-                <GlobalSegmentGrid
+            <>
+              <GlobalSection label="Bar appearance">
+                <GlobalPreviewCardGrid
                   label="Bar background"
-                  options={PORTFOLIO_NAV_BAR_SURFACE_OPTIONS}
+                  options={PORTFOLIO_NAV_BAR_SURFACE_PREVIEW_OPTIONS}
                   value={navigation.navBarSurface ?? 'neutre'}
                   onChange={(navBarSurface) => onChange({ navBarSurface })}
                   columns={3}
@@ -5682,11 +5534,10 @@ function NavigationPanel({
                   checked={showColorModeToggleInNav}
                   onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
                 />
-              </div>
+              </GlobalSection>
 
               {usesFloatingNavChrome ? (
-                <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-                  <GlobalBlockLabel>Mobile</GlobalBlockLabel>
+                <GlobalSection label="Mobile">
                   <GlobalSegmentGrid
                     label="Mobile behavior"
                     options={PORTFOLIO_NAV_MOBILE_LAYOUT_OPTIONS}
@@ -5696,9 +5547,9 @@ function NavigationPanel({
                   />
                   {(navigation.mobileLayout ?? 'brand-bar') === 'drawer' ? (
                     <>
-                      <GlobalSegmentGrid
+                      <GlobalPreviewCardGrid
                         label="Brand next to menu"
-                        options={PORTFOLIO_NAV_MOBILE_BRAND_OPTIONS}
+                        options={PORTFOLIO_NAV_MOBILE_BRAND_PREVIEW_OPTIONS}
                         value={navigation.mobileBrand ?? 'none'}
                         onChange={(mobileBrand) => onChange({ mobileBrand })}
                         columns={3}
@@ -5726,13 +5577,12 @@ function NavigationPanel({
                       />
                     </>
                   ) : null}
-                </div>
+                </GlobalSection>
               ) : null}
-            </div>
+            </>
           ) : null}
 
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-            <GlobalBlockLabel>Behavior</GlobalBlockLabel>
+          <GlobalSection label="Behavior">
             <GlobalSegmentGrid
               label="Navigation type"
               options={PORTFOLIO_NAV_MODE_OPTIONS}
@@ -5761,11 +5611,10 @@ function NavigationPanel({
               checked={navigation.hideWhenSingle}
               onChange={(hideWhenSingle) => onChange({ hideWhenSingle })}
             />
-          </div>
+          </GlobalSection>
 
           {navigation.enabled ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-              <GlobalBlockLabel>Style</GlobalBlockLabel>
+            <GlobalSection label="Style">
               <GlobalPreviewCardGrid
                 label="Active indicator"
                 options={PORTFOLIO_NAV_ACTIVE_INDICATOR_PREVIEW_OPTIONS}
@@ -5816,11 +5665,12 @@ function NavigationPanel({
                 onChange={(labelFontSize) => onChange({ labelFontSize })}
                 columns={4}
               />
-            </div>
+            </GlobalSection>
           ) : null}
 
-          <p className="text-sm text-neutral-500">
-            Visible sections populate this menu — reorder them in Global → Section order.
+          <p className="pf-gs-section text-sm text-neutral-500">
+            Visible sections populate this menu —{' '}
+            <span className="font-medium text-neutral-700">reorder in Global → Section order</span>.
           </p>
         </div>
       ) : null}
