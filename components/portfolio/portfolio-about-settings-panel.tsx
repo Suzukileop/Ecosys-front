@@ -50,7 +50,6 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import {
   ABOUT_STYLE_TARGET_COLOR_SLOT,
-  applyAboutPaletteToSettings,
   DEFAULT_ABOUT_COLOR_BINDINGS,
   DEFAULT_ABOUT_PALETTE,
   mergeAboutColorBindings,
@@ -61,7 +60,6 @@ import {
   type AboutColorSlot,
 } from '@/components/portfolio/portfolio-about-palette-settings';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
-import { SectionHeroPaletteToggle } from '@/components/portfolio/SectionHeroPaletteToggle';
 import {
   PortfolioCardFrameSettingsFields,
   type PortfolioCardFrameColorFieldKey,
@@ -364,79 +362,54 @@ function AboutPalettePanel({
 }) {
   const palette = mergeAboutPalette(DEFAULT_ABOUT_PALETTE, about.aboutPalette);
   const bindings = mergeAboutColorBindings(DEFAULT_ABOUT_COLOR_BINDINGS, about.aboutColorBindings);
-  const paletteOn = about.useHeroPalette !== false;
 
   return (
     <div className="space-y-6">
-      <SectionHeroPaletteToggle
-        enabled={paletteOn}
-        onChange={(useHeroPalette) =>
-          onChange(
-            asAboutPatch(
-              useHeroPalette
-                ? { useHeroPalette, ...applyAboutPaletteToSettings(about) }
-                : { useHeroPalette }
-            )
-          )
-        }
-        title="Use global color palette"
-        description="When on, About colors follow the Global site palette. Turn off to edit colors manually in other tabs."
-        enabledHint="Edit the dark/light token pair under Global → Theme. Bindings below pick which token each About color uses."
-        disabledHint="Global palette tokens still exist, but About uses manual hex colors until you turn this back on."
-      />
-
       <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-600">
         The site color palette lives in <span className="font-semibold">Global → Theme</span> as a
         coupled dark / light pair. About no longer has its own Mode sombre / Mode clair editor.
       </p>
 
-      {paletteOn ? (
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Color bindings
-          </p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Pick which Global token each About color uses. Swatches preview the active mode.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {PORTFOLIO_ABOUT_COLOR_SLOT_OPTIONS.map((slot) => (
-              <div key={slot.value} className="rounded-2xl border border-neutral-200/80 bg-white px-3 py-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-neutral-800">{slot.label}</span>
-                  <span
-                    className="h-5 w-5 shrink-0 rounded-full border border-neutral-200"
-                    style={{ backgroundColor: resolveHeroPaletteColor(palette, bindings[slot.value]) }}
-                    aria-hidden
-                  />
-                </div>
-                <select
-                  value={bindings[slot.value]}
-                  onChange={(event) =>
-                    onChange(
-                      asAboutPatch(
-                        patchAboutColorBinding(about, slot.value, event.target.value as HeroPaletteTokenId)
-                      )
-                    )
-                  }
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800"
-                >
-                  {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
-                    <option key={token.value} value={token.value}>
-                      {token.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1.5 text-xs text-neutral-500">{slot.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
-          Palette is off — slot bindings are hidden. Turn it back on to bind colors to Global tokens,
-          or edit hex fields in other tabs.
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Color bindings
         </p>
-      )}
+        <p className="mt-1 text-sm text-neutral-500">
+          Pick which Global token each About color uses. Swatches preview the active mode.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {PORTFOLIO_ABOUT_COLOR_SLOT_OPTIONS.map((slot) => (
+            <div key={slot.value} className="rounded-2xl border border-neutral-200/80 bg-white px-3 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-neutral-800">{slot.label}</span>
+                <span
+                  className="h-5 w-5 shrink-0 rounded-full border border-neutral-200"
+                  style={{ backgroundColor: resolveHeroPaletteColor(palette, bindings[slot.value]) }}
+                  aria-hidden
+                />
+              </div>
+              <select
+                value={bindings[slot.value]}
+                onChange={(event) =>
+                  onChange(
+                    asAboutPatch(
+                      patchAboutColorBinding(about, slot.value, event.target.value as HeroPaletteTokenId)
+                    )
+                  )
+                }
+                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800"
+              >
+                {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
+                  <option key={token.value} value={token.value}>
+                    {token.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1.5 text-xs text-neutral-500">{slot.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -500,18 +473,6 @@ export function AboutSettingsPanel({
             description="Display the about block on your public portfolio."
             checked={about.enabled}
             onChange={(enabled) => onChange({ enabled })}
-          />
-          <SectionHeroPaletteToggle
-            enabled={about.useHeroPalette !== false}
-            onChange={(useHeroPalette) =>
-              onChange(
-                asAboutPatch(
-                  useHeroPalette
-                    ? { useHeroPalette, ...applyAboutPaletteToSettings(about) }
-                    : { useHeroPalette }
-                )
-              )
-            }
           />
           <SectionColorModeControl
             value={about.colorModeOverride}

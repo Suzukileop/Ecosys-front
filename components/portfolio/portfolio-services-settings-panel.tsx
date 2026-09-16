@@ -120,7 +120,6 @@ import {
   type ServicesColorSlot,
 } from '@/components/portfolio/portfolio-services-palette-settings';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
-import { SectionHeroPaletteToggle } from '@/components/portfolio/SectionHeroPaletteToggle';
 
 export type ServicesSettingsFocus = 'skills' | 'services';
 
@@ -627,44 +626,6 @@ function ServicesManualColorField({
   );
 }
 
-function ServicesUsePaletteToggle({
-  services,
-  onChange,
-  description,
-  enabledHint,
-  disabledHint,
-}: {
-  services: PortfolioServicesSectionSettings;
-  onChange: (patch: Partial<PortfolioServicesSectionSettings>) => void;
-  description: string;
-  enabledHint?: string;
-  disabledHint?: string;
-}) {
-  return (
-    <SectionHeroPaletteToggle
-      enabled={services.useHeroPalette !== false}
-      onChange={(useHeroPalette) =>
-        onChange(
-          asServicesPatch(
-            useHeroPalette
-              ? { useHeroPalette, ...applyServicesPaletteToSettings(services) }
-              : { useHeroPalette }
-          )
-        )
-      }
-      title="Use global color palette"
-      description={description}
-      enabledHint={
-        enabledHint ??
-        'Palette mode — pick which Global token each color uses (edit tokens under Global → Theme). Free hex pickers stay locked.'
-      }
-      disabledHint={
-        disabledHint ??
-        'Manual mode — color pickers set hex values directly and are no longer overwritten by the global palette.'
-      }
-    />
-  );
-}
 
 function ServicesColorField({
   services,
@@ -794,80 +755,63 @@ function ServicesPalettePanel({
     DEFAULT_SERVICES_COLOR_BINDINGS,
     services.servicesColorBindings
   );
-  const paletteOn = services.useHeroPalette !== false;
-
   return (
     <div className="space-y-6">
-      <ServicesUsePaletteToggle
-        services={services}
-        onChange={onChange}
-        description="When on, section colors follow the Global site palette. Turn off to edit colors manually in Header, Frame, Skills, Services, and Background."
-        enabledHint="Edit the dark/light token pair under Global → Theme. Bindings below pick which token each section color uses."
-        disabledHint="Global palette tokens still exist, but this section uses manual hex colors until you turn this back on."
-      />
-
       <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-600">
         The site color palette lives in <span className="font-semibold">Global → Theme</span> as a
         coupled dark / light pair. This section no longer has its own Mode sombre / Mode clair editor.
       </p>
 
-      {paletteOn ? (
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Color bindings
-          </p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Pick which Global token each section color uses. Swatches preview the active mode.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {PORTFOLIO_SERVICES_COLOR_SLOT_OPTIONS.map((slot) => {
-              const resolved = resolveHeroPaletteColor(palette, bindings[slot.value]);
-              return (
-                <div
-                  key={slot.value}
-                  className="rounded-2xl border border-neutral-200/80 bg-white px-3 py-3"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold text-neutral-800">{slot.label}</span>
-                    <span
-                      className="h-5 w-5 shrink-0 rounded-full border border-neutral-200"
-                      style={{ backgroundColor: resolved }}
-                      aria-hidden
-                    />
-                  </div>
-                  <select
-                    value={bindings[slot.value]}
-                    onChange={(event) =>
-                      onChange(
-                        asServicesPatch(
-                          patchServicesColorBinding(
-                            services,
-                            slot.value,
-                            event.target.value as HeroPaletteTokenId
-                          )
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Color bindings
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Pick which Global token each section color uses. Swatches preview the active mode.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {PORTFOLIO_SERVICES_COLOR_SLOT_OPTIONS.map((slot) => {
+            const resolved = resolveHeroPaletteColor(palette, bindings[slot.value]);
+            return (
+              <div
+                key={slot.value}
+                className="rounded-2xl border border-neutral-200/80 bg-white px-3 py-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-neutral-800">{slot.label}</span>
+                  <span
+                    className="h-5 w-5 shrink-0 rounded-full border border-neutral-200"
+                    style={{ backgroundColor: resolved }}
+                    aria-hidden
+                  />
+                </div>
+                <select
+                  value={bindings[slot.value]}
+                  onChange={(event) =>
+                    onChange(
+                      asServicesPatch(
+                        patchServicesColorBinding(
+                          services,
+                          slot.value,
+                          event.target.value as HeroPaletteTokenId
                         )
                       )
-                    }
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
-                  >
-                    {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
-                      <option key={token.value} value={token.value}>
-                        {token.label}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1.5 text-xs text-neutral-500">{slot.description}</p>
-                </div>
-              );
-            })}
-          </div>
+                    )
+                  }
+                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
+                >
+                  {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
+                    <option key={token.value} value={token.value}>
+                      {token.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1.5 text-xs text-neutral-500">{slot.description}</p>
+              </div>
+            );
+          })}
         </div>
-      ) : (
-        <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
-          Palette is off — slot bindings are hidden. Turn it back on to bind colors to Global tokens,
-          or edit hex fields under Header / Frame / Skills / Services / Background.
-        </p>
-      )}
+      </div>
     </div>
   );
 }
@@ -1155,11 +1099,6 @@ export function ServicesSettingsPanel({
               }
             />
           )}
-          <ServicesUsePaletteToggle
-            services={services}
-            onChange={onChange}
-            description="When on, section colors follow palette tokens synced with Hero. Turn off to pick hex values freely in each tab."
-          />
           <SectionColorModeControl
             value={services.colorModeOverride}
             onChange={(colorModeOverride) => onChange({ colorModeOverride })}
@@ -3344,12 +3283,6 @@ export function ServicesSettingsPanel({
 
       {subSection === 'background' && settingsFocus === 'skills' ? (
         <div className="space-y-6">
-          <ServicesUsePaletteToggle
-            services={services}
-            onChange={onChange}
-            description="When on, section fill colors follow palette tokens. Turn off to pick them freely below."
-          />
-
           <SectionBackgroundSettingsFields
             settings={services}
             onChange={onChange}

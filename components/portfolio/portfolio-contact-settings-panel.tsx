@@ -55,7 +55,6 @@ import { PortfolioElementStyleFields } from '@/components/portfolio/portfolio-el
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { PortfolioCardFrameSettingsFields } from '@/components/portfolio/portfolio-card-frame-settings-fields';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
-import { SectionHeroPaletteToggle } from '@/components/portfolio/SectionHeroPaletteToggle';
 
 export type ContactSubSection =
   | 'general'
@@ -463,10 +462,6 @@ export function ContactSettingsPanel({
             description="Display the contact block on your public portfolio."
             checked={contact.enabled}
             onChange={(enabled) => onChange({ enabled })}
-          />
-          <SectionHeroPaletteToggle
-            enabled={contact.useHeroPalette}
-            onChange={(useHeroPalette) => onChange({ useHeroPalette })}
           />
           <SectionColorModeControl
             value={contact.colorModeOverride}

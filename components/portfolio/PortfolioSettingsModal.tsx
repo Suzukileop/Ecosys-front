@@ -143,7 +143,6 @@ import {
   PORTFOLIO_NAV_COLOR_SLOT_OPTIONS,
   type NavColorSlot,
 } from '@/components/portfolio/portfolio-nav-palette-settings';
-import { SectionHeroPaletteToggle } from '@/components/portfolio/SectionHeroPaletteToggle';
 import {
   PORTFOLIO_NAV_ICON_OPTIONS,
   PORTFOLIO_NAV_LABEL_PRESETS,
@@ -5163,44 +5162,6 @@ function patchNavColorField(
   return patchNavSlotColor(navigation, slot, hex);
 }
 
-/** Same Use-color-palette control as Hero — shown in Navigation color subsections. */
-function NavUsePaletteToggle({
-  navigation,
-  onChange,
-  description,
-  enabledHint,
-  disabledHint,
-}: {
-  navigation: PortfolioNavSettings;
-  onChange: (patch: Partial<PortfolioNavSettings>) => void;
-  description: string;
-  enabledHint?: string;
-  disabledHint?: string;
-}) {
-  return (
-    <SectionHeroPaletteToggle
-      enabled={navigation.useNavPalette !== false}
-      onChange={(useNavPalette) =>
-        onChange(
-          useNavPalette
-            ? { useNavPalette, ...applyNavPaletteToSettings(navigation) }
-            : { useNavPalette }
-        )
-      }
-      title="Use global color palette"
-      description={description}
-      enabledHint={
-        enabledHint ??
-        'Palette mode — pick which Global token each color uses (edit tokens under Global → Theme). Free hex pickers stay locked.'
-      }
-      disabledHint={
-        disabledHint ??
-        'Manual mode — color pickers set hex values directly and are no longer overwritten by the global palette.'
-      }
-    />
-  );
-}
-
 /**
  * Palette on → token binding only (hex locked).
  * Palette off → free hex picker.
@@ -5285,78 +5246,62 @@ function NavPalettePanel({
 }) {
   const palette = mergeNavPalette(DEFAULT_NAV_PALETTE, navigation.navPalette);
   const bindings = mergeNavColorBindings(DEFAULT_NAV_COLOR_BINDINGS, navigation.navColorBindings);
-  const paletteOn = navigation.useNavPalette !== false;
 
   return (
     <div className="space-y-6">
-      <NavUsePaletteToggle
-        navigation={navigation}
-        onChange={onChange}
-        description="When on, Navigation colors follow the Global site palette. Turn off to edit colors manually in Bar & buttons, Reveal, and Extras."
-        enabledHint="Edit the dark/light token pair under Global → Theme. Bindings below pick which token each nav color uses."
-        disabledHint="Global palette tokens still exist, but Navigation uses manual hex colors until you turn this back on."
-      />
-
       <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-600">
         The site color palette lives in <span className="font-semibold">Global → Theme</span> as a
         coupled dark / light pair. Navigation no longer has its own Mode sombre / Mode clair editor.
       </p>
 
-      {paletteOn ? (
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Color bindings
-          </p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Pick which Global token each navigation color uses. Swatches preview the active mode.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {PORTFOLIO_NAV_COLOR_SLOT_OPTIONS.map((slot) => {
-              const resolved = resolveHeroPaletteColor(palette, bindings[slot.value]);
-              return (
-                <div
-                  key={slot.value}
-                  className="rounded-2xl border border-neutral-200/80 bg-white px-3 py-3"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold text-neutral-800">{slot.label}</span>
-                    <span
-                      className="h-5 w-5 shrink-0 rounded-full border border-neutral-200"
-                      style={{ backgroundColor: resolved }}
-                      aria-hidden
-                    />
-                  </div>
-                  <select
-                    value={bindings[slot.value]}
-                    onChange={(event) =>
-                      onChange(
-                        patchNavColorBinding(
-                          navigation,
-                          slot.value,
-                          event.target.value as HeroPaletteTokenId
-                        )
-                      )
-                    }
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
-                  >
-                    {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
-                      <option key={token.value} value={token.value}>
-                        {token.label}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1.5 text-xs text-neutral-500">{slot.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
-          Palette is off — slot bindings are hidden. Turn it back on to bind colors to Global tokens,
-          or edit hex fields under Bar & buttons / Reveal / Extras.
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Color bindings
         </p>
-      )}
+        <p className="mt-1 text-sm text-neutral-500">
+          Pick which Global token each navigation color uses. Swatches preview the active mode.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {PORTFOLIO_NAV_COLOR_SLOT_OPTIONS.map((slot) => {
+            const resolved = resolveHeroPaletteColor(palette, bindings[slot.value]);
+            return (
+              <div
+                key={slot.value}
+                className="rounded-2xl border border-neutral-200/80 bg-white px-3 py-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-neutral-800">{slot.label}</span>
+                  <span
+                    className="h-5 w-5 shrink-0 rounded-full border border-neutral-200"
+                    style={{ backgroundColor: resolved }}
+                    aria-hidden
+                  />
+                </div>
+                <select
+                  value={bindings[slot.value]}
+                  onChange={(event) =>
+                    onChange(
+                      patchNavColorBinding(
+                        navigation,
+                        slot.value,
+                        event.target.value as HeroPaletteTokenId
+                      )
+                    )
+                  }
+                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
+                >
+                  {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
+                    <option key={token.value} value={token.value}>
+                      {token.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1.5 text-xs text-neutral-500">{slot.description}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

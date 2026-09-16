@@ -1,7 +1,6 @@
 'use client';
 
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
-import { SectionHeroPaletteToggle } from '@/components/portfolio/SectionHeroPaletteToggle';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   PORTFOLIO_TEAM_CARD_BORDER_OPTIONS,
@@ -17,7 +16,6 @@ import {
   type PortfolioTeamSectionSettings,
 } from '@/components/portfolio/portfolio-team-settings';
 import {
-  applyTeamPaletteToSettings,
   DEFAULT_TEAM_COLOR_BINDINGS,
   DEFAULT_TEAM_PALETTE,
   mergeTeamColorBindings,
@@ -146,16 +144,6 @@ export function TeamSettingsPanel({
       {current === 'general' ? (
         <div className="space-y-5">
           <Toggle label="Afficher la section" checked={team.enabled} onChange={(enabled) => onChange({ enabled })} />
-          <SectionHeroPaletteToggle
-            enabled={team.useHeroPalette !== false}
-            onChange={(useHeroPalette) =>
-              onChange(
-                (useHeroPalette
-                  ? { useHeroPalette, ...applyTeamPaletteToSettings(team) }
-                  : { useHeroPalette }) as Partial<PortfolioTeamSectionSettings>
-              )
-            }
-          />
           <SectionColorModeControl
             value={team.colorModeOverride}
             onChange={(colorModeOverride) => onChange({ colorModeOverride })}
@@ -483,8 +471,7 @@ export function TeamSettingsPanel({
 
       {current === 'palette' ? (
         <div className="space-y-4">
-          <SectionHeroPaletteToggle enabled={team.useHeroPalette !== false} onChange={(useHeroPalette) => onChange((useHeroPalette ? { useHeroPalette, ...applyTeamPaletteToSettings(team) } : { useHeroPalette }) as Partial<PortfolioTeamSectionSettings>)} />
-          {team.useHeroPalette !== false ? PORTFOLIO_TEAM_COLOR_SLOT_OPTIONS.map((slot) => (
+          {PORTFOLIO_TEAM_COLOR_SLOT_OPTIONS.map((slot) => (
             <label key={slot.value} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3">
               <span className="text-sm font-semibold">{slot.label}</span>
               <span className="h-5 w-5 rounded-full border" style={{ backgroundColor: resolveHeroPaletteColor(palette, bindings[slot.value]) }} />
@@ -496,7 +483,7 @@ export function TeamSettingsPanel({
                 {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => <option key={token.value} value={token.value}>{token.label}</option>)}
               </select>
             </label>
-          )) : <p className="text-sm text-neutral-500">La palette globale est désactivée : utilisez les couleurs manuelles des autres onglets.</p>}
+          ))}
         </div>
       ) : null}
 

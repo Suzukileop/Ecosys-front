@@ -69,7 +69,6 @@ import {
 import { PortfolioElementStyleFields } from '@/components/portfolio/portfolio-element-style-fields';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
-import { SectionHeroPaletteToggle } from '@/components/portfolio/SectionHeroPaletteToggle';
 
 export type FooterSubSection = 'general' | 'palette' | 'content' | 'typography' | 'background';
 
@@ -293,101 +292,74 @@ function FooterPalettePanel({
   onChange: (patch: Partial<PortfolioFooterSectionSettings>) => void;
 }) {
   const bindings = mergeFooterColorBindings(DEFAULT_FOOTER_COLOR_BINDINGS, footer.footerColorBindings);
-  const paletteOn = footer.useHeroPalette !== false;
 
   return (
     <div className="space-y-6">
-      <SectionHeroPaletteToggle
-        enabled={paletteOn}
-        onChange={(useHeroPalette) =>
+      <FooterToggleRow
+        label="Garder ces couleurs en sombre / clair"
+        description="Fige la palette actuelle du footer. Changer le mode Global (sombre ↔ clair) ne remplacera plus ces couleurs. Désactive puis réactive pour reprendre la palette du mode actif."
+        checked={footer.lockPaletteAcrossColorModes === true}
+        onChange={(lockPaletteAcrossColorModes) => {
+          if (!lockPaletteAcrossColorModes) {
+            onChange({ lockPaletteAcrossColorModes: false });
+            return;
+          }
+          // Snapshot current footer palette (already painted from active mode) and lock it.
+          const snapshot = mergeFooterPalette(DEFAULT_FOOTER_PALETTE, footer.footerPalette);
           onChange(
-            asFooterPatch(
-              useHeroPalette
-                ? { useHeroPalette, ...applyFooterPaletteToSettings(footer) }
-                : { useHeroPalette, lockPaletteAcrossColorModes: false }
-            )
-          )
-        }
-        title="Use global color palette"
-        description="When on, Footer colors follow the Global site palette. Turn off to edit colors manually in Background and other tabs."
-        enabledHint="Edit the dark/light token pair under Global → Theme. Bindings below pick which token each footer color uses."
-        disabledHint="Global palette tokens still exist, but Footer uses manual hex colors until you turn this back on."
+            asFooterPatch({
+              lockPaletteAcrossColorModes: true,
+              footerPalette: snapshot,
+              ...applyFooterPaletteToSettings({ ...footer, footerPalette: snapshot }),
+            })
+          );
+        }}
       />
-
-      {paletteOn ? (
-        <FooterToggleRow
-          label="Garder ces couleurs en sombre / clair"
-          description="Fige la palette actuelle du footer. Changer le mode Global (sombre ↔ clair) ne remplacera plus ces couleurs. Désactive puis réactive pour reprendre la palette du mode actif."
-          checked={footer.lockPaletteAcrossColorModes === true}
-          onChange={(lockPaletteAcrossColorModes) => {
-            if (!lockPaletteAcrossColorModes) {
-              onChange({ lockPaletteAcrossColorModes: false });
-              return;
-            }
-            // Snapshot current footer palette (already painted from active mode) and lock it.
-            const snapshot = mergeFooterPalette(DEFAULT_FOOTER_PALETTE, footer.footerPalette);
-            onChange(
-              asFooterPatch({
-                lockPaletteAcrossColorModes: true,
-                footerPalette: snapshot,
-                ...applyFooterPaletteToSettings({ ...footer, footerPalette: snapshot }),
-              })
-            );
-          }}
-        />
-      ) : null}
 
       <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-600">
         The site color palette lives in <span className="font-semibold">Global → Theme</span>. Footer
         bindings map each slot (background, text, CTAs) to one of those tokens.
       </p>
 
-      {paletteOn ? (
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Color bindings</p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Change a binding to recolor that part of the footer from the Global palette.
-          </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {PORTFOLIO_FOOTER_COLOR_SLOT_OPTIONS.map((slot) => (
-              <div key={slot.value}>
-                <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                    {slot.label}
-                  </span>
-                  <select
-                    value={bindings[slot.value]}
-                    onChange={(event) =>
-                      onChange(
-                        asFooterPatch(
-                          patchFooterColorBinding(
-                            footer,
-                            slot.value,
-                            event.target.value as HeroPaletteTokenId
-                          )
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Color bindings</p>
+        <p className="mt-1 text-sm text-neutral-500">
+          Change a binding to recolor that part of the footer from the Global palette.
+        </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {PORTFOLIO_FOOTER_COLOR_SLOT_OPTIONS.map((slot) => (
+            <div key={slot.value}>
+              <label className="block">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+                  {slot.label}
+                </span>
+                <select
+                  value={bindings[slot.value]}
+                  onChange={(event) =>
+                    onChange(
+                      asFooterPatch(
+                        patchFooterColorBinding(
+                          footer,
+                          slot.value,
+                          event.target.value as HeroPaletteTokenId
                         )
                       )
-                    }
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800"
-                  >
-                    {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
-                      <option key={token.value} value={token.value}>
-                        {token.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <p className="mt-1 text-xs text-neutral-500">{slot.description}</p>
-              </div>
-            ))}
-          </div>
+                    )
+                  }
+                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800"
+                >
+                  {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
+                    <option key={token.value} value={token.value}>
+                      {token.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="mt-1 text-xs text-neutral-500">{slot.description}</p>
+            </div>
+          ))}
         </div>
-      ) : (
-        <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
-          Palette is off — edit hex colors in Background / General. Turn palette on to bind colors to
-          Global tokens.
-        </p>
-      )}
+      </div>
     </div>
   );
 }
@@ -556,18 +528,6 @@ export function FooterSettingsPanel({
             description="Display the footer on your public portfolio."
             checked={footer.enabled}
             onChange={(enabled) => onChange({ enabled })}
-          />
-          <SectionHeroPaletteToggle
-            enabled={footer.useHeroPalette}
-            onChange={(useHeroPalette) =>
-              onChange(
-                asFooterPatch(
-                  useHeroPalette
-                    ? { useHeroPalette, ...applyFooterPaletteToSettings(footer) }
-                    : { useHeroPalette, lockPaletteAcrossColorModes: false }
-                )
-              )
-            }
           />
           <SectionColorModeControl
             value={footer.colorModeOverride}

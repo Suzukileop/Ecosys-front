@@ -35,7 +35,6 @@ import {
   type HeroPaletteTokenId,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import {
-  applyFaqPaletteToSettings,
   DEFAULT_FAQ_COLOR_BINDINGS,
   DEFAULT_FAQ_PALETTE,
   mergeFaqColorBindings,
@@ -48,7 +47,6 @@ import {
   PortfolioCardFrameSettingsFields,
   type PortfolioCardFrameColorFieldKey,
 } from '@/components/portfolio/portfolio-card-frame-settings-fields';
-import { SectionHeroPaletteToggle } from '@/components/portfolio/SectionHeroPaletteToggle';
 
 const FAQ_FRAME_SLOTS: Record<PortfolioCardFrameColorFieldKey, FaqColorSlot> = {
   cardBorderColor: 'cardBorder',
@@ -293,16 +291,6 @@ export function FaqSettingsPanel({
             description="Display the FAQ block on your public portfolio."
             checked={faq.enabled}
             onChange={(enabled) => onChange({ enabled })}
-          />
-          <SectionHeroPaletteToggle
-            enabled={faq.useHeroPalette !== false}
-            onChange={(useHeroPalette) =>
-              onChange(
-                asFaqPatch(
-                  useHeroPalette ? { useHeroPalette, ...applyFaqPaletteToSettings(faq) } : { useHeroPalette }
-                )
-              )
-            }
           />
           <SectionColorModeControl
             value={faq.colorModeOverride}

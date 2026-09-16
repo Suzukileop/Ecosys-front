@@ -351,13 +351,6 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
     'general'
   ),
 
-  // Portfolio / work
-  entry(
-    'work',
-    'Use global color palette',
-    ['palette', 'hero palette', 'sync colors', 'couleurs', 'palette hero'],
-    'general'
-  ),
   // Work
   entry(
     'work',
@@ -417,12 +410,6 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   entry('tools', 'Background', ['fill', 'gradient', 'fond'], 'background'),
 
   // Services
-  entry(
-    'services',
-    'Use global color palette',
-    ['palette', 'hero palette', 'sync colors', 'couleurs', 'palette hero'],
-    'general'
-  ),
   entry(
     'services',
     'Use color palette',
@@ -657,24 +644,12 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ),
 
   // FAQ
-  entry(
-    'faq',
-    'Use global color palette',
-    ['palette', 'hero palette', 'sync colors', 'couleurs', 'palette hero'],
-    'general'
-  ),
   entry('faq', 'General', ['visibility', 'accordion', 'spacing'], 'general'),
   entry('faq', 'Header', ['title', 'subtitle'], 'header'),
   entry('faq', 'Items', ['questions', 'answers', 'icons'], 'items'),
   entry('faq', 'Frame', ['card', 'border', 'radius'], 'frame'),
 
   // Contact
-  entry(
-    'contact',
-    'Use global color palette',
-    ['palette', 'hero palette', 'sync colors', 'couleurs', 'palette hero'],
-    'general'
-  ),
   entry('contact', 'General', ['visibility', 'cta', 'design', 'icon', 'icone', 'border', 'size', 'couleur'], 'general'),
   entry(
     'contact',
@@ -709,12 +684,6 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   entry('contact', 'Background', ['fill', 'gradient', 'fond'], 'background'),
 
   // Footer
-  entry(
-    'footer',
-    'Use global color palette',
-    ['palette', 'hero palette', 'sync colors', 'couleurs', 'palette hero'],
-    'general'
-  ),
   entry('footer', 'General', ['visibility', 'design', 'colors'], 'general'),
   entry('footer', 'Content', ['brand', 'copyright', 'links', 'credit'], 'content'),
   entry('footer', 'Typography', ['color', 'font', 'size', 'typography', 'cta', 'meta'], 'typography'),

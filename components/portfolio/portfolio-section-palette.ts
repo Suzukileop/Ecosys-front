@@ -98,7 +98,6 @@ export function applyHeroPaletteToWork(
   presentation: PortfolioWorkPresentationSettings,
   palette: PortfolioHeroPalette
 ): PortfolioWorkPresentationSettings {
-  if (presentation.useHeroPalette === false) return presentation;
   const workPalette = mergeHeroPalette(DEFAULT_HERO_PALETTE, palette);
   return {
     ...presentation,
@@ -119,7 +118,6 @@ export function applyHeroPaletteToServices(
   presentation: PortfolioServicesPresentationSettings,
   palette: PortfolioHeroPalette
 ): PortfolioServicesPresentationSettings {
-  if (presentation.useHeroPalette === false) return presentation;
   const servicesPalette = mergeHeroPalette(DEFAULT_HERO_PALETTE, palette);
   return {
     ...presentation,
@@ -136,7 +134,6 @@ export function applyHeroPaletteToAbout(
   presentation: PortfolioAboutPresentationSettings,
   palette: PortfolioHeroPalette
 ): PortfolioAboutPresentationSettings {
-  if (presentation.useHeroPalette === false) return presentation;
   const aboutPalette = mergeHeroPalette(DEFAULT_HERO_PALETTE, palette);
   return {
     ...presentation,
@@ -153,7 +150,6 @@ export function applyHeroPaletteToExperience(
   presentation: PortfolioExperiencePresentationSettings,
   palette: PortfolioHeroPalette
 ): PortfolioExperiencePresentationSettings {
-  if (presentation.useHeroPalette === false) return presentation;
   const experiencePalette = mergeHeroPalette(DEFAULT_HERO_PALETTE, palette);
   const applied = {
     ...presentation,
@@ -180,7 +176,6 @@ export function applyHeroPaletteToFaq(
   presentation: PortfolioFaqPresentationSettings,
   palette: PortfolioHeroPalette
 ): PortfolioFaqPresentationSettings {
-  if (presentation.useHeroPalette === false) return presentation;
   const faqPalette = mergeHeroPalette(DEFAULT_HERO_PALETTE, palette);
   return {
     ...presentation,
@@ -197,7 +192,6 @@ export function applyHeroPaletteToTeam(
   presentation: PortfolioTeamPresentationSettings,
   palette: PortfolioHeroPalette
 ): PortfolioTeamPresentationSettings {
-  if (presentation.useHeroPalette === false) return presentation;
   const teamPalette = mergeHeroPalette(DEFAULT_HERO_PALETTE, palette);
   return {
     ...presentation,
@@ -211,7 +205,6 @@ export function applyHeroPaletteToTools(
   presentation: PortfolioToolsPresentationSettings,
   palette: PortfolioHeroPalette
 ): PortfolioToolsPresentationSettings {
-  if (presentation.useHeroPalette === false) return presentation;
   const toolsPalette = mergeHeroPalette(DEFAULT_HERO_PALETTE, palette);
   return {
     ...presentation,
@@ -226,7 +219,6 @@ export function applyHeroPaletteToStack(
   presentation: PortfolioStackPresentationSettings,
   palette: PortfolioHeroPalette
 ): PortfolioStackPresentationSettings {
-  if (presentation.useHeroPalette === false) return presentation;
   const toolsPalette = mergeHeroPalette(DEFAULT_HERO_PALETTE, palette);
   const painted = applyToolsPaletteToSettings({ ...presentation, toolsPalette });
   return {
@@ -241,7 +233,6 @@ export function applyHeroPaletteToAboutUs(
   presentation: PortfolioAboutUsPresentationSettings,
   palette: PortfolioHeroPalette
 ): PortfolioAboutUsPresentationSettings {
-  if (presentation.useHeroPalette === false) return presentation;
   const color = (token: HeroPaletteTokenId) => resolveHeroPaletteColor(palette, token);
   return {
     ...presentation,
@@ -276,7 +267,6 @@ export function applyHeroPaletteToInfo(
   presentation: PortfolioInfoPresentationSettings,
   palette: PortfolioHeroPalette
 ): PortfolioInfoPresentationSettings {
-  if (presentation.useHeroPalette === false) return presentation;
   const color = (token: HeroPaletteTokenId) => resolveHeroPaletteColor(palette, token);
   return {
     ...presentation,
@@ -294,7 +284,6 @@ export function applyHeroPaletteToContact(
   presentation: PortfolioContactPresentationSettings,
   palette: PortfolioHeroPalette
 ): PortfolioContactPresentationSettings {
-  if (presentation.useHeroPalette === false) return presentation;
   const color = (token: HeroPaletteTokenId) => resolveHeroPaletteColor(palette, token);
   const bindings = mergeContactColorBindings(
     DEFAULT_CONTACT_COLOR_BINDINGS,
@@ -338,7 +327,6 @@ export function applyHeroPaletteToFooter(
   presentation: PortfolioFooterPresentationSettings,
   palette: PortfolioHeroPalette
 ): PortfolioFooterPresentationSettings {
-  if (presentation.useHeroPalette === false) return presentation;
 
   // Locked: keep the snapshotted footer palette — ignore Global dark/light switches.
   const sourcePalette = presentation.lockPaletteAcrossColorModes

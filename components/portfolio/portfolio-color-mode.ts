@@ -215,30 +215,20 @@ export function applyActivePortfolioPalette(settings: PortfolioSettings): Portfo
   const heroPalette = pairFor(settings.hero.colorModeOverride);
   const heroBase = {
     ...settings.hero,
-    useHeroPalette: settings.hero.useHeroPalette !== false,
+    useHeroPalette: true,
     palette: heroPalette,
   };
-  const hero =
-    heroBase.useHeroPalette === false
-      ? { ...settings.hero, palette: heroPalette }
-      : {
-          ...heroBase,
-          ...applyHeroPaletteToPresentation(heroBase),
-          useHeroPalette: true,
-        };
+  const hero = {
+    ...heroBase,
+    ...applyHeroPaletteToPresentation(heroBase),
+  };
 
   const navPalette = pairFor(settings.navigation.colorModeOverride);
-  const navigation =
-    settings.navigation.useNavPalette === false
-      ? {
-          ...settings.navigation,
-          navPalette,
-        }
-      : {
-          ...settings.navigation,
-          ...patchNavPalette(settings.navigation, navPalette),
-          useNavPalette: true,
-        };
+  const navigation = {
+    ...settings.navigation,
+    ...patchNavPalette(settings.navigation, navPalette),
+    useNavPalette: true,
+  };
 
   // Page background is a fixed wallpaper image — an explicit, user-owned choice made in
   // Global → Background — it does not derive from the active palette at all, so it is left
@@ -247,25 +237,23 @@ export function applyActivePortfolioPalette(settings: PortfolioSettings): Portfo
   const global = settings.global;
 
   const experiencePalette = pairFor(settings.experience.colorModeOverride);
-  const experienceNext =
-    settings.experience.useHeroPalette === false
-      ? { ...settings.experience }
-      : {
-          ...settings.experience,
-          ...applyHeroPaletteToExperience(
-            { ...settings.experience, useHeroPalette: true },
-            experiencePalette
-          ),
-        };
+  const experienceNext = {
+    ...settings.experience,
+    ...applyHeroPaletteToExperience(
+      { ...settings.experience, useHeroPalette: true },
+      experiencePalette
+    ),
+  };
   // When forced to one mode, both slots of the period-rule pair collapse to that mode's
   // palette (the rule never flips with prefers-color-scheme for a section pinned open).
   const experienceOverride = settings.experience.colorModeOverride;
   const experienceLightPalette = experienceOverride === 'dark' ? darkPalette : lightPalette;
   const experienceDarkPalette = experienceOverride === 'light' ? lightPalette : darkPalette;
-  const periodRulePair =
-    settings.experience.useHeroPalette === false
-      ? null
-      : syncExperiencePeriodRulePair(experienceNext, experienceLightPalette, experienceDarkPalette);
+  const periodRulePair = syncExperiencePeriodRulePair(
+    experienceNext,
+    experienceLightPalette,
+    experienceDarkPalette
+  );
 
   return {
     ...settings,
@@ -274,106 +262,77 @@ export function applyActivePortfolioPalette(settings: PortfolioSettings): Portfo
     hero,
     work: {
       ...settings.work,
-      ...(settings.work.useHeroPalette === false
-        ? { workPalette: pairFor(settings.work.colorModeOverride) }
-        : (patchWorkPalette(
-            settings.work,
-            pairFor(settings.work.colorModeOverride)
-          ) as Partial<(typeof settings)['work']>)),
-      ...(settings.work.useHeroPalette === false ? {} : { useHeroPalette: true }),
+      ...(patchWorkPalette(
+        settings.work,
+        pairFor(settings.work.colorModeOverride)
+      ) as Partial<(typeof settings)['work']>),
+      useHeroPalette: true,
     },
-    services:
-      settings.services.useHeroPalette === false
-        ? { ...settings.services, useHeroPalette: false }
-        : {
-            ...settings.services,
-            ...applyHeroPaletteToServices(
-              { ...settings.services, useHeroPalette: true },
-              pairFor(settings.services.colorModeOverride)
-            ),
-          },
-    about:
-      settings.about.useHeroPalette === false
-        ? { ...settings.about }
-        : {
-            ...settings.about,
-            ...applyHeroPaletteToAbout(
-              { ...settings.about, useHeroPalette: true },
-              pairFor(settings.about.colorModeOverride)
-            ),
-          },
-    aboutUs:
-      settings.aboutUs.useHeroPalette === false
-        ? { ...settings.aboutUs }
-        : {
-            ...settings.aboutUs,
-            ...applyHeroPaletteToAboutUs(
-              { ...settings.aboutUs, useHeroPalette: true },
-              pairFor(settings.aboutUs.colorModeOverride)
-            ),
-          },
+    services: {
+      ...settings.services,
+      ...applyHeroPaletteToServices(
+        { ...settings.services, useHeroPalette: true },
+        pairFor(settings.services.colorModeOverride)
+      ),
+    },
+    about: {
+      ...settings.about,
+      ...applyHeroPaletteToAbout(
+        { ...settings.about, useHeroPalette: true },
+        pairFor(settings.about.colorModeOverride)
+      ),
+    },
+    aboutUs: {
+      ...settings.aboutUs,
+      ...applyHeroPaletteToAboutUs(
+        { ...settings.aboutUs, useHeroPalette: true },
+        pairFor(settings.aboutUs.colorModeOverride)
+      ),
+    },
     experience: periodRulePair ? { ...experienceNext, ...periodRulePair } : experienceNext,
-    team:
-      settings.team.useHeroPalette === false
-        ? { ...settings.team }
-        : {
-            ...settings.team,
-            ...applyHeroPaletteToTeam(
-              { ...settings.team, useHeroPalette: true },
-              pairFor(settings.team.colorModeOverride)
-            ),
-          },
-    tools:
-      settings.tools.useHeroPalette === false
-        ? { ...settings.tools }
-        : {
-            ...settings.tools,
-            ...applyHeroPaletteToTools(
-              { ...settings.tools, useHeroPalette: true },
-              pairFor(settings.tools.colorModeOverride)
-            ),
-          },
-    gallery:
-      settings.gallery.useHeroPalette === false
-        ? { ...settings.gallery }
-        : {
-            ...settings.gallery,
-            ...applyGalleryPaletteToSettings(
-              settings.gallery,
-              pairFor(settings.gallery.colorModeOverride)
-            ),
-            useHeroPalette: true,
-          },
-    faq:
-      settings.faq.useHeroPalette === false
-        ? { ...settings.faq }
-        : {
-            ...settings.faq,
-            ...applyHeroPaletteToFaq(
-              { ...settings.faq, useHeroPalette: true },
-              pairFor(settings.faq.colorModeOverride)
-            ),
-          },
-    contact:
-      settings.contact.useHeroPalette === false
-        ? { ...settings.contact }
-        : {
-            ...settings.contact,
-            ...applyHeroPaletteToContact(
-              { ...settings.contact, useHeroPalette: true },
-              pairFor(settings.contact.colorModeOverride)
-            ),
-          },
-    footer:
-      settings.footer.useHeroPalette === false
-        ? { ...settings.footer }
-        : {
-            ...settings.footer,
-            ...applyHeroPaletteToFooter(
-              { ...settings.footer, useHeroPalette: true },
-              pairFor(settings.footer.colorModeOverride)
-            ),
-          },
+    team: {
+      ...settings.team,
+      ...applyHeroPaletteToTeam(
+        { ...settings.team, useHeroPalette: true },
+        pairFor(settings.team.colorModeOverride)
+      ),
+    },
+    tools: {
+      ...settings.tools,
+      ...applyHeroPaletteToTools(
+        { ...settings.tools, useHeroPalette: true },
+        pairFor(settings.tools.colorModeOverride)
+      ),
+    },
+    gallery: {
+      ...settings.gallery,
+      ...applyGalleryPaletteToSettings(
+        settings.gallery,
+        pairFor(settings.gallery.colorModeOverride)
+      ),
+      useHeroPalette: true,
+    },
+    faq: {
+      ...settings.faq,
+      ...applyHeroPaletteToFaq(
+        { ...settings.faq, useHeroPalette: true },
+        pairFor(settings.faq.colorModeOverride)
+      ),
+    },
+    contact: {
+      ...settings.contact,
+      ...applyHeroPaletteToContact(
+        { ...settings.contact, useHeroPalette: true },
+        pairFor(settings.contact.colorModeOverride)
+      ),
+    },
+    footer: {
+      ...settings.footer,
+      ...applyHeroPaletteToFooter(
+        { ...settings.footer, useHeroPalette: true },
+        pairFor(settings.footer.colorModeOverride)
+      ),
+    },
   };
 }
 
