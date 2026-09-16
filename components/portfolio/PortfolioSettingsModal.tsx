@@ -2148,6 +2148,99 @@ function GlobalNumberSlider({
   );
 }
 
+const PALETTE_FAMILY_OPTIONS = [
+  {
+    id: 'indigo' as const,
+    label: 'Indigo',
+    detail: 'Sombre #6366F1 / #F59E0B sur #0F172A · Clair #4338CA / #EA580C sur #F8FAFC.',
+    dark: INDIGO_DARK_HERO_PALETTE,
+    light: INDIGO_LIGHT_HERO_PALETTE,
+    darkClass: 'border-slate-600 bg-[#0F172A] hover:border-indigo-400',
+    labelClass: 'text-[#F8FAFC]',
+    swatchBorder: 'border-white/20',
+  },
+  {
+    id: 'classic' as const,
+    label: 'Classic',
+    detail: 'Sombre #e2572e / #22c48f sur #0F172A · Clair #c2410c / #00875f sur #F8FAFC.',
+    dark: DEFAULT_HERO_PALETTE,
+    light: LIGHT_HERO_PALETTE,
+    darkClass: 'border-slate-600 bg-[#0F172A] hover:border-orange-400',
+    labelClass: 'text-[#FAFAFA]',
+    swatchBorder: 'border-white/20',
+  },
+  {
+    id: 'verdant' as const,
+    label: 'Verdant',
+    detail: 'Sombre #43E00B sur #020617 · Clair #2A9608 / #BE123C sur #F8FAFC.',
+    dark: VERDANT_DARK_HERO_PALETTE,
+    light: VERDANT_LIGHT_HERO_PALETTE,
+    darkClass: 'border-slate-700/80 bg-[#020617] hover:border-lime-400',
+    labelClass: 'text-[#F8FAFC]',
+    swatchBorder: 'border-white/20',
+  },
+  {
+    id: 'vive' as const,
+    label: 'Vive',
+    detail: 'Fond #FEE685 + #6C1BB9 / #D01C82. Light mode stays in this pair.',
+    dark: VIVE_DARK_HERO_PALETTE,
+    light: VIVE_LIGHT_HERO_PALETTE,
+    darkClass: 'border-yellow-700/60 bg-[#12100A] hover:border-yellow-400',
+    labelClass: 'text-[#FEE685]',
+    swatchBorder: 'border-white/20',
+  },
+  {
+    id: 'safran' as const,
+    label: 'Safran',
+    detail: 'Sombre #FCE96A / #0E7C6B sur #0C0A09 · Clair fond #FCE96A + #3D2B84.',
+    dark: SAFRAN_DARK_HERO_PALETTE,
+    light: SAFRAN_LIGHT_HERO_PALETTE,
+    darkClass: 'border-stone-700/50 bg-[#0C0A09] hover:border-[#FCE96A]',
+    labelClass: 'text-[#FCE96A]',
+    swatchBorder: 'border-white/15',
+  },
+  {
+    id: 'citron' as const,
+    label: 'Citron',
+    detail: 'Sombre #A78BFA / #F0985A sur #0F172A · Clair fond #C8E01A + #4C1D6B.',
+    dark: CITRON_DARK_HERO_PALETTE,
+    light: CITRON_LIGHT_HERO_PALETTE,
+    darkClass: 'border-slate-700/60 bg-[#0F172A] hover:border-[#C8E01A]',
+    labelClass: 'text-[#C8E01A]',
+    swatchBorder: 'border-white/15',
+  },
+  {
+    id: 'rouge' as const,
+    label: 'Rouge',
+    detail: 'Sombre #EF4444 / #38BDF8 sur #020202 · Clair #DC2626 / #0EA5E9 sur #F4F4F5.',
+    dark: ROUGE_DARK_HERO_PALETTE,
+    light: ROUGE_LIGHT_HERO_PALETTE,
+    darkClass: 'border-zinc-700 bg-[#020202] hover:border-red-400',
+    labelClass: 'text-[#FAFAFA]',
+    swatchBorder: 'border-white/15',
+  },
+  {
+    id: 'ecarlate' as const,
+    label: 'Écarlate',
+    detail: 'Sombre #FF3333 / #34D399 sur #000000 · Clair #DF1C1C / #10B981 sur #FFFFFF.',
+    dark: ECARLATE_DARK_HERO_PALETTE,
+    light: ECARLATE_LIGHT_HERO_PALETTE,
+    darkClass: 'border-neutral-700 bg-[#000000] hover:border-red-400',
+    labelClass: 'text-[#F5F5F5]',
+    swatchBorder: 'border-white/15',
+  },
+  {
+    id: 'ardoise' as const,
+    label: 'Ardoise',
+    detail: 'Sombre #F87171 / #60A5FA sur #030712 · Clair #EF4444 / #2563EB sur #D4DBE7.',
+    dark: ARDOISE_DARK_HERO_PALETTE,
+    light: ARDOISE_LIGHT_HERO_PALETTE,
+    darkClass: 'border-slate-700 bg-[#030712] hover:border-red-400',
+    labelClass: 'text-[#F9FAFB]',
+    swatchBorder: 'border-white/15',
+  },
+] as const;
+
 function GlobalSettingsPanel({
   themeId,
   customThemes,
@@ -2202,6 +2295,7 @@ function GlobalSettingsPanel({
   const activePalette = resolveActivePortfolioPalette(global);
   const activeMode = (global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark';
   const activeFamily = inferPaletteFamily(global);
+  const [showPaletteDetails, setShowPaletteDetails] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -2273,123 +2367,13 @@ function GlobalSettingsPanel({
           <div className="space-y-4">
             <GlobalBlockLabel>Site color palette</GlobalBlockLabel>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {(
-                [
-                  {
-                    id: 'indigo' as const,
-                    label: 'Indigo / Ambre',
-                    description:
-                      'Pair: sombre #6366F1 / #F59E0B sur #0F172A · clair #4338CA / orange #EA580C sur #F8FAFC.',
-                    dark: INDIGO_DARK_HERO_PALETTE,
-                    light: INDIGO_LIGHT_HERO_PALETTE,
-                    darkClass: 'border-slate-600 bg-[#0F172A] hover:border-indigo-400',
-                    labelClass: 'text-[#F8FAFC]',
-                    descClass: 'text-[#94A3B8]',
-                    swatchBorder: 'border-white/20',
-                  },
-                  {
-                    id: 'classic' as const,
-                    label: 'Classic orange / teal',
-                    description:
-                      'Pair: sombre #e2572e / #22c48f sur #0F172A · clair #c2410c / #00875f sur #F8FAFC (slate).',
-                    dark: DEFAULT_HERO_PALETTE,
-                    light: LIGHT_HERO_PALETTE,
-                    darkClass: 'border-slate-600 bg-[#0F172A] hover:border-orange-400',
-                    labelClass: 'text-[#FAFAFA]',
-                    descClass: 'text-[#94A3B8]',
-                    swatchBorder: 'border-white/20',
-                  },
-                  {
-                    id: 'verdant' as const,
-                    label: 'Verdant / Rose',
-                    description:
-                      'Pair: clair vert #2A9608 / rubis #BE123C sur #F8FAFC · sombre lime #43E00B / coral sur #020617.',
-                    dark: VERDANT_DARK_HERO_PALETTE,
-                    light: VERDANT_LIGHT_HERO_PALETTE,
-                    darkClass: 'border-slate-700/80 bg-[#020617] hover:border-lime-400',
-                    labelClass: 'text-[#F8FAFC]',
-                    descClass: 'text-[#94A3B8]',
-                    swatchBorder: 'border-white/20',
-                  },
-                  {
-                    id: 'vive' as const,
-                    label: 'Vive — jaune / violet',
-                    description:
-                      'Pair: fond #FEE685 + violet #6C1BB9 / magenta #D01C82, neutre blanc + Zinc. Light mode stays in this pair.',
-                    dark: VIVE_DARK_HERO_PALETTE,
-                    light: VIVE_LIGHT_HERO_PALETTE,
-                    darkClass: 'border-yellow-700/60 bg-[#12100A] hover:border-yellow-400',
-                    labelClass: 'text-[#FEE685]',
-                    descClass: 'text-[#C9B56E]',
-                    swatchBorder: 'border-white/20',
-                  },
-                  {
-                    id: 'safran' as const,
-                    label: 'Safran — jaune / violet / émeraude',
-                    description:
-                      'Pair: fond #FCE96A + violet #3D2B84 / émeraude #0E7C6B, neutre blanc + Stone. Sombre: jaune #FCE96A / émeraude sur #0C0A09.',
-                    dark: SAFRAN_DARK_HERO_PALETTE,
-                    light: SAFRAN_LIGHT_HERO_PALETTE,
-                    darkClass: 'border-stone-700/50 bg-[#0C0A09] hover:border-[#FCE96A]',
-                    labelClass: 'text-[#FCE96A]',
-                    descClass: 'text-[#A8A29E]',
-                    swatchBorder: 'border-white/15',
-                  },
-                  {
-                    id: 'citron' as const,
-                    label: 'Citron — vert-citron / violet / bleu',
-                    description:
-                      'Pair: fond #C8E01A + violet #4C1D6B / bleu #2563EB, neutres slate. Sombre: violet #A78BFA / orange #F0985A sur #0F172A.',
-                    dark: CITRON_DARK_HERO_PALETTE,
-                    light: CITRON_LIGHT_HERO_PALETTE,
-                    darkClass: 'border-slate-700/60 bg-[#0F172A] hover:border-[#C8E01A]',
-                    labelClass: 'text-[#C8E01A]',
-                    descClass: 'text-[#94A3B8]',
-                    swatchBorder: 'border-white/15',
-                  },
-                  {
-                    id: 'rouge' as const,
-                    label: 'Rouge / Cyan',
-                    description:
-                      'Pair: clair #DC2626 / #0EA5E9 sur #F4F4F5 · sombre #EF4444 / #38BDF8 sur #020202 (Cyber-Rouge).',
-                    dark: ROUGE_DARK_HERO_PALETTE,
-                    light: ROUGE_LIGHT_HERO_PALETTE,
-                    darkClass: 'border-zinc-700 bg-[#020202] hover:border-red-400',
-                    labelClass: 'text-[#FAFAFA]',
-                    descClass: 'text-[#A1A1AA]',
-                    swatchBorder: 'border-white/15',
-                  },
-                  {
-                    id: 'ecarlate' as const,
-                    label: 'Écarlate / Émeraude',
-                    description:
-                      'Pair: clair #DF1C1C / #10B981 sur #FFFFFF · sombre #FF3333 / #34D399 sur #000000.',
-                    dark: ECARLATE_DARK_HERO_PALETTE,
-                    light: ECARLATE_LIGHT_HERO_PALETTE,
-                    darkClass: 'border-neutral-700 bg-[#000000] hover:border-red-400',
-                    labelClass: 'text-[#F5F5F5]',
-                    descClass: 'text-[#A3A3A3]',
-                    swatchBorder: 'border-white/15',
-                  },
-                  {
-                    id: 'ardoise' as const,
-                    label: 'Ardoise — rouge / bleu',
-                    description:
-                      'Pair: clair #EF4444 / #2563EB sur #D4DBE7 · sombre #F87171 / #60A5FA sur #030712.',
-                    dark: ARDOISE_DARK_HERO_PALETTE,
-                    light: ARDOISE_LIGHT_HERO_PALETTE,
-                    darkClass: 'border-slate-700 bg-[#030712] hover:border-red-400',
-                    labelClass: 'text-[#F9FAFB]',
-                    descClass: 'text-[#9CA3AF]',
-                    swatchBorder: 'border-white/15',
-                  },
-                ] as const
-              ).map((family) => {
+              {PALETTE_FAMILY_OPTIONS.map((family) => {
                 const active = activeFamily === family.id;
                 return (
                   <button
                     key={family.id}
                     type="button"
+                    aria-pressed={active}
                     onClick={() =>
                       onGlobalPalettePairChange(family.dark, family.light, family.id)
                     }
@@ -2397,9 +2381,21 @@ function GlobalSettingsPanel({
                       active ? 'ring-2 ring-indigo-500 ring-offset-2' : ''
                     }`}
                   >
-                    <span className={`text-sm font-bold ${family.labelClass}`}>{family.label}</span>
-                    <span className={`mt-1 block text-xs ${family.descClass}`}>
-                      {family.description}
+                    <span className="flex items-center justify-between gap-2">
+                      <span className={`text-sm font-bold ${family.labelClass}`}>{family.label}</span>
+                      {active ? (
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-indigo-500">
+                          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5" aria-hidden>
+                            <path
+                              d="M4 10.5l3.5 3.5L16 6"
+                              stroke="white"
+                              strokeWidth={2.5}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </span>
+                      ) : null}
                     </span>
                     <span className="mt-2 flex gap-1.5">
                       {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
@@ -2423,10 +2419,31 @@ function GlobalSettingsPanel({
 
             {activeFamily === 'custom' ? (
               <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
-                Custom pair — Light mode still flips between your edited dark and light tokens.
-                Pick Indigo, Classic, Verdant, Vive, Safran, Citron, Rouge, Écarlate, or Ardoise above to reset to a named pair.
+                Custom pair — pick a family above to reset to a named pair.
               </p>
-            ) : null}
+            ) : (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowPaletteDetails((value) => !value)}
+                  className="text-xs font-semibold text-neutral-400 underline decoration-dotted underline-offset-2 transition hover:text-neutral-200"
+                >
+                  {showPaletteDetails ? 'Hide technical details' : 'View technical details'}
+                </button>
+                {showPaletteDetails
+                  ? (() => {
+                      const activeFamilyEntry = PALETTE_FAMILY_OPTIONS.find(
+                        (family) => family.id === activeFamily
+                      );
+                      return activeFamilyEntry ? (
+                        <p className="mt-2 rounded-xl border border-neutral-200/10 bg-black/20 px-3 py-2 text-xs leading-relaxed text-neutral-400">
+                          {activeFamilyEntry.detail}
+                        </p>
+                      ) : null;
+                    })()
+                  : null}
+              </div>
+            )}
 
             <GlobalBlockLabel>
               Active mode tokens ({activeMode === 'light' ? 'Light' : 'Dark'}
@@ -5592,49 +5609,47 @@ function NavMenuGroupsEditor({
 const NAV_MOBILE_LAYOUT_OPTIONS_FR = PORTFOLIO_NAV_MOBILE_LAYOUT_OPTIONS;
 
 /**
- * Larger, airier variants of ToggleRow / OptionGrid used only in the Navigation → General
- * tab — scoped here so the rest of the settings modal keeps its regular density.
+ * Ultra-minimalist toggle / segmented-pill primitives used only in the Navigation panel —
+ * no description text, compact pill switch and segments, matching the site's minimalist
+ * settings language (same mechanism as GlobalSwitchRow / GlobalSegmentGrid above).
  */
+function NavigationSwitchTrack({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${
+        checked ? 'bg-neutral-900' : 'bg-neutral-300'
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+          checked ? 'translate-x-4' : 'translate-x-0.5'
+        }`}
+      />
+    </span>
+  );
+}
+
 function NavigationToggleRow({
   label,
-  description,
   checked,
   onChange,
 }: {
   label: string;
-  description?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-5 py-5">
-      <span className="min-w-0">
-        <span className="block text-base font-semibold text-neutral-900">{label}</span>
-        {description ? (
-          <span className="mt-1.5 block text-[15px] leading-relaxed text-neutral-500">{description}</span>
-        ) : null}
-      </span>
-      <span className="relative mt-0.5 inline-flex h-6 w-11 shrink-0">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(event) => onChange(event.target.checked)}
-          className="absolute inset-0 h-full w-full cursor-pointer appearance-none"
-        />
-        <span
-          aria-hidden
-          className={`pointer-events-none absolute inset-0 rounded-full transition ${
-            checked ? 'bg-neutral-900' : 'bg-neutral-300'
-          }`}
-        />
-        <span
-          aria-hidden
-          className={`pointer-events-none absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-            checked ? 'translate-x-6' : 'translate-x-1'
-          }`}
-        />
-      </span>
-    </label>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full cursor-pointer items-center justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3.5 text-left"
+    >
+      <span className="text-sm font-semibold text-neutral-900">{label}</span>
+      <NavigationSwitchTrack checked={checked} />
+    </button>
   );
 }
 
@@ -5643,27 +5658,24 @@ function NavigationOptionGrid<T extends string>({
   options,
   value,
   onChange,
-  columns = 2,
+  columns,
 }: {
   label: string;
-  options: { value: T; label: string; description: string }[];
+  options: { value: T; label: string; description?: string }[];
   value: T | '';
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const count = options.length;
+  const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
   return (
     <div>
-      <p className="text-sm font-bold uppercase tracking-[0.12em] text-neutral-500">{label}</p>
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</p>
       <div
-        className={`mt-4 grid gap-3 ${
-          columns === 4
-            ? 'grid-cols-2 sm:grid-cols-4'
-            : columns === 3
-              ? 'sm:grid-cols-2 lg:grid-cols-3'
-              : columns === 1
-                ? 'grid-cols-1'
-                : 'sm:grid-cols-2'
-        }`}
+        role="radiogroup"
+        aria-label={label}
+        className="mt-2 grid gap-[3px] rounded-2xl border border-neutral-200/80 bg-neutral-100 p-[3px]"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
       >
         {options.map((option) => {
           const active = option.value === value;
@@ -5671,15 +5683,15 @@ function NavigationOptionGrid<T extends string>({
             <button
               key={option.value}
               type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.description}
               onClick={() => onChange(option.value)}
-              className={`rounded-2xl border px-5 py-4 text-left transition ${
-                active
-                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+              className={`rounded-xl px-3 py-2 text-center text-sm font-medium tracking-tight transition ${
+                active ? 'bg-white text-neutral-950 shadow-sm' : 'text-neutral-500 hover:text-neutral-800'
               }`}
             >
-              <p className="text-base font-semibold text-neutral-950">{option.label}</p>
-              <p className="mt-1.5 text-sm leading-relaxed text-neutral-500">{option.description}</p>
+              {option.label}
             </button>
           );
         })}
@@ -5735,7 +5747,6 @@ function NavigationPanel({
         <div className="space-y-8">
       <NavigationToggleRow
         label="Show navigation"
-        description="Menu that jumps between portfolio sections."
         checked={navigation.enabled}
         onChange={(enabled) => onChange({ enabled })}
       />
@@ -5772,7 +5783,6 @@ function NavigationPanel({
           />
           <NavigationToggleRow
             label="Bascule clair / sombre dans la barre"
-            description="Affiche une icône soleil / lune dans la navigation pour basculer entre mode clair et sombre."
             checked={showColorModeToggleInNav}
             onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
           />
@@ -5858,7 +5868,6 @@ function NavigationPanel({
       <div className="space-y-4">
       <NavigationToggleRow
         label="Hide when only one section"
-        description="Do not show the menu if a single destination is available."
         checked={navigation.hideWhenSingle}
         onChange={(hideWhenSingle) => onChange({ hideWhenSingle })}
       />
