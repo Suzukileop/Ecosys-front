@@ -16,7 +16,6 @@ import {
   resolveHeroPaletteColor,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
-import { heroBottomFrameHasContent } from '@/components/portfolio/hero-variants/PortfolioHeroBottomFrame';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 
 const FALLBACK_INTRO =
@@ -74,7 +73,9 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
 
-  const showBottomBand = heroBottomFrameHasContent(data.presentation);
+  // The shared bottom-frame feature was removed — always false so the reserved-space
+  // branches below never trigger, even for legacy portfolios with old frame data stored.
+  const showBottomBand = false;
   const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
 
   const contactHref = data.contactHref || '#contact';
