@@ -119,10 +119,7 @@ export function PortfolioBackgroundImageUpload({
 
       {!hasImage && (!libraryEnabled || images.length === 0) ? (
         <div className="flex min-h-[7.5rem] flex-col items-center justify-center rounded-xl border-2 border-dashed border-neutral-200 bg-white px-4 text-center">
-          <p className="text-sm font-semibold text-neutral-700">No image yet</p>
-          <p className="mt-1 text-xs text-neutral-500">
-            JPEG, PNG, WebP or GIF — up to {MAX_PORTFOLIO_BACKGROUND_IMAGES} in library
-          </p>
+          <p className="text-sm font-semibold text-neutral-700">No image yet — click to upload</p>
         </div>
       ) : null}
 

@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type CSSProperties,
@@ -228,6 +229,7 @@ import {
   DEFAULT_GLOBAL_SUBTITLE_COLOR,
   DEFAULT_GLOBAL_TITLE_COLOR,
   PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS,
+  type PortfolioGlobalBackgroundImagePosition,
   PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS,
   PORTFOLIO_GLOBAL_CONTENT_GUTTER_OPTIONS,
   PORTFOLIO_GLOBAL_CONTENT_WIDTH_OPTIONS,
@@ -2150,6 +2152,215 @@ const GLOBAL_CONTENT_GUTTER_PREVIEW_OPTIONS = PORTFOLIO_GLOBAL_CONTENT_GUTTER_OP
   ),
 }));
 
+/** Frame + "photo" rect sized/positioned per fit mode — preview for Cover/Contain/Stretch. */
+function globalImageSizeGlyph(mode: 'cover' | 'contain' | 'fill') {
+  return () => {
+    const frameX = 14;
+    const frameY = 6;
+    const frameW = 36;
+    const frameH = 22;
+    const photo = (x: number, y: number, w: number, h: number) => (
+      <>
+        <rect x={x} y={y} width={w} height={h} className="pf-stack-mini-mute" />
+        <circle cx={x + w * 0.24} cy={y + h * 0.3} r={Math.min(w, h) * 0.13} className="pf-stack-mini-ink" />
+        <path
+          d={`M${x} ${y + h} L${x + w * 0.38} ${y + h * 0.42} L${x + w * 0.6} ${y + h * 0.68} L${x + w * 0.8} ${y + h * 0.36} L${x + w} ${y + h} Z`}
+          className="pf-stack-mini-ink"
+        />
+      </>
+    );
+    return (
+      <>
+        {mode === 'cover' ? (
+          <>
+            <clipPath id="gbl-bg-size-cover-clip">
+              <rect x={frameX} y={frameY} width={frameW} height={frameH} rx={3} />
+            </clipPath>
+            <g clipPath="url(#gbl-bg-size-cover-clip)">
+              {photo(frameX - 6, frameY - 4, frameW + 12, frameH + 10)}
+            </g>
+          </>
+        ) : mode === 'contain' ? (
+          photo(frameX + 6, frameY + 4, frameW - 12, frameH - 8)
+        ) : (
+          photo(frameX, frameY, frameW, frameH)
+        )}
+        <rect
+          x={frameX}
+          y={frameY}
+          width={frameW}
+          height={frameH}
+          rx={3}
+          className="pf-stack-mini-ring"
+          strokeWidth={1.2}
+        />
+      </>
+    );
+  };
+}
+
+const GLOBAL_BACKGROUND_IMAGE_SIZE_PREVIEW_OPTIONS = PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS.map(
+  (option) => ({
+    value: option.value,
+    label: option.label,
+    glyph: globalImageSizeGlyph(option.value),
+  })
+);
+
+/** 3×3 spatial position picker — square grid of dots, no visible text (title/aria-label carry
+ *  the position name for accessibility). Arrow keys move focus between cells like a radiogroup. */
+function GlobalPositionGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioGlobalBackgroundImagePosition;
+  onChange: (value: PortfolioGlobalBackgroundImagePosition) => void;
+}) {
+  const grid: PortfolioGlobalBackgroundImagePosition[][] = [
+    ['top-left', 'top', 'top-right'],
+    ['left', 'center', 'right'],
+    ['bottom-left', 'bottom', 'bottom-right'],
+  ];
+  const labelByValue = Object.fromEntries(
+    PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS.map((option) => [option.value, option.label])
+  ) as Record<PortfolioGlobalBackgroundImagePosition, string>;
+  const cellRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  const handleKeyDown = (
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    row: number,
+    col: number
+  ) => {
+    let nextRow = row;
+    let nextCol = col;
+    if (event.key === 'ArrowUp') nextRow = Math.max(0, row - 1);
+    else if (event.key === 'ArrowDown') nextRow = Math.min(2, row + 1);
+    else if (event.key === 'ArrowLeft') nextCol = Math.max(0, col - 1);
+    else if (event.key === 'ArrowRight') nextCol = Math.min(2, col + 1);
+    else return;
+    event.preventDefault();
+    const next = grid[nextRow][nextCol];
+    onChange(next);
+    cellRefs.current[next]?.focus();
+  };
+
+  return (
+    <div>
+      <p className="pf-stack-block-label pf-stack-option-label">Image position</p>
+      <div
+        role="radiogroup"
+        aria-label="Image position"
+        className="grid grid-cols-3 gap-1.5"
+        style={{ width: '140px' }}
+      >
+        {grid.map((row, rowIndex) =>
+          row.map((pos, colIndex) => {
+            const active = value === pos;
+            return (
+              <button
+                key={pos}
+                ref={(node) => {
+                  cellRefs.current[pos] = node;
+                }}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                aria-label={labelByValue[pos]}
+                title={labelByValue[pos]}
+                data-active={active ? 'true' : 'false'}
+                tabIndex={active ? 0 : -1}
+                onClick={() => onChange(pos)}
+                onKeyDown={(event) => handleKeyDown(event, rowIndex, colIndex)}
+                className="pf-stack-design-card flex aspect-square items-center justify-center rounded-lg"
+              >
+                <span
+                  aria-hidden
+                  className="block h-1.5 w-1.5 rounded-full transition-colors"
+                  style={{
+                    backgroundColor: active
+                      ? 'var(--pf-palette-principal, #f97316)'
+                      : 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 30%, transparent)',
+                  }}
+                />
+              </button>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GlobalInsetField({
+  side,
+  value,
+  onChange,
+}: {
+  side: 'Top' | 'Right' | 'Bottom' | 'Left';
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <input
+      type="number"
+      min={0}
+      max={240}
+      step={4}
+      value={value}
+      aria-label={`${side} inset`}
+      title={`${side} inset`}
+      onChange={(event) => {
+        const next = Number(event.target.value);
+        onChange(Number.isFinite(next) ? Math.min(240, Math.max(0, Math.round(next))) : 0);
+      }}
+      className="w-16 rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-center text-sm tabular-nums text-neutral-900 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-200"
+    />
+  );
+}
+
+/** Mini schema: each numeric field sits on the side of a dashed frame it controls, so the
+ *  field's position — not a text label — communicates which edge it insets. */
+function GlobalInsetsSchema({
+  top,
+  right,
+  bottom,
+  left,
+  onChange,
+}: {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+  onChange: (key: 'backgroundImageInsetTop' | 'backgroundImageInsetRight' | 'backgroundImageInsetBottom' | 'backgroundImageInsetLeft', value: number) => void;
+}) {
+  return (
+    <div className="grid grid-cols-3 grid-rows-3 items-center justify-items-center gap-2 py-1">
+      <div aria-hidden />
+      <GlobalInsetField side="Top" value={top} onChange={(value) => onChange('backgroundImageInsetTop', value)} />
+      <div aria-hidden />
+
+      <GlobalInsetField side="Left" value={left} onChange={(value) => onChange('backgroundImageInsetLeft', value)} />
+      <div
+        aria-hidden
+        className="flex h-14 w-14 items-center justify-center rounded-lg border border-dashed border-neutral-300"
+      >
+        <span className="text-[8px] font-semibold uppercase tracking-[0.1em] text-neutral-400">
+          Image
+        </span>
+      </div>
+      <GlobalInsetField side="Right" value={right} onChange={(value) => onChange('backgroundImageInsetRight', value)} />
+
+      <div aria-hidden />
+      <GlobalInsetField
+        side="Bottom"
+        value={bottom}
+        onChange={(value) => onChange('backgroundImageInsetBottom', value)}
+      />
+      <div aria-hidden />
+    </div>
+  );
+}
+
 /** Guaranteed-visible animated switch — hardcoded per dock-mode colors (see .pf-global-switch-*
  *  in globals.css) instead of palette-derived ones, which can land near-invisible against the
  *  dock's own chrome in some palette/mode combinations. */
@@ -2168,33 +2379,83 @@ function GlobalSwitchTrack({ checked }: { checked: boolean }) {
   );
 }
 
+/** Small keyboard-accessible "i" tooltip — shows non-obvious info on hover or focus
+ *  instead of a permanent line of text under a toggle. */
+function GlobalInfoTooltip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const tooltipId = useId();
+  return (
+    <span className="relative inline-flex shrink-0">
+      <button
+        type="button"
+        aria-describedby={open ? tooltipId : undefined}
+        aria-label={`More info: ${text}`}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+      >
+        <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
+          <circle cx="7" cy="4.35" r="0.95" fill="currentColor" />
+          <rect x="6.3" y="6.05" width="1.4" height="4.4" rx="0.7" fill="currentColor" />
+        </svg>
+      </button>
+      {open ? (
+        <span
+          id={tooltipId}
+          role="tooltip"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+        >
+          {text}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 function GlobalSwitchRow({
   label,
   description,
+  info,
   checked,
   onChange,
 }: {
   label: string;
   description?: string;
+  /** Non-obvious info shown as a hover/focus tooltip instead of a permanent description line. */
+  info?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="flex w-full cursor-pointer flex-col gap-1 text-left"
-    >
-      <span className="flex items-center justify-between gap-4">
-        <span className="min-w-0 text-sm font-semibold text-neutral-950">{label}</span>
-        <GlobalSwitchTrack checked={checked} />
-      </span>
+    <div className="flex w-full flex-col gap-1">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span
+            className="min-w-0 cursor-pointer text-sm font-semibold text-neutral-950"
+            onClick={() => onChange(!checked)}
+          >
+            {label}
+          </span>
+          {info ? <GlobalInfoTooltip text={info} /> : null}
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={checked}
+          aria-label={label}
+          onClick={() => onChange(!checked)}
+          className="shrink-0"
+        >
+          <GlobalSwitchTrack checked={checked} />
+        </button>
+      </div>
       {description ? (
         <span className="text-sm leading-relaxed text-neutral-500">{description}</span>
       ) : null}
-    </button>
+    </div>
   );
 }
 
@@ -2575,7 +2836,7 @@ function GlobalSettingsPanel({
         <div className="space-y-4">
           <GlobalSwitchRow
             label="Enable page background"
-            description="Fixed wallpaper image behind every section. A section's own image fill still sits on top for that section only."
+            info="Sits behind every section — a section's own image fill still shows on top there."
             checked={global.backgroundEnabled}
             onChange={(backgroundEnabled) => onGlobalChange({ backgroundEnabled })}
           />
@@ -2589,58 +2850,28 @@ function GlobalSettingsPanel({
                 onLibraryChange={(backgroundImageLibrary) => onGlobalChange({ backgroundImageLibrary })}
               />
 
-              <GlobalSegmentGrid
+              <GlobalPreviewCardGrid
                 label="Image size"
-                options={PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS}
+                options={GLOBAL_BACKGROUND_IMAGE_SIZE_PREVIEW_OPTIONS}
                 value={global.backgroundImageSize}
                 onChange={(backgroundImageSize) => onGlobalChange({ backgroundImageSize })}
                 columns={3}
-                hideDescription
               />
 
-              <GlobalSegmentGrid
-                label="Image position"
-                options={PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS}
+              <GlobalPositionGrid
                 value={global.backgroundImagePosition}
                 onChange={(backgroundImagePosition) => onGlobalChange({ backgroundImagePosition })}
-                columns={3}
-                hideDescription
               />
 
               <div>
                 <GlobalBlockLabel>Insets from edges</GlobalBlockLabel>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {(
-                    [
-                      ['Top', 'backgroundImageInsetTop', global.backgroundImageInsetTop],
-                      ['Right', 'backgroundImageInsetRight', global.backgroundImageInsetRight],
-                      ['Bottom', 'backgroundImageInsetBottom', global.backgroundImageInsetBottom],
-                      ['Left', 'backgroundImageInsetLeft', global.backgroundImageInsetLeft],
-                    ] as const
-                  ).map(([label, key, value]) => (
-                    <label key={key} className="block">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                        {label}
-                      </span>
-                      <input
-                        type="number"
-                        min={0}
-                        max={240}
-                        step={4}
-                        value={value}
-                        onChange={(event) => {
-                          const next = Number(event.target.value);
-                          onGlobalChange({
-                            [key]: Number.isFinite(next)
-                              ? Math.min(240, Math.max(0, Math.round(next)))
-                              : 0,
-                          });
-                        }}
-                        className="mt-1.5 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm tabular-nums text-neutral-900 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-200"
-                      />
-                    </label>
-                  ))}
-                </div>
+                <GlobalInsetsSchema
+                  top={global.backgroundImageInsetTop}
+                  right={global.backgroundImageInsetRight}
+                  bottom={global.backgroundImageInsetBottom}
+                  left={global.backgroundImageInsetLeft}
+                  onChange={(key, value) => onGlobalChange({ [key]: value })}
+                />
               </div>
 
               <GlobalNumberSlider
