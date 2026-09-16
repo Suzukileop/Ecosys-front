@@ -228,16 +228,8 @@ import {
   DEFAULT_GLOBAL_TITLE_COLOR,
   PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS,
   PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS,
-  PORTFOLIO_GLOBAL_BACKGROUND_PATTERN_OPTIONS,
-  GLOBAL_BACKGROUND_PATTERN_GAP_MAX,
-  GLOBAL_BACKGROUND_PATTERN_UNIT_SIZE_MAX,
-  GLOBAL_BACKGROUND_PATTERN_UNIT_SIZE_MIN,
-  GLOBAL_BACKGROUND_PATTERN_UNITS_PER_ROW_MAX,
-  globalBackgroundPatternSwatchStyle,
-  globalBackgroundPatternUsesSecondaryColor,
   PORTFOLIO_GLOBAL_CONTENT_GUTTER_OPTIONS,
   PORTFOLIO_GLOBAL_CONTENT_WIDTH_OPTIONS,
-  PORTFOLIO_GLOBAL_BODY_FONT_OPTIONS,
   PORTFOLIO_GLOBAL_HEADER_FONT_OPTIONS,
   PORTFOLIO_GLOBAL_SECTION_TOP_SPACING_OPTIONS,
   PORTFOLIO_GLOBAL_SECTION_BOTTOM_SPACING_OPTIONS,
@@ -266,7 +258,6 @@ import {
   type PortfolioGlobalTitleOrientationTargets,
   type PortfolioGlobalTitleTypography,
   type PortfolioGlobalHeaderFont,
-  type PortfolioGlobalBodyFont,
   type PortfolioGlobalColorSource,
   resolveGlobalTypographyTextColor,
   globalTitleFontWeightValue,
@@ -1166,66 +1157,6 @@ function GlobalHeaderFontMockups({
             </button>
           );
         })}
-      </div>
-    </div>
-  );
-}
-
-function GlobalPolicePrincipaleBlock({
-  global,
-  onGlobalChange,
-}: {
-  global: PortfolioGlobalSettings;
-  onGlobalChange: (patch: Partial<PortfolioGlobalSettings>) => void;
-}) {
-  const bodyFont = global.bodyFont ?? 'plusJakarta';
-
-  return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-      <div>
-        <p className="text-sm font-semibold text-neutral-950">Police principale</p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Unique typeface du portfolio public — appliquée partout (hero, titres, cartes, contact,
-          footer…). Les polices par section ont été retirées.
-        </p>
-      </div>
-
-      <div className="grid gap-2 sm:grid-cols-2">
-        {PORTFOLIO_GLOBAL_BODY_FONT_OPTIONS.filter((option) => option.value !== 'default').map(
-          (option) => {
-            const active =
-              bodyFont === option.value ||
-              (option.value === 'geist' && bodyFont === 'default');
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() =>
-                  onGlobalChange({
-                    bodyFont: option.value as PortfolioGlobalBodyFont,
-                    bodyFontForceAll: true,
-                  })
-                }
-                className={`rounded-2xl border px-3.5 py-3 text-left transition ${
-                  active
-                    ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
-                    : 'border-neutral-200/80 bg-white hover:border-neutral-300'
-                }`}
-              >
-                <p
-                  className="text-base font-semibold text-neutral-950"
-                  style={option.fontFamily ? { fontFamily: option.fontFamily } : undefined}
-                >
-                  {option.previewText}
-                </p>
-                <p className="mt-1.5 text-sm font-semibold text-neutral-800">{option.label}</p>
-                <p className="mt-0.5 text-xs leading-relaxed text-neutral-500">
-                  {option.description}
-                </p>
-              </button>
-            );
-          }
-        )}
       </div>
     </div>
   );
@@ -2378,6 +2309,26 @@ function GlobalSettingsPanel({
 
           <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+              Layout &amp; width
+            </p>
+            <OptionGrid
+              label="Content width"
+              options={PORTFOLIO_GLOBAL_CONTENT_WIDTH_OPTIONS}
+              value={global.contentWidth}
+              onChange={(contentWidth) => onGlobalChange({ contentWidth })}
+              columns={3}
+            />
+            <OptionGrid
+              label="Side margins"
+              options={PORTFOLIO_GLOBAL_CONTENT_GUTTER_OPTIONS}
+              value={global.contentGutter}
+              onChange={(contentGutter) => onGlobalChange({ contentGutter })}
+              columns={2}
+            />
+          </div>
+
+          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
               Preferences
             </p>
             <ToggleRow
@@ -2391,57 +2342,21 @@ function GlobalSettingsPanel({
       ) : null}
 
       {subSection === 'background' ? (
-        <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-          <OptionGrid
-            label="Page background"
-            options={[
-              {
-                value: 'none',
-                label: 'None',
-                description: 'Default theme chrome — section fills keep working.',
-              },
-              {
-                value: 'solid',
-                label: 'Solid color',
-                description: 'One page color. Replaces per-section background fills.',
-              },
-              {
-                value: 'image',
-                label: 'Fixed image',
-                description: 'Viewport wallpaper. Section fills can still sit on top.',
-              },
-            ]}
-            value={
-              global.backgroundImageEnabled ? 'image' : global.backgroundEnabled ? 'solid' : 'none'
-            }
-            onChange={(mode) => {
-              if (mode === 'solid') {
-                onGlobalChange({ backgroundEnabled: true, backgroundImageEnabled: false });
-              } else if (mode === 'image') {
-                onGlobalChange({ backgroundEnabled: false, backgroundImageEnabled: true });
-              } else {
-                onGlobalChange({ backgroundEnabled: false, backgroundImageEnabled: false });
-              }
-            }}
-            columns={3}
+        <div className="space-y-4">
+          <ToggleRow
+            label="Enable page background"
+            description="Fixed wallpaper image behind every section. A section's own image fill still sits on top for that section only."
+            checked={global.backgroundEnabled}
+            onChange={(backgroundEnabled) => onGlobalChange({ backgroundEnabled })}
           />
 
-          {global.backgroundEnabled && !global.backgroundImageEnabled ? (
-            <GlobalColorField
-              label="Background color"
-              value={global.backgroundColor}
-              onChange={(backgroundColor) => onGlobalChange({ backgroundColor })}
-            />
-          ) : null}
-
-          {global.backgroundImageEnabled ? (
-            <>
+          {global.backgroundEnabled ? (
+            <div className="space-y-4">
               <PortfolioBackgroundImageUpload
                 url={global.backgroundImageUrl}
                 onChange={(backgroundImageUrl) => onGlobalChange({ backgroundImageUrl })}
                 library={global.backgroundImageLibrary}
                 onLibraryChange={(backgroundImageLibrary) => onGlobalChange({ backgroundImageLibrary })}
-                helperText="This fixed wallpaper shows behind every section. A section can override it with its own image fill — only that section is affected."
               />
 
               <OptionGrid
@@ -2461,34 +2376,8 @@ function GlobalSettingsPanel({
               />
 
               <div>
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Image opacity
-                  </p>
-                  <span className="text-xs font-semibold tabular-nums text-neutral-600">
-                    {global.backgroundImageOpacity}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={global.backgroundImageOpacity}
-                  onChange={(event) =>
-                    onGlobalChange({ backgroundImageOpacity: Number(event.target.value) })
-                  }
-                  className="mt-2 h-1.5 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Background image opacity"
-                />
-              </div>
-
-              <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Insets from edges
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Pull the image in from each side of the screen (px).
                 </p>
                 <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {(
@@ -2523,208 +2412,31 @@ function GlobalSettingsPanel({
                   ))}
                 </div>
               </div>
-            </>
-          ) : null}
 
-          <div className="space-y-4 border-t border-neutral-200/80 pt-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Background pattern
-              </p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Repeating geometric motif painted over the page fill.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {PORTFOLIO_GLOBAL_BACKGROUND_PATTERN_OPTIONS.map((option) => {
-                const active = global.backgroundPattern === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => onGlobalChange({ backgroundPattern: option.value })}
-                    className={`overflow-hidden rounded-2xl border text-left transition ${
-                      active
-                        ? 'border-neutral-900 ring-2 ring-neutral-900/10'
-                        : 'border-neutral-200 hover:border-neutral-300'
-                    }`}
-                    aria-pressed={active}
-                  >
-                    <div
-                      className="h-16 w-full bg-white"
-                      style={globalBackgroundPatternSwatchStyle(
-                        option.value,
-                        global.backgroundPatternColor,
-                        global.backgroundPatternSecondaryColor
-                      )}
-                    />
-                    <div className="border-t border-neutral-100 bg-white px-3 py-2">
-                      <p className="text-sm font-semibold text-neutral-900">{option.label}</p>
-                      <p className="mt-0.5 text-[11px] leading-snug text-neutral-500">
-                        {option.description}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {global.backgroundPattern !== 'none' ? (
-              <>
-              <div
-                className={`grid gap-4 ${
-                  globalBackgroundPatternUsesSecondaryColor(global.backgroundPattern)
-                    ? 'sm:grid-cols-3'
-                    : 'sm:grid-cols-2'
-                }`}
-              >
-                <GlobalColorField
-                  label="Pattern color A"
-                  value={global.backgroundPatternColor}
-                  onChange={(backgroundPatternColor) => onGlobalChange({ backgroundPatternColor })}
-                />
-                {globalBackgroundPatternUsesSecondaryColor(global.backgroundPattern) ? (
-                  <GlobalColorField
-                    label="Pattern color B"
-                    value={global.backgroundPatternSecondaryColor}
-                    onChange={(backgroundPatternSecondaryColor) =>
-                      onGlobalChange({ backgroundPatternSecondaryColor })
-                    }
-                  />
-                ) : null}
-                <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Pattern opacity
-                    </p>
-                    <span className="text-xs font-semibold tabular-nums text-neutral-600">
-                      {global.backgroundPatternOpacity}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={2}
-                    max={60}
-                    step={1}
-                    value={global.backgroundPatternOpacity}
-                    onChange={(event) =>
-                      onGlobalChange({ backgroundPatternOpacity: Number(event.target.value) })
-                    }
-                    className="mt-3 h-1.5 w-full cursor-pointer accent-neutral-900"
-                    aria-label="Background pattern opacity"
-                  />
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Units per row
-                    </p>
-                    <span className="text-xs font-semibold tabular-nums text-neutral-600">
-                      {(global.backgroundPatternUnitsPerRow ?? 0) === 0
-                        ? 'Auto'
-                        : global.backgroundPatternUnitsPerRow}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={GLOBAL_BACKGROUND_PATTERN_UNITS_PER_ROW_MAX}
-                    step={1}
-                    value={global.backgroundPatternUnitsPerRow ?? 0}
-                    onChange={(event) =>
-                      onGlobalChange({ backgroundPatternUnitsPerRow: Number(event.target.value) })
-                    }
-                    className="mt-3 h-1.5 w-full cursor-pointer accent-neutral-900"
-                    aria-label="Pattern units per row"
-                  />
-                  <p className="mt-1.5 text-xs text-neutral-500">
-                    {(global.backgroundPatternUnitsPerRow ?? 0) === 1
-                      ? 'One unit centered on the page — no repetition. Adjust size below.'
-                      : (global.backgroundPatternUnitsPerRow ?? 0) === 0
-                        ? 'Auto keeps the natural tile size and repeats across the page.'
-                        : 'How many units fit across the page.'}
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                    Opacity
                   </p>
+                  <span className="text-xs font-semibold tabular-nums text-neutral-600">
+                    {global.backgroundOpacity}%
+                  </span>
                 </div>
-                {(global.backgroundPatternUnitsPerRow ?? 0) === 1 ? (
-                  <div className="sm:col-span-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Unit size
-                      </p>
-                      <span className="text-xs font-semibold tabular-nums text-neutral-600">
-                        {global.backgroundPatternUnitSize ?? 40}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={GLOBAL_BACKGROUND_PATTERN_UNIT_SIZE_MIN}
-                      max={GLOBAL_BACKGROUND_PATTERN_UNIT_SIZE_MAX}
-                      step={1}
-                      value={global.backgroundPatternUnitSize ?? 40}
-                      onChange={(event) =>
-                        onGlobalChange({ backgroundPatternUnitSize: Number(event.target.value) })
-                      }
-                      className="mt-3 h-1.5 w-full cursor-pointer accent-neutral-900"
-                      aria-label="Pattern unit size"
-                    />
-                    <p className="mt-1.5 text-xs text-neutral-500">
-                      Width of the centered motif as a percentage of the screen.
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                          Gap horizontal
-                        </p>
-                        <span className="text-xs font-semibold tabular-nums text-neutral-600">
-                          {global.backgroundPatternGapX ?? 0}px
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={GLOBAL_BACKGROUND_PATTERN_GAP_MAX}
-                        step={2}
-                        value={global.backgroundPatternGapX ?? 0}
-                        onChange={(event) =>
-                          onGlobalChange({ backgroundPatternGapX: Number(event.target.value) })
-                        }
-                        className="mt-3 h-1.5 w-full cursor-pointer accent-neutral-900"
-                        aria-label="Pattern horizontal gap"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                          Gap vertical
-                        </p>
-                        <span className="text-xs font-semibold tabular-nums text-neutral-600">
-                          {global.backgroundPatternGapY ?? 0}px
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={GLOBAL_BACKGROUND_PATTERN_GAP_MAX}
-                        step={2}
-                        value={global.backgroundPatternGapY ?? 0}
-                        onChange={(event) =>
-                          onGlobalChange({ backgroundPatternGapY: Number(event.target.value) })
-                        }
-                        className="mt-3 h-1.5 w-full cursor-pointer accent-neutral-900"
-                        aria-label="Pattern vertical gap"
-                      />
-                    </div>
-                  </>
-                )}
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={global.backgroundOpacity}
+                  onChange={(event) =>
+                    onGlobalChange({ backgroundOpacity: Number(event.target.value) })
+                  }
+                  className="mt-2 h-1.5 w-full cursor-pointer accent-neutral-900"
+                  aria-label="Background image opacity"
+                />
               </div>
-              </>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -2736,171 +2448,6 @@ function GlobalSettingsPanel({
         />
       ) : null}
 
-      {subSection === 'titles' ? (
-        <div className="space-y-5">
-          <GlobalSectionTypographySettings global={global} onGlobalChange={onGlobalChange} />
-
-          <div className="space-y-5 border-t border-neutral-200/80 pt-5">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Layout & motion
-              </p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Alignment, orientation, sticky behavior, and scroll reveal for section headers.
-              </p>
-            </div>
-
-          <OptionGrid
-            label="Section titles alignment"
-            options={PORTFOLIO_GLOBAL_TITLE_ALIGNMENT_OPTIONS}
-            value={global.titleAlignment}
-            onChange={(titleAlignment) => onGlobalChange({ titleAlignment })}
-          />
-
-          <OptionGrid
-            label="Section title orientation"
-            options={PORTFOLIO_GLOBAL_TITLE_ORIENTATION_OPTIONS}
-            value={global.titleOrientation}
-            onChange={(titleOrientation) => onGlobalChange({ titleOrientation })}
-            columns={2}
-          />
-
-          {global.titleOrientation === 'vertical' ? (
-            <GlobalOrientationTargets
-              targets={global.titleOrientationTargets}
-              onChange={(titleOrientationTargets) => onGlobalChange({ titleOrientationTargets })}
-            />
-          ) : null}
-
-          <OptionGrid
-            label="Section title scroll behavior"
-            options={PORTFOLIO_GLOBAL_TITLE_SCROLL_OPTIONS}
-            value={global.titleScroll}
-            onChange={(titleScroll) => onGlobalChange({ titleScroll })}
-          />
-
-          <GlobalSectionRevealBlock
-            motionProfile={global.motionProfile}
-            motionTiming={global.motionTiming}
-            onChange={(patch) => onGlobalChange(patch)}
-          />
-
-          <OptionGrid
-            label="Space above section titles"
-            options={PORTFOLIO_GLOBAL_SECTION_TOP_SPACING_OPTIONS}
-            value={global.sectionTitleTopSpacing}
-            onChange={(sectionTitleTopSpacing) => onGlobalChange({ sectionTitleTopSpacing })}
-            columns={2}
-          />
-          <div>
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Extra spacing (px)
-              </p>
-              <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                {clampGlobalSectionTitleTopExtraPx(global.sectionTitleTopExtraPx, 0)}px
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-neutral-500">
-              Ajoute des pixels au preset ci-dessus pour affiner l’espace au-dessus de chaque titre
-              de section.
-            </p>
-            <input
-              type="range"
-              min={GLOBAL_SECTION_TITLE_TOP_EXTRA_PX_MIN}
-              max={GLOBAL_SECTION_TITLE_TOP_EXTRA_PX_MAX}
-              step={4}
-              value={clampGlobalSectionTitleTopExtraPx(global.sectionTitleTopExtraPx, 0)}
-              onChange={(event) =>
-                onGlobalChange({
-                  sectionTitleTopExtraPx: clampGlobalSectionTitleTopExtraPx(
-                    Number(event.target.value),
-                    0
-                  ),
-                })
-              }
-              className="mt-3 w-full accent-neutral-900"
-            />
-            <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
-              <span>{GLOBAL_SECTION_TITLE_TOP_EXTRA_PX_MIN}px</span>
-              <span>{GLOBAL_SECTION_TITLE_TOP_EXTRA_PX_MAX}px</span>
-            </div>
-          </div>
-          <OptionGrid
-            label="Space below sections"
-            options={PORTFOLIO_GLOBAL_SECTION_BOTTOM_SPACING_OPTIONS}
-            value={global.sectionTitleBottomSpacing}
-            onChange={(sectionTitleBottomSpacing) => onGlobalChange({ sectionTitleBottomSpacing })}
-            columns={2}
-          />
-          <div>
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Extra bottom spacing (px)
-              </p>
-              <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                {clampGlobalSectionTitleBottomExtraPx(global.sectionTitleBottomExtraPx, 0)}px
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-neutral-500">
-              Ajoute des pixels au preset ci-dessus pour affiner l’espace sous chaque section
-              (Stack, Tools, Portfolio, etc.).
-            </p>
-            <input
-              type="range"
-              min={GLOBAL_SECTION_TITLE_BOTTOM_EXTRA_PX_MIN}
-              max={GLOBAL_SECTION_TITLE_BOTTOM_EXTRA_PX_MAX}
-              step={4}
-              value={clampGlobalSectionTitleBottomExtraPx(global.sectionTitleBottomExtraPx, 0)}
-              onChange={(event) =>
-                onGlobalChange({
-                  sectionTitleBottomExtraPx: clampGlobalSectionTitleBottomExtraPx(
-                    Number(event.target.value),
-                    0
-                  ),
-                })
-              }
-              className="mt-3 w-full accent-neutral-900"
-            />
-            <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
-              <span>{GLOBAL_SECTION_TITLE_BOTTOM_EXTRA_PX_MIN}px</span>
-              <span>{GLOBAL_SECTION_TITLE_BOTTOM_EXTRA_PX_MAX}px</span>
-            </div>
-          </div>
-          </div>
-        </div>
-      ) : null}
-
-      {subSection === 'layout' ? (
-        <div className="space-y-5">
-          <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-            <p className="text-sm text-neutral-500">
-              Content width caps how wide the column can grow on large screens (Standard / Wide / Full).
-              Side margins add padding inside that column. Change Side margins to None to see width caps
-              more clearly. On phones the layout stays fluid.
-            </p>
-          </div>
-          <OptionGrid
-            label="Content width"
-            options={PORTFOLIO_GLOBAL_CONTENT_WIDTH_OPTIONS}
-            value={global.contentWidth}
-            onChange={(contentWidth) => onGlobalChange({ contentWidth })}
-            columns={3}
-          />
-
-          <OptionGrid
-            label="Side margins"
-            options={PORTFOLIO_GLOBAL_CONTENT_GUTTER_OPTIONS}
-            value={global.contentGutter}
-            onChange={(contentGutter) => onGlobalChange({ contentGutter })}
-            columns={2}
-          />
-        </div>
-      ) : null}
-
-      {subSection === 'typography' ? (
-        <GlobalPolicePrincipaleBlock global={global} onGlobalChange={onGlobalChange} />
-      ) : null}
     </div>
   );
 }
@@ -5984,7 +5531,7 @@ function NavigationOptionGrid<T extends string>({
   );
 }
 
-function NavigationPanel({
+export function NavigationPanel({
   navigation,
   onChange,
   navSocialLinkOptions = [],

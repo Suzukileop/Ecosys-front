@@ -340,8 +340,6 @@ import {
   type PortfolioNavIconVariant,
 } from '@/components/portfolio/portfolio-nav-items';
 import {
-  globalBackgroundPatternStyle,
-  globalBackgroundStyle,
   globalContentWidthClass,
   globalFixedBackgroundImageStyle,
   globalSectionTitleTopClass,
@@ -349,7 +347,6 @@ import {
   globalSectionTitleBottomClass,
   globalSectionTitleBottomExtraStyle,
   hasGlobalPageBackground,
-  hasGlobalSolidBackground,
   resolveGlobalSectionSubtitleTypography,
   resolveGlobalSectionTitleChrome,
   resolveGlobalSectionTitleTypography,
@@ -1346,18 +1343,13 @@ export function PublicCreatorPortfolioPage({
 
   const hasGlobalBg = useMemo(() => hasGlobalPageBackground(settings.global), [settings.global]);
   /**
-   * Global solid page color: sections without their own fill stay transparent so the
-   * global color shows through. An enabled section background always paints on top
-   * (section wins — e.g. footer fill overrides global on the footer only).
-   * Image wallpaper never suppresses section fills.
+   * The global page background is an image-only wallpaper — it never suppresses a
+   * section's own fill, so every section paints (or not) purely based on its own
+   * "enable background" setting.
    */
-  const hasGlobalSolid = useMemo(
-    () => hasGlobalSolidBackground(settings.global),
-    [settings.global]
-  );
   const suppressSectionBackground = (
-    section?: Pick<PortfolioSectionBackgroundSettings, 'sectionBackgroundEnabled'> | null
-  ) => hasGlobalSolid && !section?.sectionBackgroundEnabled;
+    _section?: Pick<PortfolioSectionBackgroundSettings, 'sectionBackgroundEnabled'> | null
+  ) => false;
 
   const sectionBackgroundByKey = useMemo((): Partial<
     Record<PortfolioNavSectionKey, PortfolioSectionBackgroundSettings>
@@ -1390,13 +1382,8 @@ export function PublicCreatorPortfolioPage({
   ]);
 
   const footerPaintsOwnBackground = Boolean(footerPresentation.sectionBackgroundEnabled);
-  const globalBgStyle = useMemo(() => globalBackgroundStyle(settings.global), [settings.global]);
   const globalFixedBgStyle = useMemo(
     () => globalFixedBackgroundImageStyle(settings.global),
-    [settings.global]
-  );
-  const globalPatternStyle = useMemo(
-    () => globalBackgroundPatternStyle(settings.global),
     [settings.global]
   );
   const globalWidthClass = useMemo(
@@ -3483,13 +3470,9 @@ export function PublicCreatorPortfolioPage({
       themeId={settings.themeId}
       customThemes={settings.customThemes}
       monochromeUi={settings.global.monochromeUi}
-      bodyFont={settings.global.bodyFont}
-      bodyFontForceAll={settings.global.bodyFontForceAll}
       colorMode={(settings.global.colorMode ?? 'dark') as 'dark' | 'light'}
       activePalette={activeGlobalPalette}
-      globalStyle={globalBgStyle}
       fixedBackgroundStyle={globalFixedBgStyle}
-      patternBackgroundStyle={globalPatternStyle}
       suppressDefaultBackground={hasGlobalBg}
       fixedMotifsLayer={
         <PortfolioFixedMotifsLayer
@@ -3592,8 +3575,7 @@ export function PublicCreatorPortfolioPage({
             showContactCta={settings.hero.showContactCta}
             navItems={navItems}
             presentation={heroPresentation}
-            suppressBackground={hasGlobalSolid}
-            globalBackgroundStyle={globalBgStyle}
+            suppressBackground={false}
             geomFadeEnabled={motionProfileEnablesHeroGeomFade(motionProfile)}
             motionProfile={motionProfile}
             contentGutter={settings.global.contentGutter}

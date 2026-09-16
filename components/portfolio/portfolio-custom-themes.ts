@@ -71,10 +71,7 @@ export function extractThemeColorsFromSettings(settings: PortfolioSettings): {
     '#EA580C';
 
   const accentSoft = '#FFF7ED';
-  const surface =
-    settings.global.backgroundEnabled && isHex(settings.global.backgroundColor)
-      ? settings.global.backgroundColor
-      : '#F5F5F5';
+  const surface = '#F5F5F5';
   const motif = '#E5E5E5';
 
   return {

@@ -40,8 +40,6 @@ export function createBuiltinThemeSettings(
     customThemes,
     global: {
       ...base.global,
-      backgroundEnabled: true,
-      backgroundColor: NOIR_WHITE,
       monochromeUi: true,
       titleTypography: {
         ...base.global.titleTypography,
