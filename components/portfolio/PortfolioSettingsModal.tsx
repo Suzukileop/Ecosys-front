@@ -5228,6 +5228,8 @@ function NavSplitLogoSectionEditor({
   );
 }
 
+/** Same collapsed-preview / expand-to-grid mechanism as Hero > Design Banner and
+ *  Stack > Design/Header design: shows only the active layout, "Change" reveals the grid. */
 function NavLayoutDesignGrid({
   value,
   navigation,
@@ -5237,58 +5239,109 @@ function NavLayoutDesignGrid({
   navigation: PortfolioNavSettings;
   onChange: (design: PortfolioNavLayoutDesign) => void;
 }) {
+  const [showGrid, setShowGrid] = useState(false);
   const palette = mergeNavPalette(DEFAULT_NAV_PALETTE, navigation.navPalette);
   const accent = resolveHeroPaletteColor(palette, 'principal');
   const strongText = resolveHeroPaletteColor(palette, 'texteFort');
   const muted = resolveHeroPaletteColor(palette, 'texteMuted');
+  const selected =
+    PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS.find((option) => option.value === value) ??
+    PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS[0];
+
+  if (showGrid) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="pf-stack-block-label pf-stack-option-label !mb-0">Layout</p>
+          <button
+            type="button"
+            onClick={() => setShowGrid(false)}
+            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+          >
+            ← Back
+          </button>
+        </div>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          {PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS.map((option) => {
+            const active = option.value === value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={active}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+                className={`relative flex h-32 flex-col rounded-2xl border-2 bg-white p-4 text-left transition ${
+                  active ? '' : 'border-neutral-200/80 hover:border-neutral-300'
+                }`}
+                style={active ? { borderColor: 'var(--pf-palette-principal, #f97316)' } : undefined}
+              >
+                {active ? (
+                  <span
+                    aria-hidden
+                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+                    style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
+                  >
+                    <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
+                      <path
+                        d="M4 10.5l3.5 3.5L16 6"
+                        stroke="white"
+                        strokeWidth={2.5}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                ) : null}
+                <p className="shrink-0 text-sm font-semibold text-neutral-950">{option.label}</p>
+                <div className="mt-2 flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+                  <NavLayoutDesignPreview
+                    design={option.value}
+                    accent={accent}
+                    strongText={strongText}
+                    muted={muted}
+                  />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
       <p className="pf-stack-block-label pf-stack-option-label">Layout</p>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              aria-pressed={active}
-              onClick={() => onChange(option.value)}
-              className={`relative flex h-32 flex-col rounded-2xl border-2 bg-white p-4 text-left transition ${
-                active ? '' : 'border-neutral-200/80 hover:border-neutral-300'
-              }`}
-              style={active ? { borderColor: 'var(--pf-palette-principal, #f97316)' } : undefined}
-            >
-              {active ? (
-                <span
-                  aria-hidden
-                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
-                  style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
-                >
-                  <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
-                    <path
-                      d="M4 10.5l3.5 3.5L16 6"
-                      stroke="white"
-                      strokeWidth={2.5}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-              ) : null}
-              <p className="shrink-0 text-sm font-semibold text-neutral-950">{option.label}</p>
-              <div className="mt-2 flex min-h-0 flex-1 items-center justify-center overflow-hidden">
-                <NavLayoutDesignPreview
-                  design={option.value}
-                  accent={accent}
-                  strongText={strongText}
-                  muted={muted}
-                />
-              </div>
-            </button>
-          );
-        })}
+      <div className="group relative flex h-24 w-full items-center justify-center overflow-hidden rounded-2xl border border-neutral-200/80 bg-white p-4">
+        <NavLayoutDesignPreview
+          design={value}
+          accent={accent}
+          strongText={strongText}
+          muted={muted}
+        />
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change layout"
+          className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
+        >
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-lg">
+            Change layout
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change layout"
+          className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
+        >
+          Change
+        </button>
       </div>
+      <p className="mt-2 text-sm font-semibold text-neutral-950">{selected.label}</p>
     </div>
   );
 }
