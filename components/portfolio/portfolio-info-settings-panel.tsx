@@ -188,6 +188,23 @@ function InfoPickerCard({
       onClick={onClick}
       className="pf-stack-design-card rounded-2xl px-3 pb-3 pt-2.5 text-left"
     >
+      {active ? (
+        <span
+          aria-hidden
+          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
+        >
+          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
+            <path
+              d="M4 10.5l3.5 3.5L16 6"
+              stroke="white"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      ) : null}
       {children}
       <span className="mt-2.5 block">
         <span className="pf-stack-card-label min-w-0 text-sm font-semibold leading-none tracking-tight">

@@ -5524,8 +5524,12 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 /* Stack design picker — same card/mini-wireframe/layout-settings mechanism as Experience (.pf-exp-*). */
+/* border-width stays 2px in every state (only the color changes) so selecting a card never
+   shifts the grid by a pixel — same "thin 2px accent border" selected treatment used by every
+   picker card in Settings (Site color palette, Design/Header grids, preview cards, …). */
 .pf-stack-design-card {
-  border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 12%, transparent);
+  position: relative;
+  border: 2px solid color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 12%, transparent);
   background: transparent;
   opacity: 1;
   transition: border-color 0.2s ease;
@@ -5536,7 +5540,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-stack-design-card[data-active='true'] {
-  border-color: var(--pf-palette-texte-fort, #f5f5f5);
+  border-color: var(--pf-palette-principal, #f97316);
 }
 
 .pf-stack-design-card .pf-stack-mini {

@@ -2102,6 +2102,7 @@ function GlobalPreviewCard({
       onClick={onClick}
       className="pf-stack-design-card pf-stack-preview-card rounded-2xl text-left"
     >
+      {active ? <PfSelectedBadge /> : null}
       {children}
       <span className="mt-1.5 block">
         <span className="pf-stack-card-label min-w-0 text-[13px] font-medium leading-none tracking-tight">
@@ -2109,6 +2110,28 @@ function GlobalPreviewCard({
         </span>
       </span>
     </button>
+  );
+}
+
+/** Circular check badge, top-right corner — the one "selected" treatment used by every
+ *  picker card in Settings (Site color palette, Design/Header grids, preview cards, …). */
+function PfSelectedBadge() {
+  return (
+    <span
+      aria-hidden
+      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+      style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
+    >
+      <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
+        <path
+          d="M4 10.5l3.5 3.5L16 6"
+          stroke="white"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
   );
 }
 
@@ -2980,23 +3003,7 @@ function GlobalSettingsPanel({
                         : 'border border-neutral-200/80 hover:border-neutral-300'
                     }`}
                   >
-                    {active ? (
-                      <span
-                        aria-hidden
-                        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
-                        style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
-                      >
-                        <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5" aria-hidden>
-                          <path
-                            d="M4 10.5l3.5 3.5L16 6"
-                            stroke="white"
-                            strokeWidth={2.5}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </span>
-                    ) : null}
+                    {active ? <PfSelectedBadge /> : null}
                     <span className="text-sm font-semibold text-neutral-950">{family.label}</span>
                     <span className="mt-2 flex gap-1.5">
                       {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (

@@ -310,6 +310,23 @@ function StackPickerCard({
       onClick={onClick}
       className={`pf-stack-design-card rounded-2xl text-left ${compact ? 'pf-stack-preview-card' : 'px-3 pb-3 pt-2.5'}`}
     >
+      {active ? (
+        <span
+          aria-hidden
+          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
+        >
+          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
+            <path
+              d="M4 10.5l3.5 3.5L16 6"
+              stroke="white"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      ) : null}
       {children}
       <span className={compact ? 'mt-1.5 block' : 'mt-2.5 block'}>
         <span
@@ -976,7 +993,7 @@ function StackDesignChoiceGrid({
   return (
     <div>
       <p className="pf-stack-block-label">Design</p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-4">
         {PORTFOLIO_STACK_DESIGN_OPTIONS.map((option) => {
           const active = option.value === value;
           return (
@@ -1149,7 +1166,7 @@ function StackHeaderDesignChoiceGrid({
   return (
     <div>
       <p className="pf-stack-block-label">Header design</p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-4">
         {PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS.map((option) => {
           const active = option.value === value;
           return (
@@ -1374,6 +1391,17 @@ export function StackSettingsPanel({
             value={stack.colorModeOverride}
             onChange={(colorModeOverride) => onChange({ colorModeOverride })}
           />
+          <div>
+            <Toggle
+              label="Snap scroll"
+              checked={stack.snapScrollPin === true}
+              onChange={(snapScrollPin) => onChange({ snapScrollPin })}
+            />
+            <p className="mt-1.5 px-1 text-xs text-neutral-500">
+              Pins the section above in place while Stack scrolls up to fully cover it, then
+              scrolling continues normally.
+            </p>
+          </div>
         </div>
       ) : null}
 
