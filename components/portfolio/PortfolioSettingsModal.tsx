@@ -4055,95 +4055,97 @@ function NavCaseOverlayLogoEditor({
   const menuTrigger = navigation.caseOverlayMenuTrigger ?? 'text';
 
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Fullscreen menu bar
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Logo, menu button placement, and trigger style.
-        </p>
+    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+        Fullscreen menu bar
+      </p>
+
+      <div className="mt-4 space-y-4">
+        <PortfolioBackgroundImageUpload
+          label="Logo"
+          url={navigation.customExtraLogoUrl ?? ''}
+          onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
+          helperText="PNG or SVG, transparent background preferred."
+        />
+        <label className="block">
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+            Logo size
+          </span>
+          <input
+            type="range"
+            min={18}
+            max={48}
+            step={1}
+            value={navigation.customExtraLogoSizePx ?? 28}
+            onChange={(event) =>
+              onChange({
+                customExtraLogoSizePx: clampPortfolioNavCustomExtraLogoSizePx(
+                  Number(event.target.value),
+                  28
+                ),
+              })
+            }
+            className="mt-2 w-full"
+          />
+          <p className="mt-1 text-xs text-neutral-500">
+            {navigation.customExtraLogoSizePx ?? 28}px
+          </p>
+        </label>
       </div>
 
-      <PortfolioBackgroundImageUpload
-        label="Logo"
-        url={navigation.customExtraLogoUrl ?? ''}
-        onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
-        helperText="PNG or SVG, transparent background preferred."
-      />
-      <label className="block">
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-          Logo size
-        </span>
-        <input
-          type="range"
-          min={18}
-          max={48}
-          step={1}
-          value={navigation.customExtraLogoSizePx ?? 28}
-          onChange={(event) =>
-            onChange({
-              customExtraLogoSizePx: clampPortfolioNavCustomExtraLogoSizePx(
-                Number(event.target.value),
-                28
-              ),
-            })
-          }
-          className="mt-2 w-full"
+      <div className="pf-gs-section">
+        <GlobalPreviewCardGrid
+          label="Menu / logo placement"
+          options={NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS}
+          value={navigation.caseOverlayMenuSide ?? 'right'}
+          onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
+          columns={2}
         />
-        <p className="mt-1 text-xs text-neutral-500">
-          {navigation.customExtraLogoSizePx ?? 28}px
-        </p>
-      </label>
+      </div>
 
-      <GlobalPreviewCardGrid
-        label="Menu / logo placement"
-        options={NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS}
-        value={navigation.caseOverlayMenuSide ?? 'right'}
-        onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
-        columns={2}
-      />
+      <div className="pf-gs-section space-y-3">
+        <GlobalPreviewCardGrid
+          label="Menu button"
+          options={NAV_MENU_BUTTON_PREVIEW_OPTIONS}
+          value={menuTrigger}
+          onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
+          columns={2}
+        />
 
-      <GlobalPreviewCardGrid
-        label="Menu button"
-        options={NAV_MENU_BUTTON_PREVIEW_OPTIONS}
-        value={menuTrigger}
-        onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
-        columns={2}
-      />
-
-      {menuTrigger === 'icon' ? (
-        <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Menu icon</p>
-          <div className="flex flex-wrap gap-2">
-            {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
-              const active = (navigation.menuControlIcon ?? 'menu') === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  title={option.description}
-                  onClick={() => onChange({ menuControlIcon: option.value })}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                    active
-                      ? 'border-neutral-900 bg-neutral-900 text-white'
-                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
+        {menuTrigger === 'icon' ? (
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Menu icon</p>
+            <div className="flex flex-wrap gap-2">
+              {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
+                const active = (navigation.menuControlIcon ?? 'menu') === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    title={option.description}
+                    onClick={() => onChange({ menuControlIcon: option.value })}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                      active
+                        ? 'border-neutral-900 bg-neutral-900 text-white'
+                        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
-      <ToggleRow
-        label="Light/dark toggle in bar"
-        description="Sun / moon icon next to the menu button."
-        checked={showColorModeToggleInNav}
-        onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
-      />
+      <div className="pf-gs-section">
+        <ToggleRow
+          label="Light/dark toggle in bar"
+          checked={showColorModeToggleInNav}
+          onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
+        />
+      </div>
     </div>
   );
 }
@@ -4212,8 +4214,8 @@ function navMenuButtonGlyph(mode: 'text' | 'icon') {
 }
 
 const NAV_LINK_COLUMNS_PREVIEW_OPTIONS: { value: '2' | '1'; label: string; glyph: (active: boolean) => ReactNode }[] = [
-  { value: '2', label: 'Link columns', glyph: navLinkColumnsGlyph(2) },
-  { value: '1', label: 'Link column', glyph: navLinkColumnsGlyph(1) },
+  { value: '2', label: '2 columns', glyph: navLinkColumnsGlyph(2) },
+  { value: '1', label: '1 column', glyph: navLinkColumnsGlyph(1) },
 ];
 
 const NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS: {
@@ -4260,105 +4262,106 @@ function NavDutenPanelEditor({
     }`;
 
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Docked panel
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Rounded light panel with logo, link columns, and a menu trigger.
-        </p>
+    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+        Docked panel
+      </p>
+
+      <div className="mt-4 space-y-4">
+        <PortfolioBackgroundImageUpload
+          label="Logo"
+          url={navigation.customExtraLogoUrl ?? ''}
+          onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
+          helperText="PNG or SVG, transparent background preferred."
+        />
+        <label className="block">
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+            Logo size
+          </span>
+          <input
+            type="range"
+            min={18}
+            max={56}
+            step={1}
+            value={navigation.customExtraLogoSizePx ?? 32}
+            onChange={(event) =>
+              onChange({
+                customExtraLogoSizePx: clampPortfolioNavCustomExtraLogoSizePx(
+                  Number(event.target.value),
+                  32
+                ),
+              })
+            }
+            className="mt-2 w-full"
+          />
+          <p className="mt-1 text-xs text-neutral-500">
+            {navigation.customExtraLogoSizePx ?? 32}px
+          </p>
+        </label>
       </div>
 
-      <PortfolioBackgroundImageUpload
-        label="Logo"
-        url={navigation.customExtraLogoUrl ?? ''}
-        onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
-        helperText="PNG or SVG, transparent background preferred."
-      />
-      <label className="block">
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-          Logo size
-        </span>
-        <input
-          type="range"
-          min={18}
-          max={56}
-          step={1}
-          value={navigation.customExtraLogoSizePx ?? 32}
-          onChange={(event) =>
-            onChange({
-              customExtraLogoSizePx: clampPortfolioNavCustomExtraLogoSizePx(
-                Number(event.target.value),
-                32
-              ),
-            })
-          }
-          className="mt-2 w-full"
+      <div className="pf-gs-section">
+        <GlobalPreviewCardGrid
+          label="Link columns"
+          options={NAV_LINK_COLUMNS_PREVIEW_OPTIONS}
+          value={String(navigation.dutenPanelColumns ?? 2)}
+          onChange={(value) => onChange({ dutenPanelColumns: value === '1' ? 1 : 2 })}
+          columns={2}
         />
-        <p className="mt-1 text-xs text-neutral-500">
-          {navigation.customExtraLogoSizePx ?? 32}px
-        </p>
-      </label>
+      </div>
 
-      <GlobalPreviewCardGrid
-        label="Link columns"
-        options={NAV_LINK_COLUMNS_PREVIEW_OPTIONS}
-        value={String(navigation.dutenPanelColumns ?? 2)}
-        onChange={(value) => onChange({ dutenPanelColumns: value === '1' ? 1 : 2 })}
-        columns={2}
-      />
+      <div className="pf-gs-section">
+        <GlobalPreviewCardGrid
+          label="Menu / logo placement"
+          options={NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS}
+          value={navigation.caseOverlayMenuSide ?? 'right'}
+          onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
+          columns={2}
+        />
+      </div>
 
-      <GlobalPreviewCardGrid
-        label="Menu / logo placement"
-        options={NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS}
-        value={navigation.caseOverlayMenuSide ?? 'right'}
-        onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
-        columns={2}
-      />
+      <div className="pf-gs-section space-y-3">
+        <GlobalPreviewCardGrid
+          label="Menu button"
+          options={NAV_MENU_BUTTON_PREVIEW_OPTIONS}
+          value={menuTrigger}
+          onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
+          columns={2}
+        />
 
-      <GlobalPreviewCardGrid
-        label="Menu button"
-        options={NAV_MENU_BUTTON_PREVIEW_OPTIONS}
-        value={menuTrigger}
-        onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
-        columns={2}
-      />
-
-      {menuTrigger === 'icon' ? (
-        <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Menu icon</p>
-          <div className="flex flex-wrap gap-2">
-            {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
-              const active = (navigation.menuControlIcon ?? 'menu') === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  title={option.description}
-                  onClick={() => onChange({ menuControlIcon: option.value })}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                    active
-                      ? 'border-neutral-900 bg-neutral-900 text-white'
-                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
+        {menuTrigger === 'icon' ? (
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Menu icon</p>
+            <div className="flex flex-wrap gap-2">
+              {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
+                const active = (navigation.menuControlIcon ?? 'menu') === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    title={option.description}
+                    onClick={() => onChange({ menuControlIcon: option.value })}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                      active
+                        ? 'border-neutral-900 bg-neutral-900 text-white'
+                        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
-      <div className="space-y-3 border-t border-neutral-200/80 pt-4">
+      <div className="pf-gs-section space-y-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
             Display word
           </p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Large custom word below the links — like a wordmark.
-          </p>
+          <p className="mt-1 text-sm text-neutral-500">Custom word below the links.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -4389,11 +4392,11 @@ function NavDutenPanelEditor({
         ) : null}
       </div>
 
-      <div className="space-y-2 border-t border-neutral-200/80 pt-4">
+      <div className="pf-gs-section space-y-2">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
           Open panel footer
         </p>
-        <p className="text-sm text-neutral-500">Contact and social links, enabled separately.</p>
+        <p className="text-sm text-neutral-500">Contact and social links.</p>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -4410,23 +4413,23 @@ function NavDutenPanelEditor({
             Social links
           </button>
         </div>
+        {showSocial ? (
+          <NavTriZoneSocialLinkPicker
+            options={options}
+            selectedIds={navigation.dutenPanelSocialLinkIds ?? []}
+            onChange={(dutenPanelSocialLinkIds) => onChange({ dutenPanelSocialLinkIds })}
+            maxLinks={5}
+          />
+        ) : null}
       </div>
 
-      {showSocial ? (
-        <NavTriZoneSocialLinkPicker
-          options={options}
-          selectedIds={navigation.dutenPanelSocialLinkIds ?? []}
-          onChange={(dutenPanelSocialLinkIds) => onChange({ dutenPanelSocialLinkIds })}
-          maxLinks={5}
+      <div className="pf-gs-section">
+        <ToggleRow
+          label="Light/dark toggle in panel"
+          checked={showColorModeToggleInNav}
+          onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
         />
-      ) : null}
-
-      <ToggleRow
-        label="Light/dark toggle in panel"
-        description="Sun / moon icon next to the menu button."
-        checked={showColorModeToggleInNav}
-        onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
-      />
+      </div>
     </div>
   );
 }
@@ -4456,114 +4459,120 @@ function NavHalfPanelEditor({
     }`;
 
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Side panel
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Top-right icon opens a 50%-wide drawer from the right.
-        </p>
+    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+        Side panel
+      </p>
+
+      <div className="mt-4 space-y-4">
+        <PortfolioBackgroundImageUpload
+          label="Logo"
+          url={navigation.customExtraLogoUrl ?? ''}
+          onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
+          helperText="PNG or SVG, transparent background preferred."
+        />
+        <label className="block">
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+            Logo size
+          </span>
+          <input
+            type="range"
+            min={18}
+            max={56}
+            step={1}
+            value={navigation.customExtraLogoSizePx ?? 32}
+            onChange={(event) =>
+              onChange({
+                customExtraLogoSizePx: clampPortfolioNavCustomExtraLogoSizePx(
+                  Number(event.target.value),
+                  32
+                ),
+              })
+            }
+            className="mt-2 w-full"
+          />
+          <p className="mt-1 text-xs text-neutral-500">
+            {navigation.customExtraLogoSizePx ?? 32}px
+          </p>
+        </label>
       </div>
 
-      <PortfolioBackgroundImageUpload
-        label="Logo"
-        url={navigation.customExtraLogoUrl ?? ''}
-        onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
-        helperText="PNG or SVG, transparent background preferred."
-      />
-      <label className="block">
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-          Logo size
-        </span>
-        <input
-          type="range"
-          min={18}
-          max={56}
-          step={1}
-          value={navigation.customExtraLogoSizePx ?? 32}
-          onChange={(event) =>
-            onChange({
-              customExtraLogoSizePx: clampPortfolioNavCustomExtraLogoSizePx(
-                Number(event.target.value),
-                32
-              ),
-            })
-          }
-          className="mt-2 w-full"
+      <div className="pf-gs-section">
+        <label className="block">
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+            Title above the links
+          </span>
+          <input
+            type="text"
+            value={navigation.halfPanelDiscoverLabel ?? 'Discover Pages'}
+            onChange={(event) => onChange({ halfPanelDiscoverLabel: event.target.value })}
+            placeholder="Discover Pages"
+            className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
+          />
+        </label>
+      </div>
+
+      <div className="pf-gs-section">
+        <GlobalPreviewCardGrid
+          label="Link columns"
+          options={NAV_LINK_COLUMNS_PREVIEW_OPTIONS}
+          value={String(navigation.dutenPanelColumns ?? 2)}
+          onChange={(value) => onChange({ dutenPanelColumns: value === '1' ? 1 : 2 })}
+          columns={2}
         />
-        <p className="mt-1 text-xs text-neutral-500">
-          {navigation.customExtraLogoSizePx ?? 32}px
-        </p>
-      </label>
+      </div>
 
-      <label className="block">
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-          Title above the links
-        </span>
-        <input
-          type="text"
-          value={navigation.halfPanelDiscoverLabel ?? 'Discover Pages'}
-          onChange={(event) => onChange({ halfPanelDiscoverLabel: event.target.value })}
-          placeholder="Discover Pages"
-          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
+      <div className="pf-gs-section">
+        <GlobalPreviewCardGrid
+          label="Menu / logo placement"
+          options={NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS}
+          value={navigation.caseOverlayMenuSide ?? 'right'}
+          onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
+          columns={2}
         />
-      </label>
+      </div>
 
-      <GlobalPreviewCardGrid
-        label="Link columns"
-        options={NAV_LINK_COLUMNS_PREVIEW_OPTIONS}
-        value={String(navigation.dutenPanelColumns ?? 2)}
-        onChange={(value) => onChange({ dutenPanelColumns: value === '1' ? 1 : 2 })}
-        columns={2}
-      />
+      <div className="pf-gs-section space-y-3">
+        <GlobalPreviewCardGrid
+          label="Menu button"
+          options={NAV_MENU_BUTTON_PREVIEW_OPTIONS}
+          value={menuTrigger}
+          onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
+          columns={2}
+        />
 
-      <GlobalPreviewCardGrid
-        label="Menu / logo placement"
-        options={NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS}
-        value={navigation.caseOverlayMenuSide ?? 'right'}
-        onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
-        columns={2}
-      />
-
-      <GlobalPreviewCardGrid
-        label="Menu button"
-        options={NAV_MENU_BUTTON_PREVIEW_OPTIONS}
-        value={menuTrigger}
-        onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
-        columns={2}
-      />
-
-      {menuTrigger === 'icon' ? (
-        <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Menu icon</p>
-          <div className="flex flex-wrap gap-2">
-            {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
-              const active = (navigation.menuControlIcon ?? 'menu') === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  title={option.description}
-                  onClick={() => onChange({ menuControlIcon: option.value })}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                    active
-                      ? 'border-neutral-900 bg-neutral-900 text-white'
-                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
+        {menuTrigger === 'icon' ? (
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Menu icon</p>
+            <div className="flex flex-wrap gap-2">
+              {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
+                const active = (navigation.menuControlIcon ?? 'menu') === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    title={option.description}
+                    onClick={() => onChange({ menuControlIcon: option.value })}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                      active
+                        ? 'border-neutral-900 bg-neutral-900 text-white'
+                        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
-      <div className="space-y-2 border-t border-neutral-200/80 pt-4">
+      <div className="pf-gs-section space-y-2">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
           Open panel footer
         </p>
+        <p className="text-sm text-neutral-500">Contact and social links.</p>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -4580,23 +4589,23 @@ function NavHalfPanelEditor({
             Social links
           </button>
         </div>
+        {showSocial ? (
+          <NavTriZoneSocialLinkPicker
+            options={options}
+            selectedIds={navigation.dutenPanelSocialLinkIds ?? []}
+            onChange={(dutenPanelSocialLinkIds) => onChange({ dutenPanelSocialLinkIds })}
+            maxLinks={5}
+          />
+        ) : null}
       </div>
 
-      {showSocial ? (
-        <NavTriZoneSocialLinkPicker
-          options={options}
-          selectedIds={navigation.dutenPanelSocialLinkIds ?? []}
-          onChange={(dutenPanelSocialLinkIds) => onChange({ dutenPanelSocialLinkIds })}
-          maxLinks={5}
+      <div className="pf-gs-section">
+        <ToggleRow
+          label="Light/dark toggle in panel"
+          checked={showColorModeToggleInNav}
+          onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
         />
-      ) : null}
-
-      <ToggleRow
-        label="Light/dark toggle in panel"
-        description="Sun / moon icon next to the menu button."
-        checked={showColorModeToggleInNav}
-        onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
-      />
+      </div>
     </div>
   );
 }
@@ -4668,27 +4677,32 @@ function NavFloatingPillMenuEditor({
   const menuMode = normalizePortfolioNavFloatingPillMenuMode(navigation.contentMode);
 
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Navigation menu
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">Section links at the center — text or icons only.</p>
+    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+        Navigation menu
+      </p>
+
+      <div className="mt-4">
+        <OptionGrid
+          label="Menu style"
+          options={PORTFOLIO_NAV_FLOATING_PILL_MENU_MODE_OPTIONS}
+          value={menuMode}
+          onChange={(contentMode) => onChange({ contentMode })}
+          columns={2}
+        />
       </div>
-      <OptionGrid
-        label="Menu style"
-        options={PORTFOLIO_NAV_FLOATING_PILL_MENU_MODE_OPTIONS}
-        value={menuMode}
-        onChange={(contentMode) => onChange({ contentMode })}
-        columns={2}
-      />
-      <NavFloatingPillVisibilityToggles navigation={navigation} onChange={onChange} />
-      <ToggleRow
-        label="Light/dark toggle in pill"
-        description="Sun / moon icon to the right of the menu, before the contact button."
-        checked={showColorModeToggleInNav}
-        onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
-      />
+
+      <div className="pf-gs-section">
+        <NavFloatingPillVisibilityToggles navigation={navigation} onChange={onChange} />
+      </div>
+
+      <div className="pf-gs-section">
+        <ToggleRow
+          label="Light/dark toggle in pill"
+          checked={showColorModeToggleInNav}
+          onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
+        />
+      </div>
     </div>
   );
 }
@@ -4705,28 +4719,29 @@ function NavEditorialBarSlotEditor({
   const showSocial = navigation.editorialBarShowSocial ?? false;
 
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Right zone (Editorial bar)
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">Social links, phone, and email — any combination.</p>
+    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+        Right zone (Editorial bar)
+      </p>
+
+      <div className="mt-4">
+        <NavEditorialBarVisibilityToggles navigation={navigation} onChange={onChange} />
       </div>
 
-      <NavEditorialBarVisibilityToggles navigation={navigation} onChange={onChange} />
-
       {showSocial ? (
-        <>
+        <div className="pf-gs-section space-y-4">
           <NavTriZoneSocialLinkPicker
             options={options}
             selectedIds={navigation.triZoneSocialLinkIds ?? []}
             onChange={(triZoneSocialLinkIds) => onChange({ triZoneSocialLinkIds })}
           />
           <NavTriZoneSocialLinkStyleEditor navigation={navigation} onChange={onChange} />
-        </>
+        </div>
       ) : null}
 
-      <NavEditorialBarContactChannelsEditor navigation={navigation} onChange={onChange} />
+      <div className="pf-gs-section">
+        <NavEditorialBarContactChannelsEditor navigation={navigation} onChange={onChange} />
+      </div>
     </div>
   );
 }
@@ -4809,28 +4824,29 @@ function NavTriZoneSideSlotEditor({
   const showSocial = navigation.triZoneShowSocial ?? false;
 
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Side zone (Nav · logo · social)
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">Social links, phone, and email — any combination.</p>
+    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+        Side zone (Nav · logo · social)
+      </p>
+
+      <div className="mt-4">
+        <NavTriZoneVisibilityToggles navigation={navigation} onChange={onChange} />
       </div>
 
-      <NavTriZoneVisibilityToggles navigation={navigation} onChange={onChange} />
-
       {showSocial ? (
-        <>
+        <div className="pf-gs-section space-y-4">
           <NavTriZoneSocialLinkPicker
             options={options}
             selectedIds={navigation.triZoneSocialLinkIds ?? []}
             onChange={(triZoneSocialLinkIds) => onChange({ triZoneSocialLinkIds })}
           />
           <NavTriZoneSocialLinkStyleEditor navigation={navigation} onChange={onChange} />
-        </>
+        </div>
       ) : null}
 
-      <NavEditorialBarContactChannelsEditor navigation={navigation} onChange={onChange} />
+      <div className="pf-gs-section">
+        <NavEditorialBarContactChannelsEditor navigation={navigation} onChange={onChange} />
+      </div>
     </div>
   );
 }
@@ -4852,66 +4868,62 @@ function NavLogoLeftContactPlacementEditor({
     }`;
 
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Logo / navigation placement
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">Contact stays at the outer edge either way.</p>
-      </div>
+    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+        Logo / navigation placement
+      </p>
 
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className={modeButtonClass(logoSide === 'left')}
-          onClick={() => onChange({ logoLeftNavContactLogoSide: 'left' })}
-        >
-          Logo left
-        </button>
-        <button
-          type="button"
-          className={modeButtonClass(logoSide === 'right')}
-          onClick={() => onChange({ logoLeftNavContactLogoSide: 'right' })}
-        >
-          Logo right
-        </button>
-      </div>
-
-      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white px-2.5 py-2 shadow-sm">
-        {logoSide === 'left' ? (
-          <div className="flex w-full items-center justify-between gap-3">
-            <span className="text-[11px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
-            <div className="flex items-center gap-2 text-[8px] text-neutral-700">
-              <span className="border-b border-neutral-900 pb-px">About</span>
-              <span>Blog</span>
-              <span className="inline-flex items-center gap-0.5 rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
-                <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden />
-                Contact
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="flex w-full items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-[8px] text-neutral-700">
-              <span className="inline-flex items-center gap-0.5 rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
-                <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden />
-                Contact
-              </span>
-              <span className="border-b border-neutral-900 pb-px">About</span>
-              <span>Blog</span>
-            </div>
-            <span className="text-[11px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Contact button
-          </p>
-          <p className="mt-1 text-sm text-neutral-500">Same options as the other bar designs.</p>
+      <div className="mt-4 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={modeButtonClass(logoSide === 'left')}
+            onClick={() => onChange({ logoLeftNavContactLogoSide: 'left' })}
+          >
+            Logo left
+          </button>
+          <button
+            type="button"
+            className={modeButtonClass(logoSide === 'right')}
+            onClick={() => onChange({ logoLeftNavContactLogoSide: 'right' })}
+          >
+            Logo right
+          </button>
         </div>
+
+        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white px-2.5 py-2 shadow-sm">
+          {logoSide === 'left' ? (
+            <div className="flex w-full items-center justify-between gap-3">
+              <span className="text-[11px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
+              <div className="flex items-center gap-2 text-[8px] text-neutral-700">
+                <span className="border-b border-neutral-900 pb-px">About</span>
+                <span>Blog</span>
+                <span className="inline-flex items-center gap-0.5 rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden />
+                  Contact
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex w-full items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-[8px] text-neutral-700">
+                <span className="inline-flex items-center gap-0.5 rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden />
+                  Contact
+                </span>
+                <span className="border-b border-neutral-900 pb-px">About</span>
+                <span>Blog</span>
+              </div>
+              <span className="text-[11px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="pf-gs-section space-y-3">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Contact button
+        </p>
         <NavContactButtonStyleEditor navigation={navigation} onChange={onChange} />
       </div>
     </div>
