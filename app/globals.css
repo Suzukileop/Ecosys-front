@@ -4814,7 +4814,8 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-exp-design-card {
-  border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 12%, transparent);
+  position: relative;
+  border: 2px solid color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 12%, transparent);
   background: transparent;
   opacity: 1;
   transition: border-color 0.2s ease;
@@ -4825,7 +4826,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-exp-design-card[data-active='true'] {
-  border-color: var(--pf-palette-texte-fort, #f5f5f5);
+  border-color: var(--pf-palette-principal, #f97316);
 }
 
 .pf-exp-design-card .pf-exp-mini {
@@ -6008,7 +6009,8 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
 /* Work design picker — same card/mini-wireframe/layout-settings mechanism as Stack (.pf-stack-*) / Experience (.pf-exp-*). */
 .pf-work-design-card {
-  border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 12%, transparent);
+  position: relative;
+  border: 2px solid color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 12%, transparent);
   background: transparent;
   opacity: 1;
   transition: border-color 0.2s ease;
@@ -6019,7 +6021,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-work-design-card[data-active='true'] {
-  border-color: var(--pf-palette-texte-fort, #f5f5f5);
+  border-color: var(--pf-palette-principal, #f97316);
 }
 
 .pf-work-design-card .pf-work-mini {

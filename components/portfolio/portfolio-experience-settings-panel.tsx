@@ -183,6 +183,23 @@ function ExperiencePickerCard({
       onClick={onClick}
       className={`pf-exp-design-card rounded-2xl px-3 pt-2.5 text-left ${showLabel ? 'pb-3' : 'pb-2.5'}`}
     >
+      {active ? (
+        <span
+          aria-hidden
+          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
+        >
+          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
+            <path
+              d="M4 10.5l3.5 3.5L16 6"
+              stroke="white"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      ) : null}
       {children}
       {showLabel ? (
         <span className="mt-2.5 block">
@@ -419,6 +436,20 @@ function ExperienceLinkArrowChoiceGrid({
   );
 }
 
+function ExperienceHeaderPreview({ value }: { value: PortfolioExperienceHeaderDesign }) {
+  if (value === 'none') {
+    return (
+      <MiniSlide>
+        <MiniType x={10} y={30} size={9}>
+          DEFAULT
+        </MiniType>
+        <rect className="pf-exp-mini-mute" x="10" y="40" width="72" height="3" rx="1.4" />
+      </MiniSlide>
+    );
+  }
+  return <ExperienceHeaderWireframe design={value as ExperienceHeaderApplyDesign} />;
+}
+
 function ExperienceHeaderChoiceGrid({
   value,
   onChange,
@@ -426,24 +457,69 @@ function ExperienceHeaderChoiceGrid({
   value: PortfolioExperienceHeaderDesign;
   onChange: (value: PortfolioExperienceHeaderDesign) => void;
 }) {
+  const [showGrid, setShowGrid] = useState(false);
+  const selectedLabel = EXPERIENCE_HEADER_APPLY_CARDS.find((card) => card.id === value)?.label ?? 'Default';
+
+  if (showGrid) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="pf-exp-block-label !mb-0">Header designs</p>
+          <button
+            type="button"
+            onClick={() => setShowGrid(false)}
+            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+          >
+            ← Back
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          {EXPERIENCE_HEADER_APPLY_CARDS.map((card) => {
+            const active = value === card.id;
+            return (
+              <ExperiencePickerCard
+                key={card.id}
+                active={active}
+                label={card.label}
+                onClick={() => {
+                  onChange(active ? 'none' : card.id);
+                  setShowGrid(false);
+                }}
+              >
+                <ExperienceHeaderWireframe design={card.id} />
+              </ExperiencePickerCard>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <p className="pf-exp-block-label">Header designs</p>
-      <div className="grid grid-cols-2 gap-2">
-        {EXPERIENCE_HEADER_APPLY_CARDS.map((card) => {
-          const active = value === card.id;
-          return (
-            <ExperiencePickerCard
-              key={card.id}
-              active={active}
-              label={card.label}
-              onClick={() => onChange(active ? 'none' : card.id)}
-            >
-              <ExperienceHeaderWireframe design={card.id} />
-            </ExperiencePickerCard>
-          );
-        })}
+      <div className="group relative w-full overflow-hidden rounded-2xl border border-neutral-200/80 p-3">
+        <ExperienceHeaderPreview value={value} />
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change header design"
+          className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
+        >
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-lg">
+            Change header design
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change header design"
+          className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
+        >
+          Change
+        </button>
       </div>
+      <p className="mt-2 text-sm font-semibold text-neutral-950">{selectedLabel}</p>
     </div>
   );
 }
@@ -2468,24 +2544,71 @@ function ExperienceDesignChoiceGrid({
   value: PortfolioExperienceDesign;
   onChange: (value: PortfolioExperienceDesign) => void;
 }) {
+  const [showGrid, setShowGrid] = useState(false);
+  const selected =
+    PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.find((option) => option.value === value) ??
+    PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS[0];
+
+  if (showGrid) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="pf-exp-block-label !mb-0">Item design</p>
+          <button
+            type="button"
+            onClick={() => setShowGrid(false)}
+            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+          >
+            ← Back
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          {PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.map((option) => {
+            const active = option.value === value;
+            return (
+              <ExperiencePickerCard
+                key={option.value}
+                active={active}
+                label={option.label}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              >
+                <ExperienceDesignWireframe design={option.value} />
+              </ExperiencePickerCard>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <p className="pf-exp-block-label">Item design</p>
-      <div className="grid grid-cols-2 gap-2">
-        {PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <ExperiencePickerCard
-              key={option.value}
-              active={active}
-              label={option.label}
-              onClick={() => onChange(option.value)}
-            >
-              <ExperienceDesignWireframe design={option.value} />
-            </ExperiencePickerCard>
-          );
-        })}
+      <div className="group relative w-full overflow-hidden rounded-2xl border border-neutral-200/80 p-3">
+        <ExperienceDesignWireframe design={value} />
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change design"
+          className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
+        >
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-lg">
+            Change design
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change design"
+          className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
+        >
+          Change
+        </button>
       </div>
+      <p className="mt-2 text-sm font-semibold text-neutral-950">{selected.label}</p>
     </div>
   );
 }
