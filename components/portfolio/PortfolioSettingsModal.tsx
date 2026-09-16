@@ -2074,12 +2074,10 @@ function GlobalSwitchRow({
  *  instead of a separate swatch + hex chip + text input stacked on top of each other. */
 function GlobalTokenSwatch({
   label,
-  description,
   value,
   onChange,
 }: {
   label: string;
-  description?: string;
   value: string;
   onChange: (value: string) => void;
 }) {
@@ -2097,9 +2095,6 @@ function GlobalTokenSwatch({
           {value}
         </span>
       </span>
-      {description ? (
-        <span className="mt-1.5 block text-xs leading-relaxed text-neutral-500">{description}</span>
-      ) : null}
     </label>
   );
 }
@@ -2152,7 +2147,6 @@ const PALETTE_FAMILY_OPTIONS = [
   {
     id: 'indigo' as const,
     label: 'Indigo',
-    detail: 'Sombre #6366F1 / #F59E0B sur #0F172A · Clair #4338CA / #EA580C sur #F8FAFC.',
     dark: INDIGO_DARK_HERO_PALETTE,
     light: INDIGO_LIGHT_HERO_PALETTE,
     darkClass: 'border-slate-600 bg-[#0F172A] hover:border-indigo-400',
@@ -2162,7 +2156,6 @@ const PALETTE_FAMILY_OPTIONS = [
   {
     id: 'classic' as const,
     label: 'Classic',
-    detail: 'Sombre #e2572e / #22c48f sur #0F172A · Clair #c2410c / #00875f sur #F8FAFC.',
     dark: DEFAULT_HERO_PALETTE,
     light: LIGHT_HERO_PALETTE,
     darkClass: 'border-slate-600 bg-[#0F172A] hover:border-orange-400',
@@ -2172,7 +2165,6 @@ const PALETTE_FAMILY_OPTIONS = [
   {
     id: 'verdant' as const,
     label: 'Verdant',
-    detail: 'Sombre #43E00B sur #020617 · Clair #2A9608 / #BE123C sur #F8FAFC.',
     dark: VERDANT_DARK_HERO_PALETTE,
     light: VERDANT_LIGHT_HERO_PALETTE,
     darkClass: 'border-slate-700/80 bg-[#020617] hover:border-lime-400',
@@ -2182,7 +2174,6 @@ const PALETTE_FAMILY_OPTIONS = [
   {
     id: 'vive' as const,
     label: 'Vive',
-    detail: 'Fond #FEE685 + #6C1BB9 / #D01C82. Light mode stays in this pair.',
     dark: VIVE_DARK_HERO_PALETTE,
     light: VIVE_LIGHT_HERO_PALETTE,
     darkClass: 'border-yellow-700/60 bg-[#12100A] hover:border-yellow-400',
@@ -2192,7 +2183,6 @@ const PALETTE_FAMILY_OPTIONS = [
   {
     id: 'safran' as const,
     label: 'Safran',
-    detail: 'Sombre #FCE96A / #0E7C6B sur #0C0A09 · Clair fond #FCE96A + #3D2B84.',
     dark: SAFRAN_DARK_HERO_PALETTE,
     light: SAFRAN_LIGHT_HERO_PALETTE,
     darkClass: 'border-stone-700/50 bg-[#0C0A09] hover:border-[#FCE96A]',
@@ -2202,7 +2192,6 @@ const PALETTE_FAMILY_OPTIONS = [
   {
     id: 'citron' as const,
     label: 'Citron',
-    detail: 'Sombre #A78BFA / #F0985A sur #0F172A · Clair fond #C8E01A + #4C1D6B.',
     dark: CITRON_DARK_HERO_PALETTE,
     light: CITRON_LIGHT_HERO_PALETTE,
     darkClass: 'border-slate-700/60 bg-[#0F172A] hover:border-[#C8E01A]',
@@ -2212,7 +2201,6 @@ const PALETTE_FAMILY_OPTIONS = [
   {
     id: 'rouge' as const,
     label: 'Rouge',
-    detail: 'Sombre #EF4444 / #38BDF8 sur #020202 · Clair #DC2626 / #0EA5E9 sur #F4F4F5.',
     dark: ROUGE_DARK_HERO_PALETTE,
     light: ROUGE_LIGHT_HERO_PALETTE,
     darkClass: 'border-zinc-700 bg-[#020202] hover:border-red-400',
@@ -2222,7 +2210,6 @@ const PALETTE_FAMILY_OPTIONS = [
   {
     id: 'ecarlate' as const,
     label: 'Écarlate',
-    detail: 'Sombre #FF3333 / #34D399 sur #000000 · Clair #DF1C1C / #10B981 sur #FFFFFF.',
     dark: ECARLATE_DARK_HERO_PALETTE,
     light: ECARLATE_LIGHT_HERO_PALETTE,
     darkClass: 'border-neutral-700 bg-[#000000] hover:border-red-400',
@@ -2232,7 +2219,6 @@ const PALETTE_FAMILY_OPTIONS = [
   {
     id: 'ardoise' as const,
     label: 'Ardoise',
-    detail: 'Sombre #F87171 / #60A5FA sur #030712 · Clair #EF4444 / #2563EB sur #D4DBE7.',
     dark: ARDOISE_DARK_HERO_PALETTE,
     light: ARDOISE_LIGHT_HERO_PALETTE,
     darkClass: 'border-slate-700 bg-[#030712] hover:border-red-400',
@@ -2289,21 +2275,13 @@ function GlobalSettingsPanel({
     onSubSectionChange?.(value);
     if (controlledSubSection === undefined) setUncontrolledSubSection(value);
   };
-  const activeMeta =
-    GLOBAL_SETTINGS_SUB_SECTIONS.find((section) => section.id === subSection) ??
-    GLOBAL_SETTINGS_SUB_SECTIONS[0];
   const activePalette = resolveActivePortfolioPalette(global);
   const activeMode = (global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark';
   const activeFamily = inferPaletteFamily(global);
-  const [showPaletteDetails, setShowPaletteDetails] = useState(false);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 border-b border-neutral-200/80 pb-5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-neutral-950">{activeMeta.label}</p>
-          <p className="mt-1 text-sm leading-relaxed text-neutral-500">{activeMeta.description}</p>
-        </div>
+      <div className="flex flex-col gap-3 border-b border-neutral-200/80 pb-5 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
         <div className="relative w-full min-w-0 sm:w-auto sm:max-w-xs sm:shrink-0">
           <label htmlFor="global-settings-subsection" className="sr-only">
             Global settings section
@@ -2359,14 +2337,13 @@ function GlobalSettingsPanel({
         <div className="space-y-8">
           <GlobalSwitchRow
             label="Light mode"
-            description="Off = dark half of the selected pair. On = light half of the same pair — light mode never jumps to another family."
             checked={activeMode === 'light'}
             onChange={(light) => onColorModeChange(light ? 'light' : 'dark')}
           />
 
           <div className="space-y-4">
             <GlobalBlockLabel>Site color palette</GlobalBlockLabel>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {PALETTE_FAMILY_OPTIONS.map((family) => {
                 const active = activeFamily === family.id;
                 return (
@@ -2421,40 +2398,14 @@ function GlobalSettingsPanel({
               <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
                 Custom pair — pick a family above to reset to a named pair.
               </p>
-            ) : (
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setShowPaletteDetails((value) => !value)}
-                  className="text-xs font-semibold text-neutral-400 underline decoration-dotted underline-offset-2 transition hover:text-neutral-200"
-                >
-                  {showPaletteDetails ? 'Hide technical details' : 'View technical details'}
-                </button>
-                {showPaletteDetails
-                  ? (() => {
-                      const activeFamilyEntry = PALETTE_FAMILY_OPTIONS.find(
-                        (family) => family.id === activeFamily
-                      );
-                      return activeFamilyEntry ? (
-                        <p className="mt-2 rounded-xl border border-neutral-200/10 bg-black/20 px-3 py-2 text-xs leading-relaxed text-neutral-400">
-                          {activeFamilyEntry.detail}
-                        </p>
-                      ) : null;
-                    })()
-                  : null}
-              </div>
-            )}
+            ) : null}
 
-            <GlobalBlockLabel>
-              Active mode tokens ({activeMode === 'light' ? 'Light' : 'Dark'}
-              {activeFamily !== 'custom' ? ` · ${activeFamily}` : ' · custom'})
-            </GlobalBlockLabel>
+            <GlobalBlockLabel>Active mode tokens</GlobalBlockLabel>
             <div className="grid gap-4 sm:grid-cols-2">
               {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
                 <GlobalTokenSwatch
                   key={token.value}
                   label={token.label}
-                  description={token.description}
                   value={resolveHeroPaletteColor(activePalette, token.value)}
                   onChange={(color) => onGlobalPaletteChange({ [token.value]: color })}
                 />
@@ -2462,37 +2413,7 @@ function GlobalSettingsPanel({
             </div>
           </div>
 
-          <div>
-            <GlobalBlockLabel>Theme chrome</GlobalBlockLabel>
-            <div className="mt-3">
-              <ThemePickerPanel
-                themeId={themeId}
-                customThemes={customThemes}
-                settings={settings}
-                onChange={onThemeChange}
-                onSaveCustomTheme={onSaveCustomTheme}
-                onRenameCustomTheme={onRenameCustomTheme}
-                onDuplicateTheme={onDuplicateTheme}
-                onResetBuiltinTheme={onResetBuiltinTheme}
-                onDeleteCustomTheme={onDeleteCustomTheme}
-              />
-            </div>
-            <div className="mt-3 flex gap-3 rounded-2xl border border-neutral-200/80 bg-gradient-to-br from-neutral-50 to-white px-4 py-3.5">
-              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-white">
-                <ThemeInfoIcon className="h-4 w-4" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-neutral-900">Editorial Warm reste intact</p>
-                <p className="mt-1 text-sm leading-relaxed text-neutral-500">
-                  Seul Editorial Warm est verrouillé : toute personnalisation crée automatiquement une
-                  copie. Noir / Blanc se modifie directement. Les copies (ex. « Noir / Blanc copie »)
-                  restent indépendantes.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
+          <div className="space-y-4 rounded-2xl border border-neutral-200/10 bg-black/10 p-4">
             <GlobalBlockLabel>Layout &amp; width</GlobalBlockLabel>
             <GlobalSegmentGrid
               label="Content width"
@@ -2618,460 +2539,6 @@ function GlobalSettingsPanel({
       ) : null}
 
     </div>
-  );
-}
-
-function ThemePickerPanel({
-  themeId,
-  customThemes,
-  settings,
-  onChange,
-  onSaveCustomTheme,
-  onRenameCustomTheme,
-  onDuplicateTheme,
-  onResetBuiltinTheme,
-  onDeleteCustomTheme,
-}: {
-  themeId: PortfolioThemeId;
-  customThemes: PortfolioCustomTheme[];
-  settings: PortfolioSettings;
-  onChange: (themeId: PortfolioThemeId) => void;
-  onSaveCustomTheme: (themeId: string, name?: string) => boolean;
-  onRenameCustomTheme: (themeId: string, name: string) => boolean;
-  onDuplicateTheme: (themeId: PortfolioThemeId) => void;
-  onResetBuiltinTheme: (themeId: PortfolioBuiltinThemeId) => void;
-  onDeleteCustomTheme: (themeId: string) => void;
-}) {
-  const [nameEditor, setNameEditor] = useState<{
-    id: string;
-    mode: 'save' | 'rename';
-    value: string;
-  } | null>(null);
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-
-  const builtin = PORTFOLIO_THEMES;
-  const customs = customThemes.map(customThemeToPickerTheme);
-
-  const openNameEditor = (id: string, mode: 'save' | 'rename', currentName: string) => {
-    setPendingDeleteId(null);
-    setNameEditor({ id, mode, value: currentName });
-  };
-
-  const closeNameEditor = () => setNameEditor(null);
-
-  const commitNameEditor = () => {
-    if (!nameEditor) return;
-    const name = nameEditor.value.trim();
-    if (!name) return;
-
-    if (nameEditor.mode === 'save') {
-      const changed = onSaveCustomTheme(nameEditor.id, name);
-      if (changed) {
-        pushFlashFeedback({
-          variant: 'success',
-          title: 'Thème enregistré',
-          description: `« ${name} » a été sauvegardé avec toutes vos personnalisations.`,
-          durationMs: 4500,
-        });
-      }
-    } else {
-      const changed = onRenameCustomTheme(nameEditor.id, name);
-      if (changed) {
-        pushFlashFeedback({
-          variant: 'success',
-          title: 'Thème renommé',
-          description: `Le thème s’appelle maintenant « ${name} ».`,
-          durationMs: 4000,
-        });
-      }
-      // Same name → close quietly, no toast (nothing happened).
-    }
-    setNameEditor(null);
-  };
-
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {builtin.map((theme) => {
-        const active = theme.id === themeId;
-        const badge = theme.id === 'editorial' ? 'Default' : 'Editable';
-        return (
-          <div
-            key={theme.id}
-            className={`rounded-2xl border p-4 text-left transition ${
-              active
-                ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-            }`}
-          >
-            <button type="button" onClick={() => onChange(theme.id)} className="w-full text-left">
-              <div className="mb-4 flex gap-1.5">
-                {theme.swatches.map((color) => (
-                  <span
-                    key={`${theme.id}-${color}`}
-                    className="h-8 flex-1 rounded-lg border border-black/5"
-                    style={{ backgroundColor: color }}
-                    aria-hidden
-                  />
-                ))}
-              </div>
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-bold text-neutral-950">{theme.label}</p>
-                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-500">
-                  {badge}
-                </span>
-              </div>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">{theme.description}</p>
-              {active ? (
-                <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">Active</p>
-              ) : null}
-            </button>
-            <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-neutral-100 pt-3">
-              <ThemeActionButton
-                label="Dupliquer"
-                onClick={() => {
-                  onDuplicateTheme(theme.id);
-                  pushFlashFeedback({
-                    variant: 'success',
-                    title: 'Thème dupliqué',
-                    description: `Une copie personnalisable a été créée à partir de « ${theme.label} ».`,
-                    durationMs: 4000,
-                  });
-                }}
-                icon={<ThemeCopyIcon className="h-3.5 w-3.5" />}
-              />
-              {theme.id === 'noir' ? (
-                <ThemeActionButton
-                  label="Réinitialiser"
-                  onClick={() => {
-                    onResetBuiltinTheme('noir');
-                    pushFlashFeedback({
-                      variant: 'success',
-                      title: 'Noir / Blanc réinitialisé',
-                      description: 'Le thème a été restauré à ses réglages d’usine.',
-                      durationMs: 4000,
-                    });
-                  }}
-                  icon={<ThemeResetIcon className="h-3.5 w-3.5" />}
-                />
-              ) : null}
-            </div>
-          </div>
-        );
-      })}
-
-      {customs.map((theme) => {
-        const active = theme.id === themeId;
-        const source = customThemes.find((item) => item.id === theme.id);
-        const editorOpen = nameEditor?.id === theme.id;
-        const deletePending = pendingDeleteId === theme.id;
-        const statusLabel = source?.saved
-          ? active
-            ? 'Actif · Enregistré'
-            : 'Enregistré'
-          : active
-            ? 'Actif · Brouillon'
-            : 'Brouillon';
-        const hasPendingChanges = source
-          ? customThemeHasPendingChanges(source, settings)
-          : false;
-
-        return (
-          <div
-            key={theme.id}
-            className={`rounded-2xl border p-4 text-left transition ${
-              active
-                ? 'border-orange-500 bg-orange-50/40 ring-2 ring-orange-500/15'
-                : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-            }`}
-          >
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => {
-                if (editorOpen || deletePending) return;
-                onChange(theme.id);
-              }}
-              onKeyDown={(event) => {
-                if (editorOpen || deletePending) return;
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  onChange(theme.id);
-                }
-              }}
-              className="w-full cursor-pointer text-left"
-            >
-              <div className="mb-4 flex gap-1.5">
-                {theme.swatches.map((color) => (
-                  <span
-                    key={`${theme.id}-${color}`}
-                    className="h-8 flex-1 rounded-lg border border-black/5"
-                    style={{ backgroundColor: color }}
-                    aria-hidden
-                  />
-                ))}
-              </div>
-              <p className="text-sm font-bold text-neutral-950">{theme.label}</p>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">{theme.description}</p>
-              <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.16em] text-orange-600">
-                {statusLabel}
-              </p>
-            </div>
-
-            {editorOpen ? (
-              <div
-                className="mt-3 rounded-xl border border-neutral-200 bg-white p-2.5 shadow-sm"
-                onClick={(event) => event.stopPropagation()}
-              >
-                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                  {nameEditor.mode === 'save' ? 'Nommer et enregistrer' : 'Renommer le thème'}
-                </p>
-                <div className="flex items-center gap-2">
-                  <input
-                    value={nameEditor.value}
-                    onChange={(event) =>
-                      setNameEditor((prev) => (prev ? { ...prev, value: event.target.value } : prev))
-                    }
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        commitNameEditor();
-                      }
-                      if (event.key === 'Escape') {
-                        event.preventDefault();
-                        closeNameEditor();
-                      }
-                    }}
-                    placeholder="Nom du thème"
-                    className="min-w-0 flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-semibold text-neutral-950 outline-none ring-orange-500/30 focus:border-orange-400 focus:ring-2"
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    onClick={commitNameEditor}
-                    disabled={!nameEditor.value.trim()}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-950 text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
-                    aria-label="Valider"
-                    title="Valider"
-                  >
-                    <ThemeCheckIcon className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={closeNameEditor}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 transition hover:bg-neutral-50"
-                    aria-label="Annuler"
-                    title="Annuler"
-                  >
-                    <ThemeCloseIcon className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            ) : deletePending ? (
-              <div
-                className="mt-3 rounded-xl border border-red-200 bg-red-50/70 p-2.5"
-                onClick={(event) => event.stopPropagation()}
-              >
-                <p className="text-xs font-medium text-red-700">
-                  Supprimer « {source?.name || theme.label} » ?
-                </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const deletedName = source?.name || theme.label;
-                      onDeleteCustomTheme(theme.id);
-                      setPendingDeleteId(null);
-                      pushFlashFeedback({
-                        variant: 'info',
-                        title: 'Thème supprimé',
-                        description: `« ${deletedName} » a été retiré de votre palette.`,
-                        durationMs: 4000,
-                      });
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-red-500"
-                  >
-                    <ThemeTrashIcon className="h-3.5 w-3.5" />
-                    Confirmer
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPendingDeleteId(null)}
-                    className="rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-neutral-600 transition hover:bg-neutral-50"
-                  >
-                    Annuler
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-neutral-100 pt-3">
-                {/*
-                  Save / Update only for the ACTIVE theme — inactive themes must not
-                  absorb the live settings (avoids overwriting an unselected snapshot).
-                */}
-                {active ? (
-                  !source?.saved ? (
-                    <ThemeActionButton
-                      label="Enregistrer"
-                      tone="primary"
-                      onClick={() => openNameEditor(theme.id, 'save', source?.name || theme.label)}
-                      icon={<ThemeSaveIcon className="h-3.5 w-3.5" />}
-                    />
-                  ) : (
-                    <ThemeActionButton
-                      label={hasPendingChanges ? 'Mettre à jour' : 'À jour'}
-                      disabled={!hasPendingChanges}
-                      onClick={() => {
-                        const changed = onSaveCustomTheme(theme.id);
-                        if (!changed) return;
-                        pushFlashFeedback({
-                          variant: 'success',
-                          title: 'Thème mis à jour',
-                          description: `« ${source?.name || theme.label} » a été synchronisé avec vos réglages actuels.`,
-                          durationMs: 4500,
-                        });
-                      }}
-                      icon={<ThemeSaveIcon className="h-3.5 w-3.5" />}
-                    />
-                  )
-                ) : null}
-                <ThemeActionButton
-                  label="Renommer"
-                  onClick={() => openNameEditor(theme.id, 'rename', source?.name || theme.label)}
-                  icon={<ThemePencilIcon className="h-3.5 w-3.5" />}
-                />
-                <ThemeActionButton
-                  label="Dupliquer"
-                  onClick={() => {
-                    onDuplicateTheme(theme.id);
-                    pushFlashFeedback({
-                      variant: 'success',
-                      title: 'Thème dupliqué',
-                      description: `Une copie de « ${source?.name || theme.label} » a été créée.`,
-                      durationMs: 4000,
-                    });
-                  }}
-                  icon={<ThemeCopyIcon className="h-3.5 w-3.5" />}
-                />
-                {isCustomPortfolioThemeId(theme.id) ? (
-                  <ThemeActionButton
-                    label="Supprimer"
-                    tone="danger"
-                    onClick={() => {
-                      setNameEditor(null);
-                      setPendingDeleteId(theme.id);
-                    }}
-                    icon={<ThemeTrashIcon className="h-3.5 w-3.5" />}
-                  />
-                ) : null}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function ThemeActionButton({
-  label,
-  onClick,
-  icon,
-  tone = 'neutral',
-  disabled = false,
-}: {
-  label: string;
-  onClick: () => void;
-  icon: ReactNode;
-  tone?: 'neutral' | 'primary' | 'danger';
-  disabled?: boolean;
-}) {
-  const toneClass =
-    tone === 'primary'
-      ? 'border-neutral-900 bg-neutral-900 text-white hover:bg-neutral-800'
-      : tone === 'danger'
-        ? 'border-red-200 bg-white text-red-600 hover:border-red-300 hover:bg-red-50'
-        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50';
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:border-neutral-100 disabled:bg-neutral-50 disabled:text-neutral-400 disabled:hover:bg-neutral-50 ${toneClass}`}
-      title={disabled ? 'Aucune modification à enregistrer' : label}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
-  );
-}
-
-function ThemeInfoIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <path strokeLinecap="round" d="M12 11v5M12 8h.01" />
-    </svg>
-  );
-}
-
-function ThemeSaveIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5h11l3 3v11H5V5z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 5v5h7V5M8 19v-6h8v6" />
-    </svg>
-  );
-}
-
-function ThemePencilIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 20h4l10.5-10.5a2.1 2.1 0 00-3-3L5 17v3z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6.5l3 3" />
-    </svg>
-  );
-}
-
-function ThemeCopyIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <rect x="9" y="9" width="11" height="11" rx="2" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 15V5a2 2 0 012-2h10" />
-    </svg>
-  );
-}
-
-function ThemeResetIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 0114.95-4.05M20 12a8 8 0 01-14.95 4.05" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 5v5h5M20 19v-5h-5" />
-    </svg>
-  );
-}
-
-function ThemeTrashIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M9 7V5h6v2M8 7l1 12h6l1-12" />
-    </svg>
-  );
-}
-
-function ThemeCheckIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12l5 5L20 7" />
-    </svg>
-  );
-}
-
-function ThemeCloseIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-    </svg>
   );
 }
 
