@@ -5757,6 +5757,18 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   margin-bottom: 0.4rem;
 }
 
+/* Global settings — per-token/per-option label inside a card or grid (e.g. "Texte fort",
+   "Standard"). Same uppercase/letter-spacing treatment as .pf-stack-block-label but larger
+   and built on texte-fort (not texte-muted) so it stays legible in both color modes — the
+   muted token was fine for a section header but too dim to read as a token's own name. */
+.pf-stack-option-title {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #f5f5f5) 80%, transparent);
+}
+
 .pf-stack-segment-icon {
   display: inline-flex;
   align-items: center;
