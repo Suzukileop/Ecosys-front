@@ -2022,6 +2022,134 @@ function GlobalSegmentGrid<T extends string | number>({
   );
 }
 
+/** Same visual-preview picker card as Stack's "Cell style"/"Columns" (StackPickerCard,
+ *  compact variant) — reused here so Global's layout controls read as one system. */
+function GlobalPreviewCard({
+  active,
+  label,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={label}
+      title={label}
+      data-active={active ? 'true' : 'false'}
+      onClick={onClick}
+      className="pf-stack-design-card pf-stack-preview-card rounded-2xl text-left"
+    >
+      {children}
+      <span className="mt-1.5 block">
+        <span className="pf-stack-card-label min-w-0 text-xs font-semibold leading-none tracking-tight">
+          {label}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function GlobalPreviewCardGrid<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  columns,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string; glyph: (active: boolean) => ReactNode }[];
+  onChange: (value: T) => void;
+  columns?: number;
+}) {
+  const cols = columns ?? Math.min(options.length, 4);
+  return (
+    <div>
+      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="grid gap-2"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <GlobalPreviewCard
+              key={option.value}
+              active={active}
+              label={option.label}
+              onClick={() => onChange(option.value)}
+            >
+              <svg viewBox="0 0 64 34" className="pf-stack-mini h-full w-full" aria-hidden>
+                <rect className="pf-stack-mini-stage" x="0.75" y="0.75" width="62.5" height="32.5" rx="6" />
+                {option.glyph(active)}
+              </svg>
+            </GlobalPreviewCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Bar spanning `percent`% of the safe stage width, centered — preview for Content width. */
+function globalWidthBarGlyph(percent: number) {
+  return (active: boolean) => {
+    const barWidth = (48 * percent) / 100;
+    const x = 8 + (48 - barWidth) / 2;
+    return (
+      <rect
+        className={active ? 'pf-stack-mini-accent' : 'pf-stack-mini-mute'}
+        x={x}
+        y={13}
+        width={barWidth}
+        height={8}
+        rx={2}
+      />
+    );
+  };
+}
+
+/** Bar inset by `paddingPercent`% on each side — preview for Side margins. */
+function globalMarginBarGlyph(paddingPercent: number) {
+  return (active: boolean) => {
+    const padding = (48 * paddingPercent) / 100;
+    return (
+      <rect
+        className={active ? 'pf-stack-mini-accent' : 'pf-stack-mini-mute'}
+        x={8 + padding}
+        y={13}
+        width={48 - padding * 2}
+        height={8}
+        rx={2}
+      />
+    );
+  };
+}
+
+const GLOBAL_CONTENT_WIDTH_PREVIEW_OPTIONS = PORTFOLIO_GLOBAL_CONTENT_WIDTH_OPTIONS.map((option) => ({
+  value: option.value,
+  label: option.label,
+  glyph: globalWidthBarGlyph(
+    option.value === 'standard' ? 45 : option.value === 'wide' ? 70 : 100
+  ),
+}));
+
+const GLOBAL_CONTENT_GUTTER_PREVIEW_OPTIONS = PORTFOLIO_GLOBAL_CONTENT_GUTTER_OPTIONS.map((option) => ({
+  value: option.value,
+  label: option.label,
+  glyph: globalMarginBarGlyph(
+    option.value === 'none' ? 0 : option.value === 'wide' ? 8 : option.value === 'medium' ? 16 : 24
+  ),
+}));
+
 /** Guaranteed-visible animated switch — hardcoded per dock-mode colors (see .pf-global-switch-*
  *  in globals.css) instead of palette-derived ones, which can land near-invisible against the
  *  dock's own chrome in some palette/mode combinations. */
@@ -2415,21 +2543,19 @@ function GlobalSettingsPanel({
 
           <div className="space-y-4 rounded-2xl border border-neutral-200/10 bg-black/10 p-4">
             <GlobalBlockLabel>Layout &amp; width</GlobalBlockLabel>
-            <GlobalSegmentGrid
+            <GlobalPreviewCardGrid
               label="Content width"
-              options={PORTFOLIO_GLOBAL_CONTENT_WIDTH_OPTIONS}
+              options={GLOBAL_CONTENT_WIDTH_PREVIEW_OPTIONS}
               value={global.contentWidth}
               onChange={(contentWidth) => onGlobalChange({ contentWidth })}
               columns={3}
-              hideDescription
             />
-            <GlobalSegmentGrid
+            <GlobalPreviewCardGrid
               label="Side margins"
-              options={PORTFOLIO_GLOBAL_CONTENT_GUTTER_OPTIONS}
+              options={GLOBAL_CONTENT_GUTTER_PREVIEW_OPTIONS}
               value={global.contentGutter}
               onChange={(contentGutter) => onGlobalChange({ contentGutter })}
-              columns={2}
-              hideDescription
+              columns={4}
             />
           </div>
 
