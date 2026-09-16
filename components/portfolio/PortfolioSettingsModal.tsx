@@ -1975,6 +1975,17 @@ function GlobalBlockLabel({ children }: { children: ReactNode }) {
   return <p className="pf-stack-block-label">{children}</p>;
 }
 
+/** Uniform section wrapper: divider + 32px breathing room before the label, 12px between
+ *  the label and its content — applied before every Level-3 section, not ad hoc per block. */
+function GlobalSection({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="pf-gs-section">
+      <GlobalBlockLabel>{label}</GlobalBlockLabel>
+      <div className="space-y-4">{children}</div>
+    </div>
+  );
+}
+
 function GlobalSegmentGrid<T extends string | number>({
   label,
   options,
@@ -2513,7 +2524,7 @@ function GlobalSwitchRow({
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-1.5">
           <span
-            className="min-w-0 cursor-pointer text-sm font-semibold text-neutral-950"
+            className="min-w-0 cursor-pointer text-sm font-medium text-neutral-950"
             onClick={() => onChange(!checked)}
           >
             {label}
@@ -2802,15 +2813,14 @@ function GlobalSettingsPanel({
       </nav>
 
       {subSection === 'theme' ? (
-        <div className="space-y-8">
+        <div>
           <GlobalSwitchRow
             label="Light mode"
             checked={activeMode === 'light'}
             onChange={(light) => onColorModeChange(light ? 'light' : 'dark')}
           />
 
-          <div className="space-y-4">
-            <GlobalBlockLabel>Site color palette</GlobalBlockLabel>
+          <GlobalSection label="Site color palette">
             <div className="grid gap-3 sm:grid-cols-2">
               {PALETTE_FAMILY_OPTIONS.map((family) => {
                 const active = activeFamily === family.id;
@@ -2867,8 +2877,9 @@ function GlobalSettingsPanel({
                 Custom pair — pick a family above to reset to a named pair.
               </p>
             ) : null}
+          </GlobalSection>
 
-            <GlobalBlockLabel>Active mode tokens</GlobalBlockLabel>
+          <GlobalSection label="Active mode tokens">
             <div className="grid gap-4 sm:grid-cols-2">
               {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
                 <GlobalTokenSwatch
@@ -2879,10 +2890,9 @@ function GlobalSettingsPanel({
                 />
               ))}
             </div>
-          </div>
+          </GlobalSection>
 
-          <div className="space-y-4">
-            <GlobalBlockLabel>Layout &amp; width</GlobalBlockLabel>
+          <GlobalSection label="Layout & width">
             <GlobalPreviewCardGrid
               label="Content width"
               options={GLOBAL_CONTENT_WIDTH_PREVIEW_OPTIONS}
@@ -2897,17 +2907,16 @@ function GlobalSettingsPanel({
               onChange={(contentGutter) => onGlobalChange({ contentGutter })}
               columns={4}
             />
-          </div>
+          </GlobalSection>
 
-          <div className="space-y-4">
-            <GlobalBlockLabel>Preferences</GlobalBlockLabel>
+          <GlobalSection label="Preferences">
             <GlobalSwitchRow
               label="Settings keyboard shortcut"
               description="Ctrl+, (⌘ on Mac) — owner only."
               checked={global.settingsShortcutEnabled ?? true}
               onChange={(settingsShortcutEnabled) => onGlobalChange({ settingsShortcutEnabled })}
             />
-          </div>
+          </GlobalSection>
         </div>
       ) : null}
 
