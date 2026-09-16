@@ -2810,81 +2810,54 @@ const PALETTE_FAMILY_OPTIONS = [
     label: 'Indigo',
     dark: INDIGO_DARK_HERO_PALETTE,
     light: INDIGO_LIGHT_HERO_PALETTE,
-    darkClass: 'border-[#2E2F52] bg-[#0D0E1F] hover:border-indigo-400',
-    labelClass: 'text-[#F5F5FF]',
-    swatchBorder: 'border-white/20',
   },
   {
     id: 'classic' as const,
     label: 'Classic',
     dark: DEFAULT_HERO_PALETTE,
     light: LIGHT_HERO_PALETTE,
-    darkClass: 'border-[#3B3323] bg-[#15110B] hover:border-orange-400',
-    labelClass: 'text-[#F5F0E8]',
-    swatchBorder: 'border-white/20',
   },
   {
     id: 'verdant' as const,
     label: 'Verdant',
     dark: VERDANT_DARK_HERO_PALETTE,
     light: VERDANT_LIGHT_HERO_PALETTE,
-    darkClass: 'border-slate-700/80 bg-[#020617] hover:border-lime-400',
-    labelClass: 'text-[#F8FAFC]',
-    swatchBorder: 'border-white/20',
   },
   {
     id: 'vive' as const,
     label: 'Vive',
     dark: VIVE_DARK_HERO_PALETTE,
     light: VIVE_LIGHT_HERO_PALETTE,
-    darkClass: 'border-yellow-700/60 bg-[#12100A] hover:border-yellow-400',
-    labelClass: 'text-[#FEE685]',
-    swatchBorder: 'border-white/20',
   },
   {
     id: 'safran' as const,
     label: 'Safran',
     dark: SAFRAN_DARK_HERO_PALETTE,
     light: SAFRAN_LIGHT_HERO_PALETTE,
-    darkClass: 'border-stone-700/50 bg-[#0C0A09] hover:border-[#FCE96A]',
-    labelClass: 'text-[#FCE96A]',
-    swatchBorder: 'border-white/15',
   },
   {
     id: 'citron' as const,
     label: 'Citron',
     dark: CITRON_DARK_HERO_PALETTE,
     light: CITRON_LIGHT_HERO_PALETTE,
-    darkClass: 'border-slate-700/60 bg-[#0F172A] hover:border-[#C8E01A]',
-    labelClass: 'text-[#C8E01A]',
-    swatchBorder: 'border-white/15',
   },
   {
     id: 'rouge' as const,
     label: 'Rouge',
     dark: ROUGE_DARK_HERO_PALETTE,
     light: ROUGE_LIGHT_HERO_PALETTE,
-    darkClass: 'border-zinc-700 bg-[#020202] hover:border-red-400',
-    labelClass: 'text-[#FAFAFA]',
-    swatchBorder: 'border-white/15',
   },
   {
     id: 'ecarlate' as const,
     label: 'Écarlate',
     dark: ECARLATE_DARK_HERO_PALETTE,
     light: ECARLATE_LIGHT_HERO_PALETTE,
-    darkClass: 'border-neutral-700 bg-[#000000] hover:border-red-400',
-    labelClass: 'text-[#F5F5F5]',
-    swatchBorder: 'border-white/15',
   },
   {
     id: 'ardoise' as const,
     label: 'Ardoise',
     dark: ARDOISE_DARK_HERO_PALETTE,
     light: ARDOISE_LIGHT_HERO_PALETTE,
-    darkClass: 'border-[#303B47] bg-[#0A0F15] hover:border-sky-400',
-    labelClass: 'text-[#EEF2F5]',
-    swatchBorder: 'border-white/15',
   },
 ] as const;
 
@@ -3001,31 +2974,35 @@ function GlobalSettingsPanel({
                     onClick={() =>
                       onGlobalPalettePairChange(family.dark, family.light, family.id)
                     }
-                    className={`rounded-2xl border px-4 py-3 text-left transition ${family.darkClass} ${
-                      active ? 'ring-2 ring-indigo-500 ring-offset-2' : ''
+                    className={`relative rounded-2xl bg-white px-4 py-3 text-left transition ${
+                      active
+                        ? 'border-2 border-[color:var(--pf-palette-principal,#f97316)]'
+                        : 'border border-neutral-200/80 hover:border-neutral-300'
                     }`}
                   >
-                    <span className="flex items-center justify-between gap-2">
-                      <span className={`text-sm font-semibold ${family.labelClass}`}>{family.label}</span>
-                      {active ? (
-                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-indigo-500">
-                          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5" aria-hidden>
-                            <path
-                              d="M4 10.5l3.5 3.5L16 6"
-                              stroke="white"
-                              strokeWidth={2.5}
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
-                      ) : null}
-                    </span>
+                    {active ? (
+                      <span
+                        aria-hidden
+                        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+                        style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
+                      >
+                        <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5" aria-hidden>
+                          <path
+                            d="M4 10.5l3.5 3.5L16 6"
+                            stroke="white"
+                            strokeWidth={2.5}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </span>
+                    ) : null}
+                    <span className="text-sm font-semibold text-neutral-950">{family.label}</span>
                     <span className="mt-2 flex gap-1.5">
                       {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
                         <span
                           key={token.value}
-                          className={`h-4 w-4 rounded-full border ${family.swatchBorder}`}
+                          className="h-4 w-4 rounded-full border border-neutral-200"
                           style={{
                             backgroundColor:
                               activeMode === 'light'
@@ -6435,14 +6412,28 @@ export function PortfolioSettingsModal({
     }
   }, [onPreviewSectionFocus]);
 
-  const visibleSettingsSections = useMemo(
-    () =>
-      PORTFOLIO_SETTINGS_SECTIONS.filter(
-        (section) =>
-          section.id !== 'aboutUs' || portfolioPresenceShowsAboutUs(settings.global.presenceKind)
-      ),
-    [settings.global.presenceKind]
-  );
+  const visibleSettingsSections = useMemo(() => {
+    const filtered = PORTFOLIO_SETTINGS_SECTIONS.filter(
+      (section) =>
+        section.id !== 'aboutUs' || portfolioPresenceShowsAboutUs(settings.global.presenceKind)
+    );
+    // Keep this menu's order in sync with Global → Section display order: Global,
+    // Navigation and Hero always lead, then the reorderable content sections in the
+    // order the user picked, then Footer trails (falls through to the end — it's
+    // absent from the resolved content order).
+    const contentOrder = resolvePortfolioContentSectionOrder(settings.global.sectionOrder);
+    const contentRank = new Map(contentOrder.map((key, index) => [key as string, index]));
+    const leadingRank: Partial<Record<PortfolioSettingsSectionId, number>> = {
+      theme: -3,
+      navigation: -2,
+      hero: -1,
+    };
+    return [...filtered].sort((a, b) => {
+      const rankA = leadingRank[a.id] ?? contentRank.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+      const rankB = leadingRank[b.id] ?? contentRank.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+      return rankA - rankB;
+    });
+  }, [settings.global.presenceKind, settings.global.sectionOrder]);
 
   useEffect(() => {
     if (!open) return;
