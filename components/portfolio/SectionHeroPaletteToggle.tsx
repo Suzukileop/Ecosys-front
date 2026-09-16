@@ -17,19 +17,36 @@ export function SectionHeroPaletteToggle({
 }) {
   return (
     <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-      <label className="flex cursor-pointer items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4">
         <span className="min-w-0">
-          <span className="block text-sm font-semibold text-neutral-950">{title}</span>
+          <span
+            className="block cursor-pointer text-sm font-semibold text-neutral-950"
+            onClick={() => onChange(!enabled)}
+          >
+            {title}
+          </span>
           <span className="mt-1 block text-sm text-neutral-500">{description}</span>
         </span>
-        <input
-          type="checkbox"
-          checked={enabled}
-          onChange={(event) => onChange(event.target.checked)}
-          className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-neutral-900"
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
           aria-label={title}
-        />
-      </label>
+          onClick={() => onChange(!enabled)}
+          className="mt-1 shrink-0"
+        >
+          <span
+            data-checked={enabled ? 'true' : 'false'}
+            className="pf-global-switch-track relative inline-block h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          >
+            <span
+              data-checked={enabled ? 'true' : 'false'}
+              className="pf-global-switch-thumb absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+              style={{ left: enabled ? '1.125rem' : '0.125rem' }}
+            />
+          </span>
+        </button>
+      </div>
       {enabled && enabledHint ? (
         <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
           {enabledHint}
