@@ -32,6 +32,7 @@ import {
   deferAfterPortfolioNavOverlayClose,
   scrollToPortfolioSection,
   unlockPortfolioPageScroll,
+  usePortfolioNavFocusTrap,
   usePortfolioNavTopClearanceSync,
 } from '@/components/portfolio/portfolio-nav-top-clearance';
 import { usePortfolioSectionSpy } from '@/components/portfolio/portfolio-nav-section-spy';
@@ -534,6 +535,7 @@ export function PortfolioDutenPanelNav({
   const [dockedToTop, setDockedToTop] = useState(false);
   const navRootRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
+  const linksPanelRef = useRef<HTMLDivElement>(null);
   const lastScrollYRef = useRef(0);
   const isControlled = typeof onNavigate === 'function';
   const sectionIds = useMemo(() => items.map((item) => item.id), [items]);
@@ -654,6 +656,7 @@ export function PortfolioDutenPanelNav({
     active: true,
     visible,
   });
+  usePortfolioNavFocusTrap({ open, containerRef: linksPanelRef });
 
   const handleNavigate = (id: string, event?: ReactMouseEvent) => {
     event?.preventDefault();
@@ -857,7 +860,9 @@ export function PortfolioDutenPanelNav({
           {open ? (
             <motion.div
               key="duten-links"
-              className={PANEL_SCROLL_CLASS}
+              ref={linksPanelRef}
+              tabIndex={-1}
+              className={`${PANEL_SCROLL_CLASS} focus:outline-none`}
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={reduceMotion ? undefined : { opacity: 0 }}

@@ -114,8 +114,8 @@ function BrandCardLevelIndex({
       <span className="sr-only">{label}</span>
       <span
         aria-hidden="true"
-        className="text-[0.6875rem] font-medium tabular-nums leading-none tracking-[0.16em]"
-        style={{ color: mixInk(ink, 42, surface) }}
+        className="text-[0.75rem] font-semibold tabular-nums leading-none tracking-[0.14em]"
+        style={{ color: mixInk(ink, 52, surface) }}
       >
         {index}
       </span>
@@ -168,11 +168,12 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
   const accent = presentation.levelAccentColor?.trim() || ink;
   const chipInk = presentation.chipTextColor?.trim() || ink;
   const wash = mixInk(ink, 4, surface);
+  const washHover = mixInk(ink, 7, surface);
   const hairline = `color-mix(in srgb, ${border} 58%, transparent)`;
   const hairlineHover = mixInk(ink, 34, border);
-  const descInk = mixInk(ink, 60, surface);
-  const kickerInk = mixInk(ink, 38, surface);
-  const useInk = mixInk(chipInk, 72, surface);
+  const descInk = presentation.descriptionColor?.trim() || mixInk(ink, 64, surface);
+  const kickerInk = mixInk(ink, 46, surface);
+  const useInk = mixInk(chipInk, 76, surface);
   const logoHairline = showIconBg ? `color-mix(in srgb, ${ink} 10%, transparent)` : 'transparent';
   const logoWash = showIconBg ? mixInk(ink, 4, tileBg === 'transparent' ? surface : tileBg) : 'transparent';
 
@@ -189,24 +190,23 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
         .filter(isLaidOut);
       if (items.length === 0) return;
 
+      // Hide immediately (pre-paint) so items never flash at their static/visible
+      // state before ScrollTrigger fires — only the reveal is scroll-gated.
+      gsap.set(items, { y: 18, opacity: 0.22 });
+
       ScrollTrigger.batch(items, {
         start: 'top 90%',
         once: true,
         ...(scroller ? { scroller } : {}),
         onEnter: (batch) => {
-          gsap.fromTo(
-            batch,
-            { y: 18, opacity: 0.22 },
-            {
-              y: 0,
-              opacity: 1,
-              duration: 0.72,
-              stagger: 0.08,
-              ease: 'power3.out',
-              overwrite: 'auto',
-              immediateRender: false,
-            }
-          );
+          gsap.to(batch, {
+            y: 0,
+            opacity: 1,
+            duration: 0.72,
+            stagger: 0.08,
+            ease: 'power3.out',
+            overwrite: 'auto',
+          });
         },
       });
     }, root);
@@ -296,7 +296,7 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
 
             {showName && showCategory && category ? (
               <p
-                className="pf-stack-brand-cards-kicker text-[0.625rem] font-medium uppercase tracking-[0.18em]"
+                className="pf-stack-brand-cards-kicker text-[0.6875rem] font-semibold uppercase tracking-[0.16em]"
                 style={{ color: kickerInk }}
               >
                 {category}
@@ -305,7 +305,7 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
 
             {showDescription && description ? (
               <p
-                className="pf-stack-brand-cards-desc text-[0.8125rem] sm:text-[0.875rem]"
+                className="pf-stack-brand-cards-desc text-[0.875rem] sm:text-[0.9375rem]"
                 style={{ color: descInk }}
               >
                 {description}
@@ -317,7 +317,7 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
                 {useCases.map((useCase, index) => (
                   <li
                     key={useCase}
-                    className="text-[0.6875rem] font-medium leading-[1.5] tracking-[0.02em]"
+                    className="text-[0.75rem] font-medium leading-[1.5] tracking-[0.015em]"
                     style={{ color: useInk }}
                   >
                     {index > 0 ? (
@@ -343,6 +343,7 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
                 '--pf-stack-brand-cards-hairline': hairline,
                 '--pf-stack-brand-cards-hairline-hover': hairlineHover,
                 '--pf-stack-brand-cards-wash': wash,
+                '--pf-stack-brand-cards-wash-hover': washHover,
               } as CSSProperties
             }
           >

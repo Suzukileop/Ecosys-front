@@ -48,7 +48,7 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ),
 
   // Global
-  entry('theme', 'Theme & preferences', ['theme', 'preferences', 'shortcut', 'thème', 'préférences'], 'theme'),
+  entry('theme', 'Foundations', ['theme', 'preferences', 'shortcut', 'thème', 'préférences', 'basic', 'foundations'], 'theme'),
   entry(
     'theme',
     'Dark / light mode',
@@ -98,62 +98,9 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   entry('theme', 'Section order', ['order', 'reorder', 'section order', 'ordre', 'sections'], 'order'),
   entry(
     'theme',
-    'Titles & motion',
-    [
-      'title',
-      'subtitle',
-      'description',
-      'typography',
-      'font',
-      'alignment',
-      'orientation',
-      'sticky',
-      'motion',
-      'scroll',
-      'titre',
-      'sous-titre',
-      'alignement',
-      'police',
-      'geist',
-    ],
-    'titles'
-  ),
-  entry('theme', 'Title alignment', ['title', 'alignment', 'align', 'titre', 'alignement'], 'titles'),
-  entry(
-    'theme',
-    'Section subtitle typography',
-    ['subtitle', 'description', 'sous-titre', 'typography', 'font', 'color', 'size'],
-    'titles'
-  ),
-  entry(
-    'theme',
     'Layout & width',
     ['width', 'content width', 'gutter', 'margins', 'largeur', 'layout', 'responsive'],
-    'layout'
-  ),
-  entry(
-    'theme',
-    'Police principale',
-    [
-      'typography',
-      'typography & title box',
-      'title box',
-      'font',
-      'typo',
-      'police',
-      'police principale',
-      'body font',
-      'site font',
-      'maison neue',
-      'plus jakarta',
-      'geist',
-      'montserrat',
-      'raleway',
-      'roboto',
-      'caractères',
-      'texte',
-    ],
-    'typography'
+    'theme'
   ),
 
   // Navigation
@@ -265,7 +212,7 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ),
   entry('navigation', 'Show navigation', ['menu', 'visibility', 'afficher', 'navigation']),
   entry('navigation', 'Handle colors', ['handle', 'menu', 'chevron', 'illisible', 'contrast'], undefined),
-  entry('navigation', 'Navigation type', ['nav mode', 'per page', 'pages', 'default', 'type']),
+  entry('navigation', 'Navigation type', ['nav mode', 'per page', 'default', 'type']),
   entry('navigation', 'When to appear', ['always', 'after scrolling', 'after hero', 'display', 'apparition']),
   entry('navigation', 'Glass / blur', ['glass', 'blur', 'frosted', 'flou', 'ombre'], undefined),
   entry('navigation', 'Bar shadow', ['shadow', 'halo', 'ombre', 'bar'], undefined),
@@ -418,115 +365,13 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
     ['palette', 'manual', 'manuel', 'tokens', 'couleurs', 'désactiver palette'],
     'general'
   ),
-  entry(
-    'work',
-    'Palette',
-    ['palette', 'color', 'couleur', 'tokens', 'semantic', 'bound colors'],
-    'palette'
-  ),
   entry('work', 'General', ['visibility', 'marketplace', 'show portfolio'], 'general'),
   entry('work', 'Header', ['title', 'subtitle', 'fonts', 'colors'], 'header'),
-  entry('work', 'Categories', ['filter', 'category', 'group', 'catégories', 'placement', 'typography'], 'categories'),
   entry(
     'work',
-    'Cards',
-    [
-      'layout',
-      'grid',
-      'overlay',
-      'design',
-      'responsive',
-      'cards',
-      'cartes',
-      'columns',
-      'largeur',
-      'width',
-      'vertical',
-      'centrage',
-      'justify',
-    ],
-    'cards'
-  ),
-  entry(
-    'work',
-    'Media',
-    [
-      'media',
-      'média',
-      'image',
-      'thumbnail',
-      'vignette',
-      'placement',
-      'gauche',
-      'droite',
-      'haut',
-      'bas',
-      'taille',
-      'ratio',
-      'bordure',
-      'border',
-      'show media',
-      'afficher média',
-    ],
-    'media'
-  ),
-  entry(
-    'work',
-    'Titre',
-    ['title', 'project title', 'typography', 'placement', 'titre', 'overlay'],
-    'title'
-  ),
-  entry(
-    'work',
-    'Description',
-    ['description', 'body', 'typography', 'placement', 'texte'],
-    'description'
-  ),
-  entry(
-    'work',
-    'Outils',
-    [
-      'tools',
-      'logos',
-      'icons',
-      'outils',
-      'placement',
-      'typography',
-      'fond',
-      'icônes',
-      'fit',
-      'limiter',
-    ],
-    'tools'
-  ),
-  entry(
-    'work',
-    'CTA',
-    ['view project', 'button', 'cta', 'bouton', 'placement', 'typography'],
-    'cta'
-  ),
-  entry(
-    'work',
-    'Cadre des informations',
-    ['info frame', 'content frame', 'border', 'padding', 'gap', 'cadre info', 'informations'],
-    'cards'
-  ),
-  entry(
-    'work',
-    'Ombre / flotte',
-    [
-      'shadow',
-      'float',
-      'blur',
-      'halo',
-      'ombre',
-      'flotte',
-      'elevation',
-      'lift',
-      'intensité',
-      'légèreté',
-    ],
-    'cards'
+    'Design',
+    ['layout', 'grid', 'design', 'responsive', 'board', 'accordion', 'frames', 'carousel'],
+    'design'
   ),
   entry('work', 'Background', ['fill', 'gradient', 'opacity', 'fond'], 'background'),
 

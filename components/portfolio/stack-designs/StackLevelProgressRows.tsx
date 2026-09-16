@@ -179,7 +179,7 @@ function ToolLevelProgressRowItem({
         {showName || (showLevel && level) ? (
           <div className="pf-stack-progress-meta flex min-w-0 items-baseline justify-between gap-3">
             {showName ? (
-              <span className="pf-stack-progress-name truncate font-normal leading-none tracking-[-0.02em]">
+              <span className="pf-stack-progress-name truncate font-medium leading-[1.3] tracking-[-0.02em]">
                 {name}
               </span>
             ) : (
@@ -187,8 +187,8 @@ function ToolLevelProgressRowItem({
             )}
             {showLevel && level ? (
               <span
-                className="pf-stack-progress-percent shrink-0 font-normal tabular-nums leading-none tracking-[0.04em]"
-                style={{ color: mixInk(labelColor, 40) }}
+                className="pf-stack-progress-percent shrink-0 font-medium tabular-nums leading-none tracking-[0.04em]"
+                style={{ color: mixInk(labelColor, 52) }}
               >
                 {percent}%
               </span>

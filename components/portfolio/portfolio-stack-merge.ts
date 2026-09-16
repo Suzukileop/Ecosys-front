@@ -1,5 +1,6 @@
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
+import { mergeSectionColorMode } from '@/components/portfolio/portfolio-section-color-mode';
 import {
   DEFAULT_SECTION_BACKGROUND,
   mergeSectionBackground,
@@ -21,6 +22,7 @@ import {
 import type {
   PortfolioStackAsideTitlePlacement,
   PortfolioStackDesign,
+  PortfolioStackHeaderDesign,
   PortfolioStackPresentationSettings,
   PortfolioStackSectionLayout,
   PortfolioStackSubtitleSize,
@@ -29,6 +31,21 @@ import type {
   PortfolioStackTitlePresetLegacy,
   PortfolioStackTitleSize,
 } from '@/components/portfolio/portfolio-stack-presentation';
+
+export const STACK_HEADER_DESIGN_IDS: PortfolioStackHeaderDesign[] = [
+  'mask',
+  'split',
+  'typewriter',
+  'index',
+  'masthead',
+  'marquee',
+  'focus',
+  'terminal',
+  'bracket',
+  'underline',
+  'cascade',
+  'mosaic',
+];
 
 /** Mirrors {@link PortfolioSectionCopy} without importing portfolio-settings-types (avoids circular deps). */
 type PortfolioStackSectionCopy = {
@@ -285,6 +302,12 @@ export function mergeStackPresentationBase(
     ...base,
     ...mergeSectionBackground(base, record),
     design,
+    headerDesign: pick(record.headerDesign, STACK_HEADER_DESIGN_IDS, base.headerDesign ?? 'mask'),
+    headerBottomSpacing: pick(
+      record.headerBottomSpacing,
+      ['tight', 'medium', 'large', 'xlarge'] as const,
+      base.headerBottomSpacing ?? 'medium'
+    ),
     sectionLayout,
     asideTitleSticky:
       typeof record.asideTitleSticky === 'boolean'
@@ -491,6 +514,7 @@ export function mergeStackPresentationBase(
       record.activeColorMode === 'light' || record.activeColorMode === 'dark'
         ? record.activeColorMode
         : base.activeColorMode,
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
   };
 
   if (next.useHeroPalette !== false) {

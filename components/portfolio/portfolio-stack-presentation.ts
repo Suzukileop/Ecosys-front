@@ -22,6 +22,11 @@ import type {
   PortfolioToolsColorBindings,
   PortfolioToolsPalette,
 } from '@/components/portfolio/portfolio-tools-palette-settings';
+import type {
+  PortfolioHeaderDesign,
+  PortfolioHeaderBottomSpacing,
+} from '@/components/portfolio/portfolio-header-design-shared';
+import type { PortfolioSectionColorMode } from '@/components/portfolio/portfolio-section-color-mode';
 
 export type PortfolioStackDesign =
   | 'workflow-rail'
@@ -53,6 +58,11 @@ export type PortfolioStackTitleSize = 'sm' | 'md' | 'lg' | 'xl';
 
 /** Section subtitle scale for all Stack designs. */
 export type PortfolioStackSubtitleSize = 'sm' | 'md' | 'lg';
+
+/** Header design — visual/motion treatment for the section's title + subtitle. Shared
+ *  1:1 with Tools' `PortfolioToolsHeaderDesign` — both sections can render any of the
+ *  12 header-design components (stack-header-designs/* + tools-header-designs/*). */
+export type PortfolioStackHeaderDesign = PortfolioHeaderDesign;
 
 /**
  * Standalone Stack gallery/presentation settings — shared visual fields used by Stack
@@ -147,6 +157,8 @@ export type PortfolioStackPresentationSettings = PortfolioSectionBackgroundSetti
   /** JSON field name kept for backward compatibility with Tools color bindings. */
   toolsColorBindings?: PortfolioToolsColorBindings;
   activeColorMode?: 'light' | 'dark';
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
   /**
    * `aside-left` / `aside-right` — title in one half (centered), list in the other.
    * When aside, level-progress-rows always shows 1 column.
@@ -168,6 +180,10 @@ export type PortfolioStackPresentationSettings = PortfolioSectionBackgroundSetti
   titleSize?: PortfolioStackTitleSize;
   /** Subtitle size — applies to sticky header and embedded stack-tags subtitle. */
   subtitleSize?: PortfolioStackSubtitleSize;
+  /** Header design — which stack-header-designs/* component renders the section title/subtitle. */
+  headerDesign: PortfolioStackHeaderDesign;
+  /** Gap between the header block and the gallery below it. */
+  headerBottomSpacing: PortfolioHeaderBottomSpacing;
 };
 
 /** Legacy title presets accepted in saved JSON — normalized by mergeStackPresentation. */

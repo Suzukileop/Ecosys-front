@@ -8,6 +8,12 @@ import {
   type PortfolioSectionBackgroundSettings,
 } from '@/components/portfolio/portfolio-section-background-settings';
 import type { PortfolioSectionCopy } from '@/components/portfolio/portfolio-settings-types';
+import { mergeSectionColorMode, type PortfolioSectionColorMode } from '@/components/portfolio/portfolio-section-color-mode';
+import {
+  PORTFOLIO_HEADER_BOTTOM_SPACING_OPTIONS,
+  type PortfolioHeaderDesign,
+  type PortfolioHeaderBottomSpacing,
+} from '@/components/portfolio/portfolio-header-design-shared';
 import {
   applyToolsPaletteToSettings,
   DEFAULT_TOOLS_COLOR_BINDINGS,
@@ -54,6 +60,10 @@ export type PortfolioToolsBrandCardsIconPlacement = 'top' | 'left';
 
 export type PortfolioToolsHeaderFont = 'sans' | 'serif' | 'display';
 export type PortfolioToolsHeaderAlignment = 'left' | 'center' | 'right';
+/** Header design — visual/motion treatment for the section's title + subtitle. Shared
+ *  1:1 with Stack's `PortfolioStackHeaderDesign` — both sections can render any of the
+ *  12 header-design components (tools-header-designs/* + stack-header-designs/*). */
+export type PortfolioToolsHeaderDesign = PortfolioHeaderDesign;
 export type PortfolioToolsContentAlignment = 'left' | 'center' | 'right';
 export type PortfolioToolsTitlePreset =
   | 'workflow-tools'
@@ -110,6 +120,10 @@ export type PortfolioToolsPresentationSettings = PortfolioSectionBackgroundSetti
   subtitlePreset: PortfolioToolsSubtitlePreset;
   subtitleCustom: string;
   headerAlignment: PortfolioToolsHeaderAlignment;
+  /** Header design — which tools-header-designs/* component renders the section title/subtitle. */
+  headerDesign: PortfolioToolsHeaderDesign;
+  /** Gap between the header block and the gallery below it. */
+  headerBottomSpacing: PortfolioHeaderBottomSpacing;
   /** @deprecated Legacy shared alignment — use design-specific fields below. */
   contentAlignment: PortfolioToolsContentAlignment;
   titleFont: PortfolioToolsHeaderFont;
@@ -208,6 +222,8 @@ export type PortfolioToolsPresentationSettings = PortfolioSectionBackgroundSetti
   toolsPalette?: PortfolioToolsPalette;
   toolsColorBindings?: PortfolioToolsColorBindings;
   activeColorMode?: 'light' | 'dark';
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
 };
 
 export type PortfolioToolsSectionSettings = PortfolioSectionCopy & PortfolioToolsPresentationSettings;
@@ -308,6 +324,26 @@ export const PORTFOLIO_TOOLS_TITLE_PRESET_OPTIONS = [
   { value: 'stack' as const, label: 'Stack', description: 'Tech stack framing.' },
   { value: 'custom' as const, label: 'Custom', description: 'Your own title.' },
 ];
+
+export const PORTFOLIO_TOOLS_HEADER_DESIGN_OPTIONS: {
+  value: PortfolioToolsHeaderDesign;
+  label: string;
+}[] = [
+  { value: 'focus', label: 'Focus pull' },
+  { value: 'terminal', label: 'Terminal' },
+  { value: 'bracket', label: 'Bracket frame' },
+  { value: 'underline', label: 'Ink underline' },
+  { value: 'cascade', label: 'Word cascade' },
+  { value: 'mosaic', label: 'Mosaic reveal' },
+  { value: 'mask', label: 'Reveal mask' },
+  { value: 'split', label: 'Split rule' },
+  { value: 'typewriter', label: 'Typewriter' },
+  { value: 'index', label: 'Index numeral' },
+  { value: 'masthead', label: 'Masthead' },
+  { value: 'marquee', label: 'Marquee' },
+];
+
+export const PORTFOLIO_TOOLS_HEADER_BOTTOM_SPACING_OPTIONS = PORTFOLIO_HEADER_BOTTOM_SPACING_OPTIONS;
 
 export const PORTFOLIO_TOOLS_LEVEL_BAR_STYLE_OPTIONS: {
   value: PortfolioToolsLevelBarStyle;
@@ -429,6 +465,64 @@ export function toolsLevelBarPercentClass(size: PortfolioToolsLevelBarSize): str
   return LEVEL_BAR_PERCENT_CLASS[size];
 }
 
+/** Same tier scale as toolsLevelBarPercentClass, as a rem value — for designs (like
+ *  level-circular-cards) that set the % size via a CSS custom property instead of a Tailwind class. */
+const LEVEL_BAR_PERCENT_REM: Record<PortfolioToolsLevelBarSize, string> = {
+  tight: '0.875rem',
+  small: '1rem',
+  medium: '1.125rem',
+  large: '1.25rem',
+  xlarge: '1.5rem',
+};
+
+export function toolsLevelBarPercentRem(size: PortfolioToolsLevelBarSize): string {
+  return LEVEL_BAR_PERCENT_REM[size] ?? LEVEL_BAR_PERCENT_REM.small;
+}
+
+/** "Bar & % size" scale, expressed as a stroke-width multiplier for ring indicators
+ *  (level-circular-cards, level-svg-rings). The settings panel only offers small→xlarge for
+ *  these two designs (a hairline "tight" ring reads as broken rather than refined), so the
+ *  usable range is deliberately punchier than the linear-bar height ratios — small stays at
+ *  the existing baseline look, xlarge should read as unmistakably bold, not "barely thicker". */
+const LEVEL_RING_STROKE_MULTIPLIER: Record<PortfolioToolsLevelBarSize, number> = {
+  tight: 0.75,
+  small: 1,
+  medium: 1.55,
+  large: 2.15,
+  xlarge: 2.85,
+};
+
+export function toolsLevelRingStrokeMultiplier(size: PortfolioToolsLevelBarSize): number {
+  return LEVEL_RING_STROKE_MULTIPLIER[size] ?? 1;
+}
+
+/** level-svg-rings' own hairline stroke — deliberately thin, the name sits inside the ring
+ *  aperture so it needs the open space. Do NOT reuse this for level-circular-cards: that design
+ *  has no text inside the ring, so it can (and per feedback, should) go genuinely bold. */
+export function toolsLevelRingStroke(size: number, barSize: PortfolioToolsLevelBarSize): number {
+  return Math.max(1.35, size * 0.0155 * toolsLevelRingStrokeMultiplier(barSize));
+}
+
+/** level-circular-cards' own stroke scale, as a fraction of ring diameter per tier — "small"
+ *  matches the design's original ~4.2%-of-size default, "xlarge" is a genuinely bold ~13.5%
+ *  (e.g. ~15px on a 108px ring), not just a subtle bump over "small" like the shared ring
+ *  multiplier produced. */
+const CIRCULAR_RING_STROKE_RATIO: Record<PortfolioToolsLevelBarSize, number> = {
+  tight: 0.035,
+  small: 0.05,
+  medium: 0.075,
+  large: 0.1,
+  xlarge: 0.135,
+};
+
+export function toolsLevelCircularRingStroke(
+  size: number,
+  barSize: PortfolioToolsLevelBarSize
+): number {
+  const ratio = CIRCULAR_RING_STROKE_RATIO[barSize] ?? CIRCULAR_RING_STROKE_RATIO.small;
+  return Math.max(4, Math.round(size * ratio));
+}
+
 export const PORTFOLIO_TOOLS_LEVEL_TABLE_GROUP_BY_OPTIONS: {
   value: PortfolioToolsLevelTableGroupBy;
   label: string;
@@ -543,17 +637,17 @@ export const PORTFOLIO_TOOLS_SUBTITLE_PRESET_OPTIONS: {
   value: PortfolioToolsSubtitlePreset;
   label: string;
 }[] = [
-  { value: 'none', label: 'Aucun' },
-  { value: 'custom', label: 'Personnalisé' },
+  { value: 'none', label: 'None' },
+  { value: 'custom', label: 'Custom' },
 ];
 
 export const PORTFOLIO_TOOLS_HEADER_ALIGNMENT_OPTIONS: {
   value: PortfolioToolsHeaderAlignment;
   label: string;
 }[] = [
-  { value: 'left', label: 'Gauche' },
-  { value: 'center', label: 'Centre' },
-  { value: 'right', label: 'Droite' },
+  { value: 'left', label: 'Left' },
+  { value: 'center', label: 'Center' },
+  { value: 'right', label: 'Right' },
 ];
 
 export const PORTFOLIO_TOOLS_TILE_SIZE_OPTIONS: {
@@ -563,17 +657,17 @@ export const PORTFOLIO_TOOLS_TILE_SIZE_OPTIONS: {
   { value: 'sm', label: 'Compact' },
   { value: 'md', label: 'Standard' },
   { value: 'lg', label: 'Large' },
-  { value: 'xl', label: 'Très large' },
+  { value: 'xl', label: 'Extra large' },
 ];
 
 export const PORTFOLIO_TOOLS_CARD_GAP_OPTIONS: {
   value: PortfolioToolsCardGap;
   label: string;
 }[] = [
-  { value: 'tight', label: 'Serré' },
-  { value: 'medium', label: 'Moyenne' },
+  { value: 'tight', label: 'Tight' },
+  { value: 'medium', label: 'Medium' },
   { value: 'large', label: 'Large' },
-  { value: 'xlarge', label: 'Très large' },
+  { value: 'xlarge', label: 'Extra large' },
 ];
 
 export const PORTFOLIO_TOOLS_LEVEL_PROGRESS_ROW_GAP_OPTIONS: {
@@ -590,17 +684,17 @@ export const PORTFOLIO_TOOLS_LEVEL_PROGRESS_COLUMNS_OPTIONS: {
   value: '1' | '2';
   label: string;
 }[] = [
-  { value: '1', label: '1 par ligne' },
-  { value: '2', label: '2 par ligne (écran large)' },
+  { value: '1', label: '1 per row' },
+  { value: '2', label: '2 per row (large screen)' },
 ];
 
 export const PORTFOLIO_TOOLS_BRAND_ROW_CELL_STYLE_OPTIONS: {
   value: PortfolioToolsBrandRowCellStyle;
   label: string;
 }[] = [
-  { value: 'dividers', label: 'Séparateurs (lignes)' },
-  { value: 'frames', label: 'Cadres individuels' },
-  { value: 'none', label: 'Aucun (sans traits)' },
+  { value: 'dividers', label: 'Dividers (lines)' },
+  { value: 'frames', label: 'Individual frames' },
+  { value: 'none', label: 'None (no lines)' },
 ];
 
 export const PORTFOLIO_TOOLS_BRAND_FLOAT_GRID_MODE_OPTIONS: {
@@ -802,18 +896,18 @@ export const PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS: {
   value: '1' | '2' | '3' | '4';
   label: string;
 }[] = [
-  { value: '1', label: '1 par ligne' },
-  { value: '2', label: '2 par ligne (écran large)' },
-  { value: '3', label: '3 par ligne (écran large)' },
-  { value: '4', label: '4 par ligne (écran large)' },
+  { value: '1', label: '1 per row' },
+  { value: '2', label: '2 per row (large screen)' },
+  { value: '3', label: '3 per row (large screen)' },
+  { value: '4', label: '4 per row (large screen)' },
 ];
 
 export const PORTFOLIO_TOOLS_BRAND_CARDS_ICON_PLACEMENT_OPTIONS: {
   value: PortfolioToolsBrandCardsIconPlacement;
   label: string;
 }[] = [
-  { value: 'top', label: 'Au-dessus du texte' },
-  { value: 'left', label: 'À gauche (panneau horizontal)' },
+  { value: 'top', label: 'Above text' },
+  { value: 'left', label: 'Left (horizontal panel)' },
 ];
 
 /** @deprecated Use `PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS` */
@@ -833,9 +927,9 @@ export const PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS: {
   value: PortfolioToolsContentAlignment;
   label: string;
 }[] = [
-  { value: 'left', label: 'Gauche' },
-  { value: 'center', label: 'Centre' },
-  { value: 'right', label: 'Droite' },
+  { value: 'left', label: 'Left' },
+  { value: 'center', label: 'Center' },
+  { value: 'right', label: 'Right' },
 ];
 
 export const DEFAULT_TOOLS_TITLE = 'Workflow & Tools';
@@ -848,6 +942,8 @@ export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   subtitlePreset: 'none',
   subtitleCustom: '',
   headerAlignment: 'left',
+  headerDesign: 'focus',
+  headerBottomSpacing: 'medium',
   contentAlignment: 'center',
   titleFont: 'serif',
   subtitleFont: 'sans',
@@ -906,6 +1002,7 @@ export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   toolsPalette: { ...DEFAULT_TOOLS_PALETTE },
   toolsColorBindings: { ...DEFAULT_TOOLS_COLOR_BINDINGS },
   activeColorMode: 'light',
+  colorModeOverride: 'auto',
 };
 
 Object.assign(DEFAULT_TOOLS_PRESENTATION, applyToolsPaletteToSettings(DEFAULT_TOOLS_PRESENTATION));
@@ -1443,6 +1540,29 @@ export function mergeToolsPresentation(
     subtitleCustom:
       typeof record.subtitleCustom === 'string' ? record.subtitleCustom : (base.subtitleCustom ?? ''),
     headerAlignment: pick(record.headerAlignment, ['left', 'center', 'right'] as const, base.headerAlignment),
+    headerDesign: pick(
+      record.headerDesign,
+      [
+        'focus',
+        'terminal',
+        'bracket',
+        'underline',
+        'cascade',
+        'mosaic',
+        'mask',
+        'split',
+        'typewriter',
+        'index',
+        'masthead',
+        'marquee',
+      ] as const,
+      base.headerDesign ?? 'focus'
+    ),
+    headerBottomSpacing: pick(
+      record.headerBottomSpacing,
+      ['tight', 'medium', 'large', 'xlarge'] as const,
+      base.headerBottomSpacing ?? 'medium'
+    ),
     contentAlignment: pick(
       record.contentAlignment,
       ['left', 'center', 'right'] as const,
@@ -1662,6 +1782,7 @@ export function mergeToolsPresentation(
       record.activeColorMode === 'light' || record.activeColorMode === 'dark'
         ? record.activeColorMode
         : base.activeColorMode,
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
   };
 
   if (next.useHeroPalette !== false) {

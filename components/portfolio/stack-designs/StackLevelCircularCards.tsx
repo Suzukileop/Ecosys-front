@@ -11,10 +11,13 @@ import {
 import { ToolsLevelCircularRingWithLogo } from '@/components/portfolio/portfolio-tools-level-indicators';
 import {
   resolveToolsDesignBrandColumnsPerRow,
+  resolveToolsLevelBarSize,
   resolveToolsShowLevel,
   toolsLevelCircularCardsGridClass,
   toolsLevelCircularLogoPx,
   toolsLevelCircularRingPx,
+  toolsLevelBarPercentRem,
+  toolsLevelCircularRingStroke,
   toolsLevelIndicatorGridGapClass,
   type PortfolioToolsPresentationSettings,
 } from '@/components/portfolio/portfolio-tools-settings';
@@ -133,6 +136,9 @@ function CircularCardItem({
             '--pf-stack-circular-size': `${ringPx}px`,
             '--pf-stack-circular-percent': String(percent),
             '--pf-stack-circular-fill': ringColor,
+            '--pf-stack-circular-percent-size': toolsLevelBarPercentRem(
+              resolveToolsLevelBarSize(presentation)
+            ),
           } as CSSProperties
         }
       >
@@ -148,6 +154,7 @@ function CircularCardItem({
               fillColor={ringColor}
               trackColor={trackColor}
               size={ringPx}
+              strokeWidth={toolsLevelCircularRingStroke(ringPx, resolveToolsLevelBarSize(presentation))}
               className="pf-stack-circular-ring"
               logo={logo}
             />

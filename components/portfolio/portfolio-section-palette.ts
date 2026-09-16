@@ -265,6 +265,13 @@ export function applyHeroPaletteToAboutUs(
   };
 }
 
+/**
+ * Info's Background tab is the sole owner of the section-background fields
+ * (fill type, color(s), opacity — set via its own palette-swatch picker), so
+ * unlike the other sections this only paints the content colors that have no
+ * dedicated control in the panel. Painting the background fields here too
+ * would silently override whatever the user just picked in the Background tab.
+ */
 export function applyHeroPaletteToInfo(
   presentation: PortfolioInfoPresentationSettings,
   palette: PortfolioHeroPalette
@@ -273,12 +280,6 @@ export function applyHeroPaletteToInfo(
   const color = (token: HeroPaletteTokenId) => resolveHeroPaletteColor(palette, token);
   return {
     ...presentation,
-    sectionBackgroundColor: color('fond'),
-    sectionBackgroundGradientFrom: color('fond'),
-    sectionBackgroundGradientTo: color('neutre'),
-    sectionBackgroundColorA: color('fond'),
-    sectionBackgroundColorB: color('neutre'),
-    sectionBackgroundDividerColor: color('bordure'),
     accentColor: color('principal'),
     titleColor: color('principal'),
     subtitleColor: color('texteFort'),

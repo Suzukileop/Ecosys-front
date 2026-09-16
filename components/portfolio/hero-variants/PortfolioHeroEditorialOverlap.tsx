@@ -32,6 +32,7 @@ export type EditorialOverlapHeroProps = {
   width: PortfolioHeroEditorialOverlapWidth;
   align: PortfolioHeroEditorialOverlapAlign;
   imageBw: boolean;
+  suppressBackground?: boolean;
 };
 
 function stageWidthStyle(width: PortfolioHeroEditorialOverlapWidth): {
@@ -88,6 +89,7 @@ export function EditorialOverlapHero({
   width,
   align,
   imageBw,
+  suppressBackground = false,
 }: EditorialOverlapHeroProps) {
   const mediaSurface = `color-mix(in srgb, ${neutre} 55%, ${fond})`;
   /** One radius scale for the whole collage: the scoop answers the media frame corner. */
@@ -261,7 +263,7 @@ export function EditorialOverlapHero({
       ref={heroRef}
       data-pf-entry="armed"
       className="pf-overlap-hero relative isolate w-full overflow-clip"
-      style={{ backgroundColor: fond, color: ink }}
+      style={{ ...(suppressBackground ? null : { backgroundColor: fond }), color: ink }}
       aria-label="Editorial hero"
     >
       {/* —— Desktop collage (vertically centered) —— */}
@@ -408,6 +410,7 @@ export function PortfolioHeroEditorialOverlap({ data }: { data: PortfolioHeroDat
       width={width}
       align={align}
       imageBw={imageBw}
+      suppressBackground={data.suppressBackground}
     />
   );
 }

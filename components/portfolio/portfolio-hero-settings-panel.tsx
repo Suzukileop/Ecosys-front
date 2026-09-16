@@ -78,43 +78,56 @@ export function normalizeHeroSettingsSubSection(value: string | undefined): Hero
   return value === 'banner' ? 'banner' : 'general';
 }
 
-function HeroSubSectionDropdown({
+/** Same pill-tab bar as the Stack/Tools settings panels. */
+function HeroSubSectionTabs({
   value,
   onChange,
 }: {
   value: HeroSettingsSubSection;
   onChange: (value: HeroSettingsSubSection) => void;
 }) {
+  const current = normalizeHeroSettingsSubSection(value);
   return (
-    <div className="relative w-full min-w-0 sm:w-auto sm:shrink-0">
-      <label htmlFor="hero-settings-subsection" className="sr-only">
-        Hero settings section
-      </label>
-      <select
-        id="hero-settings-subsection"
-        value={normalizeHeroSettingsSubSection(value)}
-        onChange={(event) => onChange(event.target.value as HeroSettingsSubSection)}
-        className="min-h-11 w-full appearance-none rounded-full border border-neutral-300 bg-white py-2.5 pl-4 pr-10 text-sm font-semibold text-neutral-900 shadow-sm transition hover:border-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 sm:w-auto"
-      >
-        {HERO_SETTINGS_SUB_SECTIONS.map((section) => (
-          <option key={section.id} value={section.id}>
-            {section.label}
-          </option>
-        ))}
-      </select>
-      <svg
-        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-        aria-hidden
-      >
-        <path
-          fillRule="evenodd"
-          d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-          clipRule="evenodd"
-        />
-      </svg>
+    <div className="flex flex-wrap gap-2">
+      {HERO_SETTINGS_SUB_SECTIONS.map((section) => (
+        <button
+          key={section.id}
+          type="button"
+          onClick={() => onChange(section.id)}
+          className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+            current === section.id
+              ? 'bg-neutral-900 text-white'
+              : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+          }`}
+        >
+          {section.label}
+        </button>
+      ))}
     </div>
+  );
+}
+
+/** Same animated switch as the Stack/Tools settings panels (ToolsSwitchTrack/StackSwitchTrack). */
+function HeroSwitchTrack({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className="relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      style={{
+        backgroundColor: checked
+          ? 'var(--pf-palette-texte-fort, #171717)'
+          : 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, var(--pf-palette-fond, #0a0a0a))',
+      }}
+    >
+      <span
+        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        style={{
+          left: checked ? '1.125rem' : '0.125rem',
+          backgroundColor: checked
+            ? 'var(--pf-palette-fond, #ffffff)'
+            : 'var(--pf-palette-texte-fort, #ffffff)',
+        }}
+      />
+    </span>
   );
 }
 
@@ -130,18 +143,21 @@ function HeroToggleRow({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-4">
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-4 text-left"
+    >
       <span className="min-w-0">
         <span className="block text-sm font-semibold text-neutral-900">{label}</span>
         {description ? <span className="mt-1 block text-sm text-neutral-500">{description}</span> : null}
       </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-orange-600 focus:ring-orange-500"
-      />
-    </label>
+      <span className="mt-1">
+        <HeroSwitchTrack checked={checked} />
+      </span>
+    </button>
   );
 }
 
@@ -469,12 +485,9 @@ export function HeroSettingsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-3 border-b border-neutral-200/80 pb-5">
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-neutral-950">{activeMeta.label}</p>
-          <p className="mt-1 text-sm text-neutral-500">{activeMeta.description}</p>
-        </div>
-        <HeroSubSectionDropdown value={subSection} onChange={setSubSection} />
+      <div className="space-y-2">
+        <HeroSubSectionTabs value={subSection} onChange={setSubSection} />
+        <p className="text-sm text-neutral-500">{activeMeta.description}</p>
       </div>
 
       {subSection === 'banner' ? (

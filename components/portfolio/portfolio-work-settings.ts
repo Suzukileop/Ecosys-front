@@ -45,12 +45,50 @@ export type PortfolioWorkSubtitlePreset = 'default' | 'short' | 'process' | 'min
 
 export type PortfolioWorkHeaderFont = 'sans' | 'serif' | 'display';
 
+/**
+ * Header design applied from Header — independent of Design's `sectionDesign` (which layout the
+ * projects render in). One shared, GSAP-animated header mounts above every project layout.
+ */
+export type PortfolioWorkHeaderDesign =
+  | 'minimal'
+  | 'editorial'
+  | 'marquee'
+  | 'index'
+  | 'accent-count'
+  | 'serif-lead'
+  | 'billboard'
+  | 'masthead';
+
+export type PortfolioWorkAccentCountBadgeColor = 'accent' | 'principal' | 'secondaire';
+
 export type PortfolioWorkHeaderAlignment = 'left' | 'center';
+
+/** Bottom spacing under every header design — one shared scale, same 4 steps everywhere. */
+export type PortfolioWorkHeaderMarginBottom = 'sm' | 'md' | 'lg' | 'xl';
+export const WORK_HEADER_MARGIN_BOTTOM_REM: Record<PortfolioWorkHeaderMarginBottom, number> = {
+  sm: 1.5,
+  md: 2.5,
+  lg: 4,
+  xl: 6,
+};
+
+/** Title size/weight — one shared scale applied proportionally by every header design. */
+export type PortfolioWorkHeaderTitleSize = 'sm' | 'md' | 'lg' | 'xl';
+export type PortfolioWorkHeaderTitleWeight = 'light' | 'regular' | 'semibold' | 'bold';
+/** `!`-flagged so this always wins over the baked-in weight in `workHeaderFontClass('title')`
+ *  (both are plain utility classes on the same element; Tailwind's `important` modifier is the
+ *  only reliable way to guarantee winner regardless of generated-CSS order). */
+export const WORK_HEADER_TITLE_WEIGHT_CLASS: Record<PortfolioWorkHeaderTitleWeight, string> = {
+  light: '!font-light',
+  regular: '!font-normal',
+  semibold: '!font-semibold',
+  bold: '!font-bold',
+};
 
 /**
  * How the Portfolio title relates to the gallery body.
- * `stacked` â€” title above the projects (default).
- * `aside-left` / `aside-right` â€” title beside the gallery on large screens.
+ * `stacked` — title above the projects (default).
+ * `aside-left` / `aside-right` — title beside the gallery on large screens.
  */
 export type PortfolioWorkSectionLayout = 'stacked' | 'aside-left' | 'aside-right';
 
@@ -80,7 +118,7 @@ export type PortfolioWorkCardDesign =
 
 export type PortfolioWorkCardBorder = 'none' | 'soft' | 'solid' | 'accent';
 
-/** Soft lift around the card â€” independent of border (use for float without outline). */
+/** Soft lift around the card — independent of border (use for float without outline). */
 export type PortfolioWorkCardShadow = 'none' | 'soft' | 'float' | 'deep';
 
 export type PortfolioWorkGalleryLayout =
@@ -203,7 +241,7 @@ export type PortfolioWorkProjectsAccordionSettings = {
   showRoleInPanel: boolean;
   /** Category label inside the open accordion panel. */
   showCategoryInPanel: boolean;
-  /** Text â€œConsultâ€ link under the preview (uses project link). */
+  /** Text “Consult” link under the preview (uses project link). */
   showConsult: boolean;
   consultLabel: string;
 };
@@ -363,11 +401,11 @@ export const PORTFOLIO_WORK_FRAMES_THUMBNAIL_SIZE_OPTIONS: {
   { value: 'md', label: 'Medium', description: 'Compact thumbnail beside the info.' },
   { value: 'lg', label: 'Large', description: 'Wider thumbnail, balanced with text.' },
   { value: 'xl', label: 'Extra large', description: 'Current large default size.' },
-  { value: 'xxl', label: 'Huge', description: 'Very large â€” bigger than the previous max.' },
+  { value: 'xxl', label: 'Huge', description: 'Very large — bigger than the previous max.' },
   {
     value: 'half',
     label: 'Two columns',
-    description: 'Image and info split evenly â€” 50 / 50.',
+    description: 'Image and info split evenly — 50 / 50.',
   },
 ];
 
@@ -395,9 +433,9 @@ export const PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'SerrÃ©', description: 'Current compact spacing between cards.' },
+  { value: 'tight', label: 'Serré', description: 'Current compact spacing between cards.' },
   { value: 'md', label: 'Moyen', description: 'More vertical breathing room.' },
-  { value: 'xl', label: 'TrÃ¨s grand', description: 'Wide vertical gap between each card.' },
+  { value: 'xl', label: 'Très grand', description: 'Wide vertical gap between each card.' },
 ];
 
 /** Options that apply only when `sectionDesign === 'projects-index'`. */
@@ -405,7 +443,7 @@ export type PortfolioWorkProjectsIndexMarker = 'number' | 'bullet';
 
 export type PortfolioWorkProjectsIndexSettings = {
   showNumber: boolean;
-  /** Left column marker â€” padded numbers or list bullet. */
+  /** Left column marker — padded numbers or list bullet. */
   indexMarker: PortfolioWorkProjectsIndexMarker;
   showStack: boolean;
   showDescription: boolean;
@@ -448,7 +486,7 @@ export const PORTFOLIO_WORK_INDEX_MARKER_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'number', label: 'NumÃ©rotation', description: '001, 002â€¦ in the left column.' },
+  { value: 'number', label: 'Numérotation', description: '001, 002… in the left column.' },
   { value: 'bullet', label: 'Puce', description: 'Simple list bullet instead of numbers.' },
 ];
 
@@ -457,9 +495,9 @@ export const PORTFOLIO_WORK_INDEX_ROW_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'SerrÃ©', description: 'Compact padding above / below each separator.' },
+  { value: 'tight', label: 'Serré', description: 'Compact padding above / below each separator.' },
   { value: 'md', label: 'Moyen', description: 'Balanced spacing (default).' },
-  { value: 'xl', label: 'TrÃ¨s grand', description: 'Airy space between numbered rows.' },
+  { value: 'xl', label: 'Très grand', description: 'Airy space between numbered rows.' },
 ];
 
 /** Options that apply only when `sectionDesign === 'projects-grid'`. */
@@ -653,9 +691,9 @@ export const PORTFOLIO_WORK_SPLIT_ROW_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'SerrÃ©', description: 'Compact spacing between rows.' },
+  { value: 'tight', label: 'Serré', description: 'Compact spacing between rows.' },
   { value: 'md', label: 'Moyen', description: 'Balanced spacing (default).' },
-  { value: 'xl', label: 'TrÃ¨s grand', description: 'Airy vertical rhythm.' },
+  { value: 'xl', label: 'Très grand', description: 'Airy vertical rhythm.' },
 ];
 
 export const PORTFOLIO_WORK_SPLIT_IMAGE_SIDE_OPTIONS: {
@@ -697,12 +735,12 @@ export const PORTFOLIO_WORK_SPLIT_TITLE_VERTICAL_OPTIONS: {
   {
     value: 'top',
     label: 'En haut',
-    description: 'AlignÃ© en haut avec le bord supÃ©rieur de lâ€™image.',
+    description: 'Aligné en haut avec le bord supérieur de l’image.',
   },
   {
     value: 'bottom',
     label: 'En bas',
-    description: 'AlignÃ© en bas â€” titre au bas du cÃ´tÃ©.',
+    description: 'Aligné en bas — titre au bas du côté.',
   },
 ];
 
@@ -718,8 +756,8 @@ export const PORTFOLIO_WORK_SPLIT_DESCRIPTION_PLACEMENT_OPTIONS: {
   },
   {
     value: 'opposite',
-    label: 'Autre cÃ´tÃ©',
-    description: 'La description passe de lâ€™autre cÃ´tÃ© de lâ€™image (titre inchangÃ©).',
+    label: 'Autre côté',
+    description: 'La description passe de l’autre côté de l’image (titre inchangé).',
   },
 ];
 
@@ -731,12 +769,12 @@ export const PORTFOLIO_WORK_SPLIT_DESCRIPTION_VERTICAL_OPTIONS: {
   {
     value: 'top',
     label: 'En haut',
-    description: 'Description en haut, de lâ€™autre cÃ´tÃ© de lâ€™image.',
+    description: 'Description en haut, de l’autre côté de l’image.',
   },
   {
     value: 'bottom',
     label: 'En bas',
-    description: 'Description en bas, de lâ€™autre cÃ´tÃ© de lâ€™image.',
+    description: 'Description en bas, de l’autre côté de l’image.',
   },
 ];
 
@@ -815,10 +853,10 @@ export const PORTFOLIO_WORK_CAROUSEL_IMAGE_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Petite', description: 'Images compactes â€” plusieurs visibles Ã  la fois.' },
-  { value: 'md', label: 'Moyenne', description: 'Taille Ã©quilibrÃ©e.' },
-  { value: 'lg', label: 'Grande', description: 'Image dominante (dÃ©faut).' },
-  { value: 'xl', label: 'TrÃ¨s grande', description: 'Presque plein Ã©cran, lÃ©ger aperÃ§u suivant.' },
+  { value: 'sm', label: 'Petite', description: 'Images compactes — plusieurs visibles à la fois.' },
+  { value: 'md', label: 'Moyenne', description: 'Taille équilibrée.' },
+  { value: 'lg', label: 'Grande', description: 'Image dominante (défaut).' },
+  { value: 'xl', label: 'Très grande', description: 'Presque plein écran, léger aperçu suivant.' },
 ];
 
 export const PORTFOLIO_WORK_CAROUSEL_RADIUS_OPTIONS: {
@@ -826,9 +864,9 @@ export const PORTFOLIO_WORK_CAROUSEL_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'Coins droits (dÃ©faut).' },
-  { value: 'md', label: 'Medium', description: 'Coins lÃ©gÃ¨rement arrondis.' },
-  { value: 'xl', label: 'Large', description: 'Coins trÃ¨s arrondis.' },
+  { value: 'none', label: 'None', description: 'Coins droits (défaut).' },
+  { value: 'md', label: 'Medium', description: 'Coins légèrement arrondis.' },
+  { value: 'xl', label: 'Large', description: 'Coins très arrondis.' },
 ];
 
 export const PORTFOLIO_WORK_CAROUSEL_ASPECT_OPTIONS: {
@@ -836,7 +874,7 @@ export const PORTFOLIO_WORK_CAROUSEL_ASPECT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'square', label: 'CarrÃ©', description: 'Format 1:1 (dÃ©faut).' },
+  { value: 'square', label: 'Carré', description: 'Format 1:1 (défaut).' },
   { value: 'landscape', label: 'Paysage', description: 'Format 4:3 horizontal.' },
   { value: 'portrait', label: 'Portrait', description: 'Format 3:4 vertical.' },
 ];
@@ -846,7 +884,7 @@ export const PORTFOLIO_WORK_CAROUSEL_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'SerrÃ©', description: 'Peu dâ€™espace entre les images.' },
+  { value: 'tight', label: 'Serré', description: 'Peu d’espace entre les images.' },
   { value: 'md', label: 'Moyen', description: 'Espacement lisible entre les slides.' },
   { value: 'xl', label: 'Large', description: 'Grand air entre chaque image.' },
 ];
@@ -925,13 +963,13 @@ export const PORTFOLIO_WORK_SPOTLIGHT_LIST_SIDE_OPTIONS: {
 }[] = [
   {
     value: 'right',
-    label: 'Titres Ã  droite',
-    description: 'DÃ©tails Ã  gauche, sÃ©lecteur de titres Ã  droite (dÃ©faut).',
+    label: 'Titres à droite',
+    description: 'Détails à gauche, sélecteur de titres à droite (défaut).',
   },
   {
     value: 'left',
-    label: 'Titres Ã  gauche',
-    description: 'SÃ©lecteur Ã  gauche, dÃ©tails Ã  droite.',
+    label: 'Titres à gauche',
+    description: 'Sélecteur à gauche, détails à droite.',
   },
 ];
 
@@ -943,17 +981,17 @@ export const PORTFOLIO_WORK_SPOTLIGHT_STACK_STYLE_OPTIONS: {
   {
     value: 'tags',
     label: 'Tags',
-    description: 'Labels sÃ©parÃ©s par | , couleur titre.',
+    description: 'Labels séparés par | , couleur titre.',
   },
   {
     value: 'hairline',
     label: 'Ligne',
-    description: 'Labels compacts sÃ©parÃ©s par | .',
+    description: 'Labels compacts séparés par | .',
   },
   {
     value: 'list',
     label: 'Liste',
-    description: 'Stack en liste verticale aÃ©rÃ©e.',
+    description: 'Stack en liste verticale aérée.',
   },
 ];
 
@@ -1193,7 +1231,7 @@ export const DEFAULT_PROJECTS_FOLIO_SETTINGS: PortfolioWorkProjectsFolioSettings
 };
 
 function normalizeFolioStackDesign(value: unknown): PortfolioWorkProjectsFolioStackDesign | null {
-  if (value === 'tags') return 'tags-outline'; // legacy â†’ current default
+  if (value === 'tags') return 'tags-outline'; // legacy → current default
   if (
     value === 'index' ||
     value === 'list' ||
@@ -1371,7 +1409,7 @@ export type PortfolioWorkProjectsCaseSettings = {
   sheetFrame: 'none' | 'thin' | 'solid' | 'accent';
   /** Show large left thumbnail (50/50). When false, content is full width. */
   showThumbnail: boolean;
-  /** Thumbnail height preset â€” `md` matches the original Case size. */
+  /** Thumbnail height preset — `md` matches the original Case size. */
   thumbnailHeight: 'sm' | 'md' | 'lg' | 'xl';
   /** Show Summary / Stack / Link labels in the definition grid. */
   showFieldLabels: boolean;
@@ -1474,10 +1512,10 @@ export const PORTFOLIO_WORK_CASE_THUMBNAIL_HEIGHT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Petite', description: 'Hauteur rÃ©duite.' },
+  { value: 'sm', label: 'Petite', description: 'Hauteur réduite.' },
   { value: 'md', label: 'Moyenne', description: 'Hauteur moyenne.' },
   { value: 'lg', label: 'Grande', description: 'Miniature plus haute.' },
-  { value: 'xl', label: 'TrÃ¨s grande', description: 'Hauteur maximale (dÃ©faut).' },
+  { value: 'xl', label: 'Très grande', description: 'Hauteur maximale (défaut).' },
 ];
 
 export const PORTFOLIO_WORK_SPEC_FRAME_OPTIONS: {
@@ -1488,7 +1526,7 @@ export const PORTFOLIO_WORK_SPEC_FRAME_OPTIONS: {
   {
     value: 'none',
     label: 'Aucun',
-    description: 'Pas de cadre (dÃ©faut).',
+    description: 'Pas de cadre (défaut).',
   },
   {
     value: 'thin',
@@ -1498,7 +1536,7 @@ export const PORTFOLIO_WORK_SPEC_FRAME_OPTIONS: {
   {
     value: 'solid',
     label: 'Solid',
-    description: 'Cadre plus marquÃ© autour de la fiche.',
+    description: 'Cadre plus marqué autour de la fiche.',
   },
   {
     value: 'accent',
@@ -1515,12 +1553,12 @@ export const PORTFOLIO_WORK_SPEC_COLUMNS_OPTIONS: {
   {
     value: '1',
     label: '1 par ligne',
-    description: 'Fiche pleine largeur (dÃ©faut).',
+    description: 'Fiche pleine largeur (défaut).',
   },
   {
     value: '2',
     label: '2 par ligne',
-    description: '2 colonnes en grand Ã©cran + titre rÃ©duit + gap horizontal.',
+    description: '2 colonnes en grand écran + titre réduit + gap horizontal.',
   },
 ];
 
@@ -1529,10 +1567,10 @@ export const PORTFOLIO_WORK_SPEC_SHEET_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'SerrÃ©', description: 'Compact, un peu plus dâ€™air quâ€™avant.' },
-  { value: 'md', label: 'Moyen', description: 'Espacement gÃ©nÃ©reux entre fiches.' },
-  { value: 'xl', label: 'Large', description: 'TrÃ¨s aÃ©rÃ© (dÃ©faut).' },
-  { value: '2xl', label: 'TrÃ¨s large', description: 'Espacement maximal, lecture lente.' },
+  { value: 'tight', label: 'Serré', description: 'Compact, un peu plus d’air qu’avant.' },
+  { value: 'md', label: 'Moyen', description: 'Espacement généreux entre fiches.' },
+  { value: 'xl', label: 'Large', description: 'Très aéré (défaut).' },
+  { value: '2xl', label: 'Très large', description: 'Espacement maximal, lecture lente.' },
 ];
 
 export const PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS: {
@@ -1543,17 +1581,17 @@ export const PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS: {
   {
     value: 'bracket',
     label: 'Bracket',
-    description: 'Mono [ Consult â†’ ] â€” style Framer (dÃ©faut).',
+    description: 'Mono [ Consult → ] — style Framer (défaut).',
   },
   {
     value: 'link',
     label: 'Link',
-    description: 'Lien texte + flÃ¨che â†— dans la grille.',
+    description: 'Lien texte + flèche ↗ dans la grille.',
   },
   {
     value: 'underline',
     label: 'Underline',
-    description: 'Texte soulignÃ© animÃ©, sans flÃ¨che.',
+    description: 'Texte souligné animé, sans flèche.',
   },
   {
     value: 'footer',
@@ -1573,7 +1611,7 @@ export const PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS: {
   {
     value: 'ghost',
     label: 'Ghost',
-    description: 'Fond soft teintÃ©, sans bordure forte.',
+    description: 'Fond soft teinté, sans bordure forte.',
   },
   {
     value: 'solid',
@@ -1590,22 +1628,22 @@ export const PORTFOLIO_WORK_FOLIO_STACK_DESIGN_OPTIONS: {
   {
     value: 'tags-outline',
     label: 'Tags outline',
-    description: 'Pastilles transparentes, bordure seulement (dÃ©faut).',
+    description: 'Pastilles transparentes, bordure seulement (défaut).',
   },
   {
     value: 'tags-soft',
     label: 'Tags soft',
-    description: 'Pastilles teintÃ©es accent.',
+    description: 'Pastilles teintées accent.',
   },
   {
     value: 'tags-solid',
     label: 'Tags solid',
-    description: 'Pastilles pleines (token tools / titre â€” pas la CTA).',
+    description: 'Pastilles pleines (token tools / titre — pas la CTA).',
   },
   {
     value: 'index',
     label: 'Index',
-    description: '01 Â·Â·Â·Â·Â·Â·Â·Â·Â· outil â€” table des matiÃ¨res.',
+    description: '01 ········· outil — table des matières.',
   },
   {
     value: 'list',
@@ -1615,7 +1653,7 @@ export const PORTFOLIO_WORK_FOLIO_STACK_DESIGN_OPTIONS: {
   {
     value: 'inline',
     label: 'Inline',
-    description: 'Outils en une phrase sÃ©parÃ©s par Â·',
+    description: 'Outils en une phrase séparés par ·',
   },
   {
     value: 'grid',
@@ -1625,7 +1663,7 @@ export const PORTFOLIO_WORK_FOLIO_STACK_DESIGN_OPTIONS: {
   {
     value: 'rail',
     label: 'Rail',
-    description: 'Barre accent + outils empilÃ©s Ã  droite.',
+    description: 'Barre accent + outils empilés à droite.',
   },
 ];
 
@@ -1637,12 +1675,12 @@ export const PORTFOLIO_WORK_LEDGER_EXPAND_OPTIONS: {
   {
     value: 'hover',
     label: 'Hover',
-    description: 'DÃ©tails au survol (desktop) â€” Framer index style.',
+    description: 'Détails au survol (desktop) — Framer index style.',
   },
   {
     value: 'click',
     label: 'Click',
-    description: 'Ouvre / ferme au clic â€” idÃ©al mobile.',
+    description: 'Ouvre / ferme au clic — idéal mobile.',
   },
   {
     value: 'always',
@@ -1659,12 +1697,12 @@ export const PORTFOLIO_WORK_EDITORIAL_RIGHT_PANEL_OPTIONS: {
   {
     value: 'info',
     label: 'Infos',
-    description: 'Description, stack et Consult Ã  droite (sticky).',
+    description: 'Description, stack et Consult à droite (sticky).',
   },
   {
     value: 'thumbnail',
     label: 'Miniature',
-    description: 'Uniquement la miniature projet Ã  droite â€” sans bordure ni radius.',
+    description: 'Uniquement la miniature projet à droite — sans bordure ni radius.',
   },
 ];
 
@@ -1681,73 +1719,121 @@ export const PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS: {
   {
     value: 'projects-accordion',
     label: 'Accordion',
-    description: 'Accordion + large preview â€” swap columns, role/category, Consult text link.',
+    description: 'Accordion + large preview — swap columns, role/category, Consult text link.',
   },
   {
     value: 'projects-frames',
     label: 'Frames',
-    description: 'Horizontal frames â€” image left, info right, stack as plain text (not tags).',
+    description: 'Horizontal frames — image left, info right, stack as plain text (not tags).',
   },
   {
     value: 'projects-index',
     label: 'Index',
-    description: 'Numbered rows with thin rules â€” title + stack, description on the right.',
+    description: 'Numbered rows with thin rules — title + stack, description on the right.',
   },
   {
     value: 'projects-grid',
     label: 'Grid',
-    description: 'Thumbnail cards â€” title + description, 2 or 3 per row on large screens.',
+    description: 'Thumbnail cards — title + description, 2 or 3 per row on large screens.',
   },
   {
     value: 'projects-split',
     label: 'Split',
-    description: 'Large thumbnail beside a top-aligned title â€” sides and zigzag configurable.',
+    description: 'Large thumbnail beside a top-aligned title — sides and zigzag configurable.',
   },
   {
     value: 'projects-carousel',
     label: 'Carousel',
-    description: 'Image-only horizontal carousel â€” configure slide size, ratio, and spacing.',
+    description: 'Image-only horizontal carousel — configure slide size, ratio, and spacing.',
   },
   {
     value: 'projects-spotlight',
     label: 'Spotlight',
     description:
-      'Cadre fin â€” dÃ©tails projet Ã  gauche, sÃ©lecteur de titres Ã  droite (pas accordion).',
+      'Cadre fin — détails projet à gauche, sélecteur de titres à droite (pas accordion).',
   },
   {
     value: 'projects-showcase',
     label: 'Showcase',
     description:
-      'Large media + details â€” chevrons and three thumbnails to switch the active project.',
+      'Large media + details — chevrons and three thumbnails to switch the active project.',
   },
   {
     value: 'projects-editorial',
     label: 'Editorial',
     description:
-      'Grand numÃ©ro + rÃ´le + titre Ã  gauche, description / catÃ©gorie / stack Ã  droite â€” sans image.',
+      'Grand numéro + rôle + titre à gauche, description / catégorie / stack à droite — sans image.',
   },
   {
     value: 'projects-ledger',
     label: 'Ledger',
     description:
-      'Index typographique Framer â€” lignes, titres, rÃ´le, dÃ©tails au survol. DonnÃ©es seulement, sans miniature.',
+      'Index typographique Framer — lignes, titres, rôle, détails au survol. Données seulement, sans miniature.',
   },
   {
     value: 'projects-folio',
     label: 'Folio',
     description:
-      'Dossier sticky Ã  gauche + liste de titres Ã  droite â€” lecture Ã©ditoriale, donnÃ©es seulement, sans miniature.',
+      'Dossier sticky à gauche + liste de titres à droite — lecture éditoriale, données seulement, sans miniature.',
   },
   {
     value: 'projects-spec',
     label: 'Spec',
     description:
-      'Fiche technique / datasheet â€” titre + grille label/valeur. DonnÃ©es seulement, sans miniature.',
+      'Fiche technique / datasheet — titre + grille label/valeur. Données seulement, sans miniature.',
   },
   {
     value: 'projects-case',
     label: 'Case',
-    description: 'Grande miniature 50/50 Ã  gauche + fiche Spec Ã  droite.',
+    description: 'Grande miniature 50/50 à gauche + fiche Spec à droite.',
+  },
+];
+
+/** Header designs — applied from Header, independent of the project layout chosen in Design. */
+export const PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS: {
+  value: PortfolioWorkHeaderDesign;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'minimal',
+    label: 'Minimal',
+    description: 'Title + subtitle, clean and quiet — no extra motion or ornament.',
+  },
+  {
+    value: 'editorial',
+    label: 'Editorial',
+    description: 'Kicker + masked line-reveal title + subtitle — premium GSAP entrance.',
+  },
+  {
+    value: 'marquee',
+    label: 'Marquee',
+    description: 'Bold title over a scrolling decorative word band.',
+  },
+  {
+    value: 'index',
+    label: 'Index',
+    description: 'Large faded index numeral beside the title.',
+  },
+  {
+    value: 'accent-count',
+    label: 'Accent count',
+    description: 'Small accent badge with the project count, lead line, and title.',
+  },
+  {
+    value: 'serif-lead',
+    label: 'Serif lead',
+    description: 'Small label above a large serif title.',
+  },
+  {
+    value: 'billboard',
+    label: 'Billboard',
+    description: 'Big faint background word behind the title, with a project-count line.',
+  },
+  {
+    value: 'masthead',
+    label: 'Masthead',
+    description: 'Monumental uppercase headline with an intro line underneath.',
   },
 ];
 
@@ -1811,12 +1897,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: false,
       showCategoryOnCard: false,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'left',
-      sectionLayout: 'stacked',
-      titlePreset: 'projects',
-      subtitlePreset: 'short',
-      subtitleCustom: 'Selected projects.',
       projectsBoard: { ...DEFAULT_PROJECTS_BOARD_SETTINGS },
     };
   }
@@ -1849,13 +1929,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: false,
       showCategoryOnCard: false,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'center',
-      sectionLayout: 'stacked',
-      titlePreset: 'custom',
-      titleCustom: 'Selected work',
-      subtitlePreset: 'custom',
-      subtitleCustom: 'A closer look at platforms I designed and built.',
       projectsAccordion: { ...DEFAULT_PROJECTS_ACCORDION_SETTINGS },
     };
   }
@@ -1888,13 +1961,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: false,
       showCategoryOnCard: false,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'left',
-      sectionLayout: 'stacked',
-      titlePreset: 'custom',
-      titleCustom: 'Selected work',
-      subtitlePreset: 'custom',
-      subtitleCustom: 'Projects in focus.',
       projectsFrames: { ...DEFAULT_PROJECTS_FRAMES_SETTINGS },
     };
   }
@@ -1927,13 +1993,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: false,
       showCategoryOnCard: false,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'left',
-      sectionLayout: 'stacked',
-      titlePreset: 'custom',
-      titleCustom: 'Capabilities',
-      subtitlePreset: 'custom',
-      subtitleCustom: 'What I ship across design and engineering.',
       projectsIndex: { ...DEFAULT_PROJECTS_INDEX_SETTINGS },
     };
   }
@@ -1966,13 +2025,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: false,
       showCategoryOnCard: false,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'left',
-      sectionLayout: 'stacked',
-      titlePreset: 'custom',
-      titleCustom: 'Selected work',
-      subtitlePreset: 'custom',
-      subtitleCustom: 'Recent projects.',
       projectsGrid: { ...DEFAULT_PROJECTS_GRID_SETTINGS },
     };
   }
@@ -2005,13 +2057,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: false,
       showCategoryOnCard: false,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'left',
-      sectionLayout: 'stacked',
-      titlePreset: 'custom',
-      titleCustom: 'Selected work',
-      subtitlePreset: 'custom',
-      subtitleCustom: 'Recent projects.',
       projectsSplit: { ...DEFAULT_PROJECTS_SPLIT_SETTINGS },
     };
   }
@@ -2044,13 +2089,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: false,
       showCategoryOnCard: false,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'left',
-      sectionLayout: 'stacked',
-      titlePreset: 'custom',
-      titleCustom: 'Selected work',
-      subtitlePreset: 'custom',
-      subtitleCustom: 'Recent projects.',
       projectsCarousel: { ...DEFAULT_PROJECTS_CAROUSEL_SETTINGS },
     };
   }
@@ -2083,14 +2121,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: true,
       showCategoryOnCard: false,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'center',
-      sectionLayout: 'stacked',
-      titlePreset: 'custom',
-      titleCustom: 'Selected work',
-      subtitlePreset: 'minimal',
-      subtitleCustom: '',
-
       projectsSpotlight: { ...DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS },
     };
   }
@@ -2123,14 +2153,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: false,
       showCategoryOnCard: true,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'left',
-      sectionLayout: 'stacked',
-      titlePreset: 'custom',
-      titleCustom: 'Selected work',
-      subtitlePreset: 'minimal',
-      subtitleCustom: '',
-
       projectsShowcase: { ...DEFAULT_PROJECTS_SHOWCASE_SETTINGS },
     };
   }
@@ -2163,14 +2185,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: true,
       showCategoryOnCard: true,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'left',
-      sectionLayout: 'stacked',
-      titlePreset: 'custom',
-      titleCustom: 'Selected work',
-      subtitlePreset: 'minimal',
-      subtitleCustom: '',
-
       projectsEditorial: { ...DEFAULT_PROJECTS_EDITORIAL_SETTINGS },
     };
   }
@@ -2203,14 +2217,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: true,
       showCategoryOnCard: true,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'left',
-      sectionLayout: 'stacked',
-      titlePreset: 'custom',
-      titleCustom: 'Selected work',
-      subtitlePreset: 'minimal',
-      subtitleCustom: '',
-
       projectsLedger: { ...DEFAULT_PROJECTS_LEDGER_SETTINGS },
     };
   }
@@ -2243,14 +2249,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: true,
       showCategoryOnCard: true,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'left',
-      sectionLayout: 'stacked',
-      titlePreset: 'custom',
-      titleCustom: 'Selected work',
-      subtitlePreset: 'minimal',
-      subtitleCustom: '',
-
       projectsFolio: { ...DEFAULT_PROJECTS_FOLIO_SETTINGS },
     };
   }
@@ -2283,14 +2281,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: true,
       showCategoryOnCard: true,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'left',
-      sectionLayout: 'stacked',
-      titlePreset: 'custom',
-      titleCustom: 'Selected work',
-      subtitlePreset: 'minimal',
-      subtitleCustom: '',
-
       projectsSpec: { ...DEFAULT_PROJECTS_SPEC_SETTINGS },
     };
   }
@@ -2323,14 +2313,6 @@ export function workSectionDesignSettingsPatch(
       showCardCta: true,
       showCategoryOnCard: true,
       showMarketplaceLink: false,
-      illustrationVariant: 'none',
-      headerAlignment: 'left',
-      sectionLayout: 'stacked',
-      titlePreset: 'custom',
-      titleCustom: 'Selected work',
-      subtitlePreset: 'minimal',
-      subtitleCustom: '',
-
       projectsCase: { ...DEFAULT_PROJECTS_CASE_SETTINGS },
     };
   }
@@ -2409,12 +2391,12 @@ export const PORTFOLIO_WORK_OVERLAY_LAYOUT_MODE_OPTIONS: {
   {
     value: 'stack',
     label: 'Pile basse',
-    description: 'Texte empilÃ© en bas de la carte (tous Ã©crans).',
+    description: 'Texte empilé en bas de la carte (tous écrans).',
   },
   {
     value: 'free',
-    label: 'Libre (grand Ã©cran)',
-    description: 'Place chaque Ã©lÃ©ment dans une cellule 3Ã—3 â€” desktop seulement.',
+    label: 'Libre (grand écran)',
+    description: 'Place chaque élément dans une cellule 3×3 — desktop seulement.',
   },
 ];
 
@@ -2439,7 +2421,7 @@ export const PORTFOLIO_WORK_OVERLAY_ELEMENT_OPTIONS: {
   value: PortfolioWorkOverlayElementId;
   label: string;
 }[] = [
-  { value: 'category', label: 'CatÃ©gorie' },
+  { value: 'category', label: 'Catégorie' },
   { value: 'title', label: 'Titre' },
   { value: 'description', label: 'Description' },
   { value: 'tools', label: 'Outils' },
@@ -2567,14 +2549,14 @@ export function workOverlayCellAbsoluteStyle(
   };
 }
 
-/** Vertical row of a free-placement cell â€” lets small screens keep the chosen band. */
+/** Vertical row of a free-placement cell — lets small screens keep the chosen band. */
 export function workOverlayCellRow(
   cell: PortfolioWorkOverlayCellPlacement
 ): 'top' | 'center' | 'bottom' {
   return overlayCellMeta(cell).row;
 }
 
-/** Horizontal column of a free-placement cell â€” lets small screens keep the chosen side. */
+/** Horizontal column of a free-placement cell — lets small screens keep the chosen side. */
 export function workOverlayCellColumn(
   cell: PortfolioWorkOverlayCellPlacement
 ): 'left' | 'center' | 'right' {
@@ -2651,7 +2633,7 @@ export const PORTFOLIO_WORK_STYLE_TARGET_OPTIONS: {
 }[] = [
   { value: 'cardTitle', label: 'Project title', description: 'Title text on each project card.' },
   { value: 'cardDescription', label: 'Description', description: 'Body text under the title.' },
-  { value: 'toolsLabel', label: 'Tools label', description: 'â€œTools to useâ€ heading above the tool logos.' },
+  { value: 'toolsLabel', label: 'Tools label', description: '“Tools to use” heading above the tool logos.' },
   { value: 'toolsList', label: 'Tools list', description: 'Text list of tool names.' },
   { value: 'categoryOnCard', label: 'Category on card', description: 'Category name shown above the title.' },
   { value: 'cta', label: 'CTA text', description: 'View project button text.' },
@@ -2676,7 +2658,7 @@ export type PortfolioWorkElementChromeId =
   | 'cardDescription'
   | 'tools';
 
-/** Inner padding for per-element chrome â€” includes free `custom` px mode. */
+/** Inner padding for per-element chrome — includes free `custom` px mode. */
 export type PortfolioWorkElementChromePadding = PortfolioWorkCardPadding | 'custom';
 
 export type PortfolioWorkElementChromeSettings = {
@@ -2689,7 +2671,7 @@ export type PortfolioWorkElementChromeSettings = {
   padding: PortfolioWorkElementChromePadding;
   /** Exact inner padding in px when padding is `custom` (also synced from presets). */
   paddingPx: number;
-  /** Outer spacing around the element â€” not tied to content-frame vertical gap. */
+  /** Outer spacing around the element — not tied to content-frame vertical gap. */
   margin: PortfolioWorkCardPadding;
   /**
    * When true, chrome hugs content width (`w-fit`) instead of stretching full column.
@@ -2710,7 +2692,7 @@ export const WORK_ELEMENT_CHROME_IDS: PortfolioWorkElementChromeId[] = [
   'tools',
 ];
 
-/** Preset â†’ px map for element chrome inner padding (Compact / Standard / Confortable). */
+/** Preset → px map for element chrome inner padding (Compact / Standard / Confortable). */
 export const WORK_ELEMENT_CHROME_PADDING_PRESET_PX: Record<PortfolioWorkCardPadding, number> = {
   none: 0,
   sm: 16,
@@ -2910,10 +2892,32 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   subtitleFont: PortfolioWorkHeaderFont;
   titleColor: string;
   subtitleColor: string;
+  /** Header design applied from Header (above every Design layout, independent of it). */
+  headerDesign: PortfolioWorkHeaderDesign;
+  /** Master switch for the header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
+  headerAnimationEnabled: boolean;
   headerAlignment: PortfolioWorkHeaderAlignment;
+  /** Bottom spacing under every header design — shared across all of them. */
+  headerMarginBottom: PortfolioWorkHeaderMarginBottom;
+  /** Title size/weight — shared across every header design. */
+  headerTitleSize: PortfolioWorkHeaderTitleSize;
+  headerTitleWeight: PortfolioWorkHeaderTitleWeight;
+  /** Accent count header — badge text supports a {count} token for the project count. */
+  accentCountBadgeText: string;
+  accentCountLeadText: string;
+  accentCountBadgeColor: PortfolioWorkAccentCountBadgeColor;
+  /** Serif lead header — small label above the large serif title. */
+  serifLeadLabelText: string;
+  /** Billboard header — big faint background word + a {count}-token project line. */
+  billboardBigWord: string;
+  billboardCountText: string;
+  /** Split heading header — small label on the side opposite the narrative title. */
+  splitHeadingLabelText: string;
+  /** Masthead header — monumental headline text, independent of the section title. */
+  mastheadHeadlineText: string;
   /**
-   * `stacked` â€” title above the gallery (default).
-   * `aside-left` / `aside-right` â€” title beside the gallery on large screens.
+   * `stacked` — title above the gallery (default).
+   * `aside-left` / `aside-right` — title beside the gallery on large screens.
    */
   sectionLayout: PortfolioWorkSectionLayout;
   /** Decorative SVG beside the gallery (`none` hides it). */
@@ -2922,35 +2926,35 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   illustrationPlacement: PortfolioWorkIllustrationPlacement;
   contentPlacement: PortfolioWorkContentPlacement;
   galleryLayout: PortfolioWorkGalleryLayout;
-  /** Named Portfolio section design (Settings â†’ Design). */
+  /** Named Portfolio section design (Settings → Design). */
   sectionDesign: PortfolioWorkSectionDesign;
-  /** Projects boardâ€“only options (ignored by Classic). */
+  /** Projects board–only options (ignored by Classic). */
   projectsBoard: PortfolioWorkProjectsBoardSettings;
-  /** Accordion designâ€“only options (ignored by Classic / Projects board). */
+  /** Accordion design–only options (ignored by Classic / Projects board). */
   projectsAccordion: PortfolioWorkProjectsAccordionSettings;
-  /** Frames designâ€“only options (horizontal image + info cards). */
+  /** Frames design–only options (horizontal image + info cards). */
   projectsFrames: PortfolioWorkProjectsFramesSettings;
-  /** Index designâ€“only options (numbered rows + separators). */
+  /** Index design–only options (numbered rows + separators). */
   projectsIndex: PortfolioWorkProjectsIndexSettings;
-  /** Grid designâ€“only options (thumbnail + title + description cards). */
+  /** Grid design–only options (thumbnail + title + description cards). */
   projectsGrid: PortfolioWorkProjectsGridSettings;
-  /** Split designâ€“only options (large thumbnail left + title right). */
+  /** Split design–only options (large thumbnail left + title right). */
   projectsSplit: PortfolioWorkProjectsSplitSettings;
-  /** Carousel designâ€“only options (image-only horizontal slides). */
+  /** Carousel design–only options (image-only horizontal slides). */
   projectsCarousel: PortfolioWorkProjectsCarouselSettings;
-  /** Spotlight designâ€“only options (left details + right title selector). */
+  /** Spotlight design–only options (left details + right title selector). */
   projectsSpotlight: PortfolioWorkProjectsSpotlightSettings;
-  /** Showcase designâ€“only options (media + details + thumbnail selector). */
+  /** Showcase design–only options (media + details + thumbnail selector). */
   projectsShowcase: PortfolioWorkProjectsShowcaseSettings;
-  /** Editorial designâ€“only options (number + title left, meta rail right). */
+  /** Editorial design–only options (number + title left, meta rail right). */
   projectsEditorial: PortfolioWorkProjectsEditorialSettings;
-  /** Ledger designâ€“only options (typographic index rows, data-only). */
+  /** Ledger design–only options (typographic index rows, data-only). */
   projectsLedger: PortfolioWorkProjectsLedgerSettings;
-  /** Folio designâ€“only options (sticky dossier + title list, data-only). */
+  /** Folio design–only options (sticky dossier + title list, data-only). */
   projectsFolio: PortfolioWorkProjectsFolioSettings;
-  /** Spec designâ€“only options (technical datasheet rows, data-only). */
+  /** Spec design–only options (technical datasheet rows, data-only). */
   projectsSpec: PortfolioWorkProjectsSpecSettings;
-  /** Case designâ€“only options (50/50 thumbnail + Spec datasheet). */
+  /** Case design–only options (50/50 thumbnail + Spec datasheet). */
   projectsCase: PortfolioWorkProjectsCaseSettings;
   /** Cards per row on large screens (stack / grid / overlay). */
   itemsPerRow: PortfolioWorkItemsPerRow;
@@ -2968,7 +2972,7 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   overlayMediaDarkness: number;
   /** Diffuse shadow / float halo around the card (no hard border). */
   cardShadow: PortfolioWorkCardShadow;
-  /** 0â€“100 continuous strength of the float / shadow halo. */
+  /** 0–100 continuous strength of the float / shadow halo. */
   cardShadowIntensity: number;
   cardBackgroundEnabled: boolean;
   cardBackgroundColor: string;
@@ -2987,7 +2991,7 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   contentFrameBorderColor: string;
   contentFrameBackgroundEnabled: boolean;
   contentFrameBackgroundColor: string;
-  /** Manual hex override â€” palette sync skipped until the token binding changes. */
+  /** Manual hex override — palette sync skipped until the token binding changes. */
   contentFrameBorderManual: boolean;
   contentFrameBackgroundManual: boolean;
   contentFrameBorderRadius: PortfolioWorkCardRadius;
@@ -2997,7 +3001,7 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   /** Optional surface behind category / title / description / tools (padding, margin, border, fill). */
   elementChromes: PortfolioWorkElementChromes;
   /**
-   * Overlay immersive only: classic bottom stack, or free 3Ã—3 placement on lg+.
+   * Overlay immersive only: classic bottom stack, or free 3×3 placement on lg+.
    * Below lg, free mode still uses the bottom stack.
    */
   overlayLayoutMode: PortfolioWorkOverlayLayoutMode;
@@ -3047,23 +3051,23 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   /** Place the glyph before or after the label. */
   ctaIconPosition: PortfolioWorkCtaIconPosition;
   ctaColor: string;
-  /** CTA outline â€” bound to the same palette token as Hero `ctaBorder`. */
+  /** CTA outline — bound to the same palette token as Hero `ctaBorder`. */
   ctaBorderColor: string;
   /** Border thickness on pill / circle CTA. */
   ctaBorderWidth: PortfolioWorkCtaBorderWidth;
   /** Corner radius on pill CTAs (circle icon shell stays round). */
   ctaBorderRadius: PortfolioWorkCtaBorderRadius;
-  /** Hover fill â€” palette `ctaHoverBackground`. */
+  /** Hover fill — palette `ctaHoverBackground`. */
   ctaHoverBackgroundColor: string;
-  /** Hover label / icon ink â€” palette `ctaHoverText`. */
+  /** Hover label / icon ink — palette `ctaHoverText`. */
   ctaHoverTextColor: string;
-  /** Hover outline â€” palette `ctaHoverBorder`. */
+  /** Hover outline — palette `ctaHoverBorder`. */
   ctaHoverBorderColor: string;
   /** When false, CTA keeps resting colors on hover. */
   ctaHoverEnabled: boolean;
-  /** Tool icon chip fill â€” bound to Hero `toolsIconBackground`. */
+  /** Tool icon chip fill — bound to Hero `toolsIconBackground`. */
   toolsIconBackgroundColor: string;
-  /** Tool icon chip outline â€” bound to Hero `toolsIconBorder`. */
+  /** Tool icon chip outline — bound to Hero `toolsIconBorder`. */
   toolsIconBorderColor: string;
   toolsDisplay: PortfolioWorkToolsDisplay;
   maxToolsShown: number;
@@ -3107,7 +3111,20 @@ export const DEFAULT_WORK_PRESENTATION: PortfolioWorkPresentationSettings = {
   subtitleFont: 'sans',
   titleColor: DEFAULT_WORK_TITLE_COLOR,
   subtitleColor: DEFAULT_WORK_SUBTITLE_COLOR,
+  headerDesign: 'minimal',
+  headerAnimationEnabled: true,
   headerAlignment: 'left',
+  headerMarginBottom: 'md',
+  headerTitleSize: 'md',
+  headerTitleWeight: 'regular',
+  accentCountBadgeText: '',
+  accentCountLeadText: '',
+  accentCountBadgeColor: 'accent',
+  serifLeadLabelText: '',
+  billboardBigWord: '',
+  billboardCountText: '',
+  splitHeadingLabelText: '',
+  mastheadHeadlineText: '',
   sectionLayout: 'stacked',
   illustrationVariant: 'none',
   illustrationPlacement: 'right',
@@ -3262,11 +3279,24 @@ export const PORTFOLIO_WORK_HEADER_FONT_OPTIONS: {
   description: string;
 }[] = [
   { value: 'sans', label: 'Modern sans', description: 'Bold geometric sans-serif.' },
-  { value: 'serif', label: 'Editorial serif', description: 'Playfair Display â€” magazine feel.' },
+  { value: 'serif', label: 'Editorial serif', description: 'Playfair Display — magazine feel.' },
   { value: 'display', label: 'Display caps', description: 'Uppercase poster style.' },
 ];
 
 export const WORK_SECTION_LAYOUTS = ['stacked', 'aside-left', 'aside-right'] as const;
+export const WORK_HEADER_DESIGNS = [
+  'minimal',
+  'editorial',
+  'marquee',
+  'index',
+  'accent-count',
+  'serif-lead',
+  'billboard',
+  'masthead',
+] as const;
+export const WORK_HEADER_MARGIN_BOTTOM_STEPS = ['sm', 'md', 'lg', 'xl'] as const;
+export const WORK_HEADER_TITLE_SIZES = ['sm', 'md', 'lg', 'xl'] as const;
+export const WORK_HEADER_TITLE_WEIGHTS = ['light', 'regular', 'semibold', 'bold'] as const;
 export const WORK_ILLUSTRATION_VARIANTS = [
   'none',
   'chat',
@@ -3284,18 +3314,18 @@ export const PORTFOLIO_WORK_SECTION_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'stacked',
-    label: 'EmpilÃ©',
+    label: 'Empilé',
     description: 'Titre au-dessus, projets en dessous.',
   },
   {
     value: 'aside-left',
-    label: 'Titre Ã  gauche',
-    description: 'Titre Ã  gauche, galerie Ã  droite (cÃ´te Ã  cÃ´te).',
+    label: 'Titre à gauche',
+    description: 'Titre à gauche, galerie à droite (côte à côte).',
   },
   {
     value: 'aside-right',
-    label: 'Titre Ã  droite',
-    description: 'Galerie Ã  gauche, titre Ã  droite (cÃ´te Ã  cÃ´te).',
+    label: 'Titre à droite',
+    description: 'Galerie à gauche, titre à droite (côte à côte).',
   },
 ];
 
@@ -3320,10 +3350,10 @@ export const PORTFOLIO_WORK_ILLUSTRATION_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Aucun', description: 'Pas de SVG dÃ©coratif Ã  cÃ´tÃ© de la galerie.' },
+  { value: 'none', label: 'Aucun', description: 'Pas de SVG décoratif à côté de la galerie.' },
   { value: 'chat', label: 'Chat', description: 'Bulles de conversation.' },
-  { value: 'question', label: 'Question', description: 'Point dâ€™interrogation graphique.' },
-  { value: 'docs', label: 'Docs', description: 'Documents superposÃ©s.' },
+  { value: 'question', label: 'Question', description: 'Point d’interrogation graphique.' },
+  { value: 'docs', label: 'Docs', description: 'Documents superposés.' },
   { value: 'support', label: 'Support', description: 'Illustration support.' },
   { value: 'hex', label: 'Hex', description: 'Symbole hexagonal.' },
 ];
@@ -3333,8 +3363,8 @@ export const PORTFOLIO_WORK_ILLUSTRATION_PLACEMENT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Gauche', description: 'SVG Ã  gauche de la galerie.' },
-  { value: 'right', label: 'Droite', description: 'SVG Ã  droite de la galerie.' },
+  { value: 'left', label: 'Gauche', description: 'SVG à gauche de la galerie.' },
+  { value: 'right', label: 'Droite', description: 'SVG à droite de la galerie.' },
 ];
 
 export function isPortfolioWorkIllustrationVariant(
@@ -3361,12 +3391,12 @@ export const PORTFOLIO_WORK_GALLERY_LAYOUT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'stack', label: 'Grille portfolio', description: 'Grandes cartes Ã©ditoriales â€” colonnes rÃ©glables, design libre.' },
-  { value: 'grid', label: 'Grille compacte', description: 'Tuiles denses : mÃ©dia bas, texte serrÃ© â€” colonnes rÃ©glables.' },
-  { value: 'carousel', label: 'Carrousel', description: 'Un projet Ã  la fois â€” flÃ¨ches gauche / droite pour naviguer.' },
-  { value: 'list', label: 'Liste compacte', description: 'Lignes Ã©levÃ©es : grande vignette, tools Ã  droite, action encerclÃ©e.' },
-  { value: 'overlay', label: 'Overlay immersif', description: 'Media plein avec texte superposÃ© â€” colonnes rÃ©glables.' },
-  { value: 'accordion', label: 'AccordÃ©on', description: 'Lignes dÃ©pliables rÃ©vÃ©lant les dÃ©tails du projet.' },
+  { value: 'stack', label: 'Grille portfolio', description: 'Grandes cartes éditoriales — colonnes réglables, design libre.' },
+  { value: 'grid', label: 'Grille compacte', description: 'Tuiles denses : média bas, texte serré — colonnes réglables.' },
+  { value: 'carousel', label: 'Carrousel', description: 'Un projet à la fois — flèches gauche / droite pour naviguer.' },
+  { value: 'list', label: 'Liste compacte', description: 'Lignes élevées : grande vignette, tools à droite, action encerclée.' },
+  { value: 'overlay', label: 'Overlay immersif', description: 'Media plein avec texte superposé — colonnes réglables.' },
+  { value: 'accordion', label: 'Accordéon', description: 'Lignes dépliables révélant les détails du projet.' },
 ];
 
 export const PORTFOLIO_WORK_ITEMS_PER_ROW_OPTIONS: {
@@ -3374,10 +3404,10 @@ export const PORTFOLIO_WORK_ITEMS_PER_ROW_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: '1', label: '1 par ligne', description: 'Pleine largeur â€” idÃ©al mobile et grands projets.' },
-  { value: '2', label: '2 par ligne', description: '2 colonnes dÃ¨s tablette (md).' },
-  { value: '3', label: '3 par ligne', description: '2 dÃ¨s sm, 3 dÃ¨s xl â€” dense sur grand Ã©cran.' },
-  { value: '4', label: '4 par ligne', description: 'Jusquâ€™Ã  4 sur trÃ¨s grand Ã©cran â€” trÃ¨s compact.' },
+  { value: '1', label: '1 par ligne', description: 'Pleine largeur — idéal mobile et grands projets.' },
+  { value: '2', label: '2 par ligne', description: '2 colonnes dès tablette (md).' },
+  { value: '3', label: '3 par ligne', description: '2 dès sm, 3 dès xl — dense sur grand écran.' },
+  { value: '4', label: '4 par ligne', description: 'Jusqu’à 4 sur très grand écran — très compact.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_MAX_WIDTH_OPTIONS: {
@@ -3386,10 +3416,10 @@ export const PORTFOLIO_WORK_CARD_MAX_WIDTH_OPTIONS: {
   description: string;
 }[] = [
   { value: 'full', label: 'Pleine largeur', description: 'La carte remplit toute la colonne (comportement actuel).' },
-  { value: 'xl', label: 'Large', description: 'Max ~42rem â€” encore confortable, moins Ã©tirÃ©e.' },
-  { value: 'lg', label: 'Carte portrait', description: 'Max ~36rem â€” forme verticale type rÃ©fÃ©rence.' },
-  { value: 'md', label: 'Moyenne', description: 'Max ~32rem â€” carte plus compacte.' },
-  { value: 'sm', label: 'Compacte', description: 'Max ~28rem â€” tuile Ã©troite.' },
+  { value: 'xl', label: 'Large', description: 'Max ~42rem — encore confortable, moins étirée.' },
+  { value: 'lg', label: 'Carte portrait', description: 'Max ~36rem — forme verticale type référence.' },
+  { value: 'md', label: 'Moyenne', description: 'Max ~32rem — carte plus compacte.' },
+  { value: 'sm', label: 'Compacte', description: 'Max ~28rem — tuile étroite.' },
 ];
 
 export const PORTFOLIO_WORK_CATEGORY_MODE_OPTIONS: {
@@ -3412,7 +3442,7 @@ export const PORTFOLIO_WORK_CATEGORY_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'pills', label: 'Pills', description: 'Rounded chips â€” clear and tap-friendly.' },
+  { value: 'pills', label: 'Pills', description: 'Rounded chips — clear and tap-friendly.' },
   { value: 'underline', label: 'Underline', description: 'Text links with an active underline.' },
   { value: 'tabs', label: 'Tabs', description: 'Segmented control in a soft tray.' },
   { value: 'minimal', label: 'Minimal', description: 'Plain text row, no chrome.' },
@@ -3423,11 +3453,11 @@ export const PORTFOLIO_WORK_CARD_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'CarrÃ©', description: 'Coins droits.' },
-  { value: 'sm', label: 'LÃ©ger', description: 'Arrondi subtil.' },
-  { value: 'md', label: 'Moyen', description: 'Arrondi Ã©quilibrÃ©.' },
-  { value: 'lg', label: 'Large', description: 'Coins bien arrondis (dÃ©faut).' },
-  { value: 'xl', label: 'TrÃ¨s large', description: 'Arrondi prononcÃ©.' },
+  { value: 'none', label: 'Carré', description: 'Coins droits.' },
+  { value: 'sm', label: 'Léger', description: 'Arrondi subtil.' },
+  { value: 'md', label: 'Moyen', description: 'Arrondi équilibré.' },
+  { value: 'lg', label: 'Large', description: 'Coins bien arrondis (défaut).' },
+  { value: 'xl', label: 'Très large', description: 'Arrondi prononcé.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_PADDING_OPTIONS: {
@@ -3435,10 +3465,10 @@ export const PORTFOLIO_WORK_CARD_PADDING_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Aucun', description: 'Pas de marge intÃ©rieure.' },
-  { value: 'sm', label: 'Compact', description: 'Marge intÃ©rieure rÃ©duite.' },
-  { value: 'md', label: 'Standard', description: 'Marge intÃ©rieure Ã©quilibrÃ©e.' },
-  { value: 'lg', label: 'Confortable', description: 'Marge intÃ©rieure gÃ©nÃ©reuse.' },
+  { value: 'none', label: 'Aucun', description: 'Pas de marge intérieure.' },
+  { value: 'sm', label: 'Compact', description: 'Marge intérieure réduite.' },
+  { value: 'md', label: 'Standard', description: 'Marge intérieure équilibrée.' },
+  { value: 'lg', label: 'Confortable', description: 'Marge intérieure généreuse.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_GAP_OPTIONS: {
@@ -3446,10 +3476,10 @@ export const PORTFOLIO_WORK_CARD_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'SerrÃ©', description: 'Peu dâ€™espace entre les projets.' },
-  { value: 'md', label: 'Moyen', description: 'Espacement modÃ©rÃ© entre les projets.' },
-  { value: 'lg', label: 'Large', description: 'Espacement gÃ©nÃ©reux (dÃ©faut).' },
-  { value: 'xl', label: 'TrÃ¨s large', description: 'Espacement maximal entre les projets.' },
+  { value: 'sm', label: 'Serré', description: 'Peu d’espace entre les projets.' },
+  { value: 'md', label: 'Moyen', description: 'Espacement modéré entre les projets.' },
+  { value: 'lg', label: 'Large', description: 'Espacement généreux (défaut).' },
+  { value: 'xl', label: 'Très large', description: 'Espacement maximal entre les projets.' },
 ];
 
 export const PORTFOLIO_WORK_CONTENT_FRAME_GAP_OPTIONS: {
@@ -3457,10 +3487,10 @@ export const PORTFOLIO_WORK_CONTENT_FRAME_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'SerrÃ©', description: 'Peu dâ€™espace entre catÃ©gorie, titre, outilsâ€¦' },
-  { value: 'md', label: 'Moyen', description: 'Espacement modÃ©rÃ© entre les blocs dâ€™info.' },
-  { value: 'lg', label: 'Large', description: 'Espacement gÃ©nÃ©reux entre les blocs.' },
-  { value: 'xl', label: 'TrÃ¨s large', description: 'Espacement maximal entre les blocs.' },
+  { value: 'sm', label: 'Serré', description: 'Peu d’espace entre catégorie, titre, outils…' },
+  { value: 'md', label: 'Moyen', description: 'Espacement modéré entre les blocs d’info.' },
+  { value: 'lg', label: 'Large', description: 'Espacement généreux entre les blocs.' },
+  { value: 'xl', label: 'Très large', description: 'Espacement maximal entre les blocs.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_ALIGNMENT_OPTIONS: {
@@ -3468,9 +3498,9 @@ export const PORTFOLIO_WORK_CARD_ALIGNMENT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Gauche', description: 'Place le cadre de la carte Ã  gauche de la colonne.' },
+  { value: 'left', label: 'Gauche', description: 'Place le cadre de la carte à gauche de la colonne.' },
   { value: 'center', label: 'Centre', description: 'Centre le cadre de la carte dans la colonne.' },
-  { value: 'right', label: 'Droite', description: 'Place le cadre de la carte Ã  droite de la colonne.' },
+  { value: 'right', label: 'Droite', description: 'Place le cadre de la carte à droite de la colonne.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_CONTENT_ALIGNMENT_OPTIONS: {
@@ -3478,9 +3508,9 @@ export const PORTFOLIO_WORK_CARD_CONTENT_ALIGNMENT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Gauche', description: 'Titre, texte et outils Ã  lâ€™intÃ©rieur de la carte â€” gauche.' },
-  { value: 'center', label: 'Centre', description: 'Ã‰lÃ©ments Ã  lâ€™intÃ©rieur de la carte â€” centrÃ©s.' },
-  { value: 'right', label: 'Droite', description: 'Ã‰lÃ©ments Ã  lâ€™intÃ©rieur de la carte â€” droite.' },
+  { value: 'left', label: 'Gauche', description: 'Titre, texte et outils à l’intérieur de la carte — gauche.' },
+  { value: 'center', label: 'Centre', description: 'Éléments à l’intérieur de la carte — centrés.' },
+  { value: 'right', label: 'Droite', description: 'Éléments à l’intérieur de la carte — droite.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_CONTENT_VERTICAL_ALIGN_OPTIONS: {
@@ -3491,17 +3521,17 @@ export const PORTFOLIO_WORK_CARD_CONTENT_VERTICAL_ALIGN_OPTIONS: {
   {
     value: 'top',
     label: 'Haut',
-    description: 'Infos collÃ©es en haut de la colonne (espace vide en bas).',
+    description: 'Infos collées en haut de la colonne (espace vide en bas).',
   },
   {
     value: 'center',
     label: 'Centre',
-    description: 'Infos centrÃ©es verticalement face au mÃ©dia.',
+    description: 'Infos centrées verticalement face au média.',
   },
   {
     value: 'bottom',
     label: 'Bas',
-    description: 'Infos collÃ©es en bas de la colonne.',
+    description: 'Infos collées en bas de la colonne.',
   },
 ];
 
@@ -3510,9 +3540,9 @@ export const PORTFOLIO_WORK_CTA_ALIGNMENT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Gauche', description: 'Bouton alignÃ© Ã  gauche.' },
-  { value: 'center', label: 'Centre', description: 'Bouton centrÃ©.' },
-  { value: 'right', label: 'Droite', description: 'Bouton alignÃ© Ã  droite.' },
+  { value: 'left', label: 'Gauche', description: 'Bouton aligné à gauche.' },
+  { value: 'center', label: 'Centre', description: 'Bouton centré.' },
+  { value: 'right', label: 'Droite', description: 'Bouton aligné à droite.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_DESIGN_OPTIONS: {
@@ -3520,12 +3550,12 @@ export const PORTFOLIO_WORK_CARD_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'editorial', label: 'Editorial', description: 'Rounded media, roomy typography â€” the default.' },
+  { value: 'editorial', label: 'Editorial', description: 'Rounded media, roomy typography — the default.' },
   { value: 'minimal', label: 'Minimal', description: 'Flat sharp media, mono CTA, thin content divider.' },
   { value: 'compact', label: 'Compact', description: 'Smaller preview and tighter content stack.' },
   { value: 'stacked', label: 'Stacked', description: 'Full-width media with content underneath.' },
   { value: 'overlay', label: 'Overlay', description: 'Text layered over media with a dark gradient.' },
-  { value: 'framed', label: 'Framed', description: 'Denser spacing and shadow â€” borders are set in Cadre & espacement.' },
+  { value: 'framed', label: 'Framed', description: 'Denser spacing and shadow — borders are set in Cadre & espacement.' },
 ];
 
 export const PORTFOLIO_WORK_CONTENT_PLACEMENT_OPTIONS: {
@@ -3535,22 +3565,22 @@ export const PORTFOLIO_WORK_CONTENT_PLACEMENT_OPTIONS: {
 }[] = [
   {
     value: 'side',
-    label: 'MÃ©dia Ã  gauche',
-    description: 'Image Ã  gauche, infos complÃ©mentaires Ã  droite.',
+    label: 'Média à gauche',
+    description: 'Image à gauche, infos complémentaires à droite.',
   },
   {
     value: 'side-reverse',
-    label: 'MÃ©dia Ã  droite',
-    description: 'Infos Ã  gauche, image Ã  droite.',
+    label: 'Média à droite',
+    description: 'Infos à gauche, image à droite.',
   },
   {
     value: 'bottom',
-    label: 'MÃ©dia en haut',
+    label: 'Média en haut',
     description: 'Image au-dessus, texte et CTA en dessous.',
   },
   {
     value: 'top',
-    label: 'MÃ©dia en bas',
+    label: 'Média en bas',
     description: 'Texte et CTA au-dessus, image en dessous.',
   },
 ];
@@ -3568,12 +3598,12 @@ export const PORTFOLIO_WORK_NO_MEDIA_INFO_LAYOUT_OPTIONS: {
   {
     value: 'readable',
     label: 'Colonne lisible',
-    description: 'Largeur limitÃ©e (comme Ã  cÃ´tÃ© du mÃ©dia) pour une lecture confortable.',
+    description: 'Largeur limitée (comme à côté du média) pour une lecture confortable.',
   },
   {
     value: 'centered',
-    label: 'CentrÃ©',
-    description: 'Bloc dâ€™infos centrÃ© avec largeur limitÃ©e.',
+    label: 'Centré',
+    description: 'Bloc d’infos centré avec largeur limitée.',
   },
 ];
 
@@ -3601,7 +3631,7 @@ export function workListMediaFlexClass(
   }
 }
 
-/** Thumb sizing for list rows â€” full-bleed when stacked, square when beside. */
+/** Thumb sizing for list rows — full-bleed when stacked, square when beside. */
 export function workListThumbClass(
   placement: PortfolioWorkContentPlacement,
   mediaRatio = 50
@@ -3610,7 +3640,7 @@ export function workListThumbClass(
     return 'aspect-[16/10] w-full shrink-0 overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10';
   }
   const clamped = Math.min(70, Math.max(30, Math.round(mediaRatio)));
-  // 30 â†’ ~5.5rem, 50 â†’ 7â€“8rem, 70 â†’ ~10rem on sm+
+  // 30 → ~5.5rem, 50 → 7–8rem, 70 → ~10rem on sm+
   if (clamped <= 40) {
     return 'aspect-[16/10] w-full shrink-0 overflow-hidden rounded-xl ring-1 ring-black/5 sm:aspect-auto sm:h-24 sm:w-24 sm:rounded-xl lg:h-28 lg:w-28 dark:ring-white/10';
   }
@@ -3638,10 +3668,10 @@ export const PORTFOLIO_WORK_CARD_BORDER_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Aucune', description: 'Pas de bordure â€” les coins restent rÃ©glables ci-dessous.' },
-  { value: 'soft', label: 'Fine', description: 'Contour lÃ©ger autour du mÃ©dia ou de la carte.' },
-  { value: 'solid', label: 'Pleine', description: 'Bordure marquÃ©e autour du mÃ©dia ou de la carte.' },
-  { value: 'accent', label: 'Accent', description: 'Bordure teintÃ©e avec la couleur dâ€™accent.' },
+  { value: 'none', label: 'Aucune', description: 'Pas de bordure — les coins restent réglables ci-dessous.' },
+  { value: 'soft', label: 'Fine', description: 'Contour léger autour du média ou de la carte.' },
+  { value: 'solid', label: 'Pleine', description: 'Bordure marquée autour du média ou de la carte.' },
+  { value: 'accent', label: 'Accent', description: 'Bordure teintée avec la couleur d’accent.' },
 ];
 
 export const PORTFOLIO_WORK_CARD_SHADOW_OPTIONS: {
@@ -3649,14 +3679,14 @@ export const PORTFOLIO_WORK_CARD_SHADOW_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Aucune', description: 'Carte Ã  plat â€” pas de profondeur.' },
-  { value: 'soft', label: 'Douce', description: 'Ombre lÃ©gÃ¨re pour un lÃ©ger relief.' },
+  { value: 'none', label: 'Aucune', description: 'Carte à plat — pas de profondeur.' },
+  { value: 'soft', label: 'Douce', description: 'Ombre légère pour un léger relief.' },
   {
     value: 'float',
     label: 'Flottante',
-    description: 'Halo flou autour de la carte â€” effet de flotte sans bordure.',
+    description: 'Halo flou autour de la carte — effet de flotte sans bordure.',
   },
-  { value: 'deep', label: 'Profonde', description: 'Ombre marquÃ©e pour un fort dÃ©tachement du fond.' },
+  { value: 'deep', label: 'Profonde', description: 'Ombre marquée pour un fort détachement du fond.' },
 ];
 
 /** Default intensity when picking a shadow preset (slider can still fine-tune). */
@@ -3681,27 +3711,27 @@ export const PORTFOLIO_WORK_CTA_DESIGN_OPTIONS: {
   {
     value: 'circle-icon',
     label: 'Circle icon',
-    description: 'Label + cercle flÃ¨che â€” bordure et hover sur lâ€™icÃ´ne.',
+    description: 'Label + cercle flèche — bordure et hover sur l’icône.',
   },
   {
     value: 'pill-dark',
     label: 'Dark pill',
-    description: 'Capsule remplie (accent) â€” bordure et hover configurables.',
+    description: 'Capsule remplie (accent) — bordure et hover configurables.',
   },
   {
     value: 'pill-outline',
     label: 'Outline pill',
-    description: 'Capsule Ã  contour â€” au survol, fond hover + texte.',
+    description: 'Capsule à contour — au survol, fond hover + texte.',
   },
   {
     value: 'pill-accent',
     label: 'Accent pill',
-    description: 'Capsule accent vive â€” bordure fine + swap de couleurs au survol.',
+    description: 'Capsule accent vive — bordure fine + swap de couleurs au survol.',
   },
   {
     value: 'text-arrow',
     label: 'Text + arrow',
-    description: 'Lien minimal â€” soulignement et couleurs au survol.',
+    description: 'Lien minimal — soulignement et couleurs au survol.',
   },
 ];
 
@@ -3711,9 +3741,9 @@ export const PORTFOLIO_WORK_CTA_BORDER_WIDTH_OPTIONS: {
   description: string;
 }[] = [
   { value: 'none', label: 'Aucune', description: 'Pas de contour sur le bouton.' },
-  { value: 'thin', label: 'Fine', description: 'Contour lÃ©ger (1px).' },
-  { value: 'medium', label: 'Moyenne', description: 'Contour marquÃ© (2px).' },
-  { value: 'thick', label: 'Ã‰paisse', description: 'Contour fort (3px).' },
+  { value: 'thin', label: 'Fine', description: 'Contour léger (1px).' },
+  { value: 'medium', label: 'Moyenne', description: 'Contour marqué (2px).' },
+  { value: 'thick', label: 'Épaisse', description: 'Contour fort (3px).' },
 ];
 
 export const PORTFOLIO_WORK_CTA_BORDER_RADIUS_OPTIONS: {
@@ -3721,11 +3751,11 @@ export const PORTFOLIO_WORK_CTA_BORDER_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'CarrÃ©', description: 'Coins droits.' },
-  { value: 'sm', label: 'LÃ©ger', description: 'Arrondi subtil.' },
-  { value: 'md', label: 'Moyen', description: 'Arrondi Ã©quilibrÃ©.' },
+  { value: 'none', label: 'Carré', description: 'Coins droits.' },
+  { value: 'sm', label: 'Léger', description: 'Arrondi subtil.' },
+  { value: 'md', label: 'Moyen', description: 'Arrondi équilibré.' },
   { value: 'lg', label: 'Large', description: 'Coins bien arrondis.' },
-  { value: 'full', label: 'Pilule', description: 'Capsule complÃ¨tement ronde (dÃ©faut).' },
+  { value: 'full', label: 'Pilule', description: 'Capsule complètement ronde (défaut).' },
 ];
 
 export const PORTFOLIO_WORK_TOOLS_DISPLAY_OPTIONS: {
@@ -3778,7 +3808,7 @@ export function clampWorkToolsMarginTopPx(value: unknown, fallback = 0): number 
 
 /**
  * Tools block spacing classes.
- * Pin-to-bottom uses a sibling flex spacer (see EditorialWorkCard) â€” not mt-auto here â€”
+ * Pin-to-bottom uses a sibling flex spacer (see EditorialWorkCard) — not mt-auto here —
  * so toolsMarginTopPx always applies as real margin-top.
  */
 export function workToolsBlockClass(
@@ -3836,32 +3866,8 @@ export function resolveWorkSectionTitle(settings: Pick<PortfolioWorkSectionSetti
 }
 
 export function resolveWorkSectionSubtitle(
-  settings: Pick<
-    PortfolioWorkSectionSettings,
-    'subtitlePreset' | 'subtitleCustom' | 'subtitle' | 'sectionDesign'
-  >
+  settings: Pick<PortfolioWorkSectionSettings, 'subtitlePreset' | 'subtitleCustom' | 'subtitle'>
 ): string {
-  // Spotlight / Showcase / Editorial / Ledger / Folio / Spec / Case: no section subtitle by default (hide stock lines from older saves).
-  if (
-    settings.sectionDesign === 'projects-spotlight' ||
-    settings.sectionDesign === 'projects-showcase' ||
-    settings.sectionDesign === 'projects-editorial' ||
-    settings.sectionDesign === 'projects-ledger' ||
-    settings.sectionDesign === 'projects-folio' ||
-    settings.sectionDesign === 'projects-spec' ||
-    settings.sectionDesign === 'projects-case'
-  ) {
-    if (settings.subtitlePreset === 'minimal') return '';
-    if (settings.subtitlePreset === 'default') {
-      const text = (settings.subtitle || '').trim();
-      if (!text || text === 'Selected projects.') return '';
-    }
-    if (settings.subtitlePreset === 'custom') {
-      const custom = (settings.subtitleCustom || settings.subtitle || '').trim();
-      if (!custom || custom === 'Recent projects.') return '';
-    }
-  }
-
   switch (settings.subtitlePreset) {
     case 'minimal':
       return '';
@@ -3928,7 +3934,7 @@ export function workCardMediaFr(mediaRatio: number): number {
 
 export function workCardShellClass(design: PortfolioWorkCardDesign, placement: PortfolioWorkContentPlacement): string {
   if (workCardIsStacked(design, placement)) {
-    // Media sits flush with the info block â€” no empty band between them.
+    // Media sits flush with the info block — no empty band between them.
     // `top` = media below content (flex-col-reverse).
     return placement === 'top'
       ? 'group flex h-full flex-col-reverse gap-0'
@@ -4036,7 +4042,7 @@ export function workGalleryLayoutSettingsPatch(
       return {
         galleryLayout,
         cardDesign: 'overlay',
-        // Overlay chrome expects media as the canvas â€” default to media on top.
+        // Overlay chrome expects media as the canvas — default to media on top.
         contentPlacement: 'bottom',
         overlayLayoutMode: 'free',
         overlayElementPlacements: { ...DEFAULT_WORK_OVERLAY_ELEMENT_PLACEMENTS },
@@ -4079,7 +4085,7 @@ export function workListRowFallbackStyle(
 }
 
 /**
- * Liste compacte â€” flat surface (no forced ambient shadow).
+ * Liste compacte — flat surface (no forced ambient shadow).
  * Border / shadow follow Frame settings only.
  */
 export function workListCardSurfaceClass(
@@ -4113,7 +4119,7 @@ export function workListCardSurfaceStyle(
   if (p.cardBackgroundEnabled) {
     style.backgroundColor = sanitizeHex(p.cardBackgroundColor, DEFAULT_WORK_CARD_BACKGROUND_COLOR);
   } else {
-    // Plate vs page fond â€” dark/light via theme tokens (not light-only --pf-surface).
+    // Plate vs page fond — dark/light via theme tokens (not light-only --pf-surface).
     style.backgroundColor = 'var(--pf-muted-surface, #18181b)';
   }
 
@@ -4156,11 +4162,11 @@ export function workItemsPerRowGridClass(
 export function workItemsPerRowResponsiveHint(itemsPerRow: PortfolioWorkItemsPerRow): string | null {
   switch (itemsPerRow) {
     case 2:
-      return 'Sur mobile, les cartes restent sur 1 colonne. 2 colonnes Ã  partir des grands Ã©crans (lg).';
+      return 'Sur mobile, les cartes restent sur 1 colonne. 2 colonnes à partir des grands écrans (lg).';
     case 3:
-      return 'Sur mobile : 1 colonne. Tablette : 2. Grand Ã©cran (xl) : 3.';
+      return 'Sur mobile : 1 colonne. Tablette : 2. Grand écran (xl) : 3.';
     case 4:
-      return '4 colonnes uniquement sur trÃ¨s grand Ã©cran (2xl). Sur laptop max 3 ; tablette 2 ; mobile 1.';
+      return '4 colonnes uniquement sur très grand écran (2xl). Sur laptop max 3 ; tablette 2 ; mobile 1.';
     default:
       return null;
   }
@@ -4182,7 +4188,7 @@ export function workCardMaxWidthClass(maxWidth: PortfolioWorkCardMaxWidth | unde
   }
 }
 
-/** Align constrained cards inside their grid / flex cell â€” card frame only. */
+/** Align constrained cards inside their grid / flex cell — card frame only. */
 export function workCardMaxWidthJustifyClass(
   maxWidth: PortfolioWorkCardMaxWidth | undefined,
   alignment: PortfolioWorkCardAlignment
@@ -4325,11 +4331,11 @@ export function workCardEdgeStyle(
 }
 
 /**
- * Soft lift / float halo around the card â€” independent of border.
- * Prefer on an outer wrapper (not the same node as overflow-hidden) so the blur isnâ€™t clipped.
- * Intensity (0â€“100) freely scales blur size + opacity via `--pf-card-lift`.
+ * Soft lift / float halo around the card — independent of border.
+ * Prefer on an outer wrapper (not the same node as overflow-hidden) so the blur isn’t clipped.
+ * Intensity (0–100) freely scales blur size + opacity via `--pf-card-lift`.
  * Dark vs light shadow recipe is applied in CSS (`.pf-work-card-lift`) so black-on-black
- * doesnâ€™t swallow the effect in dark mode.
+ * doesn’t swallow the effect in dark mode.
  */
 export function workCardLiftStyle(
   p: Pick<PortfolioWorkPresentationSettings, 'cardShadow' | 'cardShadowIntensity'>
@@ -4448,7 +4454,7 @@ export function workContentFrameStyle(
   return Object.keys(style).length > 0 ? style : undefined;
 }
 
-/** Card-design behavior only (shadow, hover) â€” border and radius come from manual edge settings. */
+/** Card-design behavior only (shadow, hover) — border and radius come from manual edge settings. */
 export function workCardMediaBehaviorClass(design: PortfolioWorkCardDesign): string {
   const base = 'relative block overflow-hidden transition duration-300';
   switch (design) {
@@ -4496,7 +4502,7 @@ export function workCardMediaAspectClass(
   }
 }
 
-/** Maps mediaRatio (30â€“70) to aspect ratio for stacked layouts â€” lower = shorter, higher = taller. */
+/** Maps mediaRatio (30–70) to aspect ratio for stacked layouts — lower = shorter, higher = taller. */
 export function workCardMediaAspectStyle(
   design: PortfolioWorkCardDesign,
   placement: PortfolioWorkContentPlacement,
@@ -4554,7 +4560,7 @@ function workHexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-/** Mix hex toward black (positive amount) or white (negative). amount âˆˆ 0â€“1. */
+/** Mix hex toward black (positive amount) or white (negative). amount ∈ 0–1. */
 function workShadeHex(hex: string, amount: number): string {
   const raw = hex.trim().replace('#', '');
   const full =
@@ -4614,7 +4620,7 @@ type WorkCtaSurfacePresentation = Pick<
 
 /**
  * Resting + hover colors as CSS vars (Navigation-style).
- * Filled pills: label ink = page background (`fond`) â€” not fixed white â€”
+ * Filled pills: label ink = page background (`fond`) — not fixed white —
  * so light/dark modes stay consistent with the original contrast rule.
  */
 export function workCtaSurfaceStyle(
@@ -4624,7 +4630,7 @@ export function workCtaSurfaceStyle(
   const accent = sanitizeHex(presentation.ctaColor, DEFAULT_WORK_CTA_COLOR);
   const border = sanitizeHex(presentation.ctaBorderColor, accent);
   const labelInk = sanitizeHex(presentation.elementStyles?.cta?.color ?? accent, accent);
-  /** Page fill â€” dark in dark mode, light in light mode. */
+  /** Page fill — dark in dark mode, light in light mode. */
   const pageFond = sanitizeHex(
     presentation.sectionBackgroundColor,
     workContrastingInk(accent)
@@ -4662,7 +4668,7 @@ export function workCtaSurfaceStyle(
     fg = labelInk;
     brd = border;
     hBg = hoverEnabled ? hoverBgRaw : 'transparent';
-    // Filled on hover â†’ page-fond ink (same rule as accent pills).
+    // Filled on hover → page-fond ink (same rule as accent pills).
     hFg = hoverEnabled ? pageFond : labelInk;
     hBrd = hoverEnabled ? hoverBorderRaw : border;
   } else if (design === 'circle-icon') {
@@ -4781,7 +4787,7 @@ export function workContrastRatio(a: string, b: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-/** Relative luminance 0â€“1 for work contrast helpers. */
+/** Relative luminance 0–1 for work contrast helpers. */
 export function workColorLuminance(hex: string): number {
   const raw = hex.trim().replace('#', '');
   const full =
@@ -4855,7 +4861,7 @@ export function workCtaIconShellStyle(
   };
 }
 
-/** Tool icon circle surface â€” follows Hero tools icon palette tokens. */
+/** Tool icon circle surface — follows Hero tools icon palette tokens. */
 export function workToolIconShellStyle(
   presentation: Pick<
     PortfolioWorkPresentationSettings,
@@ -4954,8 +4960,52 @@ export function mergeWorkPresentation(
         : base.subtitleFont,
     titleColor: sanitizeHex(record.titleColor, base.titleColor),
     subtitleColor: sanitizeHex(record.subtitleColor, base.subtitleColor),
+    headerDesign: pickAllowlisted(
+      record.headerDesign,
+      WORK_HEADER_DESIGNS,
+      base.headerDesign ?? 'minimal'
+    ),
+    headerAnimationEnabled:
+      typeof record.headerAnimationEnabled === 'boolean'
+        ? record.headerAnimationEnabled
+        : (base.headerAnimationEnabled ?? true),
     headerAlignment:
       headerAlignment === 'left' || headerAlignment === 'center' ? headerAlignment : base.headerAlignment,
+    headerMarginBottom: pickAllowlisted(
+      record.headerMarginBottom,
+      WORK_HEADER_MARGIN_BOTTOM_STEPS,
+      base.headerMarginBottom ?? 'md'
+    ),
+    headerTitleSize: pickAllowlisted(
+      record.headerTitleSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.headerTitleSize ?? 'md'
+    ),
+    headerTitleWeight: pickAllowlisted(
+      record.headerTitleWeight,
+      WORK_HEADER_TITLE_WEIGHTS,
+      base.headerTitleWeight ?? 'regular'
+    ),
+    accentCountBadgeText:
+      typeof record.accentCountBadgeText === 'string' ? record.accentCountBadgeText : base.accentCountBadgeText,
+    accentCountLeadText:
+      typeof record.accentCountLeadText === 'string' ? record.accentCountLeadText : base.accentCountLeadText,
+    accentCountBadgeColor:
+      record.accentCountBadgeColor === 'accent' ||
+      record.accentCountBadgeColor === 'principal' ||
+      record.accentCountBadgeColor === 'secondaire'
+        ? record.accentCountBadgeColor
+        : base.accentCountBadgeColor,
+    serifLeadLabelText:
+      typeof record.serifLeadLabelText === 'string' ? record.serifLeadLabelText : base.serifLeadLabelText,
+    billboardBigWord:
+      typeof record.billboardBigWord === 'string' ? record.billboardBigWord : base.billboardBigWord,
+    billboardCountText:
+      typeof record.billboardCountText === 'string' ? record.billboardCountText : base.billboardCountText,
+    splitHeadingLabelText:
+      typeof record.splitHeadingLabelText === 'string' ? record.splitHeadingLabelText : base.splitHeadingLabelText,
+    mastheadHeadlineText:
+      typeof record.mastheadHeadlineText === 'string' ? record.mastheadHeadlineText : base.mastheadHeadlineText,
     sectionLayout: pickAllowlisted(
       record.sectionLayout,
       WORK_SECTION_LAYOUTS,

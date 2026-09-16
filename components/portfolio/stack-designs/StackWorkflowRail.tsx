@@ -122,23 +122,28 @@ export function EditorialToolsWorkflow({ tools, presentation }: ToolsGalleryProp
     if (laidOut.length === 0) return;
 
     ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        defaults: { overwrite: 'auto' },
-        scrollTrigger: {
-          trigger: root,
-          start: 'top 88%',
-          once: true,
-          invalidateOnRefresh: true,
-          ...(scroller ? { scroller } : {}),
+      // Hide immediately (pre-paint) — a timeline's own .set() only runs once the
+      // scroll-gated timeline plays, which flashed items visible until then.
+      gsap.set(laidOut, { opacity: 0, y: 10 });
+
+      // Trigger per item (not once on the shared root) — when the rail wraps to
+      // several rows, a single root-level trigger fires as soon as the section is
+      // entered, well before the lower rows are actually in view, so their reveal
+      // plays out unseen and they just sit there already visible.
+      ScrollTrigger.batch(laidOut, {
+        start: 'top 88%',
+        once: true,
+        ...(scroller ? { scroller } : {}),
+        onEnter: (batch) => {
+          gsap.to(batch, {
+            opacity: 1,
+            y: 0,
+            duration: 0.84,
+            ease: 'power2.out',
+            stagger: 0.055,
+            overwrite: 'auto',
+          });
         },
-      });
-      tl.set(laidOut, { opacity: 0, y: 10 });
-      tl.to(laidOut, {
-        opacity: 1,
-        y: 0,
-        duration: 0.84,
-        ease: 'power2.out',
-        stagger: 0.055,
       });
     }, root);
 

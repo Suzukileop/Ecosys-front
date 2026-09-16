@@ -49,6 +49,9 @@ export type PortfolioSectionBackgroundSettings = {
   sectionBackgroundDividerColor: string;
   sectionBackgroundDividerThickness: number;
   sectionBackgroundDividerOpacity: number;
+  /** Fade the fill to transparent at the top/bottom edges instead of a hard cut — avoids a
+   *  visible seam where this section's background meets the sections above/below it. */
+  sectionBackgroundEdgeFade: boolean;
 };
 
 export const DEFAULT_SECTION_BACKGROUND_COLOR = '#ffffff';
@@ -79,6 +82,7 @@ export const DEFAULT_SECTION_BACKGROUND: PortfolioSectionBackgroundSettings = {
   sectionBackgroundDividerColor: DEFAULT_SECTION_BACKGROUND_DIVIDER_COLOR,
   sectionBackgroundDividerThickness: 2,
   sectionBackgroundDividerOpacity: 85,
+  sectionBackgroundEdgeFade: false,
 };
 
 export const PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS: {
@@ -417,6 +421,10 @@ export function mergeSectionBackground(
       record.sectionBackgroundDividerOpacity,
       base.sectionBackgroundDividerOpacity ?? 85
     ),
+    sectionBackgroundEdgeFade:
+      typeof record.sectionBackgroundEdgeFade === 'boolean'
+        ? record.sectionBackgroundEdgeFade
+        : (base.sectionBackgroundEdgeFade ?? false),
   };
 }
 

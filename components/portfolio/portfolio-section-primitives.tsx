@@ -76,7 +76,6 @@ import {
   type PortfolioListMarkerWeight,
 } from '@/components/portfolio/portfolio-list-marker';
 import { usePortfolioTaskListMarkerGlobal } from '@/components/portfolio/portfolio-task-list-marker-context';
-import { PortfolioSplitScreenTitle } from '@/components/portfolio/portfolio-split-screen';
 import type { PortfolioGlobalMotionProfile } from '@/components/portfolio/portfolio-motion-settings';
 import {
   DEFAULT_MOTION_PROFILE,
@@ -26207,7 +26206,6 @@ export function EditorialContactSection({
   topSpacingStyle,
   bottomSpacingClass = 'pb-12 sm:pb-16 lg:pb-20',
   bottomSpacingStyle,
-  contentLayout = 'stacked',
 }: {
   creatorId?: string;
   email?: string | null;
@@ -26250,8 +26248,6 @@ export function EditorialContactSection({
   /** Global padding-bottom below section content. */
   bottomSpacingClass?: string;
   bottomSpacingStyle?: React.CSSProperties;
-  /** Split screen nav: title left / content right on large screens. */
-  contentLayout?: 'stacked' | 'split';
 }) {
   const visibleEmail = presentation.showEmail ? (email ?? null) : null;
   const visiblePhone = presentation.showPhone ? (phone ?? null) : null;
@@ -26306,7 +26302,6 @@ export function EditorialContactSection({
         ? ctaChrome.color
         : (ctaLabelColor ?? ctaChrome.color),
   };
-  const split = contentLayout === 'split';
   const chromeVars = contactChromeCssVars(presentation);
   const formChannelsMeta = {
     email: visibleEmail,
@@ -27462,25 +27457,7 @@ export function EditorialContactSection({
             />
           </>
         ) : null}
-        {split ? (
-          <>
-            <div className="relative z-[1]">
-              <PortfolioSplitScreenTitle>{editorialHeader}</PortfolioSplitScreenTitle>
-            </div>
-            <div className="relative z-[1] w-full" style={chromeVars}>
-              <div className="grid w-full items-stretch gap-8 lg:grid-cols-2 lg:gap-10">
-                <div className="min-w-0">{editorialListCard}</div>
-                <div className="flex min-h-full min-w-0 flex-col">
-                  {showContactForm ? (
-                    <ContactFormShell presentation={presentation}>{contactFormNode}</ContactFormShell>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          withContactIllustration(editorialBody)
-        )}
+        {withContactIllustration(editorialBody)}
       </section>
     );
   }
@@ -27592,36 +27569,13 @@ export function EditorialContactSection({
             />
           </>
         ) : null}
-        {split ? (
-          <>
-            <div className="relative z-[1]">
-              <PortfolioSplitScreenTitle>{directoryHeader}</PortfolioSplitScreenTitle>
-            </div>
-            <div className="relative z-[1] w-full" style={chromeVars}>
-              {directorySocials ? (
-                <div className="mb-10 flex justify-center">{directorySocials}</div>
-              ) : null}
-              <div className="grid w-full items-stretch gap-8 lg:grid-cols-2 lg:gap-10">
-                <div className="min-w-0" />
-                <div className="flex min-h-full min-w-0 flex-col">
-                  {showContactForm ? (
-                    <ContactFormShell presentation={presentation}>{contactFormNode}</ContactFormShell>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          withContactIllustration(directoryBody)
-        )}
+        {withContactIllustration(directoryBody)}
       </section>
     );
   }
 
   const contactAside =
-    !split &&
-    (presentation.sectionLayout === 'aside-left' ||
-      presentation.sectionLayout === 'aside-right');
+    presentation.sectionLayout === 'aside-left' || presentation.sectionLayout === 'aside-right';
   const header = (
     <EditorialSectionStickyHeader
       title={resolvedTitle}
@@ -27631,9 +27585,7 @@ export function EditorialContactSection({
       centered={centered}
       alignRight={alignRight}
       alwaysCentered={alwaysCentered}
-      className={`relative z-[1] ${
-        split || contactAside ? 'mb-0 w-full' : 'mb-10 lg:mb-12'
-      }`}
+      className={`relative z-[1] ${contactAside ? 'mb-0 w-full' : 'mb-10 lg:mb-12'}`}
       titleTypographyClass={titleTypographyClass}
       titleTypographyStyle={titleTypographyStyle}
       titleDecorationStyle={titleDecorationStyle}
@@ -27753,14 +27705,7 @@ export function EditorialContactSection({
           />
         </>
       ) : null}
-      {split ? (
-        <>
-          <div className="relative z-[1]">
-            <PortfolioSplitScreenTitle>{header}</PortfolioSplitScreenTitle>
-          </div>
-          {illustratedBody}
-        </>
-      ) : contactAside ? (
+      {contactAside ? (
         <div className={contactAsideLayoutClass(presentation.sectionLayout)}>
           {presentation.sectionLayout === 'aside-right' ? (
             <>

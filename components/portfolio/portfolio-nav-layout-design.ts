@@ -50,51 +50,51 @@ export const PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS: {
   },
   {
     value: 'editorial-bar',
-    label: '1 — Barre éditoriale',
+    label: 'Editorial bar',
     description:
-      'Pleine largeur : logo ou nom à gauche, liens au centre, bouton contact à droite (gutter global).',
+      'Full width: logo or name on the left, links in the center, contact button on the right (global gutter).',
   },
   {
     value: 'floating-pill',
-    label: '2 — Capsule flottante',
+    label: 'Floating pill',
     description:
-      'Pilule flottante neutre : logo à gauche, liens au centre, bouton contact contrasté à droite.',
+      'Neutral floating pill: logo on the left, links in the center, contrasted contact button on the right.',
   },
   {
     value: 'nav-logo-social',
-    label: '3 — Nav · logo · social',
+    label: 'Social nav',
     description:
-      'Pleine largeur : liens à gauche, logo au centre, icônes sociales à droite (jusqu’à 3).',
+      'Full width: links on the left, logo in the center, social icons on the right (up to 3).',
   },
   {
     value: 'center-logo-split',
-    label: '4 — Logo centré · menus split',
+    label: 'Split menu',
     description:
-      'Pleine largeur : liens répartis à gauche et à droite du logo, style barre hero.',
+      'Full width: links split left and right of the logo, hero-bar style.',
   },
   {
     value: 'logo-left-nav-contact',
-    label: '5 — Logo gauche · nav + contact',
+    label: 'Contact nav',
     description:
-      'Pleine largeur : logo à gauche, liens de section à droite, bouton Contact en bout de barre.',
+      'Full width: logo on the left, section links on the right, Contact button at the end of the bar.',
   },
   {
     value: 'case-overlay',
-    label: '6 — Menu plein écran',
+    label: 'Fullscreen menu',
     description:
-      'Barre minimaliste avec bascule Menu / Close. Overlay éditorial plein écran, numérotation et sous-liens.',
+      'Minimal bar with a Menu / Close toggle. Fullscreen editorial overlay with numbering and sub-links.',
   },
   {
     value: 'duten-panel',
-    label: '7 — Panneau Duten',
+    label: 'Docked panel',
     description:
-      'Panneau clair arrondi avec liens en colonnes, logo en haut à gauche et fermeture en haut à droite.',
+      'Light rounded panel with links in columns, logo top-left, close button top-right.',
   },
   {
     value: 'half-panel-left',
-    label: '8 — Demi-panneau droit',
+    label: 'Side panel',
     description:
-      'Icône menu en haut à droite — le tiroir éditorial s’ouvre depuis la droite (50 %).',
+      'Menu icon top-right — the editorial drawer opens from the right (50%).',
   },
 ];
 

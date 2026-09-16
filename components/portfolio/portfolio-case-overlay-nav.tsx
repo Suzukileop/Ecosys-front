@@ -26,6 +26,7 @@ import {
   deferAfterPortfolioNavOverlayClose,
   scrollToPortfolioSection,
   unlockPortfolioPageScroll,
+  usePortfolioNavFocusTrap,
   usePortfolioNavTopClearanceSync,
 } from '@/components/portfolio/portfolio-nav-top-clearance';
 import { usePortfolioSectionSpy } from '@/components/portfolio/portfolio-nav-section-spy';
@@ -320,6 +321,7 @@ export function PortfolioCaseOverlayNav({
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const navRootRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const isControlled = typeof onNavigate === 'function';
   const sectionIds = useMemo(() => items.map((item) => item.id), [items]);
   const {
@@ -395,6 +397,7 @@ export function PortfolioCaseOverlayNav({
     active: true,
     visible,
   });
+  usePortfolioNavFocusTrap({ open, containerRef: panelRef });
 
   const handleNavigate = (id: string, event?: ReactMouseEvent) => {
     event?.preventDefault();
@@ -509,11 +512,13 @@ export function PortfolioCaseOverlayNav({
       <AnimatePresence>
         {open ? (
           <motion.div
+            ref={panelRef}
             id="portfolio-case-overlay-panel"
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className="fixed inset-0 z-[228] flex flex-col"
+            tabIndex={-1}
+            className="fixed inset-0 z-[228] flex flex-col focus:outline-none"
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={reduceMotion ? undefined : { opacity: 0 }}
@@ -521,7 +526,8 @@ export function PortfolioCaseOverlayNav({
           >
             <button
               type="button"
-              aria-label="Close navigation menu"
+              aria-hidden
+              tabIndex={-1}
               className="absolute inset-0"
               style={{
                 backgroundColor: overlayBg,

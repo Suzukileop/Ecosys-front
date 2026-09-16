@@ -583,12 +583,12 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
       ref={heroRef}
       data-pf-entry="armed"
       className="pf-left-portrait-hero relative isolate w-full overflow-x-clip font-sans"
-      style={{ backgroundColor: fond, color: ink }}
+      style={{ ...(data.suppressBackground ? null : { backgroundColor: fond }), color: ink }}
     >
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2"
-        style={{ backgroundColor: fond }}
+        style={data.suppressBackground ? undefined : { backgroundColor: fond }}
       />
 
       {/* —— Desktop — global content width + gutter only —— */}

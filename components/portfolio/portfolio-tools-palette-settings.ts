@@ -50,21 +50,21 @@ export const PORTFOLIO_TOOLS_COLOR_SLOT_OPTIONS: {
   value: ToolsColorSlot;
   label: string;
 }[] = [
-  { value: 'sectionBackground', label: 'Fond de section' },
-  { value: 'sectionGradientFrom', label: 'Début du dégradé' },
-  { value: 'sectionGradientTo', label: 'Fin du dégradé' },
+  { value: 'sectionBackground', label: 'Section background' },
+  { value: 'sectionGradientFrom', label: 'Gradient start' },
+  { value: 'sectionGradientTo', label: 'Gradient end' },
   { value: 'sectionSplitA', label: 'Zone A' },
   { value: 'sectionSplitB', label: 'Zone B' },
-  { value: 'sectionDivider', label: 'Séparateur' },
-  { value: 'title', label: 'Titre' },
-  { value: 'tileBackground', label: 'Fond des tuiles / logos' },
-  { value: 'label', label: 'Nom des outils' },
+  { value: 'sectionDivider', label: 'Divider' },
+  { value: 'title', label: 'Title' },
+  { value: 'tileBackground', label: 'Tile / logo background' },
+  { value: 'label', label: 'Tool name' },
   { value: 'description', label: 'Description' },
-  { value: 'cardBackground', label: 'Fond des cartes' },
-  { value: 'cardBorder', label: 'Bordure des cartes' },
-  { value: 'chipBackground', label: 'Fond des use cases' },
-  { value: 'chipText', label: 'Texte des use cases' },
-  { value: 'levelAccent', label: 'Badge niveau' },
+  { value: 'cardBackground', label: 'Card background' },
+  { value: 'cardBorder', label: 'Card border' },
+  { value: 'chipBackground', label: 'Use case background' },
+  { value: 'chipText', label: 'Use case text' },
+  { value: 'levelAccent', label: 'Level badge' },
 ];
 
 export const DEFAULT_TOOLS_PALETTE: PortfolioToolsPalette = { ...DEFAULT_HERO_PALETTE };

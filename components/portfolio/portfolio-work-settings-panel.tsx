@@ -1,30 +1,9 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import {
-  PORTFOLIO_WORK_CARD_ALIGNMENT_OPTIONS,
   PORTFOLIO_WORK_CARD_BORDER_OPTIONS,
-  PORTFOLIO_WORK_CARD_CONTENT_ALIGNMENT_OPTIONS,
-  PORTFOLIO_WORK_CARD_CONTENT_VERTICAL_ALIGN_OPTIONS,
-  PORTFOLIO_WORK_CARD_DESIGN_OPTIONS,
-  PORTFOLIO_WORK_CARD_GAP_OPTIONS,
-  PORTFOLIO_WORK_CARD_MAX_WIDTH_OPTIONS,
-  PORTFOLIO_WORK_CARD_PADDING_OPTIONS,
   PORTFOLIO_WORK_CARD_RADIUS_OPTIONS,
-  PORTFOLIO_WORK_CARD_SHADOW_OPTIONS,
-  PORTFOLIO_WORK_CARD_SHADOW_PRESET_INTENSITY,
-  PORTFOLIO_WORK_CONTENT_FRAME_GAP_OPTIONS,
-  PORTFOLIO_WORK_CATEGORY_DESIGN_OPTIONS,
-  PORTFOLIO_WORK_CATEGORY_MODE_OPTIONS,
-  PORTFOLIO_WORK_CONTENT_PLACEMENT_OPTIONS,
-  PORTFOLIO_WORK_NO_MEDIA_INFO_LAYOUT_OPTIONS,
-  PORTFOLIO_WORK_CTA_ALIGNMENT_OPTIONS,
-  PORTFOLIO_WORK_CTA_BORDER_RADIUS_OPTIONS,
-  PORTFOLIO_WORK_CTA_BORDER_WIDTH_OPTIONS,
-  PORTFOLIO_WORK_CTA_DESIGN_OPTIONS,
-  PORTFOLIO_WORK_CTA_ICON_OPTIONS,
-  PORTFOLIO_WORK_CTA_ICON_POSITION_OPTIONS,
-  PORTFOLIO_WORK_GALLERY_LAYOUT_OPTIONS,
   PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS,
   PORTFOLIO_WORK_ACCORDION_ALIGN_OPTIONS,
   PORTFOLIO_WORK_ACCORDION_PREVIEW_SIDE_OPTIONS,
@@ -74,45 +53,14 @@ import {
   PORTFOLIO_WORK_SPOTLIGHT_STACK_STYLE_OPTIONS,
   PORTFOLIO_WORK_SHOWCASE_MEDIA_SIDE_OPTIONS,
   PORTFOLIO_WORK_SHOWCASE_RADIUS_OPTIONS,
-  PORTFOLIO_WORK_ILLUSTRATION_OPTIONS,
-  PORTFOLIO_WORK_ILLUSTRATION_PLACEMENT_OPTIONS,
-  PORTFOLIO_WORK_ITEMS_PER_ROW_OPTIONS,
-  PORTFOLIO_WORK_OVERLAY_CELL_OPTIONS,
-  PORTFOLIO_WORK_OVERLAY_LAYOUT_MODE_OPTIONS,
+  PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS,
   PORTFOLIO_WORK_SECTION_LAYOUT_OPTIONS,
-  PORTFOLIO_WORK_STYLE_TARGET_OPTIONS,
-  PORTFOLIO_WORK_SUBTITLE_PRESET_OPTIONS,
-  PORTFOLIO_WORK_TITLE_PRESET_OPTIONS,
-  PORTFOLIO_WORK_TOOLS_DISPLAY_OPTIONS,
-  WORK_TOOLS_MARGIN_TOP_PX_MAX,
-  WORK_TOOLS_MARGIN_TOP_PX_MIN,
-  WORK_ELEMENT_CHROME_PADDING_PRESET_PX,
-  WORK_ELEMENT_CHROME_PADDING_PX_MAX,
-  WORK_ELEMENT_CHROME_PADDING_PX_MIN,
-  clampWorkElementChromePaddingPx,
-  clampWorkToolsMarginTopPx,
-  normalizeWorkElementStyles,
-  patchWorkElementChrome,
-  patchWorkElementStyle,
-  resolveWorkElementChromePaddingPx,
-  workGalleryLayoutSettingsPatch,
   workSectionLayoutIsAside,
-  DEFAULT_WORK_OVERLAY_ELEMENT_BANDS,
-  DEFAULT_WORK_ELEMENT_CHROMES,
-  type PortfolioWorkCardPadding,
-  type PortfolioWorkElementChromeId,
-  type PortfolioWorkItemsPerRow,
-  type PortfolioWorkOverlayCellPlacement,
-  type PortfolioWorkOverlayElementBand,
-  type PortfolioWorkOverlayElementId,
+  type PortfolioWorkHeaderDesign,
+  type PortfolioWorkProjectsSpecConsultDesign,
+  type PortfolioWorkSectionDesign,
   type PortfolioWorkSectionSettings,
-  type PortfolioWorkStyleTarget,
-  workCardIsStacked,
-  workGallerySupportsItemsPerRow,
-  workItemsPerRowResponsiveHint,
 } from '@/components/portfolio/portfolio-work-settings';
-import { PORTFOLIO_TOOLS_ICON_SIZE_OPTIONS } from '@/components/portfolio/portfolio-element-text-style';
-import { PortfolioElementStyleFields } from '@/components/portfolio/portfolio-element-style-fields';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import {
   PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS,
@@ -120,9 +68,7 @@ import {
   type HeroPaletteTokenId,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
-import { SectionHeroPaletteToggle } from '@/components/portfolio/SectionHeroPaletteToggle';
 import {
-  applyWorkPaletteToSettings,
   DEFAULT_WORK_COLOR_BINDINGS,
   DEFAULT_WORK_PALETTE,
   mergeWorkColorBindings,
@@ -130,8 +76,6 @@ import {
   patchWorkColorBinding,
   patchWorkColorField,
   patchWorkColorFieldManual,
-  PORTFOLIO_WORK_COLOR_SLOT_OPTIONS,
-  WORK_STYLE_TARGET_COLOR_SLOT,
   type WorkColorSlot,
 } from '@/components/portfolio/portfolio-work-palette-settings';
 
@@ -139,6 +83,8 @@ export type WorkSettingsSubSection =
   | 'general'
   | 'header'
   | 'design'
+  | 'background'
+  /** @deprecated Categories / Cards / Media / Title / Description / Tools / CTA / Palette now live under Design */
   | 'categories'
   | 'cards'
   | 'media'
@@ -146,73 +92,36 @@ export type WorkSettingsSubSection =
   | 'description'
   | 'tools'
   | 'cta'
-  | 'background'
   | 'palette'
-  /** @deprecated Prefer title / description / tools / cta */
+  /** @deprecated Prefer Design */
   | 'style';
 
 const WORK_SETTINGS_SUB_SECTIONS: {
-  id: Exclude<WorkSettingsSubSection, 'style'>;
+  id: Exclude<WorkSettingsSubSection, 'style' | 'categories' | 'cards' | 'media' | 'title' | 'description' | 'tools' | 'cta' | 'palette'>;
   label: string;
   description: string;
 }[] = [
-  { id: 'general', label: 'General', description: 'Section visibility and marketplace link.' },
+  {
+    id: 'general',
+    label: 'General',
+    description: 'Content is edited in Creator Studio → Information — this tab only controls visibility & presentation.',
+  },
   { id: 'header', label: 'Header', description: 'Title and subtitle presets, fonts, and colors.' },
   {
     id: 'design',
     label: 'Design',
     description: 'Named Portfolio layouts — projects board, accordion, frames, and more.',
   },
-  {
-    id: 'categories',
-    label: 'Categories',
-    description: 'Filter chips, category on cards, placement, and typography.',
-  },
-  {
-    id: 'cards',
-    label: 'Cards',
-    description: 'Gallery layout, columns, frame, and card design.',
-  },
-  {
-    id: 'media',
-    label: 'Media',
-    description: 'Project image placement (left / right / top / bottom), size, and border.',
-  },
-  {
-    id: 'title',
-    label: 'Titre',
-    description: 'Project title visibility, overlay placement, and typography.',
-  },
-  {
-    id: 'description',
-    label: 'Description',
-    description: 'Description visibility, overlay placement, and typography.',
-  },
-  {
-    id: 'tools',
-    label: 'Outils',
-    description: 'Tools row, icons, overlay placement, and typography.',
-  },
-  {
-    id: 'cta',
-    label: 'CTA',
-    description: 'View project button design, placement, and typography.',
-  },
   { id: 'background', label: 'Background', description: 'Section fill, gradients, and opacity.' },
-  {
-    id: 'palette',
-    label: 'Palette',
-    description: 'Use the Global site palette and bind section colors to tokens.',
-  },
 ];
 
-/** Map legacy subsection ids (saved UI state / search) to the new element menus. */
+/** Map legacy subsection ids (saved UI state / search) to the current 4-tab menu. */
 export function normalizeWorkSettingsSubSection(value: string | undefined): WorkSettingsSubSection {
-  if (value === 'style') return 'title';
+  if (value === 'general' || value === 'header' || value === 'design' || value === 'background') {
+    return value;
+  }
   if (
-    value === 'general' ||
-    value === 'header' ||
-    value === 'design' ||
+    value === 'style' ||
     value === 'categories' ||
     value === 'cards' ||
     value === 'media' ||
@@ -220,10 +129,9 @@ export function normalizeWorkSettingsSubSection(value: string | undefined): Work
     value === 'description' ||
     value === 'tools' ||
     value === 'cta' ||
-    value === 'background' ||
     value === 'palette'
   ) {
-    return value;
+    return 'design';
   }
   return 'header';
 }
@@ -243,45 +151,6 @@ function asWorkPatch(
   patch: Record<string, unknown> | object
 ): Partial<PortfolioWorkSectionSettings> {
   return patch as Partial<PortfolioWorkSectionSettings>;
-}
-
-function WorkUsePaletteToggle({
-  work,
-  onChange,
-  description,
-  enabledHint,
-  disabledHint,
-}: {
-  work: PortfolioWorkSectionSettings;
-  onChange: (patch: Partial<PortfolioWorkSectionSettings>) => void;
-  description: string;
-  enabledHint?: string;
-  disabledHint?: string;
-}) {
-  return (
-    <SectionHeroPaletteToggle
-      enabled={work.useHeroPalette !== false}
-      onChange={(useHeroPalette) =>
-        onChange(
-          asWorkPatch(
-            useHeroPalette
-              ? { useHeroPalette, ...applyWorkPaletteToSettings(work) }
-              : { useHeroPalette }
-          )
-        )
-      }
-      title="Use global color palette"
-      description={description}
-      enabledHint={
-        enabledHint ??
-        'Palette mode — pick which Global token each color uses (edit tokens under Global → Theme). Free hex pickers stay locked.'
-      }
-      disabledHint={
-        disabledHint ??
-        'Manual mode — color pickers set hex values directly and are no longer overwritten by the global palette.'
-      }
-    />
-  );
 }
 
 function WorkColorField({
@@ -425,288 +294,91 @@ function WorkManualColorField({
   );
 }
 
-function WorkPalettePanel({
-  work,
-  onChange,
-}: {
-  work: PortfolioWorkSectionSettings;
-  onChange: (patch: Partial<PortfolioWorkSectionSettings>) => void;
-}) {
-  const palette = mergeWorkPalette(DEFAULT_WORK_PALETTE, work.workPalette);
-  const bindings = mergeWorkColorBindings(DEFAULT_WORK_COLOR_BINDINGS, work.workColorBindings);
-  const paletteOn = work.useHeroPalette !== false;
-
+/** Premium switch track. The off-state fill is mixed toward `transparent` (not toward
+ *  `--pf-palette-fond`) plus a visible border, so it never blends into a page whose
+ *  background happens to be close to the same token — off-state contrast is guaranteed
+ *  regardless of light/dark theme, not just on-state. */
+function WorkSwitchTrack({ checked }: { checked: boolean }) {
   return (
-    <div className="space-y-6">
-      <WorkUsePaletteToggle
-        work={work}
-        onChange={onChange}
-        description="When on, Portfolio colors follow the Global site palette. Turn off to edit colors manually in Header, Cards, Style, and Background."
-        enabledHint="Edit the dark/light token pair under Global → Theme. Bindings below pick which token each portfolio color uses."
-        disabledHint="Global palette tokens still exist, but Portfolio uses manual hex colors until you turn this back on."
-      />
-
-      <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-600">
-        The site color palette lives in <span className="font-semibold">Global → Theme</span> as a
-        coupled dark / light pair. Portfolio no longer has its own Mode sombre / Mode clair editor.
-      </p>
-
-      {paletteOn ? (
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Color bindings
-          </p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Pick which Global token each portfolio color uses. Swatches preview the active mode.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {PORTFOLIO_WORK_COLOR_SLOT_OPTIONS.map((slot) => {
-              const resolved = resolveHeroPaletteColor(palette, bindings[slot.value]);
-              return (
-                <div
-                  key={slot.value}
-                  className="rounded-2xl border border-neutral-200/80 bg-white px-3 py-3"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold text-neutral-800">{slot.label}</span>
-                    <span
-                      className="h-5 w-5 shrink-0 rounded-full border border-neutral-200"
-                      style={{ backgroundColor: resolved }}
-                      aria-hidden
-                    />
-                  </div>
-                  <select
-                    value={bindings[slot.value]}
-                    onChange={(event) =>
-                      onChange(
-                        asWorkPatch(
-                          patchWorkColorBinding(
-                            work,
-                            slot.value,
-                            event.target.value as HeroPaletteTokenId
-                          )
-                        )
-                      )
-                    }
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
-                  >
-                    {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
-                      <option key={token.value} value={token.value}>
-                        {token.label}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1.5 text-xs text-neutral-500">{slot.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
-          Palette is off — slot bindings are hidden. Turn it back on to bind colors to Global tokens,
-          or edit hex fields under Header / Cards / Style / Background.
-        </p>
-      )}
-    </div>
+    <span className="pf-work-switch" data-checked={checked ? 'true' : 'false'}>
+      <span className="pf-work-switch-thumb" />
+    </span>
   );
+}
+
+/** Small keyboard-accessible "i" tooltip — shows non-obvious info on hover or focus
+ *  instead of a permanent line of text under a toggle. */
+function WorkInfoTooltip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const tooltipId = useId();
+  return (
+    <span className="relative inline-flex shrink-0">
+      <button
+        type="button"
+        aria-describedby={open ? tooltipId : undefined}
+        aria-label={`More info: ${text}`}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+      >
+        <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
+          <circle cx="7" cy="4.35" r="0.95" fill="currentColor" />
+          <rect x="6.3" y="6.05" width="1.4" height="4.4" rx="0.7" fill="currentColor" />
+        </svg>
+      </button>
+      {open ? (
+        <span
+          id={tooltipId}
+          role="tooltip"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+        >
+          {text}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function WorkSectionLabel({ children }: { children: ReactNode }) {
+  return <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{children}</p>;
 }
 
 function WorkToggleRow({
   label,
-  description,
+  info,
   checked,
   onChange,
 }: {
   label: string;
-  description?: string;
+  /** Non-obvious info (where to find something, hidden behavior) shown as a hover/focus tooltip. */
+  info?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-white px-4 py-3.5">
-      <span className="min-w-0">
-        <span className="block text-sm font-semibold text-neutral-950">{label}</span>
-        {description ? <span className="mt-1 block text-sm text-neutral-500">{description}</span> : null}
-      </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-neutral-900"
-      />
-    </label>
-  );
-}
-
-const WORK_ELEMENT_CHROME_COLOR_SLOTS: Record<
-  PortfolioWorkElementChromeId,
-  { background: WorkColorSlot; border: WorkColorSlot }
-> = {
-  categoryOnCard: {
-    background: 'categoryChromeBackground',
-    border: 'categoryChromeBorder',
-  },
-  cardTitle: {
-    background: 'titleChromeBackground',
-    border: 'titleChromeBorder',
-  },
-  cardDescription: {
-    background: 'descriptionChromeBackground',
-    border: 'descriptionChromeBorder',
-  },
-  tools: {
-    background: 'toolsChromeBackground',
-    border: 'toolsChromeBorder',
-  },
-};
-
-function WorkElementChromeControls({
-  work,
-  chromeId,
-  onChange,
-  title = 'Fond de l’élément',
-  description = 'Ajoute un fond derrière cet élément — padding, marge, couleur et bordure.',
-}: {
-  work: PortfolioWorkSectionSettings;
-  chromeId: PortfolioWorkElementChromeId;
-  onChange: (patch: Partial<PortfolioWorkSectionSettings>) => void;
-  title?: string;
-  description?: string;
-}) {
-  const chrome = work.elementChromes?.[chromeId] ?? DEFAULT_WORK_ELEMENT_CHROMES[chromeId];
-  const slots = WORK_ELEMENT_CHROME_COLOR_SLOTS[chromeId];
-
-  const patchChrome = (patch: Partial<typeof chrome>) => {
-    onChange({
-      elementChromes: patchWorkElementChrome(
-        work.elementChromes ?? DEFAULT_WORK_ELEMENT_CHROMES,
-        chromeId,
-        patch
-      ),
-    });
-  };
-
-  return (
-    <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-      <div>
-        <p className="text-sm font-semibold text-neutral-950">{title}</p>
-        <p className="mt-1 text-sm text-neutral-500">{description}</p>
+    <div className="flex items-center justify-between gap-4 border-b border-neutral-200/80 py-3.5 last:border-b-0">
+      <div className="flex min-w-0 items-center gap-1.5">
+        <span
+          className="min-w-0 cursor-pointer truncate text-sm font-semibold text-neutral-950"
+          onClick={() => onChange(!checked)}
+        >
+          {label}
+        </span>
+        {info ? <WorkInfoTooltip text={info} /> : null}
       </div>
-      <WorkToggleRow
-        label="Activer le fond"
-        description="Encadre cet élément avec un fond et optionnellement une bordure."
-        checked={chrome.enabled}
-        onChange={(enabled) => patchChrome({ enabled })}
-      />
-      {chrome.enabled ? (
-        <>
-          <WorkToggleRow
-            label="Remplissage"
-            description="Couleur de fond derrière le texte / les icônes."
-            checked={chrome.backgroundEnabled}
-            onChange={(backgroundEnabled) => patchChrome({ backgroundEnabled })}
-          />
-          {chromeId === 'tools' ? (
-            <WorkToggleRow
-              label="Limiter aux icônes"
-              description="Le fond et la bordure s’ajustent à la largeur des icônes (pas toute la colonne)."
-              checked={chrome.fitContent}
-              onChange={(fitContent) => patchChrome({ fitContent })}
-            />
-          ) : null}
-          {chrome.backgroundEnabled ? (
-            <WorkColorField
-              work={work}
-              onChange={onChange}
-              slot={slots.background}
-              label="Couleur de fond"
-              value={chrome.backgroundColor}
-            />
-          ) : null}
-          <WorkOptionGrid
-            label="Bordure"
-            options={PORTFOLIO_WORK_CARD_BORDER_OPTIONS}
-            value={chrome.border}
-            onChange={(border) => patchChrome({ border })}
-            columns={2}
-          />
-          {chrome.border === 'soft' || chrome.border === 'solid' ? (
-            <WorkColorField
-              work={work}
-              onChange={onChange}
-              slot={slots.border}
-              label="Couleur de bordure"
-              value={chrome.borderColor}
-            />
-          ) : null}
-          <WorkOptionGrid
-            label="Coins"
-            options={PORTFOLIO_WORK_CARD_RADIUS_OPTIONS}
-            value={chrome.borderRadius}
-            onChange={(borderRadius) => patchChrome({ borderRadius })}
-            columns={2}
-          />
-          <WorkOptionGrid
-            label="Padding (intérieur)"
-            options={PORTFOLIO_WORK_CARD_PADDING_OPTIONS}
-            value={
-              chrome.padding === 'custom'
-                ? ('' as PortfolioWorkCardPadding)
-                : chrome.padding
-            }
-            onChange={(padding) =>
-              patchChrome({
-                padding,
-                paddingPx: WORK_ELEMENT_CHROME_PADDING_PRESET_PX[padding],
-              })
-            }
-            columns={2}
-          />
-          {chrome.padding === 'custom' ? (
-            <p className="text-xs font-medium text-amber-700">
-              Mode manuel actif — choisis un preset ci-dessus pour quitter Manual.
-            </p>
-          ) : null}
-          <div>
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Manuel (px)
-              </p>
-              <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                {resolveWorkElementChromePaddingPx(chrome)}px
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-neutral-500">
-              Marge intérieure exacte du fond (ex. Tools).
-            </p>
-            <input
-              type="range"
-              min={WORK_ELEMENT_CHROME_PADDING_PX_MIN}
-              max={WORK_ELEMENT_CHROME_PADDING_PX_MAX}
-              step={1}
-              value={resolveWorkElementChromePaddingPx(chrome)}
-              onChange={(event) => {
-                const px = clampWorkElementChromePaddingPx(Number(event.target.value), 16);
-                patchChrome({ padding: 'custom', paddingPx: px });
-              }}
-              className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-              aria-label="Padding intérieur manuel en pixels"
-            />
-            <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
-              <span>{WORK_ELEMENT_CHROME_PADDING_PX_MIN}px</span>
-              <span>{WORK_ELEMENT_CHROME_PADDING_PX_MAX}px</span>
-            </div>
-          </div>
-          <WorkOptionGrid
-            label="Marge (extérieur)"
-            options={PORTFOLIO_WORK_CARD_PADDING_OPTIONS}
-            value={chrome.margin}
-            onChange={(margin) => patchChrome({ margin })}
-            columns={2}
-          />
-        </>
-      ) : null}
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className="shrink-0"
+      >
+        <WorkSwitchTrack checked={checked} />
+      </button>
     </div>
   );
 }
@@ -717,42 +389,42 @@ function WorkOptionGrid<T extends string | number>({
   value,
   onChange,
   columns = 2,
+  icons,
 }: {
   label: string;
   options: { value: T; label: string; description: string }[];
   value: T;
   onChange: (value: T) => void;
   columns?: 1 | 2 | 3 | 4;
+  icons?: Partial<Record<string, ReactNode>>;
 }) {
+  const compact = columns === options.length && options.length >= 2 && options.length <= 5;
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
+      <p className="pf-work-block-label pf-work-option-label">{label}</p>
       <div
-        className={`mt-3 grid gap-2 ${
-          columns === 4
-            ? 'grid-cols-2 sm:grid-cols-4'
-            : columns === 3
-              ? 'sm:grid-cols-2 lg:grid-cols-3'
-              : columns === 1
-                ? 'grid-cols-1'
-                : 'sm:grid-cols-2'
-        }`}
+        role="radiogroup"
+        aria-label={label}
+        className="pf-work-segment grid gap-[3px] p-[3px]"
+        data-compact={compact ? 'true' : 'false'}
+        style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
       >
         {options.map((option) => {
           const active = option.value === value;
+          const icon = icons?.[String(option.value)];
           return (
             <button
               key={String(option.value)}
               type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.description}
               onClick={() => onChange(option.value)}
-              className={`rounded-2xl border px-4 py-3 text-left transition ${
-                active
-                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-              }`}
+              data-active={active ? 'true' : 'false'}
+              className="pf-work-segment-btn flex items-center justify-center gap-1 px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
             >
-              <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
+              {icon ? <span className="pf-work-segment-icon">{icon}</span> : null}
+              <span>{option.label}</span>
             </button>
           );
         })}
@@ -761,260 +433,2383 @@ function WorkOptionGrid<T extends string | number>({
   );
 }
 
-/** Compact 3×3 snap grid for overlay immersive free placement (desktop). */
-function WorkOverlayCellPicker({
+/** Ordered/continuous-scale control (size, spacing) — a single drag surface snapping
+ *  between the option's discrete steps, with the current step named live. */
+function WorkSlider<T extends string>({
   label,
   value,
+  options,
   onChange,
 }: {
   label: string;
-  value: PortfolioWorkOverlayCellPlacement;
-  onChange: (value: PortfolioWorkOverlayCellPlacement) => void;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (value: T) => void;
 }) {
-  const activeLabel =
-    PORTFOLIO_WORK_OVERLAY_CELL_OPTIONS.find((option) => option.value === value)?.label ?? value;
-
+  const index = Math.max(
+    0,
+    options.findIndex((option) => option.value === value)
+  );
+  const lastIndex = options.length - 1;
+  const percent = lastIndex > 0 ? (index / lastIndex) * 100 : 0;
+  const current = options[index] ?? options[0];
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-      <div className="mt-2 inline-grid grid-cols-3 gap-1.5 rounded-xl border border-neutral-200 bg-white p-2">
-        {PORTFOLIO_WORK_OVERLAY_CELL_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              title={option.label}
-              aria-label={`${label}: ${option.label}`}
-              aria-pressed={active}
-              onClick={() => onChange(option.value)}
-              className={`flex h-8 w-8 items-center justify-center rounded-full border transition ${
-                active
-                  ? 'border-neutral-900 bg-neutral-950 text-white shadow-sm'
-                  : 'border-neutral-300 bg-white text-neutral-400 hover:border-neutral-500 hover:text-neutral-700'
-              }`}
-            >
-              <span
-                className={`block h-2 w-2 rounded-full ${active ? 'bg-orange-400' : 'bg-current'}`}
-              />
-            </button>
-          );
-        })}
+      <div className="pf-work-slider-row">
+        <span className="pf-work-slider-label">{label}</span>
+        <span className="pf-work-slider-value">{current?.label}</span>
       </div>
-      <p className="mt-1.5 text-xs font-medium text-neutral-600">{activeLabel}</p>
+      <input
+        type="range"
+        min={0}
+        max={Math.max(lastIndex, 0)}
+        step={1}
+        value={index}
+        onChange={(event) => {
+          const next = options[Number(event.target.value)];
+          if (next) onChange(next.value);
+        }}
+        aria-label={label}
+        className="pf-work-slider-input"
+        style={{
+          background: `linear-gradient(to right, var(--pf-palette-texte-fort, #f5f5f5) ${percent}%, color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a)) ${percent}%)`,
+        }}
+      />
     </div>
   );
 }
 
-/** Per-element overlay free placement — mirrors Hero’s per-element layout block. */
-function WorkOverlayElementPlacementControls({
+function WorkMiniSlide({ children }: { children: ReactNode }) {
+  return (
+    <svg viewBox="0 0 120 72" className="pf-work-mini h-[4.35rem] w-full" aria-hidden>
+      <rect className="pf-work-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
+      {children}
+    </svg>
+  );
+}
+
+function WorkPickerCard({
+  active,
+  label,
+  onClick,
+  children,
+  compact,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  children: ReactNode;
+  /** Smaller padding/type for secondary preview-card grids. */
+  compact?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={label}
+      title={label}
+      data-active={active ? 'true' : 'false'}
+      onClick={onClick}
+      className={`pf-work-design-card rounded-2xl text-left ${compact ? 'pf-work-preview-card' : 'px-3 pb-3 pt-2.5'}`}
+    >
+      {children}
+      <span className={compact ? 'mt-1.5 block' : 'mt-2.5 block'}>
+        <span
+          className={`pf-work-card-label min-w-0 font-semibold leading-none tracking-tight ${compact ? 'text-xs' : 'text-sm'}`}
+        >
+          {label}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+/** Visual-difference choice (style, layout) — a compact preview card per option so the
+ *  difference reads at a glance instead of via a label alone. */
+function WorkPreviewCardGrid<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  columns,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string; glyph: ReactNode }[];
+  onChange: (value: T) => void;
+  columns?: number;
+}) {
+  const cols = columns ?? Math.min(options.length, 4);
+  return (
+    <div>
+      <p className="pf-work-block-label pf-work-option-label">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="grid gap-2"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
+        {options.map((option) => (
+          <WorkPickerCard
+            key={option.value}
+            active={option.value === value}
+            label={option.label}
+            onClick={() => onChange(option.value)}
+            compact
+          >
+            <svg viewBox="0 0 64 34" className="pf-work-mini h-full w-full" aria-hidden>
+              <rect className="pf-work-mini-stage" x="0.75" y="0.75" width="62.5" height="32.5" rx="6" />
+              {option.glyph}
+            </svg>
+          </WorkPickerCard>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Wraps the per-layout settings body, remounted (via `motionKey`) so switching the
+ *  chosen Portfolio layout cross-fades/slides the settings body in. */
+function WorkLayoutSettingsBand({
+  children,
+  motionKey,
+  title = 'Design settings',
+}: {
+  children: ReactNode;
+  motionKey: string;
+  title?: string;
+}) {
+  if (!children) return null;
+  return (
+    <section className="pf-work-layout-settings" aria-labelledby="work-layout-settings-title">
+      <h3 id="work-layout-settings-title" className="pf-work-layout-settings-title">
+        {title}
+      </h3>
+      <div key={motionKey} className="pf-work-layout-settings-body space-y-6">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+/** Minimalist text-alignment glyphs, shared by every alignment-type WorkOptionGrid via `icons`. */
+function WorkAlignLeftIcon() {
+  return (
+    <svg viewBox="0 0 16 12" width="14" height="11" fill="none" aria-hidden>
+      <rect x="0" y="0" width="16" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="0" y="5.2" width="10" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="0" y="10.4" width="13" height="1.6" rx="0.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+function WorkAlignCenterIcon() {
+  return (
+    <svg viewBox="0 0 16 12" width="14" height="11" fill="none" aria-hidden>
+      <rect x="0" y="0" width="16" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="3" y="5.2" width="10" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="1.5" y="10.4" width="13" height="1.6" rx="0.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+function WorkAlignRightIcon() {
+  return (
+    <svg viewBox="0 0 16 12" width="14" height="11" fill="none" aria-hidden>
+      <rect x="0" y="0" width="16" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="6" y="5.2" width="10" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="3" y="10.4" width="13" height="1.6" rx="0.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+const WORK_ALIGNMENT_ICONS: Partial<Record<string, ReactNode>> = {
+  left: <WorkAlignLeftIcon />,
+  center: <WorkAlignCenterIcon />,
+  right: <WorkAlignRightIcon />,
+};
+
+/** N evenly spaced bars — glyph for "columns per row" preview cards. */
+function workColumnsGlyph(n: 1 | 2 | 3 | 4): ReactNode {
+  const gap = 4;
+  const totalWidth = 48;
+  const startX = 8;
+  const barWidth = (totalWidth - gap * (n - 1)) / n;
+  return (
+    <>
+      {Array.from({ length: n }, (_, i) => (
+        <rect
+          key={i}
+          className="pf-work-mini-ink"
+          x={startX + i * (barWidth + gap)}
+          y={8}
+          width={barWidth}
+          height={18}
+          rx={2}
+        />
+      ))}
+    </>
+  );
+}
+
+/** Media-on-left / media-on-right glyphs for the various image-side pickers. */
+function workSideLeftGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-work-mini-ink" x="8" y="9" width="22" height="16" rx="2" />
+      <rect className="pf-work-mini-mute" x="36" y="10" width="20" height="3" rx="1.5" />
+      <rect className="pf-work-mini-mute" x="36" y="16" width="20" height="3" rx="1.5" />
+      <rect className="pf-work-mini-mute" x="36" y="22" width="14" height="3" rx="1.5" />
+    </>
+  );
+}
+
+function workSideRightGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-work-mini-mute" x="8" y="10" width="20" height="3" rx="1.5" />
+      <rect className="pf-work-mini-mute" x="8" y="16" width="20" height="3" rx="1.5" />
+      <rect className="pf-work-mini-mute" x="8" y="22" width="14" height="3" rx="1.5" />
+      <rect className="pf-work-mini-ink" x="34" y="9" width="22" height="16" rx="2" />
+    </>
+  );
+}
+
+/** A small "Go" label rendered in the button-preview glyphs below. */
+function workConsultGoLabel(fill?: string): ReactNode {
+  return (
+    <text
+      x="32"
+      y="20.5"
+      textAnchor="middle"
+      fontSize="9"
+      fontWeight={700}
+      className={fill ? undefined : 'pf-work-mini-ink'}
+      fill={fill}
+    >
+      Go
+    </text>
+  );
+}
+
+/** Mini button-style previews for the "Consult design" picker — one real rendering
+ *  of each button treatment instead of a plain word. */
+function workConsultDesignGlyph(design: PortfolioWorkProjectsSpecConsultDesign): ReactNode {
+  switch (design) {
+    case 'bracket':
+      return (
+        <>
+          <path d="M21 12 L17 12 L17 22 L21 22" className="pf-work-mini-mute" fill="none" stroke="currentColor" strokeWidth="1.2" />
+          <path d="M43 12 L47 12 L47 22 L43 22" className="pf-work-mini-mute" fill="none" stroke="currentColor" strokeWidth="1.2" />
+          {workConsultGoLabel()}
+        </>
+      );
+    case 'link':
+      return (
+        <>
+          {workConsultGoLabel()}
+          <path
+            d="M44 15 L49 10 M49 10 L45 10 M49 10 L49 14"
+            className="pf-work-mini-accent"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      );
+    case 'underline':
+      return (
+        <>
+          {workConsultGoLabel()}
+          <rect className="pf-work-mini-accent" x="24" y="23.5" width="16" height="1.4" rx="0.7" />
+        </>
+      );
+    case 'footer':
+      return (
+        <>
+          <rect className="pf-work-mini-mute" x="10" y="8" width="44" height="1" />
+          {workConsultGoLabel()}
+        </>
+      );
+    case 'pill':
+      return (
+        <>
+          <rect className="pf-work-mini-accent" x="18" y="11" width="28" height="12" rx="6" />
+          {workConsultGoLabel('var(--pf-palette-fond, #ffffff)')}
+        </>
+      );
+    case 'outline':
+      return (
+        <>
+          <rect className="pf-work-mini-ring" x="18" y="11" width="28" height="12" rx="3" strokeWidth="1.2" />
+          {workConsultGoLabel()}
+        </>
+      );
+    case 'ghost':
+      return (
+        <>
+          <rect className="pf-work-mini-mute" x="18" y="11" width="28" height="12" rx="3" opacity={0.6} />
+          {workConsultGoLabel()}
+        </>
+      );
+    case 'solid':
+      return (
+        <>
+          <rect className="pf-work-mini-ink" x="18" y="11" width="28" height="12" rx="2.5" />
+          {workConsultGoLabel('var(--pf-palette-fond, #ffffff)')}
+        </>
+      );
+    default: {
+      const _exhaustive: never = design;
+      return _exhaustive;
+    }
+  }
+}
+
+/** Mini wireframes for the 14 "Section design" picker cards. */
+function WorkDesignWireframe({ design }: { design: PortfolioWorkSectionDesign }) {
+  switch (design) {
+    case 'projects-board':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-ink" x="10" y="10" width="44" height="26" rx="2" />
+          <rect className="pf-work-mini-ink" x="66" y="10" width="44" height="26" rx="2" />
+          <rect className="pf-work-mini-mute" x="10" y="42" width="40" height="3" rx="1.5" />
+          <rect className="pf-work-mini-mute" x="66" y="42" width="40" height="3" rx="1.5" />
+          <rect className="pf-work-mini-mute" x="10" y="49" width="28" height="2.4" rx="1.2" />
+          <rect className="pf-work-mini-mute" x="66" y="49" width="28" height="2.4" rx="1.2" />
+        </WorkMiniSlide>
+      );
+    case 'projects-accordion':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-ink" x="10" y="10" width="34" height="8" rx="2" />
+          <rect className="pf-work-mini-mute" x="10" y="22" width="34" height="8" rx="2" />
+          <rect className="pf-work-mini-mute" x="10" y="34" width="34" height="8" rx="2" />
+          <rect className="pf-work-mini-mute" x="10" y="46" width="34" height="8" rx="2" />
+          <rect className="pf-work-mini-ring" x="52" y="10" width="58" height="44" rx="3" />
+        </WorkMiniSlide>
+      );
+    case 'projects-frames':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-ink" x="10" y="10" width="34" height="34" rx="2" />
+          <rect className="pf-work-mini-mute" x="52" y="14" width="50" height="4" rx="2" />
+          <rect className="pf-work-mini-mute" x="52" y="24" width="40" height="3" rx="1.5" />
+          <rect className="pf-work-mini-mute" x="52" y="31" width="44" height="3" rx="1.5" />
+          <rect className="pf-work-mini-accent" x="52" y="40" width="20" height="3" rx="1.5" />
+        </WorkMiniSlide>
+      );
+    case 'projects-index':
+      return (
+        <WorkMiniSlide>
+          {[0, 1, 2].map((i) => (
+            <g key={i}>
+              <WorkMiniType x={10} y={16 + i * 15} size={7}>{`0${i + 1}`}</WorkMiniType>
+              <rect className="pf-work-mini-ink" x="26" y={12 + i * 15} width="34" height="4" rx="2" />
+              <rect className="pf-work-mini-mute" x="66" y={12 + i * 15} width="40" height="4" rx="2" />
+              <rect className="pf-work-mini-mute" x="10" y={22 + i * 15} width="96" height="1" />
+            </g>
+          ))}
+        </WorkMiniSlide>
+      );
+    case 'projects-grid':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-ink" x="9" y="9" width="30" height="20" rx="2" />
+          <rect className="pf-work-mini-ink" x="45" y="9" width="30" height="20" rx="2" />
+          <rect className="pf-work-mini-ink" x="81" y="9" width="30" height="20" rx="2" />
+          <rect className="pf-work-mini-mute" x="9" y="33" width="26" height="2.4" rx="1.2" />
+          <rect className="pf-work-mini-mute" x="45" y="33" width="26" height="2.4" rx="1.2" />
+          <rect className="pf-work-mini-mute" x="81" y="33" width="26" height="2.4" rx="1.2" />
+        </WorkMiniSlide>
+      );
+    case 'projects-split':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-ink" x="10" y="8" width="48" height="48" rx="2" />
+          <rect className="pf-work-mini-mute" x="66" y="10" width="42" height="4" rx="2" />
+          <rect className="pf-work-mini-mute" x="66" y="19" width="34" height="3" rx="1.5" />
+          <rect className="pf-work-mini-mute" x="66" y="26" width="38" height="3" rx="1.5" />
+        </WorkMiniSlide>
+      );
+    case 'projects-carousel':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-mute" x="4" y="14" width="26" height="36" rx="2" />
+          <rect className="pf-work-mini-ink" x="35" y="10" width="34" height="44" rx="2" />
+          <rect className="pf-work-mini-mute" x="74" y="14" width="26" height="36" rx="2" />
+          <rect className="pf-work-mini-mute" x="105" y="18" width="14" height="28" rx="2" opacity={0.5} />
+        </WorkMiniSlide>
+      );
+    case 'projects-spotlight':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-ring" x="9" y="9" width="42" height="46" rx="3" />
+          <rect className="pf-work-mini-mute" x="17" y="18" width="26" height="3" rx="1.5" />
+          <rect className="pf-work-mini-mute" x="17" y="26" width="22" height="2.4" rx="1.2" />
+          <rect className="pf-work-mini-ink" x="60" y="10" width="46" height="7" rx="2" />
+          <rect className="pf-work-mini-mute" x="60" y="22" width="46" height="7" rx="2" />
+          <rect className="pf-work-mini-mute" x="60" y="34" width="46" height="7" rx="2" />
+        </WorkMiniSlide>
+      );
+    case 'projects-showcase':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-ink" x="14" y="8" width="92" height="30" rx="2" />
+          <rect className="pf-work-mini-mute" x="14" y="42" width="26" height="18" rx="2" />
+          <rect className="pf-work-mini-mute" x="43" y="42" width="26" height="18" rx="2" />
+          <rect className="pf-work-mini-mute" x="72" y="42" width="26" height="18" rx="2" />
+          <path className="pf-work-mini-mute" d="M6 23l4-4-4-4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+          <path className="pf-work-mini-mute" d="M114 15l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+        </WorkMiniSlide>
+      );
+    case 'projects-editorial':
+      return (
+        <WorkMiniSlide>
+          <WorkMiniType x={10} y={44} size={30}>01</WorkMiniType>
+          <rect className="pf-work-mini-mute" x="10" y="50" width="28" height="3" rx="1.5" />
+          <rect className="pf-work-mini-ink" x="62" y="12" width="44" height="4" rx="2" />
+          <rect className="pf-work-mini-mute" x="62" y="22" width="44" height="3" rx="1.5" />
+          <rect className="pf-work-mini-mute" x="62" y="29" width="36" height="3" rx="1.5" />
+          <rect className="pf-work-mini-accent" x="62" y="40" width="20" height="3" rx="1.5" />
+        </WorkMiniSlide>
+      );
+    case 'projects-ledger':
+      return (
+        <WorkMiniSlide>
+          {[0, 1, 2].map((i) => (
+            <g key={i}>
+              <rect className="pf-work-mini-ink" x="10" y={11 + i * 15} width="46" height="4" rx="2" />
+              <rect className="pf-work-mini-mute" x="66" y={11 + i * 15} width="30" height="4" rx="2" />
+              <rect className="pf-work-mini-mute" x="10" y={21 + i * 15} width="96" height="1" />
+            </g>
+          ))}
+        </WorkMiniSlide>
+      );
+    case 'projects-folio':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-ring" x="9" y="9" width="32" height="46" rx="3" />
+          <rect className="pf-work-mini-mute" x="15" y="17" width="20" height="3" rx="1.5" />
+          <rect className="pf-work-mini-mute" x="15" y="24" width="14" height="2.4" rx="1.2" />
+          {[0, 1, 2].map((i) => (
+            <rect key={i} className="pf-work-mini-mute" x="52" y={12 + i * 12} width="54" height="4" rx="2" />
+          ))}
+        </WorkMiniSlide>
+      );
+    case 'projects-spec':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-ink" x="10" y="9" width="50" height="6" rx="2" />
+          {[0, 1, 2].map((i) => (
+            <g key={i}>
+              <rect className="pf-work-mini-mute" x="10" y={24 + i * 10} width="26" height="3" rx="1.5" />
+              <rect className="pf-work-mini-accent" x="42" y={24 + i * 10} width="30" height="3" rx="1.5" />
+            </g>
+          ))}
+        </WorkMiniSlide>
+      );
+    case 'projects-case':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-ink" x="6" y="8" width="50" height="48" rx="2" />
+          <rect className="pf-work-mini-mute" x="64" y="10" width="46" height="5" rx="2" />
+          {[0, 1, 2].map((i) => (
+            <g key={i}>
+              <rect className="pf-work-mini-mute" x="64" y={24 + i * 10} width="20" height="3" rx="1.5" />
+              <rect className="pf-work-mini-accent" x="88" y={24 + i * 10} width="22" height="3" rx="1.5" />
+            </g>
+          ))}
+        </WorkMiniSlide>
+      );
+    default: {
+      const _exhaustive: never = design;
+      return _exhaustive;
+    }
+  }
+}
+
+function WorkMiniType({
+  x,
+  y,
+  children,
+  size = 8,
+}: {
+  x: number;
+  y: number;
+  children: string;
+  size?: number;
+}) {
+  return (
+    <text className="pf-work-mini-type" x={x} y={y} fontSize={size} fontWeight={800} opacity={0.45}>
+      {children}
+    </text>
+  );
+}
+
+/** The main "Section design" picker — visual wireframe cards instead of a plain option grid. */
+function WorkDesignChoiceGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioWorkSectionDesign;
+  onChange: (value: PortfolioWorkSectionDesign) => void;
+}) {
+  return (
+    <div>
+      <p className="pf-work-block-label">Section design</p>
+      <div className="grid grid-cols-2 gap-2">
+        {PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <WorkPickerCard
+              key={option.value}
+              active={active}
+              label={option.label}
+              onClick={() => onChange(option.value)}
+            >
+              <WorkDesignWireframe design={option.value} />
+            </WorkPickerCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Mini wireframes for the 5 "Header design" picker cards. */
+function WorkHeaderWireframe({ design }: { design: PortfolioWorkHeaderDesign }) {
+  switch (design) {
+    case 'minimal':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-ink" x="10" y="24" width="52" height="8" rx="2" />
+          <rect className="pf-work-mini-mute" x="10" y="38" width="70" height="4" rx="2" />
+        </WorkMiniSlide>
+      );
+    case 'editorial':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-accent" x="10" y="16" width="18" height="3" rx="1.5" />
+          <rect className="pf-work-mini-ink" x="10" y="26" width="64" height="9" rx="2" />
+          <rect className="pf-work-mini-mute" x="10" y="42" width="46" height="4" rx="2" />
+        </WorkMiniSlide>
+      );
+    case 'marquee':
+      return (
+        <WorkMiniSlide>
+          <text
+            x="60"
+            y="34"
+            fontSize={22}
+            fontWeight={800}
+            textAnchor="middle"
+            opacity={0.14}
+            className="pf-work-mini-ink"
+          >
+            WORK
+          </text>
+          <rect className="pf-work-mini-ink" x="18" y="30" width="84" height="10" rx="2" />
+        </WorkMiniSlide>
+      );
+    case 'index':
+      return (
+        <WorkMiniSlide>
+          <WorkMiniType x={10} y={46} size={28}>
+            01
+          </WorkMiniType>
+          <rect className="pf-work-mini-ink" x="46" y="26" width="46" height="8" rx="2" />
+          <rect className="pf-work-mini-mute" x="46" y="40" width="32" height="4" rx="2" />
+        </WorkMiniSlide>
+      );
+    case 'accent-count':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-accent" x="10" y="12" width="26" height="8" rx="4" />
+          <rect className="pf-work-mini-mute" x="10" y="26" width="40" height="3" rx="1.5" />
+          <rect className="pf-work-mini-ink" x="10" y="33" width="60" height="7" rx="2" />
+        </WorkMiniSlide>
+      );
+    case 'serif-lead':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-mute" x="10" y="14" width="20" height="3" rx="1.5" />
+          <rect className="pf-work-mini-ink" x="10" y="24" width="76" height="11" rx="2" />
+        </WorkMiniSlide>
+      );
+    case 'billboard':
+      return (
+        <WorkMiniSlide>
+          <text
+            x="60"
+            y="30"
+            fontSize={26}
+            fontWeight={900}
+            textAnchor="middle"
+            opacity={0.1}
+            className="pf-work-mini-ink"
+          >
+            WORK
+          </text>
+          <rect className="pf-work-mini-ink" x="18" y="30" width="60" height="8" rx="2" />
+          <rect className="pf-work-mini-mute" x="18" y="42" width="40" height="3" rx="1.5" />
+        </WorkMiniSlide>
+      );
+    case 'masthead':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-mute" x="10" y="12" width="100" height="1" />
+          <rect className="pf-work-mini-ink" x="10" y="20" width="100" height="12" rx="2" />
+          <rect className="pf-work-mini-mute" x="10" y="38" width="100" height="1" />
+        </WorkMiniSlide>
+      );
+    default: {
+      const _exhaustive: never = design;
+      return _exhaustive;
+    }
+  }
+}
+
+/** The "Header design" picker — one shared, GSAP-animated header applied above every layout. */
+function WorkHeaderChoiceGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioWorkHeaderDesign;
+  onChange: (value: PortfolioWorkHeaderDesign) => void;
+}) {
+  return (
+    <div>
+      <p className="pf-work-block-label">Header design</p>
+      <div className="grid grid-cols-2 gap-2">
+        {PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <WorkPickerCard
+              key={option.value}
+              active={active}
+              label={option.label}
+              onClick={() => onChange(active ? 'minimal' : option.value)}
+            >
+              <WorkHeaderWireframe design={option.value} />
+            </WorkPickerCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const WORK_HEADER_MARGIN_BOTTOM_OPTIONS = [
+  { value: 'sm' as const, label: 'Small' },
+  { value: 'md' as const, label: 'Medium' },
+  { value: 'lg' as const, label: 'Large' },
+  { value: 'xl' as const, label: 'XL' },
+];
+
+const WORK_HEADER_TITLE_SIZE_OPTIONS = [
+  { value: 'sm' as const, label: 'Small' },
+  { value: 'md' as const, label: 'Medium' },
+  { value: 'lg' as const, label: 'Large' },
+  { value: 'xl' as const, label: 'XL' },
+];
+
+const WORK_HEADER_TITLE_WEIGHT_OPTIONS = [
+  { value: 'light' as const, label: 'Light', description: 'Lighter than this design’s default.' },
+  { value: 'regular' as const, label: 'Regular', description: 'This design’s default weight.' },
+  { value: 'semibold' as const, label: 'Semibold', description: 'A step bolder.' },
+  { value: 'bold' as const, label: 'Bold', description: 'The boldest step.' },
+];
+
+/** Shared across every header design — bottom spacing, title size, and title weight.
+ *  Appended to each design's own advanced-settings branch in the Header tab. */
+function WorkHeaderSharedAdvancedControls({
   work,
-  elementId,
   onChange,
 }: {
   work: PortfolioWorkSectionSettings;
-  elementId: PortfolioWorkOverlayElementId;
   onChange: (patch: Partial<PortfolioWorkSectionSettings>) => void;
 }) {
-  if (work.galleryLayout !== 'overlay') {
-    return (
-      <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-        Le placement libre 3×3 est disponible uniquement avec la disposition{' '}
-        <span className="font-semibold text-neutral-700">Overlay immersif</span> (onglet Cards).
-      </p>
-    );
-  }
-
-  const band = work.overlayElementBands?.[elementId] ?? DEFAULT_WORK_OVERLAY_ELEMENT_BANDS[elementId];
-  const bandOptions: {
-    value: PortfolioWorkOverlayElementBand;
-    label: string;
-    description: string;
-  }[] = [
-    {
-      value: 'on-media',
-      label: 'Sur le média',
-      description: 'Affiché dans l’image, avec le style overlay immersif.',
-    },
-    {
-      value: 'above',
-      label: 'Au-dessus',
-      description: 'Affiché dans le flux normal avant le média.',
-    },
-    {
-      value: 'below',
-      label: 'En dessous',
-      description: 'Affiché dans le flux normal après le média.',
-    },
-  ];
-
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-      <div>
-        <p className="text-sm font-semibold text-neutral-950">Zone de placement</p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Choisissez si cet élément apparaît sur le média ou à l’extérieur de celui-ci.
-        </p>
-      </div>
-
-      <WorkOptionGrid
-        label="Bande"
-        options={bandOptions}
-        value={band}
-        onChange={(nextBand) =>
-          onChange({
-            overlayElementBands: {
-              ...(work.overlayElementBands ?? DEFAULT_WORK_OVERLAY_ELEMENT_BANDS),
-              [elementId]: nextBand,
-            },
-          })
-        }
-        columns={3}
+    <>
+      <WorkSlider
+        label="Bottom spacing"
+        options={WORK_HEADER_MARGIN_BOTTOM_OPTIONS}
+        value={work.headerMarginBottom ?? 'md'}
+        onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
       />
+      <WorkSlider
+        label="Title size"
+        options={WORK_HEADER_TITLE_SIZE_OPTIONS}
+        value={work.headerTitleSize ?? 'md'}
+        onChange={(headerTitleSize) => onChange({ headerTitleSize })}
+      />
+      <WorkOptionGrid
+        label="Title weight"
+        options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
+        value={work.headerTitleWeight ?? 'regular'}
+        onChange={(headerTitleWeight) => onChange({ headerTitleWeight })}
+        columns={4}
+      />
+    </>
+  );
+}
 
-      {band === 'on-media' ? (
-        work.overlayLayoutMode !== 'free' ? (
+function WorkLayoutDisplayOptions({
+  work,
+  onChange,
+}: {
+  work: PortfolioWorkSectionSettings;
+  onChange: (patch: Partial<PortfolioWorkSectionSettings>) => void;
+}) {
+  const design = work.sectionDesign ?? 'projects-board';
+  const layoutLabel =
+    PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.find((option) => option.value === design)?.label ?? '';
+  return (
+    <div>
+      <WorkSectionLabel>{`Display options — ${layoutLabel}`}</WorkSectionLabel>
+      <div className="mt-4" key={design}>
+      {design === 'projects-board' ? (
+        <>
           <WorkToggleRow
-            label="Activer le placement libre"
-            description="Passe la carte overlay en disposition libre (desktop). Les autres éléments restent configurables dans leur sous-section."
-            checked={false}
-            onChange={(enabled) => {
-              if (enabled) onChange({ overlayLayoutMode: 'free' });
-            }}
-          />
-        ) : (
-          <WorkOverlayCellPicker
-            label="Cellule 3×3"
-            value={work.overlayElementPlacements[elementId]}
-            onChange={(cell) =>
+            label="Thumbnails"
+            info="Upload in Information → Portfolio"
+            checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showThumbnail}
+            onChange={(showThumbnail) =>
               onChange({
-                overlayElementPlacements: {
-                  ...work.overlayElementPlacements,
-                  [elementId]: cell,
+                projectsBoard: {
+                  ...(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS),
+                  showThumbnail,
                 },
               })
             }
           />
-        )
-      ) : (
-        <p className="text-xs leading-relaxed text-neutral-500">
-          L’alignement horizontal conserve la colonne de la cellule 3×3 enregistrée pour cet élément.
-        </p>
-      )}
-    </div>
-  );
-}
 
-function WorkInlineTypography({
-  work,
-  target,
-  onChange,
-  title = 'Typography',
-  extra,
-}: {
-  work: PortfolioWorkSectionSettings;
-  target: PortfolioWorkStyleTarget;
-  onChange: (patch: Partial<PortfolioWorkSectionSettings>) => void;
-  title?: string;
-  extra?: ReactNode;
-}) {
-  const elementStyles = normalizeWorkElementStyles(work.elementStyles);
-  return (
-    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-      <PortfolioElementStyleFields
-        targets={PORTFOLIO_WORK_STYLE_TARGET_OPTIONS}
-        activeTarget={target}
-        onTargetChange={() => {}}
-        hideTargetPicker
-        title={title}
-        style={elementStyles[target]}
-        onStyleChange={(patch) =>
-          onChange({ elementStyles: patchWorkElementStyle(elementStyles, target, patch) })
-        }
-        renderColorField={({ label, value }) => (
-          <WorkColorField
-            work={work}
-            onChange={onChange}
-            slot={WORK_STYLE_TARGET_COLOR_SLOT[target]}
-            label={label}
-            value={value}
+          <WorkToggleRow
+            label="Role"
+            checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showRole}
+            onChange={(showRole) =>
+              onChange({
+                projectsBoard: {
+                  ...(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS),
+                  showRole,
+                },
+              })
+            }
           />
-        )}
-        extra={extra}
-      />
-    </div>
-  );
-}
 
-function WorkTitleSubtitlePersonalization({
-  work,
-  onChange,
-}: {
-  work: PortfolioWorkSectionSettings;
-  onChange: (patch: Partial<PortfolioWorkSectionSettings>) => void;
-}) {
-  return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/70 bg-white/80 p-3.5 sm:p-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Titre & sous-titre
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Personnalise le titre et le sous-titre de la section pour ce design.
-        </p>
+          <WorkToggleRow
+            label="Category"
+            checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showCategory}
+            onChange={(showCategory) =>
+              onChange({
+                projectsBoard: {
+                  ...(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS),
+                  showCategory,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Consult button on thumbnail"
+            info="Corner of the image, links to the project"
+            checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showConsultOnHover}
+            onChange={(showConsultOnHover) =>
+              onChange({
+                projectsBoard: {
+                  ...(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS),
+                  showConsultOnHover,
+                },
+              })
+            }
+          />
+
+          {(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showConsultOnHover ? (
+            <div className="border-t border-neutral-200/80 pt-6">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Consult button label
+              </p>
+              <input
+                type="text"
+                value={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).consultLabel}
+                onChange={(event) =>
+                  onChange({
+                    projectsBoard: {
+                      ...(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS),
+                      consultLabel: event.target.value,
+                    },
+                  })
+                }
+                placeholder="Consult"
+                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+              />
+            </div>
+          ) : null}
+        </>
+      )
+      : design === 'projects-accordion' ? (
+        <>
+          <WorkToggleRow
+            label="Tools under preview"
+            checked={(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showTools}
+            onChange={(showTools) =>
+              onChange({
+                projectsAccordion: {
+                  ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
+                  showTools,
+                },
+              })
+            }
+          />
+
+          {(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showTools ? (
+            <>
+              <WorkToggleRow
+                label="Tools label"
+                info="Heading above the chips — off by default"
+                checked={
+                  (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS)
+                    .showToolsLabel === true
+                }
+                onChange={(showToolsLabel) =>
+                  onChange({
+                    projectsAccordion: {
+                      ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
+                      showToolsLabel,
+                    },
+                  })
+                }
+              />
+
+              {(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS)
+                .showToolsLabel === true ? (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                    Tools label
+                  </p>
+                  <input
+                    type="text"
+                    value={
+                      (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).toolsLabel
+                    }
+                    onChange={(event) =>
+                      onChange({
+                        projectsAccordion: {
+                          ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
+                          toolsLabel: event.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Tools I use"
+                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                  />
+                </div>
+              ) : null}
+            </>
+          ) : null}
+          <WorkToggleRow
+            label="Description in panel"
+            checked={
+              (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showDescription
+            }
+            onChange={(showDescription) =>
+              onChange({
+                projectsAccordion: {
+                  ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
+                  showDescription,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Role"
+            info="Left side, under the description"
+            checked={
+              (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS)
+                .showRoleInPanel !== false
+            }
+            onChange={(showRoleInPanel) =>
+              onChange({
+                projectsAccordion: {
+                  ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
+                  showRoleInPanel,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Category"
+            info="Right side, under the description"
+            checked={
+              (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS)
+                .showCategoryInPanel !== false
+            }
+            onChange={(showCategoryInPanel) =>
+              onChange({
+                projectsAccordion: {
+                  ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
+                  showCategoryInPanel,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Consult link"
+            info="Text link under the preview, not a hover overlay"
+            checked={
+              (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showConsult !==
+              false
+            }
+            onChange={(showConsult) =>
+              onChange({
+                projectsAccordion: {
+                  ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
+                  showConsult,
+                },
+              })
+            }
+          />
+
+          {(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showConsult !==
+          false ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Consult button label
+              </p>
+              <input
+                type="text"
+                value={
+                  (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).consultLabel
+                }
+                onChange={(event) =>
+                  onChange({
+                    projectsAccordion: {
+                      ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
+                      consultLabel: event.target.value,
+                    },
+                  })
+                }
+                placeholder="Consult"
+                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+              />
+            </div>
+          ) : null}
+        </>
+      )
+      : design === 'projects-frames' ? (
+        <>
+          <WorkToggleRow
+            label="Image padding"
+            info="Off = flush to edge, on = small gap"
+            checked={
+              (work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).imagePadding !== false
+            }
+            onChange={(imagePadding) =>
+              onChange({
+                projectsFrames: {
+                  ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
+                  imagePadding,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Alternate image sides"
+            info="Even cards flip left ↔ right"
+            checked={
+              (work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).alternateSides === true
+            }
+            onChange={(alternateSides) =>
+              onChange({
+                projectsFrames: {
+                  ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
+                  alternateSides,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Role"
+            info="Above the title"
+            checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showRole}
+            onChange={(showRole) =>
+              onChange({
+                projectsFrames: {
+                  ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
+                  showRole,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Category"
+            info="Same row as role, right-aligned"
+            checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showCategory}
+            onChange={(showCategory) =>
+              onChange({
+                projectsFrames: {
+                  ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
+                  showCategory,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Description"
+            checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showDescription}
+            onChange={(showDescription) =>
+              onChange({
+                projectsFrames: {
+                  ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
+                  showDescription,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Stack"
+            info="Plain text with separators, not pill tags"
+            checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showStack}
+            onChange={(showStack) =>
+              onChange({
+                projectsFrames: {
+                  ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
+                  showStack,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Consult link"
+            info="Text link under the stack"
+            checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showConsult}
+            onChange={(showConsult) =>
+              onChange({
+                projectsFrames: {
+                  ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
+                  showConsult,
+                },
+              })
+            }
+          />
+
+          {(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showConsult ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Consult button label
+              </p>
+              <input
+                type="text"
+                value={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).consultLabel}
+                onChange={(event) =>
+                  onChange({
+                    projectsFrames: {
+                      ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
+                      consultLabel: event.target.value,
+                    },
+                  })
+                }
+                placeholder="Consult"
+                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+              />
+            </div>
+          ) : null}
+        </>
+      )
+      : design === 'projects-index' ? (
+        <>
+          <WorkToggleRow
+            label="Index marker"
+            info="Number or bullet, left column"
+            checked={(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).showNumber !== false}
+            onChange={(showNumber) =>
+              onChange({
+                projectsIndex: {
+                  ...(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS),
+                  showNumber,
+                },
+              })
+            }
+          />
+
+          {(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).showNumber !== false ? (
+            <WorkOptionGrid
+              label="Index marker style"
+              options={PORTFOLIO_WORK_INDEX_MARKER_OPTIONS}
+              value={
+                (work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).indexMarker ?? 'number'
+              }
+              onChange={(indexMarker) =>
+                onChange({
+                  projectsIndex: {
+                    ...(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS),
+                    indexMarker,
+                  },
+                })
+              }
+              columns={2}
+            />
+          ) : null}
+
+          <WorkToggleRow
+            label="Stack"
+            info="Chips directly under the title"
+            checked={(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).showStack !== false}
+            onChange={(showStack) =>
+              onChange({
+                projectsIndex: {
+                  ...(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS),
+                  showStack,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Description"
+            info="Right column"
+            checked={
+              (work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).showDescription !== false
+            }
+            onChange={(showDescription) =>
+              onChange({
+                projectsIndex: {
+                  ...(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS),
+                  showDescription,
+                },
+              })
+            }
+          />
+        </>
+      )
+      : design === 'projects-grid' ? (
+        <>
+          <WorkToggleRow
+            label="Carousel navigation"
+            info="Arrow-button slide when a row overflows"
+            checked={
+              (work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS).carouselEnabled === true
+            }
+            onChange={(carouselEnabled) =>
+              onChange({
+                projectsGrid: {
+                  ...(work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS),
+                  carouselEnabled,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Description"
+            checked={
+              (work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS).showDescription !== false
+            }
+            onChange={(showDescription) =>
+              onChange({
+                projectsGrid: {
+                  ...(work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS),
+                  showDescription,
+                },
+              })
+            }
+          />
+        </>
+      )
+      : design === 'projects-split' ? (
+        <>
+          {(work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).imageSide !== 'center' ? (
+            <WorkToggleRow
+              label="Alternate image sides"
+              info="Even rows flip image ↔ title"
+              checked={
+                (work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).alternateSides === true
+              }
+              onChange={(alternateSides) =>
+                onChange({
+                  projectsSplit: {
+                    ...(work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS),
+                    alternateSides,
+                  },
+                })
+              }
+            />
+          ) : null}
+
+          <WorkToggleRow
+            label="Description"
+            checked={
+              (work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).showDescription === true
+            }
+            onChange={(showDescription) =>
+              onChange({
+                projectsSplit: {
+                  ...(work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS),
+                  showDescription,
+                },
+              })
+            }
+          />
+        </>
+      )
+      : design === 'projects-carousel' ? (
+        <>
+          <WorkToggleRow
+            label="Hover reveal"
+            info="Survol : zoom, assombrit, affiche titre + description"
+            checked={
+              (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS).hoverReveal !== false
+            }
+            onChange={(hoverReveal) =>
+              onChange({
+                projectsCarousel: {
+                  ...(work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS),
+                  hoverReveal,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Focus blur"
+            info="Floute les autres images au survol"
+            checked={
+              (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS)
+                .focusBlurSiblings !== false
+            }
+            onChange={(focusBlurSiblings) =>
+              onChange({
+                projectsCarousel: {
+                  ...(work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS),
+                  focusBlurSiblings,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Hover stack"
+            info="Survol : stack sous l'image, sans bordure"
+            checked={
+              (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS).hoverStack !== false
+            }
+            onChange={(hoverStack) =>
+              onChange({
+                projectsCarousel: {
+                  ...(work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS),
+                  hoverStack,
+                },
+              })
+            }
+          />
+        </>
+      )
+      : design === 'projects-spotlight' ? (
+        <>
+          <WorkToggleRow
+            label="Role"
+            info="Au-dessus du titre"
+            checked={
+              (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).showRole !== false
+            }
+            onChange={(showRole) =>
+              onChange({
+                projectsSpotlight: {
+                  ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
+                  showRole,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Description"
+            checked={
+              (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS)
+                .showDescription !== false
+            }
+            onChange={(showDescription) =>
+              onChange({
+                projectsSpotlight: {
+                  ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
+                  showDescription,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Consult"
+            checked={
+              (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).showConsult !==
+              false
+            }
+            onChange={(showConsult) =>
+              onChange({
+                projectsSpotlight: {
+                  ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
+                  showConsult,
+                },
+              })
+            }
+          />
+
+          {(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).showConsult !==
+          false ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Consult label
+              </p>
+              <input
+                type="text"
+                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                value={
+                  (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).consultLabel ||
+                  'Consult'
+                }
+                onChange={(event) =>
+                  onChange({
+                    projectsSpotlight: {
+                      ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
+                      consultLabel: event.target.value,
+                    },
+                  })
+                }
+              />
+            </div>
+          ) : null}
+
+          <WorkToggleRow
+            label="Stack"
+            checked={
+              (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).showStack !== false
+            }
+            onChange={(showStack) =>
+              onChange({
+                projectsSpotlight: {
+                  ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
+                  showStack,
+                },
+              })
+            }
+          />
+
+          {(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).showStack !==
+          false ? (
+            <WorkOptionGrid
+              label="Stack style"
+              options={PORTFOLIO_WORK_SPOTLIGHT_STACK_STYLE_OPTIONS}
+              value={
+                (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).stackStyle ??
+                'tags'
+              }
+              onChange={(stackStyle) =>
+                onChange({
+                  projectsSpotlight: {
+                    ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
+                    stackStyle,
+                  },
+                })
+              }
+              columns={3}
+            />
+          ) : null}
+
+          <WorkToggleRow
+            label="Frame fill"
+            info="Désactiver = layout à plat"
+            checked={
+              (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).showFrameFill !==
+              false
+            }
+            onChange={(showFrameFill) =>
+              onChange({
+                projectsSpotlight: {
+                  ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
+                  showFrameFill,
+                },
+              })
+            }
+          />
+        </>
+      )
+      : design === 'projects-showcase' ? (
+        <>
+          <WorkToggleRow
+            label="Role on media"
+            info="Compact label overlaid on the image"
+            checked={
+              (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).showRole !== false
+            }
+            onChange={(showRole) =>
+              onChange({
+                projectsShowcase: {
+                  ...(work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS),
+                  showRole,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Description"
+            checked={
+              (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).showDescription !==
+              false
+            }
+            onChange={(showDescription) =>
+              onChange({
+                projectsShowcase: {
+                  ...(work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS),
+                  showDescription,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Category"
+            info="Label + value, under the description"
+            checked={
+              (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).showCategory !==
+              false
+            }
+            onChange={(showCategory) =>
+              onChange({
+                projectsShowcase: {
+                  ...(work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS),
+                  showCategory,
+                },
+              })
+            }
+          />
+
+          {(work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).showCategory !==
+          false ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Category label
+              </p>
+              <input
+                type="text"
+                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                value={
+                  (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).categoryLabel ||
+                  'Category'
+                }
+                onChange={(event) =>
+                  onChange({
+                    projectsShowcase: {
+                      ...(work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS),
+                      categoryLabel: event.target.value,
+                    },
+                  })
+                }
+              />
+            </div>
+          ) : null}
+        </>
+      )
+      : design === 'projects-editorial' ? (
+        <>
+          <WorkToggleRow
+            label="Role"
+            info="Sous le numéro, avec un trait"
+            checked={
+              (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS).showRole !== false
+            }
+            onChange={(showRole) =>
+              onChange({
+                projectsEditorial: {
+                  ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
+                  showRole,
+                },
+              })
+            }
+          />
+
+          {(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS).rightPanel !==
+          'thumbnail' ? (
+            <>
+              <WorkToggleRow
+                label="Description"
+                info="Colonne de droite"
+                checked={
+                  (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
+                    .showDescription !== false
+                }
+                onChange={(showDescription) =>
+                  onChange({
+                    projectsEditorial: {
+                      ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
+                      showDescription,
+                    },
+                  })
+                }
+              />
+
+              <WorkToggleRow
+                label="Stack"
+                info="Outils du projet, à droite"
+                checked={
+                  (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS).showStack !==
+                  false
+                }
+                onChange={(showStack) =>
+                  onChange({
+                    projectsEditorial: {
+                      ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
+                      showStack,
+                    },
+                  })
+                }
+              />
+
+              <WorkToggleRow
+                label="Consult"
+                info="Pill + flèche, sous les infos"
+                checked={
+                  (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS).showConsult !==
+                  false
+                }
+                onChange={(showConsult) =>
+                  onChange({
+                    projectsEditorial: {
+                      ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
+                      showConsult,
+                    },
+                  })
+                }
+              />
+
+              {(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS).showConsult !==
+              false ? (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                    Consult label
+                  </p>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    Phrase du lien (ex. « Consult this project ») + flèche ↗.
+                  </p>
+                  <input
+                    type="text"
+                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                    value={
+                      (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
+                        .consultLabel || 'Consult this project'
+                    }
+                    placeholder="Consult this project"
+                    onChange={(event) =>
+                      onChange({
+                        projectsEditorial: {
+                          ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
+                          consultLabel: event.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <WorkToggleRow
+                label="Hover reveal"
+                info="Survol : assombrit et révèle les infos"
+                checked={
+                  (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
+                    .thumbnailHoverReveal !== false
+                }
+                onChange={(thumbnailHoverReveal) =>
+                  onChange({
+                    projectsEditorial: {
+                      ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
+                      thumbnailHoverReveal,
+                    },
+                  })
+                }
+              />
+
+              {(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
+                .thumbnailHoverReveal !== false ? (
+                <>
+                  <WorkToggleRow
+                    label="Description"
+                    checked={
+                      (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
+                        .showDescription !== false
+                    }
+                    onChange={(showDescription) =>
+                      onChange({
+                        projectsEditorial: {
+                          ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
+                          showDescription,
+                        },
+                      })
+                    }
+                  />
+
+                  <WorkToggleRow
+                    label="Stack"
+                    checked={
+                      (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
+                        .showStack !== false
+                    }
+                    onChange={(showStack) =>
+                      onChange({
+                        projectsEditorial: {
+                          ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
+                          showStack,
+                        },
+                      })
+                    }
+                  />
+
+                  <WorkToggleRow
+                    label="Consult"
+                    checked={
+                      (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
+                        .showConsult !== false
+                    }
+                    onChange={(showConsult) =>
+                      onChange({
+                        projectsEditorial: {
+                          ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
+                          showConsult,
+                        },
+                      })
+                    }
+                  />
+
+                  {(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
+                    .showConsult !== false ? (
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                        Consult label
+                      </p>
+                      <input
+                        type="text"
+                        className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                        value={
+                          (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
+                            .consultLabel || 'Consult this project'
+                        }
+                        placeholder="Consult this project"
+                        onChange={(event) =>
+                          onChange({
+                            projectsEditorial: {
+                              ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
+                              consultLabel: event.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
+                  Hover désactivé : la miniature s’affiche seule, sans overlay.
+                </p>
+              )}
+            </>
+          )}
+        </>
+      )
+      : design === 'projects-ledger' ? (
+        <>
+          <WorkToggleRow
+            label="Count"
+            info="Compteur à droite du titre"
+            checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showCount !== false}
+            onChange={(showCount) =>
+              onChange({
+                projectsLedger: {
+                  ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
+                  showCount,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Index"
+            info="01, 02… à gauche de chaque ligne"
+            checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showIndex !== false}
+            onChange={(showIndex) =>
+              onChange({
+                projectsLedger: {
+                  ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
+                  showIndex,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Role"
+            info="Rôle/catégorie, aligné à droite (desktop)"
+            checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showRole !== false}
+            onChange={(showRole) =>
+              onChange({
+                projectsLedger: {
+                  ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
+                  showRole,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Description"
+            info="Dans le panneau déplié"
+            checked={
+              (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showDescription !== false
+            }
+            onChange={(showDescription) =>
+              onChange({
+                projectsLedger: {
+                  ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
+                  showDescription,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Stack"
+            info="Mono uppercase, sous la description"
+            checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showStack !== false}
+            onChange={(showStack) =>
+              onChange({
+                projectsLedger: {
+                  ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
+                  showStack,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Consult"
+            info="Lien texte + flèche, sous les détails"
+            checked={
+              (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showConsult !== false
+            }
+            onChange={(showConsult) =>
+              onChange({
+                projectsLedger: {
+                  ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
+                  showConsult,
+                },
+              })
+            }
+          />
+
+          {(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showConsult !== false ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Consult label
+              </p>
+              <input
+                type="text"
+                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                value={
+                  (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).consultLabel ||
+                  'Consult this project'
+                }
+                placeholder="Consult this project"
+                onChange={(event) =>
+                  onChange({
+                    projectsLedger: {
+                      ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
+                      consultLabel: event.target.value,
+                    },
+                  })
+                }
+              />
+            </div>
+          ) : null}
+        </>
+      )
+      : design === 'projects-folio' ? (
+        <>
+          <WorkToggleRow
+            label="Role"
+            info="Micro-label au-dessus du trait d'accent"
+            checked={(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).showRole !== false}
+            onChange={(showRole) =>
+              onChange({
+                projectsFolio: {
+                  ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
+                  showRole,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Description"
+            checked={
+              (work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).showDescription !== false
+            }
+            onChange={(showDescription) =>
+              onChange({
+                projectsFolio: {
+                  ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
+                  showDescription,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Stack"
+            info="5 designs au choix, ci-dessous"
+            checked={(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).showStack !== false}
+            onChange={(showStack) =>
+              onChange({
+                projectsFolio: {
+                  ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
+                  showStack,
+                },
+              })
+            }
+          />
+
+          {(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).showStack !== false ? (
+            <>
+              <WorkOptionGrid
+                label="Stack design"
+                options={PORTFOLIO_WORK_FOLIO_STACK_DESIGN_OPTIONS}
+                value={
+                  (work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).stackDesign ??
+                  'tags-outline'
+                }
+                onChange={(stackDesign) =>
+                  onChange({
+                    projectsFolio: {
+                      ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
+                      stackDesign,
+                    },
+                  })
+                }
+                columns={2}
+              />
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Stack label
+                </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Titre du bloc (ex. « Core stack »).
+                </p>
+                <input
+                  type="text"
+                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                  value={
+                    (work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).stackLabel ||
+                    'Core stack'
+                  }
+                  placeholder="Core stack"
+                  onChange={(event) =>
+                    onChange({
+                      projectsFolio: {
+                        ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
+                        stackLabel: event.target.value,
+                      },
+                    })
+                  }
+                />
+              </div>
+            </>
+          ) : null}
+
+          <WorkToggleRow
+            label="Consult"
+            info="Lien texte + flèche, sous le dossier"
+            checked={(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).showConsult !== false}
+            onChange={(showConsult) =>
+              onChange({
+                projectsFolio: {
+                  ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
+                  showConsult,
+                },
+              })
+            }
+          />
+
+          {(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).showConsult !== false ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Consult label
+              </p>
+              <input
+                type="text"
+                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                value={
+                  (work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).consultLabel ||
+                  'Consult this project'
+                }
+                placeholder="Consult this project"
+                onChange={(event) =>
+                  onChange({
+                    projectsFolio: {
+                      ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
+                      consultLabel: event.target.value,
+                    },
+                  })
+                }
+              />
+            </div>
+          ) : null}
+        </>
+      )
+      : design === 'projects-spec' ? (
+        <>
+          <WorkToggleRow
+            label="Thumbnail"
+            info="Désactive auto « 2 par ligne »"
+            checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showThumbnail === true}
+            onChange={(showThumbnail) =>
+              onChange({
+                projectsSpec: {
+                  ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
+                  showThumbnail,
+                  ...(showThumbnail ? { columnsPerRow: 1 as const } : {}),
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Category"
+            info="À gauche, couleur CTA"
+            checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showCategory !== false}
+            onChange={(showCategory) =>
+              onChange({
+                projectsSpec: {
+                  ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
+                  showCategory,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Role"
+            info="À droite du micro-header"
+            checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showRole !== false}
+            onChange={(showRole) =>
+              onChange({
+                projectsSpec: {
+                  ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
+                  showRole,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Field labels"
+            info="Labels Summary / Stack / Link"
+            checked={
+              (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showFieldLabels !== false
+            }
+            onChange={(showFieldLabels) =>
+              onChange({
+                projectsSpec: {
+                  ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
+                  showFieldLabels,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Description"
+            info="Ligne Summary"
+            checked={
+              (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showDescription !== false
+            }
+            onChange={(showDescription) =>
+              onChange({
+                projectsSpec: {
+                  ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
+                  showDescription,
+                },
+              })
+            }
+          />
+
+          {(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showDescription !== false &&
+          (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showFieldLabels !== false ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Description label
+              </p>
+              <input
+                type="text"
+                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                value={
+                  (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).descriptionLabel ||
+                  'Summary'
+                }
+                placeholder="Summary"
+                onChange={(event) =>
+                  onChange({
+                    projectsSpec: {
+                      ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
+                      descriptionLabel: event.target.value,
+                    },
+                  })
+                }
+              />
+            </div>
+          ) : null}
+
+          <WorkToggleRow
+            label="Stack"
+            info="Tags, comme Projects board"
+            checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showStack !== false}
+            onChange={(showStack) =>
+              onChange({
+                projectsSpec: {
+                  ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
+                  showStack,
+                },
+              })
+            }
+          />
+
+          {(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showStack !== false &&
+          (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showFieldLabels !== false ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Stack label
+              </p>
+              <input
+                type="text"
+                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                value={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).stackLabel || 'Stack'}
+                placeholder="Stack"
+                onChange={(event) =>
+                  onChange({
+                    projectsSpec: {
+                      ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
+                      stackLabel: event.target.value,
+                    },
+                  })
+                }
+              />
+            </div>
+          ) : null}
+
+          <WorkToggleRow
+            label="Consult"
+            info="Plusieurs designs au choix, ci-dessous"
+            checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showConsult !== false}
+            onChange={(showConsult) =>
+              onChange({
+                projectsSpec: {
+                  ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
+                  showConsult,
+                },
+              })
+            }
+          />
+
+          {(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showConsult !== false ? (
+            <>
+              <WorkPreviewCardGrid
+                label="Consult design"
+                options={PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS.map((option) => ({
+                  ...option,
+                  glyph: workConsultDesignGlyph(option.value),
+                }))}
+                columns={4}
+                value={
+                  (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).consultDesign ??
+                  'bracket'
+                }
+                onChange={(consultDesign) =>
+                  onChange({
+                    projectsSpec: {
+                      ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
+                      consultDesign,
+                    },
+                  })
+                }
+              />
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Consult label
+                </p>
+                <input
+                  type="text"
+                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                  value={
+                    (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).consultLabel ||
+                    'Consult this project'
+                  }
+                  placeholder="Consult this project"
+                  onChange={(event) =>
+                    onChange({
+                      projectsSpec: {
+                        ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
+                        consultLabel: event.target.value,
+                      },
+                    })
+                  }
+                />
+              </div>
+            </>
+          ) : null}
+        </>
+      )
+      : design === 'projects-case' ? (
+        <>
+          <WorkToggleRow
+            label="Thumbnail"
+            info="~50% à gauche; désactivé = pleine largeur"
+            checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showThumbnail !== false}
+            onChange={(showThumbnail) =>
+              onChange({
+                projectsCase: {
+                  ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
+                  showThumbnail,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Category"
+            info="À gauche, couleur CTA"
+            checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showCategory !== false}
+            onChange={(showCategory) =>
+              onChange({
+                projectsCase: {
+                  ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
+                  showCategory,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Role"
+            info="À droite du micro-header"
+            checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showRole !== false}
+            onChange={(showRole) =>
+              onChange({
+                projectsCase: {
+                  ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
+                  showRole,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Field labels"
+            info="Labels Summary / Stack / Link"
+            checked={
+              (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showFieldLabels !== false
+            }
+            onChange={(showFieldLabels) =>
+              onChange({
+                projectsCase: {
+                  ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
+                  showFieldLabels,
+                },
+              })
+            }
+          />
+
+          <WorkToggleRow
+            label="Description"
+            info="Ligne Summary"
+            checked={
+              (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showDescription !== false
+            }
+            onChange={(showDescription) =>
+              onChange({
+                projectsCase: {
+                  ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
+                  showDescription,
+                },
+              })
+            }
+          />
+
+          {(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showDescription !== false &&
+          (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showFieldLabels !== false ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Description label
+              </p>
+              <input
+                type="text"
+                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                value={
+                  (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).descriptionLabel ||
+                  'Summary'
+                }
+                placeholder="Summary"
+                onChange={(event) =>
+                  onChange({
+                    projectsCase: {
+                      ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
+                      descriptionLabel: event.target.value,
+                    },
+                  })
+                }
+              />
+            </div>
+          ) : null}
+
+          <WorkToggleRow
+            label="Stack"
+            info="Tags, comme Projects board"
+            checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showStack !== false}
+            onChange={(showStack) =>
+              onChange({
+                projectsCase: {
+                  ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
+                  showStack,
+                },
+              })
+            }
+          />
+
+          {(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showStack !== false &&
+          (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showFieldLabels !== false ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                Stack label
+              </p>
+              <input
+                type="text"
+                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                value={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).stackLabel || 'Stack'}
+                placeholder="Stack"
+                onChange={(event) =>
+                  onChange({
+                    projectsCase: {
+                      ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
+                      stackLabel: event.target.value,
+                    },
+                  })
+                }
+              />
+            </div>
+          ) : null}
+
+          <WorkToggleRow
+            label="Consult"
+            info="Plusieurs designs au choix, ci-dessous"
+            checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showConsult !== false}
+            onChange={(showConsult) =>
+              onChange({
+                projectsCase: {
+                  ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
+                  showConsult,
+                },
+              })
+            }
+          />
+
+          {(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showConsult !== false ? (
+            <>
+              <WorkPreviewCardGrid
+                label="Consult design"
+                options={PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS.map((option) => ({
+                  ...option,
+                  glyph: workConsultDesignGlyph(option.value),
+                }))}
+                columns={4}
+                value={
+                  (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).consultDesign ??
+                  'bracket'
+                }
+                onChange={(consultDesign) =>
+                  onChange({
+                    projectsCase: {
+                      ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
+                      consultDesign,
+                    },
+                  })
+                }
+              />
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Consult label
+                </p>
+                <input
+                  type="text"
+                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                  value={
+                    (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).consultLabel ||
+                    'Consult this project'
+                  }
+                  placeholder="Consult this project"
+                  onChange={(event) =>
+                    onChange({
+                      projectsCase: {
+                        ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
+                        consultLabel: event.target.value,
+                      },
+                    })
+                  }
+                />
+              </div>
+
+              {(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showFieldLabels !==
+              false ? (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                    Link label
+                  </p>
+                  <input
+                    type="text"
+                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                    value={
+                      (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).linkLabel || 'Link'
+                    }
+                    placeholder="Link"
+                    onChange={(event) =>
+                      onChange({
+                        projectsCase: {
+                          ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
+                          linkLabel: event.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+              ) : null}
+            </>
+          ) : null}
+        </>
+      )
+      : null}
       </div>
-
-      <WorkOptionGrid
-        label="Title preset"
-        options={PORTFOLIO_WORK_TITLE_PRESET_OPTIONS}
-        value={work.titlePreset}
-        onChange={(titlePreset) => onChange({ titlePreset })}
-        columns={2}
-      />
-      {work.titlePreset === 'custom' ? (
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Custom title</p>
-          <input
-            type="text"
-            value={work.titleCustom || work.title}
-            onChange={(event) =>
-              onChange({ titleCustom: event.target.value, title: event.target.value })
-            }
-            placeholder="PORTFOLIO"
-            className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-          />
-        </div>
-      ) : null}
-
-      <WorkOptionGrid
-        label="Subtitle preset"
-        options={PORTFOLIO_WORK_SUBTITLE_PRESET_OPTIONS}
-        value={work.subtitlePreset}
-        onChange={(subtitlePreset) => onChange({ subtitlePreset })}
-        columns={2}
-      />
-      {work.subtitlePreset === 'custom' || work.subtitlePreset === 'default' ? (
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-            {work.subtitlePreset === 'custom' ? 'Custom subtitle' : 'Subtitle text'}
-          </p>
-          <textarea
-            rows={3}
-            value={
-              work.subtitlePreset === 'custom' ? work.subtitleCustom || work.subtitle : work.subtitle
-            }
-            onChange={(event) =>
-              onChange(
-                work.subtitlePreset === 'custom'
-                  ? { subtitleCustom: event.target.value, subtitle: event.target.value }
-                  : { subtitle: event.target.value }
-              )
-            }
-            placeholder="Selected projects."
-            className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-          />
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -1037,295 +2832,208 @@ export function WorkSettingsPanel({
     onSubSectionChange?.(next);
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
-  const activeMeta =
-    WORK_SETTINGS_SUB_SECTIONS.find((section) => section.id === subSection) ?? WORK_SETTINGS_SUB_SECTIONS[0];
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Portfolio subsection</p>
-          <p className="mt-1 text-sm text-neutral-500">{activeMeta.description}</p>
-        </div>
-        <label className="min-w-[12rem] flex-1 sm:max-w-xs">
-          <span className="sr-only">Portfolio settings subsection</span>
-          <select
-            value={subSection}
-            onChange={(event) => setSubSection(event.target.value as WorkSettingsSubSection)}
-            className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-neutral-900"
+      <div className="flex flex-wrap gap-2">
+        {WORK_SETTINGS_SUB_SECTIONS.map((section) => (
+          <button
+            key={section.id}
+            type="button"
+            onClick={() => setSubSection(section.id)}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+              subSection === section.id
+                ? 'bg-neutral-900 text-white'
+                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+            }`}
           >
-            {WORK_SETTINGS_SUB_SECTIONS.map((section) => (
-              <option key={section.id} value={section.id}>
-                {section.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            {section.label}
+          </button>
+        ))}
       </div>
 
       {subSection === 'general' ? (
-        <div className="space-y-4">
-          <WorkToggleRow
-            label="Show section"
-            description="Display the portfolio block on your public portfolio."
-            checked={work.enabled}
-            onChange={(enabled) => onChange({ enabled })}
-          />
-          <WorkToggleRow
-            label="Show marketplace link"
-            description='“View all projects” link under the section header.'
-            checked={work.showMarketplaceLink}
-            onChange={(showMarketplaceLink) => onChange({ showMarketplaceLink })}
-          />
-          <WorkUsePaletteToggle
-            work={work}
-            onChange={onChange}
-            description="When on, Portfolio colors follow the semantic palette (Principal, Fond, Bordure…). Turn off to set each color manually in the other tabs."
-          />
-          <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-            Project content is edited in Creator Studio → Information. These settings control visibility and
-            presentation on the portfolio page.
-          </p>
+        <div className="space-y-8">
+          <div>
+            <WorkSectionLabel>Visibility</WorkSectionLabel>
+            <div className="mt-4">
+              <WorkToggleRow
+                label="Portfolio section"
+                checked={work.enabled}
+                onChange={(enabled) => onChange({ enabled })}
+              />
+              <WorkToggleRow
+                label="Marketplace link"
+                checked={work.showMarketplaceLink}
+                onChange={(showMarketplaceLink) => onChange({ showMarketplaceLink })}
+              />
+              <WorkToggleRow
+                label="Subtitle"
+                checked={work.subtitlePreset !== 'minimal'}
+                onChange={(show) => onChange({ subtitlePreset: show ? 'default' : 'minimal' })}
+              />
+            </div>
+          </div>
+
+          <WorkLayoutDisplayOptions work={work} onChange={onChange} />
         </div>
       ) : null}
 
       {subSection === 'header' ? (
         <div className="space-y-6">
-          <WorkUsePaletteToggle
-            work={work}
-            onChange={onChange}
-            description="When on, title and subtitle colors follow palette tokens. Turn off to pick them freely below."
-          />
-
-          <WorkOptionGrid
-            label="Disposition titre / contenu"
-            options={PORTFOLIO_WORK_SECTION_LAYOUT_OPTIONS}
-            value={work.sectionLayout ?? 'stacked'}
-            onChange={(sectionLayout) => onChange({ sectionLayout })}
-            columns={1}
-          />
-          {workSectionLayoutIsAside(work.sectionLayout) ? (
-            <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-              En côte à côte, le titre et la galerie s’affichent en deux colonnes sur grand écran
-              (empilés sur mobile).
-            </p>
-          ) : null}
-
-          <WorkOptionGrid
-            label="Title preset"
-            options={PORTFOLIO_WORK_TITLE_PRESET_OPTIONS}
-            value={work.titlePreset}
-            onChange={(titlePreset) => onChange({ titlePreset })}
-            columns={2}
-          />
-          {work.titlePreset === 'custom' ? (
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Custom title</p>
-              <input
-                type="text"
-                value={work.titleCustom || work.title}
-                onChange={(event) => onChange({ titleCustom: event.target.value, title: event.target.value })}
-                placeholder="PORTFOLIO"
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-              />
-            </div>
-          ) : null}
-
-          <WorkOptionGrid
-            label="Subtitle preset"
-            options={PORTFOLIO_WORK_SUBTITLE_PRESET_OPTIONS}
-            value={work.subtitlePreset}
-            onChange={(subtitlePreset) => onChange({ subtitlePreset })}
-            columns={2}
-          />
-          {work.subtitlePreset === 'custom' || work.subtitlePreset === 'default' ? (
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                {work.subtitlePreset === 'custom' ? 'Custom subtitle' : 'Subtitle text'}
-              </p>
-              <textarea
-                rows={3}
-                value={work.subtitlePreset === 'custom' ? work.subtitleCustom || work.subtitle : work.subtitle}
-                onChange={(event) =>
-                  onChange(
-                    work.subtitlePreset === 'custom'
-                      ? { subtitleCustom: event.target.value, subtitle: event.target.value }
-                      : { subtitle: event.target.value }
-                  )
-                }
-                placeholder="Selected projects."
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-              />
-            </div>
-          ) : null}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <WorkColorField
-              work={work}
-              onChange={onChange}
-              slot="title"
-              label="Title color"
-              value={work.titleColor}
+          <div>
+            <WorkHeaderChoiceGrid
+              value={work.headerDesign ?? 'minimal'}
+              onChange={(headerDesign) => onChange({ headerDesign })}
             />
-            <WorkColorField
-              work={work}
-              onChange={onChange}
-              slot="subtitle"
-              label="Subtitle color"
-              value={work.subtitleColor}
-            />
-          </div>
 
-          {workSectionLayoutIsAside(work.sectionLayout) ? (
-            <p className="text-sm text-neutral-500">
-              Alignement horizontal masqué : le titre est déjà placé{' '}
-              {work.sectionLayout === 'aside-right' ? 'à droite' : 'à gauche'} de la galerie.
-            </p>
-          ) : (
-            <WorkOptionGrid
-              label="Header alignment"
-              options={[
-                { value: 'left' as const, label: 'Left', description: 'Default editorial alignment.' },
-                { value: 'center' as const, label: 'Center', description: 'Centered title and subtitle.' },
-              ]}
-              value={work.headerAlignment}
-              onChange={(headerAlignment) => onChange({ headerAlignment })}
-              columns={2}
-            />
-          )}
-
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Illustration décorative</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                SVG décoratif à côté de la galerie. Choisissez un style, puis placez-le à gauche ou
-                à droite sur grand écran.
-              </p>
-            </div>
-            <WorkOptionGrid
-              label="Style SVG"
-              options={PORTFOLIO_WORK_ILLUSTRATION_OPTIONS}
-              value={work.illustrationVariant ?? 'none'}
-              onChange={(illustrationVariant) => onChange({ illustrationVariant })}
-              columns={2}
-            />
-            {(work.illustrationVariant ?? 'none') !== 'none' ? (
-              <WorkOptionGrid
-                label="Placement du SVG"
-                options={PORTFOLIO_WORK_ILLUSTRATION_PLACEMENT_OPTIONS}
-                value={work.illustrationPlacement ?? 'right'}
-                onChange={(illustrationPlacement) => onChange({ illustrationPlacement })}
-                columns={2}
-              />
-            ) : null}
+            <WorkLayoutSettingsBand motionKey={work.headerDesign ?? 'minimal'}>
+              {(work.headerDesign ?? 'minimal') === 'minimal' ? (
+                <>
+                  {workSectionLayoutIsAside(work.sectionLayout) ? (
+                    <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
+                      Alignement horizontal masqué : le titre est déjà placé{' '}
+                      {work.sectionLayout === 'aside-right' ? 'à droite' : 'à gauche'} de la galerie.
+                    </p>
+                  ) : (
+                    <WorkOptionGrid
+                      label="Header alignment"
+                      options={[
+                        { value: 'left' as const, label: 'Left', description: 'Default editorial alignment.' },
+                        { value: 'center' as const, label: 'Center', description: 'Centered title and subtitle.' },
+                      ]}
+                      value={work.headerAlignment}
+                      onChange={(headerAlignment) => onChange({ headerAlignment })}
+                      columns={2}
+                    />
+                  )}
+                  <WorkOptionGrid
+                    label="Disposition titre / contenu"
+                    options={PORTFOLIO_WORK_SECTION_LAYOUT_OPTIONS}
+                    value={work.sectionLayout ?? 'stacked'}
+                    onChange={(sectionLayout) => onChange({ sectionLayout })}
+                    columns={1}
+                  />
+                  <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} />
+                </>
+              ) : work.headerDesign === 'accent-count' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Badge text</p>
+                    <input
+                      type="text"
+                      value={work.accentCountBadgeText}
+                      onChange={(event) => onChange({ accentCountBadgeText: event.target.value })}
+                      placeholder="{count}+ projects"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                    <p className="mt-1.5 text-sm text-neutral-500">Use {'{count}'} to insert the project count.</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Lead text</p>
+                    <input
+                      type="text"
+                      value={work.accentCountLeadText}
+                      onChange={(event) => onChange({ accentCountLeadText: event.target.value })}
+                      placeholder="A selection of recent work."
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <WorkOptionGrid
+                    label="Badge color"
+                    options={[
+                      { value: 'accent' as const, label: 'Accent', description: 'Uses the CTA/accent color.' },
+                      { value: 'principal' as const, label: 'Principal', description: 'Global principal token.' },
+                      { value: 'secondaire' as const, label: 'Secondaire', description: 'Global secondary token.' },
+                    ]}
+                    value={work.accentCountBadgeColor}
+                    onChange={(accentCountBadgeColor) => onChange({ accentCountBadgeColor })}
+                    columns={3}
+                  />
+                  <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} />
+                </>
+              ) : work.headerDesign === 'serif-lead' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
+                    <input
+                      type="text"
+                      value={work.serifLeadLabelText}
+                      onChange={(event) => onChange({ serifLeadLabelText: event.target.value })}
+                      placeholder="Portfolio"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} />
+                </>
+              ) : work.headerDesign === 'billboard' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Big background word</p>
+                    <input
+                      type="text"
+                      value={work.billboardBigWord}
+                      onChange={(event) => onChange({ billboardBigWord: event.target.value })}
+                      placeholder="WORK"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Project count line</p>
+                    <input
+                      type="text"
+                      value={work.billboardCountText}
+                      onChange={(event) => onChange({ billboardCountText: event.target.value })}
+                      placeholder="{count} projects"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                    <p className="mt-1.5 text-sm text-neutral-500">Use {'{count}'} to insert the project count.</p>
+                  </div>
+                  <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} />
+                </>
+              ) : work.headerDesign === 'masthead' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Headline</p>
+                    <input
+                      type="text"
+                      value={work.mastheadHeadlineText}
+                      onChange={(event) => onChange({ mastheadHeadlineText: event.target.value })}
+                      placeholder={work.title || 'PORTFOLIO'}
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                    <p className="mt-1.5 text-sm text-neutral-500">Defaults to the title above when left empty.</p>
+                  </div>
+                  <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} />
+                </>
+              ) : (
+                <>
+                  <WorkToggleRow
+                    label="Header motion"
+                    info="Respects reduced-motion preference"
+                    checked={work.headerAnimationEnabled !== false}
+                    onChange={(headerAnimationEnabled) => onChange({ headerAnimationEnabled })}
+                  />
+                  <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} />
+                </>
+              )}
+            </WorkLayoutSettingsBand>
           </div>
         </div>
       ) : null}
 
       {subSection === 'design' ? (
+        <>
         <div className="space-y-6">
-          <WorkOptionGrid
-            label="Section design"
-            options={PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS}
+          <WorkDesignChoiceGrid
             value={work.sectionDesign ?? 'projects-board'}
             onChange={(sectionDesign) => onChange(workSectionDesignSettingsPatch(sectionDesign))}
-            columns={1}
           />
 
+          <WorkLayoutSettingsBand motionKey={work.sectionDesign ?? 'projects-board'}>
           {(work.sectionDesign ?? 'projects-board') === 'projects-board' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Projects board options
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  These toggles apply only to this design. Thumbnails and links come from Information →
-                  Portfolio.
-                </p>
-              </div>
-
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
-
-              <WorkToggleRow
-                label="Show thumbnails"
-                description="Image above each card (upload in Information → Portfolio)."
-                checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showThumbnail}
-                onChange={(showThumbnail) =>
-                  onChange({
-                    projectsBoard: {
-                      ...(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS),
-                      showThumbnail,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show role"
-                description="Role label at the bottom of each card (accent color)."
-                checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showRole}
-                onChange={(showRole) =>
-                  onChange({
-                    projectsBoard: {
-                      ...(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS),
-                      showRole,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show category"
-                description="Category next to the role, at the bottom of each card."
-                checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showCategory}
-                onChange={(showCategory) =>
-                  onChange({
-                    projectsBoard: {
-                      ...(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS),
-                      showCategory,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Consult button on thumbnail"
-                description="Places the Consult button in the same corner of every project image — uses the project link."
-                checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showConsultOnHover}
-                onChange={(showConsultOnHover) =>
-                  onChange({
-                    projectsBoard: {
-                      ...(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS),
-                      showConsultOnHover,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showConsultOnHover ? (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Consult button label
-                  </p>
-                  <input
-                    type="text"
-                    value={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).consultLabel}
-                    onChange={(event) =>
-                      onChange({
-                        projectsBoard: {
-                          ...(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS),
-                          consultLabel: event.target.value,
-                        },
-                      })
-                    }
-                    placeholder="Consult"
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                  />
-                </div>
-              ) : null}
-            </div>
+            null
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-accordion' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Accordion options
@@ -1336,11 +3044,10 @@ export function WorkSettingsPanel({
                 </p>
               </div>
 
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
-
               <WorkOptionGrid
                 label="Title / subtitle alignment"
                 options={PORTFOLIO_WORK_ACCORDION_ALIGN_OPTIONS}
+                icons={WORK_ALIGNMENT_ICONS}
                 value={(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).headerAlign}
                 onChange={(headerAlign) =>
                   onChange({
@@ -1370,160 +3077,9 @@ export function WorkSettingsPanel({
                 }
                 columns={2}
               />
-
-              <WorkToggleRow
-                label="Show tools under preview"
-                description="Stack chips below the large thumbnail."
-                checked={(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showTools}
-                onChange={(showTools) =>
-                  onChange({
-                    projectsAccordion: {
-                      ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
-                      showTools,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showTools ? (
-                <>
-                  <WorkToggleRow
-                    label="Show tools label"
-                    description="Heading and short rule above the stack chips. Off by default."
-                    checked={
-                      (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS)
-                        .showToolsLabel === true
-                    }
-                    onChange={(showToolsLabel) =>
-                      onChange({
-                        projectsAccordion: {
-                          ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
-                          showToolsLabel,
-                        },
-                      })
-                    }
-                  />
-
-                  {(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS)
-                    .showToolsLabel === true ? (
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Tools label
-                      </p>
-                      <input
-                        type="text"
-                        value={
-                          (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).toolsLabel
-                        }
-                        onChange={(event) =>
-                          onChange({
-                            projectsAccordion: {
-                              ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
-                              toolsLabel: event.target.value,
-                            },
-                          })
-                        }
-                        placeholder="Tools I use"
-                        className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                      />
-                    </div>
-                  ) : null}
-                </>
-              ) : null}
-              <WorkToggleRow
-                label="Show description in panel"
-                description="Project description inside the open accordion item."
-                checked={
-                  (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showDescription
-                }
-                onChange={(showDescription) =>
-                  onChange({
-                    projectsAccordion: {
-                      ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
-                      showDescription,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show role"
-                description="Role under the description, left side."
-                checked={
-                  (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS)
-                    .showRoleInPanel !== false
-                }
-                onChange={(showRoleInPanel) =>
-                  onChange({
-                    projectsAccordion: {
-                      ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
-                      showRoleInPanel,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show category"
-                description="Category under the description, right side."
-                checked={
-                  (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS)
-                    .showCategoryInPanel !== false
-                }
-                onChange={(showCategoryInPanel) =>
-                  onChange({
-                    projectsAccordion: {
-                      ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
-                      showCategoryInPanel,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show Consult link"
-                description="Text link with arrow under the preview image (not a hover overlay) — uses the project link."
-                checked={
-                  (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showConsult !==
-                  false
-                }
-                onChange={(showConsult) =>
-                  onChange({
-                    projectsAccordion: {
-                      ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
-                      showConsult,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showConsult !==
-              false ? (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Consult button label
-                  </p>
-                  <input
-                    type="text"
-                    value={
-                      (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).consultLabel
-                    }
-                    onChange={(event) =>
-                      onChange({
-                        projectsAccordion: {
-                          ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
-                          consultLabel: event.target.value,
-                        },
-                      })
-                    }
-                    placeholder="Consult"
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                  />
-                </div>
-              ) : null}
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-frames' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Frames options
@@ -1534,9 +3090,7 @@ export function WorkSettingsPanel({
                 </p>
               </div>
 
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
-
-              <WorkOptionGrid
+              <WorkSlider
                 label="Thumbnail size"
                 options={PORTFOLIO_WORK_FRAMES_THUMBNAIL_SIZE_OPTIONS}
                 value={
@@ -1550,12 +3104,14 @@ export function WorkSettingsPanel({
                     },
                   })
                 }
-                columns={2}
               />
 
-              <WorkOptionGrid
+              <WorkPreviewCardGrid
                 label="Image placement"
-                options={PORTFOLIO_WORK_FRAMES_IMAGE_SIDE_OPTIONS}
+                options={PORTFOLIO_WORK_FRAMES_IMAGE_SIDE_OPTIONS.map((option) => ({
+                  ...option,
+                  glyph: option.value === 'left' ? workSideLeftGlyph() : workSideRightGlyph(),
+                }))}
                 value={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).imageSide ?? 'left'}
                 onChange={(imageSide) =>
                   onChange({
@@ -1583,7 +3139,7 @@ export function WorkSettingsPanel({
                 columns={3}
               />
 
-              <WorkOptionGrid
+              <WorkSlider
                 label="Espacement vertical"
                 options={PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS}
                 value={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).cardGap ?? 'tight'}
@@ -1595,135 +3151,10 @@ export function WorkSettingsPanel({
                     },
                   })
                 }
-                columns={3}
               />
-
-              <WorkToggleRow
-                label="Image padding"
-                description="Off = thumbnail flush to the card edge. On = small gap inside the frame."
-                checked={
-                  (work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).imagePadding !== false
-                }
-                onChange={(imagePadding) =>
-                  onChange({
-                    projectsFrames: {
-                      ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
-                      imagePadding,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Alternate image sides"
-                description="Odd cards use the placement above; even cards flip image left ↔ right."
-                checked={
-                  (work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).alternateSides === true
-                }
-                onChange={(alternateSides) =>
-                  onChange({
-                    projectsFrames: {
-                      ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
-                      alternateSides,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show role"
-                description="Role above the title (accent color)."
-                checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showRole}
-                onChange={(showRole) =>
-                  onChange({
-                    projectsFrames: {
-                      ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
-                      showRole,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show category"
-                description="Category on the same row as the role, right-aligned."
-                checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showCategory}
-                onChange={(showCategory) =>
-                  onChange({
-                    projectsFrames: {
-                      ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
-                      showCategory,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show description"
-                description="Project description in the info column."
-                checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showDescription}
-                onChange={(showDescription) =>
-                  onChange({
-                    projectsFrames: {
-                      ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
-                      showDescription,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show stack"
-                description="Tools as plain text with thin separators at the bottom — not pill tags."
-                checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showStack}
-                onChange={(showStack) =>
-                  onChange({
-                    projectsFrames: {
-                      ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
-                      showStack,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show Consult link"
-                description="Text link under the stack — uses the project link."
-                checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showConsult}
-                onChange={(showConsult) =>
-                  onChange({
-                    projectsFrames: {
-                      ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
-                      showConsult,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showConsult ? (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Consult button label
-                  </p>
-                  <input
-                    type="text"
-                    value={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).consultLabel}
-                    onChange={(event) =>
-                      onChange({
-                        projectsFrames: {
-                          ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
-                          consultLabel: event.target.value,
-                        },
-                      })
-                    }
-                    placeholder="Consult"
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                  />
-                </div>
-              ) : null}
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-index' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Index options
@@ -1734,9 +3165,7 @@ export function WorkSettingsPanel({
                 </p>
               </div>
 
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
-
-              <WorkOptionGrid
+              <WorkSlider
                 label="Espacement des lignes"
                 options={PORTFOLIO_WORK_INDEX_ROW_GAP_OPTIONS}
                 value={(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).rowGap ?? 'md'}
@@ -1748,74 +3177,10 @@ export function WorkSettingsPanel({
                     },
                   })
                 }
-                columns={3}
-              />
-
-              <WorkToggleRow
-                label="Show index marker"
-                description="Number or bullet in the narrow left column."
-                checked={(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).showNumber !== false}
-                onChange={(showNumber) =>
-                  onChange({
-                    projectsIndex: {
-                      ...(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS),
-                      showNumber,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).showNumber !== false ? (
-                <WorkOptionGrid
-                  label="Index marker style"
-                  options={PORTFOLIO_WORK_INDEX_MARKER_OPTIONS}
-                  value={
-                    (work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).indexMarker ?? 'number'
-                  }
-                  onChange={(indexMarker) =>
-                    onChange({
-                      projectsIndex: {
-                        ...(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS),
-                        indexMarker,
-                      },
-                    })
-                  }
-                  columns={2}
-                />
-              ) : null}
-
-              <WorkToggleRow
-                label="Show stack"
-                description="Stack chips directly under the title."
-                checked={(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).showStack !== false}
-                onChange={(showStack) =>
-                  onChange({
-                    projectsIndex: {
-                      ...(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS),
-                      showStack,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show description"
-                description="Description in the right column."
-                checked={
-                  (work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).showDescription !== false
-                }
-                onChange={(showDescription) =>
-                  onChange({
-                    projectsIndex: {
-                      ...(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS),
-                      showDescription,
-                    },
-                  })
-                }
               />
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-grid' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Grid options
@@ -1825,19 +3190,21 @@ export function WorkSettingsPanel({
                 </p>
               </div>
 
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
-
-              <WorkOptionGrid
+              <WorkPreviewCardGrid
                 label="Columns on large screens"
-                options={PORTFOLIO_WORK_GRID_COLUMNS_OPTIONS}
-                value={
+                options={PORTFOLIO_WORK_GRID_COLUMNS_OPTIONS.map((option) => ({
+                  value: String(option.value) as '2' | '3',
+                  label: option.label,
+                  glyph: workColumnsGlyph(option.value),
+                }))}
+                value={String(
                   (work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS).columnsPerRow ?? 2
-                }
+                ) as '2' | '3'}
                 onChange={(columnsPerRow) =>
                   onChange({
                     projectsGrid: {
                       ...(work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS),
-                      columnsPerRow,
+                      columnsPerRow: columnsPerRow === '3' ? 3 : 2,
                     },
                   })
                 }
@@ -1874,41 +3241,9 @@ export function WorkSettingsPanel({
                 }
                 columns={2}
               />
-
-              <WorkToggleRow
-                label="Carousel navigation"
-                description="When more projects than fit in one row, slide one card at a time with arrow buttons."
-                checked={
-                  (work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS).carouselEnabled === true
-                }
-                onChange={(carouselEnabled) =>
-                  onChange({
-                    projectsGrid: {
-                      ...(work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS),
-                      carouselEnabled,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show description"
-                description="Short description under the title."
-                checked={
-                  (work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS).showDescription !== false
-                }
-                onChange={(showDescription) =>
-                  onChange({
-                    projectsGrid: {
-                      ...(work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS),
-                      showDescription,
-                    },
-                  })
-                }
-              />
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-split' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Split options
@@ -1917,8 +3252,6 @@ export function WorkSettingsPanel({
                   Large thumbnail beside the title. Choose sides and optional row alternation.
                 </p>
               </div>
-
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
 
               <WorkOptionGrid
                 label="Image placement"
@@ -2017,25 +3350,9 @@ export function WorkSettingsPanel({
                     />
                   ) : null}
                 </>
-              ) : (
-                <WorkToggleRow
-                  label="Alternate image sides"
-                  description="Odd rows use the placement above; even rows flip image ↔ title."
-                  checked={
-                    (work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).alternateSides === true
-                  }
-                  onChange={(alternateSides) =>
-                    onChange({
-                      projectsSplit: {
-                        ...(work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS),
-                        alternateSides,
-                      },
-                    })
-                  }
-                />
-              )}
+              ) : null}
 
-              <WorkOptionGrid
+              <WorkSlider
                 label="Thumbnail size"
                 options={PORTFOLIO_WORK_SPLIT_THUMBNAIL_SIZE_OPTIONS}
                 value={
@@ -2049,7 +3366,6 @@ export function WorkSettingsPanel({
                     },
                   })
                 }
-                columns={2}
               />
 
               <WorkOptionGrid
@@ -2069,7 +3385,7 @@ export function WorkSettingsPanel({
                 columns={2}
               />
 
-              <WorkOptionGrid
+              <WorkSlider
                 label="Row spacing"
                 options={PORTFOLIO_WORK_SPLIT_ROW_GAP_OPTIONS}
                 value={(work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).rowGap ?? 'md'}
@@ -2081,27 +3397,10 @@ export function WorkSettingsPanel({
                     },
                   })
                 }
-                columns={2}
-              />
-
-              <WorkToggleRow
-                label="Show description"
-                description="Optional short text under the title."
-                checked={
-                  (work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).showDescription === true
-                }
-                onChange={(showDescription) =>
-                  onChange({
-                    projectsSplit: {
-                      ...(work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS),
-                      showDescription,
-                    },
-                  })
-                }
               />
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-carousel' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Carousel options
@@ -2111,9 +3410,7 @@ export function WorkSettingsPanel({
                 </p>
               </div>
 
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
-
-              <WorkOptionGrid
+              <WorkSlider
                 label="Image size"
                 options={PORTFOLIO_WORK_CAROUSEL_IMAGE_SIZE_OPTIONS}
                 value={
@@ -2127,7 +3424,6 @@ export function WorkSettingsPanel({
                     },
                   })
                 }
-                columns={2}
               />
 
               <WorkOptionGrid
@@ -2165,7 +3461,7 @@ export function WorkSettingsPanel({
                 columns={3}
               />
 
-              <WorkOptionGrid
+              <WorkSlider
                 label="Gap between images"
                 options={PORTFOLIO_WORK_CAROUSEL_GAP_OPTIONS}
                 value={(work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS).gap ?? 'md'}
@@ -2177,60 +3473,10 @@ export function WorkSettingsPanel({
                     },
                   })
                 }
-                columns={3}
-              />
-
-              <WorkToggleRow
-                label="Hover reveal"
-                description="Au survol : zoom léger, assombrit l’image et affiche titre + description au centre."
-                checked={
-                  (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS).hoverReveal !== false
-                }
-                onChange={(hoverReveal) =>
-                  onChange({
-                    projectsCarousel: {
-                      ...(work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS),
-                      hoverReveal,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Focus blur"
-                description="Au survol d’une image, floute légèrement les autres pour un mode focus."
-                checked={
-                  (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS)
-                    .focusBlurSiblings !== false
-                }
-                onChange={(focusBlurSiblings) =>
-                  onChange({
-                    projectsCarousel: {
-                      ...(work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS),
-                      focusBlurSiblings,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Hover stack"
-                description="Au survol : affiche le stack sous l’image, dans un cadre sans bordure."
-                checked={
-                  (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS).hoverStack !== false
-                }
-                onChange={(hoverStack) =>
-                  onChange({
-                    projectsCarousel: {
-                      ...(work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS),
-                      hoverStack,
-                    },
-                  })
-                }
               />
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-spotlight' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Spotlight options
@@ -2241,11 +3487,13 @@ export function WorkSettingsPanel({
                 </p>
               </div>
 
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
-
-              <WorkOptionGrid
+              <WorkPreviewCardGrid
                 label="Disposition"
-                options={PORTFOLIO_WORK_SPOTLIGHT_LIST_SIDE_OPTIONS}
+                options={PORTFOLIO_WORK_SPOTLIGHT_LIST_SIDE_OPTIONS.map((option) => ({
+                  ...option,
+                  // Details (the "ink" block) sit opposite the title list.
+                  glyph: option.value === 'right' ? workSideLeftGlyph() : workSideRightGlyph(),
+                }))}
                 value={
                   (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).listSide ?? 'right'
                 }
@@ -2258,135 +3506,6 @@ export function WorkSettingsPanel({
                   })
                 }
                 columns={2}
-              />
-
-              <WorkToggleRow
-                label="Show role"
-                description="Affiche le rôle au-dessus du titre du projet."
-                checked={
-                  (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).showRole !== false
-                }
-                onChange={(showRole) =>
-                  onChange({
-                    projectsSpotlight: {
-                      ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
-                      showRole,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show description"
-                description="Affiche la description du projet sélectionné."
-                checked={
-                  (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS)
-                    .showDescription !== false
-                }
-                onChange={(showDescription) =>
-                  onChange({
-                    projectsSpotlight: {
-                      ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
-                      showDescription,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show Consult"
-                description="Bouton Consult (lien du projet)."
-                checked={
-                  (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).showConsult !==
-                  false
-                }
-                onChange={(showConsult) =>
-                  onChange({
-                    projectsSpotlight: {
-                      ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
-                      showConsult,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).showConsult !==
-              false ? (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Consult label
-                  </p>
-                  <input
-                    type="text"
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                    value={
-                      (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).consultLabel ||
-                      'Consult'
-                    }
-                    onChange={(event) =>
-                      onChange({
-                        projectsSpotlight: {
-                          ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
-                          consultLabel: event.target.value,
-                        },
-                      })
-                    }
-                  />
-                </div>
-              ) : null}
-
-              <WorkToggleRow
-                label="Show stack"
-                description="Affiche le stack du projet sélectionné."
-                checked={
-                  (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).showStack !== false
-                }
-                onChange={(showStack) =>
-                  onChange({
-                    projectsSpotlight: {
-                      ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
-                      showStack,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).showStack !==
-              false ? (
-                <WorkOptionGrid
-                  label="Stack style"
-                  options={PORTFOLIO_WORK_SPOTLIGHT_STACK_STYLE_OPTIONS}
-                  value={
-                    (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).stackStyle ??
-                    'tags'
-                  }
-                  onChange={(stackStyle) =>
-                    onChange({
-                      projectsSpotlight: {
-                        ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
-                        stackStyle,
-                      },
-                    })
-                  }
-                  columns={3}
-                />
-              ) : null}
-
-              <WorkToggleRow
-                label="Frame fill"
-                description="Fond et padding intérieur du cadre. Désactive pour un layout à plat."
-                checked={
-                  (work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS).showFrameFill !==
-                  false
-                }
-                onChange={(showFrameFill) =>
-                  onChange({
-                    projectsSpotlight: {
-                      ...(work.projectsSpotlight ?? DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS),
-                      showFrameFill,
-                    },
-                  })
-                }
               />
 
               <WorkOptionGrid
@@ -2407,7 +3526,7 @@ export function WorkSettingsPanel({
               />
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-showcase' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Showcase options
@@ -2417,11 +3536,12 @@ export function WorkSettingsPanel({
                 </p>
               </div>
 
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
-
-              <WorkOptionGrid
+              <WorkPreviewCardGrid
                 label="Media placement"
-                options={PORTFOLIO_WORK_SHOWCASE_MEDIA_SIDE_OPTIONS}
+                options={PORTFOLIO_WORK_SHOWCASE_MEDIA_SIDE_OPTIONS.map((option) => ({
+                  ...option,
+                  glyph: option.value === 'left' ? workSideLeftGlyph() : workSideRightGlyph(),
+                }))}
                 value={
                   (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).mediaSide ?? 'left'
                 }
@@ -2452,84 +3572,9 @@ export function WorkSettingsPanel({
                 }
                 columns={3}
               />
-
-              <WorkToggleRow
-                label="Show role on media"
-                description="Compact role label overlaid on the primary image."
-                checked={
-                  (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).showRole !== false
-                }
-                onChange={(showRole) =>
-                  onChange({
-                    projectsShowcase: {
-                      ...(work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS),
-                      showRole,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show description"
-                description="Project description under the title."
-                checked={
-                  (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).showDescription !==
-                  false
-                }
-                onChange={(showDescription) =>
-                  onChange({
-                    projectsShowcase: {
-                      ...(work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS),
-                      showDescription,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show category"
-                description="Category label + value under the description."
-                checked={
-                  (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).showCategory !==
-                  false
-                }
-                onChange={(showCategory) =>
-                  onChange({
-                    projectsShowcase: {
-                      ...(work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS),
-                      showCategory,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).showCategory !==
-              false ? (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Category label
-                  </p>
-                  <input
-                    type="text"
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                    value={
-                      (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).categoryLabel ||
-                      'Category'
-                    }
-                    onChange={(event) =>
-                      onChange({
-                        projectsShowcase: {
-                          ...(work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS),
-                          categoryLabel: event.target.value,
-                        },
-                      })
-                    }
-                  />
-                </div>
-              ) : null}
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-editorial' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Editorial options
@@ -2539,8 +3584,6 @@ export function WorkSettingsPanel({
                   (sans bordure / radius).
                 </p>
               </div>
-
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
 
               <WorkOptionGrid
                 label="Panneau droit"
@@ -2559,215 +3602,9 @@ export function WorkSettingsPanel({
                 }
                 columns={2}
               />
-
-              <WorkToggleRow
-                label="Show role"
-                description="Rôle sous le numéro, avec un petit trait."
-                checked={
-                  (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS).showRole !== false
-                }
-                onChange={(showRole) =>
-                  onChange({
-                    projectsEditorial: {
-                      ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
-                      showRole,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS).rightPanel !==
-              'thumbnail' ? (
-                <>
-                  <WorkToggleRow
-                    label="Show description"
-                    description="Bloc Description dans la colonne de droite."
-                    checked={
-                      (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
-                        .showDescription !== false
-                    }
-                    onChange={(showDescription) =>
-                      onChange({
-                        projectsEditorial: {
-                          ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
-                          showDescription,
-                        },
-                      })
-                    }
-                  />
-
-                  <WorkToggleRow
-                    label="Show stack"
-                    description="Bloc Stack (outils du projet) à droite."
-                    checked={
-                      (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS).showStack !==
-                      false
-                    }
-                    onChange={(showStack) =>
-                      onChange({
-                        projectsEditorial: {
-                          ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
-                          showStack,
-                        },
-                      })
-                    }
-                  />
-
-                  <WorkToggleRow
-                    label="Show Consult"
-                    description="Bouton Consult (pill + flèche) sous les infos."
-                    checked={
-                      (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS).showConsult !==
-                      false
-                    }
-                    onChange={(showConsult) =>
-                      onChange({
-                        projectsEditorial: {
-                          ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
-                          showConsult,
-                        },
-                      })
-                    }
-                  />
-
-                  {(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS).showConsult !==
-                  false ? (
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Consult label
-                      </p>
-                      <p className="mt-1 text-sm text-neutral-500">
-                        Phrase du lien (ex. « Consult this project ») + flèche ↗.
-                      </p>
-                      <input
-                        type="text"
-                        className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                        value={
-                          (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
-                            .consultLabel || 'Consult this project'
-                        }
-                        placeholder="Consult this project"
-                        onChange={(event) =>
-                          onChange({
-                            projectsEditorial: {
-                              ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
-                              consultLabel: event.target.value,
-                            },
-                          })
-                        }
-                      />
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <WorkToggleRow
-                    label="Hover reveal"
-                    description="Au survol : assombrit l’image du bas vers le haut et affiche description, stack et Consult."
-                    checked={
-                      (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
-                        .thumbnailHoverReveal !== false
-                    }
-                    onChange={(thumbnailHoverReveal) =>
-                      onChange({
-                        projectsEditorial: {
-                          ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
-                          thumbnailHoverReveal,
-                        },
-                      })
-                    }
-                  />
-
-                  {(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
-                    .thumbnailHoverReveal !== false ? (
-                    <>
-                      <WorkToggleRow
-                        label="Show description"
-                        description="Description dans le hover de la miniature."
-                        checked={
-                          (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
-                            .showDescription !== false
-                        }
-                        onChange={(showDescription) =>
-                          onChange({
-                            projectsEditorial: {
-                              ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
-                              showDescription,
-                            },
-                          })
-                        }
-                      />
-
-                      <WorkToggleRow
-                        label="Show stack"
-                        description="Stack dans le hover de la miniature."
-                        checked={
-                          (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
-                            .showStack !== false
-                        }
-                        onChange={(showStack) =>
-                          onChange({
-                            projectsEditorial: {
-                              ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
-                              showStack,
-                            },
-                          })
-                        }
-                      />
-
-                      <WorkToggleRow
-                        label="Show Consult"
-                        description="Bouton Consult (pill) dans le hover."
-                        checked={
-                          (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
-                            .showConsult !== false
-                        }
-                        onChange={(showConsult) =>
-                          onChange({
-                            projectsEditorial: {
-                              ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
-                              showConsult,
-                            },
-                          })
-                        }
-                      />
-
-                      {(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
-                        .showConsult !== false ? (
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                            Consult label
-                          </p>
-                          <input
-                            type="text"
-                            className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                            value={
-                              (work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS)
-                                .consultLabel || 'Consult this project'
-                            }
-                            placeholder="Consult this project"
-                            onChange={(event) =>
-                              onChange({
-                                projectsEditorial: {
-                                  ...(work.projectsEditorial ?? DEFAULT_PROJECTS_EDITORIAL_SETTINGS),
-                                  consultLabel: event.target.value,
-                                },
-                              })
-                            }
-                          />
-                        </div>
-                      ) : null}
-                    </>
-                  ) : (
-                    <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                      Hover désactivé : la miniature s’affiche seule, sans overlay.
-                    </p>
-                  )}
-                </>
-              )}
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-ledger' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Ledger options
@@ -2776,8 +3613,6 @@ export function WorkSettingsPanel({
                   Index typographique (style Framer) — titres, rôles et détails. Aucune miniature.
                 </p>
               </div>
-
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
 
               <WorkOptionGrid
                 label="Reveal details"
@@ -2793,267 +3628,11 @@ export function WorkSettingsPanel({
                 }
                 columns={3}
               />
-
-              <WorkToggleRow
-                label="Show count"
-                description="Compteur de projets à droite du titre de section."
-                checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showCount !== false}
-                onChange={(showCount) =>
-                  onChange({
-                    projectsLedger: {
-                      ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
-                      showCount,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show index"
-                description="Numéros 01, 02… à gauche de chaque ligne."
-                checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showIndex !== false}
-                onChange={(showIndex) =>
-                  onChange({
-                    projectsLedger: {
-                      ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
-                      showIndex,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show role"
-                description="Rôle / catégorie aligné à droite sur desktop."
-                checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showRole !== false}
-                onChange={(showRole) =>
-                  onChange({
-                    projectsLedger: {
-                      ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
-                      showRole,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show description"
-                description="Texte projet dans le panneau déplié."
-                checked={
-                  (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showDescription !== false
-                }
-                onChange={(showDescription) =>
-                  onChange({
-                    projectsLedger: {
-                      ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
-                      showDescription,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show stack"
-                description="Outils en mono uppercase sous la description."
-                checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showStack !== false}
-                onChange={(showStack) =>
-                  onChange({
-                    projectsLedger: {
-                      ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
-                      showStack,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show Consult"
-                description="Lien texte + flèche ↗ sous les détails."
-                checked={
-                  (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showConsult !== false
-                }
-                onChange={(showConsult) =>
-                  onChange({
-                    projectsLedger: {
-                      ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
-                      showConsult,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showConsult !== false ? (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Consult label
-                  </p>
-                  <input
-                    type="text"
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                    value={
-                      (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).consultLabel ||
-                      'Consult this project'
-                    }
-                    placeholder="Consult this project"
-                    onChange={(event) =>
-                      onChange({
-                        projectsLedger: {
-                          ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
-                          consultLabel: event.target.value,
-                        },
-                      })
-                    }
-                  />
-                </div>
-              ) : null}
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-folio' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Folio options
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Dossier sticky à gauche, liste de titres à droite. Données seulement — aucune
-                  miniature.
-                </p>
-              </div>
-
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
-
-              <WorkToggleRow
-                label="Show role"
-                description="Micro-label de rôle au-dessus du trait d’accent dans le dossier."
-                checked={(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).showRole !== false}
-                onChange={(showRole) =>
-                  onChange({
-                    projectsFolio: {
-                      ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
-                      showRole,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show description"
-                description="Description du projet dans le panneau dossier."
-                checked={
-                  (work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).showDescription !== false
-                }
-                onChange={(showDescription) =>
-                  onChange({
-                    projectsFolio: {
-                      ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
-                      showDescription,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show stack"
-                description="Bloc outils dans le dossier — 5 designs au choix."
-                checked={(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).showStack !== false}
-                onChange={(showStack) =>
-                  onChange({
-                    projectsFolio: {
-                      ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
-                      showStack,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).showStack !== false ? (
-                <>
-                  <WorkOptionGrid
-                    label="Stack design"
-                    options={PORTFOLIO_WORK_FOLIO_STACK_DESIGN_OPTIONS}
-                    value={
-                      (work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).stackDesign ??
-                      'tags-outline'
-                    }
-                    onChange={(stackDesign) =>
-                      onChange({
-                        projectsFolio: {
-                          ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
-                          stackDesign,
-                        },
-                      })
-                    }
-                    columns={2}
-                  />
-
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Stack label
-                    </p>
-                    <p className="mt-1 text-sm text-neutral-500">
-                      Titre du bloc (ex. « Core stack »).
-                    </p>
-                    <input
-                      type="text"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                      value={
-                        (work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).stackLabel ||
-                        'Core stack'
-                      }
-                      placeholder="Core stack"
-                      onChange={(event) =>
-                        onChange({
-                          projectsFolio: {
-                            ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
-                            stackLabel: event.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                </>
-              ) : null}
-
-              <WorkToggleRow
-                label="Show Consult"
-                description="Lien texte + flèche ↗ sous le dossier."
-                checked={(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).showConsult !== false}
-                onChange={(showConsult) =>
-                  onChange({
-                    projectsFolio: {
-                      ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
-                      showConsult,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).showConsult !== false ? (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Consult label
-                  </p>
-                  <input
-                    type="text"
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                    value={
-                      (work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS).consultLabel ||
-                      'Consult this project'
-                    }
-                    placeholder="Consult this project"
-                    onChange={(event) =>
-                      onChange({
-                        projectsFolio: {
-                          ...(work.projectsFolio ?? DEFAULT_PROJECTS_FOLIO_SETTINGS),
-                          consultLabel: event.target.value,
-                        },
-                      })
-                    }
-                  />
-                </div>
-              ) : null}
-            </div>
+            null
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-spec' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Spec options
@@ -3064,11 +3643,12 @@ export function WorkSettingsPanel({
                 </p>
               </div>
 
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
-
-              <WorkOptionGrid
+              <WorkPreviewCardGrid
                 label="Colonnes (écran large)"
-                options={PORTFOLIO_WORK_SPEC_COLUMNS_OPTIONS}
+                options={PORTFOLIO_WORK_SPEC_COLUMNS_OPTIONS.map((option) => ({
+                  ...option,
+                  glyph: workColumnsGlyph(option.value === '2' ? 2 : 1),
+                }))}
                 value={
                   (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showThumbnail === true
                     ? '1'
@@ -3111,7 +3691,7 @@ export function WorkSettingsPanel({
                 columns={2}
               />
 
-              <WorkOptionGrid
+              <WorkSlider
                 label="Espacement entre projets"
                 options={PORTFOLIO_WORK_SPEC_SHEET_GAP_OPTIONS}
                 value={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).sheetGap ?? 'xl'}
@@ -3123,208 +3703,10 @@ export function WorkSettingsPanel({
                     },
                   })
                 }
-                columns={2}
               />
-
-              <WorkToggleRow
-                label="Show thumbnail"
-                description="Miniature à l’extérieur à gauche — désactive auto « 2 par ligne »."
-                checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showThumbnail === true}
-                onChange={(showThumbnail) =>
-                  onChange({
-                    projectsSpec: {
-                      ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
-                      showThumbnail,
-                      ...(showThumbnail ? { columnsPerRow: 1 as const } : {}),
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show category"
-                description="Catégorie à gauche — couleur principale (CTA)."
-                checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showCategory !== false}
-                onChange={(showCategory) =>
-                  onChange({
-                    projectsSpec: {
-                      ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
-                      showCategory,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show role"
-                description="Rôle à droite du micro-header."
-                checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showRole !== false}
-                onChange={(showRole) =>
-                  onChange({
-                    projectsSpec: {
-                      ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
-                      showRole,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show field labels"
-                description="Affiche ou masque les 3 labels Summary / Stack / Link."
-                checked={
-                  (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showFieldLabels !== false
-                }
-                onChange={(showFieldLabels) =>
-                  onChange({
-                    projectsSpec: {
-                      ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
-                      showFieldLabels,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show description"
-                description="Ligne Summary dans la grille définition."
-                checked={
-                  (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showDescription !== false
-                }
-                onChange={(showDescription) =>
-                  onChange({
-                    projectsSpec: {
-                      ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
-                      showDescription,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showDescription !== false &&
-              (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showFieldLabels !== false ? (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Description label
-                  </p>
-                  <input
-                    type="text"
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                    value={
-                      (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).descriptionLabel ||
-                      'Summary'
-                    }
-                    placeholder="Summary"
-                    onChange={(event) =>
-                      onChange({
-                        projectsSpec: {
-                          ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
-                          descriptionLabel: event.target.value,
-                        },
-                      })
-                    }
-                  />
-                </div>
-              ) : null}
-
-              <WorkToggleRow
-                label="Show stack"
-                description="Outils en tags (comme Projects board)."
-                checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showStack !== false}
-                onChange={(showStack) =>
-                  onChange({
-                    projectsSpec: {
-                      ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
-                      showStack,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showStack !== false &&
-              (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showFieldLabels !== false ? (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Stack label
-                  </p>
-                  <input
-                    type="text"
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                    value={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).stackLabel || 'Stack'}
-                    placeholder="Stack"
-                    onChange={(event) =>
-                      onChange({
-                        projectsSpec: {
-                          ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
-                          stackLabel: event.target.value,
-                        },
-                      })
-                    }
-                  />
-                </div>
-              ) : null}
-
-              <WorkToggleRow
-                label="Show Consult"
-                description="CTA vers le projet — plusieurs designs au choix."
-                checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showConsult !== false}
-                onChange={(showConsult) =>
-                  onChange({
-                    projectsSpec: {
-                      ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
-                      showConsult,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showConsult !== false ? (
-                <>
-                  <WorkOptionGrid
-                    label="Consult design"
-                    options={PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS}
-                    value={
-                      (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).consultDesign ??
-                      'bracket'
-                    }
-                    onChange={(consultDesign) =>
-                      onChange({
-                        projectsSpec: {
-                          ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
-                          consultDesign,
-                        },
-                      })
-                    }
-                    columns={2}
-                  />
-
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Consult label
-                    </p>
-                    <input
-                      type="text"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                      value={
-                        (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).consultLabel ||
-                        'Consult this project'
-                      }
-                      placeholder="Consult this project"
-                      onChange={(event) =>
-                        onChange({
-                          projectsSpec: {
-                            ...(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS),
-                            consultLabel: event.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                </>
-              ) : null}
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-case' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Case options
@@ -3335,9 +3717,7 @@ export function WorkSettingsPanel({
                 </p>
               </div>
 
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
-
-              <WorkOptionGrid
+              <WorkSlider
                 label="Espacement entre projets"
                 options={PORTFOLIO_WORK_SPEC_SHEET_GAP_OPTIONS}
                 value={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).sheetGap ?? 'xl'}
@@ -3349,7 +3729,6 @@ export function WorkSettingsPanel({
                     },
                   })
                 }
-                columns={2}
               />
 
               <WorkOptionGrid
@@ -3365,20 +3744,6 @@ export function WorkSettingsPanel({
                   })
                 }
                 columns={2}
-              />
-
-              <WorkToggleRow
-                label="Show thumbnail"
-                description="Grande miniature à gauche (~50%). Désactivé = contenu pleine largeur."
-                checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showThumbnail !== false}
-                onChange={(showThumbnail) =>
-                  onChange({
-                    projectsCase: {
-                      ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
-                      showThumbnail,
-                    },
-                  })
-                }
               />
 
               <WorkOptionGrid
@@ -3399,1306 +3764,15 @@ export function WorkSettingsPanel({
                 }
                 columns={2}
               />
-
-              <WorkToggleRow
-                label="Show category"
-                description="Catégorie à gauche — couleur principale (CTA)."
-                checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showCategory !== false}
-                onChange={(showCategory) =>
-                  onChange({
-                    projectsCase: {
-                      ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
-                      showCategory,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show role"
-                description="Rôle à droite du micro-header."
-                checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showRole !== false}
-                onChange={(showRole) =>
-                  onChange({
-                    projectsCase: {
-                      ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
-                      showRole,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show field labels"
-                description="Affiche ou masque les 3 labels Summary / Stack / Link."
-                checked={
-                  (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showFieldLabels !== false
-                }
-                onChange={(showFieldLabels) =>
-                  onChange({
-                    projectsCase: {
-                      ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
-                      showFieldLabels,
-                    },
-                  })
-                }
-              />
-
-              <WorkToggleRow
-                label="Show description"
-                description="Ligne Summary dans la grille définition."
-                checked={
-                  (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showDescription !== false
-                }
-                onChange={(showDescription) =>
-                  onChange({
-                    projectsCase: {
-                      ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
-                      showDescription,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showDescription !== false &&
-              (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showFieldLabels !== false ? (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Description label
-                  </p>
-                  <input
-                    type="text"
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                    value={
-                      (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).descriptionLabel ||
-                      'Summary'
-                    }
-                    placeholder="Summary"
-                    onChange={(event) =>
-                      onChange({
-                        projectsCase: {
-                          ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
-                          descriptionLabel: event.target.value,
-                        },
-                      })
-                    }
-                  />
-                </div>
-              ) : null}
-
-              <WorkToggleRow
-                label="Show stack"
-                description="Outils en tags (comme Projects board)."
-                checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showStack !== false}
-                onChange={(showStack) =>
-                  onChange({
-                    projectsCase: {
-                      ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
-                      showStack,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showStack !== false &&
-              (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showFieldLabels !== false ? (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Stack label
-                  </p>
-                  <input
-                    type="text"
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                    value={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).stackLabel || 'Stack'}
-                    placeholder="Stack"
-                    onChange={(event) =>
-                      onChange({
-                        projectsCase: {
-                          ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
-                          stackLabel: event.target.value,
-                        },
-                      })
-                    }
-                  />
-                </div>
-              ) : null}
-
-              <WorkToggleRow
-                label="Show Consult"
-                description="CTA vers le projet — plusieurs designs au choix."
-                checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showConsult !== false}
-                onChange={(showConsult) =>
-                  onChange({
-                    projectsCase: {
-                      ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
-                      showConsult,
-                    },
-                  })
-                }
-              />
-
-              {(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showConsult !== false ? (
-                <>
-                  <WorkOptionGrid
-                    label="Consult design"
-                    options={PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS}
-                    value={
-                      (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).consultDesign ??
-                      'bracket'
-                    }
-                    onChange={(consultDesign) =>
-                      onChange({
-                        projectsCase: {
-                          ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
-                          consultDesign,
-                        },
-                      })
-                    }
-                    columns={2}
-                  />
-
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Consult label
-                    </p>
-                    <input
-                      type="text"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                      value={
-                        (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).consultLabel ||
-                        'Consult this project'
-                      }
-                      placeholder="Consult this project"
-                      onChange={(event) =>
-                        onChange({
-                          projectsCase: {
-                            ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
-                            consultLabel: event.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </div>
-
-                  {(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showFieldLabels !==
-                  false ? (
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Link label
-                      </p>
-                      <input
-                        type="text"
-                        className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
-                        value={
-                          (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).linkLabel || 'Link'
-                        }
-                        placeholder="Link"
-                        onChange={(event) =>
-                          onChange({
-                            projectsCase: {
-                              ...(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS),
-                              linkLabel: event.target.value,
-                            },
-                          })
-                        }
-                      />
-                    </div>
-                  ) : null}
-                </>
-              ) : null}
-            </div>
-          ) : (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:p-5">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Classic options
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Layout details live under Cards / Media / Categories. Personnalise ici le titre et
-                  le sous-titre de la section.
-                </p>
-              </div>
-              <WorkTitleSubtitlePersonalization work={work} onChange={onChange} />
-            </div>
-          )}
-        </div>
-      ) : null}
-
-      {subSection === 'categories' ? (
-        <div className="space-y-6">
-          <WorkUsePaletteToggle
-            work={work}
-            onChange={onChange}
-            description="When on, category chip colors follow palette tokens. Turn off to pick them freely below."
-          />
-
-          <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-            Categories come from each content’s <span className="font-semibold text-neutral-700">Category</span>{' '}
-            field (set when you publish). Projects without one appear under “Other”.
-          </p>
-          <WorkOptionGrid
-            label="Category mode"
-            options={PORTFOLIO_WORK_CATEGORY_MODE_OPTIONS}
-            value={work.categoryMode}
-            onChange={(categoryMode) => onChange({ categoryMode })}
-            columns={2}
-          />
-          {work.categoryMode !== 'off' ? (
-            <>
-              <WorkOptionGrid
-                label="Filter design"
-                options={PORTFOLIO_WORK_CATEGORY_DESIGN_OPTIONS}
-                value={work.categoryDesign}
-                onChange={(categoryDesign) => onChange({ categoryDesign })}
-                columns={2}
-              />
-              <WorkToggleRow
-                label="Show category on cards"
-                description="Display the category name above each project title."
-                checked={work.showCategoryOnCard}
-                onChange={(showCategoryOnCard) => onChange({ showCategoryOnCard })}
-              />
-              {work.showCategoryOnCard ? (
-                <>
-                  <WorkOverlayElementPlacementControls
-                    work={work}
-                    elementId="category"
-                    onChange={onChange}
-                  />
-                  <WorkElementChromeControls
-                    work={work}
-                    chromeId="categoryOnCard"
-                    onChange={onChange}
-                    title="Fond de la catégorie"
-                    description="Fond derrière le label TECH / catégorie sur la carte."
-                  />
-                  <WorkInlineTypography
-                    work={work}
-                    target="categoryOnCard"
-                    onChange={onChange}
-                    title="Category on card typography"
-                  />
-                </>
-              ) : null}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    “All” label
-                  </p>
-                  <input
-                    type="text"
-                    value={work.categoryAllLabel}
-                    onChange={(event) => onChange({ categoryAllLabel: event.target.value })}
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                  />
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Uncategorized label
-                  </p>
-                  <input
-                    type="text"
-                    value={work.categoryUncategorizedLabel}
-                    onChange={(event) => onChange({ categoryUncategorizedLabel: event.target.value })}
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                  />
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <WorkColorField
-                  work={work}
-                  onChange={onChange}
-                  slot="categoryActive"
-                  label="Active category"
-                  value={work.categoryActiveColor}
-                />
-                <WorkColorField
-                  work={work}
-                  onChange={onChange}
-                  slot="categoryMuted"
-                  label="Muted category"
-                  value={work.categoryMutedColor}
-                />
-              </div>
-            </>
-          ) : null}
-        </div>
-      ) : null}
-
-      {subSection === 'cards' ? (
-        <div className="space-y-6">
-          <WorkUsePaletteToggle
-            work={work}
-            onChange={onChange}
-            description="When on, card border and background colors follow palette tokens. Turn off to pick them freely below."
-          />
-
-          <WorkOptionGrid
-            label="Disposition de la galerie"
-            options={PORTFOLIO_WORK_GALLERY_LAYOUT_OPTIONS}
-            value={work.galleryLayout}
-            onChange={(galleryLayout) => onChange(workGalleryLayoutSettingsPatch(galleryLayout))}
-            columns={2}
-          />
-
-          {work.galleryLayout === 'overlay' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-              <div>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-neutral-950">Assombrissement du média</p>
-                    <p className="mt-1 text-sm text-neutral-500">
-                      Ajuste le voile sombre derrière les textes de la carte immersive.
-                    </p>
-                  </div>
-                  <span className="text-sm font-semibold tabular-nums text-neutral-700">
-                    {work.overlayMediaDarkness ?? 100}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={200}
-                  step={1}
-                  value={work.overlayMediaDarkness ?? 100}
-                  onChange={(event) =>
-                    onChange({ overlayMediaDarkness: Number(event.target.value) })
-                  }
-                  className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Intensité d’assombrissement du média"
-                />
-              </div>
-              <div className="h-px bg-neutral-200/80" />
-              <div>
-                <p className="text-sm font-semibold text-neutral-950">Trait inférieur</p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Ajoute un séparateur fin sous chaque carte Overlay immersif.
-                </p>
-              </div>
-              <WorkToggleRow
-                label="Afficher le trait inférieur"
-                description="Le trait suit par défaut le token Bordure de la palette Portfolio."
-                checked={work.overlayBottomRuleEnabled === true}
-                onChange={(overlayBottomRuleEnabled) => onChange({ overlayBottomRuleEnabled })}
-              />
-              {work.overlayBottomRuleEnabled ? (
-                <WorkColorField
-                  work={work}
-                  onChange={onChange}
-                  slot="overlayBottomRule"
-                  label="Couleur du trait"
-                  description="Choisissez un token de palette ou une couleur hexadécimale personnalisée."
-                  value={work.overlayBottomRuleColor}
-                  allowManualHex
-                />
-              ) : null}
             </div>
           ) : null}
-
-          {workGallerySupportsItemsPerRow(work.galleryLayout) ? (
-            <div className="space-y-3">
-              <WorkOptionGrid
-                label="Cadres par ligne"
-                options={PORTFOLIO_WORK_ITEMS_PER_ROW_OPTIONS}
-                value={String(
-                  work.itemsPerRow === 2 || work.itemsPerRow === 3 || work.itemsPerRow === 4
-                    ? work.itemsPerRow
-                    : 1
-                ) as '1' | '2' | '3' | '4'}
-                onChange={(value) =>
-                  onChange({ itemsPerRow: Number(value) as PortfolioWorkItemsPerRow })
-                }
-                columns={2}
-              />
-              {(() => {
-                const perRow = (
-                  work.itemsPerRow === 2 || work.itemsPerRow === 3 || work.itemsPerRow === 4
-                    ? work.itemsPerRow
-                    : 1
-                ) as PortfolioWorkItemsPerRow;
-                const hint = workItemsPerRowResponsiveHint(perRow);
-                if (!hint) return null;
-                return (
-                  <p
-                    className={`rounded-2xl border px-4 py-3 text-sm ${
-                      perRow >= 3
-                        ? 'border-amber-200 bg-amber-50 text-amber-900'
-                        : 'border-dashed border-neutral-200 bg-white text-neutral-500'
-                    }`}
-                  >
-                    {hint}
-                  </p>
-                );
-              })()}
-            </div>
-          ) : (
-            <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-              Le nombre de cadres par ligne s’applique à{' '}
-              <span className="font-semibold text-neutral-700">Grille portfolio</span>,{' '}
-              <span className="font-semibold text-neutral-700">Grille compacte</span> et{' '}
-              <span className="font-semibold text-neutral-700">Overlay</span>. Liste, accordéon et
-              carrousel restent sur une seule colonne.
-            </p>
-          )}
-
-          <WorkOptionGrid
-            label="Largeur de la carte"
-            options={PORTFOLIO_WORK_CARD_MAX_WIDTH_OPTIONS}
-            value={work.cardMaxWidth}
-            onChange={(cardMaxWidth) => onChange({ cardMaxWidth })}
-            columns={2}
-          />
-          {work.cardMaxWidth !== 'full' ? (
-            <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-              Largeur plafonnée — la carte garde une forme verticale (média + infos) au lieu de s’étirer
-              sur toute la colonne. Combine avec{' '}
-              <span className="font-semibold text-neutral-700">Cadres par ligne</span> pour la grille.
-            </p>
-          ) : null}
-
-          <WorkOptionGrid
-            label="Alignement de la carte"
-            options={PORTFOLIO_WORK_CARD_ALIGNMENT_OPTIONS}
-            value={work.cardAlignment}
-            onChange={(cardAlignment) => onChange({ cardAlignment })}
-            columns={3}
-          />
-          <p className="text-sm text-neutral-500">
-            Positionne le <span className="font-semibold text-neutral-700">cadre</span> dans la colonne
-            (quand la largeur est plafonnée). N’aligne pas le texte à l’intérieur.
-            {work.categoryMode !== 'off'
-              ? ' Les filtres catégories suivent aussi cet alignement.'
-              : ''}
-          </p>
-
-          <WorkOptionGrid
-            label="Alignement du contenu"
-            options={PORTFOLIO_WORK_CARD_CONTENT_ALIGNMENT_OPTIONS}
-            value={work.cardContentAlignment}
-            onChange={(cardContentAlignment) => onChange({ cardContentAlignment })}
-            columns={3}
-          />
-          <p className="text-sm text-neutral-500">
-            Aligne uniquement les éléments <span className="font-semibold text-neutral-700">à l’intérieur</span> de
-            la carte (titre, description, outils…). Le bouton CTA a son propre alignement dans la sous-section CTA.
-          </p>
-
-          <WorkOptionGrid
-            label="Centrage vertical"
-            options={PORTFOLIO_WORK_CARD_CONTENT_VERTICAL_ALIGN_OPTIONS}
-            value={work.cardContentVerticalAlign}
-            onChange={(cardContentVerticalAlign) => onChange({ cardContentVerticalAlign })}
-            columns={3}
-          />
-          <p className="text-sm text-neutral-500">
-            Place le bloc d’infos (catégorie → CTA) en haut, au centre ou en bas de la colonne — surtout utile
-            quand le média est à gauche / à droite.
-          </p>
-
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Cadre & espacement</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Bordure, ombre flottante, coins arrondis, fond, marge intérieure et espace entre les
-                projets — s’applique à toutes les dispositions de galerie, indépendamment du card design.
-              </p>
-            </div>
-
-            <WorkOptionGrid
-              label="Bordure"
-              options={PORTFOLIO_WORK_CARD_BORDER_OPTIONS}
-              value={work.cardBorder}
-              onChange={(cardBorder) => onChange({ cardBorder })}
-              columns={2}
-            />
-
-            {work.cardBorder === 'soft' || work.cardBorder === 'solid' ? (
-              <WorkColorField
-                work={work}
-                onChange={onChange}
-                slot="cardBorder"
-                label="Couleur de bordure"
-                value={work.cardBorderColor}
-              />
-            ) : null}
-
-            <WorkOptionGrid
-              label="Ombre / flotte"
-              options={PORTFOLIO_WORK_CARD_SHADOW_OPTIONS}
-              value={work.cardShadow ?? 'float'}
-              onChange={(cardShadow) =>
-                onChange({
-                  cardShadow,
-                  cardShadowIntensity: PORTFOLIO_WORK_CARD_SHADOW_PRESET_INTENSITY[cardShadow],
-                })
-              }
-              columns={2}
-            />
-            {(work.cardShadow ?? 'float') !== 'none' ? (
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Intensité de l’ombre
-                  </p>
-                  <span className="text-sm font-semibold text-neutral-700">
-                    {work.cardShadowIntensity ?? 55}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={work.cardShadowIntensity ?? 55}
-                  onChange={(event) =>
-                    onChange({ cardShadowIntensity: Number(event.target.value) })
-                  }
-                  className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Intensité de l’ombre flottante"
-                />
-                <p className="mt-2 text-sm text-neutral-500">
-                  Règle librement la légèreté du halo. En mode sombre, l’effet devient un
-                  halo clair (une ombre noire disparaîtrait sur fond noir).
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-neutral-500">
-                Halo flou autour de la carte pour la détacher du fond — indépendant de la bordure
-                (tu peux laisser bordure sur{' '}
-                <span className="font-semibold text-neutral-700">Aucune</span>).
-              </p>
-            )}
-
-            <WorkToggleRow
-              label="Fond du cadre"
-              description="Appliquer une couleur de fond derrière le contenu de la carte."
-              checked={work.cardBackgroundEnabled}
-              onChange={(cardBackgroundEnabled) => onChange({ cardBackgroundEnabled })}
-            />
-
-            {work.cardBackgroundEnabled ? (
-              <WorkColorField
-                work={work}
-                onChange={onChange}
-                slot="cardBackground"
-                label="Couleur de fond"
-                value={work.cardBackgroundColor}
-              />
-            ) : null}
-
-            <WorkOptionGrid
-              label="Coins arrondis"
-              options={PORTFOLIO_WORK_CARD_RADIUS_OPTIONS}
-              value={work.cardBorderRadius}
-              onChange={(cardBorderRadius) => onChange({ cardBorderRadius })}
-              columns={3}
-            />
-
-            <WorkOptionGrid
-              label="Marge intérieure"
-              options={PORTFOLIO_WORK_CARD_PADDING_OPTIONS}
-              value={work.cardPadding}
-              onChange={(cardPadding) => onChange({ cardPadding })}
-              columns={2}
-            />
-
-            <WorkOptionGrid
-              label="Espace entre projets"
-              options={PORTFOLIO_WORK_CARD_GAP_OPTIONS}
-              value={work.cardGap}
-              onChange={(cardGap) => onChange({ cardGap })}
-              columns={2}
-            />
-          </div>
-
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Cadre des informations</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Encadre le bloc titre / description / outils / CTA à côté ou sous le média. Couleurs
-                liées à la palette (tokens) avec override hex manuel pour le fond et la bordure.
-              </p>
-            </div>
-
-            <WorkToggleRow
-              label="Activer le cadre info"
-              description="Ajoute un panneau distinct autour des informations du projet."
-              checked={work.contentFrameEnabled}
-              onChange={(contentFrameEnabled) => onChange({ contentFrameEnabled })}
-            />
-
-            {work.contentFrameEnabled ? (
-              <>
-                <WorkOptionGrid
-                  label="Bordure"
-                  options={PORTFOLIO_WORK_CARD_BORDER_OPTIONS}
-                  value={work.contentFrameBorder}
-                  onChange={(contentFrameBorder) => onChange({ contentFrameBorder })}
-                  columns={2}
-                />
-
-                {work.contentFrameBorder === 'soft' || work.contentFrameBorder === 'solid' ? (
-                  <WorkColorField
-                    work={work}
-                    onChange={onChange}
-                    slot="contentFrameBorder"
-                    label="Couleur de bordure"
-                    value={work.contentFrameBorderColor}
-                    allowManualHex
-                  />
-                ) : null}
-
-                <WorkToggleRow
-                  label="Fond du cadre info"
-                  description="Couleur de fond derrière les informations."
-                  checked={work.contentFrameBackgroundEnabled}
-                  onChange={(contentFrameBackgroundEnabled) =>
-                    onChange({ contentFrameBackgroundEnabled })
-                  }
-                />
-
-                {work.contentFrameBackgroundEnabled ? (
-                  <WorkColorField
-                    work={work}
-                    onChange={onChange}
-                    slot="contentFrameBackground"
-                    label="Couleur de fond"
-                    value={work.contentFrameBackgroundColor}
-                    allowManualHex
-                  />
-                ) : null}
-
-                <WorkOptionGrid
-                  label="Coins arrondis"
-                  options={PORTFOLIO_WORK_CARD_RADIUS_OPTIONS}
-                  value={work.contentFrameBorderRadius}
-                  onChange={(contentFrameBorderRadius) => onChange({ contentFrameBorderRadius })}
-                  columns={3}
-                />
-
-                <WorkOptionGrid
-                  label="Marge intérieure"
-                  options={PORTFOLIO_WORK_CARD_PADDING_OPTIONS}
-                  value={work.contentFramePadding}
-                  onChange={(contentFramePadding) => onChange({ contentFramePadding })}
-                  columns={2}
-                />
-
-                <WorkOptionGrid
-                  label="Espace vertical entre blocs"
-                  options={PORTFOLIO_WORK_CONTENT_FRAME_GAP_OPTIONS}
-                  value={work.contentFrameGap}
-                  onChange={(contentFrameGap) => onChange({ contentFrameGap })}
-                  columns={2}
-                />
-              </>
-            ) : null}
-          </div>
-
-          {work.galleryLayout === 'stack' || work.galleryLayout === 'carousel' ? (
-            <div className="space-y-3">
-              {work.galleryLayout === 'carousel' ? (
-                <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                  Carrousel : un seul projet visible. Les flèches gauche / droite passent au projet
-                  suivant ou précédent. Combine avec{' '}
-                  <span className="font-semibold text-neutral-700">Largeur de la carte</span> pour
-                  centrer une carte portrait comme sur la référence.
-                </p>
-              ) : null}
-              <WorkOptionGrid
-                label="Card design"
-                options={PORTFOLIO_WORK_CARD_DESIGN_OPTIONS.filter(
-                  (option) => option.value !== 'compact' && option.value !== 'overlay'
-                )}
-                value={
-                  work.cardDesign === 'compact' || work.cardDesign === 'overlay'
-                    ? 'editorial'
-                    : work.cardDesign
-                }
-                onChange={(cardDesign) => onChange({ cardDesign })}
-                columns={2}
-              />
-              <p className="text-sm text-neutral-500">
-                Espacement, ombres et densité uniquement — la bordure et les coins se règlent dans{' '}
-                <span className="font-semibold text-neutral-700">Cadre & espacement</span>. Emplacement
-                et taille du média : sous-section{' '}
-                <span className="font-semibold text-neutral-700">Media</span>.
-              </p>
-            </div>
-          ) : work.galleryLayout === 'grid' ? (
-            <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-              Grille compacte force le design{' '}
-              <span className="font-semibold text-neutral-700">Compact</span> : typo serrée,
-              descriptions coupées. Place le média (gauche / droite / haut / bas) dans{' '}
-              <span className="font-semibold text-neutral-700">Media</span>.
-            </p>
-          ) : work.galleryLayout === 'overlay' ? (
-            <div className="space-y-4">
-              <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                Overlay immersif force le design{' '}
-                <span className="font-semibold text-neutral-700">Overlay</span> — texte superposé sur le
-                média. Place chaque élément (titre, description, outils, CTA…) dans sa propre
-                sous-section.
-              </p>
-
-              <WorkOptionGrid
-                label="Disposition des éléments"
-                options={PORTFOLIO_WORK_OVERLAY_LAYOUT_MODE_OPTIONS}
-                value={work.overlayLayoutMode}
-                onChange={(overlayLayoutMode) => onChange({ overlayLayoutMode })}
-                columns={2}
-              />
-
-              {work.overlayLayoutMode === 'free' ? (
-                <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                  Mode libre actif — ouvre{' '}
-                  <span className="font-semibold text-neutral-700">Titre</span>,{' '}
-                  <span className="font-semibold text-neutral-700">Description</span>,{' '}
-                  <span className="font-semibold text-neutral-700">Outils</span>,{' '}
-                  <span className="font-semibold text-neutral-700">CTA</span> ou{' '}
-                  <span className="font-semibold text-neutral-700">Categories</span> pour placer chaque
-                  élément dans la grille 3×3 (grand écran uniquement).
-                </p>
-              ) : null}
-            </div>
-          ) : work.galleryLayout === 'list' || work.galleryLayout === 'accordion' ? (
-            <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-              Emplacement et taille de la vignette : sous-section{' '}
-              <span className="font-semibold text-neutral-700">Media</span>.
-            </p>
-          ) : null}
+          </WorkLayoutSettingsBand>
         </div>
-      ) : null}
-
-      {subSection === 'media' ? (
-        <div className="space-y-6">
-          <WorkUsePaletteToggle
-            work={work}
-            onChange={onChange}
-            description="When on, media border color can follow the palette card-border token. Turn off to pick freely."
-          />
-
-          <WorkToggleRow
-            label="Afficher le média"
-            description="Image / vidéo du projet sur les cartes, listes et accordéons — sans supprimer le fichier Studio."
-            checked={work.showCardMedia}
-            onChange={(showCardMedia) => onChange({ showCardMedia })}
-          />
-
-          {!work.showCardMedia ? (
-            <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-              <WorkOptionGrid
-                label="Info layout without media"
-                options={PORTFOLIO_WORK_NO_MEDIA_INFO_LAYOUT_OPTIONS}
-                value={work.noMediaInfoLayout}
-                onChange={(noMediaInfoLayout) => onChange({ noMediaInfoLayout })}
-                columns={3}
-              />
-              <p className="text-sm text-neutral-500">
-                Sans média, le contenu remonte pour remplir la carte. Choisis la largeur et
-                l’alignement du bloc d’informations.
-              </p>
-            </div>
-          ) : (
-            <>
-              <WorkOptionGrid
-                label="Emplacement du média"
-                options={PORTFOLIO_WORK_CONTENT_PLACEMENT_OPTIONS}
-                value={work.contentPlacement}
-                onChange={(contentPlacement) => onChange({ contentPlacement })}
-                columns={2}
-              />
-              <p className="text-sm text-neutral-500">
-                Position par rapport aux infos (titre, description, outils, CTA). S’applique à toutes
-                les dispositions de galerie — en grille multi-colonnes, le mode côte-à-côte peut
-                repasser en empilé pour la lisibilité.
-              </p>
-
-              {work.galleryLayout === 'overlay' ? (
-                <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                  Overlay immersif : le média reste le fond de la carte ; l’emplacement vertical
-                  (haut / bas) ajuste surtout le ratio de hauteur.
-                </p>
-              ) : null}
-
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    {workCardIsStacked(work.cardDesign, work.contentPlacement)
-                      ? 'Hauteur du média'
-                      : 'Taille / ratio média'}
-                  </p>
-                  <span className="text-sm font-semibold text-neutral-700">{work.mediaRatio}%</span>
-                </div>
-                <input
-                  type="range"
-                  min={30}
-                  max={70}
-                  step={1}
-                  value={work.mediaRatio}
-                  onChange={(event) => onChange({ mediaRatio: Number(event.target.value) })}
-                  className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Taille du média"
-                />
-                <p className="mt-2 text-sm text-neutral-500">
-                  {workCardIsStacked(work.cardDesign, work.contentPlacement)
-                    ? 'Ajuste la hauteur de l’image par rapport au bloc texte.'
-                    : 'Redimensionne l’aperçu média par rapport à la colonne infos (desktop).'}
-                </p>
-              </div>
-
-              <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-                <div>
-                  <p className="text-sm font-semibold text-neutral-950">Bordure & coins du média</p>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Chrome autour de l’image (ou de la carte quand le média est empilé).
-                  </p>
-                </div>
-                <WorkOptionGrid
-                  label="Bordure"
-                  options={PORTFOLIO_WORK_CARD_BORDER_OPTIONS}
-                  value={work.cardBorder}
-                  onChange={(cardBorder) => onChange({ cardBorder })}
-                  columns={2}
-                />
-                {work.cardBorder !== 'none' && work.cardBorder !== 'accent' ? (
-                  <WorkColorField
-                    work={work}
-                    onChange={onChange}
-                    slot="cardBorder"
-                    label="Couleur de bordure"
-                    value={work.cardBorderColor}
-                  />
-                ) : null}
-                <WorkOptionGrid
-                  label="Coins"
-                  options={PORTFOLIO_WORK_CARD_RADIUS_OPTIONS}
-                  value={work.cardBorderRadius}
-                  onChange={(cardBorderRadius) => onChange({ cardBorderRadius })}
-                  columns={3}
-                />
-              </div>
-            </>
-          )}
-        </div>
-      ) : null}
-
-      {subSection === 'title' ? (
-        <div className="space-y-6">
-          <WorkUsePaletteToggle
-            work={work}
-            onChange={onChange}
-            description="When on, project title color follows its palette token. Turn off to pick the text color freely."
-          />
-          <WorkToggleRow
-            label="Show project title"
-            description="Display the project name on each card."
-            checked={work.showCardTitle}
-            onChange={(showCardTitle) => onChange({ showCardTitle })}
-          />
-          {work.showCardTitle ? (
-            <>
-              <WorkOverlayElementPlacementControls work={work} elementId="title" onChange={onChange} />
-              <WorkElementChromeControls
-                work={work}
-                chromeId="cardTitle"
-                onChange={onChange}
-                title="Fond du titre"
-                description="Fond derrière le titre du projet sur la carte."
-              />
-              <WorkInlineTypography
-                work={work}
-                target="cardTitle"
-                onChange={onChange}
-                title="Title typography"
-              />
-            </>
-          ) : null}
-        </div>
-      ) : null}
-
-      {subSection === 'description' ? (
-        <div className="space-y-6">
-          <WorkUsePaletteToggle
-            work={work}
-            onChange={onChange}
-            description="When on, description color follows its palette token. Turn off to pick the text color freely."
-          />
-          <WorkToggleRow
-            label="Show description"
-            description="Display the project description under the title."
-            checked={work.showCardDescription}
-            onChange={(showCardDescription) => onChange({ showCardDescription })}
-          />
-          {work.showCardDescription ? (
-            <>
-              <WorkOverlayElementPlacementControls
-                work={work}
-                elementId="description"
-                onChange={onChange}
-              />
-              <WorkElementChromeControls
-                work={work}
-                chromeId="cardDescription"
-                onChange={onChange}
-                title="Fond de la description"
-                description="Fond derrière le texte de description sur la carte."
-              />
-              <WorkInlineTypography
-                work={work}
-                target="cardDescription"
-                onChange={onChange}
-                title="Description typography"
-              />
-            </>
-          ) : null}
-        </div>
-      ) : null}
-
-      {subSection === 'tools' ? (
-        <div className="space-y-6">
-          <WorkUsePaletteToggle
-            work={work}
-            onChange={onChange}
-            description="When on, tools label and list colors follow palette tokens. Turn off to set them freely below."
-          />
-          <WorkToggleRow
-            label="Show tools block"
-            description="Display tools used on each project card."
-            checked={work.showCardTools}
-            onChange={(showCardTools) => onChange({ showCardTools })}
-          />
-          {work.showCardTools ? (
-            <>
-              <WorkToggleRow
-                label="Tool icons"
-                checked={work.showCardToolIcons}
-                onChange={(showCardToolIcons) => onChange({ showCardToolIcons })}
-              />
-              <WorkToggleRow
-                label="Tool text list"
-                checked={work.showCardToolList}
-                onChange={(showCardToolList) => onChange({ showCardToolList })}
-              />
-              <WorkToggleRow
-                label="“Tools to use” label"
-                checked={work.showToolsLabel}
-                onChange={(showToolsLabel) => onChange({ showToolsLabel })}
-              />
-              {work.showToolsLabel ? (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Label text
-                  </p>
-                  <input
-                    type="text"
-                    value={work.toolsLabelText}
-                    placeholder="Tools to use"
-                    onChange={(event) => onChange({ toolsLabelText: event.target.value })}
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                  />
-                </div>
-              ) : null}
-
-              <WorkOptionGrid
-                label="Tools display"
-                options={PORTFOLIO_WORK_TOOLS_DISPLAY_OPTIONS}
-                value={work.toolsDisplay}
-                onChange={(toolsDisplay) => onChange({ toolsDisplay })}
-                columns={2}
-              />
-
-              <WorkToggleRow
-                label="Aligner tools en bas (grand écran)"
-                description="Pousse le bloc tools vers le bas des cartes (grand écran) pour aligner les rangées. Le margin-top reste toujours appliqué au-dessus de Tools."
-                checked={work.toolsPinToBottom !== false}
-                onChange={(toolsPinToBottom) => onChange({ toolsPinToBottom })}
-              />
-
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Margin top tools
-                  </p>
-                  <span className="text-sm font-semibold text-neutral-700">
-                    {clampWorkToolsMarginTopPx(work.toolsMarginTopPx, 0)}px
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Espace fixe au-dessus de Tools — tous les designs. Fonctionne aussi quand
-                  l’alignement bas est activé.
-                </p>
-                <input
-                  type="range"
-                  min={WORK_TOOLS_MARGIN_TOP_PX_MIN}
-                  max={WORK_TOOLS_MARGIN_TOP_PX_MAX}
-                  step={1}
-                  value={clampWorkToolsMarginTopPx(work.toolsMarginTopPx, 0)}
-                  onChange={(event) =>
-                    onChange({ toolsMarginTopPx: Number(event.target.value) })
-                  }
-                  className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                />
-              </div>
-
-              <WorkOptionGrid
-                label="Tools icon size"
-                options={PORTFOLIO_TOOLS_ICON_SIZE_OPTIONS}
-                value={work.toolsIconSize}
-                onChange={(toolsIconSize) => onChange({ toolsIconSize })}
-                columns={2}
-              />
-
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Max tools shown
-                  </p>
-                  <span className="text-sm font-semibold text-neutral-700">{work.maxToolsShown}</span>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={24}
-                  step={1}
-                  value={work.maxToolsShown}
-                  onChange={(event) => onChange({ maxToolsShown: Number(event.target.value) })}
-                  className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                />
-                <p className="mt-2 text-sm text-neutral-500">
-                  Tool logos appear when they exist in the NoProbleme library for each project&apos;s
-                  tools.
-                </p>
-              </div>
-
-              <WorkOverlayElementPlacementControls work={work} elementId="tools" onChange={onChange} />
-
-              <WorkElementChromeControls
-                work={work}
-                chromeId="tools"
-                onChange={onChange}
-                title="Fond des outils"
-                description="Fond derrière les icônes (et le label si « Limiter aux icônes » est désactivé)."
-              />
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <WorkColorField
-                  work={work}
-                  onChange={onChange}
-                  slot="toolsIconBackground"
-                  label="Icon background"
-                  value={work.toolsIconBackgroundColor}
-                />
-                <WorkColorField
-                  work={work}
-                  onChange={onChange}
-                  slot="toolsIconBorder"
-                  label="Icon border"
-                  value={work.toolsIconBorderColor}
-                />
-              </div>
-
-              {work.showToolsLabel ? (
-                <WorkInlineTypography
-                  work={work}
-                  target="toolsLabel"
-                  onChange={onChange}
-                  title="Tools label typography"
-                />
-              ) : null}
-              {work.showCardToolList ? (
-                <WorkInlineTypography
-                  work={work}
-                  target="toolsList"
-                  onChange={onChange}
-                  title="Tools list typography"
-                />
-              ) : null}
-            </>
-          ) : null}
-        </div>
-      ) : null}
-
-      {subSection === 'cta' ? (
-        <div className="space-y-6">
-          <WorkUsePaletteToggle
-            work={work}
-            onChange={onChange}
-            description="When on, CTA accent and text colors follow palette tokens. Turn off to pick them freely below."
-          />
-
-          <WorkToggleRow
-            label="Show view project button"
-            checked={work.showCardCta}
-            onChange={(showCardCta) => onChange({ showCardCta })}
-          />
-
-          {work.showCardCta ? (
-            <>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Button label
-                </p>
-                <input
-                  type="text"
-                  value={work.ctaLabel}
-                  onChange={(event) => onChange({ ctaLabel: event.target.value })}
-                  placeholder="View project"
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                />
-              </div>
-
-              <WorkOptionGrid
-                label="Button style"
-                options={PORTFOLIO_WORK_CTA_DESIGN_OPTIONS}
-                value={work.ctaDesign}
-                onChange={(ctaDesign) => onChange({ ctaDesign })}
-                columns={2}
-              />
-
-              <WorkToggleRow
-                label="Show CTA icon"
-                description="Glyph next to the button label (arrow, play, plus…)."
-                checked={work.ctaShowIcon !== false}
-                onChange={(ctaShowIcon) => onChange({ ctaShowIcon })}
-              />
-
-              {work.ctaShowIcon !== false ? (
-                <>
-                  <WorkOptionGrid
-                    label="Icon position"
-                    options={PORTFOLIO_WORK_CTA_ICON_POSITION_OPTIONS}
-                    value={work.ctaIconPosition ?? 'right'}
-                    onChange={(ctaIconPosition) => onChange({ ctaIconPosition })}
-                    columns={2}
-                  />
-                  <WorkOptionGrid
-                    label="CTA icon"
-                    options={PORTFOLIO_WORK_CTA_ICON_OPTIONS}
-                    value={work.ctaIcon ?? 'arrow-up-right'}
-                    onChange={(ctaIcon) => onChange({ ctaIcon })}
-                    columns={2}
-                  />
-                </>
-              ) : null}
-
-              <WorkOptionGrid
-                label="Épaisseur de bordure"
-                options={PORTFOLIO_WORK_CTA_BORDER_WIDTH_OPTIONS}
-                value={work.ctaBorderWidth}
-                onChange={(ctaBorderWidth) => onChange({ ctaBorderWidth })}
-                columns={2}
-              />
-
-              <WorkOptionGrid
-                label="Coins arrondis (CTA)"
-                options={PORTFOLIO_WORK_CTA_BORDER_RADIUS_OPTIONS}
-                value={work.ctaBorderRadius}
-                onChange={(ctaBorderRadius) => onChange({ ctaBorderRadius })}
-                columns={3}
-              />
-              {(work.ctaDesign === 'circle-icon' || work.ctaDesign === 'text-arrow') && (
-                <p className="text-sm text-neutral-500">
-                  Le rayon s’applique aux styles <span className="font-semibold text-neutral-700">pill</span>.
-                  Circle icon garde un cercle ; Text + arrow n’a pas de boîte.
-                </p>
-              )}
-
-              <WorkColorField
-                work={work}
-                onChange={onChange}
-                slot="ctaAccent"
-                label="Button accent (fill / outline)"
-                value={work.ctaColor}
-              />
-
-              <WorkColorField
-                work={work}
-                onChange={onChange}
-                slot="ctaBorder"
-                label="Button border"
-                value={work.ctaBorderColor}
-              />
-
-              <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-                <div>
-                  <p className="text-sm font-semibold text-neutral-950">Effet au survol</p>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Comme la Navigation — couleurs de fond, texte et bordure au hover, liées à la
-                    palette.
-                  </p>
-                </div>
-
-                <WorkToggleRow
-                  label="Activer le hover"
-                  description="Au survol, le bouton bascule vers les couleurs ci-dessous."
-                  checked={work.ctaHoverEnabled}
-                  onChange={(ctaHoverEnabled) => onChange({ ctaHoverEnabled })}
-                />
-
-                {work.ctaHoverEnabled ? (
-                  <>
-                    <WorkColorField
-                      work={work}
-                      onChange={onChange}
-                      slot="ctaHoverBackground"
-                      label="Fond au survol"
-                      value={work.ctaHoverBackgroundColor}
-                    />
-                    <WorkColorField
-                      work={work}
-                      onChange={onChange}
-                      slot="ctaHoverText"
-                      label="Texte au survol"
-                      value={work.ctaHoverTextColor}
-                    />
-                    <WorkColorField
-                      work={work}
-                      onChange={onChange}
-                      slot="ctaHoverBorder"
-                      label="Bordure au survol"
-                      value={work.ctaHoverBorderColor}
-                    />
-                  </>
-                ) : null}
-              </div>
-
-              <WorkOptionGrid
-                label="Emplacement du bouton (pile)"
-                options={PORTFOLIO_WORK_CTA_ALIGNMENT_OPTIONS}
-                value={work.ctaAlignment}
-                onChange={(ctaAlignment) => onChange({ ctaAlignment })}
-                columns={3}
-              />
-
-              <WorkOverlayElementPlacementControls work={work} elementId="cta" onChange={onChange} />
-
-              <WorkInlineTypography
-                work={work}
-                target="cta"
-                onChange={onChange}
-                title="CTA typography"
-                extra={
-                  <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                    Sur les pills remplies, le texte suit le <span className="font-semibold text-neutral-700">fond de page</span>{' '}
-                    (token fond) — pas un blanc fixe. Outline / circle / text utilisent « CTA text »
-                    (texteFort). Le hover suit les tokens ci-dessus.
-                  </p>
-                }
-              />
-            </>
-          ) : null}
-        </div>
+        </>
       ) : null}
 
       {subSection === 'background' ? (
-        <div className="space-y-6">
-          <WorkUsePaletteToggle
-            work={work}
-            onChange={onChange}
-            description="When on, section fill colors follow palette tokens. Turn off to pick them freely below."
-          />
-
+        <div className="space-y-4">
           <SectionBackgroundSettingsFields
             settings={work}
             onChange={onChange}
@@ -4726,8 +3800,6 @@ export function WorkSettingsPanel({
           />
         </div>
       ) : null}
-
-      {subSection === 'palette' ? <WorkPalettePanel work={work} onChange={onChange} /> : null}
     </div>
   );
 }

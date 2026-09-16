@@ -21,6 +21,8 @@ import {
   VIVE_LIGHT_HERO_PALETTE,
   matchHeroPalettePresetId,
   mergeHeroPalette,
+  resolveHeroPaletteColor,
+  type HeroPaletteTokenId,
   type PortfolioHeroPalette,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import type { CSSProperties } from 'react';
@@ -232,13 +234,39 @@ export function applyActivePortfolioPalette(settings: PortfolioSettings): Portfo
           useNavPalette: true,
         };
 
-  const global = {
-    ...settings.global,
-    backgroundColor: palette.fond,
-    ...(settings.global.backgroundImageEnabled
-      ? {}
-      : { backgroundEnabled: true, backgroundImageEnabled: false }),
-  };
+  // Page background (Solid/Gradient/Split/Image) is an explicit, user-owned choice made in
+  // Global → Background — its enabled state / fill type / hex values must NOT be re-derived
+  // from the active palette wholesale (this function re-runs on every settings hydration,
+  // including every Live Preview postMessage sync, so forcing those fields unconditionally
+  // silently overwrote the user's own pick back to the "fond" token on every change).
+  // The one thing that SHOULD track the active palette: a color field the user explicitly
+  // bound to a token (via the quick-palette swatches) stays on that token across dark ↔
+  // light and palette-family changes, instead of freezing at whichever hex it resolved to
+  // the moment it was picked. Unbound fields are left completely untouched.
+  const backgroundBindings = settings.global.backgroundColorBindings ?? {};
+  const boundBackgroundFields: Partial<PortfolioGlobalSettings> = {};
+  if (backgroundBindings.color) {
+    boundBackgroundFields.backgroundColor = resolveHeroPaletteColor(palette, backgroundBindings.color);
+  }
+  if (backgroundBindings.gradientFrom) {
+    boundBackgroundFields.backgroundGradientFrom = resolveHeroPaletteColor(
+      palette,
+      backgroundBindings.gradientFrom
+    );
+  }
+  if (backgroundBindings.gradientTo) {
+    boundBackgroundFields.backgroundGradientTo = resolveHeroPaletteColor(
+      palette,
+      backgroundBindings.gradientTo
+    );
+  }
+  if (backgroundBindings.colorA) {
+    boundBackgroundFields.backgroundColorA = resolveHeroPaletteColor(palette, backgroundBindings.colorA);
+  }
+  if (backgroundBindings.colorB) {
+    boundBackgroundFields.backgroundColorB = resolveHeroPaletteColor(palette, backgroundBindings.colorB);
+  }
+  const global = { ...settings.global, ...boundBackgroundFields };
 
   const experienceNext =
     settings.experience.useHeroPalette === false

@@ -50,7 +50,10 @@ import {
 } from '@/lib/portfolio-settings-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 
-type PortfolioContentSectionId = Exclude<PortfolioSettingsSectionId, 'theme' | 'navigation'>;
+type PortfolioContentSectionId = Exclude<
+  PortfolioSettingsSectionId,
+  'theme' | 'navigation'
+>;
 
 const SAVE_DEBOUNCE_MS = 400;
 const HISTORY_LIMIT = 50;

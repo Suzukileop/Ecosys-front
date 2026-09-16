@@ -16,7 +16,6 @@ export type PortfolioInfoDesign =
   | 'about-me-trait'
   | 'about-split'
   | 'about-banner'
-  | 'about-feature-panel'
   | 'about-platform'
   | 'about-portrait-skills'
   | 'about-manifesto'
@@ -68,6 +67,9 @@ export type PortfolioInfoAboutSplitSectionLabelsStyle =
   | 'editorial'
   | 'creative';
 
+/** About · split / banner — Standard (fixed wording) or Custom (free text per label). */
+export type PortfolioInfoLabelsMode = 'standard' | 'custom';
+
 /** About · value — list marker before each value / strength / etc. */
 export type PortfolioInfoAboutValueListMarkerStyle =
   | 'dot'
@@ -108,8 +110,6 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   showSystemsTools: boolean;
   /** Show country flags next to language names — default on. */
   showLanguageFlags: boolean;
-  /** Languages proficiency indicator — default stars. */
-  languageLevelDisplayStyle: PortfolioInfoLanguageLevelDisplayStyle;
   /**
    * About me · trait only — how Education is laid out.
    * Default editorial (magazine bands). Ignored on classic about-me cards.
@@ -121,7 +121,7 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   aboutMeTraitHeadlineEnabled: boolean;
   /** Empty = profile bio from Creator Studio. Use line breaks for multi-line headlines. */
   aboutMeTraitHeadlineCustomText: string;
-  /** All Info designs — labels, listes, titres de blocs, education, etc. */
+  /** All Info designs — labels, lists, block titles, education, etc. */
   contentSize: PortfolioInfoContentSize;
   /** @deprecated Use contentSize — kept for saved settings migration. */
   aboutManifestoContentSize: PortfolioInfoContentSize;
@@ -129,10 +129,10 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   aboutMeTraitContentSize: PortfolioInfoContentSize;
   /**
    * @deprecated About · value removed — kept for saved settings migration.
-   * Split (titre gauche / liste droite) or grid-2 for secondary blocks.
+   * Split (title left / list right) or grid-2 for secondary blocks.
    */
   aboutValueBlocksLayout: PortfolioInfoAboutValueBlocksLayout;
-  /** About · value (+ steps skills) — editorial, grille, liste indexée ou steps natifs. */
+  /** About · value (+ steps skills) — editorial, grid, indexed list, or native steps. */
   aboutValueValuesLayout: PortfolioInfoAboutValueValuesLayout;
   /** About · value steps — bullet style for editorial values list. */
   aboutValueListMarkerStyle: PortfolioInfoAboutValueListMarkerStyle;
@@ -163,19 +163,22 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   aboutManifestoPortraitFrame: PortfolioInfoAboutManifestoPortraitFrame;
   /** About · split — portrait column side on large screens. */
   aboutSplitPortraitSide: PortfolioInfoAboutSplitPortraitSide;
-  /** About · split — preset labels for Skills / Strengths / Languages blocks. */
+  /** @deprecated Use aboutSplitLabelsMode + aboutSplitCustom*Label — kept for saved settings migration. */
   aboutSplitSectionLabelsStyle: PortfolioInfoAboutSplitSectionLabelsStyle;
+  /** About · split — Standard wording, or Custom free text per label (below). */
+  aboutSplitLabelsMode: PortfolioInfoLabelsMode;
+  aboutSplitCustomSkillsLabel: string;
+  aboutSplitCustomStrengthsLabel: string;
+  aboutSplitCustomLanguagesLabel: string;
   /** About · banner — XXL centered headline (independent from about-me-trait). */
   aboutBannerHeadlineEnabled: boolean;
   aboutBannerHeadlineCustomText: string;
-  /** About · banner — preset labels for Skills / Strengths blocks. */
+  /** @deprecated Use aboutBannerLabelsMode + aboutBannerCustom*Label — kept for saved settings migration. */
   aboutBannerSectionLabelsStyle: PortfolioInfoAboutSplitSectionLabelsStyle;
-  /** About · feature panel — intro headline line 1 (strong + muted parts). */
-  aboutFeatureIntroLine1Primary: string;
-  aboutFeatureIntroLine1Secondary: string;
-  /** About · feature panel — intro headline line 2 (strong + muted parts). */
-  aboutFeatureIntroLine2Primary: string;
-  aboutFeatureIntroLine2Secondary: string;
+  /** About · banner — Standard wording, or Custom free text per label (below). */
+  aboutBannerLabelsMode: PortfolioInfoLabelsMode;
+  aboutBannerCustomSkillsLabel: string;
+  aboutBannerCustomStrengthsLabel: string;
   /** About · platform — left headline beside bio (supports line breaks). */
   aboutPlatformHeadlineCustomText: string;
   /** About · platform — full-width skills section title. */
@@ -188,7 +191,7 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   aboutPortraitSkillsMetaLead: string;
   /** About · portrait skills — show interests + languages paragraph at the bottom. */
   aboutPortraitSkillsMetaEnabled: boolean;
-  /** About · manifesto — grid 2×2 or zigzag alterné (grand écran). */
+  /** About · manifesto — grid 2×2 or alternating zigzag (desktop). */
   aboutManifestoBlocksLayout: PortfolioInfoAboutManifestoBlocksLayout;
   /** About · manifesto — blur non-centered blocks while scrolling. */
   aboutManifestoBlocksScrollFocus: boolean;
@@ -206,12 +209,6 @@ export const DEFAULT_ABOUT_ME_TRAIT_HEADLINE =
 
 /** About · banner — default XXL centered headline (3 lines). */
 export const DEFAULT_ABOUT_BANNER_HEADLINE = 'Built To Ship\nDesigned To\nScale';
-
-/** About · feature panel — default two-tone intro (web craft, not AI-model copy). */
-export const DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY = 'FROM INTERFACE';
-export const DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY = 'TO INFRASTRUCTURE';
-export const DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY = 'Web apps, APIs,';
-export const DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY = 'and delivery that lasts';
 
 export const DEFAULT_ABOUT_PLATFORM_HEADLINE = 'Built for clarity\nand real-world impact';
 export const DEFAULT_ABOUT_PLATFORM_SKILLS_TITLE = 'Skills I have';
@@ -233,109 +230,28 @@ export const PORTFOLIO_INFO_ABOUT_PLATFORM_HEADLINE_PRESETS: {
   {
     id: 'clarity-impact',
     label: 'Clarity & Impact',
-    description: 'Clarté produit et impact concret.',
+    description: 'Product clarity and real-world impact.',
     text: 'Built for clarity\nand real-world impact',
   },
   {
     id: 'marketing-success',
     label: 'Marketing Success',
-    description: 'Ton Jasper — succès marketing.',
+    description: 'Jasper-style tone — marketing success.',
     text: 'Built for\nmarketing success',
   },
   {
     id: 'ship-scale',
     label: 'Ship & Scale',
-    description: 'Produit robuste, pensé pour durer.',
+    description: 'Sturdy product, built to last.',
     text: 'Built to ship\nproducts that scale',
   },
   {
     id: 'real-people',
     label: 'Real People',
-    description: 'Logiciel utile au quotidien.',
+    description: 'Software that helps every day.',
     text: 'Software that works\nfor real people',
   },
 ];
-
-/** About · feature panel — bicolor intro presets (2 lines × primary + secondary). */
-export const PORTFOLIO_INFO_ABOUT_FEATURE_INTRO_PRESETS: {
-  id: string;
-  label: string;
-  description: string;
-  line1Primary: string;
-  line1Secondary: string;
-  line2Primary: string;
-  line2Secondary: string;
-}[] = [
-  {
-    id: 'web-craft',
-    label: 'Web Craft',
-    description: 'Applications, APIs et mise en production.',
-    line1Primary: 'FROM INTERFACE',
-    line1Secondary: 'TO INFRASTRUCTURE',
-    line2Primary: 'Web apps, APIs,',
-    line2Secondary: 'and delivery that lasts',
-  },
-  {
-    id: 'breakthrough',
-    label: 'Breakthrough',
-    description: 'Apollo-style — foundation model, intelligence & products.',
-    line1Primary: 'THE BREAKTHROUGH',
-    line1Secondary: 'FOUNDATION MODEL',
-    line2Primary: 'Intelligence, systems,',
-    line2Secondary: 'and products that ship',
-  },
-  {
-    id: 'ship-scale',
-    label: 'Ship & Scale',
-    description: 'Produit robuste, pensé pour durer en production.',
-    line1Primary: 'BUILT TO',
-    line1Secondary: 'SHIP',
-    line2Primary: 'Designed to',
-    line2Secondary: 'scale and endure',
-  },
-  {
-    id: 'clear-craft',
-    label: 'Clear Craft',
-    description: 'Clarté technique et exécution soignée.',
-    line1Primary: 'ENGINEERED FOR',
-    line1Secondary: 'CLARITY',
-    line2Primary: 'Turning ideas',
-    line2Secondary: 'into shipped products',
-  },
-  {
-    id: 'real-impact',
-    label: 'Real Impact',
-    description: 'Logiciel utile, centré sur les vrais besoins.',
-    line1Primary: 'SOFTWARE FOR',
-    line1Secondary: 'REAL PEOPLE',
-    line2Primary: 'Built with care',
-    line2Secondary: 'and lasting intent',
-  },
-  {
-    id: 'bold-ideas',
-    label: 'Bold Ideas',
-    description: 'De la vision au produit concret.',
-    line1Primary: 'WHERE BOLD IDEAS',
-    line1Secondary: 'TAKE FORM',
-    line2Primary: 'From concept',
-    line2Secondary: 'to production',
-  },
-  {
-    id: 'quiet-power',
-    label: 'Quiet Power',
-    description: 'Impact discret, qualité durable.',
-    line1Primary: 'QUIET BY DESIGN',
-    line1Secondary: 'STRONG BY DEFAULT',
-    line2Primary: 'Focused work',
-    line2Secondary: 'with lasting results',
-  },
-];
-
-/** About · feature panel — default two-tone headline above education / languages footer. */
-export const DEFAULT_ABOUT_FEATURE_META_LINE_1_PRIMARY = 'SHAPED BY';
-export const DEFAULT_ABOUT_FEATURE_META_LINE_1_SECONDARY = 'EXPERIENCE';
-export const DEFAULT_ABOUT_FEATURE_META_LINE_2_PRIMARY = 'ROOTED IN';
-export const DEFAULT_ABOUT_FEATURE_META_LINE_2_SECONDARY = 'THE WORLD';
 
 /** About · banner — XXL headline presets (hero / manifesto tone). */
 export const PORTFOLIO_INFO_ABOUT_BANNER_HEADLINE_PRESETS: {
@@ -347,37 +263,37 @@ export const PORTFOLIO_INFO_ABOUT_BANNER_HEADLINE_PRESETS: {
   {
     id: 'ship-scale',
     label: 'Ship & Scale',
-    description: 'Produit robuste, pensé pour durer.',
+    description: 'Sturdy product, built to last.',
     text: 'Built To Ship\nDesigned To\nScale',
   },
   {
     id: 'flex-convert',
     label: 'Flex & Convert',
-    description: 'Impact éditorial type hero portfolio.',
+    description: 'Editorial impact, portfolio-hero style.',
     text: 'Built To Flex\nDesigned To\nConvert',
   },
   {
     id: 'sketch-production',
     label: 'Sketch → Prod',
-    description: 'De la première idée à la prod.',
+    description: 'From first sketch to production.',
     text: 'From First Sketch\nTo Production\nWithout Noise',
   },
   {
     id: 'clear-clean',
     label: 'Clear & Clean',
-    description: 'Clarté, exécution, produits durables.',
+    description: 'Clarity, execution, lasting products.',
     text: 'Clear Thinking\nClean Builds\nLasting Products',
   },
   {
     id: 'real-people',
     label: 'Real People',
-    description: 'Technologie utile au quotidien.',
+    description: 'Technology that helps every day.',
     text: 'Software That\nWorks For\nReal People',
   },
   {
     id: 'ideas-live',
     label: 'Ideas Live',
-    description: 'Des idées aux produits concrets.',
+    description: 'From ideas to real products.',
     text: 'Where Bold Ideas\nBecome Real\nWorking Products',
   },
 ];
@@ -407,37 +323,37 @@ export const PORTFOLIO_INFO_ABOUT_ME_TRAIT_HEADLINE_PRESETS: {
   {
     id: 'hard-to-simple',
     label: 'Hard → Simple',
-    description: 'Complexité → simplicité logicielle.',
+    description: 'Complexity turned into simple software.',
     text: 'Turning Hard\nProblems Into\nSimple Software',
   },
   {
     id: 'effortless-products',
     label: 'Effortless',
-    description: 'Produits digitaux fluides et naturels.',
+    description: 'Digital products that feel fluid and natural.',
     text: 'Building Digital\nProducts That\nFeel Effortless',
   },
   {
     id: 'ideas-to-products',
     label: 'Ideas → Products',
-    description: 'De l’idée au produit concret.',
+    description: 'From idea to real product.',
     text: 'From Complex Ideas\nTo Clear\nWorking Products',
   },
   {
     id: 'clarity-purpose',
     label: 'Clarity & Purpose',
-    description: 'Code réfléchi, intention claire.',
+    description: 'Thoughtful code, clear intent.',
     text: 'Crafting Software\nWith Clarity\nAnd Purpose',
   },
   {
     id: 'tech-for-people',
     label: 'Tech for People',
-    description: 'Technologie accessible et humaine.',
+    description: 'Accessible, human-centered technology.',
     text: 'Making Technology\nSimple For\nReal People',
   },
   {
     id: 'real-world-impact',
     label: 'Real Impact',
-    description: 'Code utile, impact concret.',
+    description: 'Useful code, real-world impact.',
     text: 'Where Thoughtful Code\nMeets Real\nWorld Impact',
   },
 ];
@@ -458,7 +374,6 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   showLanguages: true,
   showSystemsTools: true,
   showLanguageFlags: true,
-  languageLevelDisplayStyle: 'stars',
   educationDisplayStyle: 'editorial',
   educationCascadeScrollShift: false,
   aboutMeTraitHeadlineEnabled: true,
@@ -483,13 +398,16 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   aboutManifestoPortraitFrame: 'square',
   aboutSplitPortraitSide: 'left',
   aboutSplitSectionLabelsStyle: 'default',
+  aboutSplitLabelsMode: 'standard',
+  aboutSplitCustomSkillsLabel: '',
+  aboutSplitCustomStrengthsLabel: '',
+  aboutSplitCustomLanguagesLabel: '',
   aboutBannerHeadlineEnabled: true,
   aboutBannerHeadlineCustomText: DEFAULT_ABOUT_BANNER_HEADLINE,
   aboutBannerSectionLabelsStyle: 'conversational',
-  aboutFeatureIntroLine1Primary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY,
-  aboutFeatureIntroLine1Secondary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY,
-  aboutFeatureIntroLine2Primary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY,
-  aboutFeatureIntroLine2Secondary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY,
+  aboutBannerLabelsMode: 'standard',
+  aboutBannerCustomSkillsLabel: '',
+  aboutBannerCustomStrengthsLabel: '',
   aboutPlatformHeadlineCustomText: DEFAULT_ABOUT_PLATFORM_HEADLINE,
   aboutPlatformSkillsSectionTitle: DEFAULT_ABOUT_PLATFORM_SKILLS_TITLE,
   aboutPlatformStrengthsSectionTitle: DEFAULT_ABOUT_PLATFORM_STRENGTHS_TITLE,
@@ -508,18 +426,18 @@ export const PORTFOLIO_INFO_ABOUT_VALUE_VALUES_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'editorial',
-    label: 'Éditorial',
-    description: 'Titre à gauche, liste à droite — une value par ligne avec puce.',
+    label: 'Editorial',
+    description: 'Title on the left, list on the right — one value per line with a bullet.',
   },
   {
     value: 'numbered-grid',
-    label: 'Grille numérotée',
-    description: 'Titre en haut à gauche ; values en grille 2 colonnes — 01, 02… + titre + texte.',
+    label: 'Numbered grid',
+    description: 'Title top-left; values in a 2-column grid — 01, 02… + title + text.',
   },
   {
     value: 'indexed-list',
-    label: 'Liste indexée',
-    description: 'Titre en haut ; lignes 001 · titre · description — séparateurs fins type témoignages.',
+    label: 'Indexed list',
+    description: 'Title at top; rows 001 · title · description — thin dividers, testimonial style.',
   },
 ];
 
@@ -531,7 +449,7 @@ export const PORTFOLIO_INFO_ABOUT_VALUE_STEPS_VALUES_LAYOUT_OPTIONS: {
   {
     value: 'value-steps',
     label: 'Steps',
-    description: 'My Values sticky à droite ; skills numérotés (01…) — layout natif du design.',
+    description: 'My Values sticky on the right; numbered skills (01…) — the design’s native layout.',
   },
   ...PORTFOLIO_INFO_ABOUT_VALUE_VALUES_LAYOUT_OPTIONS,
 ];
@@ -564,12 +482,12 @@ export const PORTFOLIO_INFO_ABOUT_VALUE_BLOCKS_LAYOUT_OPTIONS: {
   {
     value: 'split',
     label: 'Split',
-    description: 'Titre à gauche, liste à droite — une section par ligne (grand écran).',
+    description: 'Title on the left, list on the right — one section per row (desktop).',
   },
   {
     value: 'grid-2',
-    label: 'Grille 2 colonnes',
-    description: 'My Values, Strengths, etc. côte à côte — titre en haut, contenu en dessous.',
+    label: '2-column grid',
+    description: 'My Values, Strengths, etc. side by side — title on top, content below.',
   },
 ];
 
@@ -594,13 +512,13 @@ export const PORTFOLIO_INFO_ABOUT_MANIFESTO_BLOCKS_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'grid',
-    label: 'Grille',
-    description: 'Deux blocs par ligne — alignés en grille (Education | Skills, etc.).',
+    label: 'Grid',
+    description: 'Two blocks per row — aligned in a grid (Education | Skills, etc.).',
   },
   {
     value: 'zigzag',
     label: 'Zigzag',
-    description: 'Un bloc par ligne — alternance gauche puis droite.',
+    description: 'One block per row — alternating left then right.',
   },
 ];
 
@@ -625,28 +543,28 @@ export const PORTFOLIO_INFO_ABOUT_MANIFESTO_PORTRAIT_FRAME_OPTIONS: {
 }[] = [
   {
     value: 'circle',
-    label: 'Rond',
-    description: 'Cercle classique — photo recadrée en rond.',
+    label: 'Circle',
+    description: 'Classic circle — photo cropped round.',
   },
   {
     value: 'square',
-    label: 'Carré',
-    description: 'Cadre carré net — angles droits.',
+    label: 'Square',
+    description: 'Clean square frame — sharp corners.',
   },
   {
     value: 'rectangle',
     label: 'Rectangle',
-    description: 'Format portrait 4:5 — style éditorial.',
+    description: '4:5 portrait format — editorial style.',
   },
   {
     value: 'instagram',
     label: 'Instagram',
-        description: 'Anneau unicolore (couleur principale) décollé du portrait.',
+    description: 'Single-color ring (accent color), offset from the portrait.',
   },
   {
     value: 'monogram',
-    label: 'Initiales',
-    description: 'Monogramme typographique — initiales en serif, sans photo.',
+    label: 'Monogram',
+    description: 'Typographic monogram — serif initials, no photo.',
   },
 ];
 
@@ -677,13 +595,13 @@ export const PORTFOLIO_INFO_ABOUT_SPLIT_PORTRAIT_SIDE_OPTIONS: {
 }[] = [
   {
     value: 'left',
-    label: 'Portrait à gauche',
-    description: 'Photo sticky à gauche, contenu à droite — disposition par défaut.',
+    label: 'Portrait on the left',
+    description: 'Sticky photo on the left, content on the right — default layout.',
   },
   {
     value: 'right',
-    label: 'Portrait à droite',
-    description: 'Contenu à gauche, photo sticky à droite.',
+    label: 'Portrait on the right',
+    description: 'Content on the left, sticky photo on the right.',
   },
 ];
 
@@ -747,31 +665,31 @@ export const PORTFOLIO_INFO_ABOUT_SPLIT_SECTION_LABELS_OPTIONS: {
   {
     value: 'default',
     label: 'Standard',
-    description: 'Skills · Strengths · Languages — titres classiques.',
+    description: 'Skills · Strengths · Languages — classic titles.',
     preview: ABOUT_SPLIT_SECTION_LABELS_BY_STYLE.default,
   },
   {
     value: 'conversational',
-    label: 'Conversationnel',
-    description: 'What I do · What I bring · I speak — ton personnel.',
+    label: 'Conversational',
+    description: 'What I do · What I bring · I speak — personal tone.',
     preview: ABOUT_SPLIT_SECTION_LABELS_BY_STYLE.conversational,
   },
   {
     value: 'professional',
-    label: 'Professionnel',
+    label: 'Professional',
     description: 'Core competencies · Key strengths · Languages spoken.',
     preview: ABOUT_SPLIT_SECTION_LABELS_BY_STYLE.professional,
   },
   {
     value: 'editorial',
-    label: 'Éditorial',
-    description: 'Expertise · Qualities · Spoken languages — style magazine.',
+    label: 'Editorial',
+    description: 'Expertise · Qualities · Spoken languages — magazine style.',
     preview: ABOUT_SPLIT_SECTION_LABELS_BY_STYLE.editorial,
   },
   {
     value: 'creative',
-    label: 'Créatif',
-    description: 'Capabilities · Superpowers · Languages — portfolio créatif.',
+    label: 'Creative',
+    description: 'Capabilities · Superpowers · Languages — creative portfolio.',
     preview: ABOUT_SPLIT_SECTION_LABELS_BY_STYLE.creative,
   },
 ];
@@ -788,15 +706,26 @@ export function isPortfolioInfoAboutSplitSectionLabelsStyle(
   );
 }
 
+export function isPortfolioInfoLabelsMode(value: unknown): value is PortfolioInfoLabelsMode {
+  return value === 'standard' || value === 'custom';
+}
+
 export function resolveAboutSplitSectionLabels(
-  presentation: Pick<PortfolioInfoPresentationSettings, 'aboutSplitSectionLabelsStyle'>
+  presentation: Pick<
+    PortfolioInfoPresentationSettings,
+    | 'aboutSplitLabelsMode'
+    | 'aboutSplitCustomSkillsLabel'
+    | 'aboutSplitCustomStrengthsLabel'
+    | 'aboutSplitCustomLanguagesLabel'
+  >
 ): AboutSplitSectionLabels {
-  const style = isPortfolioInfoAboutSplitSectionLabelsStyle(
-    presentation.aboutSplitSectionLabelsStyle
-  )
-    ? presentation.aboutSplitSectionLabelsStyle
-    : 'default';
-  return ABOUT_SPLIT_SECTION_LABELS_BY_STYLE[style];
+  const standard = ABOUT_SPLIT_SECTION_LABELS_BY_STYLE.default;
+  if (presentation.aboutSplitLabelsMode !== 'custom') return standard;
+  return {
+    skills: presentation.aboutSplitCustomSkillsLabel?.trim() || standard.skills,
+    strengths: presentation.aboutSplitCustomStrengthsLabel?.trim() || standard.strengths,
+    languages: presentation.aboutSplitCustomLanguagesLabel?.trim() || standard.languages,
+  };
 }
 
 export type AboutBannerSectionLabels = Pick<AboutSplitSectionLabels, 'skills' | 'strengths'> & {
@@ -816,18 +745,24 @@ const ABOUT_BANNER_META_LABELS_BY_STYLE: Record<
 };
 
 export function resolveAboutBannerSectionLabels(
-  presentation: Pick<PortfolioInfoPresentationSettings, 'aboutBannerSectionLabelsStyle'>
+  presentation: Pick<
+    PortfolioInfoPresentationSettings,
+    'aboutBannerLabelsMode' | 'aboutBannerCustomSkillsLabel' | 'aboutBannerCustomStrengthsLabel'
+  >
 ): AboutBannerSectionLabels {
-  const style = isPortfolioInfoAboutSplitSectionLabelsStyle(
-    presentation.aboutBannerSectionLabelsStyle
-  )
-    ? presentation.aboutBannerSectionLabelsStyle
-    : 'conversational';
-  const labels = ABOUT_SPLIT_SECTION_LABELS_BY_STYLE[style];
-  const metaLabels = ABOUT_BANNER_META_LABELS_BY_STYLE[style];
+  const labels = ABOUT_SPLIT_SECTION_LABELS_BY_STYLE.default;
+  const metaLabels = ABOUT_BANNER_META_LABELS_BY_STYLE.default;
+  if (presentation.aboutBannerLabelsMode !== 'custom') {
+    return {
+      skills: labels.skills,
+      strengths: labels.strengths,
+      education: metaLabels.education,
+      interests: metaLabels.interests,
+    };
+  }
   return {
-    skills: labels.skills,
-    strengths: labels.strengths,
+    skills: presentation.aboutBannerCustomSkillsLabel?.trim() || labels.skills,
+    strengths: presentation.aboutBannerCustomStrengthsLabel?.trim() || labels.strengths,
     education: metaLabels.education,
     interests: metaLabels.interests,
   };
@@ -845,11 +780,11 @@ export const PORTFOLIO_INFO_ABOUT_VALUE_LIST_MARKER_STYLE_OPTIONS: {
   description: string;
   preview: string;
 }[] = [
-  { value: 'dot', label: 'Point', description: 'Puce ronde pleine — style actuel.', preview: '●' },
-  { value: 'dash', label: 'Trait', description: 'Tiret horizontal court.', preview: '—' },
-  { value: 'arrow', label: 'Flèche', description: 'Flèche →.', preview: '→' },
+  { value: 'dot', label: 'Dot', description: 'Solid round bullet — current style.', preview: '●' },
+  { value: 'dash', label: 'Dash', description: 'Short horizontal dash.', preview: '—' },
+  { value: 'arrow', label: 'Arrow', description: 'Arrow →.', preview: '→' },
   { value: 'chevron', label: 'Chevron', description: 'Chevron ›.', preview: '›' },
-  { value: 'none', label: 'Aucun', description: 'Masquer les puces — texte seul.', preview: '∅' },
+  { value: 'none', label: 'None', description: 'Hide bullets — text only.', preview: '∅' },
 ];
 
 export function isPortfolioInfoAboutValueListMarkerStyle(
@@ -920,11 +855,11 @@ export const PORTFOLIO_INFO_ABOUT_VALUE_BIO_WIDTH_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'full', label: 'Plein largeur', description: 'La bio occupe toute la largeur du conteneur.' },
+  { value: 'full', label: 'Full width', description: 'The bio fills the full width of the container.' },
   {
     value: 'half',
-    label: 'Demi largeur',
-    description: 'La bio occupe ~50 % — alignement gauche, centre ou droite.',
+    label: 'Half width',
+    description: 'The bio takes up ~50% — left, center, or right aligned.',
   },
 ];
 
@@ -932,9 +867,9 @@ export const PORTFOLIO_INFO_ABOUT_VALUE_BIO_ALIGN_OPTIONS: {
   value: PortfolioInfoAboutValueBioAlign;
   label: string;
 }[] = [
-  { value: 'left', label: 'Gauche' },
-  { value: 'center', label: 'Centre' },
-  { value: 'right', label: 'Droite' },
+  { value: 'left', label: 'Left' },
+  { value: 'center', label: 'Center' },
+  { value: 'right', label: 'Right' },
 ];
 
 export const PORTFOLIO_INFO_ABOUT_VALUE_BIO_COLOR_OPTIONS: {
@@ -942,10 +877,10 @@ export const PORTFOLIO_INFO_ABOUT_VALUE_BIO_COLOR_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'principal', label: 'Principal', description: 'Accent principal de la palette Hero.' },
-  { value: 'texteFort', label: 'Texte', description: 'Texte fort — titres et copy principal.' },
-  { value: 'texteMuted', label: 'Muted', description: 'Texte secondaire atténué.' },
-  { value: 'texteFaint', label: 'Faint', description: 'Texte discret — hints et labels.' },
+  { value: 'principal', label: 'Principal', description: 'Main accent from the Hero palette.' },
+  { value: 'texteFort', label: 'Text', description: 'Strong text — titles and main copy.' },
+  { value: 'texteMuted', label: 'Muted', description: 'Muted secondary text.' },
+  { value: 'texteFaint', label: 'Faint', description: 'Subtle text — hints and labels.' },
 ];
 
 export function isPortfolioInfoAboutValueBioSize(
@@ -1067,78 +1002,6 @@ export function resolveAboutBannerHeadlineText(
   return DEFAULT_ABOUT_BANNER_HEADLINE;
 }
 
-export type AboutFeatureIntroLine = { primary: string; secondary: string };
-
-/** Previous default copy — remapped so live portfolios follow the web-craft title.
- *  The Breakthrough preset uses a different line 2 so it is not swallowed. */
-const LEGACY_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY = 'THE BREAKTHROUGH';
-const LEGACY_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY = 'FOUNDATION MODEL';
-const LEGACY_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY = 'Built for clarity';
-const LEGACY_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY = 'and real-world impact';
-
-export function resolveAboutFeatureIntroLines(
-  presentation: Pick<
-    PortfolioInfoPresentationSettings,
-    | 'aboutFeatureIntroLine1Primary'
-    | 'aboutFeatureIntroLine1Secondary'
-    | 'aboutFeatureIntroLine2Primary'
-    | 'aboutFeatureIntroLine2Secondary'
-  >
-): { line1: AboutFeatureIntroLine; line2: AboutFeatureIntroLine } {
-  const line1Primary =
-    presentation.aboutFeatureIntroLine1Primary?.trim() || DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY;
-  const line1Secondary =
-    presentation.aboutFeatureIntroLine1Secondary?.trim() ||
-    DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY;
-  const line2Primary =
-    presentation.aboutFeatureIntroLine2Primary?.trim() || DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY;
-  const line2Secondary =
-    presentation.aboutFeatureIntroLine2Secondary?.trim() ||
-    DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY;
-  const isLegacyBreakthrough =
-    line1Primary === LEGACY_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY &&
-    line1Secondary === LEGACY_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY &&
-    line2Primary === LEGACY_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY &&
-    line2Secondary === LEGACY_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY;
-
-  if (isLegacyBreakthrough) {
-    return {
-      line1: {
-        primary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY,
-        secondary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY,
-      },
-      line2: {
-        primary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY,
-        secondary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY,
-      },
-    };
-  }
-
-  return {
-    line1: { primary: line1Primary, secondary: line1Secondary },
-    line2: { primary: line2Primary, secondary: line2Secondary },
-  };
-}
-
-export function isAboutFeatureIntroPresetActive(
-  presentation: Pick<
-    PortfolioInfoPresentationSettings,
-    | 'aboutFeatureIntroLine1Primary'
-    | 'aboutFeatureIntroLine1Secondary'
-    | 'aboutFeatureIntroLine2Primary'
-    | 'aboutFeatureIntroLine2Secondary'
-  >,
-  preset: (typeof PORTFOLIO_INFO_ABOUT_FEATURE_INTRO_PRESETS)[number]
-): boolean {
-  const lines = resolveAboutFeatureIntroLines(presentation);
-  return (
-    lines.line1.primary === preset.line1Primary &&
-    lines.line1.secondary === preset.line1Secondary &&
-    lines.line2.primary === preset.line2Primary &&
-    lines.line2.secondary === preset.line2Secondary
-  );
-}
-
 export function resolveAboutPlatformHeadlineText(
   presentation: Pick<PortfolioInfoPresentationSettings, 'aboutPlatformHeadlineCustomText'>,
   specialty?: string | null
@@ -1171,22 +1034,6 @@ export function resolveInfoAboutPlatformStaggerLayout(
   presentation: Pick<PortfolioInfoPresentationSettings, 'aboutPlatformStaggerLayout'>
 ): boolean {
   return presentation.aboutPlatformStaggerLayout !== false;
-}
-
-export function resolveAboutFeatureMetaIntroLines(): {
-  line1: AboutFeatureIntroLine;
-  line2: AboutFeatureIntroLine;
-} {
-  return {
-    line1: {
-      primary: DEFAULT_ABOUT_FEATURE_META_LINE_1_PRIMARY,
-      secondary: DEFAULT_ABOUT_FEATURE_META_LINE_1_SECONDARY,
-    },
-    line2: {
-      primary: DEFAULT_ABOUT_FEATURE_META_LINE_2_PRIMARY,
-      secondary: DEFAULT_ABOUT_FEATURE_META_LINE_2_SECONDARY,
-    },
-  };
 }
 
 export function resolveAboutValueBioColor(
@@ -1225,22 +1072,22 @@ export const PORTFOLIO_INFO_EDUCATION_DISPLAY_OPTIONS: {
   {
     value: 'timeline',
     label: 'Timeline',
-    description: 'Spine verticale + points — années empilées, index 01/02 (style actuel).',
+    description: 'Vertical spine + dots — stacked years, 01/02 index (current style).',
   },
   {
     value: 'editorial',
     label: 'Editorial',
-    description: 'Bandes magazine — année en filigrane, titre XXL, institution en caption.',
+    description: 'Magazine bands — watermark year, XXL title, institution as caption.',
   },
   {
     value: 'panels',
     label: 'Panels',
-    description: 'Grille 2 colonnes — cartes douces, année discrète, trait accent au survol.',
+    description: '2-column grid — soft cards, subtle year, accent line on hover.',
   },
   {
     value: 'cascade',
     label: 'Cascade',
-    description: 'Décalage asymétrique type Awwwards — index géant + pastille année.',
+    description: 'Asymmetric Awwwards-style stagger — giant index + year badge.',
   },
 ];
 
@@ -1317,9 +1164,9 @@ export const PORTFOLIO_INFO_CONTENT_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'S', description: 'Compact — labels et listes plus petits.' },
-  { value: 'md', label: 'M', description: 'Standard — équilibre lisibilité / densité.' },
-  { value: 'lg', label: 'L', description: 'Large — texte plus confortable à lire.' },
+  { value: 'sm', label: 'S', description: 'Compact — smaller labels and lists.' },
+  { value: 'md', label: 'M', description: 'Standard — balance of readability and density.' },
+  { value: 'lg', label: 'L', description: 'Large — more comfortable to read.' },
 ];
 
 export function isPortfolioInfoContentSize(value: unknown): value is PortfolioInfoContentSize {
@@ -1539,19 +1386,6 @@ export function aboutBannerBioSizeClass(size: PortfolioInfoContentSize): string 
   }
 }
 
-/** About · feature panel — two-tone intro headline (regular weight). */
-export function aboutFeatureIntroSizeClass(size: PortfolioInfoContentSize): string {
-  switch (size) {
-    case 'sm':
-      return 'text-2xl sm:text-3xl';
-    case 'lg':
-      return 'text-4xl sm:text-5xl lg:text-[3.25rem]';
-    case 'md':
-    default:
-      return 'text-3xl sm:text-4xl lg:text-[2.75rem]';
-  }
-}
-
 /** About · platform — hero headline beside bio. */
 export function aboutPlatformHeadlineSizeClass(size: PortfolioInfoContentSize): string {
   switch (size) {
@@ -1588,45 +1422,6 @@ export function aboutPlatformSkillsTitleSizeClass(size: PortfolioInfoContentSize
     case 'md':
     default:
       return 'text-5xl sm:text-6xl lg:text-[4.25rem]';
-  }
-}
-
-/** About · feature panel — footer meta bicolor headline (larger than section intro). */
-export function aboutFeatureMetaIntroSizeClass(size: PortfolioInfoContentSize): string {
-  switch (size) {
-    case 'sm':
-      return 'text-4xl sm:text-5xl';
-    case 'lg':
-      return 'text-6xl sm:text-7xl lg:text-[5rem]';
-    case 'md':
-    default:
-      return 'text-5xl sm:text-6xl lg:text-[4.25rem]';
-  }
-}
-
-/** About · feature panel — skill title in left rail. */
-export function aboutFeatureSkillTitleSizeClass(size: PortfolioInfoContentSize): string {
-  switch (size) {
-    case 'sm':
-      return 'text-lg sm:text-xl';
-    case 'lg':
-      return 'text-2xl sm:text-[1.75rem]';
-    case 'md':
-    default:
-      return 'text-xl sm:text-2xl';
-  }
-}
-
-/** About · feature panel — blockquote description inside the card. */
-export function aboutFeatureQuoteSizeClass(size: PortfolioInfoContentSize): string {
-  switch (size) {
-    case 'sm':
-      return 'text-[1.35rem] sm:text-[1.55rem]';
-    case 'lg':
-      return 'text-[1.85rem] sm:text-[2.2rem] lg:text-[2.5rem]';
-    case 'md':
-    default:
-      return 'text-[1.65rem] sm:text-[1.95rem] lg:text-[2.25rem]';
   }
 }
 
@@ -1758,47 +1553,9 @@ export function terminalHeadingSizeClass(size: PortfolioInfoContentSize): string
   }
 }
 
-export const PORTFOLIO_INFO_LANGUAGE_LEVEL_DISPLAY_OPTIONS: {
-  value: PortfolioInfoLanguageLevelDisplayStyle;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'stars',
-    label: 'Étoiles',
-    description: 'Note sur 5 étoiles — remplies avec la couleur d’accent.',
-  },
-  {
-    value: 'text',
-    label: 'Texte',
-    description: 'Beginner, Intermediate, Advanced, Expert — libellé textuel.',
-  },
-  {
-    value: 'dots',
-    label: 'Points',
-    description: '5 points lumineux selon le niveau.',
-  },
-  {
-    value: 'progress-bar',
-    label: 'Barre',
-    description: 'Barre de progression horizontale (sans libellé de niveau).',
-  },
-];
-
-export function isPortfolioInfoLanguageLevelDisplayStyle(
-  value: unknown
-): value is PortfolioInfoLanguageLevelDisplayStyle {
-  return (
-    value === 'stars' || value === 'text' || value === 'dots' || value === 'progress-bar'
-  );
-}
-
 export function resolveInfoLanguageLevelDisplayStyle(
-  presentation: Pick<PortfolioInfoPresentationSettings, 'design' | 'languageLevelDisplayStyle'>
+  presentation: Pick<PortfolioInfoPresentationSettings, 'design'>
 ): PortfolioInfoLanguageLevelDisplayStyle {
-  if (isPortfolioInfoLanguageLevelDisplayStyle(presentation.languageLevelDisplayStyle)) {
-    return presentation.languageLevelDisplayStyle;
-  }
   if (presentation.design === 'about-terminal' || presentation.design === 'about-value-steps') {
     return 'progress-bar';
   }
@@ -1817,61 +1574,55 @@ export const PORTFOLIO_INFO_DESIGN_OPTIONS: {
     value: 'about-me',
     label: 'About me',
     description:
-      'Titre + sous-titre, bio, puis Education et grilles Skills / Strengths / Languages / Systems & tools.',
+      'Title + subtitle, bio, then Education and Skills / Strengths / Languages / Systems & tools grids.',
   },
   {
     value: 'about-me-trait',
     label: 'About me · trait',
     description:
-      'ABOUT ME + trait ; portrait / bio ; Skills · Strengths · Languages ; Education en timeline éditoriale.',
+      'ABOUT ME + trait; portrait / bio; Skills · Strengths · Languages; Education as an editorial timeline.',
   },
   {
     value: 'about-split',
     label: 'About · split',
     description:
-      'Split asymétrique type Framer — portrait à gauche, titre expressif, bio, skills chips, strengths, langues compactes.',
+      'Framer-style asymmetric split — portrait on the left, expressive title, bio, skill chips, strengths, compact languages.',
   },
   {
     value: 'about-banner',
     label: 'About · banner',
     description:
-      'Titre XXL centré — portrait en bas à gauche, bio discrète en bas à droite. Style hero éditorial.',
-  },
-  {
-    value: 'about-feature-panel',
-    label: 'About · feature panel',
-    description:
-      'Titre + intro bicolore — rail de skills, panneau citation éditorial, pied magazine (bio en chapô, Background / What I bring / I speak).',
+      'Centered XXL title — portrait bottom-left, discreet bio bottom-right. Editorial hero style.',
   },
   {
     value: 'about-platform',
     label: 'About · platform',
     description:
-      'Style Jasper — kicker + titre à gauche, bio à droite ; grille de skills en cartes (4 par ligne).',
+      'Jasper style — kicker + title on the left, bio on the right; skills grid in cards (4 per row).',
   },
   {
     value: 'about-portrait-skills',
     label: 'About · portrait skills',
     description:
-      'Feature panel à portrait fixe — rail de skills XXL à gauche, photo épinglée à droite, badges ghost et bloc Interests & languages.',
+      'Fixed-portrait feature panel — XXL skills rail on the left, pinned photo on the right, ghost badges, and an Interests & languages block.',
   },
   {
     value: 'about-manifesto',
     label: 'About · manifesto',
     description:
-      'Déclaration XXL + filet d’accent ; Languages, Skills (Strengths) — éditorial Awwwards.',
+      'XXL statement + accent underline; Languages, Skills (Strengths) — Awwwards-style editorial.',
   },
   {
     value: 'about-terminal',
     label: 'About · terminal',
     description:
-      'Terminal monospace — header, bio, skills //, strengths, interests, langues (étoiles/texte/barre), tools, education.log ; palette Hero.',
+      'Monospace terminal — header, bio, skills //, strengths, interests, languages (stars/text/bar), tools, education.log; Hero palette.',
   },
   {
     value: 'about-value-steps',
     label: 'About · value steps',
     description:
-      'My Values — steps natifs, éditorial, grille numérotée ou liste indexée ; intro, strengths, portrait et blocs meta.',
+      'My Values — native steps, editorial, numbered grid, or indexed list; intro, strengths, portrait, and meta blocks.',
   },
 ];
 
@@ -1881,7 +1632,6 @@ export function isPortfolioInfoDesign(value: unknown): value is PortfolioInfoDes
     value === 'about-me-trait' ||
     value === 'about-split' ||
     value === 'about-banner' ||
-    value === 'about-feature-panel' ||
     value === 'about-platform' ||
     value === 'about-portrait-skills' ||
     value === 'about-manifesto' ||
@@ -1897,6 +1647,7 @@ const REMOVED_INFO_DESIGNS = new Set([
   'about-marquee',
   'about-cinema',
   'about-value',
+  'about-feature-panel',
 ]);
 
 /** Map saved design ids — removed layouts fall back to about-me (about-value → about-value-steps). */
@@ -1941,7 +1692,6 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         showStrengths: true,
         showLanguages: true,
         showSystemsTools: false,
-        languageLevelDisplayStyle: 'text',
         aboutSplitPortraitSide: 'left',
         aboutSplitSectionLabelsStyle: 'default',
       };
@@ -1961,24 +1711,6 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         aboutBannerSectionLabelsStyle: 'conversational',
         contentSize: 'md',
       };
-    case 'about-feature-panel':
-      return {
-        design: 'about-feature-panel',
-        title: DEFAULT_INFO_TITLE,
-        subtitle: '',
-        showEducation: true,
-        showSkills: true,
-        showStrengths: true,
-        showInterests: false,
-        showLanguages: true,
-        showSystemsTools: false,
-        languageLevelDisplayStyle: 'stars',
-        aboutFeatureIntroLine1Primary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_PRIMARY,
-        aboutFeatureIntroLine1Secondary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_1_SECONDARY,
-        aboutFeatureIntroLine2Primary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_PRIMARY,
-        aboutFeatureIntroLine2Secondary: DEFAULT_ABOUT_FEATURE_INTRO_LINE_2_SECONDARY,
-        contentSize: 'md',
-      };
     case 'about-platform':
       return {
         design: 'about-platform',
@@ -1990,7 +1722,6 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         showInterests: true,
         showLanguages: true,
         showSystemsTools: false,
-        languageLevelDisplayStyle: 'stars',
         aboutPlatformHeadlineCustomText: DEFAULT_ABOUT_PLATFORM_HEADLINE,
         aboutPlatformSkillsSectionTitle: DEFAULT_ABOUT_PLATFORM_SKILLS_TITLE,
         aboutPlatformStrengthsSectionTitle: DEFAULT_ABOUT_PLATFORM_STRENGTHS_TITLE,
@@ -2041,7 +1772,6 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         showInterests: true,
         showLanguages: true,
         showSystemsTools: true,
-        languageLevelDisplayStyle: 'progress-bar',
       };
     case 'about-value-steps':
       return {
@@ -2054,7 +1784,6 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         showInterests: true,
         showLanguages: false,
         showSystemsTools: false,
-        languageLevelDisplayStyle: 'progress-bar',
         aboutValueValuesLayout: 'value-steps',
         aboutValueStepsIntroEnabled: true,
         aboutValueStepsIntroParagraph1: DEFAULT_ABOUT_VALUE_STEPS_INTRO_PARAGRAPH_1,
@@ -2098,10 +1827,6 @@ export function resolveInfoSectionSubtitle(settings: PortfolioInfoSectionSetting
   const custom = settings.subtitle?.trim();
   // About · banner — profile bio drives copy; ignore generic default subtitle
   if (settings.design === 'about-banner') {
-    if (custom && custom !== DEFAULT_INFO_SUBTITLE) return custom;
-    return '';
-  }
-  if (settings.design === 'about-feature-panel') {
     if (custom && custom !== DEFAULT_INFO_SUBTITLE) return custom;
     return '';
   }
@@ -2224,11 +1949,6 @@ export function mergeInfoPresentation(
   let aboutValueStepsSettingsRevision =
     design === 'about-value-steps' ? aboutValueStepsRevision : base.aboutValueStepsSettingsRevision;
 
-  let languageLevelDisplayStyle: PortfolioInfoLanguageLevelDisplayStyle =
-    isPortfolioInfoLanguageLevelDisplayStyle(record.languageLevelDisplayStyle)
-      ? record.languageLevelDisplayStyle
-      : base.languageLevelDisplayStyle;
-
   let aboutValueValuesLayout: PortfolioInfoAboutValueValuesLayout =
     isPortfolioInfoAboutValueValuesLayout(record.aboutValueValuesLayout)
       ? record.aboutValueValuesLayout
@@ -2248,7 +1968,7 @@ export function mergeInfoPresentation(
       ? record.aboutValueStepsIntroParagraph1
       : base.aboutValueStepsIntroParagraph1;
 
-  let aboutValueStepsIntroParagraph2 =
+  const aboutValueStepsIntroParagraph2 =
     typeof record.aboutValueStepsIntroParagraph2 === 'string'
       ? record.aboutValueStepsIntroParagraph2
       : base.aboutValueStepsIntroParagraph2;
@@ -2300,7 +2020,6 @@ export function mergeInfoPresentation(
     showLanguages = designDefaults.showLanguages ?? false;
     showSystemsTools = designDefaults.showSystemsTools ?? false;
     showInterests = designDefaults.showInterests ?? true;
-    languageLevelDisplayStyle = designDefaults.languageLevelDisplayStyle ?? 'progress-bar';
     if (aboutValueStepsRevision < 6) {
       aboutValueValuesLayout = designDefaults.aboutValueValuesLayout ?? 'value-steps';
     }
@@ -2325,7 +2044,6 @@ export function mergeInfoPresentation(
     showSystemsTools,
     showLanguageFlags:
       typeof record.showLanguageFlags === 'boolean' ? record.showLanguageFlags : base.showLanguageFlags,
-    languageLevelDisplayStyle,
     educationDisplayStyle: isPortfolioInfoEducationDisplayStyle(record.educationDisplayStyle)
       ? record.educationDisplayStyle
       : base.educationDisplayStyle,
@@ -2409,6 +2127,21 @@ export function mergeInfoPresentation(
     )
       ? record.aboutSplitSectionLabelsStyle
       : base.aboutSplitSectionLabelsStyle,
+    aboutSplitLabelsMode: isPortfolioInfoLabelsMode(record.aboutSplitLabelsMode)
+      ? record.aboutSplitLabelsMode
+      : base.aboutSplitLabelsMode,
+    aboutSplitCustomSkillsLabel:
+      typeof record.aboutSplitCustomSkillsLabel === 'string'
+        ? record.aboutSplitCustomSkillsLabel
+        : base.aboutSplitCustomSkillsLabel,
+    aboutSplitCustomStrengthsLabel:
+      typeof record.aboutSplitCustomStrengthsLabel === 'string'
+        ? record.aboutSplitCustomStrengthsLabel
+        : base.aboutSplitCustomStrengthsLabel,
+    aboutSplitCustomLanguagesLabel:
+      typeof record.aboutSplitCustomLanguagesLabel === 'string'
+        ? record.aboutSplitCustomLanguagesLabel
+        : base.aboutSplitCustomLanguagesLabel,
     aboutBannerHeadlineEnabled:
       typeof record.aboutBannerHeadlineEnabled === 'boolean'
         ? record.aboutBannerHeadlineEnabled
@@ -2422,22 +2155,17 @@ export function mergeInfoPresentation(
     )
       ? record.aboutBannerSectionLabelsStyle
       : base.aboutBannerSectionLabelsStyle,
-    aboutFeatureIntroLine1Primary:
-      typeof record.aboutFeatureIntroLine1Primary === 'string'
-        ? record.aboutFeatureIntroLine1Primary
-        : base.aboutFeatureIntroLine1Primary,
-    aboutFeatureIntroLine1Secondary:
-      typeof record.aboutFeatureIntroLine1Secondary === 'string'
-        ? record.aboutFeatureIntroLine1Secondary
-        : base.aboutFeatureIntroLine1Secondary,
-    aboutFeatureIntroLine2Primary:
-      typeof record.aboutFeatureIntroLine2Primary === 'string'
-        ? record.aboutFeatureIntroLine2Primary
-        : base.aboutFeatureIntroLine2Primary,
-    aboutFeatureIntroLine2Secondary:
-      typeof record.aboutFeatureIntroLine2Secondary === 'string'
-        ? record.aboutFeatureIntroLine2Secondary
-        : base.aboutFeatureIntroLine2Secondary,
+    aboutBannerLabelsMode: isPortfolioInfoLabelsMode(record.aboutBannerLabelsMode)
+      ? record.aboutBannerLabelsMode
+      : base.aboutBannerLabelsMode,
+    aboutBannerCustomSkillsLabel:
+      typeof record.aboutBannerCustomSkillsLabel === 'string'
+        ? record.aboutBannerCustomSkillsLabel
+        : base.aboutBannerCustomSkillsLabel,
+    aboutBannerCustomStrengthsLabel:
+      typeof record.aboutBannerCustomStrengthsLabel === 'string'
+        ? record.aboutBannerCustomStrengthsLabel
+        : base.aboutBannerCustomStrengthsLabel,
     aboutPlatformHeadlineCustomText:
       typeof record.aboutPlatformHeadlineCustomText === 'string'
         ? record.aboutPlatformHeadlineCustomText

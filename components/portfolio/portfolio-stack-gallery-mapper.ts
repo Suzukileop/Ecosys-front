@@ -15,6 +15,7 @@ const TOOLS_GALLERY_DEFAULTS: Pick<
   | 'brandFloatTileDensity'
   | 'brandFloatContentAlignment'
   | 'brandFloatCardStyle'
+  | 'headerDesign'
 > = {
   brandDirectoryLevelStyle: 'percentage',
   brandDirectoryColumnsPerRow: 1,
@@ -25,6 +26,10 @@ const TOOLS_GALLERY_DEFAULTS: Pick<
   brandFloatTileDensity: 'comfortable',
   brandFloatContentAlignment: 'center',
   brandFloatCardStyle: 'framed',
+  // Stack's headerDesign (mask/split/typewriter/…) has no Tools equivalent and isn't
+  // read by the gallery renderers (Stack renders its own header separately) — any
+  // valid Tools value satisfies the type here.
+  headerDesign: 'focus',
 };
 
 function mapStackTitlePresetToTools(
@@ -64,6 +69,7 @@ export function stackPresentationToToolsGallery(
     stackTagsSize: _stackTagsSize,
     titleSize: _titleSize,
     subtitleSize: _subtitleSize,
+    headerDesign: _headerDesign,
     design,
     titlePreset,
     ...shared
@@ -74,6 +80,7 @@ export function stackPresentationToToolsGallery(
   void _stackTagsSize;
   void _titleSize;
   void _subtitleSize;
+  void _headerDesign;
 
   const galleryDesign = overrides?.design ?? design;
   if (galleryDesign === 'stack-tags') {

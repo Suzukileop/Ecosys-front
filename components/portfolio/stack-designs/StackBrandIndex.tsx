@@ -100,12 +100,37 @@ export function EditorialToolsBrandIndex({ tools, presentation }: ToolsGalleryPr
 
     gsap.registerPlugin(ScrollTrigger);
     const scroller = brandIndexScrollParent(root);
+    const rows = [...root.querySelectorAll<HTMLElement>('.pf-stack-brand-index-row')].filter(
+      isLaidOut
+    );
     const rules = [...root.querySelectorAll<HTMLElement>('.pf-stack-brand-index-rule')].filter(
       isLaidOut
     );
-    if (rules.length === 0) return;
+    if (rows.length === 0 && rules.length === 0) return;
 
     const ctx = gsap.context(() => {
+      if (rows.length > 0) {
+        // Hide immediately (pre-paint) so rows never flash at their static/visible
+        // state before ScrollTrigger fires — only the reveal is scroll-gated.
+        gsap.set(rows, { y: 16, opacity: 0.18 });
+
+        ScrollTrigger.batch(rows, {
+          start: 'top 92%',
+          once: true,
+          ...(scroller ? { scroller } : {}),
+          onEnter: (batch) => {
+            gsap.to(batch, {
+              y: 0,
+              opacity: 1,
+              duration: 0.72,
+              stagger: 0.065,
+              ease: 'power3.out',
+              overwrite: 'auto',
+            });
+          },
+        });
+      }
+
       rules.forEach((rule, index) => {
         gsap.set(rule, { scaleX: 0, transformOrigin: 'left center' });
         gsap.to(rule, {

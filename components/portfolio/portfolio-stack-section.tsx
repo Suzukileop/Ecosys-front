@@ -9,26 +9,11 @@ import { EditorialStackTags } from '@/components/portfolio/stack-designs/StackTa
 type StackGalleryProps = {
   items: PortfolioSkillRef[];
   presentation: PortfolioStackPresentationSettings;
-  /** Embedded kicker title — used by stack-tags only. */
-  embeddedTitle?: string;
-  embeddedSubtitle?: string;
 };
 
-export function EditorialStackGallery({
-  items,
-  presentation,
-  embeddedTitle,
-  embeddedSubtitle,
-}: StackGalleryProps) {
+export function EditorialStackGallery({ items, presentation }: StackGalleryProps) {
   if (presentation.design === 'stack-tags') {
-    return (
-      <EditorialStackTags
-        items={items}
-        presentation={presentation}
-        embeddedTitle={embeddedTitle}
-        embeddedSubtitle={embeddedSubtitle}
-      />
-    );
+    return <EditorialStackTags items={items} presentation={presentation} />;
   }
 
   const aside =

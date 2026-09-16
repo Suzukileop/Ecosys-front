@@ -59,10 +59,14 @@ export function PortfolioHeroBottomFrame({
   presentation,
   contentGutter = DEFAULT_CONTENT_GUTTER,
   contentWidthClass,
+  suppressBackground = false,
 }: {
   presentation: PortfolioHeroPresentationSettings;
   contentGutter?: PortfolioContentGutter;
   contentWidthClass?: string;
+  /** When a global page fill is active, this outer strip stays clear so it shows through —
+   *  the inner rounded card below keeps its own fill regardless (it's a deliberate frame). */
+  suppressBackground?: boolean;
 }) {
   const bottomText = presentation.heroPortraitIdentityBottomText?.trim() || '';
   const bottomLabel = presentation.heroPortraitIdentityBottomLabel?.trim() || '';
@@ -104,7 +108,7 @@ export function PortfolioHeroBottomFrame({
   return (
     <div
       className={`relative z-[1] ${shellX} ${bottomFrameGapClass(bottomGap)}`}
-      style={{ backgroundColor: fond }}
+      style={suppressBackground ? undefined : { backgroundColor: fond }}
     >
       <div
         className={`w-full ${bottomFrameAlignClass(bottomAlign)}`}

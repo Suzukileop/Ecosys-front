@@ -1,6 +1,17 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import { useToolLevelBarColor } from '@/components/creator/studio/creator-tool-logo-color';
 import {
@@ -60,6 +71,75 @@ type ToolsGalleryProps = {
   tools: PortfolioSkillRef[];
   presentation: PortfolioToolsPresentationSettings;
 };
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function isLaidOut(el: HTMLElement): boolean {
+  return el.getClientRects().length > 0;
+}
+
+function toolsGalleryScrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
+}
+
+/**
+ * Same scroll-gated reveal as the shared Stack/Tools designs (see StackBrandCards) —
+ * items sit hidden pre-paint and animate in once their row enters the viewport.
+ */
+function useToolsGalleryReveal(
+  listRef: React.RefObject<HTMLUListElement | null>,
+  itemSelector: string,
+  deps: unknown[]
+) {
+  useLayoutEffect(() => {
+    const root = listRef.current;
+    if (!root) return undefined;
+    if (prefersReducedMotion()) return undefined;
+
+    gsap.registerPlugin(ScrollTrigger);
+    const scroller = toolsGalleryScrollParent(root);
+    const ctx = gsap.context(() => {
+      const items = gsap.utils.toArray<HTMLElement>(root.querySelectorAll(itemSelector)).filter(isLaidOut);
+      if (items.length === 0) return;
+
+      gsap.set(items, { y: 18, opacity: 0.22 });
+
+      ScrollTrigger.batch(items, {
+        start: 'top 90%',
+        once: true,
+        ...(scroller ? { scroller } : {}),
+        onEnter: (batch) => {
+          gsap.to(batch, {
+            y: 0,
+            opacity: 1,
+            duration: 0.72,
+            stagger: 0.08,
+            ease: 'power3.out',
+            overwrite: 'auto',
+          });
+        },
+      });
+    }, root);
+
+    return () => {
+      ctx.revert();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+}
 
 /** Visible tile fill behind the icon (transparent when chip bg is off). */
 function toolsIconFrameBackground(presentation: PortfolioToolsPresentationSettings): string {
@@ -260,7 +340,7 @@ export function EditorialToolsGallery({ tools, presentation }: ToolsGalleryProps
  * logo left, copy + chips, level aligned right.
  */
 export function EditorialToolsBrandDirectory({ tools, presentation }: ToolsGalleryProps) {
-  if (tools.length === 0) return null;
+  const listRef = useRef<HTMLUListElement>(null);
 
   const tilePx = toolsBrandCardLogoTilePx(presentation.tileSize);
   const logoPx = toolsBrandCardLogoPx(presentation.tileSize);
@@ -281,8 +361,13 @@ export function EditorialToolsBrandDirectory({ tools, presentation }: ToolsGalle
   const ink = presentation.labelColor?.trim() || 'currentColor';
   const rule = presentation.cardBorderColor;
 
+  useToolsGalleryReveal(listRef, '.pf-tools-directory-row', [tools, presentation.cardGap, columnsPerRow]);
+
+  if (tools.length === 0) return null;
+
   return (
     <ul
+      ref={listRef}
       className={`pf-tools-directory w-full list-none p-0 ${gridClass}${multiColumn ? ' lg:border-t-0' : ''}`}
       role="list"
       data-columns={multiColumn ? 'multi' : '1'}
@@ -467,7 +552,7 @@ function ToolsBrandFloatDescription({
  * Centered tile grid — logo, name, optional copy. Hairline frame, no lift.
  */
 export function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryProps) {
-  if (tools.length === 0) return null;
+  const listRef = useRef<HTMLUListElement>(null);
 
   const logoPx = toolsShowcaseLogoPx(presentation.tileSize);
   const tilePx = Math.round(logoPx * 1.45);
@@ -493,8 +578,19 @@ export function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryPr
   const border = presentation.cardBorderColor;
   const framed = (presentation.brandFloatCardStyle ?? 'framed') === 'framed';
 
+  useToolsGalleryReveal(listRef, '.pf-tools-float-cell', [
+    tools,
+    presentation.cardGap,
+    gridMode,
+    presentation.brandFloatColumnsPerRow,
+    presentation.brandFloatTileDensity,
+  ]);
+
+  if (tools.length === 0) return null;
+
   return (
     <ul
+      ref={listRef}
       className={`w-full list-none p-0 ${gridClass} ${toolsBrandFloatGapClass(presentation.cardGap)}`}
       role="list"
       style={gridStyle}
@@ -507,7 +603,7 @@ export function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryPr
         const key = typeof tool === 'string' ? tool : `${tool.name}-${tool.iconUrl ?? ''}`;
 
         return (
-          <li key={key} className="relative z-0 min-w-0 hover:z-10 focus-within:z-10">
+          <li key={key} className="pf-tools-float-cell relative z-0 min-w-0 hover:z-10 focus-within:z-10">
             <article
               className={`pf-tools-float-card group relative flex h-full flex-col items-center overflow-visible px-4 pb-5 pt-6 sm:px-5 sm:pb-6 sm:pt-7 ${
                 framed ? 'pf-tools-float-card--framed' : 'pf-tools-float-card--open'
@@ -674,7 +770,7 @@ function ToolLevelStatBarCardItem({
 
       {showName ? (
         <span
-          className="pf-tools-stat-name mb-2.5 max-w-[7.25rem] truncate text-center"
+          className="pf-tools-stat-name mb-2.5 max-w-[8.5rem] text-center"
           style={toolsLabelColorStyle(presentation.labelColor)}
         >
           {name}
@@ -698,7 +794,7 @@ function ToolLevelStatBarCardItem({
  * Landbook / Framer minimal grid — logo, name, 4-segment stat bar (no text level).
  */
 export function EditorialToolsLevelStatBars({ tools, presentation }: ToolsGalleryProps) {
-  if (tools.length === 0) return null;
+  const listRef = useRef<HTMLUListElement>(null);
 
   const tilePx = toolsBrandCardLogoTilePx(presentation.tileSize);
   const logoPx = toolsBrandCardLogoPx(presentation.tileSize);
@@ -711,8 +807,13 @@ export function EditorialToolsLevelStatBars({ tools, presentation }: ToolsGaller
   const showLevel = resolveToolsShowLevel(presentation);
   const levelBarColors = resolveToolsLevelBarColors(presentation);
 
+  useToolsGalleryReveal(listRef, '.pf-tools-stat-cell', [tools, presentation.levelProgressRowGap]);
+
+  if (tools.length === 0) return null;
+
   return (
     <ul
+      ref={listRef}
       className={`grid w-full list-none grid-cols-2 p-0 sm:grid-cols-3 lg:grid-cols-4 ${toolsLevelIndicatorGridGapClass(presentation.levelProgressRowGap)}`}
       role="list"
     >
@@ -720,7 +821,7 @@ export function EditorialToolsLevelStatBars({ tools, presentation }: ToolsGaller
         const key = typeof tool === 'string' ? tool : `${tool.name}-${tool.iconUrl ?? ''}`;
 
         return (
-          <li key={key} className="min-w-0">
+          <li key={key} className="pf-tools-stat-cell min-w-0">
             <ToolLevelStatBarCardItem
               tool={tool}
               presentation={presentation}

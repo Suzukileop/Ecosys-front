@@ -30,6 +30,7 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
         presentation={heroData.presentation}
         contentGutter={heroData.contentGutter}
         contentWidthClass={heroData.contentWidthClass}
+        suppressBackground={heroData.suppressBackground}
       />
     </section>
   );

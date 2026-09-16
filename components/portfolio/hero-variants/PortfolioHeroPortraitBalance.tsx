@@ -439,13 +439,13 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
     <section
       ref={sectionRef}
       className="relative isolate w-full overflow-x-clip font-sans"
-      style={{ backgroundColor: fond, color: ink }}
+      style={{ ...(data.suppressBackground ? null : { backgroundColor: fond }), color: ink }}
       data-hero-variant="portrait-balance"
     >
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2"
-        style={{ backgroundColor: fond }}
+        style={data.suppressBackground ? undefined : { backgroundColor: fond }}
       />
 
       {/* —— Desktop — Brutalist Asymmetric Layout —— */}

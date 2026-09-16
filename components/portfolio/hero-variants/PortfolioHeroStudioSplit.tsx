@@ -298,7 +298,7 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
     <section
       ref={sectionRef}
       className="relative isolate w-full overflow-x-clip font-sans"
-      style={{ backgroundColor: fond, minHeight: '150vh' }} // Extra height for scroll effect
+      style={{ ...(data.suppressBackground ? null : { backgroundColor: fond }), minHeight: '150vh' }} // Extra height for scroll effect
       data-hero-variant="studio-split"
     >
       {/* Top principal band — copy lives here; media overlaps its bottom edge */}

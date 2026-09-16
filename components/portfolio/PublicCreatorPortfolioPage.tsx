@@ -26,7 +26,6 @@ import { SOCIAL_PLATFORMS } from '@/types/ecosystem';
 import type { MarketplaceContentItem, MarketplaceCreatorPublicProfile } from '@/types/marketplace';
 import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
 import { PortfolioHeroSection } from '@/components/portfolio/PortfolioHeroSection';
-import { PortfolioPagesSlideViewport } from '@/components/portfolio/portfolio-pages-transition';
 import { PortfolioCaseOverlayNav } from '@/components/portfolio/portfolio-case-overlay-nav';
 import { PortfolioDutenPanelNav } from '@/components/portfolio/portfolio-duten-panel-nav';
 import { PortfolioHalfPanelNav } from '@/components/portfolio/portfolio-half-panel-nav';
@@ -37,9 +36,6 @@ import {
 } from '@/components/portfolio/portfolio-nav-layout-design';
 import { PortfolioFixedMotifsLayer } from '@/components/portfolio/PortfolioHeroMotifsLayer';
 import { PortfolioSectionShell } from '@/components/portfolio/PortfolioSectionShell';
-import {
-  PortfolioSplitScreenFrame,
-} from '@/components/portfolio/portfolio-split-screen';
 import { PortfolioThemeRoot } from '@/components/portfolio/PortfolioThemeRoot';
 import { FaqSectionIllustration } from '@/components/portfolio/FaqSectionIllustration';
 import { usePortfolioSettings } from '@/components/portfolio/use-portfolio-settings';
@@ -352,24 +348,15 @@ import {
   globalSectionTitleTopExtraStyle,
   globalSectionTitleBottomClass,
   globalSectionTitleBottomExtraStyle,
-  globalSplitContentTopClass,
-  globalSplitContentTopExtraStyle,
-  globalSplitContentBottomClass,
-  globalSplitContentBottomExtraStyle,
   hasGlobalPageBackground,
   hasGlobalSolidBackground,
   resolveGlobalSectionSubtitleTypography,
   resolveGlobalSectionTitleChrome,
   resolveGlobalSectionTitleTypography,
-  resolveGlobalSplitTitleFrame,
   resolveSectionHeaderAlign,
   resolveSectionTitleOrientation,
 } from '@/components/portfolio/portfolio-global-settings';
-import {
-  hasOpaqueSectionBackground,
-  sectionBackgroundBlockColor,
-  type PortfolioSectionBackgroundSettings,
-} from '@/components/portfolio/portfolio-section-background-settings';
+import type { PortfolioSectionBackgroundSettings } from '@/components/portfolio/portfolio-section-background-settings';
 import {
   buildPortfolioNavChromeLinks,
   buildPortfolioNavSocialLinkOptions,
@@ -1321,88 +1308,29 @@ export function PublicCreatorPortfolioPage({
   }, [navItems, settings.hero.enabled]);
 
   const navMode = settings.navigation.navMode ?? 'default';
-  const isPagesMode = navMode === 'pages';
   const isCaseOverlayNav = portfolioNavUsesCaseOverlayLayout(settings.navigation);
   const isDutenPanelNav = portfolioNavUsesDutenPanelLayout(settings.navigation);
   const isHalfPanelNav = portfolioNavUsesHalfPanelLeftLayout(settings.navigation);
-  /** Large-screen split: title/description left (~40%), content right (~60%) — hero stays full-bleed. */
-  const isSplitMode = navMode === 'split';
-  const sectionContentLayout = isSplitMode ? 'split' : 'stacked';
-  const globalTypographyContext = useMemo(
-    () => ({ splitRail: isSplitMode }),
-    [isSplitMode]
-  );
-  const [activePageId, setActivePageId] = useState(() => perPageNavItems[0]?.id ?? 'hero');
-  const [pageSlideDirection, setPageSlideDirection] = useState<1 | -1>(1);
-
-  useEffect(() => {
-    if (!isPagesMode || perPageNavItems.length === 0) return;
-    if (!perPageNavItems.some((item) => item.id === activePageId)) {
-      setActivePageId(perPageNavItems[0].id);
-    }
-  }, [isPagesMode, perPageNavItems, activePageId]);
-
-  useEffect(() => {
-    if (!isPagesMode) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [isPagesMode]);
 
   const lastContentPageId = navItems[navItems.length - 1]?.id;
-  const shouldShowFooterOnPage = (pageId: string) => {
-    if (!settings.footer.enabled) return false;
-    if (sectionVisibility.contact) return pageId === 'contact';
-    return Boolean(lastContentPageId) && pageId === lastContentPageId;
-  };
 
   const contactCtaHref =
     primaryLink?.url ??
     (resolvedContactEmail ? `mailto:${resolvedContactEmail}` : '#footer');
-  const pagesContactTarget = sectionVisibility.contact
-    ? 'contact'
-    : lastContentPageId ?? 'contact';
-
-  const navigateToPage = (sectionId: string) => {
-    const normalized =
-      sectionId === 'footer' || sectionId === 'contact' ? pagesContactTarget : sectionId;
-    const targetIndex = perPageNavItems.findIndex((item) => item.id === normalized);
-    if (targetIndex < 0) {
-      if (lastContentPageId) {
-        setActivePageId(pagesContactTarget);
-      }
-      return;
-    }
-    const currentIndex = perPageNavItems.findIndex((item) => item.id === activePageId);
-    if (currentIndex >= 0 && targetIndex !== currentIndex) {
-      setPageSlideDirection(targetIndex > currentIndex ? 1 : -1);
-    }
-    setActivePageId(normalized);
-  };
 
   previewSectionFocusRef.current = (sectionId: string) => {
-    if (isPagesMode) {
-      navigateToPage(sectionId);
-      return;
-    }
     if (scrollToPortfolioSection(sectionId)) return;
     if (sectionId === 'hero') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  const heroContactHref = isPagesMode ? `#${pagesContactTarget}` : '#footer';
-  const navContactHref = isPagesMode
-    ? `#${pagesContactTarget}`
-    : sectionVisibility.contact
-      ? '#contact'
-      : contactCtaHref;
+  const heroContactHref = '#footer';
+  const navContactHref = sectionVisibility.contact ? '#contact' : contactCtaHref;
   const servicesOrderCtaHref = resolveServicesOrderCtaHref({
     contactSectionVisible: showContactSectionResolved,
     phone: profile.phone,
-    contactHref: isPagesMode ? `#${pagesContactTarget}` : '#contact',
+    contactHref: '#contact',
   });
   const heroWorkHref = showWorkSection
     ? '#work'
@@ -1413,21 +1341,6 @@ export function PublicCreatorPortfolioPage({
         : showContactSectionResolved
           ? '#contact'
           : '#hero';
-  const onNavigateSection = isPagesMode
-    ? (sectionId: string) => {
-        navigateToPage(sectionId);
-      }
-    : undefined;
-  const onServicesOrderCtaNavigate = isPagesMode
-    ? (href: string) => {
-        if (href.startsWith('tel:') || href.startsWith('mailto:')) {
-          window.location.assign(href);
-          return;
-        }
-        const sectionId = href.replace(/^#/, '') || 'footer';
-        onNavigateSection?.(sectionId);
-      }
-    : undefined;
 
   const isEditorialLayout = true;
 
@@ -1476,9 +1389,6 @@ export function PublicCreatorPortfolioPage({
     toolsPresentation,
   ]);
 
-  const resolvePageSectionBlocksGlobal = (sectionKey: PortfolioNavSectionKey) => {
-    return hasOpaqueSectionBackground(sectionBackgroundByKey[sectionKey]);
-  };
   const footerPaintsOwnBackground = Boolean(footerPresentation.sectionBackgroundEnabled);
   const globalBgStyle = useMemo(() => globalBackgroundStyle(settings.global), [settings.global]);
   const globalFixedBgStyle = useMemo(
@@ -1498,59 +1408,28 @@ export function PublicCreatorPortfolioPage({
     [settings.global.contentGutter]
   );
   const titleScrollBehavior = settings.global.titleScroll;
-  const effectiveTitleScroll = isSplitMode ? 'static' : titleScrollBehavior;
+  const effectiveTitleScroll = titleScrollBehavior;
   const motionProfile = settings.global.motionProfile;
   const titleChrome = useMemo(
     () => resolveGlobalSectionTitleChrome(settings.global),
     [settings.global]
   );
-  const splitTitleFrame = useMemo(
-    () => resolveGlobalSplitTitleFrame(settings.global),
-    [settings.global]
-  );
+  const globalTypographyContext = useMemo(() => ({ splitRail: false }), []);
   const sectionTopSpacingClass = useMemo(
-    () =>
-      isSplitMode
-        ? globalSplitContentTopClass(settings.global.splitContentTopSpacing ?? 'compact')
-        : globalSectionTitleTopClass(settings.global.sectionTitleTopSpacing),
-    [
-      isSplitMode,
-      settings.global.splitContentTopSpacing,
-      settings.global.sectionTitleTopSpacing,
-    ]
+    () => globalSectionTitleTopClass(settings.global.sectionTitleTopSpacing),
+    [settings.global.sectionTitleTopSpacing]
   );
   const sectionTopSpacingStyle = useMemo(
-    () =>
-      isSplitMode
-        ? globalSplitContentTopExtraStyle(settings.global.splitContentTopExtraPx ?? 0)
-        : globalSectionTitleTopExtraStyle(settings.global.sectionTitleTopExtraPx ?? 0),
-    [
-      isSplitMode,
-      settings.global.splitContentTopExtraPx,
-      settings.global.sectionTitleTopExtraPx,
-    ]
+    () => globalSectionTitleTopExtraStyle(settings.global.sectionTitleTopExtraPx ?? 0),
+    [settings.global.sectionTitleTopExtraPx]
   );
   const sectionBottomSpacingClass = useMemo(
-    () =>
-      isSplitMode
-        ? globalSplitContentBottomClass(settings.global.splitContentBottomSpacing ?? 'compact')
-        : globalSectionTitleBottomClass(settings.global.sectionTitleBottomSpacing),
-    [
-      isSplitMode,
-      settings.global.splitContentBottomSpacing,
-      settings.global.sectionTitleBottomSpacing,
-    ]
+    () => globalSectionTitleBottomClass(settings.global.sectionTitleBottomSpacing),
+    [settings.global.sectionTitleBottomSpacing]
   );
   const sectionBottomSpacingStyle = useMemo(
-    () =>
-      isSplitMode
-        ? globalSplitContentBottomExtraStyle(settings.global.splitContentBottomExtraPx ?? 0)
-        : globalSectionTitleBottomExtraStyle(settings.global.sectionTitleBottomExtraPx ?? 0),
-    [
-      isSplitMode,
-      settings.global.splitContentBottomExtraPx,
-      settings.global.sectionTitleBottomExtraPx,
-    ]
+    () => globalSectionTitleBottomExtraStyle(settings.global.sectionTitleBottomExtraPx ?? 0),
+    [settings.global.sectionTitleBottomExtraPx]
   );
 
   const workHeaderAlign = useMemo(
@@ -2133,7 +2012,6 @@ export function PublicCreatorPortfolioPage({
             id="info"
             background={infoPresentation}
             fitContent
-            fillAvailableHeight={isPagesMode}
             suppressBackground={suppressSectionBackground(infoPresentation)}
             topSpacingClass={
               isAboutBannerInfo
@@ -2145,7 +2023,6 @@ export function PublicCreatorPortfolioPage({
             topSpacingStyle={isAboutHeroInfo ? undefined : sectionTopSpacingStyle}
             bottomSpacingClass={isAboutHeroInfo ? 'pb-0' : sectionBottomSpacingClass}
             bottomSpacingStyle={isAboutHeroInfo ? undefined : sectionBottomSpacingStyle}
-            contentLayout={sectionContentLayout}
           >
             <EditorialAboutMeSection
               title={infoSectionTitle}
@@ -2168,7 +2045,7 @@ export function PublicCreatorPortfolioPage({
         );
       case 'work': {
         const layout = workPresentation.sectionLayout ?? 'stacked';
-        const aside = !isSplitMode && faqSectionLayoutIsAside(layout);
+        const aside = faqSectionLayoutIsAside(layout);
         const projectsBoard = isProjectsBoardDesign(workPresentation);
         const projectsAccordion = isProjectsAccordionDesign(workPresentation);
         const projectsFrames = isProjectsFramesDesign(workPresentation);
@@ -2374,7 +2251,7 @@ export function PublicCreatorPortfolioPage({
             subtitleDecorationStyle={workHeaderTypography.subtitle.decorationStyle}
             customSubtitleSizing={workHeaderTypography.subtitle.customSizing}
             scrollBehavior={effectiveTitleScroll}
-            orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'work')}
+            orientation={resolveSectionTitleOrientation(settings.global, 'work')}
           />
         );
         const contentBlock = (
@@ -2389,7 +2266,6 @@ export function PublicCreatorPortfolioPage({
               <ProjectsBoardGallery
                 items={workItems}
                 presentation={workPresentation}
-                forceSingleColumn={isSplitMode}
               />
             ) : projectsAccordion ? (
               <ProjectsAccordionGallery items={workItems} presentation={workPresentation} />
@@ -2406,7 +2282,6 @@ export function PublicCreatorPortfolioPage({
                 trailing={marketplaceTrailing}
                 items={workItems}
                 presentation={workPresentation}
-                forceSingleColumn={isSplitMode}
               />
             ) : projectsCarousel ? (
               <ProjectsCarouselSection
@@ -2435,7 +2310,6 @@ export function PublicCreatorPortfolioPage({
                 items={workItems}
                 presentation={workPresentation}
                 motionProfile={motionProfile}
-                forceSingleColumn={isSplitMode}
               />
             )}
           </SectionIllustratedContent>
@@ -2445,13 +2319,11 @@ export function PublicCreatorPortfolioPage({
             id="work"
             background={workPresentation}
             fitContent
-            fillAvailableHeight={isPagesMode}
             suppressBackground={suppressSectionBackground(workPresentation)}
             topSpacingClass={sectionTopSpacingClass}
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            contentLayout={sectionContentLayout}
             header={aside ? undefined : headerBlock}
           >
             {aside ? (
@@ -2467,9 +2339,7 @@ export function PublicCreatorPortfolioPage({
       case 'services': {
         const servicesLayout = settings.services.servicesHeader.sectionLayout ?? 'stacked';
         const servicesAside =
-          isDistinctServicesOrganization &&
-          !isSplitMode &&
-          faqSectionLayoutIsAside(servicesLayout);
+          isDistinctServicesOrganization && faqSectionLayoutIsAside(servicesLayout);
         const servicesHeaderBlock = (
           <EditorialSectionStickyHeader
             title={
@@ -2559,14 +2429,11 @@ export function PublicCreatorPortfolioPage({
               ).subtitle.customSizing
             }
             scrollBehavior={effectiveTitleScroll}
-            orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'services')}
+            orientation={resolveSectionTitleOrientation(settings.global, 'services')}
           />
         );
         const servicesContentBlock = (
-          <ServicesOrderCtaHrefProvider
-            href={servicesOrderCtaHref}
-            onNavigate={onServicesOrderCtaNavigate}
-          >
+          <ServicesOrderCtaHrefProvider href={servicesOrderCtaHref}>
             <SectionIllustratedContent
               variant={servicesPresentation.servicesIllustrationVariant}
               placement={servicesPresentation.servicesIllustrationPlacement}
@@ -2595,13 +2462,11 @@ export function PublicCreatorPortfolioPage({
             id="services"
             background={servicesPresentation}
             fitContent
-            fillAvailableHeight={isPagesMode}
             suppressBackground={suppressSectionBackground(servicesPresentation)}
             topSpacingClass={sectionTopSpacingClass}
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            contentLayout={sectionContentLayout}
             header={servicesAside ? undefined : servicesHeaderBlock}
           >
             {servicesAside ? (
@@ -2618,24 +2483,16 @@ export function PublicCreatorPortfolioPage({
         // About chrome (section title, subtitle, SVG) removed — only Infos panel remains.
         const aboutBody = (() => {
           const showPanel = settings.about.showSidePanel && aboutSideInfoItems.length > 0;
-          const splitProfileBand = isSplitMode && showPanel;
-          const isFullWidth = splitProfileBand || settings.about.layoutMode === 'full-width';
+          const isFullWidth = settings.about.layoutMode === 'full-width';
           const hasSidebar = showPanel && !isFullWidth;
-          const layoutMode = splitProfileBand ? 'full-width' : settings.about.layoutMode;
+          const layoutMode = settings.about.layoutMode;
           const isTwinColumns = layoutMode === 'twin-columns';
           const pairAlignClass = aboutContentPairAlignClass(
             aboutPresentation.contentPairAlign ?? 'start'
           );
-          const panelPlacement = splitProfileBand
-            ? 'below-stats'
-            : settings.about.fullWidthPanelPlacement;
+          const panelPlacement = settings.about.fullWidthPanelPlacement;
           const statsBlockSpacing = settings.about.showStats && stats.length > 0 ? 'mt-14' : 'mt-10';
-          const sidePanelPresentation = splitProfileBand
-            ? {
-                ...aboutPresentation,
-                sidePanelAutoCenter: false,
-              }
-            : aboutPresentation;
+          const sidePanelPresentation = aboutPresentation;
 
           const sidePanelColumn = showPanel ? (
             isTwinColumns ? (
@@ -2710,13 +2567,11 @@ export function PublicCreatorPortfolioPage({
             id="about"
             background={aboutPresentation}
             fitContent
-            fillAvailableHeight={isPagesMode}
             suppressBackground={suppressSectionBackground(aboutPresentation)}
             topSpacingClass={sectionTopSpacingClass}
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            contentLayout={sectionContentLayout}
           >
             {aboutBody}
           </PortfolioSectionShell>
@@ -2842,11 +2697,9 @@ export function PublicCreatorPortfolioPage({
               id="experience"
               background={experiencePresentation}
               fitContent
-              fillAvailableHeight={isPagesMode}
               suppressBackground={suppressSectionBackground(experiencePresentation)}
               topSpacingClass=""
               bottomSpacingClass=""
-              contentLayout={sectionContentLayout}
             >
               {appliedExperienceHeaderZone}
               <ReelExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
@@ -2859,11 +2712,9 @@ export function PublicCreatorPortfolioPage({
               id="experience"
               background={experiencePresentation}
               fitContent
-              fillAvailableHeight={isPagesMode}
               suppressBackground={suppressSectionBackground(experiencePresentation)}
               topSpacingClass=""
               bottomSpacingClass=""
-              contentLayout={sectionContentLayout}
             >
               {appliedExperienceHeaderZone}
               <DuotoneExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
@@ -2876,13 +2727,11 @@ export function PublicCreatorPortfolioPage({
               id="experience"
               background={experiencePresentation}
               fitContent
-              fillAvailableHeight={isPagesMode}
               suppressBackground={suppressSectionBackground(experiencePresentation)}
               topSpacingClass={sectionTopSpacingClass}
               topSpacingStyle={sectionTopSpacingStyle}
               bottomSpacingClass={sectionBottomSpacingClass}
               bottomSpacingStyle={sectionBottomSpacingStyle}
-              contentLayout={sectionContentLayout}
             >
               {appliedExperienceHeaderZone}
               <GalleryExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
@@ -2895,13 +2744,11 @@ export function PublicCreatorPortfolioPage({
               id="experience"
               background={experiencePresentation}
               fitContent
-              fillAvailableHeight={isPagesMode}
               suppressBackground={suppressSectionBackground(experiencePresentation)}
               topSpacingClass={sectionTopSpacingClass}
               topSpacingStyle={sectionTopSpacingStyle}
               bottomSpacingClass={sectionBottomSpacingClass}
               bottomSpacingStyle={sectionBottomSpacingStyle}
-              contentLayout={sectionContentLayout}
             >
               {appliedExperienceHeaderZone}
               <SpotlightExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
@@ -2914,13 +2761,11 @@ export function PublicCreatorPortfolioPage({
               id="experience"
               background={experiencePresentation}
               fitContent
-              fillAvailableHeight={isPagesMode}
               suppressBackground={suppressSectionBackground(experiencePresentation)}
               topSpacingClass={sectionTopSpacingClass}
               topSpacingStyle={sectionTopSpacingStyle}
               bottomSpacingClass={sectionBottomSpacingClass}
               bottomSpacingStyle={sectionBottomSpacingStyle}
-              contentLayout={sectionContentLayout}
             >
               {appliedExperienceHeaderZone}
               <LoftExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
@@ -2933,13 +2778,11 @@ export function PublicCreatorPortfolioPage({
               id="experience"
               background={experiencePresentation}
               fitContent
-              fillAvailableHeight={isPagesMode}
               suppressBackground={suppressSectionBackground(experiencePresentation)}
               topSpacingClass={sectionTopSpacingClass}
               topSpacingStyle={sectionTopSpacingStyle}
               bottomSpacingClass={sectionBottomSpacingClass}
               bottomSpacingStyle={sectionBottomSpacingStyle}
-              contentLayout={sectionContentLayout}
             >
               {appliedExperienceHeaderZone}
               <PressExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
@@ -2952,13 +2795,11 @@ export function PublicCreatorPortfolioPage({
               id="experience"
               background={experiencePresentation}
               fitContent
-              fillAvailableHeight={isPagesMode}
               suppressBackground={suppressSectionBackground(experiencePresentation)}
               topSpacingClass={sectionTopSpacingClass}
               topSpacingStyle={sectionTopSpacingStyle}
               bottomSpacingClass={sectionBottomSpacingClass}
               bottomSpacingStyle={sectionBottomSpacingStyle}
-              contentLayout={sectionContentLayout}
             >
               {appliedExperienceHeaderZone}
               <LegacyExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
@@ -2971,19 +2812,16 @@ export function PublicCreatorPortfolioPage({
               id="experience"
               background={experiencePresentation}
               fitContent
-              fillAvailableHeight={isPagesMode}
               suppressBackground={suppressSectionBackground(experiencePresentation)}
               topSpacingClass={sectionTopSpacingClass}
               topSpacingStyle={sectionTopSpacingStyle}
               bottomSpacingClass={sectionBottomSpacingClass}
               bottomSpacingStyle={sectionBottomSpacingStyle}
-              contentLayout={sectionContentLayout}
             >
               {appliedExperienceHeaderZone}
               <AsymmetricExperienceList
                 blocks={experienceBlocks}
                 presentation={experiencePresentation}
-                forceSingleColumn={isSplitMode}
               />
             </PortfolioSectionShell>
           );
@@ -2994,19 +2832,16 @@ export function PublicCreatorPortfolioPage({
               id="experience"
               background={experiencePresentation}
               fitContent
-              fillAvailableHeight={isPagesMode}
               suppressBackground={suppressSectionBackground(experiencePresentation)}
               topSpacingClass={sectionTopSpacingClass}
               topSpacingStyle={sectionTopSpacingStyle}
               bottomSpacingClass={sectionBottomSpacingClass}
               bottomSpacingStyle={sectionBottomSpacingStyle}
-              contentLayout={sectionContentLayout}
             >
               {appliedExperienceHeaderZone}
               <KineticExperienceList
                 blocks={experienceBlocks}
                 presentation={experiencePresentation}
-                forceSingleColumn={isSplitMode}
               />
             </PortfolioSectionShell>
           );
@@ -3025,11 +2860,10 @@ export function PublicCreatorPortfolioPage({
         const aside =
           !usesFlatExperienceHeader &&
           !usesCustomExperienceHeader &&
-          !isSplitMode &&
           faqSectionLayoutIsAside(layout);
         // Section lead comes only from Experience → Header (applied zone). Design-owned
         // default headers are stripped — table/cards/years/sticky title no longer mount here.
-        const headerBlock = !isSplitMode ? appliedExperienceHeaderZone : null;
+        const headerBlock = appliedExperienceHeaderZone;
         const contentBlock = (
           <SectionIllustratedContent
             variant={experiencePresentation.illustrationVariant}
@@ -3038,34 +2872,29 @@ export function PublicCreatorPortfolioPage({
             ink={experiencePresentation.titleColor}
             surface={experiencePresentation.entryFrame.cardBackgroundColor}
           >
-            {isSplitMode ? appliedExperienceHeaderZone : null}
             {experiencePresentation.experienceDesign === 'milestone' ? (
               <MilestoneExperienceList
                 blocks={experienceBlocks}
                 presentation={experiencePresentation}
                 motionProfile={motionProfile}
-                forceSingleColumn={isSplitMode}
               />
             ) : experiencePresentation.experienceDesign === 'table' ? (
               <TableExperienceList
                 blocks={experienceBlocks}
                 presentation={experiencePresentation}
                 motionProfile={motionProfile}
-                forceSingleColumn={isSplitMode}
               />
             ) : experiencePresentation.experienceDesign === 'cards' ? (
               <CardsExperienceList
                 blocks={experienceBlocks}
                 presentation={experiencePresentation}
                 motionProfile={motionProfile}
-                forceSingleColumn={isSplitMode}
               />
             ) : (
               <EditorialExperienceList
                 blocks={experienceBlocks}
                 presentation={experiencePresentation}
                 motionProfile={motionProfile}
-                forceSingleColumn={isSplitMode}
               />
             )}
           </SectionIllustratedContent>
@@ -3075,13 +2904,11 @@ export function PublicCreatorPortfolioPage({
             id="experience"
             background={experiencePresentation}
             fitContent
-            fillAvailableHeight={isPagesMode}
             suppressBackground={suppressSectionBackground(experiencePresentation)}
             topSpacingClass={sectionTopSpacingClass}
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            contentLayout={sectionContentLayout}
             header={aside || !headerBlock ? undefined : headerBlock}
           >
             {aside && headerBlock ? (
@@ -3098,7 +2925,7 @@ export function PublicCreatorPortfolioPage({
         if (!aboutUs) return null;
         const layout = aboutUsPresentation.sectionLayout ?? 'stacked';
         const embedHeader = aboutUsDesignEmbedsHeader(aboutUsPresentation.design);
-        const aside = !embedHeader && !isSplitMode && aboutUsSectionLayoutIsAside(layout);
+        const aside = !embedHeader && aboutUsSectionLayoutIsAside(layout);
         const headerBlock = (
           <EditorialSectionStickyHeader
             title={aboutUsSectionTitle}
@@ -3119,7 +2946,7 @@ export function PublicCreatorPortfolioPage({
             subtitleDecorationStyle={aboutUsHeaderTypography.subtitle.decorationStyle}
             customSubtitleSizing={aboutUsHeaderTypography.subtitle.customSizing}
             scrollBehavior={effectiveTitleScroll}
-            orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'aboutUs')}
+            orientation={resolveSectionTitleOrientation(settings.global, 'aboutUs')}
           />
         );
         const contentBlock = (
@@ -3136,13 +2963,11 @@ export function PublicCreatorPortfolioPage({
             id="aboutUs"
             background={aboutUsPresentation}
             fitContent
-            fillAvailableHeight={isPagesMode}
             suppressBackground={suppressSectionBackground(aboutUsPresentation)}
             topSpacingClass={sectionTopSpacingClass}
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            contentLayout={sectionContentLayout}
             header={embedHeader || aside ? undefined : headerBlock}
           >
             {aside ? (
@@ -3157,7 +2982,7 @@ export function PublicCreatorPortfolioPage({
       }
       case 'team': {
         const layout = teamPresentation.sectionLayout ?? 'stacked';
-        const aside = !isSplitMode && teamSectionLayoutIsAside(layout);
+        const aside = teamSectionLayoutIsAside(layout);
         const headerBlock = (
           <EditorialSectionStickyHeader
             title={teamSectionTitle}
@@ -3178,7 +3003,7 @@ export function PublicCreatorPortfolioPage({
             subtitleDecorationStyle={teamHeaderTypography.subtitle.decorationStyle}
             customSubtitleSizing={teamHeaderTypography.subtitle.customSizing}
             scrollBehavior={effectiveTitleScroll}
-            orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'team')}
+            orientation={resolveSectionTitleOrientation(settings.global, 'team')}
           />
         );
         const contentBlock = (
@@ -3197,13 +3022,11 @@ export function PublicCreatorPortfolioPage({
             id="team"
             background={teamPresentation}
             fitContent
-            fillAvailableHeight={isPagesMode}
             suppressBackground={suppressSectionBackground(teamPresentation)}
             topSpacingClass={sectionTopSpacingClass}
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            contentLayout={sectionContentLayout}
             header={aside ? undefined : headerBlock}
           >
             {aside ? (
@@ -3218,7 +3041,7 @@ export function PublicCreatorPortfolioPage({
       }
       case 'gallery': {
         const layout = galleryPresentation.sectionLayout ?? 'stacked';
-        const aside = !isSplitMode && gallerySectionLayoutIsAside(layout);
+        const aside = gallerySectionLayoutIsAside(layout);
         const embedHeader = gallerySectionLayoutEmbedsHeader(layout, galleryPresentation);
         const headerBlock =
           gallerySectionTitle || gallerySectionSubtitle ? (
@@ -3241,7 +3064,7 @@ export function PublicCreatorPortfolioPage({
             subtitleDecorationStyle={galleryHeaderTypography.subtitle.decorationStyle}
             customSubtitleSizing={galleryHeaderTypography.subtitle.customSizing}
             scrollBehavior={embedHeader ? 'static' : effectiveTitleScroll}
-            orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'gallery')}
+            orientation={resolveSectionTitleOrientation(settings.global, 'gallery')}
           />
         ) : null;
         const contentBlock = (
@@ -3264,13 +3087,11 @@ export function PublicCreatorPortfolioPage({
             id="gallery"
             background={galleryPresentation}
             fitContent
-            fillAvailableHeight={isPagesMode}
             suppressBackground={suppressSectionBackground(galleryPresentation)}
             topSpacingClass={sectionTopSpacingClass}
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            contentLayout={sectionContentLayout}
             header={aside || embedHeader ? undefined : headerBlock}
           >
             {aside ? (
@@ -3287,7 +3108,6 @@ export function PublicCreatorPortfolioPage({
         const faqSplit = faqDesignIsSplit(faqPresentation.design);
         const faqCtaSplit = faqDesignIsCtaSplit(faqPresentation.design);
         const faqAside =
-          !isSplitMode &&
           !faqSplit &&
           !faqCtaSplit &&
           faqSectionLayoutIsAside(faqPresentation.sectionLayout ?? 'stacked');
@@ -3326,7 +3146,7 @@ export function PublicCreatorPortfolioPage({
             subtitleDecorationStyle={faqHeaderTypography.subtitle.decorationStyle}
             customSubtitleSizing={faqHeaderTypography.subtitle.customSizing}
             scrollBehavior={faqPanel || faqSplit ? 'static' : effectiveTitleScroll}
-            orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'faq')}
+            orientation={resolveSectionTitleOrientation(settings.global, 'faq')}
           />
         );
         const faqListBlock = (
@@ -3455,14 +3275,12 @@ export function PublicCreatorPortfolioPage({
             id="faq"
             background={faqPresentation}
             fitContent
-            fillAvailableHeight={isPagesMode}
             className={navMode === 'per-page' ? 'pb-28 sm:pb-24' : undefined}
             suppressBackground={suppressSectionBackground(faqPresentation)}
             topSpacingClass={sectionTopSpacingClass}
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            contentLayout={sectionContentLayout}
             header={faqAside || faqPanel || faqSplit ? undefined : faqHeaderBlock}
           >
             {faqAside ? (
@@ -3500,7 +3318,6 @@ export function PublicCreatorPortfolioPage({
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            contentLayout={sectionContentLayout}
             titleTypographyClass={contactHeaderTypography.title.className}
             titleTypographyStyle={contactHeaderTypography.title.style}
             titleDecorationStyle={contactHeaderTypography.title.decorationStyle}
@@ -3516,7 +3333,7 @@ export function PublicCreatorPortfolioPage({
             alwaysCentered={contactHeaderAlign.alwaysCentered}
             suppressBackground={suppressSectionBackground(contactPresentation)}
             scrollBehavior={effectiveTitleScroll}
-            orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'contact')}
+            orientation={resolveSectionTitleOrientation(settings.global, 'contact')}
             renderSocialIcon={(platform, className) => (
               <SocialPlatformIcon platform={platform} className={className} />
             )}
@@ -3542,8 +3359,7 @@ export function PublicCreatorPortfolioPage({
           />
         );
       case 'stack': {
-        const stackAside =
-          !isSplitMode && stackSectionLayoutIsAside(stackPresentation.sectionLayout);
+        const stackAside = stackSectionLayoutIsAside(stackPresentation.sectionLayout);
         const stackAsideTitleCentered =
           (stackPresentation.asideTitlePlacement ?? 'center') === 'center';
         // Aside uses the sticky header in the title half — never embed tags kicker.
@@ -3569,7 +3385,7 @@ export function PublicCreatorPortfolioPage({
             subtitleDecorationStyle={stackHeaderTypography.subtitle.decorationStyle}
             customSubtitleSizing={stackHeaderTypography.subtitle.customSizing}
             scrollBehavior={stackAside ? 'static' : effectiveTitleScroll}
-            orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'stack')}
+            orientation={resolveSectionTitleOrientation(settings.global, 'stack')}
           />
         );
         const stackGallery = (
@@ -3585,13 +3401,11 @@ export function PublicCreatorPortfolioPage({
             id="stack"
             background={stackPresentation}
             fitContent
-            fillAvailableHeight={isPagesMode}
             suppressBackground={suppressSectionBackground(stackPresentation)}
             topSpacingClass={sectionTopSpacingClass}
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            contentLayout={sectionContentLayout}
             header={stackAside ? undefined : headerBlock}
           >
             {stackAside && headerBlock ? (
@@ -3629,7 +3443,7 @@ export function PublicCreatorPortfolioPage({
             subtitleDecorationStyle={toolsHeaderTypography.subtitle.decorationStyle}
             customSubtitleSizing={toolsHeaderTypography.subtitle.customSizing}
             scrollBehavior={effectiveTitleScroll}
-            orientation={isSplitMode ? 'horizontal' : resolveSectionTitleOrientation(settings.global, 'tools')}
+            orientation={resolveSectionTitleOrientation(settings.global, 'tools')}
           />
         );
         return (
@@ -3637,13 +3451,11 @@ export function PublicCreatorPortfolioPage({
             id="tools"
             background={toolsPresentation}
             fitContent
-            fillAvailableHeight={isPagesMode}
             suppressBackground={suppressSectionBackground(toolsPresentation)}
             topSpacingClass={sectionTopSpacingClass}
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            contentLayout={sectionContentLayout}
             header={headerBlock}
           >
             <EditorialToolsGallery tools={strengths} presentation={toolsPresentation} />
@@ -3697,14 +3509,8 @@ export function PublicCreatorPortfolioPage({
         <PortfolioPerPageNav items={perPageNavItems} settings={settings.navigation} />
       ) : isCaseOverlayNav ? (
         <PortfolioCaseOverlayNav
-          items={isPagesMode ? perPageNavItems : navItems}
+          items={navItems}
           settings={settings.navigation}
-          activeId={isPagesMode ? activePageId : undefined}
-          onNavigate={
-            isPagesMode
-              ? (id) => navigateToPage(id)
-              : undefined
-          }
           brandName={(profile.fullName ?? '').trim().split(/\s+/).filter(Boolean)[0] ?? ''}
           avatarUrl={profile.avatarUrl}
           contentGutter={settings.global.contentGutter}
@@ -3714,14 +3520,8 @@ export function PublicCreatorPortfolioPage({
         />
       ) : isDutenPanelNav ? (
         <PortfolioDutenPanelNav
-          items={isPagesMode ? perPageNavItems : navItems}
+          items={navItems}
           settings={settings.navigation}
-          activeId={isPagesMode ? activePageId : undefined}
-          onNavigate={
-            isPagesMode
-              ? (id) => navigateToPage(id)
-              : undefined
-          }
           avatarUrl={profile.avatarUrl}
           contentGutter={settings.global.contentGutter}
           socialLinkOptions={navProfileLinkOptions}
@@ -3733,14 +3533,8 @@ export function PublicCreatorPortfolioPage({
         />
       ) : isHalfPanelNav ? (
         <PortfolioHalfPanelNav
-          items={isPagesMode ? perPageNavItems : navItems}
+          items={navItems}
           settings={settings.navigation}
-          activeId={isPagesMode ? activePageId : undefined}
-          onNavigate={
-            isPagesMode
-              ? (id) => navigateToPage(id)
-              : undefined
-          }
           avatarUrl={profile.avatarUrl}
           contentGutter={settings.global.contentGutter}
           socialLinkOptions={navProfileLinkOptions}
@@ -3753,20 +3547,11 @@ export function PublicCreatorPortfolioPage({
       ) : (
         <>
           <PortfolioFloatingNav
-            items={isPagesMode ? perPageNavItems : navItems}
+            items={navItems}
             settings={settings.navigation}
-            activeId={isPagesMode ? activePageId : undefined}
-            onNavigate={
-              isPagesMode
-                ? (id) => navigateToPage(id)
-                : undefined
-            }
             chromeLinks={navChromeLinks}
             monochrome={usesMonochromeChrome}
             contactHref={navContactHref}
-            onContactNavigate={
-              isPagesMode ? () => navigateToPage(pagesContactTarget) : undefined
-            }
             contactPhone={profile.phone}
             contactEmail={resolvedContactEmail}
             avatarUrl={profile.avatarUrl}
@@ -3779,203 +3564,84 @@ export function PublicCreatorPortfolioPage({
         </>
       )}
 
-      {isPagesMode ? (
-        <div className="relative flex h-[100dvh] flex-col overflow-hidden">
-          <PortfolioPagesSlideViewport pageId={activePageId} direction={pageSlideDirection}>
-            {settings.hero.enabled && activePageId === 'hero' ? (
-              <PortfolioHeroSection
-                creatorId={creatorId}
-                username={profile.username}
-                fullName={profile.fullName}
-                nameLead={nameLead}
-                nameAccent={nameAccent}
-                specialite={profile.specialite}
-                description={heroDescription}
-                avatarUrl={profile.avatarUrl}
-                isVerified={profile.isVerified}
-                isAvailable={profile.isAvailable}
-                responseTimeLabel={profile.responseTimeLabel}
-                yearsOfExperience={profile.yearsOfExperience}
-                workCount={resolveExactContentCount(profile) ?? undefined}
-                locationLabel={locationLabel}
-                stats={heroStats}
-                socialLinks={socialLinks}
-                tools={heroToolsProp}
-                toolDetails={heroToolDetailsProp}
-                contactHref={heroContactHref}
-                workHref={heroWorkHref}
-                featuredWorks={heroFeaturedWorks}
-                onNavigateSection={onNavigateSection}
-                showWorkCta={showWorkSection || showGallerySection}
-                showContactCta={settings.hero.showContactCta}
-                navItems={navItems}
-                presentation={heroPresentation}
-                suppressBackground={hasGlobalSolid}
-                globalBackgroundStyle={globalBgStyle}
-                geomFadeEnabled={motionProfileEnablesHeroGeomFade(motionProfile)}
-                motionProfile={motionProfile}
-                contentGutter={settings.global.contentGutter}
-                contentWidthClass={globalWidthClass}
-                colorMode={(settings.global.colorMode ?? 'dark') as 'light' | 'dark'}
-              />
-            ) : null}
+      <div className="flex min-h-[100dvh] min-h-screen max-w-full flex-col overflow-x-clip">
+        {settings.hero.enabled ? (
+          <PortfolioHeroSection
+            creatorId={creatorId}
+            username={profile.username}
+            fullName={profile.fullName}
+            nameLead={nameLead}
+            nameAccent={nameAccent}
+            specialite={profile.specialite}
+            description={heroDescription}
+            avatarUrl={profile.avatarUrl}
+            isVerified={profile.isVerified}
+            isAvailable={profile.isAvailable}
+            responseTimeLabel={profile.responseTimeLabel}
+            yearsOfExperience={profile.yearsOfExperience}
+            workCount={resolveExactContentCount(profile) ?? undefined}
+            locationLabel={locationLabel}
+            stats={heroStats}
+            socialLinks={socialLinks}
+            tools={heroToolsProp}
+            toolDetails={heroToolDetailsProp}
+            contactHref={heroContactHref}
+            workHref={heroWorkHref}
+            featuredWorks={heroFeaturedWorks}
+            showWorkCta={showWorkSection || showGallerySection}
+            showContactCta={settings.hero.showContactCta}
+            navItems={navItems}
+            presentation={heroPresentation}
+            suppressBackground={hasGlobalSolid}
+            globalBackgroundStyle={globalBgStyle}
+            geomFadeEnabled={motionProfileEnablesHeroGeomFade(motionProfile)}
+            motionProfile={motionProfile}
+            contentGutter={settings.global.contentGutter}
+            contentWidthClass={globalWidthClass}
+            colorMode={(settings.global.colorMode ?? 'dark') as 'light' | 'dark'}
+          />
+        ) : null}
 
-            {contentSectionOrder.map((sectionKey) => {
-              if (!sectionVisibility[sectionKey]) return null;
-              if (activePageId !== sectionKey) return null;
-              const showFooter = shouldShowFooterOnPage(sectionKey);
-              const sectionBlocksGlobal = resolvePageSectionBlocksGlobal(sectionKey);
-              const sectionBg = sectionBackgroundByKey[sectionKey];
-              const pageFillColor =
-                sectionBlocksGlobal && sectionBg
-                  ? sectionBackgroundBlockColor(sectionBg)
-                  : undefined;
-              return (
-                <div
-                  key={sectionKey}
-                  className={`flex min-h-full w-full flex-col overflow-x-clip ${
-                    !hasGlobalBg && !sectionBlocksGlobal ? 'bg-white' : ''
-                  }`}
-                  style={{
-                    minHeight: '100%',
-                    ...(pageFillColor ? { backgroundColor: pageFillColor } : null),
-                  }}
-                >
-                  <main
-                    className={`mx-auto flex w-full flex-1 grow flex-col ${editorialShellClass} ${globalWidthClass} ${
-                      showFooter ? 'pb-0' : 'pb-24 sm:pb-28'
-                    }`}
-                  >
-                    {renderContentSection(sectionKey)}
-                  </main>
-                  {showFooter ? (
-                    <div className="mt-auto w-full shrink-0">
-                      <EditorialPortfolioFooter
-                        creatorName={profile.fullName}
-                        creatorId={creatorId}
-                        avatarUrl={profile.avatarUrl}
-                        bio={profile.bio}
-                        email={resolvedContactEmail || null}
-                        phone={profile.phone}
-                        locationLabel={locationLabel}
-                        hoursLabel={availabilityDisplay}
-                        profileVisits={profileVisits}
-                        links={uniqueContactLinks}
-                        contentClassName={editorialShellClass}
-                        presentation={footerPresentation}
-                        transparentBase={hasGlobalBg && !footerPaintsOwnBackground}
-                        isAvailable={profile.isAvailable}
-                        responseTimeLabel={profile.responseTimeLabel}
-                        contactHref={
-                          resolvedContactEmail
-                            ? `mailto:${resolvedContactEmail}`
-                            : heroContactHref
-                        }
-                        motionProfile={motionProfile}
-                        bottomClearanceClass={footerNavClearanceClass}
-                        visibleSectionLinks={footerVisibleSectionLinks}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </PortfolioPagesSlideViewport>
-        </div>
-      ) : (
-        <div className={`flex min-h-[100dvh] min-h-screen max-w-full flex-col ${
-          isSplitMode ? '' : 'overflow-x-clip'
-        }`}>
-          {settings.hero.enabled ? (
-            <PortfolioHeroSection
+        <main
+          className={`mx-auto w-full flex-1 grow space-y-0 ${editorialShellClass} ${globalWidthClass} ${
+            settings.footer.enabled ? 'pb-0' : 'pb-24 sm:pb-28 xl:pb-20'
+          } ${hasGlobalBg ? '' : 'bg-white'}`}
+        >
+          {contentSectionOrder.map((sectionKey) => (
+            <Fragment key={sectionKey}>{renderContentSection(sectionKey)}</Fragment>
+          ))}
+        </main>
+
+        {settings.footer.enabled ? (
+          <div className="mt-auto w-full shrink-0">
+            <EditorialPortfolioFooter
+              creatorName={profile.fullName}
               creatorId={creatorId}
-              username={profile.username}
-              fullName={profile.fullName}
-              nameLead={nameLead}
-              nameAccent={nameAccent}
-              specialite={profile.specialite}
-              description={heroDescription}
               avatarUrl={profile.avatarUrl}
-              isVerified={profile.isVerified}
+              bio={profile.bio}
+              email={resolvedContactEmail || null}
+              phone={profile.phone}
+              locationLabel={locationLabel}
+              hoursLabel={availabilityDisplay}
+              profileVisits={profileVisits}
+              links={uniqueContactLinks}
+              contentClassName={editorialShellClass}
+              presentation={footerPresentation}
+              transparentBase={hasGlobalBg && !footerPaintsOwnBackground}
               isAvailable={profile.isAvailable}
               responseTimeLabel={profile.responseTimeLabel}
-              yearsOfExperience={profile.yearsOfExperience}
-              workCount={resolveExactContentCount(profile) ?? undefined}
-              locationLabel={locationLabel}
-              stats={heroStats}
-              socialLinks={socialLinks}
-              tools={heroToolsProp}
-              toolDetails={heroToolDetailsProp}
-              contactHref={heroContactHref}
-              workHref={heroWorkHref}
-              featuredWorks={heroFeaturedWorks}
-              onNavigateSection={onNavigateSection}
-              showWorkCta={showWorkSection || showGallerySection}
-              showContactCta={settings.hero.showContactCta}
-              navItems={navItems}
-              presentation={heroPresentation}
-              suppressBackground={hasGlobalSolid}
-              globalBackgroundStyle={globalBgStyle}
-              geomFadeEnabled={motionProfileEnablesHeroGeomFade(motionProfile)}
+              contactHref={
+                resolvedContactEmail
+                  ? `mailto:${resolvedContactEmail}`
+                  : heroContactHref
+              }
               motionProfile={motionProfile}
-              contentGutter={settings.global.contentGutter}
-              contentWidthClass={globalWidthClass}
-              colorMode={(settings.global.colorMode ?? 'dark') as 'light' | 'dark'}
+              bottomClearanceClass={footerNavClearanceClass}
+              visibleSectionLinks={footerVisibleSectionLinks}
             />
-          ) : null}
-
-          <main
-            className={`mx-auto w-full flex-1 grow space-y-0 ${editorialShellClass} ${globalWidthClass} ${
-              settings.footer.enabled ? 'pb-0' : 'pb-24 sm:pb-28 xl:pb-20'
-            } ${hasGlobalBg ? '' : 'bg-white'}`}
-          >
-            {isSplitMode ? (
-              <PortfolioSplitScreenFrame
-                titleMotion={settings.global.splitTitleMotion ?? 'fade-up'}
-                titleFrame={splitTitleFrame}
-              >
-                {contentSectionOrder.map((sectionKey) => (
-                  <Fragment key={sectionKey}>{renderContentSection(sectionKey)}</Fragment>
-                ))}
-              </PortfolioSplitScreenFrame>
-            ) : (
-              contentSectionOrder.map((sectionKey) => (
-                <Fragment key={sectionKey}>{renderContentSection(sectionKey)}</Fragment>
-              ))
-            )}
-          </main>
-
-          {settings.footer.enabled ? (
-            <div className="mt-auto w-full shrink-0">
-              <EditorialPortfolioFooter
-                creatorName={profile.fullName}
-                creatorId={creatorId}
-                avatarUrl={profile.avatarUrl}
-                bio={profile.bio}
-                email={resolvedContactEmail || null}
-                phone={profile.phone}
-                locationLabel={locationLabel}
-                hoursLabel={availabilityDisplay}
-                profileVisits={profileVisits}
-                links={uniqueContactLinks}
-                contentClassName={editorialShellClass}
-                presentation={footerPresentation}
-                transparentBase={hasGlobalBg && !footerPaintsOwnBackground}
-                isAvailable={profile.isAvailable}
-                responseTimeLabel={profile.responseTimeLabel}
-                contactHref={
-                  resolvedContactEmail
-                    ? `mailto:${resolvedContactEmail}`
-                    : heroContactHref
-                }
-                motionProfile={motionProfile}
-                bottomClearanceClass={footerNavClearanceClass}
-                visibleSectionLinks={footerVisibleSectionLinks}
-              />
-            </div>
-          ) : null}
-        </div>
-      )}
+          </div>
+        ) : null}
+      </div>
     </PortfolioThemeRoot>
     </PortfolioTaskListMarkerProvider>
     </PortfolioMotionProvider>

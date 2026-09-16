@@ -1,24 +1,11 @@
 'use client';
 
-import type { CSSProperties, ReactNode } from 'react';
-import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
+import type { ReactNode } from 'react';
 import {
-  PORTFOLIO_SECTION_BACKGROUND_DIVIDER_SHAPE_OPTIONS,
   PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS,
-  PORTFOLIO_SECTION_BACKGROUND_GRADIENT_TYPE_OPTIONS,
-  PORTFOLIO_SECTION_BACKGROUND_SPLIT_AXIS_OPTIONS,
-  sectionBackgroundStyle,
-  sectionSplitBackgroundLayerStyle,
   type PortfolioSectionBackgroundFill,
   type PortfolioSectionBackgroundSettings,
 } from '@/components/portfolio/portfolio-section-background-settings';
-import type { HeroBackgroundGradientType } from '@/components/portfolio/portfolio-hero-background-settings';
-import {
-  PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS,
-  PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS,
-} from '@/components/portfolio/portfolio-global-settings';
-import { PortfolioBackgroundImageUpload } from '@/components/portfolio/portfolio-background-image-upload';
-import { usePortfolioBackgroundLibrary } from '@/components/portfolio/portfolio-background-library-context';
 
 function ToggleRow({
   label,
@@ -70,6 +57,15 @@ function ColorField({
   return <DefaultColorField label={label} value={value} onChange={onChange} />;
 }
 
+/** Fixed neutral spread — light to dark, pairs cleanly with any accent palette. No free-form
+ *  hex input: pick a swatch, that's it. */
+const BACKGROUND_COLOR_PRESETS: { hex: string; label: string }[] = [
+  { hex: '#FFFFFF', label: 'Blanc' },
+  { hex: '#F5F5F5', label: 'Clair' },
+  { hex: '#171717', label: 'Sombre' },
+  { hex: '#0A0A0A', label: 'Noir' },
+];
+
 function DefaultColorField({
   label,
   value,
@@ -79,26 +75,33 @@ function DefaultColorField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const activeHex = value.trim().toLowerCase();
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <input
-          type="color"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="h-11 w-14 cursor-pointer rounded-xl border border-neutral-200 bg-white p-1"
-        />
-        <input
-          type="text"
-          value={value}
-          onChange={(event) => {
-            const next = event.target.value.trim();
-            if (isValidProfileHexColor(next)) onChange(next);
-          }}
-          className="w-28 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-mono text-neutral-900"
-        />
-        <span className="h-11 w-20 rounded-xl border border-neutral-200/80 shadow-inner" style={{ backgroundColor: value }} />
+      <div className="mt-3 flex flex-wrap gap-3">
+        {BACKGROUND_COLOR_PRESETS.map((preset) => {
+          const active = preset.hex.toLowerCase() === activeHex;
+          return (
+            <button
+              key={preset.hex}
+              type="button"
+              onClick={() => onChange(preset.hex)}
+              aria-pressed={active}
+              aria-label={preset.label}
+              title={preset.label}
+              className={`flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
+                active ? 'ring-2 ring-neutral-900 ring-offset-2' : 'hover:bg-neutral-100'
+              }`}
+            >
+              <span
+                className="h-9 w-9 rounded-full border border-neutral-200/80 shadow-inner"
+                style={{ backgroundColor: preset.hex }}
+              />
+              <span className="text-[11px] font-medium text-neutral-500">{preset.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -110,17 +113,26 @@ function OptionGrid<T extends string>({
   value,
   onChange,
   columns = 2,
+  compact = false,
 }: {
   label: string;
-  options: { value: T; label: string; description: string }[];
+  options: { value: T; label: string; description?: string }[];
   value: T;
   onChange: (value: T) => void;
   columns?: 2 | 3;
+  /** Labels only, tight pill row — no per-option description text. */
+  compact?: boolean;
 }) {
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-      <div className={`mt-3 grid gap-2 ${columns === 3 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'}`}>
+      <div
+        className={
+          compact
+            ? 'mt-3 grid grid-cols-3 gap-2'
+            : `mt-3 grid gap-2 ${columns === 3 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'}`
+        }
+      >
         {options.map((option) => {
           const active = option.value === value;
           return (
@@ -128,14 +140,24 @@ function OptionGrid<T extends string>({
               key={option.value}
               type="button"
               onClick={() => onChange(option.value)}
-              className={`rounded-2xl border px-4 py-3 text-left transition ${
-                active
-                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-              }`}
+              className={
+                compact
+                  ? `rounded-xl border px-3 py-2.5 text-center text-sm font-semibold transition ${
+                      active
+                        ? 'border-neutral-900 bg-neutral-900 text-white'
+                        : 'border-neutral-200/80 bg-white text-neutral-700 hover:border-neutral-300'
+                    }`
+                  : `rounded-2xl border px-4 py-3 text-left transition ${
+                      active
+                        ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                        : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                    }`
+              }
             >
-              <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
+              <p className={compact ? '' : 'text-sm font-semibold text-neutral-950'}>{option.label}</p>
+              {!compact && option.description ? (
+                <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
+              ) : null}
             </button>
           );
         })}
@@ -164,329 +186,138 @@ function OpacitySlider({ label, value, onChange }: { label: string; value: numbe
   );
 }
 
+const SECTION_BACKGROUND_PALETTE_FILL_OPTIONS = PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS.filter(
+  (option) => option.value !== 'image'
+);
+
+export type GradientOrientation = 'horizontal' | 'vertical' | 'diagonal';
+
+export const GRADIENT_ORIENTATION_ANGLE: Record<GradientOrientation, number> = {
+  horizontal: 90,
+  vertical: 180,
+  diagonal: 135,
+};
+
+export const GRADIENT_ORIENTATION_OPTIONS: { value: GradientOrientation; label: string }[] = [
+  { value: 'horizontal', label: 'Horizontal' },
+  { value: 'vertical', label: 'Vertical' },
+  { value: 'diagonal', label: 'Diagonal' },
+];
+
+/** The stored value is still a free angle (for older data) — snap it to whichever of the 3
+ *  orientation presets it's closest to, purely for display; picking a preset writes the exact angle. */
+export function gradientOrientationFromAngle(angle: number): GradientOrientation {
+  let closest: GradientOrientation = 'diagonal';
+  let closestDiff = Infinity;
+  (Object.keys(GRADIENT_ORIENTATION_ANGLE) as GradientOrientation[]).forEach((key) => {
+    const diff = Math.abs(GRADIENT_ORIENTATION_ANGLE[key] - angle);
+    if (diff < closestDiff) {
+      closestDiff = diff;
+      closest = key;
+    }
+  });
+  return closest;
+}
+
+const SPLIT_DIRECTION_OPTIONS: { value: PortfolioSectionBackgroundSettings['sectionBackgroundSplitAxis']; label: string }[] = [
+  { value: 'y', label: 'Horizontal' },
+  { value: 'x', label: 'Vertical' },
+];
+
+/** Minimal: fill type (3 palette-based options — no Image), the relevant color(s), a compact
+ *  orientation/direction picker for gradient and split, and opacity. No explanatory copy, no
+ *  preview swatch, no split-divider sub-controls. */
 export function SectionBackgroundFillControls({
-  title,
-  description,
   settings,
   onChange,
-  imageLibrary,
-  onImageLibraryChange,
   renderColorField,
 }: {
-  title: string;
-  description: string;
   settings: PortfolioSectionBackgroundSettings;
   onChange: (patch: Partial<PortfolioSectionBackgroundSettings>) => void;
-  imageLibrary?: string[];
-  onImageLibraryChange?: (urls: string[]) => void;
   renderColorField?: BackgroundColorFieldRenderer;
 }) {
-  const libraryContext = usePortfolioBackgroundLibrary();
-  const resolvedLibrary = imageLibrary ?? libraryContext?.library;
-  const resolvedLibraryChange = onImageLibraryChange ?? libraryContext?.onLibraryChange;
-  const previewStyle: CSSProperties =
-    sectionBackgroundStyle({ ...settings, sectionBackgroundEnabled: true }) ?? {};
-
   return (
-    <div className="space-y-5 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-neutral-950">{title}</p>
-          <p className="mt-1 text-sm text-neutral-500">{description}</p>
-        </div>
-        <span className="h-14 w-24 shrink-0 rounded-xl border border-neutral-200/80 shadow-inner" style={previewStyle} />
-      </div>
-
+    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
       <OptionGrid
         label="Fill type"
-        options={PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS}
-        value={settings.sectionBackgroundFill}
+        options={SECTION_BACKGROUND_PALETTE_FILL_OPTIONS}
+        value={
+          settings.sectionBackgroundFill === 'image' ? 'solid' : settings.sectionBackgroundFill
+        }
         onChange={(sectionBackgroundFill) => onChange({ sectionBackgroundFill })}
-        columns={2}
+        compact
       />
 
-      {settings.sectionBackgroundFill === 'solid' ? (
+      {settings.sectionBackgroundFill === 'gradient' ? (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <ColorField
+              label="Gradient start"
+              value={settings.sectionBackgroundGradientFrom}
+              onChange={(sectionBackgroundGradientFrom) => onChange({ sectionBackgroundGradientFrom })}
+              render={renderColorField}
+            />
+            <ColorField
+              label="Gradient end"
+              value={settings.sectionBackgroundGradientTo}
+              onChange={(sectionBackgroundGradientTo) => onChange({ sectionBackgroundGradientTo })}
+              render={renderColorField}
+            />
+          </div>
+          <OptionGrid
+            label="Orientation"
+            options={GRADIENT_ORIENTATION_OPTIONS}
+            value={gradientOrientationFromAngle(settings.sectionBackgroundGradientAngle)}
+            onChange={(orientation) =>
+              onChange({ sectionBackgroundGradientAngle: GRADIENT_ORIENTATION_ANGLE[orientation] })
+            }
+            compact
+          />
+        </>
+      ) : settings.sectionBackgroundFill === 'split' ? (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <ColorField
+              label="Color A"
+              value={settings.sectionBackgroundColorA}
+              onChange={(sectionBackgroundColorA) => onChange({ sectionBackgroundColorA })}
+              render={renderColorField}
+            />
+            <ColorField
+              label="Color B"
+              value={settings.sectionBackgroundColorB}
+              onChange={(sectionBackgroundColorB) => onChange({ sectionBackgroundColorB })}
+              render={renderColorField}
+            />
+          </div>
+          <OptionGrid
+            label="Direction"
+            options={SPLIT_DIRECTION_OPTIONS}
+            value={settings.sectionBackgroundSplitAxis}
+            onChange={(sectionBackgroundSplitAxis) => onChange({ sectionBackgroundSplitAxis })}
+            compact
+          />
+        </>
+      ) : (
         <ColorField
           label="Color"
           value={settings.sectionBackgroundColor}
           onChange={(sectionBackgroundColor) => onChange({ sectionBackgroundColor })}
           render={renderColorField}
         />
-      ) : null}
-
-      {settings.sectionBackgroundFill === 'gradient' ? (
-        <>
-          <OptionGrid
-            label="Gradient type"
-            options={PORTFOLIO_SECTION_BACKGROUND_GRADIENT_TYPE_OPTIONS}
-            value={settings.sectionBackgroundGradientType}
-            onChange={(sectionBackgroundGradientType) =>
-              onChange({ sectionBackgroundGradientType: sectionBackgroundGradientType as HeroBackgroundGradientType })
-            }
-          />
-          <ColorField
-            label="Gradient start"
-            value={settings.sectionBackgroundGradientFrom}
-            onChange={(sectionBackgroundGradientFrom) => onChange({ sectionBackgroundGradientFrom })}
-            render={renderColorField}
-          />
-          <ColorField
-            label="Gradient end"
-            value={settings.sectionBackgroundGradientTo}
-            onChange={(sectionBackgroundGradientTo) => onChange({ sectionBackgroundGradientTo })}
-            render={renderColorField}
-          />
-          {settings.sectionBackgroundGradientType === 'linear' ? (
-            <div>
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Angle</p>
-                <span className="text-sm font-semibold text-neutral-700">
-                  {settings.sectionBackgroundGradientAngle}°
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={359}
-                step={1}
-                value={settings.sectionBackgroundGradientAngle}
-                onChange={(event) =>
-                  onChange({ sectionBackgroundGradientAngle: Number(event.target.value) })
-                }
-                className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-              />
-            </div>
-          ) : null}
-        </>
-      ) : null}
-
-      {settings.sectionBackgroundFill === 'split' ? (
-        <div className="space-y-4 rounded-2xl border border-neutral-200/60 bg-white/70 p-4">
-          <div>
-            <p className="text-sm font-semibold text-neutral-950">Fond divisé X / Y</p>
-            <p className="mt-1 text-sm text-neutral-500">
-              Deux couleurs de zone séparées par une ligne géométrique — comme sur les cartes.
-            </p>
-          </div>
-
-          <OptionGrid
-            label="Axe de séparation"
-            options={PORTFOLIO_SECTION_BACKGROUND_SPLIT_AXIS_OPTIONS}
-            value={settings.sectionBackgroundSplitAxis}
-            onChange={(sectionBackgroundSplitAxis) => onChange({ sectionBackgroundSplitAxis })}
-          />
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <ColorField
-              label={
-                settings.sectionBackgroundSplitAxis === 'y'
-                  ? 'Couleur zone haut'
-                  : 'Couleur zone gauche'
-              }
-              value={settings.sectionBackgroundColorA}
-              onChange={(sectionBackgroundColorA) => onChange({ sectionBackgroundColorA })}
-              render={renderColorField}
-            />
-            <ColorField
-              label={
-                settings.sectionBackgroundSplitAxis === 'y'
-                  ? 'Couleur zone bas'
-                  : 'Couleur zone droite'
-              }
-              value={settings.sectionBackgroundColorB}
-              onChange={(sectionBackgroundColorB) => onChange({ sectionBackgroundColorB })}
-              render={renderColorField}
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Position de la séparation
-              </p>
-              <span className="text-sm font-semibold text-neutral-700">
-                {settings.sectionBackgroundSplitPosition}%
-              </span>
-            </div>
-            <input
-              type="range"
-              min={8}
-              max={92}
-              step={1}
-              value={settings.sectionBackgroundSplitPosition}
-              onChange={(event) =>
-                onChange({ sectionBackgroundSplitPosition: Number(event.target.value) })
-              }
-              className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-              aria-label="Position de la séparation"
-            />
-          </div>
-
-          <div
-            className="h-24 overflow-hidden rounded-2xl border border-neutral-200/80 shadow-inner"
-            style={sectionSplitBackgroundLayerStyle({
-              ...settings,
-              sectionBackgroundOpacity: 100,
-            })}
-            aria-hidden
-          />
-
-          <ToggleRow
-            label="Ligne de séparation"
-            description="Afficher une ligne entre les deux zones de couleur."
-            checked={settings.sectionBackgroundDividerEnabled}
-            onChange={(sectionBackgroundDividerEnabled) =>
-              onChange({ sectionBackgroundDividerEnabled })
-            }
-          />
-
-          <OptionGrid
-            label="Forme de la ligne"
-            options={PORTFOLIO_SECTION_BACKGROUND_DIVIDER_SHAPE_OPTIONS}
-            value={settings.sectionBackgroundDividerShape}
-            onChange={(sectionBackgroundDividerShape) =>
-              onChange({ sectionBackgroundDividerShape })
-            }
-          />
-
-          {settings.sectionBackgroundDividerShape === 'diagonal' ? (
-            <div>
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Angle</p>
-                <span className="text-sm font-semibold text-neutral-700">
-                  {settings.sectionBackgroundDividerAngle}°
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={359}
-                step={1}
-                value={settings.sectionBackgroundDividerAngle}
-                onChange={(event) =>
-                  onChange({ sectionBackgroundDividerAngle: Number(event.target.value) })
-                }
-                className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                aria-label="Angle de la diagonale"
-              />
-            </div>
-          ) : settings.sectionBackgroundDividerShape === 'curve' ||
-            settings.sectionBackgroundDividerShape === 'wave' ? (
-            <div>
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  {settings.sectionBackgroundDividerShape === 'curve'
-                    ? 'Courbure'
-                    : 'Amplitude vague'}
-                </p>
-                <span className="text-sm font-semibold text-neutral-700">
-                  {settings.sectionBackgroundDividerCurveDepth}%
-                </span>
-              </div>
-              <input
-                type="range"
-                min={4}
-                max={40}
-                step={1}
-                value={settings.sectionBackgroundDividerCurveDepth}
-                onChange={(event) =>
-                  onChange({ sectionBackgroundDividerCurveDepth: Number(event.target.value) })
-                }
-                className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                aria-label="Profondeur de courbe"
-              />
-            </div>
-          ) : null}
-
-          {settings.sectionBackgroundDividerEnabled ? (
-            <div className="space-y-4">
-              <ColorField
-                label="Couleur de la ligne"
-                value={settings.sectionBackgroundDividerColor}
-                onChange={(sectionBackgroundDividerColor) =>
-                  onChange({ sectionBackgroundDividerColor })
-                }
-                render={renderColorField}
-              />
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Épaisseur
-                  </p>
-                  <span className="text-sm font-semibold text-neutral-700">
-                    {settings.sectionBackgroundDividerThickness}px
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={8}
-                  step={1}
-                  value={settings.sectionBackgroundDividerThickness}
-                  onChange={(event) =>
-                    onChange({ sectionBackgroundDividerThickness: Number(event.target.value) })
-                  }
-                  className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Épaisseur de la ligne"
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Opacité ligne
-                  </p>
-                  <span className="text-sm font-semibold text-neutral-700">
-                    {settings.sectionBackgroundDividerOpacity}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={settings.sectionBackgroundDividerOpacity}
-                  onChange={(event) =>
-                    onChange({ sectionBackgroundDividerOpacity: Number(event.target.value) })
-                  }
-                  className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Opacité de la ligne"
-                />
-              </div>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      {settings.sectionBackgroundFill === 'image' ? (
-        <>
-          <PortfolioBackgroundImageUpload
-            url={settings.sectionBackgroundImageUrl}
-            onChange={(sectionBackgroundImageUrl) => onChange({ sectionBackgroundImageUrl })}
-            library={resolvedLibrary}
-            onLibraryChange={resolvedLibraryChange}
-            helperText="Overrides the Global wallpaper for this section only. Other sections keep the global image."
-          />
-          <OptionGrid
-            label="Image size"
-            options={PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS}
-            value={settings.sectionBackgroundImageSize}
-            onChange={(sectionBackgroundImageSize) => onChange({ sectionBackgroundImageSize })}
-            columns={3}
-          />
-          <OptionGrid
-            label="Image position"
-            options={PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS}
-            value={settings.sectionBackgroundImagePosition}
-            onChange={(sectionBackgroundImagePosition) => onChange({ sectionBackgroundImagePosition })}
-            columns={3}
-          />
-        </>
-      ) : null}
+      )}
 
       <OpacitySlider
         label="Opacity"
         value={settings.sectionBackgroundOpacity}
         onChange={(sectionBackgroundOpacity) => onChange({ sectionBackgroundOpacity })}
+      />
+
+      <ToggleRow
+        label="Fondu haut / bas"
+        description="Estompe le fond en douceur au lieu d'une coupure nette avec la section suivante."
+        checked={settings.sectionBackgroundEdgeFade}
+        onChange={(sectionBackgroundEdgeFade) => onChange({ sectionBackgroundEdgeFade })}
       />
     </div>
   );
@@ -495,14 +326,12 @@ export function SectionBackgroundFillControls({
 export function SectionBackgroundSettingsFields({
   settings,
   onChange,
-  title = 'Section background',
-  description = 'Optional fill for this section. Image fill overrides the Global wallpaper here only — other sections keep the global image.',
-  imageLibrary,
-  onImageLibraryChange,
   renderColorField,
 }: {
   settings: PortfolioSectionBackgroundSettings;
   onChange: (patch: Partial<PortfolioSectionBackgroundSettings>) => void;
+  /** Accepted for backward compatibility with existing callers — no longer rendered
+   *  (the panel is minimal now: fill type, color(s), opacity — no header copy or image fill). */
   title?: string;
   description?: string;
   imageLibrary?: string[];
@@ -513,18 +342,13 @@ export function SectionBackgroundSettingsFields({
     <div className="space-y-4">
       <ToggleRow
         label="Enable section background"
-        description="Apply a custom fill behind this section. When off, the Global wallpaper (if any) shows through."
         checked={settings.sectionBackgroundEnabled}
         onChange={(sectionBackgroundEnabled) => onChange({ sectionBackgroundEnabled })}
       />
       {settings.sectionBackgroundEnabled ? (
         <SectionBackgroundFillControls
-          title={title}
-          description={description}
           settings={settings}
           onChange={onChange}
-          imageLibrary={imageLibrary}
-          onImageLibraryChange={onImageLibraryChange}
           renderColorField={renderColorField}
         />
       ) : null}

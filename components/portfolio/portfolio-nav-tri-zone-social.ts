@@ -17,10 +17,10 @@ export const PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_GAP_OPTIONS: {
   value: PortfolioNavTriZoneSocialLinkGap;
   label: string;
 }[] = [
-  { value: 'sm', label: 'Serré' },
+  { value: 'sm', label: 'Tight' },
   { value: 'md', label: 'Normal' },
-  { value: 'lg', label: 'Large' },
-  { value: 'xl', label: 'Très large' },
+  { value: 'lg', label: 'Wide' },
+  { value: 'xl', label: 'Extra wide' },
 ];
 
 export function portfolioNavTriZoneSocialLinkGapClass(

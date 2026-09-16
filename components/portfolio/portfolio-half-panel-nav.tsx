@@ -30,6 +30,7 @@ import {
   deferAfterPortfolioNavOverlayClose,
   scrollToPortfolioSection,
   unlockPortfolioPageScroll,
+  usePortfolioNavFocusTrap,
   usePortfolioNavTopClearanceSync,
 } from '@/components/portfolio/portfolio-nav-top-clearance';
 import { usePortfolioSectionSpy } from '@/components/portfolio/portfolio-nav-section-spy';
@@ -298,6 +299,7 @@ export function PortfolioHalfPanelNav({
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
   const isControlled = typeof onNavigate === 'function';
   const sectionIds = useMemo(() => items.map((item) => item.id), [items]);
   const {
@@ -371,6 +373,7 @@ export function PortfolioHalfPanelNav({
     active: true,
     visible,
   });
+  usePortfolioNavFocusTrap({ open, containerRef: drawerRef });
 
   const handleNavigate = (id: string, event?: ReactMouseEvent) => {
     event?.preventDefault();
@@ -437,11 +440,13 @@ export function PortfolioHalfPanelNav({
         {open ? (
           <motion.aside
             key="half-panel-drawer"
+            ref={drawerRef}
             id="portfolio-half-panel-drawer"
             role="dialog"
             aria-modal
             aria-label="Navigation menu"
-            className="fixed inset-y-0 right-0 z-[230] flex w-[min(100%,50vw)] min-w-[min(100%,18rem)] max-w-[32rem] flex-col shadow-[-24px_0_80px_rgba(0,0,0,0.12)]"
+            tabIndex={-1}
+            className="fixed inset-y-0 right-0 z-[230] flex w-[min(100%,50vw)] min-w-[min(100%,18rem)] max-w-[32rem] flex-col shadow-[-24px_0_80px_rgba(0,0,0,0.12)] focus:outline-none"
             style={{
               backgroundColor: panelFill,
               color: strongInk,

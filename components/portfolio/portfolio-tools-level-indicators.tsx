@@ -340,6 +340,7 @@ export function ToolsLevelCircularRingWithLogo({
   size = 112,
   logo,
   className,
+  strokeWidth,
 }: {
   percent: number;
   fillColor: string;
@@ -347,10 +348,12 @@ export function ToolsLevelCircularRingWithLogo({
   size?: number;
   logo: ReactNode;
   className?: string;
+  /** Hairline override. Default keeps the original ~4.2%-of-size ring. */
+  strokeWidth?: number;
 }) {
   if (percent <= 0) return null;
 
-  const stroke = Math.max(4, Math.round(size * 0.042));
+  const stroke = strokeWidth ?? Math.max(4, Math.round(size * 0.042));
   const radius = (size - stroke) / 2;
   const center = size / 2;
   const circumference = 2 * Math.PI * radius;

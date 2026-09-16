@@ -50,17 +50,6 @@ export const PORTFOLIO_NAV_MODE_OPTIONS: {
     label: 'Per page',
     description: 'Dots + previous / next — still scrolls between sections.',
   },
-  {
-    value: 'pages',
-    label: 'Pages',
-    description: 'Each section is its own page — switch only with the nav bar (no scroll between sections).',
-  },
-  {
-    value: 'split',
-    label: 'Split screen',
-    description:
-      'Large screens only: fixed left frame (~40%) for title / description that swaps with the active section; content scrolls on the right (~60%). Hero stays full-bleed.',
-  },
 ];
 
 export const PORTFOLIO_NAV_PLACEMENT_OPTIONS: {
@@ -122,13 +111,13 @@ export const PORTFOLIO_NAV_FLOATING_PILL_MENU_MODE_OPTIONS: {
 }[] = [
   {
     value: 'text',
-    label: 'Texte',
-    description: 'Libellés de section dans la capsule (par défaut).',
+    label: 'Text',
+    description: 'Section labels in the pill (default).',
   },
   {
     value: 'icons',
-    label: 'Icônes seules',
-    description: 'Glyphes compacts à la place du texte du menu.',
+    label: 'Icons only',
+    description: 'Compact glyphs instead of menu text.',
   },
 ];
 
@@ -188,7 +177,7 @@ export const PORTFOLIO_NAV_ACTIVE_OPTIONS: {
   { value: 'accent-text', label: 'Accent text', description: 'Colored bold text — no background shape.' },
 ];
 
-/** French UI — active item indicators for Navigation → General (mockups 01–06, 08). */
+/** Active item indicators for Navigation → General (mockups 01–06, 08). */
 export const PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS: {
   value: PortfolioNavActiveStyle;
   label: string;
@@ -196,33 +185,33 @@ export const PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS: {
 }[] = [
   {
     value: 'dot',
-    label: 'Point sous le texte',
-    description: 'Petit point accent centré sous le libellé actif.',
+    label: 'Dot below text',
+    description: 'Small accent dot centered below the active label.',
   },
   {
     value: 'underline',
-    label: 'Barre sous le texte',
-    description: 'Barre accent soulignant le libellé actif.',
+    label: 'Bar below text',
+    description: 'Accent bar underlining the active label.',
   },
   {
     value: 'filled-pill',
-    label: 'Pilule colorée',
-    description: 'Rectangle accent arrondi avec texte contrasté sur l’élément actif.',
+    label: 'Filled pill',
+    description: 'Rounded accent rectangle with contrasted text on the active item.',
   },
   {
     value: 'dot-left',
-    label: 'Point à gauche',
-    description: 'Petit point accent à gauche du libellé actif.',
+    label: 'Dot on the left',
+    description: 'Small accent dot to the left of the active label.',
   },
   {
     value: 'accent-text',
-    label: 'Texte en gras + couleur',
-    description: 'Libellé actif en gras et couleur accent — sans forme.',
+    label: 'Bold + accent text',
+    description: 'Active label in bold, accent color — no shape.',
   },
   {
     value: 'underline-animated',
-    label: 'Souligné animé',
-    description: 'Soulignement accent avec transition de largeur sur l’élément actif.',
+    label: 'Animated underline',
+    description: 'Accent underline with a width transition on the active item.',
   },
 ];
 
@@ -339,7 +328,7 @@ export const PORTFOLIO_NAV_PRESENCE_OPTIONS: {
   },
 ];
 
-/** Simplified presence control for Navigation → Général (maps to `presence`). */
+/** Simplified presence control for Navigation → General (maps to `presence`). */
 export type PortfolioNavVisibilityMode = Extract<PortfolioNavPresence, 'full' | 'dim'>;
 
 export const PORTFOLIO_NAV_VISIBILITY_MODE_OPTIONS: {
@@ -349,15 +338,15 @@ export const PORTFOLIO_NAV_VISIBILITY_MODE_OPTIONS: {
 }[] = [
   {
     value: 'full',
-    label: 'Toujours visible',
+    label: 'Always visible',
     description:
-      'La barre reste à pleine opacité dès qu’elle est affichée (écrans larges).',
+      'The bar stays at full opacity as soon as it is shown (large screens).',
   },
   {
     value: 'dim',
-    label: 'Discret',
+    label: 'Discreet',
     description:
-      'Le fond de la barre reste opaque ; seuls les libellés s’atténuent au repos et redeviennent nets au survol.',
+      'The bar background stays opaque; only the labels dim at rest and sharpen again on hover.',
   },
 ];
 
@@ -407,18 +396,18 @@ export const PORTFOLIO_NAV_BAR_SURFACE_OPTIONS: {
 }[] = [
   {
     value: 'neutre',
-    label: 'Neutre',
-    description: 'Surface carte — blanc en clair, ardoise en sombre.',
+    label: 'Neutral',
+    description: 'Card surface — white in light mode, slate in dark mode.',
   },
   {
     value: 'fond',
-    label: 'Fond',
-    description: 'Même couleur que le fond de page.',
+    label: 'Page background',
+    description: 'Same color as the page background.',
   },
   {
     value: 'transparent',
-    label: 'Sans fond',
-    description: 'Barre transparente, sans bordure.',
+    label: 'Transparent',
+    description: 'Transparent bar, no border.',
   },
 ];
 
@@ -437,10 +426,10 @@ export const PORTFOLIO_NAV_LABEL_FONT_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'xs', label: 'Petit', description: '12px — menu et libellés de liens compacts.' },
-  { value: 'sm', label: 'Compact', description: '13px — taille par défaut, discret mais lisible.' },
-  { value: 'md', label: 'Moyen', description: '15px — équilibré et confortable.' },
-  { value: 'lg', label: 'Grand', description: '16px — plus visible sur grand écran.' },
+  { value: 'xs', label: 'Small', description: '12px — compact menu and link labels.' },
+  { value: 'sm', label: 'Compact', description: '13px — default size, discreet but readable.' },
+  { value: 'md', label: 'Medium', description: '15px — balanced and comfortable.' },
+  { value: 'lg', label: 'Large', description: '16px — more visible on large screens.' },
 ];
 
 export function portfolioNavLabelFontSizeClass(
@@ -466,15 +455,15 @@ export const PORTFOLIO_NAV_MOBILE_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'brand-bar',
-    label: 'Barre logo pleine largeur',
+    label: 'Full-width logo bar',
     description:
-      'Barre fixe en haut : logo à gauche, icône menu à droite — ouvre le tiroir de navigation.',
+      'Fixed top bar: logo on the left, menu icon on the right — opens the navigation drawer.',
   },
   {
     value: 'drawer',
-    label: 'Tiroir menu',
+    label: 'Menu drawer',
     description:
-      'Déclencheur menu compact en haut (icône seule ou avec avatar / texte) — ouvre le tiroir.',
+      'Compact menu trigger at the top (icon only, or with avatar / text) — opens the drawer.',
   },
 ];
 
@@ -636,18 +625,18 @@ export const PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS: {
 }[] = [
   {
     value: 'sm',
-    label: 'Petit',
-    description: 'Barre basse — padding vertical réduit et zone de clic compacte.',
+    label: 'Small',
+    description: 'Short bar — reduced vertical padding and a compact click zone.',
   },
   {
     value: 'md',
     label: 'Normal',
-    description: 'Hauteur équilibrée par défaut (apparence actuelle).',
+    description: 'Balanced default height (current appearance).',
   },
   {
     value: 'lg',
-    label: 'Aéré',
-    description: 'Barre plus haute — padding vertical généreux et cibles plus confortables.',
+    label: 'Airy',
+    description: 'Taller bar — generous vertical padding and more comfortable targets.',
   },
 ];
 
@@ -1222,28 +1211,28 @@ export const PORTFOLIO_NAV_LOOK_PRESET_OPTIONS: {
 }[] = [
   {
     value: 'accent-fill',
-    label: '1 — Remplissage accent plein',
-    description: 'Pastille Principal — icône Neutre. Couleurs = palette Nav.',
+    label: 'Solid accent fill',
+    description: 'Principal-color badge — Neutral icon. Colors follow the Nav palette.',
   },
   {
     value: 'accent-outline',
-    label: '2 — Contour accent minimal',
-    description: 'Anneau Principal — icône accent sur Neutre.',
+    label: 'Accent outline',
+    description: 'Principal-color ring — accent icon on Neutral.',
   },
   {
     value: 'dark-fill',
-    label: '3 — Inversion contraste',
-    description: 'Pastille Texte fort — icône Neutre.',
+    label: 'Inverted contrast',
+    description: 'Texte fort-color badge — Neutral icon.',
   },
   {
     value: 'soft-badge',
-    label: '4 — Teinte douce (badge)',
-    description: 'Fond Principal léger — icône accent.',
+    label: 'Soft badge',
+    description: 'Light Principal-color background — accent icon.',
   },
   {
     value: 'dot',
-    label: '5 — Indicateur point',
-    description: 'Icône Texte fort + point Principal.',
+    label: 'Dot indicator',
+    description: 'Texte fort-color icon with a Principal-color dot.',
   },
 ];
 

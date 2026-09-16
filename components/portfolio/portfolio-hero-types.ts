@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import type { PortfolioContentGutter } from '@/components/portfolio/portfolio-editorial-layout';
 import type { PortfolioHeroPresentationSettings } from '@/components/portfolio/portfolio-hero-settings';
 import type { PortfolioGlobalMotionProfile } from '@/components/portfolio/portfolio-motion-settings';
@@ -41,7 +40,6 @@ export type PortfolioHeroData = {
   presentation: PortfolioHeroPresentationSettings;
   /** When a global page background is active, the hero uses the global color instead of its own. */
   suppressBackground?: boolean;
-  globalBackgroundStyle?: CSSProperties;
   /** Fade geometric hero motif on scroll (cinematic / editorial motion profiles). */
   geomFadeEnabled?: boolean;
   /** Global motion profile — gates CSS hero enter animations. */

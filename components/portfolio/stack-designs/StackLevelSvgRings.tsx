@@ -10,10 +10,12 @@ import {
 import { ToolsLevelSvgRingWithLabel } from '@/components/portfolio/portfolio-tools-level-indicators';
 import {
   resolveToolsDesignBrandColumnsPerRow,
+  resolveToolsLevelBarSize,
   resolveToolsLevelIndicatorCardFramed,
   resolveToolsShowLevel,
   toolsLevelCircularCardsGridClass,
   toolsLevelIndicatorGridGapClass,
+  toolsLevelRingStroke,
   toolsLevelSvgRingPx,
   type PortfolioToolsPresentationSettings,
 } from '@/components/portfolio/portfolio-tools-settings';
@@ -28,10 +30,6 @@ type ToolsGalleryProps = {
   tools: PortfolioSkillRef[];
   presentation: PortfolioToolsPresentationSettings;
 };
-
-function editorialRingStroke(size: number): number {
-  return Math.max(1.35, size * 0.0155);
-}
 
 function mixLogoPrincipal(logoColor: string, principal: string, fromLogo: boolean): string {
   const accent = principal.trim();
@@ -103,7 +101,7 @@ function ToolLevelSvgRingCardItem({
           trackColor={trackInk}
           labelColor={nameInk}
           size={ringPx}
-          strokeWidth={editorialRingStroke(ringPx)}
+          strokeWidth={toolsLevelRingStroke(ringPx, resolveToolsLevelBarSize(presentation))}
           opticalOffsetY={longName ? Math.round(ringPx * -0.008) : Math.round(ringPx * -0.016)}
           className="pf-stack-svg-rings-dial"
           labelWrapperClassName="pf-stack-svg-rings-aperture"
@@ -158,32 +156,36 @@ export function EditorialToolsLevelSvgRings({ tools, presentation }: ToolsGaller
         );
         if (circles.length === 0) return;
 
-        gsap.fromTo(
-          circles,
-          {
-            strokeDashoffset: (_index, target) => {
-              const circle = target as SVGCircleElement;
-              return Number(circle.dataset.circumference ?? 0);
-            },
+        // Hide immediately (pre-paint) — only the reveal is scroll-gated, so the ring
+        // never flashes fully drawn before snapping back to empty and animating in.
+        gsap.set(circles, {
+          strokeDashoffset: (_index, target) => {
+            const circle = target as SVGCircleElement;
+            return Number(circle.dataset.circumference ?? 0);
           },
-          {
-            strokeDashoffset: (_index, target) => {
-              const circle = target as SVGCircleElement;
-              return Number(circle.dataset.targetOffset ?? 0);
-            },
-            duration: 1.18,
-            delay: 0.08,
-            stagger: 0.075,
-            ease: 'power3.out',
-            overwrite: 'auto',
-            immediateRender: false,
-            scrollTrigger: {
-              trigger: root,
-              start: 'top 88%',
-              once: true,
-            },
-          }
-        );
+        });
+
+        // Trigger per ring (not once on the shared root) — with several rows of
+        // rings, a single root-level trigger fires as soon as the section is
+        // entered, well before the lower rows are actually in view, so their
+        // draw-on animation plays out unseen and they just sit there already full.
+        ScrollTrigger.batch(circles, {
+          start: 'top 88%',
+          once: true,
+          onEnter: (batch) => {
+            gsap.to(batch, {
+              strokeDashoffset: (_index, target) => {
+                const circle = target as SVGCircleElement;
+                return Number(circle.dataset.targetOffset ?? 0);
+              },
+              duration: 1.18,
+              delay: 0.08,
+              stagger: 0.075,
+              ease: 'power3.out',
+              overwrite: 'auto',
+            });
+          },
+        });
       }, root);
     } catch {
       ctx?.revert();

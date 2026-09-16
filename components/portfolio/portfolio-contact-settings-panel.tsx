@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   PORTFOLIO_CONTACT_BLOCK_ORDER_OPTIONS,
   PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS,
@@ -46,13 +46,8 @@ import {
 } from '@/components/portfolio/portfolio-contact-settings';
 import { PORTFOLIO_SERVICES_CARD_BORDER_OPTIONS } from '@/components/portfolio/portfolio-services-settings';
 import {
-  DEFAULT_CONTACT_COLOR_BINDINGS,
-  mergeContactColorBindings,
-  patchContactColorBinding,
-  type ContactColorSlot,
-} from '@/components/portfolio/portfolio-contact-palette-settings';
-import {
-  PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS,
+  DEFAULT_HERO_PALETTE,
+  resolveHeroPaletteColor,
   type HeroPaletteTokenId,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { PortfolioElementStyleFields } from '@/components/portfolio/portfolio-element-style-fields';
@@ -84,6 +79,31 @@ const CONTACT_SUB_SECTIONS: { id: ContactSubSection; label: string; description:
   { id: 'background', label: 'Background', description: 'Optional fill behind this section.' },
 ];
 
+/** Same animated switch as the Stack/Tools settings panels (`.pf-stack-*` classes are generic
+ *  settings-UI chrome, not Stack-specific — shared across every section panel now). */
+function ContactSwitchTrack({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className="relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      style={{
+        backgroundColor: checked
+          ? 'var(--pf-palette-texte-fort, #171717)'
+          : 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, var(--pf-palette-fond, #0a0a0a))',
+      }}
+    >
+      <span
+        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        style={{
+          left: checked ? '1.125rem' : '0.125rem',
+          backgroundColor: checked
+            ? 'var(--pf-palette-fond, #ffffff)'
+            : 'var(--pf-palette-texte-fort, #ffffff)',
+        }}
+      />
+    </span>
+  );
+}
+
 function ContactToggleRow({
   label,
   description,
@@ -96,21 +116,125 @@ function ContactToggleRow({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-white px-4 py-3.5">
-      <span className="min-w-0">
-        <span className="block text-sm font-semibold text-neutral-950">{label}</span>
-        {description ? <span className="mt-1 block text-sm text-neutral-500">{description}</span> : null}
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full cursor-pointer flex-col gap-1 text-left"
+    >
+      <span className="flex items-center justify-between gap-4">
+        <span className="min-w-0">
+          <span className="block text-sm font-semibold text-neutral-950">{label}</span>
+          {description ? <span className="mt-1 block text-sm text-neutral-500">{description}</span> : null}
+        </span>
+        <ContactSwitchTrack checked={checked} />
       </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-neutral-900"
-      />
-    </label>
+    </button>
   );
 }
 
+/** Compact segmented pill picker — for simple choices (alignment, placement, on/off-style
+ *  variants) where a big descriptive card is overkill. Same mechanism as Stack/Tools'
+ *  OptionGrid: up to 4 options sit on one row, larger sets wrap to 2 columns. */
+function ContactSegmentGrid<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  columns,
+  icons,
+}: {
+  label: string;
+  options: { value: T; label: string; description?: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  columns?: number;
+  icons?: Partial<Record<string, ReactNode>>;
+}) {
+  const count = options.length;
+  const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
+  const compact = cols === count && count >= 2 && count <= 5;
+  return (
+    <div>
+      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="pf-stack-segment grid gap-[3px] p-[3px]"
+        data-compact={compact ? 'true' : 'false'}
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
+        {options.map((option) => {
+          const active = option.value === value;
+          const icon = icons?.[String(option.value)];
+          return (
+            <button
+              key={String(option.value)}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.description}
+              onClick={() => onChange(option.value)}
+              data-active={active ? 'true' : 'false'}
+              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
+              style={active ? undefined : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }}
+            >
+              {icon ? <span className="pf-stack-segment-icon">{icon}</span> : null}
+              <span>{option.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Ordered-scale slider — for size/spacing progressions (icon size, gaps, padding, shadow
+ *  depth). Same mechanism as Stack/Tools' Slider: one drag surface snapping between steps. */
+function ContactSlider<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (value: T) => void;
+}) {
+  const index = Math.max(0, options.findIndex((option) => option.value === value));
+  const lastIndex = options.length - 1;
+  const percent = lastIndex > 0 ? (index / lastIndex) * 100 : 0;
+  const current = options[index] ?? options[0];
+  return (
+    <div>
+      <div className="pf-stack-slider-row">
+        <span className="pf-stack-slider-label">{label}</span>
+        <span className="pf-stack-slider-value">{current?.label}</span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={Math.max(lastIndex, 0)}
+        step={1}
+        value={index}
+        onChange={(event) => {
+          const next = options[Number(event.target.value)];
+          if (next) onChange(next.value);
+        }}
+        aria-label={label}
+        className="pf-stack-slider-input"
+        style={{
+          background: `linear-gradient(to right, var(--pf-palette-texte-fort, #f5f5f5) ${percent}%, color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a)) ${percent}%)`,
+        }}
+      />
+    </div>
+  );
+}
+
+/** Visual-difference choice — a compact preview card per option, for genuinely distinct
+ *  layout/design choices (Card design, Form design) where a description earns its keep. */
 function ContactOptionGrid<T extends string>({
   label,
   options,
@@ -184,72 +308,110 @@ function ContactManualColorField({
   );
 }
 
-/** Hex picker when palette is off; Global token select when palette is on. */
-function ContactColorField({
-  contact,
-  onChange,
-  slot,
+/** Curated palette-token swatches for the Background tab — "Fond"/"Neutre"/"Principal"/
+ *  "Texte muted", same set Stack/Tools use for section fills. Contact has no per-section
+ *  palette-binding record of its own (unlike Stack/Tools' toolsPalette), so this resolves
+ *  directly against the site's default Global palette rather than a stored snapshot —
+ *  still palette-driven, just without the binding indirection Stack/Tools use. */
+const CONTACT_BACKGROUND_PALETTE_TOKENS: { value: HeroPaletteTokenId; label: string }[] = [
+  { value: 'fond', label: 'Fond' },
+  { value: 'neutre', label: 'Neutre' },
+  { value: 'principal', label: 'Principal' },
+  { value: 'texteMuted', label: 'Texte muted' },
+];
+
+function ContactBackgroundColorField({
   label,
   value,
+  onChange,
 }: {
-  contact: PortfolioContactSectionSettings;
-  onChange: (patch: Partial<PortfolioContactSectionSettings>) => void;
-  slot: ContactColorSlot;
   label: string;
   value: string;
+  onChange: (value: string) => void;
 }) {
-  if (contact.useHeroPalette === false) {
-    return (
-      <ContactManualColorField
-        label={label}
-        value={value}
-        onChange={(hex) => {
-          if (slot === 'iconColor') onChange({ iconColor: hex });
-          else if (slot === 'iconBorder') onChange({ iconBorderColor: hex });
-          else if (slot === 'iconBackground') onChange({ iconBackgroundColor: hex });
-          else if (slot === 'cta') onChange({ ctaColor: hex });
-        }}
-      />
-    );
-  }
-
-  const bindings = mergeContactColorBindings(
-    DEFAULT_CONTACT_COLOR_BINDINGS,
-    contact.contactColorBindings
-  );
-  const token = bindings[slot];
-  const swatch = isValidProfileHexColor(value) ? value : '#ea580c';
-
+  const activeHex = value.trim().toLowerCase();
   return (
-    <div className="space-y-2">
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-        <span
-          className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-neutral-200"
-          style={{ backgroundColor: swatch }}
-          title={swatch}
-          aria-hidden
-        />
+    <div>
+      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
+      <div className="mt-2 flex items-center gap-3">
+        {CONTACT_BACKGROUND_PALETTE_TOKENS.map((token) => {
+          const hex = resolveHeroPaletteColor(DEFAULT_HERO_PALETTE, token.value);
+          const active = activeHex === hex.toLowerCase();
+          return (
+            <button
+              key={token.value}
+              type="button"
+              title={token.label}
+              aria-label={token.label}
+              aria-pressed={active}
+              onClick={() => onChange(hex)}
+              className="flex flex-col items-center gap-1.5"
+            >
+              <span
+                className="h-8 w-8 rounded-full border-2 transition"
+                style={{
+                  backgroundColor: hex,
+                  borderColor: active ? '#171717' : '#e5e5e5',
+                  boxShadow: active ? '0 0 0 2px rgba(23,23,23,0.15)' : 'none',
+                }}
+              />
+              <span className={`text-[11px] font-medium ${active ? 'text-neutral-900' : 'text-neutral-500'}`}>
+                {token.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
-      <select
-        value={token}
-        onChange={(event) => {
-          const nextToken = event.target.value as HeroPaletteTokenId;
-          onChange(patchContactColorBinding(contact, slot, nextToken));
-        }}
-        className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
-        aria-label={`${label} palette token`}
-      >
-        {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <p className="text-xs text-neutral-500">
-        Bound to Global palette token — change the token color under Global → Theme.
-      </p>
     </div>
+  );
+}
+
+function ContactAlignLeftIcon() {
+  return (
+    <svg viewBox="0 0 16 12" width="14" height="11" fill="none" aria-hidden>
+      <rect x="0" y="0" width="16" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="0" y="5.2" width="10" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="0" y="10.4" width="13" height="1.6" rx="0.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+function ContactAlignCenterIcon() {
+  return (
+    <svg viewBox="0 0 16 12" width="14" height="11" fill="none" aria-hidden>
+      <rect x="0" y="0" width="16" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="3" y="5.2" width="10" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="1.5" y="10.4" width="13" height="1.6" rx="0.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+function ContactAlignRightIcon() {
+  return (
+    <svg viewBox="0 0 16 12" width="14" height="11" fill="none" aria-hidden>
+      <rect x="0" y="0" width="16" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="6" y="5.2" width="10" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="3" y="10.4" width="13" height="1.6" rx="0.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+const CONTACT_ALIGNMENT_ICONS: Partial<Record<string, ReactNode>> = {
+  left: <ContactAlignLeftIcon />,
+  center: <ContactAlignCenterIcon />,
+  right: <ContactAlignRightIcon />,
+};
+
+/** Titled bordered band grouping related controls — same `.pf-stack-layout-settings*`
+ *  chrome Stack/Tools use for their Design-tab and Content-visibility groupings. */
+function ContactSettingsBand({ children, title }: { children: ReactNode; title: string }) {
+  return (
+    <section className="pf-stack-layout-settings" aria-labelledby="contact-settings-band-title">
+      <h3 id="contact-settings-band-title" className="pf-stack-layout-settings-title">
+        {title}
+      </h3>
+      <div className="pf-stack-layout-settings-body space-y-6">{children}</div>
+    </section>
   );
 }
 
@@ -272,27 +434,25 @@ export function ContactSettingsPanel({
     onSubSectionChange?.(value);
     if (controlledSubSection === undefined) setUncontrolledSubSection(value);
   };
-  const activeMeta = CONTACT_SUB_SECTIONS.find((section) => section.id === subSection) ?? CONTACT_SUB_SECTIONS[0];
   const elementStyles = normalizeContactElementStyles(contact.elementStyles);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Contact subsection</p>
-          <p className="mt-1 text-sm text-neutral-500">{activeMeta.description}</p>
-        </div>
-        <select
-          value={subSection}
-          onChange={(event) => setSubSection(event.target.value as ContactSubSection)}
-          className="min-w-[12rem] flex-1 rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-neutral-900 sm:max-w-xs"
-        >
-          {CONTACT_SUB_SECTIONS.map((section) => (
-            <option key={section.id} value={section.id}>
-              {section.label}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-wrap gap-2">
+        {CONTACT_SUB_SECTIONS.map((section) => (
+          <button
+            key={section.id}
+            type="button"
+            onClick={() => setSubSection(section.id)}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+              subSection === section.id
+                ? 'bg-neutral-900 text-white'
+                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+            }`}
+          >
+            {section.label}
+          </button>
+        ))}
       </div>
 
       {subSection === 'general' ? (
@@ -468,21 +628,18 @@ export function ContactSettingsPanel({
                   the Desk form design is selected.
                 </p>
               </div>
-              <ContactOptionGrid
+              <ContactSlider
                 label="Desk width"
                 options={PORTFOLIO_CONTACT_DESK_WIDTH_OPTIONS}
-                value={
-                  contact.cardMaxWidth === 'md' ? 'xl' : contact.cardMaxWidth
-                }
+                value={contact.cardMaxWidth === 'md' ? 'xl' : contact.cardMaxWidth}
                 onChange={(cardMaxWidth) => onChange({ cardMaxWidth })}
-                columns={3}
               />
-              <ContactOptionGrid
+              <ContactSegmentGrid
                 label="Placement (large screens)"
                 options={PORTFOLIO_CONTACT_CARD_PLACEMENT_OPTIONS}
                 value={contact.cardPlacement}
+                icons={CONTACT_ALIGNMENT_ICONS}
                 onChange={(cardPlacement) => onChange({ cardPlacement })}
-                columns={3}
               />
             </div>
           ) : null}
@@ -519,19 +676,18 @@ export function ContactSettingsPanel({
                   className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
                 />
               </div>
-              <ContactOptionGrid
+              <ContactSlider
                 label="Panel width"
                 options={PORTFOLIO_CONTACT_DESK_WIDTH_OPTIONS}
                 value={contact.cardMaxWidth === 'md' ? 'xl' : contact.cardMaxWidth}
                 onChange={(cardMaxWidth) => onChange({ cardMaxWidth })}
-                columns={3}
               />
-              <ContactOptionGrid
+              <ContactSegmentGrid
                 label="Placement (large screens)"
                 options={PORTFOLIO_CONTACT_CARD_PLACEMENT_OPTIONS}
                 value={contact.cardPlacement}
+                icons={CONTACT_ALIGNMENT_ICONS}
                 onChange={(cardPlacement) => onChange({ cardPlacement })}
-                columns={3}
               />
             </div>
           ) : null}
@@ -584,32 +740,15 @@ export function ContactSettingsPanel({
                   }
                 />
               ) : null}
-              <div>
-                <p className="text-xs font-semibold text-neutral-500">Bordure</p>
-                <div className="mt-2 grid grid-cols-3 gap-2">
-                  {PORTFOLIO_CONTACT_CHANNEL_CARDS_BORDER_OPTIONS.map((option) => {
-                    const active = option.value === (contact.channelCardsBorder ?? 'thin');
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() =>
-                          onChange({
-                            channelCardsBorder: option.value as PortfolioContactChannelCardsBorder,
-                          })
-                        }
-                        className={`rounded-2xl border px-2 py-2.5 text-sm font-semibold transition ${
-                          active
-                            ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
-                            : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <ContactSegmentGrid
+                label="Bordure"
+                options={PORTFOLIO_CONTACT_CHANNEL_CARDS_BORDER_OPTIONS.map((option) => ({
+                  value: option.value as PortfolioContactChannelCardsBorder,
+                  label: option.label,
+                }))}
+                value={contact.channelCardsBorder ?? 'thin'}
+                onChange={(channelCardsBorder) => onChange({ channelCardsBorder })}
+              />
               {(contact.channelCardsBorder ?? 'thin') !== 'none' ? (
                 <ContactManualColorField
                   label="Couleur de bordure"
@@ -619,66 +758,52 @@ export function ContactSettingsPanel({
               ) : null}
             </div>
           ) : null}
-          <ContactOptionGrid
+          <ContactSegmentGrid
             label="Icon placement"
             options={PORTFOLIO_CONTACT_ICON_PLACEMENT_OPTIONS}
             value={contact.iconPlacement ?? 'left'}
             onChange={(iconPlacement) => onChange({ iconPlacement })}
-            columns={3}
           />
 
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Link / contact icons</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Size, corners, border, and colors for email, phone, location, and social badges.
-              </p>
-            </div>
+          <ContactSettingsBand title="Link / contact icons">
             <ContactToggleRow
               label="Icon background"
               description="Turn off to show glyphs only (no circular fill)."
               checked={contact.iconBackgroundEnabled !== false}
               onChange={(iconBackgroundEnabled) => onChange({ iconBackgroundEnabled })}
             />
-            <ContactOptionGrid
+            <ContactSlider
               label="Icon size"
               options={PORTFOLIO_CONTACT_ICON_SIZE_OPTIONS}
               value={contact.iconSize ?? 'md'}
               onChange={(iconSize) => onChange({ iconSize })}
-              columns={2}
             />
-            <ContactOptionGrid
+            <ContactSlider
               label="Icon corners"
               options={PORTFOLIO_CONTACT_ICON_RADIUS_OPTIONS}
               value={contact.iconRadius ?? 'lg'}
               onChange={(iconRadius) => onChange({ iconRadius })}
-              columns={2}
             />
-            <ContactOptionGrid
+            <ContactSegmentGrid
               label="Icon border"
               options={PORTFOLIO_CONTACT_ICON_BORDER_OPTIONS}
               value={contact.iconBorder ?? 'none'}
               onChange={(iconBorder) => onChange({ iconBorder })}
-              columns={3}
             />
             {(contact.iconBorder ?? 'none') !== 'none' ? (
-              <ContactColorField
-                contact={contact}
-                onChange={onChange}
-                slot="iconBorder"
+              <ContactManualColorField
                 label="Icon border color"
                 value={contact.iconBorderColor || contact.cardBorderColor}
+                onChange={(iconBorderColor) => onChange({ iconBorderColor })}
               />
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
-              {contact.useHeroPalette === false && contact.iconBackgroundEnabled !== false ? (
+              {contact.iconBackgroundEnabled !== false ? (
                 <div>
-                  <ContactColorField
-                    contact={contact}
-                    onChange={onChange}
-                    slot="iconBackground"
+                  <ContactManualColorField
                     label="Icon background"
                     value={contact.iconBackgroundColor || '#fff7ed'}
+                    onChange={(iconBackgroundColor) => onChange({ iconBackgroundColor })}
                   />
                   <button
                     type="button"
@@ -690,27 +815,18 @@ export function ContactSettingsPanel({
                 </div>
               ) : null}
               <div>
-                <ContactColorField
-                  contact={contact}
-                  onChange={onChange}
-                  slot="iconColor"
+                <ContactManualColorField
                   label="Icon color"
                   value={contact.iconColor || contact.ctaColor}
+                  onChange={(iconColor) => onChange({ iconColor })}
                 />
-                {contact.useHeroPalette === false ? (
-                  <button
-                    type="button"
-                    className="mt-2 text-xs font-semibold text-neutral-600 underline-offset-2 hover:underline"
-                    onClick={() => onChange({ iconColor: '' })}
-                  >
-                    Reset to CTA accent
-                  </button>
-                ) : (
-                  <p className="mt-2 text-xs text-neutral-500">
-                    Soft badge fill follows this token (accent tint). Edit the token under Global →
-                    Theme.
-                  </p>
-                )}
+                <button
+                  type="button"
+                  className="mt-2 text-xs font-semibold text-neutral-600 underline-offset-2 hover:underline"
+                  onClick={() => onChange({ iconColor: '' })}
+                >
+                  Reset to CTA accent
+                </button>
               </div>
             </div>
             <ContactToggleRow
@@ -719,42 +835,38 @@ export function ContactSettingsPanel({
               checked={contact.iconUseBrandColors !== false}
               onChange={(iconUseBrandColors) => onChange({ iconUseBrandColors })}
             />
-          </div>
+          </ContactSettingsBand>
 
-          <ContactOptionGrid
+          <ContactSlider
             label="Item spacing"
             options={PORTFOLIO_CONTACT_ITEM_GAP_OPTIONS}
             value={contact.itemGap ?? 'md'}
             onChange={(itemGap) => onChange({ itemGap })}
-            columns={2}
           />
-          <ContactOptionGrid
+          <ContactSlider
             label="Card padding (list + form)"
             options={PORTFOLIO_CONTACT_CARD_PADDING_OPTIONS}
             value={contact.cardPadding ?? 'md'}
             onChange={(cardPadding) => onChange({ cardPadding })}
-            columns={2}
           />
-          <ContactOptionGrid
+          <ContactSegmentGrid
             label="Block order"
             options={PORTFOLIO_CONTACT_BLOCK_ORDER_OPTIONS}
             value={contact.blockOrder}
             onChange={(blockOrder) => onChange({ blockOrder })}
-            columns={2}
           />
-          <ContactOptionGrid
+          <ContactSlider
             label="Card max width"
             options={PORTFOLIO_CONTACT_CARD_MAX_WIDTH_OPTIONS}
             value={contact.cardMaxWidth}
             onChange={(cardMaxWidth) => onChange({ cardMaxWidth })}
-            columns={2}
           />
-          <ContactOptionGrid
+          <ContactSegmentGrid
             label="Card placement"
             options={PORTFOLIO_CONTACT_CARD_PLACEMENT_OPTIONS}
             value={contact.cardPlacement}
+            icons={CONTACT_ALIGNMENT_ICONS}
             onChange={(cardPlacement) => onChange({ cardPlacement })}
-            columns={3}
           />
           <ContactOptionGrid
             label="CTA design"
@@ -772,12 +884,10 @@ export function ContactSettingsPanel({
               className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
             />
           </div>
-          <ContactColorField
-            contact={contact}
-            onChange={onChange}
-            slot="cta"
+          <ContactManualColorField
             label="CTA color"
             value={contact.ctaColor}
+            onChange={(ctaColor) => onChange({ ctaColor })}
           />
         </div>
       ) : null}
@@ -804,12 +914,11 @@ export function ContactSettingsPanel({
             </p>
           ) : null}
 
-          <ContactOptionGrid
+          <ContactSegmentGrid
             label="Title preset"
             options={PORTFOLIO_CONTACT_TITLE_PRESET_OPTIONS}
             value={contact.titlePreset}
             onChange={(titlePreset) => onChange({ titlePreset })}
-            columns={2}
           />
           {contact.titlePreset === 'custom' ? (
             <div>
@@ -823,12 +932,11 @@ export function ContactSettingsPanel({
             </div>
           ) : null}
 
-          <ContactOptionGrid
+          <ContactSegmentGrid
             label="Subtitle preset"
             options={PORTFOLIO_CONTACT_SUBTITLE_PRESET_OPTIONS}
             value={contact.subtitlePreset}
             onChange={(subtitlePreset) => onChange({ subtitlePreset })}
-            columns={2}
           />
           {contact.subtitlePreset === 'custom' || contact.subtitlePreset === 'default' ? (
             <div>
@@ -869,27 +977,24 @@ export function ContactSettingsPanel({
               {contact.sectionLayout === 'aside-right' ? 'à droite' : 'à gauche'} du contenu.
             </p>
           ) : (
-            <ContactOptionGrid
+            <ContactSegmentGrid
               label="Header alignment"
               options={[
-                { value: 'left' as const, label: 'Left', description: 'Default editorial alignment.' },
-                { value: 'center' as const, label: 'Center', description: 'Centered title and subtitle.' },
+                { value: 'left' as const, label: 'Left' },
+                { value: 'center' as const, label: 'Center' },
               ]}
+              icons={CONTACT_ALIGNMENT_ICONS}
               value={contact.headerAlignment}
               onChange={(headerAlignment) => onChange({ headerAlignment })}
-              columns={2}
             />
           )}
 
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Illustration SVG</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                SVG décoratif à côté du contenu. Choisissez un style, puis placez-le à gauche ou à
-                droite sur grand écran. Les layouts Inquiry / Desk / Info panel peuvent ignorer ce
-                réglage au profit de leur illustration intégrée.
-              </p>
-            </div>
+          <ContactSettingsBand title="Illustration SVG">
+            <p className="text-sm text-neutral-500">
+              SVG décoratif à côté du contenu. Choisissez un style, puis placez-le à gauche ou à
+              droite sur grand écran. Les layouts Inquiry / Desk / Info panel peuvent ignorer ce
+              réglage au profit de leur illustration intégrée.
+            </p>
             <ContactOptionGrid
               label="Style SVG"
               options={PORTFOLIO_CONTACT_ILLUSTRATION_OPTIONS}
@@ -898,15 +1003,15 @@ export function ContactSettingsPanel({
               columns={2}
             />
             {(contact.illustrationVariant ?? 'none') !== 'none' ? (
-              <ContactOptionGrid
+              <ContactSegmentGrid
                 label="Placement SVG"
                 options={PORTFOLIO_CONTACT_ILLUSTRATION_PLACEMENT_OPTIONS}
                 value={contact.illustrationPlacement ?? 'right'}
+                icons={CONTACT_ALIGNMENT_ICONS}
                 onChange={(illustrationPlacement) => onChange({ illustrationPlacement })}
-                columns={2}
               />
             ) : null}
-          </div>
+          </ContactSettingsBand>
         </div>
       ) : null}
 
@@ -942,42 +1047,44 @@ export function ContactSettingsPanel({
 
       {subSection === 'content' ? (
         <div className="space-y-4">
-          <ContactToggleRow
-            label="Email"
-            description="Show email address channel."
-            checked={contact.showEmail}
-            onChange={(showEmail) => onChange({ showEmail })}
-          />
-          <ContactToggleRow
-            label="Phone"
-            description="Show phone number channel."
-            checked={contact.showPhone}
-            onChange={(showPhone) => onChange({ showPhone })}
-          />
-          <ContactToggleRow
-            label="Location"
-            description="Show city or region."
-            checked={contact.showLocation}
-            onChange={(showLocation) => onChange({ showLocation })}
-          />
-          <ContactToggleRow
-            label="Social links"
-            description="Instagram, LinkedIn, and other profiles."
-            checked={contact.showSocialLinks}
-            onChange={(showSocialLinks) => onChange({ showSocialLinks })}
-          />
-          <ContactToggleRow
-            label="CTA button"
-            description="Primary action button below channels."
-            checked={contact.showCta}
-            onChange={(showCta) => onChange({ showCta })}
-          />
-          <ContactToggleRow
-            label="Response time in subtitle"
-            description="Include typical reply speed when using the response-time preset."
-            checked={contact.showResponseTimeInSubtitle}
-            onChange={(showResponseTimeInSubtitle) => onChange({ showResponseTimeInSubtitle })}
-          />
+          <ContactSettingsBand title="Content visibility">
+            <ContactToggleRow
+              label="Email"
+              description="Show email address channel."
+              checked={contact.showEmail}
+              onChange={(showEmail) => onChange({ showEmail })}
+            />
+            <ContactToggleRow
+              label="Phone"
+              description="Show phone number channel."
+              checked={contact.showPhone}
+              onChange={(showPhone) => onChange({ showPhone })}
+            />
+            <ContactToggleRow
+              label="Location"
+              description="Show city or region."
+              checked={contact.showLocation}
+              onChange={(showLocation) => onChange({ showLocation })}
+            />
+            <ContactToggleRow
+              label="Social links"
+              description="Instagram, LinkedIn, and other profiles."
+              checked={contact.showSocialLinks}
+              onChange={(showSocialLinks) => onChange({ showSocialLinks })}
+            />
+            <ContactToggleRow
+              label="CTA button"
+              description="Primary action button below channels."
+              checked={contact.showCta}
+              onChange={(showCta) => onChange({ showCta })}
+            />
+            <ContactToggleRow
+              label="Response time in subtitle"
+              description="Include typical reply speed when using the response-time preset."
+              checked={contact.showResponseTimeInSubtitle}
+              onChange={(showResponseTimeInSubtitle) => onChange({ showResponseTimeInSubtitle })}
+            />
+          </ContactSettingsBand>
 
           <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
             Contact details are edited in Creator Studio → Information. Message form controls live
@@ -1013,41 +1120,35 @@ export function ContactSettingsPanel({
 
               {!isContactOwnedLayoutDesign(contact.cardDesign) ? (
                 <>
-                  <ContactOptionGrid
+                  <ContactSegmentGrid
                     label="Form layout"
                     options={PORTFOLIO_CONTACT_FORM_PLACEMENT_OPTIONS}
                     value={contact.contactFormPlacement ?? 'below'}
                     onChange={(contactFormPlacement) => onChange({ contactFormPlacement })}
-                    columns={2}
                   />
                   {(contact.contactFormPlacement ?? 'below') === 'below' ? (
-                    <ContactOptionGrid
+                    <ContactSlider
                       label="Space between list and form"
                       options={PORTFOLIO_CONTACT_FORM_STACK_GAP_OPTIONS}
                       value={contact.formStackGap ?? 'lg'}
                       onChange={(formStackGap) => onChange({ formStackGap })}
-                      columns={2}
                     />
                   ) : null}
                 </>
               ) : null}
 
-              <ContactOptionGrid
+              <ContactSlider
                 label="Card padding (list + form)"
                 options={PORTFOLIO_CONTACT_CARD_PADDING_OPTIONS}
                 value={contact.cardPadding ?? 'md'}
                 onChange={(cardPadding) => onChange({ cardPadding })}
-                columns={2}
               />
 
-              <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/70 p-4">
-                <div>
-                  <p className="text-sm font-semibold text-neutral-950">Form container</p>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Outer fill, border and drop shadow around the message form — all nine form
-                    designs.
-                  </p>
-                </div>
+              <ContactSettingsBand title="Form container">
+                <p className="text-sm text-neutral-500">
+                  Outer fill, border and drop shadow around the message form — all nine form
+                  designs.
+                </p>
 
                 <ContactToggleRow
                   label="Form background"
@@ -1071,12 +1172,11 @@ export function ContactSettingsPanel({
                   />
                 ) : null}
 
-                <ContactOptionGrid
+                <ContactSegmentGrid
                   label="Form border"
                   options={PORTFOLIO_SERVICES_CARD_BORDER_OPTIONS}
                   value={contact.formBorder ?? 'soft'}
                   onChange={(formBorder) => onChange({ formBorder })}
-                  columns={2}
                 />
 
                 {contact.formBorder === 'soft' || contact.formBorder === 'solid' ? (
@@ -1087,7 +1187,7 @@ export function ContactSettingsPanel({
                   />
                 ) : null}
 
-                <ContactOptionGrid
+                <ContactSlider
                   label="Form shadow"
                   options={PORTFOLIO_CONTACT_FORM_SHADOW_OPTIONS}
                   value={contact.formShadow ?? 'float'}
@@ -1098,7 +1198,6 @@ export function ContactSettingsPanel({
                         PORTFOLIO_CONTACT_FORM_SHADOW_PRESET_INTENSITY[formShadow],
                     })
                   }
-                  columns={2}
                 />
 
                 {(contact.formShadow ?? 'float') !== 'none' ? (
@@ -1125,7 +1224,7 @@ export function ContactSettingsPanel({
                     />
                   </div>
                 ) : null}
-              </div>
+              </ContactSettingsBand>
 
               {formDesign === 'project-brief' ||
               formDesign === 'workspace-chat' ||
@@ -1197,7 +1296,13 @@ export function ContactSettingsPanel({
       ) : null}
 
       {subSection === 'background' ? (
-        <SectionBackgroundSettingsFields settings={contact} onChange={onChange} />
+        <SectionBackgroundSettingsFields
+          settings={contact}
+          onChange={onChange}
+          renderColorField={({ label, value, onChange: setColor }) => (
+            <ContactBackgroundColorField label={label} value={value} onChange={setColor} />
+          )}
+        />
       ) : null}
     </div>
   );

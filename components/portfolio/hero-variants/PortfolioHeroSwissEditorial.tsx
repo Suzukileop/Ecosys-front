@@ -301,7 +301,7 @@ export function PortfolioHeroSwissEditorial({ data }: { data: PortfolioHeroData 
       <div
         aria-hidden
         className="pf-swiss-editorial-fond pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2"
-        style={{ backgroundColor: fond }}
+        style={data.suppressBackground ? undefined : { backgroundColor: fond }}
       />
       <div
         aria-hidden

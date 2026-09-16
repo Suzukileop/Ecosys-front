@@ -1008,8 +1008,8 @@ export const DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES: PortfolioNavLinkIconSource
 
 export type PortfolioNavSettings = {
   enabled: boolean;
-  /** Default = floating + scroll; per-page = dots pager; pages = one section at a time via nav bar only. */
-  navMode: 'default' | 'per-page' | 'pages' | 'split';
+  /** Default = floating + scroll; per-page = dots pager. */
+  navMode: 'default' | 'per-page';
   /** Ready-made bar structure (logo / links / contact). */
   navLayoutDesign: PortfolioNavLayoutDesign;
   placement: PortfolioNavPlacement;
@@ -1710,10 +1710,7 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
   const merged: PortfolioNavSettings = {
     enabled: typeof patch.enabled === 'boolean' ? patch.enabled : base.enabled,
     navMode:
-      patch.navMode === 'default' ||
-      patch.navMode === 'per-page' ||
-      patch.navMode === 'pages' ||
-      patch.navMode === 'split'
+      patch.navMode === 'default' || patch.navMode === 'per-page'
         ? patch.navMode
         : base.navMode ?? 'default',
     navLayoutDesign:

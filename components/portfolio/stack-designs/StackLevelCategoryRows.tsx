@@ -1,6 +1,8 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import { useLayoutEffect, useRef, type CSSProperties } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import {
   resolveToolLevelPercent,
@@ -32,6 +34,29 @@ type ToolsGalleryProps = {
   tools: PortfolioSkillRef[];
   presentation: PortfolioToolsPresentationSettings;
 };
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function isLaidOut(el: HTMLElement): boolean {
+  return el.getClientRects().length > 0;
+}
+
+function stackCatRowsScrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
+}
 
 function toolsLogoContrastBackground(
   presentation: PortfolioToolsPresentationSettings
@@ -172,6 +197,7 @@ function ToolLevelCategoryRowItem({
               barSize={levelBarSize}
               barHeightVariant="thin"
               className="pf-stack-cat-rows-bar min-w-0"
+              fillClassName="pf-stack-cat-rows-fill"
             />
           </div>
           <span className="pf-stack-cat-rows-percent tabular-nums" aria-hidden="true">
@@ -185,19 +211,99 @@ function ToolLevelCategoryRowItem({
 
 /** Editorial index — kicker above the name, thin bar and % on one right column. */
 export function EditorialToolsLevelCategoryRows({ tools, presentation }: ToolsGalleryProps) {
+  const listRef = useRef<HTMLUListElement>(null);
+  const showLevel = resolveToolsShowLevel(presentation);
+  const twoColumn = (presentation.levelProgressColumnsPerRow ?? 1) === 2;
+  const rowGap = presentation.levelProgressRowGap;
+
+  useLayoutEffect(() => {
+    const root = listRef.current;
+    if (!root) return;
+
+    if (prefersReducedMotion()) {
+      root.removeAttribute('data-pf-gsap');
+      return;
+    }
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    const scroller = stackCatRowsScrollParent(root);
+    const rows = [...root.querySelectorAll<HTMLElement>('.pf-stack-cat-rows-row')].filter(isLaidOut);
+    if (rows.length === 0) return;
+
+    root.setAttribute('data-pf-gsap', 'active');
+
+    const ctx = gsap.context(() => {
+      // Hide immediately (pre-paint) so rows never flash at their static/visible
+      // state before ScrollTrigger fires — only the reveal is scroll-gated.
+      gsap.set(rows, { y: 12, opacity: 0.28 });
+
+      ScrollTrigger.batch(rows, {
+        start: 'top 92%',
+        once: true,
+        ...(scroller ? { scroller } : {}),
+        onEnter: (batch) => {
+          gsap.to(batch, {
+            y: 0,
+            opacity: 1,
+            duration: 0.68,
+            stagger: 0.05,
+            ease: 'power2.out',
+            overwrite: 'auto',
+          });
+        },
+      });
+
+      rows.forEach((row) => {
+        const fills = [...row.querySelectorAll<HTMLElement>('.pf-stack-cat-rows-fill')];
+        if (fills.length === 0) return;
+
+        fills.forEach((fill) => {
+          fill.style.animation = 'none';
+        });
+
+        gsap.fromTo(
+          fills,
+          { scaleX: 0 },
+          {
+            scaleX: 1,
+            duration: 0.85,
+            ease: 'power3.out',
+            transformOrigin: 'left center',
+            force3D: false,
+            overwrite: 'auto',
+            immediateRender: true,
+            scrollTrigger: {
+              trigger: row,
+              scroller,
+              start: 'top 88%',
+              once: true,
+              invalidateOnRefresh: true,
+            },
+          }
+        );
+      });
+    }, root);
+
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+    return () => {
+      window.clearTimeout(refreshId);
+      ctx.revert();
+      root.removeAttribute('data-pf-gsap');
+    };
+  }, [tools, showLevel, twoColumn, rowGap, presentation.levelBarStyle, presentation.levelBarSize]);
+
   if (tools.length === 0) return null;
 
   const logoPx = toolsBrandCardLogoPx(presentation.tileSize);
   const logoContrastBg = toolsLogoContrastBackground(presentation);
   const logoColorMode = toolsLogoColorMode(presentation);
   const showName = presentation.showLabels !== false;
-  const showLevel = resolveToolsShowLevel(presentation);
-  const twoColumn = (presentation.levelProgressColumnsPerRow ?? 1) === 2;
-  const rowGap = presentation.levelProgressRowGap;
   const levelBarColors = resolveToolsLevelBarColors(presentation);
 
   return (
     <ul
+      ref={listRef}
       className={
         twoColumn
           ? `pf-stack-cat-rows pf-stack-cat-rows-list grid w-full list-none grid-cols-1 p-0 lg:grid-cols-2 ${toolsLevelProgressRowsGridGapClass(rowGap)}`

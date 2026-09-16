@@ -1,5 +1,6 @@
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import type { PortfolioSectionBackgroundSettings } from '@/components/portfolio/portfolio-section-background-settings';
+import { PORTFOLIO_HEADER_BOTTOM_SPACING_OPTIONS } from '@/components/portfolio/portfolio-header-design-shared';
 import {
   applyToolsPaletteToSettings,
   DEFAULT_TOOLS_COLOR_BINDINGS,
@@ -14,6 +15,7 @@ import {
 import {
   type PortfolioStackAsideTitlePlacement,
   type PortfolioStackDesign,
+  type PortfolioStackHeaderDesign,
   type PortfolioStackPresentationSettings,
   type PortfolioStackSectionLayout,
   type PortfolioStackSubtitleSize,
@@ -36,6 +38,7 @@ import {
 export type {
   PortfolioStackAsideTitlePlacement,
   PortfolioStackDesign,
+  PortfolioStackHeaderDesign,
   PortfolioStackPresentationSettings,
   PortfolioStackSectionLayout,
   PortfolioStackSubtitleSize,
@@ -43,19 +46,40 @@ export type {
   PortfolioStackTitlePreset,
   PortfolioStackTitleSize,
 } from '@/components/portfolio/portfolio-stack-presentation';
+export type { PortfolioHeaderBottomSpacing } from '@/components/portfolio/portfolio-header-design-shared';
 export type { PortfolioStackSectionSettings } from '@/components/portfolio/portfolio-stack-merge';
 export { pickStackPresentationFields, mergeStackPresentationBase, resolveStackShowLevel, resolveStackIconBackgroundEnabled } from '@/components/portfolio/portfolio-stack-merge';
 export { stackPresentationToToolsGallery } from '@/components/portfolio/portfolio-stack-gallery-mapper';
+
+export const PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS: {
+  value: PortfolioStackHeaderDesign;
+  label: string;
+}[] = [
+  { value: 'mask', label: 'Reveal mask' },
+  { value: 'split', label: 'Split rule' },
+  { value: 'typewriter', label: 'Typewriter' },
+  { value: 'index', label: 'Index numeral' },
+  { value: 'masthead', label: 'Masthead' },
+  { value: 'marquee', label: 'Marquee' },
+  { value: 'focus', label: 'Focus pull' },
+  { value: 'terminal', label: 'Terminal' },
+  { value: 'bracket', label: 'Bracket frame' },
+  { value: 'underline', label: 'Ink underline' },
+  { value: 'cascade', label: 'Word cascade' },
+  { value: 'mosaic', label: 'Mosaic reveal' },
+];
+
+export const PORTFOLIO_STACK_HEADER_BOTTOM_SPACING_OPTIONS = PORTFOLIO_HEADER_BOTTOM_SPACING_OPTIONS;
 
 export const PORTFOLIO_STACK_TAGS_SIZE_OPTIONS: {
   value: PortfolioStackTagsSize;
   label: string;
   description: string;
 }[] = [
-  { value: 'compact', label: 'Compacte', description: 'Petits tags — rendu dense.' },
-  { value: 'medium', label: 'Moyenne', description: 'Taille équilibrée (défaut).' },
-  { value: 'large', label: 'Grande', description: 'Tags plus lisibles sur grand écran.' },
-  { value: 'xlarge', label: 'Très grande', description: 'Maximum — pastilles XXL.' },
+  { value: 'compact', label: 'Compact', description: 'Petits tags — rendu dense.' },
+  { value: 'medium', label: 'Medium', description: 'Taille équilibrée (défaut).' },
+  { value: 'large', label: 'Large', description: 'Tags plus lisibles sur grand écran.' },
+  { value: 'xlarge', label: 'Extra large', description: 'Maximum — pastilles XXL.' },
 ];
 
 export const PORTFOLIO_STACK_TITLE_SIZE_OPTIONS: {
@@ -63,10 +87,10 @@ export const PORTFOLIO_STACK_TITLE_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Petite', description: 'Titre compact.' },
-  { value: 'md', label: 'Moyenne', description: 'Taille équilibrée (défaut).' },
-  { value: 'lg', label: 'Grande', description: 'Titre plus affirmé.' },
-  { value: 'xl', label: 'Très grande', description: 'Impact maximum.' },
+  { value: 'sm', label: 'Small', description: 'Titre compact.' },
+  { value: 'md', label: 'Medium', description: 'Taille équilibrée (défaut).' },
+  { value: 'lg', label: 'Large', description: 'Titre plus affirmé.' },
+  { value: 'xl', label: 'Extra large', description: 'Impact maximum.' },
 ];
 
 export const PORTFOLIO_STACK_SUBTITLE_SIZE_OPTIONS: {
@@ -74,9 +98,9 @@ export const PORTFOLIO_STACK_SUBTITLE_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Petite', description: 'Sous-titre compact.' },
-  { value: 'md', label: 'Moyenne', description: 'Taille de lecture par défaut.' },
-  { value: 'lg', label: 'Grande', description: 'Sous-titre plus aéré.' },
+  { value: 'sm', label: 'Small', description: 'Sous-titre compact.' },
+  { value: 'md', label: 'Medium', description: 'Taille de lecture par défaut.' },
+  { value: 'lg', label: 'Large', description: 'Sous-titre plus aéré.' },
 ];
 
 export function resolveStackTagsSize(
@@ -131,32 +155,6 @@ export function stackTagsContainerMaxWidth(
   return '100%';
 }
 
-/** Embedded kicker title for `stack-tags` — driven by titleSize. */
-export function stackTagsKickerClass(size: PortfolioStackTitleSize): string {
-  switch (size) {
-    case 'sm':
-      return 'text-[10px] font-semibold uppercase tracking-[0.2em] sm:text-[11px]';
-    case 'lg':
-      return 'text-sm font-semibold uppercase tracking-[0.22em] sm:text-base';
-    case 'xl':
-      return 'text-base font-semibold uppercase tracking-[0.24em] sm:text-lg';
-    default:
-      return 'text-xs font-semibold uppercase tracking-[0.22em] sm:text-sm';
-  }
-}
-
-/** Embedded subtitle for `stack-tags` — driven by subtitleSize. */
-export function stackTagsSubtitleClass(size: PortfolioStackSubtitleSize): string {
-  switch (size) {
-    case 'sm':
-      return 'mt-2 text-sm leading-relaxed';
-    case 'lg':
-      return 'mt-4 text-[1.0625rem] leading-relaxed sm:text-lg';
-    default:
-      return 'mt-3 text-base leading-relaxed sm:text-[1.0625rem]';
-  }
-}
-
 export function stackTagsListClass(size: PortfolioStackTagsSize): string {
   switch (size) {
     case 'compact':
@@ -173,7 +171,7 @@ export function stackTagsListClass(size: PortfolioStackTagsSize): string {
 export function stackTagsChipClass(size: PortfolioStackTagsSize): string {
   switch (size) {
     case 'compact':
-      return 'rounded-md px-3 py-1.5 text-[11px] font-medium tracking-[-0.01em] sm:text-xs';
+      return 'rounded-md px-3 py-1.5 text-xs font-medium tracking-[-0.01em] sm:text-[0.8125rem]';
     case 'large':
       return 'rounded-lg px-5 py-2.5 text-[0.9375rem] font-medium tracking-[-0.01em] sm:px-6 sm:py-3 sm:text-base';
     case 'xlarge':
@@ -311,17 +309,17 @@ export const PORTFOLIO_STACK_SECTION_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'stacked',
-    label: 'Empilé',
+    label: 'Stacked',
     description: 'Titre au-dessus de la liste (disposition classique).',
   },
   {
     value: 'aside-left',
-    label: 'Titre à gauche',
+    label: 'Title left',
     description: 'Écran coupé en deux — titre centré à gauche, liste à droite.',
   },
   {
     value: 'aside-right',
-    label: 'Titre à droite',
+    label: 'Title right',
     description: 'Écran coupé en deux — liste à gauche, titre centré à droite.',
   },
 ];
@@ -356,12 +354,12 @@ export const PORTFOLIO_STACK_ASIDE_TITLE_PLACEMENT_OPTIONS: {
 }[] = [
   {
     value: 'top',
-    label: 'En haut',
+    label: 'Top',
     description: 'Titre aligné en haut, face au début de la liste.',
   },
   {
     value: 'center',
-    label: 'Centré face à la liste',
+    label: 'Centered with list',
     description: 'Titre centré verticalement par rapport à la hauteur de la liste à côté.',
   },
 ];
@@ -693,6 +691,8 @@ export const PORTFOLIO_STACK_TITLE_PRESET_OPTIONS = [
 export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
   ...DEFAULT_SECTION_BACKGROUND,
   design: 'workflow-rail',
+  headerDesign: 'mask',
+  headerBottomSpacing: 'medium',
   sectionLayout: 'stacked',
   asideTitleSticky: true,
   asideTitlePlacement: 'center',
@@ -753,6 +753,7 @@ export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
   toolsPalette: { ...DEFAULT_TOOLS_PALETTE },
   toolsColorBindings: { ...DEFAULT_TOOLS_COLOR_BINDINGS },
   activeColorMode: 'light',
+  colorModeOverride: 'auto',
 };
 
 Object.assign(DEFAULT_STACK_PRESENTATION, applyToolsPaletteToSettings(DEFAULT_STACK_PRESENTATION));

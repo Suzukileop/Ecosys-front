@@ -230,24 +230,23 @@ export function EditorialToolsLevelTableRows({ tools, presentation }: ToolsGalle
       const items = gsap.utils.toArray<HTMLElement>(root.querySelectorAll('.pf-stack-table-row'));
       if (items.length === 0) return;
 
+      // Hide immediately (pre-paint) so rows never flash at their static/visible
+      // state before ScrollTrigger fires — only the reveal is scroll-gated.
+      gsap.set(items, { y: 12, opacity: 0.28 });
+
       ScrollTrigger.batch(items, {
         start: 'top 92%',
         once: true,
         ...(scroller ? { scroller } : {}),
         onEnter: (batch) => {
-          gsap.fromTo(
-            batch,
-            { y: 8, opacity: 0.28 },
-            {
-              y: 0,
-              opacity: 1,
-              duration: 0.52,
-              stagger: 0.036,
-              ease: 'power2.out',
-              overwrite: 'auto',
-              immediateRender: false,
-            }
-          );
+          gsap.to(batch, {
+            y: 0,
+            opacity: 1,
+            duration: 0.68,
+            stagger: 0.05,
+            ease: 'power2.out',
+            overwrite: 'auto',
+          });
         },
       });
     }, root);

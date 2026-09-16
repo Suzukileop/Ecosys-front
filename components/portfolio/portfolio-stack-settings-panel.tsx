@@ -1,15 +1,17 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionHeroPaletteToggle } from '@/components/portfolio/SectionHeroPaletteToggle';
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   PORTFOLIO_STACK_ASIDE_TITLE_PLACEMENT_OPTIONS,
   PORTFOLIO_STACK_DESIGN_OPTIONS,
+  PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS,
+  PORTFOLIO_STACK_HEADER_BOTTOM_SPACING_OPTIONS,
   PORTFOLIO_STACK_SECTION_LAYOUT_OPTIONS,
-  PORTFOLIO_STACK_SUBTITLE_SIZE_OPTIONS,
   PORTFOLIO_STACK_TAGS_SIZE_OPTIONS,
   PORTFOLIO_STACK_TITLE_PRESET_OPTIONS,
-  PORTFOLIO_STACK_TITLE_SIZE_OPTIONS,
   stackBrandCardsDesignDefaults,
   stackBrandIndexDesignDefaults,
   stackBrandRowDesignDefaults,
@@ -27,11 +29,10 @@ import {
   DEFAULT_STACK_TITLE,
   type PortfolioStackAsideTitlePlacement,
   type PortfolioStackDesign,
+  type PortfolioStackHeaderDesign,
   type PortfolioStackSectionLayout,
   type PortfolioStackSectionSettings,
-  type PortfolioStackSubtitleSize,
   type PortfolioStackTagsSize,
-  type PortfolioStackTitleSize,
 } from '@/components/portfolio/portfolio-stack-settings';
 import {
   PORTFOLIO_TOOLS_BRAND_CARDS_ICON_PLACEMENT_OPTIONS,
@@ -39,7 +40,6 @@ import {
   PORTFOLIO_TOOLS_BRAND_ROW_CELL_STYLE_OPTIONS,
   PORTFOLIO_TOOLS_CARD_GAP_OPTIONS,
   PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS,
-  PORTFOLIO_TOOLS_HEADER_ALIGNMENT_OPTIONS,
   PORTFOLIO_TOOLS_LEVEL_BENTO_GRID_MODE_OPTIONS,
   PORTFOLIO_TOOLS_LEVEL_BAR_SIZE_OPTIONS,
   PORTFOLIO_TOOLS_LEVEL_BAR_STYLE_OPTIONS,
@@ -82,16 +82,18 @@ import {
   type HeroPaletteTokenId,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 
-export type StackSubSection = 'general' | 'palette' | 'background';
+/** Same general / design / header mechanism as the Experience section settings panel, plus its own Background tab. */
+export type StackSubSection = 'general' | 'design' | 'header' | 'background';
 
 const SUBSECTIONS: { value: StackSubSection; label: string }[] = [
-  { value: 'general', label: 'Général' },
-  { value: 'palette', label: 'Palette' },
-  { value: 'background', label: 'Arrière-plan' },
+  { value: 'general', label: 'General' },
+  { value: 'design', label: 'Design' },
+  { value: 'header', label: 'Header' },
+  { value: 'background', label: 'Background' },
 ];
 
 export function normalizeStackSubSection(value: string | undefined): StackSubSection {
-  return SUBSECTIONS.some((item) => item.value === value) ? (value as StackSubSection) : 'general';
+  return SUBSECTIONS.some((item) => item.value === value) ? (value as StackSubSection) : 'design';
 }
 
 function Toggle({
@@ -112,38 +114,6 @@ function Toggle({
         onChange={(event) => onChange(event.target.checked)}
         className="h-4 w-4"
       />
-    </label>
-  );
-}
-
-function SelectField<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: T;
-  options: { value: T; label: string }[];
-  onChange: (value: T) => void;
-}) {
-  return (
-    <label className="block">
-      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => {
-          const option = options.find((item) => item.value === event.target.value);
-          if (option) onChange(option.value);
-        }}
-        className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
     </label>
   );
 }
@@ -175,6 +145,1108 @@ function ColorField({
         />
       </div>
     </label>
+  );
+}
+
+/** Curated 3-option quick palette for Name / Description text colors — separate from the full 8-token dropdown. */
+const STACK_QUICK_PALETTE_TOKENS: { value: HeroPaletteTokenId; label: string }[] = [
+  { value: 'principal', label: 'Principal' },
+  { value: 'texteFort', label: 'Texte fort' },
+  { value: 'texteMuted', label: 'Texte muted' },
+];
+
+/** For section-background-style fields (fill, gradient stops, split zones) — "fond"/"neutre"
+ *  fit that context better than "texte fort", which is why this isn't just STACK_QUICK_PALETTE_TOKENS. */
+const STACK_BACKGROUND_PALETTE_TOKENS: { value: HeroPaletteTokenId; label: string }[] = [
+  { value: 'fond', label: 'Fond' },
+  { value: 'neutre', label: 'Neutre' },
+  { value: 'principal', label: 'Principal' },
+  { value: 'texteMuted', label: 'Texte muted' },
+];
+
+function StackQuickColorPicker({
+  label,
+  palette,
+  activeToken,
+  activeHex,
+  onPickToken,
+  tokens = STACK_QUICK_PALETTE_TOKENS,
+}: {
+  label: string;
+  palette: Record<HeroPaletteTokenId, string>;
+  /** Bound to a live palette token (hero-palette mode) — takes priority over activeHex for the active state. */
+  activeToken?: HeroPaletteTokenId;
+  /** Concrete hex in use (custom-color mode) — matched against each swatch's resolved color. */
+  activeHex?: string;
+  onPickToken: (token: HeroPaletteTokenId) => void;
+  tokens?: { value: HeroPaletteTokenId; label: string }[];
+}) {
+  return (
+    <div>
+      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
+      <div className="mt-2 flex items-center gap-3">
+        {tokens.map((token) => {
+          const hex = resolveHeroPaletteColor(palette, token.value);
+          const active = activeToken
+            ? activeToken === token.value
+            : activeHex?.trim().toLowerCase() === hex.toLowerCase();
+          return (
+            <button
+              key={token.value}
+              type="button"
+              title={token.label}
+              aria-label={token.label}
+              aria-pressed={active}
+              onClick={() => onPickToken(token.value)}
+              className="flex flex-col items-center gap-1.5"
+            >
+              <span
+                className="h-8 w-8 rounded-full border-2 transition"
+                style={{
+                  backgroundColor: hex,
+                  borderColor: active ? '#171717' : '#e5e5e5',
+                  boxShadow: active ? '0 0 0 2px rgba(23,23,23,0.15)' : 'none',
+                }}
+              />
+              <span
+                className={`text-[11px] font-medium ${active ? 'text-neutral-900' : 'text-neutral-500'}`}
+              >
+                {token.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function StackSectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{children}</p>
+  );
+}
+
+/** Maps SectionBackgroundFillControls' field labels to the matching ToolsColorSlot and, for the
+ *  custom-color fallback (useHeroPalette off), the concrete settings field it should write to —
+ *  same label-keyed pattern portfolio-work-settings-panel.tsx uses for its own background fields. */
+const STACK_BACKGROUND_LABEL_SLOTS: Record<
+  string,
+  { slot: ToolsColorSlot; field: keyof PortfolioStackSectionSettings }
+> = {
+  Color: { slot: 'sectionBackground', field: 'sectionBackgroundColor' },
+  'Gradient start': { slot: 'sectionGradientFrom', field: 'sectionBackgroundGradientFrom' },
+  'Gradient end': { slot: 'sectionGradientTo', field: 'sectionBackgroundGradientTo' },
+  'Color A': { slot: 'sectionSplitA', field: 'sectionBackgroundColorA' },
+  'Color B': { slot: 'sectionSplitB', field: 'sectionBackgroundColorB' },
+};
+
+/** Section-background color fields, bound to the same toolsPalette/toolsColorBindings system
+ *  as the rest of Stack's Palette tab — "Fond", "Neutre", "Principal", "Texte muted" swatches,
+ *  no free-form hex. */
+function StackBackgroundColorField({
+  stack,
+  onChange,
+  palette,
+  bindings,
+  label,
+  value,
+}: {
+  stack: PortfolioStackSectionSettings;
+  onChange: (patch: Partial<PortfolioStackSectionSettings>) => void;
+  palette: Record<HeroPaletteTokenId, string>;
+  bindings: Record<ToolsColorSlot, HeroPaletteTokenId>;
+  label: string;
+  value: string;
+}) {
+  const mapping = STACK_BACKGROUND_LABEL_SLOTS[label] ?? STACK_BACKGROUND_LABEL_SLOTS.Color;
+  const usingPalette = stack.useHeroPalette !== false;
+  return (
+    <StackQuickColorPicker
+      label={label}
+      palette={palette}
+      tokens={STACK_BACKGROUND_PALETTE_TOKENS}
+      activeToken={usingPalette ? bindings[mapping.slot] : undefined}
+      activeHex={value}
+      onPickToken={(token) =>
+        onChange(
+          usingPalette
+            ? patchToolsColorBinding(stack, mapping.slot, token)
+            : { [mapping.field]: resolveHeroPaletteColor(palette, token) }
+        )
+      }
+    />
+  );
+}
+
+/** Same mini-wireframe/picker-card mechanism as Experience's design grid (see ExperienceDesignWireframe). */
+function StackMiniSlide({ children }: { children: ReactNode }) {
+  return (
+    <svg viewBox="0 0 120 72" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
+      <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
+      {children}
+    </svg>
+  );
+}
+
+function StackMiniType({
+  x,
+  y,
+  children,
+  size = 8,
+  anchor = 'start',
+}: {
+  x: number;
+  y: number;
+  children: string;
+  size?: number;
+  anchor?: 'start' | 'middle' | 'end';
+}) {
+  return (
+    <text
+      className="pf-stack-mini-type"
+      x={x}
+      y={y}
+      fontSize={size}
+      fontWeight={700}
+      letterSpacing="0.1em"
+      textAnchor={anchor}
+    >
+      {children}
+    </text>
+  );
+}
+
+function StackPickerCard({
+  active,
+  label,
+  onClick,
+  children,
+  compact,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  children: ReactNode;
+  /** Smaller padding/type for secondary preview-card grids (Cell style, Columns, …). */
+  compact?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={label}
+      title={label}
+      data-active={active ? 'true' : 'false'}
+      onClick={onClick}
+      className={`pf-stack-design-card rounded-2xl text-left ${compact ? 'pf-stack-preview-card' : 'px-3 pb-3 pt-2.5'}`}
+    >
+      {children}
+      <span className={compact ? 'mt-1.5 block' : 'mt-2.5 block'}>
+        <span
+          className={`pf-stack-card-label min-w-0 font-semibold leading-none tracking-tight ${compact ? 'text-xs' : 'text-sm'}`}
+        >
+          {label}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function StackDesignWireframe({ design }: { design: PortfolioStackDesign }) {
+  switch (design) {
+    case 'workflow-rail':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-ink" x="8" y="18" width="14" height="14" rx="4" />
+          <rect className="pf-stack-mini-mute" x="9" y="38" width="12" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-ink" x="31" y="18" width="14" height="14" rx="4" />
+          <rect className="pf-stack-mini-mute" x="32" y="38" width="12" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-ink" x="54" y="18" width="14" height="14" rx="4" />
+          <rect className="pf-stack-mini-mute" x="55" y="38" width="12" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-ink" x="77" y="18" width="14" height="14" rx="4" />
+          <rect className="pf-stack-mini-mute" x="78" y="38" width="12" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-ink" x="100" y="18" width="14" height="14" rx="4" />
+          <rect className="pf-stack-mini-mute" x="101" y="38" width="12" height="2.2" rx="1.1" />
+        </StackMiniSlide>
+      );
+    case 'stack-tags':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-accent" x="44" y="10" width="32" height="2" rx="1" />
+          <rect className="pf-stack-mini-ink" x="18" y="24" width="22" height="9" rx="4.5" />
+          <rect className="pf-stack-mini-mute" x="44" y="24" width="28" height="9" rx="4.5" />
+          <rect className="pf-stack-mini-ink" x="76" y="24" width="20" height="9" rx="4.5" />
+          <rect className="pf-stack-mini-mute" x="12" y="38" width="26" height="9" rx="4.5" />
+          <rect className="pf-stack-mini-ink" x="42" y="38" width="18" height="9" rx="4.5" />
+          <rect className="pf-stack-mini-mute" x="64" y="38" width="30" height="9" rx="4.5" />
+          <rect className="pf-stack-mini-ink" x="28" y="52" width="24" height="9" rx="4.5" />
+          <rect className="pf-stack-mini-mute" x="56" y="52" width="22" height="9" rx="4.5" />
+        </StackMiniSlide>
+      );
+    case 'brand-cards':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-mute" x="8" y="8" width="48" height="56" rx="4" />
+          <rect className="pf-stack-mini-ink" x="14" y="15" width="12" height="12" rx="3" />
+          <rect className="pf-stack-mini-mute" x="14" y="34" width="28" height="3" rx="1.4" />
+          <rect className="pf-stack-mini-mute" x="14" y="41" width="32" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-accent" x="14" y="49" width="16" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-mute" x="64" y="8" width="48" height="56" rx="4" />
+          <rect className="pf-stack-mini-ink" x="70" y="15" width="12" height="12" rx="3" />
+          <rect className="pf-stack-mini-mute" x="70" y="34" width="28" height="3" rx="1.4" />
+          <rect className="pf-stack-mini-mute" x="70" y="41" width="24" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-accent" x="70" y="49" width="16" height="2.2" rx="1.1" />
+        </StackMiniSlide>
+      );
+    case 'brand-index':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-mute" x="8" y="21" width="104" height="1" rx="0.5" />
+          <rect className="pf-stack-mini-mute" x="8" y="37" width="104" height="1" rx="0.5" />
+          <rect className="pf-stack-mini-mute" x="8" y="53" width="104" height="1" rx="0.5" />
+          <rect className="pf-stack-mini-ink" x="8" y="10" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="22" y="12" width="22" height="2.4" rx="1.2" />
+          <rect className="pf-stack-mini-mute" x="50" y="12" width="16" height="2" rx="1" />
+          <rect className="pf-stack-mini-mute" x="78" y="12" width="30" height="2" rx="1" />
+          <rect className="pf-stack-mini-ink" x="8" y="26" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="22" y="28" width="18" height="2.4" rx="1.2" />
+          <rect className="pf-stack-mini-mute" x="50" y="28" width="16" height="2" rx="1" />
+          <rect className="pf-stack-mini-mute" x="78" y="28" width="24" height="2" rx="1" />
+          <rect className="pf-stack-mini-ink" x="8" y="42" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="22" y="44" width="24" height="2.4" rx="1.2" />
+          <rect className="pf-stack-mini-mute" x="50" y="44" width="16" height="2" rx="1" />
+          <rect className="pf-stack-mini-mute" x="78" y="44" width="28" height="2" rx="1" />
+        </StackMiniSlide>
+      );
+    case 'brand-row':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-mute" x="8" y="9" width="104" height="1" rx="0.5" />
+          <rect className="pf-stack-mini-mute" x="41" y="9" width="1" height="54" rx="0.5" />
+          <rect className="pf-stack-mini-mute" x="74" y="9" width="1" height="54" rx="0.5" />
+          <rect className="pf-stack-mini-ink" x="18" y="18" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="15" y="30" width="14" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-ink" x="51" y="18" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="48" y="30" width="14" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-ink" x="84" y="18" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="81" y="30" width="14" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-ink" x="18" y="44" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="15" y="56" width="14" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-ink" x="51" y="44" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="48" y="56" width="14" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-ink" x="84" y="44" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="81" y="56" width="14" height="2.2" rx="1.1" />
+        </StackMiniSlide>
+      );
+    case 'level-progress-rows':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-ink" x="8" y="9" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="22" y="11" width="26" height="2.4" rx="1.2" />
+          <rect className="pf-stack-mini-mute" x="8" y="21" width="104" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="8" y="21" width="76" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="8" y="32" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="22" y="34" width="20" height="2.4" rx="1.2" />
+          <rect className="pf-stack-mini-mute" x="8" y="44" width="104" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="8" y="44" width="52" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="8" y="55" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="22" y="57" width="24" height="2.4" rx="1.2" />
+        </StackMiniSlide>
+      );
+    case 'level-category-rows':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-ink" x="8" y="9" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="22" y="10" width="18" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-accent" x="42" y="10.4" width="14" height="1.6" rx="0.8" />
+          <rect className="pf-stack-mini-mute" x="8" y="20" width="88" height="2" rx="1" />
+          <rect className="pf-stack-mini-ink" x="8" y="20" width="60" height="2" rx="1" />
+          <rect className="pf-stack-mini-ink" x="8" y="32" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="22" y="33" width="22" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-accent" x="46" y="33.4" width="14" height="1.6" rx="0.8" />
+          <rect className="pf-stack-mini-mute" x="8" y="43" width="88" height="2" rx="1" />
+          <rect className="pf-stack-mini-ink" x="8" y="43" width="40" height="2" rx="1" />
+          <rect className="pf-stack-mini-ink" x="8" y="55" width="8" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="22" y="56" width="16" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-accent" x="40" y="56.4" width="14" height="1.6" rx="0.8" />
+        </StackMiniSlide>
+      );
+    case 'level-table-rows':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-mute" x="8" y="20" width="104" height="1" rx="0.5" />
+          <rect className="pf-stack-mini-mute" x="8" y="36" width="104" height="1" rx="0.5" />
+          <rect className="pf-stack-mini-mute" x="8" y="52" width="104" height="1" rx="0.5" />
+          <rect className="pf-stack-mini-ink" x="8" y="9" width="7" height="7" rx="2" />
+          <rect className="pf-stack-mini-mute" x="20" y="10.5" width="20" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-mute" x="46" y="10.5" width="16" height="2" rx="1" />
+          <rect className="pf-stack-mini-accent" x="94" y="9" width="14" height="7" rx="2" />
+          <rect className="pf-stack-mini-ink" x="8" y="25" width="7" height="7" rx="2" />
+          <rect className="pf-stack-mini-mute" x="20" y="26.5" width="24" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-mute" x="52" y="26.5" width="16" height="2" rx="1" />
+          <rect className="pf-stack-mini-accent" x="94" y="25" width="14" height="7" rx="2" />
+          <rect className="pf-stack-mini-ink" x="8" y="41" width="7" height="7" rx="2" />
+          <rect className="pf-stack-mini-mute" x="20" y="42.5" width="18" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-mute" x="44" y="42.5" width="16" height="2" rx="1" />
+          <rect className="pf-stack-mini-accent" x="94" y="41" width="14" height="7" rx="2" />
+        </StackMiniSlide>
+      );
+    case 'level-circular-cards':
+      return (
+        <StackMiniSlide>
+          <circle className="pf-stack-mini-ring" cx="24" cy="28" r="12" strokeWidth={2.5} />
+          <circle className="pf-stack-mini-ink" cx="24" cy="28" r="4" />
+          <rect className="pf-stack-mini-mute" x="14" y="46" width="20" height="2.2" rx="1.1" />
+          <circle className="pf-stack-mini-ring" cx="60" cy="28" r="12" strokeWidth={2.5} />
+          <circle className="pf-stack-mini-ink" cx="60" cy="28" r="4" />
+          <rect className="pf-stack-mini-mute" x="50" y="46" width="20" height="2.2" rx="1.1" />
+          <circle className="pf-stack-mini-ring" cx="96" cy="28" r="12" strokeWidth={2.5} />
+          <circle className="pf-stack-mini-ink" cx="96" cy="28" r="4" />
+          <rect className="pf-stack-mini-mute" x="86" y="46" width="20" height="2.2" rx="1.1" />
+        </StackMiniSlide>
+      );
+    case 'level-star-cards':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-mute" x="8" y="10" width="104" height="22" rx="4" />
+          <rect className="pf-stack-mini-mute" x="16" y="18" width="26" height="3" rx="1.5" />
+          <circle className="pf-stack-mini-accent" cx="70" cy="19.5" r="2.2" />
+          <circle className="pf-stack-mini-accent" cx="78" cy="19.5" r="2.2" />
+          <circle className="pf-stack-mini-accent" cx="86" cy="19.5" r="2.2" />
+          <circle className="pf-stack-mini-mute" cx="94" cy="19.5" r="2.2" />
+          <circle className="pf-stack-mini-mute" cx="102" cy="19.5" r="2.2" />
+          <rect className="pf-stack-mini-mute" x="8" y="40" width="104" height="22" rx="4" />
+          <rect className="pf-stack-mini-mute" x="16" y="48" width="22" height="3" rx="1.5" />
+          <circle className="pf-stack-mini-accent" cx="70" cy="49.5" r="2.2" />
+          <circle className="pf-stack-mini-accent" cx="78" cy="49.5" r="2.2" />
+          <circle className="pf-stack-mini-accent" cx="86" cy="49.5" r="2.2" />
+          <circle className="pf-stack-mini-accent" cx="94" cy="49.5" r="2.2" />
+          <circle className="pf-stack-mini-mute" cx="102" cy="49.5" r="2.2" />
+        </StackMiniSlide>
+      );
+    case 'level-svg-rings':
+      return (
+        <StackMiniSlide>
+          <circle className="pf-stack-mini-ring" cx="24" cy="32" r="16" strokeWidth={3} />
+          <StackMiniType x={24} y={34} size={6} anchor="middle">
+            CSS
+          </StackMiniType>
+          <circle className="pf-stack-mini-ring" cx="60" cy="32" r="16" strokeWidth={3} />
+          <StackMiniType x={60} y={34} size={6} anchor="middle">
+            JS
+          </StackMiniType>
+          <circle className="pf-stack-mini-ring" cx="96" cy="32" r="16" strokeWidth={3} />
+          <StackMiniType x={96} y={34} size={6} anchor="middle">
+            GO
+          </StackMiniType>
+        </StackMiniSlide>
+      );
+    case 'level-bento-categories':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-mute" x="8" y="8" width="50" height="26" rx="3.5" />
+          <rect className="pf-stack-mini-ink" x="14" y="14" width="7" height="7" rx="2" />
+          <rect className="pf-stack-mini-mute" x="14" y="26" width="28" height="2.2" rx="1.1" />
+          <rect className="pf-stack-mini-mute" x="62" y="8" width="50" height="14" rx="3.5" />
+          <rect className="pf-stack-mini-mute" x="62" y="26" width="24" height="8" rx="3" />
+          <rect className="pf-stack-mini-mute" x="90" y="26" width="22" height="8" rx="3" />
+          <rect className="pf-stack-mini-mute" x="8" y="38" width="24" height="26" rx="3.5" />
+          <rect className="pf-stack-mini-mute" x="36" y="38" width="24" height="26" rx="3.5" />
+          <rect className="pf-stack-mini-mute" x="64" y="38" width="48" height="26" rx="3.5" />
+          <rect className="pf-stack-mini-ink" x="70" y="44" width="7" height="7" rx="2" />
+        </StackMiniSlide>
+      );
+    default: {
+      const _exhaustive: never = design;
+      return _exhaustive;
+    }
+  }
+}
+
+/** Same animated switch + segmented option grid as Experience's layout settings (ExperienceSwitchTrack/ExperienceOptionGrid). */
+function StackSwitchTrack({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className="relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      style={{
+        backgroundColor: checked
+          ? 'var(--pf-palette-texte-fort, #171717)'
+          : 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, var(--pf-palette-fond, #0a0a0a))',
+      }}
+    >
+      <span
+        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        style={{
+          left: checked ? '1.125rem' : '0.125rem',
+          backgroundColor: checked
+            ? 'var(--pf-palette-fond, #ffffff)'
+            : 'var(--pf-palette-texte-fort, #ffffff)',
+        }}
+      />
+    </span>
+  );
+}
+
+function StackToggleRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full cursor-pointer flex-col gap-1 text-left"
+    >
+      <span className="flex items-center justify-between gap-4">
+        <span className="min-w-0 text-sm font-semibold text-neutral-950">{label}</span>
+        <StackSwitchTrack checked={checked} />
+      </span>
+    </button>
+  );
+}
+
+function StackOptionGrid<T extends string | number>({
+  label,
+  options,
+  value,
+  onChange,
+  columns,
+  icons,
+}: {
+  label: string;
+  options: { value: T; label: string; description?: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  columns?: number;
+  icons?: Partial<Record<string, ReactNode>>;
+}) {
+  const count = options.length;
+  // Keep every option on one horizontal row up to 4 choices (Taille/Espacement/Écart-style fields);
+  // larger sets fall back to a 2-column wrap so buttons don't get too cramped.
+  const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
+  const compact = cols === count && count >= 2 && count <= 5;
+  return (
+    <div>
+      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="pf-stack-segment grid gap-[3px] p-[3px]"
+        data-compact={compact ? 'true' : 'false'}
+        style={{
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+        }}
+      >
+        {options.map((option) => {
+          const active = option.value === value;
+          const icon = icons?.[String(option.value)];
+          return (
+            <button
+              key={String(option.value)}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.description}
+              onClick={() => onChange(option.value)}
+              data-active={active ? 'true' : 'false'}
+              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
+              style={
+                active
+                  ? undefined
+                  : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }
+              }
+            >
+              {icon ? <span className="pf-stack-segment-icon">{icon}</span> : null}
+              <span>{option.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Ordered/continuous-scale control (size, spacing, gap) — a single drag surface
+ * snapping between the option's discrete steps, with the current step named live.
+ */
+function StackSlider<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (value: T) => void;
+}) {
+  const index = Math.max(
+    0,
+    options.findIndex((option) => option.value === value)
+  );
+  const lastIndex = options.length - 1;
+  const percent = lastIndex > 0 ? (index / lastIndex) * 100 : 0;
+  const current = options[index] ?? options[0];
+  return (
+    <div>
+      <div className="pf-stack-slider-row">
+        <span className="pf-stack-slider-label">{label}</span>
+        <span className="pf-stack-slider-value">{current?.label}</span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={Math.max(lastIndex, 0)}
+        step={1}
+        value={index}
+        onChange={(event) => {
+          const next = options[Number(event.target.value)];
+          if (next) onChange(next.value);
+        }}
+        aria-label={label}
+        className="pf-stack-slider-input"
+        style={{
+          background: `linear-gradient(to right, var(--pf-palette-texte-fort, #f5f5f5) ${percent}%, color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a)) ${percent}%)`,
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * Visual-difference choice (style, layout) — a compact preview card per option so the
+ * difference reads at a glance instead of via a label alone.
+ */
+function StackPreviewCardGrid<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  columns,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string; glyph: ReactNode }[];
+  onChange: (value: T) => void;
+  columns?: number;
+}) {
+  const cols = columns ?? Math.min(options.length, 4);
+  return (
+    <div>
+      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="grid gap-2"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
+        {options.map((option) => (
+          <StackPickerCard
+            key={option.value}
+            active={option.value === value}
+            label={option.label}
+            onClick={() => onChange(option.value)}
+            compact
+          >
+            <svg viewBox="0 0 64 34" className="pf-stack-mini h-full w-full" aria-hidden>
+              <rect className="pf-stack-mini-stage" x="0.75" y="0.75" width="62.5" height="32.5" rx="6" />
+              {option.glyph}
+            </svg>
+          </StackPickerCard>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** N evenly spaced bars — glyph for "columns per row" preview cards. */
+function stackColumnsGlyph(n: 1 | 2 | 3 | 4): ReactNode {
+  const gap = 4;
+  const totalWidth = 48;
+  const startX = 8;
+  const barWidth = (totalWidth - gap * (n - 1)) / n;
+  return (
+    <>
+      {Array.from({ length: n }, (_, i) => (
+        <rect
+          key={i}
+          className="pf-stack-mini-ink"
+          x={startX + i * (barWidth + gap)}
+          y={8}
+          width={barWidth}
+          height={18}
+          rx={2}
+        />
+      ))}
+    </>
+  );
+}
+
+function stackCellStyleDividersGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-mute" x="8" y="10" width="20" height="14" rx="2" />
+      <rect className="pf-stack-mini-accent" x="31" y="8" width="1.4" height="18" rx="0.7" />
+      <rect className="pf-stack-mini-mute" x="36" y="10" width="20" height="14" rx="2" />
+    </>
+  );
+}
+
+function stackCellStyleFramesGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-ring" x="9" y="9" width="20" height="16" rx="3" strokeWidth={1.4} />
+      <rect className="pf-stack-mini-ring" x="35" y="9" width="20" height="16" rx="3" strokeWidth={1.4} />
+    </>
+  );
+}
+
+function stackCellStyleNoneGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-mute" x="9" y="10" width="20" height="14" rx="2" />
+      <rect className="pf-stack-mini-mute" x="35" y="10" width="20" height="14" rx="2" />
+    </>
+  );
+}
+
+function stackIconPlacementTopGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-ink" x="26" y="6" width="12" height="12" rx="3" />
+      <rect className="pf-stack-mini-mute" x="18" y="22" width="28" height="3" rx="1.5" />
+    </>
+  );
+}
+
+function stackIconPlacementLeftGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-ink" x="8" y="11" width="12" height="12" rx="3" />
+      <rect className="pf-stack-mini-mute" x="26" y="12" width="30" height="3" rx="1.5" />
+      <rect className="pf-stack-mini-mute" x="26" y="19" width="22" height="2.4" rx="1.2" />
+    </>
+  );
+}
+
+function stackLevelDisplayTextGlyph(): ReactNode {
+  return <rect className="pf-stack-mini-accent" x="16" y="14" width="32" height="6" rx="3" />;
+}
+
+function stackLevelDisplayStarsGlyph(): ReactNode {
+  return (
+    <>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <circle
+          key={i}
+          className={i < 3 ? 'pf-stack-mini-accent' : 'pf-stack-mini-mute'}
+          cx={14 + i * 9.5}
+          cy={17}
+          r={2.6}
+        />
+      ))}
+    </>
+  );
+}
+
+function stackLevelDisplayDotsGlyph(): ReactNode {
+  return (
+    <>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <circle
+          key={i}
+          className={i < 3 ? 'pf-stack-mini-accent' : 'pf-stack-mini-mute'}
+          cx={14 + i * 9.5}
+          cy={17}
+          r={2.1}
+        />
+      ))}
+    </>
+  );
+}
+
+function stackLevelDisplayBarGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-mute" x="10" y="15" width="44" height="4" rx="2" />
+      <rect className="pf-stack-mini-accent" x="10" y="15" width="28" height="4" rx="2" />
+    </>
+  );
+}
+
+function stackBarStyleRectangleGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-mute" x="8" y="15" width="48" height="4" />
+      <rect className="pf-stack-mini-accent" x="8" y="15" width="30" height="4" />
+    </>
+  );
+}
+
+function stackBarStylePillGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-mute" x="8" y="14.5" width="48" height="5" rx="2.5" />
+      <rect className="pf-stack-mini-accent" x="8" y="14.5" width="30" height="5" rx="2.5" />
+    </>
+  );
+}
+
+function stackBarStyleGradientGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-mute" x="8" y="14.5" width="48" height="5" rx="2.5" />
+      <rect className="pf-stack-mini-accent" x="8" y="14.5" width="30" height="5" rx="2.5" opacity={0.5} />
+      <rect className="pf-stack-mini-accent" x="8" y="14.5" width="14" height="5" rx="2.5" />
+    </>
+  );
+}
+
+function stackBarStyleSegmentsGlyph(): ReactNode {
+  return (
+    <>
+      {Array.from({ length: 6 }, (_, i) => (
+        <rect
+          key={i}
+          className={i < 4 ? 'pf-stack-mini-accent' : 'pf-stack-mini-mute'}
+          x={8 + i * 8}
+          y={14.5}
+          width={6}
+          height={5}
+          rx={1.6}
+        />
+      ))}
+    </>
+  );
+}
+
+function stackCardFrameFramedGlyph(): ReactNode {
+  return <rect className="pf-stack-mini-ring" x="14" y="6" width="36" height="22" rx="4" strokeWidth={1.4} />;
+}
+
+function stackCardFramePlainGlyph(): ReactNode {
+  return (
+    <>
+      <circle className="pf-stack-mini-ink" cx="32" cy="13" r="5" />
+      <rect className="pf-stack-mini-mute" x="22" y="23" width="20" height="2.4" rx="1.2" />
+    </>
+  );
+}
+
+function stackGridLayoutAsymmetricGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-ink" x="8" y="8" width="28" height="18" rx="3" />
+      <rect className="pf-stack-mini-mute" x="39" y="8" width="17" height="18" rx="3" />
+    </>
+  );
+}
+
+function stackGridLayoutEqualGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-ink" x="8" y="8" width="22" height="18" rx="3" />
+      <rect className="pf-stack-mini-ink" x="34" y="8" width="22" height="18" rx="3" />
+    </>
+  );
+}
+
+/** Minimalist text-alignment glyphs for content-alignment option grids. */
+function StackAlignLeftIcon() {
+  return (
+    <svg viewBox="0 0 16 12" width="14" height="11" fill="none" aria-hidden>
+      <rect x="0" y="0" width="16" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="0" y="5.2" width="10" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="0" y="10.4" width="13" height="1.6" rx="0.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+function StackAlignCenterIcon() {
+  return (
+    <svg viewBox="0 0 16 12" width="14" height="11" fill="none" aria-hidden>
+      <rect x="0" y="0" width="16" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="3" y="5.2" width="10" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="1.5" y="10.4" width="13" height="1.6" rx="0.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+function StackAlignRightIcon() {
+  return (
+    <svg viewBox="0 0 16 12" width="14" height="11" fill="none" aria-hidden>
+      <rect x="0" y="0" width="16" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="6" y="5.2" width="10" height="1.6" rx="0.8" fill="currentColor" />
+      <rect x="3" y="10.4" width="13" height="1.6" rx="0.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+const STACK_ALIGNMENT_ICONS: Partial<Record<string, ReactNode>> = {
+  left: <StackAlignLeftIcon />,
+  center: <StackAlignCenterIcon />,
+  right: <StackAlignRightIcon />,
+};
+
+function StackDesignChoiceGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioStackDesign;
+  onChange: (value: PortfolioStackDesign) => void;
+}) {
+  return (
+    <div>
+      <p className="pf-stack-block-label">Design</p>
+      <div className="grid grid-cols-2 gap-2">
+        {PORTFOLIO_STACK_DESIGN_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <StackPickerCard
+              key={option.value}
+              active={active}
+              label={option.label}
+              onClick={() => onChange(option.value)}
+            >
+              <StackDesignWireframe design={option.value} />
+            </StackPickerCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Mini wireframes for the 6 Header design picker cards — same StackMiniSlide mechanism as Design. */
+function StackHeaderDesignWireframe({ design }: { design: PortfolioStackHeaderDesign }) {
+  switch (design) {
+    case 'mask':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-ink" x="20" y="28" width="60" height="10" rx="2" />
+          <rect className="pf-stack-mini-accent" x="58" y="28" width="22" height="10" rx="2" />
+          <rect className="pf-stack-mini-mute" x="20" y="46" width="40" height="4" rx="2" />
+        </StackMiniSlide>
+      );
+    case 'split':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-ink" x="12" y="26" width="36" height="14" rx="2" />
+          <rect className="pf-stack-mini-mute" x="59" y="20" width="1.4" height="28" rx="0.7" />
+          <rect className="pf-stack-mini-mute" x="72" y="30" width="36" height="4" rx="2" />
+          <rect className="pf-stack-mini-mute" x="72" y="38" width="28" height="4" rx="2" />
+        </StackMiniSlide>
+      );
+    case 'typewriter':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-ink" x="18" y="30" width="8" height="10" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="29" y="30" width="8" height="10" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="40" y="30" width="8" height="10" rx="1.5" />
+          <rect className="pf-stack-mini-mute" x="51" y="30" width="8" height="10" rx="1.5" />
+          <rect className="pf-stack-mini-accent" x="63" y="29" width="2" height="12" rx="1" />
+          <rect className="pf-stack-mini-mute" x="18" y="48" width="40" height="4" rx="2" />
+        </StackMiniSlide>
+      );
+    case 'index':
+      return (
+        <StackMiniSlide>
+          <text x="18" y="52" fontSize={40} fontWeight={800} opacity={0.45} className="pf-stack-mini-mute">
+            0
+          </text>
+          <rect className="pf-stack-mini-ink" x="48" y="30" width="46" height="10" rx="2" />
+          <rect className="pf-stack-mini-mute" x="48" y="46" width="32" height="4" rx="2" />
+        </StackMiniSlide>
+      );
+    case 'masthead':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-accent" x="30" y="18" width="60" height="1.6" rx="0.8" />
+          <rect className="pf-stack-mini-ink" x="36" y="30" width="48" height="10" rx="2" />
+          <rect className="pf-stack-mini-mute" x="42" y="46" width="36" height="4" rx="2" />
+          <rect className="pf-stack-mini-accent" x="30" y="54" width="60" height="1.6" rx="0.8" />
+        </StackMiniSlide>
+      );
+    case 'marquee':
+      return (
+        <StackMiniSlide>
+          <g transform="rotate(-4 60 36)" opacity={0.35}>
+            <rect className="pf-stack-mini-mute" x="0" y="30" width="26" height="10" rx="2" />
+            <rect className="pf-stack-mini-mute" x="32" y="30" width="26" height="10" rx="2" />
+            <rect className="pf-stack-mini-mute" x="64" y="30" width="26" height="10" rx="2" />
+            <rect className="pf-stack-mini-mute" x="96" y="30" width="26" height="10" rx="2" />
+          </g>
+          <rect className="pf-stack-mini-ink" x="30" y="28" width="60" height="10" rx="2" />
+          <rect className="pf-stack-mini-mute" x="38" y="46" width="44" height="4" rx="2" />
+        </StackMiniSlide>
+      );
+    case 'focus':
+      return (
+        <StackMiniSlide>
+          <circle className="pf-stack-mini-ring" cx="24" cy="15" r="6" strokeWidth={1.4} />
+          <line className="pf-stack-mini-ring" x1="24" y1="7" x2="24" y2="10.5" strokeWidth={1.4} />
+          <line className="pf-stack-mini-ring" x1="24" y1="19.5" x2="24" y2="23" strokeWidth={1.4} />
+          <rect className="pf-stack-mini-ink" x="20" y="28" width="60" height="10" rx="2" />
+          <rect className="pf-stack-mini-mute" x="20" y="46" width="40" height="4" rx="2" />
+        </StackMiniSlide>
+      );
+    case 'terminal':
+      return (
+        <StackMiniSlide>
+          <StackMiniType x={18} y={20} size={7}>
+            $
+          </StackMiniType>
+          <rect className="pf-stack-mini-accent" x="27" y="14" width="3" height="8" rx="1" />
+          <rect className="pf-stack-mini-ink" x="18" y="28" width="58" height="10" rx="2" />
+          <StackMiniType x={18} y={51} size={6}>
+            &gt;
+          </StackMiniType>
+          <rect className="pf-stack-mini-mute" x="27" y="46" width="34" height="4" rx="2" />
+        </StackMiniSlide>
+      );
+    case 'bracket':
+      return (
+        <StackMiniSlide>
+          <path className="pf-stack-mini-ring" d="M16 20 V14 H22" fill="none" strokeWidth={2} />
+          <path className="pf-stack-mini-ring" d="M84 20 V14 H78" fill="none" strokeWidth={2} />
+          <path className="pf-stack-mini-ring" d="M16 46 V52 H22" fill="none" strokeWidth={2} />
+          <path className="pf-stack-mini-ring" d="M84 46 V52 H78" fill="none" strokeWidth={2} />
+          <rect className="pf-stack-mini-ink" x="24" y="26" width="52" height="12" rx="2" />
+          <rect className="pf-stack-mini-mute" x="24" y="46" width="36" height="4" rx="2" />
+        </StackMiniSlide>
+      );
+    case 'underline':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-ink" x="20" y="24" width="60" height="10" rx="2" />
+          <path
+            className="pf-stack-mini-ring"
+            d="M20 40 C 40 37, 60 43, 80 39"
+            fill="none"
+            strokeWidth={2}
+          />
+          <rect className="pf-stack-mini-mute" x="20" y="48" width="40" height="4" rx="2" />
+        </StackMiniSlide>
+      );
+    case 'cascade':
+      return (
+        <StackMiniSlide>
+          <circle className="pf-stack-mini-accent" cx="20" cy="14" r="2.1" />
+          <circle className="pf-stack-mini-accent" cx="28" cy="14" r="2.1" />
+          <circle className="pf-stack-mini-accent" cx="36" cy="14" r="2.1" />
+          <rect className="pf-stack-mini-ink" x="18" y="26" width="24" height="10" rx="2" />
+          <rect className="pf-stack-mini-ink" x="46" y="26" width="30" height="10" rx="2" />
+          <rect className="pf-stack-mini-ink" x="80" y="26" width="20" height="10" rx="2" />
+          <rect className="pf-stack-mini-mute" x="18" y="50" width="40" height="4" rx="2" />
+        </StackMiniSlide>
+      );
+    case 'mosaic':
+      return (
+        <StackMiniSlide>
+          <rect className="pf-stack-mini-accent" x="10" y="10" width="6" height="6" />
+          <rect className="pf-stack-mini-mute" x="18" y="10" width="6" height="6" opacity={0.55} />
+          <rect className="pf-stack-mini-mute" x="10" y="18" width="6" height="6" opacity={0.32} />
+          <rect className="pf-stack-mini-mute" x="18" y="18" width="6" height="6" opacity={0.18} />
+          <rect className="pf-stack-mini-ink" x="34" y="24" width="60" height="16" rx="2" />
+          <rect className="pf-stack-mini-mute" x="34" y="24" width="14" height="8" />
+          <rect className="pf-stack-mini-mute" x="62" y="24" width="14" height="8" opacity={0.6} />
+          <rect className="pf-stack-mini-mute" x="80" y="32" width="14" height="8" opacity={0.35} />
+          <rect className="pf-stack-mini-mute" x="34" y="48" width="40" height="4" rx="2" />
+        </StackMiniSlide>
+      );
+    default: {
+      const _exhaustive: never = design;
+      return _exhaustive;
+    }
+  }
+}
+
+function StackHeaderDesignChoiceGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioStackHeaderDesign;
+  onChange: (value: PortfolioStackHeaderDesign) => void;
+}) {
+  return (
+    <div>
+      <p className="pf-stack-block-label">Header design</p>
+      <div className="grid grid-cols-2 gap-2">
+        {PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <StackPickerCard
+              key={option.value}
+              active={active}
+              label={option.label}
+              onClick={() => onChange(option.value)}
+            >
+              <StackHeaderDesignWireframe design={option.value} />
+            </StackPickerCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function stackSectionLayoutStackedGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-ink" x="10" y="7" width="44" height="7" rx="2" />
+      <rect className="pf-stack-mini-mute" x="10" y="18" width="44" height="3" rx="1.5" />
+      <rect className="pf-stack-mini-mute" x="10" y="24" width="34" height="3" rx="1.5" />
+    </>
+  );
+}
+
+function stackSectionLayoutAsideLeftGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-ink" x="8" y="9" width="22" height="16" rx="2" />
+      <rect className="pf-stack-mini-mute" x="36" y="10" width="20" height="3" rx="1.5" />
+      <rect className="pf-stack-mini-mute" x="36" y="16" width="20" height="3" rx="1.5" />
+      <rect className="pf-stack-mini-mute" x="36" y="22" width="14" height="3" rx="1.5" />
+    </>
+  );
+}
+
+function stackSectionLayoutAsideRightGlyph(): ReactNode {
+  return (
+    <>
+      <rect className="pf-stack-mini-mute" x="8" y="10" width="20" height="3" rx="1.5" />
+      <rect className="pf-stack-mini-mute" x="8" y="16" width="20" height="3" rx="1.5" />
+      <rect className="pf-stack-mini-mute" x="8" y="22" width="14" height="3" rx="1.5" />
+      <rect className="pf-stack-mini-ink" x="34" y="9" width="22" height="16" rx="2" />
+    </>
+  );
+}
+
+function StackLayoutSettingsBand({
+  children,
+  motionKey,
+}: {
+  children: ReactNode;
+  motionKey: string;
+}) {
+  return (
+    <section className="pf-stack-layout-settings" aria-labelledby="stack-layout-settings-title">
+      <h3 id="stack-layout-settings-title" className="pf-stack-layout-settings-title">
+        Design settings
+      </h3>
+      <div key={motionKey} className="pf-stack-layout-settings-body space-y-6">
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -250,7 +1322,7 @@ type StackSettingsPanelProps = {
 export function StackSettingsPanel({
   stack,
   onChange,
-  subSection = 'general',
+  subSection = 'design',
   onSubSectionChange,
 }: StackSettingsPanelProps) {
   const palette = mergeToolsPalette(DEFAULT_TOOLS_PALETTE, stack.toolsPalette);
@@ -269,11 +1341,16 @@ export function StackSettingsPanel({
     stack.design === 'level-bento-categories';
   const isBrandRowFrames =
     stack.design === 'brand-row' && (stack.brandRowCellStyle ?? 'dividers') === 'frames';
+  // Core stack tags renders names as chips (chipText/chipBackground), not the generic label ink —
+  // point the "Nom" quick picker at whichever slot actually drives that design's name color.
+  const nameColorSlot: ToolsColorSlot = stack.design === 'stack-tags' ? 'chipText' : 'label';
+  const nameColorHex = nameColorSlot === 'chipText' ? stack.chipTextColor : stack.labelColor;
   const paletteSlots = PORTFOLIO_TOOLS_COLOR_SLOT_OPTIONS.filter((slot) => {
+    // Nom / Description get their own dedicated 3-swatch quick picker (StackQuickColorPicker) below.
+    if (slot.value === 'label' || slot.value === 'description') return false;
     if (
       slot.value === 'title' ||
       slot.value === 'tileBackground' ||
-      slot.value === 'label' ||
       slot.value === 'sectionBackground'
     ) {
       return true;
@@ -290,7 +1367,6 @@ export function StackSettingsPanel({
       return slot.value === 'cardBackground' || slot.value === 'cardBorder';
     }
     return (
-      slot.value === 'description' ||
       slot.value === 'cardBackground' ||
       slot.value === 'cardBorder' ||
       slot.value === 'chipBackground' ||
@@ -321,39 +1397,690 @@ export function StackSettingsPanel({
       {current === 'general' ? (
         <div className="space-y-4">
           <Toggle
-            label="Afficher la section Stack"
+            label="Show Stack section"
             checked={stack.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
-          {PORTFOLIO_STACK_DESIGN_OPTIONS.length > 1 ? (
+          <SectionColorModeControl
+            value={stack.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+          />
+          <StackSectionLabel>Content visibility</StackSectionLabel>
+          <Toggle
+            label={
+              isLevelIndicatorDesign
+                ? 'Show name'
+                : isRichStackDesign
+                  ? 'Show name'
+                  : 'Show name under logo'
+            }
+            checked={stack.showLabels !== false}
+            onChange={(showLabels) => onChange({ showLabels })}
+          />
+          {stack.design !== 'stack-tags' ? (
+            <Toggle
+              label="Show icon background"
+              checked={resolveStackIconBackgroundEnabled(stack)}
+              onChange={(iconBackgroundEnabled) =>
+                onChange({ iconBackgroundEnabled, iconBackgroundOptIn: true })
+              }
+            />
+          ) : null}
+          {stack.design !== 'stack-tags' ? (
+            <Toggle
+              label="Grayscale logos"
+              checked={stack.logosGrayscale === true}
+              onChange={(logosGrayscale) => onChange({ logosGrayscale })}
+            />
+          ) : null}
+          {isRichStackDesign ? (
             <>
-              <SelectField
-                label="Design"
-                value={stack.design}
-                options={PORTFOLIO_STACK_DESIGN_OPTIONS.map((item) => ({
-                  value: item.value,
-                  label: item.label,
-                }))}
-                onChange={(design) => handleStackDesignChange(stack, design, onChange)}
+              <Toggle
+                label="Show description"
+                checked={stack.showDescription !== false}
+                onChange={(showDescription) => onChange({ showDescription })}
               />
-              <p className="text-sm text-neutral-500">
-                {PORTFOLIO_STACK_DESIGN_OPTIONS.find((item) => item.value === stack.design)?.description}
-              </p>
+              {stack.design !== 'brand-index' ? (
+                <Toggle
+                  label="Show level"
+                  checked={resolveStackShowLevel(stack)}
+                  onChange={(showLevel) => onChange({ showLevel, showLevelOptIn: showLevel })}
+                />
+              ) : null}
+            </>
+          ) : isLevelIndicatorDesign ? (
+            <Toggle
+              label="Show level indicator"
+              checked={resolveStackShowLevel(stack)}
+              onChange={(showLevel) => onChange({ showLevel, showLevelOptIn: showLevel })}
+            />
+          ) : null}
+
+          <div className="mt-4 space-y-4 border-t border-neutral-200 pt-6">
+            <StackSectionLabel>Palette</StackSectionLabel>
+            <SectionHeroPaletteToggle
+              enabled={stack.useHeroPalette !== false}
+              onChange={(useHeroPalette) =>
+                onChange(
+                  useHeroPalette
+                    ? { useHeroPalette, ...applyToolsPaletteToSettings(stack) }
+                    : { useHeroPalette }
+                )
+              }
+            />
+            <div className="grid gap-4 rounded-xl border border-neutral-200 bg-white p-3 sm:grid-cols-2">
+              <StackQuickColorPicker
+                label="Name"
+                palette={palette}
+                activeToken={stack.useHeroPalette !== false ? bindings[nameColorSlot] : undefined}
+                activeHex={nameColorHex}
+                onPickToken={(token) => {
+                  if (stack.useHeroPalette !== false) {
+                    onChange(patchToolsColorBinding(stack, nameColorSlot, token));
+                    return;
+                  }
+                  const hex = resolveHeroPaletteColor(palette, token);
+                  onChange(nameColorSlot === 'chipText' ? { chipTextColor: hex } : { labelColor: hex });
+                }}
+              />
+              <StackQuickColorPicker
+                label="Description"
+                palette={palette}
+                activeToken={stack.useHeroPalette !== false ? bindings.description : undefined}
+                activeHex={stack.descriptionColor}
+                onPickToken={(token) =>
+                  onChange(
+                    stack.useHeroPalette !== false
+                      ? patchToolsColorBinding(stack, 'description', token)
+                      : { descriptionColor: resolveHeroPaletteColor(palette, token) }
+                  )
+                }
+              />
+            </div>
+            {stack.useHeroPalette !== false ? (
+              paletteSlots.map((slot) => (
+                <label
+                  key={slot.value}
+                  className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3"
+                >
+                  <span className="text-sm font-semibold">{slot.label}</span>
+                  <span
+                    className="h-5 w-5 rounded-full border"
+                    style={{ backgroundColor: resolveHeroPaletteColor(palette, bindings[slot.value]) }}
+                  />
+                  <select
+                    value={bindings[slot.value]}
+                    onChange={(event) =>
+                      onChange(
+                        patchToolsColorBinding(
+                          stack,
+                          slot.value as ToolsColorSlot,
+                          event.target.value as HeroPaletteTokenId
+                        )
+                      )
+                    }
+                    className="col-span-2 rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                  >
+                    {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
+                      <option key={token.value} value={token.value}>
+                        {token.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <ColorField
+                  label="Title"
+                  value={stack.titleColor}
+                  onChange={(titleColor) => onChange({ titleColor })}
+                />
+                <ColorField
+                  label="Subtitle"
+                  value={stack.subtitleColor}
+                  onChange={(subtitleColor) => onChange({ subtitleColor })}
+                />
+                <ColorField
+                  label="Tile background"
+                  value={stack.tileBackgroundColor}
+                  onChange={(tileBackgroundColor) => onChange({ tileBackgroundColor })}
+                />
+                <ColorField
+                  label="Name"
+                  value={stack.labelColor}
+                  onChange={(labelColor) => onChange({ labelColor })}
+                />
+                <ColorField
+                  label="Description"
+                  value={stack.descriptionColor}
+                  onChange={(descriptionColor) => onChange({ descriptionColor })}
+                />
+                {isRichStackDesign ? (
+                  <>
+                    <ColorField
+                      label="Card background"
+                      value={stack.cardBackgroundColor}
+                      onChange={(cardBackgroundColor) => onChange({ cardBackgroundColor })}
+                    />
+                    <ColorField
+                      label="Border / dividers"
+                      value={stack.cardBorderColor}
+                      onChange={(cardBorderColor) => onChange({ cardBorderColor })}
+                    />
+                    <ColorField
+                      label="Level badge"
+                      value={stack.levelAccentColor}
+                      onChange={(levelAccentColor) => onChange({ levelAccentColor })}
+                    />
+                  </>
+                ) : null}
+                {isBrandRowFrames ? (
+                  <>
+                    <ColorField
+                      label="Frame background"
+                      value={stack.cardBackgroundColor}
+                      onChange={(cardBackgroundColor) => onChange({ cardBackgroundColor })}
+                    />
+                    <ColorField
+                      label="Frame border"
+                      value={stack.cardBorderColor}
+                      onChange={(cardBorderColor) => onChange({ cardBorderColor })}
+                    />
+                  </>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {current === 'design' ? (
+        <div className="space-y-4">
+          {PORTFOLIO_STACK_DESIGN_OPTIONS.length > 1 ? (
+            <StackDesignChoiceGrid
+              value={stack.design}
+              onChange={(design) => handleStackDesignChange(stack, design, onChange)}
+            />
+          ) : null}
+          <StackLayoutSettingsBand motionKey={stack.design}>
+          {stack.design === 'stack-tags' ? (
+            <StackOptionGrid
+              label="Tag alignment"
+              value={stack.contentAlignment ?? 'center'}
+              options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
+                icons={STACK_ALIGNMENT_ICONS}
+              onChange={(contentAlignment: PortfolioToolsContentAlignment) =>
+                onChange({ contentAlignment })
+              }
+            />
+          ) : null}
+          {stack.design === 'stack-tags' ? (
+            <>
+              <StackSlider
+                label="Tag size"
+                value={stack.stackTagsSize ?? 'medium'}
+                options={PORTFOLIO_STACK_TAGS_SIZE_OPTIONS}
+                onChange={(stackTagsSize: PortfolioStackTagsSize) => onChange({ stackTagsSize })}
+              />
+              <StackSlider
+                label="Tag spacing"
+                value={stack.cardGap}
+                options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
+                onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
+              />
+            </>
+          ) : (
+            <StackSlider
+              label="Logo size"
+              value={stack.tileSize}
+              options={PORTFOLIO_TOOLS_TILE_SIZE_OPTIONS}
+              onChange={(tileSize: PortfolioToolsTileSize) => onChange({ tileSize })}
+            />
+          )}
+          {isLevelIndicatorDesign ? (
+            <>
+              {stack.design !== 'level-star-cards' ? (
+                <StackSlider
+                  label="Vertical spacing"
+                  value={stack.levelProgressRowGap ?? 'large'}
+                  options={PORTFOLIO_TOOLS_LEVEL_PROGRESS_ROW_GAP_OPTIONS}
+                  onChange={(levelProgressRowGap: PortfolioToolsLevelProgressRowGap) =>
+                    onChange({ levelProgressRowGap })
+                  }
+                />
+              ) : null}
+              {stack.design !== 'level-progress-rows' && stack.design !== 'level-category-rows' ? (
+                <StackToggleRow
+                  label="Full width"
+                  checked={resolveToolsLevelIndicatorFullWidth(stack)}
+                  onChange={(levelIndicatorFullWidth) =>
+                    onChange({
+                      levelIndicatorFullWidth,
+                      levelTableFullWidth: levelIndicatorFullWidth,
+                    })
+                  }
+                />
+              ) : null}
+              <StackOptionGrid
+                label="Row order"
+                value={stack.levelTableGroupBy ?? 'category'}
+                options={PORTFOLIO_TOOLS_LEVEL_TABLE_GROUP_BY_OPTIONS}
+                onChange={(levelTableGroupBy: PortfolioToolsLevelTableGroupBy) =>
+                  onChange({ levelTableGroupBy })
+                }
+              />
+              <StackToggleRow
+                label="Category filter"
+                checked={resolveToolsLevelIndicatorShowCategoryFilter(stack)}
+                onChange={(levelIndicatorShowCategoryFilter) =>
+                  onChange({
+                    levelIndicatorShowCategoryFilter,
+                    levelTableShowCategoryFilter: levelIndicatorShowCategoryFilter,
+                  })
+                }
+              />
+              {stack.design !== 'level-circular-cards' && stack.design !== 'level-svg-rings' ? (
+                // Both designs always render their own fixed ring regardless of this
+                // setting — level-circular-cards and level-svg-rings never read
+                // levelIndicatorDisplayStyle, so the control had no effect there.
+                <StackPreviewCardGrid
+                  label="Level display"
+                  value={
+                    stack.levelIndicatorDisplayStyle ??
+                    (stack.design === 'level-bento-categories' ? 'progress-bar' : 'text')
+                  }
+                  options={PORTFOLIO_TOOLS_LEVEL_INDICATOR_DISPLAY_STYLE_OPTIONS.map((option) => ({
+                    ...option,
+                    glyph:
+                      option.value === 'stars'
+                        ? stackLevelDisplayStarsGlyph()
+                        : option.value === 'dots'
+                          ? stackLevelDisplayDotsGlyph()
+                          : option.value === 'progress-bar'
+                            ? stackLevelDisplayBarGlyph()
+                            : stackLevelDisplayTextGlyph(),
+                  }))}
+                  onChange={(levelIndicatorDisplayStyle: PortfolioToolsLevelIndicatorDisplayStyle) =>
+                    onChange({ levelIndicatorDisplayStyle })
+                  }
+                />
+              ) : null}
             </>
           ) : null}
-          <SelectField
-            label="Titre"
+          {stackLevelIndicatorDesignSupportsCardFrame(stack.design) ? (
+            <>
+              <StackPreviewCardGrid
+                label="Card frame"
+                value={stack.levelIndicatorCardStyle ?? 'framed'}
+                options={PORTFOLIO_TOOLS_LEVEL_INDICATOR_CARD_STYLE_OPTIONS.map((option) => ({
+                  ...option,
+                  glyph:
+                    option.value === 'framed'
+                      ? stackCardFrameFramedGlyph()
+                      : stackCardFramePlainGlyph(),
+                }))}
+                columns={2}
+                onChange={(levelIndicatorCardStyle: PortfolioToolsLevelIndicatorCardStyle) =>
+                  onChange({ levelIndicatorCardStyle })
+                }
+              />
+            </>
+          ) : null}
+          {stack.design === 'level-progress-rows' ||
+          stack.design === 'level-category-rows' ||
+          stack.design === 'level-table-rows' ? (
+            <>
+              <StackOptionGrid
+                label="List alignment"
+                value={stack.levelProgressContentAlignment ?? 'center'}
+                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
+                icons={STACK_ALIGNMENT_ICONS}
+                onChange={(levelProgressContentAlignment: PortfolioToolsContentAlignment) =>
+                  onChange({ levelProgressContentAlignment })
+                }
+              />
+              {stack.design === 'level-table-rows' ? null : stackAside ? null : (
+                <StackPreviewCardGrid
+                  label="Columns (large screen)"
+                  value={String(stack.levelProgressColumnsPerRow ?? 1) as '1' | '2'}
+                  options={PORTFOLIO_TOOLS_LEVEL_PROGRESS_COLUMNS_OPTIONS.map((option) => ({
+                    ...option,
+                    glyph: stackColumnsGlyph(option.value === '2' ? 2 : 1),
+                  }))}
+                  columns={2}
+                  onChange={(value) =>
+                    onChange({
+                      levelProgressColumnsPerRow: value === '2' ? 2 : 1,
+                    })
+                  }
+                />
+              )}
+              {stack.design === 'level-progress-rows' || stack.design === 'level-category-rows' ? (
+                <StackToggleRow
+                  label="Full width"
+                  checked={resolveToolsLevelIndicatorFullWidth(stack)}
+                  onChange={(levelIndicatorFullWidth) =>
+                    onChange({
+                      levelIndicatorFullWidth,
+                      levelTableFullWidth: levelIndicatorFullWidth,
+                    })
+                  }
+                />
+              ) : null}
+            </>
+          ) : stack.design === 'level-bento-categories' ? (
+            <>
+              <StackSlider
+                label="Card spacing"
+                value={stack.cardGap ?? 'medium'}
+                options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
+                onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
+              />
+              <StackPreviewCardGrid
+                label="Grid layout"
+                value={stack.levelBentoGridMode ?? 'equal'}
+                options={PORTFOLIO_TOOLS_LEVEL_BENTO_GRID_MODE_OPTIONS.map((option) => ({
+                  ...option,
+                  glyph:
+                    option.value === 'asymmetric'
+                      ? stackGridLayoutAsymmetricGlyph()
+                      : stackGridLayoutEqualGlyph(),
+                }))}
+                columns={2}
+                onChange={(levelBentoGridMode: PortfolioToolsLevelBentoGridMode) =>
+                  onChange({ levelBentoGridMode })
+                }
+              />
+              <StackOptionGrid
+                label="Content alignment"
+                value={stack.brandCardsContentAlignment ?? 'left'}
+                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
+                icons={STACK_ALIGNMENT_ICONS}
+                onChange={(brandCardsContentAlignment: PortfolioToolsContentAlignment) =>
+                  onChange({ brandCardsContentAlignment })
+                }
+              />
+            </>
+          ) : !isLevelIndicatorDesign && stack.design !== 'stack-tags' ? (
+            // stack-tags already has its own "Tag spacing" slider above (same
+            // cardGap field) — showing this generic one too just duplicated it.
+            <StackSlider
+              label={
+                stack.design === 'brand-index'
+                  ? 'Row spacing'
+                  : stack.design === 'brand-row'
+                    ? (stack.brandRowCellStyle ?? 'dividers') === 'frames'
+                      ? 'Spacing between frames'
+                      : (stack.brandRowCellStyle ?? 'dividers') === 'none'
+                        ? 'Spacing between cells'
+                        : 'Cell spacing'
+                    : 'Card spacing'
+              }
+              value={stack.cardGap ?? 'tight'}
+              options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
+              onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
+            />
+          ) : null}
+          {stack.design === 'level-progress-rows' || stack.design === 'level-category-rows' ? (
+            <>
+              <StackPreviewCardGrid
+                label="Bar style"
+                value={stack.levelBarStyle ?? 'rectangle'}
+                options={PORTFOLIO_TOOLS_LEVEL_BAR_STYLE_OPTIONS.map((option) => ({
+                  ...option,
+                  glyph:
+                    option.value === 'pill'
+                      ? stackBarStylePillGlyph()
+                      : option.value === 'pill-gradient'
+                        ? stackBarStyleGradientGlyph()
+                        : option.value === 'segments'
+                          ? stackBarStyleSegmentsGlyph()
+                          : stackBarStyleRectangleGlyph(),
+                }))}
+                onChange={(levelBarStyle: PortfolioToolsLevelBarStyle) => onChange({ levelBarStyle })}
+              />
+            </>
+          ) : null}
+          {stack.design === 'level-progress-rows' ||
+          stack.design === 'level-category-rows' ||
+          stack.design === 'level-circular-cards' ||
+          stack.design === 'level-star-cards' ||
+          stack.design === 'level-svg-rings' ? (
+            <>
+              <StackSlider
+                label={
+                  stack.design === 'level-circular-cards' || stack.design === 'level-svg-rings'
+                    ? 'Thickness & % size'
+                    : 'Bar & % size'
+                }
+                value={stack.levelBarSize ?? 'small'}
+                options={
+                  stack.design === 'level-circular-cards' || stack.design === 'level-svg-rings'
+                    ? PORTFOLIO_TOOLS_LEVEL_BAR_SIZE_OPTIONS.filter((item) => item.value !== 'tight')
+                    : PORTFOLIO_TOOLS_LEVEL_BAR_SIZE_OPTIONS
+                }
+                onChange={(levelBarSize: PortfolioToolsLevelBarSize) => onChange({ levelBarSize })}
+              />
+            </>
+          ) : null}
+          {stack.design === 'brand-cards' ? (
+            <>
+              <StackPreviewCardGrid
+                label="Icon placement"
+                value={stack.brandCardsIconPlacement ?? 'left'}
+                options={PORTFOLIO_TOOLS_BRAND_CARDS_ICON_PLACEMENT_OPTIONS.map((option) => ({
+                  ...option,
+                  glyph:
+                    option.value === 'top'
+                      ? stackIconPlacementTopGlyph()
+                      : stackIconPlacementLeftGlyph(),
+                }))}
+                columns={2}
+                onChange={(brandCardsIconPlacement: PortfolioToolsBrandCardsIconPlacement) =>
+                  onChange({ brandCardsIconPlacement })
+                }
+              />
+              {stackAside ? null : (
+                <StackPreviewCardGrid
+                  label="Columns (large screen)"
+                  value={String(stack.brandCardsColumnsPerRow ?? 2) as '1' | '2' | '3'}
+                  options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS.map((option) => ({
+                    ...option,
+                    glyph: stackColumnsGlyph(Number(option.value) as 1 | 2 | 3 | 4),
+                  }))}
+                  onChange={(value) =>
+                    onChange({
+                      brandCardsColumnsPerRow: value === '3' ? 3 : value === '2' ? 2 : 1,
+                    })
+                  }
+                />
+              )}
+              <StackOptionGrid
+                label="Content alignment"
+                value={stack.brandCardsContentAlignment ?? 'center'}
+                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
+                icons={STACK_ALIGNMENT_ICONS}
+                onChange={(brandCardsContentAlignment: PortfolioToolsContentAlignment) =>
+                  onChange({ brandCardsContentAlignment })
+                }
+              />
+              <StackToggleRow
+                label="Full width"
+                checked={stack.brandCardsFullWidth === true}
+                onChange={(brandCardsFullWidth) => onChange({ brandCardsFullWidth })}
+              />
+            </>
+          ) : null}
+          {stack.design === 'level-star-cards' ? (
+            <>
+              <StackSlider
+                label="Card spacing"
+                value={stack.cardGap ?? 'medium'}
+                options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
+                onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
+              />
+              <StackOptionGrid
+                label="Content alignment"
+                value={stack.brandCardsContentAlignment ?? 'left'}
+                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
+                icons={STACK_ALIGNMENT_ICONS}
+                onChange={(brandCardsContentAlignment: PortfolioToolsContentAlignment) =>
+                  onChange({ brandCardsContentAlignment })
+                }
+              />
+            </>
+          ) : stack.design === 'level-circular-cards' || stack.design === 'level-svg-rings' ? (
+            <>
+              {stackAside ? null : (
+                <StackPreviewCardGrid
+                  label="Columns (large screen)"
+                  value={String(stack.brandCardsColumnsPerRow ?? 3) as '1' | '2' | '3'}
+                  options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS.filter(
+                    (item) => item.value !== '4'
+                  ).map((option) => ({
+                    ...option,
+                    glyph: stackColumnsGlyph(Number(option.value) as 1 | 2 | 3),
+                  }))}
+                  onChange={(value) =>
+                    onChange({
+                      brandCardsColumnsPerRow: value === '3' ? 3 : value === '2' ? 2 : 1,
+                    })
+                  }
+                />
+              )}
+              <StackOptionGrid
+                label="Content alignment"
+                value={stack.brandCardsContentAlignment ?? 'center'}
+                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
+                icons={STACK_ALIGNMENT_ICONS}
+                onChange={(brandCardsContentAlignment: PortfolioToolsContentAlignment) =>
+                  onChange({ brandCardsContentAlignment })
+                }
+              />
+            </>
+          ) : null}
+          {stack.design === 'brand-index' ? (
+            <>
+              <StackOptionGrid
+                label="Content alignment"
+                value={stack.brandIndexContentAlignment ?? 'center'}
+                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
+                icons={STACK_ALIGNMENT_ICONS}
+                onChange={(brandIndexContentAlignment: PortfolioToolsContentAlignment) =>
+                  onChange({ brandIndexContentAlignment })
+                }
+              />
+              <StackToggleRow
+                label="Full width (1 per row)"
+                checked={stack.brandIndexFullWidth !== false}
+                onChange={(brandIndexFullWidth) => onChange({ brandIndexFullWidth })}
+              />
+              <StackToggleRow
+                label="Category filter"
+                checked={resolveToolsLevelIndicatorShowCategoryFilter(stack)}
+                onChange={(levelIndicatorShowCategoryFilter) =>
+                  onChange({
+                    levelIndicatorShowCategoryFilter,
+                    levelTableShowCategoryFilter: levelIndicatorShowCategoryFilter,
+                  })
+                }
+              />
+            </>
+          ) : null}
+          {stack.design === 'brand-row' ? (
+            <>
+              <StackPreviewCardGrid
+                label="Cell style"
+                value={stack.brandRowCellStyle ?? 'dividers'}
+                options={PORTFOLIO_TOOLS_BRAND_ROW_CELL_STYLE_OPTIONS.map((option) => ({
+                  ...option,
+                  glyph:
+                    option.value === 'frames'
+                      ? stackCellStyleFramesGlyph()
+                      : option.value === 'none'
+                        ? stackCellStyleNoneGlyph()
+                        : stackCellStyleDividersGlyph(),
+                }))}
+                onChange={(brandRowCellStyle: PortfolioToolsBrandRowCellStyle) =>
+                  onChange({ brandRowCellStyle })
+                }
+              />
+              <StackPreviewCardGrid
+                label="Columns (large screen)"
+                value={String(stack.brandRowColumnsPerRow ?? 3) as '1' | '2' | '3'}
+                options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS.map((option) => ({
+                  ...option,
+                  glyph: stackColumnsGlyph(Number(option.value) as 1 | 2 | 3 | 4),
+                }))}
+                onChange={(value) =>
+                  onChange({
+                    brandRowColumnsPerRow: value === '3' ? 3 : value === '2' ? 2 : 1,
+                  })
+                }
+              />
+              <StackOptionGrid
+                label="Content alignment"
+                value={stack.brandRowContentAlignment ?? 'center'}
+                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
+                icons={STACK_ALIGNMENT_ICONS}
+                onChange={(brandRowContentAlignment: PortfolioToolsContentAlignment) =>
+                  onChange({ brandRowContentAlignment })
+                }
+              />
+            </>
+          ) : null}
+          {stack.design === 'workflow-rail' ? (
+            <StackOptionGrid
+              label="Content alignment"
+              value={stack.workflowRailContentAlignment ?? 'center'}
+              options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
+                icons={STACK_ALIGNMENT_ICONS}
+              onChange={(workflowRailContentAlignment: PortfolioToolsContentAlignment) =>
+                onChange({ workflowRailContentAlignment })
+              }
+            />
+          ) : null}
+          </StackLayoutSettingsBand>
+        </div>
+      ) : null}
+
+      {current === 'background' ? (
+        <div className="space-y-4">
+          <SectionBackgroundSettingsFields
+            settings={stack}
+            onChange={onChange}
+            renderColorField={({ label, value }) => (
+              <StackBackgroundColorField
+                stack={stack}
+                onChange={onChange}
+                palette={palette}
+                bindings={bindings}
+                label={label}
+                value={value}
+              />
+            )}
+          />
+        </div>
+      ) : null}
+
+      {current === 'header' ? (
+        <div className="space-y-4">
+          <StackHeaderDesignChoiceGrid
+            value={stack.headerDesign ?? 'mask'}
+            onChange={(headerDesign) => onChange({ headerDesign })}
+          />
+          <div className="mt-4 space-y-4 border-t border-neutral-200 pt-6">
+          <StackOptionGrid
+            label="Title"
             value={stack.titlePreset}
-            options={PORTFOLIO_STACK_TITLE_PRESET_OPTIONS.map((item) => ({
-              value: item.value,
-              label: item.label,
-            }))}
+            options={PORTFOLIO_STACK_TITLE_PRESET_OPTIONS}
             onChange={(titlePreset) => onChange({ titlePreset })}
           />
           {stack.titlePreset === 'custom' ? (
             <label className="block">
               <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                Titre personnalisé
+                Custom title
               </span>
               <input
                 type="text"
@@ -364,18 +2091,18 @@ export function StackSettingsPanel({
               />
             </label>
           ) : null}
-          {stackAside ? null : (
-            <SelectField
-              label="Alignement du titre"
-              value={stack.headerAlignment}
-              options={PORTFOLIO_TOOLS_HEADER_ALIGNMENT_OPTIONS}
-              onChange={(headerAlignment) => onChange({ headerAlignment })}
-            />
-          )}
-          <SelectField
-            label="Disposition titre / liste"
+          <StackPreviewCardGrid
+            label="Title / list layout"
             value={sectionLayout}
-            options={PORTFOLIO_STACK_SECTION_LAYOUT_OPTIONS}
+            options={PORTFOLIO_STACK_SECTION_LAYOUT_OPTIONS.map((option) => ({
+              ...option,
+              glyph:
+                option.value === 'aside-left'
+                  ? stackSectionLayoutAsideLeftGlyph()
+                  : option.value === 'aside-right'
+                    ? stackSectionLayoutAsideRightGlyph()
+                    : stackSectionLayoutStackedGlyph(),
+            }))}
             onChange={(layout: PortfolioStackSectionLayout) =>
               onChange({
                 sectionLayout: layout,
@@ -391,56 +2118,23 @@ export function StackSettingsPanel({
           />
           {stackAside ? (
             <>
-              <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                Écran coupé en deux : le titre occupe une moitié (
-                {sectionLayout === 'aside-right' ? 'droite' : 'gauche'}), la liste l’autre. Sur grand
-                écran uniquement (empilé sur mobile). Une colonne forcée pour la liste.
-              </p>
-              <SelectField
-                label="Alignement vertical du titre"
+              <StackOptionGrid
+                label="Vertical title alignment"
                 value={stack.asideTitlePlacement ?? 'center'}
                 options={PORTFOLIO_STACK_ASIDE_TITLE_PLACEMENT_OPTIONS}
                 onChange={(asideTitlePlacement: PortfolioStackAsideTitlePlacement) =>
                   onChange({ asideTitlePlacement })
                 }
               />
-              <p className="text-sm text-neutral-500">
-                {
-                  PORTFOLIO_STACK_ASIDE_TITLE_PLACEMENT_OPTIONS.find(
-                    (item) => item.value === (stack.asideTitlePlacement ?? 'center')
-                  )?.description
-                }
-              </p>
-              <Toggle
-                label="Titre sticky au scroll"
+              <StackToggleRow
+                label="Sticky title on scroll"
                 checked={stack.asideTitleSticky !== false}
                 onChange={(asideTitleSticky) => onChange({ asideTitleSticky })}
               />
-              {stack.asideTitleSticky !== false ? (
-                <p className="text-sm text-neutral-500">
-                  Le titre reste fixe dans sa moitié pendant le scroll de la liste Stack, jusqu’à la
-                  fin de la section.
-                </p>
-              ) : null}
             </>
           ) : null}
-          <SelectField
-            label="Taille du titre"
-            value={stack.titleSize ?? 'md'}
-            options={PORTFOLIO_STACK_TITLE_SIZE_OPTIONS.map((item) => ({
-              value: item.value,
-              label: item.label,
-            }))}
-            onChange={(titleSize: PortfolioStackTitleSize) => onChange({ titleSize })}
-          />
-          <p className="text-sm text-neutral-500">
-            {
-              PORTFOLIO_STACK_TITLE_SIZE_OPTIONS.find((item) => item.value === (stack.titleSize ?? 'md'))
-                ?.description
-            }
-          </p>
-          <SelectField
-            label="Sous-titre"
+          <StackOptionGrid
+            label="Subtitle"
             value={stack.subtitlePreset ?? 'none'}
             options={PORTFOLIO_TOOLS_SUBTITLE_PRESET_OPTIONS}
             onChange={(subtitlePreset: PortfolioToolsSubtitlePreset) => onChange({ subtitlePreset })}
@@ -448,7 +2142,7 @@ export function StackSettingsPanel({
           {stack.subtitlePreset === 'custom' ? (
             <label className="block">
               <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                Texte du sous-titre
+                Subtitle text
               </span>
               <textarea
                 rows={3}
@@ -461,664 +2155,14 @@ export function StackSettingsPanel({
               />
             </label>
           ) : null}
-          <SelectField
-            label="Taille du sous-titre"
-            value={stack.subtitleSize ?? 'md'}
-            options={PORTFOLIO_STACK_SUBTITLE_SIZE_OPTIONS.map((item) => ({
-              value: item.value,
-              label: item.label,
-            }))}
-            onChange={(subtitleSize: PortfolioStackSubtitleSize) => onChange({ subtitleSize })}
+          <StackSlider
+            label="Espacement sous le header"
+            value={stack.headerBottomSpacing ?? 'medium'}
+            options={PORTFOLIO_STACK_HEADER_BOTTOM_SPACING_OPTIONS}
+            onChange={(headerBottomSpacing) => onChange({ headerBottomSpacing })}
           />
-          <p className="text-sm text-neutral-500">
-            {
-              PORTFOLIO_STACK_SUBTITLE_SIZE_OPTIONS.find(
-                (item) => item.value === (stack.subtitleSize ?? 'md')
-              )?.description
-            }
-          </p>
-          {stack.design === 'stack-tags' ? (
-            <SelectField
-              label="Alignement des tags"
-              value={stack.contentAlignment ?? 'center'}
-              options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
-              onChange={(contentAlignment: PortfolioToolsContentAlignment) =>
-                onChange({ contentAlignment })
-              }
-            />
-          ) : null}
-          {stack.design === 'stack-tags' ? (
-            <>
-              <SelectField
-                label="Taille des tags"
-                value={stack.stackTagsSize ?? 'medium'}
-                options={PORTFOLIO_STACK_TAGS_SIZE_OPTIONS.map((item) => ({
-                  value: item.value,
-                  label: item.label,
-                }))}
-                onChange={(stackTagsSize: PortfolioStackTagsSize) => onChange({ stackTagsSize })}
-              />
-              <p className="text-sm text-neutral-500">
-                {
-                  PORTFOLIO_STACK_TAGS_SIZE_OPTIONS.find(
-                    (item) => item.value === (stack.stackTagsSize ?? 'medium')
-                  )?.description
-                }
-              </p>
-              <SelectField
-                label="Espacement des tags"
-                value={stack.cardGap}
-                options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
-                onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
-              />
-            </>
-          ) : (
-            <SelectField
-              label="Taille des logos"
-              value={stack.tileSize}
-              options={PORTFOLIO_TOOLS_TILE_SIZE_OPTIONS}
-              onChange={(tileSize: PortfolioToolsTileSize) => onChange({ tileSize })}
-            />
-          )}
-          {isLevelIndicatorDesign ? (
-            <>
-              {stack.design !== 'level-star-cards' ? (
-                <SelectField
-                  label="Vertical spacing"
-                  value={stack.levelProgressRowGap ?? 'large'}
-                  options={PORTFOLIO_TOOLS_LEVEL_PROGRESS_ROW_GAP_OPTIONS}
-                  onChange={(levelProgressRowGap: PortfolioToolsLevelProgressRowGap) =>
-                    onChange({ levelProgressRowGap })
-                  }
-                />
-              ) : null}
-              {stack.design !== 'level-progress-rows' && stack.design !== 'level-category-rows' ? (
-                <Toggle
-                  label="Full width"
-                  checked={resolveToolsLevelIndicatorFullWidth(stack)}
-                  onChange={(levelIndicatorFullWidth) =>
-                    onChange({
-                      levelIndicatorFullWidth,
-                      levelTableFullWidth: levelIndicatorFullWidth,
-                    })
-                  }
-                />
-              ) : null}
-              <SelectField
-                label="Row order"
-                value={stack.levelTableGroupBy ?? 'category'}
-                options={PORTFOLIO_TOOLS_LEVEL_TABLE_GROUP_BY_OPTIONS.map((item) => ({
-                  value: item.value,
-                  label: item.label,
-                }))}
-                onChange={(levelTableGroupBy: PortfolioToolsLevelTableGroupBy) =>
-                  onChange({ levelTableGroupBy })
-                }
-              />
-              <p className="text-sm text-neutral-500">
-                {
-                  PORTFOLIO_TOOLS_LEVEL_TABLE_GROUP_BY_OPTIONS.find(
-                    (item) => item.value === (stack.levelTableGroupBy ?? 'category')
-                  )?.description
-                }
-              </p>
-              <Toggle
-                label="Category filter"
-                checked={resolveToolsLevelIndicatorShowCategoryFilter(stack)}
-                onChange={(levelIndicatorShowCategoryFilter) =>
-                  onChange({
-                    levelIndicatorShowCategoryFilter,
-                    levelTableShowCategoryFilter: levelIndicatorShowCategoryFilter,
-                  })
-                }
-              />
-              <p className="text-sm text-neutral-500">
-                Shows category chips above the list so visitors can filter items (All + each category).
-              </p>
-              <SelectField
-                label="Level display"
-                value={
-                  stack.levelIndicatorDisplayStyle ??
-                  (stack.design === 'level-bento-categories' ? 'progress-bar' : 'text')
-                }
-                options={PORTFOLIO_TOOLS_LEVEL_INDICATOR_DISPLAY_STYLE_OPTIONS.map((item) => ({
-                  value: item.value,
-                  label: item.label,
-                }))}
-                onChange={(levelIndicatorDisplayStyle: PortfolioToolsLevelIndicatorDisplayStyle) =>
-                  onChange({ levelIndicatorDisplayStyle })
-                }
-              />
-              <p className="text-sm text-neutral-500">
-                {
-                  PORTFOLIO_TOOLS_LEVEL_INDICATOR_DISPLAY_STYLE_OPTIONS.find(
-                    (item) =>
-                      item.value ===
-                      (stack.levelIndicatorDisplayStyle ??
-                        (stack.design === 'level-bento-categories' ? 'progress-bar' : 'text'))
-                  )?.description
-                }
-              </p>
-            </>
-          ) : null}
-          {stackLevelIndicatorDesignSupportsCardFrame(stack.design) ? (
-            <>
-              <SelectField
-                label="Card frame"
-                value={stack.levelIndicatorCardStyle ?? 'framed'}
-                options={PORTFOLIO_TOOLS_LEVEL_INDICATOR_CARD_STYLE_OPTIONS.map((item) => ({
-                  value: item.value,
-                  label: item.label,
-                }))}
-                onChange={(levelIndicatorCardStyle: PortfolioToolsLevelIndicatorCardStyle) =>
-                  onChange({ levelIndicatorCardStyle })
-                }
-              />
-              <p className="text-sm text-neutral-500">
-                {
-                  PORTFOLIO_TOOLS_LEVEL_INDICATOR_CARD_STYLE_OPTIONS.find(
-                    (item) => item.value === (stack.levelIndicatorCardStyle ?? 'framed')
-                  )?.description
-                }
-              </p>
-            </>
-          ) : null}
-          {stack.design === 'level-progress-rows' ||
-          stack.design === 'level-category-rows' ||
-          stack.design === 'level-table-rows' ? (
-            <>
-              <SelectField
-                label="Alignement de la liste"
-                value={stack.levelProgressContentAlignment ?? 'center'}
-                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
-                onChange={(levelProgressContentAlignment: PortfolioToolsContentAlignment) =>
-                  onChange({ levelProgressContentAlignment })
-                }
-              />
-              {stack.design === 'level-table-rows' ? (
-                <p className="text-sm text-neutral-500">
-                  Single-column table — no header row and no experience column.
-                </p>
-              ) : stackAside ? (
-                <p className="text-sm text-neutral-500">
-                  Colonnes : 1 par ligne (forcé en disposition titre à gauche / droite).
-                </p>
-              ) : (
-                <SelectField
-                  label="Colonnes (écran large)"
-                  value={String(stack.levelProgressColumnsPerRow ?? 1) as '1' | '2'}
-                  options={PORTFOLIO_TOOLS_LEVEL_PROGRESS_COLUMNS_OPTIONS}
-                  onChange={(value) =>
-                    onChange({
-                      levelProgressColumnsPerRow: value === '2' ? 2 : 1,
-                    })
-                  }
-                />
-              )}
-              {stack.design === 'level-progress-rows' || stack.design === 'level-category-rows' ? (
-                <Toggle
-                  label="Pleine largeur"
-                  checked={resolveToolsLevelIndicatorFullWidth(stack)}
-                  onChange={(levelIndicatorFullWidth) =>
-                    onChange({
-                      levelIndicatorFullWidth,
-                      levelTableFullWidth: levelIndicatorFullWidth,
-                    })
-                  }
-                />
-              ) : null}
-            </>
-          ) : stack.design === 'level-bento-categories' ? (
-            <>
-              <SelectField
-                label="Card spacing"
-                value={stack.cardGap ?? 'medium'}
-                options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
-                onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
-              />
-              <SelectField
-                label="Grid layout"
-                value={stack.levelBentoGridMode ?? 'equal'}
-                options={PORTFOLIO_TOOLS_LEVEL_BENTO_GRID_MODE_OPTIONS.map((item) => ({
-                  value: item.value,
-                  label: item.label,
-                }))}
-                onChange={(levelBentoGridMode: PortfolioToolsLevelBentoGridMode) =>
-                  onChange({ levelBentoGridMode })
-                }
-              />
-              <p className="text-sm text-neutral-500">
-                {
-                  PORTFOLIO_TOOLS_LEVEL_BENTO_GRID_MODE_OPTIONS.find(
-                    (item) => item.value === (stack.levelBentoGridMode ?? 'equal')
-                  )?.description
-                }
-              </p>
-              <SelectField
-                label="Content alignment"
-                value={stack.brandCardsContentAlignment ?? 'left'}
-                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
-                onChange={(brandCardsContentAlignment: PortfolioToolsContentAlignment) =>
-                  onChange({ brandCardsContentAlignment })
-                }
-              />
-            </>
-          ) : !isLevelIndicatorDesign ? (
-            <SelectField
-              label={
-                stack.design === 'brand-index'
-                  ? 'Espacement entre les lignes'
-                  : stack.design === 'brand-row'
-                    ? (stack.brandRowCellStyle ?? 'dividers') === 'frames'
-                      ? 'Espacement entre les cadres'
-                      : (stack.brandRowCellStyle ?? 'dividers') === 'none'
-                        ? 'Espacement entre les cellules'
-                        : 'Espacement des cellules'
-                    : 'Écart entre les cartes'
-              }
-              value={stack.cardGap ?? 'tight'}
-              options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
-              onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
-            />
-          ) : null}
-          {stack.design === 'level-progress-rows' || stack.design === 'level-category-rows' ? (
-            <>
-              <SelectField
-                label="Bar style"
-                value={stack.levelBarStyle ?? 'rectangle'}
-                options={PORTFOLIO_TOOLS_LEVEL_BAR_STYLE_OPTIONS.map((item) => ({
-                  value: item.value,
-                  label: item.label,
-                }))}
-                onChange={(levelBarStyle: PortfolioToolsLevelBarStyle) => onChange({ levelBarStyle })}
-              />
-              <p className="text-sm text-neutral-500">
-                {
-                  PORTFOLIO_TOOLS_LEVEL_BAR_STYLE_OPTIONS.find(
-                    (item) => item.value === (stack.levelBarStyle ?? 'rectangle')
-                  )?.description
-                }
-              </p>
-            </>
-          ) : null}
-          {stack.design === 'level-progress-rows' ||
-          stack.design === 'level-category-rows' ||
-          stack.design === 'level-circular-cards' ||
-          stack.design === 'level-star-cards' ||
-          stack.design === 'level-svg-rings' ? (
-            <>
-              <SelectField
-                label="Bar & % size"
-                value={stack.levelBarSize ?? 'small'}
-                options={PORTFOLIO_TOOLS_LEVEL_BAR_SIZE_OPTIONS.map((item) => ({
-                  value: item.value,
-                  label: item.label,
-                }))}
-                onChange={(levelBarSize: PortfolioToolsLevelBarSize) => onChange({ levelBarSize })}
-              />
-              <p className="text-sm text-neutral-500">
-                {
-                  PORTFOLIO_TOOLS_LEVEL_BAR_SIZE_OPTIONS.find(
-                    (item) => item.value === (stack.levelBarSize ?? 'small')
-                  )?.description
-                }
-              </p>
-            </>
-          ) : null}
-          {stack.design === 'brand-cards' ? (
-            <>
-              <SelectField
-                label="Emplacement de l'icône"
-                value={stack.brandCardsIconPlacement ?? 'left'}
-                options={PORTFOLIO_TOOLS_BRAND_CARDS_ICON_PLACEMENT_OPTIONS}
-                onChange={(brandCardsIconPlacement: PortfolioToolsBrandCardsIconPlacement) =>
-                  onChange({ brandCardsIconPlacement })
-                }
-              />
-              {stackAside ? (
-                <p className="text-sm text-neutral-500">
-                  Colonnes : 1 par ligne (forcé en disposition titre à gauche / droite).
-                </p>
-              ) : (
-                <SelectField
-                  label="Colonnes (écran large)"
-                  value={String(stack.brandCardsColumnsPerRow ?? 2) as '1' | '2' | '3'}
-                  options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS}
-                  onChange={(value) =>
-                    onChange({
-                      brandCardsColumnsPerRow: value === '3' ? 3 : value === '2' ? 2 : 1,
-                    })
-                  }
-                />
-              )}
-              <SelectField
-                label="Alignement du contenu"
-                value={stack.brandCardsContentAlignment ?? 'center'}
-                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
-                onChange={(brandCardsContentAlignment: PortfolioToolsContentAlignment) =>
-                  onChange({ brandCardsContentAlignment })
-                }
-              />
-              <Toggle
-                label="Pleine largeur"
-                checked={stack.brandCardsFullWidth === true}
-                onChange={(brandCardsFullWidth) => onChange({ brandCardsFullWidth })}
-              />
-            </>
-          ) : null}
-          {stack.design === 'level-star-cards' ? (
-            <>
-              <SelectField
-                label="Card spacing"
-                value={stack.cardGap ?? 'medium'}
-                options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
-                onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
-              />
-              <p className="text-sm text-neutral-500">
-                4 cartes par ligne sur grand écran — pleine largeur.
-              </p>
-              <SelectField
-                label="Alignement du contenu"
-                value={stack.brandCardsContentAlignment ?? 'left'}
-                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
-                onChange={(brandCardsContentAlignment: PortfolioToolsContentAlignment) =>
-                  onChange({ brandCardsContentAlignment })
-                }
-              />
-            </>
-          ) : stack.design === 'level-circular-cards' || stack.design === 'level-svg-rings' ? (
-            <>
-              {stackAside ? (
-                <p className="text-sm text-neutral-500">
-                  Colonnes : 2 max (forcé en disposition titre à gauche / droite).
-                </p>
-              ) : (
-                <SelectField
-                  label="Colonnes (écran large)"
-                  value={String(stack.brandCardsColumnsPerRow ?? 3) as '1' | '2' | '3'}
-                  options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS.filter(
-                    (item) => item.value !== '4'
-                  )}
-                  onChange={(value) =>
-                    onChange({
-                      brandCardsColumnsPerRow: value === '3' ? 3 : value === '2' ? 2 : 1,
-                    })
-                  }
-                />
-              )}
-              <SelectField
-                label="Alignement du contenu"
-                value={stack.brandCardsContentAlignment ?? 'center'}
-                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
-                onChange={(brandCardsContentAlignment: PortfolioToolsContentAlignment) =>
-                  onChange({ brandCardsContentAlignment })
-                }
-              />
-            </>
-          ) : null}
-          {stack.design === 'brand-index' ? (
-            <>
-              <SelectField
-                label="Alignement du contenu"
-                value={stack.brandIndexContentAlignment ?? 'center'}
-                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
-                onChange={(brandIndexContentAlignment: PortfolioToolsContentAlignment) =>
-                  onChange({ brandIndexContentAlignment })
-                }
-              />
-              <Toggle
-                label="Pleine largeur (1 par ligne)"
-                checked={stack.brandIndexFullWidth !== false}
-                onChange={(brandIndexFullWidth) => onChange({ brandIndexFullWidth })}
-              />
-              <Toggle
-                label="Filtre par catégorie"
-                checked={resolveToolsLevelIndicatorShowCategoryFilter(stack)}
-                onChange={(levelIndicatorShowCategoryFilter) =>
-                  onChange({
-                    levelIndicatorShowCategoryFilter,
-                    levelTableShowCategoryFilter: levelIndicatorShowCategoryFilter,
-                  })
-                }
-              />
-              <p className="text-sm text-neutral-500">
-                Affiche des pastilles au-dessus de la liste pour filtrer par catégorie (Tout + chaque
-                catégorie renseignée sur les éléments Stack).
-              </p>
-            </>
-          ) : null}
-          {stack.design === 'brand-row' ? (
-            <>
-              <SelectField
-                label="Style des cellules"
-                value={stack.brandRowCellStyle ?? 'dividers'}
-                options={PORTFOLIO_TOOLS_BRAND_ROW_CELL_STYLE_OPTIONS}
-                onChange={(brandRowCellStyle: PortfolioToolsBrandRowCellStyle) =>
-                  onChange({ brandRowCellStyle })
-                }
-              />
-              <SelectField
-                label="Colonnes (écran large)"
-                value={String(stack.brandRowColumnsPerRow ?? 3) as '1' | '2' | '3'}
-                options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS}
-                onChange={(value) =>
-                  onChange({
-                    brandRowColumnsPerRow: value === '3' ? 3 : value === '2' ? 2 : 1,
-                  })
-                }
-              />
-              <SelectField
-                label="Alignement du contenu"
-                value={stack.brandRowContentAlignment ?? 'center'}
-                options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
-                onChange={(brandRowContentAlignment: PortfolioToolsContentAlignment) =>
-                  onChange({ brandRowContentAlignment })
-                }
-              />
-            </>
-          ) : null}
-          {stack.design === 'workflow-rail' ? (
-            <SelectField
-              label="Alignement du contenu"
-              value={stack.workflowRailContentAlignment ?? 'center'}
-              options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
-              onChange={(workflowRailContentAlignment: PortfolioToolsContentAlignment) =>
-                onChange({ workflowRailContentAlignment })
-              }
-            />
-          ) : null}
-          <Toggle
-            label={
-              isLevelIndicatorDesign
-                ? 'Afficher le nom'
-                : isRichStackDesign
-                  ? 'Afficher le nom'
-                  : 'Afficher le nom sous le logo'
-            }
-            checked={stack.showLabels !== false}
-            onChange={(showLabels) => onChange({ showLabels })}
-          />
-          {stack.design !== 'stack-tags' ? (
-            <Toggle
-              label="Afficher le fond de l'icône"
-              checked={resolveStackIconBackgroundEnabled(stack)}
-              onChange={(iconBackgroundEnabled) =>
-                onChange({ iconBackgroundEnabled, iconBackgroundOptIn: true })
-              }
-            />
-          ) : null}
-          {stack.design !== 'stack-tags' ? (
-            <Toggle
-              label="Logos en noir & blanc"
-              checked={stack.logosGrayscale === true}
-              onChange={(logosGrayscale) => onChange({ logosGrayscale })}
-            />
-          ) : null}
-          {isRichStackDesign ? (
-            <>
-              <Toggle
-                label="Afficher la description"
-                checked={stack.showDescription !== false}
-                onChange={(showDescription) => onChange({ showDescription })}
-              />
-              {stack.design !== 'brand-index' ? (
-                <Toggle
-                  label="Afficher le niveau"
-                  checked={resolveStackShowLevel(stack)}
-                  onChange={(showLevel) => onChange({ showLevel, showLevelOptIn: showLevel })}
-                />
-              ) : null}
-            </>
-          ) : isLevelIndicatorDesign ? (
-            <Toggle
-              label="Afficher l'indicateur de niveau"
-              checked={resolveStackShowLevel(stack)}
-              onChange={(showLevel) => onChange({ showLevel, showLevelOptIn: showLevel })}
-            />
-          ) : null}
-          <p className="rounded-xl border border-sky-100 bg-sky-50/80 px-4 py-3 text-sm text-sky-900">
-            {stack.design === 'level-progress-rows'
-              ? 'Level progress rows : liste éditoriale — logo, nom, % et barre (couleur logo). Réglage « Espacement entre les lignes » ci-dessus.'
-              : stack.design === 'level-category-rows'
-                ? 'Level category rows : logo, nom + catégorie (FRONTEND, BACKEND…), barre fine et % à droite. Renseigne la catégorie sur chaque élément Stack.'
-                : stack.design === 'level-table-rows'
-                  ? 'Level table rows: headerless table — logo + name, category, colored level label, and % (no experience column). Row order by category or level; optional full width.'
-                  : stack.design === 'level-circular-cards'
-                    ? 'Level circular cards : grille de cartes — anneau circulaire autour du logo (sans carré intérieur), nom et % en dessous.'
-                    : stack.design === 'level-star-cards'
-                      ? 'Level star cards : cartes horizontales — nom à gauche, notation 5 étoiles à droite (sans logos).'
-                      : stack.design === 'level-svg-rings'
-                        ? 'Level SVG rings : grille de cartes — anneau SVG de progression avec le nom de l\'outil centré à l\'intérieur (sans logo, sans %).'
-                        : stack.design === 'level-bento-categories'
-                          ? 'Level bento categories: one card per skill category in a bento grid — logo, name, and colored level label per row. Assign a category on each stack item.'
-                          : stack.design === 'brand-index'
-                            ? 'Brand index : lignes type portfolio index — logo à gauche, nom, catégorie au centre (alignée à gauche), description à droite, séparateurs fins. Filtre par catégorie optionnel.'
-                            : stack.design === 'brand-row'
-                              ? (stack.brandRowCellStyle ?? 'dividers') === 'frames'
-                                ? 'Brand row — cadres : chaque outil dans un cadre avec fond et bordure (sans lignes de séparation partagées).'
-                                : (stack.brandRowCellStyle ?? 'dividers') === 'none'
-                                  ? 'Brand row — sans traits : grille logo + nom, aucune ligne ni cadre.'
-                                  : 'Brand row — séparateurs : logo + nom, trait du haut et séparateurs verticaux entre colonnes.'
-                              : stack.design === 'brand-cards'
-                                ? 'Brand cards : cartes avec logo au-dessus ou à gauche, description et niveau.'
-                                : stack.design === 'stack-tags'
-                                  ? 'Core stack tags : kicker accent et pastilles de noms sur fond sombre — sans logos.'
-                                  : 'Core stack rail : logos en rangée. Les éléments viennent du profil.'}
-          </p>
+          </div>
         </div>
-      ) : null}
-
-      {current === 'palette' ? (
-        <div className="space-y-4">
-          <SectionHeroPaletteToggle
-            enabled={stack.useHeroPalette !== false}
-            onChange={(useHeroPalette) =>
-              onChange(
-                useHeroPalette
-                  ? { useHeroPalette, ...applyToolsPaletteToSettings(stack) }
-                  : { useHeroPalette }
-              )
-            }
-          />
-          {stack.useHeroPalette !== false ? (
-            paletteSlots.map((slot) => (
-              <label
-                key={slot.value}
-                className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3"
-              >
-                <span className="text-sm font-semibold">{slot.label}</span>
-                <span
-                  className="h-5 w-5 rounded-full border"
-                  style={{ backgroundColor: resolveHeroPaletteColor(palette, bindings[slot.value]) }}
-                />
-                <select
-                  value={bindings[slot.value]}
-                  onChange={(event) =>
-                    onChange(
-                      patchToolsColorBinding(
-                        stack,
-                        slot.value as ToolsColorSlot,
-                        event.target.value as HeroPaletteTokenId
-                      )
-                    )
-                  }
-                  className="col-span-2 rounded-lg border border-neutral-200 px-3 py-2 text-sm"
-                >
-                  {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
-                    <option key={token.value} value={token.value}>
-                      {token.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ))
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <ColorField
-                label="Titre"
-                value={stack.titleColor}
-                onChange={(titleColor) => onChange({ titleColor })}
-              />
-              <ColorField
-                label="Sous-titre"
-                value={stack.subtitleColor}
-                onChange={(subtitleColor) => onChange({ subtitleColor })}
-              />
-              <ColorField
-                label="Fond des tuiles"
-                value={stack.tileBackgroundColor}
-                onChange={(tileBackgroundColor) => onChange({ tileBackgroundColor })}
-              />
-              <ColorField
-                label="Noms"
-                value={stack.labelColor}
-                onChange={(labelColor) => onChange({ labelColor })}
-              />
-              {isRichStackDesign ? (
-                <>
-                  <ColorField
-                    label="Description"
-                    value={stack.descriptionColor}
-                    onChange={(descriptionColor) => onChange({ descriptionColor })}
-                  />
-                  <ColorField
-                    label="Fond cartes"
-                    value={stack.cardBackgroundColor}
-                    onChange={(cardBackgroundColor) => onChange({ cardBackgroundColor })}
-                  />
-                  <ColorField
-                    label="Bordure / séparateurs"
-                    value={stack.cardBorderColor}
-                    onChange={(cardBorderColor) => onChange({ cardBorderColor })}
-                  />
-                  <ColorField
-                    label="Badge niveau"
-                    value={stack.levelAccentColor}
-                    onChange={(levelAccentColor) => onChange({ levelAccentColor })}
-                  />
-                </>
-              ) : null}
-              {isBrandRowFrames ? (
-                <>
-                  <ColorField
-                    label="Fond cadres"
-                    value={stack.cardBackgroundColor}
-                    onChange={(cardBackgroundColor) => onChange({ cardBackgroundColor })}
-                  />
-                  <ColorField
-                    label="Bordure cadres"
-                    value={stack.cardBorderColor}
-                    onChange={(cardBorderColor) => onChange({ cardBorderColor })}
-                  />
-                </>
-              ) : null}
-            </div>
-          )}
-        </div>
-      ) : null}
-
-      {current === 'background' ? (
-        <SectionBackgroundSettingsFields settings={stack} onChange={onChange} />
       ) : null}
     </div>
   );

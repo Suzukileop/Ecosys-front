@@ -367,25 +367,28 @@ export function EditorialToolsLevelBentoCategories({ tools, presentation }: Tool
     if (panels.length === 0) return;
 
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        panels,
-        { opacity: 0.22 },
-        {
-          opacity: 1,
-          duration: 0.62,
-          stagger: 0.05,
-          ease: 'power2.out',
-          overwrite: 'auto',
-          immediateRender: false,
-          scrollTrigger: {
-            trigger: root,
-            start: 'top 90%',
-            once: true,
-            invalidateOnRefresh: true,
-            ...(scroller ? { scroller } : {}),
-          },
-        }
-      );
+      // Hide immediately (pre-paint) so panels never flash at their static/visible
+      // state before ScrollTrigger fires — only the reveal is scroll-gated.
+      gsap.set(panels, { opacity: 0.22 });
+
+      // Trigger per panel (not once on the shared root) — with several rows of
+      // category panels, a single root-level trigger fires as soon as the section
+      // is entered, well before the lower panels are actually in view, so their
+      // reveal plays out unseen and they just sit there already visible.
+      ScrollTrigger.batch(panels, {
+        start: 'top 90%',
+        once: true,
+        ...(scroller ? { scroller } : {}),
+        onEnter: (batch) => {
+          gsap.to(batch, {
+            opacity: 1,
+            duration: 0.72,
+            stagger: 0.06,
+            ease: 'power2.out',
+            overwrite: 'auto',
+          });
+        },
+      });
     }, root);
 
     const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 80);

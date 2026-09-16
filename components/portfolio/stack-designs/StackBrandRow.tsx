@@ -118,24 +118,25 @@ export function EditorialToolsBrandRow({ tools, presentation }: ToolsGalleryProp
     if (cells.length === 0) return;
 
     const ctx = gsap.context(() => {
+      // Hide everything immediately (pre-paint) — only the reveal is scroll-gated,
+      // so nothing ever flashes at its static/visible state first.
+      gsap.set(cells, { y: 12, opacity: 0.32 });
+      if (verts.length > 0) gsap.set(verts, { scaleY: 0, transformOrigin: 'center top' });
+      if (horiz.length > 0) gsap.set(horiz, { scaleX: 0, transformOrigin: 'left center' });
+
       ScrollTrigger.batch(cells, {
         start: 'top 91%',
         once: true,
         ...(scroller ? { scroller } : {}),
         onEnter: (batch) => {
-          gsap.fromTo(
-            batch,
-            { y: 10, opacity: 0.32 },
-            {
-              y: 0,
-              opacity: 1,
-              duration: 0.68,
-              stagger: 0.045,
-              ease: 'power3.out',
-              overwrite: 'auto',
-              immediateRender: false,
-            }
-          );
+          gsap.to(batch, {
+            y: 0,
+            opacity: 1,
+            duration: 0.76,
+            stagger: 0.05,
+            ease: 'power3.out',
+            overwrite: 'auto',
+          });
         },
       });
 
@@ -145,18 +146,13 @@ export function EditorialToolsBrandRow({ tools, presentation }: ToolsGalleryProp
           once: true,
           ...(scroller ? { scroller } : {}),
           onEnter: (batch) => {
-            gsap.fromTo(
-              batch,
-              { scaleY: 0, transformOrigin: 'center top' },
-              {
-                scaleY: 1,
-                duration: 0.74,
-                stagger: 0.04,
-                ease: 'power2.out',
-                overwrite: 'auto',
-                immediateRender: false,
-              }
-            );
+            gsap.to(batch, {
+              scaleY: 1,
+              duration: 0.74,
+              stagger: 0.04,
+              ease: 'power2.out',
+              overwrite: 'auto',
+            });
           },
         });
       }
@@ -167,18 +163,13 @@ export function EditorialToolsBrandRow({ tools, presentation }: ToolsGalleryProp
           once: true,
           ...(scroller ? { scroller } : {}),
           onEnter: (batch) => {
-            gsap.fromTo(
-              batch,
-              { scaleX: 0, transformOrigin: 'left center' },
-              {
-                scaleX: 1,
-                duration: 0.8,
-                stagger: 0.035,
-                ease: 'power2.out',
-                overwrite: 'auto',
-                immediateRender: false,
-              }
-            );
+            gsap.to(batch, {
+              scaleX: 1,
+              duration: 0.8,
+              stagger: 0.035,
+              ease: 'power2.out',
+              overwrite: 'auto',
+            });
           },
         });
       }

@@ -8,11 +8,6 @@ import {
 } from '@/components/portfolio/portfolio-themes';
 import type { PortfolioCustomTheme } from '@/components/portfolio/portfolio-custom-themes';
 import { customThemeToPickerTheme } from '@/components/portfolio/portfolio-custom-themes';
-import {
-  globalBodyFontRootStyle,
-  resolvePortfolioGlobalBodyFont,
-  type PortfolioGlobalBodyFont,
-} from '@/components/portfolio/portfolio-global-settings';
 import type { PortfolioHeroPalette } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { portfolioPaletteCssVars } from '@/components/portfolio/portfolio-color-mode';
 
@@ -20,13 +15,9 @@ export function PortfolioThemeRoot({
   themeId,
   customThemes = [],
   monochromeUi = false,
-  bodyFont,
-  bodyFontForceAll = false,
   colorMode = 'dark',
   activePalette,
-  globalStyle,
   fixedBackgroundStyle,
-  patternBackgroundStyle,
   fixedMotifsLayer,
   suppressDefaultBackground = false,
   children,
@@ -35,22 +26,12 @@ export function PortfolioThemeRoot({
   customThemes?: PortfolioCustomTheme[];
   /** Persist monochrome chrome across Noir / Blanc duplicates. */
   monochromeUi?: boolean;
-  /** Site-wide portfolio typeface (Geist / Google Font / local Aeonik). */
-  bodyFont?: PortfolioGlobalBodyFont;
-  /**
-   * Force bodyFont on every text node — overrides serif / display / hardcoded
-   * Playfair stacks without exception.
-   */
-  bodyFontForceAll?: boolean;
   /** Global appearance — drives light vs dark float / chrome recipes. */
   colorMode?: 'dark' | 'light';
   /** Active global palette — drives animatable CSS vars on the root. */
   activePalette?: PortfolioHeroPalette;
-  globalStyle?: CSSProperties;
   /** Fixed viewport background image layer (insets applied via top/right/bottom/left). */
   fixedBackgroundStyle?: CSSProperties;
-  /** Fixed repeating motif layer painted above the page fill / wallpaper. */
-  patternBackgroundStyle?: CSSProperties;
   /**
    * Fixed glow/curve motifs — painted above the pattern, always behind page content
    * (Hero, Portfolio cards, nav, …).
@@ -62,19 +43,7 @@ export function PortfolioThemeRoot({
 }) {
   const pickerThemes = customThemes.map(customThemeToPickerTheme);
   const mono = portfolioUsesMonochromeChrome(themeId, monochromeUi);
-  const useCustomBackground =
-    Boolean(globalStyle) || suppressDefaultBackground || Boolean(fixedBackgroundStyle);
-
-  /**
-   * Keep the solid page color on its own layer (not on the root), so the
-   * pattern can sit above the fill and still stay behind all content.
-   * Stack (back → front): solid → fixed image → pattern → fixed motifs → children.
-   */
-  const { backgroundColor: solidPageColor, ...rootGlobalStyle } = globalStyle ?? {};
-  const hasSolidPageColor =
-    typeof solidPageColor === 'string' && solidPageColor.trim().length > 0;
-  const bodyFontStyle = globalBodyFontRootStyle(bodyFont);
-  const resolvedBodyFont = resolvePortfolioGlobalBodyFont(bodyFont);
+  const useCustomBackground = suppressDefaultBackground || Boolean(fixedBackgroundStyle);
   const paletteVars = activePalette ? portfolioPaletteCssVars(activePalette) : undefined;
   /** Arm color transitions after first paint — avoids animating the initial load. */
   const [colorTransitionsReady, setColorTransitionsReady] = useState(false);
@@ -113,35 +82,18 @@ export function PortfolioThemeRoot({
       data-portfolio-mono={mono ? 'true' : undefined}
       data-portfolio-color-mode={colorMode === 'light' ? 'light' : 'dark'}
       data-pf-color-transitions={colorTransitionsReady ? 'true' : undefined}
-      data-portfolio-body-font={resolvedBodyFont}
       data-portfolio-force-font="true"
       style={{
         ...portfolioThemeCssVars(themeId, pickerThemes, monochromeUi),
         ...paletteVars,
-        ...bodyFontStyle,
-        ...rootGlobalStyle,
         colorScheme: colorMode === 'light' ? 'light' : 'dark',
       }}
     >
-      {hasSolidPageColor ? (
-        <div
-          aria-hidden
-          className="pf-theme-layer pointer-events-none fixed inset-0 -z-30"
-          style={{ backgroundColor: solidPageColor }}
-        />
-      ) : null}
       {fixedBackgroundStyle ? (
         <div
           aria-hidden
           className="pf-theme-layer pointer-events-none fixed -z-20 bg-no-repeat"
           style={fixedBackgroundStyle}
-        />
-      ) : null}
-      {patternBackgroundStyle ? (
-        <div
-          aria-hidden
-          className="pf-theme-layer pointer-events-none fixed -z-10"
-          style={patternBackgroundStyle}
         />
       ) : null}
       {fixedMotifsLayer ? (

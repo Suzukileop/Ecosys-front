@@ -4664,6 +4664,28 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   opacity: 0.88;
 }
 
+/*
+ * Structured/floating nav bar (classic, editorial, pill, tri-zone, split, logo-left) —
+ * the overlay nav designs (case overlay, Duten panel, half panel) already respect
+ * prefers-reduced-motion via framer-motion; this covers the shared CSS-transition bar
+ * (fold reveal, opacity fades, mobile drawer slide) and the animated underline indicator.
+ * Hover micro-interactions above are left untouched — small, user-triggered, not the
+ * reveal/mount motion reduced-motion users are opting out of.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .pf-nav-fold-motion,
+  .pf-nav-opacity-motion,
+  .pf-nav-drawer-motion {
+    transition-duration: 0.01ms !important;
+  }
+
+  .portfolio-nav-underline-animated,
+  .portfolio-nav-hover-underline-animated:hover::after,
+  .portfolio-nav-hover-underline-animated:focus-visible::after {
+    animation: none !important;
+  }
+}
+
 /* Live Preview settings dock — follows the portfolio color mode + global palette. */
 .portfolio-studio-dock {
   background: var(--pf-palette-fond);
@@ -5501,6 +5523,817 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   margin-bottom: 1.2rem;
 }
 
+/* Stack design picker — same card/mini-wireframe/layout-settings mechanism as Experience (.pf-exp-*). */
+.pf-stack-design-card {
+  border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 12%, transparent);
+  background: transparent;
+  opacity: 1;
+  transition: border-color 0.2s ease;
+}
+
+.pf-stack-design-card:hover {
+  border-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 28%, transparent);
+}
+
+.pf-stack-design-card[data-active='true'] {
+  border-color: var(--pf-palette-texte-fort, #f5f5f5);
+}
+
+.pf-stack-design-card .pf-stack-mini {
+  opacity: 0.72;
+  transition: opacity 0.2s ease;
+}
+
+.pf-stack-design-card:hover .pf-stack-mini,
+.pf-stack-design-card[data-active='true'] .pf-stack-mini {
+  opacity: 1;
+}
+
+.pf-stack-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #f5f5f5) 58%, transparent);
+  transition: color 0.2s ease;
+}
+
+.pf-stack-design-card:hover .pf-stack-card-label,
+.pf-stack-design-card[data-active='true'] .pf-stack-card-label {
+  color: var(--pf-palette-texte-fort, #f5f5f5);
+}
+
+.portfolio-studio-dock-surface .pf-stack-design-card:not([data-active='true']) .pf-stack-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort) 58%, transparent) !important;
+}
+
+.portfolio-studio-dock-surface .pf-stack-design-card[data-active='true'] .pf-stack-card-label {
+  color: var(--pf-palette-texte-fort) !important;
+}
+
+.pf-stack-mini {
+  display: block;
+  color: var(--pf-palette-texte-fort, #f5f5f5);
+}
+
+.pf-stack-mini-stage {
+  fill: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 5.5%, var(--pf-palette-fond, #0a0a0a));
+  stroke: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 10%, transparent);
+  stroke-width: 1;
+}
+
+.pf-stack-mini-ink {
+  fill: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 20%, transparent);
+}
+
+.pf-stack-mini-mute {
+  fill: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 10%, transparent);
+}
+
+.pf-stack-mini-accent {
+  fill: var(--pf-palette-principal, currentColor);
+}
+
+.pf-stack-mini-ring {
+  fill: none;
+  stroke: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 30%, transparent);
+}
+
+.pf-stack-mini-type {
+  fill: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 62%, transparent);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.pf-stack-block-label {
+  margin: 0 0 0.9rem;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--pf-palette-texte-muted, #737373);
+}
+
+.pf-stack-block-label + * {
+  margin-top: 0;
+}
+
+.pf-stack-layout-settings {
+  margin-top: 2.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 5%, transparent);
+  animation: pf-stack-layout-open 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.pf-stack-layout-settings-title {
+  margin: 0 0 1.35rem;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 45%, transparent);
+}
+
+.pf-stack-layout-settings-body {
+  animation: pf-stack-layout-body-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pf-stack-layout-open {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pf-stack-layout-body-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-stack-layout-settings,
+  .pf-stack-layout-settings-body {
+    animation: none;
+  }
+}
+
+.portfolio-studio-dock-surface .pf-stack-layout-settings {
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 1.5rem 1rem 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort) 5%, transparent);
+  border-radius: 0.875rem;
+  background: color-mix(in srgb, var(--pf-palette-texte-fort) 3.5%, var(--pf-palette-fond));
+}
+
+/* Stack layout-settings segmented control — same mechanism as Experience's .pf-exp-segment. */
+.pf-stack-segment {
+  border-radius: 12px;
+  color: var(--pf-palette-texte-fort, inherit);
+  background: color-mix(
+    in srgb,
+    var(--pf-palette-texte-fort, #171717) 8%,
+    var(--pf-palette-fond, #ffffff)
+  );
+}
+
+.pf-stack-segment[data-compact='true'] {
+  border-radius: 999px;
+}
+
+.pf-stack-segment-btn {
+  border-radius: 9px;
+  color: #c4c4c4;
+  -webkit-text-fill-color: currentColor;
+  opacity: 1;
+  background: transparent;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.pf-stack-segment[data-compact='true'] .pf-stack-segment-btn {
+  border-radius: 999px;
+}
+
+.pf-stack-segment-btn:hover {
+  color: var(--pf-palette-texte-fort, #e5e5e5);
+}
+
+.pf-stack-segment-btn[data-active='true'] {
+  color: var(--pf-palette-texte-fort, #f5f5f5);
+  -webkit-text-fill-color: currentColor;
+  background: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 14%, var(--pf-palette-fond, #0a0a0a));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 38%, transparent);
+}
+
+.portfolio-studio-dock[data-color-mode='dark'] .pf-stack-segment-btn[data-active='false'] {
+  color: #c4c4c4 !important;
+  -webkit-text-fill-color: #c4c4c4 !important;
+}
+
+.portfolio-studio-dock[data-color-mode='light'] .pf-stack-segment-btn[data-active='false'] {
+  color: #6b6b6b !important;
+  -webkit-text-fill-color: #6b6b6b !important;
+}
+
+/* Global on/off switch (Enable page background, etc.) — hardcoded per dock-mode colors,
+   same fix as the segment-button contrast issue above: deriving track/thumb color from the
+   site's own palette can land the switch nearly invisible against the dock's own chrome
+   (e.g. a light-mode "fond" thumb on a light-mode dock surface). Hardcoding a guaranteed
+   pair per mode, exactly like the segment buttons, removes that failure mode entirely. */
+.pf-global-switch-track {
+  background-color: #4b4b4b;
+}
+.pf-global-switch-track[data-checked='true'] {
+  background-color: #f5f5f5;
+}
+.pf-global-switch-thumb {
+  background-color: #f5f5f5;
+}
+.pf-global-switch-thumb[data-checked='true'] {
+  background-color: #171717;
+}
+.portfolio-studio-dock[data-color-mode='light'] .pf-global-switch-track {
+  background-color: #d4d4d4;
+}
+.portfolio-studio-dock[data-color-mode='light'] .pf-global-switch-track[data-checked='true'] {
+  background-color: #171717;
+}
+.portfolio-studio-dock[data-color-mode='light'] .pf-global-switch-thumb {
+  background-color: #ffffff;
+}
+.portfolio-studio-dock[data-color-mode='light'] .pf-global-switch-thumb[data-checked='true'] {
+  background-color: #f5f5f5;
+}
+
+.pf-stack-option-label {
+  margin-bottom: 0.4rem;
+}
+
+.pf-stack-segment-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.4em;
+  opacity: 0.85;
+}
+
+/* Stack layout-settings — ordered/continuous-scale slider (Slider bucket). */
+.pf-stack-slider-label {
+  margin: 0;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--pf-palette-texte-muted, #737373);
+}
+
+.pf-stack-slider-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.pf-stack-slider-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 78%, transparent);
+}
+
+.pf-stack-slider-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  margin: 0.6rem 0;
+}
+
+.pf-stack-slider-input::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+}
+
+.pf-stack-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 999px;
+  background: var(--pf-palette-texte-fort, #f5f5f5);
+  border: 2px solid var(--pf-palette-fond, #0a0a0a);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 34%, transparent);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.pf-stack-slider-input:hover::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+.pf-stack-slider-input::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a));
+}
+
+.pf-stack-slider-input::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--pf-palette-texte-fort, #f5f5f5);
+}
+
+.pf-stack-slider-input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--pf-palette-texte-fort, #f5f5f5);
+  border: 2px solid var(--pf-palette-fond, #0a0a0a);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-stack-slider-input::-webkit-slider-thumb {
+    transition: none;
+  }
+}
+
+/* Color swatch outline — a fixed border class (Tailwind border-neutral-*, border-white/…)
+   either gets hijacked to the palette's own "bordure" token by the dock-surface overrides
+   above, or is a hardcoded low-opacity color: both can end up nearly identical to a swatch
+   showing "Fond" (white) on a light page, making the swatch invisible. This mixes in
+   texte-fort — guaranteed to contrast against fond by definition of the token pair — so the
+   ring stays visible against the page in both dark and light mode regardless of the swatch's
+   own fill color. Use instead of border-neutral-* / border-white on any color preview swatch. */
+.pf-swatch-ring {
+  border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 35%, transparent);
+}
+
+/* Global token swatch — native color input stripped of its default inset so it fills
+   the card as one flat rectangle instead of a small chip with padding/border. */
+.pf-token-swatch-input {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  padding: 0;
+  background: none;
+}
+
+.pf-token-swatch-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.pf-token-swatch-input::-webkit-color-swatch {
+  border: none;
+  border-radius: inherit;
+}
+
+.pf-token-swatch-input::-moz-color-swatch {
+  border: none;
+  border-radius: inherit;
+}
+
+/* Stack layout-settings — compact preview-card grid (Cards bucket), reusing .pf-stack-design-card. */
+.pf-stack-preview-card {
+  padding: 0.65rem 0.6rem 0.6rem;
+}
+
+.pf-stack-preview-card .pf-stack-mini {
+  height: 2.35rem;
+}
+
+/* Navigation settings — NavSlider (Slider bucket). Plain light-card colors (this
+   settings modal doesn't use the --pf-palette-* variable system Stack's panel does). */
+.pf-nav-slider-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+
+.pf-nav-slider-input::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+}
+
+.pf-nav-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 999px;
+  background: #171717;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(23, 23, 23, 0.18);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.pf-nav-slider-input:hover::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+.pf-nav-slider-input::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: #e5e5e5;
+}
+
+.pf-nav-slider-input::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: #171717;
+}
+
+.pf-nav-slider-input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #171717;
+  border: 2px solid #ffffff;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-nav-slider-input::-webkit-slider-thumb {
+    transition: none;
+  }
+}
+
+/* Work design picker — same card/mini-wireframe/layout-settings mechanism as Stack (.pf-stack-*) / Experience (.pf-exp-*). */
+.pf-work-design-card {
+  border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 12%, transparent);
+  background: transparent;
+  opacity: 1;
+  transition: border-color 0.2s ease;
+}
+
+.pf-work-design-card:hover {
+  border-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 28%, transparent);
+}
+
+.pf-work-design-card[data-active='true'] {
+  border-color: var(--pf-palette-texte-fort, #f5f5f5);
+}
+
+.pf-work-design-card .pf-work-mini {
+  opacity: 0.72;
+  transition: opacity 0.2s ease;
+}
+
+.pf-work-design-card:hover .pf-work-mini,
+.pf-work-design-card[data-active='true'] .pf-work-mini {
+  opacity: 1;
+}
+
+.pf-work-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #f5f5f5) 58%, transparent);
+  transition: color 0.2s ease;
+}
+
+.pf-work-design-card:hover .pf-work-card-label,
+.pf-work-design-card[data-active='true'] .pf-work-card-label {
+  color: var(--pf-palette-texte-fort, #f5f5f5);
+}
+
+.portfolio-studio-dock-surface .pf-work-design-card:not([data-active='true']) .pf-work-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort) 58%, transparent) !important;
+}
+
+.portfolio-studio-dock-surface .pf-work-design-card[data-active='true'] .pf-work-card-label {
+  color: var(--pf-palette-texte-fort) !important;
+}
+
+.pf-work-mini {
+  display: block;
+  color: var(--pf-palette-texte-fort, #f5f5f5);
+}
+
+.pf-work-mini-stage {
+  fill: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 5.5%, var(--pf-palette-fond, #0a0a0a));
+  stroke: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 10%, transparent);
+  stroke-width: 1;
+}
+
+.pf-work-mini-ink {
+  fill: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 20%, transparent);
+}
+
+.pf-work-mini-mute {
+  fill: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 10%, transparent);
+}
+
+.pf-work-mini-accent {
+  fill: var(--pf-palette-principal, currentColor);
+}
+
+.pf-work-mini-ring {
+  fill: none;
+  stroke: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 30%, transparent);
+}
+
+.pf-work-mini-type {
+  fill: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 62%, transparent);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.pf-work-block-label {
+  margin: 0 0 0.9rem;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--pf-palette-texte-muted, #737373);
+}
+
+.pf-work-block-label + * {
+  margin-top: 0;
+}
+
+.pf-work-layout-settings {
+  margin-top: 2.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 5%, transparent);
+  animation: pf-work-layout-open 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.pf-work-layout-settings-title {
+  margin: 0 0 1.35rem;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 45%, transparent);
+}
+
+.pf-work-layout-settings-body {
+  animation: pf-work-layout-body-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pf-work-layout-open {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pf-work-layout-body-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-work-layout-settings,
+  .pf-work-layout-settings-body {
+    animation: none;
+  }
+}
+
+.portfolio-studio-dock-surface .pf-work-layout-settings {
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 1.5rem 1rem 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort) 5%, transparent);
+  border-radius: 0.875rem;
+  background: color-mix(in srgb, var(--pf-palette-texte-fort) 3.5%, var(--pf-palette-fond));
+}
+
+/* Work layout-settings segmented control — same mechanism as Stack's .pf-stack-segment. */
+.pf-work-segment {
+  border-radius: 12px;
+  color: var(--pf-palette-texte-fort, inherit);
+  background: color-mix(
+    in srgb,
+    var(--pf-palette-texte-fort, #171717) 8%,
+    var(--pf-palette-fond, #ffffff)
+  );
+}
+
+.pf-work-segment[data-compact='true'] {
+  border-radius: 999px;
+}
+
+.pf-work-segment-btn {
+  border-radius: 9px;
+  color: #c4c4c4;
+  -webkit-text-fill-color: currentColor;
+  opacity: 1;
+  background: transparent;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.pf-work-segment[data-compact='true'] .pf-work-segment-btn {
+  border-radius: 999px;
+}
+
+.pf-work-segment-btn:hover {
+  color: var(--pf-palette-texte-fort, #e5e5e5);
+}
+
+.pf-work-segment-btn[data-active='true'] {
+  color: var(--pf-palette-texte-fort, #f5f5f5);
+  -webkit-text-fill-color: currentColor;
+  background: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 14%, var(--pf-palette-fond, #0a0a0a));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 38%, transparent);
+}
+
+.portfolio-studio-dock[data-color-mode='dark'] .pf-work-segment-btn[data-active='false'] {
+  color: #c4c4c4 !important;
+  -webkit-text-fill-color: #c4c4c4 !important;
+}
+
+.portfolio-studio-dock[data-color-mode='light'] .pf-work-segment-btn[data-active='false'] {
+  color: #6b6b6b !important;
+  -webkit-text-fill-color: #6b6b6b !important;
+}
+
+/* Work toggle switch — class-based (not inline styles) so the dock's explicit
+   data-color-mode overrides below can actually win; --pf-palette-* alone isn't
+   reliably set inside the dashboard chrome (unlike the public portfolio page),
+   which made the plain color-mix() fallback nearly invisible in both modes. */
+.pf-work-switch {
+  position: relative;
+  display: inline-flex;
+  height: 1.25rem;
+  width: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 35%, transparent);
+  background: color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 12%, transparent);
+  transition: background-color 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pf-work-switch[data-checked='true'] {
+  background: var(--pf-palette-texte-fort, #171717);
+  border-color: var(--pf-palette-texte-fort, #171717);
+}
+
+.pf-work-switch-thumb {
+  position: absolute;
+  top: 0.0625rem;
+  left: 0.125rem;
+  height: 1rem;
+  width: 1rem;
+  border-radius: 999px;
+  background: var(--pf-palette-texte-fort, #171717);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  transition: left 0.2s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pf-work-switch[data-checked='true'] .pf-work-switch-thumb {
+  left: 1rem;
+  background: var(--pf-palette-fond, #ffffff);
+}
+
+.portfolio-studio-dock[data-color-mode='dark'] .pf-work-switch {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.portfolio-studio-dock[data-color-mode='dark'] .pf-work-switch[data-checked='true'] {
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+.portfolio-studio-dock[data-color-mode='dark'] .pf-work-switch-thumb {
+  background: #f5f5f5 !important;
+}
+
+.portfolio-studio-dock[data-color-mode='dark'] .pf-work-switch[data-checked='true'] .pf-work-switch-thumb {
+  background: #0a0a0a !important;
+}
+
+.portfolio-studio-dock[data-color-mode='light'] .pf-work-switch {
+  background: rgba(23, 23, 23, 0.12) !important;
+  border-color: rgba(23, 23, 23, 0.35) !important;
+}
+
+.portfolio-studio-dock[data-color-mode='light'] .pf-work-switch[data-checked='true'] {
+  background: #171717 !important;
+  border-color: #171717 !important;
+}
+
+.portfolio-studio-dock[data-color-mode='light'] .pf-work-switch-thumb {
+  background: #171717 !important;
+}
+
+.portfolio-studio-dock[data-color-mode='light'] .pf-work-switch[data-checked='true'] .pf-work-switch-thumb {
+  background: #ffffff !important;
+}
+
+.pf-work-option-label {
+  margin-bottom: 0.4rem;
+}
+
+.pf-work-segment-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.4em;
+  opacity: 0.85;
+}
+
+/* Work layout-settings — ordered/continuous-scale slider (Slider bucket). */
+.pf-work-slider-label {
+  margin: 0;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--pf-palette-texte-muted, #737373);
+}
+
+.pf-work-slider-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.pf-work-slider-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 78%, transparent);
+}
+
+.pf-work-slider-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  margin: 0.6rem 0;
+}
+
+.pf-work-slider-input::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+}
+
+.pf-work-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 999px;
+  background: var(--pf-palette-texte-fort, #f5f5f5);
+  border: 2px solid var(--pf-palette-fond, #0a0a0a);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 34%, transparent);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.pf-work-slider-input:hover::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+.pf-work-slider-input::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a));
+}
+
+.pf-work-slider-input::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--pf-palette-texte-fort, #f5f5f5);
+}
+
+.pf-work-slider-input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--pf-palette-texte-fort, #f5f5f5);
+  border: 2px solid var(--pf-palette-fond, #0a0a0a);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-work-slider-input::-webkit-slider-thumb {
+    transition: none;
+  }
+}
+
+/* Work layout-settings — compact preview-card grid (Cards bucket), reusing .pf-work-design-card. */
+.pf-work-preview-card {
+  padding: 0.65rem 0.6rem 0.6rem;
+}
+
+.pf-work-preview-card .pf-work-mini {
+  height: 2.35rem;
+}
+
 .pf-exp-centered-config {
   --pf-exp-centered-ink: var(--pf-palette-texte-fort, #f5f5f5);
   --pf-exp-centered-surface: var(--pf-palette-fond, #0a0a0a);
@@ -5955,34 +6788,32 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   align-items: center;
   justify-content: center;
   /* Optical: extra floor space lifts the type mass toward the true disc center */
-  padding-bottom: 0.14em;
+  padding-bottom: 0.1em;
   pointer-events: none;
 }
 
 .pf-stack-svg-rings-name {
-  display: -webkit-box;
+  /* -webkit-line-clamp + overflow:hidden was clipping descenders (p, y, g, j) no matter how
+     generous the line-height got — it interacts badly with the ancestor's `container-type: size`.
+     Dropped the hard clamp entirely: overflow stays visible, so nothing can ever cut a glyph. */
+  display: block;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
   color: var(--pf-stack-svg-rings-name);
-  font-size: max(0.625rem, calc(var(--pf-stack-svg-rings-size, 7.5rem) * 0.09));
-  font-weight: 400;
-  letter-spacing: 0.07em;
-  line-height: 1.18;
+  font-size: max(0.8125rem, calc(var(--pf-stack-svg-rings-size, 7.5rem) * 0.118));
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.32;
   text-align: center;
   text-wrap: balance;
   overflow-wrap: anywhere;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  opacity: 0.78;
-  translate: 0 -0.08em;
+  opacity: 0.9;
   transition: opacity 0.45s ease;
 }
 
 .pf-stack-svg-rings-name--wrap {
-  letter-spacing: 0.05em;
-  font-size: max(0.5625rem, calc(var(--pf-stack-svg-rings-size, 7.5rem) * 0.078));
-  translate: 0 -0.04em;
+  letter-spacing: 0.045em;
+  font-size: max(0.75rem, calc(var(--pf-stack-svg-rings-size, 7.5rem) * 0.1));
 }
 
 .pf-stack-svg-rings-name:empty {
@@ -6052,7 +6883,9 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   background-color: var(--pf-stack-brand-cards-wash);
   padding: 1.35rem 1.4rem 1.55rem;
   box-shadow: none;
-  transition: border-color 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    border-color 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .pf-stack-brand-cards[data-icon='left'] .pf-stack-brand-cards-surface {
@@ -6144,6 +6977,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 @media (hover: hover) and (pointer: fine) {
   .pf-stack-brand-cards-item:hover .pf-stack-brand-cards-surface {
     border-color: var(--pf-stack-brand-cards-hairline-hover);
+    background-color: var(--pf-stack-brand-cards-wash-hover, var(--pf-stack-brand-cards-wash));
   }
 }
 
@@ -6180,8 +7014,10 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
 .pf-stack-rail-item {
   display: grid;
-  width: var(--pf-stack-rail-col, 7.5rem);
-  flex: 0 0 var(--pf-stack-rail-col, 7.5rem);
+  /* Label column is wider than the icon tile itself, so names like "TypeScript" or
+     "Spring Boot" get room to sit on one line instead of truncating or breaking mid-word. */
+  width: calc(var(--pf-stack-rail-col, 7.5rem) * 1.35);
+  flex: 0 0 calc(var(--pf-stack-rail-col, 7.5rem) * 1.35);
   grid-template-rows: var(--pf-stack-rail-mark, 7.5rem) auto;
   justify-items: center;
   align-content: start;
@@ -6222,21 +7058,24 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-stack-rail-name {
+  /* -webkit-line-clamp + overflow:hidden clips descenders (p, y, g, j) regardless of
+     line-height — dropped in favor of free wrapping, same fix as the ring designs. */
   display: block;
   width: 100%;
   margin-top: 0.85rem;
-  overflow: hidden;
+  overflow: visible;
   text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
   font-family: ui-sans-serif, system-ui, sans-serif;
   max-width: 100%;
   padding-inline: 0.15rem;
-  font-size: 0.75rem;
+  font-size: clamp(0.8125rem, calc(var(--pf-stack-rail-mark, 7.5rem) * 0.09), 0.875rem);
   font-weight: 400;
-  line-height: 1;
-  letter-spacing: 0.11em;
-  color: color-mix(in srgb, var(--pf-stack-rail-ink, currentColor) 68%, transparent);
+  line-height: 1.3;
+  letter-spacing: 0.05em;
+  color: color-mix(in srgb, var(--pf-stack-rail-ink, currentColor) 85%, transparent);
   transition: color 1s cubic-bezier(0.33, 0.1, 0.2, 1);
 }
 
@@ -6254,7 +7093,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
   .pf-stack-rail-item:hover .pf-stack-rail-name,
   .pf-stack-rail-item:focus-within .pf-stack-rail-name {
-    color: color-mix(in srgb, var(--pf-stack-rail-ink, currentColor) 88%, transparent);
+    color: var(--pf-stack-rail-ink, currentColor);
   }
 }
 
@@ -6280,8 +7119,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   margin: 0;
   padding: 0;
   font-weight: 500;
-  letter-spacing: 0.34em;
-  font-variant-caps: all-small-caps;
 }
 
 .pf-stack-tags-subtitle {
@@ -6317,9 +7154,9 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   letter-spacing: 0.046em;
   line-height: 1.2;
   padding: 0.28em 0.7em;
-  color: color-mix(in srgb, var(--pf-stack-tags-ink) 78%, transparent);
+  color: color-mix(in srgb, var(--pf-stack-tags-ink) 90%, transparent);
   background-color: color-mix(in srgb, var(--pf-stack-tags-fill) 18%, transparent);
-  border-color: color-mix(in srgb, var(--pf-stack-tags-ink) 16%, transparent);
+  border-color: color-mix(in srgb, var(--pf-stack-tags-ink) 22%, transparent);
   transition:
     color 0.38s ease,
     border-color 0.38s ease,
@@ -6417,8 +7254,9 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-stack-circular-ring svg circle {
+  /* stroke-width comes from the "Épaisseur & taille %" setting via the SVG attribute
+     (ToolsLevelCircularRingWithLogo) — a hardcoded 1.35px here was silently overriding it. */
   vector-effect: non-scaling-stroke;
-  stroke-width: 1.35px;
 }
 
 .pf-stack-circular-ring svg circle:first-of-type {
@@ -6464,30 +7302,34 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-stack-circular-name {
+  /* Same lesson as SVG rings: -webkit-line-clamp + overflow:hidden clips descenders (p, y, g, j)
+     regardless of line-height. This element sits in normal flow below the ring (not inside a
+     clipped aperture), so there's no real need for a hard clamp — let it wrap freely instead. */
   display: block;
   width: 100%;
-  max-width: calc(var(--pf-stack-circular-size, 6.75rem) + 0.75rem);
+  max-width: calc(var(--pf-stack-circular-size, 6.75rem) + 3rem);
   margin: 0.75rem 0 0;
-  overflow: hidden;
+  overflow: visible;
   text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.6875rem;
-  font-weight: 400;
-  line-height: 1.15;
-  letter-spacing: 0.14em;
-  color: color-mix(in srgb, var(--pf-stack-circular-ink, currentColor) 62%, transparent);
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  font-size: max(0.875rem, calc(var(--pf-stack-circular-size, 6.75rem) * 0.1));
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--pf-stack-circular-ink, currentColor) 74%, transparent);
   transition: color 0.7s cubic-bezier(0.33, 0.1, 0.2, 1);
 }
 
 .pf-stack-circular-percent {
   margin: 0.35rem 0 0;
-  font-size: 0.5625rem;
-  font-weight: 300;
+  font-size: var(--pf-stack-circular-percent-size, 0.75rem);
+  font-weight: 500;
   line-height: 1;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.08em;
   font-variant-numeric: tabular-nums;
-  color: color-mix(in srgb, var(--pf-stack-circular-fill, currentColor) 40%, transparent);
+  color: color-mix(in srgb, var(--pf-stack-circular-fill, currentColor) 56%, transparent);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -6512,7 +7354,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
   .pf-stack-circular-item:hover .pf-stack-circular-percent,
   .pf-stack-circular-item:focus-within .pf-stack-circular-percent {
-    color: color-mix(in srgb, var(--pf-stack-circular-fill, currentColor) 58%, transparent);
+    color: color-mix(in srgb, var(--pf-stack-circular-fill, currentColor) 78%, transparent);
   }
 }
 
@@ -6592,12 +7434,13 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   grid-column: 1;
   order: 3;
   margin: 0;
-  font-size: 0.6875rem;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 600;
   line-height: 1.35;
-  letter-spacing: 0.17em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--pf-stack-brand-index-ink) 38%, transparent);
+  color: color-mix(in srgb, var(--pf-stack-brand-index-ink) 48%, transparent);
+  transition: color 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .pf-stack-brand-index-description {
@@ -6607,9 +7450,10 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   max-width: none;
   font-size: 0.9375rem;
   font-weight: 400;
-  line-height: 1.55;
+  line-height: 1.58;
   letter-spacing: 0.008em;
-  color: color-mix(in srgb, var(--pf-stack-brand-index-muted) 72%, transparent);
+  color: color-mix(in srgb, var(--pf-stack-brand-index-muted) 76%, transparent);
+  transition: color 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .pf-stack-brand-index-slot {
@@ -6624,11 +7468,11 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
 .pf-stack-brand-index-chip {
   border-radius: 999px;
-  padding: 0.28em 0.72em;
-  font-size: 0.6875rem;
+  padding: 0.3em 0.75em;
+  font-size: 0.75rem;
   font-weight: 500;
-  letter-spacing: 0.04em;
-  line-height: 1.25;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
   color: var(--pf-stack-brand-index-chip-ink);
   background-color: color-mix(in srgb, var(--pf-stack-brand-index-chip-fill) 88%, transparent);
   border: 1px solid color-mix(in srgb, var(--pf-stack-brand-index-rule) 42%, transparent);
@@ -6718,6 +7562,16 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
     color: var(--pf-stack-brand-index-ink);
   }
 
+  .pf-stack-brand-index-row:hover .pf-stack-brand-index-category,
+  .pf-stack-brand-index-row:focus-within .pf-stack-brand-index-category {
+    color: color-mix(in srgb, var(--pf-stack-brand-index-ink) 68%, transparent);
+  }
+
+  .pf-stack-brand-index-row:hover .pf-stack-brand-index-description,
+  .pf-stack-brand-index-row:focus-within .pf-stack-brand-index-description {
+    color: color-mix(in srgb, var(--pf-stack-brand-index-muted) 92%, transparent);
+  }
+
   .pf-stack-brand-index-row:hover .pf-stack-brand-index-rule,
   .pf-stack-brand-index-row:focus-within .pf-stack-brand-index-rule {
     background-color: color-mix(in srgb, var(--pf-stack-brand-index-rule) 82%, transparent);
@@ -6737,6 +7591,12 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .pf-stack-brand-index-row {
+    transform: none !important;
+    opacity: 1 !important;
+    will-change: auto;
+  }
+
   .pf-stack-brand-index-rule {
     transform: none !important;
     will-change: auto;
@@ -6887,15 +7747,22 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   white-space: nowrap;
   font-size: 0.9375rem;
   font-weight: 500;
-  line-height: 1;
+  /* line-height:1 clipped descenders (p, y, g, j) against overflow:hidden — needs headroom. */
+  line-height: 1.3;
   letter-spacing: -0.022em;
-  color: color-mix(in srgb, var(--pf-stack-brand-row-ink) 78%, transparent);
+  color: color-mix(in srgb, var(--pf-stack-brand-row-ink) 84%, transparent);
   transition: color 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (min-width: 640px) {
   .pf-stack-brand-row-name {
     font-size: 1.0625rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pf-stack-brand-row-name {
+    font-size: 1.125rem;
   }
 }
 
@@ -7192,26 +8059,21 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-stack-progress-name {
-  font-size: 0.8125rem;
-  color: color-mix(in srgb, var(--pf-stack-progress-ink) 82%, transparent);
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--pf-stack-progress-ink) 90%, transparent);
   transition: color 0.2s ease;
 }
 
 .pf-stack-progress-percent {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
 }
 
 .pf-stack-progress-track {
-  height: 2px !important;
-  max-height: 2px;
+  /* Height/radius now come from the "Bar style"/"Bar & % size" settings
+     (Tailwind classes on the element) instead of being hard-locked here. */
   width: 100%;
   overflow: hidden;
-  border-radius: 0 !important;
-}
-
-.pf-stack-progress-track > * {
-  border-radius: 0 !important;
 }
 
 .pf-stack-progress-fill {
@@ -7236,11 +8098,11 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
 @media (min-width: 640px) {
   .pf-stack-progress-name {
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
   }
 
   .pf-stack-progress-percent {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
   }
 }
 
@@ -7315,7 +8177,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   border-radius: 0;
   background-color: transparent;
   box-shadow: none;
-  padding: 0.8rem 1.5rem;
+  padding: 0.95rem 1.6rem;
 }
 
 .pf-stack-stars-card[data-framed='true'] {
@@ -7330,7 +8192,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   align-items: center;
   justify-content: space-between;
   gap: 0.85rem 1.15rem;
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   line-height: 1;
 }
 
@@ -7343,10 +8205,11 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   white-space: nowrap;
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 1em;
-  font-weight: 300;
-  line-height: 1;
-  letter-spacing: 0.03em;
-  color: color-mix(in srgb, var(--pf-stack-stars-ink) 70%, transparent);
+  font-weight: 400;
+  /* line-height:1 clipped descenders (p, y, g, j) against overflow:hidden — needs headroom. */
+  line-height: 1.3;
+  letter-spacing: 0.015em;
+  color: color-mix(in srgb, var(--pf-stack-stars-ink) 76%, transparent);
   transition: color 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -7384,11 +8247,11 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
 @media (min-width: 640px) {
   .pf-stack-stars-card {
-    padding: 0.9rem 1.85rem;
+    padding: 1.05rem 1.95rem;
   }
 
   .pf-stack-stars-row {
-    font-size: 0.875rem;
+    font-size: 1rem;
   }
 }
 
@@ -7495,12 +8358,12 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   grid-row: 1;
   margin: 0;
   justify-self: start;
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 500;
   line-height: 1.2;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   font-variant-caps: all-small-caps;
-  color: color-mix(in srgb, var(--pf-stack-cat-rows-ink) 30%, transparent);
+  color: color-mix(in srgb, var(--pf-stack-cat-rows-ink) 42%, transparent);
 }
 
 .pf-stack-cat-rows-name {
@@ -7508,11 +8371,11 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   grid-row: 1;
   margin: 0;
   justify-self: start;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 600;
-  line-height: 1.15;
+  line-height: 1.3;
   letter-spacing: -0.022em;
-  color: color-mix(in srgb, var(--pf-stack-cat-rows-ink) 88%, transparent);
+  color: color-mix(in srgb, var(--pf-stack-cat-rows-ink) 92%, transparent);
   transition: color 0.28s ease;
 }
 
@@ -7528,8 +8391,28 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   min-width: 0;
   align-items: center;
   justify-self: stretch;
-  opacity: 0.72;
+  opacity: 0.8;
   transition: opacity 0.28s ease;
+}
+
+.pf-stack-cat-rows-fill {
+  transform-origin: left center;
+  transition: filter 0.2s ease;
+}
+
+.pf-stack-cat-rows-list[data-pf-gsap='active'] .pf-stack-cat-rows-fill {
+  animation: pf-stack-cat-rows-draw-safety 0.9s cubic-bezier(0.22, 1, 0.36, 1) 2.1s forwards;
+}
+
+.pf-stack-cat-rows-list:not([data-pf-gsap='active']) .pf-stack-cat-rows-fill {
+  transform: none;
+  animation: none;
+}
+
+@keyframes pf-stack-cat-rows-draw-safety {
+  to {
+    transform: scaleX(1);
+  }
 }
 
 .pf-stack-cat-rows-percent {
@@ -7537,14 +8420,14 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   grid-row: 1;
   justify-self: end;
   align-self: center;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 500;
   line-height: 1;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
   color: color-mix(
     in srgb,
-    var(--pf-stack-cat-rows-fill, var(--pf-stack-cat-rows-ink)) 48%,
+    var(--pf-stack-cat-rows-fill, var(--pf-stack-cat-rows-ink)) 62%,
     transparent
   );
   transition: color 0.28s ease;
@@ -7555,29 +8438,24 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   grid-row: 2;
 }
 
-.pf-stack-cat-rows-meter [role='meter'],
-.pf-stack-cat-rows-bar[role='meter'] {
-  height: 2px;
-  max-height: 2px;
-  border-radius: 0;
-}
-
-.pf-stack-cat-rows-meter [role='meter'] > *,
-.pf-stack-cat-rows-bar[role='meter'] > * {
-  border-radius: 0;
-}
+/* Height/radius now come from the "Bar style"/"Bar & % size" settings instead of
+   being hard-locked to a 2px hairline — those controls were previously inert here. */
 
 @media (min-width: 640px) {
   .pf-stack-cat-rows-row {
     column-gap: 1rem;
   }
 
+  .pf-stack-cat-rows-kicker {
+    font-size: 0.75rem;
+  }
+
   .pf-stack-cat-rows-name {
-    font-size: 1rem;
+    font-size: 1.0625rem;
   }
 
   .pf-stack-cat-rows-percent {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
   }
 }
 
@@ -7597,6 +8475,11 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
     opacity: 1;
   }
 
+  .pf-stack-cat-rows-row:hover .pf-stack-cat-rows-fill,
+  .pf-stack-cat-rows-row:focus-within .pf-stack-cat-rows-fill {
+    filter: brightness(1.04);
+  }
+
   .pf-stack-cat-rows-row:hover .pf-stack-cat-rows-percent,
   .pf-stack-cat-rows-row:focus-within .pf-stack-cat-rows-percent {
     color: color-mix(
@@ -7614,6 +8497,12 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   .pf-stack-cat-rows-percent {
     transform: none;
     transition: none;
+  }
+
+  .pf-stack-cat-rows-fill {
+    transform: none !important;
+    animation: none !important;
+    filter: none !important;
   }
 }
 
@@ -7785,10 +8674,18 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-tools-stat-name {
-  font-size: 0.6875rem;
-  font-weight: 300;
-  letter-spacing: 0.12em;
-  line-height: 1.15;
+  /* No more ellipsis truncation — long names wrap instead of cutting off (same fix as
+     the other stack/tools name labels this pass). overflow:visible + line-height 1.3
+     keeps descenders (p/y/g/j) from clipping once the label wraps to a second line. */
+  display: block;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -7807,7 +8704,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   --pf-stack-table-level: currentColor;
   --pf-stack-table-name-col: minmax(0, 1fr);
   --pf-stack-table-cat-col: 5.25rem;
-  --pf-stack-table-level-col: 5.5rem;
+  --pf-stack-table-level-col: 6.25rem;
   --pf-stack-table-pct-col: 2.55rem;
   --pf-stack-table-gap: clamp(0.7rem, 2.4vw, 1.75rem);
   width: 100%;
@@ -7888,11 +8785,11 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 500;
   letter-spacing: -0.018em;
-  line-height: 1.25;
-  color: color-mix(in srgb, var(--pf-stack-table-ink) 86%, transparent);
+  line-height: 1.3;
+  color: color-mix(in srgb, var(--pf-stack-table-ink) 90%, transparent);
   transition: color 0.18s ease;
 }
 
@@ -7901,12 +8798,12 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 500;
-  letter-spacing: 0.16em;
-  line-height: 1.2;
+  letter-spacing: 0.14em;
+  line-height: 1.3;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--pf-stack-table-muted) 68%, transparent);
+  color: color-mix(in srgb, var(--pf-stack-table-muted) 76%, transparent);
 }
 
 .pf-stack-table-level {
@@ -7920,46 +8817,46 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
-  letter-spacing: 0.12em;
-  line-height: 1;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
   text-transform: lowercase;
   font-variant-caps: all-small-caps;
   font-feature-settings: 'c2sc', 'smcp';
-  color: color-mix(in srgb, var(--pf-stack-table-level) 58%, var(--pf-stack-table-ink));
+  color: color-mix(in srgb, var(--pf-stack-table-level) 68%, var(--pf-stack-table-ink));
 }
 
 .pf-stack-table-percent {
   justify-self: end;
   text-align: right;
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 400;
   letter-spacing: 0.04em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
-  color: color-mix(in srgb, var(--pf-stack-table-ink) 38%, transparent);
+  color: color-mix(in srgb, var(--pf-stack-table-ink) 48%, transparent);
   transition: color 0.18s ease;
 }
 
 .pf-stack-table-percent-mark {
   margin-inline-start: 0.08em;
   font-weight: 400;
-  color: color-mix(in srgb, var(--pf-stack-table-ink) 26%, transparent);
+  color: color-mix(in srgb, var(--pf-stack-table-ink) 34%, transparent);
 }
 
 .pf-stack-table[data-pct='small'] .pf-stack-table-percent {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
 }
 
 .pf-stack-table[data-pct='medium'] .pf-stack-table-percent {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .pf-stack-table[data-pct='large'] .pf-stack-table-percent,
 .pf-stack-table[data-pct='xlarge'] .pf-stack-table-percent {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
 }
 
 .pf-stack-table-bar {
@@ -7968,7 +8865,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-stack-table-stars {
-  font-size: 0.6875rem !important;
+  font-size: 0.75rem !important;
   letter-spacing: 0.04em;
   gap: 0.05rem;
 }
@@ -7976,14 +8873,14 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-stack-table-dots {
   display: flex;
   align-items: center;
-  gap: 0.28rem;
+  gap: 0.32rem;
 }
 
 .pf-stack-table-dot {
-  width: 0.3125rem;
-  height: 0.3125rem;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: 999px;
-  background-color: color-mix(in srgb, var(--pf-stack-table-level) 18%, transparent);
+  background-color: color-mix(in srgb, var(--pf-stack-table-level) 22%, transparent);
   box-shadow: none;
 }
 
@@ -8003,7 +8900,11 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   }
 
   .pf-stack-table-name {
-    font-size: 0.9375rem;
+    font-size: 1rem;
+  }
+
+  .pf-stack-table-category {
+    font-size: 0.75rem;
   }
 
   .pf-stack-table-row--medium {
@@ -8073,582 +8974,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
     transition: none;
     transform: none !important;
     opacity: 1 !important;
-  }
-}
-
-/**
- * ABOUT FEATURE PANEL — premium motion
- * Prefix: pf-about-feature-
- * Mount reveal, rail-thumb, and tab crossfade are GSAP-driven (see
- * AboutFeaturePanelLayout in EditorialAboutMeSection.tsx).
- * Default styles keep kicker, intro, skills, and panel visible if JS animation never runs.
- * 'armed' only hides under prefers-reduced-motion: no-preference, with an 8s safety reveal
- * in case GSAP never takes over; 'active'/'done' hand the reveal to GSAP's inline styles.
- */
-.pf-about-feature-root {
-  --pf-about-feature-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --pf-about-feature-accent: currentColor;
-  --pf-about-feature-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
-}
-
-.pf-about-feature-kicker,
-.pf-about-feature-intro-line,
-.pf-about-feature-skill,
-.pf-about-feature-panel-shell,
-.pf-about-feature-bio,
-.pf-about-feature-footer,
-.pf-about-feature-footer-dek,
-.pf-about-feature-footer-block {
-  backface-visibility: hidden;
-}
-
-.pf-about-feature-kicker,
-.pf-about-feature-footer-label,
-.pf-about-feature-quote-caption,
-.pf-about-feature-skill-btn {
-  font-family: inherit;
-}
-
-.pf-about-feature-intro-line,
-.pf-about-feature-quote-text,
-.pf-about-feature-quote-mark {
-  font-family: var(--pf-about-feature-serif);
-}
-
-.pf-about-feature-quote-text {
-  line-height: 1.5;
-}
-
-.pf-about-feature-intro-line {
-  text-wrap: balance;
-  /* Progressive enhancement: browsers that understand `pretty` avoid the
-     lone-orphan-word wraps that `balance` alone can still leave; browsers
-     that don't simply keep using `balance` above. */
-  text-wrap: pretty;
-  font-weight: 500;
-}
-
-.pf-about-feature-intro-primary {
-  font-weight: 600;
-  letter-spacing: -0.038em;
-}
-
-.pf-about-feature-intro-secondary {
-  font-weight: 500;
-  font-style: italic;
-  letter-spacing: -0.028em;
-  opacity: 0.5;
-}
-
-.pf-about-feature-skill-btn {
-  position: relative;
-  cursor: pointer;
-  opacity: 1;
-  letter-spacing: -0.022em;
-  line-height: 1.05;
-  transform: none;
-  transition: opacity 0.4s var(--pf-about-feature-ease);
-}
-
-.pf-about-feature-skill-btn:not(.is-active):not([aria-expanded='true']) {
-  opacity: 0.62;
-}
-
-.pf-about-feature-skill-btn:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--pf-about-feature-accent) 72%, transparent);
-  outline-offset: 6px;
-  border-radius: 2px;
-}
-
-.pf-about-feature-rail-track {
-  opacity: 0.85;
-  transition: opacity 0.45s var(--pf-about-feature-ease);
-}
-
-@media (min-width: 1024px) {
-  .pf-about-feature-pin {
-    --pf-about-feature-stage-min: 26.5rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: stretch;
-    width: 100%;
-    min-height: calc(100dvh - var(--portfolio-nav-top-clearance, 5.5rem) - 1.25rem);
-    /* Optical mid-viewport for the fixed stage; extra quote length grows down. */
-    padding-top: max(
-      1.25rem,
-      calc(
-        (
-            100dvh - var(--portfolio-nav-top-clearance, 5.5rem) - 1.25rem -
-              var(--pf-about-feature-stage-min)
-          ) / 2
-      )
-    );
-    padding-bottom: 1.5rem;
-  }
-
-  .pf-about-feature-pin > * {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .pf-about-feature-stage {
-    min-height: var(--pf-about-feature-stage-min);
-    align-items: stretch;
-    grid-template-rows: minmax(var(--pf-about-feature-stage-min), auto);
-  }
-
-  .pf-about-feature-panel,
-  .pf-about-feature-panel-parallax,
-  .pf-about-feature-panel-shell {
-    height: 100%;
-  }
-
-  .pf-about-feature-panel {
-    width: 100%;
-    max-width: 52rem;
-  }
-
-  .pf-about-feature-panel,
-  .pf-about-feature-panel-parallax {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .pf-about-feature-panel-shell {
-    flex: 1 1 auto;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-  }
-
-  .pf-about-feature-panel-layer {
-    flex: 1 1 auto;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    width: 100%;
-  }
-}
-
-@media (min-width: 1280px) {
-  .pf-about-feature-pin {
-    --pf-about-feature-stage-min: 28rem;
-  }
-
-  .pf-about-feature-panel {
-    max-width: 56rem;
-  }
-}
-
-.pf-about-feature-rail-thumb {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 2px;
-  border-radius: 999px;
-  pointer-events: none;
-  transform-origin: top center;
-  will-change: transform, height;
-  z-index: 1;
-  box-shadow: 0 0 10px color-mix(in srgb, var(--pf-about-feature-accent) 42%, transparent);
-}
-
-.pf-about-feature-panel-parallax {
-  width: 100%;
-  min-height: 100%;
-}
-
-.pf-about-feature-panel-shell {
-  isolation: isolate;
-  border-radius: 1.05rem;
-  border: 1px solid color-mix(in srgb, var(--pf-about-feature-ink, currentColor) 8%, transparent);
-  padding: 3.15rem 2.85rem 3.4rem;
-  transition: box-shadow 0.5s var(--pf-about-feature-ease);
-  box-shadow: 0 0 0 0 transparent;
-}
-
-@media (min-width: 640px) {
-  .pf-about-feature-panel-shell {
-    padding: 3.55rem 3.25rem 3.8rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .pf-about-feature-panel-shell {
-    padding: 4.1rem 3.85rem 4.35rem;
-  }
-}
-
-@media (min-width: 1280px) {
-  .pf-about-feature-panel-shell {
-    padding: 4.5rem 4.25rem 4.75rem;
-  }
-}
-
-.pf-about-feature-panel-shell::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.12;
-  background: radial-gradient(
-    24rem 16rem at 8% 10%,
-    color-mix(in srgb, var(--pf-about-feature-accent) 16%, transparent),
-    transparent 70%
-  );
-  transition: opacity 0.5s var(--pf-about-feature-ease);
-}
-
-.pf-about-feature-panel-layer {
-  z-index: 1;
-  will-change: opacity, transform, clip-path;
-}
-
-.pf-about-feature-quote-caption {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.65rem;
-  margin-top: 1.65rem;
-  font-size: 0.62rem;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--pf-about-feature-ink, currentColor) 42%, transparent);
-}
-
-.pf-about-feature-quote--start .pf-about-feature-quote-caption::before {
-  content: '';
-  width: 1.35rem;
-  height: 1px;
-  background: currentColor;
-  opacity: 0.7;
-  flex: 0 0 auto;
-}
-
-.pf-about-feature-footer-label {
-  margin: 0 0 1.15rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
-.pf-about-feature-footer-dek {
-  max-width: 36rem;
-  margin: 1.35rem 0 0;
-  line-height: 1.7;
-  opacity: 0.72;
-}
-
-.pf-about-feature-footer-meta {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 2.4rem;
-}
-
-@media (min-width: 1024px) {
-  .pf-about-feature-footer-meta {
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 0.85fr);
-    column-gap: 3.2rem;
-    row-gap: 0;
-  }
-}
-
-.pf-about-feature-edu-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 1.35rem;
-}
-
-.pf-about-feature-edu-meta {
-  opacity: 0.72;
-}
-
-.pf-about-feature-edu-dot {
-  opacity: 0.45;
-}
-
-.pf-about-feature-edu-year {
-  opacity: 0.86;
-}
-
-.pf-about-feature-strengths {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-.pf-about-feature-strength {
-  display: grid;
-  grid-template-columns: 1.7rem minmax(0, 1fr);
-  align-items: baseline;
-  column-gap: 0.7rem;
-}
-
-.pf-about-feature-strength-index {
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  font-variant-numeric: tabular-nums;
-  color: color-mix(in srgb, var(--pf-about-feature-ink, currentColor) 38%, transparent);
-}
-
-.pf-about-feature-langs {
-  display: flex;
-  flex-direction: column;
-  gap: 0.42rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.pf-about-feature-lang {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  line-height: 1.25;
-}
-
-.pf-about-feature-lang-code {
-  flex: 0 0 auto;
-  min-width: 1.55rem;
-  font-weight: 700;
-  font-style: normal;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.pf-about-feature-lang-dot {
-  flex: 0 0 auto;
-  font-weight: 400;
-  color: color-mix(in srgb, var(--pf-about-feature-ink, currentColor) 34%, transparent);
-}
-
-.pf-about-feature-lang-level {
-  font-size: 0.92em;
-  font-weight: 400;
-  font-style: normal;
-  letter-spacing: 0.03em;
-  color: color-mix(in srgb, var(--pf-about-feature-ink, currentColor) 56%, transparent);
-}
-
-.pf-about-feature-accordion-card {
-  position: relative;
-  overflow: hidden;
-}
-
-.pf-about-feature-accordion-card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 1.15rem;
-  bottom: 1.15rem;
-  width: 2px;
-  border-radius: 999px;
-  background: var(--pf-about-feature-accent);
-  opacity: 0.88;
-  box-shadow: 0 0 10px color-mix(in srgb, var(--pf-about-feature-accent) 40%, transparent);
-}
-
-.pf-about-feature-accordion-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.18;
-  background: radial-gradient(
-    18rem 14rem at 8% 18%,
-    color-mix(in srgb, var(--pf-about-feature-accent) 20%, transparent),
-    transparent 68%
-  );
-}
-
-.pf-about-feature-accordion-card > * {
-  position: relative;
-  z-index: 1;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .pf-about-feature-skill-btn:not(.is-active):not([aria-expanded='true']):hover {
-    opacity: 0.84;
-  }
-
-  .pf-about-feature-rail:hover .pf-about-feature-rail-track {
-    opacity: 1;
-  }
-
-  .pf-about-feature-rail:hover .pf-about-feature-rail-thumb,
-  .pf-about-feature-root:has(.pf-about-feature-skill-btn:hover) .pf-about-feature-rail-thumb {
-    width: 3px;
-    box-shadow: 0 0 18px color-mix(in srgb, var(--pf-about-feature-accent) 72%, transparent);
-  }
-
-  .pf-about-feature-panel:hover .pf-about-feature-panel-shell,
-  .pf-about-feature-root:has(.pf-about-feature-skill-btn:hover) .pf-about-feature-panel-shell {
-    box-shadow: 0 16px 40px -30px color-mix(in srgb, var(--pf-about-feature-ink, currentColor) 28%, transparent);
-  }
-
-  .pf-about-feature-panel:hover .pf-about-feature-panel-shell::after,
-  .pf-about-feature-root:has(.pf-about-feature-skill-btn:hover) .pf-about-feature-panel-shell::after {
-    opacity: 0.22;
-  }
-}
-
-.pf-theme-root[data-portfolio-force-font='true'] .pf-about-feature-intro-line,
-.pf-theme-root[data-portfolio-force-font='true'] .pf-about-feature-intro-line *,
-.pf-theme-root[data-portfolio-force-font='true'] .pf-about-feature-quote-text,
-.pf-theme-root[data-portfolio-force-font='true'] .pf-about-feature-quote-mark {
-  font-family: var(--pf-about-feature-serif) !important;
-}
-
-/*
- * Motion is GSAP-driven (see AboutFeaturePanelLayout's mount-reveal
- * useLayoutEffect). CSS here only covers:
- *  - 'armed'  — default, pre-hydration state: hidden, with a long-delayed
- *               safety-net animation in case GSAP never takes over (JS
- *               failure, plugin error, etc.) — mirrors AboutBannerLayout's
- *               own 8s safety-reveal convention.
- *  - 'active' — GSAP has taken over (gsap.set ran); CSS animation is
- *               switched off so it doesn't fight GSAP's inline styles.
- *  - 'done'   — the reveal timeline finished; animation off, will-change
- *               released.
- */
-@media (prefers-reduced-motion: no-preference) {
-  .pf-about-feature-root[data-pf-entry='armed'] .pf-about-feature-kicker,
-  .pf-about-feature-root[data-pf-entry='armed'] .pf-about-feature-intro .pf-about-feature-intro-line,
-  .pf-about-feature-root[data-pf-entry='armed'] .pf-about-feature-bio {
-    opacity: 0;
-    transform: translate3d(0, 18px, 0);
-    animation: pf-about-feature-enter-safety 0.7s ease 8s forwards;
-  }
-
-  .pf-about-feature-root[data-pf-footer='armed'] .pf-about-feature-footer-intro,
-  .pf-about-feature-root[data-pf-footer='armed'] .pf-about-feature-footer-dek,
-  .pf-about-feature-root[data-pf-footer='armed'] .pf-about-feature-footer-block {
-    opacity: 0;
-    transform: translate3d(0, 18px, 0);
-    animation: pf-about-feature-enter-safety 0.7s ease 8s forwards;
-  }
-
-  .pf-about-feature-root[data-pf-rail='armed'] .pf-about-feature-skill {
-    opacity: 0;
-    transform: translate3d(0, 18px, 0);
-    animation: pf-about-feature-enter-safety 0.7s ease 8s forwards;
-  }
-
-  .pf-about-feature-root[data-pf-rail='armed'] .pf-about-feature-panel-shell {
-    opacity: 0;
-    clip-path: inset(14% 0 0 0);
-    animation: pf-about-feature-panel-safety 0.85s ease 8s forwards;
-  }
-
-  .pf-about-feature-root[data-pf-entry='active'] .pf-about-feature-kicker,
-  .pf-about-feature-root[data-pf-entry='active'] .pf-about-feature-intro .pf-about-feature-intro-line,
-  .pf-about-feature-root[data-pf-entry='active'] .pf-about-feature-bio,
-  .pf-about-feature-root[data-pf-entry='done'] .pf-about-feature-kicker,
-  .pf-about-feature-root[data-pf-entry='done'] .pf-about-feature-intro .pf-about-feature-intro-line,
-  .pf-about-feature-root[data-pf-entry='done'] .pf-about-feature-bio,
-  .pf-about-feature-root[data-pf-footer='active'] .pf-about-feature-footer-intro,
-  .pf-about-feature-root[data-pf-footer='active'] .pf-about-feature-footer-dek,
-  .pf-about-feature-root[data-pf-footer='active'] .pf-about-feature-footer-block,
-  .pf-about-feature-root[data-pf-footer='done'] .pf-about-feature-footer-intro,
-  .pf-about-feature-root[data-pf-footer='done'] .pf-about-feature-footer-dek,
-  .pf-about-feature-root[data-pf-footer='done'] .pf-about-feature-footer-block {
-    animation: none;
-  }
-
-  .pf-about-feature-root[data-pf-rail='active'] .pf-about-feature-skill,
-  .pf-about-feature-root[data-pf-rail='active'] .pf-about-feature-panel-shell,
-  .pf-about-feature-root[data-pf-rail='done'] .pf-about-feature-skill,
-  .pf-about-feature-root[data-pf-rail='done'] .pf-about-feature-panel-shell {
-    animation: none;
-  }
-
-  .pf-about-feature-root[data-pf-entry='done'] .pf-about-feature-kicker,
-  .pf-about-feature-root[data-pf-entry='done'] .pf-about-feature-intro .pf-about-feature-intro-line,
-  .pf-about-feature-root[data-pf-entry='done'] .pf-about-feature-bio,
-  .pf-about-feature-root[data-pf-footer='done'] .pf-about-feature-footer-intro,
-  .pf-about-feature-root[data-pf-footer='done'] .pf-about-feature-footer-dek,
-  .pf-about-feature-root[data-pf-footer='done'] .pf-about-feature-footer-block,
-  .pf-about-feature-root[data-pf-rail='done'] .pf-about-feature-skill,
-  .pf-about-feature-root[data-pf-rail='done'] .pf-about-feature-panel-shell {
-    will-change: auto;
-  }
-}
-
-@keyframes pf-about-feature-enter-safety {
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes pf-about-feature-panel-safety {
-  to {
-    opacity: 1;
-    clip-path: inset(0% 0 0 0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pf-about-feature-kicker,
-  .pf-about-feature-intro-line,
-  .pf-about-feature-skill,
-  .pf-about-feature-panel-shell,
-  .pf-about-feature-panel-layer,
-  .pf-about-feature-bio,
-  .pf-about-feature-footer,
-  .pf-about-feature-footer-intro,
-  .pf-about-feature-footer-dek,
-  .pf-about-feature-footer-block,
-  .pf-about-feature-rail-thumb,
-  .pf-about-feature-rail-track,
-  .pf-about-feature-skill-btn,
-  .pf-about-feature-accordion-card {
-    animation: none !important;
-    transform: none !important;
-    clip-path: none !important;
-    will-change: auto;
-  }
-
-  .pf-about-feature-kicker,
-  .pf-about-feature-intro-line,
-  .pf-about-feature-skill,
-  .pf-about-feature-panel-shell,
-  .pf-about-feature-bio,
-  .pf-about-feature-footer,
-  .pf-about-feature-footer-intro,
-  .pf-about-feature-footer-dek,
-  .pf-about-feature-footer-block {
-    opacity: 1 !important;
-  }
-
-  .pf-about-feature-skill-btn:not(.is-active):not([aria-expanded='true']) {
-    opacity: 0.62 !important;
-  }
-
-  .pf-about-feature-pin {
-    position: static;
-    min-height: 0;
-    padding-block: 0;
-  }
-
-  .pf-about-feature-skill-btn,
-  .pf-about-feature-rail-thumb,
-  .pf-about-feature-rail-track,
-  .pf-about-feature-panel-shell,
-  .pf-about-feature-panel-shell::after,
-  .pf-about-feature-accordion-card::after {
-    transition: none !important;
   }
 }
 
@@ -9176,21 +9501,21 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 500;
   line-height: 1.35;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--pf-stack-bento-ink) 36%, transparent);
+  color: color-mix(in srgb, var(--pf-stack-bento-ink) 60%, transparent);
 }
 
 .pf-stack-bento-kicker-count {
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 400;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.16em;
   line-height: 1.35;
-  color: color-mix(in srgb, var(--pf-stack-bento-ink) 28%, transparent);
+  color: color-mix(in srgb, var(--pf-stack-bento-ink) 45%, transparent);
 }
 
 .pf-stack-bento-list {
@@ -9259,7 +9584,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   font-size: 0.8125rem;
   font-weight: 500;
   letter-spacing: -0.012em;
-  line-height: 1.25;
+  line-height: 1.3;
   color: color-mix(in srgb, var(--pf-stack-bento-ink) 86%, transparent);
   transition: color 0.35s ease;
 }
@@ -9280,13 +9605,13 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
-  line-height: 1;
+  letter-spacing: 0.12em;
+  line-height: 1.3;
   text-transform: uppercase;
   text-align: right;
-  color: color-mix(in srgb, var(--pf-stack-bento-ink) 42%, transparent);
+  color: color-mix(in srgb, var(--pf-stack-bento-ink) 65%, transparent);
 }
 
 .pf-stack-bento-bar {
@@ -9300,8 +9625,8 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-stack-bento-stars {
-  gap: 0.12rem !important;
-  font-size: 0.7rem !important;
+  gap: 0.14rem !important;
+  font-size: 0.78rem !important;
   line-height: 1 !important;
 }
 

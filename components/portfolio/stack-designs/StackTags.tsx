@@ -1,6 +1,7 @@
 'use client';
 
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import {
@@ -9,38 +10,14 @@ import {
 } from '@/components/portfolio/skill-usage-descriptions';
 import type { PortfolioStackPresentationSettings } from '@/components/portfolio/portfolio-stack-settings';
 import {
-  resolveStackSubtitleSize,
   resolveStackTagsContentAlignment,
-  resolveStackTagsHeaderAlignment,
   resolveStackTagsSize,
-  resolveStackTitleSize,
   stackTagsChipClass,
-  stackTagsKickerClass,
   stackTagsListClass,
-  stackTagsSubtitleClass,
 } from '@/components/portfolio/portfolio-stack-settings';
-import type {
-  PortfolioToolsCardGap,
-  PortfolioToolsContentAlignment,
-  PortfolioToolsHeaderAlignment,
-} from '@/components/portfolio/portfolio-tools-settings';
+import type { PortfolioToolsCardGap, PortfolioToolsContentAlignment } from '@/components/portfolio/portfolio-tools-settings';
 
-function stackTagsTextAlignClass(
-  alignment: PortfolioToolsHeaderAlignment | PortfolioToolsContentAlignment
-): string {
-  switch (alignment) {
-    case 'right':
-      return 'text-right';
-    case 'center':
-      return 'text-center';
-    default:
-      return 'text-left';
-  }
-}
-
-function stackTagsJustifyClass(
-  alignment: PortfolioToolsHeaderAlignment | PortfolioToolsContentAlignment
-): string {
+function stackTagsJustifyClass(alignment: PortfolioToolsContentAlignment): string {
   switch (alignment) {
     case 'right':
       return 'justify-end';
@@ -68,29 +45,39 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+function isLaidOut(el: HTMLElement): boolean {
+  return el.getClientRects().length > 0;
+}
+
+function stackTagsScrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
+}
+
 export function EditorialStackTags({
   items,
   presentation,
-  embeddedTitle,
-  embeddedSubtitle,
 }: {
   items: PortfolioSkillRef[];
   presentation: PortfolioStackPresentationSettings;
-  embeddedTitle?: string;
-  embeddedSubtitle?: string;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const names = items.map(resolveSkillName).map((name) => name.trim()).filter(Boolean);
-  const headerAlignment = resolveStackTagsHeaderAlignment(presentation);
   const contentAlignment = resolveStackTagsContentAlignment(presentation);
   const accent = presentation.levelAccentColor;
   const chipBg = presentation.chipBackgroundColor;
   const chipText = presentation.chipTextColor;
-  const kicker = embeddedTitle?.trim();
-  const subtitle = embeddedSubtitle?.trim();
   const tagSize = resolveStackTagsSize(presentation.stackTagsSize);
-  const titleSize = resolveStackTitleSize(presentation.titleSize);
-  const subtitleSize = resolveStackSubtitleSize(presentation.subtitleSize);
   const namesKey = names.join('\u001f');
 
   useLayoutEffect(() => {
@@ -98,26 +85,39 @@ export function EditorialStackTags({
     if (!root || namesKey.length === 0) return;
     if (prefersReducedMotion()) return;
 
-    const chips = root.querySelectorAll<HTMLElement>('.pf-stack-tags-chip');
+    gsap.registerPlugin(ScrollTrigger);
+    const scroller = stackTagsScrollParent(root);
+    const chips = [...root.querySelectorAll<HTMLElement>('.pf-stack-tags-chip')].filter(isLaidOut);
     if (chips.length === 0) return;
 
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        chips,
-        { opacity: 0, y: 6 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.48,
-          stagger: 0.06,
-          ease: 'power2.out',
-          overwrite: 'auto',
-          immediateRender: false,
-        }
-      );
+      // Hide immediately (pre-paint) so chips never flash at their static/visible
+      // state before ScrollTrigger fires — only the reveal is scroll-gated.
+      gsap.set(chips, { opacity: 0, y: 10 });
+
+      // Trigger per chip (not blindly on mount) — this design previously animated
+      // as soon as it mounted, regardless of scroll position, so on a section that
+      // starts off-screen the reveal played out before it was ever visible.
+      ScrollTrigger.batch(chips, {
+        start: 'top 94%',
+        once: true,
+        ...(scroller ? { scroller } : {}),
+        onEnter: (batch) => {
+          gsap.to(batch, {
+            opacity: 1,
+            y: 0,
+            duration: 0.62,
+            stagger: 0.07,
+            ease: 'power2.out',
+            overwrite: 'auto',
+          });
+        },
+      });
     }, root);
 
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 80);
     return () => {
+      window.clearTimeout(refreshId);
       ctx.revert();
     };
   }, [namesKey]);
@@ -132,36 +132,17 @@ export function EditorialStackTags({
     '--pf-stack-tags-accent': accent,
   } as CSSProperties;
 
-  const kickerInk = `color-mix(in srgb, ${accent} 30%, transparent)`;
-
   return (
     <div
       ref={rootRef}
       className="pf-stack-tags flex w-full max-w-none flex-col"
       data-size={tagSize}
-      data-header-align={headerAlignment}
       data-content-align={contentAlignment}
       style={rootStyle}
     >
-      {kicker ? (
-        <p
-          className={`pf-stack-tags-kicker w-full ${stackTagsKickerClass(titleSize)} ${stackTagsTextAlignClass(headerAlignment)}`}
-          style={{ color: kickerInk }}
-        >
-          {kicker}
-        </p>
-      ) : null}
-      {subtitle ? (
-        <p
-          className={`pf-stack-tags-subtitle ${stackTagsSubtitleClass(subtitleSize)} w-full max-w-none ${stackTagsTextAlignClass(headerAlignment)}`}
-          style={{ color: presentation.subtitleColor }}
-        >
-          {subtitle}
-        </p>
-      ) : null}
       <ul
         className={`pf-stack-tags-list ${stackTagsListClass(tagSize)} flex w-full max-w-none list-none flex-wrap p-0 ${stackTagsGapClass(presentation.cardGap)} ${stackTagsJustifyClass(contentAlignment)}`}
-        aria-label={kicker || 'Stack'}
+        aria-label="Stack"
       >
         {names.map((name, index) => (
           <li
