@@ -742,10 +742,10 @@ export const PORTFOLIO_GLOBAL_SECTION_TOP_SPACING_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'compact', label: 'Compact', description: 'Tighter space above every section title.' },
-  { value: 'standard', label: 'Standard', description: 'Default editorial spacing above titles.' },
-  { value: 'comfortable', label: 'Comfortable', description: 'More breathing room above titles.' },
-  { value: 'spacious', label: 'Spacious', description: 'Maximum space above section titles.' },
+  { value: 'compact', label: 'Small', description: 'Tightest padding above every section.' },
+  { value: 'standard', label: 'Medium', description: 'Default padding above every section.' },
+  { value: 'comfortable', label: 'Large', description: 'More breathing room above every section.' },
+  { value: 'spacious', label: 'Extra large', description: 'Maximum padding above every section.' },
 ];
 
 export const PORTFOLIO_GLOBAL_SECTION_BOTTOM_SPACING_OPTIONS: {
@@ -753,10 +753,10 @@ export const PORTFOLIO_GLOBAL_SECTION_BOTTOM_SPACING_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'compact', label: 'Compact', description: 'Tighter space below every section.' },
-  { value: 'standard', label: 'Standard', description: 'Default editorial spacing below sections.' },
-  { value: 'comfortable', label: 'Comfortable', description: 'More breathing room below sections.' },
-  { value: 'spacious', label: 'Spacious', description: 'Maximum space below sections.' },
+  { value: 'compact', label: 'Small', description: 'Tightest padding below every section.' },
+  { value: 'standard', label: 'Medium', description: 'Default padding below every section.' },
+  { value: 'comfortable', label: 'Large', description: 'More breathing room below every section.' },
+  { value: 'spacious', label: 'Extra large', description: 'Maximum padding below every section.' },
 ];
 
 export const PORTFOLIO_GLOBAL_SPLIT_CONTENT_TOP_SPACING_OPTIONS: {

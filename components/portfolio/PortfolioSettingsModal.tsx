@@ -240,6 +240,7 @@ import {
   PORTFOLIO_GLOBAL_HEADER_FONT_OPTIONS,
   PORTFOLIO_GLOBAL_SECTION_TOP_SPACING_OPTIONS,
   PORTFOLIO_GLOBAL_SECTION_BOTTOM_SPACING_OPTIONS,
+  type PortfolioGlobalSectionTitleTopSpacing,
   PORTFOLIO_GLOBAL_SUBTITLE_SIZE_OPTIONS,
   PORTFOLIO_GLOBAL_TEXT_DECORATION_OPTIONS,
   PORTFOLIO_GLOBAL_TITLE_ALIGNMENT_OPTIONS,
@@ -2206,6 +2207,45 @@ const GLOBAL_CONTENT_GUTTER_PREVIEW_OPTIONS = PORTFOLIO_GLOBAL_CONTENT_GUTTER_OP
   ),
 }));
 
+/** Two stacked bars with a gap sized per tier — preview for section top/bottom padding. */
+function globalSectionSpacingGlyph(gap: number) {
+  return (active: boolean) => {
+    const cls = active ? 'pf-stack-mini-accent' : 'pf-stack-mini-mute';
+    const barHeight = 5;
+    const firstY = 2;
+    const secondY = firstY + barHeight + gap;
+    return (
+      <>
+        <rect className={cls} x="10" y={firstY} width="44" height={barHeight} rx="1.5" />
+        <rect className={cls} x="10" y={secondY} width="44" height={barHeight} rx="1.5" />
+      </>
+    );
+  };
+}
+
+const GLOBAL_SECTION_SPACING_GAP_PX: Record<PortfolioGlobalSectionTitleTopSpacing, number> = {
+  compact: 3,
+  standard: 6,
+  comfortable: 10,
+  spacious: 17,
+};
+
+const GLOBAL_SECTION_TOP_SPACING_PREVIEW_OPTIONS = PORTFOLIO_GLOBAL_SECTION_TOP_SPACING_OPTIONS.map(
+  (option) => ({
+    value: option.value,
+    label: option.label,
+    glyph: globalSectionSpacingGlyph(GLOBAL_SECTION_SPACING_GAP_PX[option.value]),
+  })
+);
+
+const GLOBAL_SECTION_BOTTOM_SPACING_PREVIEW_OPTIONS = PORTFOLIO_GLOBAL_SECTION_BOTTOM_SPACING_OPTIONS.map(
+  (option) => ({
+    value: option.value,
+    label: option.label,
+    glyph: globalSectionSpacingGlyph(GLOBAL_SECTION_SPACING_GAP_PX[option.value]),
+  })
+);
+
 /** Mini "Nav" label mock, decorated per active-indicator style — preview for Active indicator. */
 function navIndicatorGlyph(style: PortfolioNavActiveStyle) {
   return (active: boolean) => {
@@ -2909,6 +2949,23 @@ function GlobalSettingsPanel({
               options={GLOBAL_CONTENT_GUTTER_PREVIEW_OPTIONS}
               value={global.contentGutter}
               onChange={(contentGutter) => onGlobalChange({ contentGutter })}
+              columns={4}
+            />
+          </GlobalSection>
+
+          <GlobalSection label="Section spacing">
+            <GlobalPreviewCardGrid
+              label="Top padding"
+              options={GLOBAL_SECTION_TOP_SPACING_PREVIEW_OPTIONS}
+              value={global.sectionTitleTopSpacing}
+              onChange={(sectionTitleTopSpacing) => onGlobalChange({ sectionTitleTopSpacing })}
+              columns={4}
+            />
+            <GlobalPreviewCardGrid
+              label="Bottom padding"
+              options={GLOBAL_SECTION_BOTTOM_SPACING_PREVIEW_OPTIONS}
+              value={global.sectionTitleBottomSpacing}
+              onChange={(sectionTitleBottomSpacing) => onGlobalChange({ sectionTitleBottomSpacing })}
               columns={4}
             />
           </GlobalSection>
