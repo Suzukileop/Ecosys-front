@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   PORTFOLIO_ABOUT_FULL_WIDTH_PANEL_PLACEMENT_OPTIONS,
   PORTFOLIO_ABOUT_LAYOUT_MODE_OPTIONS,
@@ -511,6 +512,10 @@ export function AboutSettingsPanel({
                 )
               )
             }
+          />
+          <SectionColorModeControl
+            value={about.colorModeOverride}
+            onChange={(colorModeOverride) => onChange(asAboutPatch({ colorModeOverride }))}
           />
           <AboutToggleRow
             label="Afficher la section stats"

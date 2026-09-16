@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type CSSProperties, type ReactNode } from 'react';
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS,
   PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS,
@@ -2717,6 +2718,10 @@ export function ExperienceSettingsPanel({
             label="Show section"
             checked={experience.enabled}
             onChange={(enabled) => onChange({ enabled })}
+          />
+          <SectionColorModeControl
+            value={experience.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
           />
           <div>
             <p className="pf-exp-block-label">Content visibility</p>

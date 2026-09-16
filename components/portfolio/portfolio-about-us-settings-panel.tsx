@@ -1,6 +1,7 @@
 'use client';
 
 import { useContentMediaUpload } from '@/components/creator/creator-content-media';
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   AboutUsQuoteSvg,
   DEFAULT_ABOUT_US_QUOTE_SVG_URLS,
@@ -280,6 +281,11 @@ export function AboutUsSettingsPanel({
         description="Display About us on the public portfolio."
         checked={aboutUs.enabled}
         onChange={(enabled) => onChange({ enabled })}
+      />
+
+      <SectionColorModeControl
+        value={aboutUs.colorModeOverride}
+        onChange={(colorModeOverride) => onChange({ colorModeOverride })}
       />
 
       <div>

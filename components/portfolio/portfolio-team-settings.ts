@@ -3,6 +3,10 @@ import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-pr
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
+  mergeSectionColorMode,
+  type PortfolioSectionColorMode,
+} from '@/components/portfolio/portfolio-section-color-mode';
+import {
   DEFAULT_SECTION_BACKGROUND,
   mergeSectionBackground,
   type PortfolioSectionBackgroundSettings,
@@ -123,6 +127,8 @@ export type PortfolioTeamPresentationSettings = PortfolioSectionBackgroundSettin
   teamPalette?: PortfolioTeamPalette;
   teamColorBindings?: PortfolioTeamColorBindings;
   activeColorMode?: 'light' | 'dark';
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
 };
 
 export type PortfolioTeamSectionSettings = PortfolioSectionCopy & PortfolioTeamPresentationSettings;
@@ -294,6 +300,7 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
   teamPalette: { ...DEFAULT_TEAM_PALETTE },
   teamColorBindings: { ...DEFAULT_TEAM_COLOR_BINDINGS },
   activeColorMode: 'light',
+  colorModeOverride: 'auto',
 };
 
 Object.assign(DEFAULT_TEAM_PRESENTATION, applyTeamPaletteToSettings(DEFAULT_TEAM_PRESENTATION));
@@ -709,6 +716,7 @@ export function mergeTeamPresentation(
       record.teamColorBindings
     ),
     activeColorMode: record.activeColorMode === 'dark' || record.activeColorMode === 'light' ? record.activeColorMode : base.activeColorMode,
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
   };
   return merged.useHeroPalette === false
     ? merged

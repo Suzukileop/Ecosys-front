@@ -2,6 +2,7 @@
 
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionHeroPaletteToggle } from '@/components/portfolio/SectionHeroPaletteToggle';
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   PORTFOLIO_TEAM_CARD_BORDER_OPTIONS,
   PORTFOLIO_TEAM_GAP_OPTIONS,
@@ -154,6 +155,10 @@ export function TeamSettingsPanel({
                   : { useHeroPalette }) as Partial<PortfolioTeamSectionSettings>
               )
             }
+          />
+          <SectionColorModeControl
+            value={team.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
           />
           <div className="grid gap-3">
             {PORTFOLIO_TEAM_LAYOUT_OPTIONS.map((layout) => (

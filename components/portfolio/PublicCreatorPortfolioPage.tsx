@@ -1071,30 +1071,64 @@ export function PublicCreatorPortfolioPage({
     () => resolveWorkSectionSubtitle(settings.work),
     [settings.work]
   );
+  const aboutPalette = useMemo(
+    () =>
+      resolveSectionPalette(settings.about.colorModeOverride, {
+        auto: activeGlobalPalette,
+        light: lightGlobalPalette,
+        dark: darkGlobalPalette,
+      }),
+    [settings.about.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+  );
   const aboutPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToAbout(pickAboutPresentationSettings(settings.about), heroPalette),
-      activeColorMode: (settings.global.colorMode ?? 'dark') as 'light' | 'dark',
+      ...applyHeroPaletteToAbout(pickAboutPresentationSettings(settings.about), aboutPalette),
+      activeColorMode: resolveSectionActiveMode(
+        settings.about.colorModeOverride,
+        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+      ),
     }),
-    [settings.about, settings.global.colorMode, heroPalette]
+    [settings.about, settings.global.colorMode, aboutPalette]
   );
   const stats = useMemo(
     () => filterAboutStats(rawAboutStats, aboutPresentation),
     [rawAboutStats, aboutPresentation]
   );
+  const experiencePalette = useMemo(
+    () =>
+      resolveSectionPalette(settings.experience.colorModeOverride, {
+        auto: activeGlobalPalette,
+        light: lightGlobalPalette,
+        dark: darkGlobalPalette,
+      }),
+    [
+      settings.experience.colorModeOverride,
+      activeGlobalPalette,
+      lightGlobalPalette,
+      darkGlobalPalette,
+    ]
+  );
   const experiencePresentation = useMemo(() => {
     const picked = pickExperiencePresentationSettings(settings.experience);
-    const painted = applyHeroPaletteToExperience(picked, heroPalette);
-    const mode = (settings.global.colorMode ?? 'dark') as 'light' | 'dark';
-    const lightPalette = resolveActivePortfolioPalette({ ...settings.global, colorMode: 'light' });
-    const darkPalette = resolveActivePortfolioPalette({ ...settings.global, colorMode: 'dark' });
+    const painted = applyHeroPaletteToExperience(picked, experiencePalette);
+    const mode = resolveSectionActiveMode(
+      settings.experience.colorModeOverride,
+      (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+    );
+    // When forced to one mode, both slots of the period-rule pair collapse to that mode's
+    // palette (the rule never flips with prefers-color-scheme for a section pinned open).
+    const experienceOverride = settings.experience.colorModeOverride;
+    const periodRuleLightPalette =
+      experienceOverride === 'dark' ? darkGlobalPalette : lightGlobalPalette;
+    const periodRuleDarkPalette =
+      experienceOverride === 'light' ? lightGlobalPalette : darkGlobalPalette;
     const periodRulePair =
       picked.useHeroPalette === false
         ? {
             periodRuleColor: picked.periodRuleColor,
             periodRuleColorDark: picked.periodRuleColorDark,
           }
-        : syncExperiencePeriodRulePair(painted, lightPalette, darkPalette) ?? {
+        : syncExperiencePeriodRulePair(painted, periodRuleLightPalette, periodRuleDarkPalette) ?? {
             periodRuleColor: picked.periodRuleColor,
             periodRuleColorDark: picked.periodRuleColorDark,
             periodRuleFollowPalette: false as const,
@@ -1104,7 +1138,7 @@ export function PublicCreatorPortfolioPage({
       ...periodRulePair,
       activeColorMode: mode,
     };
-  }, [settings.experience, settings.global, heroPalette]);
+  }, [settings.experience, settings.global, experiencePalette, lightGlobalPalette, darkGlobalPalette]);
   const experienceSectionTitle = useMemo(
     () => resolveExperienceSectionTitle(settings.experience),
     [settings.experience]
@@ -1213,12 +1247,24 @@ export function PublicCreatorPortfolioPage({
   );
   const faqSectionTitle = useMemo(() => resolveFaqSectionTitle(settings.faq), [settings.faq]);
   const faqSectionSubtitle = useMemo(() => resolveFaqSectionSubtitle(settings.faq), [settings.faq]);
+  const teamPalette = useMemo(
+    () =>
+      resolveSectionPalette(settings.team.colorModeOverride, {
+        auto: activeGlobalPalette,
+        light: lightGlobalPalette,
+        dark: darkGlobalPalette,
+      }),
+    [settings.team.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+  );
   const teamPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToTeam(pickTeamPresentationSettings(settings.team), heroPalette),
-      activeColorMode: (settings.global.colorMode ?? 'dark') as 'light' | 'dark',
+      ...applyHeroPaletteToTeam(pickTeamPresentationSettings(settings.team), teamPalette),
+      activeColorMode: resolveSectionActiveMode(
+        settings.team.colorModeOverride,
+        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+      ),
     }),
-    [settings.team, settings.global.colorMode, heroPalette]
+    [settings.team, settings.global.colorMode, teamPalette]
   );
   const teamSectionTitle = useMemo(() => resolveTeamSectionTitle(settings.team), [settings.team]);
   const teamSectionSubtitle = useMemo(() => resolveTeamSectionSubtitle(settings.team), [settings.team]);
@@ -1307,12 +1353,29 @@ export function PublicCreatorPortfolioPage({
     () => resolveStackSectionSubtitle(settings.stack),
     [settings.stack]
   );
+  const aboutUsPalette = useMemo(
+    () =>
+      resolveSectionPalette(settings.aboutUs.colorModeOverride, {
+        auto: activeGlobalPalette,
+        light: lightGlobalPalette,
+        dark: darkGlobalPalette,
+      }),
+    [
+      settings.aboutUs.colorModeOverride,
+      activeGlobalPalette,
+      lightGlobalPalette,
+      darkGlobalPalette,
+    ]
+  );
   const aboutUsPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToAboutUs(pickAboutUsPresentationSettings(settings.aboutUs), heroPalette),
-      activeColorMode: (settings.global.colorMode ?? 'dark') as 'light' | 'dark',
+      ...applyHeroPaletteToAboutUs(pickAboutUsPresentationSettings(settings.aboutUs), aboutUsPalette),
+      activeColorMode: resolveSectionActiveMode(
+        settings.aboutUs.colorModeOverride,
+        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+      ),
     }),
-    [settings.aboutUs, settings.global.colorMode, heroPalette]
+    [settings.aboutUs, settings.global.colorMode, aboutUsPalette]
   );
   const aboutUsSectionTitle = useMemo(
     () => resolveAboutUsSectionTitle(settings.aboutUs),

@@ -3,6 +3,10 @@ import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-pr
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
+  mergeSectionColorMode,
+  type PortfolioSectionColorMode,
+} from '@/components/portfolio/portfolio-section-color-mode';
+import {
   DEFAULT_EXPERIENCE_COLOR_BINDINGS,
   DEFAULT_EXPERIENCE_PALETTE,
   applyExperiencePaletteToSettings,
@@ -2072,6 +2076,8 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   experienceColorBindings?: PortfolioExperienceColorBindings;
   /** Runtime Global color mode (injected on the public page for light/dark pairs). */
   activeColorMode?: 'light' | 'dark';
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
   /** Per-element color, font, size, and weight for entry content. */
   elementStyles: PortfolioExperienceElementStyles;
   /** Outer entry background (the gray shell around both columns). */
@@ -2546,6 +2552,7 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   toolsIconGapPx: 8,
   toolsChrome: { ...DEFAULT_EXPERIENCE_TOOLS_CHROME },
   useHeroPalette: true,
+  colorModeOverride: 'auto',
   experiencePalette: { ...DEFAULT_EXPERIENCE_PALETTE },
   experienceColorBindings: { ...DEFAULT_EXPERIENCE_COLOR_BINDINGS },
   elementStyles: DEFAULT_EXPERIENCE_ELEMENT_STYLES,
@@ -7030,6 +7037,7 @@ export function mergeExperiencePresentation(
       record.toolsChrome
     ),
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
     experiencePalette: mergeExperiencePalette(
       mergeExperiencePalette(DEFAULT_EXPERIENCE_PALETTE, base.experiencePalette),
       record.experiencePalette

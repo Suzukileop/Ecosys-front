@@ -3,6 +3,10 @@ import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-pr
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
+  mergeSectionColorMode,
+  type PortfolioSectionColorMode,
+} from '@/components/portfolio/portfolio-section-color-mode';
+import {
   DEFAULT_SECTION_BACKGROUND,
   mergeSectionBackground,
   type PortfolioSectionBackgroundSettings,
@@ -68,6 +72,8 @@ export type PortfolioAboutUsPresentationSettings = PortfolioSectionBackgroundSet
   quoteSvgUrls: [string, string, string, string];
   useHeroPalette: boolean;
   activeColorMode?: 'light' | 'dark';
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
 };
 
 export type PortfolioAboutUsSectionSettings = PortfolioSectionCopy & PortfolioAboutUsPresentationSettings;
@@ -110,6 +116,7 @@ export const DEFAULT_ABOUT_US_PRESENTATION: PortfolioAboutUsPresentationSettings
   quoteSvgId: 'globe',
   quoteSvgUrls: DEFAULT_ABOUT_US_QUOTE_SVG_URLS,
   useHeroPalette: true,
+  colorModeOverride: 'auto',
 };
 
 export const PORTFOLIO_ABOUT_US_DESIGN_OPTIONS: {
@@ -573,6 +580,7 @@ export function mergeAboutUsPresentation(
       record.activeColorMode === 'dark' || record.activeColorMode === 'light'
         ? record.activeColorMode
         : base.activeColorMode,
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
   };
 }
 

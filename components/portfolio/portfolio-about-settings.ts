@@ -3,6 +3,10 @@ import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-pr
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
+  mergeSectionColorMode,
+  type PortfolioSectionColorMode,
+} from '@/components/portfolio/portfolio-section-color-mode';
+import {
   DEFAULT_ABOUT_COLOR_BINDINGS,
   DEFAULT_ABOUT_PALETTE,
   applyAboutPaletteToSettings,
@@ -299,6 +303,8 @@ export type PortfolioAboutPresentationSettings = PortfolioSectionBackgroundSetti
    * element `color` / `colorDark` pairs resolve correctly.
    */
   activeColorMode?: 'light' | 'dark';
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
   /** About-owned palette copy (same 8 tokens as Hero). */
   aboutPalette?: PortfolioAboutPalette;
   /** Which token each about color slot uses. */
@@ -574,6 +580,7 @@ export const DEFAULT_ABOUT_PRESENTATION: PortfolioAboutPresentationSettings = {
   twinColumnsSplit: 'equal',
   contentPairAlign: 'start',
   useHeroPalette: true,
+  colorModeOverride: 'auto',
   aboutPalette: { ...DEFAULT_ABOUT_PALETTE },
   aboutColorBindings: { ...DEFAULT_ABOUT_COLOR_BINDINGS },
   elementStyles: DEFAULT_ABOUT_ELEMENT_STYLES,
@@ -2201,6 +2208,7 @@ export function mergeAboutPresentation(
       base.contentPairAlign ?? 'start'
     ),
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
     aboutPalette: mergeAboutPalette(
       mergeAboutPalette(DEFAULT_ABOUT_PALETTE, base.aboutPalette),
       record.aboutPalette
