@@ -46,55 +46,47 @@ export const PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS: {
   {
     value: 'classic',
     label: 'Classic',
-    description: 'Floating bar — placement, width, and extras follow Layout / Extras.',
+    description: 'Follows the Layout / Extras settings.',
   },
   {
     value: 'editorial-bar',
     label: 'Editorial bar',
-    description:
-      'Full width: logo or name on the left, links in the center, contact button on the right (global gutter).',
+    description: 'Contact button in the global gutter.',
   },
   {
     value: 'floating-pill',
     label: 'Floating pill',
-    description:
-      'Neutral floating pill: logo on the left, links in the center, contrasted contact button on the right.',
+    description: 'Contact button in a contrast color.',
   },
   {
     value: 'nav-logo-social',
     label: 'Social nav',
-    description:
-      'Full width: links on the left, logo in the center, social icons on the right (up to 3).',
+    description: 'Up to 3 social icons shown.',
   },
   {
     value: 'center-logo-split',
     label: 'Split menu',
-    description:
-      'Full width: links split left and right of the logo, hero-bar style.',
+    description: 'Hero-bar style, links split around logo.',
   },
   {
     value: 'logo-left-nav-contact',
     label: 'Contact nav',
-    description:
-      'Full width: logo on the left, section links on the right, Contact button at the end of the bar.',
+    description: 'Contact button always at the outer edge.',
   },
   {
     value: 'case-overlay',
     label: 'Fullscreen menu',
-    description:
-      'Minimal bar with a Menu / Close toggle. Fullscreen editorial overlay with numbering and sub-links.',
+    description: 'Numbered links with sub-link support.',
   },
   {
     value: 'duten-panel',
     label: 'Docked panel',
-    description:
-      'Light rounded panel with links in columns, logo top-left, close button top-right.',
+    description: 'Optional large wordmark below the links.',
   },
   {
     value: 'half-panel-left',
     label: 'Side panel',
-    description:
-      'Menu icon top-right — the editorial drawer opens from the right (50%).',
+    description: 'Drawer opens at 50% width.',
   },
 ];
 

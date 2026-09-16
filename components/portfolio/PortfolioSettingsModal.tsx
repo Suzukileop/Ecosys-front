@@ -912,18 +912,27 @@ function ToggleRow({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-4">
+    <div className="flex items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-4">
       <span className="min-w-0">
-        <span className="block text-sm font-semibold text-neutral-900">{label}</span>
+        <span
+          className="block cursor-pointer text-sm font-semibold text-neutral-900"
+          onClick={() => onChange(!checked)}
+        >
+          {label}
+        </span>
         {description ? <span className="mt-1 block text-sm text-neutral-500">{description}</span> : null}
       </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-orange-600 focus:ring-orange-500"
-      />
-    </label>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className="mt-1 shrink-0"
+      >
+        <GlobalSwitchTrack checked={checked} />
+      </button>
+    </div>
   );
 }
 
@@ -1440,23 +1449,30 @@ function GlobalOrientationTargets({
         {PORTFOLIO_NAV_SECTION_META.map((section) => {
           const checked = targets[section.key];
           return (
-            <label
+            <div
               key={section.key}
-              className="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-neutral-200/80 bg-white px-4 py-3"
+              className="flex items-start justify-between gap-4 rounded-xl border border-neutral-200/80 bg-white px-4 py-3"
             >
               <span className="min-w-0">
-                <span className="block text-sm font-semibold text-neutral-900">{section.title}</span>
+                <span
+                  className="block cursor-pointer text-sm font-semibold text-neutral-900"
+                  onClick={() => onChange({ ...targets, [section.key]: !checked })}
+                >
+                  {section.title}
+                </span>
                 <span className="mt-0.5 block text-xs text-neutral-500">{section.description}</span>
               </span>
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={(event) =>
-                  onChange({ ...targets, [section.key]: event.target.checked })
-                }
-                className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-orange-600 focus:ring-orange-500"
-              />
-            </label>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={checked}
+                aria-label={section.title}
+                onClick={() => onChange({ ...targets, [section.key]: !checked })}
+                className="mt-1 shrink-0"
+              >
+                <GlobalSwitchTrack checked={checked} />
+              </button>
+            </div>
           );
         })}
       </div>
@@ -3024,17 +3040,19 @@ function OptionGrid<T extends string>({
 function NavItemCustomizer({
   sectionKey,
   title,
-  description,
   label,
   icon,
+  expanded,
+  onToggleExpanded,
   onLabelChange,
   onIconChange,
 }: {
   sectionKey: PortfolioNavSectionKey;
   title: string;
-  description: string;
   label: string;
   icon: PortfolioNavIconVariant;
+  expanded: boolean;
+  onToggleExpanded: () => void;
   onLabelChange: (label: string) => void;
   onIconChange: (icon: PortfolioNavIconVariant) => void;
 }) {
@@ -3044,82 +3062,100 @@ function NavItemCustomizer({
   const usesCustomLabel = label.trim().length > 0 && !presetValues.has(label);
 
   return (
-    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-bold text-neutral-950">{title}</p>
-          <p className="mt-1 text-xs text-neutral-500">{description}</p>
-        </div>
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-800 shadow-sm">
-          <PortfolioNavIcon variant={icon} className="h-5 w-5" />
-        </div>
-      </div>
+    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/50">
+      <button
+        type="button"
+        onClick={onToggleExpanded}
+        aria-expanded={expanded}
+        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-neutral-200/80 bg-white text-neutral-800">
+          <PortfolioNavIcon variant={icon} className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium text-neutral-950">
+            {label || title}
+          </span>
+        </span>
+        <svg
+          viewBox="0 0 20 20"
+          className={`h-4 w-4 shrink-0 text-neutral-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          aria-hidden
+        >
+          <path d="M5 7.5L10 12.5L15 7.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
 
-      <div className="space-y-4">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Menu name
-          </p>
-          <input
-            type="text"
-            value={label}
-            maxLength={32}
-            onChange={(event) => onLabelChange(event.target.value)}
-            placeholder="e.g. Projects, Expertise…"
-            className="mt-2 w-full rounded-xl border border-neutral-200/80 bg-white px-3 py-2.5 text-sm font-medium text-neutral-900 shadow-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-900/10"
-          />
-          <p className="mt-1.5 text-[11px] text-neutral-500">
-            {usesCustomLabel ? 'Custom label active.' : 'Quick suggestions:'}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {labelPresets.map((preset, presetIndex) => {
-              const active = label === preset.value;
-              return (
-                <button
-                  key={`${sectionKey}-label-${presetIndex}-${preset.value}`}
-                  type="button"
-                  onClick={() => onLabelChange(preset.value)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                    active
-                      ? 'bg-neutral-950 text-white'
-                      : 'border border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              );
-            })}
+      {expanded ? (
+        <div className="space-y-4 border-t border-neutral-200/80 px-4 pb-4 pt-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+              Menu name
+            </p>
+            <input
+              type="text"
+              value={label}
+              maxLength={32}
+              onChange={(event) => onLabelChange(event.target.value)}
+              placeholder="e.g. Projects, Expertise…"
+              className="mt-2 w-full rounded-xl border border-neutral-200/80 bg-white px-3 py-2.5 text-sm font-medium text-neutral-900 shadow-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-900/10"
+            />
+            <p className="mt-1.5 text-[11px] text-neutral-500">
+              {usesCustomLabel ? 'Custom label active.' : 'Quick suggestions:'}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {labelPresets.map((preset, presetIndex) => {
+                const active = label === preset.value;
+                return (
+                  <button
+                    key={`${sectionKey}-label-${presetIndex}-${preset.value}`}
+                    type="button"
+                    onClick={() => onLabelChange(preset.value)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      active
+                        ? 'bg-neutral-950 text-white'
+                        : 'border border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+              Icon ({iconOptions.length} options)
+            </p>
+            <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
+              {iconOptions.map((option) => {
+                const active = icon === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => onIconChange(option.value)}
+                    className={`flex flex-col items-center gap-1.5 rounded-xl border px-1.5 py-2.5 transition ${
+                      active
+                        ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
+                        : 'border-neutral-200/80 bg-white hover:border-neutral-300'
+                    }`}
+                  >
+                    <PortfolioNavIcon variant={option.value} className="h-5 w-5 text-neutral-800" />
+                    <span className="text-center text-[9px] font-semibold leading-tight text-neutral-600">
+                      {option.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Icon ({iconOptions.length} options)
-          </p>
-          <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
-            {iconOptions.map((option) => {
-              const active = icon === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => onIconChange(option.value)}
-                  className={`flex flex-col items-center gap-1.5 rounded-xl border px-1.5 py-2.5 transition ${
-                    active
-                      ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
-                      : 'border-neutral-200/80 bg-white hover:border-neutral-300'
-                  }`}
-                >
-                  <PortfolioNavIcon variant={option.value} className="h-5 w-5 text-neutral-800" />
-                  <span className="text-center text-[9px] font-semibold leading-tight text-neutral-600">
-                    {option.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      ) : null}
     </div>
   );
 }
@@ -3133,18 +3169,24 @@ function NavigationLabelsIconsPanel({
   itemIcons: PortfolioNavItemIcons;
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
 }) {
+  // All sections start collapsed; only one card is expanded at a time.
+  const [openSection, setOpenSection] = useState<PortfolioNavSectionKey | null>(null);
+
   return (
     <div className="space-y-4">
       <p className="pf-stack-block-label pf-stack-option-label">Menu labels & icons</p>
-      <div className="space-y-3">
+      <div className="space-y-2">
         {PORTFOLIO_NAV_SECTION_META.map((section) => (
           <NavItemCustomizer
             key={section.key}
             sectionKey={section.key}
             title={section.title}
-            description={section.description}
             label={itemLabels[section.key]}
             icon={itemIcons[section.key]}
+            expanded={openSection === section.key}
+            onToggleExpanded={() =>
+              setOpenSection((current) => (current === section.key ? null : section.key))
+            }
             onLabelChange={(nextLabel) =>
               onChange({ itemLabels: { ...itemLabels, [section.key]: nextLabel } })
             }
@@ -3419,7 +3461,7 @@ function NavLayoutDesignPreview({
             <span className="text-[7px] font-medium uppercase tracking-[0.12em] text-neutral-700">Menu</span>
           </div>
         </div>
-        <p className="mt-1.5 text-center text-[7px] text-neutral-400">La pilule se déplie en panneau</p>
+        <p className="mt-1.5 text-center text-[7px] text-neutral-400">The pill unfolds into a panel</p>
       </div>
     );
   }
@@ -3441,7 +3483,7 @@ function NavLayoutDesignPreview({
             </div>
           </div>
         </div>
-        <p className="py-1 text-center text-[6px] text-neutral-400">Icône menu en haut à droite</p>
+        <p className="py-1 text-center text-[6px] text-neutral-400">Menu icon top-right</p>
       </div>
     );
   }
@@ -3486,8 +3528,7 @@ function NavTriZoneSocialLinkPicker({
   if (options.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-        Aucun lien trouvé dans la section Links du profil. Ajoutez-les dans Creator Studio pour les
-        afficher dans la barre.
+        No links found — add some in Creator Studio &gt; Links first.
       </p>
     );
   }
@@ -3505,11 +3546,10 @@ function NavTriZoneSocialLinkPicker({
     <div className="space-y-3">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Liens affichés
+          Links shown
         </p>
         <p className="mt-1 text-sm text-neutral-500">
-          Choisissez jusqu&apos;à {maxLinks} liens de la section Links. Laissez tout désélectionné pour
-          afficher automatiquement les premiers liens disponibles.
+          Up to {maxLinks} — leave empty to auto-pick the first available.
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -3547,7 +3587,7 @@ function NavTriZoneSocialLinkPicker({
           onClick={() => onChange([])}
           className="text-sm text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
         >
-          Réinitialiser (affichage automatique)
+          Reset (automatic display)
         </button>
       ) : null}
     </div>
@@ -3576,15 +3616,15 @@ function NavTriZoneSocialLinkStyleEditor({
     <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Style des icônes de lien
+          Link icon style
         </p>
         <p className="mt-1 text-sm text-neutral-500">
-          Taille, espacement et rendu noir &amp; blanc des logos de profil (max. 3).
+          Size, spacing, and black &amp; white rendering (max. 3).
         </p>
       </div>
 
       <div className="space-y-2">
-        <p className="text-sm font-medium text-neutral-700">Taille</p>
+        <p className="text-sm font-medium text-neutral-700">Size</p>
         <div className="flex flex-wrap gap-2">
           {PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_SIZE_OPTIONS.map((option) => (
             <button
@@ -3600,7 +3640,7 @@ function NavTriZoneSocialLinkStyleEditor({
       </div>
 
       <div className="space-y-2">
-        <p className="text-sm font-medium text-neutral-700">Espacement</p>
+        <p className="text-sm font-medium text-neutral-700">Spacing</p>
         <div className="flex flex-wrap gap-2">
           {PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_GAP_OPTIONS.map((option) => (
             <button
@@ -3615,18 +3655,27 @@ function NavTriZoneSocialLinkStyleEditor({
         </div>
       </div>
 
-      <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-neutral-200/80 bg-neutral-50/60 px-3 py-2.5">
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200/80 bg-neutral-50/60 px-3 py-2.5">
         <div>
-          <p className="text-sm font-medium text-neutral-800">Noir &amp; blanc</p>
-          <p className="text-xs text-neutral-500">Désactive les couleurs de marque des plateformes.</p>
+          <p
+            className="cursor-pointer text-sm font-medium text-neutral-800"
+            onClick={() => onChange({ triZoneSocialLinkMonochrome: !monochrome })}
+          >
+            Black &amp; white
+          </p>
+          <p className="text-xs text-neutral-500">Disables each platform&apos;s brand colors.</p>
         </div>
-        <input
-          type="checkbox"
-          checked={monochrome}
-          onChange={(event) => onChange({ triZoneSocialLinkMonochrome: event.target.checked })}
-          className="h-4 w-4 rounded border-neutral-300"
-        />
-      </label>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={monochrome}
+          aria-label="Black & white"
+          onClick={() => onChange({ triZoneSocialLinkMonochrome: !monochrome })}
+          className="shrink-0"
+        >
+          <GlobalSwitchTrack checked={monochrome} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -3662,7 +3711,7 @@ function NavContactButtonProfileEditor({
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{title}</p>
 
       <label className="block text-sm">
-        <span className="mb-1 block font-medium text-neutral-700">Libellé</span>
+        <span className="mb-1 block font-medium text-neutral-700">Label</span>
         <input
           type="text"
           value={profile.label}
@@ -3674,7 +3723,7 @@ function NavContactButtonProfileEditor({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-neutral-700">Affichage</span>
+          <span className="mb-1 block font-medium text-neutral-700">Display</span>
           <select
             value={display}
             onChange={(event) =>
@@ -3684,13 +3733,13 @@ function NavContactButtonProfileEditor({
             }
             className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
           >
-            <option value="icon">Icône seule</option>
-            <option value="button">Bouton avec libellé</option>
+            <option value="icon">Icon only</option>
+            <option value="button">Button with label</option>
           </select>
         </label>
         {display === 'button' ? (
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-neutral-700">Position icône</span>
+            <span className="mb-1 block font-medium text-neutral-700">Icon position</span>
             <select
               value={iconPosition}
               onChange={(event) =>
@@ -3711,7 +3760,7 @@ function NavContactButtonProfileEditor({
       </div>
 
       <div className="space-y-2">
-        <p className="text-sm font-medium text-neutral-700">Cadre du bouton</p>
+        <p className="text-sm font-medium text-neutral-700">Button frame</p>
         <div className="flex flex-wrap gap-2">
           {PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS.map((option) => (
             <button
@@ -3729,7 +3778,7 @@ function NavContactButtonProfileEditor({
 
       {display === 'icon' || (display === 'button' && iconPosition !== 'none') ? (
         <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icône</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icon</p>
           <div className="flex flex-wrap gap-2">
             {iconOptions.map((option) => {
               const active = profile.icon === option.value;
@@ -3781,7 +3830,7 @@ function NavEditorialBarContactChannelsEditor({
   return (
     <div className="space-y-4">
       <NavContactButtonProfileEditor
-        title="Réglages · Téléphone"
+        title="Phone settings"
         profile={phoneProfile}
         editorialChannel="phone"
         onChange={(patch) =>
@@ -3792,7 +3841,7 @@ function NavEditorialBarContactChannelsEditor({
       />
 
       <NavContactButtonProfileEditor
-        title="Réglages · E-mail"
+        title="Email settings"
         profile={mailProfile}
         editorialChannel="mail"
         onChange={(patch) =>
@@ -3826,11 +3875,9 @@ function NavEditorialBarVisibilityToggles({
   return (
     <div className="space-y-2">
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Afficher dans la barre
+        Show in bar
       </p>
-      <p className="text-sm text-neutral-500">
-        Activez un ou plusieurs éléments — liens sociaux, téléphone et e-mail peuvent coexister.
-      </p>
+      <p className="text-sm text-neutral-500">Any combination — social, phone, and email can coexist.</p>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -3842,7 +3889,7 @@ function NavEditorialBarVisibilityToggles({
             })
           }
         >
-          Liens sociaux
+          Social links
         </button>
         <button
           type="button"
@@ -3854,7 +3901,7 @@ function NavEditorialBarVisibilityToggles({
             })
           }
         >
-          Téléphone
+          Phone
         </button>
         <button
           type="button"
@@ -3866,7 +3913,7 @@ function NavEditorialBarVisibilityToggles({
             })
           }
         >
-          E-mail
+          Email
         </button>
       </div>
     </div>
@@ -3894,7 +3941,7 @@ function NavContactButtonStyleEditor({
   return (
     <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-4">
       <label className="block text-sm">
-        <span className="mb-1 block font-medium text-neutral-700">Libellé</span>
+        <span className="mb-1 block font-medium text-neutral-700">Label</span>
         <input
           type="text"
           value={navigation.contactButtonLabel ?? 'Contact'}
@@ -3908,7 +3955,7 @@ function NavContactButtonStyleEditor({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-neutral-700">Affichage</span>
+          <span className="mb-1 block font-medium text-neutral-700">Display</span>
           <select
             value={display}
             onChange={(event) =>
@@ -3918,13 +3965,13 @@ function NavContactButtonStyleEditor({
             }
             className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
           >
-            <option value="icon">Icône seule</option>
-            <option value="button">Bouton avec libellé</option>
+            <option value="icon">Icon only</option>
+            <option value="button">Button with label</option>
           </select>
         </label>
         {display === 'button' ? (
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-neutral-700">Position icône</span>
+            <span className="mb-1 block font-medium text-neutral-700">Icon position</span>
             <select
               value={iconPosition}
               onChange={(event) =>
@@ -3945,7 +3992,7 @@ function NavContactButtonStyleEditor({
       </div>
 
       <div className="space-y-2">
-        <p className="text-sm font-medium text-neutral-700">Cadre du bouton</p>
+        <p className="text-sm font-medium text-neutral-700">Button frame</p>
         <div className="flex flex-wrap gap-2">
           {PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS.map((option) => (
             <button
@@ -3963,7 +4010,7 @@ function NavContactButtonStyleEditor({
 
       {display === 'icon' || (display === 'button' && iconPosition !== 'none') ? (
         <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icône</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icon</p>
           <div className="flex flex-wrap gap-2">
             {PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS.map((option) => {
               const active = (navigation.contactButtonIcon ?? 'phone') === option.value;
@@ -4011,10 +4058,10 @@ function NavCaseOverlayLogoEditor({
     <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Barre du menu plein écran
+          Fullscreen menu bar
         </p>
         <p className="mt-1 text-sm text-neutral-500">
-          Logo, emplacement du bouton menu et style du déclencheur.
+          Logo, menu button placement, and trigger style.
         </p>
       </div>
 
@@ -4022,11 +4069,11 @@ function NavCaseOverlayLogoEditor({
         label="Logo"
         url={navigation.customExtraLogoUrl ?? ''}
         onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
-        helperText="PNG, SVG ou WebP recommandé — fond transparent de préférence."
+        helperText="PNG or SVG, transparent background preferred."
       />
       <label className="block">
         <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-          Taille du logo
+          Logo size
         </span>
         <input
           type="range"
@@ -4049,39 +4096,17 @@ function NavCaseOverlayLogoEditor({
         </p>
       </label>
 
-      <OptionGrid
-        label="Emplacement menu / logo"
-        options={[
-          {
-            value: 'right',
-            label: 'Menu à droite',
-            description: 'Logo au centre, menu à droite (défaut).',
-          },
-          {
-            value: 'left',
-            label: 'Menu à gauche',
-            description: 'Menu à gauche, logo à droite — section active au centre.',
-          },
-        ]}
+      <GlobalPreviewCardGrid
+        label="Menu / logo placement"
+        options={NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS}
         value={navigation.caseOverlayMenuSide ?? 'right'}
         onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
         columns={2}
       />
 
-      <OptionGrid
-        label="Bouton menu"
-        options={[
-          {
-            value: 'text',
-            label: 'Texte',
-            description: 'Menu / Close avec animation.',
-          },
-          {
-            value: 'icon',
-            label: 'Icône',
-            description: 'Hamburger, points ou autre glyphe simple.',
-          },
-        ]}
+      <GlobalPreviewCardGrid
+        label="Menu button"
+        options={NAV_MENU_BUTTON_PREVIEW_OPTIONS}
         value={menuTrigger}
         onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
         columns={2}
@@ -4089,7 +4114,7 @@ function NavCaseOverlayLogoEditor({
 
       {menuTrigger === 'icon' ? (
         <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icône du menu</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Menu icon</p>
           <div className="flex flex-wrap gap-2">
             {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
               const active = (navigation.menuControlIcon ?? 'menu') === option.value;
@@ -4114,14 +4139,100 @@ function NavCaseOverlayLogoEditor({
       ) : null}
 
       <ToggleRow
-        label="Bascule clair / sombre dans la barre"
-        description="Affiche une icône soleil / lune à côté du bouton menu."
+        label="Light/dark toggle in bar"
+        description="Sun / moon icon next to the menu button."
         checked={showColorModeToggleInNav}
         onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
       />
     </div>
   );
 }
+
+/** 1 vs 2 stacked link columns — preview for Link columns. */
+function navLinkColumnsGlyph(columns: 1 | 2) {
+  return (active: boolean) => {
+    const cls = active ? 'pf-stack-mini-accent' : 'pf-stack-mini-mute';
+    if (columns === 1) {
+      return (
+        <>
+          <rect className={cls} x="24" y="10" width="16" height="2.6" rx="1.3" />
+          <rect className={cls} x="24" y="16.2" width="16" height="2.6" rx="1.3" />
+          <rect className={cls} x="24" y="22.4" width="16" height="2.6" rx="1.3" />
+        </>
+      );
+    }
+    return (
+      <>
+        <rect className={cls} x="12" y="10" width="14" height="2.6" rx="1.3" />
+        <rect className={cls} x="12" y="16.2" width="14" height="2.6" rx="1.3" />
+        <rect className={cls} x="12" y="22.4" width="14" height="2.6" rx="1.3" />
+        <rect className={cls} x="38" y="10" width="14" height="2.6" rx="1.3" />
+        <rect className={cls} x="38" y="16.2" width="14" height="2.6" rx="1.3" />
+        <rect className={cls} x="38" y="22.4" width="14" height="2.6" rx="1.3" />
+      </>
+    );
+  };
+}
+
+/** Logo dot + menu lines on opposite sides — preview for Menu / logo placement. */
+function navMenuLogoPlacementGlyph(side: 'left' | 'right') {
+  return (active: boolean) => {
+    const cls = active ? 'pf-stack-mini-accent' : 'pf-stack-mini-mute';
+    const logoX = side === 'right' ? 14 : 50;
+    const menuX = side === 'right' ? 34 : 10;
+    return (
+      <>
+        <circle className={cls} cx={logoX} cy="17" r="4" />
+        <rect className={cls} x={menuX} y="12.6" width="16" height="2.4" rx="1.2" />
+        <rect className={cls} x={menuX} y="18.2" width="16" height="2.4" rx="1.2" />
+      </>
+    );
+  };
+}
+
+/** "Menu" word vs hamburger bars — preview for Menu button. */
+function navMenuButtonGlyph(mode: 'text' | 'icon') {
+  return (active: boolean) => {
+    const cls = active ? 'pf-stack-mini-accent' : 'pf-stack-mini-mute';
+    if (mode === 'icon') {
+      return (
+        <>
+          <rect className={cls} x="24" y="12" width="16" height="2.2" rx="1.1" />
+          <rect className={cls} x="24" y="16.4" width="16" height="2.2" rx="1.1" />
+          <rect className={cls} x="24" y="20.8" width="16" height="2.2" rx="1.1" />
+        </>
+      );
+    }
+    return (
+      <text x="32" y="20" textAnchor="middle" fontSize="9" fontWeight="600" className="pf-stack-mini-type">
+        Menu
+      </text>
+    );
+  };
+}
+
+const NAV_LINK_COLUMNS_PREVIEW_OPTIONS: { value: '2' | '1'; label: string; glyph: (active: boolean) => ReactNode }[] = [
+  { value: '2', label: 'Link columns', glyph: navLinkColumnsGlyph(2) },
+  { value: '1', label: 'Link column', glyph: navLinkColumnsGlyph(1) },
+];
+
+const NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS: {
+  value: 'left' | 'right';
+  label: string;
+  glyph: (active: boolean) => ReactNode;
+}[] = [
+  { value: 'right', label: 'Menu right', glyph: navMenuLogoPlacementGlyph('right') },
+  { value: 'left', label: 'Menu left', glyph: navMenuLogoPlacementGlyph('left') },
+];
+
+const NAV_MENU_BUTTON_PREVIEW_OPTIONS: {
+  value: 'text' | 'icon';
+  label: string;
+  glyph: (active: boolean) => ReactNode;
+}[] = [
+  { value: 'text', label: 'Text', glyph: navMenuButtonGlyph('text') },
+  { value: 'icon', label: 'Icon', glyph: navMenuButtonGlyph('icon') },
+];
 
 function NavDutenPanelEditor({
   navigation,
@@ -4152,10 +4263,10 @@ function NavDutenPanelEditor({
     <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Panneau Duten
+          Docked panel
         </p>
         <p className="mt-1 text-sm text-neutral-500">
-          Panneau clair arrondi : logo, colonnes de liens, marge extérieure et déclencheur menu.
+          Rounded light panel with logo, link columns, and a menu trigger.
         </p>
       </div>
 
@@ -4163,11 +4274,11 @@ function NavDutenPanelEditor({
         label="Logo"
         url={navigation.customExtraLogoUrl ?? ''}
         onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
-        helperText="PNG, SVG ou WebP recommandé — fond transparent de préférence."
+        helperText="PNG or SVG, transparent background preferred."
       />
       <label className="block">
         <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-          Taille du logo
+          Logo size
         </span>
         <input
           type="range"
@@ -4190,60 +4301,25 @@ function NavDutenPanelEditor({
         </p>
       </label>
 
-      <OptionGrid
-        label="Colonnes de liens"
-        options={[
-          {
-            value: '2',
-            label: '2 colonnes',
-            description: 'Grille éditoriale comme la référence Duten.',
-          },
-          {
-            value: '1',
-            label: '1 colonne',
-            description: 'Liste verticale pour peu de sections.',
-          },
-        ]}
+      <GlobalPreviewCardGrid
+        label="Link columns"
+        options={NAV_LINK_COLUMNS_PREVIEW_OPTIONS}
         value={String(navigation.dutenPanelColumns ?? 2)}
-        onChange={(value) =>
-          onChange({ dutenPanelColumns: value === '1' ? 1 : 2 })
-        }
+        onChange={(value) => onChange({ dutenPanelColumns: value === '1' ? 1 : 2 })}
         columns={2}
       />
 
-      <OptionGrid
-        label="Emplacement menu / logo"
-        options={[
-          {
-            value: 'right',
-            label: 'Menu à droite',
-            description: 'Logo au centre, menu à droite (défaut).',
-          },
-          {
-            value: 'left',
-            label: 'Menu à gauche',
-            description: 'Menu à gauche, logo à droite.',
-          },
-        ]}
+      <GlobalPreviewCardGrid
+        label="Menu / logo placement"
+        options={NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS}
         value={navigation.caseOverlayMenuSide ?? 'right'}
         onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
         columns={2}
       />
 
-      <OptionGrid
-        label="Bouton menu"
-        options={[
-          {
-            value: 'text',
-            label: 'Texte',
-            description: 'Menu / Close avec animation.',
-          },
-          {
-            value: 'icon',
-            label: 'Icône',
-            description: 'Hamburger, points ou autre glyphe simple.',
-          },
-        ]}
+      <GlobalPreviewCardGrid
+        label="Menu button"
+        options={NAV_MENU_BUTTON_PREVIEW_OPTIONS}
         value={menuTrigger}
         onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
         columns={2}
@@ -4251,7 +4327,7 @@ function NavDutenPanelEditor({
 
       {menuTrigger === 'icon' ? (
         <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icône du menu</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Menu icon</p>
           <div className="flex flex-wrap gap-2">
             {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
               const active = (navigation.menuControlIcon ?? 'menu') === option.value;
@@ -4278,10 +4354,10 @@ function NavDutenPanelEditor({
       <div className="space-y-3 border-t border-neutral-200/80 pt-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Mot d&apos;affichage
+            Display word
           </p>
           <p className="mt-1 text-sm text-neutral-500">
-            Grand mot personnalisable sous les liens — comme un sigle ou un nom de marque.
+            Large custom word below the links — like a wordmark.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -4290,13 +4366,13 @@ function NavDutenPanelEditor({
             className={chipClass(showHeroWord)}
             onClick={() => onChange({ dutenPanelShowHeroWord: !showHeroWord })}
           >
-            Afficher le mot
+            Show word
           </button>
         </div>
         {showHeroWord ? (
           <label className="block">
             <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-              Texte affiché
+              Displayed text
             </span>
             <input
               type="text"
@@ -4308,20 +4384,16 @@ function NavDutenPanelEditor({
               maxLength={32}
               className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
             />
-            <p className="mt-1 text-xs text-neutral-500">
-              Jusqu&apos;à 32 caractères — affiché en très grande taille en bas du panneau.
-            </p>
+            <p className="mt-1 text-xs text-neutral-500">Up to 32 characters, shown very large.</p>
           </label>
         ) : null}
       </div>
 
       <div className="space-y-2 border-t border-neutral-200/80 pt-4">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Bas du panneau ouvert
+          Open panel footer
         </p>
-        <p className="text-sm text-neutral-500">
-          Contact et réseaux sociaux en bas du menu déplié — activables séparément.
-        </p>
+        <p className="text-sm text-neutral-500">Contact and social links, enabled separately.</p>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -4350,8 +4422,8 @@ function NavDutenPanelEditor({
       ) : null}
 
       <ToggleRow
-        label="Bascule clair / sombre dans le panneau"
-        description="Affiche une icône soleil / lune à côté du bouton menu."
+        label="Light/dark toggle in panel"
+        description="Sun / moon icon next to the menu button."
         checked={showColorModeToggleInNav}
         onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
       />
@@ -4387,10 +4459,10 @@ function NavHalfPanelEditor({
     <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Demi-panneau droit
+          Side panel
         </p>
         <p className="mt-1 text-sm text-neutral-500">
-          Icône menu en haut à droite — tiroir éditorial depuis la droite (50 %), contact et réseaux en bas.
+          Top-right icon opens a 50%-wide drawer from the right.
         </p>
       </div>
 
@@ -4398,11 +4470,11 @@ function NavHalfPanelEditor({
         label="Logo"
         url={navigation.customExtraLogoUrl ?? ''}
         onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
-        helperText="PNG, SVG ou WebP recommandé — fond transparent de préférence."
+        helperText="PNG or SVG, transparent background preferred."
       />
       <label className="block">
         <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-          Taille du logo
+          Logo size
         </span>
         <input
           type="range"
@@ -4427,7 +4499,7 @@ function NavHalfPanelEditor({
 
       <label className="block">
         <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-          Titre au-dessus des liens
+          Title above the links
         </span>
         <input
           type="text"
@@ -4438,60 +4510,25 @@ function NavHalfPanelEditor({
         />
       </label>
 
-      <OptionGrid
-        label="Colonnes de liens"
-        options={[
-          {
-            value: '2',
-            label: '2 colonnes',
-            description: 'Grille éditoriale comme la référence.',
-          },
-          {
-            value: '1',
-            label: '1 colonne',
-            description: 'Liste verticale pour peu de sections.',
-          },
-        ]}
+      <GlobalPreviewCardGrid
+        label="Link columns"
+        options={NAV_LINK_COLUMNS_PREVIEW_OPTIONS}
         value={String(navigation.dutenPanelColumns ?? 2)}
-        onChange={(value) =>
-          onChange({ dutenPanelColumns: value === '1' ? 1 : 2 })
-        }
+        onChange={(value) => onChange({ dutenPanelColumns: value === '1' ? 1 : 2 })}
         columns={2}
       />
 
-      <OptionGrid
-        label="Emplacement menu / logo"
-        options={[
-          {
-            value: 'right',
-            label: 'Menu à droite',
-            description: 'Logo au centre, menu à droite (défaut).',
-          },
-          {
-            value: 'left',
-            label: 'Menu à gauche',
-            description: 'Menu à gauche, logo à droite.',
-          },
-        ]}
+      <GlobalPreviewCardGrid
+        label="Menu / logo placement"
+        options={NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS}
         value={navigation.caseOverlayMenuSide ?? 'right'}
         onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
         columns={2}
       />
 
-      <OptionGrid
-        label="Bouton menu"
-        options={[
-          {
-            value: 'text',
-            label: 'Texte',
-            description: 'Menu / Close avec animation.',
-          },
-          {
-            value: 'icon',
-            label: 'Icône',
-            description: 'Hamburger, points ou autre glyphe simple.',
-          },
-        ]}
+      <GlobalPreviewCardGrid
+        label="Menu button"
+        options={NAV_MENU_BUTTON_PREVIEW_OPTIONS}
         value={menuTrigger}
         onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
         columns={2}
@@ -4499,7 +4536,7 @@ function NavHalfPanelEditor({
 
       {menuTrigger === 'icon' ? (
         <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icône du menu</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Menu icon</p>
           <div className="flex flex-wrap gap-2">
             {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
               const active = (navigation.menuControlIcon ?? 'menu') === option.value;
@@ -4525,7 +4562,7 @@ function NavHalfPanelEditor({
 
       <div className="space-y-2 border-t border-neutral-200/80 pt-4">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Bas du panneau ouvert
+          Open panel footer
         </p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -4555,8 +4592,8 @@ function NavHalfPanelEditor({
       ) : null}
 
       <ToggleRow
-        label="Bascule clair / sombre dans le panneau"
-        description="Affiche une icône soleil / lune à côté du bouton menu."
+        label="Light/dark toggle in panel"
+        description="Sun / moon icon next to the menu button."
         checked={showColorModeToggleInNav}
         onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
       />
@@ -4584,11 +4621,9 @@ function NavFloatingPillVisibilityToggles({
   return (
     <div className="space-y-2">
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Afficher dans la capsule
+        Show in pill
       </p>
-      <p className="text-sm text-neutral-500">
-        Le logo est masqué par défaut. Activez logo et/ou contact selon vos besoins.
-      </p>
+      <p className="text-sm text-neutral-500">Logo is hidden by default — enable logo and/or contact.</p>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -4636,15 +4671,12 @@ function NavFloatingPillMenuEditor({
     <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Menu de navigation
+          Navigation menu
         </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Affichage des liens de section au centre de la capsule — texte ou icônes seules (pas les
-          liens sociaux). Sur mobile : barre logo pleine largeur ou tiroir menu (réglage dans Général).
-        </p>
+        <p className="mt-1 text-sm text-neutral-500">Section links at the center — text or icons only.</p>
       </div>
       <OptionGrid
-        label="Style du menu"
+        label="Menu style"
         options={PORTFOLIO_NAV_FLOATING_PILL_MENU_MODE_OPTIONS}
         value={menuMode}
         onChange={(contentMode) => onChange({ contentMode })}
@@ -4652,8 +4684,8 @@ function NavFloatingPillMenuEditor({
       />
       <NavFloatingPillVisibilityToggles navigation={navigation} onChange={onChange} />
       <ToggleRow
-        label="Bascule clair / sombre dans la capsule"
-        description="Affiche une icône soleil / lune à droite du menu, avant le bouton contact."
+        label="Light/dark toggle in pill"
+        description="Sun / moon icon to the right of the menu, before the contact button."
         checked={showColorModeToggleInNav}
         onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
       />
@@ -4676,11 +4708,9 @@ function NavEditorialBarSlotEditor({
     <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Zone droite (Barre éditoriale)
+          Right zone (Editorial bar)
         </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Liens sociaux, téléphone et e-mail — affichez ce que vous voulez, en même temps si besoin.
-        </p>
+        <p className="mt-1 text-sm text-neutral-500">Social links, phone, and email — any combination.</p>
       </div>
 
       <NavEditorialBarVisibilityToggles navigation={navigation} onChange={onChange} />
@@ -4722,11 +4752,9 @@ function NavTriZoneVisibilityToggles({
   return (
     <div className="space-y-2">
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Afficher dans la barre
+        Show in bar
       </p>
-      <p className="text-sm text-neutral-500">
-        Activez un ou plusieurs éléments — liens sociaux, téléphone et e-mail peuvent coexister.
-      </p>
+      <p className="text-sm text-neutral-500">Any combination — social, phone, and email can coexist.</p>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -4738,7 +4766,7 @@ function NavTriZoneVisibilityToggles({
             })
           }
         >
-          Liens sociaux
+          Social links
         </button>
         <button
           type="button"
@@ -4750,7 +4778,7 @@ function NavTriZoneVisibilityToggles({
             })
           }
         >
-          Téléphone
+          Phone
         </button>
         <button
           type="button"
@@ -4762,7 +4790,7 @@ function NavTriZoneVisibilityToggles({
             })
           }
         >
-          E-mail
+          Email
         </button>
       </div>
     </div>
@@ -4784,11 +4812,9 @@ function NavTriZoneSideSlotEditor({
     <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Zone latérale (Nav · logo · social)
+          Side zone (Nav · logo · social)
         </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Liens sociaux, téléphone et e-mail — affichez ce que vous voulez, en même temps si besoin.
-        </p>
+        <p className="mt-1 text-sm text-neutral-500">Social links, phone, and email — any combination.</p>
       </div>
 
       <NavTriZoneVisibilityToggles navigation={navigation} onChange={onChange} />
@@ -4829,12 +4855,9 @@ function NavLogoLeftContactPlacementEditor({
     <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Placement logo / navigation
+          Logo / navigation placement
         </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Logo à gauche et menus + contact à droite, ou l&apos;inverse. Le bouton Contact reste
-          toujours au bord extérieur (premier élément côté gauche, dernier côté droite).
-        </p>
+        <p className="mt-1 text-sm text-neutral-500">Contact stays at the outer edge either way.</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -4843,14 +4866,14 @@ function NavLogoLeftContactPlacementEditor({
           className={modeButtonClass(logoSide === 'left')}
           onClick={() => onChange({ logoLeftNavContactLogoSide: 'left' })}
         >
-          Logo à gauche
+          Logo left
         </button>
         <button
           type="button"
           className={modeButtonClass(logoSide === 'right')}
           onClick={() => onChange({ logoLeftNavContactLogoSide: 'right' })}
         >
-          Logo à droite
+          Logo right
         </button>
       </div>
 
@@ -4885,11 +4908,9 @@ function NavLogoLeftContactPlacementEditor({
       <div className="space-y-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Bouton Contact
+            Contact button
           </p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Libellé, icône, cadre et mode d&apos;affichage — comme sur les autres designs de barre.
-          </p>
+          <p className="mt-1 text-sm text-neutral-500">Same options as the other bar designs.</p>
         </div>
         <NavContactButtonStyleEditor navigation={navigation} onChange={onChange} />
       </div>
@@ -4937,17 +4958,14 @@ function NavSplitLogoSectionEditor({
     <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Répartition gauche / droite
+          Left / right split
         </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Choisissez quels liens de section apparaissent à gauche ou à droite du logo centré.
-          Laissez tout en automatique pour une répartition 50/50 selon l&apos;ordre des sections.
-        </p>
+        <p className="mt-1 text-sm text-neutral-500">Auto splits 50/50 by section order.</p>
       </div>
 
       {autoSplit ? (
         <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-500">
-          Répartition automatique active.
+          Automatic split active.
         </p>
       ) : (
         <button
@@ -4955,7 +4973,7 @@ function NavSplitLogoSectionEditor({
           onClick={() => onChange({ splitNavLeftSectionKeys: [] })}
           className="text-sm text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
         >
-          Réinitialiser (répartition automatique)
+          Reset (automatic split)
         </button>
       )}
 
@@ -4975,14 +4993,14 @@ function NavSplitLogoSectionEditor({
                   className={modeButtonClass(!autoSplit && onLeft)}
                   onClick={() => setSide(section.key, 'left')}
                 >
-                  Gauche
+                  Left
                 </button>
                 <button
                   type="button"
                   className={modeButtonClass(!autoSplit && !onLeft)}
                   onClick={() => setSide(section.key, 'right')}
                 >
-                  Droite
+                  Right
                 </button>
               </div>
             </div>
@@ -5065,12 +5083,9 @@ function NavLookPresetGrid({
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Maquettes navigation
+        Navigation looks
       </p>
-      <p className="mt-1 text-sm text-neutral-500">
-        Structure réutilisable (classic + icons + active style). Survolez les pastilles grises pour
-        prévisualiser le hover — couleurs liées à la palette Nav.
-      </p>
+      <p className="mt-1 text-sm text-neutral-500">Hover a preview to see its active/hover state.</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {PORTFOLIO_NAV_LOOK_PRESET_OPTIONS.map((option) => {
           const active = option.value === value;
@@ -5461,7 +5476,7 @@ function NavMenuGroupsEditor({
   );
 }
 
-export function NavigationPanel({
+function NavigationPanel({
   navigation,
   onChange,
   navSocialLinkOptions = [],
@@ -5668,10 +5683,6 @@ export function NavigationPanel({
             </GlobalSection>
           ) : null}
 
-          <p className="pf-gs-section text-sm text-neutral-500">
-            Visible sections populate this menu —{' '}
-            <span className="font-medium text-neutral-700">reorder in Global → Section order</span>.
-          </p>
         </div>
       ) : null}
 
