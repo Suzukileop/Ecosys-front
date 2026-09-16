@@ -1977,12 +1977,35 @@ function GlobalBlockLabel({ children }: { children: ReactNode }) {
 
 /** Uniform section wrapper: divider + 32px breathing room before the label, 12px between
  *  the label and its content — applied before every Level-3 section, not ad hoc per block. */
-function GlobalSection({ label, children }: { label: string; children: ReactNode }) {
+function GlobalSection({
+  label,
+  action,
+  children,
+}: {
+  label: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div className="pf-gs-section">
-      <GlobalBlockLabel>{label}</GlobalBlockLabel>
+      <div className="pf-gs-section-header flex items-center justify-between gap-3">
+        <GlobalBlockLabel>{label}</GlobalBlockLabel>
+        {action}
+      </div>
       <div className="space-y-4">{children}</div>
     </div>
+  );
+}
+
+function GlobalResetTokensButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="pf-stack-block-label shrink-0 underline decoration-dotted underline-offset-2 transition hover:text-neutral-200"
+    >
+      Reset
+    </button>
   );
 }
 
@@ -2758,6 +2781,20 @@ function GlobalSettingsPanel({
   const activeMode = (global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark';
   const activeFamily = inferPaletteFamily(global);
 
+  // Remembers the last non-custom family so "Reset" can restore that exact pair —
+  // editing a token sets paletteFamily to 'custom', which would otherwise lose it.
+  const lastFamilyRef = useRef<Exclude<typeof activeFamily, 'custom'>>('classic');
+  useEffect(() => {
+    if (activeFamily !== 'custom') lastFamilyRef.current = activeFamily;
+  }, [activeFamily]);
+
+  const handleResetPaletteTokens = () => {
+    const preset =
+      PALETTE_FAMILY_OPTIONS.find((family) => family.id === lastFamilyRef.current) ??
+      PALETTE_FAMILY_OPTIONS.find((family) => family.id === 'classic')!;
+    onGlobalPalettePairChange(preset.dark, preset.light, preset.id);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 border-b border-neutral-200/80 pb-5 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
@@ -2872,14 +2909,16 @@ function GlobalSettingsPanel({
               })}
             </div>
 
-            {activeFamily === 'custom' ? (
-              <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
-                Custom pair — pick a family above to reset to a named pair.
-              </p>
-            ) : null}
           </GlobalSection>
 
-          <GlobalSection label="Active mode tokens">
+          <GlobalSection
+            label="Active mode tokens"
+            action={
+              activeFamily === 'custom' ? (
+                <GlobalResetTokensButton onClick={handleResetPaletteTokens} />
+              ) : null
+            }
+          >
             <div className="grid gap-4 sm:grid-cols-2">
               {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
                 <GlobalTokenSwatch
@@ -5594,7 +5633,7 @@ function NavigationOptionGrid<T extends string>({
   );
 }
 
-export function NavigationPanel({
+function NavigationPanel({
   navigation,
   onChange,
   navSocialLinkOptions = [],
@@ -5609,7 +5648,7 @@ export function NavigationPanel({
 }) {
   const [navTab, setNavTab] = useState<NavSettingsTab>('general');
   const navMode = navigation.navMode ?? 'default';
-  const usesFloatingNavChrome = navMode === 'default';
+  const usesFloatingNavChrome = navMode === 'default' || navMode === 'pages';
 
   return (
     <div className="space-y-6">
