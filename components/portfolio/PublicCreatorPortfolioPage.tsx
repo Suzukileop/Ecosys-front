@@ -1147,12 +1147,26 @@ export function PublicCreatorPortfolioPage({
     () => resolveExperienceSectionSubtitle(settings.experience),
     [settings.experience]
   );
+  const galleryPalette = useMemo(
+    () =>
+      resolveSectionPalette(settings.gallery.colorModeOverride, {
+        auto: activeGlobalPalette,
+        light: lightGlobalPalette,
+        dark: darkGlobalPalette,
+      }),
+    [
+      settings.gallery.colorModeOverride,
+      activeGlobalPalette,
+      lightGlobalPalette,
+      darkGlobalPalette,
+    ]
+  );
   const galleryPresentation = useMemo(() => {
     const picked = pickGalleryPresentationSettings(settings.gallery);
     return picked.useHeroPalette === false
       ? picked
-      : { ...picked, ...applyGalleryPaletteToSettings(picked, heroPalette) };
-  }, [settings.gallery, heroPalette]);
+      : { ...picked, ...applyGalleryPaletteToSettings(picked, galleryPalette) };
+  }, [settings.gallery, galleryPalette]);
   const gallerySectionTitle = useMemo(
     () => resolveGallerySectionTitle(settings.gallery),
     [settings.gallery]
@@ -1241,9 +1255,18 @@ export function PublicCreatorPortfolioPage({
     () => resolveServicesSectionSubtitle(settings.services),
     [settings.services]
   );
+  const faqPalette = useMemo(
+    () =>
+      resolveSectionPalette(settings.faq.colorModeOverride, {
+        auto: activeGlobalPalette,
+        light: lightGlobalPalette,
+        dark: darkGlobalPalette,
+      }),
+    [settings.faq.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+  );
   const faqPresentation = useMemo(
-    () => applyHeroPaletteToFaq(pickFaqPresentationSettings(settings.faq), heroPalette),
-    [settings.faq, heroPalette]
+    () => applyHeroPaletteToFaq(pickFaqPresentationSettings(settings.faq), faqPalette),
+    [settings.faq, faqPalette]
   );
   const faqSectionTitle = useMemo(() => resolveFaqSectionTitle(settings.faq), [settings.faq]);
   const faqSectionSubtitle = useMemo(() => resolveFaqSectionSubtitle(settings.faq), [settings.faq]);
@@ -1385,12 +1408,29 @@ export function PublicCreatorPortfolioPage({
     () => resolveAboutUsSectionSubtitle(settings.aboutUs),
     [settings.aboutUs]
   );
+  const contactPalette = useMemo(
+    () =>
+      resolveSectionPalette(settings.contact.colorModeOverride, {
+        auto: activeGlobalPalette,
+        light: lightGlobalPalette,
+        dark: darkGlobalPalette,
+      }),
+    [
+      settings.contact.colorModeOverride,
+      activeGlobalPalette,
+      lightGlobalPalette,
+      darkGlobalPalette,
+    ]
+  );
   const contactPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToContact(pickContactPresentationSettings(settings.contact), heroPalette),
-      activeColorMode: (settings.global.colorMode ?? 'dark') as 'light' | 'dark',
+      ...applyHeroPaletteToContact(pickContactPresentationSettings(settings.contact), contactPalette),
+      activeColorMode: resolveSectionActiveMode(
+        settings.contact.colorModeOverride,
+        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+      ),
     }),
-    [settings.contact, settings.global.colorMode, heroPalette]
+    [settings.contact, settings.global.colorMode, contactPalette]
   );
   const contactSectionTitle = useMemo(
     () => resolveContactSectionTitle(settings.contact),
@@ -1400,10 +1440,19 @@ export function PublicCreatorPortfolioPage({
     () => resolveContactSectionSubtitle(settings.contact, profile.responseTimeLabel),
     [settings.contact, profile.responseTimeLabel]
   );
+  const footerPalette = useMemo(
+    () =>
+      resolveSectionPalette(settings.footer.colorModeOverride, {
+        auto: activeGlobalPalette,
+        light: lightGlobalPalette,
+        dark: darkGlobalPalette,
+      }),
+    [settings.footer.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+  );
   const footerPresentation = useMemo(
     () =>
-      applyHeroPaletteToFooter(pickFooterPresentationSettings(settings.footer), heroPalette),
-    [settings.footer, heroPalette]
+      applyHeroPaletteToFooter(pickFooterPresentationSettings(settings.footer), footerPalette),
+    [settings.footer, footerPalette]
   );
   const footerNavClearanceClass = useMemo(
     () =>

@@ -8,6 +8,10 @@ import {
 import type { PortfolioSectionCopy } from '@/components/portfolio/portfolio-settings-types';
 import type { PortfolioHeroPalette } from '@/components/portfolio/portfolio-hero-palette-settings';
 import type { PortfolioGalleryColorBindings } from '@/components/portfolio/portfolio-gallery-palette-settings';
+import {
+  mergeSectionColorMode,
+  type PortfolioSectionColorMode,
+} from '@/components/portfolio/portfolio-section-color-mode';
 
 export type PortfolioGalleryDesign =
   | 'framed-grid'
@@ -94,6 +98,8 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   overlayColor: string;
   overlayOpacity: number;
   useHeroPalette: boolean;
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
   galleryPalette?: PortfolioHeroPalette;
   galleryColorBindings?: PortfolioGalleryColorBindings;
   maxWidth: PortfolioGalleryMaxWidth;
@@ -303,6 +309,7 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   overlayColor: '#000000',
   overlayOpacity: 46,
   useHeroPalette: true,
+  colorModeOverride: 'auto',
   maxWidth: 'full',
   placement: 'center',
   showCarouselNav: true,
@@ -428,6 +435,7 @@ export function mergeGalleryPresentation(
     overlayColor: color(record.overlayColor, base.overlayColor),
     overlayOpacity: clamp(record.overlayOpacity, 0, 90, base.overlayOpacity),
     useHeroPalette: typeof record.useHeroPalette === 'boolean' ? record.useHeroPalette : base.useHeroPalette,
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
     galleryPalette:
       record.galleryPalette && typeof record.galleryPalette === 'object'
         ? (record.galleryPalette as PortfolioHeroPalette)

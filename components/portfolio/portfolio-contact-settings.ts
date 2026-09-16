@@ -3,6 +3,10 @@ import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-pr
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
+  mergeSectionColorMode,
+  type PortfolioSectionColorMode,
+} from '@/components/portfolio/portfolio-section-color-mode';
+import {
   DEFAULT_CONTACT_COLOR_BINDINGS,
   mergeContactColorBindings,
   type PortfolioContactColorBindings,
@@ -397,6 +401,8 @@ export type PortfolioContactPresentationSettings = PortfolioSectionBackgroundSet
    * Not persisted in settings JSON.
    */
   activeColorMode?: 'light' | 'dark';
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
   contactFormTitle: string;
   contactFormSubmitLabel: string;
   contactFormPlacement: PortfolioContactFormPlacement;
@@ -525,6 +531,7 @@ export const DEFAULT_CONTACT_PRESENTATION: PortfolioContactPresentationSettings 
   channelCardsBorder: 'thin',
   channelCardsBorderColor: DEFAULT_CONTACT_CARD_BORDER_COLOR,
   useHeroPalette: false,
+  colorModeOverride: 'auto',
   contactColorBindings: { ...DEFAULT_CONTACT_COLOR_BINDINGS },
   elementStyles: DEFAULT_CONTACT_ELEMENT_STYLES,
 };
@@ -2195,6 +2202,7 @@ export function mergeContactPresentation(
       base.channelCardsBorderColor ?? DEFAULT_CONTACT_CARD_BORDER_COLOR
     ),
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
     contactColorBindings: mergeContactColorBindings(
       mergeContactColorBindings(DEFAULT_CONTACT_COLOR_BINDINGS, base.contactColorBindings),
       record.contactColorBindings

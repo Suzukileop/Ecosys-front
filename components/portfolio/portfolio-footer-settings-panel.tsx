@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   PORTFOLIO_FOOTER_CTA_BUTTONS_ALIGN_OPTIONS,
   PORTFOLIO_FOOTER_CONTACT_CTA_DESIGN_OPTIONS,
@@ -567,6 +568,10 @@ export function FooterSettingsPanel({
                 )
               )
             }
+          />
+          <SectionColorModeControl
+            value={footer.colorModeOverride}
+            onChange={(colorModeOverride) => onChange(asFooterPatch({ colorModeOverride }))}
           />
           {footer.useHeroPalette ? (
             <FooterToggleRow

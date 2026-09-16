@@ -3,6 +3,10 @@ import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-pr
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
+  mergeSectionColorMode,
+  type PortfolioSectionColorMode,
+} from '@/components/portfolio/portfolio-section-color-mode';
+import {
   isPortfolioListMarkerSize,
   isPortfolioListMarkerSource,
   isPortfolioListMarkerStyle,
@@ -187,6 +191,8 @@ export type PortfolioFaqPresentationSettings = PortfolioSectionBackgroundSetting
   answerFlushWithQuestion: boolean;
   /** When true, section colors follow the Hero semantic palette. */
   useHeroPalette: boolean;
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
   /** FAQ-owned palette copy (same 8 tokens as Hero). */
   faqPalette?: PortfolioFaqPalette;
   /** Which token each FAQ color slot uses. */
@@ -308,6 +314,7 @@ export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   illustrationPlacement: 'right',
   answerFlushWithQuestion: true,
   useHeroPalette: true,
+  colorModeOverride: 'auto',
   faqPalette: { ...DEFAULT_FAQ_PALETTE },
   faqColorBindings: { ...DEFAULT_FAQ_COLOR_BINDINGS },
   elementStyles: DEFAULT_FAQ_ELEMENT_STYLES,
@@ -1417,6 +1424,7 @@ export function mergeFaqPresentation(
         ? record.answerFlushWithQuestion
         : base.answerFlushWithQuestion ?? false,
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
     faqPalette: mergeFaqPalette(
       mergeFaqPalette(DEFAULT_FAQ_PALETTE, base.faqPalette),
       record.faqPalette

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   PORTFOLIO_LIST_MARKER_SOURCE_OPTIONS,
   PORTFOLIO_LIST_MARKER_STYLE_OPTIONS,
@@ -302,6 +303,10 @@ export function FaqSettingsPanel({
                 )
               )
             }
+          />
+          <SectionColorModeControl
+            value={faq.colorModeOverride}
+            onChange={(colorModeOverride) => onChange(asFaqPatch({ colorModeOverride }))}
           />
           <FaqOptionGrid
             label="Design"

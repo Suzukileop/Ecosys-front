@@ -2,6 +2,10 @@ import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
+  mergeSectionColorMode,
+  type PortfolioSectionColorMode,
+} from '@/components/portfolio/portfolio-section-color-mode';
+import {
   DEFAULT_FOOTER_COLOR_BINDINGS,
   DEFAULT_FOOTER_PALETTE,
   mergeFooterColorBindings,
@@ -467,6 +471,8 @@ export type PortfolioFooterPresentationSettings = PortfolioSectionBackgroundSett
   patternOpacity: number;
   /** When true, section colors follow the Hero semantic palette. */
   useHeroPalette: boolean;
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
   /**
    * When true (and palette is on), keep the snapshotted footer palette colors
    * even if Global switches between dark / light mode.
@@ -880,6 +886,7 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   patternColor: DEFAULT_FOOTER_PATTERN_COLOR,
   patternOpacity: 18,
   useHeroPalette: false,
+  colorModeOverride: 'auto',
   lockPaletteAcrossColorModes: false,
   footerPalette: DEFAULT_FOOTER_PALETTE,
   footerColorBindings: DEFAULT_FOOTER_COLOR_BINDINGS,
@@ -2081,6 +2088,7 @@ export function mergeFooterPresentation(
         ? Math.min(100, Math.max(0, record.patternOpacity))
         : base.patternOpacity,
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
     lockPaletteAcrossColorModes:
       typeof record.lockPaletteAcrossColorModes === 'boolean'
         ? record.lockPaletteAcrossColorModes

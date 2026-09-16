@@ -1,5 +1,6 @@
 'use client';
 
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   galleryDesignUsesCarouselNav,
   galleryDesignUsesColumns,
@@ -147,6 +148,10 @@ export function GallerySettingsPanel({
           <Toggle label="Afficher la galerie" checked={gallery.enabled} onChange={(enabled) => onChange({ enabled })} />
           <Toggle label="Afficher les titres" description="Chaque média affiche uniquement son titre." checked={gallery.showTitle} onChange={(showTitle) => onChange({ showTitle })} />
           <Toggle label="Activer la lightbox" description="Ouvre le média dans une superposition accessible." checked={gallery.lightboxEnabled} onChange={(lightboxEnabled) => onChange({ lightboxEnabled })} />
+          <SectionColorModeControl
+            value={gallery.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+          />
         </div>
       ) : null}
 

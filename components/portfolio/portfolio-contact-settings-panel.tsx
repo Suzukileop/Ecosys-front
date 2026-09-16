@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   PORTFOLIO_CONTACT_BLOCK_ORDER_OPTIONS,
   PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS,
@@ -466,6 +467,10 @@ export function ContactSettingsPanel({
           <SectionHeroPaletteToggle
             enabled={contact.useHeroPalette}
             onChange={(useHeroPalette) => onChange({ useHeroPalette })}
+          />
+          <SectionColorModeControl
+            value={contact.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
           />
           <ContactOptionGrid
             label="Card design"
