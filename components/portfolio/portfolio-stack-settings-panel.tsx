@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
@@ -983,6 +983,9 @@ const STACK_ALIGNMENT_ICONS: Partial<Record<string, ReactNode>> = {
   right: <StackAlignRightIcon />,
 };
 
+/** Same collapsed-preview / expand-to-grid mechanism as Hero > Design Banner: shows only the
+ *  active design at a glance, with a "Change" affordance that reveals the full grid to pick
+ *  from — picking a card re-collapses back to the single preview. */
 function StackDesignChoiceGrid({
   value,
   onChange,
@@ -990,24 +993,71 @@ function StackDesignChoiceGrid({
   value: PortfolioStackDesign;
   onChange: (value: PortfolioStackDesign) => void;
 }) {
+  const [showGrid, setShowGrid] = useState(false);
+  const selected =
+    PORTFOLIO_STACK_DESIGN_OPTIONS.find((option) => option.value === value) ??
+    PORTFOLIO_STACK_DESIGN_OPTIONS[0];
+
+  if (showGrid) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="pf-stack-block-label !mb-0">Design</p>
+          <button
+            type="button"
+            onClick={() => setShowGrid(false)}
+            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+          >
+            ← Back
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          {PORTFOLIO_STACK_DESIGN_OPTIONS.map((option) => {
+            const active = option.value === value;
+            return (
+              <StackPickerCard
+                key={option.value}
+                active={active}
+                label={option.label}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              >
+                <StackDesignWireframe design={option.value} />
+              </StackPickerCard>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <p className="pf-stack-block-label">Design</p>
-      <div className="grid grid-cols-2 gap-4">
-        {PORTFOLIO_STACK_DESIGN_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <StackPickerCard
-              key={option.value}
-              active={active}
-              label={option.label}
-              onClick={() => onChange(option.value)}
-            >
-              <StackDesignWireframe design={option.value} />
-            </StackPickerCard>
-          );
-        })}
+      <div className="group relative w-full overflow-hidden rounded-2xl border border-neutral-200/80 p-3">
+        <StackDesignWireframe design={value} />
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change design"
+          className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
+        >
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-lg">
+            Change design
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change design"
+          className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
+        >
+          Change
+        </button>
       </div>
+      <p className="mt-2 text-sm font-semibold text-neutral-950">{selected.label}</p>
     </div>
   );
 }
@@ -1156,6 +1206,7 @@ function StackHeaderDesignWireframe({ design }: { design: PortfolioStackHeaderDe
   }
 }
 
+/** Same collapsed-preview / expand-to-grid mechanism as Design above and Hero > Design Banner. */
 function StackHeaderDesignChoiceGrid({
   value,
   onChange,
@@ -1163,24 +1214,71 @@ function StackHeaderDesignChoiceGrid({
   value: PortfolioStackHeaderDesign;
   onChange: (value: PortfolioStackHeaderDesign) => void;
 }) {
+  const [showGrid, setShowGrid] = useState(false);
+  const selected =
+    PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
+    PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS[0];
+
+  if (showGrid) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="pf-stack-block-label !mb-0">Header design</p>
+          <button
+            type="button"
+            onClick={() => setShowGrid(false)}
+            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+          >
+            ← Back
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          {PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS.map((option) => {
+            const active = option.value === value;
+            return (
+              <StackPickerCard
+                key={option.value}
+                active={active}
+                label={option.label}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              >
+                <StackHeaderDesignWireframe design={option.value} />
+              </StackPickerCard>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <p className="pf-stack-block-label">Header design</p>
-      <div className="grid grid-cols-2 gap-4">
-        {PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <StackPickerCard
-              key={option.value}
-              active={active}
-              label={option.label}
-              onClick={() => onChange(option.value)}
-            >
-              <StackHeaderDesignWireframe design={option.value} />
-            </StackPickerCard>
-          );
-        })}
+      <div className="group relative w-full overflow-hidden rounded-2xl border border-neutral-200/80 p-3">
+        <StackHeaderDesignWireframe design={value} />
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change header design"
+          className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
+        >
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-lg">
+            Change header design
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change header design"
+          className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
+        >
+          Change
+        </button>
       </div>
+      <p className="mt-2 text-sm font-semibold text-neutral-950">{selected.label}</p>
     </div>
   );
 }
@@ -1391,17 +1489,6 @@ export function StackSettingsPanel({
             value={stack.colorModeOverride}
             onChange={(colorModeOverride) => onChange({ colorModeOverride })}
           />
-          <div>
-            <Toggle
-              label="Snap scroll"
-              checked={stack.snapScrollPin === true}
-              onChange={(snapScrollPin) => onChange({ snapScrollPin })}
-            />
-            <p className="mt-1.5 px-1 text-xs text-neutral-500">
-              Pins the section above in place while Stack scrolls up to fully cover it, then
-              scrolling continues normally.
-            </p>
-          </div>
         </div>
       ) : null}
 
