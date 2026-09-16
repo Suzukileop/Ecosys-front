@@ -214,8 +214,6 @@ import { PORTFOLIO_UPGRADE_PATH } from '@/components/portfolio/portfolio-pricing
 import { portfolioPresenceShowsAboutUs } from '@/components/portfolio/portfolio-presence';
 import {
   GLOBAL_SETTINGS_SUB_SECTIONS,
-  GlobalSettingsGuideMockup,
-  GlobalSettingsTip,
   type GlobalSettingsSubSection,
 } from '@/components/portfolio/portfolio-global-settings-guide';
 import {
@@ -893,8 +891,8 @@ export function PortfolioSettingsButton({
       aria-label={shortcutHint ? `Portfolio settings (${shortcutHint})` : 'Portfolio settings'}
       title={
         shortcutHint
-          ? `Settings Â· ${shortcutHint} â€” drag to move`
-          : 'Portfolio settings â€” drag to move'
+          ? `Settings · ${shortcutHint} — drag to move`
+          : 'Portfolio settings — drag to move'
       }
     >
       <SettingsIcon className="h-5 w-5" />
@@ -1013,7 +1011,7 @@ function GlobalColorField({
   );
 }
 
-/** Text color for Global section titles/subtitles â€” palette token or free hex. */
+/** Text color for Global section titles/subtitles — palette token or free hex. */
 function GlobalTypographyTextColorField({
   typography,
   global,
@@ -1090,13 +1088,13 @@ function GlobalTypographyTextColorField({
           </select>
           <p className="text-xs text-neutral-500">
             Edit token hex under{' '}
-            <span className="font-semibold text-neutral-700">Global â†’ Theme</span>
+            <span className="font-semibold text-neutral-700">Global → Theme</span>
           </p>
         </div>
       ) : (
         <GlobalColorField
           label="Hex color"
-          description="Manual color â€” independent from the Global theme palette."
+          description="Manual color — independent from the Global theme palette."
           value={typography.color || defaultColor}
           onChange={(color) => onChange({ color, colorSource: 'manual' })}
         />
@@ -1127,8 +1125,8 @@ function GlobalHeaderFontMockups({
         </p>
         <p className="mt-1 text-sm text-neutral-500">
           {isTitle
-            ? 'Clique une maquette pour appliquer une Google Font Ã  tous les titres de section.'
-            : 'Clique une maquette pour appliquer une Google Font Ã  toutes les descriptions de section.'}
+            ? 'Clique une maquette pour appliquer une Google Font à tous les titres de section.'
+            : 'Clique une maquette pour appliquer une Google Font à toutes les descriptions de section.'}
         </p>
       </div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -1607,7 +1605,7 @@ function GlobalSectionRevealBlock({
           Profil de motion
         </p>
         <p className="mt-2 text-sm text-neutral-500">
-          Chaque profil a une signature diffÃ©rente. Affinez ensuite dÃ©lai, durÃ©e, dÃ©calage et
+          Chaque profil a une signature différente. Affinez ensuite délai, durée, décalage et
           distance.
         </p>
       </div>
@@ -1661,9 +1659,9 @@ function GlobalSectionRevealBlock({
 
       {selectedMeta ? (
         <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-600">
-          <span className="font-semibold text-neutral-800">{selectedMeta.label} Â· </span>
+          <span className="font-semibold text-neutral-800">{selectedMeta.label} · </span>
           {motionProfileSupportsHover(motionProfile)
-            ? `${timing.duration.toFixed(2).replace('.', ',')}s Â· stagger ${Math.round(timing.stagger * 1000)}ms Â· ${clampMotionTimingDistance(timing.distance)}px Â· ${formatMotionHoverRecipe(timing)}`
+            ? `${timing.duration.toFixed(2).replace('.', ',')}s · stagger ${Math.round(timing.stagger * 1000)}ms · ${clampMotionTimingDistance(timing.distance)}px · ${formatMotionHoverRecipe(timing)}`
             : selectedMeta.recipe}
         </p>
       ) : null}
@@ -1672,10 +1670,10 @@ function GlobalSectionRevealBlock({
         <div className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="text-sm font-semibold text-neutral-950">RÃ©glages de timing</p>
+              <p className="text-sm font-semibold text-neutral-950">Réglages de timing</p>
               <p className="mt-1 text-sm text-neutral-500">
-                AppliquÃ©s aux cartes / blocs au scroll. Changer de profil recharge les valeurs
-                recommandÃ©es.
+                Appliqués aux cartes / blocs au scroll. Changer de profil recharge les valeurs
+                recommandées.
               </p>
             </div>
             <button
@@ -1692,13 +1690,13 @@ function GlobalSectionRevealBlock({
           <div>
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                DÃ©lai de base
+                Délai de base
               </p>
               <span className="tabular-nums text-sm font-semibold text-neutral-700">
                 {formatMotionSeconds(timing.delay)}
               </span>
             </div>
-            <p className="mt-1 text-sm text-neutral-500">Attente avant la premiÃ¨re carte.</p>
+            <p className="mt-1 text-sm text-neutral-500">Attente avant la première carte.</p>
             <input
               type="range"
               min={MOTION_TIMING_DELAY_MIN}
@@ -1709,20 +1707,20 @@ function GlobalSectionRevealBlock({
                 patchTiming({ delay: clampMotionTimingDelay(Number(event.target.value)) })
               }
               className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-              aria-label="DÃ©lai de base"
+              aria-label="Délai de base"
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                DurÃ©e
+                Durée
               </p>
               <span className="tabular-nums text-sm font-semibold text-neutral-700">
                 {formatMotionSeconds(timing.duration)}
               </span>
             </div>
-            <p className="mt-1 text-sm text-neutral-500">Longueur de lâ€™animation dâ€™entrÃ©e.</p>
+            <p className="mt-1 text-sm text-neutral-500">Longueur de l’animation d’entrée.</p>
             <input
               type="range"
               min={MOTION_TIMING_DURATION_MIN}
@@ -1733,21 +1731,21 @@ function GlobalSectionRevealBlock({
                 patchTiming({ duration: clampMotionTimingDuration(Number(event.target.value)) })
               }
               className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-              aria-label="DurÃ©e dâ€™animation"
+              aria-label="Durée d’animation"
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                DÃ©calage (stagger)
+                Décalage (stagger)
               </p>
               <span className="tabular-nums text-sm font-semibold text-neutral-700">
                 {formatMotionSeconds(timing.stagger)}
               </span>
             </div>
             <p className="mt-1 text-sm text-neutral-500">
-              Ã‰cart entre chaque carte (effet cascade).
+              Écart entre chaque carte (effet cascade).
             </p>
             <input
               type="range"
@@ -1759,7 +1757,7 @@ function GlobalSectionRevealBlock({
                 patchTiming({ stagger: clampMotionTimingStagger(Number(event.target.value)) })
               }
               className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-              aria-label="DÃ©calage stagger"
+              aria-label="Décalage stagger"
             />
           </div>
 
@@ -1773,7 +1771,7 @@ function GlobalSectionRevealBlock({
               </span>
             </div>
             <p className="mt-1 text-sm text-neutral-500">
-              DÃ©placement vertical au dÃ©marrage de lâ€™entrÃ©e.
+              Déplacement vertical au démarrage de l’entrée.
             </p>
             <input
               type="range"
@@ -1785,7 +1783,7 @@ function GlobalSectionRevealBlock({
                 patchTiming({ distance: clampMotionTimingDistance(Number(event.target.value)) })
               }
               className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-              aria-label="Distance dâ€™entrÃ©e"
+              aria-label="Distance d’entrée"
             />
           </div>
 
@@ -1794,7 +1792,7 @@ function GlobalSectionRevealBlock({
               <div>
                 <p className="text-sm font-semibold text-neutral-950">Survol (lift & ombre)</p>
                 <p className="mt-1 text-sm text-neutral-500">
-                  Effet au survol des cartes â€” lift vertical, taille et couleur de lâ€™ombrage.
+                  Effet au survol des cartes — lift vertical, taille et couleur de l’ombrage.
                 </p>
               </div>
 
@@ -1804,11 +1802,11 @@ function GlobalSectionRevealBlock({
                     Lift au survol
                   </p>
                   <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                    âˆ’{clampMotionHoverLift(timing.hoverLift)}px
+                    −{clampMotionHoverLift(timing.hoverLift)}px
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-neutral-500">
-                  DÃ©calage vertical quand la souris passe sur une carte.
+                  Décalage vertical quand la souris passe sur une carte.
                 </p>
                 <input
                   type="range"
@@ -1827,14 +1825,14 @@ function GlobalSectionRevealBlock({
               <div>
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Taille de lâ€™ombre
+                    Taille de l’ombre
                   </p>
                   <span className="tabular-nums text-sm font-semibold text-neutral-700">
                     {clampMotionHoverShadowSize(timing.hoverShadowSize)}px
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-neutral-500">
-                  Flou / ampleur de lâ€™ombre sous la carte (0 = pas dâ€™ombre).
+                  Flou / ampleur de l’ombre sous la carte (0 = pas d’ombre).
                 </p>
                 <input
                   type="range"
@@ -1848,14 +1846,14 @@ function GlobalSectionRevealBlock({
                     })
                   }
                   className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Taille de lâ€™ombre au survol"
+                  aria-label="Taille de l’ombre au survol"
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    OpacitÃ© de lâ€™ombre
+                    Opacité de l’ombre
                   </p>
                   <span className="tabular-nums text-sm font-semibold text-neutral-700">
                     {clampMotionHoverShadowOpacity(timing.hoverShadowOpacity)}%
@@ -1873,13 +1871,13 @@ function GlobalSectionRevealBlock({
                     })
                   }
                   className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                  aria-label="OpacitÃ© de lâ€™ombre au survol"
+                  aria-label="Opacité de l’ombre au survol"
                 />
               </div>
 
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Couleur de lâ€™ombre
+                  Couleur de l’ombre
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <input
@@ -1887,7 +1885,7 @@ function GlobalSectionRevealBlock({
                     value={timing.hoverShadowColor}
                     onChange={(event) => patchTiming({ hoverShadowColor: event.target.value })}
                     className="h-11 w-14 cursor-pointer rounded-xl border border-neutral-200 bg-white p-1"
-                    aria-label="Couleur de lâ€™ombre au survol"
+                    aria-label="Couleur de l’ombre au survol"
                   />
                   <input
                     type="text"
@@ -1909,13 +1907,13 @@ function GlobalSectionRevealBlock({
         </div>
       ) : (
         <p className="text-sm text-neutral-500">
-          Les cartes apparaissent sans animation. Choisissez Ã‰ditorial, Dynamique ou CinÃ©matique
-          pour activer les rÃ©glages de timing.
+          Les cartes apparaissent sans animation. Choisissez Éditorial, Dynamique ou Cinématique
+          pour activer les réglages de timing.
         </p>
       )}
 
       <p className="text-sm text-neutral-500">
-        Les titres de section et la navigation sticky ne sont pas animÃ©s â€” plus stable avec vos
+        Les titres de section et la navigation sticky ne sont pas animés — plus stable avec vos
         personnalisations.
       </p>
     </div>
@@ -2146,18 +2144,11 @@ function GlobalSettingsPanel({
         })}
       </nav>
 
-      {subSection !== 'typography' ? (
-        <>
-          <GlobalSettingsGuideMockup section={subSection} />
-          <GlobalSettingsTip>{activeMeta.tip}</GlobalSettingsTip>
-        </>
-      ) : null}
-
       {subSection === 'theme' ? (
         <div className="space-y-5">
           <ToggleRow
             label="Light mode"
-            description="Off = dark half of the selected palette pair. On = light half of the same pair (Indigo, Classic, Verdant, Vive, Safran, Citron, Rouge, Ã‰carlate, or Ardoise stay in their own pair)."
+            description="Off = dark half of the selected palette pair. On = light half of the same pair (Indigo, Classic, Verdant, Vive, Safran, Citron, Rouge, Écarlate, or Ardoise stay in their own pair)."
             checked={activeMode === 'light'}
             onChange={(light) => onColorModeChange(light ? 'light' : 'dark')}
           />
@@ -2168,7 +2159,7 @@ function GlobalSettingsPanel({
                 Site color palette
               </p>
               <p className="mt-1 text-sm text-neutral-500">
-                Pick one coupled pair below. Light mode only flips sombre â†” clair inside that pair â€”
+                Pick one coupled pair below. Light mode only flips sombre ↔ clair inside that pair —
                 it never jumps to another family. Token edits update the{' '}
                 <span className="font-semibold text-neutral-800">
                   {activeMode === 'light' ? 'light' : 'dark'}
@@ -2187,7 +2178,7 @@ function GlobalSettingsPanel({
                     id: 'indigo' as const,
                     label: 'Indigo / Ambre',
                     description:
-                      'Pair: sombre #6366F1 / #F59E0B sur #0F172A Â· clair #4338CA / orange #EA580C sur #F8FAFC.',
+                      'Pair: sombre #6366F1 / #F59E0B sur #0F172A · clair #4338CA / orange #EA580C sur #F8FAFC.',
                     dark: INDIGO_DARK_HERO_PALETTE,
                     light: INDIGO_LIGHT_HERO_PALETTE,
                     darkClass: 'border-slate-600 bg-[#0F172A] hover:border-indigo-400',
@@ -2199,7 +2190,7 @@ function GlobalSettingsPanel({
                     id: 'classic' as const,
                     label: 'Classic orange / teal',
                     description:
-                      'Pair: sombre #e2572e / #22c48f sur #0F172A Â· clair #c2410c / #00875f sur #F8FAFC (slate).',
+                      'Pair: sombre #e2572e / #22c48f sur #0F172A · clair #c2410c / #00875f sur #F8FAFC (slate).',
                     dark: DEFAULT_HERO_PALETTE,
                     light: LIGHT_HERO_PALETTE,
                     darkClass: 'border-slate-600 bg-[#0F172A] hover:border-orange-400',
@@ -2211,7 +2202,7 @@ function GlobalSettingsPanel({
                     id: 'verdant' as const,
                     label: 'Verdant / Rose',
                     description:
-                      'Pair: clair vert #2A9608 / rubis #BE123C sur #F8FAFC Â· sombre lime #43E00B / coral sur #020617.',
+                      'Pair: clair vert #2A9608 / rubis #BE123C sur #F8FAFC · sombre lime #43E00B / coral sur #020617.',
                     dark: VERDANT_DARK_HERO_PALETTE,
                     light: VERDANT_LIGHT_HERO_PALETTE,
                     darkClass: 'border-slate-700/80 bg-[#020617] hover:border-lime-400',
@@ -2221,7 +2212,7 @@ function GlobalSettingsPanel({
                   },
                   {
                     id: 'vive' as const,
-                    label: 'Vive â€” jaune / violet',
+                    label: 'Vive — jaune / violet',
                     description:
                       'Pair: fond #FEE685 + violet #6C1BB9 / magenta #D01C82, neutre blanc + Zinc. Light mode stays in this pair.',
                     dark: VIVE_DARK_HERO_PALETTE,
@@ -2233,9 +2224,9 @@ function GlobalSettingsPanel({
                   },
                   {
                     id: 'safran' as const,
-                    label: 'Safran â€” jaune / violet / Ã©meraude',
+                    label: 'Safran — jaune / violet / émeraude',
                     description:
-                      'Pair: fond #FCE96A + violet #3D2B84 / Ã©meraude #0E7C6B, neutre blanc + Stone. Sombre: jaune #FCE96A / Ã©meraude sur #0C0A09.',
+                      'Pair: fond #FCE96A + violet #3D2B84 / émeraude #0E7C6B, neutre blanc + Stone. Sombre: jaune #FCE96A / émeraude sur #0C0A09.',
                     dark: SAFRAN_DARK_HERO_PALETTE,
                     light: SAFRAN_LIGHT_HERO_PALETTE,
                     darkClass: 'border-stone-700/50 bg-[#0C0A09] hover:border-[#FCE96A]',
@@ -2245,7 +2236,7 @@ function GlobalSettingsPanel({
                   },
                   {
                     id: 'citron' as const,
-                    label: 'Citron â€” vert-citron / violet / bleu',
+                    label: 'Citron — vert-citron / violet / bleu',
                     description:
                       'Pair: fond #C8E01A + violet #4C1D6B / bleu #2563EB, neutres slate. Sombre: violet #A78BFA / orange #F0985A sur #0F172A.',
                     dark: CITRON_DARK_HERO_PALETTE,
@@ -2259,7 +2250,7 @@ function GlobalSettingsPanel({
                     id: 'rouge' as const,
                     label: 'Rouge / Cyan',
                     description:
-                      'Pair: clair #DC2626 / #0EA5E9 sur #F4F4F5 Â· sombre #EF4444 / #38BDF8 sur #020202 (Cyber-Rouge).',
+                      'Pair: clair #DC2626 / #0EA5E9 sur #F4F4F5 · sombre #EF4444 / #38BDF8 sur #020202 (Cyber-Rouge).',
                     dark: ROUGE_DARK_HERO_PALETTE,
                     light: ROUGE_LIGHT_HERO_PALETTE,
                     darkClass: 'border-zinc-700 bg-[#020202] hover:border-red-400',
@@ -2269,9 +2260,9 @@ function GlobalSettingsPanel({
                   },
                   {
                     id: 'ecarlate' as const,
-                    label: 'Ã‰carlate / Ã‰meraude',
+                    label: 'Écarlate / Émeraude',
                     description:
-                      'Pair: clair #DF1C1C / #10B981 sur #FFFFFF Â· sombre #FF3333 / #34D399 sur #000000.',
+                      'Pair: clair #DF1C1C / #10B981 sur #FFFFFF · sombre #FF3333 / #34D399 sur #000000.',
                     dark: ECARLATE_DARK_HERO_PALETTE,
                     light: ECARLATE_LIGHT_HERO_PALETTE,
                     darkClass: 'border-neutral-700 bg-[#000000] hover:border-red-400',
@@ -2281,9 +2272,9 @@ function GlobalSettingsPanel({
                   },
                   {
                     id: 'ardoise' as const,
-                    label: 'Ardoise â€” rouge / bleu',
+                    label: 'Ardoise — rouge / bleu',
                     description:
-                      'Pair: clair #EF4444 / #2563EB sur #D4DBE7 Â· sombre #F87171 / #60A5FA sur #030712.',
+                      'Pair: clair #EF4444 / #2563EB sur #D4DBE7 · sombre #F87171 / #60A5FA sur #030712.',
                     dark: ARDOISE_DARK_HERO_PALETTE,
                     light: ARDOISE_LIGHT_HERO_PALETTE,
                     darkClass: 'border-slate-700 bg-[#030712] hover:border-red-400',
@@ -2331,14 +2322,14 @@ function GlobalSettingsPanel({
 
             {activeFamily === 'custom' ? (
               <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
-                Custom pair â€” Light mode still flips between your edited dark and light tokens.
-                Pick Indigo, Classic, Verdant, Vive, Safran, Citron, Rouge, Ã‰carlate, or Ardoise above to reset to a named pair.
+                Custom pair — Light mode still flips between your edited dark and light tokens.
+                Pick Indigo, Classic, Verdant, Vive, Safran, Citron, Rouge, Écarlate, or Ardoise above to reset to a named pair.
               </p>
             ) : null}
 
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
               Active mode tokens ({activeMode === 'light' ? 'Light' : 'Dark'}
-              {activeFamily !== 'custom' ? ` Â· ${activeFamily}` : ' Â· custom'})
+              {activeFamily !== 'custom' ? ` · ${activeFamily}` : ' · custom'})
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
@@ -2377,9 +2368,9 @@ function GlobalSettingsPanel({
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-neutral-900">Editorial Warm reste intact</p>
                 <p className="mt-1 text-sm leading-relaxed text-neutral-500">
-                  Seul Editorial Warm est verrouillÃ© : toute personnalisation crÃ©e automatiquement une
-                  copie. Noir / Blanc se modifie directement. Les copies (ex. Â« Noir / Blanc copie Â»)
-                  restent indÃ©pendantes.
+                  Seul Editorial Warm est verrouillé : toute personnalisation crée automatiquement une
+                  copie. Noir / Blanc se modifie directement. Les copies (ex. « Noir / Blanc copie »)
+                  restent indépendantes.
                 </p>
               </div>
             </div>
@@ -2391,7 +2382,7 @@ function GlobalSettingsPanel({
             </p>
             <ToggleRow
               label="Settings keyboard shortcut"
-              description="Press Ctrl+, (âŒ˜, on Mac) to open or close portfolio settings. Owner only."
+              description="Press Ctrl+, (⌘, on Mac) to open or close portfolio settings. Owner only."
               checked={global.settingsShortcutEnabled ?? true}
               onChange={(settingsShortcutEnabled) => onGlobalChange({ settingsShortcutEnabled })}
             />
@@ -2407,7 +2398,7 @@ function GlobalSettingsPanel({
               {
                 value: 'none',
                 label: 'None',
-                description: 'Default theme chrome â€” section fills keep working.',
+                description: 'Default theme chrome — section fills keep working.',
               },
               {
                 value: 'solid',
@@ -2450,7 +2441,7 @@ function GlobalSettingsPanel({
                 onChange={(backgroundImageUrl) => onGlobalChange({ backgroundImageUrl })}
                 library={global.backgroundImageLibrary}
                 onLibraryChange={(backgroundImageLibrary) => onGlobalChange({ backgroundImageLibrary })}
-                helperText="This fixed wallpaper shows behind every section. A section can override it with its own image fill â€” only that section is affected."
+                helperText="This fixed wallpaper shows behind every section. A section can override it with its own image fill — only that section is affected."
               />
 
               <OptionGrid
@@ -2650,7 +2641,7 @@ function GlobalSettingsPanel({
                   />
                   <p className="mt-1.5 text-xs text-neutral-500">
                     {(global.backgroundPatternUnitsPerRow ?? 0) === 1
-                      ? 'One unit centered on the page â€” no repetition. Adjust size below.'
+                      ? 'One unit centered on the page — no repetition. Adjust size below.'
                       : (global.backgroundPatternUnitsPerRow ?? 0) === 0
                         ? 'Auto keeps the natural tile size and repeats across the page.'
                         : 'How many units fit across the page.'}
@@ -2811,7 +2802,7 @@ function GlobalSettingsPanel({
               </span>
             </div>
             <p className="mt-1 text-sm text-neutral-500">
-              Ajoute des pixels au preset ci-dessus pour affiner lâ€™espace au-dessus de chaque titre
+              Ajoute des pixels au preset ci-dessus pour affiner l’espace au-dessus de chaque titre
               de section.
             </p>
             <input
@@ -2852,7 +2843,7 @@ function GlobalSettingsPanel({
               </span>
             </div>
             <p className="mt-1 text-sm text-neutral-500">
-              Ajoute des pixels au preset ci-dessus pour affiner lâ€™espace sous chaque section
+              Ajoute des pixels au preset ci-dessus pour affiner l’espace sous chaque section
               (Stack, Tools, Portfolio, etc.).
             </p>
             <input
@@ -2962,8 +2953,8 @@ function ThemePickerPanel({
       if (changed) {
         pushFlashFeedback({
           variant: 'success',
-          title: 'ThÃ¨me enregistrÃ©',
-          description: `Â« ${name} Â» a Ã©tÃ© sauvegardÃ© avec toutes vos personnalisations.`,
+          title: 'Thème enregistré',
+          description: `« ${name} » a été sauvegardé avec toutes vos personnalisations.`,
           durationMs: 4500,
         });
       }
@@ -2972,12 +2963,12 @@ function ThemePickerPanel({
       if (changed) {
         pushFlashFeedback({
           variant: 'success',
-          title: 'ThÃ¨me renommÃ©',
-          description: `Le thÃ¨me sâ€™appelle maintenant Â« ${name} Â».`,
+          title: 'Thème renommé',
+          description: `Le thème s’appelle maintenant « ${name} ».`,
           durationMs: 4000,
         });
       }
-      // Same name â†’ close quietly, no toast (nothing happened).
+      // Same name → close quietly, no toast (nothing happened).
     }
     setNameEditor(null);
   };
@@ -3025,8 +3016,8 @@ function ThemePickerPanel({
                   onDuplicateTheme(theme.id);
                   pushFlashFeedback({
                     variant: 'success',
-                    title: 'ThÃ¨me dupliquÃ©',
-                    description: `Une copie personnalisable a Ã©tÃ© crÃ©Ã©e Ã  partir de Â« ${theme.label} Â».`,
+                    title: 'Thème dupliqué',
+                    description: `Une copie personnalisable a été créée à partir de « ${theme.label} ».`,
                     durationMs: 4000,
                   });
                 }}
@@ -3034,13 +3025,13 @@ function ThemePickerPanel({
               />
               {theme.id === 'noir' ? (
                 <ThemeActionButton
-                  label="RÃ©initialiser"
+                  label="Réinitialiser"
                   onClick={() => {
                     onResetBuiltinTheme('noir');
                     pushFlashFeedback({
                       variant: 'success',
-                      title: 'Noir / Blanc rÃ©initialisÃ©',
-                      description: 'Le thÃ¨me a Ã©tÃ© restaurÃ© Ã  ses rÃ©glages dâ€™usine.',
+                      title: 'Noir / Blanc réinitialisé',
+                      description: 'Le thème a été restauré à ses réglages d’usine.',
                       durationMs: 4000,
                     });
                   }}
@@ -3059,10 +3050,10 @@ function ThemePickerPanel({
         const deletePending = pendingDeleteId === theme.id;
         const statusLabel = source?.saved
           ? active
-            ? 'Actif Â· EnregistrÃ©'
-            : 'EnregistrÃ©'
+            ? 'Actif · Enregistré'
+            : 'Enregistré'
           : active
-            ? 'Actif Â· Brouillon'
+            ? 'Actif · Brouillon'
             : 'Brouillon';
         const hasPendingChanges = source
           ? customThemeHasPendingChanges(source, settings)
@@ -3116,7 +3107,7 @@ function ThemePickerPanel({
                 onClick={(event) => event.stopPropagation()}
               >
                 <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                  {nameEditor.mode === 'save' ? 'Nommer et enregistrer' : 'Renommer le thÃ¨me'}
+                  {nameEditor.mode === 'save' ? 'Nommer et enregistrer' : 'Renommer le thème'}
                 </p>
                 <div className="flex items-center gap-2">
                   <input
@@ -3134,7 +3125,7 @@ function ThemePickerPanel({
                         closeNameEditor();
                       }
                     }}
-                    placeholder="Nom du thÃ¨me"
+                    placeholder="Nom du thème"
                     className="min-w-0 flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-semibold text-neutral-950 outline-none ring-orange-500/30 focus:border-orange-400 focus:ring-2"
                     autoFocus
                   />
@@ -3165,7 +3156,7 @@ function ThemePickerPanel({
                 onClick={(event) => event.stopPropagation()}
               >
                 <p className="text-xs font-medium text-red-700">
-                  Supprimer Â« {source?.name || theme.label} Â» ?
+                  Supprimer « {source?.name || theme.label} » ?
                 </p>
                 <div className="mt-2 flex items-center gap-2">
                   <button
@@ -3176,8 +3167,8 @@ function ThemePickerPanel({
                       setPendingDeleteId(null);
                       pushFlashFeedback({
                         variant: 'info',
-                        title: 'ThÃ¨me supprimÃ©',
-                        description: `Â« ${deletedName} Â» a Ã©tÃ© retirÃ© de votre palette.`,
+                        title: 'Thème supprimé',
+                        description: `« ${deletedName} » a été retiré de votre palette.`,
                         durationMs: 4000,
                       });
                     }}
@@ -3198,7 +3189,7 @@ function ThemePickerPanel({
             ) : (
               <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-neutral-100 pt-3">
                 {/*
-                  Save / Update only for the ACTIVE theme â€” inactive themes must not
+                  Save / Update only for the ACTIVE theme — inactive themes must not
                   absorb the live settings (avoids overwriting an unselected snapshot).
                 */}
                 {active ? (
@@ -3211,15 +3202,15 @@ function ThemePickerPanel({
                     />
                   ) : (
                     <ThemeActionButton
-                      label={hasPendingChanges ? 'Mettre Ã  jour' : 'Ã€ jour'}
+                      label={hasPendingChanges ? 'Mettre à jour' : 'À jour'}
                       disabled={!hasPendingChanges}
                       onClick={() => {
                         const changed = onSaveCustomTheme(theme.id);
                         if (!changed) return;
                         pushFlashFeedback({
                           variant: 'success',
-                          title: 'ThÃ¨me mis Ã  jour',
-                          description: `Â« ${source?.name || theme.label} Â» a Ã©tÃ© synchronisÃ© avec vos rÃ©glages actuels.`,
+                          title: 'Thème mis à jour',
+                          description: `« ${source?.name || theme.label} » a été synchronisé avec vos réglages actuels.`,
                           durationMs: 4500,
                         });
                       }}
@@ -3238,8 +3229,8 @@ function ThemePickerPanel({
                     onDuplicateTheme(theme.id);
                     pushFlashFeedback({
                       variant: 'success',
-                      title: 'ThÃ¨me dupliquÃ©',
-                      description: `Une copie de Â« ${source?.name || theme.label} Â» a Ã©tÃ© crÃ©Ã©e.`,
+                      title: 'Thème dupliqué',
+                      description: `Une copie de « ${source?.name || theme.label} » a été créée.`,
                       durationMs: 4000,
                     });
                   }}
@@ -3291,7 +3282,7 @@ function ThemeActionButton({
       onClick={onClick}
       disabled={disabled}
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:border-neutral-100 disabled:bg-neutral-50 disabled:text-neutral-400 disabled:hover:bg-neutral-50 ${toneClass}`}
-      title={disabled ? 'Aucune modification Ã  enregistrer' : label}
+      title={disabled ? 'Aucune modification à enregistrer' : label}
     >
       {icon}
       <span>{label}</span>
@@ -5418,8 +5409,8 @@ function NavLayoutDesignGrid({
         Designs navigation
       </p>
       <p className="mt-1 text-sm text-neutral-500">
-        Mise en page prÃªte Ã  l&apos;emploi : logo ou nom, liens de section et contact. Les marges
-        latÃ©rales suivent le gutter global du portfolio.
+        Mise en page prête à l&apos;emploi : logo ou nom, liens de section et contact. Les marges
+        latérales suivent le gutter global du portfolio.
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         {PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS.map((option) => {
@@ -5479,8 +5470,8 @@ function NavLookPresetGrid({
         Maquettes navigation
       </p>
       <p className="mt-1 text-sm text-neutral-500">
-        Structure rÃ©utilisable (classic + icons + active style). Survolez les pastilles grises pour
-        prÃ©visualiser le hover â€” couleurs liÃ©es Ã  la palette Nav.
+        Structure réutilisable (classic + icons + active style). Survolez les pastilles grises pour
+        prévisualiser le hover — couleurs liées à la palette Nav.
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {PORTFOLIO_NAV_LOOK_PRESET_OPTIONS.map((option) => {
@@ -5530,7 +5521,7 @@ const NAV_SETTINGS_TABS: { id: NavSettingsTab; label: string; description: strin
   {
     id: 'design',
     label: 'Design',
-    description: 'ModÃ¨les de mise en page : logo, liens de section, contact ou rÃ©seaux sociaux.',
+    description: 'Modèles de mise en page : logo, liens de section, contact ou réseaux sociaux.',
   },
 ];
 
@@ -5554,7 +5545,7 @@ function patchNavColorField(
   return patchNavSlotColor(navigation, slot, hex);
 }
 
-/** Same Use-color-palette control as Hero â€” shown in Navigation color subsections. */
+/** Same Use-color-palette control as Hero — shown in Navigation color subsections. */
 function NavUsePaletteToggle({
   navigation,
   onChange,
@@ -5582,19 +5573,19 @@ function NavUsePaletteToggle({
       description={description}
       enabledHint={
         enabledHint ??
-        'Palette mode â€” pick which Global token each color uses (edit tokens under Global â†’ Theme). Free hex pickers stay locked.'
+        'Palette mode — pick which Global token each color uses (edit tokens under Global → Theme). Free hex pickers stay locked.'
       }
       disabledHint={
         disabledHint ??
-        'Manual mode â€” color pickers set hex values directly and are no longer overwritten by the global palette.'
+        'Manual mode — color pickers set hex values directly and are no longer overwritten by the global palette.'
       }
     />
   );
 }
 
 /**
- * Palette on â†’ token binding only (hex locked).
- * Palette off â†’ free hex picker.
+ * Palette on → token binding only (hex locked).
+ * Palette off → free hex picker.
  */
 function NavColorField({
   navigation,
@@ -5660,8 +5651,8 @@ function NavColorField({
         ))}
       </select>
       <p className="text-xs text-neutral-500">
-        Bound to token Â· edit hex under{' '}
-        <span className="font-semibold text-neutral-700">Global â†’ Theme</span>
+        Bound to token · edit hex under{' '}
+        <span className="font-semibold text-neutral-700">Global → Theme</span>
       </p>
     </div>
   );
@@ -5684,12 +5675,12 @@ function NavPalettePanel({
         navigation={navigation}
         onChange={onChange}
         description="When on, Navigation colors follow the Global site palette. Turn off to edit colors manually in Bar & buttons, Reveal, and Extras."
-        enabledHint="Edit the dark/light token pair under Global â†’ Theme. Bindings below pick which token each nav color uses."
+        enabledHint="Edit the dark/light token pair under Global → Theme. Bindings below pick which token each nav color uses."
         disabledHint="Global palette tokens still exist, but Navigation uses manual hex colors until you turn this back on."
       />
 
       <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-600">
-        The site color palette lives in <span className="font-semibold">Global â†’ Theme</span> as a
+        The site color palette lives in <span className="font-semibold">Global → Theme</span> as a
         coupled dark / light pair. Navigation no longer has its own Mode sombre / Mode clair editor.
       </p>
 
@@ -5744,7 +5735,7 @@ function NavPalettePanel({
         </div>
       ) : (
         <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-500">
-          Palette is off â€” slot bindings are hidden. Turn it back on to bind colors to Global tokens,
+          Palette is off — slot bindings are hidden. Turn it back on to bind colors to Global tokens,
           or edit hex fields under Bar & buttons / Reveal / Extras.
         </p>
       )}
@@ -6048,7 +6039,7 @@ function NavigationPanel({
       <NavUsePaletteToggle
         navigation={navigation}
         onChange={onChange}
-        description="When on, Navigation colors follow the semantic palette (Principal, Fond, Bordureâ€¦). Turn off to set each color manually."
+        description="When on, Navigation colors follow the semantic palette (Principal, Fond, Bordure…). Turn off to set each color manually."
       />
 
       {navigation.enabled ? (
@@ -6603,7 +6594,7 @@ function SectionPanel({
       ) : null}
 
       <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-        Content for this section is edited in Creator Studio â†’ Information. These settings control visibility and
+        Content for this section is edited in Creator Studio → Information. These settings control visibility and
         presentation on the portfolio page.
       </p>
     </div>
@@ -7053,11 +7044,11 @@ export function PortfolioSettingsModal({
                 aria-live="polite"
               >
                 {persistStatus === 'saving'
-                  ? 'Saving to your accountâ€¦'
+                  ? 'Saving to your account…'
                   : persistStatus === 'saved'
                     ? 'Saved to your account'
                     : persistStatus === 'error'
-                      ? 'Not saved â€” kept on this device, retryingâ€¦'
+                      ? 'Not saved — kept on this device, retrying…'
                       : 'Synced with your account'}
               </p>
             </div>
@@ -7143,7 +7134,7 @@ export function PortfolioSettingsModal({
                 >
                   <span>Upgrade</span>
                   <span aria-hidden className="text-xs font-bold opacity-70">
-                    â†—
+                    ↗
                   </span>
                 </button>
               </li>
