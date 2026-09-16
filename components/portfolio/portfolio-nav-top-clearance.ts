@@ -41,8 +41,6 @@ export function portfolioNavTopClearanceActive(
   effectivePlacement: PortfolioNavPlacement
 ): boolean {
   if (!settings.enabled) return false;
-  // Dots / per-page chrome is not a fixed top bar — skip. Default, pages, and split need clearance.
-  if ((settings.navMode ?? 'default') === 'per-page') return false;
   return portfolioNavIsTop(effectivePlacement);
 }
 

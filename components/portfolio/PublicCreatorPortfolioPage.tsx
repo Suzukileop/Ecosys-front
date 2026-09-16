@@ -1487,7 +1487,7 @@ export function PublicCreatorPortfolioPage({
     ]
   );
 
-  const perPageNavItems = useMemo(() => {
+  const pagesNavItems = useMemo(() => {
     const pages: { id: string; label: string; icon: PortfolioNavIconVariant }[] = [];
     if (settings.hero.enabled) {
       pages.push({ id: 'hero', label: 'Home', icon: 'home' });
@@ -1497,29 +1497,81 @@ export function PublicCreatorPortfolioPage({
   }, [navItems, settings.hero.enabled]);
 
   const navMode = settings.navigation.navMode ?? 'default';
+  const isPagesMode = navMode === 'pages';
   const isCaseOverlayNav = portfolioNavUsesCaseOverlayLayout(settings.navigation);
   const isDutenPanelNav = portfolioNavUsesDutenPanelLayout(settings.navigation);
   const isHalfPanelNav = portfolioNavUsesHalfPanelLeftLayout(settings.navigation);
+  const [activePageId, setActivePageId] = useState(() => pagesNavItems[0]?.id ?? 'hero');
+  const [pageSlideDirection, setPageSlideDirection] = useState<1 | -1>(1);
+
+  useEffect(() => {
+    if (!isPagesMode || pagesNavItems.length === 0) return;
+    if (!pagesNavItems.some((item) => item.id === activePageId)) {
+      setActivePageId(pagesNavItems[0].id);
+    }
+  }, [isPagesMode, pagesNavItems, activePageId]);
+
+  useEffect(() => {
+    if (!isPagesMode) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [isPagesMode]);
 
   const lastContentPageId = navItems[navItems.length - 1]?.id;
+  const shouldShowFooterOnPage = (pageId: string) => {
+    if (!settings.footer.enabled) return false;
+    if (sectionVisibility.contact) return pageId === 'contact';
+    return Boolean(lastContentPageId) && pageId === lastContentPageId;
+  };
 
   const contactCtaHref =
     primaryLink?.url ??
     (resolvedContactEmail ? `mailto:${resolvedContactEmail}` : '#footer');
+  const pagesContactTarget = sectionVisibility.contact
+    ? 'contact'
+    : lastContentPageId ?? 'contact';
+
+  const navigateToPage = (sectionId: string) => {
+    const normalized =
+      sectionId === 'footer' || sectionId === 'contact' ? pagesContactTarget : sectionId;
+    const targetIndex = pagesNavItems.findIndex((item) => item.id === normalized);
+    if (targetIndex < 0) {
+      if (lastContentPageId) {
+        setActivePageId(pagesContactTarget);
+      }
+      return;
+    }
+    const currentIndex = pagesNavItems.findIndex((item) => item.id === activePageId);
+    if (currentIndex >= 0 && targetIndex !== currentIndex) {
+      setPageSlideDirection(targetIndex > currentIndex ? 1 : -1);
+    }
+    setActivePageId(normalized);
+  };
 
   previewSectionFocusRef.current = (sectionId: string) => {
+    if (isPagesMode) {
+      navigateToPage(sectionId);
+      return;
+    }
     if (scrollToPortfolioSection(sectionId)) return;
     if (sectionId === 'hero') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  const heroContactHref = '#footer';
-  const navContactHref = sectionVisibility.contact ? '#contact' : contactCtaHref;
+  const heroContactHref = isPagesMode ? `#${pagesContactTarget}` : '#footer';
+  const navContactHref = isPagesMode
+    ? `#${pagesContactTarget}`
+    : sectionVisibility.contact
+      ? '#contact'
+      : contactCtaHref;
   const servicesOrderCtaHref = resolveServicesOrderCtaHref({
     contactSectionVisible: showContactSectionResolved,
     phone: profile.phone,
-    contactHref: '#contact',
+    contactHref: isPagesMode ? `#${pagesContactTarget}` : '#contact',
   });
   const heroWorkHref = showWorkSection
     ? '#work'
@@ -1530,6 +1582,21 @@ export function PublicCreatorPortfolioPage({
         : showContactSectionResolved
           ? '#contact'
           : '#hero';
+  const onNavigateSection = isPagesMode
+    ? (sectionId: string) => {
+        navigateToPage(sectionId);
+      }
+    : undefined;
+  const onServicesOrderCtaNavigate = isPagesMode
+    ? (href: string) => {
+        if (href.startsWith('tel:') || href.startsWith('mailto:')) {
+          window.location.assign(href);
+          return;
+        }
+        const sectionId = href.replace(/^#/, '') || 'footer';
+        onNavigateSection?.(sectionId);
+      }
+    : undefined;
 
   const isEditorialLayout = true;
 
@@ -2612,7 +2679,10 @@ export function PublicCreatorPortfolioPage({
           />
         );
         const servicesContentBlock = (
-          <ServicesOrderCtaHrefProvider href={servicesOrderCtaHref}>
+          <ServicesOrderCtaHrefProvider
+            href={servicesOrderCtaHref}
+            onNavigate={onServicesOrderCtaNavigate}
+          >
             <SectionIllustratedContent
               variant={servicesPresentation.servicesIllustrationVariant}
               placement={servicesPresentation.servicesIllustrationPlacement}
@@ -3454,7 +3524,6 @@ export function PublicCreatorPortfolioPage({
             id="faq"
             background={faqPresentation}
             fitContent
-            className={navMode === 'per-page' ? 'pb-28 sm:pb-24' : undefined}
             suppressBackground={suppressSectionBackground(faqPresentation)}
             topSpacingClass={sectionTopSpacingClass}
             topSpacingStyle={sectionTopSpacingStyle}
@@ -3763,6 +3832,7 @@ export function PublicCreatorPortfolioPage({
             contactHref={heroContactHref}
             workHref={heroWorkHref}
             featuredWorks={heroFeaturedWorks}
+            onNavigateSection={onNavigateSection}
             showWorkCta={showWorkSection || showGallerySection}
             showContactCta={settings.hero.showContactCta}
             navItems={navItems}

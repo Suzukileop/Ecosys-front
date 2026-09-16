@@ -5541,7 +5541,7 @@ function NavigationToggleRow({
       onClick={() => onChange(!checked)}
       className="flex w-full cursor-pointer items-center justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3.5 text-left"
     >
-      <span className="text-sm font-semibold text-neutral-900">{label}</span>
+      <span className="text-sm font-medium text-neutral-900">{label}</span>
       <NavigationSwitchTrack checked={checked} />
     </button>
   );
@@ -5639,19 +5639,6 @@ export function NavigationPanel({
             label="Show navigation"
             checked={navigation.enabled}
             onChange={(enabled) => onChange({ enabled })}
-          />
-
-          <GlobalSwitchRow
-            label="Use global color palette"
-            info="Uses tokens from Global → Theme. Free hex pickers stay locked while this is on."
-            checked={navigation.useNavPalette !== false}
-            onChange={(useNavPalette) =>
-              onChange(
-                useNavPalette
-                  ? { useNavPalette, ...applyNavPaletteToSettings(navigation) }
-                  : { useNavPalette }
-              )
-            }
           />
 
           {navigation.enabled ? (

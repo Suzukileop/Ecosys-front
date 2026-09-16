@@ -46,9 +46,9 @@ export const PORTFOLIO_NAV_MODE_OPTIONS: {
     description: 'Floating menu — scroll the page and jump with the nav bar.',
   },
   {
-    value: 'per-page',
-    label: 'Per page',
-    description: 'Dots + previous / next — still scrolls between sections.',
+    value: 'pages',
+    label: 'Page',
+    description: 'Each section is its own page — switch only with the nav bar (no scroll between sections).',
   },
 ];
 

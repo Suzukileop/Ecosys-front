@@ -242,7 +242,7 @@ function InfoToggleRow({
       className="flex w-full cursor-pointer flex-col gap-1 text-left"
     >
       <span className="flex items-center justify-between gap-4">
-        <span className="min-w-0 text-sm font-semibold text-neutral-950">{label}</span>
+        <span className="min-w-0 text-sm font-medium text-neutral-950">{label}</span>
         <InfoSwitchTrack checked={checked} />
       </span>
     </button>

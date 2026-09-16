@@ -1358,8 +1358,7 @@ export function portfolioFooterNavClearanceClass(
 ): string {
   void placement;
   const enabled = opts?.enabled !== false;
-  const navMode = opts?.navMode ?? 'default';
-  if (!enabled || navMode === 'per-page') {
+  if (!enabled) {
     return 'pb-[env(safe-area-inset-bottom,0px)]';
   }
   return 'pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]';

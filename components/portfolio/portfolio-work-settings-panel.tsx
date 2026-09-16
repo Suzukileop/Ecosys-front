@@ -363,7 +363,7 @@ function WorkToggleRow({
     <div className="flex items-center justify-between gap-4 border-b border-neutral-200/80 py-3.5 last:border-b-0">
       <div className="flex min-w-0 items-center gap-1.5">
         <span
-          className="min-w-0 cursor-pointer truncate text-sm font-semibold text-neutral-950"
+          className="min-w-0 cursor-pointer truncate text-sm font-medium text-neutral-950"
           onClick={() => onChange(!checked)}
         >
           {label}
