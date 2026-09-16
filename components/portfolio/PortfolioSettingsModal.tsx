@@ -5537,7 +5537,7 @@ const NAV_SETTINGS_TABS: { id: NavSettingsTab; label: string; description: strin
 function NavFloatingOnlyNote() {
   return (
     <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-      These options apply to the floating nav bar (Default, Pages, and Split screen types). Switch the
+      These options apply to the floating nav bar (Default navigation type). Switch the
       navigation type in General to use them.
     </p>
   );
@@ -5896,6 +5896,103 @@ function NavMenuGroupsEditor({
 
 const NAV_MOBILE_LAYOUT_OPTIONS_FR = PORTFOLIO_NAV_MOBILE_LAYOUT_OPTIONS;
 
+/**
+ * Larger, airier variants of ToggleRow / OptionGrid used only in the Navigation → General
+ * tab — scoped here so the rest of the settings modal keeps its regular density.
+ */
+function NavigationToggleRow({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-5 py-5">
+      <span className="min-w-0">
+        <span className="block text-base font-semibold text-neutral-900">{label}</span>
+        {description ? (
+          <span className="mt-1.5 block text-[15px] leading-relaxed text-neutral-500">{description}</span>
+        ) : null}
+      </span>
+      <span className="relative mt-0.5 inline-flex h-6 w-11 shrink-0">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(event) => onChange(event.target.checked)}
+          className="absolute inset-0 h-full w-full cursor-pointer appearance-none"
+        />
+        <span
+          aria-hidden
+          className={`pointer-events-none absolute inset-0 rounded-full transition ${
+            checked ? 'bg-neutral-900' : 'bg-neutral-300'
+          }`}
+        />
+        <span
+          aria-hidden
+          className={`pointer-events-none absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+            checked ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
+      </span>
+    </label>
+  );
+}
+
+function NavigationOptionGrid<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  columns = 2,
+}: {
+  label: string;
+  options: { value: T; label: string; description: string }[];
+  value: T | '';
+  onChange: (value: T) => void;
+  columns?: number;
+}) {
+  return (
+    <div>
+      <p className="text-sm font-bold uppercase tracking-[0.12em] text-neutral-500">{label}</p>
+      <div
+        className={`mt-4 grid gap-3 ${
+          columns === 4
+            ? 'grid-cols-2 sm:grid-cols-4'
+            : columns === 3
+              ? 'sm:grid-cols-2 lg:grid-cols-3'
+              : columns === 1
+                ? 'grid-cols-1'
+                : 'sm:grid-cols-2'
+        }`}
+      >
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange(option.value)}
+              className={`rounded-2xl border px-5 py-4 text-left transition ${
+                active
+                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
+                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+              }`}
+            >
+              <p className="text-base font-semibold text-neutral-950">{option.label}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-neutral-500">{option.description}</p>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function NavigationPanel({
   navigation,
   onChange,
@@ -5911,8 +6008,7 @@ function NavigationPanel({
 }) {
   const [navTab, setNavTab] = useState<NavSettingsTab>('general');
   const navMode = navigation.navMode ?? 'default';
-  const usesFloatingNavChrome =
-    navMode === 'default' || navMode === 'pages' || navMode === 'split';
+  const usesFloatingNavChrome = navMode === 'default';
   const activeTabMeta = NAV_SETTINGS_TABS.find((tab) => tab.id === navTab) ?? NAV_SETTINGS_TABS[0];
 
   return (
@@ -5941,7 +6037,7 @@ function NavigationPanel({
       </div>
 
       {navTab === 'general' ? (
-        <div className="space-y-6">
+        <div className="space-y-8">
       <ToggleRow
         label="Show navigation"
         description="Menu that jumps between portfolio sections."
@@ -5956,7 +6052,8 @@ function NavigationPanel({
       />
 
       {navigation.enabled ? (
-        <>
+        <div className="space-y-8">
+        <div className="space-y-4">
         <OptionGrid
           label="Fond de la barre"
           options={PORTFOLIO_NAV_BAR_SURFACE_OPTIONS}
@@ -5977,19 +6074,20 @@ function NavigationPanel({
           checked={showColorModeToggleInNav}
           onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
         />
+        </div>
 
         {usesFloatingNavChrome ? (
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+          <div className="space-y-5 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+              <p className="text-sm font-bold uppercase tracking-[0.12em] text-neutral-500">
                 Mobile
               </p>
-              <p className="mt-1 text-sm text-neutral-500">
+              <p className="mt-1.5 text-[15px] leading-relaxed text-neutral-500">
                 Deux comportements sur écran étroit (&lt; 1024 px) : barre logo pleine largeur ou
                 tiroir menu compact. Les deux ouvrent le même panneau de liens.
               </p>
             </div>
-            <OptionGrid
+            <NavigationOptionGrid
               label="Comportement mobile"
               options={NAV_MOBILE_LAYOUT_OPTIONS_FR}
               value={navigation.mobileLayout ?? 'brand-bar'}
@@ -5998,7 +6096,7 @@ function NavigationPanel({
             />
             {(navigation.mobileLayout ?? 'brand-bar') === 'drawer' ? (
               <>
-                <OptionGrid
+                <NavigationOptionGrid
                   label="Marque à côté du menu"
                   options={PORTFOLIO_NAV_MOBILE_BRAND_OPTIONS}
                   value={navigation.mobileBrand ?? 'none'}
@@ -6007,7 +6105,7 @@ function NavigationPanel({
                 />
                 {(navigation.mobileBrand ?? 'none') === 'word' ? (
                   <label className="block">
-                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+                    <span className="text-sm font-bold uppercase tracking-[0.1em] text-neutral-500">
                       Texte de marque
                     </span>
                     <input
@@ -6015,11 +6113,11 @@ function NavigationPanel({
                       value={navigation.mobileBrandWord ?? ''}
                       onChange={(event) => onChange({ mobileBrandWord: event.target.value })}
                       placeholder="Prénom ou nom court"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-[15px] text-neutral-900"
                     />
                   </label>
                 ) : null}
-                <OptionGrid
+                <NavigationOptionGrid
                   label="Côté du tiroir"
                   options={PORTFOLIO_NAV_MOBILE_DRAWER_SIDE_OPTIONS}
                   value={navigation.mobileDrawerSide ?? 'right'}
@@ -6029,17 +6127,18 @@ function NavigationPanel({
               </>
             ) : null}
             {(navigation.mobileLayout ?? 'brand-bar') === 'brand-bar' ? (
-              <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-500">
+              <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-4 py-2.5 text-[15px] text-neutral-500">
                 Barre pleine largeur : logo à gauche, menu à droite (style éditorial). Le logo utilise
                 le texte / image de marque de la navigation.
               </p>
             ) : null}
           </div>
         ) : null}
-        </>
+        </div>
       ) : null}
 
-      <OptionGrid
+      <div className="space-y-4">
+      <NavigationOptionGrid
         label="Navigation type"
         options={PORTFOLIO_NAV_MODE_OPTIONS}
         value={navMode}
@@ -6047,30 +6146,16 @@ function NavigationPanel({
         columns={2}
       />
 
-      {navMode === 'pages' ? (
-        <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-          Pages mode shows one section at a time. Use the nav bar buttons to switch pages â€” there is no
-          scrolling between sections. Bar design options below still apply.
-        </p>
-      ) : null}
-
       {navMode === 'per-page' ? (
-        <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
+        <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-5 py-3.5 text-[15px] text-neutral-500">
           Per page mode shows dots and previous / next controls to move one section at a time while
           scrolling. Labels below still apply.
         </p>
       ) : null}
+      </div>
 
-      {navMode === 'split' ? (
-        <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-          Split screen applies from Portfolio onward on large screens: a fixed left frame
-          (~40%) keeps the title centered and swaps it as you scroll the content on the
-          right (~60%). Titles do not travel up or down with the page. The hero stays full
-          width. Below large breakpoints the layout stacks like Default.
-        </p>
-      ) : null}
-
-      <OptionGrid
+      <div className="space-y-4">
+      <NavigationOptionGrid
         label="When to appear"
         options={PORTFOLIO_NAV_DISPLAY_OPTIONS}
         value={navigation.displayMode}
@@ -6079,7 +6164,7 @@ function NavigationPanel({
       />
 
       {navigation.enabled && usesFloatingNavChrome ? (
-        <OptionGrid
+        <NavigationOptionGrid
           label="Mode de visibilité de la barre"
           options={PORTFOLIO_NAV_VISIBILITY_MODE_OPTIONS}
           value={resolvePortfolioNavVisibilityMode(navigation.presence)}
@@ -6087,8 +6172,10 @@ function NavigationPanel({
           columns={2}
         />
       ) : null}
+      </div>
 
-      <ToggleRow
+      <div className="space-y-4">
+      <NavigationToggleRow
         label="Hide when only one section"
         description="Do not show the menu if a single destination is available."
         checked={navigation.hideWhenSingle}
@@ -6096,7 +6183,7 @@ function NavigationPanel({
       />
 
       {navigation.enabled ? (
-        <OptionGrid
+        <NavigationOptionGrid
           label="Indicateur actif"
           options={PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS}
           value={
@@ -6110,6 +6197,7 @@ function NavigationPanel({
           columns={3}
         />
       ) : null}
+      </div>
 
       {navigation.enabled && navigation.navLayoutDesign === 'editorial-bar' ? (
         <OptionGrid

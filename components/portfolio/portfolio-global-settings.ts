@@ -64,20 +64,6 @@ export type PortfolioGlobalSectionTitleTopSpacing = 'compact' | 'standard' | 'co
 
 export type PortfolioGlobalTypographyScope = 'section' | 'global';
 
-/**
- * Site-wide body / UI typeface for the public portfolio.
- * When {@link PortfolioGlobalSettings.bodyFontForceAll} is true, this typeface
- * overrides every element font (serif / display / hardcoded) without exception.
- */
-export type PortfolioGlobalBodyFont =
-  | 'aeonik'
-  | 'default'
-  | 'plusJakarta'
-  | 'geist'
-  | 'montserrat'
-  | 'raleway'
-  | 'roboto';
-
 export type PortfolioGlobalHeaderFont =
   | 'aeonik'
   | 'geist'
@@ -189,18 +175,6 @@ export type PortfolioGlobalSubtitleTypography = {
 
 export type PortfolioGlobalBackgroundImageSize = 'cover' | 'contain' | 'fill';
 
-/** Decorative repeating motif painted above the page fill (branding-style geometry). */
-export type PortfolioGlobalBackgroundPattern =
-  | 'none'
-  | 'arrows'
-  | 'cubes'
-  | 'hexagons'
-  | 'double-hexagon'
-  | 'axis-reticle'
-  | 'faceted-diamond'
-  | 'opposed-triangles'
-  | 'asymmetric-grid';
-
 export type PortfolioGlobalBackgroundImagePosition =
   | 'center'
   | 'top'
@@ -213,10 +187,11 @@ export type PortfolioGlobalBackgroundImagePosition =
   | 'bottom-right';
 
 export type PortfolioGlobalSettings = {
+  /** Master toggle for the page-wide fixed background image. */
   backgroundEnabled: boolean;
-  backgroundColor: string;
+  /** Image layer opacity 0–100. */
+  backgroundOpacity: number;
   /** Fixed viewport background image (stays put while scrolling). */
-  backgroundImageEnabled: boolean;
   backgroundImageUrl: string;
   /**
    * Shared background image library (max {@link MAX_PORTFOLIO_BACKGROUND_IMAGES}).
@@ -225,30 +200,11 @@ export type PortfolioGlobalSettings = {
   backgroundImageLibrary: string[];
   backgroundImageSize: PortfolioGlobalBackgroundImageSize;
   backgroundImagePosition: PortfolioGlobalBackgroundImagePosition;
-  /** Image layer opacity 0–100. */
-  backgroundImageOpacity: number;
   /** Insets from each viewport edge in px (0–240). */
   backgroundImageInsetTop: number;
   backgroundImageInsetRight: number;
   backgroundImageInsetBottom: number;
   backgroundImageInsetLeft: number;
-  /** Repeating geometric motif over the page background (any mode). */
-  backgroundPattern: PortfolioGlobalBackgroundPattern;
-  backgroundPatternColor: string;
-  /** Second stroke/fill color used by the duotone geometric patterns. */
-  backgroundPatternSecondaryColor: string;
-  /** Pattern layer opacity 0–100. */
-  backgroundPatternOpacity: number;
-  /** Units (tiles) per row. 0 = auto (natural tile size). 1 = single centered unit. */
-  backgroundPatternUnitsPerRow: number;
-  /**
-   * Size of the single centered unit as % of viewport width (only when units per row = 1).
-   */
-  backgroundPatternUnitSize: number;
-  /** Horizontal spacing between units, in tile px. */
-  backgroundPatternGapX: number;
-  /** Vertical spacing between units, in tile px. */
-  backgroundPatternGapY: number;
   /**
    * When true, keep social brands + hardcoded accent utilities monochrome.
    * Set by Noir / Blanc and preserved on duplicates so images/icons don’t flip on edit.
@@ -329,16 +285,6 @@ export type PortfolioGlobalSettings = {
   sectionOrder: PortfolioNavSectionKey[];
   /** Session presence type for the public page (About us is business + storefront only). */
   presenceKind: PortfolioPresenceKind | null;
-  /**
-   * Base typeface for all portfolio text.
-   * With {@link bodyFontForceAll}, it wins over every per-element font.
-   */
-  bodyFont: PortfolioGlobalBodyFont;
-  /**
-   * When true, force {@link bodyFont} on every text node in the portfolio
-   * (titles, cards, hero, footer — no serif/display exceptions).
-   */
-  bodyFontForceAll: boolean;
   titleTypography: PortfolioGlobalTitleTypography;
   subtitleTypography: PortfolioGlobalSubtitleTypography;
   titleChrome: PortfolioGlobalTitleChrome;
@@ -346,8 +292,6 @@ export type PortfolioGlobalSettings = {
 
 /** Partial patch accepted by updateGlobal — nested objects merge deeply via mergeGlobalSettings. */
 export type PortfolioGlobalSettingsPatch = Partial<PortfolioGlobalSettings>;
-
-export const DEFAULT_GLOBAL_BACKGROUND_COLOR = '#ffffff';
 
 export const DEFAULT_GLOBAL_TITLE_COLOR = '#0a0a0a';
 export const DEFAULT_GLOBAL_SUBTITLE_COLOR = '#737373';
@@ -624,44 +568,22 @@ export function moveSectionInOrder(
   return next;
 }
 
-export const DEFAULT_GLOBAL_BACKGROUND_IMAGE_OPACITY = 100;
+export const DEFAULT_GLOBAL_BACKGROUND_OPACITY = 100;
 export const DEFAULT_GLOBAL_BACKGROUND_IMAGE_INSET = 0;
-export const DEFAULT_GLOBAL_BACKGROUND_PATTERN_COLOR = '#a3a3a3';
-export const DEFAULT_GLOBAL_BACKGROUND_PATTERN_SECONDARY_COLOR = '#22c48f';
-export const DEFAULT_GLOBAL_BACKGROUND_PATTERN_OPACITY = 12;
-/** 0 = auto (natural tile size, previous behavior). */
-export const DEFAULT_GLOBAL_BACKGROUND_PATTERN_UNITS_PER_ROW = 0;
-export const GLOBAL_BACKGROUND_PATTERN_UNITS_PER_ROW_MAX = 32;
-/** Single-unit size (% of viewport width) when units per row = 1. */
-export const DEFAULT_GLOBAL_BACKGROUND_PATTERN_UNIT_SIZE = 40;
-export const GLOBAL_BACKGROUND_PATTERN_UNIT_SIZE_MIN = 8;
-export const GLOBAL_BACKGROUND_PATTERN_UNIT_SIZE_MAX = 100;
-export const DEFAULT_GLOBAL_BACKGROUND_PATTERN_GAP = 0;
-export const GLOBAL_BACKGROUND_PATTERN_GAP_MAX = 160;
 /** Max images stored in the shared portfolio background library. */
 export const MAX_PORTFOLIO_BACKGROUND_IMAGES = 5;
 
 export const DEFAULT_GLOBAL_SETTINGS: PortfolioGlobalSettings = {
   backgroundEnabled: false,
-  backgroundColor: DEFAULT_GLOBAL_BACKGROUND_COLOR,
-  backgroundImageEnabled: false,
+  backgroundOpacity: DEFAULT_GLOBAL_BACKGROUND_OPACITY,
   backgroundImageUrl: '',
   backgroundImageLibrary: [],
   backgroundImageSize: 'cover',
   backgroundImagePosition: 'center',
-  backgroundImageOpacity: DEFAULT_GLOBAL_BACKGROUND_IMAGE_OPACITY,
   backgroundImageInsetTop: DEFAULT_GLOBAL_BACKGROUND_IMAGE_INSET,
   backgroundImageInsetRight: DEFAULT_GLOBAL_BACKGROUND_IMAGE_INSET,
   backgroundImageInsetBottom: DEFAULT_GLOBAL_BACKGROUND_IMAGE_INSET,
   backgroundImageInsetLeft: DEFAULT_GLOBAL_BACKGROUND_IMAGE_INSET,
-  backgroundPattern: 'none',
-  backgroundPatternColor: DEFAULT_GLOBAL_BACKGROUND_PATTERN_COLOR,
-  backgroundPatternSecondaryColor: DEFAULT_GLOBAL_BACKGROUND_PATTERN_SECONDARY_COLOR,
-  backgroundPatternOpacity: DEFAULT_GLOBAL_BACKGROUND_PATTERN_OPACITY,
-  backgroundPatternUnitsPerRow: DEFAULT_GLOBAL_BACKGROUND_PATTERN_UNITS_PER_ROW,
-  backgroundPatternUnitSize: DEFAULT_GLOBAL_BACKGROUND_PATTERN_UNIT_SIZE,
-  backgroundPatternGapX: DEFAULT_GLOBAL_BACKGROUND_PATTERN_GAP,
-  backgroundPatternGapY: DEFAULT_GLOBAL_BACKGROUND_PATTERN_GAP,
   monochromeUi: false,
   colorMode: 'dark',
   paletteFamily: 'classic',
@@ -695,8 +617,6 @@ export const DEFAULT_GLOBAL_SETTINGS: PortfolioGlobalSettings = {
   sectionTitleBottomExtraPx: 0,
   sectionOrder: [...DEFAULT_CONTENT_SECTION_ORDER],
   presenceKind: null,
-  bodyFont: 'plusJakarta',
-  bodyFontForceAll: true,
   titleTypography: { ...DEFAULT_GLOBAL_TITLE_TYPOGRAPHY },
   subtitleTypography: { ...DEFAULT_GLOBAL_SUBTITLE_TYPOGRAPHY },
   titleChrome: { ...DEFAULT_GLOBAL_TITLE_CHROME },
@@ -940,109 +860,6 @@ export const PORTFOLIO_GLOBAL_HEADER_FONT_OPTIONS: {
     previewText: 'Projects',
   },
 ];
-
-export const PORTFOLIO_GLOBAL_BODY_FONT_OPTIONS: {
-  value: PortfolioGlobalBodyFont;
-  label: string;
-  description: string;
-  /** Empty only for legacy `default` — resolved to Geist at runtime. */
-  fontFamily: string;
-  previewText: string;
-}[] = [
-  {
-    value: 'aeonik',
-    label: 'Aeonik',
-    description: 'Grotesk trial — Light / Regular / Bold uniquement. Peut tout forcer.',
-    fontFamily: AEONIK_FONT_FAMILY,
-    previewText: 'The quick brown fox',
-  },
-  {
-    value: 'plusJakarta',
-    label: 'Plus Jakarta Sans',
-    description: 'Google Fonts equivalent to Maison Neue — premium neo-grotesque.',
-    fontFamily: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
-    previewText: 'The quick brown fox',
-  },
-  {
-    value: 'geist',
-    label: 'Geist',
-    description: 'Police du site — UI moderne, SemiBold réel (600). Peut tout forcer.',
-    fontFamily: GEIST_FONT_FAMILY,
-    previewText: 'The quick brown fox',
-  },
-  {
-    value: 'default',
-    label: 'Site default (Geist)',
-    description: 'Alias historique — même police que Geist.',
-    fontFamily: GEIST_FONT_FAMILY,
-    previewText: 'The quick brown fox',
-  },
-  {
-    value: 'montserrat',
-    label: 'Montserrat',
-    description: 'Clean geometric sans — versatile and sharp.',
-    fontFamily: "'Montserrat', ui-sans-serif, system-ui, sans-serif",
-    previewText: 'The quick brown fox',
-  },
-  {
-    value: 'raleway',
-    label: 'Raleway',
-    description: 'Elegant geometric — refined body and UI.',
-    fontFamily: "'Raleway', ui-sans-serif, system-ui, sans-serif",
-    previewText: 'The quick brown fox',
-  },
-  {
-    value: 'roboto',
-    label: 'Roboto',
-    description: 'Neutral product sans — highly readable.',
-    fontFamily: "'Roboto', ui-sans-serif, system-ui, sans-serif",
-    previewText: 'The quick brown fox',
-  },
-];
-
-const GLOBAL_BODY_FONT_VALUES = new Set<PortfolioGlobalBodyFont>(
-  PORTFOLIO_GLOBAL_BODY_FONT_OPTIONS.map((option) => option.value)
-);
-
-export function isPortfolioGlobalBodyFont(value: unknown): value is PortfolioGlobalBodyFont {
-  return typeof value === 'string' && GLOBAL_BODY_FONT_VALUES.has(value as PortfolioGlobalBodyFont);
-}
-
-/** Normalize legacy `default` → `geist`. */
-export function resolvePortfolioGlobalBodyFont(
-  font: PortfolioGlobalBodyFont | undefined
-): Exclude<PortfolioGlobalBodyFont, 'default'> {
-  if (!font || font === 'default') return 'geist';
-  return font;
-}
-
-/** Resolved CSS font-family for the portfolio root. */
-export function globalBodyFontFamily(
-  font: PortfolioGlobalBodyFont | undefined
-): string {
-  const resolved = resolvePortfolioGlobalBodyFont(font);
-  if (resolved === 'geist') return GEIST_FONT_FAMILY;
-  const option = PORTFOLIO_GLOBAL_BODY_FONT_OPTIONS.find((item) => item.value === resolved);
-  return option?.fontFamily?.trim() || GEIST_FONT_FAMILY;
-}
-
-/** Inline style + CSS var override so Tailwind `font-sans` inside the portfolio follows bodyFont. */
-export function globalBodyFontRootStyle(
-  font: PortfolioGlobalBodyFont | undefined
-): CSSProperties {
-  const family = globalBodyFontFamily(font);
-  const resolved = resolvePortfolioGlobalBodyFont(font);
-  const style: CSSProperties = {
-    fontFamily: family,
-    ['--portfolio-body-font' as string]: family,
-  };
-  // Remap Tailwind `font-sans` (--font-geist) only when not using the real Geist face,
-  // so the site variable on <html> stays intact for the Geist option.
-  if (resolved !== 'geist') {
-    (style as Record<string, string>)['--font-geist'] = family;
-  }
-  return style;
-}
 
 const GLOBAL_HEADER_FONT_VALUES = new Set<PortfolioGlobalHeaderFont>(
   PORTFOLIO_GLOBAL_HEADER_FONT_OPTIONS.map((option) => option.value)
@@ -1545,305 +1362,6 @@ export const PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS: {
   { value: 'bottom-right', label: 'Bottom right', description: 'Pin to the bottom-right corner.' },
 ];
 
-export const PORTFOLIO_GLOBAL_BACKGROUND_PATTERN_OPTIONS: {
-  value: PortfolioGlobalBackgroundPattern;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No motif — plain page fill only.' },
-  { value: 'arrows', label: 'Arrows', description: 'Rounded chevrons drifting diagonally.' },
-  { value: 'cubes', label: 'Cubes', description: '3D isometric blocks, branding style.' },
-  { value: 'hexagons', label: 'Hexagons', description: 'Honeycomb outline mesh.' },
-  {
-    value: 'double-hexagon',
-    label: 'Double hexagon',
-    description: 'Two nested hexagons with a central point.',
-  },
-  {
-    value: 'axis-reticle',
-    label: 'Axis reticle',
-    description: 'Vertical and horizontal measuring axes around a ring.',
-  },
-  {
-    value: 'faceted-diamond',
-    label: 'Faceted diamond',
-    description: 'Divided diamond with contrasting facets.',
-  },
-  {
-    value: 'opposed-triangles',
-    label: 'Opposed triangles',
-    description: 'Two opposing triangles joined at the center.',
-  },
-  {
-    value: 'asymmetric-grid',
-    label: 'Asymmetric grid',
-    description: 'Irregular grid crossed by a highlighted vertical axis.',
-  },
-];
-
-export function globalBackgroundPatternUsesSecondaryColor(
-  pattern: PortfolioGlobalBackgroundPattern
-): boolean {
-  return (
-    pattern === 'double-hexagon' ||
-    pattern === 'axis-reticle' ||
-    pattern === 'faceted-diamond' ||
-    pattern === 'opposed-triangles' ||
-    pattern === 'asymmetric-grid'
-  );
-}
-
-/** Base unit markup for each motif (inner SVG content + natural size). */
-function globalBackgroundPatternUnit(
-  pattern: PortfolioGlobalBackgroundPattern,
-  color: string,
-  secondaryColor: string
-): { width: number; height: number; scale: number; content: string } | null {
-  switch (pattern) {
-    case 'arrows':
-      return {
-        width: 120,
-        height: 120,
-        scale: 1,
-        content:
-          `<g fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">` +
-          `<path d="M14 44 L34 24 L54 44"/>` +
-          `<path d="M72 102 L92 82 L112 102"/>` +
-          `<path d="M76 40 L94 22" opacity="0.55"/>` +
-          `<path d="M16 100 L34 82" opacity="0.55"/>` +
-          `</g>`,
-      };
-    case 'cubes':
-      return {
-        width: 112,
-        height: 128,
-        scale: 1,
-        content:
-          `<g fill="${color}">` +
-          `<path d="M56 16 L92 37 L56 58 L20 37 Z" opacity="0.85"/>` +
-          `<path d="M20 37 L56 58 L56 100 L20 79 Z" opacity="0.5"/>` +
-          `<path d="M92 37 L56 58 L56 100 L92 79 Z" opacity="0.28"/>` +
-          `</g>`,
-      };
-    case 'hexagons':
-      // Seamless honeycomb outline (Hero Patterns "hexagons" path, scaled 2x).
-      return {
-        width: 56,
-        height: 98,
-        scale: 2,
-        content:
-          `<path fill="${color}" fill-rule="evenodd" d="M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z"/>`,
-      };
-    case 'double-hexagon':
-      return {
-        width: 120,
-        height: 120,
-        scale: 1,
-        content:
-          `<g fill="none" stroke-width="2.2" stroke-linejoin="round">` +
-          `<path stroke="${color}" d="M60 12 104 37 104 83 60 108 16 83 16 37Z"/>` +
-          `<path stroke="${secondaryColor}" d="M60 32 84 46 84 74 60 88 36 74 36 46Z"/>` +
-          `<circle cx="60" cy="60" r="4" fill="${color}" stroke="none"/>` +
-          `</g>`,
-      };
-    case 'axis-reticle':
-      return {
-        width: 140,
-        height: 140,
-        scale: 1,
-        content:
-          `<g fill="none" stroke="${color}" stroke-width="2" stroke-linecap="square">` +
-          `<path d="M70 10v36M70 94v36M10 70h36M94 70h36"/>` +
-          `<path d="M60 10h20M60 130h20M10 60v20M130 60v20"/>` +
-          `</g>` +
-          `<circle cx="70" cy="70" r="16" fill="none" stroke="${secondaryColor}" stroke-width="2"/>` +
-          `<circle cx="70" cy="70" r="4" fill="${color}"/>`,
-      };
-    case 'faceted-diamond':
-      return {
-        width: 120,
-        height: 120,
-        scale: 1,
-        content:
-          `<g fill="none" stroke-width="2" stroke-linejoin="round">` +
-          `<path stroke="${color}" d="M60 12 108 60 60 108 12 60Z"/>` +
-          `<path stroke="${secondaryColor}" d="M12 60h96M60 12v96"/>` +
-          `<circle cx="60" cy="60" r="4" fill="${color}" stroke="none"/>` +
-          `</g>`,
-      };
-    case 'opposed-triangles':
-      return {
-        width: 120,
-        height: 120,
-        scale: 1,
-        content:
-          `<g fill="none" stroke-width="2.2" stroke-linejoin="round">` +
-          `<path stroke="${color}" d="M60 10 104 60H16Z"/>` +
-          `<path stroke="${secondaryColor}" d="M16 60h88L60 110Z"/>` +
-          `<circle cx="60" cy="60" r="4" fill="${color}" stroke="none"/>` +
-          `</g>`,
-      };
-    case 'asymmetric-grid':
-      return {
-        width: 140,
-        height: 140,
-        scale: 1,
-        content:
-          `<g fill="none" stroke="${color}" stroke-width="1.5" opacity="0.45">` +
-          `<path d="M22 42h96M12 62h116M18 86h104M44 20v100M64 28v84M94 18v104"/>` +
-          `</g>` +
-          `<path d="M70 10v120" stroke="${secondaryColor}" stroke-width="2.5"/>` +
-          `<circle cx="70" cy="10" r="4" fill="none" stroke="${secondaryColor}" stroke-width="2"/>` +
-          `<circle cx="70" cy="130" r="4" fill="none" stroke="${secondaryColor}" stroke-width="2"/>` +
-          `<circle cx="70" cy="72" r="5" fill="${secondaryColor}"/>`,
-      };
-    default:
-      return null;
-  }
-}
-
-/**
- * Repeating SVG tile for each motif (single-color, opacity applied on the layer).
- * Optional gaps pad the tile around the unit so repeats spread apart.
- */
-function globalBackgroundPatternTile(
-  pattern: PortfolioGlobalBackgroundPattern,
-  color: string,
-  secondaryColor: string,
-  gapX = 0,
-  gapY = 0
-): { svg: string; width: number; height: number } | null {
-  const unit = globalBackgroundPatternUnit(pattern, color, secondaryColor);
-  if (!unit) return null;
-  const width = unit.width + Math.max(0, gapX);
-  const height = unit.height + Math.max(0, gapY);
-  const transforms = [
-    `translate(${Math.max(0, gapX) / 2}, ${Math.max(0, gapY) / 2})`,
-    unit.scale !== 1 ? `scale(${unit.scale})` : '',
-  ]
-    .filter(Boolean)
-    .join(' ');
-  return {
-    width,
-    height,
-    svg:
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
-      `<g transform="${transforms}">${unit.content}</g></svg>`,
-  };
-}
-
-/** Repeating tile only (no opacity/positioning) — settings-panel swatch previews. */
-export function globalBackgroundPatternSwatchStyle(
-  pattern: PortfolioGlobalBackgroundPattern,
-  color = '#e2572e',
-  secondaryColor = '#22c48f'
-): CSSProperties | undefined {
-  const tile = globalBackgroundPatternTile(pattern, color, secondaryColor);
-  if (!tile) return undefined;
-  return {
-    backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(tile.svg)}")`,
-    backgroundSize: `${Math.round(tile.width * 0.6)}px ${Math.round(tile.height * 0.6)}px`,
-    backgroundRepeat: 'repeat',
-  };
-}
-
-/** True when a motif should be painted over the page background. */
-export function hasGlobalBackgroundPattern(global: PortfolioGlobalSettings): boolean {
-  return global.backgroundPattern !== 'none' && global.backgroundPatternOpacity > 0;
-}
-
-function sanitizePatternUnitsPerRow(value: unknown, fallback: number): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
-  return Math.min(GLOBAL_BACKGROUND_PATTERN_UNITS_PER_ROW_MAX, Math.max(0, Math.round(value)));
-}
-
-function sanitizePatternUnitSize(value: unknown, fallback: number): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
-  return Math.min(
-    GLOBAL_BACKGROUND_PATTERN_UNIT_SIZE_MAX,
-    Math.max(GLOBAL_BACKGROUND_PATTERN_UNIT_SIZE_MIN, Math.round(value))
-  );
-}
-
-function sanitizePatternGapPx(value: unknown, fallback: number): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
-  return Math.min(GLOBAL_BACKGROUND_PATTERN_GAP_MAX, Math.max(0, Math.round(value)));
-}
-
-/** Fixed full-viewport layer with the repeating motif tile. */
-export function globalBackgroundPatternStyle(
-  global: PortfolioGlobalSettings
-): CSSProperties | undefined {
-  if (!hasGlobalBackgroundPattern(global)) return undefined;
-  const color = sanitizeHex(global.backgroundPatternColor, DEFAULT_GLOBAL_BACKGROUND_PATTERN_COLOR);
-  const secondaryColor = sanitizeHex(
-    global.backgroundPatternSecondaryColor,
-    DEFAULT_GLOBAL_BACKGROUND_PATTERN_SECONDARY_COLOR
-  );
-  const unitsPerRow = sanitizePatternUnitsPerRow(
-    global.backgroundPatternUnitsPerRow,
-    DEFAULT_GLOBAL_BACKGROUND_PATTERN_UNITS_PER_ROW
-  );
-  const isSingleUnit = unitsPerRow === 1;
-  const gapX = isSingleUnit
-    ? 0
-    : sanitizePatternGapPx(global.backgroundPatternGapX, DEFAULT_GLOBAL_BACKGROUND_PATTERN_GAP);
-  const gapY = isSingleUnit
-    ? 0
-    : sanitizePatternGapPx(global.backgroundPatternGapY, DEFAULT_GLOBAL_BACKGROUND_PATTERN_GAP);
-  const tile = globalBackgroundPatternTile(
-    global.backgroundPattern,
-    color,
-    secondaryColor,
-    gapX,
-    gapY
-  );
-  if (!tile) return undefined;
-  const opacity = sanitizeOpacityPercent(
-    global.backgroundPatternOpacity,
-    DEFAULT_GLOBAL_BACKGROUND_PATTERN_OPACITY
-  );
-
-  /**
-   * Units per row:
-   * - 0: natural pixel tile size, repeating
-   * - 1: single centered unit (no repeat), size = % of viewport width
-   * - 2+: each tile spans 100/n % of viewport width, repeating
-   */
-  if (isSingleUnit) {
-    const unitSize = sanitizePatternUnitSize(
-      global.backgroundPatternUnitSize,
-      DEFAULT_GLOBAL_BACKGROUND_PATTERN_UNIT_SIZE
-    );
-    return {
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(tile.svg)}")`,
-      backgroundSize: `${unitSize}% auto`,
-      backgroundRepeat: 'no-repeat',
-      backgroundPosition: 'center center',
-      opacity: opacity / 100,
-    };
-  }
-
-  const backgroundSize =
-    unitsPerRow > 0
-      ? `${(100 / unitsPerRow).toFixed(4)}% auto`
-      : `${tile.width}px ${tile.height}px`;
-  return {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(tile.svg)}")`,
-    backgroundSize,
-    backgroundRepeat: 'repeat',
-    opacity: opacity / 100,
-  };
-}
-
 function sanitizeBackgroundImageUrl(value: unknown): string {
   if (typeof value !== 'string') return '';
   const trimmed = value.trim();
@@ -1935,45 +1453,27 @@ function backgroundImageSizeCss(size: PortfolioGlobalBackgroundImageSize): strin
   }
 }
 
-/** Active fixed wallpaper (image wins over solid when both flags are somehow set). */
+/** Active fixed wallpaper image. */
 export function hasActiveGlobalBackgroundImage(global: PortfolioGlobalSettings): boolean {
-  return (
-    global.backgroundImageEnabled && Boolean(sanitizeBackgroundImageUrl(global.backgroundImageUrl))
-  );
+  return global.backgroundEnabled && Boolean(sanitizeBackgroundImageUrl(global.backgroundImageUrl));
 }
 
-/** True when a solid color or fixed image should replace default white page chrome. */
+/** True when the fixed background image should replace default white page chrome. */
 export function hasGlobalPageBackground(global: PortfolioGlobalSettings): boolean {
-  return hasGlobalSolidBackground(global) || hasActiveGlobalBackgroundImage(global);
-}
-
-/**
- * Solid page color only — mutually exclusive with the fixed image.
- * Sections without their own fill stay transparent so this color shows through;
- * an enabled per-section background paints on top for that section only.
- */
-export function hasGlobalSolidBackground(global: PortfolioGlobalSettings): boolean {
-  return global.backgroundEnabled && !hasActiveGlobalBackgroundImage(global);
-}
-
-export function globalBackgroundStyle(global: PortfolioGlobalSettings): CSSProperties | undefined {
-  if (!hasGlobalSolidBackground(global)) return undefined;
-  return { backgroundColor: sanitizeHex(global.backgroundColor, DEFAULT_GLOBAL_BACKGROUND_COLOR) };
+  return hasActiveGlobalBackgroundImage(global);
 }
 
 /** Fixed layer style for the viewport background image (insets from all sides). */
 export function globalFixedBackgroundImageStyle(
   global: PortfolioGlobalSettings
 ): CSSProperties | undefined {
-  // Never stack image under/over solid — solid mode suppresses the wallpaper.
-  if (hasGlobalSolidBackground(global)) return undefined;
-  if (!global.backgroundImageEnabled) return undefined;
+  if (!global.backgroundEnabled) return undefined;
   const url = sanitizeBackgroundImageUrl(global.backgroundImageUrl);
   if (!url) return undefined;
 
   const opacity = sanitizeOpacityPercent(
-    global.backgroundImageOpacity,
-    DEFAULT_GLOBAL_BACKGROUND_IMAGE_OPACITY
+    global.backgroundOpacity,
+    DEFAULT_GLOBAL_BACKGROUND_OPACITY
   );
 
   return {
@@ -2652,30 +2152,20 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
   const backgroundImageSize = record.backgroundImageSize;
   const backgroundImagePosition = record.backgroundImagePosition;
 
-  let backgroundEnabled =
-    typeof record.backgroundEnabled === 'boolean' ? record.backgroundEnabled : base.backgroundEnabled;
-  let backgroundImageEnabled =
-    typeof record.backgroundImageEnabled === 'boolean'
-      ? record.backgroundImageEnabled
-      : base.backgroundImageEnabled;
+  // `backgroundImageEnabled` is the legacy field name from before the page background was
+  // simplified back down to image-only — it now means exactly what `backgroundEnabled` means,
+  // kept as a fallback so old saved data doesn't lose its wallpaper toggle.
+  const backgroundEnabled =
+    typeof record.backgroundEnabled === 'boolean'
+      ? record.backgroundEnabled
+      : typeof record.backgroundImageEnabled === 'boolean'
+        ? record.backgroundImageEnabled
+        : base.backgroundEnabled;
+
   const backgroundImageUrl =
     typeof record.backgroundImageUrl === 'string'
       ? record.backgroundImageUrl.trim()
       : base.backgroundImageUrl;
-
-  // Color OR fixed image — never both. Enabling one clears the other.
-  if (typeof record.backgroundEnabled === 'boolean' && record.backgroundEnabled) {
-    backgroundImageEnabled = false;
-  } else if (typeof record.backgroundImageEnabled === 'boolean' && record.backgroundImageEnabled) {
-    backgroundEnabled = false;
-  } else if (backgroundEnabled && backgroundImageEnabled) {
-    // Legacy: both flags on — keep image when a URL exists, otherwise solid.
-    if (sanitizeBackgroundImageUrl(backgroundImageUrl)) {
-      backgroundEnabled = false;
-    } else {
-      backgroundImageEnabled = false;
-    }
-  }
 
   const backgroundImageLibrary = normalizeBackgroundImageLibrary(
     record.backgroundImageLibrary !== undefined
@@ -2686,8 +2176,10 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
 
   return {
     backgroundEnabled,
-    backgroundColor: sanitizeHex(record.backgroundColor, base.backgroundColor),
-    backgroundImageEnabled,
+    backgroundOpacity: sanitizeOpacityPercent(
+      record.backgroundOpacity ?? record.backgroundImageOpacity,
+      base.backgroundOpacity
+    ),
     backgroundImageUrl,
     backgroundImageLibrary,
     backgroundImageSize:
@@ -2708,10 +2200,6 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
       backgroundImagePosition === 'bottom-right'
         ? backgroundImagePosition
         : base.backgroundImagePosition,
-    backgroundImageOpacity: sanitizeOpacityPercent(
-      record.backgroundImageOpacity,
-      base.backgroundImageOpacity
-    ),
     backgroundImageInsetTop: sanitizeInsetPx(
       record.backgroundImageInsetTop,
       base.backgroundImageInsetTop
@@ -2727,47 +2215,6 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
     backgroundImageInsetLeft: sanitizeInsetPx(
       record.backgroundImageInsetLeft,
       base.backgroundImageInsetLeft
-    ),
-    backgroundPattern:
-      record.backgroundPattern === 'none' ||
-      record.backgroundPattern === 'arrows' ||
-      record.backgroundPattern === 'cubes' ||
-      record.backgroundPattern === 'hexagons' ||
-      record.backgroundPattern === 'double-hexagon' ||
-      record.backgroundPattern === 'axis-reticle' ||
-      record.backgroundPattern === 'faceted-diamond' ||
-      record.backgroundPattern === 'opposed-triangles' ||
-      record.backgroundPattern === 'asymmetric-grid'
-        ? record.backgroundPattern
-        : base.backgroundPattern ?? 'none',
-    backgroundPatternColor: sanitizeHex(
-      record.backgroundPatternColor,
-      base.backgroundPatternColor ?? DEFAULT_GLOBAL_BACKGROUND_PATTERN_COLOR
-    ),
-    backgroundPatternSecondaryColor: sanitizeHex(
-      record.backgroundPatternSecondaryColor,
-      base.backgroundPatternSecondaryColor ??
-        DEFAULT_GLOBAL_BACKGROUND_PATTERN_SECONDARY_COLOR
-    ),
-    backgroundPatternOpacity: sanitizeOpacityPercent(
-      record.backgroundPatternOpacity,
-      base.backgroundPatternOpacity ?? DEFAULT_GLOBAL_BACKGROUND_PATTERN_OPACITY
-    ),
-    backgroundPatternUnitsPerRow: sanitizePatternUnitsPerRow(
-      record.backgroundPatternUnitsPerRow,
-      base.backgroundPatternUnitsPerRow ?? DEFAULT_GLOBAL_BACKGROUND_PATTERN_UNITS_PER_ROW
-    ),
-    backgroundPatternUnitSize: sanitizePatternUnitSize(
-      record.backgroundPatternUnitSize,
-      base.backgroundPatternUnitSize ?? DEFAULT_GLOBAL_BACKGROUND_PATTERN_UNIT_SIZE
-    ),
-    backgroundPatternGapX: sanitizePatternGapPx(
-      record.backgroundPatternGapX,
-      base.backgroundPatternGapX ?? DEFAULT_GLOBAL_BACKGROUND_PATTERN_GAP
-    ),
-    backgroundPatternGapY: sanitizePatternGapPx(
-      record.backgroundPatternGapY,
-      base.backgroundPatternGapY ?? DEFAULT_GLOBAL_BACKGROUND_PATTERN_GAP
     ),
     monochromeUi:
       typeof record.monochromeUi === 'boolean' ? record.monochromeUi : base.monochromeUi,
@@ -2921,10 +2368,6 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
       : record.presenceKind === null
         ? null
         : (base.presenceKind ?? null),
-    bodyFont: isPortfolioGlobalBodyFont(record.bodyFont)
-      ? record.bodyFont
-      : base.bodyFont ?? 'plusJakarta',
-    bodyFontForceAll: true,
     titleTypography: mergeTitleTypography(base.titleTypography, record.titleTypography),
     subtitleTypography: mergeSubtitleTypography(base.subtitleTypography, record.subtitleTypography),
     titleChrome: mergeTitleChrome(base.titleChrome, record.titleChrome),
