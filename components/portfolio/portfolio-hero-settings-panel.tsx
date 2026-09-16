@@ -82,6 +82,27 @@ function HeroSubSectionTabs({
   );
 }
 
+function HeroChangeIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden>
+      <path
+        d="M4 8a6 6 0 0 1 10.2-4.2M16 12a6 6 0 0 1-10.2 4.2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14.2 2.4v3.4h-3.4M5.8 17.6v-3.4h3.4"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 /** Fixed, palette-independent colors — this is admin chrome, not portfolio content, so it must
  *  stay visible regardless of the portfolio's own palette/color-mode (which the settings modal
  *  otherwise inherits via .pf-theme-root). */
@@ -290,6 +311,13 @@ export function HeroSettingsPanel({
     onSubSectionChange?.(value);
     if (controlledSubSection === undefined) setUncontrolledSubSection(value);
   };
+  // Banner tab: browse designs (grid) vs configure the selected one (detail) — picking a
+  // design jumps straight to its settings instead of leaving them buried below the grid.
+  const [showBannerGrid, setShowBannerGrid] = useState(false);
+  const selectedBannerDesign = hero.heroBannerDesign ?? 'swiss-editorial';
+  const selectedBannerLabel =
+    PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS.find((option) => option.value === selectedBannerDesign)?.label ??
+    selectedBannerDesign;
   const normalizedTools = Array.from(
     new Set(availableTools.map((item) => item.trim()).filter(Boolean))
   );
@@ -303,93 +331,161 @@ export function HeroSettingsPanel({
 
       {subSection === 'banner' ? (
         <div className="space-y-6">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Design Banner
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              {PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS.map((option) => {
-                const active = (hero.heroBannerDesign ?? 'swiss-editorial') === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => onChange(heroBannerDesignSettingsPatch(option.value))}
-                    className={`text-left transition ${
-                      active ? 'opacity-100' : 'opacity-60 hover:opacity-90'
-                    }`}
-                  >
-                    <div
-                      className="overflow-hidden rounded-xl"
-                      style={{ boxShadow: active ? '0 0 0 2px #f97316' : undefined }}
-                    >
-                      <HeroBannerDesignPreview design={option.value} hero={hero} />
-                    </div>
-                    <span
-                      className={`mt-2 block text-sm ${
-                        active ? 'font-semibold text-neutral-950' : 'font-medium text-neutral-500'
+          {showBannerGrid ? (
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                  Design Banner
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowBannerGrid(false)}
+                  className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+                >
+                  ← Back
+                </button>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-5">
+                {PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS.map((option) => {
+                  const active = selectedBannerDesign === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => {
+                        onChange(heroBannerDesignSettingsPatch(option.value));
+                        setShowBannerGrid(false);
+                      }}
+                      className={`relative rounded-2xl border-2 p-4 text-left transition ${
+                        active ? '' : 'border-neutral-200/80 hover:border-neutral-300'
                       }`}
+                      style={active ? { borderColor: 'var(--pf-palette-principal, #f97316)' } : undefined}
                     >
-                      {option.label}
+                      {active ? (
+                        <span
+                          aria-hidden
+                          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+                          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
+                        >
+                          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
+                            <path
+                              d="M4 10.5l3.5 3.5L16 6"
+                              stroke="white"
+                              strokeWidth={2.5}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </span>
+                      ) : null}
+                      <div className="overflow-hidden rounded-xl">
+                        {/* No `hero` prop here: this grid compares many designs at once, so
+                            it must stay an abstract mini-schema (fixed shape count, uniform
+                            height) — real content (variable-length text, pills, dots) belongs
+                            only in the single-design detail preview above. */}
+                        <HeroBannerDesignPreview design={option.value} />
+                      </div>
+                      <span
+                        className={`mt-3 block text-sm ${
+                          active ? 'font-semibold text-neutral-950' : 'font-medium text-neutral-500'
+                        }`}
+                      >
+                        {option.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div>
+                <div className="group relative w-full overflow-hidden rounded-2xl border border-neutral-200/80">
+                  <HeroBannerDesignPreview design={selectedBannerDesign} hero={hero} />
+
+                  {/* Desktop: full dark overlay revealed on hover/keyboard focus. */}
+                  <button
+                    type="button"
+                    onClick={() => setShowBannerGrid(true)}
+                    aria-label="Change banner design"
+                    className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
+                  >
+                    <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-lg">
+                      <HeroChangeIcon className="h-4 w-4" />
+                      Change banner
                     </span>
                   </button>
-                );
-              })}
-            </div>
-          </div>
 
-          <HeroToggleRow
-            label="Noir et blanc (images)"
-            checked={hero.heroImageGrayscale === true}
-            onChange={(heroImageGrayscale) => onChange({ heroImageGrayscale })}
-          />
+                  {/* Mobile/touch: no hover, so keep a small persistent affordance instead. */}
+                  <button
+                    type="button"
+                    onClick={() => setShowBannerGrid(true)}
+                    aria-label="Change banner design"
+                    className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
+                  >
+                    <HeroChangeIcon className="h-3.5 w-3.5" />
+                    Change
+                  </button>
+                </div>
+                <p className="mt-3 text-sm font-semibold text-neutral-950">{selectedBannerLabel}</p>
+                <p className="mt-0.5 text-xs text-neutral-400">
+                  <span className="hidden sm:inline">Hover preview to change</span>
+                  <span className="sm:hidden">Tap preview to change</span>
+                </p>
+              </div>
 
-          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'swiss-editorial' ? (
-            <div className="space-y-4 border-t border-neutral-200/70 pt-6">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Contenu Swiss editorial
-              </p>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Label Currently
-                </p>
-                <input
-                  type="text"
-                  value={hero.heroCurrentlyLabel ?? 'Currently'}
-                  onChange={(event) => onChange({ heroCurrentlyLabel: event.target.value })}
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
-                />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Label Specialized in
-                </p>
-                <input
-                  type="text"
-                  value={hero.heroSpecializedInLabel ?? 'Specialized in'}
-                  onChange={(event) => onChange({ heroSpecializedInLabel: event.target.value })}
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
-                />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Signature word
-                </p>
-                <input
-                  type="text"
-                  value={hero.heroSignatureWord ?? ''}
-                  onChange={(event) => onChange({ heroSignatureWord: event.target.value })}
-                  placeholder="Vide = prénom en majuscules"
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
-                />
-              </div>
               <HeroToggleRow
-                label="Interchanger bio ↔ nom + spécialité"
-                checked={hero.heroBannerSwapBioName === true}
-                onChange={(heroBannerSwapBioName) => onChange({ heroBannerSwapBioName })}
+                label="Noir et blanc (images)"
+                checked={hero.heroImageGrayscale === true}
+                onChange={(heroImageGrayscale) => onChange({ heroImageGrayscale })}
               />
-            </div>
-          ) : null}
+
+              {(hero.heroBannerDesign ?? 'swiss-editorial') === 'swiss-editorial' ? (
+                <div className="space-y-6 border-t border-neutral-200/70 pt-6">
+                  <HeroToggleRow
+                    label="Swap bio ↔ name + specialty"
+                    checked={hero.heroBannerSwapBioName === true}
+                    onChange={(heroBannerSwapBioName) => onChange({ heroBannerSwapBioName })}
+                  />
+                  <div className="space-y-4 border-t border-neutral-200/70 pt-6">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                        Currently label
+                      </p>
+                      <input
+                        type="text"
+                        value={hero.heroCurrentlyLabel ?? 'Currently'}
+                        onChange={(event) => onChange({ heroCurrentlyLabel: event.target.value })}
+                        className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                        Specialized in label
+                      </p>
+                      <input
+                        type="text"
+                        value={hero.heroSpecializedInLabel ?? 'Specialized in'}
+                        onChange={(event) => onChange({ heroSpecializedInLabel: event.target.value })}
+                        className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                        Signature word
+                      </p>
+                      <input
+                        type="text"
+                        value={hero.heroSignatureWord ?? ''}
+                        onChange={(event) => onChange({ heroSignatureWord: event.target.value })}
+                        placeholder="e.g. JOHN"
+                        className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'portrait-identity' ? (
             <div className="space-y-4 border-t border-neutral-200/70 pt-7">
@@ -990,6 +1086,8 @@ export function HeroSettingsPanel({
               />
             </div>
           ) : null}
+            </div>
+          )}
         </div>
       ) : null}
 
