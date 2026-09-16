@@ -1963,6 +1963,191 @@ function ChevronDownIcon({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Global settings controls below reuse the Stack section's `.pf-stack-*` design language
+ * (segmented pills, hairline block labels, merged token swatches) so the whole settings
+ * surface reads as one system instead of mixing native inputs with bespoke controls.
+ */
+function GlobalBlockLabel({ children }: { children: ReactNode }) {
+  return <p className="pf-stack-block-label">{children}</p>;
+}
+
+function GlobalSegmentGrid<T extends string | number>({
+  label,
+  options,
+  value,
+  onChange,
+  columns,
+  hideDescription,
+}: {
+  label: string;
+  options: { value: T; label: string; description?: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  columns?: number;
+  hideDescription?: boolean;
+}) {
+  const count = options.length;
+  const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
+  const compact = cols === count && count >= 2 && count <= 5;
+  return (
+    <div>
+      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="pf-stack-segment grid gap-[3px] p-[3px]"
+        data-compact={compact ? 'true' : 'false'}
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={String(option.value)}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              title={!hideDescription ? option.description : undefined}
+              onClick={() => onChange(option.value)}
+              data-active={active ? 'true' : 'false'}
+              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
+            >
+              <span>{option.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Guaranteed-visible animated switch — hardcoded per dock-mode colors (see .pf-global-switch-*
+ *  in globals.css) instead of palette-derived ones, which can land near-invisible against the
+ *  dock's own chrome in some palette/mode combinations. */
+function GlobalSwitchTrack({ checked }: { checked: boolean }) {
+  return (
+    <span
+      data-checked={checked ? 'true' : 'false'}
+      className="pf-global-switch-track relative inline-block h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+    >
+      <span
+        data-checked={checked ? 'true' : 'false'}
+        className="pf-global-switch-thumb absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        style={{ left: checked ? '1.125rem' : '0.125rem' }}
+      />
+    </span>
+  );
+}
+
+function GlobalSwitchRow({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full cursor-pointer flex-col gap-1 text-left"
+    >
+      <span className="flex items-center justify-between gap-4">
+        <span className="min-w-0 text-sm font-semibold text-neutral-950">{label}</span>
+        <GlobalSwitchTrack checked={checked} />
+      </span>
+      {description ? (
+        <span className="text-sm leading-relaxed text-neutral-500">{description}</span>
+      ) : null}
+    </button>
+  );
+}
+
+/** Single merged shape — native color input fills the whole swatch, hex shows on hover —
+ *  instead of a separate swatch + hex chip + text input stacked on top of each other. */
+function GlobalTokenSwatch({
+  label,
+  description,
+  value,
+  onChange,
+}: {
+  label: string;
+  description?: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="group block cursor-pointer">
+      <span className="pf-stack-block-label pf-stack-option-label">{label}</span>
+      <span className="pf-swatch-ring relative block h-11 w-full overflow-hidden rounded-xl">
+        <input
+          type="color"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="pf-token-swatch-input h-full w-full cursor-pointer"
+        />
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 text-[11px] font-semibold uppercase tracking-[0.08em] text-transparent opacity-0 mix-blend-difference transition group-hover:bg-black/10 group-hover:text-white group-hover:opacity-100">
+          {value}
+        </span>
+      </span>
+      {description ? (
+        <span className="mt-1.5 block text-xs leading-relaxed text-neutral-500">{description}</span>
+      ) : null}
+    </label>
+  );
+}
+
+function GlobalNumberSlider({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  unit = '',
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  unit?: string;
+  onChange: (value: number) => void;
+}) {
+  const percent = max > min ? ((value - min) / (max - min)) * 100 : 0;
+  return (
+    <div>
+      <div className="pf-stack-slider-row">
+        <span className="pf-stack-slider-label">{label}</span>
+        <span className="pf-stack-slider-value">
+          {value}
+          {unit}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        aria-label={label}
+        className="pf-stack-slider-input"
+        style={{
+          background: `linear-gradient(to right, var(--pf-palette-texte-fort, #f5f5f5) ${percent}%, color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a)) ${percent}%)`,
+        }}
+      />
+    </div>
+  );
+}
+
 function GlobalSettingsPanel({
   themeId,
   customThemes,
@@ -2077,32 +2262,16 @@ function GlobalSettingsPanel({
       </nav>
 
       {subSection === 'theme' ? (
-        <div className="space-y-5">
-          <ToggleRow
+        <div className="space-y-8">
+          <GlobalSwitchRow
             label="Light mode"
-            description="Off = dark half of the selected palette pair. On = light half of the same pair (Indigo, Classic, Verdant, Vive, Safran, Citron, Rouge, Écarlate, or Ardoise stay in their own pair)."
+            description="Off = dark half of the selected pair. On = light half of the same pair — light mode never jumps to another family."
             checked={activeMode === 'light'}
             onChange={(light) => onColorModeChange(light ? 'light' : 'dark')}
           />
 
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Site color palette
-              </p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Pick one coupled pair below. Light mode only flips sombre ↔ clair inside that pair —
-                it never jumps to another family. Token edits update the{' '}
-                <span className="font-semibold text-neutral-800">
-                  {activeMode === 'light' ? 'light' : 'dark'}
-                </span>{' '}
-                side and apply to Hero, Nav, and every section that follows the global palette.
-              </p>
-            </div>
-
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Palette pairs
-            </p>
+          <div className="space-y-4">
+            <GlobalBlockLabel>Site color palette</GlobalBlockLabel>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {(
                 [
@@ -2259,13 +2428,13 @@ function GlobalSettingsPanel({
               </p>
             ) : null}
 
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+            <GlobalBlockLabel>
               Active mode tokens ({activeMode === 'light' ? 'Light' : 'Dark'}
               {activeFamily !== 'custom' ? ` · ${activeFamily}` : ' · custom'})
-            </p>
+            </GlobalBlockLabel>
             <div className="grid gap-4 sm:grid-cols-2">
               {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
-                <GlobalColorField
+                <GlobalTokenSwatch
                   key={token.value}
                   label={token.label}
                   description={token.description}
@@ -2277,9 +2446,7 @@ function GlobalSettingsPanel({
           </div>
 
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Theme chrome
-            </p>
+            <GlobalBlockLabel>Theme chrome</GlobalBlockLabel>
             <div className="mt-3">
               <ThemePickerPanel
                 themeId={themeId}
@@ -2308,33 +2475,31 @@ function GlobalSettingsPanel({
             </div>
           </div>
 
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Layout &amp; width
-            </p>
-            <OptionGrid
+          <div className="space-y-4">
+            <GlobalBlockLabel>Layout &amp; width</GlobalBlockLabel>
+            <GlobalSegmentGrid
               label="Content width"
               options={PORTFOLIO_GLOBAL_CONTENT_WIDTH_OPTIONS}
               value={global.contentWidth}
               onChange={(contentWidth) => onGlobalChange({ contentWidth })}
               columns={3}
+              hideDescription
             />
-            <OptionGrid
+            <GlobalSegmentGrid
               label="Side margins"
               options={PORTFOLIO_GLOBAL_CONTENT_GUTTER_OPTIONS}
               value={global.contentGutter}
               onChange={(contentGutter) => onGlobalChange({ contentGutter })}
               columns={2}
+              hideDescription
             />
           </div>
 
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Preferences
-            </p>
-            <ToggleRow
+          <div className="space-y-4">
+            <GlobalBlockLabel>Preferences</GlobalBlockLabel>
+            <GlobalSwitchRow
               label="Settings keyboard shortcut"
-              description="Press Ctrl+, (⌘, on Mac) to open or close portfolio settings. Owner only."
+              description="Ctrl+, (⌘ on Mac) — owner only."
               checked={global.settingsShortcutEnabled ?? true}
               onChange={(settingsShortcutEnabled) => onGlobalChange({ settingsShortcutEnabled })}
             />
@@ -2344,7 +2509,7 @@ function GlobalSettingsPanel({
 
       {subSection === 'background' ? (
         <div className="space-y-4">
-          <ToggleRow
+          <GlobalSwitchRow
             label="Enable page background"
             description="Fixed wallpaper image behind every section. A section's own image fill still sits on top for that section only."
             checked={global.backgroundEnabled}
@@ -2360,27 +2525,27 @@ function GlobalSettingsPanel({
                 onLibraryChange={(backgroundImageLibrary) => onGlobalChange({ backgroundImageLibrary })}
               />
 
-              <OptionGrid
+              <GlobalSegmentGrid
                 label="Image size"
                 options={PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS}
                 value={global.backgroundImageSize}
                 onChange={(backgroundImageSize) => onGlobalChange({ backgroundImageSize })}
                 columns={3}
+                hideDescription
               />
 
-              <OptionGrid
+              <GlobalSegmentGrid
                 label="Image position"
                 options={PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS}
                 value={global.backgroundImagePosition}
                 onChange={(backgroundImagePosition) => onGlobalChange({ backgroundImagePosition })}
                 columns={3}
+                hideDescription
               />
 
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Insets from edges
-                </p>
-                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <GlobalBlockLabel>Insets from edges</GlobalBlockLabel>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {(
                     [
                       ['Top', 'backgroundImageInsetTop', global.backgroundImageInsetTop],
@@ -2414,28 +2579,14 @@ function GlobalSettingsPanel({
                 </div>
               </div>
 
-              <div>
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Opacity
-                  </p>
-                  <span className="text-xs font-semibold tabular-nums text-neutral-600">
-                    {global.backgroundOpacity}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={global.backgroundOpacity}
-                  onChange={(event) =>
-                    onGlobalChange({ backgroundOpacity: Number(event.target.value) })
-                  }
-                  className="mt-2 h-1.5 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Background image opacity"
-                />
-              </div>
+              <GlobalNumberSlider
+                label="Opacity"
+                value={global.backgroundOpacity}
+                min={0}
+                max={100}
+                unit="%"
+                onChange={(backgroundOpacity) => onGlobalChange({ backgroundOpacity })}
+              />
             </div>
           ) : null}
         </div>
@@ -5058,7 +5209,7 @@ function NavLookPresetGrid({
   );
 }
 
-type NavSettingsTab = 'general' | 'design';
+type NavSettingsTab = 'general' | 'design' | 'labels';
 
 const NAV_SETTINGS_TABS: { id: NavSettingsTab; label: string; description: string }[] = [
   {
@@ -5070,6 +5221,11 @@ const NAV_SETTINGS_TABS: { id: NavSettingsTab; label: string; description: strin
     id: 'design',
     label: 'Design',
     description: 'Modèles de mise en page : logo, liens de section, contact ou réseaux sociaux.',
+  },
+  {
+    id: 'labels',
+    label: 'Labels',
+    description: 'Menu groups, and the label / icon shown for each section.',
   },
 ];
 
@@ -5590,47 +5746,43 @@ function NavigationPanel({
         description="When on, Navigation colors follow the semantic palette (Principal, Fond, Bordure…). Turn off to set each color manually."
       />
 
-      <SectionColorModeControl
-        value={navigation.colorModeOverride}
-        onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-      />
-
       {navigation.enabled ? (
         <div className="space-y-8">
-        <div className="space-y-4">
-        <NavigationOptionGrid
-          label="Fond de la barre"
-          options={PORTFOLIO_NAV_BAR_SURFACE_OPTIONS}
-          value={navigation.navBarSurface ?? 'neutre'}
-          onChange={(navBarSurface) => onChange({ navBarSurface })}
-          columns={3}
-        />
-        <NavigationOptionGrid
-          label="Hauteur de la barre"
-          options={PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS}
-          value={navigation.navBarHeight ?? 'md'}
-          onChange={(navBarHeight) => onChange({ navBarHeight })}
-          columns={3}
-        />
-        <NavigationToggleRow
-          label="Bascule clair / sombre dans la barre"
-          description="Affiche une icône soleil / lune dans la navigation pour basculer entre mode clair et sombre."
-          checked={showColorModeToggleInNav}
-          onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
-        />
+        <div className="space-y-5 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-5">
+          <p className="text-sm font-bold uppercase tracking-[0.12em] text-neutral-500">
+            Bar appearance
+          </p>
+          <NavigationOptionGrid
+            label="Fond de la barre"
+            options={PORTFOLIO_NAV_BAR_SURFACE_OPTIONS}
+            value={navigation.navBarSurface ?? 'neutre'}
+            onChange={(navBarSurface) => onChange({ navBarSurface })}
+            columns={3}
+          />
+          <NavigationOptionGrid
+            label="Hauteur de la barre"
+            options={PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS}
+            value={navigation.navBarHeight ?? 'md'}
+            onChange={(navBarHeight) => onChange({ navBarHeight })}
+            columns={3}
+          />
+          <SectionColorModeControl
+            value={navigation.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+          />
+          <NavigationToggleRow
+            label="Bascule clair / sombre dans la barre"
+            description="Affiche une icône soleil / lune dans la navigation pour basculer entre mode clair et sombre."
+            checked={showColorModeToggleInNav}
+            onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
+          />
         </div>
 
         {usesFloatingNavChrome ? (
           <div className="space-y-5 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-5">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.12em] text-neutral-500">
-                Mobile
-              </p>
-              <p className="mt-1.5 text-[15px] leading-relaxed text-neutral-500">
-                Deux comportements sur écran étroit (&lt; 1024 px) : barre logo pleine largeur ou
-                tiroir menu compact. Les deux ouvrent le même panneau de liens.
-              </p>
-            </div>
+            <p className="text-sm font-bold uppercase tracking-[0.12em] text-neutral-500">
+              Mobile
+            </p>
             <NavigationOptionGrid
               label="Comportement mobile"
               options={NAV_MOBILE_LAYOUT_OPTIONS_FR}
@@ -5670,18 +5822,11 @@ function NavigationPanel({
                 />
               </>
             ) : null}
-            {(navigation.mobileLayout ?? 'brand-bar') === 'brand-bar' ? (
-              <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-4 py-2.5 text-[15px] text-neutral-500">
-                Barre pleine largeur : logo à gauche, menu à droite (style éditorial). Le logo utilise
-                le texte / image de marque de la navigation.
-              </p>
-            ) : null}
           </div>
         ) : null}
         </div>
       ) : null}
 
-      <div className="space-y-4">
       <NavigationOptionGrid
         label="Navigation type"
         options={PORTFOLIO_NAV_MODE_OPTIONS}
@@ -5689,14 +5834,6 @@ function NavigationPanel({
         onChange={(nextMode) => onChange({ navMode: nextMode })}
         columns={2}
       />
-
-      {navMode === 'per-page' ? (
-        <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-5 py-3.5 text-[15px] text-neutral-500">
-          Per page mode shows dots and previous / next controls to move one section at a time while
-          scrolling. Labels below still apply.
-        </p>
-      ) : null}
-      </div>
 
       <div className="space-y-4">
       <NavigationOptionGrid
@@ -5784,18 +5921,6 @@ function NavigationPanel({
         />
       ) : null}
 
-      <NavMenuGroupsEditor
-        groups={navigation.navMenuGroups ?? []}
-        itemLabels={navigation.itemLabels}
-        onChange={(navMenuGroups) => onChange({ navMenuGroups })}
-      />
-
-      <NavigationLabelsIconsPanel
-        itemLabels={navigation.itemLabels}
-        itemIcons={navigation.itemIcons}
-        onChange={onChange}
-      />
-
       <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
         Les sections visibles alimentent le menu. Réordonnez-les dans Global → Section display order.
       </p>
@@ -5874,6 +5999,22 @@ function NavigationPanel({
               onGlobalChange={onGlobalChange}
             />
           ) : null}
+        </div>
+      ) : null}
+
+      {navTab === 'labels' ? (
+        <div className="space-y-8">
+          <NavMenuGroupsEditor
+            groups={navigation.navMenuGroups ?? []}
+            itemLabels={navigation.itemLabels}
+            onChange={(navMenuGroups) => onChange({ navMenuGroups })}
+          />
+
+          <NavigationLabelsIconsPanel
+            itemLabels={navigation.itemLabels}
+            itemIcons={navigation.itemIcons}
+            onChange={onChange}
+          />
         </div>
       ) : null}
     </div>
