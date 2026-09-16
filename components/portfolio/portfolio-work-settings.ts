@@ -2,6 +2,10 @@ import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import {
+  mergeSectionColorMode,
+  type PortfolioSectionColorMode,
+} from '@/components/portfolio/portfolio-section-color-mode';
+import {
   applyWorkPaletteToSettings,
   DEFAULT_WORK_COLOR_BINDINGS,
   DEFAULT_WORK_PALETTE,
@@ -3087,6 +3091,8 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   workColorBindings?: PortfolioWorkColorBindings;
   /** Per-element color, font, size, and weight for card text. */
   elementStyles: PortfolioWorkElementStyles;
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
 };
 
 export type PortfolioWorkSectionSettings = PortfolioSectionCopy & PortfolioWorkPresentationSettings;
@@ -3227,6 +3233,7 @@ export const DEFAULT_WORK_PRESENTATION: PortfolioWorkPresentationSettings = {
   workPalette: { ...DEFAULT_WORK_PALETTE },
   workColorBindings: { ...DEFAULT_WORK_COLOR_BINDINGS },
   elementStyles: DEFAULT_WORK_ELEMENT_STYLES,
+  colorModeOverride: 'auto',
 };
 
 // Sync hex fields from the default palette without circular init (palette module owns tokens).
@@ -5394,6 +5401,7 @@ export function mergeWorkPresentation(
       record.workColorBindings
     ),
     elementStyles: normalizeWorkElementStyles(record.elementStyles ?? base.elementStyles),
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
   };
 
   if (!merged.useHeroPalette) {

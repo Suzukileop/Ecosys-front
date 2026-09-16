@@ -18,6 +18,7 @@ import {
   PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_SIZE_OPTIONS,
 } from '@/components/portfolio/portfolio-nav-tri-zone-social';
 import { LinkBrandIcon } from '@/components/portfolio/PortfolioLinksChrome';
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { PortfolioNavContactCtaGlyph } from '@/components/portfolio/portfolio-nav-contact-cta-icons';
 import type { PortfolioNavMenuGroup } from '@/components/portfolio/portfolio-nav-menu-groups';
 import type { PortfolioNavChromeLink } from '@/components/portfolio/portfolio-nav-extras';

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   infoDesignSettingsPatch,
   portfolioInfoDesignHasPortrait,
@@ -556,6 +557,11 @@ export function InfoSettingsPanel({
             label="Show Info section"
             checked={info.enabled}
             onChange={(enabled) => onChange({ enabled })}
+          />
+
+          <SectionColorModeControl
+            value={info.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
           />
 
           <InfoOptionGrid

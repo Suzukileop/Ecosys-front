@@ -1050,9 +1050,18 @@ export function PublicCreatorPortfolioPage({
     () => resolveActivePortfolioPalette({ ...settings.global, colorMode: 'dark' }),
     [settings.global]
   );
+  const workPalette = useMemo(
+    () =>
+      resolveSectionPalette(settings.work.colorModeOverride, {
+        auto: activeGlobalPalette,
+        light: lightGlobalPalette,
+        dark: darkGlobalPalette,
+      }),
+    [settings.work.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+  );
   const workPresentation = useMemo(
-    () => applyHeroPaletteToWork(pickWorkPresentationSettings(settings.work), heroPalette),
-    [settings.work, heroPalette]
+    () => applyHeroPaletteToWork(pickWorkPresentationSettings(settings.work), workPalette),
+    [settings.work, workPalette]
   );
   const workSectionTitle = useMemo(
     () => resolveWorkSectionTitle(settings.work),
@@ -1118,12 +1127,32 @@ export function PublicCreatorPortfolioPage({
     () => resolveGallerySectionSubtitle(settings.gallery),
     [settings.gallery]
   );
+  const servicesPalette = useMemo(
+    () =>
+      resolveSectionPalette(settings.services.colorModeOverride, {
+        auto: activeGlobalPalette,
+        light: lightGlobalPalette,
+        dark: darkGlobalPalette,
+      }),
+    [
+      settings.services.colorModeOverride,
+      activeGlobalPalette,
+      lightGlobalPalette,
+      darkGlobalPalette,
+    ]
+  );
   const servicesPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToServices(pickServicesPresentationSettings(settings.services), heroPalette),
-      activeColorMode: (settings.global.colorMode ?? 'dark') as 'light' | 'dark',
+      ...applyHeroPaletteToServices(
+        pickServicesPresentationSettings(settings.services),
+        servicesPalette
+      ),
+      activeColorMode: resolveSectionActiveMode(
+        settings.services.colorModeOverride,
+        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+      ),
     }),
-    [settings.services, settings.global.colorMode, heroPalette]
+    [settings.services, settings.global.colorMode, servicesPalette]
   );
   const isDistinctServicesOrganization = servicesUsesDistinctSections(
     servicesPresentation.sectionOrganization
@@ -1193,12 +1222,24 @@ export function PublicCreatorPortfolioPage({
   );
   const teamSectionTitle = useMemo(() => resolveTeamSectionTitle(settings.team), [settings.team]);
   const teamSectionSubtitle = useMemo(() => resolveTeamSectionSubtitle(settings.team), [settings.team]);
+  const infoPalette = useMemo(
+    () =>
+      resolveSectionPalette(settings.info.colorModeOverride, {
+        auto: activeGlobalPalette,
+        light: lightGlobalPalette,
+        dark: darkGlobalPalette,
+      }),
+    [settings.info.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+  );
   const infoPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToInfo(pickInfoPresentationSettings(settings.info), heroPalette),
-      activeColorMode: (settings.global.colorMode ?? 'dark') as 'light' | 'dark',
+      ...applyHeroPaletteToInfo(pickInfoPresentationSettings(settings.info), infoPalette),
+      activeColorMode: resolveSectionActiveMode(
+        settings.info.colorModeOverride,
+        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+      ),
     }),
-    [settings.info, settings.global.colorMode, heroPalette]
+    [settings.info, settings.global.colorMode, infoPalette]
   );
   const infoSectionTitle = useMemo(() => resolveInfoSectionTitle(settings.info), [settings.info]);
   const infoSectionSubtitle = useMemo(
@@ -2065,7 +2106,7 @@ export function PublicCreatorPortfolioPage({
               languagesFallback={profile.languages}
               systemsTools={profile.aboutSystemsTools}
               presentation={infoPresentation}
-              heroPalette={heroPalette}
+              heroPalette={infoPalette}
             />
           </PortfolioSectionShell>
         );

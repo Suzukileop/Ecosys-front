@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   PORTFOLIO_SERVICES_CARD_BORDER_OPTIONS,
   PORTFOLIO_SERVICES_CARD_BACKGROUND_ALTERNATION_OPTIONS,
@@ -1158,6 +1159,10 @@ export function ServicesSettingsPanel({
             services={services}
             onChange={onChange}
             description="When on, section colors follow palette tokens synced with Hero. Turn off to pick hex values freely in each tab."
+          />
+          <SectionColorModeControl
+            value={services.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
           />
           {settingsFocus === 'services' ? (
             <ServicesToggleRow

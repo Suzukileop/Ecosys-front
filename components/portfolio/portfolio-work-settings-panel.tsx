@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   PORTFOLIO_WORK_CARD_BORDER_OPTIONS,
   PORTFOLIO_WORK_CARD_RADIUS_OPTIONS,
@@ -2873,6 +2874,11 @@ export function WorkSettingsPanel({
               />
             </div>
           </div>
+
+          <SectionColorModeControl
+            value={work.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+          />
 
           <WorkLayoutDisplayOptions work={work} onChange={onChange} />
         </div>

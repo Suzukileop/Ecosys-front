@@ -5,6 +5,10 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
+  mergeSectionColorMode,
+  type PortfolioSectionColorMode,
+} from '@/components/portfolio/portfolio-section-color-mode';
+import {
   DEFAULT_SECTION_BACKGROUND,
   mergeSectionBackground,
   type PortfolioSectionBackgroundSettings,
@@ -197,6 +201,8 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   aboutManifestoBlocksScrollFocus: boolean;
   useHeroPalette: boolean;
   activeColorMode?: 'light' | 'dark';
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
 };
 
 export type PortfolioInfoSectionSettings = PortfolioSectionCopy & PortfolioInfoPresentationSettings;
@@ -417,6 +423,7 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   aboutManifestoBlocksLayout: 'grid',
   aboutManifestoBlocksScrollFocus: false,
   useHeroPalette: true,
+  colorModeOverride: 'auto',
 };
 
 export const PORTFOLIO_INFO_ABOUT_VALUE_VALUES_LAYOUT_OPTIONS: {
@@ -2200,5 +2207,6 @@ export function mergeInfoPresentation(
         ? record.aboutManifestoBlocksScrollFocus
         : base.aboutManifestoBlocksScrollFocus,
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
   };
 }

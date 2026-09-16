@@ -1,6 +1,10 @@
 import type { CSSProperties } from 'react';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import {
+  mergeSectionColorMode,
+  type PortfolioSectionColorMode,
+} from '@/components/portfolio/portfolio-section-color-mode';
+import {
   DEFAULT_SERVICES_CARD_BACKGROUND_SETTINGS,
   DEFAULT_SERVICES_CARD_BACKGROUND_ZONE_B,
   mergeServicesCardBackgroundSettings,
@@ -706,6 +710,8 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
    * manual colors for card fill + element text.
    */
   activeColorMode?: 'light' | 'dark';
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
   /** Services-owned palette copy (same 8 tokens as Hero). */
   servicesPalette?: PortfolioServicesPalette;
   /** Which token each services color slot uses. */
@@ -1524,6 +1530,7 @@ export const DEFAULT_SERVICES_PRESENTATION: PortfolioServicesPresentationSetting
   skillsHeader: createDefaultDistinctHeaderSettings('skills'),
   servicesHeader: createDefaultDistinctHeaderSettings('services'),
   useHeroPalette: true,
+  colorModeOverride: 'auto',
   servicesPalette: { ...DEFAULT_SERVICES_PALETTE },
   servicesColorBindings: { ...DEFAULT_SERVICES_COLOR_BINDINGS },
   elementStyles: DEFAULT_SERVICES_ELEMENT_STYLES,
@@ -5967,6 +5974,7 @@ export function mergeServicesPresentation(
         : base.servicesSubheadingLabel,
     skillsIconSize: pick(record.skillsIconSize, ['sm', 'md', 'lg', 'xl'], base.skillsIconSize),
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
     servicesPalette: mergeServicesPalette(
       mergeServicesPalette(DEFAULT_SERVICES_PALETTE, base.servicesPalette),
       record.servicesPalette
