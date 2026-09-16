@@ -43,7 +43,6 @@ export function PortfolioThemeRoot({
 }) {
   const pickerThemes = customThemes.map(customThemeToPickerTheme);
   const mono = portfolioUsesMonochromeChrome(themeId, monochromeUi);
-  const useCustomBackground = suppressDefaultBackground || Boolean(fixedBackgroundStyle);
   const paletteVars = activePalette ? portfolioPaletteCssVars(activePalette) : undefined;
   /** Arm color transitions after first paint — avoids animating the initial load. */
   const [colorTransitionsReady, setColorTransitionsReady] = useState(false);
@@ -77,7 +76,7 @@ export function PortfolioThemeRoot({
 
   return (
     <div
-      className={`pf-theme-root relative isolate min-h-screen min-h-[100dvh] overflow-x-clip ${useCustomBackground ? '' : 'pf-theme-page-fill'}`}
+      className="pf-theme-root pf-theme-page-fill relative isolate min-h-screen min-h-[100dvh] overflow-x-clip"
       data-portfolio-theme={themeId}
       data-portfolio-mono={mono ? 'true' : undefined}
       data-portfolio-color-mode={colorMode === 'light' ? 'light' : 'dark'}
