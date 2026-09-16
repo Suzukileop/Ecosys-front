@@ -2112,7 +2112,8 @@ function GlobalPreviewCard({
   );
 }
 
-function GlobalPreviewCardGrid<T extends string>({
+/** Grid-only body (no header) — shared by GlobalPreviewCardGrid and any custom-header variant. */
+function GlobalPreviewCardGridBody<T extends string>({
   label,
   value,
   options,
@@ -2127,31 +2128,60 @@ function GlobalPreviewCardGrid<T extends string>({
 }) {
   const cols = columns ?? Math.min(options.length, 4);
   return (
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className="grid gap-2"
+      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+    >
+      {options.map((option) => {
+        const active = option.value === value;
+        return (
+          <GlobalPreviewCard
+            key={option.value}
+            active={active}
+            label={option.label}
+            onClick={() => onChange(option.value)}
+          >
+            <svg viewBox="0 0 64 34" className="pf-stack-mini h-full w-full" aria-hidden>
+              <rect className="pf-stack-mini-stage" x="0.75" y="0.75" width="62.5" height="32.5" rx="6" />
+              {option.glyph(active)}
+            </svg>
+          </GlobalPreviewCard>
+        );
+      })}
+    </div>
+  );
+}
+
+function GlobalPreviewCardGrid<T extends string>({
+  label,
+  action,
+  value,
+  options,
+  onChange,
+  columns,
+}: {
+  label: string;
+  action?: ReactNode;
+  value: T;
+  options: { value: T; label: string; glyph: (active: boolean) => ReactNode }[];
+  onChange: (value: T) => void;
+  columns?: number;
+}) {
+  return (
     <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="grid gap-2"
-        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-      >
-        {options.map((option) => {
-          const active = option.value === value;
-          return (
-            <GlobalPreviewCard
-              key={option.value}
-              active={active}
-              label={option.label}
-              onClick={() => onChange(option.value)}
-            >
-              <svg viewBox="0 0 64 34" className="pf-stack-mini h-full w-full" aria-hidden>
-                <rect className="pf-stack-mini-stage" x="0.75" y="0.75" width="62.5" height="32.5" rx="6" />
-                {option.glyph(active)}
-              </svg>
-            </GlobalPreviewCard>
-          );
-        })}
+      <div className="flex items-center justify-between gap-3 pf-stack-option-label">
+        <p className="pf-stack-block-label !mb-0">{label}</p>
+        {action}
       </div>
+      <GlobalPreviewCardGridBody
+        label={label}
+        value={value}
+        options={options}
+        onChange={onChange}
+        columns={columns}
+      />
     </div>
   );
 }
@@ -2245,6 +2275,98 @@ const GLOBAL_SECTION_BOTTOM_SPACING_PREVIEW_OPTIONS = PORTFOLIO_GLOBAL_SECTION_B
     glyph: globalSectionSpacingGlyph(GLOBAL_SECTION_SPACING_GAP_PX[option.value]),
   })
 );
+
+/** Exaggerated (not to-scale) heights for the live preview box — bigger canvas than the card glyphs. */
+const GLOBAL_SECTION_SPACING_LIVE_PX: Record<PortfolioGlobalSectionTitleTopSpacing, number> = {
+  compact: 10,
+  standard: 20,
+  comfortable: 34,
+  spacious: 58,
+};
+
+/** Compact "Manual" switch — same pill as GlobalSwitchRow, used inline next to a card-grid title. */
+function GlobalManualToggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label="Manual"
+      onClick={() => onChange(!checked)}
+      className="flex shrink-0 items-center gap-2"
+    >
+      <span className="text-[11px] font-medium uppercase tracking-[0.05em] text-neutral-500">Manual</span>
+      <GlobalSwitchTrack checked={checked} />
+    </button>
+  );
+}
+
+/** Continuous drag across the same 4 tiers as the card grid — snaps to a value on release. */
+function GlobalSpacingTierSlider({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: PortfolioGlobalSectionTitleTopSpacing; label: string }[];
+  value: PortfolioGlobalSectionTitleTopSpacing;
+  onChange: (value: PortfolioGlobalSectionTitleTopSpacing) => void;
+}) {
+  const index = Math.max(0, options.findIndex((option) => option.value === value));
+  const percent = options.length > 1 ? (index / (options.length - 1)) * 100 : 0;
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-end">
+        <span className="pf-stack-slider-value">{options[index]?.label}</span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={options.length - 1}
+        step={1}
+        value={index}
+        onChange={(event) => onChange(options[Number(event.target.value)].value)}
+        aria-label="Padding amount"
+        className="pf-stack-slider-input"
+        style={{
+          background: `linear-gradient(to right, var(--pf-palette-texte-fort, #f5f5f5) ${percent}%, color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a)) ${percent}%)`,
+        }}
+      />
+    </div>
+  );
+}
+
+/** Shared live preview — one "Section content" block, gaps above/below animate as either slider moves. */
+function GlobalSectionSpacingPreview({
+  topSpacing,
+  bottomSpacing,
+}: {
+  topSpacing: PortfolioGlobalSectionTitleTopSpacing;
+  bottomSpacing: PortfolioGlobalSectionTitleTopSpacing;
+}) {
+  return (
+    <div className="pf-fade-in overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4">
+      <div
+        aria-hidden
+        className="transition-[height] duration-200 ease-out"
+        style={{ height: GLOBAL_SECTION_SPACING_LIVE_PX[topSpacing] }}
+      />
+      <div className="rounded-lg border border-dashed border-neutral-300 bg-white px-3 py-2 text-center text-xs font-medium text-neutral-500">
+        Section content
+      </div>
+      <div
+        aria-hidden
+        className="transition-[height] duration-200 ease-out"
+        style={{ height: GLOBAL_SECTION_SPACING_LIVE_PX[bottomSpacing] }}
+      />
+    </div>
+  );
+}
 
 /** Mini "Nav" label mock, decorated per active-indicator style — preview for Active indicator. */
 function navIndicatorGlyph(style: PortfolioNavActiveStyle) {
@@ -2688,8 +2810,8 @@ const PALETTE_FAMILY_OPTIONS = [
     label: 'Indigo',
     dark: INDIGO_DARK_HERO_PALETTE,
     light: INDIGO_LIGHT_HERO_PALETTE,
-    darkClass: 'border-slate-600 bg-[#0F172A] hover:border-indigo-400',
-    labelClass: 'text-[#F8FAFC]',
+    darkClass: 'border-[#2E2F52] bg-[#0D0E1F] hover:border-indigo-400',
+    labelClass: 'text-[#F5F5FF]',
     swatchBorder: 'border-white/20',
   },
   {
@@ -2697,8 +2819,8 @@ const PALETTE_FAMILY_OPTIONS = [
     label: 'Classic',
     dark: DEFAULT_HERO_PALETTE,
     light: LIGHT_HERO_PALETTE,
-    darkClass: 'border-slate-600 bg-[#0F172A] hover:border-orange-400',
-    labelClass: 'text-[#FAFAFA]',
+    darkClass: 'border-[#3B3323] bg-[#15110B] hover:border-orange-400',
+    labelClass: 'text-[#F5F0E8]',
     swatchBorder: 'border-white/20',
   },
   {
@@ -2760,8 +2882,8 @@ const PALETTE_FAMILY_OPTIONS = [
     label: 'Ardoise',
     dark: ARDOISE_DARK_HERO_PALETTE,
     light: ARDOISE_LIGHT_HERO_PALETTE,
-    darkClass: 'border-slate-700 bg-[#030712] hover:border-red-400',
-    labelClass: 'text-[#F9FAFB]',
+    darkClass: 'border-[#303B47] bg-[#0A0F15] hover:border-sky-400',
+    labelClass: 'text-[#EEF2F5]',
     swatchBorder: 'border-white/15',
   },
 ] as const;
@@ -2831,6 +2953,11 @@ function GlobalSettingsPanel({
       PALETTE_FAMILY_OPTIONS.find((family) => family.id === 'classic')!;
     onGlobalPalettePairChange(preset.dark, preset.light, preset.id);
   };
+
+  // Display-mode only — cards vs. slider for Section spacing. Never saved; the underlying
+  // sectionTitleTopSpacing/BottomSpacing value is unaffected by which UI picks it.
+  const [topPaddingManual, setTopPaddingManual] = useState(false);
+  const [bottomPaddingManual, setBottomPaddingManual] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -2954,20 +3081,60 @@ function GlobalSettingsPanel({
           </GlobalSection>
 
           <GlobalSection label="Section spacing">
-            <GlobalPreviewCardGrid
-              label="Top padding"
-              options={GLOBAL_SECTION_TOP_SPACING_PREVIEW_OPTIONS}
-              value={global.sectionTitleTopSpacing}
-              onChange={(sectionTitleTopSpacing) => onGlobalChange({ sectionTitleTopSpacing })}
-              columns={4}
-            />
-            <GlobalPreviewCardGrid
-              label="Bottom padding"
-              options={GLOBAL_SECTION_BOTTOM_SPACING_PREVIEW_OPTIONS}
-              value={global.sectionTitleBottomSpacing}
-              onChange={(sectionTitleBottomSpacing) => onGlobalChange({ sectionTitleBottomSpacing })}
-              columns={4}
-            />
+            {topPaddingManual || bottomPaddingManual ? (
+              <GlobalSectionSpacingPreview
+                topSpacing={global.sectionTitleTopSpacing}
+                bottomSpacing={global.sectionTitleBottomSpacing}
+              />
+            ) : null}
+
+            <div>
+              <div className="flex items-center justify-between gap-3 pf-stack-option-label">
+                <p className="pf-stack-block-label !mb-0">Top padding</p>
+                <GlobalManualToggle checked={topPaddingManual} onChange={setTopPaddingManual} />
+              </div>
+              <div key={topPaddingManual ? 'manual' : 'cards'} className="pf-fade-in">
+                {topPaddingManual ? (
+                  <GlobalSpacingTierSlider
+                    options={GLOBAL_SECTION_TOP_SPACING_PREVIEW_OPTIONS}
+                    value={global.sectionTitleTopSpacing}
+                    onChange={(sectionTitleTopSpacing) => onGlobalChange({ sectionTitleTopSpacing })}
+                  />
+                ) : (
+                  <GlobalPreviewCardGridBody
+                    label="Top padding"
+                    options={GLOBAL_SECTION_TOP_SPACING_PREVIEW_OPTIONS}
+                    value={global.sectionTitleTopSpacing}
+                    onChange={(sectionTitleTopSpacing) => onGlobalChange({ sectionTitleTopSpacing })}
+                    columns={4}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between gap-3 pf-stack-option-label">
+                <p className="pf-stack-block-label !mb-0">Bottom padding</p>
+                <GlobalManualToggle checked={bottomPaddingManual} onChange={setBottomPaddingManual} />
+              </div>
+              <div key={bottomPaddingManual ? 'manual' : 'cards'} className="pf-fade-in">
+                {bottomPaddingManual ? (
+                  <GlobalSpacingTierSlider
+                    options={GLOBAL_SECTION_BOTTOM_SPACING_PREVIEW_OPTIONS}
+                    value={global.sectionTitleBottomSpacing}
+                    onChange={(sectionTitleBottomSpacing) => onGlobalChange({ sectionTitleBottomSpacing })}
+                  />
+                ) : (
+                  <GlobalPreviewCardGridBody
+                    label="Bottom padding"
+                    options={GLOBAL_SECTION_BOTTOM_SPACING_PREVIEW_OPTIONS}
+                    value={global.sectionTitleBottomSpacing}
+                    onChange={(sectionTitleBottomSpacing) => onGlobalChange({ sectionTitleBottomSpacing })}
+                    columns={4}
+                  />
+                )}
+              </div>
+            </div>
           </GlobalSection>
 
           <GlobalSection label="Preferences">

@@ -5787,6 +5787,23 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   margin-bottom: 0;
 }
 
+/** Gentle crossfade when a control swaps its display mode (e.g. card grid <-> slider) —
+ *  keyed by mode on the React side so this replays on every toggle. */
+@keyframes pf-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pf-fade-in {
+  animation: pf-fade-in 220ms ease;
+}
+
 .pf-stack-segment-icon {
   display: inline-flex;
   align-items: center;
