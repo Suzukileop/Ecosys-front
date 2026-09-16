@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
+import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   PORTFOLIO_TOOLS_BRAND_CARDS_ICON_PLACEMENT_OPTIONS,
   PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS,
@@ -1292,6 +1293,10 @@ export function ToolsSettingsPanel({
             label={sectionToggleLabel}
             checked={tools.enabled}
             onChange={(enabled) => onChange({ enabled })}
+          />
+          <SectionColorModeControl
+            value={tools.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
           />
           <ToolsLayoutSettingsBand motionKey={`${tools.design}-visibility`} title="Content visibility">
             <ToolsToggleRow

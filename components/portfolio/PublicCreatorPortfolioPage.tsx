@@ -332,6 +332,10 @@ import {
   resolveHeroPaletteFromSettings,
 } from '@/components/portfolio/portfolio-section-palette';
 import { resolveActivePortfolioPalette } from '@/components/portfolio/portfolio-color-mode';
+import {
+  resolveSectionActiveMode,
+  resolveSectionPalette,
+} from '@/components/portfolio/portfolio-section-color-mode';
 import { resolveHeroPaletteColor } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { syncExperiencePeriodRulePair } from '@/components/portfolio/portfolio-experience-palette-settings';
 import {
@@ -1035,6 +1039,17 @@ export function PublicCreatorPortfolioPage({
     () => resolveActivePortfolioPalette(settings.global),
     [settings.global]
   );
+  // Auto / Light / Dark base for a section's own colorModeOverride (Global → Theme's palette
+  // pair, independent of which half Global itself currently shows) — resolved once and reused
+  // by every section so a per-section override never has to re-derive the pair itself.
+  const lightGlobalPalette = useMemo(
+    () => resolveActivePortfolioPalette({ ...settings.global, colorMode: 'light' }),
+    [settings.global]
+  );
+  const darkGlobalPalette = useMemo(
+    () => resolveActivePortfolioPalette({ ...settings.global, colorMode: 'dark' }),
+    [settings.global]
+  );
   const workPresentation = useMemo(
     () => applyHeroPaletteToWork(pickWorkPresentationSettings(settings.work), heroPalette),
     [settings.work, heroPalette]
@@ -1193,12 +1208,33 @@ export function PublicCreatorPortfolioPage({
   const isAboutSplitInfo = infoPresentation.design === 'about-split';
   const isAboutBannerInfo = infoPresentation.design === 'about-banner';
   const isAboutHeroInfo = isAboutSplitInfo || isAboutBannerInfo;
+  const toolsPalette = useMemo(
+    () =>
+      resolveSectionPalette(settings.tools.colorModeOverride, {
+        auto: activeGlobalPalette,
+        light: lightGlobalPalette,
+        dark: darkGlobalPalette,
+      }),
+    [settings.tools.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+  );
   const toolsPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToTools(pickToolsPresentationSettings(settings.tools), heroPalette),
-      activeColorMode: (settings.global.colorMode ?? 'dark') as 'light' | 'dark',
+      ...applyHeroPaletteToTools(pickToolsPresentationSettings(settings.tools), toolsPalette),
+      activeColorMode: resolveSectionActiveMode(
+        settings.tools.colorModeOverride,
+        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+      ),
     }),
-    [settings.tools, settings.global.colorMode, heroPalette]
+    [settings.tools, settings.global.colorMode, toolsPalette]
+  );
+  const stackPalette = useMemo(
+    () =>
+      resolveSectionPalette(settings.stack.colorModeOverride, {
+        auto: activeGlobalPalette,
+        light: lightGlobalPalette,
+        dark: darkGlobalPalette,
+      }),
+    [settings.stack.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
   );
   const stackPresentation = useMemo((): PortfolioStackPresentationSettings & {
     activeColorMode: 'light' | 'dark';
@@ -1209,14 +1245,17 @@ export function PublicCreatorPortfolioPage({
       picked.design === 'brand-cards' || picked.design === 'brand-index';
     return {
       ...picked,
-      ...applyHeroPaletteToStack(picked, heroPalette),
-      activeColorMode: (settings.global.colorMode ?? 'dark') as 'light' | 'dark',
+      ...applyHeroPaletteToStack(picked, stackPalette),
+      activeColorMode: resolveSectionActiveMode(
+        settings.stack.colorModeOverride,
+        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+      ),
       showUseCases: isBrandCards ? picked.showUseCases !== false : false,
       showCategory: picked.design === 'brand-index',
       showDescription: stackSupportsDescription ? picked.showDescription !== false : false,
       showLevel: isBrandCards ? picked.showLevel !== false : picked.showLevel,
     };
-  }, [settings.stack, settings.global.colorMode, heroPalette]);
+  }, [settings.stack, settings.global.colorMode, stackPalette]);
   const toolsSectionTitle = useMemo(() => resolveToolsSectionTitle(settings.tools), [settings.tools]);
   const toolsSectionSubtitle = useMemo(
     () => resolveToolsSectionSubtitle(settings.tools),
