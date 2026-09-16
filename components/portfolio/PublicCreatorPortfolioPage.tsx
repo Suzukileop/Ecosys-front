@@ -26,6 +26,7 @@ import { SOCIAL_PLATFORMS } from '@/types/ecosystem';
 import type { MarketplaceContentItem, MarketplaceCreatorPublicProfile } from '@/types/marketplace';
 import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
 import { PortfolioHeroSection } from '@/components/portfolio/PortfolioHeroSection';
+import { PortfolioPagesSlideViewport } from '@/components/portfolio/portfolio-pages-transition';
 import { PortfolioCaseOverlayNav } from '@/components/portfolio/portfolio-case-overlay-nav';
 import { PortfolioDutenPanelNav } from '@/components/portfolio/portfolio-duten-panel-nav';
 import { PortfolioHalfPanelNav } from '@/components/portfolio/portfolio-half-panel-nav';
@@ -81,7 +82,6 @@ import {
   MarketplaceProfileLink,
   portfolioEditorialShellClass,
   PortfolioFloatingNav,
-  PortfolioPerPageNav,
   SIDE_INFO_ICONS,
   ServicesOrderCtaHrefProvider,
 } from '@/components/portfolio/portfolio-section-primitives';
@@ -96,6 +96,16 @@ import {
   ExperienceSpotlightHeader,
   ExperienceTableHeader,
 } from '@/components/portfolio/experience-header-designs';
+import {
+  WorkMinimalHeader,
+  WorkEditorialHeader,
+  WorkMarqueeHeader,
+  WorkIndexHeader,
+  WorkAccentCountHeader,
+  WorkSerifLeadHeader,
+  WorkBillboardHeader,
+  WorkMastheadHeader,
+} from '@/components/portfolio/work-header-designs';
 import {
   isProjectsBoardDesign,
   ProjectsBoardGallery,
@@ -1498,6 +1508,10 @@ export function PublicCreatorPortfolioPage({
 
   const navMode = settings.navigation.navMode ?? 'default';
   const isPagesMode = navMode === 'pages';
+  const navActiveColorMode = resolveSectionActiveMode(
+    settings.navigation.colorModeOverride,
+    (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+  );
   const isCaseOverlayNav = portfolioNavUsesCaseOverlayLayout(settings.navigation);
   const isDutenPanelNav = portfolioNavUsesDutenPanelLayout(settings.navigation);
   const isHalfPanelNav = portfolioNavUsesHalfPanelLeftLayout(settings.navigation);
@@ -2324,181 +2338,35 @@ export function PublicCreatorPortfolioPage({
         const marketplaceTrailing = settings.work.showMarketplaceLink ? (
           <MarketplaceProfileLink creatorId={creatorId} color={workPresentation.titleColor} />
         ) : null;
-        const accordionAlign =
-          workPresentation.projectsAccordion?.headerAlign ?? 'center';
-        const headerBlock = projectsBoard ? (
-          <ProjectsBoardSectionHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            accentColor={workPresentation.ctaColor || workPresentation.categoryActiveColor}
-            titleColor={workPresentation.titleColor}
-            subtitleColor={workPresentation.subtitleColor}
-            trailing={marketplaceTrailing}
-            className={aside ? 'w-full' : undefined}
-          />
-        ) : projectsAccordion ? (
-          <ProjectsAccordionSectionHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            titleColor={workPresentation.titleColor}
-            subtitleColor={workPresentation.subtitleColor}
-            align={accordionAlign}
-            className={aside ? 'w-full' : undefined}
-          />
-        ) : projectsFrames ? (
-          <ProjectsFramesSectionHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            titleColor={workPresentation.titleColor}
-            subtitleColor={workPresentation.subtitleColor}
-            className={aside ? 'w-full' : undefined}
-          />
-        ) : projectsIndex ? (
-          <ProjectsIndexSectionHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            titleColor={workPresentation.titleColor}
-            subtitleColor={workPresentation.subtitleColor}
-            titleClassName={workHeaderTypography.title.className}
-            titleStyle={workHeaderTypography.title.style}
-            trailing={marketplaceTrailing}
-            entryCount={workItems.length}
-            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
-            className={aside ? 'w-full' : undefined}
-          />
-        ) : projectsGrid ? null : projectsCarousel ? (
-          <ProjectsCarouselSectionHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            titleColor={workPresentation.titleColor}
-            subtitleColor={workPresentation.subtitleColor}
-            titleClassName={workHeaderTypography.title.className}
-            titleStyle={workHeaderTypography.title.style}
-            trailing={marketplaceTrailing}
-            entryCount={workItems.length}
-            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
-            className={aside ? 'w-full' : undefined}
-          />
-        ) : projectsSpotlight ? (
-          <ProjectsSpotlightSectionHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            titleColor={workPresentation.titleColor}
-            subtitleColor={workPresentation.subtitleColor}
-            titleClassName={workHeaderTypography.title.className}
-            titleStyle={workHeaderTypography.title.style}
-            trailing={marketplaceTrailing}
-            entryCount={workItems.length}
-            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
-            className={aside ? 'w-full' : undefined}
-          />
-        ) : projectsShowcase ? (
-          <ProjectsShowcaseSectionHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            titleColor={workPresentation.titleColor}
-            subtitleColor={workPresentation.subtitleColor}
-            titleClassName={workHeaderTypography.title.className}
-            titleStyle={workHeaderTypography.title.style}
-            trailing={marketplaceTrailing}
-            entryCount={workItems.length}
-            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
-            className={aside ? 'w-full' : undefined}
-          />
-        ) : projectsEditorial ? (
-          <ProjectsEditorialSectionHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            titleColor={workPresentation.titleColor}
-            subtitleColor={workPresentation.subtitleColor}
-            titleClassName={workHeaderTypography.title.className}
-            titleStyle={workHeaderTypography.title.style}
-            trailing={marketplaceTrailing}
-            className={aside ? 'w-full' : undefined}
-          />
-        ) : projectsLedger ? (
-          <ProjectsLedgerSectionHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            titleColor={workPresentation.titleColor}
-            subtitleColor={workPresentation.subtitleColor}
-            titleClassName={workHeaderTypography.title.className}
-            titleStyle={workHeaderTypography.title.style}
-            trailing={marketplaceTrailing}
-            entryCount={workItems.length}
-            showCount={workPresentation.projectsLedger?.showCount !== false}
-            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
-            className={aside ? 'w-full' : undefined}
-          />
-        ) : projectsFolio ? (
-          <ProjectsFolioSectionHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            titleColor={workPresentation.titleColor}
-            subtitleColor={workPresentation.subtitleColor}
-            titleClassName={workHeaderTypography.title.className}
-            titleStyle={workHeaderTypography.title.style}
-            trailing={marketplaceTrailing}
-            entryCount={workItems.length}
-            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
-            className={aside ? 'w-full' : undefined}
-          />
-        ) : projectsSpec ? (
-          <ProjectsSpecSectionHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            titleColor={workPresentation.titleColor}
-            subtitleColor={workPresentation.subtitleColor}
-            titleClassName={workHeaderTypography.title.className}
-            titleStyle={workHeaderTypography.title.style}
-            trailing={marketplaceTrailing}
-            className={aside ? 'w-full' : undefined}
-          />
-        ) : projectsCase ? (
-          <ProjectsCaseSectionHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            titleColor={workPresentation.titleColor}
-            subtitleColor={workPresentation.subtitleColor}
-            titleClassName={workHeaderTypography.title.className}
-            titleStyle={workHeaderTypography.title.style}
-            trailing={marketplaceTrailing}
-            entryCount={workItems.length}
-            accent={workPresentation.ctaColor || workPresentation.categoryActiveColor}
-            className={aside ? 'w-full' : undefined}
-          />
-        ) : projectsSplit ? (
-          <ProjectsSplitSectionHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            titleColor={workPresentation.titleColor}
-            subtitleColor={workPresentation.subtitleColor}
-            trailing={marketplaceTrailing}
-            className={aside ? 'w-full' : undefined}
-          />
-        ) : (
-          <EditorialSectionStickyHeader
-            title={workSectionTitle}
-            subtitle={workSectionSubtitle || undefined}
-            trailing={marketplaceTrailing}
-            editorialLayout={isEditorialLayout}
-            centered={workHeaderAlign.centered}
-            alignRight={workHeaderAlign.alignRight}
-            alwaysCentered={workHeaderAlign.alwaysCentered}
-            className={aside ? 'mb-0 w-full' : undefined}
-            titleTypographyClass={workHeaderTypography.title.className}
-            titleTypographyStyle={workHeaderTypography.title.style}
-            titleDecorationStyle={workHeaderTypography.title.decorationStyle}
-            titleChromeClass={titleChrome.className}
-            titleChromeStyle={titleChrome.style}
-            customTitleSizing={workHeaderTypography.title.customSizing}
-            subtitleTypographyClass={workHeaderTypography.subtitle.className}
-            subtitleTypographyStyle={workHeaderTypography.subtitle.style}
-            subtitleDecorationStyle={workHeaderTypography.subtitle.decorationStyle}
-            customSubtitleSizing={workHeaderTypography.subtitle.customSizing}
-            scrollBehavior={effectiveTitleScroll}
-            orientation={resolveSectionTitleOrientation(settings.global, 'work')}
-          />
+        // One shared, GSAP-animated header design (Header → Design) mounts above every
+        // project layout — no per-layout header is baked in here anymore.
+        const workHeaderProps = {
+          sectionTitle: workSectionTitle,
+          sectionSubtitle: workSectionSubtitle || undefined,
+          presentation: workPresentation,
+          trailing: marketplaceTrailing,
+        };
+        const workHeaderCountProps = { ...workHeaderProps, projectCount: workItems.length };
+        const headerBlock = (
+          <div className={aside ? 'w-full' : undefined}>
+            {workPresentation.headerDesign === 'editorial' ? (
+              <WorkEditorialHeader {...workHeaderProps} />
+            ) : workPresentation.headerDesign === 'marquee' ? (
+              <WorkMarqueeHeader {...workHeaderProps} />
+            ) : workPresentation.headerDesign === 'index' ? (
+              <WorkIndexHeader {...workHeaderProps} />
+            ) : workPresentation.headerDesign === 'accent-count' ? (
+              <WorkAccentCountHeader {...workHeaderCountProps} />
+            ) : workPresentation.headerDesign === 'serif-lead' ? (
+              <WorkSerifLeadHeader {...workHeaderProps} />
+            ) : workPresentation.headerDesign === 'billboard' ? (
+              <WorkBillboardHeader {...workHeaderCountProps} />
+            ) : workPresentation.headerDesign === 'masthead' ? (
+              <WorkMastheadHeader {...workHeaderProps} />
+            ) : (
+              <WorkMinimalHeader {...workHeaderProps} />
+            )}
+          </div>
         );
         const contentBlock = (
           <SectionIllustratedContent
@@ -3749,143 +3617,243 @@ export function PublicCreatorPortfolioPage({
       }
     >
       <CreatorProfileViewTracker creatorId={creatorId} onVisitRecorded={setProfileVisits} />
-      {navMode === 'per-page' ? (
-        <PortfolioPerPageNav items={perPageNavItems} settings={settings.navigation} />
-      ) : isCaseOverlayNav ? (
+      {isCaseOverlayNav ? (
         <PortfolioCaseOverlayNav
-          items={navItems}
+          items={isPagesMode ? pagesNavItems : navItems}
           settings={settings.navigation}
+          activeId={isPagesMode ? activePageId : undefined}
+          onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
           brandName={(profile.fullName ?? '').trim().split(/\s+/).filter(Boolean)[0] ?? ''}
           avatarUrl={profile.avatarUrl}
           contentGutter={settings.global.contentGutter}
           showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
-          colorMode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
+          colorMode={navActiveColorMode}
           onColorModeToggle={cyclePortfolioColorMode}
         />
       ) : isDutenPanelNav ? (
         <PortfolioDutenPanelNav
-          items={navItems}
+          items={isPagesMode ? pagesNavItems : navItems}
           settings={settings.navigation}
+          activeId={isPagesMode ? activePageId : undefined}
+          onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
           avatarUrl={profile.avatarUrl}
           contentGutter={settings.global.contentGutter}
           socialLinkOptions={navProfileLinkOptions}
           contactPhone={profile.phone}
           contactEmail={resolvedContactEmail}
           showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
-          colorMode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
+          colorMode={navActiveColorMode}
           onColorModeToggle={cyclePortfolioColorMode}
         />
       ) : isHalfPanelNav ? (
         <PortfolioHalfPanelNav
-          items={navItems}
+          items={isPagesMode ? pagesNavItems : navItems}
           settings={settings.navigation}
+          activeId={isPagesMode ? activePageId : undefined}
+          onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
           avatarUrl={profile.avatarUrl}
           contentGutter={settings.global.contentGutter}
           socialLinkOptions={navProfileLinkOptions}
           contactPhone={profile.phone}
           contactEmail={resolvedContactEmail}
           showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
-          colorMode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
+          colorMode={navActiveColorMode}
           onColorModeToggle={cyclePortfolioColorMode}
         />
       ) : (
         <>
           <PortfolioFloatingNav
-            items={navItems}
+            items={isPagesMode ? pagesNavItems : navItems}
             settings={settings.navigation}
+            activeId={isPagesMode ? activePageId : undefined}
+            onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
             chromeLinks={navChromeLinks}
             monochrome={usesMonochromeChrome}
             contactHref={navContactHref}
+            onContactNavigate={isPagesMode ? () => navigateToPage(pagesContactTarget) : undefined}
             contactPhone={profile.phone}
             contactEmail={resolvedContactEmail}
             avatarUrl={profile.avatarUrl}
             brandName={(profile.fullName ?? '').trim().split(/\s+/).filter(Boolean)[0] ?? ''}
             contentGutter={settings.global.contentGutter}
             showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
-            colorMode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
+            colorMode={navActiveColorMode}
             onColorModeToggle={cyclePortfolioColorMode}
           />
         </>
       )}
 
-      <div className="flex min-h-[100dvh] min-h-screen max-w-full flex-col overflow-x-clip">
-        {settings.hero.enabled ? (
-          <PortfolioHeroSection
-            creatorId={creatorId}
-            username={profile.username}
-            fullName={profile.fullName}
-            nameLead={nameLead}
-            nameAccent={nameAccent}
-            specialite={profile.specialite}
-            description={heroDescription}
-            avatarUrl={profile.avatarUrl}
-            isVerified={profile.isVerified}
-            isAvailable={profile.isAvailable}
-            responseTimeLabel={profile.responseTimeLabel}
-            yearsOfExperience={profile.yearsOfExperience}
-            workCount={resolveExactContentCount(profile) ?? undefined}
-            locationLabel={locationLabel}
-            stats={heroStats}
-            socialLinks={socialLinks}
-            tools={heroToolsProp}
-            toolDetails={heroToolDetailsProp}
-            contactHref={heroContactHref}
-            workHref={heroWorkHref}
-            featuredWorks={heroFeaturedWorks}
-            onNavigateSection={onNavigateSection}
-            showWorkCta={showWorkSection || showGallerySection}
-            showContactCta={settings.hero.showContactCta}
-            navItems={navItems}
-            presentation={heroPresentation}
-            suppressBackground={false}
-            geomFadeEnabled={motionProfileEnablesHeroGeomFade(motionProfile)}
-            motionProfile={motionProfile}
-            contentGutter={settings.global.contentGutter}
-            contentWidthClass={globalWidthClass}
-            colorMode={(settings.global.colorMode ?? 'dark') as 'light' | 'dark'}
-          />
-        ) : null}
+      {isPagesMode ? (
+        <div className="relative flex h-[100dvh] flex-col overflow-hidden">
+          <PortfolioPagesSlideViewport pageId={activePageId} direction={pageSlideDirection}>
+            {settings.hero.enabled && activePageId === 'hero' ? (
+              <PortfolioHeroSection
+                creatorId={creatorId}
+                username={profile.username}
+                fullName={profile.fullName}
+                nameLead={nameLead}
+                nameAccent={nameAccent}
+                specialite={profile.specialite}
+                description={heroDescription}
+                avatarUrl={profile.avatarUrl}
+                isVerified={profile.isVerified}
+                isAvailable={profile.isAvailable}
+                responseTimeLabel={profile.responseTimeLabel}
+                yearsOfExperience={profile.yearsOfExperience}
+                workCount={resolveExactContentCount(profile) ?? undefined}
+                locationLabel={locationLabel}
+                stats={heroStats}
+                socialLinks={socialLinks}
+                tools={heroToolsProp}
+                toolDetails={heroToolDetailsProp}
+                contactHref={heroContactHref}
+                workHref={heroWorkHref}
+                featuredWorks={heroFeaturedWorks}
+                onNavigateSection={onNavigateSection}
+                showWorkCta={showWorkSection || showGallerySection}
+                showContactCta={settings.hero.showContactCta}
+                navItems={navItems}
+                presentation={heroPresentation}
+                suppressBackground={false}
+                geomFadeEnabled={motionProfileEnablesHeroGeomFade(motionProfile)}
+                motionProfile={motionProfile}
+                contentGutter={settings.global.contentGutter}
+                contentWidthClass={globalWidthClass}
+                colorMode={(settings.global.colorMode ?? 'dark') as 'light' | 'dark'}
+              />
+            ) : null}
 
-        <main
-          className={`mx-auto w-full flex-1 grow space-y-0 ${editorialShellClass} ${globalWidthClass} ${
-            settings.footer.enabled ? 'pb-0' : 'pb-24 sm:pb-28 xl:pb-20'
-          } ${hasGlobalBg ? '' : 'bg-white'}`}
-        >
-          {contentSectionOrder.map((sectionKey) => (
-            <Fragment key={sectionKey}>{renderContentSection(sectionKey)}</Fragment>
-          ))}
-        </main>
-
-        {settings.footer.enabled ? (
-          <div className="mt-auto w-full shrink-0">
-            <EditorialPortfolioFooter
-              creatorName={profile.fullName}
+            {contentSectionOrder.map((sectionKey) => {
+              if (!sectionVisibility[sectionKey]) return null;
+              if (activePageId !== sectionKey) return null;
+              const showFooter = shouldShowFooterOnPage(sectionKey);
+              return (
+                <div
+                  key={sectionKey}
+                  className="flex min-h-full w-full flex-col overflow-x-clip"
+                  style={{ minHeight: '100%' }}
+                >
+                  <main
+                    className={`mx-auto flex w-full flex-1 grow flex-col ${editorialShellClass} ${globalWidthClass} ${
+                      showFooter ? 'pb-0' : 'pb-24 sm:pb-28'
+                    }`}
+                  >
+                    {renderContentSection(sectionKey)}
+                  </main>
+                  {showFooter ? (
+                    <div className="mt-auto w-full shrink-0">
+                      <EditorialPortfolioFooter
+                        creatorName={profile.fullName}
+                        creatorId={creatorId}
+                        avatarUrl={profile.avatarUrl}
+                        bio={profile.bio}
+                        email={resolvedContactEmail || null}
+                        phone={profile.phone}
+                        locationLabel={locationLabel}
+                        hoursLabel={availabilityDisplay}
+                        profileVisits={profileVisits}
+                        links={uniqueContactLinks}
+                        contentClassName={editorialShellClass}
+                        presentation={footerPresentation}
+                        transparentBase={hasGlobalBg && !footerPaintsOwnBackground}
+                        isAvailable={profile.isAvailable}
+                        responseTimeLabel={profile.responseTimeLabel}
+                        contactHref={
+                          resolvedContactEmail
+                            ? `mailto:${resolvedContactEmail}`
+                            : heroContactHref
+                        }
+                        motionProfile={motionProfile}
+                        bottomClearanceClass={footerNavClearanceClass}
+                        visibleSectionLinks={footerVisibleSectionLinks}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </PortfolioPagesSlideViewport>
+        </div>
+      ) : (
+        <div className="flex min-h-[100dvh] min-h-screen max-w-full flex-col overflow-x-clip">
+          {settings.hero.enabled ? (
+            <PortfolioHeroSection
               creatorId={creatorId}
+              username={profile.username}
+              fullName={profile.fullName}
+              nameLead={nameLead}
+              nameAccent={nameAccent}
+              specialite={profile.specialite}
+              description={heroDescription}
               avatarUrl={profile.avatarUrl}
-              bio={profile.bio}
-              email={resolvedContactEmail || null}
-              phone={profile.phone}
-              locationLabel={locationLabel}
-              hoursLabel={availabilityDisplay}
-              profileVisits={profileVisits}
-              links={uniqueContactLinks}
-              contentClassName={editorialShellClass}
-              presentation={footerPresentation}
-              transparentBase={hasGlobalBg && !footerPaintsOwnBackground}
+              isVerified={profile.isVerified}
               isAvailable={profile.isAvailable}
               responseTimeLabel={profile.responseTimeLabel}
-              contactHref={
-                resolvedContactEmail
-                  ? `mailto:${resolvedContactEmail}`
-                  : heroContactHref
-              }
+              yearsOfExperience={profile.yearsOfExperience}
+              workCount={resolveExactContentCount(profile) ?? undefined}
+              locationLabel={locationLabel}
+              stats={heroStats}
+              socialLinks={socialLinks}
+              tools={heroToolsProp}
+              toolDetails={heroToolDetailsProp}
+              contactHref={heroContactHref}
+              workHref={heroWorkHref}
+              featuredWorks={heroFeaturedWorks}
+              onNavigateSection={onNavigateSection}
+              showWorkCta={showWorkSection || showGallerySection}
+              showContactCta={settings.hero.showContactCta}
+              navItems={navItems}
+              presentation={heroPresentation}
+              suppressBackground={false}
+              geomFadeEnabled={motionProfileEnablesHeroGeomFade(motionProfile)}
               motionProfile={motionProfile}
-              bottomClearanceClass={footerNavClearanceClass}
-              visibleSectionLinks={footerVisibleSectionLinks}
+              contentGutter={settings.global.contentGutter}
+              contentWidthClass={globalWidthClass}
+              colorMode={(settings.global.colorMode ?? 'dark') as 'light' | 'dark'}
             />
-          </div>
-        ) : null}
-      </div>
+          ) : null}
+
+          <main
+            className={`mx-auto w-full flex-1 grow space-y-0 ${editorialShellClass} ${globalWidthClass} ${
+              settings.footer.enabled ? 'pb-0' : 'pb-24 sm:pb-28 xl:pb-20'
+            }`}
+          >
+            {contentSectionOrder.map((sectionKey) => (
+              <Fragment key={sectionKey}>{renderContentSection(sectionKey)}</Fragment>
+            ))}
+          </main>
+
+          {settings.footer.enabled ? (
+            <div className="mt-auto w-full shrink-0">
+              <EditorialPortfolioFooter
+                creatorName={profile.fullName}
+                creatorId={creatorId}
+                avatarUrl={profile.avatarUrl}
+                bio={profile.bio}
+                email={resolvedContactEmail || null}
+                phone={profile.phone}
+                locationLabel={locationLabel}
+                hoursLabel={availabilityDisplay}
+                profileVisits={profileVisits}
+                links={uniqueContactLinks}
+                contentClassName={editorialShellClass}
+                presentation={footerPresentation}
+                transparentBase={hasGlobalBg && !footerPaintsOwnBackground}
+                isAvailable={profile.isAvailable}
+                responseTimeLabel={profile.responseTimeLabel}
+                contactHref={
+                  resolvedContactEmail
+                    ? `mailto:${resolvedContactEmail}`
+                    : heroContactHref
+                }
+                motionProfile={motionProfile}
+                bottomClearanceClass={footerNavClearanceClass}
+                visibleSectionLinks={footerVisibleSectionLinks}
+              />
+            </div>
+          ) : null}
+        </div>
+      )}
     </PortfolioThemeRoot>
     </PortfolioTaskListMarkerProvider>
     </PortfolioMotionProvider>
