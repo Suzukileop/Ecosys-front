@@ -55,9 +55,12 @@ import {
   PORTFOLIO_WORK_SHOWCASE_MEDIA_SIDE_OPTIONS,
   PORTFOLIO_WORK_SHOWCASE_RADIUS_OPTIONS,
   PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS,
-  PORTFOLIO_WORK_SECTION_LAYOUT_OPTIONS,
-  workSectionLayoutIsAside,
+  WORK_PALETTE_TOKEN_OPTIONS,
+  WORK_BILLBOARD_WORD_STYLE_OPTIONS,
+  workPaletteTokenColor,
+  type PortfolioWorkBillboardWordStyle,
   type PortfolioWorkHeaderDesign,
+  type PortfolioWorkPaletteToken,
   type PortfolioWorkProjectsSpecConsultDesign,
   type PortfolioWorkSectionDesign,
   type PortfolioWorkSectionSettings,
@@ -513,6 +516,23 @@ function WorkPickerCard({
       onClick={onClick}
       className={`pf-work-design-card rounded-2xl text-left ${compact ? 'pf-work-preview-card' : 'px-3 pb-3 pt-2.5'}`}
     >
+      {active ? (
+        <span
+          aria-hidden
+          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
+        >
+          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
+            <path
+              d="M4 10.5l3.5 3.5L16 6"
+              stroke="white"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      ) : null}
       {children}
       <span className={compact ? 'mt-1.5 block' : 'mt-2.5 block'}>
         <span
@@ -769,6 +789,76 @@ function workConsultDesignGlyph(design: PortfolioWorkProjectsSpecConsultDesign):
   }
 }
 
+/** Mini previews for the Billboard "Big word style" picker — a real "Aa" rendered
+ *  in each treatment instead of a plain label. */
+function workBillboardWordStyleGlyph(style: PortfolioWorkBillboardWordStyle): ReactNode {
+  switch (style) {
+    case 'outline':
+      return (
+        <text
+          x="32"
+          y="23"
+          textAnchor="middle"
+          fontSize="19"
+          fontWeight={900}
+          stroke="currentColor"
+          strokeWidth="1"
+          className="pf-work-mini-ink"
+          style={{ fill: 'none' }}
+        >
+          Aa
+        </text>
+      );
+    case 'fill':
+      return (
+        <>
+          <text
+            x="32"
+            y="23"
+            textAnchor="middle"
+            fontSize="19"
+            fontWeight={900}
+            className="pf-work-mini-ink"
+            opacity={0.4}
+            style={{ filter: 'blur(2px)' }}
+          >
+            Aa
+          </text>
+          <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-work-mini-ink">
+            Aa
+          </text>
+        </>
+      );
+    case 'simple':
+      return (
+        <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-work-mini-ink">
+          Aa
+        </text>
+      );
+    default: {
+      const _exhaustive: never = style;
+      return _exhaustive;
+    }
+  }
+}
+
+/** Mini swatch for a palette-token color picker — the actual resolved color,
+ *  not just a text label. */
+function workPaletteTokenGlyph(token: PortfolioWorkPaletteToken): ReactNode {
+  return (
+    <circle
+      cx="32"
+      cy="17"
+      r="8"
+      fill={workPaletteTokenColor(token)}
+      style={{
+        stroke: 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, transparent)',
+        strokeWidth: 1,
+      }}
+    />
+  );
+}
+
 /** Mini wireframes for the 14 "Section design" picker cards. */
 function WorkDesignWireframe({ design }: { design: PortfolioWorkSectionDesign }) {
   switch (design) {
@@ -951,7 +1041,7 @@ function WorkMiniType({
   );
 }
 
-/** The main "Section design" picker — visual wireframe cards instead of a plain option grid. */
+/** The main "Section design" picker — collapses to the selected design; click to expand and change. */
 function WorkDesignChoiceGrid({
   value,
   onChange,
@@ -959,24 +1049,71 @@ function WorkDesignChoiceGrid({
   value: PortfolioWorkSectionDesign;
   onChange: (value: PortfolioWorkSectionDesign) => void;
 }) {
+  const [showGrid, setShowGrid] = useState(false);
+  const selected =
+    PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.find((option) => option.value === value) ??
+    PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS[0];
+
+  if (showGrid) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="pf-work-block-label !mb-0">Section design</p>
+          <button
+            type="button"
+            onClick={() => setShowGrid(false)}
+            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+          >
+            ← Back
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          {PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.map((option) => {
+            const active = option.value === value;
+            return (
+              <WorkPickerCard
+                key={option.value}
+                active={active}
+                label={option.label}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              >
+                <WorkDesignWireframe design={option.value} />
+              </WorkPickerCard>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <p className="pf-work-block-label">Section design</p>
-      <div className="grid grid-cols-2 gap-2">
-        {PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <WorkPickerCard
-              key={option.value}
-              active={active}
-              label={option.label}
-              onClick={() => onChange(option.value)}
-            >
-              <WorkDesignWireframe design={option.value} />
-            </WorkPickerCard>
-          );
-        })}
+      <div className="group relative w-full overflow-hidden rounded-2xl border border-neutral-200/80 p-3">
+        <WorkDesignWireframe design={value} />
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change design"
+          className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
+        >
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-lg">
+            Change design
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change design"
+          className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
+        >
+          Change
+        </button>
       </div>
+      <p className="mt-2 text-sm font-semibold text-neutral-950">{selected.label}</p>
     </div>
   );
 }
@@ -984,13 +1121,6 @@ function WorkDesignChoiceGrid({
 /** Mini wireframes for the 5 "Header design" picker cards. */
 function WorkHeaderWireframe({ design }: { design: PortfolioWorkHeaderDesign }) {
   switch (design) {
-    case 'minimal':
-      return (
-        <WorkMiniSlide>
-          <rect className="pf-work-mini-ink" x="10" y="24" width="52" height="8" rx="2" />
-          <rect className="pf-work-mini-mute" x="10" y="38" width="70" height="4" rx="2" />
-        </WorkMiniSlide>
-      );
     case 'editorial':
       return (
         <WorkMiniSlide>
@@ -1019,11 +1149,13 @@ function WorkHeaderWireframe({ design }: { design: PortfolioWorkHeaderDesign }) 
     case 'index':
       return (
         <WorkMiniSlide>
-          <WorkMiniType x={10} y={46} size={28}>
-            01
+          <rect className="pf-work-mini-mute" x="10" y="12" width="4" height="4" />
+          <rect className="pf-work-mini-mute" x="20" y="13" width="90" height="1" />
+          <WorkMiniType x={10} y={40} size={22}>
+            04
           </WorkMiniType>
-          <rect className="pf-work-mini-ink" x="46" y="26" width="46" height="8" rx="2" />
-          <rect className="pf-work-mini-mute" x="46" y="40" width="32" height="4" rx="2" />
+          <rect className="pf-work-mini-mute" x="46" y="22" width="1" height="18" />
+          <rect className="pf-work-mini-ink" x="54" y="24" width="46" height="7" rx="2" />
         </WorkMiniSlide>
       );
     case 'accent-count':
@@ -1067,6 +1199,13 @@ function WorkHeaderWireframe({ design }: { design: PortfolioWorkHeaderDesign }) 
           <rect className="pf-work-mini-mute" x="10" y="38" width="100" height="1" />
         </WorkMiniSlide>
       );
+    case 'split-heading':
+      return (
+        <WorkMiniSlide>
+          <rect className="pf-work-mini-ink" x="10" y="20" width="58" height="10" rx="2" />
+          <rect className="pf-work-mini-mute" x="86" y="18" width="24" height="3" rx="1.5" />
+        </WorkMiniSlide>
+      );
     default: {
       const _exhaustive: never = design;
       return _exhaustive;
@@ -1082,24 +1221,71 @@ function WorkHeaderChoiceGrid({
   value: PortfolioWorkHeaderDesign;
   onChange: (value: PortfolioWorkHeaderDesign) => void;
 }) {
+  const [showGrid, setShowGrid] = useState(false);
+  const selected =
+    PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
+    PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS[0];
+
+  if (showGrid) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="pf-work-block-label !mb-0">Header design</p>
+          <button
+            type="button"
+            onClick={() => setShowGrid(false)}
+            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+          >
+            ← Back
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          {PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS.map((option) => {
+            const active = option.value === value;
+            return (
+              <WorkPickerCard
+                key={option.value}
+                active={active}
+                label={option.label}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              >
+                <WorkHeaderWireframe design={option.value} />
+              </WorkPickerCard>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <p className="pf-work-block-label">Header design</p>
-      <div className="grid grid-cols-2 gap-2">
-        {PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <WorkPickerCard
-              key={option.value}
-              active={active}
-              label={option.label}
-              onClick={() => onChange(active ? 'minimal' : option.value)}
-            >
-              <WorkHeaderWireframe design={option.value} />
-            </WorkPickerCard>
-          );
-        })}
+      <div className="group relative w-full overflow-hidden rounded-2xl border border-neutral-200/80 p-3">
+        <WorkHeaderWireframe design={value} />
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change header design"
+          className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
+        >
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-lg">
+            Change header design
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowGrid(true)}
+          aria-label="Change header design"
+          className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
+        >
+          Change
+        </button>
       </div>
+      <p className="mt-2 text-sm font-semibold text-neutral-950">{selected.label}</p>
     </div>
   );
 }
@@ -1126,35 +1312,58 @@ const WORK_HEADER_TITLE_WEIGHT_OPTIONS = [
 ];
 
 /** Shared across every header design — bottom spacing, title size, and title weight.
- *  Appended to each design's own advanced-settings branch in the Header tab. */
+ *  Appended to each design's own advanced-settings branch in the Header tab.
+ *  `hideAlignment`/`hideTitleControls` drop controls a given design doesn't
+ *  actually consume (e.g. Billboard has no adjustable title size/weight and
+ *  ignores header alignment) — dead controls left visible are confusing. */
 function WorkHeaderSharedAdvancedControls({
   work,
   onChange,
+  hideAlignment = false,
+  hideTitleControls = false,
 }: {
   work: PortfolioWorkSectionSettings;
   onChange: (patch: Partial<PortfolioWorkSectionSettings>) => void;
+  hideAlignment?: boolean;
+  hideTitleControls?: boolean;
 }) {
   return (
     <>
+      {hideAlignment ? null : (
+        <WorkOptionGrid
+          label="Header alignment"
+          options={[
+            { value: 'left' as const, label: 'Left', description: 'Default editorial alignment.' },
+            { value: 'center' as const, label: 'Center', description: 'Centered title and subtitle.' },
+          ]}
+          value={work.headerAlignment}
+          onChange={(headerAlignment) => onChange({ headerAlignment })}
+          columns={2}
+        />
+      )}
       <WorkSlider
         label="Bottom spacing"
         options={WORK_HEADER_MARGIN_BOTTOM_OPTIONS}
         value={work.headerMarginBottom ?? 'md'}
         onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
       />
-      <WorkSlider
-        label="Title size"
-        options={WORK_HEADER_TITLE_SIZE_OPTIONS}
-        value={work.headerTitleSize ?? 'md'}
-        onChange={(headerTitleSize) => onChange({ headerTitleSize })}
-      />
-      <WorkOptionGrid
-        label="Title weight"
-        options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
-        value={work.headerTitleWeight ?? 'regular'}
-        onChange={(headerTitleWeight) => onChange({ headerTitleWeight })}
-        columns={4}
-      />
+      {hideTitleControls ? null : (
+        <>
+          <WorkSlider
+            label="Title size"
+            options={WORK_HEADER_TITLE_SIZE_OPTIONS}
+            value={work.headerTitleSize ?? 'md'}
+            onChange={(headerTitleSize) => onChange({ headerTitleSize })}
+          />
+          <WorkOptionGrid
+            label="Title weight"
+            options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
+            value={work.headerTitleWeight ?? 'regular'}
+            onChange={(headerTitleWeight) => onChange({ headerTitleWeight })}
+            columns={4}
+          />
+        </>
+      )}
     </>
   );
 }
@@ -2888,37 +3097,23 @@ export function WorkSettingsPanel({
         <div className="space-y-6">
           <div>
             <WorkHeaderChoiceGrid
-              value={work.headerDesign ?? 'minimal'}
+              value={work.headerDesign ?? 'editorial'}
               onChange={(headerDesign) => onChange({ headerDesign })}
             />
 
-            <WorkLayoutSettingsBand motionKey={work.headerDesign ?? 'minimal'}>
-              {(work.headerDesign ?? 'minimal') === 'minimal' ? (
+            <WorkLayoutSettingsBand motionKey={work.headerDesign ?? 'editorial'}>
+              {work.headerDesign === 'index' ? (
                 <>
-                  {workSectionLayoutIsAside(work.sectionLayout) ? (
-                    <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                      Alignement horizontal masqué : le titre est déjà placé{' '}
-                      {work.sectionLayout === 'aside-right' ? 'à droite' : 'à gauche'} de la galerie.
-                    </p>
-                  ) : (
-                    <WorkOptionGrid
-                      label="Header alignment"
-                      options={[
-                        { value: 'left' as const, label: 'Left', description: 'Default editorial alignment.' },
-                        { value: 'center' as const, label: 'Center', description: 'Centered title and subtitle.' },
-                      ]}
-                      value={work.headerAlignment}
-                      onChange={(headerAlignment) => onChange({ headerAlignment })}
-                      columns={2}
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Rule label</p>
+                    <input
+                      type="text"
+                      value={work.indexLabelText}
+                      onChange={(event) => onChange({ indexLabelText: event.target.value })}
+                      placeholder="Index"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
                     />
-                  )}
-                  <WorkOptionGrid
-                    label="Disposition titre / contenu"
-                    options={PORTFOLIO_WORK_SECTION_LAYOUT_OPTIONS}
-                    value={work.sectionLayout ?? 'stacked'}
-                    onChange={(sectionLayout) => onChange({ sectionLayout })}
-                    columns={1}
-                  />
+                  </div>
                   <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} />
                 </>
               ) : work.headerDesign === 'accent-count' ? (
@@ -2969,6 +3164,19 @@ export function WorkSettingsPanel({
                       className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
                     />
                   </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
+                    <input
+                      type="text"
+                      value={work.serifLeadTitleText}
+                      onChange={(event) => onChange({ serifLeadTitleText: event.target.value })}
+                      placeholder="A curated collection of work, built with care."
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                    <p className="mt-1.5 text-sm text-neutral-500">
+                      A longer sentence splits across two balanced lines. Defaults to the phrase above when left empty.
+                    </p>
+                  </div>
                   <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} />
                 </>
               ) : work.headerDesign === 'billboard' ? (
@@ -2994,7 +3202,58 @@ export function WorkSettingsPanel({
                     />
                     <p className="mt-1.5 text-sm text-neutral-500">Use {'{count}'} to insert the project count.</p>
                   </div>
-                  <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} />
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
+                    <input
+                      type="text"
+                      value={work.billboardTitleText}
+                      onChange={(event) => onChange({ billboardTitleText: event.target.value })}
+                      placeholder="Selected work"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                    <p className="mt-1.5 text-sm text-neutral-500">First word italic, rest bold. Independent of the section title.</p>
+                  </div>
+                  <WorkPreviewCardGrid
+                    label="Big word style"
+                    options={WORK_BILLBOARD_WORD_STYLE_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: workBillboardWordStyleGlyph(option.value),
+                    }))}
+                    value={work.billboardWordStyle ?? 'outline'}
+                    onChange={(billboardWordStyle) => onChange({ billboardWordStyle })}
+                    columns={3}
+                  />
+                  <WorkPreviewCardGrid
+                    label="Big word color"
+                    options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: workPaletteTokenGlyph(option.value),
+                    }))}
+                    value={work.billboardWordColor ?? 'principal'}
+                    onChange={(billboardWordColor) => onChange({ billboardWordColor })}
+                    columns={3}
+                  />
+                  <WorkPreviewCardGrid
+                    label="Title color"
+                    options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: workPaletteTokenGlyph(option.value),
+                    }))}
+                    value={work.billboardTitleColor ?? 'principal'}
+                    onChange={(billboardTitleColor) => onChange({ billboardTitleColor })}
+                    columns={3}
+                  />
+                  <WorkPreviewCardGrid
+                    label="Count line color"
+                    options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: workPaletteTokenGlyph(option.value),
+                    }))}
+                    value={work.billboardMetaColor ?? 'secondaire'}
+                    onChange={(billboardMetaColor) => onChange({ billboardMetaColor })}
+                    columns={3}
+                  />
+                  <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} hideAlignment hideTitleControls />
                 </>
               ) : work.headerDesign === 'masthead' ? (
                 <>
@@ -3004,12 +3263,142 @@ export function WorkSettingsPanel({
                       type="text"
                       value={work.mastheadHeadlineText}
                       onChange={(event) => onChange({ mastheadHeadlineText: event.target.value })}
-                      placeholder={work.title || 'PORTFOLIO'}
+                      placeholder="Selected work. Crafted with intent. Delivered with care."
                       className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
                     />
-                    <p className="mt-1.5 text-sm text-neutral-500">Defaults to the title above when left empty.</p>
+                    <p className="mt-1.5 text-sm text-neutral-500">
+                      One period per line — short sentences stack into the mast. Defaults to the phrase above when left empty.
+                    </p>
                   </div>
-                  <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} />
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Intro</p>
+                    <input
+                      type="text"
+                      value={work.mastheadIntroText}
+                      onChange={(event) => onChange({ mastheadIntroText: event.target.value })}
+                      placeholder="A selection of recent work."
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                    <p className="mt-1.5 text-sm text-neutral-500">Optional — hidden when left empty.</p>
+                  </div>
+                  <WorkPreviewCardGrid
+                    label="Headline color"
+                    options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: workPaletteTokenGlyph(option.value),
+                    }))}
+                    value={work.mastheadHeadlineColor ?? 'principal'}
+                    onChange={(mastheadHeadlineColor) => onChange({ mastheadHeadlineColor })}
+                    columns={3}
+                  />
+                  <WorkSlider
+                    label="Headline size"
+                    options={WORK_HEADER_TITLE_SIZE_OPTIONS}
+                    value={work.mastheadHeadlineSize ?? 'md'}
+                    onChange={(mastheadHeadlineSize) => onChange({ mastheadHeadlineSize })}
+                  />
+                  <WorkOptionGrid
+                    label="Headline weight"
+                    options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={work.mastheadHeadlineWeight ?? 'regular'}
+                    onChange={(mastheadHeadlineWeight) => onChange({ mastheadHeadlineWeight })}
+                    columns={4}
+                  />
+                  <WorkPreviewCardGrid
+                    label="Intro color"
+                    options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: workPaletteTokenGlyph(option.value),
+                    }))}
+                    value={work.mastheadIntroColor ?? 'secondaire'}
+                    onChange={(mastheadIntroColor) => onChange({ mastheadIntroColor })}
+                    columns={3}
+                  />
+                  <WorkSlider
+                    label="Intro size"
+                    options={WORK_HEADER_TITLE_SIZE_OPTIONS}
+                    value={work.mastheadIntroSize ?? 'md'}
+                    onChange={(mastheadIntroSize) => onChange({ mastheadIntroSize })}
+                  />
+                  <WorkOptionGrid
+                    label="Intro weight"
+                    options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={work.mastheadIntroWeight ?? 'regular'}
+                    onChange={(mastheadIntroWeight) => onChange({ mastheadIntroWeight })}
+                    columns={4}
+                  />
+                  <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} hideTitleControls />
+                </>
+              ) : work.headerDesign === 'split-heading' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
+                    <input
+                      type="text"
+                      value={work.splitHeadingTitleText}
+                      onChange={(event) => onChange({ splitHeadingTitleText: event.target.value })}
+                      placeholder="Selected work"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                    <p className="mt-1.5 text-sm text-neutral-500">First word italic, rest bold. Independent of the section title.</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
+                    <input
+                      type="text"
+                      value={work.splitHeadingLabelText}
+                      onChange={(event) => onChange({ splitHeadingLabelText: event.target.value })}
+                      placeholder="Portfolio"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <WorkPreviewCardGrid
+                    label="Title color"
+                    options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: workPaletteTokenGlyph(option.value),
+                    }))}
+                    value={work.splitHeadingTitleColor ?? 'principal'}
+                    onChange={(splitHeadingTitleColor) => onChange({ splitHeadingTitleColor })}
+                    columns={3}
+                  />
+                  <WorkSlider
+                    label="Title size"
+                    options={WORK_HEADER_TITLE_SIZE_OPTIONS}
+                    value={work.splitHeadingTitleSize ?? 'md'}
+                    onChange={(splitHeadingTitleSize) => onChange({ splitHeadingTitleSize })}
+                  />
+                  <WorkOptionGrid
+                    label="Title weight"
+                    options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={work.splitHeadingTitleWeight ?? 'regular'}
+                    onChange={(splitHeadingTitleWeight) => onChange({ splitHeadingTitleWeight })}
+                    columns={4}
+                  />
+                  <WorkPreviewCardGrid
+                    label="Label color"
+                    options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: workPaletteTokenGlyph(option.value),
+                    }))}
+                    value={work.splitHeadingLabelColor ?? 'secondaire'}
+                    onChange={(splitHeadingLabelColor) => onChange({ splitHeadingLabelColor })}
+                    columns={3}
+                  />
+                  <WorkSlider
+                    label="Label size"
+                    options={WORK_HEADER_TITLE_SIZE_OPTIONS}
+                    value={work.splitHeadingLabelSize ?? 'md'}
+                    onChange={(splitHeadingLabelSize) => onChange({ splitHeadingLabelSize })}
+                  />
+                  <WorkOptionGrid
+                    label="Label weight"
+                    options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={work.splitHeadingLabelWeight ?? 'regular'}
+                    onChange={(splitHeadingLabelWeight) => onChange({ splitHeadingLabelWeight })}
+                    columns={4}
+                  />
+                  <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} hideAlignment hideTitleControls />
                 </>
               ) : (
                 <>
