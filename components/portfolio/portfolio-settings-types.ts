@@ -1,5 +1,9 @@
 import type { CSSProperties } from 'react';
 import {
+  mergeSectionColorMode,
+  type PortfolioSectionColorMode,
+} from '@/components/portfolio/portfolio-section-color-mode';
+import {
   DEFAULT_HERO_PRESENTATION,
   mergeHeroPresentation,
   type PortfolioHeroPresentationSettings,
@@ -1273,6 +1277,8 @@ export type PortfolioNavSettings = {
    * When false, color pickers edit hex values directly (manual mode).
    */
   useNavPalette: boolean;
+  /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+  colorModeOverride: PortfolioSectionColorMode;
 };
 
 export type PortfolioSectionCopy = {
@@ -1554,6 +1560,7 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       navPalette: { ...DEFAULT_NAV_PALETTE },
       navColorBindings: { ...DEFAULT_NAV_COLOR_BINDINGS },
       useNavPalette: true,
+      colorModeOverride: 'auto',
       ...applyNavPaletteToSettings({
         navPalette: DEFAULT_NAV_PALETTE,
         navColorBindings: DEFAULT_NAV_COLOR_BINDINGS,
@@ -2350,6 +2357,7 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
       typeof patch.useNavPalette === 'boolean'
         ? patch.useNavPalette
         : (base.useNavPalette ?? true),
+    colorModeOverride: mergeSectionColorMode(patch.colorModeOverride, base.colorModeOverride),
   };
 
   // Manual mode: keep stored hex fields — do not overwrite from palette tokens.

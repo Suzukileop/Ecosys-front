@@ -5531,7 +5531,7 @@ function NavigationOptionGrid<T extends string>({
   );
 }
 
-export function NavigationPanel({
+function NavigationPanel({
   navigation,
   onChange,
   navSocialLinkOptions = [],
@@ -5576,7 +5576,7 @@ export function NavigationPanel({
 
       {navTab === 'general' ? (
         <div className="space-y-8">
-      <ToggleRow
+      <NavigationToggleRow
         label="Show navigation"
         description="Menu that jumps between portfolio sections."
         checked={navigation.enabled}
@@ -5589,24 +5589,29 @@ export function NavigationPanel({
         description="When on, Navigation colors follow the semantic palette (Principal, Fond, Bordure…). Turn off to set each color manually."
       />
 
+      <SectionColorModeControl
+        value={navigation.colorModeOverride}
+        onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+      />
+
       {navigation.enabled ? (
         <div className="space-y-8">
         <div className="space-y-4">
-        <OptionGrid
+        <NavigationOptionGrid
           label="Fond de la barre"
           options={PORTFOLIO_NAV_BAR_SURFACE_OPTIONS}
           value={navigation.navBarSurface ?? 'neutre'}
           onChange={(navBarSurface) => onChange({ navBarSurface })}
           columns={3}
         />
-        <OptionGrid
+        <NavigationOptionGrid
           label="Hauteur de la barre"
           options={PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS}
           value={navigation.navBarHeight ?? 'md'}
           onChange={(navBarHeight) => onChange({ navBarHeight })}
           columns={3}
         />
-        <ToggleRow
+        <NavigationToggleRow
           label="Bascule clair / sombre dans la barre"
           description="Affiche une icône soleil / lune dans la navigation pour basculer entre mode clair et sombre."
           checked={showColorModeToggleInNav}
@@ -5738,7 +5743,7 @@ export function NavigationPanel({
       </div>
 
       {navigation.enabled && navigation.navLayoutDesign === 'editorial-bar' ? (
-        <OptionGrid
+        <NavigationOptionGrid
           label="Couleur du texte des boutons"
           options={PORTFOLIO_NAV_EDITORIAL_BAR_BUTTON_INK_OPTIONS}
           value={navigation.editorialBarButtonInk ?? 'principal'}
@@ -5769,7 +5774,7 @@ export function NavigationPanel({
       ) : null}
 
       {navigation.enabled ? (
-        <OptionGrid
+        <NavigationOptionGrid
           label="Taille du texte"
           options={PORTFOLIO_NAV_LABEL_FONT_SIZE_OPTIONS}
           value={navigation.labelFontSize ?? 'md'}

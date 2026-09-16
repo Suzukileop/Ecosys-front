@@ -1,5 +1,9 @@
 import type { CSSProperties } from 'react';
 import {
+  mergeSectionColorMode,
+  type PortfolioSectionColorMode,
+} from '@/components/portfolio/portfolio-section-color-mode';
+import {
   DEFAULT_CUSTOM_MOTIF_POINTS,
   ensureLeftColumnMotifPoints,
   ensureRightColumnMotifPoints,
@@ -786,6 +790,8 @@ export type PortfolioHeroPresentationSettings = {
      * When false, color pickers edit hex values directly (manual mode).
      */
     useHeroPalette: boolean;
+    /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
+    colorModeOverride: PortfolioSectionColorMode;
   };
 
 export const HERO_TOOLS_ICON_SIZE_PX_MIN = 12;
@@ -1099,6 +1105,7 @@ export const DEFAULT_HERO_PRESENTATION: PortfolioHeroPresentationSettings = {
   palette: { ...DEFAULT_HERO_PALETTE },
   colorBindings: { ...DEFAULT_HERO_COLOR_BINDINGS },
   useHeroPalette: true,
+  colorModeOverride: 'auto',
 };
 
 export const PORTFOLIO_HERO_TOOLS_ICON_ARRANGEMENT_OPTIONS: {
@@ -2926,6 +2933,7 @@ export function mergeHeroPresentation(
     ),
     useHeroPalette:
       typeof record.useHeroPalette === 'boolean' ? record.useHeroPalette : base.useHeroPalette,
+    colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
   };
 
   // One-time migration: saves that predate the stacked-align revision kept
