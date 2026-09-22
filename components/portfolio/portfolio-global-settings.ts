@@ -532,22 +532,6 @@ export function resolveSectionOrder(order: PortfolioNavSectionKey[] | undefined)
     seen.add(key);
   }
 
-  // Keep Tools right under Work when both are present (fixes older “bottom” placement).
-  const toolsIdx = next.indexOf('tools');
-  const workIdx = next.indexOf('work');
-  if (toolsIdx >= 0 && workIdx >= 0 && toolsIdx !== workIdx + 1) {
-    next.splice(toolsIdx, 1);
-    const insertAt = next.indexOf('work') + 1;
-    next.splice(insertAt, 0, 'tools');
-  }
-
-  // Keep Stack first when present (directly under Hero).
-  const stackIdx = next.indexOf('stack');
-  if (stackIdx > 0) {
-    next.splice(stackIdx, 1);
-    next.unshift('stack');
-  }
-
   return next;
 }
 
@@ -952,13 +936,13 @@ function sanitizeHex(value: unknown, fallback: string): string {
 /** Resolves the effective title alignment for a section given the global override. */
 export function resolveSectionHeaderAlign(
   global: PortfolioGlobalSettings,
-  sectionAlignment: 'left' | 'center'
+  sectionAlignment: 'left' | 'center' | 'right'
 ): { centered: boolean; alignRight: boolean; alwaysCentered: boolean } {
   if (global.titleAlignment === 'section') {
     return {
       centered: sectionAlignment === 'center',
-      alignRight: false,
-      alwaysCentered: sectionAlignment === 'center',
+      alignRight: sectionAlignment === 'right',
+      alwaysCentered: sectionAlignment !== 'left',
     };
   }
   const align = global.titleAlignment;

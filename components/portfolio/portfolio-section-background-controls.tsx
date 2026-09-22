@@ -6,6 +6,11 @@ import {
   type PortfolioSectionBackgroundFill,
   type PortfolioSectionBackgroundSettings,
 } from '@/components/portfolio/portfolio-section-background-settings';
+import { PortfolioBackgroundImageUpload } from '@/components/portfolio/portfolio-background-image-upload';
+import {
+  PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS,
+  PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS,
+} from '@/components/portfolio/portfolio-global-settings';
 
 function ToggleRow({
   label,
@@ -186,10 +191,6 @@ function OpacitySlider({ label, value, onChange }: { label: string; value: numbe
   );
 }
 
-const SECTION_BACKGROUND_PALETTE_FILL_OPTIONS = PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS.filter(
-  (option) => option.value !== 'image'
-);
-
 export type GradientOrientation = 'horizontal' | 'vertical' | 'diagonal';
 
 export const GRADIENT_ORIENTATION_ANGLE: Record<GradientOrientation, number> = {
@@ -224,9 +225,9 @@ const SPLIT_DIRECTION_OPTIONS: { value: PortfolioSectionBackgroundSettings['sect
   { value: 'x', label: 'Vertical' },
 ];
 
-/** Minimal: fill type (3 palette-based options — no Image), the relevant color(s), a compact
- *  orientation/direction picker for gradient and split, and opacity. No explanatory copy, no
- *  preview swatch, no split-divider sub-controls. */
+/** Fill type (solid / gradient / split / image), the relevant color(s) or uploaded photo, a
+ *  compact orientation/direction/size/position picker per fill, and opacity. No explanatory
+ *  copy, no preview swatch, no split-divider sub-controls. */
 export function SectionBackgroundFillControls({
   settings,
   onChange,
@@ -240,10 +241,8 @@ export function SectionBackgroundFillControls({
     <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
       <OptionGrid
         label="Fill type"
-        options={SECTION_BACKGROUND_PALETTE_FILL_OPTIONS}
-        value={
-          settings.sectionBackgroundFill === 'image' ? 'solid' : settings.sectionBackgroundFill
-        }
+        options={PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS}
+        value={settings.sectionBackgroundFill}
         onChange={(sectionBackgroundFill) => onChange({ sectionBackgroundFill })}
         compact
       />
@@ -298,6 +297,28 @@ export function SectionBackgroundFillControls({
             compact
           />
         </>
+      ) : settings.sectionBackgroundFill === 'image' ? (
+        <>
+          <PortfolioBackgroundImageUpload
+            url={settings.sectionBackgroundImageUrl}
+            onChange={(sectionBackgroundImageUrl) => onChange({ sectionBackgroundImageUrl })}
+            label="Background image"
+          />
+          <OptionGrid
+            label="Image size"
+            options={PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS}
+            value={settings.sectionBackgroundImageSize}
+            onChange={(sectionBackgroundImageSize) => onChange({ sectionBackgroundImageSize })}
+            compact
+          />
+          <OptionGrid
+            label="Image position"
+            options={PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS}
+            value={settings.sectionBackgroundImagePosition}
+            onChange={(sectionBackgroundImagePosition) => onChange({ sectionBackgroundImagePosition })}
+            compact
+          />
+        </>
       ) : (
         <ColorField
           label="Color"
@@ -314,8 +335,8 @@ export function SectionBackgroundFillControls({
       />
 
       <ToggleRow
-        label="Fondu haut / bas"
-        description="Estompe le fond en douceur au lieu d'une coupure nette avec la section suivante."
+        label="Top/bottom fade"
+        description="Softens the background into the next section instead of a hard cut."
         checked={settings.sectionBackgroundEdgeFade}
         onChange={(sectionBackgroundEdgeFade) => onChange({ sectionBackgroundEdgeFade })}
       />
@@ -331,9 +352,12 @@ export function SectionBackgroundSettingsFields({
   settings: PortfolioSectionBackgroundSettings;
   onChange: (patch: Partial<PortfolioSectionBackgroundSettings>) => void;
   /** Accepted for backward compatibility with existing callers — no longer rendered
-   *  (the panel is minimal now: fill type, color(s), opacity — no header copy or image fill). */
+   *  (no header copy above the fill-type picker). */
   title?: string;
   description?: string;
+  /** Not wired here — a per-section image fill is a single uploaded photo (see the Image
+   *  fill type), not a reusable library like the Global page background's. Accepted for
+   *  backward compatibility with existing callers only. */
   imageLibrary?: string[];
   onImageLibraryChange?: (urls: string[]) => void;
   renderColorField?: BackgroundColorFieldRenderer;

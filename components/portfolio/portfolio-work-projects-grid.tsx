@@ -52,12 +52,10 @@ function carouselTrackGapClass(forceSingleColumn: boolean): string {
   return forceSingleColumn ? 'gap-10 sm:gap-12' : 'gap-10 sm:gap-12 lg:gap-14';
 }
 
-function gridMediaAspectClass(index: number): string {
-  const cycle = index % 3;
-  if (cycle === 0) return 'aspect-[3/4]';
-  if (cycle === 1) return 'aspect-square';
-  return 'aspect-[4/3]';
-}
+// One strict ratio for every card — a per-index cycling ratio (previously 3/4, square, 4/3)
+// crops each thumbnail differently, and combined with the diagonal column offset below, adjacent
+// cards read as one character's head and body split across two unrelated blocks.
+const GRID_MEDIA_ASPECT_CLASS = 'aspect-[16/10]';
 
 function gridOffsetClass(
   index: number,
@@ -66,11 +64,12 @@ function gridOffsetClass(
 ): string {
   if (!enabled) return '';
   if (columns === 3) {
-    if (index % 3 === 1) return 'lg:mt-12 xl:mt-14';
-    if (index % 3 === 2) return 'lg:mt-24 xl:mt-28';
+    if (index % 3 === 1) return 'lg:mt-16 xl:mt-20';
+    if (index % 3 === 2) return 'lg:mt-32 xl:mt-36';
     return '';
   }
-  return index % 2 === 1 ? 'lg:mt-16 xl:mt-24' : '';
+  // Left column starts flush at the top; right column drops down for a deliberate diagonal.
+  return index % 2 === 1 ? 'lg:mt-24 xl:mt-32' : '';
 }
 
 function gridTitleClass(columns: 2 | 3): string {
@@ -88,6 +87,13 @@ function gridImageSizes(columns: 2 | 3, forceSingleColumn: boolean): string {
 
 function formatGridIndex(index: number): string {
   return String(index + 1).padStart(2, '0');
+}
+
+function gridToolLabels(item: MarketplaceContentItem, max = 6): string[] {
+  return Array.from(new Set((item.toolsUsed ?? []).map((t) => t.trim()).filter(Boolean))).slice(
+    0,
+    max
+  );
 }
 
 function prefersReducedMotion(): boolean {
@@ -405,6 +411,33 @@ function GridMediaLink({
   );
 }
 
+/** Tools as one quiet uppercase line, dot-separated — scrolls sideways if it overflows on phones. */
+function GridTagsRow({ tools, color }: { tools: string[]; color: string }) {
+  if (tools.length === 0) return null;
+  return (
+    <ul
+      className="m-0 mt-5 flex list-none items-center gap-x-2.5 overflow-x-auto whitespace-nowrap p-0 [-ms-overflow-style:none] [scrollbar-width:none] sm:mt-6 [&::-webkit-scrollbar]:hidden"
+      aria-label="Stack"
+    >
+      {tools.map((tool, index) => (
+        <li key={tool} className="flex shrink-0 items-center gap-x-2.5">
+          <span
+            className="text-[10px] font-medium uppercase leading-none tracking-[0.2em] sm:text-[11px]"
+            style={{ color, opacity: 0.78 }}
+          >
+            {tool}
+          </span>
+          {index < tools.length - 1 ? (
+            <span aria-hidden className="text-[10px] leading-none sm:text-[11px]" style={{ color, opacity: 0.4 }}>
+              •
+            </span>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function GridConsultLink({
   href,
   color,
@@ -422,13 +455,13 @@ function GridConsultLink({
         style={{ borderColor: color }}
         data-pf-no-color-transition=""
       >
-        View
+        View project
       </span>
       <span
         aria-hidden
         className="inline-block transition-transform duration-300 group-hover/grid-cta:translate-x-1"
       >
-        →
+        ↗
       </span>
     </>
   );
@@ -655,8 +688,9 @@ function GridCard({
   const description = item.description?.trim() || '';
   const href = item.linkUrl?.trim() || null;
   const title = item.title?.trim() || '';
+  const tools = gridToolLabels(item);
   const radiusClass = gridRadiusClass(cardRadius);
-  const aspectClass = gridMediaAspectClass(index);
+  const aspectClass = GRID_MEDIA_ASPECT_CLASS;
   const offsetClass = gridOffsetClass(index, columns, offsetEnabled);
   const showMediaFrame = cardBorder !== 'none';
   const frameColor = cardBorder === 'accent' ? accent || borderColor : borderColor;
@@ -696,75 +730,83 @@ function GridCard({
       data-pf-no-color-transition=""
       style={GRID_HIDDEN}
     >
+      {/* One indivisible shell: image and copy live inside the same glass panel so the
+          thumbnail is never read as detached from its own text, or from its neighbor's. */}
       <div
-        className={`relative w-full overflow-hidden ${aspectClass} ${radiusClass}`}
-        style={{
-          backgroundColor: `${borderColor}44`,
-          ...(showMediaFrame
-            ? {
-                borderColor: frameBorderColor,
-                borderWidth: 1,
-                borderStyle: 'solid',
-              }
-            : undefined),
-        }}
+        className={`flex flex-col overflow-hidden border border-neutral-900/50 bg-neutral-950/30 p-3 backdrop-blur-sm sm:p-4 ${radiusClass}`}
       >
-        {href && mediaUrl ? (
-          <GridMediaLink
-            href={href}
-            className="absolute inset-0 block focus:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2"
-            ariaLabel={title || 'Project'}
-          >
-            {mediaInner}
-          </GridMediaLink>
-        ) : (
-          mediaInner
-        )}
-      </div>
-
-      <div data-grid-copy className="flex min-w-0 flex-col pt-6 sm:pt-8">
-        <div className="flex items-center gap-3">
-          <p
-            className="text-[10px] font-medium tracking-[0.22em] tabular-nums sm:text-[11px]"
-            style={{ color: muted, opacity: 0.48 }}
-          >
-            {formatGridIndex(index)}
-          </p>
-          <span
-            className="pf-work-grid-rule block h-px"
-            style={{ backgroundColor: accent || muted }}
-            aria-hidden
-          />
+        <div
+          className={`relative w-full shrink-0 overflow-hidden ${aspectClass} ${radiusClass}`}
+          style={{
+            backgroundColor: `${borderColor}44`,
+            ...(showMediaFrame
+              ? {
+                  borderColor: frameBorderColor,
+                  borderWidth: 1,
+                  borderStyle: 'solid',
+                }
+              : undefined),
+          }}
+        >
+          {href && mediaUrl ? (
+            <GridMediaLink
+              href={href}
+              className="absolute inset-0 block focus:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2"
+              ariaLabel={title || 'Project'}
+            >
+              {mediaInner}
+            </GridMediaLink>
+          ) : (
+            mediaInner
+          )}
         </div>
 
-        {title ? (
-          <h3 className={`mt-4 sm:mt-5 ${gridTitleClass(columns)}`} style={{ color: titleColor }}>
-            {href ? (
-              <GridMediaLink
-                href={href}
-                className="rounded-sm text-inherit no-underline outline-none transition-opacity duration-300 hover:opacity-70 focus-visible:opacity-70"
-                ariaLabel={title}
-              >
+        <div data-grid-copy className="flex min-w-0 flex-col pt-6 sm:pt-8">
+          <div className="flex items-center gap-3">
+            <p
+              className="text-[10px] font-medium tracking-[0.22em] tabular-nums sm:text-[11px]"
+              style={{ color: muted, opacity: 0.48 }}
+            >
+              {formatGridIndex(index)}
+            </p>
+            <span
+              className="pf-work-grid-rule block h-px"
+              style={{ backgroundColor: accent || muted }}
+              aria-hidden
+            />
+          </div>
+
+          {title ? (
+            <h3 className={`mt-4 sm:mt-5 ${gridTitleClass(columns)}`} style={{ color: titleColor }}>
+              {href ? (
+                <GridMediaLink
+                  href={href}
+                  className="rounded-sm text-inherit no-underline outline-none transition-opacity duration-300 hover:opacity-70 focus-visible:opacity-70"
+                  ariaLabel={title}
+                >
+                  <EditorialTitleText text={title} />
+                </GridMediaLink>
+              ) : (
                 <EditorialTitleText text={title} />
-              </GridMediaLink>
-            ) : (
-              <EditorialTitleText text={title} />
-            )}
-          </h3>
-        ) : null}
+              )}
+            </h3>
+          ) : null}
 
-        {showDescription && description ? (
-          <p
-            className={`max-w-[36em] text-[0.92rem] font-normal leading-[1.7] sm:text-[0.98rem] sm:leading-[1.72] ${
-              title ? 'mt-3 sm:mt-3.5' : 'mt-3'
-            }`}
-            style={{ color: muted, opacity: 0.82 }}
-          >
-            {description}
-          </p>
-        ) : null}
+          {showDescription && description ? (
+            <p
+              className={`max-w-[36em] text-[0.92rem] font-normal leading-[1.7] sm:text-[0.98rem] sm:leading-[1.72] ${
+                title ? 'mt-3 sm:mt-3.5' : 'mt-3'
+              }`}
+              style={{ color: muted, opacity: 0.82 }}
+            >
+              {description}
+            </p>
+          ) : null}
 
-        {href ? <GridConsultLink href={href} color={accent} /> : null}
+          <GridTagsRow tools={tools} color={muted} />
+
+          {href ? <GridConsultLink href={href} color={accent} /> : null}
+        </div>
       </div>
     </article>
   );
@@ -869,22 +911,10 @@ export function ProjectsGridGallery({
 
 /** Header + gallery with optional carousel navigation — Projects grid design only. */
 export function ProjectsGridSection({
-  title,
-  subtitle,
-  titleColor,
-  subtitleColor,
-  className = '',
-  trailing,
   items,
   presentation = DEFAULT_WORK_PRESENTATION,
   forceSingleColumn = false,
 }: {
-  title: string;
-  subtitle?: string;
-  titleColor: string;
-  subtitleColor: string;
-  className?: string;
-  trailing?: ReactNode;
   items: MarketplaceContentItem[];
   presentation?: PortfolioWorkPresentationSettings;
   forceSingleColumn?: boolean;
@@ -918,14 +948,6 @@ export function ProjectsGridSection({
     />
   ) : null;
 
-  const headerTrailing =
-    trailing || carouselNav ? (
-      <div className="flex flex-col items-start gap-5 sm:items-end sm:gap-6">
-        {trailing}
-        {carouselNav}
-      </div>
-    ) : null;
-
   return (
     <div className="pf-work-grid w-full" data-pf-no-color-transition="">
       <style>{`
@@ -952,15 +974,7 @@ export function ProjectsGridSection({
           opacity: 0.7;
         }
       `}</style>
-      <ProjectsGridSectionHeader
-        title={title}
-        subtitle={subtitle}
-        titleColor={titleColor}
-        subtitleColor={subtitleColor}
-        trailing={headerTrailing}
-        className={className}
-        entryCount={items.length}
-      />
+      {carouselNav ? <div className="mb-6 flex justify-end sm:mb-8">{carouselNav}</div> : null}
       <ProjectsGridGallery
         items={items}
         presentation={presentation}

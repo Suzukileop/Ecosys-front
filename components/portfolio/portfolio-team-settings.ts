@@ -22,6 +22,23 @@ import {
   type PortfolioTeamColorBindings,
   type PortfolioTeamPalette,
 } from '@/components/portfolio/portfolio-team-palette-settings';
+import {
+  TEAM_HEADER_ACCENT_COUNT_ALIGNMENTS,
+  TEAM_HEADER_BILLBOARD_WORD_STYLES,
+  TEAM_HEADER_DESIGNS,
+  TEAM_HEADER_MARGIN_BOTTOM_STEPS,
+  TEAM_HEADER_PALETTE_TOKENS,
+  TEAM_HEADER_TITLE_SIZES,
+  TEAM_HEADER_TITLE_WEIGHTS,
+  type PortfolioTeamHeaderAccentCountAlignment,
+  type PortfolioTeamHeaderBillboardWordStyle,
+  type PortfolioTeamHeaderDesign,
+  type PortfolioTeamHeaderDesignAlignment,
+  type PortfolioTeamHeaderMarginBottom,
+  type PortfolioTeamHeaderPaletteToken,
+  type PortfolioTeamHeaderTitleSize,
+  type PortfolioTeamHeaderTitleWeight,
+} from '@/components/portfolio/portfolio-team-header-settings';
 
 export type PortfolioTeamLayout = 'meet-cards' | 'portrait-rail' | 'spotlight' | 'directory' | 'polaroid' | 'profile-cards' | 'hover-cards' | 'avatar-cards' | 'cover-cards' | 'float-cards';
 export type PortfolioTeamGap = 'sm' | 'md' | 'lg' | 'xl';
@@ -111,6 +128,107 @@ export type PortfolioTeamPresentationSettings = PortfolioSectionBackgroundSettin
   subtitleCustom: string;
   headerAlignment: PortfolioTeamHeaderAlignment;
   /**
+   * Header — one shared, GSAP-animated header mounted above the Team section, copied
+   * from the Portfolio/Work section's Header mechanism (team-portfolio-header-designs/*).
+   */
+  headerDesign: PortfolioTeamHeaderDesign;
+  /** Master switch for the header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
+  headerAnimationEnabled: boolean;
+  headerDesignAlignment: PortfolioTeamHeaderDesignAlignment;
+  /** Bottom spacing under every header design — shared across all of them. */
+  headerMarginBottom: PortfolioTeamHeaderMarginBottom;
+  /** Title size/weight — shared across every header design. */
+  headerTitleSize: PortfolioTeamHeaderTitleSize;
+  headerTitleWeight: PortfolioTeamHeaderTitleWeight;
+  /** Header accent count — badge text supports a {count} token for the team member count. */
+  headerAccentCountBadgeText: string;
+  headerAccentCountLeadText: string;
+  /** Header accent count — badge and lead bound to a palette token, independently. */
+  headerAccentCountBadgeColor: PortfolioTeamHeaderPaletteToken;
+  headerAccentCountLeadColor: PortfolioTeamHeaderPaletteToken;
+  /** Header accent count — one size/weight for the whole line (badge + lead flow together). */
+  headerAccentCountSize: PortfolioTeamHeaderTitleSize;
+  headerAccentCountWeight: PortfolioTeamHeaderTitleWeight;
+  /** Header accent count — its own 3-way alignment (adds "right", unlike the shared control). */
+  headerAccentCountAlignment: PortfolioTeamHeaderAccentCountAlignment;
+  /** Header serif lead — small label above the large serif title. */
+  headerSerifLeadLabelText: string;
+  /** Header serif lead — the large serif title itself, independent of the section title. */
+  headerSerifLeadTitleText: string;
+  /** Header serif lead — each element bound to a palette token, independently. */
+  headerSerifLeadLabelColor: PortfolioTeamHeaderPaletteToken;
+  headerSerifLeadTitleColor: PortfolioTeamHeaderPaletteToken;
+  headerSerifLeadSubtitleColor: PortfolioTeamHeaderPaletteToken;
+  /** Header serif lead — each element sized/weighted independently. */
+  headerSerifLeadLabelSize: PortfolioTeamHeaderTitleSize;
+  headerSerifLeadTitleSize: PortfolioTeamHeaderTitleSize;
+  headerSerifLeadSubtitleSize: PortfolioTeamHeaderTitleSize;
+  headerSerifLeadLabelWeight: PortfolioTeamHeaderTitleWeight;
+  headerSerifLeadTitleWeight: PortfolioTeamHeaderTitleWeight;
+  headerSerifLeadSubtitleWeight: PortfolioTeamHeaderTitleWeight;
+  /** Header billboard — big faint background word + a {count}-token line. */
+  headerBillboardBigWord: string;
+  headerBillboardCountText: string;
+  /** Header billboard — the editorial split title beneath the big word, independent of the section title. */
+  headerBillboardTitleText: string;
+  /** Header billboard — outline (stroke only) or fill (solid) big word. */
+  headerBillboardWordStyle: PortfolioTeamHeaderBillboardWordStyle;
+  /** Header billboard — each element bound to a palette token, independently. */
+  headerBillboardWordColor: PortfolioTeamHeaderPaletteToken;
+  headerBillboardTitleColor: PortfolioTeamHeaderPaletteToken;
+  headerBillboardMetaColor: PortfolioTeamHeaderPaletteToken;
+  /** Header split heading — small label on the side opposite the narrative title. */
+  headerSplitHeadingLabelText: string;
+  /** Header split heading — the narrative title itself, independent of the section title. */
+  headerSplitHeadingTitleText: string;
+  /** Header split heading — each element bound to a palette token, independently. */
+  headerSplitHeadingTitleColor: PortfolioTeamHeaderPaletteToken;
+  headerSplitHeadingLabelColor: PortfolioTeamHeaderPaletteToken;
+  /** Header split heading — each element sized/weighted independently. */
+  headerSplitHeadingTitleSize: PortfolioTeamHeaderTitleSize;
+  headerSplitHeadingTitleWeight: PortfolioTeamHeaderTitleWeight;
+  headerSplitHeadingLabelSize: PortfolioTeamHeaderTitleSize;
+  headerSplitHeadingLabelWeight: PortfolioTeamHeaderTitleWeight;
+  /** Header masthead — up to 3 independent lines, monumental headline text,
+   *  each stacked into the mast (no more period-splitting a single string). */
+  headerMastheadLine1Text: string;
+  headerMastheadLine2Text: string;
+  headerMastheadLine3Text: string;
+  /** Header masthead — one color for the whole headline, across every line. */
+  headerMastheadHeadlineColor: PortfolioTeamHeaderPaletteToken;
+  /** Header masthead — one size/weight for the whole headline, across every line. */
+  headerMastheadHeadlineSize: PortfolioTeamHeaderTitleSize;
+  headerMastheadHeadlineWeight: PortfolioTeamHeaderTitleWeight;
+  /** Header index — small label on the top divider rule (e.g. "Index", "Catalog"). */
+  headerIndexLabelText: string;
+  /** Header index — the title beside the counting numeral, independent of the section title. */
+  headerIndexTitleText: string;
+  /** Header index — caption under the counter (e.g. "Members"). Empty falls back to automatic pluralization. */
+  headerIndexCountLabelText: string;
+  /** Header index — the small subtitle under the title, independent of the section subtitle. */
+  headerIndexSubtitleText: string;
+  /** Header index — each element bound to a palette token, independently. */
+  headerIndexLabelColor: PortfolioTeamHeaderPaletteToken;
+  headerIndexNumberColor: PortfolioTeamHeaderPaletteToken;
+  headerIndexTitleColor: PortfolioTeamHeaderPaletteToken;
+  headerIndexSubtitleColor: PortfolioTeamHeaderPaletteToken;
+  /** Header index — each element sized/weighted independently. */
+  headerIndexLabelSize: PortfolioTeamHeaderTitleSize;
+  headerIndexLabelWeight: PortfolioTeamHeaderTitleWeight;
+  headerIndexTitleSize: PortfolioTeamHeaderTitleSize;
+  headerIndexTitleWeight: PortfolioTeamHeaderTitleWeight;
+  headerIndexSubtitleSize: PortfolioTeamHeaderTitleSize;
+  headerIndexSubtitleWeight: PortfolioTeamHeaderTitleWeight;
+  /** Header marquee — up to 4 independent words in the repeating band, each its own field (empty slots are dropped). */
+  headerMarqueeWord1Text: string;
+  headerMarqueeWord2Text: string;
+  headerMarqueeWord3Text: string;
+  headerMarqueeWord4Text: string;
+  /** Header marquee — alternating fill/outline words bound to one palette token. */
+  headerMarqueeWordColor: PortfolioTeamHeaderPaletteToken;
+  /** Header marquee — scales the repeating word band. */
+  headerMarqueeSize: PortfolioTeamHeaderTitleSize;
+  /**
    * `stacked` — title above the team grid (default).
    * `aside-left` / `aside-right` — title beside the grid on large screens.
    */
@@ -173,6 +291,24 @@ export const PORTFOLIO_TEAM_SUBTITLE_PRESET_OPTIONS = [
   { value: 'minimal' as const, label: 'None', description: 'Hide the subtitle.' },
   { value: 'custom' as const, label: 'Custom', description: 'Your own subtitle.' },
 ];
+
+export {
+  PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS,
+  TEAM_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
+  TEAM_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
+  TEAM_HEADER_PALETTE_TOKEN_OPTIONS,
+  teamHeaderDesignFontClass,
+  teamHeaderDesignFontStyle,
+  teamHeaderPaletteTokenColor,
+  type PortfolioTeamHeaderAccentCountAlignment,
+  type PortfolioTeamHeaderBillboardWordStyle,
+  type PortfolioTeamHeaderDesign,
+  type PortfolioTeamHeaderDesignAlignment,
+  type PortfolioTeamHeaderMarginBottom,
+  type PortfolioTeamHeaderPaletteToken,
+  type PortfolioTeamHeaderTitleSize,
+  type PortfolioTeamHeaderTitleWeight,
+} from '@/components/portfolio/portfolio-team-header-settings';
 
 export const PORTFOLIO_TEAM_SECTION_LAYOUT_OPTIONS: {
   value: PortfolioTeamSectionLayout;
@@ -289,6 +425,71 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
   subtitlePreset: 'default',
   subtitleCustom: '',
   headerAlignment: 'center',
+  headerDesign: 'editorial',
+  headerAnimationEnabled: true,
+  headerDesignAlignment: 'left',
+  headerMarginBottom: 'md',
+  headerTitleSize: 'md',
+  headerTitleWeight: 'regular',
+  headerAccentCountBadgeText: '',
+  headerAccentCountLeadText: '',
+  headerAccentCountBadgeColor: 'principal',
+  headerAccentCountLeadColor: 'secondaire',
+  headerAccentCountSize: 'md',
+  headerAccentCountWeight: 'regular',
+  headerAccentCountAlignment: 'left',
+  headerSerifLeadLabelText: '',
+  headerSerifLeadTitleText: '',
+  headerSerifLeadLabelColor: 'texteFort',
+  headerSerifLeadTitleColor: 'texteFort',
+  headerSerifLeadSubtitleColor: 'texteFort',
+  headerSerifLeadLabelSize: 'md',
+  headerSerifLeadTitleSize: 'md',
+  headerSerifLeadSubtitleSize: 'md',
+  headerSerifLeadLabelWeight: 'regular',
+  headerSerifLeadTitleWeight: 'regular',
+  headerSerifLeadSubtitleWeight: 'regular',
+  headerBillboardBigWord: '',
+  headerBillboardCountText: '',
+  headerBillboardTitleText: '',
+  headerBillboardWordStyle: 'outline',
+  headerBillboardWordColor: 'principal',
+  headerBillboardTitleColor: 'principal',
+  headerBillboardMetaColor: 'secondaire',
+  headerSplitHeadingLabelText: '',
+  headerSplitHeadingTitleText: '',
+  headerSplitHeadingTitleColor: 'principal',
+  headerSplitHeadingLabelColor: 'secondaire',
+  headerSplitHeadingTitleSize: 'md',
+  headerSplitHeadingTitleWeight: 'regular',
+  headerSplitHeadingLabelSize: 'md',
+  headerSplitHeadingLabelWeight: 'regular',
+  headerMastheadLine1Text: '',
+  headerMastheadLine2Text: '',
+  headerMastheadLine3Text: '',
+  headerMastheadHeadlineColor: 'principal',
+  headerMastheadHeadlineSize: 'md',
+  headerMastheadHeadlineWeight: 'regular',
+  headerIndexLabelText: '',
+  headerIndexTitleText: '',
+  headerIndexCountLabelText: '',
+  headerIndexSubtitleText: '',
+  headerIndexLabelColor: 'texteFort',
+  headerIndexNumberColor: 'principal',
+  headerIndexTitleColor: 'texteFort',
+  headerIndexSubtitleColor: 'texteFort',
+  headerIndexLabelSize: 'md',
+  headerIndexLabelWeight: 'regular',
+  headerIndexTitleSize: 'md',
+  headerIndexTitleWeight: 'regular',
+  headerIndexSubtitleSize: 'md',
+  headerIndexSubtitleWeight: 'regular',
+  headerMarqueeWord1Text: '',
+  headerMarqueeWord2Text: '',
+  headerMarqueeWord3Text: '',
+  headerMarqueeWord4Text: '',
+  headerMarqueeWordColor: 'principal',
+  headerMarqueeSize: 'md',
   sectionLayout: 'stacked',
   illustrationVariant: 'none',
   illustrationPlacement: 'right',
@@ -692,6 +893,294 @@ export function mergeTeamPresentation(
     subtitlePreset: pick(record.subtitlePreset, ['default', 'together', 'expertise', 'minimal', 'custom'], base.subtitlePreset),
     subtitleCustom: typeof record.subtitleCustom === 'string' ? record.subtitleCustom : base.subtitleCustom,
     headerAlignment: pick(record.headerAlignment, ['left', 'center', 'right'], base.headerAlignment),
+    headerDesign: pick(record.headerDesign, TEAM_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
+    headerAnimationEnabled:
+      typeof record.headerAnimationEnabled === 'boolean'
+        ? record.headerAnimationEnabled
+        : (base.headerAnimationEnabled ?? true),
+    headerDesignAlignment: pick(
+      record.headerDesignAlignment,
+      ['left', 'center', 'right'] as const,
+      base.headerDesignAlignment ?? 'left'
+    ),
+    headerMarginBottom: pick(
+      record.headerMarginBottom,
+      TEAM_HEADER_MARGIN_BOTTOM_STEPS,
+      base.headerMarginBottom ?? 'md'
+    ),
+    headerTitleSize: pick(record.headerTitleSize, TEAM_HEADER_TITLE_SIZES, base.headerTitleSize ?? 'md'),
+    headerTitleWeight: pick(
+      record.headerTitleWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerTitleWeight ?? 'regular'
+    ),
+    headerAccentCountBadgeText:
+      typeof record.headerAccentCountBadgeText === 'string'
+        ? record.headerAccentCountBadgeText
+        : (base.headerAccentCountBadgeText ?? ''),
+    headerAccentCountLeadText:
+      typeof record.headerAccentCountLeadText === 'string'
+        ? record.headerAccentCountLeadText
+        : (base.headerAccentCountLeadText ?? ''),
+    headerAccentCountBadgeColor: pick(
+      record.headerAccentCountBadgeColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerAccentCountBadgeColor ?? 'principal'
+    ),
+    headerAccentCountLeadColor: pick(
+      record.headerAccentCountLeadColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerAccentCountLeadColor ?? 'secondaire'
+    ),
+    headerAccentCountSize: pick(
+      record.headerAccentCountSize,
+      TEAM_HEADER_TITLE_SIZES,
+      base.headerAccentCountSize ?? 'md'
+    ),
+    headerAccentCountWeight: pick(
+      record.headerAccentCountWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerAccentCountWeight ?? 'regular'
+    ),
+    headerAccentCountAlignment: pick(
+      record.headerAccentCountAlignment,
+      TEAM_HEADER_ACCENT_COUNT_ALIGNMENTS,
+      base.headerAccentCountAlignment ?? 'left'
+    ),
+    headerSerifLeadLabelText:
+      typeof record.headerSerifLeadLabelText === 'string'
+        ? record.headerSerifLeadLabelText
+        : (base.headerSerifLeadLabelText ?? ''),
+    headerSerifLeadTitleText:
+      typeof record.headerSerifLeadTitleText === 'string'
+        ? record.headerSerifLeadTitleText
+        : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadLabelColor: pick(
+      record.headerSerifLeadLabelColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadLabelColor ?? 'texteFort'
+    ),
+    headerSerifLeadTitleColor: pick(
+      record.headerSerifLeadTitleColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadTitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadSubtitleColor: pick(
+      record.headerSerifLeadSubtitleColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadSubtitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadLabelSize: pick(
+      record.headerSerifLeadLabelSize,
+      TEAM_HEADER_TITLE_SIZES,
+      base.headerSerifLeadLabelSize ?? 'md'
+    ),
+    headerSerifLeadTitleSize: pick(
+      record.headerSerifLeadTitleSize,
+      TEAM_HEADER_TITLE_SIZES,
+      base.headerSerifLeadTitleSize ?? 'md'
+    ),
+    headerSerifLeadSubtitleSize: pick(
+      record.headerSerifLeadSubtitleSize,
+      TEAM_HEADER_TITLE_SIZES,
+      base.headerSerifLeadSubtitleSize ?? 'md'
+    ),
+    headerSerifLeadLabelWeight: pick(
+      record.headerSerifLeadLabelWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadLabelWeight ?? 'regular'
+    ),
+    headerSerifLeadTitleWeight: pick(
+      record.headerSerifLeadTitleWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadTitleWeight ?? 'regular'
+    ),
+    headerSerifLeadSubtitleWeight: pick(
+      record.headerSerifLeadSubtitleWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadSubtitleWeight ?? 'regular'
+    ),
+    headerBillboardBigWord:
+      typeof record.headerBillboardBigWord === 'string'
+        ? record.headerBillboardBigWord
+        : (base.headerBillboardBigWord ?? ''),
+    headerBillboardCountText:
+      typeof record.headerBillboardCountText === 'string'
+        ? record.headerBillboardCountText
+        : (base.headerBillboardCountText ?? ''),
+    headerBillboardTitleText:
+      typeof record.headerBillboardTitleText === 'string'
+        ? record.headerBillboardTitleText
+        : (base.headerBillboardTitleText ?? ''),
+    headerBillboardWordStyle: pick(
+      record.headerBillboardWordStyle,
+      TEAM_HEADER_BILLBOARD_WORD_STYLES,
+      base.headerBillboardWordStyle ?? 'outline'
+    ),
+    headerBillboardWordColor: pick(
+      record.headerBillboardWordColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerBillboardWordColor ?? 'principal'
+    ),
+    headerBillboardTitleColor: pick(
+      record.headerBillboardTitleColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerBillboardTitleColor ?? 'principal'
+    ),
+    headerBillboardMetaColor: pick(
+      record.headerBillboardMetaColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerBillboardMetaColor ?? 'secondaire'
+    ),
+    headerSplitHeadingLabelText:
+      typeof record.headerSplitHeadingLabelText === 'string'
+        ? record.headerSplitHeadingLabelText
+        : (base.headerSplitHeadingLabelText ?? ''),
+    headerSplitHeadingTitleText:
+      typeof record.headerSplitHeadingTitleText === 'string'
+        ? record.headerSplitHeadingTitleText
+        : (base.headerSplitHeadingTitleText ?? ''),
+    headerSplitHeadingTitleColor: pick(
+      record.headerSplitHeadingTitleColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerSplitHeadingTitleColor ?? 'principal'
+    ),
+    headerSplitHeadingLabelColor: pick(
+      record.headerSplitHeadingLabelColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerSplitHeadingLabelColor ?? 'secondaire'
+    ),
+    headerSplitHeadingTitleSize: pick(
+      record.headerSplitHeadingTitleSize,
+      TEAM_HEADER_TITLE_SIZES,
+      base.headerSplitHeadingTitleSize ?? 'md'
+    ),
+    headerSplitHeadingTitleWeight: pick(
+      record.headerSplitHeadingTitleWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerSplitHeadingTitleWeight ?? 'regular'
+    ),
+    headerSplitHeadingLabelSize: pick(
+      record.headerSplitHeadingLabelSize,
+      TEAM_HEADER_TITLE_SIZES,
+      base.headerSplitHeadingLabelSize ?? 'md'
+    ),
+    headerSplitHeadingLabelWeight: pick(
+      record.headerSplitHeadingLabelWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerSplitHeadingLabelWeight ?? 'regular'
+    ),
+    headerMastheadLine1Text:
+      typeof record.headerMastheadLine1Text === 'string'
+        ? record.headerMastheadLine1Text
+        : (base.headerMastheadLine1Text ?? ''),
+    headerMastheadLine2Text:
+      typeof record.headerMastheadLine2Text === 'string'
+        ? record.headerMastheadLine2Text
+        : (base.headerMastheadLine2Text ?? ''),
+    headerMastheadLine3Text:
+      typeof record.headerMastheadLine3Text === 'string'
+        ? record.headerMastheadLine3Text
+        : (base.headerMastheadLine3Text ?? ''),
+    headerMastheadHeadlineColor: pick(
+      record.headerMastheadHeadlineColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerMastheadHeadlineColor ?? 'principal'
+    ),
+    headerMastheadHeadlineSize: pick(
+      record.headerMastheadHeadlineSize,
+      TEAM_HEADER_TITLE_SIZES,
+      base.headerMastheadHeadlineSize ?? 'md'
+    ),
+    headerMastheadHeadlineWeight: pick(
+      record.headerMastheadHeadlineWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerMastheadHeadlineWeight ?? 'regular'
+    ),
+    headerIndexLabelText:
+      typeof record.headerIndexLabelText === 'string' ? record.headerIndexLabelText : (base.headerIndexLabelText ?? ''),
+    headerIndexTitleText:
+      typeof record.headerIndexTitleText === 'string' ? record.headerIndexTitleText : (base.headerIndexTitleText ?? ''),
+    headerIndexCountLabelText:
+      typeof record.headerIndexCountLabelText === 'string'
+        ? record.headerIndexCountLabelText
+        : (base.headerIndexCountLabelText ?? ''),
+    headerIndexSubtitleText:
+      typeof record.headerIndexSubtitleText === 'string'
+        ? record.headerIndexSubtitleText
+        : (base.headerIndexSubtitleText ?? ''),
+    headerIndexLabelColor: pick(
+      record.headerIndexLabelColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerIndexLabelColor ?? 'texteFort'
+    ),
+    headerIndexNumberColor: pick(
+      record.headerIndexNumberColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerIndexNumberColor ?? 'principal'
+    ),
+    headerIndexTitleColor: pick(
+      record.headerIndexTitleColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerIndexTitleColor ?? 'texteFort'
+    ),
+    headerIndexSubtitleColor: pick(
+      record.headerIndexSubtitleColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerIndexSubtitleColor ?? 'texteFort'
+    ),
+    headerIndexLabelSize: pick(
+      record.headerIndexLabelSize,
+      TEAM_HEADER_TITLE_SIZES,
+      base.headerIndexLabelSize ?? 'md'
+    ),
+    headerIndexLabelWeight: pick(
+      record.headerIndexLabelWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerIndexLabelWeight ?? 'regular'
+    ),
+    headerIndexTitleSize: pick(
+      record.headerIndexTitleSize,
+      TEAM_HEADER_TITLE_SIZES,
+      base.headerIndexTitleSize ?? 'md'
+    ),
+    headerIndexTitleWeight: pick(
+      record.headerIndexTitleWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerIndexTitleWeight ?? 'regular'
+    ),
+    headerIndexSubtitleSize: pick(
+      record.headerIndexSubtitleSize,
+      TEAM_HEADER_TITLE_SIZES,
+      base.headerIndexSubtitleSize ?? 'md'
+    ),
+    headerIndexSubtitleWeight: pick(
+      record.headerIndexSubtitleWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerIndexSubtitleWeight ?? 'regular'
+    ),
+    headerMarqueeWord1Text:
+      typeof record.headerMarqueeWord1Text === 'string'
+        ? record.headerMarqueeWord1Text
+        : (base.headerMarqueeWord1Text ?? ''),
+    headerMarqueeWord2Text:
+      typeof record.headerMarqueeWord2Text === 'string'
+        ? record.headerMarqueeWord2Text
+        : (base.headerMarqueeWord2Text ?? ''),
+    headerMarqueeWord3Text:
+      typeof record.headerMarqueeWord3Text === 'string'
+        ? record.headerMarqueeWord3Text
+        : (base.headerMarqueeWord3Text ?? ''),
+    headerMarqueeWord4Text:
+      typeof record.headerMarqueeWord4Text === 'string'
+        ? record.headerMarqueeWord4Text
+        : (base.headerMarqueeWord4Text ?? ''),
+    headerMarqueeWordColor: pick(
+      record.headerMarqueeWordColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerMarqueeWordColor ?? 'principal'
+    ),
+    headerMarqueeSize: pick(record.headerMarqueeSize, TEAM_HEADER_TITLE_SIZES, base.headerMarqueeSize ?? 'md'),
     sectionLayout: isPortfolioTeamSectionLayout(record.sectionLayout)
       ? record.sectionLayout
       : (base.sectionLayout ?? 'stacked'),

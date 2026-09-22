@@ -1,151 +1,269 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState, type ReactNode } from 'react';
+import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
-  PORTFOLIO_LIST_MARKER_SOURCE_OPTIONS,
-  PORTFOLIO_LIST_MARKER_STYLE_OPTIONS,
-} from '@/components/portfolio/portfolio-list-marker';
-import { PortfolioListMarkerSizeWeightControls } from '@/components/portfolio/PortfolioListMarkerSizeWeightControls';
-import {
-  PORTFOLIO_FAQ_CONTENT_ALIGN_OPTIONS,
-  PORTFOLIO_FAQ_EXPAND_ICON_OPTIONS,
-  PORTFOLIO_FAQ_ILLUSTRATION_OPTIONS,
-  PORTFOLIO_FAQ_ILLUSTRATION_PLACEMENT_OPTIONS,
-  PORTFOLIO_FAQ_ITEM_DESIGN_OPTIONS,
-  PORTFOLIO_FAQ_DESIGN_OPTIONS,
-  PORTFOLIO_FAQ_PANEL_SHADOW_OPTIONS,
-  PORTFOLIO_FAQ_PANEL_SHADOW_PRESET_INTENSITY,
-  PORTFOLIO_FAQ_SPLIT_SIDE_OPTIONS,
-  PORTFOLIO_FAQ_CTA_SPLIT_SIDE_OPTIONS,
-  defaultsForFaqDesign,
-  PORTFOLIO_FAQ_ITEM_GAP_OPTIONS,
-  PORTFOLIO_FAQ_LIST_MAX_WIDTH_OPTIONS,
-  PORTFOLIO_FAQ_LIST_PLACEMENT_OPTIONS,
-  PORTFOLIO_FAQ_SECTION_LAYOUT_OPTIONS,
-  PORTFOLIO_FAQ_SUBTITLE_PRESET_OPTIONS,
-  PORTFOLIO_FAQ_TITLE_PRESET_OPTIONS,
-  faqSectionLayoutIsAside,
-  type PortfolioFaqSectionSettings,
-} from '@/components/portfolio/portfolio-faq-settings';
-import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
-import {
-  PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS,
-  resolveHeroPaletteColor,
-  type HeroPaletteTokenId,
-} from '@/components/portfolio/portfolio-hero-palette-settings';
-import {
-  DEFAULT_FAQ_COLOR_BINDINGS,
-  DEFAULT_FAQ_PALETTE,
   mergeFaqColorBindings,
   mergeFaqPalette,
   patchFaqColorBinding,
-  patchFaqColorField,
+  DEFAULT_FAQ_COLOR_BINDINGS,
+  DEFAULT_FAQ_PALETTE,
   type FaqColorSlot,
 } from '@/components/portfolio/portfolio-faq-palette-settings';
+import { resolveHeroPaletteColor, type HeroPaletteTokenId } from '@/components/portfolio/portfolio-hero-palette-settings';
 import {
-  PortfolioCardFrameSettingsFields,
-  type PortfolioCardFrameColorFieldKey,
-} from '@/components/portfolio/portfolio-card-frame-settings-fields';
+  PORTFOLIO_FAQ_DESIGN_OPTIONS,
+  PORTFOLIO_FAQ_BENTO_DUAL_CARD_COLOR_OPTIONS,
+  PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADIUS_OPTIONS,
+  PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDER_OPTIONS,
+  defaultsForFaqDesign,
+  type PortfolioFaqSectionSettings,
+  type PortfolioFaqDesign,
+  type PortfolioFaqBentoDualCardColorToken,
+} from '@/components/portfolio/portfolio-faq-settings';
 
-const FAQ_FRAME_SLOTS: Record<PortfolioCardFrameColorFieldKey, FaqColorSlot> = {
-  cardBorderColor: 'cardBorder',
-  cardBackgroundColor: 'cardBackground',
-  cardBackgroundColorA: 'cardBackgroundA',
-  cardBackgroundColorB: 'cardBackgroundB',
-  cardDividerColor: 'cardDivider',
-};
-
-export type FaqSubSection = 'general' | 'header' | 'items' | 'frame';
+export type FaqSubSection = 'general' | 'design' | 'background';
 
 const FAQ_SUB_SECTIONS: { id: FaqSubSection; label: string; description: string }[] = [
-  { id: 'general', label: 'General', description: 'Section visibility, ready-to-use design, item design, and spacing.' },
-  { id: 'header', label: 'Header', description: 'Title, subtitle, fonts, and colors.' },
-  { id: 'items', label: 'Items', description: 'Alignment, visibility toggles, icons, and accent colors.' },
-  { id: 'frame', label: 'Frame', description: 'Complete card frame controls (border, split background, radius).' },
+  { id: 'general', label: 'General', description: 'Section visibility and defaults.' },
+  { id: 'design', label: 'Design', description: 'Layout and visual style.' },
+  { id: 'background', label: 'Background', description: 'Fill behind this section.' },
 ];
 
-/** Map legacy subsection ids (saved UI state / search) onto remaining FAQ menus. */
+/** Map legacy subsection ids (saved UI state / search) onto the current FAQ menu. */
 export function normalizeFaqSubSection(value: string | undefined): FaqSubSection {
-  if (value === 'header' || value === 'items' || value === 'frame' || value === 'general') {
+  if (value === 'general' || value === 'design' || value === 'background') {
     return value;
   }
   return 'general';
 }
 
-function asFaqPatch(patch: Record<string, unknown> | object): Partial<PortfolioFaqSectionSettings> {
-  return patch as Partial<PortfolioFaqSectionSettings>;
-}
+/* ---------------------------------------------------------------------- */
+/* Shared local building blocks — reuse the same pf-stack-* CSS classes    */
+/* every other section's settings panel already draws on (Stack, Info,    */
+/* Tools, Team, Gallery), per the design standard's "never recreate a      */
+/* standardized component" rule.                                          */
+/* ---------------------------------------------------------------------- */
 
 function FaqToggleRow({
   label,
-  description,
+  info,
   checked,
   onChange,
 }: {
   label: string;
-  description?: string;
+  /** Non-obvious info (where to find something, hidden behavior) shown as a hover/focus tooltip. */
+  info?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-white px-4 py-3.5">
-      <span className="min-w-0">
-        <span className="block text-sm font-semibold text-neutral-950">{label}</span>
-        {description ? <span className="mt-1 block text-sm text-neutral-500">{description}</span> : null}
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full cursor-pointer flex-col gap-1 text-left"
+    >
+      <span className="flex items-center justify-between gap-4">
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className="min-w-0 truncate text-sm font-semibold text-neutral-950">{label}</span>
+          {info ? <FaqInfoTooltip text={info} /> : null}
+        </span>
+        <FaqSwitchTrack checked={checked} />
       </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-neutral-900"
-      />
-    </label>
+    </button>
   );
 }
 
-function FaqOptionGrid<T extends string>({
+function FaqSwitchTrack({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className="relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      style={{
+        backgroundColor: checked
+          ? 'var(--pf-palette-texte-fort, #171717)'
+          : 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, var(--pf-palette-fond, #0a0a0a))',
+      }}
+    >
+      <span
+        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        style={{
+          left: checked ? '1.125rem' : '0.125rem',
+          backgroundColor: checked
+            ? 'var(--pf-palette-fond, #ffffff)'
+            : 'var(--pf-palette-texte-fort, #ffffff)',
+        }}
+      />
+    </span>
+  );
+}
+
+/** Small keyboard-accessible "i" tooltip — shows non-obvious info on hover or focus
+ *  instead of a permanent line of text under a toggle. */
+function FaqInfoTooltip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const tooltipId = useId();
+  return (
+    <span className="relative inline-flex shrink-0">
+      <span
+        role="button"
+        tabIndex={0}
+        aria-describedby={open ? tooltipId : undefined}
+        aria-label={`More info: ${text}`}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onClick={(event) => event.stopPropagation()}
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+      >
+        <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
+          <circle cx="7" cy="4.35" r="0.95" fill="currentColor" />
+          <rect x="6.3" y="6.05" width="1.4" height="4.4" rx="0.7" fill="currentColor" />
+        </svg>
+      </span>
+      {open ? (
+        <span
+          id={tooltipId}
+          role="tooltip"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+        >
+          {text}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function FaqMiniSlide({ children }: { children: ReactNode }) {
+  return (
+    <svg viewBox="0 0 120 72" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
+      <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
+      {children}
+    </svg>
+  );
+}
+
+function FaqPickerCard({
+  active,
   label,
-  options,
-  value,
-  onChange,
-  columns = 2,
+  onClick,
+  children,
+  compact,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  children: ReactNode;
+  compact?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={label}
+      title={label}
+      data-active={active ? 'true' : 'false'}
+      onClick={onClick}
+      className={`pf-stack-design-card rounded-2xl text-left ${compact ? 'pf-stack-preview-card' : 'px-3 pb-3 pt-2.5'}`}
+    >
+      {active ? (
+        <span
+          aria-hidden
+          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
+        >
+          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
+            <path d="M4 10.5l3.5 3.5L16 6" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      ) : null}
+      {children}
+      <span className={compact ? 'mt-1.5 block' : 'mt-2.5 block'}>
+        <span className={`pf-stack-card-label min-w-0 font-semibold leading-none tracking-tight ${compact ? 'text-xs' : 'text-sm'}`}>
+          {label}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function FaqDesignSummaryRow({
+  label,
+  name,
+  onOpen,
+  children,
 }: {
   label: string;
-  options: { value: T; label: string; description: string }[];
-  value: T | '';
-  onChange: (value: T) => void;
-  columns?: number;
+  name: string;
+  onOpen: () => void;
+  children: ReactNode;
 }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-      <div
-        className={`mt-3 grid gap-2 ${
-          columns === 4
-            ? 'grid-cols-2 sm:grid-cols-4'
-            : columns === 3
-              ? 'sm:grid-cols-2 lg:grid-cols-3'
-              : columns === 1
-                ? 'grid-cols-1'
-                : 'sm:grid-cols-2'
-        }`}
+      <p className="pf-stack-block-label">{label}</p>
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`Change ${label.toLowerCase()}`}
+        className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
       >
-        {options.map((option) => {
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+          <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">{children}</span>
+        </span>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{name}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+          <path d="M7.5 4.5l5 5.5-5 5.5" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+/** Bento Dual's own "Layout" controls — real palette tokens only, no ad-hoc hex field
+ *  (matching the Footer Header mechanism's own palette-token convention). Fallbacks
+ *  mirror the `@property --pf-palette-*` `initial-value`s in globals.css. */
+function faqBentoDualPaletteTokenColor(token: PortfolioFaqBentoDualCardColorToken): string {
+  if (token === 'secondaire') return 'var(--pf-palette-secondaire, #3b82f6)';
+  if (token === 'neutre') return 'var(--pf-palette-neutre, #171717)';
+  if (token === 'texteMuted') return 'var(--pf-palette-texte-muted, #a3a3a3)';
+  return 'var(--pf-palette-principal, #ea580c)';
+}
+
+function FaqBentoDualColorSwatches({
+  value,
+  onChange,
+}: {
+  value: PortfolioFaqBentoDualCardColorToken;
+  onChange: (value: PortfolioFaqBentoDualCardColorToken) => void;
+}) {
+  return (
+    <div>
+      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">Card color</span>
+      <div role="radiogroup" aria-label="Card color" className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+        {PORTFOLIO_FAQ_BENTO_DUAL_CARD_COLOR_OPTIONS.map((option) => {
           const active = option.value === value;
           return (
             <button
               key={option.value}
               type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.description}
               onClick={() => onChange(option.value)}
-              className={`rounded-2xl border px-4 py-3 text-left transition ${
-                active
-                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+              className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
+                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
               }`}
             >
-              <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
+              <span
+                aria-hidden
+                className="h-3 w-3 shrink-0 rounded-full border border-black/10"
+                style={{ backgroundColor: faqBentoDualPaletteTokenColor(option.value) }}
+              />
+              {option.label}
             </button>
           );
         })}
@@ -154,92 +272,335 @@ function FaqOptionGrid<T extends string>({
   );
 }
 
-function FaqManualColorField({
+function FaqBentoDualOptionGrid<T extends string>({
   label,
+  options,
   value,
   onChange,
 }: {
   label: string;
-  value: string;
-  onChange: (value: string) => void;
+  options: { value: T; label: string; description: string }[];
+  value: T;
+  onChange: (value: T) => void;
 }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <input
-          type="color"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="h-11 w-14 cursor-pointer rounded-xl border border-neutral-200 bg-white p-1"
-        />
-        <input
-          type="text"
-          value={value}
-          onChange={(event) => {
-            const next = event.target.value.trim();
-            if (isValidProfileHexColor(next)) onChange(next);
-          }}
-          className="w-28 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-mono text-neutral-900"
-        />
+      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="mt-2 grid gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+      >
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.description}
+              onClick={() => onChange(option.value)}
+              className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition ${
+                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function FaqColorField({
+function FaqBentoDualOpacitySlider({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">Card opacity</span>
+        <span className="text-xs font-semibold text-neutral-500">{Math.round(value)}%</span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={1}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        aria-label="Card opacity"
+        className="mt-2 w-full accent-neutral-900"
+      />
+    </div>
+  );
+}
+
+function FaqLayoutSettingsBand({ children, motionKey }: { children: ReactNode; motionKey: string }) {
+  return (
+    <section className="pf-stack-layout-settings" aria-labelledby="faq-layout-settings-title">
+      <h3 id="faq-layout-settings-title" className="pf-stack-layout-settings-title">
+        Design settings
+      </h3>
+      <div key={motionKey} className="pf-stack-layout-settings-body space-y-6">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/* DESIGN tab — the top-level layout catalog (same collapsed-preview /     */
+/* expand-to-grid mechanism as Stack/Info's own Design tab), plus the      */
+/* per-design settings band below it.                                     */
+/* ---------------------------------------------------------------------- */
+
+function FaqDesignWireframe({ design }: { design: PortfolioFaqDesign }) {
+  switch (design) {
+    case 'kinetic-split':
+      return (
+        <FaqMiniSlide>
+          <rect className="pf-stack-mini-accent" x="8" y="14" width="16" height="2" rx="1" />
+          <rect className="pf-stack-mini-ink" x="8" y="22" width="40" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="8" y="36" width="30" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="64" y="12" width="48" height="6" rx="2" />
+          <rect className="pf-stack-mini-mute" x="64" y="26" width="40" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-mute" x="64" y="38" width="44" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-mute" x="64" y="50" width="36" height="3" rx="1.5" />
+        </FaqMiniSlide>
+      );
+    case 'floating-gallery':
+      return (
+        <FaqMiniSlide>
+          <rect className="pf-stack-mini-mute" x="8" y="10" width="104" height="1" />
+          <rect className="pf-stack-mini-mute" x="8" y="26" width="104" height="1" />
+          <rect className="pf-stack-mini-mute" x="8" y="42" width="104" height="1" />
+          <rect className="pf-stack-mini-mute" x="8" y="58" width="104" height="1" />
+          <rect className="pf-stack-mini-mute" x="10" y="14" width="60" height="4" rx="2" />
+          <rect className="pf-stack-mini-mute" x="10" y="46" width="60" height="4" rx="2" />
+          <rect className="pf-stack-mini-ink" x="24" y="24" width="72" height="20" rx="6" opacity={0.9} />
+        </FaqMiniSlide>
+      );
+    case 'editorial-masonry':
+      return (
+        <FaqMiniSlide>
+          <rect className="pf-stack-mini-mute" x="8" y="8" width="18" height="2" rx="1" />
+          <rect className="pf-stack-mini-ink" x="8" y="20" width="46" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-mute" x="8" y="27" width="46" height="1" />
+          <rect className="pf-stack-mini-mute" x="8" y="35" width="46" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-mute" x="8" y="42" width="46" height="1" />
+          <rect className="pf-stack-mini-mute" x="8" y="50" width="46" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-mute" x="8" y="57" width="46" height="1" />
+          <rect className="pf-stack-mini-mute" x="66" y="30" width="46" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-mute" x="66" y="37" width="46" height="1" />
+          <rect className="pf-stack-mini-mute" x="66" y="45" width="46" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-mute" x="66" y="52" width="46" height="1" />
+          <rect className="pf-stack-mini-mute" x="66" y="60" width="46" height="3" rx="1.5" />
+        </FaqMiniSlide>
+      );
+    case 'prism-cards':
+      return (
+        <FaqMiniSlide>
+          <rect className="pf-stack-mini-mute" x="8" y="6" width="104" height="12" rx="5" opacity={0.45} />
+          <rect className="pf-stack-mini-ink" x="14" y="10.5" width="48" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-accent" x="8" y="22" width="104" height="34" rx="7" />
+          <rect className="pf-stack-mini-stage" x="14" y="28.5" width="58" height="4" rx="2" opacity={0.95} />
+          <circle className="pf-stack-mini-stage" cx="104" cy="30.5" r="5" opacity={0.95} />
+          <rect className="pf-stack-mini-stage" x="14" y="39" width="80" height="2" rx="1" opacity={0.55} />
+          <rect className="pf-stack-mini-stage" x="14" y="45" width="64" height="2" rx="1" opacity={0.55} />
+          <rect className="pf-stack-mini-mute" x="8" y="60" width="104" height="8" rx="4" opacity={0.3} />
+        </FaqMiniSlide>
+      );
+    case 'star-scroll':
+      return (
+        <FaqMiniSlide>
+          <rect className="pf-stack-mini-ink" x="8" y="8" width="46" height="9" rx="2" />
+          <text x="106" y="21" textAnchor="middle" fontSize="17" className="pf-stack-mini-ink">
+            ✳
+          </text>
+          <rect className="pf-stack-mini-mute" x="8" y="32" width="104" height="10" rx="5" opacity={0.5} />
+          <rect className="pf-stack-mini-mute" x="8" y="46" width="104" height="10" rx="5" opacity={0.32} />
+          <rect className="pf-stack-mini-mute" x="8" y="60" width="104" height="10" rx="5" opacity={0.32} />
+        </FaqMiniSlide>
+      );
+    case 'tri-grid':
+      return (
+        <FaqMiniSlide>
+          <rect className="pf-stack-mini-ink" x="8" y="18" width="30" height="8" rx="2" opacity={0.9} />
+          <rect className="pf-stack-mini-mute" x="8" y="30" width="30" height="16" rx="1" opacity={0.5} />
+          <rect className="pf-stack-mini-ink" x="45" y="28" width="30" height="8" rx="2" opacity={0.9} />
+          <rect className="pf-stack-mini-mute" x="45" y="40" width="30" height="16" rx="1" opacity={0.5} />
+          <rect className="pf-stack-mini-ink" x="82" y="18" width="30" height="8" rx="2" opacity={0.9} />
+          <rect className="pf-stack-mini-mute" x="82" y="30" width="30" height="16" rx="1" opacity={0.5} />
+        </FaqMiniSlide>
+      );
+    case 'split-index':
+      return (
+        <FaqMiniSlide>
+          <rect className="pf-stack-mini-ink" x="8" y="8" width="40" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="8" y="30" width="20" height="3" rx="1.5" opacity={0.6} />
+          <rect className="pf-stack-mini-ink" x="38" y="26" width="10" height="10" rx="2" />
+          <rect className="pf-stack-mini-mute" x="52" y="28" width="60" height="4" rx="2" />
+          <rect className="pf-stack-mini-mute" x="38" y="42" width="10" height="10" rx="2" opacity={0.7} />
+          <rect className="pf-stack-mini-mute" x="52" y="44" width="60" height="4" rx="2" opacity={0.7} />
+          <rect className="pf-stack-mini-mute" x="38" y="58" width="10" height="10" rx="2" opacity={0.7} />
+          <rect className="pf-stack-mini-mute" x="52" y="60" width="60" height="4" rx="2" opacity={0.7} />
+        </FaqMiniSlide>
+      );
+    case 'centered-focus':
+      return (
+        <FaqMiniSlide>
+          <rect className="pf-stack-mini-ink" x="30" y="10" width="60" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="20" y="30" width="80" height="4" rx="2" opacity={0.35} />
+          <rect className="pf-stack-mini-ink" x="28" y="42" width="64" height="5" rx="2" opacity={0.95} />
+          <rect className="pf-stack-mini-mute" x="24" y="54" width="72" height="4" rx="2" opacity={0.3} />
+        </FaqMiniSlide>
+      );
+    case 'bento-dual':
+      return (
+        <FaqMiniSlide>
+          <rect className="pf-stack-mini-accent" x="8" y="8" width="50" height="26" rx="6" />
+          <rect className="pf-stack-mini-accent" x="62" y="8" width="50" height="26" rx="6" opacity={0.75} />
+          <rect className="pf-stack-mini-accent" x="8" y="38" width="50" height="26" rx="6" opacity={0.75} />
+          <rect className="pf-stack-mini-accent" x="62" y="38" width="50" height="26" rx="6" />
+        </FaqMiniSlide>
+      );
+    default: {
+      const _exhaustive: never = design;
+      return _exhaustive;
+    }
+  }
+}
+
+/** Same collapsed-preview / expand-to-grid mechanism as every other
+ *  section's own Design tab (Stack, Info, …). */
+function FaqDesignChoiceGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioFaqDesign;
+  onChange: (value: PortfolioFaqDesign) => void;
+}) {
+  const [showGrid, setShowGrid] = useState(false);
+  const selected = PORTFOLIO_FAQ_DESIGN_OPTIONS.find((option) => option.value === value) ?? PORTFOLIO_FAQ_DESIGN_OPTIONS[0];
+
+  if (showGrid) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="pf-stack-block-label !mb-0">Design</p>
+          <button type="button" onClick={() => setShowGrid(false)} className="text-sm font-semibold text-neutral-500 hover:text-neutral-800">
+            ← Back
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          {PORTFOLIO_FAQ_DESIGN_OPTIONS.map((option) => {
+            const active = option.value === value;
+            return (
+              <FaqPickerCard
+                key={option.value}
+                active={active}
+                label={option.label}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              >
+                <FaqDesignWireframe design={option.value} />
+              </FaqPickerCard>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <FaqDesignSummaryRow label="Design" name={selected.label} onOpen={() => setShowGrid(true)}>
+      <FaqDesignWireframe design={value} />
+    </FaqDesignSummaryRow>
+  );
+}
+
+/** Section-background color fields, bound to FAQ's own hero-shaped palette
+ *  (faqPalette / faqColorBindings) — "Fond", "Neutre", "Principal", "Texte
+ *  muted" swatches, no free-form hex, same as every other section's
+ *  Background tab. */
+const FAQ_BACKGROUND_PALETTE_TOKENS: { value: HeroPaletteTokenId; label: string }[] = [
+  { value: 'fond', label: 'Fond' },
+  { value: 'neutre', label: 'Neutre' },
+  { value: 'principal', label: 'Principal' },
+  { value: 'texteMuted', label: 'Texte muted' },
+];
+
+const FAQ_BACKGROUND_LABEL_SLOTS: Record<string, { slot: FaqColorSlot; field: keyof PortfolioFaqSectionSettings }> = {
+  Color: { slot: 'sectionBackground', field: 'sectionBackgroundColor' },
+  'Gradient start': { slot: 'sectionGradientFrom', field: 'sectionBackgroundGradientFrom' },
+  'Gradient end': { slot: 'sectionGradientTo', field: 'sectionBackgroundGradientTo' },
+  'Color A': { slot: 'sectionSplitA', field: 'sectionBackgroundColorA' },
+  'Color B': { slot: 'sectionSplitB', field: 'sectionBackgroundColorB' },
+};
+
+function FaqBackgroundColorField({
   faq,
   onChange,
-  slot,
+  palette,
+  bindings,
   label,
   value,
 }: {
   faq: PortfolioFaqSectionSettings;
   onChange: (patch: Partial<PortfolioFaqSectionSettings>) => void;
-  slot: FaqColorSlot;
+  palette: Record<HeroPaletteTokenId, string>;
+  bindings: Record<FaqColorSlot, HeroPaletteTokenId>;
   label: string;
   value: string;
 }) {
-  if (faq.useHeroPalette === false) {
-    return (
-      <FaqManualColorField
-        label={label}
-        value={value}
-        onChange={(hex) => onChange(asFaqPatch(patchFaqColorField(faq, slot, hex)))}
-      />
-    );
-  }
-
-  const palette = mergeFaqPalette(DEFAULT_FAQ_PALETTE, faq.faqPalette);
-  const bindings = mergeFaqColorBindings(DEFAULT_FAQ_COLOR_BINDINGS, faq.faqColorBindings);
-  const token = bindings[slot];
-  const resolved = resolveHeroPaletteColor(palette, token);
-
+  const mapping = FAQ_BACKGROUND_LABEL_SLOTS[label] ?? FAQ_BACKGROUND_LABEL_SLOTS.Color;
+  const usingPalette = faq.useHeroPalette !== false;
+  const activeHex = value.trim().toLowerCase();
   return (
-    <div className="space-y-2">
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-        <span
-          className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-neutral-200"
-          style={{ backgroundColor: resolved }}
-          title={resolved}
-          aria-hidden
-        />
+    <div>
+      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
+      <div className="mt-2 flex items-center gap-3">
+        {FAQ_BACKGROUND_PALETTE_TOKENS.map((token) => {
+          const hex = resolveHeroPaletteColor(palette, token.value);
+          const active = usingPalette ? bindings[mapping.slot] === token.value : hex.toLowerCase() === activeHex;
+          return (
+            <button
+              key={token.value}
+              type="button"
+              title={token.label}
+              aria-label={token.label}
+              aria-pressed={active}
+              onClick={() =>
+                onChange(
+                  usingPalette
+                    ? (patchFaqColorBinding(faq, mapping.slot, token.value) as Partial<PortfolioFaqSectionSettings>)
+                    : { [mapping.field]: hex }
+                )
+              }
+              className="flex flex-col items-center gap-1.5"
+            >
+              <span
+                className="h-8 w-8 rounded-full border-2 transition"
+                style={{
+                  backgroundColor: hex,
+                  borderColor: active ? '#171717' : '#e5e5e5',
+                  boxShadow: active ? '0 0 0 2px rgba(23,23,23,0.15)' : 'none',
+                }}
+              />
+              <span className={`text-[11px] font-medium ${active ? 'text-neutral-900' : 'text-neutral-500'}`}>{token.label}</span>
+            </button>
+          );
+        })}
       </div>
-      <select
-        value={token}
-        onChange={(event) =>
-          onChange(asFaqPatch(patchFaqColorBinding(faq, slot, event.target.value as HeroPaletteTokenId)))
-        }
-        className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
-        aria-label={`${label} palette token`}
-      >
-        {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
     </div>
   );
 }
@@ -255,483 +616,108 @@ export function FaqSettingsPanel({
   subSection?: FaqSubSection;
   onSubSectionChange?: (value: FaqSubSection) => void;
 }) {
-  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<FaqSubSection>('header');
+  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<FaqSubSection>('general');
   const subSection = normalizeFaqSubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: FaqSubSection) => {
     const next = normalizeFaqSubSection(value);
     onSubSectionChange?.(next);
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
-  const activeMeta = FAQ_SUB_SECTIONS.find((section) => section.id === subSection) ?? FAQ_SUB_SECTIONS[0];
+
+  const faqPalette = mergeFaqPalette(DEFAULT_FAQ_PALETTE, faq.faqPalette);
+  const faqBindings = mergeFaqColorBindings(DEFAULT_FAQ_COLOR_BINDINGS, faq.faqColorBindings);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-4">
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">FAQ subsection</p>
-          <p className="mt-1 text-sm text-neutral-500">{activeMeta.description}</p>
-        </div>
-        <select
-          value={subSection}
-          onChange={(event) => setSubSection(event.target.value as FaqSubSection)}
-          className="w-full min-w-0 rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-neutral-900 sm:min-w-[12rem] sm:max-w-xs sm:flex-1"
-        >
-          {FAQ_SUB_SECTIONS.map((section) => (
-            <option key={section.id} value={section.id}>
-              {section.label}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-wrap gap-2">
+        {FAQ_SUB_SECTIONS.map((section) => (
+          <button
+            key={section.id}
+            type="button"
+            onClick={() => setSubSection(section.id)}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+              subSection === section.id
+                ? 'bg-neutral-900 text-white'
+                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+            }`}
+          >
+            {section.label}
+          </button>
+        ))}
       </div>
 
       {subSection === 'general' ? (
-        <div className="space-y-6">
-          <FaqToggleRow
-            label="Show section"
-            description="Display the FAQ block on your public portfolio."
-            checked={faq.enabled}
-            onChange={(enabled) => onChange({ enabled })}
-          />
-          <SectionColorModeControl
-            value={faq.colorModeOverride}
-            onChange={(colorModeOverride) => onChange(asFaqPatch({ colorModeOverride }))}
-          />
-          <FaqOptionGrid
-            label="Design"
-            options={PORTFOLIO_FAQ_DESIGN_OPTIONS}
-            value={faq.design ?? 'two-column'}
-            onChange={(design) => onChange(asFaqPatch(defaultsForFaqDesign(design)))}
-            columns={1}
-          />
-          {faq.design === 'panel' ? (
-            <>
-              <FaqOptionGrid
-                label="Ombre de la carte"
-                options={PORTFOLIO_FAQ_PANEL_SHADOW_OPTIONS}
-                value={faq.panelShadow ?? 'medium'}
-                onChange={(panelShadow) =>
-                  onChange({
-                    panelShadow,
-                    panelShadowIntensity: PORTFOLIO_FAQ_PANEL_SHADOW_PRESET_INTENSITY[panelShadow],
-                  })
-                }
-                columns={2}
-              />
-              {(faq.panelShadow ?? 'medium') !== 'none' ? (
-                <div>
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Intensité de l’ombre
-                    </p>
-                    <span className="text-sm font-semibold text-neutral-700">
-                      {faq.panelShadowIntensity ?? 55}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={faq.panelShadowIntensity ?? 55}
-                    onChange={(event) =>
-                      onChange({ panelShadowIntensity: Number(event.target.value) })
-                    }
-                    className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                    aria-label="Intensité de l’ombre de la carte FAQ"
-                  />
-                </div>
-              ) : null}
-            </>
-          ) : null}
-          {faq.design === 'split' || faq.design === 'cta-split' ? (
-            <>
-              <FaqOptionGrid
-                label={faq.design === 'cta-split' ? 'Placement SVG / questions' : 'Placement titre / questions'}
-                options={
-                  faq.design === 'cta-split'
-                    ? PORTFOLIO_FAQ_CTA_SPLIT_SIDE_OPTIONS
-                    : PORTFOLIO_FAQ_SPLIT_SIDE_OPTIONS
-                }
-                value={
-                  faq.illustrationPlacement ?? (faq.design === 'cta-split' ? 'right' : 'left')
-                }
-                onChange={(illustrationPlacement) => onChange({ illustrationPlacement })}
-                columns={2}
-              />
-              <FaqOptionGrid
-                label="SVG"
-                options={PORTFOLIO_FAQ_ILLUSTRATION_OPTIONS}
-                value={
-                  faq.illustrationVariant ?? (faq.design === 'cta-split' ? 'chat' : 'question')
-                }
-                onChange={(illustrationVariant) => onChange({ illustrationVariant })}
-                columns={2}
-              />
-            </>
-          ) : null}
-          <FaqOptionGrid
-            label="Item design"
-            options={PORTFOLIO_FAQ_ITEM_DESIGN_OPTIONS}
-            value={faq.itemDesign}
-            onChange={(itemDesign) => onChange({ itemDesign })}
-            columns={2}
-          />
-          <FaqOptionGrid
-            label="Espacement vertical"
-            options={PORTFOLIO_FAQ_ITEM_GAP_OPTIONS}
-            value={faq.itemGap}
-            onChange={(itemGap) => onChange({ itemGap })}
-            columns={2}
-          />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FaqOptionGrid
-              label="List width"
-              options={PORTFOLIO_FAQ_LIST_MAX_WIDTH_OPTIONS}
-              value={faq.listMaxWidth}
-              onChange={(listMaxWidth) => onChange({ listMaxWidth })}
-              columns={2}
-            />
-            <FaqOptionGrid
-              label="List placement"
-              options={PORTFOLIO_FAQ_LIST_PLACEMENT_OPTIONS}
-              value={faq.listPlacement}
-              onChange={(listPlacement) => onChange({ listPlacement })}
-              columns={2}
-            />
-          </div>
-          <FaqColorField faq={faq} onChange={onChange} slot="accent" label="Accent color" value={faq.accentColor} />
+        <div className="space-y-4">
+          <FaqToggleRow label="Show FAQ section" checked={faq.enabled} onChange={(enabled) => onChange({ enabled })} />
+          <SectionColorModeControl value={faq.colorModeOverride} onChange={(colorModeOverride) => onChange({ colorModeOverride })} />
         </div>
       ) : null}
 
-      {subSection === 'header' ? (
-        <div className="space-y-6">
-          <FaqOptionGrid
-            label="Disposition titre / liste"
-            options={PORTFOLIO_FAQ_SECTION_LAYOUT_OPTIONS}
-            value={faq.sectionLayout ?? 'stacked'}
-            onChange={(sectionLayout) => onChange({ sectionLayout })}
-            columns={1}
-          />
-          {faqSectionLayoutIsAside(faq.sectionLayout) ? (
-            <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-              En côte à côte, le titre et les questions s’affichent en deux colonnes sur grand écran
-              (empilés sur mobile).
-            </p>
-          ) : null}
-          <FaqOptionGrid
-            label="Title preset"
-            options={PORTFOLIO_FAQ_TITLE_PRESET_OPTIONS}
-            value={faq.titlePreset}
-            onChange={(titlePreset) => onChange({ titlePreset })}
-            columns={2}
-          />
-          {faq.titlePreset === 'custom' ? (
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Custom title</p>
-              <input
-                type="text"
-                value={faq.titleCustom || faq.title}
-                onChange={(event) => onChange({ titleCustom: event.target.value, title: event.target.value })}
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
-              />
-            </div>
-          ) : null}
+      {subSection === 'design' ? (
+        <div className="space-y-4">
+          <FaqDesignChoiceGrid value={faq.design} onChange={(design) => onChange(defaultsForFaqDesign(design))} />
 
-          <FaqOptionGrid
-            label="Subtitle preset"
-            options={PORTFOLIO_FAQ_SUBTITLE_PRESET_OPTIONS}
-            value={faq.subtitlePreset}
-            onChange={(subtitlePreset) => onChange({ subtitlePreset })}
-            columns={2}
-          />
-          {faq.subtitlePreset === 'custom' || faq.subtitlePreset === 'default' ? (
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Subtitle text</p>
-              <textarea
-                rows={3}
-                value={faq.subtitlePreset === 'custom' ? faq.subtitleCustom || faq.subtitle : faq.subtitle}
-                onChange={(event) =>
-                  onChange(
-                    faq.subtitlePreset === 'custom'
-                      ? { subtitleCustom: event.target.value, subtitle: event.target.value }
-                      : { subtitle: event.target.value }
-                  )
-                }
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
-              />
-            </div>
-          ) : null}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FaqColorField faq={faq} onChange={onChange} slot="title" label="Title color" value={faq.titleColor} />
-            <FaqColorField
-              faq={faq}
-              onChange={onChange}
-              slot="subtitle"
-              label="Subtitle color"
-              value={faq.subtitleColor}
-            />
-          </div>
-
-          {faqSectionLayoutIsAside(faq.sectionLayout) ? (
-            <p className="text-sm text-neutral-500">
-              Alignement du texte du titre : le titre est déjà placé{' '}
-              {faq.sectionLayout === 'aside-right' ? 'à droite' : 'à gauche'} de la liste.
-            </p>
-          ) : (
-            <FaqOptionGrid
-              label="Header alignment"
-              options={[
-                { value: 'left' as const, label: 'Left', description: 'Default editorial alignment.' },
-                { value: 'center' as const, label: 'Center', description: 'Centered title and subtitle.' },
-                { value: 'right' as const, label: 'Right', description: 'Align header to the right.' },
-              ]}
-              value={faq.headerAlignment}
-              onChange={(headerAlignment) => onChange({ headerAlignment })}
-              columns={3}
-            />
-          )}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FaqToggleRow
-              label="Uppercase title"
-              checked={faq.titleUppercase}
-              onChange={(titleUppercase) => onChange({ titleUppercase })}
-            />
-            <FaqToggleRow
-              label="Uppercase subtitle"
-              checked={faq.subtitleUppercase}
-              onChange={(subtitleUppercase) => onChange({ subtitleUppercase })}
-            />
-          </div>
-        </div>
-      ) : null}
-
-      {subSection === 'frame' ? (
-        <PortfolioCardFrameSettingsFields
-          settings={faq}
-          onChange={onChange}
-          heading="FAQ frame"
-          description="Outer shell for every design — Bordure, couleur, fond, arrondi. Padding carte also scales row/card inset equally across designs."
-          renderColorField={({ field, label, value }) => (
-            <FaqColorField
-              faq={faq}
-              onChange={onChange}
-              slot={FAQ_FRAME_SLOTS[field]}
-              label={label}
-              value={value}
-            />
-          )}
-        />
-      ) : null}
-
-      {subSection === 'items' ? (
-        <div className="space-y-6">
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Visibility</p>
-            <FaqToggleRow
-              label="Item markers"
-              description="Show a number or bullet before each question (same puces as Experience / Services tasks)."
-              checked={faq.showItemNumbers}
-              onChange={(showItemNumbers) => onChange({ showItemNumbers })}
-            />
-            {faq.showItemNumbers ? (
-              <div className="space-y-4 rounded-2xl border border-neutral-200/70 bg-white p-4">
-                <div>
-                  <p className="text-sm font-semibold text-neutral-950">Marker style</p>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Same task-bullet vocabulary as Global / Experience / Services.
-                  </p>
-                </div>
-                <FaqOptionGrid
-                  label="Source"
-                  options={PORTFOLIO_LIST_MARKER_SOURCE_OPTIONS}
-                  value={faq.itemMarkerSource ?? 'section'}
-                  onChange={(itemMarkerSource) => onChange({ itemMarkerSource })}
-                  columns={2}
+          <FaqLayoutSettingsBand motionKey={faq.design}>
+            {faq.design === 'bento-dual' ? (
+              <div className="space-y-6">
+                <FaqBentoDualColorSwatches
+                  value={faq.bentoDualCardColorToken ?? 'secondaire'}
+                  onChange={(bentoDualCardColorToken) => onChange({ bentoDualCardColorToken })}
                 />
-                {(faq.itemMarkerSource ?? 'section') === 'section' ? (
-                  <>
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Style
-                      </p>
-                      <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
-                        {PORTFOLIO_LIST_MARKER_STYLE_OPTIONS.map((option) => {
-                          const active = (faq.itemMarkerStyle ?? 'number') === option.value;
-                          return (
-                            <button
-                              key={option.value}
-                              type="button"
-                              title={`${option.label} — ${option.description}`}
-                              onClick={() => onChange({ itemMarkerStyle: option.value })}
-                              className={`flex flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2.5 transition ${
-                                active
-                                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-                              }`}
-                            >
-                              <span className="text-base font-semibold leading-none text-neutral-900">
-                                {option.preview}
-                              </span>
-                              <span className="max-w-full truncate text-[10px] font-medium text-neutral-500">
-                                {option.label}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    {(faq.itemMarkerStyle ?? 'number') !== 'none' ? (
-                      <>
-                        <PortfolioListMarkerSizeWeightControls
-                          size={faq.itemMarkerSize ?? 'md'}
-                          sizePx={faq.itemMarkerSizePx}
-                          weight={faq.itemMarkerWeight ?? 'regular'}
-                          weightAmount={faq.itemMarkerWeightAmount}
-                          OptionGrid={FaqOptionGrid}
-                          sizeLabel="Size"
-                          weightLabel="Weight"
-                          onChange={(patch) =>
-                            onChange({
-                              ...(patch.size !== undefined ? { itemMarkerSize: patch.size } : null),
-                              ...(patch.sizePx !== undefined ? { itemMarkerSizePx: patch.sizePx } : null),
-                              ...(patch.weight !== undefined ? { itemMarkerWeight: patch.weight } : null),
-                              ...(patch.weightAmount !== undefined
-                                ? { itemMarkerWeightAmount: patch.weightAmount }
-                                : null),
-                            })
-                          }
-                        />
-                        <FaqColorField
-                          faq={faq}
-                          onChange={(patch) => {
-                            if (typeof patch.numberColor === 'string') {
-                              onChange({
-                                ...patch,
-                                itemMarkerColor: patch.numberColor,
-                              });
-                              return;
-                            }
-                            onChange(patch);
-                          }}
-                          slot="number"
-                          label="Marker color"
-                          value={faq.itemMarkerColor || faq.numberColor}
-                        />
-                      </>
-                    ) : null}
-                  </>
-                ) : (
-                  <p className="text-sm text-neutral-500">
-                    Using Global → Task list bullets. Switch to Section to override here.
-                  </p>
-                )}
-              </div>
-            ) : null}
-            <FaqToggleRow
-              label="Answer accent border"
-              description="Left border on expanded answers."
-              checked={faq.showAnswerAccentBorder}
-              onChange={(showAnswerAccentBorder) => onChange({ showAnswerAccentBorder })}
-            />
-            <FaqToggleRow
-              label="Expand icon"
-              description="Plus or chevron icon on each question row."
-              checked={faq.showExpandIcon}
-              onChange={(showExpandIcon) => onChange({ showExpandIcon })}
-            />
-            <FaqToggleRow
-              label="Expandable accordion"
-              description="Off = all answers stay open and cannot fold. On = click to expand / collapse."
-              checked={faq.expandable !== false}
-              onChange={(expandable) => onChange({ expandable })}
-            />
-            {faq.expandable !== false ? (
-              <FaqToggleRow
-                label="One answer at a time"
-                description="Opening a question automatically closes any other open answer."
-                checked={
-                  faq.design === 'two-column' ||
-                  faq.design === 'panel' ||
-                  faq.design === 'split' ||
-                  faq.design === 'cta-split' ||
-                  faq.accordionExclusive === true
-                }
-                onChange={(accordionExclusive) => onChange({ accordionExclusive })}
-              />
-            ) : null}
-            <FaqToggleRow
-              label="Align answers with questions"
-              description="Remove the left indent so answers sit on the same edge as the question text."
-              checked={faq.answerFlushWithQuestion === true}
-              onChange={(answerFlushWithQuestion) => onChange({ answerFlushWithQuestion })}
-            />
-          </div>
-
-          {faq.design === 'split' || faq.design === 'cta-split' ? null : (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-              <div>
-                <p className="text-sm font-semibold text-neutral-950">FAQ illustration</p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Decorative SVG beside the list. Choose a style, then place it left or right on large
-                  screens.
-                </p>
-              </div>
-              <FaqOptionGrid
-                label="SVG style"
-                options={PORTFOLIO_FAQ_ILLUSTRATION_OPTIONS}
-                value={faq.illustrationVariant ?? 'none'}
-                onChange={(illustrationVariant) => onChange({ illustrationVariant })}
-                columns={2}
-              />
-              {(faq.illustrationVariant ?? 'none') !== 'none' ? (
-                <FaqOptionGrid
-                  label="SVG placement"
-                  options={PORTFOLIO_FAQ_ILLUSTRATION_PLACEMENT_OPTIONS}
-                  value={faq.illustrationPlacement ?? 'right'}
-                  onChange={(illustrationPlacement) => onChange({ illustrationPlacement })}
-                  columns={2}
+                <FaqBentoDualOptionGrid
+                  label="Card radius"
+                  options={PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADIUS_OPTIONS}
+                  value={faq.bentoDualCardRadius ?? 'md'}
+                  onChange={(bentoDualCardRadius) => onChange({ bentoDualCardRadius })}
                 />
-              ) : null}
-            </div>
-          )}
-
-          <FaqOptionGrid
-            label="Content alignment"
-            options={PORTFOLIO_FAQ_CONTENT_ALIGN_OPTIONS}
-            value={faq.itemAlign}
-            onChange={(itemAlign) => onChange({ itemAlign })}
-            columns={3}
-          />
-
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Accents & icon</p>
-            <FaqColorField
-              faq={faq}
-              onChange={onChange}
-              slot="answerAccentBorder"
-              label="Answer border color"
-              value={faq.answerAccentBorderColor}
-            />
-            <FaqOptionGrid
-              label="Expand icon style"
-              options={PORTFOLIO_FAQ_EXPAND_ICON_OPTIONS}
-              value={faq.expandIconStyle}
-              onChange={(expandIconStyle) => onChange({ expandIconStyle })}
-              columns={2}
-            />
-            <FaqColorField
-              faq={faq}
-              onChange={onChange}
-              slot="expandIcon"
-              label="Expand icon color"
-              value={faq.expandIconColor}
-            />
-          </div>
+                <FaqBentoDualOptionGrid
+                  label="Card border"
+                  options={PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDER_OPTIONS}
+                  value={faq.bentoDualCardBorder ?? 'soft'}
+                  onChange={(bentoDualCardBorder) => onChange({ bentoDualCardBorder })}
+                />
+                <FaqBentoDualOpacitySlider
+                  value={faq.bentoDualCardOpacity ?? 100}
+                  onChange={(bentoDualCardOpacity) => onChange({ bentoDualCardOpacity })}
+                />
+              </div>
+            ) : (
+              <p className="text-sm leading-relaxed text-neutral-500">
+                This design ships with its own fixed visual identity — hover focus, spring-open
+                answers, and{' '}
+                {faq.design === 'floating-gallery'
+                  ? 'a frosted glass panel are'
+                  : faq.design === 'editorial-masonry'
+                    ? 'an asymmetric offset grid are'
+                    : faq.design === 'prism-cards'
+                      ? 'a violet-electric color flip are'
+                      : faq.design === 'star-scroll'
+                        ? 'a scroll-driven spinning star are'
+                        : faq.design === 'tri-grid'
+                          ? 'an asynchronous three-column parallax are'
+                          : faq.design === 'split-index'
+                            ? 'a filled index badge on every row are'
+                            : faq.design === 'centered-focus'
+                              ? 'a soft hover zoom are'
+                              : 'a line-by-line reveal are'}{' '}
+                all built in. It doesn&rsquo;t expose extra styling controls.
+              </p>
+            )}
+          </FaqLayoutSettingsBand>
         </div>
       ) : null}
 
+      {subSection === 'background' ? (
+        <div className="space-y-4">
+          <SectionBackgroundSettingsFields
+            settings={faq}
+            onChange={onChange}
+            renderColorField={({ label, value }) => (
+              <FaqBackgroundColorField faq={faq} onChange={onChange} palette={faqPalette} bindings={faqBindings} label={label} value={value} />
+            )}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

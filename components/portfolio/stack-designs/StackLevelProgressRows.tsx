@@ -284,7 +284,18 @@ export function EditorialToolsLevelProgressRows({ tools, presentation }: ToolsGa
       });
     }, root);
 
-    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+    const refreshId = window.setTimeout(() => {
+      try {
+        ScrollTrigger.refresh();
+      } catch (error) {
+        // GSAP's ScrollTrigger.refresh() can throw internally on an edge case
+        // (e.g. "Cannot read properties of undefined (reading 'end')") during
+        // its own init-time recompute; uncaught, that crash propagates up
+        // through this deferred setTimeout with no React boundary to catch it
+        // and takes down the whole page. Never let a best-effort refresh do that.
+        console.error('[ScrollTrigger] deferred refresh() failed', error);
+      }
+    }, 90);
     return () => {
       window.clearTimeout(refreshId);
       ctx.revert();

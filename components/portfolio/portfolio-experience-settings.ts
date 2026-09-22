@@ -57,11 +57,9 @@ export type PortfolioExperienceDesign =
   | 'reel'
   | 'duotone'
   | 'gallery'
-  | 'spotlight'
   | 'loft'
   | 'press'
   | 'legacy'
-  | 'asymmetric'
   | 'kinetic';
 
 /** Legacy design ids persisted in older portfolios — coerced to `editorial` on merge. */
@@ -73,6 +71,8 @@ export const REMOVED_EXPERIENCE_DESIGNS = [
   'stacked',
   'compact',
   'large',
+  'asymmetric',
+  'spotlight',
 ] as const;
 
 export type RemovedPortfolioExperienceDesign = (typeof REMOVED_EXPERIENCE_DESIGNS)[number];
@@ -640,32 +640,6 @@ export const PORTFOLIO_EXPERIENCE_GALLERY_ROLE_COUNT_STYLE_OPTIONS: {
   { value: 'hidden', label: 'Hidden', description: 'Hide the role count line.' },
 ];
 
-/** Spotlight design: color treatment for the scrolling marquee title. */
-export type PortfolioExperienceSpotlightTitleColor = 'ink' | 'accent' | 'alternating' | 'muted';
-
-export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_TITLE_COLOR_OPTIONS: {
-  value: PortfolioExperienceSpotlightTitleColor;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'ink', label: 'Ink', description: 'Words in ink, dots in accent — the default.' },
-  { value: 'accent', label: 'Accent', description: 'Words in accent, dots in ink.' },
-  { value: 'alternating', label: 'Alternating', description: 'Each word alternates between ink and accent.' },
-  { value: 'muted', label: 'Muted', description: 'Words and dots both in the quiet secondary tone — no accent.' },
-];
-
-/** Spotlight design: how each row's thumbnail is presented. */
-export type PortfolioExperienceSpotlightThumbnailFit = 'cover' | 'glass';
-
-export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_THUMBNAIL_FIT_OPTIONS: {
-  value: PortfolioExperienceSpotlightThumbnailFit;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'cover', label: 'Current', description: 'Fills the frame — the default, cropped to fit.' },
-  { value: 'glass', label: 'Glassmorphism', description: 'Full image, never cropped — frosted glass backdrop.' },
-];
-
 /** Loft design: how each row's thumbnail is presented. */
 export type PortfolioExperienceLoftThumbnailFit = 'cover' | 'glass';
 
@@ -676,68 +650,6 @@ export const PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS: {
 }[] = [
   { value: 'cover', label: 'Current', description: 'Fills the frame — the default, cropped to fit.' },
   { value: 'glass', label: 'Glassmorphism', description: 'Full image, never cropped — frosted glass backdrop.' },
-];
-
-/** Loft design: which word gets italic treatment. */
-export type PortfolioExperienceLoftHeadingItalicWord = 'first' | 'last' | 'none';
-
-export const PORTFOLIO_EXPERIENCE_LOFT_HEADING_ITALIC_WORD_OPTIONS: {
-  value: PortfolioExperienceLoftHeadingItalicWord;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'first', label: 'First word', description: 'First word gets italic treatment.' },
-  { value: 'last', label: 'Last word', description: 'Last word gets italic treatment.' },
-  { value: 'none', label: 'None', description: 'No italic treatment.' },
-];
-
-/** Loft design: light first word vs all same weight. */
-export type PortfolioExperienceLoftHeadingFontWeight = 'light-to-bold' | 'uniform';
-
-export const PORTFOLIO_EXPERIENCE_LOFT_HEADING_FONT_WEIGHT_OPTIONS: {
-  value: PortfolioExperienceLoftHeadingFontWeight;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'light-to-bold', label: 'Light → Bold', description: 'Italic word is lighter, rest is bold.' },
-  { value: 'uniform', label: 'Uniform', description: 'All words have the same weight.' },
-];
-
-/** Loft design: label casing style. */
-export type PortfolioExperienceLoftLabelStyle = 'uppercase' | 'lowercase' | 'capitalize';
-
-export const PORTFOLIO_EXPERIENCE_LOFT_LABEL_STYLE_OPTIONS: {
-  value: PortfolioExperienceLoftLabelStyle;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'uppercase', label: 'UPPERCASE', description: 'All caps label.' },
-  { value: 'lowercase', label: 'lowercase', description: 'All lowercase label.' },
-  { value: 'capitalize', label: 'Capitalize', description: 'First letter capitalized.' },
-];
-
-/** Loft design: vertical alignment of label with title. */
-export type PortfolioExperienceLoftLabelPosition = 'top-aligned' | 'center-aligned';
-
-export const PORTFOLIO_EXPERIENCE_LOFT_LABEL_POSITION_OPTIONS: {
-  value: PortfolioExperienceLoftLabelPosition;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'top-aligned', label: 'Top aligned', description: 'Label aligns with top of title.' },
-  { value: 'center-aligned', label: 'Center aligned', description: 'Label vertically centered with title.' },
-];
-
-/** Loft design: scroll effect style. */
-export type PortfolioExperienceLoftScrollEffectStyle = 'slide-right' | 'fade-only';
-
-export const PORTFOLIO_EXPERIENCE_LOFT_SCROLL_EFFECT_STYLE_OPTIONS: {
-  value: PortfolioExperienceLoftScrollEffectStyle;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'slide-right', label: 'Slide right', description: 'Label slides right and fades out.' },
-  { value: 'fade-only', label: 'Fade only', description: 'Label fades out without sliding.' },
 ];
 
 /** Loft design: corner radius of the thumbnail frame. */
@@ -854,17 +766,49 @@ export function migrateExperienceTasksDisplay(value: unknown): PortfolioExperien
   return null;
 }
 
+/** How the tools/tech badges render inside an experience entry — a full visual style,
+ * distinct from `toolsDisplay` (icon-size options for the unused element-order layout). */
+export type PortfolioExperienceToolsBadgeStyle =
+  | 'mineral-pills'
+  | 'editorial-list'
+  | 'kinetic-marquee'
+  | 'numbered-index';
+
+/** Map legacy/unknown tools-badge-style ids. */
+export function migrateExperienceToolsBadgeStyle(value: unknown): PortfolioExperienceToolsBadgeStyle | null {
+  if (
+    value === 'mineral-pills' ||
+    value === 'editorial-list' ||
+    value === 'kinetic-marquee' ||
+    value === 'numbered-index'
+  ) {
+    return value;
+  }
+  return null;
+}
+
 /** Cards design: corner radius of each experience card. */
 export type PortfolioExperienceCardsBorderRadius = 'none' | 'md' | 'xl';
 
 /** Cards design: horizontal width of each stacked card (always centered). */
 export type PortfolioExperienceCardsCardWidth = 'full' | 'medium' | 'small';
 
+/** Cards design: font size of the big serif title inside each card. */
+export type PortfolioExperienceCardsTitleSize = 'sm' | 'md' | 'lg' | 'xl';
+
 /** Cards design: vertical rhythm between title, body, tasks, tools inside a card. */
 export type PortfolioExperienceCardsElementSpacing = 'sm' | 'md' | 'lg';
 
 /** Cards design: vertical gap between stacked cards. */
 export type PortfolioExperienceCardsVerticalGap = 'sm' | 'md' | 'lg';
+
+/** Cards design: vertical gap between individual tasks inside the timeline — independent
+ * from cardsElementSpacing so a long task list can be tightened without also shrinking
+ * the card's padding. */
+export type PortfolioExperienceCardsTasksGap = 'sm' | 'md' | 'lg';
+
+/** Cards design: sticky cascade effect on scroll (desktop only), or a plain static stack. */
+export type PortfolioExperienceCardsStackEffect = 'cascade' | 'static';
 
 /** Legacy design: image height proportion — 'lg' (tallest) is the current default. */
 export type PortfolioExperienceLegacyThumbnailHeight = 'sm' | 'md' | 'lg';
@@ -1734,6 +1678,12 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   galleryColumns: PortfolioExperienceGalleryColumns;
   /** Gallery design: how the thumbnail image fits its frame. */
   galleryThumbnailFit: PortfolioExperienceGalleryThumbnailFit;
+  /** Gallery design: corner radius of the card / thumbnail frame. */
+  galleryThumbnailRadius: PortfolioExperienceCardsBorderRadius;
+  /** Gallery design: hover interaction on grid thumbnails — same 3 moments as Loft. */
+  galleryHoverEffect: PortfolioExperienceLoftHoverEffect;
+  /** Gallery design: gap between cards, horizontally and vertically. */
+  galleryGap: PortfolioExperienceItemGap;
   /** Gallery design: show the full-bleed word above the section (e.g. "EXPERIENCE"). */
   galleryBigTitleEnabled: boolean;
   /** Gallery design: the word itself. */
@@ -1756,56 +1706,34 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   galleryRoleCountText: string;
   /** Gallery design: enable scroll parallax effect. */
   galleryScrollParallaxEnabled: boolean;
-  /** Spotlight design: show the scrolling marquee title above the section. */
+  /** Marquee header: show the scrolling marquee title above the section. */
   spotlightBigTitleEnabled: boolean;
-  /** Spotlight design: the first word in the marquee cycle. */
+  /** Marquee header: the first word in the marquee cycle. */
   spotlightBigTitleText: string;
-  /** Spotlight design: additional words cycled into the marquee — all optional. */
+  /** Marquee header: additional words cycled into the marquee — all optional. */
   spotlightBigTitleWord2: string;
   spotlightBigTitleWord3: string;
   spotlightBigTitleWord4: string;
-  /** Spotlight design: color treatment for the marquee title. */
-  spotlightBigTitleColor: PortfolioExperienceSpotlightTitleColor;
-  /** Spotlight design: how each row's thumbnail is presented. */
-  spotlightThumbnailFit: PortfolioExperienceSpotlightThumbnailFit;
-  /** Spotlight design: enable/disable entry animations (marquee motion). */
+  /** Marquee header: enable/disable entry animations (marquee motion). */
   spotlightHeaderAnimationEnabled: boolean;
-  /** Spotlight design: marquee scrolling speed. */
+  /** Marquee header: marquee scrolling speed. */
   spotlightMarqueeSpeed: PortfolioExperienceSpotlightMarqueeSpeed;
-  /** Spotlight design: marquee scroll direction. */
+  /** Marquee header: marquee scroll direction. */
   spotlightMarqueeDirection: PortfolioExperienceSpotlightMarqueeDirection;
-  /** Spotlight design: pause marquee when hovering. */
+  /** Marquee header: pause marquee when hovering. */
   spotlightMarqueePauseOnHover: boolean;
-  /** Spotlight design: marquee text weight. */
+  /** Marquee header: marquee text weight. */
   spotlightMarqueeWeight: PortfolioExperienceSpotlightMarqueeWeight;
-  /** Spotlight design: marquee text rendering style. */
+  /** Marquee header: marquee text rendering style. */
   spotlightMarqueeStyle: PortfolioExperienceSpotlightMarqueeStyle;
-  /** Spotlight design: fade edges with gradient. */
+  /** Marquee header: fade edges with gradient. */
   spotlightMarqueeGradientFade: boolean;
-  /** Spotlight design: gap between repeated words. */
+  /** Marquee header: gap between repeated words. */
   spotlightMarqueeGap: PortfolioExperienceSpotlightMarqueeGap;
-  /** Spotlight design: speed up marquee on scroll. */
+  /** Marquee header: speed up marquee on scroll. */
   spotlightScrollSpeedBoost: boolean;
-  /** Loft design: show the plain static heading above the list. */
-  loftHeadingEnabled: boolean;
-  /** Loft design: the heading text. */
-  loftHeadingText: string;
-  /** Loft design: enable/disable GSAP animations. */
+  /** Loft design: enable/disable the header's load-in reveal animation. */
   loftHeaderAnimationEnabled: boolean;
-  /** Loft design: which word gets italic treatment. */
-  loftHeadingItalicWord: PortfolioExperienceLoftHeadingItalicWord;
-  /** Loft design: light first word vs all same weight. */
-  loftHeadingFontWeight: PortfolioExperienceLoftHeadingFontWeight;
-  /** Loft design: custom label text. */
-  loftLabelText: string;
-  /** Loft design: label casing style. */
-  loftLabelStyle: PortfolioExperienceLoftLabelStyle;
-  /** Loft design: vertical alignment of label with title. */
-  loftLabelPosition: PortfolioExperienceLoftLabelPosition;
-  /** Loft design: enable scroll effect. */
-  loftScrollEffectEnabled: boolean;
-  /** Loft design: scroll effect style. */
-  loftScrollEffectStyle: PortfolioExperienceLoftScrollEffectStyle;
   /** Loft design: how each row's thumbnail is presented. */
   loftThumbnailFit: PortfolioExperienceLoftThumbnailFit;
   /** Loft design: corner radius of the thumbnail frame. */
@@ -1992,6 +1920,8 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   editorialDetailLayout: PortfolioExperienceEditorialDetailLayout;
   /** How responsibilities / tasks are displayed inside entries. */
   tasksDisplay: PortfolioExperienceTasksDisplay;
+  /** How the tools/tech badges are visually presented (pills, editorial list, marquee, numbered index). */
+  toolsBadgeStyle: PortfolioExperienceToolsBadgeStyle;
   /** Table design: alternate row background for easier scanning. */
   tableStripedRows: boolean;
   /** Cards design: shared row + column gap between cards. */
@@ -2000,12 +1930,21 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   cardsGridGapPx: number;
   /** Cards design: card frame width (full / medium / small), always centered. */
   cardsCardWidth: PortfolioExperienceCardsCardWidth;
+  /** Cards design: font size of the big serif title inside each card. */
+  cardsTitleSize: PortfolioExperienceCardsTitleSize;
   /** Cards design: spacing between elements inside each card. */
   cardsElementSpacing: PortfolioExperienceCardsElementSpacing;
   /** Cards design: vertical gap between stacked cards. */
   cardsVerticalGap: PortfolioExperienceCardsVerticalGap;
   /** Cards design: corner radius of the card frame. */
   cardsBorderRadius: PortfolioExperienceCardsBorderRadius;
+  /** Cards design: vertical gap between individual tasks in the timeline. */
+  cardsTasksGap: PortfolioExperienceCardsTasksGap;
+  /** Cards design: sticky cascade on scroll (desktop), or always static. */
+  cardsStackEffect: PortfolioExperienceCardsStackEffect;
+  /** Cards design: stretch every card to match the tallest one's height, so a
+   * shorter card is never left peeking out from behind the one covering it. */
+  cardsEqualHeight: boolean;
   /** Visual chrome for proof / portfolio links. */
   proofLinkStyle: PortfolioExperienceProofLinkStyle;
   /** General: which harvested Experience link button presents proof / repository links. */
@@ -2274,11 +2213,9 @@ const EXPERIENCE_DESIGNS = [
   'reel',
   'duotone',
   'gallery',
-  'spotlight',
   'loft',
   'press',
   'legacy',
-  'asymmetric',
   'kinetic',
 ] as const satisfies readonly PortfolioExperienceDesign[];
 
@@ -2361,6 +2298,9 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   itemsPerRow: 1,
   galleryColumns: 3,
   galleryThumbnailFit: 'cover',
+  galleryThumbnailRadius: 'md',
+  galleryHoverEffect: 'curtain',
+  galleryGap: 'md',
   galleryBigTitleEnabled: true,
   galleryBigTitleText: 'Experience',
   galleryBigTitleStyle: 'outline',
@@ -2377,8 +2317,6 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   spotlightBigTitleWord2: '',
   spotlightBigTitleWord3: '',
   spotlightBigTitleWord4: '',
-  spotlightBigTitleColor: 'ink',
-  spotlightThumbnailFit: 'cover',
   spotlightHeaderAnimationEnabled: true,
   spotlightMarqueeSpeed: 'medium',
   spotlightMarqueeDirection: 'left',
@@ -2388,16 +2326,7 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   spotlightMarqueeGradientFade: true,
   spotlightMarqueeGap: 'md',
   spotlightScrollSpeedBoost: false,
-  loftHeadingEnabled: true,
-  loftHeadingText: "Roles I've taken on",
   loftHeaderAnimationEnabled: true,
-  loftHeadingItalicWord: 'first',
-  loftHeadingFontWeight: 'light-to-bold',
-  loftLabelText: 'Experience',
-  loftLabelStyle: 'uppercase',
-  loftLabelPosition: 'top-aligned',
-  loftScrollEffectEnabled: true,
-  loftScrollEffectStyle: 'slide-right',
   loftThumbnailFit: 'cover',
   loftThumbnailRadius: 'md',
   loftHoverEffect: 'curtain',
@@ -2512,13 +2441,18 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   entryExpandMode: 'accordion',
   editorialDetailLayout: 'split-actions',
   tasksDisplay: 'editorial-dash',
+  toolsBadgeStyle: 'mineral-pills',
   tableStripedRows: false,
   cardsGridGap: 'md',
   cardsGridGapPx: 36,
   cardsCardWidth: 'medium',
+  cardsTitleSize: 'md',
   cardsElementSpacing: 'md',
   cardsVerticalGap: 'md',
   cardsBorderRadius: 'none',
+  cardsTasksGap: 'md',
+  cardsStackEffect: 'cascade',
+  cardsEqualHeight: false,
   proofLinkStyle: 'pill',
   repoLinkButtonStyle: 'auto',
   linkArrowStyle: 'northeast',
@@ -2712,12 +2646,6 @@ export const PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS: {
   description: string;
 }[] = [
   {
-    value: 'asymmetric',
-    label: 'Asymmetric Split',
-    description:
-      'Strict 50/50 split — a frozen full-height visual on the left, airy editorial copy scrolling on the right.',
-  },
-  {
     value: 'kinetic',
     label: 'Kinetic Typo',
     description:
@@ -2764,12 +2692,6 @@ export const PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS: {
     label: 'Gallery',
     description:
       'Airy thumbnail grid — Framer/Webflow-style cards with hover zoom. Click a card for the full story.',
-  },
-  {
-    value: 'spotlight',
-    label: 'Spotlight',
-    description:
-      'Editorial media showcase — alternating full-bleed image/story rows under a scrolling marquee title.',
   },
   {
     value: 'loft',
@@ -2983,12 +2905,39 @@ export const PORTFOLIO_EXPERIENCE_TASKS_DISPLAY_OPTIONS: {
   {
     value: 'accordion-stack',
     label: 'Lined Stack',
-    description: 'Numbered full sentences with a hairline between each task — always visible.',
+    description: 'A single hairline thread runs behind the indexes — the active number turns pure white on hover.',
   },
   {
     value: 'architectural-index',
     label: 'Architectural Index',
     description: 'Structural 01 / indexes in monospace — studio index line, dark-ready.',
+  },
+];
+
+export const PORTFOLIO_EXPERIENCE_TOOLS_BADGE_STYLE_OPTIONS: {
+  value: PortfolioExperienceToolsBadgeStyle;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'mineral-pills',
+    label: 'Mineral Pills',
+    description: 'Rounded capsules in a faint tone that barely lifts off the background — micro-zoom on hover.',
+  },
+  {
+    value: 'editorial-list',
+    label: 'Editorial List',
+    description: 'A single line of literary type, dot-separated — hover isolates one tool, dims the rest.',
+  },
+  {
+    value: 'kinetic-marquee',
+    label: 'Kinetic Marquee',
+    description: 'Monumental outline type drifting in an endless, silent loop — merges into the background.',
+  },
+  {
+    value: 'numbered-index',
+    label: 'Numbered Index',
+    description: 'Swiss-style catalogue rows — 01 / 02 / 03 prefixes, no boxes, no borders.',
   },
 ];
 
@@ -3035,20 +2984,65 @@ export const PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS: {
 }[] = [
   {
     value: 'full',
-    label: 'Plein écran',
-    description: 'La carte occupe toute la largeur disponible.',
+    label: 'Full width',
+    description: 'The card fills the full available width.',
   },
   {
     value: 'medium',
-    label: 'Moyen',
-    description: 'Largeur confortable, centrée dans la section.',
+    label: 'Medium',
+    description: 'Comfortable width, centered in the section.',
   },
   {
     value: 'small',
-    label: 'Petit',
-    description: 'Carte plus étroite, toujours centrée.',
+    label: 'Small',
+    description: 'Narrower card, still centered.',
   },
 ];
+
+export const PORTFOLIO_EXPERIENCE_CARDS_TITLE_SIZE_OPTIONS: {
+  value: PortfolioExperienceCardsTitleSize;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'sm',
+    label: 'Compact',
+    description: 'A smaller title, more room for the description and tasks.',
+  },
+  {
+    value: 'md',
+    label: 'Standard',
+    description: 'Balanced display size — the default.',
+  },
+  {
+    value: 'lg',
+    label: 'Large',
+    description: 'A bolder, more editorial title.',
+  },
+  {
+    value: 'xl',
+    label: 'Display',
+    description: 'Maximum presence — the title dominates the card.',
+  },
+];
+
+/** Cards design: clamp() font-size for the title, per `cardsTitleSize`. Keep the
+ * `'md'` branch in sync with the size this design shipped with originally. */
+export function experienceCardsTitleFontSize(
+  size: PortfolioExperienceCardsTitleSize | undefined
+): string {
+  switch (size) {
+    case 'sm':
+      return 'clamp(1.85rem, 3.6vw, 3.1rem)';
+    case 'lg':
+      return 'clamp(3rem, 6vw, 5.5rem)';
+    case 'xl':
+      return 'clamp(3.5rem, 7.2vw, 6.5rem)';
+    case 'md':
+    default:
+      return 'clamp(2.5rem, 5vw, 4.5rem)';
+  }
+}
 
 export const PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS: {
   value: PortfolioExperienceCardsElementSpacing;
@@ -3057,18 +3051,18 @@ export const PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS: {
 }[] = [
   {
     value: 'sm',
-    label: 'Serré',
-    description: 'Peu d’air entre titre, texte, tâches et outils.',
+    label: 'Tight',
+    description: 'Little air between title, text, tasks and tools.',
   },
   {
     value: 'md',
     label: 'Standard',
-    description: 'Rythme équilibré à l’intérieur de la carte.',
+    description: 'Balanced rhythm inside the card.',
   },
   {
     value: 'lg',
     label: 'Large',
-    description: 'Plus d’espace entre chaque bloc de la carte.',
+    description: 'More space between each block of the card.',
   },
 ];
 
@@ -3079,18 +3073,18 @@ export const PORTFOLIO_EXPERIENCE_CARDS_VERTICAL_GAP_OPTIONS: {
 }[] = [
   {
     value: 'sm',
-    label: 'Serré',
-    description: 'Peu d’espace vertical entre les cartes.',
+    label: 'Tight',
+    description: 'Little vertical space between cards.',
   },
   {
     value: 'md',
     label: 'Standard',
-    description: 'Écart vertical équilibré entre chaque cadre.',
+    description: 'Balanced vertical gap between each frame.',
   },
   {
     value: 'lg',
     label: 'Large',
-    description: 'Plus d’air vertical entre les cartes.',
+    description: 'More vertical air between cards.',
   },
 ];
 
@@ -3129,38 +3123,86 @@ export function experienceCardsElementSpacingClasses(
 ): {
   cardPad: string;
   sectionGap: string;
-  toolsGap: string;
   linksGap: string;
-  tasksSpace: string;
 } {
   switch (spacing) {
     case 'sm':
       return {
         cardPad: 'px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5',
         sectionGap: 'mt-5 sm:mt-6',
-        toolsGap: 'mt-auto pt-5 sm:pt-6',
         linksGap: 'mt-5 sm:mt-6',
-        tasksSpace: '[&_ul]:space-y-2.5 sm:[&_ul]:space-y-3',
       };
     case 'lg':
       return {
         cardPad: 'px-6 py-7 sm:px-8 sm:py-8 lg:px-9 lg:py-9',
         sectionGap: 'mt-10 sm:mt-12',
-        toolsGap: 'mt-auto pt-10 sm:pt-12',
         linksGap: 'mt-9 sm:mt-10',
-        tasksSpace: '[&_ul]:space-y-5 sm:[&_ul]:space-y-6',
       };
     case 'md':
     default:
       return {
         cardPad: 'px-5 py-5 sm:px-6 sm:py-6 lg:px-7 lg:py-7',
         sectionGap: 'mt-8 sm:mt-9',
-        toolsGap: 'mt-auto pt-8 sm:pt-9',
         linksGap: 'mt-7 sm:mt-8',
-        tasksSpace: '[&_ul]:space-y-4 sm:[&_ul]:space-y-5',
       };
   }
 }
+
+export const PORTFOLIO_EXPERIENCE_CARDS_TASKS_GAP_OPTIONS: {
+  value: PortfolioExperienceCardsTasksGap;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'sm',
+    label: 'Compact',
+    description: 'Serré — utile quand une carte a beaucoup de tâches.',
+  },
+  {
+    value: 'md',
+    label: 'Standard',
+    description: 'Espacement équilibré entre chaque tâche.',
+  },
+  {
+    value: 'lg',
+    label: 'Aéré',
+    description: 'Espacement généreux — mieux avec peu de tâches.',
+  },
+];
+
+/** Vertical rhythm between individual tasks inside the Cards timeline — kept independent
+ * from cardsElementSpacing so a long task list can be tightened without also shrinking
+ * the card's padding. */
+export function experienceCardsTasksGapClass(
+  gap: PortfolioExperienceCardsTasksGap | undefined
+): string {
+  switch (gap) {
+    case 'sm':
+      return '[&_ul]:space-y-2 sm:[&_ul]:space-y-2.5';
+    case 'lg':
+      return '[&_ul]:space-y-6 sm:[&_ul]:space-y-7';
+    case 'md':
+    default:
+      return '[&_ul]:space-y-3.5 sm:[&_ul]:space-y-4';
+  }
+}
+
+export const PORTFOLIO_EXPERIENCE_CARDS_STACK_EFFECT_OPTIONS: {
+  value: PortfolioExperienceCardsStackEffect;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'cascade',
+    label: 'Cascade au scroll',
+    description: 'Sur desktop, chaque carte reste épinglée sous la précédente pendant le défilement.',
+  },
+  {
+    value: 'static',
+    label: 'Statique',
+    description: 'Les cartes restent simplement empilées, sans effet de scroll, même sur desktop.',
+  },
+];
 
 export const PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_HEIGHT_OPTIONS: {
   value: PortfolioExperienceLegacyThumbnailHeight;
@@ -5763,7 +5805,6 @@ export function experienceEntryShellUsesFrame(
     p.experienceDesign === 'reel' ||
     p.experienceDesign === 'duotone' ||
     p.experienceDesign === 'gallery' ||
-    p.experienceDesign === 'asymmetric' ||
     p.experienceDesign === 'kinetic'
   )
     return false;
@@ -6033,7 +6074,6 @@ export function mergeExperiencePresentation(
     experienceDesign === 'reel' ||
     experienceDesign === 'duotone' ||
     experienceDesign === 'gallery' ||
-    experienceDesign === 'asymmetric' ||
     experienceDesign === 'kinetic';
   const resolvedEntryFrame = editorialFramesOff ? { ...entryFrame, enabled: false } : entryFrame;
   const resolvedStoryFrame = editorialFramesOff ? { ...storyFrame, enabled: false } : storyFrame;
@@ -6306,6 +6346,21 @@ export function mergeExperiencePresentation(
       ['cover', 'contain'],
       base.galleryThumbnailFit ?? 'cover'
     ),
+    galleryThumbnailRadius: pick(
+      record.galleryThumbnailRadius,
+      ['none', 'md', 'xl'],
+      base.galleryThumbnailRadius ?? 'md'
+    ),
+    galleryHoverEffect: pick(
+      record.galleryHoverEffect,
+      ['curtain', 'magnetic', 'press'],
+      base.galleryHoverEffect ?? 'curtain'
+    ),
+    galleryGap: pick(
+      record.galleryGap,
+      ['sm', 'md', 'lg', 'xl'],
+      base.galleryGap ?? 'md'
+    ),
     galleryBigTitleEnabled:
       typeof record.galleryBigTitleEnabled === 'boolean'
         ? record.galleryBigTitleEnabled
@@ -6375,16 +6430,6 @@ export function mergeExperiencePresentation(
       typeof record.spotlightBigTitleWord4 === 'string'
         ? record.spotlightBigTitleWord4
         : (base.spotlightBigTitleWord4 ?? ''),
-    spotlightBigTitleColor: pick(
-      record.spotlightBigTitleColor,
-      ['ink', 'accent', 'alternating', 'muted'],
-      base.spotlightBigTitleColor ?? 'ink'
-    ),
-    spotlightThumbnailFit: pick(
-      record.spotlightThumbnailFit,
-      ['cover', 'glass'],
-      base.spotlightThumbnailFit ?? 'cover'
-    ),
     spotlightHeaderAnimationEnabled:
       typeof record.spotlightHeaderAnimationEnabled === 'boolean'
         ? record.spotlightHeaderAnimationEnabled
@@ -6426,51 +6471,10 @@ export function mergeExperiencePresentation(
       typeof record.spotlightScrollSpeedBoost === 'boolean'
         ? record.spotlightScrollSpeedBoost
         : (base.spotlightScrollSpeedBoost ?? false),
-    loftHeadingEnabled:
-      typeof record.loftHeadingEnabled === 'boolean'
-        ? record.loftHeadingEnabled
-        : (base.loftHeadingEnabled ?? true),
-    loftHeadingText:
-      typeof record.loftHeadingText === 'string' && record.loftHeadingText.trim()
-        ? record.loftHeadingText
-        : (base.loftHeadingText ?? "Roles I've taken on"),
     loftHeaderAnimationEnabled:
       typeof record.loftHeaderAnimationEnabled === 'boolean'
         ? record.loftHeaderAnimationEnabled
         : (base.loftHeaderAnimationEnabled ?? true),
-    loftHeadingItalicWord: pick(
-      record.loftHeadingItalicWord,
-      ['first', 'last', 'none'],
-      base.loftHeadingItalicWord ?? 'first'
-    ),
-    loftHeadingFontWeight: pick(
-      record.loftHeadingFontWeight,
-      ['light-to-bold', 'uniform'],
-      base.loftHeadingFontWeight ?? 'light-to-bold'
-    ),
-    loftLabelText:
-      typeof record.loftLabelText === 'string'
-        ? record.loftLabelText
-        : (base.loftLabelText ?? 'Experience'),
-    loftLabelStyle: pick(
-      record.loftLabelStyle,
-      ['uppercase', 'lowercase', 'capitalize'],
-      base.loftLabelStyle ?? 'uppercase'
-    ),
-    loftLabelPosition: pick(
-      record.loftLabelPosition,
-      ['top-aligned', 'center-aligned'],
-      base.loftLabelPosition ?? 'top-aligned'
-    ),
-    loftScrollEffectEnabled:
-      typeof record.loftScrollEffectEnabled === 'boolean'
-        ? record.loftScrollEffectEnabled
-        : (base.loftScrollEffectEnabled ?? true),
-    loftScrollEffectStyle: pick(
-      record.loftScrollEffectStyle,
-      ['slide-right', 'fade-only'],
-      base.loftScrollEffectStyle ?? 'slide-right'
-    ),
     loftThumbnailFit: pick(record.loftThumbnailFit, ['cover', 'glass'], base.loftThumbnailFit ?? 'cover'),
     loftThumbnailRadius: pick(
       record.loftThumbnailRadius,
@@ -6877,6 +6881,10 @@ export function mergeExperiencePresentation(
       migrateExperienceTasksDisplay(record.tasksDisplay) ??
       migrateExperienceTasksDisplay(base.tasksDisplay) ??
       'editorial-dash',
+    toolsBadgeStyle:
+      migrateExperienceToolsBadgeStyle(record.toolsBadgeStyle) ??
+      migrateExperienceToolsBadgeStyle(base.toolsBadgeStyle) ??
+      'mineral-pills',
     tableStripedRows:
       typeof record.tableStripedRows === 'boolean'
         ? record.tableStripedRows
@@ -6891,6 +6899,11 @@ export function mergeExperiencePresentation(
       ['full', 'medium', 'small'],
       base.cardsCardWidth ?? 'medium'
     ),
+    cardsTitleSize: pick(
+      record.cardsTitleSize,
+      ['sm', 'md', 'lg', 'xl'],
+      base.cardsTitleSize ?? 'md'
+    ),
     cardsElementSpacing: pick(
       record.cardsElementSpacing,
       ['sm', 'md', 'lg'],
@@ -6901,6 +6914,20 @@ export function mergeExperiencePresentation(
       ['sm', 'md', 'lg'],
       base.cardsVerticalGap ?? 'md'
     ),
+    cardsTasksGap: pick(
+      record.cardsTasksGap,
+      ['sm', 'md', 'lg'],
+      base.cardsTasksGap ?? 'md'
+    ),
+    cardsStackEffect: pick(
+      record.cardsStackEffect,
+      ['cascade', 'static'],
+      base.cardsStackEffect ?? 'cascade'
+    ),
+    cardsEqualHeight:
+      typeof record.cardsEqualHeight === 'boolean'
+        ? record.cardsEqualHeight
+        : base.cardsEqualHeight ?? false,
     proofLinkStyle: pick(
       record.proofLinkStyle,
       ['pill', 'soft', 'outline', 'plain', 'accent', 'underline'],

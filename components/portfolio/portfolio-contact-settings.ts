@@ -36,6 +36,23 @@ import {
   patchElementStylesRecord,
   type PortfolioElementTextStyle,
 } from '@/components/portfolio/portfolio-element-text-style';
+import {
+  CONTACT_HEADER_ACCENT_COUNT_ALIGNMENTS,
+  CONTACT_HEADER_BILLBOARD_WORD_STYLES,
+  CONTACT_HEADER_DESIGNS,
+  CONTACT_HEADER_MARGIN_BOTTOM_STEPS,
+  CONTACT_HEADER_PALETTE_TOKENS,
+  CONTACT_HEADER_TITLE_SIZES,
+  CONTACT_HEADER_TITLE_WEIGHTS,
+  type PortfolioContactHeaderAccentCountAlignment,
+  type PortfolioContactHeaderBillboardWordStyle,
+  type PortfolioContactHeaderDesign,
+  type PortfolioContactHeaderDesignAlignment,
+  type PortfolioContactHeaderMarginBottom,
+  type PortfolioContactHeaderPaletteToken,
+  type PortfolioContactHeaderTitleSize,
+  type PortfolioContactHeaderTitleWeight,
+} from '@/components/portfolio/portfolio-contact-header-settings';
 
 export type PortfolioContactStyleTarget =
   | 'channelValue'
@@ -147,6 +164,24 @@ export type PortfolioContactHeaderFont = 'sans' | 'serif' | 'display';
 
 export type PortfolioContactHeaderAlignment = 'left' | 'center';
 
+export {
+  PORTFOLIO_CONTACT_HEADER_DESIGN_OPTIONS,
+  CONTACT_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
+  CONTACT_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
+  CONTACT_HEADER_PALETTE_TOKEN_OPTIONS,
+  contactHeaderDesignFontClass,
+  contactHeaderDesignFontStyle,
+  contactHeaderPaletteTokenColor,
+  type PortfolioContactHeaderAccentCountAlignment,
+  type PortfolioContactHeaderBillboardWordStyle,
+  type PortfolioContactHeaderDesign,
+  type PortfolioContactHeaderDesignAlignment,
+  type PortfolioContactHeaderMarginBottom,
+  type PortfolioContactHeaderPaletteToken,
+  type PortfolioContactHeaderTitleSize,
+  type PortfolioContactHeaderTitleWeight,
+} from '@/components/portfolio/portfolio-contact-header-settings';
+
 /** How the section title relates to the contact content. */
 export type PortfolioContactSectionLayout = 'stacked' | 'aside-left' | 'aside-right';
 
@@ -170,7 +205,40 @@ export type PortfolioContactCardDesign =
   | 'desk'
   | 'info-panel'
   | 'channel-cards'
-  | 'swiss-editorial';
+  | 'swiss-editorial'
+  | 'editorial-focus'
+  | 'split-grid'
+  | 'liquid-distortion'
+  | 'sequential-reveal'
+  | 'studio-overlap'
+  | 'borderless-grid'
+  | 'broken-grid'
+  | 'numbered-narrative'
+  | 'brutalist-overlap'
+  | 'split-manifesto'
+  | 'magnetic-overlap';
+
+/** The 11 premium, full-bleed awwwards-style designs — no boxed card. "sequential-reveal" and
+ *  "numbered-narrative" are the only two with a real message form; the rest own the entire
+ *  section composition with no form at all. Every design from "studio-overlap" onward is
+ *  genuinely light/dark aware (mirrors the portfolio's own active color mode via
+ *  settings.global.colorMode); the first 4 (editorial-focus/split-grid/liquid-distortion/
+ *  sequential-reveal) still own a fixed black canvas regardless of the site's mode. */
+export function isContactPremiumDesign(design: PortfolioContactCardDesign | undefined): boolean {
+  return (
+    design === 'editorial-focus' ||
+    design === 'split-grid' ||
+    design === 'liquid-distortion' ||
+    design === 'sequential-reveal' ||
+    design === 'studio-overlap' ||
+    design === 'borderless-grid' ||
+    design === 'broken-grid' ||
+    design === 'numbered-narrative' ||
+    design === 'brutalist-overlap' ||
+    design === 'split-manifesto' ||
+    design === 'magnetic-overlap'
+  );
+}
 
 /** Either Inquiry layout (illustration or panel). */
 export function isContactInquiryFamily(
@@ -338,6 +406,107 @@ export type PortfolioContactPresentationSettings = PortfolioSectionBackgroundSet
   subtitleSerif: boolean;
   headerAlignment: PortfolioContactHeaderAlignment;
   /**
+   * Header — one shared, GSAP-animated header mounted above the Contact section, copied
+   * from the Portfolio/Work section's Header mechanism (contact-portfolio-header-designs/*).
+   */
+  headerDesign: PortfolioContactHeaderDesign;
+  /** Master switch for the header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
+  headerAnimationEnabled: boolean;
+  headerDesignAlignment: PortfolioContactHeaderDesignAlignment;
+  /** Bottom spacing under every header design — shared across all of them. */
+  headerMarginBottom: PortfolioContactHeaderMarginBottom;
+  /** Title size/weight — shared across every header design. */
+  headerTitleSize: PortfolioContactHeaderTitleSize;
+  headerTitleWeight: PortfolioContactHeaderTitleWeight;
+  /** Header accent count — badge text supports a {count} token for the visible contact methods. */
+  headerAccentCountBadgeText: string;
+  headerAccentCountLeadText: string;
+  /** Header accent count — badge and lead bound to a palette token, independently. */
+  headerAccentCountBadgeColor: PortfolioContactHeaderPaletteToken;
+  headerAccentCountLeadColor: PortfolioContactHeaderPaletteToken;
+  /** Header accent count — one size/weight for the whole line (badge + lead flow together). */
+  headerAccentCountSize: PortfolioContactHeaderTitleSize;
+  headerAccentCountWeight: PortfolioContactHeaderTitleWeight;
+  /** Header accent count — its own 3-way alignment (adds "right", unlike the shared control). */
+  headerAccentCountAlignment: PortfolioContactHeaderAccentCountAlignment;
+  /** Header serif lead — small label above the large serif title. */
+  headerSerifLeadLabelText: string;
+  /** Header serif lead — the large serif title itself, independent of the section title. */
+  headerSerifLeadTitleText: string;
+  /** Header serif lead — each element bound to a palette token, independently. */
+  headerSerifLeadLabelColor: PortfolioContactHeaderPaletteToken;
+  headerSerifLeadTitleColor: PortfolioContactHeaderPaletteToken;
+  headerSerifLeadSubtitleColor: PortfolioContactHeaderPaletteToken;
+  /** Header serif lead — each element sized/weighted independently. */
+  headerSerifLeadLabelSize: PortfolioContactHeaderTitleSize;
+  headerSerifLeadTitleSize: PortfolioContactHeaderTitleSize;
+  headerSerifLeadSubtitleSize: PortfolioContactHeaderTitleSize;
+  headerSerifLeadLabelWeight: PortfolioContactHeaderTitleWeight;
+  headerSerifLeadTitleWeight: PortfolioContactHeaderTitleWeight;
+  headerSerifLeadSubtitleWeight: PortfolioContactHeaderTitleWeight;
+  /** Header billboard — big faint background word + a {count}-token line. */
+  headerBillboardBigWord: string;
+  headerBillboardCountText: string;
+  /** Header billboard — the editorial split title beneath the big word, independent of the section title. */
+  headerBillboardTitleText: string;
+  /** Header billboard — outline (stroke only) or fill (solid) big word. */
+  headerBillboardWordStyle: PortfolioContactHeaderBillboardWordStyle;
+  /** Header billboard — each element bound to a palette token, independently. */
+  headerBillboardWordColor: PortfolioContactHeaderPaletteToken;
+  headerBillboardTitleColor: PortfolioContactHeaderPaletteToken;
+  headerBillboardMetaColor: PortfolioContactHeaderPaletteToken;
+  /** Header split heading — small label on the side opposite the narrative title. */
+  headerSplitHeadingLabelText: string;
+  /** Header split heading — the narrative title itself, independent of the section title. */
+  headerSplitHeadingTitleText: string;
+  /** Header split heading — each element bound to a palette token, independently. */
+  headerSplitHeadingTitleColor: PortfolioContactHeaderPaletteToken;
+  headerSplitHeadingLabelColor: PortfolioContactHeaderPaletteToken;
+  /** Header split heading — each element sized/weighted independently. */
+  headerSplitHeadingTitleSize: PortfolioContactHeaderTitleSize;
+  headerSplitHeadingTitleWeight: PortfolioContactHeaderTitleWeight;
+  headerSplitHeadingLabelSize: PortfolioContactHeaderTitleSize;
+  headerSplitHeadingLabelWeight: PortfolioContactHeaderTitleWeight;
+  /** Header masthead — up to 3 independent lines, monumental headline text,
+   *  each stacked into the mast (no more period-splitting a single string). */
+  headerMastheadLine1Text: string;
+  headerMastheadLine2Text: string;
+  headerMastheadLine3Text: string;
+  /** Header masthead — one color for the whole headline, across every line. */
+  headerMastheadHeadlineColor: PortfolioContactHeaderPaletteToken;
+  /** Header masthead — one size/weight for the whole headline, across every line. */
+  headerMastheadHeadlineSize: PortfolioContactHeaderTitleSize;
+  headerMastheadHeadlineWeight: PortfolioContactHeaderTitleWeight;
+  /** Header index — small label on the top divider rule (e.g. "Index", "Contact"). */
+  headerIndexLabelText: string;
+  /** Header index — the title beside the counting numeral, independent of the section title. */
+  headerIndexTitleText: string;
+  /** Header index — caption under the counter (e.g. "Channels"). Empty falls back to automatic pluralization. */
+  headerIndexCountLabelText: string;
+  /** Header index — the small subtitle under the title, independent of the section subtitle. */
+  headerIndexSubtitleText: string;
+  /** Header index — each element bound to a palette token, independently. */
+  headerIndexLabelColor: PortfolioContactHeaderPaletteToken;
+  headerIndexNumberColor: PortfolioContactHeaderPaletteToken;
+  headerIndexTitleColor: PortfolioContactHeaderPaletteToken;
+  headerIndexSubtitleColor: PortfolioContactHeaderPaletteToken;
+  /** Header index — each element sized/weighted independently. */
+  headerIndexLabelSize: PortfolioContactHeaderTitleSize;
+  headerIndexLabelWeight: PortfolioContactHeaderTitleWeight;
+  headerIndexTitleSize: PortfolioContactHeaderTitleSize;
+  headerIndexTitleWeight: PortfolioContactHeaderTitleWeight;
+  headerIndexSubtitleSize: PortfolioContactHeaderTitleSize;
+  headerIndexSubtitleWeight: PortfolioContactHeaderTitleWeight;
+  /** Header marquee — up to 4 independent words in the repeating band, each its own field (empty slots are dropped). */
+  headerMarqueeWord1Text: string;
+  headerMarqueeWord2Text: string;
+  headerMarqueeWord3Text: string;
+  headerMarqueeWord4Text: string;
+  /** Header marquee — alternating fill/outline words bound to one palette token. */
+  headerMarqueeWordColor: PortfolioContactHeaderPaletteToken;
+  /** Header marquee — scales the repeating word band. */
+  headerMarqueeSize: PortfolioContactHeaderTitleSize;
+  /**
    * `stacked` — title above the content (default).
    * `aside-left` / `aside-right` — title beside the content on large screens.
    * Owned layouts (inquiry / inquiry-panel / desk / info-panel) manage their own
@@ -352,6 +521,22 @@ export type PortfolioContactPresentationSettings = PortfolioSectionBackgroundSet
   /** Side of the content for the decorative SVG on large screens. */
   illustrationPlacement: PortfolioContactIllustrationPlacement;
   cardDesign: PortfolioContactCardDesign;
+  /** Premium designs only — the monumental headline for "Editorial focus" (two lines, joined by \n). */
+  editorialFocusHeadline: string;
+  /** Premium designs only — the giant faint background watermark word for "Liquid distortion". */
+  liquidDistortionWatermark: string;
+  /** Premium designs only — the repeating phrase for "Split grid"'s hover marquee. */
+  premiumMarqueeText: string;
+  /** Premium designs only — the airy slogan line for "Sequential reveal"'s hero entrance. */
+  sequentialRevealTagline: string;
+  /** Premium designs only — the small graphic badge label for "Studio overlap"'s image corner. */
+  studioOverlapBadgeLabel: string;
+  /** Premium designs only — "Borderless grid"'s second stacked headline line. */
+  borderlessGridSubline: string;
+  /** Premium designs only — "Split manifesto"'s short manifesto paragraph. */
+  splitManifestoTagline: string;
+  /** Premium designs only — "Magnetic overlap"'s small italic eyebrow above the headline. */
+  magneticOverlapEyebrow: string;
   ctaDesign: PortfolioContactCtaDesign;
   ctaLabel: string;
   ctaColor: string;
@@ -475,10 +660,83 @@ export const DEFAULT_CONTACT_PRESENTATION: PortfolioContactPresentationSettings 
   subtitleColor: DEFAULT_CONTACT_SUBTITLE_COLOR,
   subtitleSerif: true,
   headerAlignment: 'left',
+  headerDesign: 'editorial',
+  headerAnimationEnabled: true,
+  headerDesignAlignment: 'left',
+  headerMarginBottom: 'md',
+  headerTitleSize: 'md',
+  headerTitleWeight: 'regular',
+  headerAccentCountBadgeText: '',
+  headerAccentCountLeadText: '',
+  headerAccentCountBadgeColor: 'principal',
+  headerAccentCountLeadColor: 'secondaire',
+  headerAccentCountSize: 'md',
+  headerAccentCountWeight: 'regular',
+  headerAccentCountAlignment: 'left',
+  headerSerifLeadLabelText: '',
+  headerSerifLeadTitleText: '',
+  headerSerifLeadLabelColor: 'texteFort',
+  headerSerifLeadTitleColor: 'texteFort',
+  headerSerifLeadSubtitleColor: 'texteFort',
+  headerSerifLeadLabelSize: 'md',
+  headerSerifLeadTitleSize: 'md',
+  headerSerifLeadSubtitleSize: 'md',
+  headerSerifLeadLabelWeight: 'regular',
+  headerSerifLeadTitleWeight: 'regular',
+  headerSerifLeadSubtitleWeight: 'regular',
+  headerBillboardBigWord: '',
+  headerBillboardCountText: '',
+  headerBillboardTitleText: '',
+  headerBillboardWordStyle: 'outline',
+  headerBillboardWordColor: 'principal',
+  headerBillboardTitleColor: 'principal',
+  headerBillboardMetaColor: 'secondaire',
+  headerSplitHeadingLabelText: '',
+  headerSplitHeadingTitleText: '',
+  headerSplitHeadingTitleColor: 'principal',
+  headerSplitHeadingLabelColor: 'secondaire',
+  headerSplitHeadingTitleSize: 'md',
+  headerSplitHeadingTitleWeight: 'regular',
+  headerSplitHeadingLabelSize: 'md',
+  headerSplitHeadingLabelWeight: 'regular',
+  headerMastheadLine1Text: '',
+  headerMastheadLine2Text: '',
+  headerMastheadLine3Text: '',
+  headerMastheadHeadlineColor: 'principal',
+  headerMastheadHeadlineSize: 'md',
+  headerMastheadHeadlineWeight: 'regular',
+  headerIndexLabelText: '',
+  headerIndexTitleText: '',
+  headerIndexCountLabelText: '',
+  headerIndexSubtitleText: '',
+  headerIndexLabelColor: 'texteFort',
+  headerIndexNumberColor: 'principal',
+  headerIndexTitleColor: 'texteFort',
+  headerIndexSubtitleColor: 'texteFort',
+  headerIndexLabelSize: 'md',
+  headerIndexLabelWeight: 'regular',
+  headerIndexTitleSize: 'md',
+  headerIndexTitleWeight: 'regular',
+  headerIndexSubtitleSize: 'md',
+  headerIndexSubtitleWeight: 'regular',
+  headerMarqueeWord1Text: '',
+  headerMarqueeWord2Text: '',
+  headerMarqueeWord3Text: '',
+  headerMarqueeWord4Text: '',
+  headerMarqueeWordColor: 'principal',
+  headerMarqueeSize: 'md',
   sectionLayout: 'stacked',
   illustrationVariant: 'none',
   illustrationPlacement: 'right',
-  cardDesign: 'editorial',
+  cardDesign: 'editorial-focus',
+  editorialFocusHeadline: "Let's build /\nSomething",
+  liquidDistortionWatermark: 'CONNECT',
+  premiumMarqueeText: "Let's talk — Say hello — Reach out — ",
+  sequentialRevealTagline: "Share your idea, let's build something meaningful together.",
+  studioOverlapBadgeLabel: 'The Studio',
+  borderlessGridSubline: 'Start a conversation.',
+  splitManifestoTagline: "We craft digital work that moves people — let's start something worth talking about.",
+  magneticOverlapEyebrow: 'Say hey',
   ctaDesign: 'pill-dark',
   ctaLabel: 'Start a project',
   ctaColor: DEFAULT_CONTACT_CTA_COLOR,
@@ -786,6 +1044,72 @@ export const PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS: {
     label: 'Swiss editorial',
     description:
       'Ivory frame, serif headline + form, contact band, and follow-me footer — cobalt accent.',
+  },
+  {
+    value: 'editorial-focus',
+    label: 'Editorial focus',
+    description:
+      'Monumental headline left, offset info right — hover dims everything but the target, ambient glow follows the cursor.',
+  },
+  {
+    value: 'split-grid',
+    label: 'Split grid',
+    description:
+      'Broken split screen — compact metadata left, giant magnetic email and socials right, curtain text reveal.',
+  },
+  {
+    value: 'liquid-distortion',
+    label: 'Liquid distortion',
+    description:
+      'Corner-anchored contacts over a faint monumental watermark — organic stretch on hover, radical dim-to-focus.',
+  },
+  {
+    value: 'sequential-reveal',
+    label: 'Sequential reveal',
+    description:
+      'Monumental title, clip-path image reveal, then a borderless floating-label form with a magnetic submit.',
+  },
+  {
+    value: 'studio-overlap',
+    label: 'Studio overlap',
+    description:
+      'Asymmetric split — headline and contact blocks left, full-bleed portrait right with an overlapping label. Light/dark aware.',
+  },
+  {
+    value: 'borderless-grid',
+    label: 'Borderless grid',
+    description:
+      'Stacked monumental headlines left, icon-free raw data right — address, phone, email each larger than the last.',
+  },
+  {
+    value: 'broken-grid',
+    label: 'Broken grid',
+    description:
+      'CONTACT top left, email monumental bottom right, a floating circular portrait drifting between them with mouse parallax.',
+  },
+  {
+    value: 'numbered-narrative',
+    label: 'Numbered narrative',
+    description:
+      'Narrative numbered form left, circular avatar and labeled contact/social metadata right — magnetic hover throughout.',
+  },
+  {
+    value: 'brutalist-overlap',
+    label: 'Brutalist overlap',
+    description:
+      'Monumental outline-to-solid headline overlapping a hard-edged thumbnail, massive underlined email, metadata right.',
+  },
+  {
+    value: 'split-manifesto',
+    label: 'Split manifesto',
+    description:
+      'Full-bleed 50/50 split — immersive portrait left, categorized contact grid and manifesto copy right.',
+  },
+  {
+    value: 'magnetic-overlap',
+    label: 'Magnetic overlap',
+    description:
+      'Eyebrow, headline and giant email overlapping a wide image, magnetic arrow button, pill contact badges below.',
   },
 ];
 
@@ -1957,7 +2281,18 @@ function migrateContactCardDesign(value: unknown): PortfolioContactCardDesign | 
     value === 'desk' ||
     value === 'info-panel' ||
     value === 'channel-cards' ||
-    value === 'swiss-editorial'
+    value === 'swiss-editorial' ||
+    value === 'editorial-focus' ||
+    value === 'split-grid' ||
+    value === 'liquid-distortion' ||
+    value === 'sequential-reveal' ||
+    value === 'studio-overlap' ||
+    value === 'borderless-grid' ||
+    value === 'broken-grid' ||
+    value === 'numbered-narrative' ||
+    value === 'brutalist-overlap' ||
+    value === 'split-manifesto' ||
+    value === 'magnetic-overlap'
   ) {
     return value;
   }
@@ -1986,11 +2321,41 @@ export function mergeContactPresentation(
   const cardDesign =
     migrateContactCardDesign(record.cardDesign) ??
     migrateContactCardDesign(base.cardDesign) ??
-    'editorial';
+    'editorial-focus';
 
   return {
     ...background,
     ...cardBackground,
+    editorialFocusHeadline:
+      typeof record.editorialFocusHeadline === 'string'
+        ? record.editorialFocusHeadline
+        : base.editorialFocusHeadline,
+    liquidDistortionWatermark:
+      typeof record.liquidDistortionWatermark === 'string'
+        ? record.liquidDistortionWatermark
+        : base.liquidDistortionWatermark,
+    premiumMarqueeText:
+      typeof record.premiumMarqueeText === 'string' ? record.premiumMarqueeText : base.premiumMarqueeText,
+    sequentialRevealTagline:
+      typeof record.sequentialRevealTagline === 'string'
+        ? record.sequentialRevealTagline
+        : base.sequentialRevealTagline,
+    studioOverlapBadgeLabel:
+      typeof record.studioOverlapBadgeLabel === 'string'
+        ? record.studioOverlapBadgeLabel
+        : base.studioOverlapBadgeLabel,
+    borderlessGridSubline:
+      typeof record.borderlessGridSubline === 'string'
+        ? record.borderlessGridSubline
+        : base.borderlessGridSubline,
+    splitManifestoTagline:
+      typeof record.splitManifestoTagline === 'string'
+        ? record.splitManifestoTagline
+        : base.splitManifestoTagline,
+    magneticOverlapEyebrow:
+      typeof record.magneticOverlapEyebrow === 'string'
+        ? record.magneticOverlapEyebrow
+        : base.magneticOverlapEyebrow,
     titlePreset: pick(
       record.titlePreset,
       ['contact', 'get-in-touch', 'lets-talk', 'start-a-project', 'custom'],
@@ -2009,6 +2374,294 @@ export function mergeContactPresentation(
     subtitleColor: sanitizeHex(record.subtitleColor, base.subtitleColor),
     subtitleSerif: typeof record.subtitleSerif === 'boolean' ? record.subtitleSerif : base.subtitleSerif,
     headerAlignment: pick(record.headerAlignment, ['left', 'center'], base.headerAlignment),
+    headerDesign: pick(record.headerDesign, CONTACT_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
+    headerAnimationEnabled:
+      typeof record.headerAnimationEnabled === 'boolean'
+        ? record.headerAnimationEnabled
+        : (base.headerAnimationEnabled ?? true),
+    headerDesignAlignment: pick(
+      record.headerDesignAlignment,
+      ['left', 'center', 'right'],
+      base.headerDesignAlignment ?? 'left'
+    ),
+    headerMarginBottom: pick(
+      record.headerMarginBottom,
+      CONTACT_HEADER_MARGIN_BOTTOM_STEPS,
+      base.headerMarginBottom ?? 'md'
+    ),
+    headerTitleSize: pick(record.headerTitleSize, CONTACT_HEADER_TITLE_SIZES, base.headerTitleSize ?? 'md'),
+    headerTitleWeight: pick(
+      record.headerTitleWeight,
+      CONTACT_HEADER_TITLE_WEIGHTS,
+      base.headerTitleWeight ?? 'regular'
+    ),
+    headerAccentCountBadgeText:
+      typeof record.headerAccentCountBadgeText === 'string'
+        ? record.headerAccentCountBadgeText
+        : (base.headerAccentCountBadgeText ?? ''),
+    headerAccentCountLeadText:
+      typeof record.headerAccentCountLeadText === 'string'
+        ? record.headerAccentCountLeadText
+        : (base.headerAccentCountLeadText ?? ''),
+    headerAccentCountBadgeColor: pick(
+      record.headerAccentCountBadgeColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerAccentCountBadgeColor ?? 'principal'
+    ),
+    headerAccentCountLeadColor: pick(
+      record.headerAccentCountLeadColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerAccentCountLeadColor ?? 'secondaire'
+    ),
+    headerAccentCountSize: pick(
+      record.headerAccentCountSize,
+      CONTACT_HEADER_TITLE_SIZES,
+      base.headerAccentCountSize ?? 'md'
+    ),
+    headerAccentCountWeight: pick(
+      record.headerAccentCountWeight,
+      CONTACT_HEADER_TITLE_WEIGHTS,
+      base.headerAccentCountWeight ?? 'regular'
+    ),
+    headerAccentCountAlignment: pick(
+      record.headerAccentCountAlignment,
+      CONTACT_HEADER_ACCENT_COUNT_ALIGNMENTS,
+      base.headerAccentCountAlignment ?? 'left'
+    ),
+    headerSerifLeadLabelText:
+      typeof record.headerSerifLeadLabelText === 'string'
+        ? record.headerSerifLeadLabelText
+        : (base.headerSerifLeadLabelText ?? ''),
+    headerSerifLeadTitleText:
+      typeof record.headerSerifLeadTitleText === 'string'
+        ? record.headerSerifLeadTitleText
+        : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadLabelColor: pick(
+      record.headerSerifLeadLabelColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadLabelColor ?? 'texteFort'
+    ),
+    headerSerifLeadTitleColor: pick(
+      record.headerSerifLeadTitleColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadTitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadSubtitleColor: pick(
+      record.headerSerifLeadSubtitleColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadSubtitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadLabelSize: pick(
+      record.headerSerifLeadLabelSize,
+      CONTACT_HEADER_TITLE_SIZES,
+      base.headerSerifLeadLabelSize ?? 'md'
+    ),
+    headerSerifLeadTitleSize: pick(
+      record.headerSerifLeadTitleSize,
+      CONTACT_HEADER_TITLE_SIZES,
+      base.headerSerifLeadTitleSize ?? 'md'
+    ),
+    headerSerifLeadSubtitleSize: pick(
+      record.headerSerifLeadSubtitleSize,
+      CONTACT_HEADER_TITLE_SIZES,
+      base.headerSerifLeadSubtitleSize ?? 'md'
+    ),
+    headerSerifLeadLabelWeight: pick(
+      record.headerSerifLeadLabelWeight,
+      CONTACT_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadLabelWeight ?? 'regular'
+    ),
+    headerSerifLeadTitleWeight: pick(
+      record.headerSerifLeadTitleWeight,
+      CONTACT_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadTitleWeight ?? 'regular'
+    ),
+    headerSerifLeadSubtitleWeight: pick(
+      record.headerSerifLeadSubtitleWeight,
+      CONTACT_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadSubtitleWeight ?? 'regular'
+    ),
+    headerBillboardBigWord:
+      typeof record.headerBillboardBigWord === 'string'
+        ? record.headerBillboardBigWord
+        : (base.headerBillboardBigWord ?? ''),
+    headerBillboardCountText:
+      typeof record.headerBillboardCountText === 'string'
+        ? record.headerBillboardCountText
+        : (base.headerBillboardCountText ?? ''),
+    headerBillboardTitleText:
+      typeof record.headerBillboardTitleText === 'string'
+        ? record.headerBillboardTitleText
+        : (base.headerBillboardTitleText ?? ''),
+    headerBillboardWordStyle: pick(
+      record.headerBillboardWordStyle,
+      CONTACT_HEADER_BILLBOARD_WORD_STYLES,
+      base.headerBillboardWordStyle ?? 'outline'
+    ),
+    headerBillboardWordColor: pick(
+      record.headerBillboardWordColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerBillboardWordColor ?? 'principal'
+    ),
+    headerBillboardTitleColor: pick(
+      record.headerBillboardTitleColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerBillboardTitleColor ?? 'principal'
+    ),
+    headerBillboardMetaColor: pick(
+      record.headerBillboardMetaColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerBillboardMetaColor ?? 'secondaire'
+    ),
+    headerSplitHeadingLabelText:
+      typeof record.headerSplitHeadingLabelText === 'string'
+        ? record.headerSplitHeadingLabelText
+        : (base.headerSplitHeadingLabelText ?? ''),
+    headerSplitHeadingTitleText:
+      typeof record.headerSplitHeadingTitleText === 'string'
+        ? record.headerSplitHeadingTitleText
+        : (base.headerSplitHeadingTitleText ?? ''),
+    headerSplitHeadingTitleColor: pick(
+      record.headerSplitHeadingTitleColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerSplitHeadingTitleColor ?? 'principal'
+    ),
+    headerSplitHeadingLabelColor: pick(
+      record.headerSplitHeadingLabelColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerSplitHeadingLabelColor ?? 'secondaire'
+    ),
+    headerSplitHeadingTitleSize: pick(
+      record.headerSplitHeadingTitleSize,
+      CONTACT_HEADER_TITLE_SIZES,
+      base.headerSplitHeadingTitleSize ?? 'md'
+    ),
+    headerSplitHeadingTitleWeight: pick(
+      record.headerSplitHeadingTitleWeight,
+      CONTACT_HEADER_TITLE_WEIGHTS,
+      base.headerSplitHeadingTitleWeight ?? 'regular'
+    ),
+    headerSplitHeadingLabelSize: pick(
+      record.headerSplitHeadingLabelSize,
+      CONTACT_HEADER_TITLE_SIZES,
+      base.headerSplitHeadingLabelSize ?? 'md'
+    ),
+    headerSplitHeadingLabelWeight: pick(
+      record.headerSplitHeadingLabelWeight,
+      CONTACT_HEADER_TITLE_WEIGHTS,
+      base.headerSplitHeadingLabelWeight ?? 'regular'
+    ),
+    headerMastheadLine1Text:
+      typeof record.headerMastheadLine1Text === 'string'
+        ? record.headerMastheadLine1Text
+        : (base.headerMastheadLine1Text ?? ''),
+    headerMastheadLine2Text:
+      typeof record.headerMastheadLine2Text === 'string'
+        ? record.headerMastheadLine2Text
+        : (base.headerMastheadLine2Text ?? ''),
+    headerMastheadLine3Text:
+      typeof record.headerMastheadLine3Text === 'string'
+        ? record.headerMastheadLine3Text
+        : (base.headerMastheadLine3Text ?? ''),
+    headerMastheadHeadlineColor: pick(
+      record.headerMastheadHeadlineColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerMastheadHeadlineColor ?? 'principal'
+    ),
+    headerMastheadHeadlineSize: pick(
+      record.headerMastheadHeadlineSize,
+      CONTACT_HEADER_TITLE_SIZES,
+      base.headerMastheadHeadlineSize ?? 'md'
+    ),
+    headerMastheadHeadlineWeight: pick(
+      record.headerMastheadHeadlineWeight,
+      CONTACT_HEADER_TITLE_WEIGHTS,
+      base.headerMastheadHeadlineWeight ?? 'regular'
+    ),
+    headerIndexLabelText:
+      typeof record.headerIndexLabelText === 'string' ? record.headerIndexLabelText : (base.headerIndexLabelText ?? ''),
+    headerIndexTitleText:
+      typeof record.headerIndexTitleText === 'string' ? record.headerIndexTitleText : (base.headerIndexTitleText ?? ''),
+    headerIndexCountLabelText:
+      typeof record.headerIndexCountLabelText === 'string'
+        ? record.headerIndexCountLabelText
+        : (base.headerIndexCountLabelText ?? ''),
+    headerIndexSubtitleText:
+      typeof record.headerIndexSubtitleText === 'string'
+        ? record.headerIndexSubtitleText
+        : (base.headerIndexSubtitleText ?? ''),
+    headerIndexLabelColor: pick(
+      record.headerIndexLabelColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerIndexLabelColor ?? 'texteFort'
+    ),
+    headerIndexNumberColor: pick(
+      record.headerIndexNumberColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerIndexNumberColor ?? 'principal'
+    ),
+    headerIndexTitleColor: pick(
+      record.headerIndexTitleColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerIndexTitleColor ?? 'texteFort'
+    ),
+    headerIndexSubtitleColor: pick(
+      record.headerIndexSubtitleColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerIndexSubtitleColor ?? 'texteFort'
+    ),
+    headerIndexLabelSize: pick(
+      record.headerIndexLabelSize,
+      CONTACT_HEADER_TITLE_SIZES,
+      base.headerIndexLabelSize ?? 'md'
+    ),
+    headerIndexLabelWeight: pick(
+      record.headerIndexLabelWeight,
+      CONTACT_HEADER_TITLE_WEIGHTS,
+      base.headerIndexLabelWeight ?? 'regular'
+    ),
+    headerIndexTitleSize: pick(
+      record.headerIndexTitleSize,
+      CONTACT_HEADER_TITLE_SIZES,
+      base.headerIndexTitleSize ?? 'md'
+    ),
+    headerIndexTitleWeight: pick(
+      record.headerIndexTitleWeight,
+      CONTACT_HEADER_TITLE_WEIGHTS,
+      base.headerIndexTitleWeight ?? 'regular'
+    ),
+    headerIndexSubtitleSize: pick(
+      record.headerIndexSubtitleSize,
+      CONTACT_HEADER_TITLE_SIZES,
+      base.headerIndexSubtitleSize ?? 'md'
+    ),
+    headerIndexSubtitleWeight: pick(
+      record.headerIndexSubtitleWeight,
+      CONTACT_HEADER_TITLE_WEIGHTS,
+      base.headerIndexSubtitleWeight ?? 'regular'
+    ),
+    headerMarqueeWord1Text:
+      typeof record.headerMarqueeWord1Text === 'string'
+        ? record.headerMarqueeWord1Text
+        : (base.headerMarqueeWord1Text ?? ''),
+    headerMarqueeWord2Text:
+      typeof record.headerMarqueeWord2Text === 'string'
+        ? record.headerMarqueeWord2Text
+        : (base.headerMarqueeWord2Text ?? ''),
+    headerMarqueeWord3Text:
+      typeof record.headerMarqueeWord3Text === 'string'
+        ? record.headerMarqueeWord3Text
+        : (base.headerMarqueeWord3Text ?? ''),
+    headerMarqueeWord4Text:
+      typeof record.headerMarqueeWord4Text === 'string'
+        ? record.headerMarqueeWord4Text
+        : (base.headerMarqueeWord4Text ?? ''),
+    headerMarqueeWordColor: pick(
+      record.headerMarqueeWordColor,
+      CONTACT_HEADER_PALETTE_TOKENS,
+      base.headerMarqueeWordColor ?? 'principal'
+    ),
+    headerMarqueeSize: pick(record.headerMarqueeSize, CONTACT_HEADER_TITLE_SIZES, base.headerMarqueeSize ?? 'md'),
     sectionLayout: isPortfolioContactSectionLayout(record.sectionLayout)
       ? record.sectionLayout
       : isPortfolioContactSectionLayout(base.sectionLayout)

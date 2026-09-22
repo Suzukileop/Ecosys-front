@@ -261,7 +261,6 @@ function EducationEditorial({
   sectionClassName?: string;
 } & Omit<TraitEducationColors, 'cardBg'>) {
   const entryTitleClass = infoContentEducationTitleSizeClass(contentSize);
-  const bodyClass = infoContentBodySizeClass(contentSize);
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
 
   return (
@@ -285,8 +284,11 @@ function EducationEditorial({
           return (
             <li key={key} className="pf-about-trait-edu-row" data-pf-no-color-transition="">
               <div className="pf-about-trait-edu-body" data-pf-no-color-transition="">
-                <span className="pf-about-trait-edu-spine" aria-hidden data-pf-no-color-transition="">
-                  <span style={{ backgroundColor: accent }} data-pf-no-color-transition="" />
+                <span
+                  className="pf-about-trait-edu-index font-mono text-[0.7rem] tabular-nums tracking-widest"
+                  style={{ color: accent }}
+                >
+                  {String(index + 1).padStart(2, '0')}
                 </span>
 
                 <div className="pf-about-trait-edu-fade" data-pf-no-color-transition="">
@@ -300,46 +302,31 @@ function EducationEditorial({
                     </span>
                   ) : null}
 
-                  <div className="relative z-[1] grid gap-6 pl-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-12">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span
-                          className="font-mono text-[0.7rem] tabular-nums tracking-widest"
-                          style={{ color: accent }}
-                        >
-                          {String(index + 1).padStart(2, '0')}
-                        </span>
-                        {yearLabel ? (
-                          <span
-                            className={`font-semibold uppercase tracking-[0.2em] ${metaClass}`}
-                            style={{ color: bodyColor }}
-                          >
-                            {yearLabel}
-                          </span>
-                        ) : null}
-                      </div>
-                      {title ? (
-                        <p
-                          className={`mt-4 max-w-4xl font-semibold leading-[1.1] tracking-tight ${entryTitleClass}`}
-                          style={{ color: titleColor }}
-                        >
-                          {title}
-                        </p>
-                      ) : null}
-                    </div>
-
+                  <div className="relative z-[1] min-w-0">
+                    {yearLabel ? (
+                      <span
+                        className={`font-semibold uppercase tracking-[0.2em] ${metaClass}`}
+                        style={{ color: bodyColor }}
+                      >
+                        {yearLabel}
+                      </span>
+                    ) : null}
+                    {title ? (
+                      <p
+                        className={`mt-3 max-w-4xl font-semibold leading-[1.1] tracking-tight ${entryTitleClass}`}
+                        style={{ color: titleColor }}
+                      >
+                        {title}
+                      </p>
+                    ) : null}
                     {institution ? (
                       <p
-                        className={`max-w-sm leading-relaxed lg:max-w-xs lg:text-right ${bodyClass}`}
-                        style={{ color: bodyColor }}
+                        className="mt-2 max-w-sm text-xs leading-relaxed"
+                        style={{ color: bodyColor, opacity: 0.6 }}
                       >
                         {institution}
                       </p>
                     ) : null}
-                  </div>
-
-                  <div className="pf-about-trait-edu-rule" aria-hidden data-pf-no-color-transition="">
-                    <span style={{ backgroundColor: accent }} data-pf-no-color-transition="" />
                   </div>
                 </div>
               </div>

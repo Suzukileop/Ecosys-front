@@ -11,7 +11,10 @@ import {
   type RefObject,
 } from 'react';
 import type { MarketplaceContentItem } from '@/types/marketplace';
-import type { PortfolioWorkPresentationSettings } from '@/components/portfolio/portfolio-work-settings';
+import type {
+  PortfolioWorkPresentationSettings,
+  PortfolioWorkProjectsBoardThumbnailSize,
+} from '@/components/portfolio/portfolio-work-settings';
 import {
   DEFAULT_PROJECTS_BOARD_SETTINGS,
   DEFAULT_WORK_PRESENTATION,
@@ -285,29 +288,25 @@ export function ProjectsBoardSectionHeader({
   );
 }
 
-function ConsultButton({
-  href,
-  label,
-}: {
-  href: string;
-  label: string;
-}) {
+/** Minimalist bottom-of-card CTA: uppercase text + a 1px underline that grows in from
+ * the left on hover, instead of the old boxed button floating on the thumbnail. */
+function CaseStudyLink({ href, label }: { href: string; label: string }) {
   const external = /^https?:\/\//i.test(href);
   const className =
-    'pointer-events-auto inline-flex items-center gap-2 border border-white/75 bg-black/35 px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-white backdrop-blur-md transition duration-300 ease-out hover:bg-white hover:text-neutral-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
+    'group/cta inline-flex items-center gap-1.5 text-[0.68rem] font-medium uppercase tracking-[0.2em] text-neutral-400 transition-colors duration-300 hover:text-white';
 
   const content = (
     <>
-      <span>{label}</span>
-      <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none" aria-hidden>
-        <path
-          d="M3.5 8h9M8.5 4l4 4-4 4"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+      <span className="relative pb-0.5">
+        {label}
+        <span
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-white transition-transform duration-500 ease-out group-hover/cta:scale-x-100"
         />
-      </svg>
+      </span>
+      <span aria-hidden className="translate-y-[-1px]">
+        ↗
+      </span>
     </>
   );
 
@@ -331,26 +330,29 @@ function ConsultButton({
   );
 }
 
+/** Aspect ratio only (no fixed pixel heights) so the thumbnail scales naturally with
+ *  the card's fluid width at every breakpoint — matters most at 1 per row, where the
+ *  card spans the full row and a fixed 3/2 ratio would otherwise look oversized. */
+function boardThumbnailAspectClass(size: PortfolioWorkProjectsBoardThumbnailSize): string {
+  if (size === 'compact') return 'aspect-[16/9]';
+  if (size === 'large') return 'aspect-[4/3]';
+  return 'aspect-[3/2]';
+}
+
 function ProjectsBoardThumbnail({
   url,
   alt,
   surface,
-  consultHref,
-  consultLabel,
-  showConsult,
+  size,
 }: {
   url: string | null;
   alt: string;
   surface: string;
-  consultHref?: string | null;
-  consultLabel: string;
-  showConsult: boolean;
+  size: PortfolioWorkProjectsBoardThumbnailSize;
 }) {
-  const consult = showConsult && consultHref?.trim();
-
   return (
     <div
-      className="relative aspect-[3/2] w-full shrink-0 overflow-hidden"
+      className={`relative w-full shrink-0 overflow-hidden ${boardThumbnailAspectClass(size)}`}
       style={{ backgroundColor: surface }}
     >
       {url ? (
@@ -367,11 +369,6 @@ function ProjectsBoardThumbnail({
         className="pointer-events-none absolute inset-0 bg-gradient-to-t from-neutral-950/50 via-neutral-950/0 to-transparent transition-opacity duration-500 ease-out group-hover/board-card:from-neutral-950/60"
         aria-hidden
       />
-      {consult ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-start p-5 sm:p-6">
-          <ConsultButton href={consultHref!.trim()} label={consultLabel} />
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -397,36 +394,68 @@ function ProjectsBoardCard({
   const href = item.linkUrl?.trim() || null;
   const mediaUrl = item.mediaUrl?.trim() || null;
   const showThumb = board.showThumbnail;
+  const thumbnailSize = board.thumbnailSize ?? DEFAULT_PROJECTS_BOARD_SETTINGS.thumbnailSize;
   const showRole = board.showRole && Boolean(role);
   const showCategory = board.showCategory && Boolean(category);
-  const showMetaRow = showRole || showCategory;
   const showTools = presentation.showCardTools !== false && tools.length > 0;
-  const showFooter = showMetaRow || showTools;
-  const showConsult = board.showConsultOnHover && Boolean(href);
+  const showCaseStudyLink = board.showConsultOnHover && Boolean(href);
+  // One flat, single-line list — role first (accent ink), everything else (category,
+  // tools) grey — instead of a separate role/category row stacked on top of a tools
+  // row, which read as clutter (two differently-colored rows of small caps).
+  const metaItems: { text: string; accent: boolean }[] = [
+    ...(showRole ? [{ text: role, accent: true }] : []),
+    ...(showCategory ? [{ text: category, accent: false }] : []),
+    ...(showTools ? tools.map((tool) => ({ text: tool, accent: false })) : []),
+  ];
+  const showMetaLine = metaItems.length > 0;
+  const showBottomBlock = showMetaLine || showCaseStudyLink;
 
   const accent = presentation.ctaColor || presentation.categoryActiveColor;
-  const mutedMeta = presentation.subtitleColor || presentation.categoryMutedColor;
   const titleColor = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
   const descriptionColor =
     presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
   const tagInk = presentation.elementStyles?.toolsList?.color || presentation.subtitleColor;
   const tagSurface = presentation.cardBorderColor;
-  const hasCardFill = presentation.cardBackgroundEnabled;
-  const hasBorder = presentation.cardBorder !== 'none';
 
-  const consultLabel = board.consultLabel?.trim() || 'Consult';
+  const caseStudyLabel = board.consultLabel?.trim() || 'View project';
   const enterDelay = 90 + Math.min(index, 8) * 95;
+  // Asymmetric rhythm (2 per row, default): wide/high card on the left, narrower
+  // card nudged down on the right — breaks the old perfectly-aligned 2-up row
+  // (desktop only; mobile stays a single stacked column via the grid's base
+  // grid-cols-1). 1, 3 and 4 per row use an even, non-offset grid instead — the
+  // base container grid always stays 12-wide so each column-count is just a
+  // col-span fraction of it (12, 6+6 is skipped in favor of the signature 7+5,
+  // 4+4+4, and 3+3+3+3). 3 and 4 per row additionally ramp down responsively: 1
+  // column below tablet, 2 from tablet (md), 3 from desktop (lg), 4 only from
+  // large desktop (xl) — see the container's gridClass.
+  const columnsPerRow = board.columnsPerRow ?? DEFAULT_PROJECTS_BOARD_SETTINGS.columnsPerRow;
+  const isAsymmetric = columnsPerRow === 2;
+  const isWide = isAsymmetric && index % 2 === 0;
+  const spanClass =
+    columnsPerRow === 1
+      ? 'lg:col-span-12'
+      : columnsPerRow === 3
+        ? 'md:col-span-6 lg:col-span-4'
+        : columnsPerRow === 4
+          ? 'md:col-span-6 lg:col-span-4 xl:col-span-3'
+          : isWide
+            ? 'lg:col-span-7'
+            : 'lg:col-span-5 lg:mt-24';
 
+  // Deliberately NOT reading presentation.cardBackgroundColor/cardBorderColor here —
+  // Projects board's near-invisible "fused with the rock texture" card chrome is a
+  // fixed trait of this design, not a themeable one. Those fields are driven by the
+  // active site theme's card token and could resolve to a solid, clearly visible
+  // color, which is exactly what this design should never show. The CSS fallback in
+  // .pf-projects-board-card (globals.css) always applies instead.
   const cardVars: CSSProperties = {
-    ...(hasCardFill ? ({ ['--pf-board-card-bg' as string]: presentation.cardBackgroundColor } as CSSProperties) : {}),
-    ...(hasBorder ? ({ ['--pf-board-card-line' as string]: presentation.cardBorderColor } as CSSProperties) : {}),
     ...boardEnterStyle(entered, ENTER_CARD, enterDelay, instant),
   };
 
   return (
     <article
       data-board-card=""
-      className="group/board-card pf-projects-board-card flex h-full min-h-0 flex-col overflow-hidden rounded-xl"
+      className={`group/board-card pf-projects-board-card flex min-h-0 flex-col overflow-hidden rounded-xl ${spanClass}`}
       style={cardVars}
       data-pf-no-color-transition=""
     >
@@ -435,9 +464,7 @@ function ProjectsBoardCard({
           url={mediaUrl}
           alt={item.title}
           surface={tagSurface || 'transparent'}
-          consultHref={href}
-          consultLabel={consultLabel}
-          showConsult={showConsult}
+          size={thumbnailSize}
         />
       ) : null}
 
@@ -448,7 +475,7 @@ function ProjectsBoardCard({
       >
         {presentation.showCardTitle !== false ? (
           <h3
-            className="text-[1.32rem] font-semibold leading-[1.22] tracking-[-0.03em] sm:text-[1.55rem] sm:leading-[1.2]"
+            className="text-2xl font-bold leading-[1.05] tracking-tight md:text-3xl lg:text-4xl"
             style={{ color: titleColor }}
           >
             {item.title}
@@ -457,7 +484,7 @@ function ProjectsBoardCard({
 
         {presentation.showCardDescription !== false && description ? (
           <p
-            className={`max-w-[42em] text-[1.02rem] leading-[1.75] sm:text-[1.0625rem] sm:leading-[1.8] ${
+            className={`max-w-md text-[1.02rem] leading-relaxed sm:text-[1.0625rem] ${
               presentation.showCardTitle !== false ? 'mt-4 sm:mt-5' : ''
             }`}
             style={{ color: descriptionColor }}
@@ -466,55 +493,30 @@ function ProjectsBoardCard({
           </p>
         ) : null}
 
-        {showFooter ? (
-          <div className="mt-auto flex flex-col gap-3 pt-8 sm:pt-10">
-            {showMetaRow ? (
-              <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                {showRole ? (
-                  <p
-                    className="min-w-0 text-[11px] font-medium uppercase tracking-[0.16em]"
-                    style={{ color: accent }}
-                  >
-                    {role}
-                  </p>
-                ) : null}
-                {showRole && showCategory ? (
-                  <span
-                    aria-hidden
-                    className="text-[11px] font-normal"
-                    style={{ color: mutedMeta, opacity: 0.35 }}
-                  >
-                    ·
-                  </span>
-                ) : null}
-                {showCategory ? (
-                  <p
-                    className="text-[11px] font-normal uppercase tracking-[0.14em]"
-                    style={{ color: mutedMeta, opacity: 0.78 }}
-                  >
-                    {category}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-            {showTools ? (
-              <ul className="flex flex-wrap items-baseline gap-x-2 gap-y-1.5" aria-label="Tools">
-                {tools.map((tool, toolIndex) => (
+        {showBottomBlock ? (
+          <div className="mt-auto flex flex-col gap-4 pt-8 sm:pt-10">
+            {showMetaLine ? (
+              <ul
+                className="group/tags flex flex-wrap items-baseline gap-x-2 gap-y-1.5"
+                aria-label="Role and tools"
+              >
+                {metaItems.map((meta, metaIndex) => (
                   <li
-                    key={tool}
-                    className="flex items-baseline gap-2 text-[11px] font-medium uppercase tracking-[0.14em]"
-                    style={{ color: tagInk }}
+                    key={`${meta.text}-${metaIndex}`}
+                    className="flex items-baseline gap-2 text-[0.66rem] font-medium uppercase tracking-[0.14em] opacity-70 transition-opacity duration-300 hover:!opacity-100 group-hover/tags:opacity-40"
+                    style={{ color: meta.accent ? accent : tagInk }}
                   >
-                    {toolIndex > 0 ? (
+                    {metaIndex > 0 ? (
                       <span aria-hidden className="font-normal opacity-35">
-                        /
+                        •
                       </span>
                     ) : null}
-                    <span>{tool}</span>
+                    <span>{meta.text}</span>
                   </li>
                 ))}
               </ul>
             ) : null}
+            {showCaseStudyLink ? <CaseStudyLink href={href!.trim()} label={caseStudyLabel} /> : null}
           </div>
         ) : null}
       </div>
@@ -522,7 +524,9 @@ function ProjectsBoardCard({
   );
 }
 
-/** Two-up project cards — Projects board design only. Equal height, aligned row. */
+/** Two-up project cards — Projects board design only. Asymmetric diagonal rhythm on
+ * desktop (wide card left, narrower card right and nudged down); stacks to a single
+ * natural-height column below `lg`. */
 export function ProjectsBoardGallery({
   items,
   presentation = DEFAULT_WORK_PRESENTATION,
@@ -537,18 +541,26 @@ export function ProjectsBoardGallery({
     rootRef,
     `${items.length}:${forceSingleColumn ? '1' : '2'}`
   );
+  const board = presentation.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS;
+  const columnsPerRow = board.columnsPerRow ?? DEFAULT_PROJECTS_BOARD_SETTINGS.columnsPerRow;
 
   if (items.length === 0) return null;
 
+  // 3 and 4 per row get their own responsive ramp (1 column below tablet, 2 from
+  // tablet (md), 3 from desktop (lg), 4 only from large desktop (xl) — see the
+  // card's spanClass) and keep `items-stretch` at every breakpoint — unlike the
+  // asymmetric 2-per-row grid, every card in an even row should share the row's
+  // height so the `mt-auto` bottom block lines up across the row instead of each
+  // card trailing off at its own natural height. 1 per row and the default 2 per
+  // row are untouched (identical to before).
+  const gridClass = forceSingleColumn
+    ? 'grid grid-cols-1 items-stretch gap-y-12 sm:gap-y-16'
+    : columnsPerRow === 3 || columnsPerRow === 4
+      ? 'grid grid-cols-1 items-stretch gap-y-12 sm:gap-y-16 md:grid-cols-12 md:gap-x-8 md:gap-y-16 lg:gap-y-20 xl:gap-x-10'
+      : 'grid grid-cols-1 items-stretch gap-y-12 sm:gap-y-16 lg:grid-cols-12 lg:items-start lg:gap-x-8 lg:gap-y-20 xl:gap-x-10';
+
   return (
-    <div
-      ref={rootRef}
-      className={
-        forceSingleColumn
-          ? 'grid grid-cols-1 items-stretch gap-y-12 sm:gap-y-16'
-          : 'grid grid-cols-1 items-stretch gap-y-12 sm:gap-y-16 lg:grid-cols-2 lg:gap-x-12 lg:gap-y-16 xl:gap-x-16'
-      }
-    >
+    <div ref={rootRef} className={gridClass}>
       {items.map((item, index) => (
         <ProjectsBoardCard
           key={item.id}

@@ -53,6 +53,40 @@ import {
   patchElementStylesRecord,
   type PortfolioElementTextStyle,
 } from '@/components/portfolio/portfolio-element-text-style';
+import {
+  FAQ_HEADER_DESIGNS,
+  FAQ_HEADER_MARGIN_BOTTOM_STEPS,
+  FAQ_HEADER_TITLE_SIZES,
+  FAQ_HEADER_TITLE_WEIGHTS,
+  FAQ_HEADER_PALETTE_TOKENS,
+  FAQ_HEADER_ACCENT_COUNT_ALIGNMENTS,
+  FAQ_HEADER_BILLBOARD_WORD_STYLES,
+  type PortfolioFaqHeaderDesign,
+  type PortfolioFaqHeaderDesignAlignment,
+  type PortfolioFaqHeaderMarginBottom,
+  type PortfolioFaqHeaderTitleSize,
+  type PortfolioFaqHeaderTitleWeight,
+  type PortfolioFaqHeaderPaletteToken,
+  type PortfolioFaqHeaderAccentCountAlignment,
+  type PortfolioFaqHeaderBillboardWordStyle,
+} from '@/components/portfolio/portfolio-faq-header-settings';
+
+export {
+  PORTFOLIO_FAQ_HEADER_DESIGN_OPTIONS,
+  PORTFOLIO_FAQ_HEADER_PALETTE_TOKEN_OPTIONS,
+  PORTFOLIO_FAQ_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
+  PORTFOLIO_FAQ_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
+  faqHeaderPaletteTokenColor,
+  FAQ_HEADER_MARGIN_BOTTOM_REM,
+  type PortfolioFaqHeaderDesign,
+  type PortfolioFaqHeaderDesignAlignment,
+  type PortfolioFaqHeaderMarginBottom,
+  type PortfolioFaqHeaderTitleSize,
+  type PortfolioFaqHeaderTitleWeight,
+  type PortfolioFaqHeaderPaletteToken,
+  type PortfolioFaqHeaderAccentCountAlignment,
+  type PortfolioFaqHeaderBillboardWordStyle,
+} from '@/components/portfolio/portfolio-faq-header-settings';
 
 export type PortfolioFaqTitlePreset =
   | 'faq'
@@ -72,7 +106,63 @@ export type PortfolioFaqHeaderAlignment = 'left' | 'center' | 'right';
 export type PortfolioFaqSectionLayout = 'stacked' | 'aside-left' | 'aside-right';
 
 /** Ready-to-use FAQ section layouts. Item design stays independently switchable. */
-export type PortfolioFaqDesign = 'two-column' | 'panel' | 'split' | 'cta-split';
+export type PortfolioFaqDesign =
+  | 'kinetic-split'
+  | 'floating-gallery'
+  | 'editorial-masonry'
+  | 'prism-cards'
+  | 'star-scroll'
+  | 'tri-grid'
+  | 'split-index'
+  | 'centered-focus'
+  | 'bento-dual';
+
+/** Bento Dual design — palette token driving the card fill, replacing the old
+ *  hardcoded/"raw" Secondary-only color. */
+export type PortfolioFaqBentoDualCardColorToken = 'principal' | 'secondaire' | 'neutre' | 'texteMuted';
+export type PortfolioFaqBentoDualCardRadius = 'sm' | 'md' | 'lg' | 'xl';
+export type PortfolioFaqBentoDualCardBorder = 'none' | 'soft' | 'solid';
+
+export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_COLOR_OPTIONS: {
+  value: PortfolioFaqBentoDualCardColorToken;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'principal', label: 'Principal', description: 'Primary accent token.' },
+  { value: 'secondaire', label: 'Secondary', description: 'Secondary accent token (previous default).' },
+  { value: 'neutre', label: 'Neutral', description: 'Neutral surface token.' },
+  { value: 'texteMuted', label: 'Muted', description: 'Muted text token, softened.' },
+];
+
+export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADIUS_OPTIONS: {
+  value: PortfolioFaqBentoDualCardRadius;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'sm', label: 'S', description: 'Light rounding.' },
+  { value: 'md', label: 'M', description: 'Default rounding.' },
+  { value: 'lg', label: 'L', description: 'Generous rounding.' },
+  { value: 'xl', label: 'XL', description: 'Very rounded.' },
+];
+
+export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDER_OPTIONS: {
+  value: PortfolioFaqBentoDualCardBorder;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: 'None', description: 'No border.' },
+  { value: 'soft', label: 'Soft', description: 'Thin hairline, blended into the card color (default).' },
+  { value: 'solid', label: 'Solid', description: 'Crisper, more visible line.' },
+];
+
+export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_COLOR_TOKENS: PortfolioFaqBentoDualCardColorToken[] = [
+  'principal',
+  'secondaire',
+  'neutre',
+  'texteMuted',
+];
+export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADII: PortfolioFaqBentoDualCardRadius[] = ['sm', 'md', 'lg', 'xl'];
+export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDERS: PortfolioFaqBentoDualCardBorder[] = ['none', 'soft', 'solid'];
 
 export type PortfolioFaqPanelShadow = 'none' | 'soft' | 'medium' | 'strong';
 
@@ -199,6 +289,93 @@ export type PortfolioFaqPresentationSettings = PortfolioSectionBackgroundSetting
   faqColorBindings?: PortfolioFaqColorBindings;
   /** Per-element color, font, size, and weight for question, answer, and item number. */
   elementStyles: PortfolioFaqElementStyles;
+
+  // ---- Header — one shared, GSAP-animated header design mounted above the
+  // section (Editorial/Marquee/Index/Accent count/Serif lead/Billboard/
+  // Masthead/Split heading), independent of the Design tab's own layout. ----
+  headerDesign: PortfolioFaqHeaderDesign;
+  /** Respects reduced-motion preference regardless of this toggle. */
+  headerAnimationEnabled: boolean;
+  headerDesignAlignment: PortfolioFaqHeaderDesignAlignment;
+  headerMarginBottom: PortfolioFaqHeaderMarginBottom;
+  headerTitleSize: PortfolioFaqHeaderTitleSize;
+  headerTitleWeight: PortfolioFaqHeaderTitleWeight;
+
+  headerAccentCountBadgeText: string;
+  headerAccentCountLeadText: string;
+  headerAccentCountBadgeColor: PortfolioFaqHeaderPaletteToken;
+  headerAccentCountLeadColor: PortfolioFaqHeaderPaletteToken;
+  headerAccentCountSize: PortfolioFaqHeaderTitleSize;
+  headerAccentCountWeight: PortfolioFaqHeaderTitleWeight;
+  headerAccentCountAlignment: PortfolioFaqHeaderAccentCountAlignment;
+
+  headerSerifLeadLabelText: string;
+  headerSerifLeadTitleText: string;
+  headerSerifLeadLabelColor: PortfolioFaqHeaderPaletteToken;
+  headerSerifLeadTitleColor: PortfolioFaqHeaderPaletteToken;
+  headerSerifLeadSubtitleColor: PortfolioFaqHeaderPaletteToken;
+  headerSerifLeadLabelSize: PortfolioFaqHeaderTitleSize;
+  headerSerifLeadTitleSize: PortfolioFaqHeaderTitleSize;
+  headerSerifLeadSubtitleSize: PortfolioFaqHeaderTitleSize;
+  headerSerifLeadLabelWeight: PortfolioFaqHeaderTitleWeight;
+  headerSerifLeadTitleWeight: PortfolioFaqHeaderTitleWeight;
+  headerSerifLeadSubtitleWeight: PortfolioFaqHeaderTitleWeight;
+
+  headerBillboardBigWord: string;
+  headerBillboardCountText: string;
+  headerBillboardTitleText: string;
+  headerBillboardWordStyle: PortfolioFaqHeaderBillboardWordStyle;
+  headerBillboardWordColor: PortfolioFaqHeaderPaletteToken;
+  headerBillboardTitleColor: PortfolioFaqHeaderPaletteToken;
+  headerBillboardMetaColor: PortfolioFaqHeaderPaletteToken;
+
+  headerSplitHeadingLabelText: string;
+  headerSplitHeadingTitleText: string;
+  headerSplitHeadingTitleColor: PortfolioFaqHeaderPaletteToken;
+  headerSplitHeadingLabelColor: PortfolioFaqHeaderPaletteToken;
+  headerSplitHeadingTitleSize: PortfolioFaqHeaderTitleSize;
+  headerSplitHeadingTitleWeight: PortfolioFaqHeaderTitleWeight;
+  headerSplitHeadingLabelSize: PortfolioFaqHeaderTitleSize;
+  headerSplitHeadingLabelWeight: PortfolioFaqHeaderTitleWeight;
+
+  headerMastheadLine1Text: string;
+  headerMastheadLine2Text: string;
+  headerMastheadLine3Text: string;
+  headerMastheadHeadlineColor: PortfolioFaqHeaderPaletteToken;
+  headerMastheadHeadlineSize: PortfolioFaqHeaderTitleSize;
+  headerMastheadHeadlineWeight: PortfolioFaqHeaderTitleWeight;
+
+  headerIndexLabelText: string;
+  headerIndexTitleText: string;
+  headerIndexCountLabelText: string;
+  headerIndexSubtitleText: string;
+  headerIndexLabelColor: PortfolioFaqHeaderPaletteToken;
+  headerIndexNumberColor: PortfolioFaqHeaderPaletteToken;
+  headerIndexTitleColor: PortfolioFaqHeaderPaletteToken;
+  headerIndexSubtitleColor: PortfolioFaqHeaderPaletteToken;
+  headerIndexLabelSize: PortfolioFaqHeaderTitleSize;
+  headerIndexLabelWeight: PortfolioFaqHeaderTitleWeight;
+  headerIndexTitleSize: PortfolioFaqHeaderTitleSize;
+  headerIndexTitleWeight: PortfolioFaqHeaderTitleWeight;
+  headerIndexSubtitleSize: PortfolioFaqHeaderTitleSize;
+  headerIndexSubtitleWeight: PortfolioFaqHeaderTitleWeight;
+
+  headerMarqueeWord1Text: string;
+  headerMarqueeWord2Text: string;
+  headerMarqueeWord3Text: string;
+  headerMarqueeWord4Text: string;
+  headerMarqueeWordColor: PortfolioFaqHeaderPaletteToken;
+  headerMarqueeSize: PortfolioFaqHeaderTitleSize;
+
+  /** Bento Dual design — which palette token fills the card (replaces the old
+   *  hardcoded/"raw" Secondary-only fill). */
+  bentoDualCardColorToken: PortfolioFaqBentoDualCardColorToken;
+  bentoDualCardRadius: PortfolioFaqBentoDualCardRadius;
+  bentoDualCardBorder: PortfolioFaqBentoDualCardBorder;
+  /** 0–100 — how much of the card's fill color shows through against the section
+   *  background (blended via `color-mix`, not raw CSS `opacity`, so the question/
+   *  answer text layers stay fully legible regardless of this value). */
+  bentoDualCardOpacity: number;
 };
 
 export type PortfolioFaqSectionSettings = PortfolioSectionCopy & PortfolioFaqPresentationSettings;
@@ -224,7 +401,17 @@ const FAQ_ITEM_DESIGNS = [
   'raised',
 ] as const;
 
-const FAQ_DESIGNS = ['two-column', 'panel', 'split', 'cta-split'] as const;
+const FAQ_DESIGNS = [
+  'kinetic-split',
+  'floating-gallery',
+  'editorial-masonry',
+  'prism-cards',
+  'star-scroll',
+  'tri-grid',
+  'split-index',
+  'centered-focus',
+  'bento-dual',
+] as const;
 
 export const FAQ_STYLE_TARGET_IDS: PortfolioFaqStyleTarget[] = ['question', 'answer', 'number'];
 
@@ -271,9 +458,9 @@ export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   subtitleColor: DEFAULT_FAQ_SUBTITLE_COLOR,
   titleUppercase: false,
   subtitleUppercase: false,
-  headerAlignment: 'center',
+  headerAlignment: 'left',
   sectionLayout: 'stacked',
-  design: 'two-column',
+  design: 'kinetic-split',
   itemDesign: 'two-column',
   itemGap: 'md',
   listMaxWidth: 'wide',
@@ -318,6 +505,84 @@ export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   faqPalette: { ...DEFAULT_FAQ_PALETTE },
   faqColorBindings: { ...DEFAULT_FAQ_COLOR_BINDINGS },
   elementStyles: DEFAULT_FAQ_ELEMENT_STYLES,
+
+  headerDesign: 'editorial',
+  headerAnimationEnabled: true,
+  headerDesignAlignment: 'left',
+  headerMarginBottom: 'md',
+  headerTitleSize: 'md',
+  headerTitleWeight: 'regular',
+
+  headerAccentCountBadgeText: '',
+  headerAccentCountLeadText: '',
+  headerAccentCountBadgeColor: 'principal',
+  headerAccentCountLeadColor: 'secondaire',
+  headerAccentCountSize: 'md',
+  headerAccentCountWeight: 'regular',
+  headerAccentCountAlignment: 'left',
+
+  headerSerifLeadLabelText: '',
+  headerSerifLeadTitleText: '',
+  headerSerifLeadLabelColor: 'texteFort',
+  headerSerifLeadTitleColor: 'texteFort',
+  headerSerifLeadSubtitleColor: 'texteFort',
+  headerSerifLeadLabelSize: 'md',
+  headerSerifLeadTitleSize: 'md',
+  headerSerifLeadSubtitleSize: 'md',
+  headerSerifLeadLabelWeight: 'regular',
+  headerSerifLeadTitleWeight: 'regular',
+  headerSerifLeadSubtitleWeight: 'regular',
+
+  headerBillboardBigWord: '',
+  headerBillboardCountText: '',
+  headerBillboardTitleText: '',
+  headerBillboardWordStyle: 'outline',
+  headerBillboardWordColor: 'principal',
+  headerBillboardTitleColor: 'principal',
+  headerBillboardMetaColor: 'secondaire',
+
+  headerSplitHeadingLabelText: '',
+  headerSplitHeadingTitleText: '',
+  headerSplitHeadingTitleColor: 'principal',
+  headerSplitHeadingLabelColor: 'secondaire',
+  headerSplitHeadingTitleSize: 'md',
+  headerSplitHeadingTitleWeight: 'regular',
+  headerSplitHeadingLabelSize: 'md',
+  headerSplitHeadingLabelWeight: 'regular',
+
+  headerMastheadLine1Text: '',
+  headerMastheadLine2Text: '',
+  headerMastheadLine3Text: '',
+  headerMastheadHeadlineColor: 'principal',
+  headerMastheadHeadlineSize: 'md',
+  headerMastheadHeadlineWeight: 'regular',
+
+  headerIndexLabelText: '',
+  headerIndexTitleText: '',
+  headerIndexCountLabelText: '',
+  headerIndexSubtitleText: '',
+  headerIndexLabelColor: 'texteFort',
+  headerIndexNumberColor: 'principal',
+  headerIndexTitleColor: 'texteFort',
+  headerIndexSubtitleColor: 'texteFort',
+  headerIndexLabelSize: 'md',
+  headerIndexLabelWeight: 'regular',
+  headerIndexTitleSize: 'md',
+  headerIndexTitleWeight: 'regular',
+  headerIndexSubtitleSize: 'md',
+  headerIndexSubtitleWeight: 'regular',
+
+  headerMarqueeWord1Text: '',
+  headerMarqueeWord2Text: '',
+  headerMarqueeWord3Text: '',
+  headerMarqueeWord4Text: '',
+  headerMarqueeWordColor: 'principal',
+  headerMarqueeSize: 'md',
+
+  bentoDualCardColorToken: 'secondaire',
+  bentoDualCardRadius: 'md',
+  bentoDualCardBorder: 'soft',
+  bentoDualCardOpacity: 100,
 };
 
 Object.assign(
@@ -375,18 +640,18 @@ export const PORTFOLIO_FAQ_SECTION_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'stacked',
-    label: 'Empilé',
-    description: 'Titre au-dessus, questions en dessous.',
+    label: 'Stacked',
+    description: 'Title above, questions below.',
   },
   {
     value: 'aside-left',
-    label: 'Titre à gauche',
-    description: 'Titre à gauche, liste FAQ à droite (côte à côte).',
+    label: 'Title left',
+    description: 'Title on the left, FAQ list on the right (side by side).',
   },
   {
     value: 'aside-right',
-    label: 'Titre à droite',
-    description: 'Liste FAQ à gauche, titre à droite (côte à côte).',
+    label: 'Title right',
+    description: 'FAQ list on the left, title on the right (side by side).',
   },
 ];
 
@@ -400,24 +665,49 @@ export const PORTFOLIO_FAQ_DESIGN_OPTIONS: {
   description: string;
 }[] = [
   {
-    value: 'two-column',
-    label: 'Two columns',
-    description: 'Centered title, rounded accordion cards in two columns — default.',
+    value: 'kinetic-split',
+    label: 'Kinetic split',
+    description: 'Boxless, monochrome: fixed title left, questions right — hover sharpens one, fades the rest.',
   },
   {
-    value: 'panel',
-    label: 'Panel card',
-    description: 'One rounded card: centered title, divided rows, controllable outer shadow.',
+    value: 'floating-gallery',
+    label: 'Floating gallery',
+    description: 'Boxless, monochrome: a cursor-borne shape and a frosted glass panel replace every card.',
   },
   {
-    value: 'split',
-    label: 'Title + SVG',
-    description: 'Title and SVG centered on one side, FAQ items on the other — reversible.',
+    value: 'editorial-masonry',
+    label: 'Editorial masonry',
+    description: 'Paper-white, boxless: an asymmetric offset two-column grid — hover isolates one question, blurs the rest.',
   },
   {
-    value: 'cta-split',
-    label: 'Title + chat CTA',
-    description: 'Centered title on top, chat SVG with Contact CTA below, questions on the other side.',
+    value: 'prism-cards',
+    label: 'Prism cards',
+    description: 'Big white accordion cards — the open card liquid-fades to a violet-electric fill from the click point.',
+  },
+  {
+    value: 'star-scroll',
+    label: 'Star scroll',
+    description: 'Giant title left, an 8-point star right that spins with page scroll — bars melt into the stage until hovered.',
+  },
+  {
+    value: 'tri-grid',
+    label: 'Tri grid',
+    description: 'Iconless, borderless: three parallax columns (center offset and slower) — hover isolates one block, blurs the rest.',
+  },
+  {
+    value: 'split-index',
+    label: 'Split index',
+    description: 'Giant title, a narrow index rail beside a hairline-divided list with filled 01/02/03 badges.',
+  },
+  {
+    value: 'centered-focus',
+    label: 'Centered focus',
+    description: 'Borderless, centered list resting at low opacity — hover snaps one question into focus and a soft zoom.',
+  },
+  {
+    value: 'bento-dual',
+    label: 'Bento dual',
+    description: 'Vivid bento cards that flip on hover — the question slides away as a contrasting answer panel rises in.',
   },
 ];
 
@@ -425,62 +715,15 @@ export function isPortfolioFaqDesign(value: unknown): value is PortfolioFaqDesig
   return (FAQ_DESIGNS as readonly string[]).includes(String(value));
 }
 
-export function faqDesignIsSplit(design: PortfolioFaqDesign | undefined): boolean {
-  return design === 'split';
-}
-
-export function faqDesignIsCtaSplit(design: PortfolioFaqDesign | undefined): boolean {
-  return design === 'cta-split';
-}
-
-export const PORTFOLIO_FAQ_SPLIT_SIDE_OPTIONS: {
-  value: PortfolioFaqIllustrationPlacement;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'left',
-    label: 'Titre à gauche',
-    description: 'Titre + SVG centrés à gauche, questions à droite.',
-  },
-  {
-    value: 'right',
-    label: 'Titre à droite',
-    description: 'Questions à gauche, titre + SVG centrés à droite.',
-  },
-];
-
-export const PORTFOLIO_FAQ_CTA_SPLIT_SIDE_OPTIONS: {
-  value: PortfolioFaqIllustrationPlacement;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'right',
-    label: 'SVG à droite',
-    description: 'Questions à gauche, SVG + Contact à droite.',
-  },
-  {
-    value: 'left',
-    label: 'SVG à gauche',
-    description: 'SVG + Contact à gauche, questions à droite.',
-  },
-];
-
-export function faqDesignShowsTitleKicker(design: PortfolioFaqDesign | undefined): boolean {
-  const value = design ?? 'two-column';
-  return value === 'two-column' || value === 'panel' || value === 'split' || value === 'cta-split';
-}
-
 export const PORTFOLIO_FAQ_PANEL_SHADOW_OPTIONS: {
   value: PortfolioFaqPanelShadow;
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Aucune', description: 'Pas d’ombre autour de la carte.' },
-  { value: 'soft', label: 'Douce', description: 'Halo léger.' },
-  { value: 'medium', label: 'Moyenne', description: 'Ombre diffuse — défaut.' },
-  { value: 'strong', label: 'Forte', description: 'Relief marqué.' },
+  { value: 'none', label: 'None', description: 'No shadow around the card.' },
+  { value: 'soft', label: 'Soft', description: 'Light halo.' },
+  { value: 'medium', label: 'Medium', description: 'Diffuse shadow — default.' },
+  { value: 'strong', label: 'Strong', description: 'Pronounced relief.' },
 ];
 
 export const PORTFOLIO_FAQ_PANEL_SHADOW_PRESET_INTENSITY: Record<PortfolioFaqPanelShadow, number> = {
@@ -519,111 +762,23 @@ export function faqPanelShadowStyle(
 }
 
 export function defaultsForFaqDesign(design: PortfolioFaqDesign): Partial<PortfolioFaqPresentationSettings> {
-  if (design === 'two-column') {
-    return {
-      design,
-      headerAlignment: 'center',
-      sectionLayout: 'stacked',
-      itemDesign: 'two-column',
-      itemGap: 'md',
-      listMaxWidth: 'wide',
-      listPlacement: 'center',
-      itemAlign: 'left',
-      showItemNumbers: false,
-      showExpandIcon: true,
-      expandIconStyle: 'plus',
-      expandable: true,
-      accordionExclusive: true,
-      showAnswerAccentBorder: false,
-      illustrationVariant: 'none',
-      cardBorder: 'soft',
-      cardBorderRadius: 'xl',
-      cardPadding: 'lg',
-      titlePreset: 'frequently-asked',
-      titleUppercase: false,
-      subtitlePreset: 'default',
-    };
-  }
-  if (design === 'panel') {
-    return {
-      design,
-      headerAlignment: 'center',
-      sectionLayout: 'stacked',
-      itemDesign: 'minimal',
-      itemGap: 'md',
-      listMaxWidth: 'default',
-      listPlacement: 'center',
-      itemAlign: 'left',
-      showItemNumbers: false,
-      showExpandIcon: true,
-      expandIconStyle: 'plus',
-      expandable: true,
-      accordionExclusive: true,
-      showAnswerAccentBorder: false,
-      illustrationVariant: 'none',
-      cardBorder: 'none',
-      cardBorderRadius: 'lg',
-      cardPadding: 'lg',
-      panelShadow: 'medium',
-      panelShadowIntensity: PORTFOLIO_FAQ_PANEL_SHADOW_PRESET_INTENSITY.medium,
-      titlePreset: 'frequently-asked',
-      titleUppercase: false,
-      subtitlePreset: 'minimal',
-    };
-  }
-  if (design === 'split') {
-    return {
-      design,
-      headerAlignment: 'center',
-      sectionLayout: 'stacked',
-      itemDesign: 'bordered',
-      itemGap: 'md',
-      listMaxWidth: 'full',
-      listPlacement: 'center',
-      itemAlign: 'left',
-      showItemNumbers: false,
-      showExpandIcon: true,
-      expandIconStyle: 'plus',
-      expandable: true,
-      accordionExclusive: true,
-      showAnswerAccentBorder: false,
-      illustrationVariant: 'question',
-      illustrationPlacement: 'left',
-      cardBorder: 'soft',
-      cardBorderRadius: 'xl',
-      cardPadding: 'md',
-      titlePreset: 'frequently-asked',
-      titleUppercase: false,
-      subtitlePreset: 'short',
-    };
-  }
-  if (design === 'cta-split') {
-    return {
-      design,
-      headerAlignment: 'center',
-      sectionLayout: 'stacked',
-      itemDesign: 'bordered',
-      itemGap: 'md',
-      listMaxWidth: 'full',
-      listPlacement: 'center',
-      itemAlign: 'left',
-      showItemNumbers: false,
-      showExpandIcon: true,
-      expandIconStyle: 'plus',
-      expandable: true,
-      accordionExclusive: true,
-      showAnswerAccentBorder: false,
-      illustrationVariant: 'chat',
-      illustrationPlacement: 'right',
-      cardBorder: 'soft',
-      cardBorderRadius: 'xl',
-      cardPadding: 'md',
-      titlePreset: 'frequently-asked',
-      titleUppercase: false,
-      subtitlePreset: 'short',
-    };
-  }
-  return { design };
+  // All nine designs are bespoke, self-contained (see each component's own
+  // portfolio-faq-*.tsx file) that render their own canvas and ignore the generic
+  // itemDesign/card/illustration fields entirely — only the shared Header block
+  // (title/subtitle text) and section layout still apply.
+  return {
+    design,
+    sectionLayout: 'stacked',
+    headerAlignment:
+      design === 'floating-gallery' || design === 'prism-cards' || design === 'centered-focus'
+        ? 'center'
+        : 'left',
+    titlePreset: 'frequently-asked',
+    titleUppercase: false,
+    subtitlePreset: 'default',
+    expandable: true,
+    accordionExclusive: true,
+  };
 }
 
 export function faqSectionLayoutIsAside(layout: PortfolioFaqSectionLayout | undefined): boolean {
@@ -990,30 +1145,21 @@ export function faqContentAlignClass(align: PortfolioFaqContentAlign): {
 
 export function faqListShellClass(
   design: PortfolioFaqItemDesign,
-  gap: PortfolioFaqItemGap = 'md',
-  sectionDesign?: PortfolioFaqDesign
+  gap: PortfolioFaqItemGap = 'md'
 ): string {
   const gapClass = faqItemGapClass(gap);
-  const panelRows =
-    sectionDesign === 'panel' &&
-    (design === 'minimal' || design === 'editorial' || design === 'compact');
 
   if (design === 'two-column') {
     return `grid lg:grid-cols-2 ${gapClass} lg:gap-x-6`;
   }
-  if (panelRows) return 'flex flex-col';
   return `flex flex-col ${gapClass}`;
 }
 
 export function faqItemShellClass(
   design: PortfolioFaqItemDesign,
-  gap: PortfolioFaqItemGap = 'md',
-  sectionDesign?: PortfolioFaqDesign
+  gap: PortfolioFaqItemGap = 'md'
 ): string {
-  const panelRows =
-    sectionDesign === 'panel' &&
-    (design === 'minimal' || design === 'editorial' || design === 'compact');
-  const dividers = gap === 'sm' || panelRows;
+  const dividers = gap === 'sm';
 
   switch (design) {
     case 'bordered':
@@ -1343,7 +1489,7 @@ export function mergeFaqPresentation(
     sectionLayout: isPortfolioFaqSectionLayout(record.sectionLayout)
       ? record.sectionLayout
       : (base.sectionLayout ?? 'stacked'),
-    design: isPortfolioFaqDesign(record.design) ? record.design : (base.design ?? 'two-column'),
+    design: isPortfolioFaqDesign(record.design) ? record.design : (base.design ?? 'kinetic-split'),
     itemDesign: pick(record.itemDesign, FAQ_ITEM_DESIGNS, base.itemDesign),
     itemGap: pick(record.itemGap, ['sm', 'md', 'lg', 'xl'], base.itemGap),
     listMaxWidth: pick(record.listMaxWidth, ['narrow', 'default', 'wide', 'full'], base.listMaxWidth),
@@ -1434,6 +1580,322 @@ export function mergeFaqPresentation(
       record.faqColorBindings
     ),
     elementStyles,
+
+    headerDesign: pick(record.headerDesign, FAQ_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
+    headerAnimationEnabled:
+      typeof record.headerAnimationEnabled === 'boolean'
+        ? record.headerAnimationEnabled
+        : (base.headerAnimationEnabled ?? true),
+    headerDesignAlignment: pick(
+      record.headerDesignAlignment,
+      ['left', 'center', 'right'] as const,
+      base.headerDesignAlignment ?? 'left'
+    ),
+    headerMarginBottom: pick(
+      record.headerMarginBottom,
+      FAQ_HEADER_MARGIN_BOTTOM_STEPS,
+      base.headerMarginBottom ?? 'md'
+    ),
+    headerTitleSize: pick(record.headerTitleSize, FAQ_HEADER_TITLE_SIZES, base.headerTitleSize ?? 'md'),
+    headerTitleWeight: pick(
+      record.headerTitleWeight,
+      FAQ_HEADER_TITLE_WEIGHTS,
+      base.headerTitleWeight ?? 'regular'
+    ),
+    headerAccentCountBadgeText:
+      typeof record.headerAccentCountBadgeText === 'string'
+        ? record.headerAccentCountBadgeText
+        : (base.headerAccentCountBadgeText ?? ''),
+    headerAccentCountLeadText:
+      typeof record.headerAccentCountLeadText === 'string'
+        ? record.headerAccentCountLeadText
+        : (base.headerAccentCountLeadText ?? ''),
+    headerAccentCountBadgeColor: pick(
+      record.headerAccentCountBadgeColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerAccentCountBadgeColor ?? 'principal'
+    ),
+    headerAccentCountLeadColor: pick(
+      record.headerAccentCountLeadColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerAccentCountLeadColor ?? 'secondaire'
+    ),
+    headerAccentCountSize: pick(
+      record.headerAccentCountSize,
+      FAQ_HEADER_TITLE_SIZES,
+      base.headerAccentCountSize ?? 'md'
+    ),
+    headerAccentCountWeight: pick(
+      record.headerAccentCountWeight,
+      FAQ_HEADER_TITLE_WEIGHTS,
+      base.headerAccentCountWeight ?? 'regular'
+    ),
+    headerAccentCountAlignment: pick(
+      record.headerAccentCountAlignment,
+      FAQ_HEADER_ACCENT_COUNT_ALIGNMENTS,
+      base.headerAccentCountAlignment ?? 'left'
+    ),
+    headerSerifLeadLabelText:
+      typeof record.headerSerifLeadLabelText === 'string'
+        ? record.headerSerifLeadLabelText
+        : (base.headerSerifLeadLabelText ?? ''),
+    headerSerifLeadTitleText:
+      typeof record.headerSerifLeadTitleText === 'string'
+        ? record.headerSerifLeadTitleText
+        : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadLabelColor: pick(
+      record.headerSerifLeadLabelColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadLabelColor ?? 'texteFort'
+    ),
+    headerSerifLeadTitleColor: pick(
+      record.headerSerifLeadTitleColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadTitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadSubtitleColor: pick(
+      record.headerSerifLeadSubtitleColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadSubtitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadLabelSize: pick(
+      record.headerSerifLeadLabelSize,
+      FAQ_HEADER_TITLE_SIZES,
+      base.headerSerifLeadLabelSize ?? 'md'
+    ),
+    headerSerifLeadTitleSize: pick(
+      record.headerSerifLeadTitleSize,
+      FAQ_HEADER_TITLE_SIZES,
+      base.headerSerifLeadTitleSize ?? 'md'
+    ),
+    headerSerifLeadSubtitleSize: pick(
+      record.headerSerifLeadSubtitleSize,
+      FAQ_HEADER_TITLE_SIZES,
+      base.headerSerifLeadSubtitleSize ?? 'md'
+    ),
+    headerSerifLeadLabelWeight: pick(
+      record.headerSerifLeadLabelWeight,
+      FAQ_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadLabelWeight ?? 'regular'
+    ),
+    headerSerifLeadTitleWeight: pick(
+      record.headerSerifLeadTitleWeight,
+      FAQ_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadTitleWeight ?? 'regular'
+    ),
+    headerSerifLeadSubtitleWeight: pick(
+      record.headerSerifLeadSubtitleWeight,
+      FAQ_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadSubtitleWeight ?? 'regular'
+    ),
+    headerBillboardBigWord:
+      typeof record.headerBillboardBigWord === 'string'
+        ? record.headerBillboardBigWord
+        : (base.headerBillboardBigWord ?? ''),
+    headerBillboardCountText:
+      typeof record.headerBillboardCountText === 'string'
+        ? record.headerBillboardCountText
+        : (base.headerBillboardCountText ?? ''),
+    headerBillboardTitleText:
+      typeof record.headerBillboardTitleText === 'string'
+        ? record.headerBillboardTitleText
+        : (base.headerBillboardTitleText ?? ''),
+    headerBillboardWordStyle: pick(
+      record.headerBillboardWordStyle,
+      FAQ_HEADER_BILLBOARD_WORD_STYLES,
+      base.headerBillboardWordStyle ?? 'outline'
+    ),
+    headerBillboardWordColor: pick(
+      record.headerBillboardWordColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerBillboardWordColor ?? 'principal'
+    ),
+    headerBillboardTitleColor: pick(
+      record.headerBillboardTitleColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerBillboardTitleColor ?? 'principal'
+    ),
+    headerBillboardMetaColor: pick(
+      record.headerBillboardMetaColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerBillboardMetaColor ?? 'secondaire'
+    ),
+    headerSplitHeadingLabelText:
+      typeof record.headerSplitHeadingLabelText === 'string'
+        ? record.headerSplitHeadingLabelText
+        : (base.headerSplitHeadingLabelText ?? ''),
+    headerSplitHeadingTitleText:
+      typeof record.headerSplitHeadingTitleText === 'string'
+        ? record.headerSplitHeadingTitleText
+        : (base.headerSplitHeadingTitleText ?? ''),
+    headerSplitHeadingTitleColor: pick(
+      record.headerSplitHeadingTitleColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerSplitHeadingTitleColor ?? 'principal'
+    ),
+    headerSplitHeadingLabelColor: pick(
+      record.headerSplitHeadingLabelColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerSplitHeadingLabelColor ?? 'secondaire'
+    ),
+    headerSplitHeadingTitleSize: pick(
+      record.headerSplitHeadingTitleSize,
+      FAQ_HEADER_TITLE_SIZES,
+      base.headerSplitHeadingTitleSize ?? 'md'
+    ),
+    headerSplitHeadingTitleWeight: pick(
+      record.headerSplitHeadingTitleWeight,
+      FAQ_HEADER_TITLE_WEIGHTS,
+      base.headerSplitHeadingTitleWeight ?? 'regular'
+    ),
+    headerSplitHeadingLabelSize: pick(
+      record.headerSplitHeadingLabelSize,
+      FAQ_HEADER_TITLE_SIZES,
+      base.headerSplitHeadingLabelSize ?? 'md'
+    ),
+    headerSplitHeadingLabelWeight: pick(
+      record.headerSplitHeadingLabelWeight,
+      FAQ_HEADER_TITLE_WEIGHTS,
+      base.headerSplitHeadingLabelWeight ?? 'regular'
+    ),
+    headerMastheadLine1Text:
+      typeof record.headerMastheadLine1Text === 'string'
+        ? record.headerMastheadLine1Text
+        : (base.headerMastheadLine1Text ?? ''),
+    headerMastheadLine2Text:
+      typeof record.headerMastheadLine2Text === 'string'
+        ? record.headerMastheadLine2Text
+        : (base.headerMastheadLine2Text ?? ''),
+    headerMastheadLine3Text:
+      typeof record.headerMastheadLine3Text === 'string'
+        ? record.headerMastheadLine3Text
+        : (base.headerMastheadLine3Text ?? ''),
+    headerMastheadHeadlineColor: pick(
+      record.headerMastheadHeadlineColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerMastheadHeadlineColor ?? 'principal'
+    ),
+    headerMastheadHeadlineSize: pick(
+      record.headerMastheadHeadlineSize,
+      FAQ_HEADER_TITLE_SIZES,
+      base.headerMastheadHeadlineSize ?? 'md'
+    ),
+    headerMastheadHeadlineWeight: pick(
+      record.headerMastheadHeadlineWeight,
+      FAQ_HEADER_TITLE_WEIGHTS,
+      base.headerMastheadHeadlineWeight ?? 'regular'
+    ),
+    headerIndexLabelText:
+      typeof record.headerIndexLabelText === 'string'
+        ? record.headerIndexLabelText
+        : (base.headerIndexLabelText ?? ''),
+    headerIndexTitleText:
+      typeof record.headerIndexTitleText === 'string'
+        ? record.headerIndexTitleText
+        : (base.headerIndexTitleText ?? ''),
+    headerIndexCountLabelText:
+      typeof record.headerIndexCountLabelText === 'string'
+        ? record.headerIndexCountLabelText
+        : (base.headerIndexCountLabelText ?? ''),
+    headerIndexSubtitleText:
+      typeof record.headerIndexSubtitleText === 'string'
+        ? record.headerIndexSubtitleText
+        : (base.headerIndexSubtitleText ?? ''),
+    headerIndexLabelColor: pick(
+      record.headerIndexLabelColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerIndexLabelColor ?? 'texteFort'
+    ),
+    headerIndexNumberColor: pick(
+      record.headerIndexNumberColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerIndexNumberColor ?? 'principal'
+    ),
+    headerIndexTitleColor: pick(
+      record.headerIndexTitleColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerIndexTitleColor ?? 'texteFort'
+    ),
+    headerIndexSubtitleColor: pick(
+      record.headerIndexSubtitleColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerIndexSubtitleColor ?? 'texteFort'
+    ),
+    headerIndexLabelSize: pick(
+      record.headerIndexLabelSize,
+      FAQ_HEADER_TITLE_SIZES,
+      base.headerIndexLabelSize ?? 'md'
+    ),
+    headerIndexLabelWeight: pick(
+      record.headerIndexLabelWeight,
+      FAQ_HEADER_TITLE_WEIGHTS,
+      base.headerIndexLabelWeight ?? 'regular'
+    ),
+    headerIndexTitleSize: pick(
+      record.headerIndexTitleSize,
+      FAQ_HEADER_TITLE_SIZES,
+      base.headerIndexTitleSize ?? 'md'
+    ),
+    headerIndexTitleWeight: pick(
+      record.headerIndexTitleWeight,
+      FAQ_HEADER_TITLE_WEIGHTS,
+      base.headerIndexTitleWeight ?? 'regular'
+    ),
+    headerIndexSubtitleSize: pick(
+      record.headerIndexSubtitleSize,
+      FAQ_HEADER_TITLE_SIZES,
+      base.headerIndexSubtitleSize ?? 'md'
+    ),
+    headerIndexSubtitleWeight: pick(
+      record.headerIndexSubtitleWeight,
+      FAQ_HEADER_TITLE_WEIGHTS,
+      base.headerIndexSubtitleWeight ?? 'regular'
+    ),
+    headerMarqueeWord1Text:
+      typeof record.headerMarqueeWord1Text === 'string'
+        ? record.headerMarqueeWord1Text
+        : (base.headerMarqueeWord1Text ?? ''),
+    headerMarqueeWord2Text:
+      typeof record.headerMarqueeWord2Text === 'string'
+        ? record.headerMarqueeWord2Text
+        : (base.headerMarqueeWord2Text ?? ''),
+    headerMarqueeWord3Text:
+      typeof record.headerMarqueeWord3Text === 'string'
+        ? record.headerMarqueeWord3Text
+        : (base.headerMarqueeWord3Text ?? ''),
+    headerMarqueeWord4Text:
+      typeof record.headerMarqueeWord4Text === 'string'
+        ? record.headerMarqueeWord4Text
+        : (base.headerMarqueeWord4Text ?? ''),
+    headerMarqueeWordColor: pick(
+      record.headerMarqueeWordColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerMarqueeWordColor ?? 'principal'
+    ),
+    headerMarqueeSize: pick(
+      record.headerMarqueeSize,
+      FAQ_HEADER_TITLE_SIZES,
+      base.headerMarqueeSize ?? 'md'
+    ),
+    bentoDualCardColorToken: pick(
+      record.bentoDualCardColorToken,
+      PORTFOLIO_FAQ_BENTO_DUAL_CARD_COLOR_TOKENS,
+      base.bentoDualCardColorToken ?? 'secondaire'
+    ),
+    bentoDualCardRadius: pick(
+      record.bentoDualCardRadius,
+      PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADII,
+      base.bentoDualCardRadius ?? 'md'
+    ),
+    bentoDualCardBorder: pick(
+      record.bentoDualCardBorder,
+      PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDERS,
+      base.bentoDualCardBorder ?? 'soft'
+    ),
+    bentoDualCardOpacity:
+      typeof record.bentoDualCardOpacity === 'number' && Number.isFinite(record.bentoDualCardOpacity)
+        ? Math.min(100, Math.max(0, record.bentoDualCardOpacity))
+        : (base.bentoDualCardOpacity ?? 100),
   };
 
   if (merged.useHeroPalette === false) {

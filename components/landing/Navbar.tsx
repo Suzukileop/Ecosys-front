@@ -106,16 +106,16 @@ export function Navbar({ brand = false, mono = false }: { brand?: boolean; mono?
               <a
                 key={link.href}
                 href={link.href}
-                className={`group relative px-4 py-2 text-sm transition-colors duration-200 ${
+                className={`group relative px-4 py-2 transition-colors duration-200 ${
                   isBrand
-                    ? 'lp-muted hover:lp-text'
-                    : 'text-gray-500 hover:text-gray-900 dark:text-[#9CA3AF] dark:hover:text-white'
+                    ? 'text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-400 hover:text-neutral-950 dark:text-neutral-500 dark:hover:text-white'
+                    : 'text-sm text-gray-500 hover:text-gray-900 dark:text-[#9CA3AF] dark:hover:text-white'
                 }`}
               >
                 {link.label}
                 <span
-                  className={`absolute bottom-0 left-0 right-0 h-[2px] scale-x-0 rounded-full transition-transform duration-300 group-hover:scale-x-100 ${
-                    isBrand ? 'bg-[#F97316]' : 'bg-gradient-to-r from-[#7C3AED] to-[#06B6D4]'
+                  className={`absolute bottom-0 left-0 right-0 h-px scale-x-0 transition-transform duration-300 group-hover:scale-x-100 ${
+                    isBrand ? 'bg-[#F97316]' : 'rounded-full bg-gradient-to-r from-[#7C3AED] to-[#06B6D4]'
                   }`}
                 />
               </a>
@@ -127,21 +127,21 @@ export function Navbar({ brand = false, mono = false }: { brand?: boolean; mono?
             <ThemeToggle />
             <Link
               href="/login"
-              className={`${brandButtonRadiusClass} border border-transparent px-4 py-2 text-sm transition-colors duration-200 ${
+              className={
                 isBrand
-                  ? 'lp-muted hover:lp-text hover:border-neutral-300 dark:hover:border-neutral-600'
-                  : 'text-gray-600 hover:border-black/10 hover:text-gray-900 dark:text-[#9CA3AF] dark:hover:border-white/10 dark:hover:text-white'
-              }`}
+                  ? 'px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-400 transition-colors duration-200 hover:text-neutral-950 dark:text-neutral-500 dark:hover:text-white'
+                  : `${brandButtonRadiusClass} border border-transparent px-4 py-2 text-sm text-gray-600 transition-colors duration-200 hover:border-black/10 hover:text-gray-900 dark:text-[#9CA3AF] dark:hover:border-white/10 dark:hover:text-white`
+              }
             >
               Log in
             </Link>
             <Link
               href="/register"
-              className={`px-5 py-2 text-sm font-semibold ${
+              className={
                 isBrand
-                  ? brandCtaClass
-                  : `${brandButtonRadiusClass} bg-gradient-to-r from-[#7C3AED] to-[#2563EB] text-white shadow-[0_0_20px_rgba(124,58,237,0.4)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_40px_rgba(124,58,237,0.7)]`
-              }`}
+                  ? 'rounded-full border border-transparent px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-950 transition-all duration-200 hover:border-neutral-300 dark:text-white dark:hover:border-neutral-600'
+                  : `px-5 py-2 text-sm font-semibold ${brandButtonRadiusClass} bg-gradient-to-r from-[#7C3AED] to-[#2563EB] text-white shadow-[0_0_20px_rgba(124,58,237,0.4)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_40px_rgba(124,58,237,0.7)]`
+              }
             >
               Sign up
             </Link>

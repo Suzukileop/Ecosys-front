@@ -73,6 +73,23 @@ import {
   type PortfolioSectionBackgroundSettings,
 } from '@/components/portfolio/portfolio-section-background-settings';
 import type { PortfolioSectionCopy } from '@/components/portfolio/portfolio-settings-types';
+import {
+  SERVICES_HEADER_ACCENT_COUNT_ALIGNMENTS,
+  SERVICES_HEADER_BILLBOARD_WORD_STYLES,
+  SERVICES_HEADER_DESIGNS,
+  SERVICES_HEADER_MARGIN_BOTTOM_STEPS,
+  SERVICES_HEADER_PALETTE_TOKENS,
+  SERVICES_HEADER_TITLE_SIZES,
+  SERVICES_HEADER_TITLE_WEIGHTS,
+  type PortfolioServicesHeaderAccentCountAlignment,
+  type PortfolioServicesHeaderBillboardWordStyle,
+  type PortfolioServicesHeaderDesign,
+  type PortfolioServicesHeaderDesignAlignment,
+  type PortfolioServicesHeaderMarginBottom,
+  type PortfolioServicesHeaderPaletteToken,
+  type PortfolioServicesHeaderTitleSize,
+  type PortfolioServicesHeaderTitleWeight,
+} from '@/components/portfolio/portfolio-services-header-settings';
 
 export type PortfolioServicesTitlePreset =
   | 'services-skills'
@@ -98,6 +115,373 @@ export type PortfolioServicesLayoutMode = 'combined' | 'separated';
 export type PortfolioServicesSectionOrganization = 'combined' | 'separated' | 'distinct';
 
 export type PortfolioServicesBlockScope = 'skills' | 'services';
+
+/**
+ * Body/content design for the Services section (Design tab) — independent of the shared
+ * GSAP header above. The legacy `carousel` layout (EditorialServicesCarousel) has been
+ * removed; any stored `carousel` value (or other unrecognized value) resolves to the
+ * default below.
+ */
+export type PortfolioServicesSectionDesign =
+  | 'showcase-hero'
+  | 'services-pricing-grid'
+  | 'services-pricing-bento'
+  | 'services-pricing-monolith'
+  | 'services-pricing-aurora'
+  | 'services-pricing-toggle';
+
+export const DEFAULT_PORTFOLIO_SERVICES_SECTION_DESIGN: PortfolioServicesSectionDesign = 'showcase-hero';
+
+export const PORTFOLIO_SERVICES_SECTION_DESIGNS: readonly PortfolioServicesSectionDesign[] = [
+  'showcase-hero',
+  'services-pricing-grid',
+  'services-pricing-bento',
+  'services-pricing-monolith',
+  'services-pricing-aurora',
+  'services-pricing-toggle',
+];
+
+export function resolveServicesSectionDesign(value: unknown): PortfolioServicesSectionDesign {
+  return typeof value === 'string' &&
+    (PORTFOLIO_SERVICES_SECTION_DESIGNS as readonly string[]).includes(value)
+    ? (value as PortfolioServicesSectionDesign)
+    : DEFAULT_PORTFOLIO_SERVICES_SECTION_DESIGN;
+}
+
+export const PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS: {
+  value: PortfolioServicesSectionDesign;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'showcase-hero',
+    label: 'Showcase Hero',
+    description:
+      'Full-bleed cinematic hero — a tilted thumbnail with an overlapping display title, magnetic edge arrows, mouse parallax, and split-text reveals on every transition.',
+  },
+  {
+    value: 'services-pricing-grid',
+    label: 'Pricing Grid',
+    description:
+      'Three-tier editorial pricing cards — a centered popular plan with a radical color inversion, borderless opacity-0.6 feature lists, a magnetic "Get started" CTA to Contact, and a GSAP 3D-tilt/focus-blur hover.',
+  },
+  {
+    value: 'services-pricing-bento',
+    label: 'Pricing Bento',
+    description:
+      'Two-tier bento composition — one card carries a textured, asymmetric graphic header in the palette accent; bullet-less features float at 0.5 opacity with generous line-height.',
+  },
+  {
+    value: 'services-pricing-monolith',
+    label: 'Pricing Monolith',
+    description:
+      'Borderless glassmorphic cards with monumental, ultra-tight display pricing, capital micro-labels, a theatrical 3D-tilt/motion-blur hover, and a magnetic "[ Get Started → ]" link.',
+  },
+  {
+    value: 'services-pricing-aurora',
+    label: 'Pricing Aurora',
+    description:
+      'Glassmorphic three-tier grid with a gradient-border focus on the popular plan, massive tight-leading prices, and a magnetic bracket CTA.',
+  },
+  {
+    value: 'services-pricing-toggle',
+    label: 'Pricing Toggle',
+    description:
+      'Horizontal three-row layout with a spring-physics Monthly/Yearly switch, an animated price transition, and a full-color-inversion popular row.',
+  },
+];
+
+/** One of 4 fixed palette tokens the creator can pick for the popular card's fill — always a
+ *  real color from the active theme palette, never a free hex picker. */
+export type PortfolioServicesPricingGridPopularColorToken = 'principal' | 'secondaire' | 'texteFort' | 'neutre';
+
+/** Options that apply only when `sectionDesign === 'services-pricing-grid'`. */
+export type PortfolioServicesPricingGridSettings = {
+  /** 0-based index of the service that renders as the centered, elevated "popular" tier. */
+  popularIndex: number;
+  /** Micro-label on the popular card's badge ("Popular", "Top"…). Empty hides it. */
+  popularBadgeLabel: string;
+  /** Small suffix after the price ("/ month"…). Hidden on Free / price-on-request cards. */
+  periodLabel: string;
+  /** CTA button label — the real data model has no per-item CTA text field. */
+  ctaLabel: string;
+  /** Which palette token fills the popular card's background (dark mode). */
+  popularColorToken: PortfolioServicesPricingGridPopularColorToken;
+};
+
+export const DEFAULT_SERVICES_PRICING_GRID_SETTINGS: PortfolioServicesPricingGridSettings = {
+  popularIndex: 1,
+  popularBadgeLabel: 'Popular',
+  periodLabel: '/ month',
+  ctaLabel: 'Get started',
+  popularColorToken: 'principal',
+};
+
+export function mergeServicesPricingGridSettings(
+  base: PortfolioServicesPricingGridSettings,
+  patch: unknown
+): PortfolioServicesPricingGridSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    popularIndex:
+      typeof record.popularIndex === 'number' && Number.isFinite(record.popularIndex)
+        ? Math.max(0, Math.round(record.popularIndex))
+        : base.popularIndex,
+    popularBadgeLabel:
+      typeof record.popularBadgeLabel === 'string' ? record.popularBadgeLabel : base.popularBadgeLabel,
+    periodLabel: typeof record.periodLabel === 'string' ? record.periodLabel : base.periodLabel,
+    ctaLabel:
+      typeof record.ctaLabel === 'string' && record.ctaLabel.trim()
+        ? record.ctaLabel.trim()
+        : base.ctaLabel,
+    popularColorToken:
+      record.popularColorToken === 'principal' ||
+      record.popularColorToken === 'secondaire' ||
+      record.popularColorToken === 'texteFort' ||
+      record.popularColorToken === 'neutre'
+        ? record.popularColorToken
+        : base.popularColorToken,
+  };
+}
+
+/** Options that apply only when `sectionDesign === 'services-pricing-bento'`. */
+export type PortfolioServicesPricingBentoSettings = {
+  /** Index (within the rendered service list) of the card that gets the textured,
+   *  asymmetric graphic header. Clamped to the available items at render time. */
+  graphicHeaderIndex: number;
+  /** Small suffix shown after a non-free price (e.g. "/ project", "/ mo"). Empty hides it. */
+  periodLabel: string;
+  /** Label on every card's CTA button (routes to the Contact section). */
+  ctaLabel: string;
+};
+
+export const DEFAULT_SERVICES_PRICING_BENTO_SETTINGS: PortfolioServicesPricingBentoSettings = {
+  graphicHeaderIndex: 0,
+  periodLabel: '/ project',
+  ctaLabel: 'Get Started',
+};
+
+export function mergeServicesPricingBentoSettings(
+  base: PortfolioServicesPricingBentoSettings,
+  patch: unknown
+): PortfolioServicesPricingBentoSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    graphicHeaderIndex:
+      typeof record.graphicHeaderIndex === 'number' && Number.isFinite(record.graphicHeaderIndex)
+        ? Math.max(0, Math.round(record.graphicHeaderIndex))
+        : base.graphicHeaderIndex,
+    periodLabel: typeof record.periodLabel === 'string' ? record.periodLabel : base.periodLabel,
+    ctaLabel:
+      typeof record.ctaLabel === 'string' && record.ctaLabel.trim()
+        ? record.ctaLabel.trim()
+        : base.ctaLabel,
+  };
+}
+
+/** Options that apply only when `sectionDesign === 'services-pricing-monolith'`. */
+export type PortfolioServicesPricingMonolithColumns = 1 | 2 | 3 | 4;
+
+export type PortfolioServicesPricingMonolithSettings = {
+  /** 0-based item index rendered as the "Popular" focal tier. */
+  popularIndex: number;
+  /** Suffix after the price on paid tiers, e.g. "/ month", "/ life". */
+  periodLabel: string;
+  /** Whether the period suffix renders at all. */
+  showPeriod: boolean;
+  /** The magnetic CTA link label ("[ Get Started → ]"). */
+  ctaLabel: string;
+  /** Cards per row on tablet/desktop. Always capped to the number of services and
+   *  centered (via flexbox, not CSS grid) when the last row doesn't fill every column —
+   *  mobile always stays a single stacked column regardless of this value. */
+  cardsPerRow: PortfolioServicesPricingMonolithColumns;
+};
+
+export const DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS: PortfolioServicesPricingMonolithSettings = {
+  popularIndex: 1,
+  periodLabel: '/ month',
+  showPeriod: true,
+  ctaLabel: 'Get Started',
+  cardsPerRow: 3,
+};
+
+export function mergeServicesPricingMonolithSettings(
+  base: PortfolioServicesPricingMonolithSettings,
+  patch: unknown
+): PortfolioServicesPricingMonolithSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    popularIndex:
+      typeof record.popularIndex === 'number' && Number.isFinite(record.popularIndex)
+        ? Math.trunc(record.popularIndex)
+        : base.popularIndex,
+    periodLabel:
+      typeof record.periodLabel === 'string' && record.periodLabel.trim()
+        ? record.periodLabel
+        : base.periodLabel,
+    showPeriod: typeof record.showPeriod === 'boolean' ? record.showPeriod : base.showPeriod,
+    ctaLabel:
+      typeof record.ctaLabel === 'string' && record.ctaLabel.trim()
+        ? record.ctaLabel.trim()
+        : base.ctaLabel,
+    cardsPerRow:
+      record.cardsPerRow === 1 || record.cardsPerRow === 2 || record.cardsPerRow === 3 || record.cardsPerRow === 4
+        ? record.cardsPerRow
+        : base.cardsPerRow,
+  };
+}
+
+export const PORTFOLIO_SERVICES_PRICING_MONOLITH_COLUMNS_OPTIONS: {
+  value: PortfolioServicesPricingMonolithColumns;
+  label: string;
+  description: string;
+}[] = [
+  { value: 1, label: '1 per row', description: 'Full-width cards, stacked — a large editorial spotlight per plan.' },
+  { value: 2, label: '2 per row', description: 'Wide side-by-side pairing.' },
+  { value: 3, label: '3 per row', description: 'Classic three-tier grid (default).' },
+  { value: 4, label: '4 per row', description: 'Compact grid for larger service catalogs.' },
+];
+
+export type PortfolioServicesPricingAuroraColumns = 1 | 2 | 3 | 4;
+/** One of 4 fixed palette tokens the creator can pick for the featured card's accent —
+ *  same convention as Pricing Grid's `popularColorToken`, always a real palette color. */
+export type PortfolioServicesPricingAuroraPopularColorToken = 'principal' | 'secondaire' | 'texteFort' | 'neutre';
+
+/** Options that apply only when `sectionDesign === 'services-pricing-aurora'`. */
+export type PortfolioServicesPricingAuroraSettings = {
+  /** 0-based index into the real (filtered) services list that gets the featured-card
+   *  accent treatment. */
+  popularIndex: number;
+  /** Suffix shown after a numeric price, e.g. "/ month". Empty hides it. */
+  periodLabel: string;
+  /** Magnetic CTA label, e.g. "Try for free". */
+  ctaLabel: string;
+  /** Cards per row on tablet/desktop; mobile always stays a single stacked column. */
+  cardsPerRow: PortfolioServicesPricingAuroraColumns;
+  /** Which palette token drives the featured card's gradient-border/glass-tint accent. */
+  popularColorToken: PortfolioServicesPricingAuroraPopularColorToken;
+};
+
+export const DEFAULT_SERVICES_PRICING_AURORA_SETTINGS: PortfolioServicesPricingAuroraSettings = {
+  popularIndex: 1,
+  periodLabel: '/ month',
+  ctaLabel: 'Try for free',
+  cardsPerRow: 3,
+  popularColorToken: 'principal',
+};
+
+export function mergeServicesPricingAuroraSettings(
+  base: PortfolioServicesPricingAuroraSettings,
+  patch: unknown
+): PortfolioServicesPricingAuroraSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    popularIndex:
+      typeof record.popularIndex === 'number' && Number.isFinite(record.popularIndex)
+        ? Math.max(0, Math.round(record.popularIndex))
+        : base.popularIndex,
+    periodLabel: typeof record.periodLabel === 'string' ? record.periodLabel : base.periodLabel,
+    ctaLabel:
+      typeof record.ctaLabel === 'string' && record.ctaLabel.trim()
+        ? record.ctaLabel.trim()
+        : base.ctaLabel,
+    cardsPerRow:
+      record.cardsPerRow === 1 || record.cardsPerRow === 2 || record.cardsPerRow === 3 || record.cardsPerRow === 4
+        ? record.cardsPerRow
+        : base.cardsPerRow,
+    popularColorToken:
+      record.popularColorToken === 'principal' ||
+      record.popularColorToken === 'secondaire' ||
+      record.popularColorToken === 'texteFort' ||
+      record.popularColorToken === 'neutre'
+        ? record.popularColorToken
+        : base.popularColorToken,
+  };
+}
+
+export const PORTFOLIO_SERVICES_PRICING_AURORA_COLUMNS_OPTIONS: {
+  value: PortfolioServicesPricingAuroraColumns;
+  label: string;
+  description: string;
+}[] = [
+  { value: 1, label: '1 per row', description: 'Full-width cards, stacked — a large editorial spotlight per plan.' },
+  { value: 2, label: '2 per row', description: 'Wide side-by-side pairing.' },
+  { value: 3, label: '3 per row', description: 'Classic three-tier grid (default).' },
+  { value: 4, label: '4 per row', description: 'Compact grid for larger service catalogs.' },
+];
+
+/** Options that apply only when `sectionDesign === 'services-pricing-toggle'`. */
+export type PortfolioServicesPricingToggleBillingCycle = 'monthly' | 'yearly';
+
+export type PortfolioServicesPricingToggleSettings = {
+  /** Which visible row (0-indexed) gets the full color-inversion treatment. */
+  popularIndex: number;
+  /** Small label on the popular row's badge. Empty hides the badge. */
+  popularBadgeLabel: string;
+  /** Suffix after the monthly price, e.g. "/ month". */
+  periodMonthlyLabel: string;
+  /** Suffix after the yearly price, e.g. "/ year". */
+  periodYearlyLabel: string;
+  /** No separate yearly price exists on a service (only `basePriceCents`), so Yearly is
+   *  derived: monthly x 12 x (1 - discount / 100). */
+  yearlyDiscountPercent: number;
+  /** CTA pill label on every row. */
+  ctaLabel: string;
+  /** Toggle position on first paint. */
+  defaultBilling: PortfolioServicesPricingToggleBillingCycle;
+};
+
+export const DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS: PortfolioServicesPricingToggleSettings = {
+  popularIndex: 0,
+  popularBadgeLabel: 'Most popular',
+  periodMonthlyLabel: '/ month',
+  periodYearlyLabel: '/ year',
+  yearlyDiscountPercent: 15,
+  ctaLabel: 'Get Started',
+  defaultBilling: 'monthly',
+};
+
+export function mergeServicesPricingToggleSettings(
+  base: PortfolioServicesPricingToggleSettings,
+  patch: unknown
+): PortfolioServicesPricingToggleSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    popularIndex:
+      typeof record.popularIndex === 'number' && Number.isFinite(record.popularIndex)
+        ? Math.max(0, Math.round(record.popularIndex))
+        : base.popularIndex,
+    popularBadgeLabel:
+      typeof record.popularBadgeLabel === 'string'
+        ? record.popularBadgeLabel.trim().slice(0, 40)
+        : base.popularBadgeLabel,
+    periodMonthlyLabel:
+      typeof record.periodMonthlyLabel === 'string' && record.periodMonthlyLabel.trim()
+        ? record.periodMonthlyLabel.trim().slice(0, 24)
+        : base.periodMonthlyLabel,
+    periodYearlyLabel:
+      typeof record.periodYearlyLabel === 'string' && record.periodYearlyLabel.trim()
+        ? record.periodYearlyLabel.trim().slice(0, 24)
+        : base.periodYearlyLabel,
+    yearlyDiscountPercent:
+      typeof record.yearlyDiscountPercent === 'number' && Number.isFinite(record.yearlyDiscountPercent)
+        ? Math.min(90, Math.max(0, Math.round(record.yearlyDiscountPercent)))
+        : base.yearlyDiscountPercent,
+    ctaLabel:
+      typeof record.ctaLabel === 'string' && record.ctaLabel.trim()
+        ? record.ctaLabel.trim().slice(0, 32)
+        : base.ctaLabel,
+    defaultBilling:
+      record.defaultBilling === 'monthly' || record.defaultBilling === 'yearly'
+        ? record.defaultBilling
+        : base.defaultBilling,
+  };
+}
 
 export type PortfolioServicesBlockSettings = PortfolioServicesCardBackgroundSettings &
   PortfolioServicesCardDecorSettings & {
@@ -488,8 +872,122 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
   titleColor: string;
   subtitleColor: string;
   headerAlignment: PortfolioServicesHeaderAlignment;
+  /**
+   * Header — one shared, GSAP-animated header mounted above the Services section, copied
+   * 1:1 from the Portfolio/Work section's "Header" mechanism (services-portfolio-header-designs/*).
+   * Independent of the section's own per-design layout (Design tab).
+   */
+  headerDesign: PortfolioServicesHeaderDesign;
+  /** Master switch for the header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
+  headerAnimationEnabled: boolean;
+  headerDesignAlignment: PortfolioServicesHeaderDesignAlignment;
+  /** Bottom spacing under every header design — shared across all of them. */
+  headerMarginBottom: PortfolioServicesHeaderMarginBottom;
+  /** Title size/weight — shared across every header design. */
+  headerTitleSize: PortfolioServicesHeaderTitleSize;
+  headerTitleWeight: PortfolioServicesHeaderTitleWeight;
+  /** Header accent count — badge text supports a {count} token for the service count. */
+  headerAccentCountBadgeText: string;
+  headerAccentCountLeadText: string;
+  /** Header accent count — badge and lead bound to a palette token, independently. */
+  headerAccentCountBadgeColor: PortfolioServicesHeaderPaletteToken;
+  headerAccentCountLeadColor: PortfolioServicesHeaderPaletteToken;
+  /** Header accent count — one size/weight for the whole line (badge + lead flow together). */
+  headerAccentCountSize: PortfolioServicesHeaderTitleSize;
+  headerAccentCountWeight: PortfolioServicesHeaderTitleWeight;
+  /** Header accent count — its own 3-way alignment (adds "right", unlike the shared control). */
+  headerAccentCountAlignment: PortfolioServicesHeaderAccentCountAlignment;
+  /** Header serif lead — small label above the large serif title. */
+  headerSerifLeadLabelText: string;
+  /** Header serif lead — the large serif title itself, independent of the section title. */
+  headerSerifLeadTitleText: string;
+  /** Header serif lead — each element bound to a palette token, independently. */
+  headerSerifLeadLabelColor: PortfolioServicesHeaderPaletteToken;
+  headerSerifLeadTitleColor: PortfolioServicesHeaderPaletteToken;
+  headerSerifLeadSubtitleColor: PortfolioServicesHeaderPaletteToken;
+  /** Header serif lead — each element sized/weighted independently. */
+  headerSerifLeadLabelSize: PortfolioServicesHeaderTitleSize;
+  headerSerifLeadTitleSize: PortfolioServicesHeaderTitleSize;
+  headerSerifLeadSubtitleSize: PortfolioServicesHeaderTitleSize;
+  headerSerifLeadLabelWeight: PortfolioServicesHeaderTitleWeight;
+  headerSerifLeadTitleWeight: PortfolioServicesHeaderTitleWeight;
+  headerSerifLeadSubtitleWeight: PortfolioServicesHeaderTitleWeight;
+  /** Header billboard — big faint background word + a {count}-token line. */
+  headerBillboardBigWord: string;
+  headerBillboardCountText: string;
+  /** Header billboard — the editorial split title beneath the big word, independent of the section title. */
+  headerBillboardTitleText: string;
+  /** Header billboard — outline (stroke only) or fill (solid) big word. */
+  headerBillboardWordStyle: PortfolioServicesHeaderBillboardWordStyle;
+  /** Header billboard — each element bound to a palette token, independently. */
+  headerBillboardWordColor: PortfolioServicesHeaderPaletteToken;
+  headerBillboardTitleColor: PortfolioServicesHeaderPaletteToken;
+  headerBillboardMetaColor: PortfolioServicesHeaderPaletteToken;
+  /** Header split heading — small label on the side opposite the narrative title. */
+  headerSplitHeadingLabelText: string;
+  /** Header split heading — the narrative title itself, independent of the section title. */
+  headerSplitHeadingTitleText: string;
+  /** Header split heading — each element bound to a palette token, independently. */
+  headerSplitHeadingTitleColor: PortfolioServicesHeaderPaletteToken;
+  headerSplitHeadingLabelColor: PortfolioServicesHeaderPaletteToken;
+  /** Header split heading — each element sized/weighted independently. */
+  headerSplitHeadingTitleSize: PortfolioServicesHeaderTitleSize;
+  headerSplitHeadingTitleWeight: PortfolioServicesHeaderTitleWeight;
+  headerSplitHeadingLabelSize: PortfolioServicesHeaderTitleSize;
+  headerSplitHeadingLabelWeight: PortfolioServicesHeaderTitleWeight;
+  /** Header masthead — up to 3 independent lines, monumental headline text,
+   *  each stacked into the mast (no more period-splitting a single string). */
+  headerMastheadLine1Text: string;
+  headerMastheadLine2Text: string;
+  headerMastheadLine3Text: string;
+  /** Header masthead — one color for the whole headline, across every line. */
+  headerMastheadHeadlineColor: PortfolioServicesHeaderPaletteToken;
+  /** Header masthead — one size/weight for the whole headline, across every line. */
+  headerMastheadHeadlineSize: PortfolioServicesHeaderTitleSize;
+  headerMastheadHeadlineWeight: PortfolioServicesHeaderTitleWeight;
+  /** Header index — small label on the top divider rule (e.g. "Index", "Catalog"). */
+  headerIndexLabelText: string;
+  /** Header index — the title beside the counting numeral, independent of the section title. */
+  headerIndexTitleText: string;
+  /** Header index — caption under the counter (e.g. "Services"). Empty falls back to automatic pluralization. */
+  headerIndexCountLabelText: string;
+  /** Header index — the small subtitle under the title, independent of the section subtitle. */
+  headerIndexSubtitleText: string;
+  /** Header index — each element bound to a palette token, independently. */
+  headerIndexLabelColor: PortfolioServicesHeaderPaletteToken;
+  headerIndexNumberColor: PortfolioServicesHeaderPaletteToken;
+  headerIndexTitleColor: PortfolioServicesHeaderPaletteToken;
+  headerIndexSubtitleColor: PortfolioServicesHeaderPaletteToken;
+  /** Header index — each element sized/weighted independently. */
+  headerIndexLabelSize: PortfolioServicesHeaderTitleSize;
+  headerIndexLabelWeight: PortfolioServicesHeaderTitleWeight;
+  headerIndexTitleSize: PortfolioServicesHeaderTitleSize;
+  headerIndexTitleWeight: PortfolioServicesHeaderTitleWeight;
+  headerIndexSubtitleSize: PortfolioServicesHeaderTitleSize;
+  headerIndexSubtitleWeight: PortfolioServicesHeaderTitleWeight;
+  /** Header marquee — up to 4 independent words in the repeating band, each its own field (empty slots are dropped). */
+  headerMarqueeWord1Text: string;
+  headerMarqueeWord2Text: string;
+  headerMarqueeWord3Text: string;
+  headerMarqueeWord4Text: string;
+  /** Header marquee — alternating fill/outline words bound to one palette token. */
+  headerMarqueeWordColor: PortfolioServicesHeaderPaletteToken;
+  /** Header marquee — scales the repeating word band. */
+  headerMarqueeSize: PortfolioServicesHeaderTitleSize;
   sectionOrganization: PortfolioServicesSectionOrganization;
   layoutMode: PortfolioServicesLayoutMode;
+  /** Body/content design for the section (Design tab) — see PortfolioServicesSectionDesign. */
+  sectionDesign: PortfolioServicesSectionDesign;
+  /** Pricing Grid design–only options. */
+  pricingGrid: PortfolioServicesPricingGridSettings;
+  /** Pricing Bento design–only options. */
+  pricingBento: PortfolioServicesPricingBentoSettings;
+  /** Pricing Monolith design–only options. */
+  servicesPricingMonolith: PortfolioServicesPricingMonolithSettings;
+  /** Pricing Aurora design–only options. */
+  servicesPricingAurora: PortfolioServicesPricingAuroraSettings;
+  /** Pricing Toggle design–only options. */
+  pricingToggle: PortfolioServicesPricingToggleSettings;
   displayMode: PortfolioServicesDisplayMode;
   /**
    * Entrance motion for Deck diagonal (ignored for other display modes).
@@ -740,6 +1238,24 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
 };
 
 export type PortfolioServicesSectionSettings = PortfolioSectionCopy & PortfolioServicesPresentationSettings;
+
+export {
+  PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS,
+  SERVICES_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
+  SERVICES_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
+  SERVICES_HEADER_PALETTE_TOKEN_OPTIONS,
+  servicesHeaderDesignFontClass,
+  servicesHeaderDesignFontStyle,
+  servicesHeaderPaletteTokenColor,
+  type PortfolioServicesHeaderAccentCountAlignment,
+  type PortfolioServicesHeaderBillboardWordStyle,
+  type PortfolioServicesHeaderDesign,
+  type PortfolioServicesHeaderDesignAlignment,
+  type PortfolioServicesHeaderMarginBottom,
+  type PortfolioServicesHeaderPaletteToken,
+  type PortfolioServicesHeaderTitleSize,
+  type PortfolioServicesHeaderTitleWeight,
+} from '@/components/portfolio/portfolio-services-header-settings';
 
 export const DEFAULT_SERVICES_TITLE_COLOR = '#0a0a0a';
 export const DEFAULT_SERVICES_SUBTITLE_COLOR = '#737373';
@@ -1386,8 +1902,79 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   titleColor: DEFAULT_SERVICES_TITLE_COLOR,
   subtitleColor: DEFAULT_SERVICES_SUBTITLE_COLOR,
   headerAlignment: 'left' as const,
+  headerDesign: 'editorial' as const,
+  headerAnimationEnabled: true as const,
+  headerDesignAlignment: 'left' as const,
+  headerMarginBottom: 'md' as const,
+  headerTitleSize: 'md' as const,
+  headerTitleWeight: 'regular' as const,
+  headerAccentCountBadgeText: '' as const,
+  headerAccentCountLeadText: '' as const,
+  headerAccentCountBadgeColor: 'principal' as const,
+  headerAccentCountLeadColor: 'secondaire' as const,
+  headerAccentCountSize: 'md' as const,
+  headerAccentCountWeight: 'regular' as const,
+  headerAccentCountAlignment: 'left' as const,
+  headerSerifLeadLabelText: '' as const,
+  headerSerifLeadTitleText: '' as const,
+  headerSerifLeadLabelColor: 'texteFort' as const,
+  headerSerifLeadTitleColor: 'texteFort' as const,
+  headerSerifLeadSubtitleColor: 'texteFort' as const,
+  headerSerifLeadLabelSize: 'md' as const,
+  headerSerifLeadTitleSize: 'md' as const,
+  headerSerifLeadSubtitleSize: 'md' as const,
+  headerSerifLeadLabelWeight: 'regular' as const,
+  headerSerifLeadTitleWeight: 'regular' as const,
+  headerSerifLeadSubtitleWeight: 'regular' as const,
+  headerBillboardBigWord: '' as const,
+  headerBillboardCountText: '' as const,
+  headerBillboardTitleText: '' as const,
+  headerBillboardWordStyle: 'outline' as const,
+  headerBillboardWordColor: 'principal' as const,
+  headerBillboardTitleColor: 'principal' as const,
+  headerBillboardMetaColor: 'secondaire' as const,
+  headerSplitHeadingLabelText: '' as const,
+  headerSplitHeadingTitleText: '' as const,
+  headerSplitHeadingTitleColor: 'principal' as const,
+  headerSplitHeadingLabelColor: 'secondaire' as const,
+  headerSplitHeadingTitleSize: 'md' as const,
+  headerSplitHeadingTitleWeight: 'regular' as const,
+  headerSplitHeadingLabelSize: 'md' as const,
+  headerSplitHeadingLabelWeight: 'regular' as const,
+  headerMastheadLine1Text: '' as const,
+  headerMastheadLine2Text: '' as const,
+  headerMastheadLine3Text: '' as const,
+  headerMastheadHeadlineColor: 'principal' as const,
+  headerMastheadHeadlineSize: 'md' as const,
+  headerMastheadHeadlineWeight: 'regular' as const,
+  headerIndexLabelText: '' as const,
+  headerIndexTitleText: '' as const,
+  headerIndexCountLabelText: '' as const,
+  headerIndexSubtitleText: '' as const,
+  headerIndexLabelColor: 'texteFort' as const,
+  headerIndexNumberColor: 'principal' as const,
+  headerIndexTitleColor: 'texteFort' as const,
+  headerIndexSubtitleColor: 'texteFort' as const,
+  headerIndexLabelSize: 'md' as const,
+  headerIndexLabelWeight: 'regular' as const,
+  headerIndexTitleSize: 'md' as const,
+  headerIndexTitleWeight: 'regular' as const,
+  headerIndexSubtitleSize: 'md' as const,
+  headerIndexSubtitleWeight: 'regular' as const,
+  headerMarqueeWord1Text: '' as const,
+  headerMarqueeWord2Text: '' as const,
+  headerMarqueeWord3Text: '' as const,
+  headerMarqueeWord4Text: '' as const,
+  headerMarqueeWordColor: 'principal' as const,
+  headerMarqueeSize: 'md' as const,
   sectionOrganization: 'distinct' as const,
   layoutMode: 'separated' as const,
+  sectionDesign: 'showcase-hero' as const,
+  pricingGrid: { ...DEFAULT_SERVICES_PRICING_GRID_SETTINGS },
+  pricingBento: { ...DEFAULT_SERVICES_PRICING_BENTO_SETTINGS },
+  servicesPricingMonolith: { ...DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS },
+  servicesPricingAurora: { ...DEFAULT_SERVICES_PRICING_AURORA_SETTINGS },
+  pricingToggle: { ...DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS },
   displayMode: 'grid' as const,
   deckEntranceEffect: 'expand' as const,
   servicesMarqueeDirection: 'left' as const,
@@ -5579,8 +6166,321 @@ export function mergeServicesPresentation(
     titleColor: sanitizeHex(record.titleColor, base.titleColor),
     subtitleColor: sanitizeHex(record.subtitleColor, base.subtitleColor),
     headerAlignment: pick(record.headerAlignment, ['left', 'center'], base.headerAlignment),
+    headerDesign: pick(record.headerDesign, SERVICES_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
+    headerAnimationEnabled:
+      typeof record.headerAnimationEnabled === 'boolean'
+        ? record.headerAnimationEnabled
+        : (base.headerAnimationEnabled ?? true),
+    headerDesignAlignment: pick(
+      record.headerDesignAlignment,
+      ['left', 'center', 'right'] as const,
+      base.headerDesignAlignment ?? 'left'
+    ),
+    headerMarginBottom: pick(
+      record.headerMarginBottom,
+      SERVICES_HEADER_MARGIN_BOTTOM_STEPS,
+      base.headerMarginBottom ?? 'md'
+    ),
+    headerTitleSize: pick(record.headerTitleSize, SERVICES_HEADER_TITLE_SIZES, base.headerTitleSize ?? 'md'),
+    headerTitleWeight: pick(
+      record.headerTitleWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerTitleWeight ?? 'regular'
+    ),
+    headerAccentCountBadgeText:
+      typeof record.headerAccentCountBadgeText === 'string'
+        ? record.headerAccentCountBadgeText
+        : (base.headerAccentCountBadgeText ?? ''),
+    headerAccentCountLeadText:
+      typeof record.headerAccentCountLeadText === 'string'
+        ? record.headerAccentCountLeadText
+        : (base.headerAccentCountLeadText ?? ''),
+    headerAccentCountBadgeColor: pick(
+      record.headerAccentCountBadgeColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerAccentCountBadgeColor ?? 'principal'
+    ),
+    headerAccentCountLeadColor: pick(
+      record.headerAccentCountLeadColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerAccentCountLeadColor ?? 'secondaire'
+    ),
+    headerAccentCountSize: pick(
+      record.headerAccentCountSize,
+      SERVICES_HEADER_TITLE_SIZES,
+      base.headerAccentCountSize ?? 'md'
+    ),
+    headerAccentCountWeight: pick(
+      record.headerAccentCountWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerAccentCountWeight ?? 'regular'
+    ),
+    headerAccentCountAlignment: pick(
+      record.headerAccentCountAlignment,
+      SERVICES_HEADER_ACCENT_COUNT_ALIGNMENTS,
+      base.headerAccentCountAlignment ?? 'left'
+    ),
+    headerSerifLeadLabelText:
+      typeof record.headerSerifLeadLabelText === 'string'
+        ? record.headerSerifLeadLabelText
+        : (base.headerSerifLeadLabelText ?? ''),
+    headerSerifLeadTitleText:
+      typeof record.headerSerifLeadTitleText === 'string'
+        ? record.headerSerifLeadTitleText
+        : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadLabelColor: pick(
+      record.headerSerifLeadLabelColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadLabelColor ?? 'texteFort'
+    ),
+    headerSerifLeadTitleColor: pick(
+      record.headerSerifLeadTitleColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadTitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadSubtitleColor: pick(
+      record.headerSerifLeadSubtitleColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadSubtitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadLabelSize: pick(
+      record.headerSerifLeadLabelSize,
+      SERVICES_HEADER_TITLE_SIZES,
+      base.headerSerifLeadLabelSize ?? 'md'
+    ),
+    headerSerifLeadTitleSize: pick(
+      record.headerSerifLeadTitleSize,
+      SERVICES_HEADER_TITLE_SIZES,
+      base.headerSerifLeadTitleSize ?? 'md'
+    ),
+    headerSerifLeadSubtitleSize: pick(
+      record.headerSerifLeadSubtitleSize,
+      SERVICES_HEADER_TITLE_SIZES,
+      base.headerSerifLeadSubtitleSize ?? 'md'
+    ),
+    headerSerifLeadLabelWeight: pick(
+      record.headerSerifLeadLabelWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadLabelWeight ?? 'regular'
+    ),
+    headerSerifLeadTitleWeight: pick(
+      record.headerSerifLeadTitleWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadTitleWeight ?? 'regular'
+    ),
+    headerSerifLeadSubtitleWeight: pick(
+      record.headerSerifLeadSubtitleWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadSubtitleWeight ?? 'regular'
+    ),
+    headerBillboardBigWord:
+      typeof record.headerBillboardBigWord === 'string'
+        ? record.headerBillboardBigWord
+        : (base.headerBillboardBigWord ?? ''),
+    headerBillboardCountText:
+      typeof record.headerBillboardCountText === 'string'
+        ? record.headerBillboardCountText
+        : (base.headerBillboardCountText ?? ''),
+    headerBillboardTitleText:
+      typeof record.headerBillboardTitleText === 'string'
+        ? record.headerBillboardTitleText
+        : (base.headerBillboardTitleText ?? ''),
+    headerBillboardWordStyle: pick(
+      record.headerBillboardWordStyle,
+      SERVICES_HEADER_BILLBOARD_WORD_STYLES,
+      base.headerBillboardWordStyle ?? 'outline'
+    ),
+    headerBillboardWordColor: pick(
+      record.headerBillboardWordColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerBillboardWordColor ?? 'principal'
+    ),
+    headerBillboardTitleColor: pick(
+      record.headerBillboardTitleColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerBillboardTitleColor ?? 'principal'
+    ),
+    headerBillboardMetaColor: pick(
+      record.headerBillboardMetaColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerBillboardMetaColor ?? 'secondaire'
+    ),
+    headerSplitHeadingLabelText:
+      typeof record.headerSplitHeadingLabelText === 'string'
+        ? record.headerSplitHeadingLabelText
+        : (base.headerSplitHeadingLabelText ?? ''),
+    headerSplitHeadingTitleText:
+      typeof record.headerSplitHeadingTitleText === 'string'
+        ? record.headerSplitHeadingTitleText
+        : (base.headerSplitHeadingTitleText ?? ''),
+    headerSplitHeadingTitleColor: pick(
+      record.headerSplitHeadingTitleColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerSplitHeadingTitleColor ?? 'principal'
+    ),
+    headerSplitHeadingLabelColor: pick(
+      record.headerSplitHeadingLabelColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerSplitHeadingLabelColor ?? 'secondaire'
+    ),
+    headerSplitHeadingTitleSize: pick(
+      record.headerSplitHeadingTitleSize,
+      SERVICES_HEADER_TITLE_SIZES,
+      base.headerSplitHeadingTitleSize ?? 'md'
+    ),
+    headerSplitHeadingTitleWeight: pick(
+      record.headerSplitHeadingTitleWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerSplitHeadingTitleWeight ?? 'regular'
+    ),
+    headerSplitHeadingLabelSize: pick(
+      record.headerSplitHeadingLabelSize,
+      SERVICES_HEADER_TITLE_SIZES,
+      base.headerSplitHeadingLabelSize ?? 'md'
+    ),
+    headerSplitHeadingLabelWeight: pick(
+      record.headerSplitHeadingLabelWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerSplitHeadingLabelWeight ?? 'regular'
+    ),
+    headerMastheadLine1Text:
+      typeof record.headerMastheadLine1Text === 'string'
+        ? record.headerMastheadLine1Text
+        : (base.headerMastheadLine1Text ?? ''),
+    headerMastheadLine2Text:
+      typeof record.headerMastheadLine2Text === 'string'
+        ? record.headerMastheadLine2Text
+        : (base.headerMastheadLine2Text ?? ''),
+    headerMastheadLine3Text:
+      typeof record.headerMastheadLine3Text === 'string'
+        ? record.headerMastheadLine3Text
+        : (base.headerMastheadLine3Text ?? ''),
+    headerMastheadHeadlineColor: pick(
+      record.headerMastheadHeadlineColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerMastheadHeadlineColor ?? 'principal'
+    ),
+    headerMastheadHeadlineSize: pick(
+      record.headerMastheadHeadlineSize,
+      SERVICES_HEADER_TITLE_SIZES,
+      base.headerMastheadHeadlineSize ?? 'md'
+    ),
+    headerMastheadHeadlineWeight: pick(
+      record.headerMastheadHeadlineWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerMastheadHeadlineWeight ?? 'regular'
+    ),
+    headerIndexLabelText:
+      typeof record.headerIndexLabelText === 'string' ? record.headerIndexLabelText : (base.headerIndexLabelText ?? ''),
+    headerIndexTitleText:
+      typeof record.headerIndexTitleText === 'string' ? record.headerIndexTitleText : (base.headerIndexTitleText ?? ''),
+    headerIndexCountLabelText:
+      typeof record.headerIndexCountLabelText === 'string'
+        ? record.headerIndexCountLabelText
+        : (base.headerIndexCountLabelText ?? ''),
+    headerIndexSubtitleText:
+      typeof record.headerIndexSubtitleText === 'string'
+        ? record.headerIndexSubtitleText
+        : (base.headerIndexSubtitleText ?? ''),
+    headerIndexLabelColor: pick(
+      record.headerIndexLabelColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerIndexLabelColor ?? 'texteFort'
+    ),
+    headerIndexNumberColor: pick(
+      record.headerIndexNumberColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerIndexNumberColor ?? 'principal'
+    ),
+    headerIndexTitleColor: pick(
+      record.headerIndexTitleColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerIndexTitleColor ?? 'texteFort'
+    ),
+    headerIndexSubtitleColor: pick(
+      record.headerIndexSubtitleColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerIndexSubtitleColor ?? 'texteFort'
+    ),
+    headerIndexLabelSize: pick(
+      record.headerIndexLabelSize,
+      SERVICES_HEADER_TITLE_SIZES,
+      base.headerIndexLabelSize ?? 'md'
+    ),
+    headerIndexLabelWeight: pick(
+      record.headerIndexLabelWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerIndexLabelWeight ?? 'regular'
+    ),
+    headerIndexTitleSize: pick(
+      record.headerIndexTitleSize,
+      SERVICES_HEADER_TITLE_SIZES,
+      base.headerIndexTitleSize ?? 'md'
+    ),
+    headerIndexTitleWeight: pick(
+      record.headerIndexTitleWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerIndexTitleWeight ?? 'regular'
+    ),
+    headerIndexSubtitleSize: pick(
+      record.headerIndexSubtitleSize,
+      SERVICES_HEADER_TITLE_SIZES,
+      base.headerIndexSubtitleSize ?? 'md'
+    ),
+    headerIndexSubtitleWeight: pick(
+      record.headerIndexSubtitleWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerIndexSubtitleWeight ?? 'regular'
+    ),
+    headerMarqueeWord1Text:
+      typeof record.headerMarqueeWord1Text === 'string'
+        ? record.headerMarqueeWord1Text
+        : (base.headerMarqueeWord1Text ?? ''),
+    headerMarqueeWord2Text:
+      typeof record.headerMarqueeWord2Text === 'string'
+        ? record.headerMarqueeWord2Text
+        : (base.headerMarqueeWord2Text ?? ''),
+    headerMarqueeWord3Text:
+      typeof record.headerMarqueeWord3Text === 'string'
+        ? record.headerMarqueeWord3Text
+        : (base.headerMarqueeWord3Text ?? ''),
+    headerMarqueeWord4Text:
+      typeof record.headerMarqueeWord4Text === 'string'
+        ? record.headerMarqueeWord4Text
+        : (base.headerMarqueeWord4Text ?? ''),
+    headerMarqueeWordColor: pick(
+      record.headerMarqueeWordColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerMarqueeWordColor ?? 'principal'
+    ),
+    headerMarqueeSize: pick(record.headerMarqueeSize, SERVICES_HEADER_TITLE_SIZES, base.headerMarqueeSize ?? 'md'),
     sectionOrganization: 'distinct' as const,
     layoutMode,
+    sectionDesign: pick(
+      record.sectionDesign,
+      PORTFOLIO_SERVICES_SECTION_DESIGNS,
+      base.sectionDesign ?? DEFAULT_PORTFOLIO_SERVICES_SECTION_DESIGN
+    ),
+    pricingGrid: mergeServicesPricingGridSettings(
+      mergeServicesPricingGridSettings(DEFAULT_SERVICES_PRICING_GRID_SETTINGS, base.pricingGrid),
+      record.pricingGrid
+    ),
+    pricingBento: mergeServicesPricingBentoSettings(
+      mergeServicesPricingBentoSettings(DEFAULT_SERVICES_PRICING_BENTO_SETTINGS, base.pricingBento),
+      record.pricingBento
+    ),
+    servicesPricingMonolith: mergeServicesPricingMonolithSettings(
+      mergeServicesPricingMonolithSettings(DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS, base.servicesPricingMonolith),
+      record.servicesPricingMonolith
+    ),
+    servicesPricingAurora: mergeServicesPricingAuroraSettings(
+      mergeServicesPricingAuroraSettings(DEFAULT_SERVICES_PRICING_AURORA_SETTINGS, base.servicesPricingAurora),
+      record.servicesPricingAurora
+    ),
+    pricingToggle: mergeServicesPricingToggleSettings(
+      mergeServicesPricingToggleSettings(DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS, base.pricingToggle),
+      record.pricingToggle
+    ),
     displayMode: pick(record.displayMode, ['marquee', 'grid', 'stack', 'coverflow', 'deck'], base.displayMode),
     deckEntranceEffect: pick(
       record.deckEntranceEffect,

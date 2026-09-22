@@ -1,9 +1,15 @@
+import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import {
   resolveHeroPaletteColor,
   type PortfolioHeroPalette,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
+import {
+  createElementTextStyle,
+  normalizeElementTextStyle,
+  type PortfolioElementTextStyle,
+} from '@/components/portfolio/portfolio-element-text-style';
 import {
   mergeSectionColorMode,
   type PortfolioSectionColorMode,
@@ -14,6 +20,23 @@ import {
   type PortfolioSectionBackgroundSettings,
 } from '@/components/portfolio/portfolio-section-background-settings';
 import type { PortfolioSectionCopy } from '@/components/portfolio/portfolio-settings-types';
+import {
+  INFO_HEADER_ACCENT_COUNT_ALIGNMENTS,
+  INFO_HEADER_BILLBOARD_WORD_STYLES,
+  INFO_HEADER_DESIGNS,
+  INFO_HEADER_MARGIN_BOTTOM_STEPS,
+  INFO_HEADER_PALETTE_TOKENS,
+  INFO_HEADER_TITLE_SIZES,
+  INFO_HEADER_TITLE_WEIGHTS,
+  type PortfolioInfoHeaderAccentCountAlignment,
+  type PortfolioInfoHeaderBillboardWordStyle,
+  type PortfolioInfoHeaderDesign,
+  type PortfolioInfoHeaderDesignAlignment,
+  type PortfolioInfoHeaderMarginBottom,
+  type PortfolioInfoHeaderPaletteToken,
+  type PortfolioInfoHeaderTitleSize,
+  type PortfolioInfoHeaderTitleWeight,
+} from '@/components/portfolio/portfolio-info-header-settings';
 
 export type PortfolioInfoDesign =
   | 'about-me'
@@ -24,6 +47,7 @@ export type PortfolioInfoDesign =
   | 'about-portrait-skills'
   | 'about-manifesto'
   | 'about-terminal'
+  | 'about-index'
   | 'about-value-steps';
 
 /** How spoken-language proficiency is shown next to each language name. */
@@ -96,6 +120,26 @@ export type PortfolioInfoAboutValueBioColorToken =
   | 'texteFort'
   | 'texteMuted'
   | 'texteFaint';
+
+export type PortfolioInfoHeaderFont = 'sans' | 'serif' | 'display';
+
+export {
+  PORTFOLIO_INFO_HEADER_DESIGN_OPTIONS,
+  INFO_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
+  INFO_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
+  INFO_HEADER_PALETTE_TOKEN_OPTIONS,
+  infoHeaderDesignFontClass,
+  infoHeaderDesignFontStyle,
+  infoHeaderPaletteTokenColor,
+  type PortfolioInfoHeaderAccentCountAlignment,
+  type PortfolioInfoHeaderBillboardWordStyle,
+  type PortfolioInfoHeaderDesign,
+  type PortfolioInfoHeaderDesignAlignment,
+  type PortfolioInfoHeaderMarginBottom,
+  type PortfolioInfoHeaderPaletteToken,
+  type PortfolioInfoHeaderTitleSize,
+  type PortfolioInfoHeaderTitleWeight,
+} from '@/components/portfolio/portfolio-info-header-settings';
 
 export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettings & {
   design: PortfolioInfoDesign;
@@ -189,8 +233,6 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   aboutPlatformSkillsSectionTitle: string;
   /** About · platform — strengths split section title (left column). */
   aboutPlatformStrengthsSectionTitle: string;
-  /** About · platform — stagger bio + strengths list on the right (zigzag). */
-  aboutPlatformStaggerLayout: boolean;
   /** About · portrait skills — intro label above the languages list. */
   aboutPortraitSkillsMetaLead: string;
   /** About · portrait skills — show interests + languages paragraph at the bottom. */
@@ -199,6 +241,132 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   aboutManifestoBlocksLayout: PortfolioInfoAboutManifestoBlocksLayout;
   /** About · manifesto — blur non-centered blocks while scrolling. */
   aboutManifestoBlocksScrollFocus: boolean;
+  /** About · manifesto — optional typography override for the big statement line. */
+  aboutManifestoStatementStyleEnabled: boolean;
+  aboutManifestoStatementStyle: PortfolioElementTextStyle;
+  /** About · terminal — keep the console shell dark even when the section/global mode is light. */
+  aboutTerminalAlwaysDark: boolean;
+  titleFont: PortfolioInfoHeaderFont;
+  subtitleFont: PortfolioInfoHeaderFont;
+  /**
+   * Header — one shared, GSAP-animated header mounted above the Info section, copied
+   * from the Portfolio/Work section's Header mechanism (info-portfolio-header-designs/*).
+   * Independent of Design's per-design layout (about-me, about-split, etc.).
+   */
+  headerDesign: PortfolioInfoHeaderDesign;
+  /** Master switch for the header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
+  headerAnimationEnabled: boolean;
+  headerDesignAlignment: PortfolioInfoHeaderDesignAlignment;
+  /** Bottom spacing under every header design — shared across all of them. */
+  headerMarginBottom: PortfolioInfoHeaderMarginBottom;
+  /** Title size/weight — shared across every header design. */
+  headerTitleSize: PortfolioInfoHeaderTitleSize;
+  headerTitleWeight: PortfolioInfoHeaderTitleWeight;
+  /** Header accent count — badge text supports a {count} token for the visible info highlights. */
+  headerAccentCountBadgeText: string;
+  headerAccentCountLeadText: string;
+  /** Header accent count — badge and lead bound to a palette token, independently. */
+  headerAccentCountBadgeColor: PortfolioInfoHeaderPaletteToken;
+  headerAccentCountLeadColor: PortfolioInfoHeaderPaletteToken;
+  /** Header accent count — one size/weight for the whole line (badge + lead flow together). */
+  headerAccentCountSize: PortfolioInfoHeaderTitleSize;
+  headerAccentCountWeight: PortfolioInfoHeaderTitleWeight;
+  /** Header accent count — its own 3-way alignment (adds "right", unlike the shared control). */
+  headerAccentCountAlignment: PortfolioInfoHeaderAccentCountAlignment;
+  /** Header serif lead — small label above the large serif title. */
+  headerSerifLeadLabelText: string;
+  /** Header serif lead — the large serif title itself, independent of the section title. */
+  headerSerifLeadTitleText: string;
+  /** Header serif lead — each element bound to a palette token, independently. */
+  headerSerifLeadLabelColor: PortfolioInfoHeaderPaletteToken;
+  headerSerifLeadTitleColor: PortfolioInfoHeaderPaletteToken;
+  headerSerifLeadSubtitleColor: PortfolioInfoHeaderPaletteToken;
+  /** Header serif lead — each element sized/weighted independently. */
+  headerSerifLeadLabelSize: PortfolioInfoHeaderTitleSize;
+  headerSerifLeadTitleSize: PortfolioInfoHeaderTitleSize;
+  headerSerifLeadSubtitleSize: PortfolioInfoHeaderTitleSize;
+  headerSerifLeadLabelWeight: PortfolioInfoHeaderTitleWeight;
+  headerSerifLeadTitleWeight: PortfolioInfoHeaderTitleWeight;
+  headerSerifLeadSubtitleWeight: PortfolioInfoHeaderTitleWeight;
+  /** Header billboard — big faint background word + a {count}-token line. */
+  headerBillboardBigWord: string;
+  headerBillboardCountText: string;
+  /** Header billboard — the editorial split title beneath the big word, independent of the section title. */
+  headerBillboardTitleText: string;
+  /** Header billboard — outline (stroke only) or fill (solid) big word. */
+  headerBillboardWordStyle: PortfolioInfoHeaderBillboardWordStyle;
+  /** Header billboard — each element bound to a palette token, independently. */
+  headerBillboardWordColor: PortfolioInfoHeaderPaletteToken;
+  headerBillboardTitleColor: PortfolioInfoHeaderPaletteToken;
+  headerBillboardMetaColor: PortfolioInfoHeaderPaletteToken;
+  /** Header split heading — small label on the side opposite the narrative title. */
+  headerSplitHeadingLabelText: string;
+  /** Header split heading — the narrative title itself, independent of the section title. */
+  headerSplitHeadingTitleText: string;
+  /** Header split heading — each element bound to a palette token, independently. */
+  headerSplitHeadingTitleColor: PortfolioInfoHeaderPaletteToken;
+  headerSplitHeadingLabelColor: PortfolioInfoHeaderPaletteToken;
+  /** Header split heading — each element sized/weighted independently. */
+  headerSplitHeadingTitleSize: PortfolioInfoHeaderTitleSize;
+  headerSplitHeadingTitleWeight: PortfolioInfoHeaderTitleWeight;
+  headerSplitHeadingLabelSize: PortfolioInfoHeaderTitleSize;
+  headerSplitHeadingLabelWeight: PortfolioInfoHeaderTitleWeight;
+  /** Header masthead — up to 3 independent lines, monumental headline text, one shared color/size/weight. */
+  headerMastheadLine1Text: string;
+  headerMastheadLine2Text: string;
+  headerMastheadLine3Text: string;
+  /** Header masthead — one color for the whole headline, across every line. */
+  headerMastheadHeadlineColor: PortfolioInfoHeaderPaletteToken;
+  /** Header masthead — one size/weight for the whole headline, across every line. */
+  headerMastheadHeadlineSize: PortfolioInfoHeaderTitleSize;
+  headerMastheadHeadlineWeight: PortfolioInfoHeaderTitleWeight;
+  /** Header index — small label on the top divider rule (e.g. "Index", "Info"). */
+  headerIndexLabelText: string;
+  /** Header index — the title beside the counting numeral, independent of the section title. */
+  headerIndexTitleText: string;
+  /** Header index — caption under the counter (e.g. "Highlights"). Empty falls back to automatic pluralization. */
+  headerIndexCountLabelText: string;
+  /** Header index — the small subtitle under the title, independent of the section subtitle. */
+  headerIndexSubtitleText: string;
+  /** Header index — each element bound to a palette token, independently. */
+  headerIndexLabelColor: PortfolioInfoHeaderPaletteToken;
+  headerIndexNumberColor: PortfolioInfoHeaderPaletteToken;
+  headerIndexTitleColor: PortfolioInfoHeaderPaletteToken;
+  headerIndexSubtitleColor: PortfolioInfoHeaderPaletteToken;
+  /** Header index — each element sized/weighted independently. */
+  headerIndexLabelSize: PortfolioInfoHeaderTitleSize;
+  headerIndexLabelWeight: PortfolioInfoHeaderTitleWeight;
+  headerIndexTitleSize: PortfolioInfoHeaderTitleSize;
+  headerIndexTitleWeight: PortfolioInfoHeaderTitleWeight;
+  headerIndexSubtitleSize: PortfolioInfoHeaderTitleSize;
+  headerIndexSubtitleWeight: PortfolioInfoHeaderTitleWeight;
+  /** Header marquee — up to 4 independent words in the repeating band, each its own field (empty slots are dropped). */
+  headerMarqueeWord1Text: string;
+  headerMarqueeWord2Text: string;
+  headerMarqueeWord3Text: string;
+  headerMarqueeWord4Text: string;
+  /** Header marquee — alternating fill/outline words bound to one palette token. */
+  headerMarqueeWordColor: PortfolioInfoHeaderPaletteToken;
+  /** Header marquee — scales the repeating word band. */
+  headerMarqueeSize: PortfolioInfoHeaderTitleSize;
+  /** Header chapter — an italic index tag (e.g. "02 /") inline with the title, independent of the section title. */
+  headerChapterIndexText: string;
+  headerChapterTitleText: string;
+  /** Header chapter — index/title/rule each bound to a palette token, independently. */
+  headerChapterIndexColor: PortfolioInfoHeaderPaletteToken;
+  headerChapterTitleColor: PortfolioInfoHeaderPaletteToken;
+  /** Header chapter — one size/weight for the whole title line. */
+  headerChapterTitleSize: PortfolioInfoHeaderTitleSize;
+  headerChapterTitleWeight: PortfolioInfoHeaderTitleWeight;
+  /** Header cover — up to 3 independent centered lines, each its own field (empty slots are dropped). */
+  headerCoverLine1Text: string;
+  headerCoverLine2Text: string;
+  headerCoverLine3Text: string;
+  /** Header cover — one color for the whole headline, across every line. */
+  headerCoverHeadlineColor: PortfolioInfoHeaderPaletteToken;
+  /** Header cover — one size/weight for the whole headline, across every line. */
+  headerCoverHeadlineSize: PortfolioInfoHeaderTitleSize;
+  headerCoverHeadlineWeight: PortfolioInfoHeaderTitleWeight;
   useHeroPalette: boolean;
   activeColorMode?: 'light' | 'dark';
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
@@ -417,11 +585,97 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   aboutPlatformHeadlineCustomText: DEFAULT_ABOUT_PLATFORM_HEADLINE,
   aboutPlatformSkillsSectionTitle: DEFAULT_ABOUT_PLATFORM_SKILLS_TITLE,
   aboutPlatformStrengthsSectionTitle: DEFAULT_ABOUT_PLATFORM_STRENGTHS_TITLE,
-  aboutPlatformStaggerLayout: true,
   aboutPortraitSkillsMetaLead: DEFAULT_ABOUT_PORTRAIT_SKILLS_META_LEAD,
   aboutPortraitSkillsMetaEnabled: true,
   aboutManifestoBlocksLayout: 'grid',
   aboutManifestoBlocksScrollFocus: false,
+  aboutManifestoStatementStyleEnabled: false,
+  aboutManifestoStatementStyle: createElementTextStyle({
+    color: '',
+    size: 'lg',
+    weight: 'medium',
+    italic: true,
+  }),
+  aboutTerminalAlwaysDark: false,
+  titleFont: 'sans',
+  subtitleFont: 'serif',
+  headerDesign: 'editorial',
+  headerAnimationEnabled: true,
+  headerDesignAlignment: 'left',
+  headerMarginBottom: 'md',
+  headerTitleSize: 'md',
+  headerTitleWeight: 'regular',
+  headerAccentCountBadgeText: '',
+  headerAccentCountLeadText: '',
+  headerAccentCountBadgeColor: 'principal',
+  headerAccentCountLeadColor: 'secondaire',
+  headerAccentCountSize: 'md',
+  headerAccentCountWeight: 'regular',
+  headerAccentCountAlignment: 'left',
+  headerSerifLeadLabelText: '',
+  headerSerifLeadTitleText: '',
+  headerSerifLeadLabelColor: 'texteFort',
+  headerSerifLeadTitleColor: 'texteFort',
+  headerSerifLeadSubtitleColor: 'texteFort',
+  headerSerifLeadLabelSize: 'md',
+  headerSerifLeadTitleSize: 'md',
+  headerSerifLeadSubtitleSize: 'md',
+  headerSerifLeadLabelWeight: 'regular',
+  headerSerifLeadTitleWeight: 'regular',
+  headerSerifLeadSubtitleWeight: 'regular',
+  headerBillboardBigWord: '',
+  headerBillboardCountText: '',
+  headerBillboardTitleText: '',
+  headerBillboardWordStyle: 'outline',
+  headerBillboardWordColor: 'principal',
+  headerBillboardTitleColor: 'principal',
+  headerBillboardMetaColor: 'secondaire',
+  headerSplitHeadingLabelText: '',
+  headerSplitHeadingTitleText: '',
+  headerSplitHeadingTitleColor: 'principal',
+  headerSplitHeadingLabelColor: 'secondaire',
+  headerSplitHeadingTitleSize: 'md',
+  headerSplitHeadingTitleWeight: 'regular',
+  headerSplitHeadingLabelSize: 'md',
+  headerSplitHeadingLabelWeight: 'regular',
+  headerMastheadLine1Text: '',
+  headerMastheadLine2Text: '',
+  headerMastheadLine3Text: '',
+  headerMastheadHeadlineColor: 'principal',
+  headerMastheadHeadlineSize: 'md',
+  headerMastheadHeadlineWeight: 'regular',
+  headerIndexLabelText: '',
+  headerIndexTitleText: '',
+  headerIndexCountLabelText: '',
+  headerIndexSubtitleText: '',
+  headerIndexLabelColor: 'texteFort',
+  headerIndexNumberColor: 'principal',
+  headerIndexTitleColor: 'texteFort',
+  headerIndexSubtitleColor: 'texteFort',
+  headerIndexLabelSize: 'md',
+  headerIndexLabelWeight: 'regular',
+  headerIndexTitleSize: 'md',
+  headerIndexTitleWeight: 'regular',
+  headerIndexSubtitleSize: 'md',
+  headerIndexSubtitleWeight: 'regular',
+  headerMarqueeWord1Text: '',
+  headerMarqueeWord2Text: '',
+  headerMarqueeWord3Text: '',
+  headerMarqueeWord4Text: '',
+  headerMarqueeWordColor: 'principal',
+  headerMarqueeSize: 'md',
+  headerChapterIndexText: '',
+  headerChapterTitleText: '',
+  headerChapterIndexColor: 'principal',
+  headerChapterTitleColor: 'texteFort',
+  headerChapterTitleSize: 'md',
+  headerChapterTitleWeight: 'regular',
+  headerCoverLine1Text: '',
+  headerCoverLine2Text: '',
+  headerCoverLine3Text: '',
+  headerCoverHeadlineColor: 'texteFort',
+  headerCoverHeadlineSize: 'md',
+  headerCoverHeadlineWeight: 'regular',
   useHeroPalette: true,
   colorModeOverride: 'auto',
 };
@@ -535,12 +789,11 @@ export function isPortfolioInfoAboutManifestoBlocksLayout(
   return value === 'grid' || value === 'zigzag';
 }
 
+/** Block layout picker was removed from Settings — always grid now, regardless of any stored value. */
 export function resolveInfoAboutManifestoBlocksLayout(
-  presentation: Pick<PortfolioInfoPresentationSettings, 'aboutManifestoBlocksLayout'>
+  _presentation: Pick<PortfolioInfoPresentationSettings, 'aboutManifestoBlocksLayout'>
 ): PortfolioInfoAboutManifestoBlocksLayout {
-  return isPortfolioInfoAboutManifestoBlocksLayout(presentation.aboutManifestoBlocksLayout)
-    ? presentation.aboutManifestoBlocksLayout
-    : 'grid';
+  return 'grid';
 }
 
 export const PORTFOLIO_INFO_ABOUT_MANIFESTO_PORTRAIT_FRAME_OPTIONS: {
@@ -779,6 +1032,26 @@ export function resolveInfoAboutManifestoBlocksScrollFocus(
   presentation: Pick<PortfolioInfoPresentationSettings, 'aboutManifestoBlocksScrollFocus'>
 ): boolean {
   return presentation.aboutManifestoBlocksScrollFocus === true;
+}
+
+/** About · manifesto — statement typography override, or null when the toggle is off. */
+export function resolveInfoAboutManifestoStatementStyle(
+  presentation: Pick<
+    PortfolioInfoPresentationSettings,
+    'aboutManifestoStatementStyleEnabled' | 'aboutManifestoStatementStyle'
+  >
+): PortfolioElementTextStyle | null {
+  return presentation.aboutManifestoStatementStyleEnabled === true
+    ? presentation.aboutManifestoStatementStyle
+    : null;
+}
+
+/** About · terminal — the console shell's own dark-mode pin, independent of the section/global mode. */
+export function resolveInfoAboutTerminalColorMode(
+  presentation: Pick<PortfolioInfoPresentationSettings, 'aboutTerminalAlwaysDark' | 'activeColorMode'>
+): 'light' | 'dark' {
+  if (presentation.aboutTerminalAlwaysDark === true) return 'dark';
+  return presentation.activeColorMode === 'light' ? 'light' : 'dark';
 }
 
 export const PORTFOLIO_INFO_ABOUT_VALUE_LIST_MARKER_STYLE_OPTIONS: {
@@ -1035,12 +1308,6 @@ export function resolveAboutPlatformStrengthsSectionTitle(
     presentation.aboutPlatformStrengthsSectionTitle?.trim() ||
     DEFAULT_ABOUT_PLATFORM_STRENGTHS_TITLE
   );
-}
-
-export function resolveInfoAboutPlatformStaggerLayout(
-  presentation: Pick<PortfolioInfoPresentationSettings, 'aboutPlatformStaggerLayout'>
-): boolean {
-  return presentation.aboutPlatformStaggerLayout !== false;
 }
 
 export function resolveAboutValueBioColor(
@@ -1384,12 +1651,38 @@ export function resolveAboutPortraitSkillsMetaEnabled(
 export function aboutBannerBioSizeClass(size: PortfolioInfoContentSize): string {
   switch (size) {
     case 'sm':
-      return 'text-sm sm:text-[0.95rem]';
+      return 'text-xl sm:text-2xl';
     case 'lg':
-      return 'text-base sm:text-lg';
+      return 'text-3xl sm:text-4xl';
     case 'md':
     default:
-      return 'text-[0.95rem] sm:text-base';
+      return 'text-2xl sm:text-3xl';
+  }
+}
+
+/** About · banner — skills/strengths folio copy, bigger than the shared editorial scale. */
+export function aboutBannerContentSizeClass(size: PortfolioInfoContentSize): string {
+  switch (size) {
+    case 'sm':
+      return 'text-base sm:text-lg';
+    case 'lg':
+      return 'text-xl sm:text-2xl';
+    case 'md':
+    default:
+      return 'text-lg sm:text-xl';
+  }
+}
+
+/** About · banner — education/interests meta copy, bigger than the shared editorial scale. */
+export function aboutBannerMetaSizeClass(size: PortfolioInfoContentSize): string {
+  switch (size) {
+    case 'sm':
+      return 'text-sm sm:text-base';
+    case 'lg':
+      return 'text-lg sm:text-xl';
+    case 'md':
+    default:
+      return 'text-base sm:text-lg';
   }
 }
 
@@ -1508,6 +1801,32 @@ export function aboutValueStepsDescriptionSizeClass(size: PortfolioInfoContentSi
   }
 }
 
+/** About · value steps — "I speak" language acronym (EN, ES, FR…), Display scale. */
+export function aboutValueStepsLanguageCodeSizeClass(size: PortfolioInfoContentSize): string {
+  switch (size) {
+    case 'sm':
+      return 'text-4xl sm:text-5xl';
+    case 'lg':
+      return 'text-6xl sm:text-7xl';
+    case 'md':
+    default:
+      return 'text-5xl sm:text-6xl';
+  }
+}
+
+/** About · value steps — proficiency label (Beginner/Advanced/Expert) under the acronym. */
+export function aboutValueStepsLanguageLevelSizeClass(size: PortfolioInfoContentSize): string {
+  switch (size) {
+    case 'sm':
+      return 'text-xs sm:text-sm';
+    case 'lg':
+      return 'text-sm sm:text-base';
+    case 'md':
+    default:
+      return 'text-xs sm:text-sm';
+  }
+}
+
 /** About · value — large index in numbered values grid (01, 02…). */
 export function aboutValueNumberedGridIndexSizeClass(size: PortfolioInfoContentSize): string {
   switch (size) {
@@ -1557,6 +1876,45 @@ export function terminalHeadingSizeClass(size: PortfolioInfoContentSize): string
     case 'md':
     default:
       return 'text-3xl font-bold tracking-tight sm:text-4xl';
+  }
+}
+
+/** About · noir — header name / bio heading size. */
+export function noirHeadingSizeClass(size: PortfolioInfoContentSize): string {
+  switch (size) {
+    case 'sm':
+      return 'text-xl leading-snug sm:text-2xl md:text-3xl';
+    case 'lg':
+      return 'text-2xl leading-snug sm:text-3xl md:text-5xl';
+    case 'md':
+    default:
+      return 'text-2xl leading-snug sm:text-3xl md:text-4xl';
+  }
+}
+
+/** About · noir — bio paragraph size. */
+export function noirBodySizeClass(size: PortfolioInfoContentSize): string {
+  switch (size) {
+    case 'sm':
+      return 'text-lg leading-relaxed sm:text-xl md:text-2xl';
+    case 'lg':
+      return 'text-xl leading-relaxed sm:text-2xl md:text-4xl';
+    case 'md':
+    default:
+      return 'text-xl leading-relaxed sm:text-2xl md:text-3xl';
+  }
+}
+
+/** About · noir — massive language acronym size. */
+export function noirLanguageAcronymSizeClass(size: PortfolioInfoContentSize): string {
+  switch (size) {
+    case 'sm':
+      return 'text-4xl sm:text-5xl';
+    case 'lg':
+      return 'text-5xl sm:text-6xl md:text-7xl';
+    case 'md':
+    default:
+      return 'text-5xl sm:text-6xl';
   }
 }
 
@@ -1626,6 +1984,12 @@ export const PORTFOLIO_INFO_DESIGN_OPTIONS: {
       'Monospace terminal — header, bio, skills //, strengths, interests, languages (stars/text/bar), tools, education.log; Hero palette.',
   },
   {
+    value: 'about-index',
+    label: 'About · index',
+    description:
+      'Brutalist-chic Swiss editorial — asymmetric 12-col grid, index-numbered sections, hover-focus keywords, no cards.',
+  },
+  {
     value: 'about-value-steps',
     label: 'About · value steps',
     description:
@@ -1643,6 +2007,7 @@ export function isPortfolioInfoDesign(value: unknown): value is PortfolioInfoDes
     value === 'about-portrait-skills' ||
     value === 'about-manifesto' ||
     value === 'about-terminal' ||
+    value === 'about-index' ||
     value === 'about-value-steps'
   );
 }
@@ -1732,7 +2097,6 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         aboutPlatformHeadlineCustomText: DEFAULT_ABOUT_PLATFORM_HEADLINE,
         aboutPlatformSkillsSectionTitle: DEFAULT_ABOUT_PLATFORM_SKILLS_TITLE,
         aboutPlatformStrengthsSectionTitle: DEFAULT_ABOUT_PLATFORM_STRENGTHS_TITLE,
-        aboutPlatformStaggerLayout: true,
         contentSize: 'md',
       };
     case 'about-portrait-skills':
@@ -1765,6 +2129,7 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         aboutManifestoPortraitFrame: 'square',
         aboutManifestoBlocksLayout: 'grid',
         aboutManifestoBlocksScrollFocus: false,
+        aboutManifestoStatementStyleEnabled: false,
         contentSize: 'md',
         aboutManifestoContentSize: 'md',
       };
@@ -1779,6 +2144,20 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         showInterests: true,
         showLanguages: true,
         showSystemsTools: true,
+        aboutTerminalAlwaysDark: false,
+      };
+    case 'about-index':
+      return {
+        design: 'about-index',
+        title: DEFAULT_INFO_TITLE,
+        subtitle: '',
+        showEducation: true,
+        showSkills: true,
+        showStrengths: true,
+        showInterests: true,
+        showLanguages: true,
+        showSystemsTools: true,
+        contentSize: 'md',
       };
     case 'about-value-steps':
       return {
@@ -1832,25 +2211,26 @@ export function resolveInfoSectionTitle(settings: PortfolioInfoSectionSettings):
 
 export function resolveInfoSectionSubtitle(settings: PortfolioInfoSectionSettings): string {
   const custom = settings.subtitle?.trim();
-  // About · banner — profile bio drives copy; ignore generic default subtitle
-  if (settings.design === 'about-banner') {
-    if (custom && custom !== DEFAULT_INFO_SUBTITLE) return custom;
-    return '';
-  }
-  if (settings.design === 'about-platform') {
-    if (custom && custom !== DEFAULT_INFO_SUBTITLE) return custom;
-    return '';
-  }
-  if (custom) return custom;
-  // Designs that intentionally start with an empty subtitle (bio drives copy)
+  // A subtitle equal to the generic "About me" default is treated as "unset" for
+  // these designs — the backend drops an empty-string subtitle entirely, so the
+  // client re-fills it from the shared default (portfolio-settings-types.ts) on
+  // every reload instead of actually staying blank. Comparing against
+  // DEFAULT_INFO_SUBTITLE (not just truthiness) is what keeps that leaked default
+  // from being mistaken for real user copy.
+  const hasRealCustomSubtitle = Boolean(custom) && custom !== DEFAULT_INFO_SUBTITLE;
   if (
+    settings.design === 'about-banner' ||
+    settings.design === 'about-platform' ||
     settings.design === 'about-me-trait' ||
     settings.design === 'about-split' ||
     settings.design === 'about-terminal' ||
-    settings.design === 'about-value-steps'
+    settings.design === 'about-value-steps' ||
+    settings.design === 'about-portrait-skills' ||
+    settings.design === 'about-index'
   ) {
-    return '';
+    return hasRealCustomSubtitle ? (custom as string) : '';
   }
+  if (custom) return custom;
   return DEFAULT_INFO_SUBTITLE;
 }
 
@@ -1873,6 +2253,47 @@ function sanitizeHex(value: unknown, fallback: string): string {
   return typeof value === 'string' && isValidProfileHexColor(value) ? value.trim() : fallback;
 }
 
+const DEFAULT_INFO_HEADER_TITLE_COLOR = '#e2572e';
+const DEFAULT_INFO_HEADER_SUBTITLE_COLOR = '#f5f5f5';
+
+export function infoHeaderFontClass(font: PortfolioInfoHeaderFont, kind: 'title' | 'subtitle'): string {
+  if (kind === 'title') {
+    switch (font) {
+      case 'serif':
+        return 'font-serif font-bold tracking-[-0.03em]';
+      case 'display':
+        return 'font-black tracking-[-0.02em]';
+      default:
+        return 'font-extrabold tracking-[-0.04em]';
+    }
+  }
+  switch (font) {
+    case 'serif':
+      return 'font-serif leading-relaxed';
+    case 'display':
+      return 'font-bold leading-relaxed tracking-[-0.01em]';
+    default:
+      return 'leading-relaxed';
+  }
+}
+
+export function infoHeaderFontStyle(
+  _font: PortfolioInfoHeaderFont,
+  _subtitleSerif: boolean,
+  _kind: 'title' | 'subtitle'
+): CSSProperties | undefined {
+  // Font family is controlled only by Global → Police principale.
+  return undefined;
+}
+
+export function infoTitleColorStyle(color: string): CSSProperties {
+  return { color: sanitizeHex(color, DEFAULT_INFO_HEADER_TITLE_COLOR) };
+}
+
+export function infoSubtitleColorStyle(color: string): CSSProperties {
+  return { color: sanitizeHex(color, DEFAULT_INFO_HEADER_SUBTITLE_COLOR) };
+}
+
 export function mergeInfoPresentation(
   base: PortfolioInfoPresentationSettings,
   patch: unknown
@@ -1881,6 +2302,8 @@ export function mergeInfoPresentation(
     return { ...base };
   }
   const record = patch as Record<string, unknown>;
+  const pick = <T extends string>(value: unknown, allowed: readonly T[], fallback: T): T =>
+    typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
   const rawDesign =
     typeof record.design === 'string' ? record.design : base.design;
   const aboutValueRevision =
@@ -2185,10 +2608,6 @@ export function mergeInfoPresentation(
       typeof record.aboutPlatformStrengthsSectionTitle === 'string'
         ? record.aboutPlatformStrengthsSectionTitle
         : base.aboutPlatformStrengthsSectionTitle,
-    aboutPlatformStaggerLayout:
-      typeof record.aboutPlatformStaggerLayout === 'boolean'
-        ? record.aboutPlatformStaggerLayout
-        : base.aboutPlatformStaggerLayout,
     aboutPortraitSkillsMetaLead:
       typeof record.aboutPortraitSkillsMetaLead === 'string'
         ? record.aboutPortraitSkillsMetaLead
@@ -2206,6 +2625,355 @@ export function mergeInfoPresentation(
       typeof record.aboutManifestoBlocksScrollFocus === 'boolean'
         ? record.aboutManifestoBlocksScrollFocus
         : base.aboutManifestoBlocksScrollFocus,
+    aboutManifestoStatementStyleEnabled:
+      typeof record.aboutManifestoStatementStyleEnabled === 'boolean'
+        ? record.aboutManifestoStatementStyleEnabled
+        : base.aboutManifestoStatementStyleEnabled,
+    aboutManifestoStatementStyle: normalizeElementTextStyle(
+      record.aboutManifestoStatementStyle,
+      base.aboutManifestoStatementStyle
+    ),
+    aboutTerminalAlwaysDark:
+      typeof record.aboutTerminalAlwaysDark === 'boolean'
+        ? record.aboutTerminalAlwaysDark
+        : base.aboutTerminalAlwaysDark,
+    titleFont: pick(record.titleFont, ['sans', 'serif', 'display'], base.titleFont),
+    subtitleFont: pick(record.subtitleFont, ['sans', 'serif', 'display'], base.subtitleFont),
+    headerDesign: pick(record.headerDesign, INFO_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
+    headerAnimationEnabled:
+      typeof record.headerAnimationEnabled === 'boolean'
+        ? record.headerAnimationEnabled
+        : (base.headerAnimationEnabled ?? true),
+    headerDesignAlignment: pick(
+      record.headerDesignAlignment,
+      ['left', 'center', 'right'],
+      base.headerDesignAlignment ?? 'left'
+    ),
+    headerMarginBottom: pick(
+      record.headerMarginBottom,
+      INFO_HEADER_MARGIN_BOTTOM_STEPS,
+      base.headerMarginBottom ?? 'md'
+    ),
+    headerTitleSize: pick(record.headerTitleSize, INFO_HEADER_TITLE_SIZES, base.headerTitleSize ?? 'md'),
+    headerTitleWeight: pick(
+      record.headerTitleWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerTitleWeight ?? 'regular'
+    ),
+    headerAccentCountBadgeText:
+      typeof record.headerAccentCountBadgeText === 'string'
+        ? record.headerAccentCountBadgeText
+        : (base.headerAccentCountBadgeText ?? ''),
+    headerAccentCountLeadText:
+      typeof record.headerAccentCountLeadText === 'string'
+        ? record.headerAccentCountLeadText
+        : (base.headerAccentCountLeadText ?? ''),
+    headerAccentCountBadgeColor: pick(
+      record.headerAccentCountBadgeColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerAccentCountBadgeColor ?? 'principal'
+    ),
+    headerAccentCountLeadColor: pick(
+      record.headerAccentCountLeadColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerAccentCountLeadColor ?? 'secondaire'
+    ),
+    headerAccentCountSize: pick(
+      record.headerAccentCountSize,
+      INFO_HEADER_TITLE_SIZES,
+      base.headerAccentCountSize ?? 'md'
+    ),
+    headerAccentCountWeight: pick(
+      record.headerAccentCountWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerAccentCountWeight ?? 'regular'
+    ),
+    headerAccentCountAlignment: pick(
+      record.headerAccentCountAlignment,
+      INFO_HEADER_ACCENT_COUNT_ALIGNMENTS,
+      base.headerAccentCountAlignment ?? 'left'
+    ),
+    headerSerifLeadLabelText:
+      typeof record.headerSerifLeadLabelText === 'string'
+        ? record.headerSerifLeadLabelText
+        : (base.headerSerifLeadLabelText ?? ''),
+    headerSerifLeadTitleText:
+      typeof record.headerSerifLeadTitleText === 'string'
+        ? record.headerSerifLeadTitleText
+        : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadLabelColor: pick(
+      record.headerSerifLeadLabelColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadLabelColor ?? 'texteFort'
+    ),
+    headerSerifLeadTitleColor: pick(
+      record.headerSerifLeadTitleColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadTitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadSubtitleColor: pick(
+      record.headerSerifLeadSubtitleColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadSubtitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadLabelSize: pick(
+      record.headerSerifLeadLabelSize,
+      INFO_HEADER_TITLE_SIZES,
+      base.headerSerifLeadLabelSize ?? 'md'
+    ),
+    headerSerifLeadTitleSize: pick(
+      record.headerSerifLeadTitleSize,
+      INFO_HEADER_TITLE_SIZES,
+      base.headerSerifLeadTitleSize ?? 'md'
+    ),
+    headerSerifLeadSubtitleSize: pick(
+      record.headerSerifLeadSubtitleSize,
+      INFO_HEADER_TITLE_SIZES,
+      base.headerSerifLeadSubtitleSize ?? 'md'
+    ),
+    headerSerifLeadLabelWeight: pick(
+      record.headerSerifLeadLabelWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadLabelWeight ?? 'regular'
+    ),
+    headerSerifLeadTitleWeight: pick(
+      record.headerSerifLeadTitleWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadTitleWeight ?? 'regular'
+    ),
+    headerSerifLeadSubtitleWeight: pick(
+      record.headerSerifLeadSubtitleWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadSubtitleWeight ?? 'regular'
+    ),
+    headerBillboardBigWord:
+      typeof record.headerBillboardBigWord === 'string'
+        ? record.headerBillboardBigWord
+        : (base.headerBillboardBigWord ?? ''),
+    headerBillboardCountText:
+      typeof record.headerBillboardCountText === 'string'
+        ? record.headerBillboardCountText
+        : (base.headerBillboardCountText ?? ''),
+    headerBillboardTitleText:
+      typeof record.headerBillboardTitleText === 'string'
+        ? record.headerBillboardTitleText
+        : (base.headerBillboardTitleText ?? ''),
+    headerBillboardWordStyle: pick(
+      record.headerBillboardWordStyle,
+      INFO_HEADER_BILLBOARD_WORD_STYLES,
+      base.headerBillboardWordStyle ?? 'outline'
+    ),
+    headerBillboardWordColor: pick(
+      record.headerBillboardWordColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerBillboardWordColor ?? 'principal'
+    ),
+    headerBillboardTitleColor: pick(
+      record.headerBillboardTitleColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerBillboardTitleColor ?? 'principal'
+    ),
+    headerBillboardMetaColor: pick(
+      record.headerBillboardMetaColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerBillboardMetaColor ?? 'secondaire'
+    ),
+    headerSplitHeadingLabelText:
+      typeof record.headerSplitHeadingLabelText === 'string'
+        ? record.headerSplitHeadingLabelText
+        : (base.headerSplitHeadingLabelText ?? ''),
+    headerSplitHeadingTitleText:
+      typeof record.headerSplitHeadingTitleText === 'string'
+        ? record.headerSplitHeadingTitleText
+        : (base.headerSplitHeadingTitleText ?? ''),
+    headerSplitHeadingTitleColor: pick(
+      record.headerSplitHeadingTitleColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerSplitHeadingTitleColor ?? 'principal'
+    ),
+    headerSplitHeadingLabelColor: pick(
+      record.headerSplitHeadingLabelColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerSplitHeadingLabelColor ?? 'secondaire'
+    ),
+    headerSplitHeadingTitleSize: pick(
+      record.headerSplitHeadingTitleSize,
+      INFO_HEADER_TITLE_SIZES,
+      base.headerSplitHeadingTitleSize ?? 'md'
+    ),
+    headerSplitHeadingTitleWeight: pick(
+      record.headerSplitHeadingTitleWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerSplitHeadingTitleWeight ?? 'regular'
+    ),
+    headerSplitHeadingLabelSize: pick(
+      record.headerSplitHeadingLabelSize,
+      INFO_HEADER_TITLE_SIZES,
+      base.headerSplitHeadingLabelSize ?? 'md'
+    ),
+    headerSplitHeadingLabelWeight: pick(
+      record.headerSplitHeadingLabelWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerSplitHeadingLabelWeight ?? 'regular'
+    ),
+    headerMastheadLine1Text:
+      typeof record.headerMastheadLine1Text === 'string'
+        ? record.headerMastheadLine1Text
+        : (base.headerMastheadLine1Text ?? ''),
+    headerMastheadLine2Text:
+      typeof record.headerMastheadLine2Text === 'string'
+        ? record.headerMastheadLine2Text
+        : (base.headerMastheadLine2Text ?? ''),
+    headerMastheadLine3Text:
+      typeof record.headerMastheadLine3Text === 'string'
+        ? record.headerMastheadLine3Text
+        : (base.headerMastheadLine3Text ?? ''),
+    headerMastheadHeadlineColor: pick(
+      record.headerMastheadHeadlineColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerMastheadHeadlineColor ?? 'principal'
+    ),
+    headerMastheadHeadlineSize: pick(
+      record.headerMastheadHeadlineSize,
+      INFO_HEADER_TITLE_SIZES,
+      base.headerMastheadHeadlineSize ?? 'md'
+    ),
+    headerMastheadHeadlineWeight: pick(
+      record.headerMastheadHeadlineWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerMastheadHeadlineWeight ?? 'regular'
+    ),
+    headerIndexLabelText:
+      typeof record.headerIndexLabelText === 'string' ? record.headerIndexLabelText : (base.headerIndexLabelText ?? ''),
+    headerIndexTitleText:
+      typeof record.headerIndexTitleText === 'string' ? record.headerIndexTitleText : (base.headerIndexTitleText ?? ''),
+    headerIndexCountLabelText:
+      typeof record.headerIndexCountLabelText === 'string'
+        ? record.headerIndexCountLabelText
+        : (base.headerIndexCountLabelText ?? ''),
+    headerIndexSubtitleText:
+      typeof record.headerIndexSubtitleText === 'string'
+        ? record.headerIndexSubtitleText
+        : (base.headerIndexSubtitleText ?? ''),
+    headerIndexLabelColor: pick(
+      record.headerIndexLabelColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerIndexLabelColor ?? 'texteFort'
+    ),
+    headerIndexNumberColor: pick(
+      record.headerIndexNumberColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerIndexNumberColor ?? 'principal'
+    ),
+    headerIndexTitleColor: pick(
+      record.headerIndexTitleColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerIndexTitleColor ?? 'texteFort'
+    ),
+    headerIndexSubtitleColor: pick(
+      record.headerIndexSubtitleColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerIndexSubtitleColor ?? 'texteFort'
+    ),
+    headerIndexLabelSize: pick(record.headerIndexLabelSize, INFO_HEADER_TITLE_SIZES, base.headerIndexLabelSize ?? 'md'),
+    headerIndexLabelWeight: pick(
+      record.headerIndexLabelWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerIndexLabelWeight ?? 'regular'
+    ),
+    headerIndexTitleSize: pick(record.headerIndexTitleSize, INFO_HEADER_TITLE_SIZES, base.headerIndexTitleSize ?? 'md'),
+    headerIndexTitleWeight: pick(
+      record.headerIndexTitleWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerIndexTitleWeight ?? 'regular'
+    ),
+    headerIndexSubtitleSize: pick(
+      record.headerIndexSubtitleSize,
+      INFO_HEADER_TITLE_SIZES,
+      base.headerIndexSubtitleSize ?? 'md'
+    ),
+    headerIndexSubtitleWeight: pick(
+      record.headerIndexSubtitleWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerIndexSubtitleWeight ?? 'regular'
+    ),
+    headerMarqueeWord1Text:
+      typeof record.headerMarqueeWord1Text === 'string'
+        ? record.headerMarqueeWord1Text
+        : (base.headerMarqueeWord1Text ?? ''),
+    headerMarqueeWord2Text:
+      typeof record.headerMarqueeWord2Text === 'string'
+        ? record.headerMarqueeWord2Text
+        : (base.headerMarqueeWord2Text ?? ''),
+    headerMarqueeWord3Text:
+      typeof record.headerMarqueeWord3Text === 'string'
+        ? record.headerMarqueeWord3Text
+        : (base.headerMarqueeWord3Text ?? ''),
+    headerMarqueeWord4Text:
+      typeof record.headerMarqueeWord4Text === 'string'
+        ? record.headerMarqueeWord4Text
+        : (base.headerMarqueeWord4Text ?? ''),
+    headerMarqueeWordColor: pick(
+      record.headerMarqueeWordColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerMarqueeWordColor ?? 'principal'
+    ),
+    headerMarqueeSize: pick(record.headerMarqueeSize, INFO_HEADER_TITLE_SIZES, base.headerMarqueeSize ?? 'md'),
+    headerChapterIndexText:
+      typeof record.headerChapterIndexText === 'string'
+        ? record.headerChapterIndexText
+        : (base.headerChapterIndexText ?? ''),
+    headerChapterTitleText:
+      typeof record.headerChapterTitleText === 'string'
+        ? record.headerChapterTitleText
+        : (base.headerChapterTitleText ?? ''),
+    headerChapterIndexColor: pick(
+      record.headerChapterIndexColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerChapterIndexColor ?? 'principal'
+    ),
+    headerChapterTitleColor: pick(
+      record.headerChapterTitleColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerChapterTitleColor ?? 'texteFort'
+    ),
+    headerChapterTitleSize: pick(
+      record.headerChapterTitleSize,
+      INFO_HEADER_TITLE_SIZES,
+      base.headerChapterTitleSize ?? 'md'
+    ),
+    headerChapterTitleWeight: pick(
+      record.headerChapterTitleWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerChapterTitleWeight ?? 'regular'
+    ),
+    headerCoverLine1Text:
+      typeof record.headerCoverLine1Text === 'string'
+        ? record.headerCoverLine1Text
+        : (base.headerCoverLine1Text ?? ''),
+    headerCoverLine2Text:
+      typeof record.headerCoverLine2Text === 'string'
+        ? record.headerCoverLine2Text
+        : (base.headerCoverLine2Text ?? ''),
+    headerCoverLine3Text:
+      typeof record.headerCoverLine3Text === 'string'
+        ? record.headerCoverLine3Text
+        : (base.headerCoverLine3Text ?? ''),
+    headerCoverHeadlineColor: pick(
+      record.headerCoverHeadlineColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerCoverHeadlineColor ?? 'texteFort'
+    ),
+    headerCoverHeadlineSize: pick(
+      record.headerCoverHeadlineSize,
+      INFO_HEADER_TITLE_SIZES,
+      base.headerCoverHeadlineSize ?? 'md'
+    ),
+    headerCoverHeadlineWeight: pick(
+      record.headerCoverHeadlineWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerCoverHeadlineWeight ?? 'regular'
+    ),
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
   };

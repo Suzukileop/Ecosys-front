@@ -69,7 +69,8 @@ const TERMINAL_LANG_CODES: Record<string, string> = {
   [spokenLanguageMatchKey('Русский')]: 'RU',
 };
 
-function terminalLanguageCode(name: string): string {
+/** Two-letter language code for a spoken-language name — shared with the About · noir layout. */
+export function terminalLanguageCode(name: string): string {
   const trimmed = name.trim();
   const key = spokenLanguageMatchKey(trimmed);
   if (TERMINAL_LANG_CODES[key]) return TERMINAL_LANG_CODES[key];
@@ -573,7 +574,7 @@ export function AboutTerminalLayout({
                 <div className="pf-about-terminal-output space-y-4">
                   {visibleStrengths.map((item, index) => (
                     <TerminalListEntry
-                      key={item}
+                      key={`${index}-${item}`}
                       label={item}
                       nameColor={subtitleColor}
                       accent={accent}
@@ -595,7 +596,7 @@ export function AboutTerminalLayout({
                 <div className="pf-about-terminal-output space-y-4">
                   {visibleInterests.map((item, index) => (
                     <TerminalListEntry
-                      key={item}
+                      key={`${index}-${item}`}
                       label={item}
                       nameColor={subtitleColor}
                       accent={accent}
@@ -641,7 +642,7 @@ export function AboutTerminalLayout({
                 <div className="pf-about-terminal-output space-y-4">
                   {visibleTools.map((item, index) => (
                     <TerminalListEntry
-                      key={item}
+                      key={`${index}-${item}`}
                       label={item}
                       nameColor={subtitleColor}
                       accent={accent}

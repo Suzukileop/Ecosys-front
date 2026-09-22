@@ -14,12 +14,7 @@ import {
 } from '@/components/landing/landingEntranceNo';
 import { toEntranceRect } from '@/components/landing/landingEntranceTypes';
 
-import {
-  BRAND_ORANGE,
-  brandCtaInvertedClass,
-  brandCtaOrangeClass,
-  brandFrameRadiusClass,
-} from '@/components/landing/landingBrand';
+import { BRAND_ORANGE } from '@/components/landing/landingBrand';
 const WORD_INTERVAL_MS = 2500;
 const WORDS = ['CODE?', 'PORTFOLIO?', 'PROBLEM'] as const;
 /** Widest label — reserves layout width so the headline does not jump. */
@@ -35,7 +30,6 @@ const heroGalleryItems = [
     src: '/landing/hero/image0.png',
     alt: 'Creator building a portfolio at their desk',
     marketingTerm: 'Creators',
-    title: 'Portfolio & services',
     description:
       'Turn your skills into a professional page. Present your work, list your services, and let clients reach you directly.',
   },
@@ -43,7 +37,6 @@ const heroGalleryItems = [
     src: '/landing/hero/image1.png',
     alt: 'Graduate showcasing achievements',
     marketingTerm: 'Students',
-    title: 'Student portfolio',
     description:
       'Highlight your projects, experience, and achievements in a clean portfolio ready to share with schools and employers.',
   },
@@ -51,7 +44,6 @@ const heroGalleryItems = [
     src: '/landing/hero/image2.png',
     alt: 'Business team presenting their brand',
     marketingTerm: 'Businesses',
-    title: 'Business presence',
     description:
       'Give your company a clear online identity. Showcase your brand, team, and offers in one professional space.',
   },
@@ -59,7 +51,6 @@ const heroGalleryItems = [
     src: '/landing/hero/image3.png',
     alt: 'Seller managing an online shop',
     marketingTerm: 'Sellers',
-    title: 'Online shop',
     description:
       'Launch a simple storefront, display your products, and talk to buyers without leaving the platform.',
   },
@@ -67,7 +58,6 @@ const heroGalleryItems = [
     src: '/landing/hero/portrait-pro-freelan.png',
     alt: 'Freelancers collaborating in a professional workspace',
     marketingTerm: 'Freelancers',
-    title: 'Service Provider',
     description:
       'Show your expertise, get discovered by clients, and run your freelance work from one professional profile.',
   },
@@ -78,20 +68,6 @@ const GALLERY_FADE = {
   duration: 0.65,
   ease: REVEAL_EASE,
 } as const;
-
-function GalleryArrowIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path
-        d="M10.5 3.5 6 8l4.5 4.5"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 function HeroInteractiveGallery() {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -108,14 +84,28 @@ function HeroInteractiveGallery() {
 
   return (
     <div
-      className="mx-auto flex w-full max-w-[100rem] flex-col items-center"
+      className="relative mx-auto w-full max-w-[100rem]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Large image · same size language as before · catalog hangs right, vertically centered */}
-      <div className="relative flex w-full justify-center overflow-x-clip lg:overflow-x-visible">
-        <div className="relative w-full min-w-0 max-w-none flex-1 lg:max-w-[min(100%,64rem)] xl:max-w-[70rem] 2xl:max-w-[76rem]">
-          <div className={`relative aspect-[16/10] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900 sm:aspect-[19/10] ${brandFrameRadiusClass}`}>
+      {/* Monumental backdrop word — full width, sits above the photo; the row below is pulled up
+          into its lower half so the photo overlaps it, exposing only its top edge (never the list). */}
+      <div
+        aria-hidden
+        className="relative z-0 -mb-[9vw] flex overflow-hidden select-none sm:-mb-[6.4vw] lg:-mb-[3.4vw]"
+      >
+        <div className="flex w-full items-end justify-center lg:w-[60%] xl:w-[57%]">
+          <span className="whitespace-nowrap text-[20vw] font-black uppercase leading-none tracking-tighter text-neutral-100 dark:text-neutral-900 sm:text-[14vw] lg:text-[8.6vw]">
+            Portfolio
+          </span>
+        </div>
+        <div className="hidden lg:block lg:w-[40%]" />
+      </div>
+
+      <div className="relative z-10 flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-6 xl:gap-10">
+        {/* Photo — asymmetric, left-anchored, overlapping the backdrop word. No text/CTA inside. */}
+        <div className="relative w-full lg:w-[60%] xl:w-[57%]">
+          <div className="relative aspect-[16/10] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900 sm:aspect-[19/10]">
             <AnimatePresence mode="sync" initial={false}>
               <motion.div
                 key={active.src}
@@ -131,125 +121,88 @@ function HeroInteractiveGallery() {
                   width={HERO_IMAGE_WIDTH}
                   height={HERO_IMAGE_HEIGHT}
                   className="h-full w-full object-cover"
-                  sizes="(max-width: 1024px) 100vw, 76rem"
+                  sizes="(max-width: 1024px) 100vw, 60vw"
                   priority={selectedIndex === 0}
                   loading={selectedIndex === 0 ? 'eager' : 'lazy'}
                   fetchPriority={selectedIndex === 0 ? 'high' : 'auto'}
                 />
               </motion.div>
             </AnimatePresence>
-
-            {/* Left edge only — ~22% of the photo, rest stays untouched */}
-            <div
-              className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-[34%] bg-gradient-to-r from-black/50 to-transparent"
-              aria-hidden
-            />
-
-            {/* Role title — top left */}
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.h3
-                key={`${active.marketingTerm}-title`}
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.35, ease: REVEAL_EASE }}
-                className="absolute left-4 top-4 z-10 max-w-[min(100%,18rem)] text-lg font-bold leading-snug text-white sm:left-5 sm:top-5 sm:max-w-[20rem] sm:text-xl md:left-6 md:top-6 md:text-2xl lg:text-[1.75rem] [text-shadow:0_1px_10px_rgba(0,0,0,0.45)]"
-              >
-                {active.title}
-              </motion.h3>
-            </AnimatePresence>
-
-            {/* Description + CTA — bottom left inside image (tablet / desktop) */}
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={`${active.marketingTerm}-bottom`}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 6 }}
-                transition={{ duration: 0.35, ease: REVEAL_EASE }}
-                className="absolute bottom-7 left-4 z-10 hidden w-[min(100%,18rem)] flex-col items-start gap-4 sm:bottom-8 sm:left-5 sm:flex sm:w-[min(100%,20.5rem)] sm:gap-5 md:bottom-9 md:left-6 md:w-[22rem] lg:w-[24rem]"
-              >
-                <p className="text-base leading-snug text-white sm:text-lg sm:leading-snug md:text-xl md:leading-snug [text-shadow:0_1px_10px_rgba(0,0,0,0.55)]">
-                  {active.description}
-                </p>
-                <Link
-                  href="/register"
-                  className={`inline-flex items-center justify-center px-7 py-2.5 text-sm font-semibold sm:px-8 sm:py-3 sm:text-base ${brandCtaInvertedClass}`}
-                >
-                  Start for free
-                </Link>
-              </motion.div>
-            </AnimatePresence>
           </div>
+        </div>
 
-          {/* Description + CTA — outside image on mobile */}
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={`${active.marketingTerm}-mobile-copy`}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
-              transition={{ duration: 0.35, ease: REVEAL_EASE }}
-              className="mt-5 flex w-full flex-col items-start gap-4 sm:hidden"
-            >
-              <p className="text-base leading-snug text-zinc-600 dark:text-zinc-400">
-                {active.description}
-              </p>
-              <Link
-                href="/register"
-                className={`inline-flex items-center justify-center px-7 py-2.5 text-sm font-semibold ${brandCtaOrangeClass}`}
-              >
-                Start for free
-              </Link>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Catalog — right of image, vertically centered to image */}
-          <div
-            className="mt-6 flex w-full justify-center lg:absolute lg:left-full lg:top-1/2 lg:mt-0 lg:ml-6 lg:w-auto lg:-translate-y-1/2 xl:ml-8 2xl:ml-10"
-            role="tablist"
-            aria-label="Target personas"
-          >
-            <div className="flex flex-row flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:gap-x-6 lg:flex-col lg:items-start lg:gap-5 xl:gap-6">
-              {heroGalleryItems.map((item, index) => {
-                const isActive = index === selectedIndex;
-                return (
-                  <button
-                    key={item.src}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    aria-label={`Show ${item.marketingTerm}`}
-                    onMouseEnter={() => setSelectedIndex(index)}
-                    onFocus={() => setSelectedIndex(index)}
-                    onClick={() => setSelectedIndex(index)}
-                    className={`group flex items-center gap-2 text-left transition-colors duration-300 sm:gap-2.5 ${
-                      isActive
-                        ? 'text-[#F97316] lg:text-zinc-900 lg:dark:text-white'
-                        : 'text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300'
+        {/* Persona menu — vertical exhibition-style list, right of the photo */}
+        <div
+          className="relative z-20 flex w-full justify-start lg:w-[40%] lg:justify-end"
+          role="tablist"
+          aria-label="Target personas"
+        >
+          <div className="flex flex-col items-start gap-5 sm:gap-6 lg:items-end">
+            {heroGalleryItems.map((item, index) => {
+              const isActive = index === selectedIndex;
+              return (
+                <button
+                  key={item.src}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-label={`Show ${item.marketingTerm}`}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  onFocus={() => setSelectedIndex(index)}
+                  onClick={() => setSelectedIndex(index)}
+                  className="group flex items-baseline gap-3 text-left transition-all duration-500"
+                >
+                  <span
+                    className={`shrink-0 font-mono text-[0.7rem] tracking-widest transition-colors duration-500 ${
+                      isActive ? 'text-[#F97316]' : 'text-neutral-400 dark:text-neutral-600'
                     }`}
                   >
-                    <GalleryArrowIcon
-                      className={`h-4 w-4 shrink-0 transition-transform duration-300 sm:h-5 sm:w-5 ${
-                        isActive ? '-translate-x-0.5' : 'opacity-50 group-hover:opacity-80'
-                      }`}
-                    />
-                    <span
-                      className={`text-sm font-semibold tracking-wide sm:text-base md:text-lg ${
-                        isActive
-                          ? 'underline decoration-[#F97316]/50 underline-offset-4 lg:decoration-zinc-900/50 lg:dark:decoration-white/50'
-                          : ''
-                      }`}
-                    >
-                      {item.marketingTerm}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                    {String(index + 1).padStart(2, '0')} /
+                  </span>
+                  <span
+                    className={`text-2xl font-black uppercase leading-none tracking-tight transition-all duration-500 sm:text-3xl lg:text-4xl ${
+                      isActive
+                        ? 'text-neutral-950 opacity-100 dark:text-white'
+                        : 'text-neutral-400 opacity-30 group-hover:opacity-60 dark:text-neutral-600'
+                    }`}
+                  >
+                    {item.marketingTerm}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
+
+      {/* Description + CTA — outside the photo, asymmetric bottom-left */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={`${active.marketingTerm}-copy`}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.4, ease: REVEAL_EASE }}
+          className="relative z-20 mt-8 flex w-full flex-col items-start gap-5 sm:mt-10 lg:w-[52%] xl:w-[46%]"
+        >
+          <p className="text-base leading-snug lp-muted sm:text-lg md:text-xl">
+            {active.description}
+          </p>
+          <Link
+            href="/register"
+            className="group relative inline-flex items-center gap-2 pb-1 text-xs font-semibold uppercase tracking-[0.25em] lp-text"
+          >
+            <span>Start for free</span>
+            <span
+              aria-hidden
+              className="inline-block transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+            >
+              ↗
+            </span>
+            <span className="absolute bottom-0 left-0 h-px w-full bg-current opacity-30 transition-opacity duration-300 group-hover:opacity-100" />
+          </Link>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

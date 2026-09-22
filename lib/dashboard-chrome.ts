@@ -1,6 +1,7 @@
-/** Coordinates exclusive open state between dashboard sidebar and conversation details. */
+/** Coordinates exclusive open state between dashboard sidebar and conversation details / portfolio settings. */
 
 export const MESSAGING_DETAILS_OPEN_EVENT = 'messaging-details-open';
+export const PORTFOLIO_SETTINGS_OPEN_EVENT = 'portfolio-settings-open';
 export const DASHBOARD_SIDEBAR_EXPAND_EVENT = 'dashboard-sidebar-expand';
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = 'noproble.dashboard.sidebar-collapsed';
@@ -64,6 +65,10 @@ function dispatchDeferred(eventName: string): void {
 
 export function notifyMessagingDetailsOpen(): void {
   dispatchDeferred(MESSAGING_DETAILS_OPEN_EVENT);
+}
+
+export function notifyPortfolioSettingsOpen(): void {
+  dispatchDeferred(PORTFOLIO_SETTINGS_OPEN_EVENT);
 }
 
 export function notifyDashboardSidebarExpand(): void {

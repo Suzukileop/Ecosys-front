@@ -121,64 +121,68 @@ export const PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS: {
 ];
 
 /**
- * Classic orange / teal — Mode sombre (rectifié).
- * Orange / teal inchangés ; fond / neutre / textes / bordure slate
- * pour un contraste moderne et des cartes nettes.
+ * Classic — Terracotta & pine, warm ink neutrals (rectifié).
+ * Orange brûlé / vert pin inchangés dans l'esprit ; fond / neutre / textes /
+ * bordure recalés sur une teinte chaude (brun-café) — plus chaude que
+ * n'importe quelle autre famille pour une identité "encre & papier".
  */
 export const DEFAULT_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#e2572e',
-  secondaire: '#22c48f',
-  texteFort: '#FAFAFA',
-  texteMuted: '#94A3B8',
-  texteFaint: '#64748B',
-  neutre: '#1E293B',
-  fond: '#0F172A',
-  bordure: '#334155',
+  principal: '#E2572E',
+  secondaire: '#22C48F',
+  texteFort: '#F5F0E8',
+  texteMuted: '#A99D89',
+  texteFaint: '#6F6553',
+  neutre: '#241E15',
+  fond: '#15110B',
+  bordure: '#3B3323',
 };
 
 /**
- * Classic orange / teal — Mode clair (rectifié).
- * Orange brique / émeraude inchangés ; textes slate, cartes blanc pur.
+ * Classic — Terracotta & pine, warm ink neutrals — Mode clair (rectifié).
+ * Orange brique / émeraude inchangés ; textes / cartes / bordure ivoire chaud
+ * (jamais bleu-slate) pour rester distinct d'Indigo et Ardoise.
  */
 export const LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#c2410c',
-  secondaire: '#00875f',
-  texteFort: '#0F172A',
-  texteMuted: '#475569',
-  texteFaint: '#94A3B8',
+  principal: '#C2410C',
+  secondaire: '#00875F',
+  texteFort: '#201A10',
+  texteMuted: '#6B6047',
+  texteFaint: '#9C8F73',
   neutre: '#FFFFFF',
-  fond: '#F8FAFC',
-  bordure: '#E2E8F0',
+  fond: '#FAF6EE',
+  bordure: '#E7DFCC',
 };
 
 /**
- * Indigo / amber — Mode sombre (rectifié).
- * Indigo / ambre inchangés ; fond / neutre / textes / bordure slate.
+ * Indigo — Violet & ambre, midnight neutrals (rectifié).
+ * Indigo / ambre inchangés ; fond / neutre / textes / bordure teintés violet
+ * (jamais slate générique) pour une identité "tech nocturne" propre.
  */
 export const INDIGO_DARK_HERO_PALETTE: PortfolioHeroPalette = {
   principal: '#6366F1',
   secondaire: '#F59E0B',
-  texteFort: '#F8FAFC',
-  texteMuted: '#94A3B8',
-  texteFaint: '#64748B',
-  neutre: '#1E293B',
-  fond: '#0F172A',
-  bordure: '#334155',
+  texteFort: '#F5F5FF',
+  texteMuted: '#A6A8C9',
+  texteFaint: '#6E7096',
+  neutre: '#1B1C33',
+  fond: '#0D0E1F',
+  bordure: '#2E2F52',
 };
 
 /**
- * Indigo / amber — Mode clair (rectifié).
- * Indigo inchangé ; Secondaire orange vif ; textes / neutre / bordure slate.
+ * Indigo — Violet & ambre, midnight neutrals — Mode clair (rectifié).
+ * Indigo inchangé ; secondaire orange vif ; textes / neutre / bordure teintés
+ * violet très doux (jamais slate) pour rester distinct de Classic et Ardoise.
  */
 export const INDIGO_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
   principal: '#4338CA',
   secondaire: '#EA580C',
-  texteFort: '#0F172A',
-  texteMuted: '#475569',
-  texteFaint: '#94A3B8',
+  texteFort: '#16162E',
+  texteMuted: '#4B4D75',
+  texteFaint: '#8688AC',
   neutre: '#FFFFFF',
-  fond: '#F8FAFC',
-  bordure: '#E2E8F0',
+  fond: '#F5F5FC',
+  bordure: '#E1E1F2',
 };
 
 /**
@@ -371,33 +375,37 @@ export const ECARLATE_DARK_HERO_PALETTE: PortfolioHeroPalette = {
 };
 
 /**
- * Ardoise / Rouge / Bleu — Mode clair (défaut).
- * Fond oklch(86.9% 0.022 252.894) ≈ #d4dbe7 ; principal #f29107 + bleu #2563EB.
+ * Ardoise — Steel & copper, cool stone neutrals (rectifié).
+ * Principal bleu acier (froid, désaturé — distinct du violet vif d'Indigo) +
+ * secondaire cuivre chaud ; fond / neutre / textes / bordure teintés pierre
+ * bleu-gris pour une identité "architecture & pierre" propre, jamais slate
+ * générique ni proche de Classic (chaud/brun) ou Indigo (violet saturé).
  */
 export const ARDOISE_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#f29107',
-  secondaire: '#2563EB',
-  texteFort: '#0F172A',
-  texteMuted: '#475569',
-  texteFaint: '#94A3B8',
+  principal: '#1D6FA8',
+  secondaire: '#C97A1E',
+  texteFort: '#101820',
+  texteMuted: '#51606D',
+  texteFaint: '#8996A3',
   neutre: '#FFFFFF',
-  fond: '#D4DBE7',
-  bordure: '#CBD5E1',
+  fond: '#E7EBEF',
+  bordure: '#D6DCE2',
 };
 
 /**
- * Ardoise / Rouge / Bleu — Mode sombre.
- * Fond #030712 ; principal #f29107 + bleu #60A5FA ; neutres Gray.
+ * Ardoise — Steel & copper, cool stone neutrals — Mode sombre.
+ * Bleu acier clarifié + cuivre chaud sur pierre quasi-noire (bleu-gris,
+ * jamais Gray/Slate neutre) pour un contraste net avec Indigo et Classic.
  */
 export const ARDOISE_DARK_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#f29107',
-  secondaire: '#60A5FA',
-  texteFort: '#F9FAFB',
-  texteMuted: '#9CA3AF',
-  texteFaint: '#6B7280',
-  neutre: '#1F2937',
-  fond: '#030712',
-  bordure: '#374151',
+  principal: '#5B9BD1',
+  secondaire: '#E8A33D',
+  texteFort: '#EEF2F5',
+  texteMuted: '#99A7B3',
+  texteFaint: '#687784',
+  neutre: '#1C2530',
+  fond: '#0A0F15',
+  bordure: '#303B47',
 };
 
 /** Named Hero palette presets users can switch between in settings. */
@@ -430,7 +438,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'indigo-dark',
     label: 'Mode sombre',
-    description: 'Indigo #6366F1 / ambre #F59E0B — fond slate #0F172A.',
+    description: 'Indigo #6366F1 / ambre #F59E0B — fond violet nocturne #0D0E1F.',
     family: 'indigo',
     mode: 'dark',
     palette: INDIGO_DARK_HERO_PALETTE,
@@ -438,7 +446,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'indigo-light',
     label: 'Mode clair',
-    description: 'Indigo #4338CA / orange #EA580C — fond #F8FAFC (slate).',
+    description: 'Indigo #4338CA / orange #EA580C — fond #F5F5FC (violet doux).',
     family: 'indigo',
     mode: 'light',
     palette: INDIGO_LIGHT_HERO_PALETTE,
@@ -446,7 +454,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'classic-dark',
     label: 'Classic dark',
-    description: 'Orange #e2572e / teal #22c48f — fond slate #0F172A.',
+    description: 'Terracotta #E2572E / pin #22C48F — fond encre chaude #15110B.',
     family: 'classic',
     mode: 'dark',
     palette: DEFAULT_HERO_PALETTE,
@@ -454,7 +462,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'classic-light',
     label: 'Classic light',
-    description: 'Orange #c2410c / teal #00875f — fond #F8FAFC (slate).',
+    description: 'Terracotta #C2410C / pin #00875F — fond ivoire chaud #FAF6EE.',
     family: 'classic',
     mode: 'light',
     palette: LIGHT_HERO_PALETTE,
@@ -558,7 +566,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'ardoise-dark',
     label: 'Ardoise sombre',
-    description: 'Rouge #F87171 / bleu #60A5FA — fond #030712 (Gray).',
+    description: 'Bleu acier #5B9BD1 / cuivre #E8A33D — fond pierre #0A0F15.',
     family: 'ardoise',
     mode: 'dark',
     palette: ARDOISE_DARK_HERO_PALETTE,
@@ -566,7 +574,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'ardoise-light',
     label: 'Ardoise clair',
-    description: 'Rouge #EF4444 / bleu #2563EB — fond #D4DBE7 (slate doux).',
+    description: 'Bleu acier #1D6FA8 / cuivre #C97A1E — fond #E7EBEF (pierre).',
     family: 'ardoise',
     mode: 'light',
     palette: ARDOISE_LIGHT_HERO_PALETTE,

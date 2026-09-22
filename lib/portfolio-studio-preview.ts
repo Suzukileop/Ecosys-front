@@ -6,6 +6,7 @@ export const PORTFOLIO_STUDIO_EMBED_QUERY = 'embed';
 export type PortfolioStudioPreviewMeta = {
   availableTools: string[];
   availableWorks: { id: string; title: string; imageUrl: string }[];
+  availableServices: { id: string; title: string }[];
   navSocialLinkOptions: PortfolioNavChromeLink[];
 };
 
@@ -74,5 +75,6 @@ export function previewAnchorForSettingsSection(sectionId: string): string | nul
 export const EMPTY_PORTFOLIO_STUDIO_PREVIEW_META: PortfolioStudioPreviewMeta = {
   availableTools: [],
   availableWorks: [],
+  availableServices: [],
   navSocialLinkOptions: [],
 };

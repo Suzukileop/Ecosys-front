@@ -22,11 +22,17 @@ import type {
   PortfolioToolsColorBindings,
   PortfolioToolsPalette,
 } from '@/components/portfolio/portfolio-tools-palette-settings';
-import type {
-  PortfolioHeaderDesign,
-  PortfolioHeaderBottomSpacing,
-} from '@/components/portfolio/portfolio-header-design-shared';
 import type { PortfolioSectionColorMode } from '@/components/portfolio/portfolio-section-color-mode';
+import type {
+  PortfolioStackHeaderAccentCountAlignment,
+  PortfolioStackHeaderDesignAlignment,
+  PortfolioStackHeaderBillboardWordStyle,
+  PortfolioStackHeaderDesign,
+  PortfolioStackHeaderMarginBottom,
+  PortfolioStackHeaderPaletteToken,
+  PortfolioStackHeaderTitleSize,
+  PortfolioStackHeaderTitleWeight,
+} from '@/components/portfolio/portfolio-stack-header-settings';
 
 export type PortfolioStackDesign =
   | 'workflow-rail'
@@ -58,11 +64,6 @@ export type PortfolioStackTitleSize = 'sm' | 'md' | 'lg' | 'xl';
 
 /** Section subtitle scale for all Stack designs. */
 export type PortfolioStackSubtitleSize = 'sm' | 'md' | 'lg';
-
-/** Header design — visual/motion treatment for the section's title + subtitle. Shared
- *  1:1 with Tools' `PortfolioToolsHeaderDesign` — both sections can render any of the
- *  12 header-design components (stack-header-designs/* + tools-header-designs/*). */
-export type PortfolioStackHeaderDesign = PortfolioHeaderDesign;
 
 /**
  * Standalone Stack gallery/presentation settings — shared visual fields used by Stack
@@ -180,10 +181,104 @@ export type PortfolioStackPresentationSettings = PortfolioSectionBackgroundSetti
   titleSize?: PortfolioStackTitleSize;
   /** Subtitle size — applies to sticky header and embedded stack-tags subtitle. */
   subtitleSize?: PortfolioStackSubtitleSize;
-  /** Header design — which stack-header-designs/* component renders the section title/subtitle. */
+  /** Header design — one shared, GSAP-animated header mounted above the Stack section. */
   headerDesign: PortfolioStackHeaderDesign;
-  /** Gap between the header block and the gallery below it. */
-  headerBottomSpacing: PortfolioHeaderBottomSpacing;
+  /** Master switch for Header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
+  headerAnimationEnabled: boolean;
+  headerDesignAlignment: PortfolioStackHeaderDesignAlignment;
+  /** Bottom spacing under every Header design — shared across all of them. */
+  headerMarginBottom: PortfolioStackHeaderMarginBottom;
+  /** Title size/weight — shared across every Header design. */
+  headerTitleSize: PortfolioStackHeaderTitleSize;
+  headerTitleWeight: PortfolioStackHeaderTitleWeight;
+  /** Header accent count — badge text supports a {count} token for the stack item count. */
+  headerAccentCountBadgeText: string;
+  headerAccentCountLeadText: string;
+  /** Header accent count — badge and lead bound to a palette token, independently. */
+  headerAccentCountBadgeColor: PortfolioStackHeaderPaletteToken;
+  headerAccentCountLeadColor: PortfolioStackHeaderPaletteToken;
+  /** Header accent count — one size/weight for the whole line (badge + lead flow together). */
+  headerAccentCountSize: PortfolioStackHeaderTitleSize;
+  headerAccentCountWeight: PortfolioStackHeaderTitleWeight;
+  /** Header accent count — its own 3-way alignment (adds "right", unlike the shared control). */
+  headerAccentCountAlignment: PortfolioStackHeaderAccentCountAlignment;
+  /** Header serif lead — small label above the large serif title. */
+  headerSerifLeadLabelText: string;
+  /** Header serif lead — the large serif title itself, independent of the section title. */
+  headerSerifLeadTitleText: string;
+  /** Header serif lead — each element bound to a palette token, independently. */
+  headerSerifLeadLabelColor: PortfolioStackHeaderPaletteToken;
+  headerSerifLeadTitleColor: PortfolioStackHeaderPaletteToken;
+  headerSerifLeadSubtitleColor: PortfolioStackHeaderPaletteToken;
+  /** Header serif lead — each element sized/weighted independently. */
+  headerSerifLeadLabelSize: PortfolioStackHeaderTitleSize;
+  headerSerifLeadTitleSize: PortfolioStackHeaderTitleSize;
+  headerSerifLeadSubtitleSize: PortfolioStackHeaderTitleSize;
+  headerSerifLeadLabelWeight: PortfolioStackHeaderTitleWeight;
+  headerSerifLeadTitleWeight: PortfolioStackHeaderTitleWeight;
+  headerSerifLeadSubtitleWeight: PortfolioStackHeaderTitleWeight;
+  /** Header billboard — big faint background word + a {count}-token line. */
+  headerBillboardBigWord: string;
+  headerBillboardCountText: string;
+  /** Header billboard — the editorial split title beneath the big word, independent of the section title. */
+  headerBillboardTitleText: string;
+  /** Header billboard — outline (stroke only) or fill (solid) big word. */
+  headerBillboardWordStyle: PortfolioStackHeaderBillboardWordStyle;
+  /** Header billboard — each element bound to a palette token, independently. */
+  headerBillboardWordColor: PortfolioStackHeaderPaletteToken;
+  headerBillboardTitleColor: PortfolioStackHeaderPaletteToken;
+  headerBillboardMetaColor: PortfolioStackHeaderPaletteToken;
+  /** Header split heading — small label on the side opposite the narrative title. */
+  headerSplitHeadingLabelText: string;
+  /** Header split heading — the narrative title itself, independent of the section title. */
+  headerSplitHeadingTitleText: string;
+  /** Header split heading — each element bound to a palette token, independently. */
+  headerSplitHeadingTitleColor: PortfolioStackHeaderPaletteToken;
+  headerSplitHeadingLabelColor: PortfolioStackHeaderPaletteToken;
+  /** Header split heading — each element sized/weighted independently. */
+  headerSplitHeadingTitleSize: PortfolioStackHeaderTitleSize;
+  headerSplitHeadingTitleWeight: PortfolioStackHeaderTitleWeight;
+  headerSplitHeadingLabelSize: PortfolioStackHeaderTitleSize;
+  headerSplitHeadingLabelWeight: PortfolioStackHeaderTitleWeight;
+  /** Header masthead — up to 3 independent lines, monumental headline text,
+   *  each stacked into the mast (no more period-splitting a single string). */
+  headerMastheadLine1Text: string;
+  headerMastheadLine2Text: string;
+  headerMastheadLine3Text: string;
+  /** Header masthead — one color for the whole headline, across every line. */
+  headerMastheadHeadlineColor: PortfolioStackHeaderPaletteToken;
+  /** Header masthead — one size/weight for the whole headline, across every line. */
+  headerMastheadHeadlineSize: PortfolioStackHeaderTitleSize;
+  headerMastheadHeadlineWeight: PortfolioStackHeaderTitleWeight;
+  /** Header index — small label on the top divider rule (e.g. "Index", "Catalog"). */
+  headerIndexLabelText: string;
+  /** Header index — the title beside the counting numeral, independent of the section title. */
+  headerIndexTitleText: string;
+  /** Header index — caption under the counter (e.g. "Technologies"). Empty falls back to automatic pluralization. */
+  headerIndexCountLabelText: string;
+  /** Header index — the small subtitle under the title, independent of the section subtitle. */
+  headerIndexSubtitleText: string;
+  /** Header index — each element bound to a palette token, independently. */
+  headerIndexLabelColor: PortfolioStackHeaderPaletteToken;
+  headerIndexNumberColor: PortfolioStackHeaderPaletteToken;
+  headerIndexTitleColor: PortfolioStackHeaderPaletteToken;
+  headerIndexSubtitleColor: PortfolioStackHeaderPaletteToken;
+  /** Header index — each element sized/weighted independently. */
+  headerIndexLabelSize: PortfolioStackHeaderTitleSize;
+  headerIndexLabelWeight: PortfolioStackHeaderTitleWeight;
+  headerIndexTitleSize: PortfolioStackHeaderTitleSize;
+  headerIndexTitleWeight: PortfolioStackHeaderTitleWeight;
+  headerIndexSubtitleSize: PortfolioStackHeaderTitleSize;
+  headerIndexSubtitleWeight: PortfolioStackHeaderTitleWeight;
+  /** Header marquee — up to 4 independent words in the repeating band, each its own field (empty slots are dropped). */
+  headerMarqueeWord1Text: string;
+  headerMarqueeWord2Text: string;
+  headerMarqueeWord3Text: string;
+  headerMarqueeWord4Text: string;
+  /** Header marquee — alternating fill/outline words bound to one palette token. */
+  headerMarqueeWordColor: PortfolioStackHeaderPaletteToken;
+  /** Header marquee — scales the repeating word band. */
+  headerMarqueeSize: PortfolioStackHeaderTitleSize;
 };
 
 /** Legacy title presets accepted in saved JSON — normalized by mergeStackPresentation. */

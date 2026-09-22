@@ -25,6 +25,21 @@ import {
   patchElementStylesRecord,
   type PortfolioElementTextStyle,
 } from '@/components/portfolio/portfolio-element-text-style';
+import {
+  FOOTER_HEADER_BILLBOARD_WORD_STYLES,
+  FOOTER_HEADER_DESIGNS,
+  FOOTER_HEADER_MARGIN_BOTTOM_STEPS,
+  FOOTER_HEADER_PALETTE_TOKENS,
+  FOOTER_HEADER_TITLE_SIZES,
+  FOOTER_HEADER_TITLE_WEIGHTS,
+  type PortfolioFooterHeaderBillboardWordStyle,
+  type PortfolioFooterHeaderDesign,
+  type PortfolioFooterHeaderDesignAlignment,
+  type PortfolioFooterHeaderMarginBottom,
+  type PortfolioFooterHeaderPaletteToken,
+  type PortfolioFooterHeaderTitleSize,
+  type PortfolioFooterHeaderTitleWeight,
+} from '@/components/portfolio/portfolio-footer-header-settings';
 
 export type PortfolioFooterStyleTarget =
   | 'brand'
@@ -58,9 +73,9 @@ export const PORTFOLIO_FOOTER_STYLE_TARGET_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'brand', label: 'Brand name', description: 'Creator name in compact and editorial footers.' },
+  { value: 'brand', label: 'Brand name', description: 'Creator name in compact and centered footers.' },
   { value: 'description', label: 'Description', description: 'Bio or why-me blurb under the brand.' },
-  { value: 'columnHeading', label: 'Column heading', description: '“Networks”, “Contact”, or link-column titles.' },
+  { value: 'columnHeading', label: 'Column heading', description: '“Contact” or link-column titles.' },
   { value: 'contactLine', label: 'Contact / link line', description: 'Phone, email, and landing-style column links.' },
   { value: 'socialLabel', label: 'Social label', description: 'Text labels beside social icons.' },
   { value: 'meta', label: 'Meta / copyright', description: 'Copyright label and design credit.' },
@@ -279,19 +294,28 @@ export function syncFooterElementStylesFromLegacyPatch(
 
 /**
  * Footer layouts:
- * - editorial: columns with separators — Networks | Contact | meta
+ * - centered-minimal: centered identity, internal navigation, bare (borderless) social + contact
+ *   icons, theatrical spring-lift hover focus, native light/dark — the default
  * - compact: SaaS utility bar — brand + icons, contact line, bottom meta
  * - minimal: contact CTA band + bottom utility row
  * - contact-card: accent card (name + location + phone/email) + one Links column
- * - landing: brand + link columns (Product / Creators / Legal) like the site footer
+ * - landing: borderless three-column Swiss grid (identity+bio+socials / Contact / Links),
+ *   theatrical spring-lift hover focus, native light/dark
  */
 export type PortfolioFooterDesign =
-  | 'editorial'
   | 'minimal'
   | 'compact'
   | 'landing'
   | 'centered-minimal'
-  | 'contact-card';
+  | 'contact-card'
+  | 'monumental'
+  | 'hero-columns'
+  | 'split-form'
+  | 'timezone-editorial'
+  | 'inverted-wordmark'
+  | 'services-reveal'
+  | 'editorial-grid'
+  | 'headline-reveal';
 
 export type PortfolioFooterCenteredIdentity = 'avatar' | 'name' | 'custom';
 
@@ -370,8 +394,7 @@ export type PortfolioFooterPresentationSettings = PortfolioSectionBackgroundSett
    */
   landingBrandGapPx: number;
   /**
-   * Shared space below Contact / Links (and Networks) column titles
-   * before the list items — landing + editorial columns.
+   * Shared space below Contact / Links column titles before the list items — landing columns.
    */
   columnHeadingGapPx: number;
   showBrand: boolean;
@@ -484,6 +507,83 @@ export type PortfolioFooterPresentationSettings = PortfolioSectionBackgroundSett
   footerColorBindings?: PortfolioFooterColorBindings;
   /** Unified typography for footer text elements. */
   elementStyles: PortfolioFooterElementStyles;
+  /** Monumental design — giant asymmetric editorial headline above the contact form. */
+  monumentalHeadline: string;
+  /** Hero columns design — acknowledgement/manifesto paragraph in the right column. */
+  heroColumnsManifesto: string;
+  /** Split form design — giant "START A PROJECT." style headline. */
+  splitFormHeadline: string;
+  /** Split form design — short paragraph under the headline. */
+  splitFormDescription: string;
+  /** Split form design — short personal-review quote line. */
+  splitFormQuote: string;
+  /** Inverted wordmark design — "Site by ..." style sub-footer credit line. */
+  invertedWordmarkCredit: string;
+  /** Editorial grid design — poetic accroche inside the suspended bento card. */
+  editorialGridTagline: string;
+  /**
+   * Header — one shared, static (non-animated) header mounted above the Footer section,
+   * copied from the same mechanism used by Info/Work/Team/etc. (footer-portfolio-header-designs/*).
+   * Independent of `design` (which of Footer's own layouts renders the content below).
+   */
+  headerDesign: PortfolioFooterHeaderDesign;
+  headerDesignAlignment: PortfolioFooterHeaderDesignAlignment;
+  /** Bottom spacing under every header design — shared across all of them. */
+  headerMarginBottom: PortfolioFooterHeaderMarginBottom;
+  /** Title size/weight — shared across every header design. */
+  headerTitleSize: PortfolioFooterHeaderTitleSize;
+  headerTitleWeight: PortfolioFooterHeaderTitleWeight;
+  /** Header editorial — own dedicated title/subtitle text (Footer has no pre-existing
+   *  title/subtitle concept to borrow, unlike sections that had one already). */
+  headerEditorialTitleText: string;
+  headerEditorialSubtitleText: string;
+  headerEditorialTitleColor: PortfolioFooterHeaderPaletteToken;
+  headerSerifLeadLabelText: string;
+  headerSerifLeadTitleText: string;
+  headerSerifLeadLabelColor: PortfolioFooterHeaderPaletteToken;
+  headerSerifLeadTitleColor: PortfolioFooterHeaderPaletteToken;
+  headerSerifLeadSubtitleColor: PortfolioFooterHeaderPaletteToken;
+  headerSerifLeadLabelSize: PortfolioFooterHeaderTitleSize;
+  headerSerifLeadTitleSize: PortfolioFooterHeaderTitleSize;
+  headerSerifLeadSubtitleSize: PortfolioFooterHeaderTitleSize;
+  headerSerifLeadLabelWeight: PortfolioFooterHeaderTitleWeight;
+  headerSerifLeadTitleWeight: PortfolioFooterHeaderTitleWeight;
+  headerSerifLeadSubtitleWeight: PortfolioFooterHeaderTitleWeight;
+  headerBillboardBigWord: string;
+  headerBillboardWordStyle: PortfolioFooterHeaderBillboardWordStyle;
+  headerBillboardWordColor: PortfolioFooterHeaderPaletteToken;
+  headerMastheadLine1Text: string;
+  headerMastheadLine2Text: string;
+  headerMastheadLine3Text: string;
+  headerMastheadHeadlineColor: PortfolioFooterHeaderPaletteToken;
+  headerMastheadHeadlineSize: PortfolioFooterHeaderTitleSize;
+  headerMastheadHeadlineWeight: PortfolioFooterHeaderTitleWeight;
+  headerIndexLabelText: string;
+  headerIndexTitleText: string;
+  headerIndexCountLabelText: string;
+  headerIndexSubtitleText: string;
+  headerIndexLabelColor: PortfolioFooterHeaderPaletteToken;
+  headerIndexNumberColor: PortfolioFooterHeaderPaletteToken;
+  headerIndexTitleColor: PortfolioFooterHeaderPaletteToken;
+  headerIndexSubtitleColor: PortfolioFooterHeaderPaletteToken;
+  headerIndexLabelSize: PortfolioFooterHeaderTitleSize;
+  headerIndexLabelWeight: PortfolioFooterHeaderTitleWeight;
+  headerIndexTitleSize: PortfolioFooterHeaderTitleSize;
+  headerIndexTitleWeight: PortfolioFooterHeaderTitleWeight;
+  headerIndexSubtitleSize: PortfolioFooterHeaderTitleSize;
+  headerIndexSubtitleWeight: PortfolioFooterHeaderTitleWeight;
+  /** Header hero — Footer-local design (centered monumental headline + CTA pill). */
+  headerHeroTitleText: string;
+  headerHeroCtaLabel: string;
+  headerHeroTitleColor: PortfolioFooterHeaderPaletteToken;
+  /** Header name — Footer-local 10th design (just the creator's name, no text field). */
+  headerNameColor: PortfolioFooterHeaderPaletteToken;
+  /** Header timezone — Footer-local 11th design (kicker + 2-line title + description,
+   *  live clock + location on the right — those two come from real profile data, no field). */
+  headerTimezoneKickerText: string;
+  headerTimezoneTitleText: string;
+  headerTimezoneDescriptionText: string;
+  headerTimezoneTitleColor: PortfolioFooterHeaderPaletteToken;
 };
 
 const LEGACY_FR_CTA_TITLES = new Set(['Un projet en tête ?', 'Un projet en tete ?']);
@@ -513,6 +613,16 @@ export const DEFAULT_FOOTER_CTA_BUTTON_BG = '#ffffff';
 export const DEFAULT_FOOTER_CTA_BUTTON_TEXT = '#0a0a0a';
 export const DEFAULT_FOOTER_CTA_BUTTON_BORDER = '#e5e5e5';
 export const DEFAULT_FOOTER_COPYRIGHT_LABEL = '© {year} {name}';
+export const DEFAULT_FOOTER_MONUMENTAL_HEADLINE = "Let's build\nsomething remarkable";
+export const DEFAULT_FOOTER_HERO_COLUMNS_MANIFESTO =
+  'A short note on how we work: thoughtful collaboration, careful craft, and a bias for clarity over noise.';
+export const DEFAULT_FOOTER_SPLIT_FORM_HEADLINE = 'Start a\nproject.';
+export const DEFAULT_FOOTER_SPLIT_FORM_DESCRIPTION =
+  "Tell us a little about what you're building — we'll get back to you within a day or two.";
+export const DEFAULT_FOOTER_SPLIT_FORM_QUOTE =
+  "I'll personally review your project and respond within 24 hours.";
+export const DEFAULT_FOOTER_INVERTED_WORDMARK_CREDIT = 'Designed & built with care.';
+export const DEFAULT_FOOTER_EDITORIAL_GRID_TAGLINE = 'Feel the fear,\ndo it anyway.';
 
 export function resolveFooterCopyrightLabel(
   label: string | undefined,
@@ -816,7 +926,7 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   sectionBackgroundFill: 'solid',
   sectionBackgroundColor: DEFAULT_FOOTER_BACKGROUND_COLOR,
   sectionBackgroundOpacity: 100,
-  design: 'editorial',
+  design: 'centered-minimal',
   alignment: 'split',
   padding: 'standard',
   paddingTopPx: 40,
@@ -839,8 +949,8 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   linkColumns: DEFAULT_FOOTER_LINK_COLUMNS,
   showEmail: true,
   showPhone: true,
-  showLocation: true,
-  showHours: true,
+  showLocation: false,
+  showHours: false,
   showContactIcons: true,
   contactIconSize: 'md',
   showCtaIcon: true,
@@ -859,12 +969,12 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   showNopbProfileLink: false,
   showProfileVisits: false,
   showContactLinks: true,
-  showDesignCredit: true,
+  showDesignCredit: false,
   showTopBorder: false,
   showContentDivider: true,
   contentDividerColor: '',
   contentDividerOpacity: 40,
-  showContactCta: true,
+  showContactCta: false,
   ctaTitle: DEFAULT_FOOTER_CTA_TITLE,
   ctaSubtitle: DEFAULT_FOOTER_CTA_SUBTITLE,
   ctaButtonLabel: DEFAULT_FOOTER_CTA_BUTTON,
@@ -891,6 +1001,63 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   footerPalette: DEFAULT_FOOTER_PALETTE,
   footerColorBindings: DEFAULT_FOOTER_COLOR_BINDINGS,
   elementStyles: DEFAULT_FOOTER_ELEMENT_STYLES,
+  monumentalHeadline: DEFAULT_FOOTER_MONUMENTAL_HEADLINE,
+  heroColumnsManifesto: DEFAULT_FOOTER_HERO_COLUMNS_MANIFESTO,
+  splitFormHeadline: DEFAULT_FOOTER_SPLIT_FORM_HEADLINE,
+  splitFormDescription: DEFAULT_FOOTER_SPLIT_FORM_DESCRIPTION,
+  splitFormQuote: DEFAULT_FOOTER_SPLIT_FORM_QUOTE,
+  invertedWordmarkCredit: DEFAULT_FOOTER_INVERTED_WORDMARK_CREDIT,
+  editorialGridTagline: DEFAULT_FOOTER_EDITORIAL_GRID_TAGLINE,
+  headerDesign: 'editorial',
+  headerDesignAlignment: 'left',
+  headerMarginBottom: 'md',
+  headerTitleSize: 'xl',
+  headerTitleWeight: 'bold',
+  headerEditorialTitleText: '',
+  headerEditorialSubtitleText: '',
+  headerEditorialTitleColor: 'texteFort',
+  headerSerifLeadLabelText: '',
+  headerSerifLeadTitleText: '',
+  headerSerifLeadLabelColor: 'texteFort',
+  headerSerifLeadTitleColor: 'texteFort',
+  headerSerifLeadSubtitleColor: 'texteFort',
+  headerSerifLeadLabelSize: 'md',
+  headerSerifLeadTitleSize: 'md',
+  headerSerifLeadSubtitleSize: 'md',
+  headerSerifLeadLabelWeight: 'regular',
+  headerSerifLeadTitleWeight: 'regular',
+  headerSerifLeadSubtitleWeight: 'regular',
+  headerBillboardBigWord: '',
+  headerBillboardWordStyle: 'outline',
+  headerBillboardWordColor: 'principal',
+  headerMastheadLine1Text: '',
+  headerMastheadLine2Text: '',
+  headerMastheadLine3Text: '',
+  headerMastheadHeadlineColor: 'principal',
+  headerMastheadHeadlineSize: 'md',
+  headerMastheadHeadlineWeight: 'regular',
+  headerIndexLabelText: '',
+  headerIndexTitleText: '',
+  headerIndexCountLabelText: '',
+  headerIndexSubtitleText: '',
+  headerIndexLabelColor: 'texteFort',
+  headerIndexNumberColor: 'principal',
+  headerIndexTitleColor: 'texteFort',
+  headerIndexSubtitleColor: 'texteFort',
+  headerIndexLabelSize: 'md',
+  headerIndexLabelWeight: 'regular',
+  headerIndexTitleSize: 'md',
+  headerIndexTitleWeight: 'regular',
+  headerIndexSubtitleSize: 'md',
+  headerIndexSubtitleWeight: 'regular',
+  headerHeroTitleText: '',
+  headerHeroCtaLabel: '',
+  headerHeroTitleColor: 'texteFort',
+  headerNameColor: 'texteFort',
+  headerTimezoneKickerText: '',
+  headerTimezoneTitleText: '',
+  headerTimezoneDescriptionText: '',
+  headerTimezoneTitleColor: 'texteFort',
 };
 
 export const PORTFOLIO_FOOTER_PATTERN_OPTIONS: {
@@ -913,22 +1080,17 @@ export const PORTFOLIO_FOOTER_DESIGN_OPTIONS: {
   {
     value: 'centered-minimal',
     label: 'Centered minimal',
-    description: 'Centered identity, internal navigation, and outlined social icons.',
+    description: 'Centered identity, bare social/contact icons, spring-lift hover focus. Light/dark aware.',
   },
   {
     value: 'landing',
     label: 'Landing columns',
-    description: 'Brand + Contact + Links (marketplace, profile, services, work).',
-  },
-  {
-    value: 'editorial',
-    label: 'Separated columns',
-    description: 'Networks | Contact — two centered columns, copyright below.',
+    description: 'Borderless three-column Swiss grid, bare icons, spring-lift hover focus. Light/dark aware.',
   },
   {
     value: 'compact',
     label: 'Compact SaaS',
-    description: 'Brand + contact stack, icon socials, clean meta bar.',
+    description: 'Monumental headline reveal, borderless contact line, theatrical hover focus. Light/dark aware.',
   },
   {
     value: 'minimal',
@@ -939,6 +1101,46 @@ export const PORTFOLIO_FOOTER_DESIGN_OPTIONS: {
     value: 'contact-card',
     label: 'Contact card',
     description: 'Accent card (name, location, phone, email) + Links — grouped toward the center.',
+  },
+  {
+    value: 'monumental',
+    label: 'Monumental',
+    description: 'Asymmetric editorial grid — giant headline, borderless contact form, kinetic watermark.',
+  },
+  {
+    value: 'hero-columns',
+    label: 'Hero columns',
+    description: 'Monumental hero + pill CTA, then a 3-column grid — parallax portrait, navigation, acknowledgement & info.',
+  },
+  {
+    value: 'split-form',
+    label: 'Split project form',
+    description: 'Asymmetric split screen — identity card and quote on the left, borderless floating-label contact form on the right.',
+  },
+  {
+    value: 'timezone-editorial',
+    label: 'Timezone editorial',
+    description: 'Editorial two-column layout — headline and contact pill left, live local time and arrow-led socials pinned right.',
+  },
+  {
+    value: 'inverted-wordmark',
+    label: 'Inverted wordmark',
+    description: 'Three-column Swiss editorial grid landing on a mirrored, upside-down giant wordmark on a solid sub-footer bar.',
+  },
+  {
+    value: 'services-reveal',
+    label: 'Services grid reveal',
+    description: 'Classic services/contact/address grid, elevated with a scroll-revealed monumental headline and magnetic social icons.',
+  },
+  {
+    value: 'editorial-grid',
+    label: 'Editorial grid',
+    description: 'Edge-to-edge monumental name, a suspended bento card with a magnetic arrow button, and a focus-dim hover on every link.',
+  },
+  {
+    value: 'headline-reveal',
+    label: 'Headline reveal',
+    description: 'Borderless — no dividers, no icon chips. A monumental CTA masks in on scroll, and hovering any coordinate spotlights it while the rest blurs away.',
   },
 ];
 
@@ -1101,17 +1303,16 @@ export function footerContentPaddingStyle(
   >
 ): CSSProperties {
   const sides = resolveFooterPaddingSides(settings);
-  const extraX =
-    settings.design === 'landing' ||
-    settings.design === 'compact' ||
-    settings.design === 'minimal'
-      ? 72
-      : 0;
+  const extraX = settings.design === 'landing' || settings.design === 'compact' ? 72 : 0;
+  // "Contact CTA" (minimal) is a full-width design whose left/right inset should come
+  // purely from the site-wide editorial gutter (the outer shell it's nested in already
+  // applies that) — not a second, independent layer of padding on top of it.
+  const padX = settings.design === 'minimal' ? 0 : extraX;
   return {
     ['--pf-footer-pad-t' as string]: `${sides.top}px`,
     ['--pf-footer-pad-b' as string]: `${sides.bottom}px`,
-    ['--pf-footer-pad-l' as string]: `${sides.left + extraX}px`,
-    ['--pf-footer-pad-r' as string]: `${sides.right + extraX}px`,
+    ['--pf-footer-pad-l' as string]: `${settings.design === 'minimal' ? 0 : sides.left + padX}px`,
+    ['--pf-footer-pad-r' as string]: `${settings.design === 'minimal' ? 0 : sides.right + padX}px`,
   };
 }
 
@@ -1405,10 +1606,8 @@ export function footerLayoutClass(
         : 'flex w-full flex-col gap-10 sm:gap-12';
     case 'contact-card':
       return 'flex w-full flex-col items-center gap-10 sm:gap-12';
-    default: {
-      // Separated columns — Networks | Contact (copyright is below, centered).
+    default:
       return 'flex w-full flex-col items-center gap-8 sm:gap-10';
-    }
   }
 }
 
@@ -1890,7 +2089,21 @@ export function mergeFooterPresentation(
     ...mergedBackground,
     design: pick(
       record.design,
-      ['editorial', 'minimal', 'compact', 'landing', 'centered-minimal', 'contact-card'],
+      [
+        'minimal',
+        'compact',
+        'landing',
+        'centered-minimal',
+        'contact-card',
+        'monumental',
+        'hero-columns',
+        'split-form',
+        'timezone-editorial',
+        'inverted-wordmark',
+        'services-reveal',
+        'editorial-grid',
+        'headline-reveal',
+      ],
       base.design
     ),
     alignment: pick(record.alignment, ['split', 'center', 'left'], base.alignment),
@@ -2098,5 +2311,254 @@ export function mergeFooterPresentation(
       record.footerColorBindings ?? base.footerColorBindings
     ),
     elementStyles,
+    monumentalHeadline:
+      typeof record.monumentalHeadline === 'string'
+        ? record.monumentalHeadline
+        : base.monumentalHeadline ?? DEFAULT_FOOTER_MONUMENTAL_HEADLINE,
+    heroColumnsManifesto:
+      typeof record.heroColumnsManifesto === 'string'
+        ? record.heroColumnsManifesto
+        : base.heroColumnsManifesto ?? DEFAULT_FOOTER_HERO_COLUMNS_MANIFESTO,
+    splitFormHeadline:
+      typeof record.splitFormHeadline === 'string'
+        ? record.splitFormHeadline
+        : base.splitFormHeadline ?? DEFAULT_FOOTER_SPLIT_FORM_HEADLINE,
+    splitFormDescription:
+      typeof record.splitFormDescription === 'string'
+        ? record.splitFormDescription
+        : base.splitFormDescription ?? DEFAULT_FOOTER_SPLIT_FORM_DESCRIPTION,
+    splitFormQuote:
+      typeof record.splitFormQuote === 'string'
+        ? record.splitFormQuote
+        : base.splitFormQuote ?? DEFAULT_FOOTER_SPLIT_FORM_QUOTE,
+    invertedWordmarkCredit:
+      typeof record.invertedWordmarkCredit === 'string'
+        ? record.invertedWordmarkCredit
+        : base.invertedWordmarkCredit ?? DEFAULT_FOOTER_INVERTED_WORDMARK_CREDIT,
+    editorialGridTagline:
+      typeof record.editorialGridTagline === 'string'
+        ? record.editorialGridTagline
+        : base.editorialGridTagline ?? DEFAULT_FOOTER_EDITORIAL_GRID_TAGLINE,
+    headerDesign: pick(record.headerDesign, FOOTER_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
+    headerDesignAlignment: pick(
+      record.headerDesignAlignment,
+      ['left', 'center', 'right'],
+      base.headerDesignAlignment ?? 'left'
+    ),
+    headerMarginBottom: pick(
+      record.headerMarginBottom,
+      FOOTER_HEADER_MARGIN_BOTTOM_STEPS,
+      base.headerMarginBottom ?? 'md'
+    ),
+    headerTitleSize: pick(record.headerTitleSize, FOOTER_HEADER_TITLE_SIZES, base.headerTitleSize ?? 'xl'),
+    headerTitleWeight: pick(
+      record.headerTitleWeight,
+      FOOTER_HEADER_TITLE_WEIGHTS,
+      base.headerTitleWeight ?? 'bold'
+    ),
+    headerEditorialTitleText:
+      typeof record.headerEditorialTitleText === 'string'
+        ? record.headerEditorialTitleText
+        : (base.headerEditorialTitleText ?? ''),
+    headerEditorialSubtitleText:
+      typeof record.headerEditorialSubtitleText === 'string'
+        ? record.headerEditorialSubtitleText
+        : (base.headerEditorialSubtitleText ?? ''),
+    headerEditorialTitleColor: pick(
+      record.headerEditorialTitleColor,
+      FOOTER_HEADER_PALETTE_TOKENS,
+      base.headerEditorialTitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadLabelText:
+      typeof record.headerSerifLeadLabelText === 'string'
+        ? record.headerSerifLeadLabelText
+        : (base.headerSerifLeadLabelText ?? ''),
+    headerSerifLeadTitleText:
+      typeof record.headerSerifLeadTitleText === 'string'
+        ? record.headerSerifLeadTitleText
+        : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadLabelColor: pick(
+      record.headerSerifLeadLabelColor,
+      FOOTER_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadLabelColor ?? 'texteFort'
+    ),
+    headerSerifLeadTitleColor: pick(
+      record.headerSerifLeadTitleColor,
+      FOOTER_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadTitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadSubtitleColor: pick(
+      record.headerSerifLeadSubtitleColor,
+      FOOTER_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadSubtitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadLabelSize: pick(
+      record.headerSerifLeadLabelSize,
+      FOOTER_HEADER_TITLE_SIZES,
+      base.headerSerifLeadLabelSize ?? 'md'
+    ),
+    headerSerifLeadTitleSize: pick(
+      record.headerSerifLeadTitleSize,
+      FOOTER_HEADER_TITLE_SIZES,
+      base.headerSerifLeadTitleSize ?? 'md'
+    ),
+    headerSerifLeadSubtitleSize: pick(
+      record.headerSerifLeadSubtitleSize,
+      FOOTER_HEADER_TITLE_SIZES,
+      base.headerSerifLeadSubtitleSize ?? 'md'
+    ),
+    headerSerifLeadLabelWeight: pick(
+      record.headerSerifLeadLabelWeight,
+      FOOTER_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadLabelWeight ?? 'regular'
+    ),
+    headerSerifLeadTitleWeight: pick(
+      record.headerSerifLeadTitleWeight,
+      FOOTER_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadTitleWeight ?? 'regular'
+    ),
+    headerSerifLeadSubtitleWeight: pick(
+      record.headerSerifLeadSubtitleWeight,
+      FOOTER_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadSubtitleWeight ?? 'regular'
+    ),
+    headerBillboardBigWord:
+      typeof record.headerBillboardBigWord === 'string'
+        ? record.headerBillboardBigWord
+        : (base.headerBillboardBigWord ?? ''),
+    headerBillboardWordStyle: pick(
+      record.headerBillboardWordStyle,
+      FOOTER_HEADER_BILLBOARD_WORD_STYLES,
+      base.headerBillboardWordStyle ?? 'outline'
+    ),
+    headerBillboardWordColor: pick(
+      record.headerBillboardWordColor,
+      FOOTER_HEADER_PALETTE_TOKENS,
+      base.headerBillboardWordColor ?? 'principal'
+    ),
+    headerMastheadLine1Text:
+      typeof record.headerMastheadLine1Text === 'string'
+        ? record.headerMastheadLine1Text
+        : (base.headerMastheadLine1Text ?? ''),
+    headerMastheadLine2Text:
+      typeof record.headerMastheadLine2Text === 'string'
+        ? record.headerMastheadLine2Text
+        : (base.headerMastheadLine2Text ?? ''),
+    headerMastheadLine3Text:
+      typeof record.headerMastheadLine3Text === 'string'
+        ? record.headerMastheadLine3Text
+        : (base.headerMastheadLine3Text ?? ''),
+    headerMastheadHeadlineColor: pick(
+      record.headerMastheadHeadlineColor,
+      FOOTER_HEADER_PALETTE_TOKENS,
+      base.headerMastheadHeadlineColor ?? 'principal'
+    ),
+    headerMastheadHeadlineSize: pick(
+      record.headerMastheadHeadlineSize,
+      FOOTER_HEADER_TITLE_SIZES,
+      base.headerMastheadHeadlineSize ?? 'md'
+    ),
+    headerMastheadHeadlineWeight: pick(
+      record.headerMastheadHeadlineWeight,
+      FOOTER_HEADER_TITLE_WEIGHTS,
+      base.headerMastheadHeadlineWeight ?? 'regular'
+    ),
+    headerIndexLabelText:
+      typeof record.headerIndexLabelText === 'string' ? record.headerIndexLabelText : (base.headerIndexLabelText ?? ''),
+    headerIndexTitleText:
+      typeof record.headerIndexTitleText === 'string' ? record.headerIndexTitleText : (base.headerIndexTitleText ?? ''),
+    headerIndexCountLabelText:
+      typeof record.headerIndexCountLabelText === 'string'
+        ? record.headerIndexCountLabelText
+        : (base.headerIndexCountLabelText ?? ''),
+    headerIndexSubtitleText:
+      typeof record.headerIndexSubtitleText === 'string'
+        ? record.headerIndexSubtitleText
+        : (base.headerIndexSubtitleText ?? ''),
+    headerIndexLabelColor: pick(
+      record.headerIndexLabelColor,
+      FOOTER_HEADER_PALETTE_TOKENS,
+      base.headerIndexLabelColor ?? 'texteFort'
+    ),
+    headerIndexNumberColor: pick(
+      record.headerIndexNumberColor,
+      FOOTER_HEADER_PALETTE_TOKENS,
+      base.headerIndexNumberColor ?? 'principal'
+    ),
+    headerIndexTitleColor: pick(
+      record.headerIndexTitleColor,
+      FOOTER_HEADER_PALETTE_TOKENS,
+      base.headerIndexTitleColor ?? 'texteFort'
+    ),
+    headerIndexSubtitleColor: pick(
+      record.headerIndexSubtitleColor,
+      FOOTER_HEADER_PALETTE_TOKENS,
+      base.headerIndexSubtitleColor ?? 'texteFort'
+    ),
+    headerIndexLabelSize: pick(
+      record.headerIndexLabelSize,
+      FOOTER_HEADER_TITLE_SIZES,
+      base.headerIndexLabelSize ?? 'md'
+    ),
+    headerIndexLabelWeight: pick(
+      record.headerIndexLabelWeight,
+      FOOTER_HEADER_TITLE_WEIGHTS,
+      base.headerIndexLabelWeight ?? 'regular'
+    ),
+    headerIndexTitleSize: pick(
+      record.headerIndexTitleSize,
+      FOOTER_HEADER_TITLE_SIZES,
+      base.headerIndexTitleSize ?? 'md'
+    ),
+    headerIndexTitleWeight: pick(
+      record.headerIndexTitleWeight,
+      FOOTER_HEADER_TITLE_WEIGHTS,
+      base.headerIndexTitleWeight ?? 'regular'
+    ),
+    headerIndexSubtitleSize: pick(
+      record.headerIndexSubtitleSize,
+      FOOTER_HEADER_TITLE_SIZES,
+      base.headerIndexSubtitleSize ?? 'md'
+    ),
+    headerIndexSubtitleWeight: pick(
+      record.headerIndexSubtitleWeight,
+      FOOTER_HEADER_TITLE_WEIGHTS,
+      base.headerIndexSubtitleWeight ?? 'regular'
+    ),
+    headerHeroTitleText:
+      typeof record.headerHeroTitleText === 'string'
+        ? record.headerHeroTitleText
+        : (base.headerHeroTitleText ?? ''),
+    headerHeroCtaLabel:
+      typeof record.headerHeroCtaLabel === 'string'
+        ? record.headerHeroCtaLabel
+        : (base.headerHeroCtaLabel ?? ''),
+    headerHeroTitleColor: pick(
+      record.headerHeroTitleColor,
+      FOOTER_HEADER_PALETTE_TOKENS,
+      base.headerHeroTitleColor ?? 'texteFort'
+    ),
+    headerNameColor: pick(
+      record.headerNameColor,
+      FOOTER_HEADER_PALETTE_TOKENS,
+      base.headerNameColor ?? 'texteFort'
+    ),
+    headerTimezoneKickerText:
+      typeof record.headerTimezoneKickerText === 'string'
+        ? record.headerTimezoneKickerText
+        : (base.headerTimezoneKickerText ?? ''),
+    headerTimezoneTitleText:
+      typeof record.headerTimezoneTitleText === 'string'
+        ? record.headerTimezoneTitleText
+        : (base.headerTimezoneTitleText ?? ''),
+    headerTimezoneDescriptionText:
+      typeof record.headerTimezoneDescriptionText === 'string'
+        ? record.headerTimezoneDescriptionText
+        : (base.headerTimezoneDescriptionText ?? ''),
+    headerTimezoneTitleColor: pick(
+      record.headerTimezoneTitleColor,
+      FOOTER_HEADER_PALETTE_TOKENS,
+      base.headerTimezoneTitleColor ?? 'texteFort'
+    ),
   };
 }

@@ -112,10 +112,8 @@ export function ExperienceSpotlightHeader({
   const rowRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
 
-  const presentation: PortfolioExperiencePresentationSettings = {
-    ...(presentationProp ?? DEFAULT_EXPERIENCE_PRESENTATION),
-    experienceDesign: 'spotlight',
-  };
+  const presentation: PortfolioExperiencePresentationSettings =
+    presentationProp ?? DEFAULT_EXPERIENCE_PRESENTATION;
 
   const words = [
     presentation.spotlightBigTitleText?.trim() || 'Experience',

@@ -22,6 +22,23 @@ function isLaidOut(el: HTMLElement): boolean {
   return el.getClientRects().length > 0;
 }
 
+/** Nearest scrollable ancestor — ScrollTrigger needs this explicitly inside an
+ *  embedded/iframe dashboard preview, where `window` isn't the real scroller. */
+function workHeaderScrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
+}
+
 const TITLE_SIZE_CLASS: Record<PortfolioWorkHeaderTitleSize, string> = {
   sm: 'text-4xl sm:text-5xl lg:text-6xl',
   md: 'text-5xl sm:text-6xl lg:text-7xl',
@@ -69,7 +86,18 @@ export function WorkEditorialHeader({
     if (prefersReducedMotion() || !animationEnabled) return;
 
     gsap.registerPlugin(ScrollTrigger);
-    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+    const refreshId = window.setTimeout(() => {
+      try {
+        ScrollTrigger.refresh();
+      } catch (error) {
+        // GSAP's ScrollTrigger.refresh() can throw internally on an edge case
+        // (e.g. "Cannot read properties of undefined (reading 'end')") during
+        // its own init-time recompute; uncaught, that crash propagates up
+        // through this deferred setTimeout with no React boundary to catch it
+        // and takes down the whole page. Never let a best-effort refresh do that.
+        console.error('[ScrollTrigger] deferred refresh() failed', error);
+      }
+    }, 90);
 
     const ctx = gsap.context(() => {
       const pick = (selector: string) =>
@@ -79,7 +107,19 @@ export function WorkEditorialHeader({
       const subs = pick('.pf-work-editorial-sub');
       const stage = header.querySelector<HTMLElement>('.pf-work-editorial-stage');
 
-      const tl = gsap.timeline({ defaults: { overwrite: 'auto' } });
+      // Gated by ScrollTrigger, not fired on mount — a header mounted below
+      // the fold must stay in its hidden "from" state (set immediately, no
+      // flash) until it actually scrolls into view, not play-then-finish
+      // off-screen and show up already static.
+      const tl = gsap.timeline({
+        defaults: { overwrite: 'auto' },
+        scrollTrigger: {
+          trigger: header,
+          scroller: workHeaderScrollParent(header),
+          start: 'top 85%',
+          once: true,
+        },
+      });
       if (kicker.length) tl.fromTo(kicker, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power2.out' }, 0);
       if (lines.length) {
         tl.set(lines, { yPercent: 110 }, 0);
@@ -100,6 +140,7 @@ export function WorkEditorialHeader({
             ease: 'none',
             scrollTrigger: {
               trigger: header,
+              scroller: workHeaderScrollParent(header),
               start: 'top 20%',
               end: 'top -20%',
               scrub: 0.5,

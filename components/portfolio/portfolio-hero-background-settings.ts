@@ -60,7 +60,10 @@ export const DEFAULT_HERO_SECTION_BACKGROUND_COLOR = '#ffffff';
 export const DEFAULT_HERO_MOTIF_GRADIENT_TO = '#0a0a0a';
 
 export const DEFAULT_HERO_BACKGROUND_SETTINGS: PortfolioHeroBackgroundSettings = {
-  heroSectionBackgroundFill: 'solid',
+  // 'none' = today's existing behavior (each banner design repaints its own Hero-palette
+  // Fond color) — this must stay the default so portfolios that never touch this new
+  // Background tab keep rendering exactly as before.
+  heroSectionBackgroundFill: 'none',
   heroSectionBackgroundColor: DEFAULT_HERO_SECTION_BACKGROUND_COLOR,
   heroSectionBackgroundOpacity: 100,
   heroSectionBackgroundGradientType: 'linear',
@@ -130,8 +133,8 @@ export const PORTFOLIO_HERO_BACKGROUND_SPLIT_AXIS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'y', label: 'Axe Y (horizontal)', description: 'Zone haut / zone bas.' },
-  { value: 'x', label: 'Axe X (vertical)', description: 'Zone gauche / zone droite.' },
+  { value: 'y', label: 'Horizontal', description: 'Top zone / bottom zone.' },
+  { value: 'x', label: 'Vertical', description: 'Left zone / right zone.' },
 ];
 
 export const PORTFOLIO_HERO_BACKGROUND_DIVIDER_SHAPE_OPTIONS: {

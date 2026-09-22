@@ -8,6 +8,10 @@ import { usePortfolioSettings } from '@/components/portfolio/use-portfolio-setti
 import { buildCreatorPortfolioPath, buildCreatorPortfolioUrl } from '@/lib/portfolio-url';
 import { enterBrowserFullscreen, exitBrowserFullscreen, getBrowserFullscreenElement } from '@/lib/browser-fullscreen';
 import {
+  DASHBOARD_SIDEBAR_EXPAND_EVENT,
+  notifyPortfolioSettingsOpen,
+} from '@/lib/dashboard-chrome';
+import {
   EMPTY_PORTFOLIO_STUDIO_PREVIEW_META,
   isPortfolioStudioPreviewMessage,
   PORTFOLIO_STUDIO_PREVIEW_SOURCE,
@@ -179,28 +183,32 @@ function PreviewResizeHandle({
   onReset: () => void;
 }) {
   return (
-    <button
-      type="button"
-      aria-label={side === 'left' ? 'Resize preview from the left' : 'Resize preview from the right'}
-      title="Drag to resize · double-click for full width"
-      className={`absolute inset-y-0 z-20 flex w-3 touch-none cursor-ew-resize items-center justify-center border-0 bg-transparent p-0 ${
+    <div
+      className={`pointer-events-none absolute inset-y-0 z-20 flex w-3 items-center justify-center ${
         side === 'left' ? 'left-0' : 'right-0'
       }`}
-      onPointerDown={(event) => onPointerDown(side, event)}
-      onDoubleClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        onReset();
-      }}
     >
-      <span
-        className={`h-11 w-1 rounded-full transition-[background-color,opacity] duration-150 ${
-          active
-            ? 'bg-neutral-700 opacity-100 dark:bg-white'
-            : 'bg-neutral-400/80 opacity-70 hover:opacity-100 dark:bg-neutral-500'
-        }`}
-      />
-    </button>
+      <button
+        type="button"
+        aria-label={side === 'left' ? 'Resize preview from the left' : 'Resize preview from the right'}
+        title="Drag to resize · double-click for full width"
+        className="pointer-events-auto flex h-11 w-3 touch-none cursor-ew-resize items-center justify-center border-0 bg-transparent p-0"
+        onPointerDown={(event) => onPointerDown(side, event)}
+        onDoubleClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onReset();
+        }}
+      >
+        <span
+          className={`h-11 w-1 rounded-full transition-[background-color,opacity] duration-150 ${
+            active
+              ? 'bg-neutral-700 opacity-100 dark:bg-white'
+              : 'bg-neutral-400/80 opacity-70 hover:opacity-100 dark:bg-neutral-500'
+          }`}
+        />
+      </button>
+    </div>
   );
 }
 
@@ -369,6 +377,18 @@ export function PortfolioLivePreview({
     flushPendingSave();
     setSettingsOpen(false);
   }, [flushPendingSave]);
+
+  // Exclusive-open with the main dashboard sidebar — opening Settings collapses it,
+  // and expanding it back closes Settings, so only one is ever open at a time.
+  useEffect(() => {
+    if (settingsOpen) notifyPortfolioSettingsOpen();
+  }, [settingsOpen]);
+
+  useEffect(() => {
+    const onSidebarExpand = () => closeSettings();
+    window.addEventListener(DASHBOARD_SIDEBAR_EXPAND_EVENT, onSidebarExpand);
+    return () => window.removeEventListener(DASHBOARD_SIDEBAR_EXPAND_EVENT, onSidebarExpand);
+  }, [closeSettings]);
 
   const refreshPreview = useCallback(() => {
     iframeReadyRef.current = false;
@@ -656,6 +676,7 @@ export function PortfolioLivePreview({
               canRedo={canRedo}
               availableTools={previewMeta.availableTools}
               availableWorks={previewMeta.availableWorks}
+              availableServices={previewMeta.availableServices}
               navSocialLinkOptions={previewMeta.navSocialLinkOptions}
               onPreviewSectionFocus={focusPreviewSection}
             />

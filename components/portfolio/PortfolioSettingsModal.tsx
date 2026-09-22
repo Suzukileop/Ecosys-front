@@ -21,16 +21,16 @@ import { LinkBrandIcon } from '@/components/portfolio/PortfolioLinksChrome';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { PortfolioNavContactCtaGlyph } from '@/components/portfolio/portfolio-nav-contact-cta-icons';
 import type { PortfolioNavMenuGroup } from '@/components/portfolio/portfolio-nav-menu-groups';
-import type { PortfolioNavChromeLink } from '@/components/portfolio/portfolio-nav-extras';
+import { type PortfolioNavChromeLink } from '@/components/portfolio/portfolio-nav-extras';
 import {
   PORTFOLIO_FLOATING_CHROME,
 } from '@/components/portfolio/portfolio-section-primitives';
 import {
   PORTFOLIO_SETTINGS_SECTIONS,
   DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES,
-  PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS,
   PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS,
   PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS,
+  portfolioNavContactButtonShellPresentation,
   DEFAULT_EDITORIAL_BAR_MAIL_CONTACT,
   DEFAULT_EDITORIAL_BAR_PHONE_CONTACT,
   mergeEditorialBarContactChannelSettings,
@@ -52,7 +52,6 @@ import {
   type PortfolioNavCustomExtraPlacement,
   type PortfolioNavCustomExtraShape,
   type PortfolioNavContactButtonDisplay,
-  type PortfolioNavContactButtonIconPosition,
   type PortfolioNavContactButtonShape,
   type PortfolioNavContactCtaIcon,
   type PortfolioNavEditorialBarContactChannelSettings,
@@ -205,10 +204,12 @@ import {
 } from '@/components/portfolio/portfolio-tools-settings-panel';
 import {
   ContactSettingsPanel,
+  normalizeContactSubSection,
   type ContactSubSection,
 } from '@/components/portfolio/portfolio-contact-settings-panel';
 import {
   FooterSettingsPanel,
+  normalizeFooterSubSection,
   type FooterSubSection,
 } from '@/components/portfolio/portfolio-footer-settings-panel';
 import { PORTFOLIO_UPGRADE_PATH } from '@/components/portfolio/portfolio-pricing-upgrade-panel';
@@ -3582,25 +3583,6 @@ function NavLayoutDesignPreview({
     );
   }
 
-  if (design === 'nav-logo-social') {
-    return (
-      <div className="w-full overflow-hidden rounded-none border-y border-neutral-200 bg-white">
-        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 px-2.5 py-2">
-          <div className="flex items-center gap-1.5 text-[8px] text-neutral-800">
-            <span>Stack</span>
-            <span className="text-neutral-400">Tools</span>
-          </div>
-          <span className="text-[10px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
-          <div className="flex items-center justify-end gap-1">
-            <span className="h-4 w-4 rounded-full border border-neutral-200 bg-white" />
-            <span className="h-4 w-4 rounded-full border border-neutral-200 bg-white" />
-            <span className="h-4 w-4 rounded-full border border-neutral-200 bg-white" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (design === 'center-logo-split') {
     return (
       <div className="w-full overflow-hidden rounded-lg bg-neutral-900/90 px-2.5 py-2">
@@ -3613,24 +3595,6 @@ function NavLayoutDesignPreview({
           <div className="flex items-center justify-start gap-2 text-[8px] text-white/90">
             <span className="text-white/60">Work</span>
             <span>Contact</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (design === 'logo-left-nav-contact') {
-    return (
-      <div className="w-full overflow-hidden rounded-xl border border-neutral-200 bg-white px-2.5 py-2 shadow-sm">
-        <div className="flex w-full items-center justify-between gap-3">
-          <span className="text-[11px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
-          <div className="flex items-center gap-2 text-[8px] text-neutral-700">
-            <span className="border-b border-neutral-900 pb-px">About</span>
-            <span>Blog</span>
-            <span className="inline-flex items-center gap-0.5 rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
-              <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden />
-              Contact
-            </span>
           </div>
         </div>
       </div>
@@ -3719,6 +3683,40 @@ function NavLayoutDesignPreview({
   );
 }
 
+/** Single normal-case, medium-weight, muted label — the one typographic
+ *  treatment for every section label in the Editorial bar / Social nav panels. */
+function NavFieldLabel({ children }: { children: ReactNode }) {
+  return <p className="text-sm font-medium text-neutral-500">{children}</p>;
+}
+
+/** Closed-by-default disclosure for the fine-grained, rarely-touched controls. */
+function NavAdvancedOptionsDisclosure({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        className="flex items-center gap-1.5 text-sm font-medium text-neutral-500 transition hover:text-neutral-800"
+      >
+        <svg
+          viewBox="0 0 20 20"
+          className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          aria-hidden
+        >
+          <path d="M7.5 4.5l5 5.5-5 5.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Advanced options
+      </button>
+      {open ? <div className="mt-3 divide-y divide-neutral-200/70">{children}</div> : null}
+    </div>
+  );
+}
+
 function NavTriZoneSocialLinkPicker({
   options,
   selectedIds,
@@ -3749,13 +3747,9 @@ function NavTriZoneSocialLinkPicker({
 
   return (
     <div className="space-y-3">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Links shown
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Up to {maxLinks} — leave empty to auto-pick the first available.
-        </p>
+      <div className="flex items-center gap-1.5">
+        <NavFieldLabel>Links shown</NavFieldLabel>
+        <GlobalInfoTooltip text={`Up to ${maxLinks} — leave empty to auto-pick the first available.`} />
       </div>
       <div className="flex flex-wrap gap-2">
         {options.map((link) => {
@@ -3799,449 +3793,68 @@ function NavTriZoneSocialLinkPicker({
   );
 }
 
-function NavTriZoneSocialLinkStyleEditor({
-  navigation,
-  onChange,
-}: {
-  navigation: PortfolioNavSettings;
-  onChange: (patch: Partial<PortfolioNavSettings>) => void;
-}) {
-  const size = navigation.triZoneSocialLinkSize ?? 'sm';
-  const gap = navigation.triZoneSocialLinkGap ?? 'md';
-  const monochrome = navigation.triZoneSocialLinkMonochrome ?? false;
+const NAV_CONTACT_BUTTON_DISPLAY_OPTIONS: {
+  value: PortfolioNavContactButtonDisplay;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'icon', label: 'Icon only', description: 'Compact circular icon, no visible label.' },
+  { value: 'button', label: 'Button with label', description: 'Icon plus text in a frame — more visible.' },
+];
 
-  const chipClass = (active: boolean) =>
-    `rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-      active
-        ? 'border-neutral-900 bg-neutral-900 text-white'
-        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-    }`;
-
+/** Actual rendered mini-button for a given frame style, used inside the "Button frame" picker. */
+function NavContactButtonShapePreview({ shape }: { shape: PortfolioNavContactButtonShape }) {
+  const isMinimal = shape === 'frameless' || shape === 'bottom-line';
+  const frame = portfolioNavContactButtonShellPresentation(
+    shape,
+    isMinimal
+      ? { background: 'transparent', color: '#171717', border: '#171717', borderEnabled: false }
+      : { background: '#171717', color: '#ffffff', border: '#171717', borderEnabled: false }
+  );
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Link icon style
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Size, spacing, and black &amp; white rendering (max. 3).
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-neutral-700">Size</p>
-        <div className="flex flex-wrap gap-2">
-          {PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_SIZE_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={chipClass(size === option.value)}
-              onClick={() => onChange({ triZoneSocialLinkSize: option.value })}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-neutral-700">Spacing</p>
-        <div className="flex flex-wrap gap-2">
-          {PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_GAP_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={chipClass(gap === option.value)}
-              onClick={() => onChange({ triZoneSocialLinkGap: option.value })}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200/80 bg-neutral-50/60 px-3 py-2.5">
-        <div>
-          <p
-            className="cursor-pointer text-sm font-medium text-neutral-800"
-            onClick={() => onChange({ triZoneSocialLinkMonochrome: !monochrome })}
-          >
-            Black &amp; white
-          </p>
-          <p className="text-xs text-neutral-500">Disables each platform&apos;s brand colors.</p>
-        </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={monochrome}
-          aria-label="Black & white"
-          onClick={() => onChange({ triZoneSocialLinkMonochrome: !monochrome })}
-          className="shrink-0"
-        >
-          <GlobalSwitchTrack checked={monochrome} />
-        </button>
-      </div>
-    </div>
+    <span
+      className={`inline-flex items-center justify-center px-3.5 py-1.5 text-[11px] font-semibold ${frame.className} ${
+        // Minimal shapes have no background of their own, so their text sits directly on
+        // whatever surface is behind them — it must follow light/dark mode like every other
+        // label in this panel instead of staying hardcoded to a light-mode-only color.
+        isMinimal ? 'text-neutral-900' : ''
+      }`}
+      style={frame.style}
+    >
+      Label
+    </span>
   );
 }
 
-function NavContactButtonProfileEditor({
-  title,
-  profile,
+function NavContactButtonShapeGrid({
+  value,
   onChange,
-  editorialChannel,
 }: {
-  title: string;
-  profile: PortfolioNavEditorialBarContactChannelSettings;
-  onChange: (patch: Partial<PortfolioNavEditorialBarContactChannelSettings>) => void;
-  /** When set, icon picker is limited to phone or mail glyphs only. */
-  editorialChannel?: 'phone' | 'mail';
+  value: PortfolioNavContactButtonShape;
+  onChange: (value: PortfolioNavContactButtonShape) => void;
 }) {
-  const display = profile.display;
-  const iconPosition = profile.iconPosition;
-  const shape = profile.shape;
-  const iconOptions = editorialChannel
-    ? portfolioNavContactCtaIconOptionsForEditorialChannel(editorialChannel)
-    : PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS;
-
-  const chipClass = (active: boolean) =>
-    `rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-      active
-        ? 'border-neutral-900 bg-neutral-900 text-white'
-        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-    }`;
-
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{title}</p>
-
-      <label className="block text-sm">
-        <span className="mb-1 block font-medium text-neutral-700">Label</span>
-        <input
-          type="text"
-          value={profile.label}
-          maxLength={32}
-          onChange={(event) => onChange({ label: event.target.value.slice(0, 32) })}
-          className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
-        />
-      </label>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-neutral-700">Display</span>
-          <select
-            value={display}
-            onChange={(event) =>
-              onChange({
-                display: event.target.value as PortfolioNavContactButtonDisplay,
-              })
-            }
-            className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
-          >
-            <option value="icon">Icon only</option>
-            <option value="button">Button with label</option>
-          </select>
-        </label>
-        {display === 'button' ? (
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium text-neutral-700">Icon position</span>
-            <select
-              value={iconPosition}
-              onChange={(event) =>
-                onChange({
-                  iconPosition: event.target.value as PortfolioNavContactButtonIconPosition,
-                })
-              }
-              className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
-            >
-              {PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-      </div>
-
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-neutral-700">Button frame</p>
-        <div className="flex flex-wrap gap-2">
-          {PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS.map((option) => (
+    <div>
+      <NavFieldLabel>Button frame</NavFieldLabel>
+      <div className="mt-2 grid grid-cols-3 gap-1.5">
+        {PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
             <button
               key={option.value}
               type="button"
               title={option.description}
-              className={chipClass(shape === option.value)}
-              onClick={() => onChange({ shape: option.value })}
+              onClick={() => onChange(option.value)}
+              className={`flex flex-col items-center gap-1.5 rounded-xl px-2 py-2 transition ${
+                active ? 'bg-neutral-100 ring-1 ring-inset ring-neutral-900' : 'hover:bg-neutral-50'
+              }`}
             >
-              {option.label}
+              <NavContactButtonShapePreview shape={option.value} />
+              <span className="text-[11px] font-medium text-neutral-600">{option.label}</span>
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
-
-      {display === 'icon' || (display === 'button' && iconPosition !== 'none') ? (
-        <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icon</p>
-          <div className="flex flex-wrap gap-2">
-            {iconOptions.map((option) => {
-              const active = profile.icon === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  title={option.description}
-                  onClick={() =>
-                    onChange({
-                      icon: option.value as PortfolioNavContactCtaIcon,
-                    })
-                  }
-                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${
-                    active
-                      ? 'border-neutral-900 bg-neutral-900 text-white'
-                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  <PortfolioNavContactCtaGlyph variant={option.value} className="h-4 w-4" />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function NavEditorialBarContactChannelsEditor({
-  navigation,
-  onChange,
-}: {
-  navigation: PortfolioNavSettings;
-  onChange: (patch: Partial<PortfolioNavSettings>) => void;
-}) {
-  const phoneProfile = mergeEditorialBarContactChannelSettings(
-    navigation.editorialBarPhoneContact,
-    undefined,
-    DEFAULT_EDITORIAL_BAR_PHONE_CONTACT
-  );
-  const mailProfile = mergeEditorialBarContactChannelSettings(
-    navigation.editorialBarMailContact,
-    undefined,
-    DEFAULT_EDITORIAL_BAR_MAIL_CONTACT
-  );
-
-  return (
-    <div className="space-y-4">
-      <NavContactButtonProfileEditor
-        title="Phone settings"
-        profile={phoneProfile}
-        editorialChannel="phone"
-        onChange={(patch) =>
-          onChange({
-            editorialBarPhoneContact: { ...phoneProfile, ...patch },
-          })
-        }
-      />
-
-      <NavContactButtonProfileEditor
-        title="Email settings"
-        profile={mailProfile}
-        editorialChannel="mail"
-        onChange={(patch) =>
-          onChange({
-            editorialBarMailContact: { ...mailProfile, ...patch },
-          })
-        }
-      />
-    </div>
-  );
-}
-
-function NavEditorialBarVisibilityToggles({
-  navigation,
-  onChange,
-}: {
-  navigation: PortfolioNavSettings;
-  onChange: (patch: Partial<PortfolioNavSettings>) => void;
-}) {
-  const showSocial = navigation.editorialBarShowSocial ?? false;
-  const showPhone = navigation.editorialBarShowPhone ?? false;
-  const showMail = navigation.editorialBarShowMail ?? false;
-
-  const chipClass = (active: boolean) =>
-    `rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
-      active
-        ? 'border-neutral-900 bg-neutral-900 text-white'
-        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-    }`;
-
-  return (
-    <div className="space-y-2">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Show in bar
-      </p>
-      <p className="text-sm text-neutral-500">Any combination — social, phone, and email can coexist.</p>
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className={chipClass(showSocial)}
-          onClick={() =>
-            onChange({
-              editorialBarShowSocial: !showSocial,
-              linkIconsEnabled: !showSocial ? true : navigation.linkIconsEnabled,
-            })
-          }
-        >
-          Social links
-        </button>
-        <button
-          type="button"
-          className={chipClass(showPhone)}
-          onClick={() =>
-            onChange({
-              editorialBarShowPhone: !showPhone,
-              contactButtonEnabled: !showPhone ? true : navigation.contactButtonEnabled,
-            })
-          }
-        >
-          Phone
-        </button>
-        <button
-          type="button"
-          className={chipClass(showMail)}
-          onClick={() =>
-            onChange({
-              editorialBarShowMail: !showMail,
-              contactButtonEnabled: !showMail ? true : navigation.contactButtonEnabled,
-            })
-          }
-        >
-          Email
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function NavContactButtonStyleEditor({
-  navigation,
-  onChange,
-}: {
-  navigation: PortfolioNavSettings;
-  onChange: (patch: Partial<PortfolioNavSettings>) => void;
-}) {
-  const display = navigation.contactButtonDisplay ?? 'button';
-  const iconPosition = navigation.contactButtonIconPosition ?? 'left';
-  const shape = navigation.contactButtonShape ?? 'rounded';
-
-  const chipClass = (active: boolean) =>
-    `rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-      active
-        ? 'border-neutral-900 bg-neutral-900 text-white'
-        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-    }`;
-
-  return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-4">
-      <label className="block text-sm">
-        <span className="mb-1 block font-medium text-neutral-700">Label</span>
-        <input
-          type="text"
-          value={navigation.contactButtonLabel ?? 'Contact'}
-          maxLength={32}
-          onChange={(event) =>
-            onChange({ contactButtonLabel: event.target.value.slice(0, 32) })
-          }
-          className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
-        />
-      </label>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-neutral-700">Display</span>
-          <select
-            value={display}
-            onChange={(event) =>
-              onChange({
-                contactButtonDisplay: event.target.value as PortfolioNavContactButtonDisplay,
-              })
-            }
-            className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
-          >
-            <option value="icon">Icon only</option>
-            <option value="button">Button with label</option>
-          </select>
-        </label>
-        {display === 'button' ? (
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium text-neutral-700">Icon position</span>
-            <select
-              value={iconPosition}
-              onChange={(event) =>
-                onChange({
-                  contactButtonIconPosition: event.target.value as PortfolioNavContactButtonIconPosition,
-                })
-              }
-              className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
-            >
-              {PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-      </div>
-
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-neutral-700">Button frame</p>
-        <div className="flex flex-wrap gap-2">
-          {PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              title={option.description}
-              className={chipClass(shape === option.value)}
-              onClick={() => onChange({ contactButtonShape: option.value })}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {display === 'icon' || (display === 'button' && iconPosition !== 'none') ? (
-        <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icon</p>
-          <div className="flex flex-wrap gap-2">
-            {PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS.map((option) => {
-              const active = (navigation.contactButtonIcon ?? 'phone') === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  title={option.description}
-                  onClick={() =>
-                    onChange({
-                      contactButtonIcon: option.value as PortfolioNavContactCtaIcon,
-                    })
-                  }
-                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${
-                    active
-                      ? 'border-neutral-900 bg-neutral-900 text-white'
-                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-                  }`}
-                >
-                  <PortfolioNavContactCtaGlyph variant={option.value} className="h-4 w-4" />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -4261,11 +3874,7 @@ function NavCaseOverlayLogoEditor({
 
   return (
     <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Fullscreen menu bar
-      </p>
-
-      <div className="mt-4 space-y-4">
+      <div className="space-y-4">
         <PortfolioBackgroundImageUpload
           label="Logo"
           url={navigation.customExtraLogoUrl ?? ''}
@@ -4468,11 +4077,7 @@ function NavDutenPanelEditor({
 
   return (
     <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Docked panel
-      </p>
-
-      <div className="mt-4 space-y-4">
+      <div className="space-y-4">
         <PortfolioBackgroundImageUpload
           label="Logo"
           url={navigation.customExtraLogoUrl ?? ''}
@@ -4562,25 +4167,18 @@ function NavDutenPanelEditor({
       </div>
 
       <div className="pf-gs-section space-y-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Display word
-          </p>
-          <p className="mt-1 text-sm text-neutral-500">Custom word below the links.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className={chipClass(showHeroWord)}
-            onClick={() => onChange({ dutenPanelShowHeroWord: !showHeroWord })}
-          >
-            Show word
-          </button>
-        </div>
+        <ToggleRow
+          label="Display word below links"
+          checked={showHeroWord}
+          onChange={(next) => onChange({ dutenPanelShowHeroWord: next })}
+        />
         {showHeroWord ? (
           <label className="block">
-            <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-              Displayed text
+            <span className="mb-1 flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+                Displayed text
+              </span>
+              <GlobalInfoTooltip text="Shown very large, up to 32 characters." />
             </span>
             <input
               type="text"
@@ -4590,9 +4188,8 @@ function NavDutenPanelEditor({
               }
               placeholder="VSIUX"
               maxLength={32}
-              className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
+              className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
             />
-            <p className="mt-1 text-xs text-neutral-500">Up to 32 characters, shown very large.</p>
           </label>
         ) : null}
       </div>
@@ -4601,7 +4198,6 @@ function NavDutenPanelEditor({
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
           Open panel footer
         </p>
-        <p className="text-sm text-neutral-500">Contact and social links.</p>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -4665,11 +4261,7 @@ function NavHalfPanelEditor({
 
   return (
     <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Side panel
-      </p>
-
-      <div className="mt-4 space-y-4">
+      <div className="space-y-4">
         <PortfolioBackgroundImageUpload
           label="Logo"
           url={navigation.customExtraLogoUrl ?? ''}
@@ -4777,7 +4369,6 @@ function NavHalfPanelEditor({
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
           Open panel footer
         </p>
-        <p className="text-sm text-neutral-500">Contact and social links.</p>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -4834,10 +4425,12 @@ function NavFloatingPillVisibilityToggles({
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Show in pill
-      </p>
-      <p className="text-sm text-neutral-500">Logo is hidden by default — enable logo and/or contact.</p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          Show in pill
+        </p>
+        <GlobalInfoTooltip text="Logo is hidden by default — enable logo and/or contact." />
+      </div>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -4883,11 +4476,7 @@ function NavFloatingPillMenuEditor({
 
   return (
     <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Navigation menu
-      </p>
-
-      <div className="mt-4">
+      <div>
         <OptionGrid
           label="Menu style"
           options={PORTFOLIO_NAV_FLOATING_PILL_MENU_MODE_OPTIONS}
@@ -4921,103 +4510,312 @@ function NavEditorialBarSlotEditor({
   options: PortfolioNavChromeLink[];
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
 }) {
-  const showSocial = navigation.editorialBarShowSocial ?? false;
-
   return (
-    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Right zone (Editorial bar)
-      </p>
+    <NavEditorialBarSocialElementsEditor navigation={navigation} options={options} onChange={onChange} />
+  );
+}
 
-      <div className="mt-4">
-        <NavEditorialBarVisibilityToggles navigation={navigation} onChange={onChange} />
+/** Small, bold, uppercase, muted label — the "Label on top" half of the Social nav
+ *  panel's vertical field pattern (label above, control filling the width below). */
+function NavStackedLabel({ children }: { children: ReactNode }) {
+  return <p className="text-[11px] font-bold uppercase tracking-[0.09em] text-neutral-400">{children}</p>;
+}
+
+/** Bandeau toggle — title + helper copy on the left, switch on the right, inside a
+ *  filled rounded panel. Used for the single "Show X" master switch of each
+ *  Social nav tab (Social links / Phone / Email). */
+function NavToggleBand({
+  title,
+  description,
+  checked,
+  onChange,
+}: {
+  title: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-2xl bg-neutral-100/80 px-4 py-4">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-neutral-900">{title}</p>
+        <p className="mt-0.5 text-xs text-neutral-500">{description}</p>
       </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={title}
+        onClick={() => onChange(!checked)}
+        className="shrink-0"
+      >
+        <GlobalSwitchTrack checked={checked} />
+      </button>
+    </div>
+  );
+}
 
-      {showSocial ? (
-        <div className="pf-gs-section space-y-4">
-          <NavTriZoneSocialLinkPicker
-            options={options}
-            selectedIds={navigation.triZoneSocialLinkIds ?? []}
-            onChange={(triZoneSocialLinkIds) => onChange({ triZoneSocialLinkIds })}
-          />
-          <NavTriZoneSocialLinkStyleEditor navigation={navigation} onChange={onChange} />
-        </div>
-      ) : null}
-
-      <div className="pf-gs-section">
-        <NavEditorialBarContactChannelsEditor navigation={navigation} onChange={onChange} />
+/** Full-width, label-on-top segmented control — the "value below label" half of the
+ *  Social nav panel's vertical field pattern. `sizePx` lets an ordered scale (Icon
+ *  size) render each option's own text at that size, so the row previews itself. */
+function NavStackedSegment<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { value: T; label: string; description?: string; sizePx?: number }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <NavStackedLabel>{label}</NavStackedLabel>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="grid gap-1 rounded-xl bg-neutral-100 p-1"
+        style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+      >
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.description}
+              onClick={() => onChange(option.value)}
+              style={option.sizePx ? { fontSize: `${option.sizePx}px` } : undefined}
+              className={`rounded-lg px-2 py-2 text-center font-semibold leading-none transition ${
+                option.sizePx ? '' : 'text-sm'
+              } ${active ? 'bg-neutral-900 text-white' : 'text-neutral-400 hover:text-neutral-700'}`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function NavTriZoneVisibilityToggles({
-  navigation,
+const NAV_ELEMENT_TAB_OPTIONS: { value: 'social' | 'phone' | 'mail'; label: string }[] = [
+  { value: 'social', label: 'Social links' },
+  { value: 'phone', label: 'Phone' },
+  { value: 'mail', label: 'Email' },
+];
+
+/** Top-level single-select switch for the Social nav panel — picking a tab swaps the
+ *  settings shown below it, independently from whether that element is actually
+ *  turned on in the live bar (that is each tab's own "Show X" toggle band). */
+function NavElementTabs({
+  value,
   onChange,
 }: {
-  navigation: PortfolioNavSettings;
-  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+  value: 'social' | 'phone' | 'mail';
+  onChange: (value: 'social' | 'phone' | 'mail') => void;
 }) {
-  const showSocial = navigation.triZoneShowSocial ?? false;
-  const showPhone = navigation.triZoneShowPhone ?? false;
-  const showMail = navigation.triZoneShowMail ?? false;
+  return (
+    <div className="space-y-2">
+      <NavStackedLabel>Navigation element</NavStackedLabel>
+      <div
+        role="tablist"
+        aria-label="Navigation element"
+        className="grid grid-cols-3 gap-1 rounded-xl bg-neutral-100 p-1"
+      >
+        {NAV_ELEMENT_TAB_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onChange(option.value)}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                active ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
-  const chipClass = (active: boolean) =>
-    `rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
-      active
-        ? 'border-neutral-900 bg-neutral-900 text-white'
-        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-    }`;
+/** "Links shown" — same up-to-`maxLinks` toggle selection as NavTriZoneSocialLinkPicker,
+ *  restyled as a 2-column pill grid (icon + domain) to match the Social nav layout. */
+function NavSocialLinksShownGrid({
+  options,
+  selectedIds,
+  onChange,
+  maxLinks = 3,
+}: {
+  options: PortfolioNavChromeLink[];
+  selectedIds: string[];
+  onChange: (ids: string[]) => void;
+  maxLinks?: number;
+}) {
+  if (options.length === 0) {
+    return (
+      <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
+        No links found — add some in Creator Studio &gt; Links first.
+      </p>
+    );
+  }
+
+  const toggle = (id: string) => {
+    if (selectedIds.includes(id)) {
+      onChange(selectedIds.filter((value) => value !== id));
+      return;
+    }
+    if (selectedIds.length >= maxLinks) return;
+    onChange([...selectedIds, id]);
+  };
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Show in bar
-      </p>
-      <p className="text-sm text-neutral-500">Any combination — social, phone, and email can coexist.</p>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex items-center gap-1.5">
+        <NavStackedLabel>Links shown</NavStackedLabel>
+        <GlobalInfoTooltip text={`Up to ${maxLinks} — leave empty to auto-pick the first available.`} />
+      </div>
+      <div className="flex flex-wrap items-center justify-center gap-1 py-1">
+        {options.map((link) => {
+          const selected = selectedIds.includes(link.id);
+          const disabled = !selected && selectedIds.length >= maxLinks;
+          return (
+            <button
+              key={link.id}
+              type="button"
+              title={link.label}
+              aria-label={link.label}
+              aria-pressed={selected}
+              onClick={() => toggle(link.id)}
+              disabled={disabled}
+              className={`group relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors duration-150 ${
+                disabled ? 'cursor-not-allowed' : 'hover:bg-neutral-100'
+              }`}
+            >
+              <span
+                className={`inline-flex transition-opacity duration-150 ${
+                  selected ? 'opacity-100' : disabled ? 'opacity-25' : 'opacity-45 group-hover:opacity-90'
+                }`}
+              >
+                <LinkBrandIcon url={link.href} platform={link.platform} iconUrl={link.iconUrl} size="sm" />
+              </span>
+              {selected ? (
+                <span className="absolute bottom-0 right-0 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-neutral-900 ring-2 ring-white">
+                  <svg viewBox="0 0 10 10" width="6" height="6" fill="none" aria-hidden>
+                    <path
+                      d="M1.5 5.2l2.2 2.2L8.5 2.5"
+                      stroke="white"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+      {selectedIds.length > 0 ? (
         <button
           type="button"
-          className={chipClass(showSocial)}
-          onClick={() =>
-            onChange({
-              triZoneShowSocial: !showSocial,
-              linkIconsEnabled: !showSocial ? true : navigation.linkIconsEnabled,
-            })
-          }
+          onClick={() => onChange([])}
+          className="text-sm text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
         >
-          Social links
+          Reset (automatic display)
         </button>
-        <button
-          type="button"
-          className={chipClass(showPhone)}
-          onClick={() =>
-            onChange({
-              triZoneShowPhone: !showPhone,
-              contactButtonEnabled: !showPhone ? true : navigation.contactButtonEnabled,
-            })
-          }
-        >
-          Phone
-        </button>
-        <button
-          type="button"
-          className={chipClass(showMail)}
-          onClick={() =>
-            onChange({
-              triZoneShowMail: !showMail,
-              contactButtonEnabled: !showMail ? true : navigation.contactButtonEnabled,
-            })
-          }
-        >
-          Email
-        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/** Two vertical bars whose gap grows with the spacing step — a graphical stand-in for
+ *  "Tight / Normal / Wide / Extra wide" so the option reads visually before its label does. */
+function NavSpacingGlyph({ gapPx }: { gapPx: number }) {
+  const barWidth = 2.5;
+  const barHeight = 13;
+  const totalWidth = barWidth * 2 + gapPx;
+  return (
+    <svg
+      width={totalWidth}
+      height={barHeight}
+      viewBox={`0 0 ${totalWidth} ${barHeight}`}
+      fill="none"
+      aria-hidden
+    >
+      <rect x={0} y={0} width={barWidth} height={barHeight} rx={1.25} fill="currentColor" />
+      <rect x={barWidth + gapPx} y={0} width={barWidth} height={barHeight} rx={1.25} fill="currentColor" />
+    </svg>
+  );
+}
+
+const NAV_SPACING_GLYPH_GAP_PX: Record<(typeof PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_GAP_OPTIONS)[number]['value'], number> = {
+  sm: 3,
+  md: 7,
+  lg: 12,
+  xl: 18,
+};
+
+/** Connected-pill segmented control for Icon spacing — one rounded-full track where
+ *  each stop is a graphical "bar gap" glyph instead of flat text, so the amount of
+ *  spacing reads visually before the caption underneath confirms it. */
+function NavSpacingPillControl({
+  value,
+  onChange,
+}: {
+  value: (typeof PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_GAP_OPTIONS)[number]['value'];
+  onChange: (value: (typeof PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_GAP_OPTIONS)[number]['value']) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <NavStackedLabel>Icon spacing</NavStackedLabel>
+      <div
+        role="radiogroup"
+        aria-label="Icon spacing"
+        className="flex items-stretch gap-1 rounded-full bg-neutral-100 p-1"
+      >
+        {PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_GAP_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.label}
+              onClick={() => onChange(option.value)}
+              className={`flex flex-1 flex-col items-center justify-center gap-1.5 rounded-full py-2.5 transition ${
+                active ? 'bg-neutral-900 text-white' : 'text-neutral-400 hover:text-neutral-700'
+              }`}
+            >
+              <NavSpacingGlyph gapPx={NAV_SPACING_GLYPH_GAP_PX[option.value]} />
+              <span className="text-[10px] font-semibold leading-none">{option.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function NavTriZoneSideSlotEditor({
+/** Which nav layout the shared Social/Phone/Email panel is driving — Editorial bar and
+ *  Social nav render the exact same panel, differing only in which "show in bar"
+ *  fields they read/write (link selection, size, spacing, and contact profiles are
+ *  already stored under the same shared keys for both designs). */
+/** "Social links" tab of the Editorial bar Social/Phone/Email panel — master toggle,
+ *  then (label-on-top, full-width control) Links shown / Icon size / Icon spacing,
+ *  with black & white tucked into Advanced options since it is a secondary,
+ *  rarely-touched switch. */
+function NavElementSocialTabPanel({
   navigation,
   options,
   onChange,
@@ -5026,110 +4824,187 @@ function NavTriZoneSideSlotEditor({
   options: PortfolioNavChromeLink[];
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
 }) {
-  const showSocial = navigation.triZoneShowSocial ?? false;
+  const showSocial = navigation.editorialBarShowSocial;
+  const monochrome = navigation.triZoneSocialLinkMonochrome ?? false;
 
   return (
-    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Side zone (Nav · logo · social)
-      </p>
-
-      <div className="mt-4">
-        <NavTriZoneVisibilityToggles navigation={navigation} onChange={onChange} />
-      </div>
-
+    <div className="space-y-6">
+      <NavToggleBand
+        title="Show Social Links"
+        description="Display icons in the navigation bar."
+        checked={showSocial}
+        onChange={(next) =>
+          onChange({
+            editorialBarShowSocial: next,
+            linkIconsEnabled: next ? true : navigation.linkIconsEnabled,
+          })
+        }
+      />
       {showSocial ? (
-        <div className="pf-gs-section space-y-4">
-          <NavTriZoneSocialLinkPicker
+        <>
+          <NavSocialLinksShownGrid
             options={options}
             selectedIds={navigation.triZoneSocialLinkIds ?? []}
             onChange={(triZoneSocialLinkIds) => onChange({ triZoneSocialLinkIds })}
           />
-          <NavTriZoneSocialLinkStyleEditor navigation={navigation} onChange={onChange} />
-        </div>
+          <NavStackedSegment
+            label="Icon size"
+            options={PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_SIZE_OPTIONS}
+            value={navigation.triZoneSocialLinkSize ?? 'sm'}
+            onChange={(triZoneSocialLinkSize) => onChange({ triZoneSocialLinkSize })}
+          />
+          <NavSpacingPillControl
+            value={navigation.triZoneSocialLinkGap ?? 'md'}
+            onChange={(triZoneSocialLinkGap) => onChange({ triZoneSocialLinkGap })}
+          />
+          <NavAdvancedOptionsDisclosure>
+            <div className="py-5 first:pt-0 last:pb-0">
+              <GlobalSwitchRow
+                label="Black & white icons"
+                description="Ignore each platform's brand color and render icons in monochrome."
+                checked={monochrome}
+                onChange={(triZoneSocialLinkMonochrome) => onChange({ triZoneSocialLinkMonochrome })}
+              />
+            </div>
+          </NavAdvancedOptionsDisclosure>
+        </>
       ) : null}
-
-      <div className="pf-gs-section">
-        <NavEditorialBarContactChannelsEditor navigation={navigation} onChange={onChange} />
-      </div>
     </div>
   );
 }
 
-function NavLogoLeftContactPlacementEditor({
+/** Phone / Email tab of the Editorial bar Social/Phone/Email panel — master toggle,
+ *  Label, Display style, and an icon grid, with Icon position and Button frame
+ *  tucked into Advanced options. */
+function NavElementContactTabPanel({
+  channel,
   navigation,
   onChange,
 }: {
+  channel: 'phone' | 'mail';
   navigation: PortfolioNavSettings;
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
 }) {
-  const logoSide = navigation.logoLeftNavContactLogoSide ?? 'left';
+  const showChannel = channel === 'phone' ? navigation.editorialBarShowPhone : navigation.editorialBarShowMail;
+  const profile = mergeEditorialBarContactChannelSettings(
+    channel === 'phone' ? navigation.editorialBarPhoneContact : navigation.editorialBarMailContact,
+    undefined,
+    channel === 'phone' ? DEFAULT_EDITORIAL_BAR_PHONE_CONTACT : DEFAULT_EDITORIAL_BAR_MAIL_CONTACT
+  );
+  const iconOptions = portfolioNavContactCtaIconOptionsForEditorialChannel(channel);
+  const iconPosition = profile.iconPosition;
 
-  const modeButtonClass = (active: boolean) =>
-    `rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
-      active
-        ? 'border-neutral-900 bg-neutral-900 text-white'
-        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-    }`;
+  const patchProfile = (patch: Partial<PortfolioNavEditorialBarContactChannelSettings>) =>
+    channel === 'phone'
+      ? onChange({ editorialBarPhoneContact: { ...profile, ...patch } })
+      : onChange({ editorialBarMailContact: { ...profile, ...patch } });
 
   return (
-    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-        Logo / navigation placement
-      </p>
+    <div className="space-y-6">
+      <NavToggleBand
+        title={channel === 'phone' ? 'Show Phone Button' : 'Show Email Button'}
+        description={
+          channel === 'phone'
+            ? 'Display a call button in the navigation bar.'
+            : 'Display an email button in the navigation bar.'
+        }
+        checked={showChannel}
+        onChange={(next) => {
+          const contactButtonEnabled = next ? true : navigation.contactButtonEnabled;
+          onChange(
+            channel === 'phone'
+              ? { editorialBarShowPhone: next, contactButtonEnabled }
+              : { editorialBarShowMail: next, contactButtonEnabled }
+          );
+        }}
+      />
+      {showChannel ? (
+        <>
+          <div>
+            <NavStackedLabel>Label</NavStackedLabel>
+            <input
+              type="text"
+              value={profile.label}
+              maxLength={32}
+              onChange={(event) => patchProfile({ label: event.target.value.slice(0, 32) })}
+              className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
+            />
+          </div>
 
-      <div className="mt-4 space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className={modeButtonClass(logoSide === 'left')}
-            onClick={() => onChange({ logoLeftNavContactLogoSide: 'left' })}
-          >
-            Logo left
-          </button>
-          <button
-            type="button"
-            className={modeButtonClass(logoSide === 'right')}
-            onClick={() => onChange({ logoLeftNavContactLogoSide: 'right' })}
-          >
-            Logo right
-          </button>
-        </div>
+          <NavStackedSegment
+            label="Display style"
+            options={NAV_CONTACT_BUTTON_DISPLAY_OPTIONS}
+            value={profile.display}
+            onChange={(display) => patchProfile({ display })}
+          />
 
-        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white px-2.5 py-2 shadow-sm">
-          {logoSide === 'left' ? (
-            <div className="flex w-full items-center justify-between gap-3">
-              <span className="text-[11px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
-              <div className="flex items-center gap-2 text-[8px] text-neutral-700">
-                <span className="border-b border-neutral-900 pb-px">About</span>
-                <span>Blog</span>
-                <span className="inline-flex items-center gap-0.5 rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden />
-                  Contact
-                </span>
+          {profile.display === 'icon' || (profile.display === 'button' && iconPosition !== 'none') ? (
+            <div className="space-y-2">
+              <NavStackedLabel>Select icon</NavStackedLabel>
+              <div className="flex flex-wrap gap-1.5">
+                {iconOptions.map((option) => {
+                  const active = profile.icon === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      title={option.description}
+                      onClick={() => patchProfile({ icon: option.value as PortfolioNavContactCtaIcon })}
+                      className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition ${
+                        active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                      }`}
+                    >
+                      <PortfolioNavContactCtaGlyph variant={option.value} className="h-4 w-4" />
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          ) : (
-            <div className="flex w-full items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-[8px] text-neutral-700">
-                <span className="inline-flex items-center gap-0.5 rounded-md bg-neutral-900 px-1.5 py-0.5 text-[7px] font-semibold text-white">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white/90" aria-hidden />
-                  Contact
-                </span>
-                <span className="border-b border-neutral-900 pb-px">About</span>
-                <span>Blog</span>
-              </div>
-              <span className="text-[11px] font-bold text-neutral-900">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
-            </div>
-          )}
-        </div>
-      </div>
+          ) : null}
 
-      <div className="pf-gs-section space-y-3">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Contact button
-        </p>
-        <NavContactButtonStyleEditor navigation={navigation} onChange={onChange} />
+          <NavAdvancedOptionsDisclosure>
+            {profile.display === 'button' ? (
+              <div className="py-5 first:pt-0 last:pb-0">
+                <NavStackedSegment
+                  label="Icon position"
+                  options={PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS}
+                  value={iconPosition}
+                  onChange={(nextIconPosition) => patchProfile({ iconPosition: nextIconPosition })}
+                />
+              </div>
+            ) : null}
+            <div className="py-5 first:pt-0 last:pb-0">
+              <NavContactButtonShapeGrid value={profile.shape} onChange={(shape) => patchProfile({ shape })} />
+            </div>
+          </NavAdvancedOptionsDisclosure>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+/** Editorial bar's Social links / Phone / Email settings panel. */
+function NavEditorialBarSocialElementsEditor({
+  navigation,
+  options,
+  onChange,
+}: {
+  navigation: PortfolioNavSettings;
+  options: PortfolioNavChromeLink[];
+  onChange: (patch: Partial<PortfolioNavSettings>) => void;
+}) {
+  const [activeElement, setActiveElement] = useState<'social' | 'phone' | 'mail'>('social');
+
+  return (
+    <div className="space-y-6 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+      <NavElementTabs value={activeElement} onChange={setActiveElement} />
+
+      <div className="space-y-6 border-t border-neutral-200/70 pt-6">
+        {activeElement === 'social' ? (
+          <NavElementSocialTabPanel navigation={navigation} options={options} onChange={onChange} />
+        ) : (
+          <NavElementContactTabPanel channel={activeElement} navigation={navigation} onChange={onChange} />
+        )}
       </div>
     </div>
   );
@@ -5173,11 +5048,11 @@ function NavSplitLogoSectionEditor({
 
   return (
     <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-      <div>
+      <div className="flex items-center gap-1.5">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
           Left / right split
         </p>
-        <p className="mt-1 text-sm text-neutral-500">Auto splits 50/50 by section order.</p>
+        <GlobalInfoTooltip text="Auto splits 50/50 by section order." />
       </div>
 
       {autoSplit ? (
@@ -5234,28 +5109,34 @@ function NavLayoutDesignGrid({
   value,
   navigation,
   onChange,
+  expanded,
+  onExpandedChange,
 }: {
   value: PortfolioNavLayoutDesign;
   navigation: PortfolioNavSettings;
   onChange: (design: PortfolioNavLayoutDesign) => void;
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
 }) {
-  const [showGrid, setShowGrid] = useState(false);
   const palette = mergeNavPalette(DEFAULT_NAV_PALETTE, navigation.navPalette);
   const accent = resolveHeroPaletteColor(palette, 'principal');
   const strongText = resolveHeroPaletteColor(palette, 'texteFort');
   const muted = resolveHeroPaletteColor(palette, 'texteMuted');
-  const selected =
-    PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS.find((option) => option.value === value) ??
-    PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS[0];
+  // 'classic' predates this picker and is no longer offered as a card, but existing
+  // portfolios can still be on it — label it accurately instead of misreporting the
+  // first listed card.
+  const selectedLabel =
+    PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS.find((option) => option.value === value)?.label ??
+    (value === 'classic' ? 'Classic' : PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS[0].label);
 
-  if (showGrid) {
+  if (expanded) {
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
           <p className="pf-stack-block-label pf-stack-option-label !mb-0">Layout</p>
           <button
             type="button"
-            onClick={() => setShowGrid(false)}
+            onClick={() => onExpandedChange(false)}
             className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
           >
             ← Back
@@ -5271,7 +5152,7 @@ function NavLayoutDesignGrid({
                 aria-pressed={active}
                 onClick={() => {
                   onChange(option.value);
-                  setShowGrid(false);
+                  onExpandedChange(false);
                 }}
                 className={`relative flex h-32 flex-col rounded-2xl border-2 bg-white p-4 text-left transition ${
                   active ? '' : 'border-neutral-200/80 hover:border-neutral-300'
@@ -5315,33 +5196,33 @@ function NavLayoutDesignGrid({
   return (
     <div>
       <p className="pf-stack-block-label pf-stack-option-label">Layout</p>
-      <div className="group relative flex h-24 w-full items-center justify-center overflow-hidden rounded-2xl border border-neutral-200/80 bg-white p-4">
-        <NavLayoutDesignPreview
-          design={value}
-          accent={accent}
-          strongText={strongText}
-          muted={muted}
-        />
-        <button
-          type="button"
-          onClick={() => setShowGrid(true)}
-          aria-label="Change layout"
-          className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
-        >
-          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-lg">
-            Change layout
+      <button
+        type="button"
+        onClick={() => onExpandedChange(true)}
+        aria-label="Change layout"
+        className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 bg-white px-3 py-2.5 text-left transition hover:border-neutral-300"
+      >
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+          <span className="flex w-64 shrink-0 origin-center scale-[0.5] items-center justify-center">
+            <NavLayoutDesignPreview
+              design={value}
+              accent={accent}
+              strongText={strongText}
+              muted={muted}
+            />
           </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowGrid(true)}
-          aria-label="Change layout"
-          className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
-        >
-          Change
-        </button>
-      </div>
-      <p className="mt-2 text-sm font-semibold text-neutral-950">{selected.label}</p>
+        </span>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{selectedLabel}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+          <path
+            d="M7.5 4.5l5 5.5-5 5.5"
+            stroke="currentColor"
+            strokeWidth={1.75}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
     </div>
   );
 }
@@ -5724,6 +5605,7 @@ function NavigationPanel({
   onGlobalChange?: (patch: PortfolioGlobalSettingsPatch) => void;
 }) {
   const [navTab, setNavTab] = useState<NavSettingsTab>('general');
+  const [layoutGridOpen, setLayoutGridOpen] = useState(false);
   const navMode = navigation.navMode ?? 'default';
   const usesFloatingNavChrome = navMode === 'default' || navMode === 'pages';
 
@@ -5927,6 +5809,8 @@ function NavigationPanel({
             <NavLayoutDesignGrid
               value={navigation.navLayoutDesign ?? 'classic'}
               navigation={navigation}
+              expanded={layoutGridOpen}
+              onExpandedChange={setLayoutGridOpen}
               onChange={(design) => {
                 onChange(portfolioNavLayoutDesignPatch(design, navigation));
                 if (design === 'floating-pill') {
@@ -5938,59 +5822,53 @@ function NavigationPanel({
           ) : (
             <NavFloatingOnlyNote />
           )}
-          {navigation.navLayoutDesign === 'editorial-bar' ? (
-            <NavEditorialBarSlotEditor
-              navigation={navigation}
-              options={navSocialLinkOptions}
-              onChange={onChange}
-            />
-          ) : null}
-          {navigation.navLayoutDesign === 'floating-pill' ? (
-            <NavFloatingPillMenuEditor
-              navigation={navigation}
-              onChange={onChange}
-              showColorModeToggleInNav={showColorModeToggleInNav}
-              onGlobalChange={onGlobalChange}
-            />
-          ) : null}
-          {navigation.navLayoutDesign === 'nav-logo-social' ? (
-            <NavTriZoneSideSlotEditor
-              navigation={navigation}
-              options={navSocialLinkOptions}
-              onChange={onChange}
-            />
-          ) : null}
-          {navigation.navLayoutDesign === 'center-logo-split' ? (
-            <NavSplitLogoSectionEditor navigation={navigation} onChange={onChange} />
-          ) : null}
-          {navigation.navLayoutDesign === 'logo-left-nav-contact' ? (
-            <NavLogoLeftContactPlacementEditor navigation={navigation} onChange={onChange} />
-          ) : null}
-          {navigation.navLayoutDesign === 'case-overlay' ? (
-            <NavCaseOverlayLogoEditor
-              navigation={navigation}
-              onChange={onChange}
-              showColorModeToggleInNav={showColorModeToggleInNav}
-              onGlobalChange={onGlobalChange}
-            />
-          ) : null}
-          {navigation.navLayoutDesign === 'duten-panel' ? (
-            <NavDutenPanelEditor
-              navigation={navigation}
-              options={navSocialLinkOptions}
-              onChange={onChange}
-              showColorModeToggleInNav={showColorModeToggleInNav}
-              onGlobalChange={onGlobalChange}
-            />
-          ) : null}
-          {navigation.navLayoutDesign === 'half-panel-left' ? (
-            <NavHalfPanelEditor
-              navigation={navigation}
-              options={navSocialLinkOptions}
-              onChange={onChange}
-              showColorModeToggleInNav={showColorModeToggleInNav}
-              onGlobalChange={onGlobalChange}
-            />
+          {!layoutGridOpen ? (
+            <>
+              {navigation.navLayoutDesign === 'editorial-bar' ? (
+                <NavEditorialBarSlotEditor
+                  navigation={navigation}
+                  options={navSocialLinkOptions}
+                  onChange={onChange}
+                />
+              ) : null}
+              {navigation.navLayoutDesign === 'floating-pill' ? (
+                <NavFloatingPillMenuEditor
+                  navigation={navigation}
+                  onChange={onChange}
+                  showColorModeToggleInNav={showColorModeToggleInNav}
+                  onGlobalChange={onGlobalChange}
+                />
+              ) : null}
+              {navigation.navLayoutDesign === 'center-logo-split' ? (
+                <NavSplitLogoSectionEditor navigation={navigation} onChange={onChange} />
+              ) : null}
+              {navigation.navLayoutDesign === 'case-overlay' ? (
+                <NavCaseOverlayLogoEditor
+                  navigation={navigation}
+                  onChange={onChange}
+                  showColorModeToggleInNav={showColorModeToggleInNav}
+                  onGlobalChange={onGlobalChange}
+                />
+              ) : null}
+              {navigation.navLayoutDesign === 'duten-panel' ? (
+                <NavDutenPanelEditor
+                  navigation={navigation}
+                  options={navSocialLinkOptions}
+                  onChange={onChange}
+                  showColorModeToggleInNav={showColorModeToggleInNav}
+                  onGlobalChange={onGlobalChange}
+                />
+              ) : null}
+              {navigation.navLayoutDesign === 'half-panel-left' ? (
+                <NavHalfPanelEditor
+                  navigation={navigation}
+                  options={navSocialLinkOptions}
+                  onChange={onChange}
+                  showColorModeToggleInNav={showColorModeToggleInNav}
+                  onGlobalChange={onGlobalChange}
+                />
+              ) : null}
+            </>
           ) : null}
         </div>
       ) : null}
@@ -6031,6 +5909,7 @@ function SectionPanel({
   onDeleteCustomTheme,
   availableTools,
   availableWorks,
+  availableServices = [],
   navSocialLinkOptions = [],
   panelSubSections,
   onPanelSubSectionChange,
@@ -6058,6 +5937,7 @@ function SectionPanel({
   onDeleteCustomTheme: (themeId: string) => void;
   availableTools: string[];
   availableWorks: { id: string; title: string; imageUrl: string }[];
+  availableServices?: { id: string; title: string }[];
   navSocialLinkOptions?: PortfolioNavChromeLink[];
   panelSubSections: PanelSubSections;
   onPanelSubSectionChange: <K extends keyof PanelSubSections>(
@@ -6144,6 +6024,7 @@ function SectionPanel({
         settingsFocus="services"
         subSection={panelSubSections.services ?? 'header'}
         onSubSectionChange={(value) => onPanelSubSectionChange('services', value)}
+        availableServices={availableServices}
       />
     );
   }
@@ -6224,7 +6105,7 @@ function SectionPanel({
       <FaqSettingsPanel
         faq={settings.faq}
         onChange={(patch) => onChange('faq', patch)}
-        subSection={panelSubSections.faq ?? 'header'}
+        subSection={panelSubSections.faq ?? 'general'}
         onSubSectionChange={(value) => onPanelSubSectionChange('faq', value)}
       />
     );
@@ -6246,8 +6127,9 @@ function SectionPanel({
       <ContactSettingsPanel
         contact={settings.contact}
         onChange={(patch) => onChange('contact', patch)}
-        subSection={panelSubSections.contact ?? 'header'}
+        subSection={panelSubSections.contact ?? 'general'}
         onSubSectionChange={(value) => onPanelSubSectionChange('contact', value)}
+        heroPalette={settings.hero.palette}
       />
     );
   }
@@ -6321,6 +6203,7 @@ type PortfolioSettingsModalProps = {
   canRedo?: boolean;
   availableTools: string[];
   availableWorks?: { id: string; title: string; imageUrl: string }[];
+  availableServices?: { id: string; title: string }[];
   navSocialLinkOptions?: PortfolioNavChromeLink[];
   /** Live Preview: scroll the iframe to the matching portfolio section. */
   onPreviewSectionFocus?: (sectionId: PortfolioSettingsSectionId) => void;
@@ -6351,6 +6234,7 @@ export function PortfolioSettingsModal({
   canRedo = false,
   availableTools,
   availableWorks = [],
+  availableServices = [],
   navSocialLinkOptions = [],
   onPreviewSectionFocus,
 }: PortfolioSettingsModalProps) {
@@ -6452,7 +6336,7 @@ export function PortfolioSettingsModal({
     } else if (entry.sectionId === 'services') {
       setPanelSubSections((prev) => ({
         ...prev,
-        services: normalizeServicesSubSection(entry.subSection, 'services'),
+        services: normalizeServicesSubSection(entry.subSection),
       }));
     } else if (entry.sectionId === 'aboutUs') {
       setPanelSubSections((prev) => ({
@@ -6482,9 +6366,9 @@ export function PortfolioSettingsModal({
         tools: normalizeToolsSubSection(entry.subSection),
       }));
     } else if (entry.sectionId === 'contact') {
-      setPanelSubSections((prev) => ({ ...prev, contact: entry.subSection as ContactSubSection }));
+      setPanelSubSections((prev) => ({ ...prev, contact: normalizeContactSubSection(entry.subSection) }));
     } else if (entry.sectionId === 'footer') {
-      setPanelSubSections((prev) => ({ ...prev, footer: entry.subSection as FooterSubSection }));
+      setPanelSubSections((prev) => ({ ...prev, footer: normalizeFooterSubSection(entry.subSection) }));
     }
   }, [onPreviewSectionFocus]);
 
@@ -6567,6 +6451,7 @@ export function PortfolioSettingsModal({
         onDeleteCustomTheme={onDeleteCustomTheme}
         availableTools={availableTools}
         availableWorks={availableWorks}
+        availableServices={availableServices}
         navSocialLinkOptions={navSocialLinkOptions}
         panelSubSections={panelSubSections}
         onPanelSubSectionChange={setPanelSubSection}

@@ -155,9 +155,7 @@ export type PortfolioNavLayoutDesign =
   | 'classic'
   | 'editorial-bar'
   | 'floating-pill'
-  | 'nav-logo-social'
   | 'center-logo-split'
-  | 'logo-left-nav-contact'
   | 'case-overlay'
   | 'duten-panel'
   | 'half-panel-left';
@@ -263,10 +261,8 @@ export type PortfolioNavLinkIconSource =
 
 /** Where to park Contact + link icons as one cluster in free space. */
 export type PortfolioNavExtrasSide = 'auto' | 'left' | 'right';
-export type PortfolioNavTriZoneSlotMode = 'social' | 'contact';
-export type PortfolioNavTriZoneContactSide = 'left' | 'right';
-/** editorial-bar: same mutual exclusion as tri-zone — social links or contact CTA on the right. */
-export type PortfolioNavEditorialBarSlotMode = PortfolioNavTriZoneSlotMode;
+/** editorial-bar: social links or contact CTA on the right — mutually exclusive. */
+export type PortfolioNavEditorialBarSlotMode = 'social' | 'contact';
 /** editorial-bar contact mode: tel: or mailto: from profile. */
 export type PortfolioNavEditorialBarContactLink = 'phone' | 'mail';
 /** editorial-bar: ink for active menu labels + contact / mail CTAs. */
@@ -326,12 +322,10 @@ export const DEFAULT_EDITORIAL_BAR_MAIL_CONTACT: PortfolioNavEditorialBarContact
   };
 /** Icon placement inside a labeled contact button. */
 export type PortfolioNavContactButtonIconPosition = 'left' | 'right' | 'none';
-/** nav-logo-social: rendered size of profile link brand icons (max 3). */
+/** editorial-bar: rendered size of profile link brand icons (max 3). */
 export type PortfolioNavTriZoneSocialLinkSize = 'xs' | 'sm' | 'md' | 'lg';
-/** nav-logo-social: horizontal gap between link brand icons. */
+/** editorial-bar: horizontal gap between link brand icons. */
 export type PortfolioNavTriZoneSocialLinkGap = 'sm' | 'md' | 'lg' | 'xl';
-/** logo-left-nav-contact: logo on the left rail (default) or swapped to the right. */
-export type PortfolioNavLogoLeftContactLogoSide = 'left' | 'right';
 
 /**
  * Where the extras cluster (Contact + link icons + custom extra) sits relative to the nav bar.
@@ -394,12 +388,12 @@ export const PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'frameless', label: 'Sans cadre', description: 'Texte ou icône seule, sans fond ni bordure.' },
-  { value: 'bottom-line', label: 'Trait en bas', description: 'Soulignement discret sous le libellé.' },
-  { value: 'square', label: 'Carré', description: 'Angles droits.' },
-  { value: 'rounded', label: 'Arrondi', description: 'Coins légèrement arrondis.' },
-  { value: 'soft', label: 'Soft', description: 'Grand rayon de coin.' },
-  { value: 'pill', label: 'Pill', description: 'Bords entièrement arrondis — cercle en mode icône.' },
+  { value: 'frameless', label: 'No frame', description: 'Text or icon alone, no fill or border.' },
+  { value: 'bottom-line', label: 'Underline', description: 'Subtle underline beneath the label.' },
+  { value: 'square', label: 'Square', description: 'Sharp corners.' },
+  { value: 'rounded', label: 'Rounded', description: 'Slightly rounded corners.' },
+  { value: 'soft', label: 'Soft', description: 'Large corner radius.' },
+  { value: 'pill', label: 'Pill', description: 'Fully rounded edges — a circle in icon mode.' },
 ];
 
 export function normalizePortfolioNavContactButtonIconPosition(
@@ -441,9 +435,9 @@ export const PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Gauche', description: 'Icône avant le libellé.' },
-  { value: 'right', label: 'Droite', description: 'Icône après le libellé.' },
-  { value: 'none', label: 'Sans icône', description: 'Libellé seul.' },
+  { value: 'left', label: 'Left', description: 'Icon before the label.' },
+  { value: 'right', label: 'Right', description: 'Icon after the label.' },
+  { value: 'none', label: 'No icon', description: 'Label only.' },
 ];
 
 export function normalizePortfolioNavContactButtonShape(
@@ -1166,24 +1160,14 @@ export type PortfolioNavSettings = {
   linkIconsEnabled: boolean;
   /** Which link sources to show when URLs/email exist on the profile. */
   linkIconSources: PortfolioNavLinkIconSource[];
-  /** nav-logo-social: ordered link ids to show (max 3). Empty = first available links. */
+  /** editorial-bar: ordered link ids to show (max 3). Empty = first available links. */
   triZoneSocialLinkIds: string[];
-  /** @deprecated Use triZoneShowSocial — kept for saved settings migration. */
-  triZoneSlotMode: PortfolioNavTriZoneSlotMode;
-  /** @deprecated Contact rails are grouped on the right — kept for migration. */
-  triZoneContactSide: PortfolioNavTriZoneContactSide;
-  /** nav-logo-social: brand icon size when showing social links. */
+  /** editorial-bar: brand icon size when showing social links. */
   triZoneSocialLinkSize: PortfolioNavTriZoneSocialLinkSize;
-  /** nav-logo-social: grayscale brand icons (no platform colors). */
+  /** editorial-bar: grayscale brand icons (no platform colors). */
   triZoneSocialLinkMonochrome: boolean;
-  /** nav-logo-social: spacing between brand link icons. */
+  /** editorial-bar: spacing between brand link icons. */
   triZoneSocialLinkGap: PortfolioNavTriZoneSocialLinkGap;
-  /** nav-logo-social: show social link icons (can combine with phone + mail). */
-  triZoneShowSocial: boolean;
-  /** nav-logo-social: show phone contact CTA. */
-  triZoneShowPhone: boolean;
-  /** nav-logo-social: show e-mail contact CTA. */
-  triZoneShowMail: boolean;
   /** editorial-bar: show social link icons on the right (can combine with phone + mail). */
   editorialBarShowSocial: boolean;
   /** editorial-bar: show phone contact CTA on the right. */
@@ -1206,8 +1190,6 @@ export type PortfolioNavSettings = {
   floatingPillShowContact: boolean;
   /** center-logo-split: section keys pinned to the left rail (empty = auto half/half). */
   splitNavLeftSectionKeys: PortfolioNavSectionKey[];
-  /** logo-left-nav-contact: logo rail — left (nav+contact right) or right (nav+contact left). */
-  logoLeftNavContactLogoSide: PortfolioNavLogoLeftContactLogoSide;
   /** Outer circle background for mail / social icon buttons (not Contact). */
   linkIconBackgroundColor: string;
   /** Glyph color for mail / social icon buttons (not Contact). */
@@ -1430,7 +1412,7 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
     navigation: {
       enabled: true,
       navMode: 'default',
-      navLayoutDesign: 'classic',
+      navLayoutDesign: 'editorial-bar',
       placement: 'top-center',
       barDesign: 'classic',
       contentMode: 'icons',
@@ -1506,14 +1488,9 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       linkIconsEnabled: false,
       linkIconSources: [...DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES],
       triZoneSocialLinkIds: [],
-      triZoneSlotMode: 'social',
-      triZoneContactSide: 'right',
       triZoneSocialLinkSize: 'sm',
       triZoneSocialLinkMonochrome: false,
       triZoneSocialLinkGap: 'md',
-      triZoneShowSocial: true,
-      triZoneShowPhone: false,
-      triZoneShowMail: false,
       editorialBarSlotMode: 'contact',
       editorialBarShowSocial: false,
       editorialBarShowPhone: true,
@@ -1525,7 +1502,6 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       floatingPillShowLogo: false,
       floatingPillShowContact: true,
       splitNavLeftSectionKeys: [],
-      logoLeftNavContactLogoSide: 'left',
       linkIconBackgroundColor: '#ffffff',
       linkIconColor: '#404040',
       linkIconBorderColor: '#e5e5e5',
@@ -1724,9 +1700,7 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
       patch.navLayoutDesign === 'classic' ||
       patch.navLayoutDesign === 'editorial-bar' ||
       patch.navLayoutDesign === 'floating-pill' ||
-      patch.navLayoutDesign === 'nav-logo-social' ||
       patch.navLayoutDesign === 'center-logo-split' ||
-      patch.navLayoutDesign === 'logo-left-nav-contact' ||
       patch.navLayoutDesign === 'case-overlay' ||
       patch.navLayoutDesign === 'duten-panel' ||
       patch.navLayoutDesign === 'half-panel-left'
@@ -2105,14 +2079,6 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
           .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
           .slice(0, 3)
       : base.triZoneSocialLinkIds ?? [],
-    triZoneSlotMode:
-      patch.triZoneSlotMode === 'contact' || patch.triZoneSlotMode === 'social'
-        ? patch.triZoneSlotMode
-        : base.triZoneSlotMode ?? 'social',
-    triZoneContactSide:
-      patch.triZoneContactSide === 'left' || patch.triZoneContactSide === 'right'
-        ? patch.triZoneContactSide
-        : base.triZoneContactSide ?? 'right',
     triZoneSocialLinkSize:
       patch.triZoneSocialLinkSize === 'xs' ||
       patch.triZoneSocialLinkSize === 'sm' ||
@@ -2131,24 +2097,6 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
       patch.triZoneSocialLinkGap === 'xl'
         ? patch.triZoneSocialLinkGap
         : base.triZoneSocialLinkGap ?? 'md',
-    triZoneShowSocial:
-      typeof patch.triZoneShowSocial === 'boolean'
-        ? patch.triZoneShowSocial
-        : typeof base.triZoneShowSocial === 'boolean'
-          ? base.triZoneShowSocial
-          : (base.triZoneSlotMode ?? 'social') === 'social',
-    triZoneShowPhone:
-      typeof patch.triZoneShowPhone === 'boolean'
-        ? patch.triZoneShowPhone
-        : typeof base.triZoneShowPhone === 'boolean'
-          ? base.triZoneShowPhone
-          : (base.triZoneSlotMode ?? 'social') === 'contact',
-    triZoneShowMail:
-      typeof patch.triZoneShowMail === 'boolean'
-        ? patch.triZoneShowMail
-        : typeof base.triZoneShowMail === 'boolean'
-          ? base.triZoneShowMail
-          : false,
     editorialBarSlotMode:
       patch.editorialBarSlotMode === 'contact' || patch.editorialBarSlotMode === 'social'
         ? patch.editorialBarSlotMode
@@ -2216,10 +2164,6 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
       patch.splitNavLeftSectionKeys !== undefined
         ? normalizeSplitNavLeftSectionKeys(patch.splitNavLeftSectionKeys)
         : base.splitNavLeftSectionKeys ?? [],
-    logoLeftNavContactLogoSide:
-      patch.logoLeftNavContactLogoSide === 'left' || patch.logoLeftNavContactLogoSide === 'right'
-        ? patch.logoLeftNavContactLogoSide
-        : base.logoLeftNavContactLogoSide ?? 'left',
     linkIconBackgroundColor:
       typeof patch.linkIconBackgroundColor === 'string' &&
       /^#[0-9a-fA-F]{6}$/.test(patch.linkIconBackgroundColor.trim())
@@ -2465,13 +2409,6 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
         }
         if (!('customExtraSide' in navPatch)) {
           navPatch.customExtraSide = sharedSide;
-        }
-        // logo-left-nav-contact: icon before label (distinct from editorial-bar default).
-        if (
-          navPatch.navLayoutDesign === 'logo-left-nav-contact' &&
-          !('contactButtonIconPosition' in stored.navigation)
-        ) {
-          navPatch.contactButtonIconPosition = 'left';
         }
         if (navPatch.navLayoutDesign === 'editorial-bar') {
           const buttonInk = normalizePortfolioNavEditorialBarButtonInk(

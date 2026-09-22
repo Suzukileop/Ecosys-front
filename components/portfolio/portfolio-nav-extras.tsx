@@ -32,9 +32,7 @@ import {
   portfolioNavUsesEditorialBarLayout,
   portfolioNavUsesFloatingPillLayout,
   portfolioNavUsesInBarBrandLayout,
-  portfolioNavUsesLogoLeftNavContactLayout,
   portfolioNavUsesStructuredBarLayout,
-  portfolioNavUsesTriZoneLayout,
   portfolioNavUsesCenterLogoSplitLayout,
 } from '@/components/portfolio/portfolio-nav-layout-design';
 import { LinkBrandIcon } from '@/components/portfolio/PortfolioLinksChrome';
@@ -60,10 +58,8 @@ import {
   resolvePortfolioNavEditorialBarButtonInk,
   resolvePortfolioNavMobileChrome,
   PORTFOLIO_NAV_EDITORIAL_INTERACTION,
-  PORTFOLIO_NAV_TRI_ZONE_INTERACTION,
   PORTFOLIO_NAV_CENTER_SPLIT_INTERACTION,
   PORTFOLIO_NAV_FLOATING_PILL_INTERACTION,
-  PORTFOLIO_NAV_LOGO_LEFT_INTERACTION,
 } from '@/components/portfolio/portfolio-nav-settings';
 import type {
   PortfolioNavContactButtonDisplay,
@@ -280,9 +276,6 @@ export function resolveEditorialBarActiveContact(
 }
 
 function navShowsSocialSlot(settings: PortfolioNavSettings): boolean {
-  if (portfolioNavUsesTriZoneLayout(settings)) {
-    return settings.triZoneShowSocial ?? (settings.triZoneSlotMode ?? 'social') === 'social';
-  }
   if (portfolioNavUsesEditorialBarLayout(settings)) {
     return settings.editorialBarShowSocial ?? (settings.editorialBarSlotMode ?? 'contact') === 'social';
   }
@@ -294,13 +287,11 @@ function editorialBarContactChannelButton({
   href,
   settings,
   compact,
-  triZoneInteraction = false,
 }: {
   profile: PortfolioNavEditorialBarContactChannelSettings;
   href: string;
   settings: PortfolioNavSettings;
   compact?: boolean;
-  triZoneInteraction?: boolean;
 }) {
   const contactLabel = profile.label.trim() || 'Contact';
   const contactDisplay = profile.display;
@@ -323,8 +314,7 @@ function editorialBarContactChannelButton({
       shape={contactShape}
       chrome={contactChrome}
       compact={compact}
-      editorialInteraction={!triZoneInteraction}
-      triZoneInteraction={triZoneInteraction}
+      editorialInteraction
     />
   );
 }
@@ -594,25 +584,6 @@ function resolveContactButtonChrome(settings: PortfolioNavSettings) {
   };
 }
 
-function resolveTriZoneContactChrome(
-  settings: PortfolioNavSettings,
-  display: PortfolioNavContactButtonDisplay
-) {
-  if (display === 'button') {
-    return resolveContactButtonChrome(settings);
-  }
-
-  const linkColors = resolveLinkIconColors(settings);
-  return {
-    background: linkColors.background,
-    color: navReadableInk(linkColors.icon, linkColors.background),
-    border: linkColors.border,
-    borderEnabled: true,
-    glass: false,
-    shadow: true,
-  };
-}
-
 function customExtraHasVisibleContent(settings: PortfolioNavSettings): boolean {
   if (!(settings.customExtraEnabled ?? false)) return false;
   if (portfolioNavUsesInBarBrandLayout(settings)) return true;
@@ -640,20 +611,16 @@ function NavBrandLinkButton({
   iconSize = 'md',
   monochrome = false,
   editorialInteraction = false,
-  triZoneInteraction = false,
 }: {
   link: PortfolioNavChromeLink;
   iconSize?: LinkBrandIconVisualSize;
   monochrome?: boolean;
   editorialInteraction?: boolean;
-  triZoneInteraction?: boolean;
 }) {
   const external = link.source !== 'mail';
   const hoverClass = editorialInteraction
     ? PORTFOLIO_NAV_EDITORIAL_INTERACTION.icon
-    : triZoneInteraction
-      ? PORTFOLIO_NAV_TRI_ZONE_INTERACTION.socialIcon
-      : 'transition hover:opacity-90';
+    : 'transition hover:opacity-90';
   return (
     <a
       href={link.href}
@@ -679,13 +646,11 @@ export function PortfolioNavBrandLinkButton({
   iconSize = 'md',
   monochrome = false,
   editorialInteraction = false,
-  triZoneInteraction = false,
 }: {
   link: PortfolioNavChromeLink;
   iconSize?: LinkBrandIconVisualSize;
   monochrome?: boolean;
   editorialInteraction?: boolean;
-  triZoneInteraction?: boolean;
 }) {
   return (
     <NavBrandLinkButton
@@ -693,7 +658,6 @@ export function PortfolioNavBrandLinkButton({
       iconSize={iconSize}
       monochrome={monochrome}
       editorialInteraction={editorialInteraction}
-      triZoneInteraction={triZoneInteraction}
     />
   );
 }
@@ -760,8 +724,6 @@ function ContactFreeSpaceButton({
   compact,
   editorialInteraction = false,
   floatingPillInteraction = false,
-  logoLeftInteraction = false,
-  triZoneInteraction = false,
 }: {
   label: string;
   labelCase: PortfolioNavSettings['labelCase'];
@@ -776,8 +738,6 @@ function ContactFreeSpaceButton({
   compact?: boolean;
   editorialInteraction?: boolean;
   floatingPillInteraction?: boolean;
-  logoLeftInteraction?: boolean;
-  triZoneInteraction?: boolean;
 }) {
   const frame = portfolioNavContactButtonShellPresentation(shape, {
     background: chrome.background,
@@ -808,13 +768,9 @@ function ContactFreeSpaceButton({
     ? normalizedShape === 'bottom-line'
       ? PORTFOLIO_NAV_EDITORIAL_INTERACTION.ctaBottomLine
       : PORTFOLIO_NAV_EDITORIAL_INTERACTION.cta
-    : triZoneInteraction
-      ? PORTFOLIO_NAV_TRI_ZONE_INTERACTION.cta
-      : floatingPillInteraction
-        ? PORTFOLIO_NAV_FLOATING_PILL_INTERACTION.cta
-        : logoLeftInteraction
-          ? PORTFOLIO_NAV_LOGO_LEFT_INTERACTION.cta
-          : 'transition hover:opacity-90';
+    : floatingPillInteraction
+      ? PORTFOLIO_NAV_FLOATING_PILL_INTERACTION.cta
+      : 'transition hover:opacity-90';
 
   if (display !== 'button') {
     const size = isMinimalFrame ? '' : compact ? 'h-9 w-9' : 'h-10 w-10';
@@ -873,9 +829,7 @@ function ContactFreeSpaceButton({
           ? ` ${PORTFOLIO_NAV_EDITORIAL_INTERACTION.ctaIcon}`
           : floatingPillInteraction
             ? ` ${PORTFOLIO_NAV_FLOATING_PILL_INTERACTION.ctaIcon}`
-            : logoLeftInteraction
-              ? ` ${PORTFOLIO_NAV_LOGO_LEFT_INTERACTION.ctaIcon}`
-              : ''
+            : ''
       }`}
     />
   ) : null;
@@ -935,16 +889,13 @@ function InBarBrandLogo({
   const editorialBar = portfolioNavUsesEditorialBarLayout(settings);
   const floatingPill = portfolioNavUsesFloatingPillLayout(settings);
   const centerLogoSplit = portfolioNavUsesCenterLogoSplitLayout(settings);
-  const logoLeftLayout = portfolioNavUsesLogoLeftNavContactLayout(settings);
   const brandHoverClass = editorialBar
     ? PORTFOLIO_NAV_EDITORIAL_INTERACTION.brand
     : floatingPill
       ? PORTFOLIO_NAV_FLOATING_PILL_INTERACTION.brand
       : centerLogoSplit
         ? PORTFOLIO_NAV_CENTER_SPLIT_INTERACTION.brand
-        : logoLeftLayout
-          ? PORTFOLIO_NAV_LOGO_LEFT_INTERACTION.brand
-          : 'transition hover:opacity-90';
+        : 'transition hover:opacity-90';
   const className = [
     'inline-flex shrink-0 items-center font-bold tracking-tight',
     brandHoverClass,
@@ -1020,21 +971,15 @@ function CustomExtraChip({ settings, compact }: { settings: PortfolioNavSettings
   const alt = text || 'Extra';
   const label = text || 'Extra';
   const floatingPill = portfolioNavUsesFloatingPillLayout(settings);
-  const triZone = portfolioNavUsesTriZoneLayout(settings);
   const editorialBar = portfolioNavUsesEditorialBarLayout(settings);
-  const logoLeftLayout = portfolioNavUsesLogoLeftNavContactLayout(settings);
   const centerLogoSplit = portfolioNavUsesCenterLogoSplitLayout(settings);
   const brandHoverClass = editorialBar
     ? PORTFOLIO_NAV_EDITORIAL_INTERACTION.brand
-    : triZone
-      ? PORTFOLIO_NAV_TRI_ZONE_INTERACTION.brand
-      : floatingPill
-        ? PORTFOLIO_NAV_FLOATING_PILL_INTERACTION.brand
-        : centerLogoSplit
-          ? PORTFOLIO_NAV_CENTER_SPLIT_INTERACTION.brand
-          : logoLeftLayout
-            ? PORTFOLIO_NAV_LOGO_LEFT_INTERACTION.brand
-            : 'transition hover:opacity-90';
+    : floatingPill
+      ? PORTFOLIO_NAV_FLOATING_PILL_INTERACTION.brand
+      : centerLogoSplit
+        ? PORTFOLIO_NAV_CENTER_SPLIT_INTERACTION.brand
+        : 'transition hover:opacity-90';
 
   const background = settings.customExtraBackgroundColor ?? '#ffffff';
   const ink = navReadableInk(settings.customExtraTextColor ?? '#171717', background);
@@ -1094,9 +1039,7 @@ function CustomExtraChip({ settings, compact }: { settings: PortfolioNavSettings
   // min-w-0 + shrink: inside a full-width bar the chip ellipsizes instead of being
   // cut off by the bar's overflow-hidden; hug bars still grow to fit the label.
   const className = `inline-flex min-w-0 max-w-full shrink items-center justify-center ${shapeClass} ${
-    (floatingPill && wantsLogo && !showText) || (triZone && wantsLogo && !showText)
-      ? '!aspect-square !rounded-full'
-      : ''
+    floatingPill && wantsLogo && !showText ? '!aspect-square !rounded-full' : ''
   } ${brandHoverClass}`;
 
   if (href) {
@@ -1500,7 +1443,7 @@ export function PortfolioNavFreeSpaceLinks({
   );
 }
 
-/** Center brand chip for tri-zone nav layouts (logo / name). */
+/** Center brand chip for structured nav layouts (logo / name). */
 export function PortfolioNavCenterBrand({
   settings,
   compact,
@@ -1512,7 +1455,7 @@ export function PortfolioNavCenterBrand({
   return <CustomExtraChip settings={settings} compact={compact} />;
 }
 
-/** Social link icons for tri-zone nav — shows up to `maxLinks` (default 3). */
+/** Social link icons for editorial-bar nav — shows up to `maxLinks` (default 3). */
 export function PortfolioNavSocialIconStrip({
   settings,
   links,
@@ -1520,20 +1463,17 @@ export function PortfolioNavSocialIconStrip({
   compact: _compact,
   className = '',
   forceVisible = false,
-  triZoneInteraction = false,
 }: {
   settings: PortfolioNavSettings;
   links: PortfolioNavChromeLink[];
   maxLinks?: number;
   compact?: boolean;
   className?: string;
-  /** Skip tri-zone / legacy slot-mode gate (editorial bar combines items). */
+  /** Skip the slot-mode gate (editorial bar combines items). */
   forceVisible?: boolean;
-  /** Tri-zone social icons — playful scale + rotate hover (not editorial). */
-  triZoneInteraction?: boolean;
 }) {
-  if (!forceVisible && !triZoneInteraction && !navShowsSocialSlot(settings)) return null;
-  if (!(settings.linkIconsEnabled ?? false) && !forceVisible && !triZoneInteraction) return null;
+  if (!forceVisible && !navShowsSocialSlot(settings)) return null;
+  if (!(settings.linkIconsEnabled ?? false) && !forceVisible) return null;
   const visible = resolveTriZoneSocialLinks(links, settings, maxLinks);
   if (visible.length === 0) return null;
 
@@ -1550,7 +1490,6 @@ export function PortfolioNavSocialIconStrip({
           iconSize={iconSize}
           monochrome={monochrome}
           editorialInteraction={forceVisible}
-          triZoneInteraction={triZoneInteraction}
         />
       ))}
     </div>
@@ -1656,145 +1595,7 @@ export function PortfolioNavEditorialRightSlot({
   );
 }
 
-/** Tri-zone right rail — social + phone + mail can all show together (like editorial bar). */
-export function PortfolioNavTriZoneSideSlot({
-  settings,
-  links,
-  contactPhone,
-  contactEmail,
-  compact,
-  className = '',
-}: {
-  settings: PortfolioNavSettings;
-  links: PortfolioNavChromeLink[];
-  contactPhone?: string | null;
-  contactEmail?: string | null;
-  compact?: boolean;
-  className?: string;
-}) {
-  const showSocial = settings.triZoneShowSocial ?? false;
-  const showPhone = settings.triZoneShowPhone ?? false;
-  const showMail = settings.triZoneShowMail ?? false;
-
-  const phoneProfile = mergeEditorialBarContactChannelSettings(
-    settings.editorialBarPhoneContact ?? seedEditorialBarPhoneContactFromLegacy(settings),
-    undefined,
-    DEFAULT_EDITORIAL_BAR_PHONE_CONTACT
-  );
-  const mailProfile = mergeEditorialBarContactChannelSettings(
-    settings.editorialBarMailContact,
-    undefined,
-    DEFAULT_EDITORIAL_BAR_MAIL_CONTACT
-  );
-  const phoneHref = showPhone ? resolveEditorialBarContactHref('phone', { phone: contactPhone }) : null;
-  const mailHref = showMail ? resolveEditorialBarContactHref('mail', { email: contactEmail }) : null;
-
-  const nodes: ReactNode[] = [];
-
-  if (showSocial) {
-    nodes.push(
-      <PortfolioNavSocialIconStrip
-        key="social"
-        settings={settings}
-        links={links}
-        maxLinks={3}
-        compact={compact}
-        triZoneInteraction
-      />
-    );
-  }
-
-  if (showPhone && phoneHref) {
-    nodes.push(
-      <div key="phone" className="flex shrink-0 items-center">
-        {editorialBarContactChannelButton({
-          profile: phoneProfile,
-          href: phoneHref,
-          settings,
-          compact,
-          triZoneInteraction: true,
-        })}
-      </div>
-    );
-  }
-
-  if (showMail && mailHref) {
-    nodes.push(
-      <div key="mail" className="flex shrink-0 items-center">
-        {editorialBarContactChannelButton({
-          profile: mailProfile,
-          href: mailHref,
-          settings,
-          compact,
-          triZoneInteraction: true,
-        })}
-      </div>
-    );
-  }
-
-  const colorModeToggle = usePortfolioNavColorModeToggleContext();
-  const showColorModeToggle = colorModeToggle?.show ?? false;
-
-  if (nodes.length === 0 && !showColorModeToggle) return null;
-
-  return (
-    <div className={`flex min-w-0 shrink-0 items-center justify-end gap-2 sm:gap-3 ${className}`}>
-      {nodes}
-      <PortfolioNavColorModeToggleButton settings={settings} compact={compact} />
-    </div>
-  );
-}
-
-/** @deprecated Tri-zone now uses {@link PortfolioNavTriZoneSideSlot} with triZoneShow* flags. */
-export function PortfolioNavTriZoneContactCta({
-  settings,
-  side,
-  contactHref = '#contact',
-  onContactNavigate,
-  compact,
-  className = '',
-}: {
-  settings: PortfolioNavSettings;
-  side: 'left' | 'right';
-  contactHref?: string;
-  onContactNavigate?: () => void;
-  compact?: boolean;
-  className?: string;
-}) {
-  if ((settings.triZoneSlotMode ?? 'social') !== 'contact') return null;
-  if ((settings.triZoneContactSide ?? 'right') !== side) return null;
-
-  const contactLabel = (settings.contactButtonLabel ?? 'Contact').trim() || 'Contact';
-  const contactDisplay = (settings.contactButtonDisplay ?? 'icon') as PortfolioNavContactButtonDisplay;
-  const contactIcon = resolvePortfolioNavContactCtaIcon(settings.contactButtonIcon, {
-    iconOnly: contactDisplay !== 'button',
-  });
-  const contactIconPosition = normalizePortfolioNavContactButtonIconPosition(
-    settings.contactButtonIconPosition
-  );
-  const contactShape = (settings.contactButtonShape ?? 'pill') as PortfolioNavContactButtonShape;
-  const contactChrome = resolveTriZoneContactChrome(settings, contactDisplay);
-
-  return (
-    <div className={`flex shrink-0 items-center ${className}`}>
-      <ContactFreeSpaceButton
-        label={contactLabel}
-        labelCase={settings.labelCase}
-        labelFontSize={settings.labelFontSize ?? 'sm'}
-        href={contactHref}
-        onNavigate={onContactNavigate}
-        display={contactDisplay}
-        icon={contactIcon}
-        iconPosition={contactIconPosition}
-        shape={contactShape}
-        chrome={contactChrome}
-        compact={compact}
-      />
-    </div>
-  );
-}
-
-/** Standalone Contact CTA (logo-left-nav-contact and other bar layouts). */
+/** Standalone Contact CTA (used by every structured bar layout's free-space Contact button). */
 export function PortfolioNavContactCta({
   settings,
   contactHref = '#contact',
@@ -1821,7 +1622,6 @@ export function PortfolioNavContactCta({
   const contactShape = (settings.contactButtonShape ?? 'pill') as PortfolioNavContactButtonShape;
   const contactChrome = resolveContactButtonChrome(settings);
   const floatingPillInteraction = portfolioNavUsesFloatingPillLayout(settings);
-  const logoLeftInteraction = portfolioNavUsesLogoLeftNavContactLayout(settings);
 
   return (
     <div className={`flex shrink-0 items-center ${className}`}>
@@ -1838,7 +1638,6 @@ export function PortfolioNavContactCta({
         chrome={contactChrome}
         compact={compact}
         floatingPillInteraction={floatingPillInteraction}
-        logoLeftInteraction={logoLeftInteraction}
       />
     </div>
   );
@@ -1901,12 +1700,12 @@ export function PortfolioNavInlineExtras({
   side: 'left' | 'right';
 }) {
   const model = usePortfolioNavExtrasModel(settings, links);
+  const colorModeToggle = usePortfolioNavColorModeToggleContext();
   const structuredBar = portfolioNavUsesStructuredBarLayout(settings);
   if (!model.inlineInBar && !structuredBar) return null;
   const includeIcons = model.iconsSide === side;
   const includeContact = model.contactSide === side;
   const includeCustom = model.customSide === side;
-  const colorModeToggle = usePortfolioNavColorModeToggleContext();
   const showColorModeToggle = colorModeToggle?.show ?? false;
   if (!includeIcons && !includeContact && !includeCustom && !showColorModeToggle) return null;
 
@@ -1955,11 +1754,11 @@ export function PortfolioNavAdjacentExtras({
   position: 'before' | 'after';
 }) {
   const model = usePortfolioNavExtrasModel(settings, links);
+  const colorModeToggle = usePortfolioNavColorModeToggleContext();
   if (!model.adjacentToNav) return null;
   const includeIcons = model.iconsAdjacent === position;
   const includeContact = model.contactAdjacent === position;
   const includeCustom = model.customAdjacent === position;
-  const colorModeToggle = usePortfolioNavColorModeToggleContext();
   const showColorModeToggle = colorModeToggle?.show ?? false;
   if (!includeIcons && !includeContact && !includeCustom && !showColorModeToggle) return null;
 

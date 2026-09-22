@@ -1,52 +1,118 @@
 'use client';
 
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import {
   DEFAULT_WORK_PRESENTATION,
   WORK_HEADER_MARGIN_BOTTOM_REM,
-  workSubtitleColorStyle,
-  workTitleColorStyle,
-  type PortfolioWorkHeaderTitleSize,
-  type PortfolioWorkHeaderTitleWeight,
+  workPaletteTokenColor,
+  type PortfolioWorkBillboardWordStyle,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
 
-function prefersReducedMotion(): boolean {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
-function isLaidOut(el: HTMLElement): boolean {
-  return el.getClientRects().length > 0;
-}
-
-const TITLE_SIZE_CLASS: Record<PortfolioWorkHeaderTitleSize, string> = {
-  sm: 'text-4xl sm:text-5xl lg:text-6xl',
-  md: 'text-5xl sm:text-6xl lg:text-7xl',
-  lg: 'text-6xl sm:text-7xl lg:text-8xl',
-  xl: 'text-7xl sm:text-8xl lg:text-9xl',
-};
-
-/** Billboard's real title is light by identity — "regular" preserves that prior default. */
-const TITLE_WEIGHT_CLASS: Record<PortfolioWorkHeaderTitleWeight, string> = {
-  light: '!font-thin',
-  regular: '!font-light',
-  semibold: '!font-medium',
-  bold: '!font-semibold',
-};
-
 const DEFAULT_BIG_WORD = 'WORK';
 const DEFAULT_COUNT_TEXT = '{count} projects — selected work below';
+const DEFAULT_TITLE_TEXT = 'Selected work';
+const REFERENCE_PX = 100;
 
 /**
- * Billboard — a big faint outlined word fills the background, the real title
- * sits on top, a small project-count line closes the block. One dramatic
- * entrance: the big word scales down into place, then the title masks in.
+ * Sizes `textRef`'s font so its rendered box exactly fills `containerRef`'s
+ * width — on mount, on any container-width change, and once web fonts
+ * finish loading. Direct port of Experience's Gallery header fit-width
+ * technique (see `useFitWidthTextSize` in portfolio-section-primitives.tsx):
+ * measures the *same* element it then resizes, so measurement and final
+ * render can never disagree.
+ */
+function useFitWidthTextSize(
+  containerRef: RefObject<HTMLElement | null>,
+  textRef: RefObject<HTMLElement | null>,
+  text: string
+) {
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const textEl = textRef.current;
+    if (!container || !textEl) return undefined;
+
+    const fit = () => {
+      const targetWidth = container.getBoundingClientRect().width;
+      if (targetWidth <= 0) return;
+
+      textEl.style.fontSize = `${REFERENCE_PX}px`;
+      const measuredWidth = textEl.getBoundingClientRect().width;
+      if (measuredWidth <= 0) return;
+
+      textEl.style.fontSize = `${REFERENCE_PX * (targetWidth / measuredWidth)}px`;
+    };
+
+    fit();
+
+    const observer = new ResizeObserver(fit);
+    observer.observe(container);
+
+    let cancelled = false;
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        if (!cancelled) fit();
+      }).catch(() => {});
+    }
+
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
+  }, [text]);
+}
+
+/** The full-bleed word — outline (stroke + glow), fill (solid + glow), or
+ *  simple (solid, no glow at all — plain display), user's choice. */
+function WorkBillboardBigWord({
+  text,
+  tone,
+  wordStyle,
+}: {
+  text: string;
+  tone: string;
+  wordStyle: PortfolioWorkBillboardWordStyle;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const textRef = useRef<HTMLSpanElement | null>(null);
+  useFitWidthTextSize(containerRef, textRef, text);
+
+  const glow = `drop-shadow(0 0 36px color-mix(in srgb, ${tone} 24%, transparent))`;
+  const textStyle: CSSProperties =
+    wordStyle === 'simple'
+      ? { color: tone, WebkitTextFillColor: tone }
+      : wordStyle === 'fill'
+        ? { color: tone, WebkitTextFillColor: tone, filter: glow }
+        : {
+            color: 'transparent',
+            WebkitTextStroke: `1.75px color-mix(in srgb, ${tone} 28%, transparent)`,
+            WebkitTextFillColor: 'transparent',
+            filter: glow,
+          };
+
+  return (
+    <div ref={containerRef} className="w-full overflow-hidden">
+      <span
+        ref={textRef}
+        aria-hidden
+        className="inline-block whitespace-nowrap text-[13vw] font-black uppercase leading-none tracking-tight sm:text-[9vw]"
+        style={textStyle}
+      >
+        {text}
+      </span>
+      <span className="sr-only">{text}</span>
+    </div>
+  );
+}
+
+/**
+ * Billboard — exact disposition + motion copy of Experience's Gallery header
+ * (`ExperienceGalleryHeader`): full-bleed outline word, an editorial
+ * title/count split row beneath it, dramatic entrance (scale + blur in on
+ * the big word, staggered slide-ups after), asymmetric scroll parallax. Only
+ * the displayed text differs.
  */
 export function WorkBillboardHeader({
-  sectionTitle,
-  sectionSubtitle,
   presentation: presentationProp,
   trailing,
   projectCount,
@@ -58,106 +124,216 @@ export function WorkBillboardHeader({
   projectCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
-  const centered = presentation.headerAlignment === 'center';
   const animationEnabled = presentation.headerAnimationEnabled !== false;
-  const title = sectionTitle.trim();
   const bigWord = (presentation.billboardBigWord || DEFAULT_BIG_WORD).trim();
   const countTemplate = presentation.billboardCountText || DEFAULT_COUNT_TEXT;
   const countText = countTemplate.replace('{count}', String(projectCount ?? 0));
+  const title = (presentation.billboardTitleText || DEFAULT_TITLE_TEXT).trim();
 
-  const headerRef = useRef<HTMLElement>(null);
+  // Every element bound to one of our actual palette colors, chosen
+  // independently — not a shared/random tone.
+  const wordTone = workPaletteTokenColor(presentation.billboardWordColor ?? 'principal');
+  const titleTone = workPaletteTokenColor(presentation.billboardTitleColor ?? 'principal');
+  const metaTone = workPaletteTokenColor(presentation.billboardMetaColor ?? 'secondaire');
 
-  useLayoutEffect(() => {
-    const header = headerRef.current;
-    if (!header) return;
-    if (prefersReducedMotion() || !animationEnabled) return;
+  const sectionRef = useRef<HTMLDivElement>(null);
 
-    gsap.registerPlugin(ScrollTrigger);
-    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+  // First word italic/light, rest bold — same split as Experience's editorial secondary title.
+  const renderSecondaryTitle = (() => {
+    const firstSpaceIndex = title.indexOf(' ');
+    if (firstSpaceIndex === -1) {
+      return <span className="font-light italic">{title}</span>;
+    }
+    const firstWord = title.slice(0, firstSpaceIndex);
+    const restOfText = title.slice(firstSpaceIndex + 1);
+    return (
+      <>
+        <span className="font-light italic">{firstWord}</span> <span className="font-semibold">{restOfText}</span>
+      </>
+    );
+  })();
 
-    const ctx = gsap.context(() => {
-      const pick = (selector: string) =>
-        [...header.querySelectorAll<HTMLElement>(selector)].filter(isLaidOut);
-      const big = header.querySelector<HTMLElement>('.pf-work-billboard-big');
-      const lines = pick('.pf-work-billboard-title-line');
-      const rest = pick('.pf-work-billboard-item');
+  const getInitialBigTitleStyle = (): CSSProperties =>
+    animationEnabled ? { opacity: 0, transform: 'scale(0.85)', filter: 'blur(12px)' } : { opacity: 1, transform: 'scale(1)', filter: 'none' };
 
-      const tl = gsap.timeline({ defaults: { overwrite: 'auto' } });
-      if (big) {
-        tl.fromTo(
-          big,
-          { opacity: 0, scale: 1.08 },
-          { opacity: 1, scale: 1, duration: 1.1, ease: 'power3.out' },
-          0
+  const getInitialSecondaryStyle = (): CSSProperties =>
+    animationEnabled
+      ? { color: titleTone, opacity: 0, transform: 'translateY(30px)' }
+      : { color: titleTone, opacity: 1, transform: 'translateY(0)' };
+
+  const getInitialMetaStyle = (): CSSProperties =>
+    animationEnabled
+      ? { color: metaTone, opacity: 0, transform: 'translateX(20px)' }
+      : { color: metaTone, opacity: 1, transform: 'translateX(0)' };
+
+  // ========== ANIMATION: Entry — dramatic billboard reveal ==========
+  useEffect(() => {
+    if (typeof window === 'undefined' || !animationEnabled) return;
+
+    const section = sectionRef.current;
+    if (!section) return;
+
+    let hasAnimated = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    const triggerAnimation = () => {
+      if (hasAnimated) return;
+      hasAnimated = true;
+
+      const bigTitle = section.querySelector('[data-work-gsap-big-title]') as HTMLElement | null;
+      const secondaryTitle = section.querySelector('[data-work-gsap-secondary]') as HTMLElement | null;
+      const metaEl = section.querySelector('[data-work-gsap-meta]') as HTMLElement | null;
+
+      if (bigTitle) {
+        timers.push(
+          setTimeout(() => {
+            bigTitle.style.transition =
+              'opacity 1s cubic-bezier(0.22, 1, 0.36, 1), transform 1.1s cubic-bezier(0.22, 1, 0.36, 1), filter 0.8s ease-out';
+            bigTitle.style.opacity = '1';
+            bigTitle.style.transform = 'scale(1)';
+            bigTitle.style.filter = 'blur(0)';
+          }, 100)
         );
       }
-      if (lines.length) {
-        tl.set(lines, { yPercent: 112 }, 0.28);
-        tl.to(lines, { yPercent: 0, duration: 1, ease: 'power3.out', stagger: 0.06 }, 0.34);
+      if (secondaryTitle) {
+        timers.push(
+          setTimeout(() => {
+            secondaryTitle.style.transition = 'opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1)';
+            secondaryTitle.style.opacity = '1';
+            secondaryTitle.style.transform = 'translateY(0)';
+          }, 400)
+        );
       }
-      if (rest.length) {
-        tl.fromTo(rest, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out', stagger: 0.08 }, 0.62);
+      if (metaEl) {
+        timers.push(
+          setTimeout(() => {
+            metaEl.style.transition = 'opacity 0.6s ease-out, transform 0.5s ease-out';
+            metaEl.style.opacity = '1';
+            metaEl.style.transform = 'translateX(0)';
+          }, 600)
+        );
       }
+    };
 
-      gsap.fromTo(
-        header,
-        { opacity: 1, y: 0 },
-        {
-          opacity: 0.6,
-          y: -10,
-          ease: 'none',
-          scrollTrigger: { trigger: header, start: 'top 16%', end: 'top -20%', scrub: 0.55, invalidateOnRefresh: true },
-        }
-      );
-    }, header);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            triggerAnimation();
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: '50px' }
+    );
+    observer.observe(section);
 
     return () => {
-      window.clearTimeout(refreshId);
-      ctx.revert();
+      observer.disconnect();
+      timers.forEach((t) => clearTimeout(t));
     };
-  }, [animationEnabled, title, bigWord, countText]);
+  }, [animationEnabled]);
+
+  // ========== ANIMATION: Scroll — asymmetric parallax ==========
+  useEffect(() => {
+    if (typeof window === 'undefined' || !animationEnabled) return;
+
+    const mediaQuery = window.matchMedia('(min-width: 768px)');
+    if (!mediaQuery.matches) return;
+
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const bigTitle = section.querySelector('[data-work-gsap-big-title]') as HTMLElement | null;
+    const secondaryTitle = section.querySelector('[data-work-gsap-secondary]') as HTMLElement | null;
+    const metaEl = section.querySelector('[data-work-gsap-meta]') as HTMLElement | null;
+
+    const handleScroll = () => {
+      const rect = section.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      if (rect.top > viewportHeight || rect.bottom < 0) return;
+
+      // Trigger point sits a little above center (not dead center, not
+      // near the very top) — the recede shouldn't start while the header
+      // is still comfortably in view.
+      const triggerOffset = rect.top - viewportHeight * 0.2;
+      const relativeScroll = Math.max(0, -triggerOffset);
+
+      if (bigTitle) {
+        const parallax = relativeScroll * 0.05;
+        const fade = Math.max(0, 1 - (relativeScroll - 150) / 400);
+        bigTitle.style.transform = `scale(1) translateY(${-parallax}px)`;
+        bigTitle.style.opacity = String(fade);
+      }
+      if (secondaryTitle) {
+        const parallax = relativeScroll * 0.18;
+        const fade = Math.max(0, 1 - (relativeScroll - 50) / 250);
+        secondaryTitle.style.transform = `translateY(${-parallax}px)`;
+        secondaryTitle.style.opacity = String(fade);
+      }
+      if (metaEl) {
+        const slide = relativeScroll * 0.12;
+        const fade = Math.max(0, 1 - (relativeScroll - 30) / 200);
+        metaEl.style.transform = `translateX(${slide}px)`;
+        metaEl.style.opacity = String(fade);
+      }
+    };
+
+    let ticking = false;
+    const throttledScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    [bigTitle, secondaryTitle, metaEl].forEach((el) => {
+      if (el) el.style.willChange = 'transform, opacity';
+    });
+
+    window.addEventListener('scroll', throttledScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', throttledScroll);
+      [bigTitle, secondaryTitle, metaEl].forEach((el) => {
+        if (el) el.style.willChange = '';
+      });
+    };
+  }, [animationEnabled]);
 
   return (
-    <header
-      ref={headerRef}
-      className={`pf-work-billboard-header relative w-full overflow-hidden ${centered ? 'text-center' : 'text-left'}`}
+    <div
+      ref={sectionRef}
+      className="w-full"
       style={{ marginBottom: `${WORK_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
+      data-work-header="billboard"
     >
-      <span
-        aria-hidden
-        className={`pf-work-billboard-big pointer-events-none absolute inset-x-0 top-0 select-none text-[7rem] font-black uppercase leading-none tracking-tight opacity-[0.06] sm:text-[9rem] lg:text-[11rem] ${
-          centered ? 'text-center' : 'text-left'
-        }`}
-        style={{ WebkitTextStroke: '1px currentColor', color: workTitleColorStyle(presentation.titleColor).color }}
-      >
-        {bigWord}
-      </span>
-      <div className={`relative flex flex-col gap-3 pt-14 sm:pt-20 ${centered ? 'items-center' : 'items-start'}`}>
-        <div className="min-w-0">
-          <h2
-            className={`mb-0 ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} tracking-[-0.02em] leading-[1.05]`}
-            style={workTitleColorStyle(presentation.titleColor)}
-          >
-            <span className="pf-work-billboard-title-mask block overflow-hidden">
-              <span className="pf-work-billboard-title-line block">{title}</span>
-            </span>
-          </h2>
-          {sectionSubtitle ? (
-            <p
-              className="pf-work-billboard-item mb-0 mt-3 max-w-xl text-sm leading-relaxed sm:text-base"
-              style={workSubtitleColorStyle(presentation.subtitleColor)}
-            >
-              {sectionSubtitle}
-            </p>
-          ) : null}
+      <div style={getInitialBigTitleStyle()} data-work-gsap-big-title>
+        <WorkBillboardBigWord text={bigWord} tone={wordTone} wordStyle={presentation.billboardWordStyle ?? 'outline'} />
+      </div>
+
+      <div className="mt-8 flex flex-col gap-5 sm:mt-10 sm:flex-row sm:items-end sm:justify-between sm:gap-10">
+        <h2
+          className="text-[clamp(1.9rem,4vw,2.75rem)] leading-[1.08] tracking-[-0.02em]"
+          style={getInitialSecondaryStyle()}
+          data-work-gsap-secondary
+        >
+          {renderSecondaryTitle}
+        </h2>
+
+        <div className="flex max-w-xs flex-col items-start gap-3 sm:items-end" style={getInitialMetaStyle()} data-work-gsap-meta>
           {countText ? (
-            <p className="pf-work-billboard-item mb-0 mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">
+            <p className="mb-0 text-[0.72rem] font-medium uppercase leading-relaxed tracking-[0.1em] sm:text-right" style={{ color: metaTone }}>
               {countText}
             </p>
           ) : null}
+          {trailing ? <div className="shrink-0">{trailing}</div> : null}
         </div>
-        {trailing ? <div className="pf-work-billboard-item shrink-0">{trailing}</div> : null}
       </div>
-    </header>
+    </div>
   );
 }

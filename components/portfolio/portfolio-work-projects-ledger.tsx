@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -23,10 +24,19 @@ import {
 } from '@/components/portfolio/portfolio-work-settings';
 
 const LEDGER_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+/** Back-out easing — the "spring/magnetic" overshoot used for active-state and FLIP motion. */
+const LEDGER_SPRING_EASE = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
 const LEDGER_HIDDEN: CSSProperties = {
   opacity: 0,
   transform: 'translate3d(0, 28px, 0)',
 };
+
+/** Cascade timing for the detail panel's split-line reveal (title -> description -> stack -> link). */
+const LEDGER_DESC_BASE_MS = 60;
+const LEDGER_DESC_STAGGER_MS = 50;
+const LEDGER_STACK_BASE_MS = 260;
+const LEDGER_STACK_STAGGER_MS = 45;
+const LEDGER_CONSULT_DELAY_MS = 340;
 
 const LEDGER_CSS = `
 .pf-work-ledger-rule {
@@ -44,33 +54,62 @@ const LEDGER_CSS = `
 }
 .pf-work-ledger-mark {
   transform-origin: right center;
-  transition: transform 0.55s ${LEDGER_EASE}, opacity 0.55s ${LEDGER_EASE};
+  transition: transform 0.6s ${LEDGER_SPRING_EASE}, opacity 0.5s ${LEDGER_EASE};
 }
 .pf-work-ledger-row:hover .pf-work-ledger-mark,
-.pf-work-ledger-row:focus-within .pf-work-ledger-mark {
-  transform: scaleX(1.85);
-  opacity: 1;
+.pf-work-ledger-row:focus-within .pf-work-ledger-mark,
+.pf-work-ledger-row[data-ledger-active='1'] .pf-work-ledger-mark {
+  transform: scaleX(2.6);
+  opacity: 1 !important;
 }
 .pf-work-ledger-title {
   color: var(--pf-ledger-ink);
+  transform-origin: left center;
   transition:
     color 0.5s ${LEDGER_EASE},
-    transform 0.55s ${LEDGER_EASE};
+    transform 0.6s ${LEDGER_SPRING_EASE};
 }
 .pf-work-ledger-row:hover .pf-work-ledger-title,
-.pf-work-ledger-row:focus-within .pf-work-ledger-title {
-  color: var(--pf-ledger-ink-hover);
-  transform: translate3d(0.4rem, 0, 0);
+.pf-work-ledger-row:focus-within .pf-work-ledger-title,
+.pf-work-ledger-row[data-ledger-active='1'] .pf-work-ledger-title {
+  color: var(--pf-ledger-ink-active);
+  transform: translate3d(0.4rem, 0, 0) scale(1.035);
+}
+.pf-work-ledger-role-text {
+  color: var(--pf-ledger-muted);
+  transform-origin: right center;
+  transition:
+    color 0.5s ${LEDGER_EASE},
+    opacity 0.5s ${LEDGER_EASE},
+    transform 0.55s ${LEDGER_SPRING_EASE};
+}
+.pf-work-ledger-row:hover .pf-work-ledger-role-text,
+.pf-work-ledger-row:focus-within .pf-work-ledger-role-text,
+.pf-work-ledger-row[data-ledger-active='1'] .pf-work-ledger-role-text {
+  color: var(--pf-ledger-ink-active);
+  opacity: 1 !important;
+  transform: translate3d(0.3rem, 0, 0);
 }
 .pf-work-ledger-inner {
   transition: opacity 0.65s ${LEDGER_EASE};
 }
 .pf-work-ledger-inner[data-dim='1'] {
-  opacity: 0.42;
+  opacity: 0.15;
+}
+.pf-ledger-line-mask {
+  display: block;
+  overflow: hidden;
+}
+.pf-ledger-line-inner {
+  display: block;
+  transition:
+    transform 0.75s ${LEDGER_SPRING_EASE},
+    opacity 0.5s ${LEDGER_EASE};
+  will-change: transform, opacity;
 }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .pf-work-ledger[data-expand='hover'] .pf-work-ledger-list:hover .pf-work-ledger-row:not(:hover):not(:focus-within) .pf-work-ledger-inner {
-    opacity: 0.42;
+    opacity: 0.15;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -88,10 +127,16 @@ const LEDGER_CSS = `
     transform: none !important;
   }
   .pf-work-ledger-title,
+  .pf-work-ledger-role-text,
   .pf-work-ledger-mark,
   .pf-work-ledger-rule,
   .pf-work-ledger-inner {
     transition-duration: 0.01ms !important;
+  }
+  .pf-ledger-line-inner {
+    transition-duration: 0.01ms !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 `;
@@ -117,6 +162,9 @@ function formatLedgerIndex(index: number): string {
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
+
+/** useLayoutEffect on the client (avoids a one-frame flash while lines re-measure), useEffect on the server. */
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 function ledgerScrollRoot(el: HTMLElement | null): HTMLElement | null {
   let node = el?.parentElement ?? null;
@@ -176,6 +224,109 @@ function showElementNow(el: HTMLElement): void {
   el.dataset.revealed = 'true';
 }
 
+/**
+ * Splits `text` into its true rendered visual lines (measured live, re-measured on resize)
+ * and reveals each one independently from a bottom mask — the split-text cascade in the brief.
+ * A hidden clone (`aria-hidden`, absolutely positioned, same className) does the measuring so the
+ * visible lines never shift the layout while recomputing.
+ */
+function LedgerLineReveal({
+  text,
+  active,
+  className = '',
+  style,
+  baseDelayMs = 0,
+  staggerMs = 50,
+  ariaLabel,
+}: {
+  text: string;
+  active: boolean;
+  className?: string;
+  style?: CSSProperties;
+  baseDelayMs?: number;
+  staggerMs?: number;
+  ariaLabel?: string;
+}) {
+  const measureRef = useRef<HTMLParagraphElement>(null);
+  const [lines, setLines] = useState<string[]>(() => (text.trim() ? [text.trim()] : []));
+
+  useIsomorphicLayoutEffect(() => {
+    const measureEl = measureRef.current;
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    if (!measureEl || words.length === 0) {
+      setLines(words.length ? [words.join(' ')] : []);
+      return;
+    }
+
+    const compute = () => {
+      measureEl.textContent = '';
+      const spans = words.map((word) => {
+        const span = document.createElement('span');
+        span.textContent = word;
+        span.style.display = 'inline-block';
+        span.style.marginRight = '0.28em';
+        measureEl.appendChild(span);
+        return span;
+      });
+      const groups: string[][] = [];
+      let lastTop = Number.NaN;
+      spans.forEach((span, i) => {
+        const top = span.offsetTop;
+        if (Number.isNaN(lastTop) || Math.abs(top - lastTop) > 1) {
+          groups.push([]);
+          lastTop = top;
+        }
+        groups[groups.length - 1].push(words[i]);
+      });
+      setLines(groups.map((group) => group.join(' ')));
+    };
+
+    compute();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(compute);
+    observer.observe(measureEl);
+    return () => observer.disconnect();
+  }, [text]);
+
+  if (lines.length === 0) return null;
+
+  return (
+    <div className={className} style={{ position: 'relative', ...style }} aria-label={ariaLabel}>
+      <p
+        ref={measureRef}
+        aria-hidden
+        className={className}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: 0,
+          overflow: 'hidden',
+          visibility: 'hidden',
+          margin: 0,
+          pointerEvents: 'none',
+        }}
+      />
+      {lines.map((line, index) => (
+        <span key={index} className="pf-ledger-line-mask" data-pf-no-color-transition="">
+          <span
+            className="pf-ledger-line-inner"
+            data-pf-no-color-transition=""
+            style={{
+              transitionDelay: active ? `${baseDelayMs + index * staggerMs}ms` : '0ms',
+              transform: active ? 'translate3d(0, 0, 0)' : 'translate3d(0, 105%, 0)',
+              opacity: active ? 1 : 0,
+            }}
+          >
+            {line}
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function LedgerConsultLink({
   href,
   label,
@@ -207,12 +358,18 @@ function LedgerConsultLink({
           style={{ backgroundColor: accent }}
         />
       </span>
-      <FontAwesomeIcon
-        icon={faArrowUp}
-        className="size-3 rotate-45 transition-transform duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
-        aria-hidden
-        data-pf-no-color-transition=""
-      />
+      <span className="relative inline-block size-3 overflow-hidden" aria-hidden>
+        <FontAwesomeIcon
+          icon={faArrowUp}
+          className="absolute inset-0 size-3 rotate-45 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover/consult:translate-x-[140%] group-hover/consult:-translate-y-[140%]"
+          data-pf-no-color-transition=""
+        />
+        <FontAwesomeIcon
+          icon={faArrowUp}
+          className="absolute inset-0 size-3 -translate-x-[140%] translate-y-[140%] rotate-45 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover/consult:translate-x-0 group-hover/consult:translate-y-0"
+          data-pf-no-color-transition=""
+        />
+      </span>
     </>
   );
 
@@ -462,6 +619,7 @@ function LedgerRow({
   const clickable = interactive && expandMode === 'click';
 
   const detailsOpen = expandMode === 'always' ? hasDetails : open && hasDetails;
+  const striped = settings.stripedRows === true && index % 2 === 1;
 
   const handleEnter = () => {
     if (expandMode === 'hover') onOpen();
@@ -482,19 +640,29 @@ function LedgerRow({
       data-ledger-row=""
       data-index={String(index)}
       data-pf-no-color-transition=""
+      data-ledger-active={detailsOpen ? '1' : '0'}
       style={{
         ...LEDGER_HIDDEN,
         ['--pf-ledger-ink' as string]: ink,
-        ['--pf-ledger-ink-hover' as string]: `color-mix(in srgb, ${ink} 68%, ${accent} 32%)`,
+        ['--pf-ledger-ink-active' as string]: `color-mix(in srgb, white 85%, ${ink} 15%)`,
+        ['--pf-ledger-muted' as string]: muted,
       }}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
     >
       <div
-        className="pf-work-ledger-inner"
+        className="pf-work-ledger-inner relative"
         data-dim={dimmed ? '1' : '0'}
         data-pf-no-color-transition=""
       >
+        {striped ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10"
+            style={{ backgroundColor: `color-mix(in srgb, ${muted} 7%, transparent)` }}
+            data-pf-no-color-transition=""
+          />
+        ) : null}
         <div
           role={clickable ? 'button' : undefined}
           tabIndex={clickable ? 0 : undefined}
@@ -549,8 +717,9 @@ function LedgerRow({
               data-pf-no-color-transition=""
             >
               <p
-                className="text-[10px] font-medium uppercase tracking-[0.2em] sm:text-[11px]"
-                style={{ color: muted, opacity: 0.58 }}
+                className="pf-work-ledger-role-text text-[10px] font-medium uppercase tracking-[0.2em] sm:text-[11px]"
+                style={{ opacity: 0.58 }}
+                data-pf-no-color-transition=""
               >
                 {role}
               </p>
@@ -568,60 +737,62 @@ function LedgerRow({
             <span
               className="pf-work-ledger-mark block h-px w-5"
               style={{ backgroundColor: accent, opacity: 0.55 }}
+              data-pf-no-color-transition=""
             />
           </div>
         </div>
 
         {hasDetails ? (
           <div
-            className="grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="grid"
             style={{ gridTemplateRows: detailsOpen ? '1fr' : '0fr' }}
             data-pf-no-color-transition=""
           >
             <div className="min-h-0 overflow-hidden">
-              <div
-                className={`pb-8 pl-0 sm:pb-10 lg:pl-[3.5rem] lg:pr-12 xl:pl-16 transition-opacity duration-400 ${
-                  detailsOpen ? 'opacity-100 delay-75' : 'opacity-0'
-                }`}
-              >
+              <div className="pb-8 pl-0 sm:pb-10 lg:pl-[3.5rem] lg:pr-12 xl:pl-16">
                 <div className="max-w-xl space-y-6">
                   {showDescription ? (
-                    <p
+                    <LedgerLineReveal
+                      text={description}
+                      active={detailsOpen}
+                      baseDelayMs={LEDGER_DESC_BASE_MS}
+                      staggerMs={LEDGER_DESC_STAGGER_MS}
                       className="text-[15px] leading-[1.8] sm:text-base sm:leading-[1.85]"
                       style={{ color: muted }}
-                    >
-                      {description}
-                    </p>
+                    />
                   ) : null}
 
                   {showStack ? (
-                    <p
+                    <LedgerLineReveal
+                      text={tools.join(' · ')}
+                      active={detailsOpen}
+                      baseDelayMs={LEDGER_STACK_BASE_MS}
+                      staggerMs={LEDGER_STACK_STAGGER_MS}
                       className="text-[10px] font-medium uppercase tracking-[0.16em] sm:text-[11px]"
                       style={{ color: muted, opacity: 0.62 }}
-                      aria-label="Stack"
-                    >
-                      {tools.map((tool, toolIndex) => (
-                        <span key={tool}>
-                          {toolIndex > 0 ? (
-                            <span className="mx-2.5 opacity-40" aria-hidden>
-                              ·
-                            </span>
-                          ) : null}
-                          {tool}
-                        </span>
-                      ))}
-                    </p>
+                      ariaLabel="Stack"
+                    />
                   ) : null}
 
                   {showConsult && href ? (
-                    <div className="pt-1">
-                      <LedgerConsultLink
-                        href={href}
-                        label={consultLabel}
-                        accent={accent}
-                        ink={ink}
-                      />
-                    </div>
+                    <span className="pf-ledger-line-mask block pt-1" data-pf-no-color-transition="">
+                      <span
+                        className="pf-ledger-line-inner"
+                        data-pf-no-color-transition=""
+                        style={{
+                          transitionDelay: detailsOpen ? `${LEDGER_CONSULT_DELAY_MS}ms` : '0ms',
+                          transform: detailsOpen ? 'translate3d(0, 0, 0)' : 'translate3d(0, 105%, 0)',
+                          opacity: detailsOpen ? 1 : 0,
+                        }}
+                      >
+                        <LedgerConsultLink
+                          href={href}
+                          label={consultLabel}
+                          accent={accent}
+                          ink={ink}
+                        />
+                      </span>
+                    </span>
                   ) : null}
                 </div>
               </div>
@@ -660,11 +831,34 @@ export function ProjectsLedgerGallery({
     else setOpenIndex(null);
   }, [expandMode]);
 
-  const openRow = useCallback((index: number) => setOpenIndex(index), []);
+  // FLIP "before" snapshot for the spring-push effect below — captured synchronously at the exact
+  // moment open/close is triggered (not from a cache updated only on prior opens), so it can never
+  // go stale from scrolling, the entrance reveal, or anything else that moves rows in between.
+  const ledgerFlipBeforeRef = useRef<Map<string, number> | null>(null);
+  const captureLedgerRowTops = useCallback(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const scroller = ledgerScrollRoot(root);
+    const scrollOffset = scroller ? scroller.scrollTop : window.scrollY;
+    const tops = new Map<string, number>();
+    root.querySelectorAll<HTMLElement>('[data-ledger-row]').forEach((row) => {
+      tops.set(row.dataset.index ?? '', row.getBoundingClientRect().top + scrollOffset);
+    });
+    ledgerFlipBeforeRef.current = tops;
+  }, []);
+
+  const openRow = useCallback(
+    (index: number) => {
+      captureLedgerRowTops();
+      setOpenIndex(index);
+    },
+    [captureLedgerRowTops]
+  );
   const closeRow = useCallback(() => {
     if (expandMode === 'always') return;
+    captureLedgerRowTops();
     setOpenIndex(null);
-  }, [expandMode]);
+  }, [expandMode, captureLedgerRowTops]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -703,6 +897,42 @@ export function ProjectsLedgerGallery({
       observer.disconnect();
     };
   }, [items.length]);
+
+  /**
+   * FLIP: the open/close panel height itself changes with no CSS transition (see the `grid`
+   * wrapper in LedgerRow) so this reads the *true* pre/post layout synchronously. Rows whose
+   * position shifted are held at their old spot with an inverse transform, then eased back to 0
+   * with a back-out (spring) curve — the "pushed by a magnetic force" motion from the brief,
+   * decoupled from the row's own content reveal.
+   */
+  useIsomorphicLayoutEffect(() => {
+    const root = rootRef.current;
+    const before = ledgerFlipBeforeRef.current;
+    ledgerFlipBeforeRef.current = null;
+    if (!root || !before || prefersReducedMotion()) return;
+    const scroller = ledgerScrollRoot(root);
+    const scrollOffset = scroller ? scroller.scrollTop : window.scrollY;
+
+    root.querySelectorAll<HTMLElement>('[data-ledger-row]').forEach((row) => {
+      const prev = before.get(row.dataset.index ?? '');
+      if (prev === undefined) return;
+      const docTop = row.getBoundingClientRect().top + scrollOffset;
+      const dy = prev - docTop;
+      if (Math.abs(dy) < 0.5) return;
+      // While held at its old spot, the row visually overlaps whatever grew above it — mute
+      // pointer events for the animation's duration so it can't steal hover from that row.
+      row.style.pointerEvents = 'none';
+      const anim = row.animate(
+        [{ transform: `translate3d(0, ${dy}px, 0)` }, { transform: 'translate3d(0, 0, 0)' }],
+        { duration: 620, easing: LEDGER_SPRING_EASE, fill: 'both' }
+      );
+      anim.finished
+        .catch(() => {})
+        .finally(() => {
+          row.style.pointerEvents = '';
+        });
+    });
+  }, [openIndex]);
 
   useEffect(() => {
     const root = rootRef.current;

@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useId, useState, type CSSProperties, type ReactNode } from 'react';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
   PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS,
   PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS,
+  PORTFOLIO_EXPERIENCE_CARDS_TITLE_SIZE_OPTIONS,
   PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS,
   PORTFOLIO_EXPERIENCE_CARDS_VERTICAL_GAP_OPTIONS,
+  PORTFOLIO_EXPERIENCE_CARDS_TASKS_GAP_OPTIONS,
   PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS,
   PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_COLOR_OPTIONS,
   PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_RADIUS_OPTIONS,
@@ -25,17 +27,10 @@ import {
   PORTFOLIO_EXPERIENCE_GALLERY_HEADER_ANIMATION_STYLE_OPTIONS,
   PORTFOLIO_EXPERIENCE_GALLERY_SECONDARY_TITLE_STYLE_OPTIONS,
   PORTFOLIO_EXPERIENCE_GALLERY_ROLE_COUNT_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_SPOTLIGHT_TITLE_COLOR_OPTIONS,
-  PORTFOLIO_EXPERIENCE_SPOTLIGHT_THUMBNAIL_FIT_OPTIONS,
   PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS,
   PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_RADIUS_OPTIONS,
   PORTFOLIO_EXPERIENCE_LOFT_HOVER_EFFECT_OPTIONS,
   PORTFOLIO_EXPERIENCE_LOFT_COLUMNS_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LOFT_HEADING_ITALIC_WORD_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LOFT_HEADING_FONT_WEIGHT_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LOFT_LABEL_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LOFT_LABEL_POSITION_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LOFT_SCROLL_EFFECT_STYLE_OPTIONS,
   PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS,
   PORTFOLIO_EXPERIENCE_LEGACY_FIXED_SIDE_OPTIONS,
   PORTFOLIO_EXPERIENCE_LEGACY_ITEM_GAP_OPTIONS,
@@ -58,6 +53,7 @@ import {
   PORTFOLIO_EXPERIENCE_REEL_STATUS_STYLE_OPTIONS,
   PORTFOLIO_EXPERIENCE_REEL_SCROLL_MOTION_OPTIONS,
   PORTFOLIO_EXPERIENCE_TASKS_DISPLAY_OPTIONS,
+  PORTFOLIO_EXPERIENCE_TOOLS_BADGE_STYLE_OPTIONS,
   DEFAULT_EXPERIENCE_BLOCK_LABEL_VISIBILITY,
   DEFAULT_ACCENT_YEARS_BADGE_TEXT,
   DEFAULT_ACCENT_YEARS_LEAD_TEXT,
@@ -85,17 +81,17 @@ import {
   PORTFOLIO_EXPERIENCE_MARQUEE_FADE_OPTIONS,
   PORTFOLIO_EXPERIENCE_MARQUEE_SEPARATOR_OPTIONS,
   PORTFOLIO_EXPERIENCE_MARQUEE_WEIGHT_OPTIONS,
-  PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_SPEED_OPTIONS,
-  PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_DIRECTION_OPTIONS,
-  PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_WEIGHT_OPTIONS,
-  PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_GAP_OPTIONS,
   CENTERED_LEAD_WEIGHT,
   CENTERED_LEAD_OPACITY,
   SERIF_LEAD_WEIGHT,
   SERIF_LEAD_LABEL_OPACITY,
   MARQUEE_WEIGHT,
   MARQUEE_FILL_OPACITY,
+  type PortfolioExperienceCardsBorderRadius,
+  type PortfolioExperienceGalleryColumns,
+  type PortfolioExperienceItemGap,
+  type PortfolioExperienceLoftColumns,
+  type PortfolioExperienceLoftHoverEffect,
   type PortfolioExperienceCenteredAlign,
   type PortfolioExperienceCenteredDivider,
   type PortfolioExperienceCenteredLineHeight,
@@ -109,6 +105,7 @@ import {
   type PortfolioExperienceRepoLinkStyle,
   type PortfolioExperienceSectionSettings,
   type PortfolioExperienceTasksDisplay,
+  type PortfolioExperienceToolsBadgeStyle,
 } from '@/components/portfolio/portfolio-experience-settings';
 import {
   experienceLinkButtonPalette,
@@ -166,12 +163,15 @@ function ExperiencePickerCard({
   onClick,
   children,
   showLabel = true,
+  compact = false,
 }: {
   active: boolean;
   label: string;
   onClick: () => void;
   children: ReactNode;
   showLabel?: boolean;
+  /** Smaller padding/type for secondary preview-card grids (e.g. Thumbnail corners). */
+  compact?: boolean;
 }) {
   return (
     <button
@@ -181,7 +181,9 @@ function ExperiencePickerCard({
       title={label}
       data-active={active ? 'true' : 'false'}
       onClick={onClick}
-      className={`pf-exp-design-card rounded-2xl px-3 pt-2.5 text-left ${showLabel ? 'pb-3' : 'pb-2.5'}`}
+      className={`pf-exp-design-card rounded-2xl text-left ${
+        compact ? 'pf-exp-preview-card' : `px-3 pt-2.5 ${showLabel ? 'pb-3' : 'pb-2.5'}`
+      }`}
     >
       {active ? (
         <span
@@ -202,8 +204,10 @@ function ExperiencePickerCard({
       ) : null}
       {children}
       {showLabel ? (
-        <span className="mt-2.5 block">
-          <span className="pf-exp-card-label min-w-0 text-sm font-semibold leading-none tracking-tight">
+        <span className={compact ? 'mt-1.5 block' : 'mt-2.5 block'}>
+          <span
+            className={`pf-exp-card-label min-w-0 font-semibold leading-none tracking-tight ${compact ? 'text-xs' : 'text-sm'}`}
+          >
             {label}
           </span>
         </span>
@@ -1895,84 +1899,11 @@ function ExperienceSplitHeadingHeaderSettings({
       </h3>
       <div className="pf-exp-layout-settings-body space-y-6">
         <ExperienceToggleRow
-          label="Heading"
-          description="Large narrative title on the left."
-          checked={experience.loftHeadingEnabled !== false}
-          onChange={(loftHeadingEnabled) => onChange({ loftHeadingEnabled })}
-        />
-        {experience.loftHeadingEnabled !== false ? (
-          <>
-            <div>
-              <label className="pf-exp-block-label block">Heading text</label>
-              <input
-                type="text"
-                value={experience.loftHeadingText ?? "Roles I've taken on"}
-                onChange={(event) => onChange({ loftHeadingText: event.target.value })}
-                placeholder="Roles I've taken on"
-                className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
-              />
-            </div>
-            <ExperienceOptionGrid
-              label="Italic word"
-              options={PORTFOLIO_EXPERIENCE_LOFT_HEADING_ITALIC_WORD_OPTIONS}
-              value={experience.loftHeadingItalicWord ?? 'first'}
-              onChange={(loftHeadingItalicWord) => onChange({ loftHeadingItalicWord })}
-              columns={3}
-            />
-            <ExperienceOptionGrid
-              label="Weight contrast"
-              options={PORTFOLIO_EXPERIENCE_LOFT_HEADING_FONT_WEIGHT_OPTIONS}
-              value={experience.loftHeadingFontWeight ?? 'light-to-bold'}
-              onChange={(loftHeadingFontWeight) => onChange({ loftHeadingFontWeight })}
-              columns={2}
-            />
-          </>
-        ) : null}
-        <div>
-          <label className="pf-exp-block-label block">Side label</label>
-          <input
-            type="text"
-            value={experience.loftLabelText ?? 'Experience'}
-            onChange={(event) => onChange({ loftLabelText: event.target.value })}
-            placeholder="Experience"
-            className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
-          />
-        </div>
-        <ExperienceOptionGrid
-          label="Label style"
-          options={PORTFOLIO_EXPERIENCE_LOFT_LABEL_STYLE_OPTIONS}
-          value={experience.loftLabelStyle ?? 'uppercase'}
-          onChange={(loftLabelStyle) => onChange({ loftLabelStyle })}
-          columns={3}
-        />
-        <ExperienceOptionGrid
-          label="Label alignment"
-          options={PORTFOLIO_EXPERIENCE_LOFT_LABEL_POSITION_OPTIONS}
-          value={experience.loftLabelPosition ?? 'top-aligned'}
-          onChange={(loftLabelPosition) => onChange({ loftLabelPosition })}
-          columns={2}
-        />
-        <ExperienceToggleRow
           label="Entrance animation"
-          description="Title rises from a mask, label slides in from the right."
+          description="Title rises from a mask, label fades in from the right."
           checked={experience.loftHeaderAnimationEnabled !== false}
           onChange={(loftHeaderAnimationEnabled) => onChange({ loftHeaderAnimationEnabled })}
         />
-        <ExperienceToggleRow
-          label="Scroll exit"
-          description="The side label slides away as you scroll."
-          checked={experience.loftScrollEffectEnabled !== false}
-          onChange={(loftScrollEffectEnabled) => onChange({ loftScrollEffectEnabled })}
-        />
-        {experience.loftScrollEffectEnabled !== false ? (
-          <ExperienceOptionGrid
-            label="Exit style"
-            options={PORTFOLIO_EXPERIENCE_LOFT_SCROLL_EFFECT_STYLE_OPTIONS}
-            value={experience.loftScrollEffectStyle ?? 'slide-right'}
-            onChange={(loftScrollEffectStyle) => onChange({ loftScrollEffectStyle })}
-            columns={2}
-          />
-        ) : null}
       </div>
     </section>
   );
@@ -2436,19 +2367,6 @@ function ExperienceDesignWireframe({ design }: { design: PortfolioExperienceDesi
           <rect className="pf-exp-mini-ink" x="64" y="38" width="48" height="26" rx="3" />
         </MiniSlide>
       );
-    case 'spotlight':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-ink" x="8" y="8" width="70" height="36" rx="3.5" />
-          <MiniType x={14} y={28} size={7}>
-            TITLE
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="84" y="8" width="28" height="16" rx="2.5" />
-          <rect className="pf-exp-mini-mute" x="8" y="50" width="40" height="3" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="8" y="57" width="28" height="2.4" rx="1.2" />
-          <rect className="pf-exp-mini-ink" x="84" y="30" width="28" height="32" rx="2.5" />
-        </MiniSlide>
-      );
     case 'loft':
       return (
         <MiniSlide>
@@ -2490,17 +2408,6 @@ function ExperienceDesignWireframe({ design }: { design: PortfolioExperienceDesi
           <rect className="pf-exp-mini-mute" x="56" y="46" width="48" height="2.6" rx="1.3" />
         </MiniSlide>
       );
-    case 'asymmetric':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-ink" x="8" y="8" width="52" height="56" rx="3" />
-          <rect className="pf-exp-mini-mute" x="68" y="16" width="40" height="2.2" rx="1.1" />
-          <rect className="pf-exp-mini-mute" x="68" y="24" width="34" height="2" rx="1" />
-          <rect className="pf-exp-mini-mute" x="68" y="32" width="38" height="2" rx="1" />
-          <rect className="pf-exp-mini-mute" x="68" y="40" width="26" height="2" rx="1" />
-          <rect className="pf-exp-mini-mute" x="68" y="48" width="32" height="2" rx="1" />
-        </MiniSlide>
-      );
     case 'kinetic':
       return (
         <MiniSlide>
@@ -2530,7 +2437,7 @@ function ExperienceLayoutSettingsBand({
       <h3 id="experience-layout-settings-title" className="pf-exp-layout-settings-title">
         Layout settings
       </h3>
-      <div key={motionKey} className="pf-exp-layout-settings-body space-y-6">
+      <div key={motionKey} className="pf-exp-layout-settings-body space-y-7">
         {children}
       </div>
     </section>
@@ -2722,6 +2629,144 @@ function ExperienceTasksDisplayChoiceGrid({
   );
 }
 
+function ExperienceToolsBadgeStyleWireframe({
+  display,
+}: {
+  display: PortfolioExperienceToolsBadgeStyle;
+}) {
+  switch (display) {
+    case 'mineral-pills':
+      return (
+        <MiniSlide>
+          <rect className="pf-exp-mini-mute" x="12" y="26" width="26" height="12" rx="6" />
+          <rect className="pf-exp-mini-mute" x="42" y="26" width="34" height="12" rx="6" />
+          <rect className="pf-exp-mini-ink" x="80" y="26" width="26" height="12" rx="6" />
+          <rect className="pf-exp-mini-mute" x="12" y="42" width="30" height="12" rx="6" />
+          <rect className="pf-exp-mini-mute" x="46" y="42" width="24" height="12" rx="6" />
+        </MiniSlide>
+      );
+    case 'editorial-list':
+      return (
+        <MiniSlide>
+          <rect className="pf-exp-mini-mute" x="12" y="32" width="22" height="5" rx="1.4" />
+          <circle className="pf-exp-mini-mute" cx="40" cy="34.5" r="1.4" />
+          <rect className="pf-exp-mini-ink" x="46" y="32" width="26" height="5" rx="1.4" />
+          <circle className="pf-exp-mini-mute" cx="78" cy="34.5" r="1.4" />
+          <rect className="pf-exp-mini-mute" x="84" y="32" width="20" height="5" rx="1.4" />
+        </MiniSlide>
+      );
+    case 'kinetic-marquee':
+      return (
+        <MiniSlide>
+          <rect className="pf-exp-mini-mute" x="6" y="18" width="22" height="36" rx="2" opacity="0.32" />
+          <rect className="pf-exp-mini-mute" x="34" y="18" width="22" height="36" rx="2" opacity="0.32" />
+          <rect className="pf-exp-mini-mute" x="62" y="18" width="22" height="36" rx="2" opacity="0.32" />
+          <rect className="pf-exp-mini-mute" x="90" y="18" width="22" height="36" rx="2" opacity="0.32" />
+        </MiniSlide>
+      );
+    case 'numbered-index':
+      return (
+        <MiniSlide>
+          <MiniType x={14} y={24} size={6}>
+            01 /
+          </MiniType>
+          <rect className="pf-exp-mini-mute" x="34" y="19" width="28" height="5" rx="1.4" />
+          <MiniType x={70} y={24} size={6}>
+            02 /
+          </MiniType>
+          <rect className="pf-exp-mini-mute" x="90" y="19" width="18" height="5" rx="1.4" />
+          <MiniType x={14} y={48} size={6}>
+            03 /
+          </MiniType>
+          <rect className="pf-exp-mini-mute" x="34" y="43" width="24" height="5" rx="1.4" />
+        </MiniSlide>
+      );
+    default: {
+      const _exhaustive: never = display;
+      return _exhaustive;
+    }
+  }
+}
+
+function ExperienceToolsBadgeStyleChoiceGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioExperienceToolsBadgeStyle;
+  onChange: (value: PortfolioExperienceToolsBadgeStyle) => void;
+}) {
+  return (
+    <div>
+      <p className="pf-exp-block-label pf-exp-option-label">Tools display</p>
+      <div
+        role="radiogroup"
+        aria-label="Tools display"
+        className="grid grid-cols-2 gap-2"
+      >
+        {PORTFOLIO_EXPERIENCE_TOOLS_BADGE_STYLE_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <ExperiencePickerCard
+              key={option.value}
+              active={active}
+              label={option.label}
+              onClick={() => onChange(option.value)}
+            >
+              <ExperienceToolsBadgeStyleWireframe display={option.value} />
+            </ExperiencePickerCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Compact alternative to a slider for an ordered axis with few options (e.g. small → large)
+ * in space-constrained settings panels: each option's label is rendered at a progressively
+ * larger size so the scale reads at a glance, without needing a live-preview slider.
+ */
+function ExperienceScalePill<T extends string>({
+  label,
+  options,
+  sizes,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { value: T; label: string; description?: string }[];
+  /** Font size (px) for each option, in the same order as `options`. */
+  sizes: number[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div>
+      <p className="pf-exp-block-label pf-exp-option-label">{label}</p>
+      <div role="radiogroup" aria-label={label} className="pf-exp-scale-pill">
+        {options.map((option, index) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.description}
+              data-active={active ? 'true' : 'false'}
+              onClick={() => onChange(option.value)}
+              className="pf-exp-scale-pill-btn"
+              style={{ fontSize: `${sizes[index] ?? sizes[sizes.length - 1]}px` }}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ExperienceOptionGrid<T extends string | number>({
   label,
   options,
@@ -2777,6 +2822,338 @@ function ExperienceOptionGrid<T extends string | number>({
   );
 }
 
+/** Actual rounded-rect preview for a given thumbnail radius, used inside the "Thumbnail corners" picker. */
+function ExperienceThumbnailRadiusWireframe({
+  radius,
+}: {
+  radius: PortfolioExperienceCardsBorderRadius;
+}) {
+  const rx = radius === 'none' ? 0 : radius === 'xl' ? 14 : 6;
+  return (
+    <MiniSlide>
+      <rect className="pf-exp-mini-ink" x="36" y="10" width="48" height="38" rx={rx} />
+      <rect className="pf-exp-mini-mute" x="36" y="54" width="30" height="3" rx="1.4" />
+      <rect className="pf-exp-mini-mute" x="36" y="60" width="20" height="2.4" rx="1.2" />
+    </MiniSlide>
+  );
+}
+
+function ExperienceThumbnailRadiusChoiceGrid({
+  value,
+  onChange,
+  label = 'Thumbnail corners',
+}: {
+  value: PortfolioExperienceCardsBorderRadius;
+  onChange: (value: PortfolioExperienceCardsBorderRadius) => void;
+  label?: string;
+}) {
+  return (
+    <div>
+      <p className="pf-exp-block-label pf-exp-option-label">{label}</p>
+      <div role="radiogroup" aria-label={label} className="grid grid-cols-3 gap-2">
+        {PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <ExperiencePickerCard
+              key={option.value}
+              active={active}
+              label={option.label}
+              compact
+              onClick={() => onChange(option.value)}
+            >
+              <ExperienceThumbnailRadiusWireframe radius={option.value} />
+            </ExperiencePickerCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** N evenly spaced bars — glyph for "columns per row" preview cards (same idea as the
+ * Work/Stack/Tools panels' own columns glyph, ported to the pf-exp-mini-* palette). */
+function experienceColumnsGlyph(n: number) {
+  const gap = 6;
+  const totalWidth = 92;
+  const startX = 14;
+  const barWidth = (totalWidth - gap * (n - 1)) / n;
+  return Array.from({ length: n }, (_, i) => (
+    <rect
+      key={i}
+      className="pf-exp-mini-ink"
+      x={startX + i * (barWidth + gap)}
+      y={18}
+      width={barWidth}
+      height={36}
+      rx={2.5}
+    />
+  ));
+}
+
+function ExperienceLoftColumnsChoiceGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioExperienceLoftColumns;
+  onChange: (value: PortfolioExperienceLoftColumns) => void;
+}) {
+  return (
+    <div>
+      <p className="pf-exp-block-label pf-exp-option-label">Columns per row</p>
+      <div role="radiogroup" aria-label="Columns per row" className="grid grid-cols-3 gap-2">
+        {PORTFOLIO_EXPERIENCE_LOFT_COLUMNS_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <ExperiencePickerCard
+              key={option.value}
+              active={active}
+              label={option.label}
+              compact
+              onClick={() => onChange(option.value)}
+            >
+              <MiniSlide>{experienceColumnsGlyph(option.value)}</MiniSlide>
+            </ExperiencePickerCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ExperienceGalleryColumnsChoiceGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioExperienceGalleryColumns;
+  onChange: (value: PortfolioExperienceGalleryColumns) => void;
+}) {
+  return (
+    <div>
+      <p className="pf-exp-block-label pf-exp-option-label">Columns per row</p>
+      <div role="radiogroup" aria-label="Columns per row" className="grid grid-cols-2 gap-2">
+        {PORTFOLIO_EXPERIENCE_GALLERY_COLUMNS_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <ExperiencePickerCard
+              key={option.value}
+              active={active}
+              label={option.label}
+              compact
+              onClick={() => onChange(option.value)}
+            >
+              <MiniSlide>{experienceColumnsGlyph(option.value)}</MiniSlide>
+            </ExperiencePickerCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Two bars with a gap sized per tier — same "2 mini-blocks, real gap" idea as Global's
+ * section-spacing preview, as a static card grid instead of a slider (keeps this reading
+ * as one family with the Columns-per-row cards right above it). */
+function ExperienceItemGapWireframe({ gap }: { gap: PortfolioExperienceItemGap }) {
+  const gapPx = gap === 'sm' ? 4 : gap === 'lg' ? 18 : gap === 'xl' ? 30 : 10;
+  const barHeight = 10;
+  const startY = (72 - (barHeight * 2 + gapPx)) / 2;
+  return (
+    <MiniSlide>
+      <rect className="pf-exp-mini-ink" x="14" y={startY} width="92" height={barHeight} rx="2.5" />
+      <rect className="pf-exp-mini-ink" x="14" y={startY + barHeight + gapPx} width="92" height={barHeight} rx="2.5" />
+    </MiniSlide>
+  );
+}
+
+function ExperienceItemGapChoiceGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioExperienceItemGap;
+  onChange: (value: PortfolioExperienceItemGap) => void;
+}) {
+  return (
+    <div>
+      <p className="pf-exp-block-label pf-exp-option-label">Gap</p>
+      <div role="radiogroup" aria-label="Gap" className="grid grid-cols-4 gap-2">
+        {PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <ExperiencePickerCard
+              key={option.value}
+              active={active}
+              label={option.label}
+              compact
+              onClick={() => onChange(option.value)}
+            >
+              <ExperienceItemGapWireframe gap={option.value} />
+            </ExperiencePickerCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Small keyboard-accessible "i" tooltip — shows non-obvious info on hover or focus.
+ * A `span` trigger, not `button`: this sits inside ExperienceOptionGridWithInfo's own
+ * <button role="radio">, and a <button> can never nest another <button>. */
+function ExperienceInfoTooltip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const tooltipId = useId();
+  return (
+    <span className="relative inline-flex shrink-0">
+      <span
+        role="button"
+        tabIndex={0}
+        aria-describedby={open ? tooltipId : undefined}
+        aria-label={`More info: ${text}`}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onClick={(event) => event.stopPropagation()}
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+      >
+        <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
+          <circle cx="7" cy="4.35" r="0.95" fill="currentColor" />
+          <rect x="6.3" y="6.05" width="1.4" height="4.4" rx="0.7" fill="currentColor" />
+        </svg>
+      </span>
+      {open ? (
+        <span
+          id={tooltipId}
+          role="tooltip"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+        >
+          {text}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+/** Same pill grid as ExperienceOptionGrid, plus a per-option info tooltip — for choices
+ * whose names are too abstract to guess from a single word alone (e.g. Loft's "Hover
+ * moment": Project Curtain / Magnetic Cue / Press In). Kept separate from the generic
+ * ExperienceOptionGrid so every other design's plain pill grids are untouched. */
+function ExperienceOptionGridWithInfo<T extends string | number>({
+  label,
+  options,
+  value,
+  onChange,
+  columns,
+}: {
+  label: string;
+  options: { value: T; label: string; description?: string }[];
+  value: T | '';
+  onChange: (value: T) => void;
+  columns?: number;
+}) {
+  const count = options.length;
+  const cols = columns ?? (count <= 3 ? Math.max(count, 1) : 2);
+  const compact = cols === count && count >= 2 && count <= 4;
+  return (
+    <div>
+      <p className="pf-exp-block-label pf-exp-option-label">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="pf-exp-segment grid gap-[3px] p-[3px]"
+        data-compact={compact ? 'true' : 'false'}
+        style={{
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+        }}
+      >
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={String(option.value)}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onChange(option.value)}
+              data-active={active ? 'true' : 'false'}
+              className="pf-exp-segment-btn flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
+              style={active ? undefined : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }}
+            >
+              <span className="truncate">{option.label}</span>
+              {option.description ? <ExperienceInfoTooltip text={option.description} /> : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** The actual micro-animation for one "Hover moment" preview card — plays on real hover,
+ * keyboard focus, and (via CSS only, no JS) on a slow auto-loop on touch devices that have
+ * no hover at all. Purely decorative, so it's aria-hidden — the option's own label + the
+ * radio button semantics on the card carry the real accessible name. */
+function ExperienceHoverMomentPreview({ effect }: { effect: PortfolioExperienceLoftHoverEffect }) {
+  if (effect === 'curtain') {
+    return (
+      <div className="pf-exp-hover-preview" aria-hidden>
+        <span className="pf-exp-hover-curtain-panel" />
+      </div>
+    );
+  }
+  if (effect === 'magnetic') {
+    return (
+      <div className="pf-exp-hover-preview" aria-hidden>
+        <span className="pf-exp-hover-magnetic-dot" />
+      </div>
+    );
+  }
+  return (
+    <div className="pf-exp-hover-preview" aria-hidden>
+      <span className="pf-exp-hover-press-square" />
+    </div>
+  );
+}
+
+/** Loft "Hover moment" — each option shows the actual micro-interaction instead of an
+ * abstract name (Project Curtain / Magnetic Cue / Press In don't self-explain otherwise). */
+function ExperienceHoverMomentChoiceGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioExperienceLoftHoverEffect;
+  onChange: (value: PortfolioExperienceLoftHoverEffect) => void;
+}) {
+  return (
+    <div>
+      <p className="pf-exp-block-label pf-exp-option-label">Hover moment</p>
+      <p className="-mt-2 mb-3 hidden text-[10px] italic text-neutral-500 sm:block">
+        Hover to preview
+      </p>
+      <div role="radiogroup" aria-label="Hover moment" className="grid grid-cols-3 gap-2">
+        {PORTFOLIO_EXPERIENCE_LOFT_HOVER_EFFECT_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.description}
+              onClick={() => onChange(option.value)}
+              data-active={active ? 'true' : 'false'}
+              className="pf-exp-hover-card rounded-xl text-left"
+            >
+              <ExperienceHoverMomentPreview effect={option.value} />
+              <span className="pf-exp-hover-card-label mt-1.5 block truncate">{option.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function ExperienceSettingsPanel({
   experience,
   onChange,
@@ -2802,7 +3179,6 @@ export function ExperienceSettingsPanel({
   const isReel = design === 'reel';
   const isDuotone = design === 'duotone';
   const isGallery = design === 'gallery';
-  const isSpotlight = design === 'spotlight';
   const isLoft = design === 'loft';
   const isPress = design === 'press';
   const isLegacy = design === 'legacy';
@@ -2900,6 +3276,10 @@ export function ExperienceSettingsPanel({
             value={experience.tasksDisplay ?? 'editorial-dash'}
             onChange={(tasksDisplay) => onChange({ tasksDisplay })}
           />
+          <ExperienceToolsBadgeStyleChoiceGrid
+            value={experience.toolsBadgeStyle ?? 'mineral-pills'}
+            onChange={(toolsBadgeStyle) => onChange({ toolsBadgeStyle })}
+          />
           <ExperienceLinkButtonChoiceGrid
             value={experience.repoLinkButtonStyle ?? 'auto'}
             onChange={(repoLinkButtonStyle) => onChange({ repoLinkButtonStyle })}
@@ -2978,33 +3358,59 @@ export function ExperienceSettingsPanel({
           ) : null}
           {isCards ? (
             <>
-              <ExperienceOptionGrid
-                label="Largeur de la carte"
+              <ExperienceScalePill
+                label="Card width"
                 options={PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS}
+                sizes={[17, 14, 11]}
                 value={experience.cardsCardWidth ?? 'medium'}
                 onChange={(cardsCardWidth) => onChange({ cardsCardWidth })}
-                columns={3}
               />
-              <ExperienceOptionGrid
-                label="Espacement des éléments"
+              <ExperienceScalePill
+                label="Title size"
+                options={PORTFOLIO_EXPERIENCE_CARDS_TITLE_SIZE_OPTIONS}
+                sizes={[12, 14, 16, 18]}
+                value={experience.cardsTitleSize ?? 'md'}
+                onChange={(cardsTitleSize) => onChange({ cardsTitleSize })}
+              />
+              <ExperienceScalePill
+                label="Element spacing"
                 options={PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS}
+                sizes={[11, 14, 17]}
                 value={experience.cardsElementSpacing ?? 'md'}
                 onChange={(cardsElementSpacing) => onChange({ cardsElementSpacing })}
-                columns={3}
               />
-              <ExperienceOptionGrid
-                label="Gap vertical"
+              <ExperienceScalePill
+                label="Vertical gap"
                 options={PORTFOLIO_EXPERIENCE_CARDS_VERTICAL_GAP_OPTIONS}
+                sizes={[11, 14, 17]}
                 value={experience.cardsVerticalGap ?? 'md'}
                 onChange={(cardsVerticalGap) => onChange({ cardsVerticalGap })}
-                columns={3}
               />
-              <ExperienceOptionGrid
+              <ExperienceThumbnailRadiusChoiceGrid
                 label="Card border radius"
-                options={PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS}
                 value={experience.cardsBorderRadius ?? 'none'}
                 onChange={(cardsBorderRadius) => onChange({ cardsBorderRadius })}
-                columns={3}
+              />
+              <ExperienceScalePill
+                label="Tasks gap"
+                options={PORTFOLIO_EXPERIENCE_CARDS_TASKS_GAP_OPTIONS}
+                sizes={[11, 14, 17]}
+                value={experience.cardsTasksGap ?? 'md'}
+                onChange={(cardsTasksGap) => onChange({ cardsTasksGap })}
+              />
+              <ExperienceToggleRow
+                label="Scroll cascade effect"
+                description="Desktop only: each card locks in place and the next rises to fully cover it, scaling down and fading as it recedes. Turn off for a plain static stack on every screen size."
+                checked={(experience.cardsStackEffect ?? 'cascade') === 'cascade'}
+                onChange={(checked) =>
+                  onChange({ cardsStackEffect: checked ? 'cascade' : 'static' })
+                }
+              />
+              <ExperienceToggleRow
+                label="Equal card height"
+                description="Every card matches the height of the tallest one, so a shorter card never leaves the one behind it peeking out during the cascade."
+                checked={experience.cardsEqualHeight === true}
+                onChange={(cardsEqualHeight) => onChange({ cardsEqualHeight })}
               />
             </>
           ) : null}
@@ -3141,16 +3547,8 @@ export function ExperienceSettingsPanel({
             </>
           ) : null}
           {isGallery ? (
-            <ExperienceOptionGrid
-              label="Columns per row"
-              options={PORTFOLIO_EXPERIENCE_GALLERY_COLUMNS_OPTIONS}
-              value={experience.galleryColumns ?? 3}
-              onChange={(galleryColumns) => onChange({ galleryColumns })}
-            />
-          ) : null}
-          {isGallery ? (
-            <ExperienceOptionGrid
-              label="Thumbnail fit"
+            <ExperienceOptionGridWithInfo
+              label="Thumbnail"
               options={PORTFOLIO_EXPERIENCE_GALLERY_THUMBNAIL_FIT_OPTIONS}
               value={experience.galleryThumbnailFit ?? 'cover'}
               onChange={(galleryThumbnailFit) => onChange({ galleryThumbnailFit })}
@@ -3158,347 +3556,31 @@ export function ExperienceSettingsPanel({
             />
           ) : null}
           {isGallery ? (
-            <ExperienceToggleRow
-              label="Big title"
-              description="The full-width word above the gallery (e.g. “EXPERIENCE”)."
-              checked={experience.galleryBigTitleEnabled !== false}
-              onChange={(galleryBigTitleEnabled) => onChange({ galleryBigTitleEnabled })}
+            <ExperienceThumbnailRadiusChoiceGrid
+              value={experience.galleryThumbnailRadius ?? 'md'}
+              onChange={(galleryThumbnailRadius) => onChange({ galleryThumbnailRadius })}
             />
           ) : null}
-          {isGallery && experience.galleryBigTitleEnabled !== false ? (
-            <>
-              <div>
-                <label className="pf-exp-block-label block">
-                  Big title word
-                </label>
-                <input
-                  type="text"
-                  value={experience.galleryBigTitleText ?? 'Experience'}
-                  onChange={(event) => onChange({ galleryBigTitleText: event.target.value })}
-                  placeholder="Experience"
-                  className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
-                />
-              </div>
-              <ExperienceOptionGrid
-                label="Big title style"
-                options={PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_STYLE_OPTIONS}
-                value={experience.galleryBigTitleStyle ?? 'outline'}
-                onChange={(galleryBigTitleStyle) => onChange({ galleryBigTitleStyle })}
-                columns={2}
-              />
-              <ExperienceOptionGrid
-                label="Big title color"
-                options={PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_COLOR_OPTIONS}
-                value={experience.galleryBigTitleColor ?? 'current'}
-                onChange={(galleryBigTitleColor) => onChange({ galleryBigTitleColor })}
-                columns={2}
-              />
-            </>
-          ) : null}
-          {/* Gallery premium animation & typography options */}
           {isGallery ? (
-            <>
-              <ExperienceToggleRow
-                label="Entry animation"
-                description="GSAP animations on scroll into view (scale + blur reveal)."
-                checked={experience.galleryHeaderAnimationEnabled !== false}
-                onChange={(galleryHeaderAnimationEnabled) => onChange({ galleryHeaderAnimationEnabled })}
-              />
-              {experience.galleryHeaderAnimationEnabled !== false ? (
-                <ExperienceOptionGrid
-                  label="Animation style"
-                  options={PORTFOLIO_EXPERIENCE_GALLERY_HEADER_ANIMATION_STYLE_OPTIONS}
-                  value={experience.galleryHeaderAnimationStyle ?? 'dramatic'}
-                  onChange={(galleryHeaderAnimationStyle) => onChange({ galleryHeaderAnimationStyle })}
-                  columns={3}
-                />
-              ) : null}
-              <ExperienceToggleRow
-                label="Scroll parallax"
-                description="Asymmetric parallax on scroll — big title slow, rest fast + fade."
-                checked={experience.galleryScrollParallaxEnabled !== false}
-                onChange={(galleryScrollParallaxEnabled) => onChange({ galleryScrollParallaxEnabled })}
-              />
-              <ExperienceOptionGrid
-                label="Secondary title style"
-                options={PORTFOLIO_EXPERIENCE_GALLERY_SECONDARY_TITLE_STYLE_OPTIONS}
-                value={experience.gallerySecondaryTitleStyle ?? 'editorial'}
-                onChange={(gallerySecondaryTitleStyle) => onChange({ gallerySecondaryTitleStyle })}
-                columns={2}
-              />
-              <div>
-                <label className="pf-exp-block-label block">
-                  Secondary title text
-                </label>
-                <input
-                  type="text"
-                  value={experience.gallerySecondaryTitleText ?? "Roles I've taken on"}
-                  onChange={(event) => onChange({ gallerySecondaryTitleText: event.target.value })}
-                  placeholder="Roles I've taken on"
-                  className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
-                />
-              </div>
-              <ExperienceOptionGrid
-                label="Role count style"
-                options={PORTFOLIO_EXPERIENCE_GALLERY_ROLE_COUNT_STYLE_OPTIONS}
-                value={experience.galleryRoleCountStyle ?? 'micro'}
-                onChange={(galleryRoleCountStyle) => onChange({ galleryRoleCountStyle })}
-                columns={3}
-              />
-              {(experience.galleryRoleCountStyle ?? 'micro') !== 'hidden' ? (
-                <div>
-                  <label className="pf-exp-block-label block">
-                    Role count text
-                  </label>
-                  <p className="mt-1 text-xs text-neutral-500">
-                    Use <code className="rounded bg-neutral-100 px-1 py-0.5 text-[10px]">{'{count}'}</code> as placeholder for the number.
-                  </p>
-                  <input
-                    type="text"
-                    value={experience.galleryRoleCountText ?? '{count} roles — click any card for the full story'}
-                    onChange={(event) => onChange({ galleryRoleCountText: event.target.value })}
-                    placeholder="{count} roles — click any card for the full story"
-                    className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
-                  />
-                </div>
-              ) : null}
-            </>
-          ) : null}
-          {isSpotlight ? (
-            <ExperienceToggleRow
-              label="Big title"
-              description="The scrolling marquee title above the showcase — cycles through up to 4 words."
-              checked={experience.spotlightBigTitleEnabled !== false}
-              onChange={(spotlightBigTitleEnabled) => onChange({ spotlightBigTitleEnabled })}
+            <ExperienceHoverMomentChoiceGrid
+              value={experience.galleryHoverEffect ?? 'curtain'}
+              onChange={(galleryHoverEffect) => onChange({ galleryHoverEffect })}
             />
           ) : null}
-          {isSpotlight && experience.spotlightBigTitleEnabled !== false ? (
-            <>
-              <div>
-                <label className="pf-exp-block-label block">
-                  Big title words
-                </label>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Up to 4 words, cycled in the scrolling title. Leave the extra ones blank to skip them.
-                </p>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={experience.spotlightBigTitleText ?? 'Experience'}
-                    onChange={(event) => onChange({ spotlightBigTitleText: event.target.value })}
-                    placeholder="Experience"
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
-                  />
-                  <input
-                    type="text"
-                    value={experience.spotlightBigTitleWord2 ?? ''}
-                    onChange={(event) => onChange({ spotlightBigTitleWord2: event.target.value })}
-                    placeholder="Optional"
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
-                  />
-                  <input
-                    type="text"
-                    value={experience.spotlightBigTitleWord3 ?? ''}
-                    onChange={(event) => onChange({ spotlightBigTitleWord3: event.target.value })}
-                    placeholder="Optional"
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
-                  />
-                  <input
-                    type="text"
-                    value={experience.spotlightBigTitleWord4 ?? ''}
-                    onChange={(event) => onChange({ spotlightBigTitleWord4: event.target.value })}
-                    placeholder="Optional"
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
-                  />
-                </div>
-              </div>
-              <ExperienceOptionGrid
-                label="Big title color"
-                options={PORTFOLIO_EXPERIENCE_SPOTLIGHT_TITLE_COLOR_OPTIONS}
-                value={experience.spotlightBigTitleColor ?? 'ink'}
-                onChange={(spotlightBigTitleColor) => onChange({ spotlightBigTitleColor })}
-                columns={4}
-              />
-            </>
-          ) : null}
-          {isSpotlight ? (
-            <ExperienceOptionGrid
-              label="Thumbnail"
-              options={PORTFOLIO_EXPERIENCE_SPOTLIGHT_THUMBNAIL_FIT_OPTIONS}
-              value={experience.spotlightThumbnailFit ?? 'cover'}
-              onChange={(spotlightThumbnailFit) => onChange({ spotlightThumbnailFit })}
-              columns={2}
+          {isGallery ? (
+            <ExperienceGalleryColumnsChoiceGrid
+              value={experience.galleryColumns ?? 3}
+              onChange={(galleryColumns) => onChange({ galleryColumns })}
             />
           ) : null}
-          {/* Spotlight Marquee Premium Options */}
-          {isSpotlight ? (
-            <ExperienceToggleRow
-              label="Marquee animation"
-              description="Enable/disable the scrolling animation on the marquee."
-              checked={experience.spotlightHeaderAnimationEnabled !== false}
-              onChange={(spotlightHeaderAnimationEnabled) => onChange({ spotlightHeaderAnimationEnabled })}
-            />
-          ) : null}
-          {isSpotlight && experience.spotlightHeaderAnimationEnabled !== false ? (
-            <>
-              <ExperienceOptionGrid
-                label="Marquee speed"
-                options={PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_SPEED_OPTIONS}
-                value={experience.spotlightMarqueeSpeed ?? 'medium'}
-                onChange={(spotlightMarqueeSpeed) => onChange({ spotlightMarqueeSpeed })}
-                columns={3}
-              />
-              <ExperienceOptionGrid
-                label="Marquee direction"
-                options={PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_DIRECTION_OPTIONS}
-                value={experience.spotlightMarqueeDirection ?? 'left'}
-                onChange={(spotlightMarqueeDirection) => onChange({ spotlightMarqueeDirection })}
-                columns={2}
-              />
-              <ExperienceToggleRow
-                label="Pause on hover"
-                description="Pause the marquee animation when the user hovers over it."
-                checked={experience.spotlightMarqueePauseOnHover !== false}
-                onChange={(spotlightMarqueePauseOnHover) => onChange({ spotlightMarqueePauseOnHover })}
-              />
-              <ExperienceToggleRow
-                label="Scroll speed boost"
-                description="Speed up the marquee when the user scrolls the page."
-                checked={experience.spotlightScrollSpeedBoost === true}
-                onChange={(spotlightScrollSpeedBoost) => onChange({ spotlightScrollSpeedBoost })}
-              />
-            </>
-          ) : null}
-          {isSpotlight ? (
-            <>
-              <ExperienceOptionGrid
-                label="Marquee weight"
-                options={PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_WEIGHT_OPTIONS}
-                value={experience.spotlightMarqueeWeight ?? 'normal'}
-                onChange={(spotlightMarqueeWeight) => onChange({ spotlightMarqueeWeight })}
-                columns={3}
-              />
-              <ExperienceOptionGrid
-                label="Marquee style"
-                options={PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_STYLE_OPTIONS}
-                value={experience.spotlightMarqueeStyle ?? 'mixed'}
-                onChange={(spotlightMarqueeStyle) => onChange({ spotlightMarqueeStyle })}
-                columns={3}
-              />
-              <ExperienceToggleRow
-                label="Gradient fade"
-                description="Fade the edges of the marquee with a subtle gradient."
-                checked={experience.spotlightMarqueeGradientFade !== false}
-                onChange={(spotlightMarqueeGradientFade) => onChange({ spotlightMarqueeGradientFade })}
-              />
-              <ExperienceOptionGrid
-                label="Word gap"
-                options={PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_GAP_OPTIONS}
-                value={experience.spotlightMarqueeGap ?? 'md'}
-                onChange={(spotlightMarqueeGap) => onChange({ spotlightMarqueeGap })}
-                columns={3}
-              />
-            </>
-          ) : null}
-          {isLoft ? (
-            <ExperienceToggleRow
-              label="Heading"
-              description="The plain static heading above the list."
-              checked={experience.loftHeadingEnabled !== false}
-              onChange={(loftHeadingEnabled) => onChange({ loftHeadingEnabled })}
-            />
-          ) : null}
-          {isLoft && experience.loftHeadingEnabled !== false ? (
-            <div>
-              <label className="pf-exp-block-label block">
-                Heading text
-              </label>
-              <input
-                type="text"
-                value={experience.loftHeadingText ?? "Roles I've taken on"}
-                onChange={(event) => onChange({ loftHeadingText: event.target.value })}
-                placeholder="Roles I've taken on"
-                className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
-              />
-            </div>
-          ) : null}
-          {isLoft && experience.loftHeadingEnabled !== false ? (
-            <ExperienceOptionGrid
-              label="Italic word"
-              options={PORTFOLIO_EXPERIENCE_LOFT_HEADING_ITALIC_WORD_OPTIONS}
-              value={experience.loftHeadingItalicWord ?? 'first'}
-              onChange={(loftHeadingItalicWord) => onChange({ loftHeadingItalicWord })}
-              columns={3}
-            />
-          ) : null}
-          {isLoft && experience.loftHeadingEnabled !== false ? (
-            <ExperienceOptionGrid
-              label="Heading weight"
-              options={PORTFOLIO_EXPERIENCE_LOFT_HEADING_FONT_WEIGHT_OPTIONS}
-              value={experience.loftHeadingFontWeight ?? 'light-to-bold'}
-              onChange={(loftHeadingFontWeight) => onChange({ loftHeadingFontWeight })}
-              columns={2}
+          {isGallery ? (
+            <ExperienceItemGapChoiceGrid
+              value={experience.galleryGap ?? 'md'}
+              onChange={(galleryGap) => onChange({ galleryGap })}
             />
           ) : null}
           {isLoft ? (
-            <ExperienceToggleRow
-              label="Header animations"
-              description="Enable GSAP entry and scroll animations."
-              checked={experience.loftHeaderAnimationEnabled !== false}
-              onChange={(loftHeaderAnimationEnabled) => onChange({ loftHeaderAnimationEnabled })}
-            />
-          ) : null}
-          {isLoft ? (
-            <div>
-              <label className="pf-exp-block-label block">
-                Label text
-              </label>
-              <input
-                type="text"
-                value={experience.loftLabelText ?? 'Experience'}
-                onChange={(event) => onChange({ loftLabelText: event.target.value })}
-                placeholder="Experience"
-                className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
-              />
-            </div>
-          ) : null}
-          {isLoft ? (
-            <ExperienceOptionGrid
-              label="Label style"
-              options={PORTFOLIO_EXPERIENCE_LOFT_LABEL_STYLE_OPTIONS}
-              value={experience.loftLabelStyle ?? 'uppercase'}
-              onChange={(loftLabelStyle) => onChange({ loftLabelStyle })}
-              columns={3}
-            />
-          ) : null}
-          {isLoft ? (
-            <ExperienceOptionGrid
-              label="Label position"
-              options={PORTFOLIO_EXPERIENCE_LOFT_LABEL_POSITION_OPTIONS}
-              value={experience.loftLabelPosition ?? 'top-aligned'}
-              onChange={(loftLabelPosition) => onChange({ loftLabelPosition })}
-              columns={2}
-            />
-          ) : null}
-          {isLoft ? (
-            <ExperienceToggleRow
-              label="Scroll effect"
-              description="Animate label on scroll."
-              checked={experience.loftScrollEffectEnabled !== false}
-              onChange={(loftScrollEffectEnabled) => onChange({ loftScrollEffectEnabled })}
-            />
-          ) : null}
-          {isLoft && experience.loftScrollEffectEnabled !== false ? (
-            <ExperienceOptionGrid
-              label="Scroll style"
-              options={PORTFOLIO_EXPERIENCE_LOFT_SCROLL_EFFECT_STYLE_OPTIONS}
-              value={experience.loftScrollEffectStyle ?? 'slide-right'}
-              onChange={(loftScrollEffectStyle) => onChange({ loftScrollEffectStyle })}
-              columns={2}
-            />
-          ) : null}
-          {isLoft ? (
-            <ExperienceOptionGrid
+            <ExperienceOptionGridWithInfo
               label="Thumbnail"
               options={PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS}
               value={experience.loftThumbnailFit ?? 'cover'}
@@ -3507,151 +3589,33 @@ export function ExperienceSettingsPanel({
             />
           ) : null}
           {isLoft ? (
-            <ExperienceOptionGrid
-              label="Thumbnail corners"
-              options={PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_RADIUS_OPTIONS}
+            <ExperienceThumbnailRadiusChoiceGrid
               value={experience.loftThumbnailRadius ?? 'md'}
               onChange={(loftThumbnailRadius) => onChange({ loftThumbnailRadius })}
-              columns={3}
             />
           ) : null}
           {isLoft ? (
-            <ExperienceOptionGrid
-              label="Hover moment"
-              options={PORTFOLIO_EXPERIENCE_LOFT_HOVER_EFFECT_OPTIONS}
+            <ExperienceHoverMomentChoiceGrid
               value={experience.loftHoverEffect ?? 'curtain'}
               onChange={(loftHoverEffect) => onChange({ loftHoverEffect })}
-              columns={1}
             />
           ) : null}
           {isLoft ? (
-            <ExperienceOptionGrid
-              label="Columns per row"
-              options={PORTFOLIO_EXPERIENCE_LOFT_COLUMNS_OPTIONS}
+            <ExperienceLoftColumnsChoiceGrid
               value={experience.loftColumns ?? 3}
               onChange={(loftColumns) => onChange({ loftColumns })}
             />
           ) : null}
           {isLoft ? (
-            <ExperienceOptionGrid
-              label="Gap"
-              options={PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS}
+            <ExperienceItemGapChoiceGrid
               value={experience.loftGap ?? 'md'}
               onChange={(loftGap) => onChange({ loftGap })}
-              columns={4}
             />
           ) : null}
           {isPress ? (
-            <ExperienceToggleRow
-              label="Headline"
-              description="The bold headline above the two-column layout."
-              checked={experience.pressHeadingEnabled !== false}
-              onChange={(pressHeadingEnabled) => onChange({ pressHeadingEnabled })}
-            />
-          ) : null}
-          {isPress && experience.pressHeadingEnabled !== false ? (
-            <div>
-              <label className="pf-exp-block-label block">
-                Headline text
-              </label>
-              <input
-                type="text"
-                value={experience.pressHeadingText ?? 'Roles taken. Skills sharpened. Impact delivered.'}
-                onChange={(event) => onChange({ pressHeadingText: event.target.value })}
-                placeholder="Roles taken. Skills sharpened. Impact delivered."
-                className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
-              />
-            </div>
-          ) : null}
-          {isPress ? (
-            <div>
-              <label className="pf-exp-block-label block">
-                Intro blurb
-              </label>
-              <p className="mt-1 text-sm text-neutral-500">
-                Small text beside the list, above the entries. Leave empty to hide it.
-              </p>
-              <input
-                type="text"
-                value={experience.pressIntroText ?? ''}
-                onChange={(event) => onChange({ pressIntroText: event.target.value })}
-                placeholder="Selected roles, projects, and outcomes."
-                className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
-              />
-            </div>
-          ) : null}
-          {isPress ? (
-            <ExperienceOptionGrid
-              label="Thumbnail corners"
-              options={PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS}
+            <ExperienceThumbnailRadiusChoiceGrid
               value={experience.pressThumbnailRadius ?? 'md'}
               onChange={(pressThumbnailRadius) => onChange({ pressThumbnailRadius })}
-              columns={3}
-            />
-          ) : null}
-
-          {/* ═══════════════════════════════════════════════════════════════
-              PRESS DESIGN — Premium Animation & Typography Settings
-          ═══════════════════════════════════════════════════════════════ */}
-          {isPress ? (
-            <ExperienceToggleRow
-              label="Entry animation"
-              description="Animate the headline reveal on scroll."
-              checked={experience.pressHeaderAnimationEnabled !== false}
-              onChange={(pressHeaderAnimationEnabled) => onChange({ pressHeaderAnimationEnabled })}
-            />
-          ) : null}
-          {isPress && experience.pressHeaderAnimationEnabled !== false ? (
-            <ExperienceOptionGrid
-              label="Animation style"
-              options={PORTFOLIO_EXPERIENCE_PRESS_ANIMATION_STYLE_OPTIONS}
-              value={experience.pressHeaderAnimationStyle ?? 'staggered'}
-              onChange={(pressHeaderAnimationStyle) => onChange({ pressHeaderAnimationStyle })}
-              columns={3}
-            />
-          ) : null}
-          {isPress && experience.pressHeadingEnabled !== false ? (
-            <ExperienceOptionGrid
-              label="Heading weight"
-              options={PORTFOLIO_EXPERIENCE_PRESS_HEADING_WEIGHT_STYLE_OPTIONS}
-              value={experience.pressHeadingWeightStyle ?? 'alternating'}
-              onChange={(pressHeadingWeightStyle) => onChange({ pressHeadingWeightStyle })}
-              columns={2}
-            />
-          ) : null}
-          {isPress && experience.pressHeadingEnabled !== false ? (
-            <ExperienceOptionGrid
-              label="Heading alignment"
-              options={PORTFOLIO_EXPERIENCE_PRESS_HEADING_ALIGNMENT_OPTIONS}
-              value={experience.pressHeadingAlignment ?? 'left'}
-              onChange={(pressHeadingAlignment) => onChange({ pressHeadingAlignment })}
-              columns={2}
-            />
-          ) : null}
-          {isPress ? (
-            <ExperienceOptionGrid
-              label="Subtitle style"
-              options={PORTFOLIO_EXPERIENCE_PRESS_SUBTITLE_STYLE_OPTIONS}
-              value={experience.pressSubtitleStyle ?? 'micro'}
-              onChange={(pressSubtitleStyle) => onChange({ pressSubtitleStyle })}
-              columns={3}
-            />
-          ) : null}
-          {isPress ? (
-            <ExperienceToggleRow
-              label="Scroll parallax"
-              description="Lines move at different speeds as you scroll."
-              checked={experience.pressScrollParallaxEnabled !== false}
-              onChange={(pressScrollParallaxEnabled) => onChange({ pressScrollParallaxEnabled })}
-            />
-          ) : null}
-          {isPress && experience.pressScrollParallaxEnabled !== false ? (
-            <ExperienceOptionGrid
-              label="Parallax intensity"
-              options={PORTFOLIO_EXPERIENCE_PRESS_PARALLAX_INTENSITY_OPTIONS}
-              value={experience.pressScrollParallaxIntensity ?? 'subtle'}
-              onChange={(pressScrollParallaxIntensity) => onChange({ pressScrollParallaxIntensity })}
-              columns={2}
             />
           ) : null}
 

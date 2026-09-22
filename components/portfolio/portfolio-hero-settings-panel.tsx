@@ -441,6 +441,70 @@ export function HeroSettingsPanel({
                 onChange={(heroImageGrayscale) => onChange({ heroImageGrayscale })}
               />
 
+              {(hero.heroBannerDesign ?? 'swiss-editorial') === 'cinematic-reveal' ? (
+                <div className="space-y-4 border-t border-neutral-200/70 pt-6">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                    Contenu Cinematic reveal
+                  </p>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                      Tools dans le bandeau
+                    </p>
+                    {normalizedTools.length > 0 ? (
+                      <>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {normalizedTools.map((tool) => {
+                            const picked = hero.heroEditorialRailSelectedTools ?? [];
+                            const active =
+                              picked.length > 0
+                                ? picked.includes(tool)
+                                : normalizedTools.slice(0, 8).includes(tool);
+                            const disabled =
+                              picked.length > 0 && !active && picked.length >= 8;
+                            return (
+                              <button
+                                key={tool}
+                                type="button"
+                                disabled={disabled}
+                                onClick={() => {
+                                  const current =
+                                    (hero.heroEditorialRailSelectedTools?.length ?? 0) > 0
+                                      ? [...(hero.heroEditorialRailSelectedTools ?? [])]
+                                      : normalizedTools.slice(0, 8);
+                                  const next = current.includes(tool)
+                                    ? current.filter((item) => item !== tool)
+                                    : current.length >= 8
+                                      ? current
+                                      : [...current, tool];
+                                  onChange({ heroEditorialRailSelectedTools: next });
+                                }}
+                                className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition ${
+                                  active
+                                    ? 'border-neutral-900 bg-neutral-950 text-white'
+                                    : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                                } disabled:cursor-not-allowed disabled:opacity-45`}
+                              >
+                                <CreatorToolLogo label={tool} size={22} />
+                                {tool}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {(hero.heroEditorialRailSelectedTools?.length ?? 0) > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => onChange({ heroEditorialRailSelectedTools: [] })}
+                            className="mt-3 text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+                          >
+                            Reset — 8 premiers du profil
+                          </button>
+                        ) : null}
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
               {(hero.heroBannerDesign ?? 'swiss-editorial') === 'swiss-editorial' ? (
                 <div className="space-y-6 border-t border-neutral-200/70 pt-6">
                   <HeroToggleRow

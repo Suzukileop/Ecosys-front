@@ -12,6 +12,7 @@ import {
 } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import gsap from 'gsap';
 import type { MarketplaceContentItem } from '@/types/marketplace';
 import type {
   PortfolioWorkPresentationSettings,
@@ -27,6 +28,8 @@ import {
 } from '@/components/portfolio/portfolio-work-settings';
 
 const CAROUSEL_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+/** A hair of overshoot on the index snap — reads as inertia settling, not a hard stop. */
+const CAROUSEL_SPRING_EASE = 'cubic-bezier(0.22, 1.28, 0.36, 1)';
 const CAROUSEL_SNAP_MS = 680;
 const DRAG_THRESHOLD_PX = 8;
 const DESKTOP_MQ = '(min-width: 768px)';
@@ -452,6 +455,57 @@ function useCarouselScrollKinetic(
   }, [readyKey, rootRef]);
 }
 
+/**
+ * Velocity-driven skew — while the strip is actively being dragged, a fast flick
+ * tilts the cards; the tilt eases back to 0 the instant motion settles. Reads
+ * `dragX` (the live, untransitioned drag offset) every frame through a ref so
+ * the loop's own lifecycle never restarts mid-gesture — it starts on the first
+ * frame that has real movement and stops itself once it decays to rest.
+ */
+function useCarouselDragSkew(viewportRef: RefObject<HTMLDivElement | null>, dragX: number): void {
+  const dragXRef = useRef(dragX);
+  const loopRef = useRef<{ raf: number; lastX: number; skew: number } | null>(null);
+
+  useEffect(() => {
+    dragXRef.current = dragX;
+    const track = viewportRef.current?.querySelector<HTMLElement>(
+      '[data-projects-carousel-track]'
+    );
+    if (!track || prefersReducedMotion() || loopRef.current) return undefined;
+
+    const state = { raf: 0, lastX: dragX, skew: 0 };
+    loopRef.current = state;
+
+    const tick = () => {
+      const x = dragXRef.current;
+      const dx = x - state.lastX;
+      state.lastX = x;
+      const targetSkew = Math.max(-9, Math.min(9, dx * -0.4));
+      state.skew += (targetSkew - state.skew) * 0.22;
+
+      if (Math.abs(state.skew) < 0.03 && Math.abs(targetSkew) < 0.03) {
+        track.style.setProperty('--carousel-skew', '0deg');
+        state.raf = 0;
+        loopRef.current = null;
+        return;
+      }
+      track.style.setProperty('--carousel-skew', `${state.skew.toFixed(2)}deg`);
+      state.raf = window.requestAnimationFrame(tick);
+    };
+
+    state.raf = window.requestAnimationFrame(tick);
+    return undefined;
+  }, [dragX, viewportRef]);
+
+  useEffect(
+    () => () => {
+      if (loopRef.current?.raf) window.cancelAnimationFrame(loopRef.current.raf);
+      loopRef.current = null;
+    },
+    []
+  );
+}
+
 function workToolLabels(item: MarketplaceContentItem, max = 12): string[] {
   return Array.from(new Set((item.toolsUsed ?? []).map((t) => t.trim()).filter(Boolean))).slice(
     0,
@@ -566,6 +620,14 @@ function CarouselQuietNav({
   );
 }
 
+/**
+ * A single thumbnail. At rest it is pure image. On hover/focus, one timeline
+ * (built once, replayed with .play()/.reverse()) drives a bottom-to-top
+ * gradient fading in behind the copy and each line of copy sliding up out of
+ * its own mask — no motion on the image itself (the zoom-on-hover GSAP
+ * tween was removed by explicit request). Leaving reverses the same
+ * timeline, so a quick in/out never snaps or fights itself.
+ */
 function CarouselSlide({
   item,
   index,
@@ -592,6 +654,68 @@ function CarouselSlide({
   const aspectClass = carouselAspectClass(settings.aspectRatio ?? 'square');
   const indexLabel = formatCarouselIndex(index);
 
+  const veilRef = useRef<HTMLDivElement>(null);
+  const descLineRef = useRef<HTMLParagraphElement>(null);
+  const stackLineRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<gsap.core.Timeline | null>(null);
+
+  useLayoutEffect(() => {
+    const veil = hoverReveal ? veilRef.current : null;
+    const descLine = hoverReveal && description ? descLineRef.current : null;
+    const stackLine = hoverStack ? stackLineRef.current : null;
+    const reduced = prefersReducedMotion();
+    // Touch devices never reliably fire mouseenter/mouseleave, so a "hidden
+    // until hover" reveal just never reveals. Skipping the whole
+    // hide-then-reveal choreography on non-hover devices — same as
+    // `reduced` — fixes that. `matchMedia('hover')` itself isn't fully
+    // trustworthy either (hybrid devices — an iPad with a trackpad, a
+    // browser's device-emulation toggle left on "mouse" — can report
+    // `hover: hover` on what's actually a touch-primary device, so a real
+    // tap can still synthesize a mouseenter/mouseleave pair here); that's
+    // why the stack strip below no longer relies on a fixed-height
+    // overflow:hidden clip to mask its hidden state — opacity-only can't
+    // ever clip a partial glyph, unlike a yPercent slide inside a fixed
+    // box, so even a device that's wrongly detected just gets an
+    // invisible-until-tapped strip instead of visibly cropped text.
+    const noHover =
+      typeof window !== 'undefined' &&
+      !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const skipAnim = reduced || noHover;
+
+    if (veil) gsap.set(veil, { autoAlpha: skipAnim ? 1 : 0 });
+    if (descLine) gsap.set(descLine, { yPercent: skipAnim ? 0 : 100 });
+    if (stackLine) gsap.set(stackLine, { autoAlpha: skipAnim ? 1 : 0 });
+
+    const tl = gsap.timeline({ paused: true });
+    if (veil) {
+      if (skipAnim) tl.set(veil, { autoAlpha: 1 }, 0);
+      else tl.to(veil, { autoAlpha: 1, duration: 0.4, ease: 'power2.out' }, 0);
+    }
+    if (descLine) {
+      // Same fix as the veil-vs-text contrast bug found earlier this
+      // session: text must not start becoming legible until the darkening
+      // underneath it already has a real head start, or there's a brief
+      // low-contrast window where the description is readable-ish over a
+      // still-bright image. 0.22s in, the veil (power2.out, 0.4s) is
+      // already ~85% dark.
+      if (skipAnim) tl.set(descLine, { yPercent: 0 }, 0);
+      else tl.to(descLine, { yPercent: 0, duration: 0.7, ease: 'power3.out' }, 0.22);
+    }
+    if (stackLine) {
+      if (skipAnim) tl.set(stackLine, { autoAlpha: 1 }, 0);
+      else tl.to(stackLine, { autoAlpha: 1, duration: 0.4, ease: 'power2.out' }, 0.08);
+    }
+    timelineRef.current = tl;
+
+    return () => {
+      tl.kill();
+      timelineRef.current = null;
+    };
+  }, [hoverReveal, description, hoverStack, tools.length]);
+
+  const onEnter = () => timelineRef.current?.play();
+  const onLeave = () => timelineRef.current?.reverse();
+
   const media = (
     <div className={`flex flex-col ${sizeClass}`}>
       <div
@@ -605,10 +729,7 @@ function CarouselSlide({
             fill
             draggable={false}
             sizes="(max-width: 640px) 90vw, (max-width: 1024px) 50vw, 40vw"
-            data-pf-no-color-transition=""
-            className={`object-cover object-center transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-              hoverReveal ? 'group-hover:scale-[1.055] group-focus-within:scale-[1.055]' : ''
-            }`}
+            className="object-cover object-center"
           />
         ) : (
           <div
@@ -619,7 +740,7 @@ function CarouselSlide({
           </div>
         )}
         <span
-          className="pointer-events-none absolute left-4 top-4 text-[10px] font-medium tabular-nums tracking-[0.2em] text-white sm:left-5 sm:top-5"
+          className="pointer-events-none absolute left-4 top-4 z-[2] text-[10px] font-medium tabular-nums tracking-[0.2em] text-white sm:left-5 sm:top-5"
           style={{ textShadow: '0 1px 12px rgba(0,0,0,0.45)' }}
           aria-hidden
         >
@@ -627,34 +748,51 @@ function CarouselSlide({
         </span>
         {hoverReveal ? (
           <>
+            {/* Bottom-to-top gradient instead of a flat full-image tint — only
+                darkens the area directly behind the description, fading to
+                fully clear by ~70% up the card. The rest of the image stays
+                untouched, which sidesteps the "flat tint never looks evenly
+                dark across a high-contrast photo" issue entirely rather than
+                fighting it with a darker alpha. Title is intentionally not
+                repeated here — it's already shown in the persistent caption
+                below the carousel viewport. */}
             <div
-              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-black/0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100 group-focus-within:opacity-100"
+              ref={veilRef}
+              className="pointer-events-none absolute inset-0 opacity-0"
+              style={{
+                background:
+                  'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.6) 25%, rgba(0,0,0,0.18) 50%, rgba(0,0,0,0) 72%)',
+              }}
               aria-hidden
-            />
-            <div
               data-pf-no-color-transition=""
-              className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-start gap-1.5 px-4 pb-4 pt-16 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100 group-focus-within:opacity-100 sm:px-5 sm:pb-5"
-            >
-              {title ? (
-                <p className="max-w-md text-[15px] font-medium leading-snug tracking-[-0.03em] text-white sm:text-base">
-                  {title}
-                </p>
-              ) : null}
-              {description ? (
-                <p className="max-w-sm text-[13px] leading-relaxed text-white/78 sm:text-sm">
-                  {description}
-                </p>
-              ) : null}
-            </div>
+            />
+            {description ? (
+              <div
+                data-pf-no-color-transition=""
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-col items-start px-4 pb-4 pt-16 sm:px-5 sm:pb-5"
+              >
+                <div className="overflow-hidden">
+                  <p
+                    ref={descLineRef}
+                    className="max-w-sm text-[13px] leading-relaxed text-white/85 sm:text-sm"
+                    data-pf-no-color-transition=""
+                  >
+                    {description}
+                  </p>
+                </div>
+              </div>
+            ) : null}
           </>
         ) : null}
       </div>
       {hoverStack ? (
-        <div
-          data-pf-no-color-transition=""
-          className="mt-3 min-h-[1.75rem] opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100 group-focus-within:opacity-100"
-        >
-          <CarouselStackStrip tools={tools} ink={stackInk} rule={`${stackInk}55`} />
+        // Reveals via opacity only (see the timeline above) — never a
+        // fixed-height clip, so there's nothing here that can crop a
+        // partially-revealed line no matter how tall the tags wrap to.
+        <div className="mt-3" data-pf-no-color-transition="">
+          <div ref={stackLineRef} data-pf-no-color-transition="">
+            <CarouselStackStrip tools={tools} ink={stackInk} rule={`${stackInk}55`} />
+          </div>
         </div>
       ) : null}
     </div>
@@ -674,19 +812,36 @@ function CarouselSlide({
           draggable={false}
           className={wrapClass}
           aria-label={title || 'Project'}
+          onMouseEnter={onEnter}
+          onMouseLeave={onLeave}
+          onFocus={onEnter}
+          onBlur={onLeave}
         >
           {media}
         </a>
       );
     }
     return (
-      <Link href={href} draggable={false} className={wrapClass} aria-label={title || 'Project'}>
+      <Link
+        href={href}
+        draggable={false}
+        className={wrapClass}
+        aria-label={title || 'Project'}
+        onMouseEnter={onEnter}
+        onMouseLeave={onLeave}
+        onFocus={onEnter}
+        onBlur={onLeave}
+      >
         {media}
       </Link>
     );
   }
 
-  return <div className="group shrink-0">{media}</div>;
+  return (
+    <div className="group shrink-0" onMouseEnter={onEnter} onMouseLeave={onLeave}>
+      {media}
+    </div>
+  );
 }
 
 /**
@@ -854,6 +1009,7 @@ export function ProjectsCarouselSection({
     (index) => setCarouselIndex(index)
   );
   useCarouselScrollKinetic(rootRef, itemsKey);
+  useCarouselDragSkew(viewportRef, offset);
 
   const color = presentation.titleColor;
   const muted = presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
@@ -909,9 +1065,10 @@ export function ProjectsCarouselSection({
           data-projects-carousel-track
           className={`group/carousel flex ${carouselGapClass(settings.gap ?? 'md')} transform-gpu will-change-transform`}
           style={{
-            transform: `translate3d(calc(${(-translateX + offset).toFixed(2)}px + var(--carousel-scroll-x, 0px)), 0, 0)`,
-            transition: dragging ? 'none' : `transform ${CAROUSEL_SNAP_MS}ms ${CAROUSEL_EASE}`,
-          }}
+            '--carousel-skew': '0deg',
+            transform: `translate3d(calc(${(-translateX + offset).toFixed(2)}px + var(--carousel-scroll-x, 0px)), 0, 0) skewX(var(--carousel-skew, 0deg))`,
+            transition: dragging ? 'none' : `transform ${CAROUSEL_SNAP_MS}ms ${CAROUSEL_SPRING_EASE}`,
+          } as CSSProperties}
         >
           {items.map((item, index) => {
             const isActive = index === activeIndex;
@@ -937,6 +1094,7 @@ export function ProjectsCarouselSection({
                 <div
                   className={`transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${recedeClass} ${hoverFocusClass}`}
                   style={{ zIndex: isActive ? 2 : 1 }}
+                  data-pf-no-color-transition=""
                 >
                   <CarouselSlide
                     item={item}
@@ -957,7 +1115,21 @@ export function ProjectsCarouselSection({
         className="mt-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-4 sm:mt-8"
         style={ENTER_HIDDEN}
       >
-        <div data-carousel-caption="" className="min-w-0" aria-live="polite">
+        {/* w-full below sm: the caption's own rendered width varies with the
+            active project's title length (short titles measure narrow), and
+            in a flex-wrap row that's enough room for the nav buttons below
+            to sometimes squeeze onto the *same* line as a short caption
+            instead of wrapping to their own line — moving Prev/Next up or
+            down depending on which project happens to be active, not
+            anything the user did. Forcing the caption to claim the full row
+            at narrow widths makes the nav wrap every time, consistently;
+            sm:w-auto restores the side-by-side layout once there's reliably
+            enough room for both regardless of title length. */}
+        <div
+          data-carousel-caption=""
+          className="w-full min-w-0 sm:w-auto"
+          aria-live="polite"
+        >
           <p
             className="text-[10px] font-medium tabular-nums tracking-[0.22em] sm:text-[11px]"
             style={{ color: muted, opacity: 0.7 }}
@@ -970,8 +1142,14 @@ export function ProjectsCarouselSection({
             {formatCarouselIndex(Math.max(0, items.length - 1))}
           </p>
           {activeTitle ? (
+            // min-h reserves space for 2 lines at this text's own line-height
+            // (28px/line at the base text-xl size, 30px/line once sm:leading-
+            // tight applies) even when the current title only needs one —
+            // without it, switching between a short and a long project name
+            // changes this block's height, which pushes the Prev/Next
+            // buttons below it up or down on every navigation.
             <h3
-              className="mt-2 max-w-xl text-xl font-medium tracking-[-0.035em] sm:text-2xl sm:leading-tight"
+              className="mt-2 max-w-xl min-h-[3.5rem] text-xl font-medium tracking-[-0.035em] sm:min-h-[3.75rem] sm:text-2xl sm:leading-tight"
               style={{ color }}
               data-pf-no-color-transition=""
             >

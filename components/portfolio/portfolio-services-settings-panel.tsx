@@ -1,105 +1,8 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
-import {
-  PORTFOLIO_SERVICES_CARD_BORDER_OPTIONS,
-  PORTFOLIO_SERVICES_CARD_BACKGROUND_ALTERNATION_OPTIONS,
-  PORTFOLIO_SERVICES_CARD_PADDING_OPTIONS,
-  PORTFOLIO_SERVICES_CARD_RADIUS_OPTIONS,
-  PORTFOLIO_SERVICES_CARD_MAX_WIDTH_OPTIONS,
-  PORTFOLIO_SERVICES_COMMERCIAL_LIST_MAX_WIDTH_OPTIONS,
-  PORTFOLIO_SERVICES_CARD_ALIGNMENT_OPTIONS,
-  PORTFOLIO_SKILLS_INSPECTOR_MAX_WIDTH_OPTIONS,
-  PORTFOLIO_SKILLS_INSPECTOR_ALIGNMENT_OPTIONS,
-  PORTFOLIO_SERVICES_COLUMNS_OPTIONS,
-  PORTFOLIO_SERVICES_CONTENT_ALIGNMENT_OPTIONS,
-  PORTFOLIO_SERVICES_CONTENT_GAP_OPTIONS,
-  SERVICES_CONTENT_GAP_PRESET_PX,
-  SERVICES_CONTENT_GAP_PX_MAX,
-  SERVICES_CONTENT_GAP_PX_MIN,
-  clampServicesContentGapPx,
-  PORTFOLIO_SERVICES_DISPLAY_MODE_OPTIONS,
-  PORTFOLIO_SERVICES_MARQUEE_DIRECTION_OPTIONS,
-  PORTFOLIO_SERVICES_DECK_ENTRANCE_EFFECT_OPTIONS,
-  PORTFOLIO_SERVICES_GALLERY_LAYOUT_OPTIONS,
-  PORTFOLIO_SKILLS_GALLERY_LAYOUT_OPTIONS,
-  PORTFOLIO_SERVICES_SECTION_LAYOUT_OPTIONS,
-  PORTFOLIO_SKILLS_INSPECTOR_ILLUSTRATION_OPTIONS,
-  PORTFOLIO_SKILLS_INSPECTOR_ILLUSTRATION_PLACEMENT_OPTIONS,
-  PORTFOLIO_SERVICES_ILLUSTRATION_OPTIONS,
-  PORTFOLIO_SERVICES_ILLUSTRATION_PLACEMENT_OPTIONS,
-  servicesSectionLayoutIsAside,
-  SKILLS_INSPECTOR_ICON_GAP_PX_MIN,
-  SKILLS_INSPECTOR_ICON_GAP_PX_MAX,
-  clampSkillsInspectorIconGapPx,
-  PORTFOLIO_SERVICES_ICON_PLACEMENT_OPTIONS,
-  PORTFOLIO_SKILLS_ICON_RADIUS_OPTIONS,
-  SKILLS_ICON_BORDER_WIDTH_PX_MIN,
-  SKILLS_ICON_BORDER_WIDTH_PX_MAX,
-  clampSkillsIconBorderWidthPx,
-  PORTFOLIO_SERVICES_STAGE_BORDER_OPTIONS,
-  PORTFOLIO_SERVICES_STAGE_CORNERS_OPTIONS,
-  PORTFOLIO_SERVICES_STAGE_DESIGN_OPTIONS,
-  PORTFOLIO_SERVICES_STAGE_PADDING_OPTIONS,
-  PORTFOLIO_SERVICES_STAGE_PATTERN_OPTIONS,
-  PORTFOLIO_SERVICES_STAGE_RADIUS_OPTIONS,
-  PORTFOLIO_SERVICES_STYLE_TARGET_OPTIONS,
-  PORTFOLIO_SERVICES_TASK_BULLET_STYLE_OPTIONS,
-  PORTFOLIO_SERVICES_DISTINCT_SERVICES_SUBTITLE_PRESET_OPTIONS,
-  PORTFOLIO_SERVICES_DISTINCT_SERVICES_TITLE_PRESET_OPTIONS,
-  PORTFOLIO_SERVICES_DISTINCT_SKILLS_SUBTITLE_PRESET_OPTIONS,
-  PORTFOLIO_SERVICES_DISTINCT_SKILLS_TITLE_PRESET_OPTIONS,
-  normalizeServicesElementStyles,
-  patchServicesElementStyle,
-  patchServicesElementChrome,
-  DEFAULT_SERVICES_ELEMENT_CHROMES,
-  PORTFOLIO_SERVICES_CARD_TEXT_CONTRAST_OPTIONS,
-  DEFAULT_SERVICES_CARD_INK_STRONG_A,
-  DEFAULT_SERVICES_CARD_INK_MUTED_A,
-  DEFAULT_SERVICES_CARD_INK_STRONG_B,
-  DEFAULT_SERVICES_CARD_INK_MUTED_B,
-  servicesMarqueeActiveFor,
-  servicesCoverflowActiveFor,
-  servicesDeckActiveFor,
-  servicesDisplayModeNeedsCardLayout,
-  servicesDisplayModeSettingsPatch,
-  switchServicesGalleryLayout,
-  stageChromePresetForDesign,
-  servicesLayoutSupportsPrincipalSurface,
-  servicesLayoutHasCoverMedia,
-  PORTFOLIO_SERVICES_PRINCIPAL_SURFACE_ALTERNATION_OPTIONS,
-  PORTFOLIO_SERVICES_PRINCIPAL_SURFACE_ALTERNATE_START_OPTIONS,
-  PORTFOLIO_SERVICES_MEDIA_SIDE_OPTIONS,
-  PORTFOLIO_SERVICES_MEDIA_SIDE_ALTERNATION_OPTIONS,
-  type PortfolioServicesElementChromeId,
-  type PortfolioServicesSectionSettings,
-  type PortfolioServicesStyleTarget,
-} from '@/components/portfolio/portfolio-services-settings';
-import { PortfolioElementStyleFields } from '@/components/portfolio/portfolio-element-style-fields';
-import { PortfolioListMarkerSizeWeightControls } from '@/components/portfolio/PortfolioListMarkerSizeWeightControls';
-import { PORTFOLIO_TOOLS_ICON_SIZE_OPTIONS } from '@/components/portfolio/portfolio-element-text-style';
-import {
-  PORTFOLIO_SERVICES_CARD_BACKGROUND_FILL_OPTIONS,
-  PORTFOLIO_SERVICES_CARD_DIVIDER_SHAPE_OPTIONS,
-  PORTFOLIO_SERVICES_CARD_SPLIT_AXIS_OPTIONS,
-  servicesCardSplitBackgroundLayerStyle,
-} from '@/components/portfolio/portfolio-services-card-background-settings';
-import {
-  PORTFOLIO_SERVICES_CARD_DECOR_ALTERNATION_OPTIONS,
-  PORTFOLIO_SERVICES_CARD_DECOR_SHAPE_OPTIONS,
-  servicesCardDecorShellStyle,
-} from '@/components/portfolio/portfolio-services-card-decor-settings';
-import {
-  patchServicesBlockSettings,
-  patchServicesDistinctHeader,
-  readServicesBlockField,
-  resolveDistinctBlockSectionSubtitle,
-  resolveDistinctBlockSectionTitle,
-  resolveServicesBlockPresentation,
-  servicesUsesSplitBlockConfig,
-  type PortfolioServicesBlockScope,
-} from '@/components/portfolio/portfolio-services-block-settings';
+import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import {
   PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS,
@@ -107,124 +10,83 @@ import {
   type HeroPaletteTokenId,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import {
-  applyServicesPaletteToSettings,
   DEFAULT_SERVICES_COLOR_BINDINGS,
   DEFAULT_SERVICES_PALETTE,
   mergeServicesColorBindings,
   mergeServicesPalette,
   patchServicesColorBinding,
   patchServicesColorField,
-  PORTFOLIO_SERVICES_COLOR_SLOT_OPTIONS,
-  SERVICES_ELEMENT_CHROME_COLOR_SLOTS,
-  SERVICES_STYLE_TARGET_COLOR_SLOT,
   type ServicesColorSlot,
 } from '@/components/portfolio/portfolio-services-palette-settings';
-import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
+import {
+  DEFAULT_SERVICES_PRICING_AURORA_SETTINGS,
+  DEFAULT_SERVICES_PRICING_BENTO_SETTINGS,
+  DEFAULT_SERVICES_PRICING_GRID_SETTINGS,
+  DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS,
+  PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS,
+  PORTFOLIO_SERVICES_PRICING_AURORA_COLUMNS_OPTIONS,
+  PORTFOLIO_SERVICES_PRICING_MONOLITH_COLUMNS_OPTIONS,
+  PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS,
+  SERVICES_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
+  SERVICES_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
+  SERVICES_HEADER_PALETTE_TOKEN_OPTIONS,
+  servicesHeaderPaletteTokenColor,
+  type PortfolioServicesHeaderAccentCountAlignment,
+  type PortfolioServicesHeaderBillboardWordStyle,
+  type PortfolioServicesHeaderDesign,
+  type PortfolioServicesHeaderDesignAlignment,
+  type PortfolioServicesHeaderPaletteToken,
+  type PortfolioServicesHeaderTitleSize,
+  type PortfolioServicesHeaderTitleWeight,
+  type PortfolioServicesPricingAuroraColumns,
+  type PortfolioServicesPricingAuroraPopularColorToken,
+  type PortfolioServicesPricingGridPopularColorToken,
+  type PortfolioServicesPricingMonolithColumns,
+  type PortfolioServicesSectionDesign,
+  type PortfolioServicesSectionSettings,
+} from '@/components/portfolio/portfolio-services-settings';
 
+/** Top-level settings entry: kept for API compatibility with callers, though only
+ *  'services' is currently wired up anywhere in the app (no live 'skills' entry point). */
 export type ServicesSettingsFocus = 'skills' | 'services';
 
-export type ServicesSubSection =
-  | 'general'
-  | 'header'
-  | 'cards'
-  | 'title'
-  | 'description'
-  | 'icon'
-  | 'background'
-  | 'palette'
-  /** @deprecated Mapped by normalizeServicesSubSection */
-  | 'layout'
-  | 'frame'
-  | 'ergonomics'
-  | 'content'
-  | 'skills'
-  | 'servicesText'
-  | 'style';
+export type ServicesSubSection = 'general' | 'design' | 'background' | 'header';
 
-type ServicesSubSectionMeta = {
-  id: ServicesSubSection;
+const SERVICES_SUB_SECTIONS: { id: ServicesSubSection; label: string; description: string }[] = [
+  { id: 'general', label: 'General', description: 'Section visibility and defaults.' },
+  { id: 'design', label: 'Design', description: 'Layout and visual style.' },
+  { id: 'background', label: 'Background', description: 'Fill behind this section.' },
+  { id: 'header', label: 'Header', description: 'Title, subtitle, fonts, and colors.' },
+];
+
+const PRICING_GRID_POPULAR_COLOR_OPTIONS: {
+  value: PortfolioServicesPricingGridPopularColorToken;
   label: string;
-  description: string;
-};
-
-const SERVICES_SUB_SECTIONS_SKILLS: ServicesSubSectionMeta[] = [
-  { id: 'general', label: 'General', description: 'Visibility and section options.' },
-  { id: 'header', label: 'Header', description: 'Titre et sous-titre de la section.' },
-  {
-    id: 'cards',
-    label: 'Cards',
-    description: 'Design, grille, cadre et alignement des cartes skills.',
-  },
-  { id: 'title', label: 'Titre', description: 'Affichage, typographie et fond du titre de skill.' },
-  {
-    id: 'description',
-    label: 'Description',
-    description: 'Affichage, typographie et fond de la description.',
-  },
-  {
-    id: 'icon',
-    label: 'Icône',
-    description: 'Icône outil, taille, placement et couleurs de marque.',
-  },
-  { id: 'background', label: 'Background', description: 'Section fill, gradients, and opacity.' },
-  {
-    id: 'palette',
-    label: 'Palette',
-    description: 'Use the Global site palette and bind section colors to tokens.',
-  },
+}[] = [
+  { value: 'principal', label: 'Principal' },
+  { value: 'secondaire', label: 'Secondary' },
+  { value: 'texteFort', label: 'Contrast' },
+  { value: 'neutre', label: 'Neutral' },
 ];
 
-const SERVICES_SUB_SECTIONS_SERVICES: ServicesSubSectionMeta[] = [
-  { id: 'general', label: 'General', description: 'Visibility and section options.' },
-  { id: 'header', label: 'Header', description: 'Titre et sous-titre de la section.' },
-  {
-    id: 'cards',
-    label: 'Cards',
-    description: 'Design, grille, cadre et alignement des cartes services.',
-  },
+const PRICING_AURORA_POPULAR_COLOR_OPTIONS: {
+  value: PortfolioServicesPricingAuroraPopularColorToken;
+  label: string;
+}[] = [
+  { value: 'principal', label: 'Principal' },
+  { value: 'secondaire', label: 'Secondary' },
+  { value: 'texteFort', label: 'Contrast' },
+  { value: 'neutre', label: 'Neutral' },
 ];
 
-function subSectionsForFocus(focus: ServicesSettingsFocus): ServicesSubSectionMeta[] {
-  return focus === 'skills' ? SERVICES_SUB_SECTIONS_SKILLS : SERVICES_SUB_SECTIONS_SERVICES;
-}
-
-/** Map legacy subsection ids (saved UI state / search) to the remaining menus. */
-export function normalizeServicesSubSection(
-  value: string | undefined,
-  focus: ServicesSettingsFocus = 'services'
-): ServicesSubSection {
-  if (value === 'layout' || value === 'frame') return 'cards';
-  if (focus === 'services') {
-    if (value === 'general' || value === 'header' || value === 'cards') return value;
-    return 'general';
-  }
-  if (value === 'skills' || value === 'servicesText' || value === 'style') return 'title';
-  if (value === 'content' || value === 'ergonomics') return 'icon';
-  if (
-    value === 'general' ||
-    value === 'header' ||
-    value === 'cards' ||
-    value === 'title' ||
-    value === 'description' ||
-    value === 'icon' ||
-    value === 'background' ||
-    value === 'palette'
-  ) {
+/** Map legacy subsection ids (saved UI state / search) onto the current Services menu. */
+export function normalizeServicesSubSection(value: string | undefined): ServicesSubSection {
+  if (value === 'general' || value === 'design' || value === 'background' || value === 'header') {
     return value;
   }
-  return 'header';
+  if (value === 'cards' || value === 'layout' || value === 'frame') return 'design';
+  return 'general';
 }
-
-const SERVICES_BACKGROUND_LABEL_SLOTS: Record<string, ServicesColorSlot> = {
-  Color: 'sectionBackground',
-  'Gradient start': 'sectionGradientFrom',
-  'Gradient end': 'sectionGradientTo',
-  'Couleur zone haut': 'sectionSplitA',
-  'Couleur zone gauche': 'sectionSplitA',
-  'Couleur zone bas': 'sectionSplitB',
-  'Couleur zone droite': 'sectionSplitB',
-  'Couleur de la ligne': 'sectionDivider',
-};
 
 function asServicesPatch(
   patch: Record<string, unknown> | object
@@ -232,372 +94,244 @@ function asServicesPatch(
   return patch as Partial<PortfolioServicesSectionSettings>;
 }
 
-function ServicesHeaderPreview({
-  title,
-  subtitle,
-  titleColor,
-  subtitleColor,
-  alignment,
-}: {
-  title: string;
-  subtitle: string;
-  titleColor: string;
-  subtitleColor: string;
-  alignment: 'left' | 'center';
-}) {
+/** Same animated switch as Stack/Contact/Info's settings panels — shared settings-UI chrome. */
+function ServicesSwitchTrack({ checked }: { checked: boolean }) {
   return (
-    <div
-      className={`rounded-2xl border border-neutral-200/80 bg-neutral-50/50 px-5 py-4 ${
-        alignment === 'center' ? 'text-center' : 'text-left'
-      }`}
+    <span
+      className="relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      style={{
+        backgroundColor: checked
+          ? 'var(--pf-palette-texte-fort, #171717)'
+          : 'color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 22%, var(--pf-palette-fond, #ffffff))',
+      }}
     >
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-400">Aperçu en direct</p>
-      <p className="mt-3 text-2xl font-bold uppercase tracking-[0.12em]" style={{ color: titleColor }}>
-        {title || '—'}
-      </p>
-      {subtitle ? (
-        <p className="mt-2 text-sm leading-relaxed" style={{ color: subtitleColor }}>
-          {subtitle}
-        </p>
-      ) : (
-        <p className="mt-2 text-sm italic text-neutral-400">Aucun sous-titre</p>
-      )}
-    </div>
-  );
-}
-
-function ServicesHeaderConfigSection({
-  heading,
-  description,
-  children,
-}: {
-  heading: string;
-  description: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-4 shadow-sm">
-      <div>
-        <p className="text-sm font-semibold text-neutral-950">{heading}</p>
-        <p className="mt-1 text-sm text-neutral-500">{description}</p>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function ServicesDistinctHeaderPanel({
-  services,
-  blockScope,
-  onChange,
-}: {
-  services: PortfolioServicesSectionSettings;
-  blockScope: PortfolioServicesBlockScope;
-  onChange: (patch: Partial<PortfolioServicesSectionSettings>) => void;
-}) {
-  const header = blockScope === 'skills' ? services.skillsHeader : services.servicesHeader;
-  const patchHeader = (patch: Parameters<typeof patchServicesDistinctHeader>[2]) =>
-    onChange(patchServicesDistinctHeader(services, blockScope, patch));
-
-  const titlePreview = resolveDistinctBlockSectionTitle(services, blockScope);
-  const subtitlePreview = resolveDistinctBlockSectionSubtitle(services, blockScope);
-  const titleOptions =
-    blockScope === 'skills'
-      ? PORTFOLIO_SERVICES_DISTINCT_SKILLS_TITLE_PRESET_OPTIONS
-      : PORTFOLIO_SERVICES_DISTINCT_SERVICES_TITLE_PRESET_OPTIONS;
-  const subtitleOptions =
-    blockScope === 'skills'
-      ? PORTFOLIO_SERVICES_DISTINCT_SKILLS_SUBTITLE_PRESET_OPTIONS
-      : PORTFOLIO_SERVICES_DISTINCT_SERVICES_SUBTITLE_PRESET_OPTIONS;
-
-  return (
-    <>
-      <ServicesHeaderPreview
-        title={titlePreview}
-        subtitle={subtitlePreview}
-        titleColor={header.titleColor}
-        subtitleColor={header.subtitleColor}
-        alignment={header.headerAlignment}
+      <span
+        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        style={{
+          left: checked ? '1.125rem' : '0.125rem',
+          backgroundColor: checked
+            ? 'var(--pf-palette-fond, #ffffff)'
+            : 'var(--pf-palette-texte-fort, #171717)',
+        }}
       />
+    </span>
+  );
+}
 
-      <ServicesHeaderConfigSection
-        heading="Titre principal"
-        description="Grand titre en haut de la section — affiché en capitales sur le portfolio."
+/** Small keyboard-accessible "i" tooltip — same mechanism as Stack/Contact/Info. */
+function ServicesInfoTooltip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const tooltipId = useId();
+  return (
+    <span className="relative inline-flex shrink-0">
+      <span
+        role="button"
+        tabIndex={0}
+        aria-describedby={open ? tooltipId : undefined}
+        aria-label={`More info: ${text}`}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onClick={(event) => event.stopPropagation()}
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
       >
-        <ServicesOptionGrid
-          label="Preset du titre"
-          options={titleOptions}
-          value={header.titlePreset}
-          onChange={(titlePreset) => patchHeader({ titlePreset })}
-        />
-        {header.titlePreset === 'custom' ? (
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Texte du titre
-            </label>
-            <input
-              type="text"
-              value={header.titleCustom}
-              onChange={(event) => patchHeader({ titleCustom: event.target.value })}
-              placeholder="Ex. MY TOOLKIT"
-              className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900"
-            />
-          </div>
-        ) : null}
-        <ServicesColorField
-          services={services}
-          onChange={onChange}
-          slot="title"
-          label="Couleur du titre"
-          value={header.titleColor}
-          manualFallback={(titleColor) => patchHeader({ titleColor })}
-        />
-      </ServicesHeaderConfigSection>
-
-      <ServicesHeaderConfigSection
-        heading="Sous-titre"
-        description="Ligne descriptive plus petite, sous le titre principal — optionnelle."
-      >
-        <ServicesOptionGrid
-          label="Preset du sous-titre"
-          options={subtitleOptions}
-          value={header.subtitlePreset}
-          onChange={(subtitlePreset) => patchHeader({ subtitlePreset })}
-        />
-        {header.subtitlePreset === 'custom' ? (
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Texte du sous-titre
-            </label>
-            <textarea
-              value={header.subtitleCustom}
-              onChange={(event) => patchHeader({ subtitleCustom: event.target.value })}
-              rows={2}
-              placeholder="Une phrase d'introduction sous le titre…"
-              className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900"
-            />
-          </div>
-        ) : null}
-        <ServicesColorField
-          services={services}
-          onChange={onChange}
-          slot="subtitle"
-          label="Couleur du sous-titre"
-          value={header.subtitleColor}
-          manualFallback={(subtitleColor) => patchHeader({ subtitleColor })}
-        />
-      </ServicesHeaderConfigSection>
-
-      <ServicesHeaderConfigSection
-        heading="Alignement"
-        description="Position du titre et du sous-titre dans la section."
-      >
-        <ServicesOptionGrid
-          label="Disposition titre / contenu"
-          options={PORTFOLIO_SERVICES_SECTION_LAYOUT_OPTIONS}
-          value={header.sectionLayout ?? 'stacked'}
-          onChange={(sectionLayout) => patchHeader({ sectionLayout })}
-          columns={1}
-        />
-        {servicesSectionLayoutIsAside(header.sectionLayout) ? (
-          <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-            Le titre et le contenu seront côte à côte sur grand écran, puis empilés sur mobile.
-          </p>
-        ) : (
-          <ServicesOptionGrid
-            label="Alignement horizontal"
-            options={[
-              { value: 'left', label: 'Gauche', description: 'Alignement éditorial par défaut.' },
-              { value: 'center', label: 'Centré', description: 'Titre et sous-titre centrés.' },
-            ]}
-            value={header.headerAlignment}
-            onChange={(headerAlignment) => patchHeader({ headerAlignment })}
-          />
-        )}
-      </ServicesHeaderConfigSection>
-
-      {blockScope === 'services' ? (
-        <ServicesHeaderConfigSection
-          heading="Illustration"
-          description="SVG décoratif à côté du contenu de la section Services."
+        <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
+          <circle cx="7" cy="4.35" r="0.95" fill="currentColor" />
+          <rect x="6.3" y="6.05" width="1.4" height="4.4" rx="0.7" fill="currentColor" />
+        </svg>
+      </span>
+      {open ? (
+        <span
+          id={tooltipId}
+          role="tooltip"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
         >
-          <ServicesOptionGrid
-            label="Style du SVG"
-            options={PORTFOLIO_SERVICES_ILLUSTRATION_OPTIONS}
-            value={services.servicesIllustrationVariant ?? 'none'}
-            onChange={(servicesIllustrationVariant) => onChange({ servicesIllustrationVariant })}
-            columns={2}
-          />
-          {(services.servicesIllustrationVariant ?? 'none') !== 'none' ? (
-            <ServicesOptionGrid
-              label="Position du SVG"
-              options={PORTFOLIO_SERVICES_ILLUSTRATION_PLACEMENT_OPTIONS}
-              value={services.servicesIllustrationPlacement ?? 'right'}
-              onChange={(servicesIllustrationPlacement) =>
-                onChange({ servicesIllustrationPlacement })
-              }
-              columns={2}
-            />
-          ) : null}
-        </ServicesHeaderConfigSection>
+          {text}
+        </span>
       ) : null}
-    </>
+    </span>
   );
 }
 
 function ServicesToggleRow({
   label,
-  description,
+  info,
   checked,
   onChange,
 }: {
   label: string;
-  description?: string;
+  /** Non-obvious info (where to find something, hidden behavior) shown as a hover/focus tooltip. */
+  info?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-white px-4 py-3.5">
-      <span className="min-w-0">
-        <span className="block text-sm font-semibold text-neutral-950">{label}</span>
-        {description ? <span className="mt-1 block text-sm text-neutral-500">{description}</span> : null}
-      </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-neutral-900"
-      />
-    </label>
-  );
-}
-
-function ServicesToolInspectorAdvancedFields({
-  services,
-  onChange,
-}: {
-  services: PortfolioServicesSectionSettings;
-  onChange: (patch: Partial<PortfolioServicesSectionSettings>) => void;
-}) {
-  const iconGap = clampSkillsInspectorIconGapPx(services.skillsInspectorIconGapPx, 12);
-  return (
-    <>
-      <ServicesToggleRow
-        label="Cadre du rail d’icônes"
-        description="Désactivez-le pour afficher les icônes sans conteneur autour."
-        checked={services.skillsInspectorRailFrameEnabled !== false}
-        onChange={(skillsInspectorRailFrameEnabled) =>
-          onChange({ skillsInspectorRailFrameEnabled })
-        }
-      />
-      <label className="block rounded-2xl border border-neutral-200/80 bg-white p-4">
-        <span className="flex items-center justify-between gap-4">
-          <span className="text-sm font-semibold text-neutral-900">Écart entre les icônes</span>
-          <span className="tabular-nums text-sm font-semibold text-neutral-700">{iconGap}px</span>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full cursor-pointer flex-col gap-1 text-left"
+    >
+      <span className="flex items-center justify-between gap-4">
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className="min-w-0 truncate text-sm font-medium text-neutral-950">{label}</span>
+          {info ? <ServicesInfoTooltip text={info} /> : null}
         </span>
-        <input
-          type="range"
-          min={SKILLS_INSPECTOR_ICON_GAP_PX_MIN}
-          max={SKILLS_INSPECTOR_ICON_GAP_PX_MAX}
-          step={1}
-          value={iconGap}
-          onChange={(event) =>
-            onChange({
-              skillsInspectorIconGapPx: clampSkillsInspectorIconGapPx(event.target.value, 12),
-            })
-          }
-          className="mt-3 w-full accent-neutral-950"
-        />
-      </label>
-      <ServicesOptionGrid
-        label="SVG décoratif"
-        options={PORTFOLIO_SKILLS_INSPECTOR_ILLUSTRATION_OPTIONS}
-        value={services.skillsInspectorIllustrationVariant ?? 'none'}
-        onChange={(skillsInspectorIllustrationVariant) =>
-          onChange({ skillsInspectorIllustrationVariant })
-        }
-        columns={2}
-      />
-      {(services.skillsInspectorIllustrationVariant ?? 'none') !== 'none' ? (
-        <ServicesOptionGrid
-          label="Position du SVG"
-          options={PORTFOLIO_SKILLS_INSPECTOR_ILLUSTRATION_PLACEMENT_OPTIONS}
-          value={services.skillsInspectorIllustrationPlacement ?? 'right'}
-          onChange={(skillsInspectorIllustrationPlacement) =>
-            onChange({ skillsInspectorIllustrationPlacement })
-          }
-          columns={2}
-        />
-      ) : null}
-    </>
+        <ServicesSwitchTrack checked={checked} />
+      </span>
+    </button>
   );
 }
 
-function ServicesOptionGrid<T extends string | number>({
-  label,
-  options,
+function ServicesSectionLabel({ children }: { children: string }) {
+  return <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{children}</p>;
+}
+
+function ServicesGroupLabel({ children }: { children: string }) {
+  return <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">{children}</p>;
+}
+
+/** Mini wireframes for the "Section design" picker cards (`.pf-stack-mini-*` classes are
+ *  generic shared settings-UI chrome, not Stack-specific — see the note below). */
+function ServicesDesignWireframe({ design }: { design: PortfolioServicesSectionDesign }) {
+  if (design === 'showcase-hero') {
+    return (
+      <ServicesMiniSlide>
+        <path d="M6 36l-3 4 3 4" className="pf-stack-mini-ink" stroke="currentColor" strokeWidth={1.4} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M114 36l3 4-3 4" className="pf-stack-mini-ink" stroke="currentColor" strokeWidth={1.4} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <rect className="pf-stack-mini-mute" x="34" y="14" width="46" height="34" rx="2" transform="rotate(-4 57 31)" />
+        <rect className="pf-stack-mini-ink" x="6" y="19" width="30" height="8" rx="2" />
+        <rect className="pf-stack-mini-mute" x="64" y="54" width="30" height="3" rx="1.5" />
+        <rect className="pf-stack-mini-mute" x="70" y="60" width="24" height="3" rx="1.5" />
+        <rect className="pf-stack-mini-accent" x="6" y="58" width="20" height="6" rx="3" />
+      </ServicesMiniSlide>
+    );
+  }
+  if (design === 'services-pricing-grid' || design === 'services-pricing-aurora') {
+    return (
+      <ServicesMiniSlide>
+        <rect className="pf-stack-mini-mute" x="8" y="20" width="30" height="38" rx="4" />
+        <rect className="pf-stack-mini-accent" x="45" y="12" width="30" height="46" rx="4" />
+        <rect className="pf-stack-mini-mute" x="82" y="20" width="30" height="38" rx="4" />
+        <rect className="pf-stack-mini-ink" x="12" y="26" width="18" height="3" rx="1.5" />
+        <rect className="pf-stack-mini-ink" x="51" y="18" width="18" height="3" rx="1.5" />
+        <rect className="pf-stack-mini-ink" x="86" y="26" width="18" height="3" rx="1.5" />
+      </ServicesMiniSlide>
+    );
+  }
+  if (design === 'services-pricing-bento') {
+    return (
+      <ServicesMiniSlide>
+        <rect className="pf-stack-mini-accent" x="8" y="10" width="50" height="48" rx="4" />
+        <rect className="pf-stack-mini-mute" x="64" y="10" width="48" height="48" rx="4" />
+        <rect className="pf-stack-mini-ink" x="14" y="16" width="30" height="8" rx="2" />
+      </ServicesMiniSlide>
+    );
+  }
+  if (design === 'services-pricing-monolith') {
+    return (
+      <ServicesMiniSlide>
+        <rect className="pf-stack-mini-ring" x="8" y="16" width="30" height="40" rx="3" />
+        <rect className="pf-stack-mini-ring" x="45" y="16" width="30" height="40" rx="3" />
+        <rect className="pf-stack-mini-ring" x="82" y="16" width="30" height="40" rx="3" />
+        <rect className="pf-stack-mini-ink" x="14" y="38" width="18" height="8" rx="1" />
+        <rect className="pf-stack-mini-ink" x="51" y="34" width="18" height="10" rx="1" />
+        <rect className="pf-stack-mini-ink" x="88" y="38" width="18" height="8" rx="1" />
+      </ServicesMiniSlide>
+    );
+  }
+  if (design === 'services-pricing-toggle') {
+    return (
+      <ServicesMiniSlide>
+        <rect className="pf-stack-mini-mute" x="42" y="4" width="36" height="8" rx="4" />
+        <rect className="pf-stack-mini-accent" x="8" y="16" width="104" height="14" rx="5" />
+        <rect className="pf-stack-mini-mute" x="8" y="34" width="104" height="12" rx="5" />
+        <rect className="pf-stack-mini-mute" x="8" y="50" width="104" height="12" rx="5" />
+      </ServicesMiniSlide>
+    );
+  }
+  return (
+    <ServicesMiniSlide>
+      <rect className="pf-stack-mini-mute" x="8" y="16" width="30" height="40" rx="2" />
+      <rect className="pf-stack-mini-mute" x="45" y="16" width="30" height="40" rx="2" />
+      <rect className="pf-stack-mini-mute" x="82" y="16" width="30" height="40" rx="2" />
+      <rect className="pf-stack-mini-ink" x="12" y="46" width="22" height="4" rx="2" />
+      <rect className="pf-stack-mini-ink" x="49" y="46" width="22" height="4" rx="2" />
+      <rect className="pf-stack-mini-ink" x="86" y="46" width="22" height="4" rx="2" />
+    </ServicesMiniSlide>
+  );
+}
+
+/** The "Section design" picker — collapses to the selected design; click to expand and change. */
+function ServicesDesignChoiceGrid({
   value,
   onChange,
-  columns = 2,
 }: {
-  label: string;
-  options: { value: T; label: string; description: string }[];
-  value: T | '';
-  onChange: (value: T) => void;
-  columns?: number;
+  value: PortfolioServicesSectionDesign;
+  onChange: (value: PortfolioServicesSectionDesign) => void;
 }) {
-  return (
-    <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-      <div
-        className={`mt-3 grid gap-2 ${
-          columns === 4
-            ? 'grid-cols-2 sm:grid-cols-4'
-            : columns === 3
-              ? 'sm:grid-cols-2 lg:grid-cols-3'
-              : columns === 1
-                ? 'grid-cols-1'
-                : 'sm:grid-cols-2'
-        }`}
-      >
-        {options.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => onChange(option.value)}
-              className={`rounded-2xl border px-4 py-3 text-left transition ${
-                active
-                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-              }`}
-            >
-              <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
-            </button>
-          );
-        })}
+  const [showGrid, setShowGrid] = useState(false);
+  const selected =
+    PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS.find((option) => option.value === value) ??
+    PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS[0];
+
+  if (showGrid) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <ServicesGroupLabel>Section design</ServicesGroupLabel>
+          <button
+            type="button"
+            onClick={() => setShowGrid(false)}
+            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+          >
+            ← Back
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          {PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS.map((option) => {
+            const active = option.value === value;
+            return (
+              <ServicesPickerCard
+                key={option.value}
+                active={active}
+                label={option.label}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              >
+                <ServicesDesignWireframe design={option.value} />
+              </ServicesPickerCard>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <ServicesDesignSummaryRow label="Section design" name={selected.label} onOpen={() => setShowGrid(true)}>
+      <ServicesDesignWireframe design={value} />
+    </ServicesDesignSummaryRow>
   );
 }
 
 function ServicesManualColorField({
   label,
-  description,
   value,
   onChange,
 }: {
   label: string;
-  description?: string;
   value: string;
   onChange: (value: string) => void;
 }) {
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-      {description ? <p className="mt-1 text-sm text-neutral-500">{description}</p> : null}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <input
           type="color"
@@ -616,69 +350,45 @@ function ServicesManualColorField({
           className="w-28 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-mono text-neutral-900"
           aria-label={`${label} hex`}
         />
-        <span
-          className="h-11 w-20 rounded-xl border border-neutral-200/80 shadow-inner"
-          style={{ backgroundColor: value }}
-          aria-hidden
-        />
       </div>
     </div>
   );
 }
 
-
+/** Palette-bound color field — dropdown of theme tokens when the Hero palette is on,
+ *  manual hex picker when it's off. Same mechanism as FAQ/Stack's own color fields. */
 function ServicesColorField({
   services,
   onChange,
   slot,
   label,
-  description,
   value,
-  manualFallback,
 }: {
   services: PortfolioServicesSectionSettings;
   onChange: (patch: Partial<PortfolioServicesSectionSettings>) => void;
   slot: ServicesColorSlot;
   label: string;
-  description?: string;
   value: string;
-  /** When palette is off, route manual edits (e.g. distinct block headers). */
-  manualFallback?: (hex: string) => void;
 }) {
-  const paletteOn = services.useHeroPalette !== false;
-
-  if (!paletteOn) {
+  if (services.useHeroPalette === false) {
     return (
       <ServicesManualColorField
         label={label}
-        description={description}
         value={value}
-        onChange={(hex) => {
-          if (manualFallback) {
-            manualFallback(hex);
-            return;
-          }
-          onChange(asServicesPatch(patchServicesColorField(services, slot, hex)));
-        }}
+        onChange={(hex) => onChange(asServicesPatch(patchServicesColorField(services, slot, hex)))}
       />
     );
   }
 
   const palette = mergeServicesPalette(DEFAULT_SERVICES_PALETTE, services.servicesPalette);
-  const bindings = mergeServicesColorBindings(
-    DEFAULT_SERVICES_COLOR_BINDINGS,
-    services.servicesColorBindings
-  );
+  const bindings = mergeServicesColorBindings(DEFAULT_SERVICES_COLOR_BINDINGS, services.servicesColorBindings);
   const token = bindings[slot];
   const resolved = resolveHeroPaletteColor(palette, token);
 
   return (
     <div className="space-y-2">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-          {description ? <p className="mt-1 text-sm text-neutral-500">{description}</p> : null}
-        </div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
         <span
           className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-neutral-200"
           style={{ backgroundColor: resolved }}
@@ -689,11 +399,7 @@ function ServicesColorField({
       <select
         value={token}
         onChange={(event) =>
-          onChange(
-            asServicesPatch(
-              patchServicesColorBinding(services, slot, event.target.value as HeroPaletteTokenId)
-            )
-          )
+          onChange(asServicesPatch(patchServicesColorBinding(services, slot, event.target.value as HeroPaletteTokenId)))
         }
         className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
         aria-label={`${label} palette token`}
@@ -704,285 +410,689 @@ function ServicesColorField({
           </option>
         ))}
       </select>
-      <p className="text-xs text-neutral-500">
-        Bound to token · edit hex under{' '}
-        <span className="font-semibold text-neutral-700">Global → Theme</span>
-      </p>
     </div>
   );
 }
 
-function ServicesFrameColorField({
-  services,
-  onChange,
-  slot,
-  label,
-  value,
-  onManualChange,
-}: {
-  services: PortfolioServicesSectionSettings;
-  onChange: (patch: Partial<PortfolioServicesSectionSettings>) => void;
-  slot: ServicesColorSlot;
-  label: string;
-  value: string;
-  onManualChange: (hex: string) => void;
-}) {
-  if (services.useHeroPalette !== false) {
-    return (
-      <ServicesColorField
-        services={services}
-        onChange={onChange}
-        slot={slot}
-        label={label}
-        value={value}
-      />
-    );
-  }
+const SERVICES_BACKGROUND_LABEL_SLOTS: Record<string, ServicesColorSlot> = {
+  Color: 'sectionBackground',
+  'Gradient start': 'sectionGradientFrom',
+  'Gradient end': 'sectionGradientTo',
+  'Color A': 'sectionSplitA',
+  'Color B': 'sectionSplitB',
+};
+
+/** Mini wireframe canvas — shared settings-UI chrome (`.pf-stack-*` classes are generic,
+ *  not Stack-specific — reused across every section panel that has this Header mechanism). */
+function ServicesMiniSlide({ children }: { children: ReactNode }) {
   return (
-    <ServicesManualColorField label={label} value={value} onChange={onManualChange} />
+    <svg viewBox="0 0 120 72" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
+      <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
+      {children}
+    </svg>
   );
 }
 
-function ServicesPalettePanel({
-  services,
+function ServicesMiniType({
+  x,
+  y,
+  children,
+  size = 8,
+  anchor = 'start',
+}: {
+  x: number;
+  y: number;
+  children: string;
+  size?: number;
+  anchor?: 'start' | 'middle' | 'end';
+}) {
+  return (
+    <text
+      className="pf-stack-mini-type"
+      x={x}
+      y={y}
+      fontSize={size}
+      fontWeight={700}
+      letterSpacing="0.1em"
+      textAnchor={anchor}
+    >
+      {children}
+    </text>
+  );
+}
+
+/** Expandable picker card — same mechanism as Stack/Contact's own design picker grid. */
+function ServicesPickerCard({
+  active,
+  label,
+  onClick,
+  children,
+  compact,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  children: ReactNode;
+  /** Smaller padding/type for secondary preview-card grids (colors, styles, …). */
+  compact?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={label}
+      title={label}
+      data-active={active ? 'true' : 'false'}
+      onClick={onClick}
+      className={`pf-stack-design-card rounded-2xl text-left ${compact ? 'pf-stack-preview-card' : 'px-3 pb-3 pt-2.5'}`}
+    >
+      {active ? (
+        <span
+          aria-hidden
+          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
+        >
+          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
+            <path
+              d="M4 10.5l3.5 3.5L16 6"
+              stroke="white"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      ) : null}
+      {children}
+      <span className={compact ? 'mt-1.5 block' : 'mt-2.5 block'}>
+        <span
+          className={`pf-stack-card-label min-w-0 font-semibold leading-none tracking-tight ${compact ? 'text-xs' : 'text-sm'}`}
+        >
+          {label}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+/** Compact segmented pill picker — for simple choices (alignment, weight) where a big
+ *  descriptive card is overkill. Same mechanism as Stack/Contact's own OptionGrid. */
+function ServicesOptionGrid<T extends string | number>({
+  label,
+  options,
+  value,
+  onChange,
+  columns,
+  icons,
+}: {
+  label: string;
+  options: { value: T; label: string; description?: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  columns?: number;
+  icons?: Partial<Record<string, ReactNode>>;
+}) {
+  const count = options.length;
+  const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
+  const compact = cols === count && count >= 2 && count <= 5;
+  return (
+    <div>
+      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="pf-stack-segment grid gap-[3px] p-[3px]"
+        data-compact={compact ? 'true' : 'false'}
+        style={{
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+        }}
+      >
+        {options.map((option) => {
+          const active = option.value === value;
+          const icon = icons?.[String(option.value)];
+          return (
+            <button
+              key={String(option.value)}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.description}
+              onClick={() => onChange(option.value)}
+              data-active={active ? 'true' : 'false'}
+              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
+              style={
+                active
+                  ? undefined
+                  : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }
+              }
+            >
+              {icon ? <span className="pf-stack-segment-icon">{icon}</span> : null}
+              <span>{option.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Ordered-scale slider — for size/spacing progressions (bottom spacing). Same
+ *  mechanism as Stack/Contact's own Slider: one drag surface snapping between steps. */
+function ServicesSlider<T extends string>({
+  label,
+  value,
+  options,
   onChange,
 }: {
-  services: PortfolioServicesSectionSettings;
-  onChange: (patch: Partial<PortfolioServicesSectionSettings>) => void;
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (value: T) => void;
 }) {
-  const palette = mergeServicesPalette(DEFAULT_SERVICES_PALETTE, services.servicesPalette);
-  const bindings = mergeServicesColorBindings(
-    DEFAULT_SERVICES_COLOR_BINDINGS,
-    services.servicesColorBindings
+  const index = Math.max(
+    0,
+    options.findIndex((option) => option.value === value)
   );
+  const lastIndex = options.length - 1;
+  const percent = lastIndex > 0 ? (index / lastIndex) * 100 : 0;
+  const current = options[index] ?? options[0];
   return (
-    <div className="space-y-6">
-      <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-600">
-        The site color palette lives in <span className="font-semibold">Global → Theme</span> as a
-        coupled dark / light pair. This section no longer has its own Mode sombre / Mode clair editor.
-      </p>
+    <div>
+      <div className="pf-stack-slider-row">
+        <span className="pf-stack-slider-label">{label}</span>
+        <span className="pf-stack-slider-value">{current?.label}</span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={Math.max(lastIndex, 0)}
+        step={1}
+        value={index}
+        onChange={(event) => {
+          const next = options[Number(event.target.value)];
+          if (next) onChange(next.value);
+        }}
+        aria-label={label}
+        className="pf-stack-slider-input"
+        style={{
+          background: `linear-gradient(to right, var(--pf-palette-texte-fort, #f5f5f5) ${percent}%, color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a)) ${percent}%)`,
+        }}
+      />
+    </div>
+  );
+}
 
+/** Visual-difference choice (color tokens, styles) — a compact preview card per option,
+ *  same mechanism as Stack/Contact's own preview card grid. */
+function ServicesPreviewCardGrid<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  columns,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string; glyph: ReactNode }[];
+  onChange: (value: T) => void;
+  columns?: number;
+}) {
+  const cols = columns ?? Math.min(options.length, 4);
+  return (
+    <div>
+      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="grid gap-2"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
+        {options.map((option) => (
+          <ServicesPickerCard
+            key={option.value}
+            active={option.value === value}
+            label={option.label}
+            onClick={() => onChange(option.value)}
+            compact
+          >
+            <svg viewBox="0 0 64 34" className="pf-stack-mini h-full w-full" aria-hidden>
+              <rect className="pf-stack-mini-stage" x="0.75" y="0.75" width="62.5" height="32.5" rx="6" />
+              {option.glyph}
+            </svg>
+          </ServicesPickerCard>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Mini "N equal bars" preview for a cards-per-row picker — mirrors Work Board's
+ *  `workColumnsGlyph`, adapted to the 64×34 stage used by `ServicesPreviewCardGrid`. */
+function servicesPricingColumnsGlyph(n: 1 | 2 | 3 | 4): ReactNode {
+  const stageX = 5;
+  const stageWidth = 54;
+  const gap = 3;
+  const barWidth = (stageWidth - gap * (n - 1)) / n;
+  return (
+    <>
+      {Array.from({ length: n }, (_, i) => (
+        <rect
+          key={i}
+          className="pf-stack-mini-ink"
+          x={stageX + i * (barWidth + gap)}
+          y={9}
+          width={barWidth}
+          height={16}
+          rx={2}
+        />
+      ))}
+    </>
+  );
+}
+
+/** Collapsed-state row shared by the Header design choice grid: a compact scaled-down
+ *  thumbnail, the selected design's name, and a trailing chevron — the whole row opens
+ *  the grid. Same mechanism as Stack/Contact's own design summary row. */
+function ServicesDesignSummaryRow({
+  label,
+  name,
+  onOpen,
+  children,
+}: {
+  label: string;
+  name: string;
+  onOpen: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <p className="pf-stack-block-label">{label}</p>
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`Change ${label.toLowerCase()}`}
+        className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
+      >
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+          <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
+            {children}
+          </span>
+        </span>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{name}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+          <path
+            d="M7.5 4.5l5 5.5-5 5.5"
+            stroke="currentColor"
+            strokeWidth={1.75}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+/** S/M/L/XL, each button's own label rendered at the size it represents —
+ *  the pill illustrates the scale directly, no separate value readout needed. */
+const SERVICES_SIZE_PILL_OPTIONS: { value: PortfolioServicesHeaderTitleSize; label: string; fontPx: number }[] = [
+  { value: 'sm', label: 'S', fontPx: 12 },
+  { value: 'md', label: 'M', fontPx: 15 },
+  { value: 'lg', label: 'L', fontPx: 18 },
+  { value: 'xl', label: 'XL', fontPx: 22 },
+];
+
+function ServicesSizePill({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: PortfolioServicesHeaderTitleSize;
+  onChange: (value: PortfolioServicesHeaderTitleSize) => void;
+}) {
+  return (
+    <div>
+      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="pf-stack-segment grid grid-cols-4 gap-[3px] p-[3px]"
+        data-compact="true"
+      >
+        {SERVICES_SIZE_PILL_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.label}
+              onClick={() => onChange(option.value)}
+              data-active={active ? 'true' : 'false'}
+              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-2 font-semibold leading-none"
+              style={{ fontSize: `${option.fontPx}px` }}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Mini swatch for a palette-token color picker — the actual resolved color,
+ *  not just a text label. */
+function servicesHeaderPaletteTokenGlyph(token: PortfolioServicesHeaderPaletteToken): ReactNode {
+  return (
+    <circle
+      cx="32"
+      cy="17"
+      r="8"
+      fill={servicesHeaderPaletteTokenColor(token)}
+      style={{
+        stroke: 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, transparent)',
+        strokeWidth: 1,
+      }}
+    />
+  );
+}
+
+function servicesHeaderBillboardWordStyleGlyph(style: PortfolioServicesHeaderBillboardWordStyle): ReactNode {
+  switch (style) {
+    case 'outline':
+      return (
+        <text
+          x="32"
+          y="23"
+          textAnchor="middle"
+          fontSize="19"
+          fontWeight={900}
+          stroke="currentColor"
+          strokeWidth="1"
+          className="pf-stack-mini-ink"
+          style={{ fill: 'none' }}
+        >
+          Aa
+        </text>
+      );
+    case 'fill':
+      return (
+        <>
+          <text
+            x="32"
+            y="23"
+            textAnchor="middle"
+            fontSize="19"
+            fontWeight={900}
+            className="pf-stack-mini-ink"
+            opacity={0.4}
+            style={{ filter: 'blur(2px)' }}
+          >
+            Aa
+          </text>
+          <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-stack-mini-ink">
+            Aa
+          </text>
+        </>
+      );
+    case 'simple':
+      return (
+        <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-stack-mini-ink">
+          Aa
+        </text>
+      );
+    default: {
+      const _exhaustive: never = style;
+      return _exhaustive;
+    }
+  }
+}
+
+/** Mini wireframes for the 8 Header design picker cards — same ServicesMiniSlide mechanism
+ *  as the generic shapes Stack/Contact use for their own Header design picker. */
+function ServicesHeaderDesignWireframe({ design }: { design: PortfolioServicesHeaderDesign }) {
+  switch (design) {
+    case 'editorial':
+      return (
+        <ServicesMiniSlide>
+          <rect className="pf-stack-mini-accent" x="10" y="16" width="18" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="10" y="26" width="64" height="9" rx="2" />
+          <rect className="pf-stack-mini-mute" x="10" y="42" width="46" height="4" rx="2" />
+        </ServicesMiniSlide>
+      );
+    case 'marquee':
+      return (
+        <ServicesMiniSlide>
+          <text
+            x="60"
+            y="34"
+            fontSize={22}
+            fontWeight={800}
+            textAnchor="middle"
+            opacity={0.14}
+            className="pf-stack-mini-ink"
+          >
+            SERVICES
+          </text>
+          <rect className="pf-stack-mini-ink" x="18" y="30" width="84" height="10" rx="2" />
+        </ServicesMiniSlide>
+      );
+    case 'index':
+      return (
+        <ServicesMiniSlide>
+          <rect className="pf-stack-mini-mute" x="10" y="12" width="4" height="4" />
+          <rect className="pf-stack-mini-mute" x="20" y="13" width="90" height="1" />
+          <ServicesMiniType x={10} y={40} size={22}>
+            04
+          </ServicesMiniType>
+          <rect className="pf-stack-mini-mute" x="46" y="22" width="1" height="18" />
+          <rect className="pf-stack-mini-ink" x="54" y="24" width="46" height="7" rx="2" />
+        </ServicesMiniSlide>
+      );
+    case 'accent-count':
+      return (
+        <ServicesMiniSlide>
+          <rect className="pf-stack-mini-accent" x="10" y="12" width="26" height="8" rx="4" />
+          <rect className="pf-stack-mini-mute" x="10" y="26" width="40" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="10" y="33" width="60" height="7" rx="2" />
+        </ServicesMiniSlide>
+      );
+    case 'serif-lead':
+      return (
+        <ServicesMiniSlide>
+          <rect className="pf-stack-mini-mute" x="10" y="14" width="20" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="10" y="24" width="76" height="11" rx="2" />
+        </ServicesMiniSlide>
+      );
+    case 'billboard':
+      return (
+        <ServicesMiniSlide>
+          <text
+            x="60"
+            y="30"
+            fontSize={26}
+            fontWeight={900}
+            textAnchor="middle"
+            opacity={0.1}
+            className="pf-stack-mini-ink"
+          >
+            SERVICES
+          </text>
+          <rect className="pf-stack-mini-ink" x="18" y="30" width="60" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="18" y="42" width="40" height="3" rx="1.5" />
+        </ServicesMiniSlide>
+      );
+    case 'masthead':
+      return (
+        <ServicesMiniSlide>
+          <rect className="pf-stack-mini-mute" x="10" y="12" width="100" height="1" />
+          <rect className="pf-stack-mini-ink" x="10" y="20" width="100" height="12" rx="2" />
+          <rect className="pf-stack-mini-mute" x="10" y="38" width="100" height="1" />
+        </ServicesMiniSlide>
+      );
+    case 'split-heading':
+      return (
+        <ServicesMiniSlide>
+          <rect className="pf-stack-mini-ink" x="10" y="20" width="58" height="10" rx="2" />
+          <rect className="pf-stack-mini-mute" x="86" y="18" width="24" height="3" rx="1.5" />
+        </ServicesMiniSlide>
+      );
+    default: {
+      const _exhaustive: never = design;
+      return _exhaustive;
+    }
+  }
+}
+
+/** Same collapsed-preview / expand-to-grid mechanism as Stack/Contact's own Header design picker. */
+function ServicesHeaderChoiceGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioServicesHeaderDesign;
+  onChange: (value: PortfolioServicesHeaderDesign) => void;
+}) {
+  const [showGrid, setShowGrid] = useState(false);
+  const selected =
+    PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
+    PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS[0];
+
+  if (showGrid) {
+    return (
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Color bindings
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Pick which Global token each section color uses. Swatches preview the active mode.
-        </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {PORTFOLIO_SERVICES_COLOR_SLOT_OPTIONS.map((slot) => {
-            const resolved = resolveHeroPaletteColor(palette, bindings[slot.value]);
+        <div className="flex items-center justify-between gap-3">
+          <p className="pf-stack-block-label !mb-0">Header design</p>
+          <button
+            type="button"
+            onClick={() => setShowGrid(false)}
+            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+          >
+            ← Back
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          {PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS.map((option) => {
+            const active = option.value === value;
             return (
-              <div
-                key={slot.value}
-                className="rounded-2xl border border-neutral-200/80 bg-white px-3 py-3"
+              <ServicesPickerCard
+                key={option.value}
+                active={active}
+                label={option.label}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-neutral-800">{slot.label}</span>
-                  <span
-                    className="h-5 w-5 shrink-0 rounded-full border border-neutral-200"
-                    style={{ backgroundColor: resolved }}
-                    aria-hidden
-                  />
-                </div>
-                <select
-                  value={bindings[slot.value]}
-                  onChange={(event) =>
-                    onChange(
-                      asServicesPatch(
-                        patchServicesColorBinding(
-                          services,
-                          slot.value,
-                          event.target.value as HeroPaletteTokenId
-                        )
-                      )
-                    )
-                  }
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
-                >
-                  {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
-                    <option key={token.value} value={token.value}>
-                      {token.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1.5 text-xs text-neutral-500">{slot.description}</p>
-              </div>
+                <ServicesHeaderDesignWireframe design={option.value} />
+              </ServicesPickerCard>
             );
           })}
         </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <ServicesDesignSummaryRow label="Header design" name={selected.label} onOpen={() => setShowGrid(true)}>
+      <ServicesHeaderDesignWireframe design={value} />
+    </ServicesDesignSummaryRow>
   );
 }
 
-function ServicesInlineTypography({
+const SERVICES_HEADER_MARGIN_BOTTOM_OPTIONS = [
+  { value: 'sm' as const, label: 'Small' },
+  { value: 'md' as const, label: 'Medium' },
+  { value: 'lg' as const, label: 'Large' },
+  { value: 'xl' as const, label: 'XL' },
+];
+
+const SERVICES_HEADER_TITLE_WEIGHT_OPTIONS = [
+  { value: 'light' as const, label: 'Light', description: 'Lighter than this design’s default.' },
+  { value: 'regular' as const, label: 'Regular', description: 'This design’s default weight.' },
+  { value: 'semibold' as const, label: 'Semibold', description: 'A step bolder.' },
+  { value: 'bold' as const, label: 'Bold', description: 'The boldest step.' },
+];
+
+/** Shared across every Header design — bottom spacing, title size, and title weight.
+ *  Appended to each design's own advanced-settings branch in the Header tab.
+ *  `hideAlignment`/`hideTitleControls` drop controls a given design doesn't
+ *  actually consume (e.g. Billboard has no adjustable title size/weight and
+ *  ignores header alignment) — dead controls left visible are confusing. */
+function ServicesHeaderSharedAdvancedControls({
   services,
   onChange,
-  target,
-  title = 'Typographie',
-  extra,
+  hideAlignment = false,
+  hideTitleControls = false,
 }: {
   services: PortfolioServicesSectionSettings;
   onChange: (patch: Partial<PortfolioServicesSectionSettings>) => void;
-  target: PortfolioServicesStyleTarget;
-  title?: string;
-  extra?: ReactNode;
+  hideAlignment?: boolean;
+  hideTitleControls?: boolean;
 }) {
-  const elementStyles = normalizeServicesElementStyles(services.elementStyles);
-  const textRole =
-    target === 'skillTitle' ||
-    target === 'cardTitle' ||
-    target === 'price' ||
-    target === 'blockSubheading'
-      ? ('title' as const)
-      : target === 'cta'
-        ? ('label' as const)
-        : ('body' as const);
   return (
-    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-      <PortfolioElementStyleFields
-        targets={PORTFOLIO_SERVICES_STYLE_TARGET_OPTIONS}
-        activeTarget={target}
-        onTargetChange={() => {}}
-        hideTargetPicker
-        title={title}
-        textRole={textRole}
-        style={elementStyles[target]}
-        onStyleChange={(patch) =>
-          onChange({ elementStyles: patchServicesElementStyle(elementStyles, target, patch) })
-        }
-        showDarkColor={services.useHeroPalette === false}
-        renderColorField={({ label, value }) => (
-          <ServicesColorField
-            services={services}
-            onChange={onChange}
-            slot={SERVICES_STYLE_TARGET_COLOR_SLOT[target]}
-            label={label}
-            value={value}
-          />
-        )}
-        renderDarkColorField={({ label, value, onChange: onDark }) => (
-          <ServicesManualColorField
-            label={label}
-            description="Used when Global → Theme is Dark and the section palette is off."
-            value={value}
-            onChange={onDark}
-          />
-        )}
-        extra={extra}
+    <>
+      {hideAlignment ? null : (
+        <ServicesOptionGrid
+          label="Header alignment"
+          options={[
+            { value: 'left' as const, label: 'Left', description: 'Default editorial alignment.' },
+            { value: 'center' as const, label: 'Center', description: 'Centered title and subtitle.' },
+            { value: 'right' as const, label: 'Right', description: 'Right-aligned title and subtitle.' },
+          ]}
+          value={services.headerDesignAlignment}
+          onChange={(headerDesignAlignment: PortfolioServicesHeaderDesignAlignment) => onChange({ headerDesignAlignment })}
+          columns={3}
+        />
+      )}
+      <ServicesSlider
+        label="Bottom spacing"
+        options={SERVICES_HEADER_MARGIN_BOTTOM_OPTIONS}
+        value={services.headerMarginBottom ?? 'md'}
+        onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
       />
-    </div>
-  );
-}
-
-function ServicesElementChromeControls({
-  services,
-  chromeId,
-  onChange,
-  title = 'Fond de l’élément',
-  description = 'Ajoute un fond derrière cet élément — padding, marge, couleur et bordure.',
-}: {
-  services: PortfolioServicesSectionSettings;
-  chromeId: PortfolioServicesElementChromeId;
-  onChange: (patch: Partial<PortfolioServicesSectionSettings>) => void;
-  title?: string;
-  description?: string;
-}) {
-  const chrome =
-    services.elementChromes?.[chromeId] ?? DEFAULT_SERVICES_ELEMENT_CHROMES[chromeId];
-  const slots = SERVICES_ELEMENT_CHROME_COLOR_SLOTS[chromeId];
-
-  const patchChrome = (patch: Partial<typeof chrome>) => {
-    const nextChromes = patchServicesElementChrome(
-      services.elementChromes ?? DEFAULT_SERVICES_ELEMENT_CHROMES,
-      chromeId,
-      patch
-    );
-    if (services.useHeroPalette === false) {
-      onChange({ elementChromes: nextChromes });
-      return;
-    }
-    // Keep chrome fill/border hex in sync with the bound palette token.
-    onChange(
-      asServicesPatch(
-        applyServicesPaletteToSettings({
-          ...services,
-          elementChromes: nextChromes,
-        })
-      )
-    );
-  };
-
-  return (
-    <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-      <div>
-        <p className="text-sm font-semibold text-neutral-950">{title}</p>
-        <p className="mt-1 text-sm text-neutral-500">{description}</p>
-      </div>
-      <ServicesToggleRow
-        label="Activer le fond"
-        description="Encadre cet élément avec un fond et optionnellement une bordure."
-        checked={chrome.enabled}
-        onChange={(enabled) => patchChrome({ enabled })}
-      />
-      {chrome.enabled ? (
+      {hideTitleControls ? null : (
         <>
-          <ServicesToggleRow
-            label="Remplissage"
-            description="Couleur de fond derrière le texte."
-            checked={chrome.backgroundEnabled}
-            onChange={(backgroundEnabled) => patchChrome({ backgroundEnabled })}
-          />
-          {chrome.backgroundEnabled ? (
-            <ServicesColorField
-              services={services}
-              onChange={onChange}
-              slot={slots.background}
-              label="Couleur de fond"
-              value={chrome.backgroundColor}
-            />
-          ) : null}
-          <ServicesOptionGrid
-            label="Bordure"
-            options={PORTFOLIO_SERVICES_CARD_BORDER_OPTIONS}
-            value={chrome.border}
-            onChange={(border) => patchChrome({ border })}
-            columns={2}
-          />
-          {chrome.border === 'soft' || chrome.border === 'solid' ? (
-            <ServicesColorField
-              services={services}
-              onChange={onChange}
-              slot={slots.border}
-              label="Couleur de bordure"
-              value={chrome.borderColor}
-            />
-          ) : null}
-          <ServicesOptionGrid
-            label="Coins"
-            options={PORTFOLIO_SERVICES_CARD_RADIUS_OPTIONS}
-            value={chrome.borderRadius}
-            onChange={(borderRadius) => patchChrome({ borderRadius })}
-            columns={2}
+          <ServicesSizePill
+            label="Title size"
+            value={services.headerTitleSize ?? 'md'}
+            onChange={(headerTitleSize) => onChange({ headerTitleSize })}
           />
           <ServicesOptionGrid
-            label="Padding (intérieur)"
-            options={PORTFOLIO_SERVICES_CARD_PADDING_OPTIONS}
-            value={chrome.padding}
-            onChange={(padding) => patchChrome({ padding })}
-            columns={2}
-          />
-          <ServicesOptionGrid
-            label="Marge (extérieur)"
-            options={PORTFOLIO_SERVICES_CARD_PADDING_OPTIONS}
-            value={chrome.margin}
-            onChange={(margin) => patchChrome({ margin })}
-            columns={2}
+            label="Title weight"
+            options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+            value={services.headerTitleWeight ?? 'regular'}
+            onChange={(headerTitleWeight: PortfolioServicesHeaderTitleWeight) => onChange({ headerTitleWeight })}
+            columns={4}
           />
         </>
-      ) : null}
-    </div>
+      )}
+    </>
+  );
+}
+
+/** Titled bordered band grouping the active Header design's settings — remounts (via
+ *  `motionKey`) when the design changes so per-design fields don't carry stale focus/state. */
+function ServicesLayoutSettingsBand({
+  children,
+  motionKey,
+  title = 'Header design settings',
+}: {
+  children: ReactNode;
+  motionKey: string;
+  title?: string;
+}) {
+  return (
+    <section className="pf-stack-layout-settings" aria-labelledby="services-layout-settings-title">
+      <h3 id="services-layout-settings-title" className="pf-stack-layout-settings-title">
+        {title}
+      </h3>
+      <div key={motionKey} className="pf-stack-layout-settings-body space-y-6">
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -991,2323 +1101,992 @@ export function ServicesSettingsPanel({
   onChange,
   subSection: controlledSubSection,
   onSubSectionChange,
-  settingsFocus = 'services',
+  availableServices = [],
 }: {
   services: PortfolioServicesSectionSettings;
   onChange: (patch: Partial<PortfolioServicesSectionSettings>) => void;
   subSection?: ServicesSubSection;
   onSubSectionChange?: (value: ServicesSubSection) => void;
-  /** Top-level settings entry: Skills and Services are independent. */
   settingsFocus?: ServicesSettingsFocus;
+  /** Real service items (id + title) from the live preview — powers the "Featured card"
+   *  picker below so the creator picks by actual title instead of a bare index. */
+  availableServices?: { id: string; title: string }[];
 }) {
-  const focusSubSections = subSectionsForFocus(settingsFocus);
-  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<ServicesSubSection>('header');
-  const rawSubSection = normalizeServicesSubSection(
-    controlledSubSection ?? uncontrolledSubSection,
-    settingsFocus
-  );
-  const subSection = focusSubSections.some((item) => item.id === rawSubSection)
-    ? rawSubSection
-    : (focusSubSections[0]?.id ?? 'header');
+  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<ServicesSubSection>('general');
+  const subSection = normalizeServicesSubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: ServicesSubSection) => {
-    const next = normalizeServicesSubSection(value, settingsFocus);
+    const next = normalizeServicesSubSection(value);
     onSubSectionChange?.(next);
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
-  const activeMeta =
-    focusSubSections.find((item) => item.id === subSection) ?? focusSubSections[0];
-  const blockScope: PortfolioServicesBlockScope = settingsFocus;
-  const usesSplitBlocks = servicesUsesSplitBlockConfig(services.sectionOrganization);
-
-  const patchBlock = (patch: Parameters<typeof patchServicesBlockSettings>[2]) =>
-    onChange(patchServicesBlockSettings(services, blockScope, patch));
-
-  /** Combined mode writes section + both blocks so design/frame stay in sync with the preview. */
-  const patchFrame = (patch: Parameters<typeof patchServicesBlockSettings>[2]) => {
-    if (usesSplitBlocks) {
-      patchBlock(patch);
-      return;
-    }
-    onChange({
-      ...patch,
-      skillsBlock: { ...services.skillsBlock, ...patch },
-      servicesBlock: { ...services.servicesBlock, ...patch },
-    });
-  };
-
-  const readBlock = <K extends keyof import('@/components/portfolio/portfolio-services-settings').PortfolioServicesBlockSettings>(
-    field: K
-  ) => readServicesBlockField(services, blockScope, field);
-
-  const activeFrameSettings = usesSplitBlocks
-    ? services[blockScope === 'skills' ? 'skillsBlock' : 'servicesBlock']
-    : services;
-  const isPillCloudLayout =
-    blockScope === 'skills' && readBlock('galleryLayout') === 'pill-cloud';
-  const isToolInspectorLayout =
-    blockScope === 'skills' && readBlock('galleryLayout') === 'tool-inspector';
-  const isSkillsSpecialLayout = isPillCloudLayout || isToolInspectorLayout;
-
   return (
-    <div className="space-y-5">
-      <div>
-        <label className="block text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Sub-section
-        </label>
-        <select
-          value={subSection}
-          onChange={(event) => setSubSection(event.target.value as ServicesSubSection)}
-          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900"
-        >
-          {focusSubSections.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-        <p className="mt-2 text-sm text-neutral-500">{activeMeta?.description}</p>
+    <div className="space-y-6">
+      <div className="flex flex-wrap gap-2">
+        {SERVICES_SUB_SECTIONS.map((section) => (
+          <button
+            key={section.id}
+            type="button"
+            onClick={() => setSubSection(section.id)}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+              subSection === section.id
+                ? 'bg-neutral-900 text-white'
+                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+            }`}
+          >
+            {section.label}
+          </button>
+        ))}
       </div>
 
       {subSection === 'general' ? (
-        <>
-          {settingsFocus === 'skills' ? (
-            <ServicesToggleRow
-              label="Show Skills section"
-              description="Display the Skills section on your public portfolio."
-              checked={services.showSkills !== false}
-              onChange={(showSkills) =>
-                onChange({
-                  showSkills,
-                  enabled: showSkills || services.showServices !== false,
-                  sectionOrganization: 'distinct',
-                  layoutMode: 'separated',
-                })
-              }
-            />
-          ) : (
-            <ServicesToggleRow
-              label="Show Services section"
-              description="Display the Services section on your public portfolio."
-              checked={services.showServices !== false}
-              onChange={(showServices) =>
-                onChange({
-                  showServices,
-                  enabled: showServices || services.showSkills !== false,
-                  sectionOrganization: 'distinct',
-                  layoutMode: 'separated',
-                })
-              }
-            />
-          )}
+        <div className="space-y-6">
+          <ServicesToggleRow
+            label="Show Services section"
+            checked={services.showServices !== false}
+            onChange={(showServices) =>
+              onChange({
+                showServices,
+                enabled: showServices || services.showSkills !== false,
+                sectionOrganization: 'distinct',
+                layoutMode: 'separated',
+              })
+            }
+          />
+
           <SectionColorModeControl
             value={services.colorModeOverride}
             onChange={(colorModeOverride) => onChange({ colorModeOverride })}
           />
-          {settingsFocus === 'services' ? (
-            <ServicesToggleRow
-              label="Show response time"
-              description="Typically replies label in the section header."
-              checked={services.showResponseTime}
-              onChange={(showResponseTime) => onChange({ showResponseTime })}
-            />
-          ) : null}
-          <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-600">
-            Skills et Services sont des sections{' '}
-            <span className="font-semibold text-neutral-800">indépendantes</span> — réordonnez-les dans
-            Global → Section order.
-          </p>
-        </>
-      ) : null}
 
-      {subSection === 'header' ? (
-        <>
-          <p className="rounded-2xl border border-violet-200/80 bg-violet-50/40 px-4 py-3 text-sm text-neutral-600">
-            En-tête de la section{' '}
-            <span className="font-semibold text-neutral-900">
-              {settingsFocus === 'skills' ? 'Skills' : 'Services'}
-            </span>
-            .
-          </p>
-          <ServicesDistinctHeaderPanel
-            services={services}
-            blockScope={blockScope}
-            onChange={onChange}
-          />
-        </>
-      ) : null}
+          <div className="space-y-5">
+            <ServicesSectionLabel>Content visibility</ServicesSectionLabel>
 
-      {subSection === 'cards' ? (
-        <>
-          {usesSplitBlocks ? (
-            <>
-              <p className="text-sm text-neutral-500">
-                Design, stage et cadre pour{' '}
-                <span className="font-semibold text-neutral-800">
-                  {settingsFocus === 'skills' ? 'Skills' : 'Services'}
-                </span>
-                .
-              </p>
-              <ServicesOptionGrid
-                label={blockScope === 'skills' ? 'Design des outils / skills' : 'Design des services'}
-                options={
-                  blockScope === 'skills'
-                    ? PORTFOLIO_SKILLS_GALLERY_LAYOUT_OPTIONS
-                    : PORTFOLIO_SERVICES_GALLERY_LAYOUT_OPTIONS
-                }
-                value={readBlock('galleryLayout')}
-                onChange={(galleryLayout) => {
-                  if (blockScope === 'services') {
-                    onChange(switchServicesGalleryLayout(galleryLayout, services));
-                    return;
-                  }
-                  patchBlock({
-                    galleryLayout,
-                    ...(galleryLayout === 'pill-cloud' || galleryLayout === 'tool-inspector'
-                      ? { displayMode: 'grid' as const }
-                      : {}),
-                  });
-                  if (galleryLayout === 'tool-inspector') {
-                    onChange({
-                      showSkillDescription: true,
-                      showSkillCurrentlyUsed: false,
-                      skillsInspectorShowHint: false,
-                    });
-                  }
-                }}
-                columns={2}
+            <div className="space-y-3">
+              <ServicesGroupLabel>Section</ServicesGroupLabel>
+              <ServicesToggleRow
+                label="Subheading"
+                checked={services.showServicesSubheading !== false}
+                onChange={(showServicesSubheading) => onChange({ showServicesSubheading })}
               />
-
-              {isToolInspectorLayout ? (
-                <div className="space-y-3 rounded-2xl border border-sky-200/80 bg-sky-50/50 px-4 py-3">
-                  <p className="text-sm font-semibold text-neutral-950">Tool inspector</p>
-                  <p className="text-sm text-neutral-600">
-                    Rail d&apos;icônes vertical ou horizontal + panneau détail.
-                  </p>
-                  <ServicesOptionGrid
-                    label="Position du rail"
-                    options={[
-                      {
-                        value: 'left',
-                        label: 'Gauche',
-                        description: 'Icônes à gauche, détail à droite.',
-                      },
-                      {
-                        value: 'right',
-                        label: 'Droite',
-                        description: 'Détail à gauche, icônes à droite.',
-                      },
-                      {
-                        value: 'top',
-                        label: 'En haut',
-                        description: 'Icônes alignées horizontalement au-dessus du détail.',
-                      },
-                    ]}
-                    value={services.skillsInspectorRailPlacement}
-                    onChange={(skillsInspectorRailPlacement) =>
-                      onChange({ skillsInspectorRailPlacement })
-                    }
-                    columns={3}
-                  />
-                  <ServicesToolInspectorAdvancedFields
-                    services={services}
-                    onChange={onChange}
-                  />
-                  <ServicesToggleRow
-                    label="Afficher la description"
-                    description="Texte détaillé sous le nom de l’outil. Activé par défaut pour ce design."
-                    checked={services.showSkillDescription !== false}
-                    onChange={(showSkillDescription) => onChange({ showSkillDescription })}
-                  />
-                  <ServicesToggleRow
-                    label="Afficher le niveau"
-                    description="Ligne « Niveau : … / catégorie »."
-                    checked={services.showSkillLevel !== false}
-                    onChange={(showSkillLevel) => onChange({ showSkillLevel })}
-                  />
-                  <ServicesToggleRow
-                    label="Afficher les cas d’usage"
-                    description="Chips « Cas d’usage pratiques »."
-                    checked={services.showSkillUseCases !== false}
-                    onChange={(showSkillUseCases) => onChange({ showSkillUseCases })}
-                  />
-                  <ServicesToggleRow
-                    label="Afficher l’expérience"
-                    description="Années / libellé en pied de panneau."
-                    checked={services.showSkillExperience !== false}
-                    onChange={(showSkillExperience) => onChange({ showSkillExperience })}
-                  />
-                </div>
-              ) : null}
-
-              {blockScope === 'services' &&
-              readBlock('galleryLayout') === 'commercial-list' ? (
-                <div className="space-y-6 rounded-2xl border border-neutral-200/80 bg-neutral-50/70 p-4">
-                  <div>
-                    <p className="text-sm font-semibold text-neutral-950">
-                      Réglages Liste commerciale
-                    </p>
-                    <p className="mt-1 text-sm text-neutral-500">
-                      Espacements, proportions des colonnes et offre mise en avant.
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Offre populaire
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {[0, 1, 2, 3, 4, 5, 6].map((itemNumber) => {
-                        const active =
-                          (services.commercialPopularItemNumber ?? 2) === itemNumber;
-                        return (
-                          <button
-                            key={itemNumber}
-                            type="button"
-                            onClick={() =>
-                              onChange({ commercialPopularItemNumber: itemNumber })
-                            }
-                            className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
-                              active
-                                ? 'border-neutral-950 bg-neutral-950 text-white'
-                                : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400'
-                            }`}
-                          >
-                            {itemNumber === 0 ? 'Aucune' : `Offre ${itemNumber}`}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <label className="block">
-                      <span className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Texte du badge
-                      </span>
-                      <input
-                        type="text"
-                        maxLength={40}
-                        value={services.commercialPopularLabel ?? 'Popular'}
-                        onChange={(event) =>
-                          onChange({ commercialPopularLabel: event.target.value })
-                        }
-                        placeholder="Popular"
-                        className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm"
-                      />
-                    </label>
-                  </div>
-
-                  {[
-                    {
-                      label: 'Espace entre les offres',
-                      description: 'Distance verticale entre chaque ligne.',
-                      value: services.commercialRowGapPx ?? 20,
-                      min: 0,
-                      max: 80,
-                      patch: (value: number) => ({ commercialRowGapPx: value }),
-                    },
-                    {
-                      label: 'Espace interne',
-                      description: 'Distance entre titre, description et tâches.',
-                      value: services.servicesContentGapPx ?? 14,
-                      min: 0,
-                      max: 48,
-                      patch: (value: number) => ({
-                        servicesContentGap: 'custom' as const,
-                        servicesContentGapPx: value,
-                      }),
-                    },
-                    {
-                      label: 'Espace horizontal',
-                      description: 'Distance entre numéro, contenu, prix et bouton.',
-                      value: services.commercialColumnGapPx ?? 48,
-                      min: 12,
-                      max: 80,
-                      patch: (value: number) => ({ commercialColumnGapPx: value }),
-                    },
-                    {
-                      label: 'Taille du numéro',
-                      description: 'Diamètre du marqueur numéroté.',
-                      value: services.commercialMarkerSizePx ?? 48,
-                      min: 32,
-                      max: 72,
-                      patch: (value: number) => ({ commercialMarkerSizePx: value }),
-                    },
-                    {
-                      label: 'Largeur prix',
-                      description: 'Largeur de la colonne du tarif sur grand écran.',
-                      value: services.commercialPriceWidthPx ?? 200,
-                      min: 112,
-                      max: 320,
-                      patch: (value: number) => ({ commercialPriceWidthPx: value }),
-                    },
-                    {
-                      label: 'Largeur bouton',
-                      description: 'Largeur de la colonne CTA sur grand écran.',
-                      value: services.commercialCtaWidthPx ?? 210,
-                      min: 112,
-                      max: 320,
-                      patch: (value: number) => ({ commercialCtaWidthPx: value }),
-                    },
-                  ].map((control) => (
-                    <label key={control.label} className="block">
-                      <span className="flex items-center justify-between gap-4">
-                        <span>
-                          <span className="block text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                            {control.label}
-                          </span>
-                          <span className="mt-1 block text-sm text-neutral-500">
-                            {control.description}
-                          </span>
-                        </span>
-                        <span className="shrink-0 tabular-nums text-sm font-semibold text-neutral-800">
-                          {control.value}px
-                        </span>
-                      </span>
-                      <input
-                        type="range"
-                        min={control.min}
-                        max={control.max}
-                        step={1}
-                        value={control.value}
-                        onChange={(event) =>
-                          onChange(control.patch(Number(event.target.value)))
-                        }
-                        className="mt-3 w-full accent-neutral-950"
-                      />
-                    </label>
-                  ))}
-
-                  <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3.5 py-3 text-sm text-neutral-500">
-                    Le padding, le rayon, la bordure et le fond restent disponibles dans
-                    <span className="font-semibold text-neutral-700"> Card frame</span>. Les tâches,
-                    prix, devise et bouton restent réglables dans leurs onglets respectifs.
-                  </p>
-                </div>
-              ) : null}
-              {isPillCloudLayout ? (
-                <p className="rounded-2xl border border-sky-200/80 bg-sky-50/60 px-4 py-3 text-sm text-neutral-600">
-                  Le nuage de pilules gère sa géométrie compacte et son retour à la ligne. Les
-                  colonnes, modes d&apos;affichage, largeurs de carte et animations ne s&apos;appliquent
-                  pas à ce design.
-                </p>
-              ) : isToolInspectorLayout ? (
-                <p className="rounded-2xl border border-sky-200/80 bg-sky-50/60 px-4 py-3 text-sm text-neutral-600">
-                  Tool inspector ignore les colonnes et le mode d&apos;affichage. Sa largeur et son
-                  alignement restent configurables ci-dessous.
-                </p>
-              ) : readBlock('galleryLayout') === 'service-selector' ||
-              readBlock('galleryLayout') === 'service-accordion' ? (
-                <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-500">
-                  Ce design occupe toute la largeur : les colonnes, le mode d&apos;affichage, la
-                  largeur de carte et l&apos;alignement ne s&apos;appliquent pas.
-                </p>
-              ) : (
-                <ServicesOptionGrid
-                  label={blockScope === 'skills' ? 'Colonnes tools (écran large)' : 'Colonnes services (écran large)'}
-                  options={PORTFOLIO_SERVICES_COLUMNS_OPTIONS}
-                  value={readBlock('columns')}
-                  onChange={(columns) => patchBlock({ columns })}
-                  columns={2}
-                />
-              )}
-
-              {isSkillsSpecialLayout ||
-              readBlock('galleryLayout') === 'service-selector' ||
-              readBlock('galleryLayout') === 'service-accordion' ? null : (
-              <ServicesOptionGrid
-                label="Mode d'affichage"
-                options={PORTFOLIO_SERVICES_DISPLAY_MODE_OPTIONS}
-                value={readBlock('displayMode')}
-                onChange={(displayMode) => {
-                  if (servicesUsesSplitBlockConfig(services.sectionOrganization)) {
-                    patchBlock({
-                      displayMode,
-                      ...(servicesDisplayModeNeedsCardLayout(displayMode)
-                        ? { galleryLayout: 'card' as const }
-                        : {}),
-                    });
-                  } else {
-                    onChange(servicesDisplayModeSettingsPatch(services, displayMode));
-                  }
-                }}
-                columns={3}
-              />
-              )}
-
-              {isPillCloudLayout ||
-              readBlock('galleryLayout') === 'service-selector' ||
-              readBlock('galleryLayout') === 'service-accordion' ? null : (
-                <>
-                  <ServicesOptionGrid
-                    label={
-                      isToolInspectorLayout
-                        ? 'Largeur de l’inspecteur'
-                        : readBlock('galleryLayout') === 'commercial-list' ||
-                            readBlock('galleryLayout') === 'plan-split' ||
-                            readBlock('galleryLayout') === 'media-banner' ||
-                            readBlock('galleryLayout') === 'media-checklist' ||
-                            readBlock('galleryLayout') === 'media-split'
-                          ? 'Largeur de la ligne'
-                          : 'Largeur de la carte'
-                    }
-                    options={
-                      isToolInspectorLayout
-                        ? PORTFOLIO_SKILLS_INSPECTOR_MAX_WIDTH_OPTIONS
-                        : readBlock('galleryLayout') === 'commercial-list' ||
-                            readBlock('galleryLayout') === 'plan-split' ||
-                            readBlock('galleryLayout') === 'media-banner' ||
-                            readBlock('galleryLayout') === 'media-checklist' ||
-                            readBlock('galleryLayout') === 'media-split'
-                          ? PORTFOLIO_SERVICES_COMMERCIAL_LIST_MAX_WIDTH_OPTIONS
-                          : PORTFOLIO_SERVICES_CARD_MAX_WIDTH_OPTIONS
-                    }
-                    value={services.cardMaxWidth}
-                    onChange={(cardMaxWidth) => onChange({ cardMaxWidth })}
-                    columns={2}
-                  />
-                  <ServicesOptionGrid
-                    label={
-                      isToolInspectorLayout
-                        ? 'Position de l’inspecteur'
-                        : 'Alignement de la carte'
-                    }
-                    options={
-                      isToolInspectorLayout
-                        ? PORTFOLIO_SKILLS_INSPECTOR_ALIGNMENT_OPTIONS
-                        : PORTFOLIO_SERVICES_CARD_ALIGNMENT_OPTIONS
-                    }
-                    value={services.cardAlignment}
-                    onChange={(cardAlignment) => onChange({ cardAlignment })}
-                    columns={3}
-                  />
-                  {services.cardMaxWidth !== 'full' ? (
-                    <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                      {isToolInspectorLayout
-                        ? 'Largeur plafonnée — placez l’inspecteur à gauche, au centre ou à droite.'
-                        : 'Largeur plafonnée — aligne le cadre (gauche / centre / droite) comme les cartes Work.'}
-                    </p>
-                  ) : null}
-                </>
-              )}
-
-              {isSkillsSpecialLayout ||
-              readBlock('galleryLayout') === 'service-selector' ||
-              readBlock('galleryLayout') === 'service-accordion' ? null : readBlock(
-                  'displayMode'
-                ) === 'marquee' ? (
-                <div className="space-y-3 rounded-2xl border border-orange-200/80 bg-orange-50/50 px-4 py-3">
-                  <p className="text-sm font-semibold text-neutral-950">Carrousel infini</p>
-                  <p className="text-sm leading-relaxed text-neutral-600">
-                    Animation pour{' '}
-                    <span className="font-semibold">
-                      {blockScope === 'skills' ? 'Tools / Skills' : 'Services'}
-                    </span>{' '}
-                    — nécessite le design <span className="font-semibold">Carte horizontal</span>.
-                  </p>
-                  <div className="flex items-center gap-2 text-sm text-neutral-700">
-                    <span
-                      className={`inline-flex h-2 w-2 rounded-full ${
-                        servicesMarqueeActiveFor(
-                          resolveServicesBlockPresentation(services, blockScope),
-                          blockScope
-                        )
-                          ? 'bg-emerald-500'
-                          : 'bg-neutral-300'
-                      }`}
-                      aria-hidden
-                    />
-                    {readBlock('galleryLayout') === 'card' ? (
-                      <span className="font-medium text-emerald-700">animé</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => patchBlock({ galleryLayout: 'card' })}
-                        className="font-medium text-orange-600 underline-offset-2 hover:underline"
-                      >
-                        passer en Carte horizontal
-                      </button>
-                    )}
-                  </div>
-                  <ServicesOptionGrid
-                    label="Direction"
-                    options={PORTFOLIO_SERVICES_MARQUEE_DIRECTION_OPTIONS}
-                    value={
-                      blockScope === 'skills'
-                        ? services.skillsMarqueeDirection
-                        : services.servicesMarqueeDirection
-                    }
-                    onChange={(direction) =>
-                      onChange(
-                        blockScope === 'skills'
-                          ? { skillsMarqueeDirection: direction }
-                          : { servicesMarqueeDirection: direction }
-                      )
-                    }
-                    columns={2}
-                  />
-                </div>
-              ) : readBlock('displayMode') === 'coverflow' ? (
-                <div className="space-y-3 rounded-2xl border border-orange-200/80 bg-orange-50/50 px-4 py-3">
-                  <p className="text-sm font-semibold text-neutral-950">Coverflow vertical</p>
-                  <p className="text-sm leading-relaxed text-neutral-600">
-                    Pile centrée auto-rotative pour{' '}
-                    <span className="font-semibold">
-                      {blockScope === 'skills' ? 'Tools / Skills' : 'Services'}
-                    </span>{' '}
-                    — nécessite le design <span className="font-semibold">Carte horizontal</span>.
-                  </p>
-                  <div className="flex items-center gap-2 text-sm text-neutral-700">
-                    <span
-                      className={`inline-flex h-2 w-2 rounded-full ${
-                        servicesCoverflowActiveFor(
-                          resolveServicesBlockPresentation(services, blockScope),
-                          blockScope
-                        )
-                          ? 'bg-emerald-500'
-                          : 'bg-neutral-300'
-                      }`}
-                      aria-hidden
-                    />
-                    {readBlock('galleryLayout') === 'card' ? (
-                      <span className="font-medium text-emerald-700">animé</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => patchBlock({ galleryLayout: 'card' })}
-                        className="font-medium text-orange-600 underline-offset-2 hover:underline"
-                      >
-                        passer en Carte horizontal
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ) : readBlock('displayMode') === 'deck' ? (
-                <div className="space-y-4 rounded-2xl border border-orange-200/80 bg-orange-50/50 px-4 py-3">
-                  <div className="space-y-3">
-                    <p className="text-sm font-semibold text-neutral-950">Deck diagonal</p>
-                    <p className="text-sm leading-relaxed text-neutral-600">
-                      Éventail diagonal fluide pour{' '}
-                      <span className="font-semibold">
-                        {blockScope === 'skills' ? 'Tools / Skills' : 'Services'}
-                      </span>{' '}
-                      — nécessite le design <span className="font-semibold">Carte horizontal</span>.
-                    </p>
-                    <div className="flex items-center gap-2 text-sm text-neutral-700">
-                      <span
-                        className={`inline-flex h-2 w-2 rounded-full ${
-                          servicesDeckActiveFor(
-                            resolveServicesBlockPresentation(services, blockScope),
-                            blockScope
-                          )
-                            ? 'bg-emerald-500'
-                            : 'bg-neutral-300'
-                        }`}
-                        aria-hidden
-                      />
-                      {readBlock('galleryLayout') === 'card' ? (
-                        <span className="font-medium text-emerald-700">animé</span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => patchBlock({ galleryLayout: 'card' })}
-                          className="font-medium text-orange-600 underline-offset-2 hover:underline"
-                        >
-                          passer en Carte horizontal
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <ServicesOptionGrid
-                    label="Effet d'entrée du deck"
-                    options={PORTFOLIO_SERVICES_DECK_ENTRANCE_EFFECT_OPTIONS}
-                    value={services.deckEntranceEffect ?? 'expand'}
-                    onChange={(deckEntranceEffect) => onChange({ deckEntranceEffect })}
-                    columns={2}
-                  />
-                </div>
-              ) : (
-                <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-500">
-                  Animation : choisissez <span className="font-semibold text-neutral-700">Carrousel infini</span>,{' '}
-                  <span className="font-semibold text-neutral-700">Coverflow vertical</span> ou{' '}
-                  <span className="font-semibold text-neutral-700">Deck diagonal</span>, puis{' '}
-                  <span className="font-semibold text-neutral-700">Carte horizontal</span> pour ce bloc.
-                </p>
-              )}
-            </>
-          ) : (
-            <>
-          <ServicesOptionGrid
-            label="Design des services"
-            options={PORTFOLIO_SERVICES_GALLERY_LAYOUT_OPTIONS}
-            value={services.servicesGalleryLayout}
-            onChange={(servicesGalleryLayout) =>
-              onChange(switchServicesGalleryLayout(servicesGalleryLayout, services))
-            }
-            columns={2}
-          />
-
-          {servicesLayoutHasCoverMedia(services.servicesGalleryLayout) ? (
-            <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 px-4 py-3">
-              <p className="text-sm font-semibold text-neutral-950">Position média / infos</p>
-              <ServicesOptionGrid
-                label="Côté du média"
-                options={PORTFOLIO_SERVICES_MEDIA_SIDE_OPTIONS}
-                value={services.servicesMediaSide ?? 'media-left'}
-                onChange={(servicesMediaSide) => onChange({ servicesMediaSide })}
-                columns={2}
-              />
-              <ServicesOptionGrid
-                label="Alternance"
-                options={PORTFOLIO_SERVICES_MEDIA_SIDE_ALTERNATION_OPTIONS}
-                value={services.servicesMediaSideAlternation ?? 'alternate'}
-                onChange={(servicesMediaSideAlternation) =>
-                  onChange({ servicesMediaSideAlternation })
-                }
-                columns={2}
+              <ServicesToggleRow
+                label="Response time"
+                info="Typically replies label in the section header."
+                checked={services.showResponseTime}
+                onChange={(showResponseTime) => onChange({ showResponseTime })}
               />
             </div>
-          ) : null}
 
-          {services.servicesGalleryLayout === 'service-selector' ||
-          services.servicesGalleryLayout === 'service-accordion' ? (
-            <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-500">
-              Ce design occupe toute la largeur : les colonnes, le mode d&apos;affichage, la largeur
-              de carte et l&apos;alignement ne s&apos;appliquent pas aux Services.
-            </p>
-          ) : (
-            <ServicesOptionGrid
-              label="Colonnes services (écran large)"
-              options={PORTFOLIO_SERVICES_COLUMNS_OPTIONS}
-              value={services.servicesColumns}
-              onChange={(servicesColumns) => onChange({ servicesColumns })}
-              columns={2}
-            />
-          )}
-
-          <ServicesOptionGrid
-            label="Design des outils / skills"
-            options={PORTFOLIO_SKILLS_GALLERY_LAYOUT_OPTIONS}
-            value={services.skillsGalleryLayout}
-            onChange={(skillsGalleryLayout) =>
-              onChange({
-                skillsGalleryLayout,
-                ...(skillsGalleryLayout === 'pill-cloud' || skillsGalleryLayout === 'tool-inspector'
-                  ? {
-                      displayMode: 'grid' as const,
-                      ...(skillsGalleryLayout === 'tool-inspector'
-                        ? {
-                            showSkillDescription: true,
-                            showSkillCurrentlyUsed: false,
-                            skillsInspectorShowHint: false,
-                          }
-                        : {}),
-                    }
-                  : {}),
-              })
-            }
-            columns={2}
-          />
-
-              {services.skillsGalleryLayout === 'tool-inspector' ? (
-                <div className="space-y-3 rounded-2xl border border-sky-200/80 bg-sky-50/50 px-4 py-3">
-                  <p className="text-sm font-semibold text-neutral-950">Tool inspector</p>
-                  <p className="text-sm text-neutral-600">
-                    Rail d&apos;icônes vertical ou horizontal + panneau détail.
-                  </p>
-                  <ServicesOptionGrid
-                    label="Position du rail"
-                    options={[
-                      {
-                        value: 'left',
-                        label: 'Gauche',
-                        description: 'Icônes à gauche, détail à droite.',
-                      },
-                      {
-                        value: 'right',
-                        label: 'Droite',
-                        description: 'Détail à gauche, icônes à droite.',
-                      },
-                      {
-                        value: 'top',
-                        label: 'En haut',
-                        description: 'Icônes alignées horizontalement au-dessus du détail.',
-                      },
-                    ]}
-                    value={services.skillsInspectorRailPlacement}
-                    onChange={(skillsInspectorRailPlacement) =>
-                      onChange({ skillsInspectorRailPlacement })
-                    }
-                    columns={3}
-                  />
-                  <ServicesToolInspectorAdvancedFields
-                    services={services}
-                    onChange={onChange}
-                  />
-                  <ServicesToggleRow
-                    label="Afficher la description"
-                    description="Texte détaillé sous le nom de l’outil. Activé par défaut pour ce design."
-                    checked={services.showSkillDescription !== false}
-                    onChange={(showSkillDescription) => onChange({ showSkillDescription })}
-                  />
-                  <ServicesToggleRow
-                    label="Afficher le niveau"
-                    description="Ligne « Niveau : … / catégorie »."
-                    checked={services.showSkillLevel !== false}
-                    onChange={(showSkillLevel) => onChange({ showSkillLevel })}
-                  />
-                  <ServicesToggleRow
-                    label="Afficher les cas d’usage"
-                    description="Chips « Cas d’usage pratiques »."
-                    checked={services.showSkillUseCases !== false}
-                    onChange={(showSkillUseCases) => onChange({ showSkillUseCases })}
-                  />
-                  <ServicesToggleRow
-                    label="Afficher l’expérience"
-                    description="Années / libellé en pied de panneau."
-                    checked={services.showSkillExperience !== false}
-                    onChange={(showSkillExperience) => onChange({ showSkillExperience })}
-                  />
-                </div>
-              ) : null}
-
-          <ServicesOptionGrid
-            label="Colonnes tools (écran large)"
-            options={PORTFOLIO_SERVICES_COLUMNS_OPTIONS}
-            value={services.skillsColumns}
-            onChange={(skillsColumns) => onChange({ skillsColumns })}
-            columns={2}
-          />
-
-          {services.servicesGalleryLayout === 'service-selector' ||
-          services.servicesGalleryLayout === 'service-accordion' ? null : (
-            <ServicesOptionGrid
-              label="Mode d'affichage"
-              options={PORTFOLIO_SERVICES_DISPLAY_MODE_OPTIONS}
-              value={services.displayMode}
-              onChange={(displayMode) => onChange(servicesDisplayModeSettingsPatch(services, displayMode))}
-              columns={2}
-            />
-          )}
-
-          {services.servicesGalleryLayout === 'service-selector' ||
-          services.servicesGalleryLayout === 'service-accordion' ? null : (
-            <>
-              <ServicesOptionGrid
-                label="Largeur de la carte"
-                options={
-                  services.servicesGalleryLayout === 'media-banner' ||
-                  services.servicesGalleryLayout === 'media-checklist' ||
-                  services.servicesGalleryLayout === 'media-split' ||
-                  services.servicesGalleryLayout === 'plan-split' ||
-                  services.servicesGalleryLayout === 'commercial-list'
-                    ? PORTFOLIO_SERVICES_COMMERCIAL_LIST_MAX_WIDTH_OPTIONS
-                    : PORTFOLIO_SERVICES_CARD_MAX_WIDTH_OPTIONS
-                }
-                value={services.cardMaxWidth}
-                onChange={(cardMaxWidth) => onChange({ cardMaxWidth })}
-                columns={2}
-              />
-              <ServicesOptionGrid
-                label="Alignement de la carte"
-                options={PORTFOLIO_SERVICES_CARD_ALIGNMENT_OPTIONS}
-                value={services.cardAlignment}
-                onChange={(cardAlignment) => onChange({ cardAlignment })}
-                columns={3}
-              />
-              {services.cardMaxWidth !== 'full' ? (
-                <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                  Largeur plafonnée — aligne le cadre (gauche / centre / droite) comme les cartes Work.
-                </p>
-              ) : null}
-            </>
-          )}
-
-          {services.servicesGalleryLayout === 'service-selector' ||
-          services.servicesGalleryLayout === 'service-accordion'
-            ? null
-            : services.displayMode === 'marquee' ? (
-            <div className="space-y-3 rounded-2xl border border-orange-200/80 bg-orange-50/50 px-4 py-3">
-              <p className="text-sm font-semibold text-neutral-950">Carrousel infini</p>
-              <p className="text-sm leading-relaxed text-neutral-600">
-                L&apos;animation de défilement s&apos;applique bloc par bloc, uniquement quand le design est{' '}
-                <span className="font-semibold">Carte horizontal</span>.
-              </p>
-              <ul className="space-y-1.5 text-sm text-neutral-700">
-                <li className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex h-2 w-2 rounded-full ${
-                      servicesMarqueeActiveFor(services, 'services') ? 'bg-emerald-500' : 'bg-neutral-300'
-                    }`}
-                    aria-hidden
-                  />
-                  Services —{' '}
-                  {services.servicesGalleryLayout === 'card' ? (
-                    <span className="font-medium text-emerald-700">animé</span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => onChange(switchServicesGalleryLayout('card', services))}
-                      className="font-medium text-orange-600 underline-offset-2 hover:underline"
-                    >
-                      passer en Carte horizontal
-                    </button>
-                  )}
-                </li>
-                <li className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex h-2 w-2 rounded-full ${
-                      servicesMarqueeActiveFor(services, 'skills') ? 'bg-emerald-500' : 'bg-neutral-300'
-                    }`}
-                    aria-hidden
-                  />
-                  Tools / skills —{' '}
-                  {services.skillsGalleryLayout === 'card' ? (
-                    <span className="font-medium text-emerald-700">animé</span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => onChange({ skillsGalleryLayout: 'card' })}
-                      className="font-medium text-orange-600 underline-offset-2 hover:underline"
-                    >
-                      passer en Carte horizontal
-                    </button>
-                  )}
-                </li>
-              </ul>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <ServicesOptionGrid
-                  label="Direction Services"
-                  options={PORTFOLIO_SERVICES_MARQUEE_DIRECTION_OPTIONS}
-                  value={services.servicesMarqueeDirection}
-                  onChange={(servicesMarqueeDirection) => onChange({ servicesMarqueeDirection })}
-                  columns={2}
-                />
-                <ServicesOptionGrid
-                  label="Direction Skills"
-                  options={PORTFOLIO_SERVICES_MARQUEE_DIRECTION_OPTIONS}
-                  value={services.skillsMarqueeDirection}
-                  onChange={(skillsMarqueeDirection) => onChange({ skillsMarqueeDirection })}
-                  columns={2}
-                />
-              </div>
-            </div>
-          ) : services.displayMode === 'coverflow' ? (
-            <div className="space-y-3 rounded-2xl border border-orange-200/80 bg-orange-50/50 px-4 py-3">
-              <p className="text-sm font-semibold text-neutral-950">Coverflow vertical</p>
-              <p className="text-sm leading-relaxed text-neutral-600">
-                Pile centrée auto-rotative, uniquement quand le design est{' '}
-                <span className="font-semibold">Carte horizontal</span>.
-              </p>
-              <ul className="space-y-1.5 text-sm text-neutral-700">
-                <li className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex h-2 w-2 rounded-full ${
-                      servicesCoverflowActiveFor(services, 'services') ? 'bg-emerald-500' : 'bg-neutral-300'
-                    }`}
-                    aria-hidden
-                  />
-                  Services —{' '}
-                  {services.servicesGalleryLayout === 'card' ? (
-                    <span className="font-medium text-emerald-700">animé</span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => onChange(switchServicesGalleryLayout('card', services))}
-                      className="font-medium text-orange-600 underline-offset-2 hover:underline"
-                    >
-                      passer en Carte horizontal
-                    </button>
-                  )}
-                </li>
-                <li className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex h-2 w-2 rounded-full ${
-                      servicesCoverflowActiveFor(services, 'skills') ? 'bg-emerald-500' : 'bg-neutral-300'
-                    }`}
-                    aria-hidden
-                  />
-                  Tools / skills —{' '}
-                  {services.skillsGalleryLayout === 'card' ? (
-                    <span className="font-medium text-emerald-700">animé</span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => onChange({ skillsGalleryLayout: 'card' })}
-                      className="font-medium text-orange-600 underline-offset-2 hover:underline"
-                    >
-                      passer en Carte horizontal
-                    </button>
-                  )}
-                </li>
-              </ul>
-            </div>
-          ) : services.displayMode === 'deck' ? (
-            <div className="space-y-4 rounded-2xl border border-orange-200/80 bg-orange-50/50 px-4 py-3">
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-neutral-950">Deck diagonal</p>
-                <p className="text-sm leading-relaxed text-neutral-600">
-                  Éventail diagonal fluide, uniquement quand le design est{' '}
-                  <span className="font-semibold">Carte horizontal</span>.
-                </p>
-                <ul className="space-y-1.5 text-sm text-neutral-700">
-                  <li className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex h-2 w-2 rounded-full ${
-                        servicesDeckActiveFor(services, 'services') ? 'bg-emerald-500' : 'bg-neutral-300'
-                      }`}
-                      aria-hidden
-                    />
-                    Services —{' '}
-                    {services.servicesGalleryLayout === 'card' ? (
-                      <span className="font-medium text-emerald-700">animé</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => onChange(switchServicesGalleryLayout('card', services))}
-                        className="font-medium text-orange-600 underline-offset-2 hover:underline"
-                      >
-                        passer en Carte horizontal
-                      </button>
-                    )}
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex h-2 w-2 rounded-full ${
-                        servicesDeckActiveFor(services, 'skills') ? 'bg-emerald-500' : 'bg-neutral-300'
-                      }`}
-                      aria-hidden
-                    />
-                    Tools / skills —{' '}
-                    {services.skillsGalleryLayout === 'card' ? (
-                      <span className="font-medium text-emerald-700">animé</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => onChange({ skillsGalleryLayout: 'card' })}
-                        className="font-medium text-orange-600 underline-offset-2 hover:underline"
-                      >
-                        passer en Carte horizontal
-                      </button>
-                    )}
-                  </li>
-                </ul>
-              </div>
-              <ServicesOptionGrid
-                label="Effet d'entrée du deck"
-                options={PORTFOLIO_SERVICES_DECK_ENTRANCE_EFFECT_OPTIONS}
-                value={services.deckEntranceEffect ?? 'expand'}
-                onChange={(deckEntranceEffect) => onChange({ deckEntranceEffect })}
-                columns={2}
-              />
-            </div>
-          ) : (
-            <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-500">
-              Pour animer les cartes, choisissez{' '}
-              <span className="font-semibold text-neutral-700">Carrousel infini</span>,{' '}
-              <span className="font-semibold text-neutral-700">Coverflow vertical</span> ou{' '}
-              <span className="font-semibold text-neutral-700">Deck diagonal</span>, puis le design{' '}
-              <span className="font-semibold text-neutral-700">Carte horizontal</span>.
-            </p>
-          )}
-            </>
-          )}
-
-          <ServicesOptionGrid
-            label="Stage frame"
-            options={PORTFOLIO_SERVICES_STAGE_DESIGN_OPTIONS}
-            value={readBlock('stageDesign')}
-            onChange={(stageDesign) =>
-              patchFrame({
-                stageDesign,
-                ...stageChromePresetForDesign(stageDesign),
-              })
-            }
-          />
-
-          {readBlock('stageDesign') === 'open' || readBlock('stageDesign') === 'none' ? (
-            <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-500">
-              Open / None n&apos;ajoutent pas de cadre par défaut. Activez un fond, une bordure ou un
-              motif ci-dessous pour en créer un.
-            </p>
-          ) : null}
-
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Chrome du stage</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Fond, bordure, arrondi, padding et motif du panneau autour des cartes (Soft panel,
-                Framed, ou Open personnalisé).
-              </p>
-            </div>
-
-            <ServicesToggleRow
-              label="Fond du stage"
-              description="Couleur de fond derrière les carrousels (ex. Soft panel gris)."
-              checked={readBlock('stageBackgroundEnabled')}
-              onChange={(stageBackgroundEnabled) => patchFrame({ stageBackgroundEnabled })}
-            />
-
-            {readBlock('stageBackgroundEnabled') ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <ServicesFrameColorField
-                  services={services}
-                  onChange={onChange}
-                  slot="stageBackground"
-                  label="Couleur de fond"
-                  value={readBlock('stageBackgroundColor')}
-                  onManualChange={(stageBackgroundColor) =>
-                    patchFrame({ stageBackgroundColor, stageBackgroundEnabled: true })
-                  }
-                />
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-neutral-800">
-                    Opacité fond — {readBlock('stageBackgroundOpacity')}%
-                  </span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={readBlock('stageBackgroundOpacity')}
-                    onChange={(event) =>
-                      patchFrame({ stageBackgroundOpacity: Number(event.target.value) })
-                    }
-                    className="w-full accent-neutral-900"
-                  />
-                </label>
-              </div>
-            ) : null}
-
-            <ServicesOptionGrid
-              label="Bordure du stage"
-              options={PORTFOLIO_SERVICES_STAGE_BORDER_OPTIONS}
-              value={readBlock('stageBorder')}
-              onChange={(stageBorder) => patchFrame({ stageBorder })}
-              columns={3}
-            />
-
-            {readBlock('stageBorder') !== 'none' ? (
-              <ServicesFrameColorField
-                services={services}
-                onChange={onChange}
-                slot="stageBorder"
-                label="Couleur de bordure"
-                value={readBlock('stageBorderColor')}
-                onManualChange={(stageBorderColor) => patchFrame({ stageBorderColor })}
-              />
-            ) : null}
-
-            <ServicesOptionGrid
-              label="Arrondi"
-              options={PORTFOLIO_SERVICES_STAGE_RADIUS_OPTIONS}
-              value={readBlock('stageBorderRadius')}
-              onChange={(stageBorderRadius) => patchFrame({ stageBorderRadius })}
-            />
-
-            <ServicesOptionGrid
-              label="Padding"
-              options={PORTFOLIO_SERVICES_STAGE_PADDING_OPTIONS}
-              value={readBlock('stagePadding')}
-              onChange={(stagePadding) => patchFrame({ stagePadding })}
-            />
-
-            <ServicesOptionGrid
-              label="Coins du stage"
-              options={PORTFOLIO_SERVICES_STAGE_CORNERS_OPTIONS}
-              value={readBlock('stageCorners') ?? 'none'}
-              onChange={(stageCorners) => patchFrame({ stageCorners })}
-              columns={3}
-            />
-
-            <ServicesOptionGrid
-              label="Largeur du stage"
-              options={PORTFOLIO_SERVICES_CARD_MAX_WIDTH_OPTIONS}
-              value={readBlock('stageMaxWidth') ?? 'full'}
-              onChange={(stageMaxWidth) => patchFrame({ stageMaxWidth })}
-              columns={2}
-            />
-            {readBlock('stageMaxWidth') && readBlock('stageMaxWidth') !== 'full' ? (
-              <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                Plafonne la largeur du panneau (les côtés que tu marques). Pour zoomer les cartes
-                elles-mêmes, utilise aussi <span className="font-semibold">Largeur de la carte</span>{' '}
-                plus haut.
-              </p>
-            ) : null}
-
-            <ServicesOptionGrid
-              label="Motif de fond"
-              options={PORTFOLIO_SERVICES_STAGE_PATTERN_OPTIONS}
-              value={readBlock('stagePattern')}
-              onChange={(stagePattern) => patchFrame({ stagePattern })}
-              columns={2}
-            />
-
-            {readBlock('stagePattern') !== 'none' ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <ServicesFrameColorField
-                  services={services}
-                  onChange={onChange}
-                  slot="stagePattern"
-                  label="Couleur du motif"
-                  value={readBlock('stagePatternColor')}
-                  onManualChange={(stagePatternColor) => patchFrame({ stagePatternColor })}
-                />
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-neutral-800">
-                    Opacité motif — {readBlock('stagePatternOpacity')}%
-                  </span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={readBlock('stagePatternOpacity')}
-                    onChange={(event) =>
-                      patchFrame({ stagePatternOpacity: Number(event.target.value) })
-                    }
-                    className="w-full accent-neutral-900"
-                  />
-                </label>
-              </div>
-            ) : null}
-          </div>
-
-          {isPillCloudLayout ? (
-            <ServicesFrameColorField
-              services={services}
-              onChange={onChange}
-              slot="cardAccent"
-              label="Couleur de secours des pastilles"
-              value={readBlock('cardAccentColor')}
-              onManualChange={(cardAccentColor) => patchFrame({ cardAccentColor })}
-            />
-          ) : readBlock('cardBorder') === 'accent' ? (
-            <ServicesFrameColorField
-              services={services}
-              onChange={onChange}
-              slot="cardAccent"
-              label="Couleur de teinte / accent"
-              value={readBlock('cardAccentColor')}
-              onManualChange={(cardAccentColor) => patchFrame({ cardAccentColor })}
-            />
-          ) : null}
-        </>
-      ) : null}
-
-      {subSection === 'cards' ? (
-        <>
-          {isPillCloudLayout ? (
-            <p className="rounded-2xl border border-sky-200/80 bg-sky-50/60 px-4 py-3 text-sm text-neutral-600">
-              Le nuage centre et répartit automatiquement ses capsules. Alignement interne,
-              puces de liste et espacement de contenu sont désactivés pour ce design.
-            </p>
-          ) : (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Alignement contenu</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                {settingsFocus === 'skills'
-                  ? 'Icône + titre bougent ensemble (gauche / centre / droite), tout en gardant les icônes alignées verticalement.'
-                  : 'Position du contenu à l’intérieur de chaque carte.'}
-              </p>
-            </div>
-            <ServicesOptionGrid
-              label="Content alignment"
-              options={PORTFOLIO_SERVICES_CONTENT_ALIGNMENT_OPTIONS}
-              value={readBlock('contentAlignment')}
-              onChange={(contentAlignment) => patchBlock({ contentAlignment })}
-              columns={3}
-            />
-            {settingsFocus === 'skills' ? (
-              <div className="space-y-4 border-t border-neutral-200/80 pt-4">
+            <div className="space-y-2">
+              <ServicesGroupLabel>Card elements</ServicesGroupLabel>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 <ServicesToggleRow
-                  label="List bullet"
-                  description="Show a list marker before the skill icon / title inside each frame."
-                  checked={services.skillsShowBullet === true}
-                  onChange={(skillsShowBullet) => onChange({ skillsShowBullet })}
+                  label="Title"
+                  checked={services.showServiceTitle !== false}
+                  onChange={(showServiceTitle) => onChange({ showServiceTitle })}
                 />
-                {services.skillsShowBullet === true ? (
-                  <>
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Bullet style
-                      </p>
-                      <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
-                        {PORTFOLIO_SERVICES_TASK_BULLET_STYLE_OPTIONS.map((option) => {
-                          const active = (services.skillsBulletStyle ?? 'disc') === option.value;
-                          return (
-                            <button
-                              key={option.value}
-                              type="button"
-                              title={`${option.label} — ${option.description}`}
-                              onClick={() =>
-                                onChange({
-                                  skillsBulletSource: 'section',
-                                  skillsBulletStyle: option.value,
-                                })
-                              }
-                              className={`flex flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2.5 transition ${
-                                active
-                                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-                              }`}
-                            >
-                              <span className="text-base font-semibold leading-none text-neutral-900">
-                                {option.preview}
-                              </span>
-                              <span className="max-w-full truncate text-[10px] font-medium text-neutral-500">
-                                {option.label}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    {(services.skillsBulletStyle ?? 'disc') !== 'none' ? (
-                      <>
-                        <PortfolioListMarkerSizeWeightControls
-                          size={services.skillsBulletSize ?? 'md'}
-                          sizePx={services.skillsBulletSizePx}
-                          weight={services.skillsBulletWeight ?? 'regular'}
-                          weightAmount={services.skillsBulletWeightAmount}
-                          OptionGrid={ServicesOptionGrid}
-                          onChange={(patch) =>
+                <ServicesToggleRow
+                  label="Description"
+                  checked={services.showServiceDescription !== false}
+                  onChange={(showServiceDescription) => onChange({ showServiceDescription })}
+                />
+                <ServicesToggleRow
+                  label="Price"
+                  checked={services.showServicePrice !== false}
+                  onChange={(showServicePrice) => onChange({ showServicePrice })}
+                />
+                <ServicesToggleRow
+                  label="Delivery time"
+                  checked={services.showServiceDelivery !== false}
+                  onChange={(showServiceDelivery) => onChange({ showServiceDelivery })}
+                />
+                <ServicesToggleRow
+                  label="Tasks checklist"
+                  checked={services.showServiceTasks !== false}
+                  onChange={(showServiceTasks) => onChange({ showServiceTasks })}
+                />
+                <ServicesToggleRow
+                  label="Order / contact button"
+                  checked={services.showServiceCta !== false}
+                  onChange={(showServiceCta) => onChange({ showServiceCta })}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {subSection === 'design' ? (
+        <div className="space-y-6">
+          <ServicesDesignChoiceGrid
+            value={services.sectionDesign ?? 'showcase-hero'}
+            onChange={(sectionDesign) => onChange({ sectionDesign })}
+          />
+
+          {services.sectionDesign === 'services-pricing-grid' ? (
+            <ServicesLayoutSettingsBand motionKey="services-pricing-grid" title="Pricing Grid options">
+              <div>
+                <span className="flex items-center gap-1.5">
+                  <ServicesGroupLabel>Featured card color</ServicesGroupLabel>
+                  <ServicesInfoTooltip text="Fills the popular card with one of 4 colors from the active theme palette." />
+                </span>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  {PRICING_GRID_POPULAR_COLOR_OPTIONS.map((option) => {
+                    const palette = mergeServicesPalette(DEFAULT_SERVICES_PALETTE, services.servicesPalette);
+                    const hex = resolveHeroPaletteColor(palette, option.value);
+                    const current = (services.pricingGrid ?? DEFAULT_SERVICES_PRICING_GRID_SETTINGS)
+                      .popularColorToken;
+                    const active = current === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() =>
+                          onChange({
+                            pricingGrid: {
+                              ...(services.pricingGrid ?? DEFAULT_SERVICES_PRICING_GRID_SETTINGS),
+                              popularColorToken: option.value,
+                            },
+                          })
+                        }
+                        aria-pressed={active}
+                        aria-label={option.label}
+                        title={option.label}
+                        className={`flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
+                          active ? 'ring-2 ring-neutral-900 ring-offset-2' : 'hover:bg-neutral-100'
+                        }`}
+                      >
+                        <span
+                          className="h-9 w-9 rounded-full border border-neutral-200/80 shadow-inner"
+                          style={{ backgroundColor: hex }}
+                        />
+                        <span className="text-[11px] font-medium text-neutral-500">{option.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </ServicesLayoutSettingsBand>
+          ) : null}
+
+          {services.sectionDesign === 'services-pricing-bento' ? (
+            <ServicesLayoutSettingsBand
+              motionKey="services-pricing-bento"
+              title="Pricing Bento options"
+            >
+              <div>
+                <span className="flex items-center gap-1.5">
+                  <ServicesGroupLabel>Featured card</ServicesGroupLabel>
+                  <ServicesInfoTooltip text="The featured card gets the textured graphic header that sets it apart from the others." />
+                </span>
+                {availableServices.length > 0 ? (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {availableServices.map((service, index) => {
+                      const currentIndex = Math.min(
+                        (services.pricingBento ?? DEFAULT_SERVICES_PRICING_BENTO_SETTINGS).graphicHeaderIndex,
+                        availableServices.length - 1
+                      );
+                      return (
+                        <ServicesPickerCard
+                          key={service.id}
+                          active={currentIndex === index}
+                          label={service.title.trim() || `Service ${index + 1}`}
+                          onClick={() =>
                             onChange({
-                              skillsBulletSource: 'section',
-                              ...(patch.size !== undefined ? { skillsBulletSize: patch.size } : null),
-                              ...(patch.sizePx !== undefined
-                                ? { skillsBulletSizePx: patch.sizePx }
-                                : null),
-                              ...(patch.weight !== undefined
-                                ? { skillsBulletWeight: patch.weight }
-                                : null),
-                              ...(patch.weightAmount !== undefined
-                                ? { skillsBulletWeightAmount: patch.weightAmount }
-                                : null),
+                              pricingBento: {
+                                ...(services.pricingBento ?? DEFAULT_SERVICES_PRICING_BENTO_SETTINGS),
+                                graphicHeaderIndex: index,
+                              },
                             })
                           }
-                        />
-                        <ServicesManualColorField
-                          label="Bullet color"
-                          value={services.skillsBulletColor || '#10b981'}
-                          onChange={(skillsBulletColor) =>
-                            onChange({ skillsBulletSource: 'section', skillsBulletColor })
-                          }
-                        />
-                      </>
-                    ) : null}
-                  </>
-                ) : null}
-              </div>
-            ) : null}
-            <div className="space-y-3 border-t border-neutral-200/80 pt-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Espacement vertical
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Écart entre tarif, titre, description, tâches et CTA dans la carte.
-                </p>
-              </div>
-              <ServicesOptionGrid
-                label="Presets"
-                options={PORTFOLIO_SERVICES_CONTENT_GAP_OPTIONS}
-                value={
-                  (settingsFocus === 'skills'
-                    ? services.skillsContentGap
-                    : services.servicesContentGap) === 'custom'
-                    ? ('' as 'md')
-                    : ((settingsFocus === 'skills'
-                        ? services.skillsContentGap
-                        : services.servicesContentGap) as 'none' | 'sm' | 'md' | 'lg' | 'xl')
-                }
-                onChange={(gap) =>
-                  onChange(
-                    settingsFocus === 'skills'
-                      ? {
-                          skillsContentGap: gap,
-                          skillsContentGapPx: SERVICES_CONTENT_GAP_PRESET_PX[gap],
-                        }
-                      : {
-                          servicesContentGap: gap,
-                          servicesContentGapPx: SERVICES_CONTENT_GAP_PRESET_PX[gap],
-                        }
-                  )
-                }
-                columns={3}
-              />
-              {(settingsFocus === 'skills'
-                ? services.skillsContentGap
-                : services.servicesContentGap) === 'custom' ? (
-                <p className="text-xs font-medium text-amber-700">
-                  Mode manuel actif — choisissez un preset ci-dessus pour en sortir.
-                </p>
-              ) : null}
-              <div>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Manuel (px)
-                  </p>
-                  <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                    {clampServicesContentGapPx(
-                      settingsFocus === 'skills'
-                        ? services.skillsContentGapPx
-                        : services.servicesContentGapPx,
-                      14
-                    )}
-                    px
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Valeur exacte entre les éléments à l&apos;intérieur de la carte.
-                </p>
-                <input
-                  type="range"
-                  min={SERVICES_CONTENT_GAP_PX_MIN}
-                  max={SERVICES_CONTENT_GAP_PX_MAX}
-                  step={1}
-                  value={clampServicesContentGapPx(
-                    settingsFocus === 'skills'
-                      ? services.skillsContentGapPx
-                      : services.servicesContentGapPx,
-                    14
-                  )}
-                  onChange={(event) => {
-                    const px = clampServicesContentGapPx(Number(event.target.value), 14);
-                    onChange(
-                      settingsFocus === 'skills'
-                        ? { skillsContentGap: 'custom', skillsContentGapPx: px }
-                        : { servicesContentGap: 'custom', servicesContentGapPx: px }
-                    );
-                  }}
-                  className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Espacement vertical manuel en pixels"
-                />
-                <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
-                  <span>{SERVICES_CONTENT_GAP_PX_MIN}px</span>
-                  <span>{SERVICES_CONTENT_GAP_PX_MAX}px</span>
-                </div>
-              </div>
-            </div>
-            </div>
-          )}
-        </>
-      ) : null}
-
-      {subSection === 'cards' ? (
-        <div className="space-y-6">
-          <p className="text-sm text-neutral-500">
-            Cadre et fond pour{' '}
-            <span className="font-semibold text-neutral-800">
-              {settingsFocus === 'skills' ? 'Skills' : 'Services'}
-            </span>
-            .
-          </p>
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Cadre & fond</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Bordure, couleur, fond, arrondi et padding pour les cartes de cette section.
-              </p>
-            </div>
-
-            <ServicesOptionGrid
-              label="Bordure"
-              options={PORTFOLIO_SERVICES_CARD_BORDER_OPTIONS}
-              value={activeFrameSettings.cardBorder}
-              onChange={(cardBorder) => patchFrame({ cardBorder })}
-              columns={2}
-            />
-
-            {activeFrameSettings.cardBorder !== 'none' ? (
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Opacité de la bordure
-                  </p>
-                  <span className="text-sm font-semibold text-neutral-700">
-                    {activeFrameSettings.cardBorderOpacity ?? 100}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={activeFrameSettings.cardBorderOpacity ?? 100}
-                  onChange={(event) =>
-                    patchFrame({ cardBorderOpacity: Number(event.target.value) })
-                  }
-                  className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Opacité de la bordure de carte"
-                />
-              </div>
-            ) : null}
-
-            <ServicesOptionGrid
-              label="Type de fond"
-              options={PORTFOLIO_SERVICES_CARD_BACKGROUND_FILL_OPTIONS}
-              value={activeFrameSettings.cardBackgroundFill}
-              onChange={(cardBackgroundFill) => {
-                if (cardBackgroundFill === 'solid') {
-                  patchFrame({
-                    cardBackgroundFill,
-                    cardBackgroundEnabled: true,
-                    cardBackgroundColor:
-                      activeFrameSettings.cardBackgroundColor ||
-                      activeFrameSettings.cardBackgroundColorA,
-                  });
-                  return;
-                }
-                patchFrame({
-                  cardBackgroundFill,
-                  // Split and alternation conflict — keep uniform when switching to split.
-                  cardBackgroundAlternation: 'uniform',
-                });
-              }}
-              columns={2}
-            />
-
-            {activeFrameSettings.cardBackgroundFill === 'solid' ? (
-              <>
-                <ServicesOptionGrid
-                  label="Alternance de fond"
-                  options={PORTFOLIO_SERVICES_CARD_BACKGROUND_ALTERNATION_OPTIONS}
-                  value={activeFrameSettings.cardBackgroundAlternation}
-                  onChange={(cardBackgroundAlternation) =>
-                    patchFrame({
-                      cardBackgroundAlternation,
-                      cardBackgroundEnabled: true,
-                    })
-                  }
-                  columns={2}
-                />
-
-                <ServicesToggleRow
-                  label="Fond du cadre"
-                  description={
-                    settingsFocus === 'skills'
-                      ? 'Appliquer une couleur de fond derrière le contenu des cartes Skills uniquement.'
-                      : 'Appliquer une couleur de fond derrière le contenu des cartes Services uniquement.'
-                  }
-                  checked={activeFrameSettings.cardBackgroundEnabled}
-                  onChange={(cardBackgroundEnabled) => {
-                    if (!cardBackgroundEnabled) {
-                      patchFrame({
-                        cardBackgroundEnabled: false,
-                        cardBackgroundAlternation: 'uniform',
-                      });
-                      return;
-                    }
-                    patchFrame({ cardBackgroundEnabled: true });
-                  }}
-                />
-
-                {settingsFocus !== 'skills' &&
-                servicesLayoutSupportsPrincipalSurface(services.servicesGalleryLayout) ? (
-                  <div className="space-y-4">
-                    <ServicesToggleRow
-                      label="Surface couleur principale"
-                      description="Cartes mises en avant : fond principal fixe (sans survol sur ce fond). Les autres cartes gardent le survol complet."
-                      checked={services.servicesPrincipalSurfaceEnabled === true}
-                      onChange={(servicesPrincipalSurfaceEnabled) =>
-                        onChange({
-                          servicesPrincipalSurfaceEnabled,
-                          ...(servicesPrincipalSurfaceEnabled
-                            ? {}
-                            : { servicesPrincipalSurfaceAlternation: 'uniform' as const }),
-                        })
-                      }
-                    />
-                    {services.servicesPrincipalSurfaceEnabled === true ? (
-                      <div className="space-y-4">
-                        <ServicesOptionGrid
-                          label="Alternance surface principale"
-                          options={PORTFOLIO_SERVICES_PRINCIPAL_SURFACE_ALTERNATION_OPTIONS}
-                          value={services.servicesPrincipalSurfaceAlternation ?? 'uniform'}
-                          onChange={(servicesPrincipalSurfaceAlternation) =>
-                            onChange({ servicesPrincipalSurfaceAlternation })
-                          }
-                          columns={2}
-                        />
-                        {services.servicesPrincipalSurfaceAlternation === 'alternate' ? (
-                          <ServicesOptionGrid
-                            label="Ordre de l’alternance"
-                            options={PORTFOLIO_SERVICES_PRINCIPAL_SURFACE_ALTERNATE_START_OPTIONS}
-                            value={services.servicesPrincipalSurfaceAlternateStart ?? 'principal'}
-                            onChange={(servicesPrincipalSurfaceAlternateStart) =>
-                              onChange({ servicesPrincipalSurfaceAlternateStart })
-                            }
-                            columns={2}
-                          />
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {activeFrameSettings.cardBackgroundEnabled ? (
-                  <div className="space-y-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <ServicesFrameColorField
-                        services={services}
-                        onChange={onChange}
-                        slot="cardBackground"
-                        label={
-                          activeFrameSettings.cardBackgroundAlternation === 'alternate'
-                            ? 'Couleur cartes claires (light)'
-                            : 'Couleur de fond (light)'
-                        }
-                        value={activeFrameSettings.cardBackgroundColor}
-                        onManualChange={(cardBackgroundColor) =>
-                          patchFrame({
-                            cardBackgroundColor,
-                            cardBackgroundColorA: cardBackgroundColor,
-                            cardBackgroundEnabled: true,
-                          })
-                        }
-                      />
-                      {activeFrameSettings.cardBackgroundAlternation === 'alternate' ? (
-                        <ServicesFrameColorField
-                          services={services}
-                          onChange={onChange}
-                          slot="cardAccent"
-                          label="Couleur cartes alternées (light)"
-                          value={activeFrameSettings.cardBackgroundColorB}
-                          onManualChange={(cardBackgroundColorB) =>
-                            patchFrame({ cardBackgroundColorB })
-                          }
-                        />
-                      ) : null}
-                    </div>
-                    {services.useHeroPalette === false ? (
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <ServicesManualColorField
-                          label={
-                            activeFrameSettings.cardBackgroundAlternation === 'alternate'
-                              ? 'Couleur cartes claires (dark)'
-                              : 'Couleur de fond (dark)'
-                          }
-                          description="Global → Theme Dark, palette off."
-                          value={
-                            activeFrameSettings.cardBackgroundColorDark ||
-                            services.cardBackgroundColorDark ||
-                            '#171717'
-                          }
-                          onChange={(cardBackgroundColorDark) =>
-                            patchFrame({ cardBackgroundColorDark })
-                          }
-                        />
-                        {activeFrameSettings.cardBackgroundAlternation === 'alternate' ? (
-                          <ServicesManualColorField
-                            label="Couleur cartes alternées (dark)"
-                            description="Global → Theme Dark, palette off."
-                            value={
-                              activeFrameSettings.cardBackgroundColorBDark ||
-                              services.cardBackgroundColorBDark ||
-                              '#262626'
-                            }
-                            onChange={(cardBackgroundColorBDark) =>
-                              patchFrame({ cardBackgroundColorBDark })
-                            }
-                          />
-                        ) : null}
-                      </div>
-                    ) : null}
-
-                    {activeFrameSettings.cardBackgroundAlternation === 'alternate' ? (
-                      <div className="space-y-4 border-t border-neutral-200 pt-4">
-                        <ServicesOptionGrid
-                          label="Contraste du texte"
-                          options={PORTFOLIO_SERVICES_CARD_TEXT_CONTRAST_OPTIONS}
-                          value={services.cardTextContrast ?? 'auto'}
-                          onChange={(cardTextContrast) => onChange({ cardTextContrast })}
-                          columns={2}
-                        />
-                        {(services.cardTextContrast ?? 'auto') === 'pair-ab' ? (
-                          <div className="space-y-4">
-                            <p className="text-sm text-neutral-500">
-                              Cartes claires (A) et cartes alternées (B) — deux paires, pas une
-                              couleur par carte.
-                            </p>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                              <ServicesManualColorField
-                                label="Titre — cartes A"
-                                value={services.cardInkStrongA || DEFAULT_SERVICES_CARD_INK_STRONG_A}
-                                onChange={(cardInkStrongA) => onChange({ cardInkStrongA })}
-                              />
-                              <ServicesManualColorField
-                                label="Description — cartes A"
-                                value={services.cardInkMutedA || DEFAULT_SERVICES_CARD_INK_MUTED_A}
-                                onChange={(cardInkMutedA) => onChange({ cardInkMutedA })}
-                              />
-                              <ServicesManualColorField
-                                label="Titre — cartes B"
-                                value={services.cardInkStrongB || DEFAULT_SERVICES_CARD_INK_STRONG_B}
-                                onChange={(cardInkStrongB) => onChange({ cardInkStrongB })}
-                              />
-                              <ServicesManualColorField
-                                label="Description — cartes B"
-                                value={services.cardInkMutedB || DEFAULT_SERVICES_CARD_INK_MUTED_B}
-                                onChange={(cardInkMutedB) => onChange({ cardInkMutedB })}
-                              />
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-neutral-500">
-                            En contraste auto, le texte devient clair ou foncé selon le fond de
-                            chaque carte (ex. blanc → texte sombre, orange → texte clair).
-                          </p>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <div className="space-y-4 rounded-2xl border border-neutral-200/60 bg-white/70 p-4">
-                <div>
-                  <p className="text-sm font-semibold text-neutral-950">Fond divisé</p>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Deux zones de couleur sur chaque carte. L’alternance carte à carte est désactivée
-                    en mode divisé.
-                  </p>
-                </div>
-
-                <ServicesOptionGrid
-                  label="Forme de séparation"
-                  options={PORTFOLIO_SERVICES_CARD_DIVIDER_SHAPE_OPTIONS}
-                  value={activeFrameSettings.cardDividerShape}
-                  onChange={(cardDividerShape) => patchFrame({ cardDividerShape })}
-                  columns={2}
-                />
-
-                {activeFrameSettings.cardDividerShape === 'diagonal' ? (
-                  <div>
-                    <div className="flex items-center justify-between gap-4">
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Angle de la diagonale
-                      </p>
-                      <span className="text-sm font-semibold text-neutral-700">
-                        {activeFrameSettings.cardDividerAngle}°
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={359}
-                      step={1}
-                      value={activeFrameSettings.cardDividerAngle}
-                      onChange={(event) =>
-                        patchFrame({ cardDividerAngle: Number(event.target.value) })
-                      }
-                      className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                      aria-label="Angle de la diagonale"
-                    />
+                          compact
+                        >
+                          <></>
+                        </ServicesPickerCard>
+                      );
+                    })}
                   </div>
                 ) : (
-                  <ServicesOptionGrid
-                    label="Axe de séparation"
-                    options={PORTFOLIO_SERVICES_CARD_SPLIT_AXIS_OPTIONS}
-                    value={activeFrameSettings.cardBackgroundSplitAxis}
-                    onChange={(cardBackgroundSplitAxis) => patchFrame({ cardBackgroundSplitAxis })}
-                    columns={2}
-                  />
+                  <p className="mt-3 text-xs text-neutral-500">
+                    Add a service to choose which card is featured.
+                  </p>
                 )}
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <ServicesFrameColorField
-                    services={services}
-                    onChange={onChange}
-                    slot="cardBackground"
-                    label={
-                      activeFrameSettings.cardDividerShape === 'diagonal'
-                        ? 'Couleur zone A'
-                        : activeFrameSettings.cardBackgroundSplitAxis === 'y'
-                          ? 'Couleur zone haut'
-                          : 'Couleur zone gauche'
-                    }
-                    value={activeFrameSettings.cardBackgroundColorA}
-                    onManualChange={(cardBackgroundColorA) => patchFrame({ cardBackgroundColorA })}
-                  />
-                  <ServicesFrameColorField
-                    services={services}
-                    onChange={onChange}
-                    slot="cardAccent"
-                    label={
-                      activeFrameSettings.cardDividerShape === 'diagonal'
-                        ? 'Couleur zone B'
-                        : activeFrameSettings.cardBackgroundSplitAxis === 'y'
-                          ? 'Couleur zone bas'
-                          : 'Couleur zone droite'
-                    }
-                    value={activeFrameSettings.cardBackgroundColorB}
-                    onManualChange={(cardBackgroundColorB) => patchFrame({ cardBackgroundColorB })}
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Position de la séparation
-                    </p>
-                    <span className="text-sm font-semibold text-neutral-700">
-                      {activeFrameSettings.cardBackgroundSplitPosition}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={8}
-                    max={92}
-                    step={1}
-                    value={activeFrameSettings.cardBackgroundSplitPosition}
-                    onChange={(event) =>
-                      patchFrame({ cardBackgroundSplitPosition: Number(event.target.value) })
-                    }
-                    className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                    aria-label="Position de la séparation"
-                  />
-                </div>
-
-                <div
-                  className="h-16 w-full overflow-hidden rounded-xl border border-neutral-200/80"
-                  style={servicesCardSplitBackgroundLayerStyle(activeFrameSettings)}
-                  aria-hidden
-                />
-
-                <ServicesToggleRow
-                  label="Ligne de séparation"
-                  description="Afficher un trait sur la frontière entre les deux zones."
-                  checked={activeFrameSettings.cardDividerEnabled}
-                  onChange={(cardDividerEnabled) => patchFrame({ cardDividerEnabled })}
-                />
-
-                {activeFrameSettings.cardDividerEnabled ? (
-                  <div className="space-y-4">
-                    {activeFrameSettings.cardDividerShape === 'curve' ||
-                    activeFrameSettings.cardDividerShape === 'wave' ? (
-                      <div>
-                        <div className="mb-2 flex items-center justify-between gap-3">
-                          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                            {activeFrameSettings.cardDividerShape === 'curve'
-                              ? 'Courbure'
-                              : 'Amplitude vague'}
-                          </p>
-                          <span className="text-xs font-semibold text-neutral-600">
-                            {activeFrameSettings.cardDividerCurveDepth}
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min={2}
-                          max={40}
-                          step={1}
-                          value={activeFrameSettings.cardDividerCurveDepth}
-                          onChange={(event) =>
-                            patchFrame({ cardDividerCurveDepth: Number(event.target.value) })
-                          }
-                          className="w-full accent-neutral-900"
-                          aria-label="Profondeur de courbe"
-                        />
-                      </div>
-                    ) : null}
-
-                    <ServicesFrameColorField
-                      services={services}
-                      onChange={onChange}
-                      slot="cardBorder"
-                      label="Couleur du trait"
-                      value={activeFrameSettings.cardDividerColor}
-                      onManualChange={(cardDividerColor) => patchFrame({ cardDividerColor })}
-                    />
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <div className="mb-2 flex items-center justify-between gap-3">
-                          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                            Épaisseur
-                          </p>
-                          <span className="text-xs font-semibold text-neutral-600">
-                            {activeFrameSettings.cardDividerThickness}px
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min={1}
-                          max={8}
-                          step={1}
-                          value={activeFrameSettings.cardDividerThickness}
-                          onChange={(event) =>
-                            patchFrame({ cardDividerThickness: Number(event.target.value) })
-                          }
-                          className="w-full accent-neutral-900"
-                        />
-                      </div>
-                      <div>
-                        <div className="mb-2 flex items-center justify-between gap-3">
-                          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                            Opacité
-                          </p>
-                          <span className="text-xs font-semibold text-neutral-600">
-                            {activeFrameSettings.cardDividerOpacity}%
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min={10}
-                          max={100}
-                          step={1}
-                          value={activeFrameSettings.cardDividerOpacity}
-                          onChange={(event) =>
-                            patchFrame({ cardDividerOpacity: Number(event.target.value) })
-                          }
-                          className="w-full accent-neutral-900"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
               </div>
-            )}
+            </ServicesLayoutSettingsBand>
+          ) : null}
 
-            <div className="space-y-4 rounded-2xl border border-neutral-200/60 bg-white/70 p-4">
+          {services.sectionDesign === 'services-pricing-monolith' ? (
+            <ServicesLayoutSettingsBand
+              motionKey="services-pricing-monolith"
+              title="Pricing Monolith options"
+            >
+              <ServicesPreviewCardGrid
+                label="Cards per row"
+                options={PORTFOLIO_SERVICES_PRICING_MONOLITH_COLUMNS_OPTIONS.map((option) => ({
+                  value: String(option.value) as '1' | '2' | '3' | '4',
+                  label: option.label,
+                  glyph: servicesPricingColumnsGlyph(option.value),
+                }))}
+                value={String(
+                  (services.servicesPricingMonolith ?? DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS).cardsPerRow ?? 3
+                ) as '1' | '2' | '3' | '4'}
+                onChange={(next) =>
+                  onChange({
+                    servicesPricingMonolith: {
+                      ...(services.servicesPricingMonolith ?? DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS),
+                      cardsPerRow: (next === '1' ? 1 : next === '2' ? 2 : next === '4' ? 4 : 3) as PortfolioServicesPricingMonolithColumns,
+                    },
+                  })
+                }
+                columns={4}
+              />
+            </ServicesLayoutSettingsBand>
+          ) : null}
+
+          {services.sectionDesign === 'services-pricing-aurora' ? (
+            <ServicesLayoutSettingsBand
+              motionKey="services-pricing-aurora"
+              title="Pricing Aurora options"
+            >
+              <ServicesPreviewCardGrid
+                label="Cards per row"
+                options={PORTFOLIO_SERVICES_PRICING_AURORA_COLUMNS_OPTIONS.map((option) => ({
+                  value: String(option.value) as '1' | '2' | '3' | '4',
+                  label: option.label,
+                  glyph: servicesPricingColumnsGlyph(option.value),
+                }))}
+                value={String(
+                  (services.servicesPricingAurora ?? DEFAULT_SERVICES_PRICING_AURORA_SETTINGS).cardsPerRow ?? 3
+                ) as '1' | '2' | '3' | '4'}
+                onChange={(next) =>
+                  onChange({
+                    servicesPricingAurora: {
+                      ...(services.servicesPricingAurora ?? DEFAULT_SERVICES_PRICING_AURORA_SETTINGS),
+                      cardsPerRow: (next === '1' ? 1 : next === '2' ? 2 : next === '4' ? 4 : 3) as PortfolioServicesPricingAuroraColumns,
+                    },
+                  })
+                }
+                columns={4}
+              />
+
               <div>
-                <p className="text-sm font-semibold text-neutral-950">Décor géométrique</p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Teinte ou forme placée librement dans le cadre — redimensionnable, avec séquence
-                  d’apparition optionnelle.
-                </p>
+                <span className="flex items-center gap-1.5">
+                  <ServicesGroupLabel>Featured card</ServicesGroupLabel>
+                  <ServicesInfoTooltip text="The featured card gets the accent gradient border and glass tint that sets it apart from the others." />
+                </span>
+                {availableServices.length > 0 ? (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {availableServices.map((service, index) => {
+                      const currentIndex = Math.min(
+                        (services.servicesPricingAurora ?? DEFAULT_SERVICES_PRICING_AURORA_SETTINGS).popularIndex,
+                        availableServices.length - 1
+                      );
+                      return (
+                        <ServicesPickerCard
+                          key={service.id}
+                          active={currentIndex === index}
+                          label={service.title.trim() || `Service ${index + 1}`}
+                          onClick={() =>
+                            onChange({
+                              servicesPricingAurora: {
+                                ...(services.servicesPricingAurora ?? DEFAULT_SERVICES_PRICING_AURORA_SETTINGS),
+                                popularIndex: index,
+                              },
+                            })
+                          }
+                          compact
+                        >
+                          <></>
+                        </ServicesPickerCard>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-xs text-neutral-500">
+                    Add a service to choose which card is featured.
+                  </p>
+                )}
               </div>
 
-              <ServicesToggleRow
-                label="Activer le décor"
-                description="Affiche une forme ou teinte décorative derrière le contenu de la carte."
-                checked={activeFrameSettings.cardDecorEnabled}
-                onChange={(cardDecorEnabled) => patchFrame({ cardDecorEnabled })}
-              />
-
-              {activeFrameSettings.cardDecorEnabled ? (
-                <>
-                  <ServicesOptionGrid
-                    label="Forme"
-                    options={PORTFOLIO_SERVICES_CARD_DECOR_SHAPE_OPTIONS}
-                    value={activeFrameSettings.cardDecorShape}
-                    onChange={(cardDecorShape) => patchFrame({ cardDecorShape })}
-                    columns={2}
-                  />
-
-                  <ServicesFrameColorField
-                    services={services}
-                    onChange={onChange}
-                    slot="cardAccent"
-                    label="Couleur / teinte"
-                    value={activeFrameSettings.cardDecorColor}
-                    onManualChange={(cardDecorColor) => patchFrame({ cardDecorColor })}
-                  />
-
-                  <div>
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Opacité
-                      </p>
-                      <span className="text-xs font-semibold text-neutral-600">
-                        {activeFrameSettings.cardDecorOpacity}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={5}
-                      max={100}
-                      step={1}
-                      value={activeFrameSettings.cardDecorOpacity}
-                      onChange={(event) =>
-                        patchFrame({ cardDecorOpacity: Number(event.target.value) })
-                      }
-                      className="w-full accent-neutral-900"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Taille
-                      </p>
-                      <span className="text-xs font-semibold text-neutral-600">
-                        {activeFrameSettings.cardDecorSize}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={8}
-                      max={160}
-                      step={1}
-                      value={activeFrameSettings.cardDecorSize}
-                      onChange={(event) => patchFrame({ cardDecorSize: Number(event.target.value) })}
-                      className="w-full accent-neutral-900"
-                    />
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <div className="mb-2 flex items-center justify-between gap-3">
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                          Position X
-                        </p>
-                        <span className="text-xs font-semibold text-neutral-600">
-                          {activeFrameSettings.cardDecorX}%
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        step={1}
-                        value={activeFrameSettings.cardDecorX}
-                        onChange={(event) => patchFrame({ cardDecorX: Number(event.target.value) })}
-                        className="w-full accent-neutral-900"
-                      />
-                    </div>
-                    <div>
-                      <div className="mb-2 flex items-center justify-between gap-3">
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                          Position Y
-                        </p>
-                        <span className="text-xs font-semibold text-neutral-600">
-                          {activeFrameSettings.cardDecorY}%
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        step={1}
-                        value={activeFrameSettings.cardDecorY}
-                        onChange={(event) => patchFrame({ cardDecorY: Number(event.target.value) })}
-                        className="w-full accent-neutral-900"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        Rotation
-                      </p>
-                      <span className="text-xs font-semibold text-neutral-600">
-                        {activeFrameSettings.cardDecorRotation}°
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={360}
-                      step={1}
-                      value={activeFrameSettings.cardDecorRotation}
-                      onChange={(event) =>
-                        patchFrame({ cardDecorRotation: Number(event.target.value) })
-                      }
-                      className="w-full accent-neutral-900"
-                    />
-                  </div>
-
-                  <ServicesOptionGrid
-                    label="Séquence d’alternance"
-                    options={PORTFOLIO_SERVICES_CARD_DECOR_ALTERNATION_OPTIONS}
-                    value={activeFrameSettings.cardDecorAlternation}
-                    onChange={(cardDecorAlternation) => patchFrame({ cardDecorAlternation })}
-                    columns={2}
-                  />
-
-                  <div className="relative h-28 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
-                    <div
-                      className="absolute inset-0"
-                      style={servicesCardDecorShellStyle(activeFrameSettings)}
-                      aria-hidden
-                    />
-                    <p className="absolute bottom-2 left-3 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
-                      Aperçu position
-                    </p>
-                  </div>
-                </>
-              ) : null}
-            </div>
-
-            {activeFrameSettings.cardBorder === 'soft' || activeFrameSettings.cardBorder === 'solid' ? (
-              <ServicesFrameColorField
-                services={services}
-                onChange={onChange}
-                slot="cardBorder"
-                label="Couleur de bordure"
-                value={activeFrameSettings.cardBorderColor}
-                onManualChange={(cardBorderColor) => patchFrame({ cardBorderColor })}
-              />
-            ) : null}
-
-            {isPillCloudLayout ? (
-              <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3.5 py-3 text-sm text-neutral-500">
-                Rayon et padding sont fixés par la géométrie compacte des pilules.
-              </p>
-            ) : (
-              <>
-                <ServicesOptionGrid
-                  label="Arrondi"
-                  options={PORTFOLIO_SERVICES_CARD_RADIUS_OPTIONS}
-                  value={activeFrameSettings.cardBorderRadius}
-                  onChange={(cardBorderRadius) => patchFrame({ cardBorderRadius })}
-                  columns={3}
-                />
-
-                <ServicesOptionGrid
-                  label="Padding carte"
-                  options={PORTFOLIO_SERVICES_CARD_PADDING_OPTIONS}
-                  value={activeFrameSettings.cardPadding}
-                  onChange={(cardPadding) => patchFrame({ cardPadding })}
-                  columns={2}
-                />
-              </>
-            )}
-          </div>
-        </div>
-      ) : null}
-
-      {subSection === 'title' && settingsFocus === 'skills' ? (
-        <div className="space-y-6">
-          <ServicesToggleRow
-            label="Skill title"
-            description="Afficher le titre sur chaque carte skill."
-            checked={services.showSkillTitle}
-            onChange={(showSkillTitle) => onChange({ showSkillTitle })}
-          />
-          {isPillCloudLayout ? (
-            <p className="rounded-2xl border border-sky-200/80 bg-sky-50/60 px-4 py-3 text-sm text-neutral-600">
-              Le fond individuel du titre est désactivé : la pilule fournit déjà sa surface.
-            </p>
-          ) : (
-            <ServicesElementChromeControls
-              services={services}
-              chromeId="skillTitle"
-              onChange={onChange}
-              title="Fond du titre"
-              description="Fond derrière le titre de la carte skill."
-            />
-          )}
-          <ServicesInlineTypography
-            services={services}
-            onChange={onChange}
-            target="skillTitle"
-            title="Typographie du titre"
-          />
-        </div>
-      ) : null}
-
-      {subSection === 'description' && settingsFocus === 'skills' ? (
-        <div className="space-y-6">
-          {isPillCloudLayout ? (
-            <p className="rounded-2xl border border-sky-200/80 bg-sky-50/60 px-4 py-3 text-sm text-neutral-600">
-              Le nuage de pilules n&apos;affiche pas les descriptions afin de conserver des
-              capsules compactes.
-            </p>
-          ) : (
-            <>
-              <ServicesToggleRow
-                label="Skill description"
-                description="Afficher la description sur chaque carte skill."
-                checked={services.showSkillDescription}
-                onChange={(showSkillDescription) => onChange({ showSkillDescription })}
-              />
-              <ServicesElementChromeControls
-                services={services}
-                chromeId="skillBody"
-                onChange={onChange}
-                title="Fond de la description"
-                description="Fond derrière la description de la carte skill."
-              />
-              <ServicesInlineTypography
-                services={services}
-                onChange={onChange}
-                target="skillBody"
-                title="Typographie de la description"
-              />
-            </>
-          )}
-        </div>
-      ) : null}
-
-      {subSection === 'icon' && settingsFocus === 'skills' ? (
-        <div className="space-y-6">
-          {isPillCloudLayout ? (
-            <p className="rounded-2xl border border-sky-200/80 bg-sky-50/60 px-4 py-3 text-sm text-neutral-600">
-              Ce design remplace les grands logos par une petite pastille de marque. Sa taille et
-              sa position sont optimisées automatiquement.
-            </p>
-          ) : (
-            <>
-              <ServicesToggleRow
-                label="Couleurs marque des outils"
-                description="Chaque carte prend la couleur exacte de l’outil (Premiere, CapCut, Framer…). Texte et icônes s’adaptent automatiquement."
-                checked={services.skillsCardBrandFill === true}
-                onChange={(skillsCardBrandFill) => onChange({ skillsCardBrandFill })}
-              />
-              <ServicesToggleRow
-                label="Tool icon"
-                description="Afficher l'icône de l'outil sur chaque carte."
-                checked={services.showSkillIcon}
-                onChange={(showSkillIcon) => onChange({ showSkillIcon })}
-              />
-              <ServicesOptionGrid
-                label="Emplacement icône"
-                options={PORTFOLIO_SERVICES_ICON_PLACEMENT_OPTIONS}
-                value={readBlock('iconPlacement')}
-                onChange={(iconPlacement) => patchBlock({ iconPlacement })}
-                columns={2}
-              />
-              <ServicesOptionGrid
-                label="Taille de l'icône"
-                options={PORTFOLIO_TOOLS_ICON_SIZE_OPTIONS}
-                value={services.skillsIconSize}
-                onChange={(skillsIconSize) => onChange({ skillsIconSize })}
-                columns={2}
-              />
-              <ServicesOptionGrid
-                label="Coins de l’icône"
-                options={PORTFOLIO_SKILLS_ICON_RADIUS_OPTIONS}
-                value={services.skillsIconRadius ?? 'full'}
-                onChange={(skillsIconRadius) => onChange({ skillsIconRadius })}
-                columns={3}
-              />
-              <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/70 p-4">
-                <ServicesToggleRow
-                  label="Fond de l’icône"
-                  description="Affiche une couleur derrière le logo de l’outil."
-                  checked={services.skillsIconBackgroundEnabled !== false}
-                  onChange={(skillsIconBackgroundEnabled) =>
-                    onChange({ skillsIconBackgroundEnabled })
-                  }
-                />
-                {services.skillsIconBackgroundEnabled !== false ? (
-                  <>
-                    <ServicesToggleRow
-                      label="Couleur de fond automatique"
-                      description="Adapte le fond à la carte et au mode clair/sombre."
-                      checked={services.skillsIconBackgroundManual !== true}
-                      onChange={(automatic) =>
-                        onChange({ skillsIconBackgroundManual: !automatic })
-                      }
-                    />
-                    {services.skillsIconBackgroundManual === true ? (
-                      <ServicesManualColorField
-                        label="Couleur de fond personnalisée"
-                        value={services.skillsIconBackgroundColor}
-                        onChange={(skillsIconBackgroundColor) =>
+              <div>
+                <span className="flex items-center gap-1.5">
+                  <ServicesGroupLabel>Featured card color</ServicesGroupLabel>
+                  <ServicesInfoTooltip text="Colors the featured card's gradient border and glass tint from the active theme palette." />
+                </span>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  {PRICING_AURORA_POPULAR_COLOR_OPTIONS.map((option) => {
+                    const palette = mergeServicesPalette(DEFAULT_SERVICES_PALETTE, services.servicesPalette);
+                    const hex = resolveHeroPaletteColor(palette, option.value);
+                    const current = (services.servicesPricingAurora ?? DEFAULT_SERVICES_PRICING_AURORA_SETTINGS)
+                      .popularColorToken;
+                    const active = current === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() =>
                           onChange({
-                            skillsIconBackgroundColor,
-                            skillsIconBackgroundManual: true,
+                            servicesPricingAurora: {
+                              ...(services.servicesPricingAurora ?? DEFAULT_SERVICES_PRICING_AURORA_SETTINGS),
+                              popularColorToken: option.value,
+                            },
                           })
                         }
-                      />
-                    ) : null}
-                  </>
-                ) : null}
+                        aria-pressed={active}
+                        aria-label={option.label}
+                        title={option.label}
+                        className={`flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
+                          active ? 'ring-2 ring-neutral-900 ring-offset-2' : 'hover:bg-neutral-100'
+                        }`}
+                      >
+                        <span
+                          className="h-9 w-9 rounded-full border border-neutral-200/80 shadow-inner"
+                          style={{ backgroundColor: hex }}
+                        />
+                        <span className="text-[11px] font-medium text-neutral-500">{option.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/70 p-4">
-                <ServicesToggleRow
-                  label="Bordure de l’icône"
-                  description="Ajoute une bordure autour du fond de l’icône."
-                  checked={services.skillsIconBorderEnabled !== false}
-                  onChange={(skillsIconBorderEnabled) =>
-                    onChange({ skillsIconBorderEnabled })
-                  }
-                />
-                {services.skillsIconBorderEnabled !== false ? (
-                  <>
-                    <ServicesToggleRow
-                      label="Couleur de bordure automatique"
-                      description="Suit la bordure de la carte et les couleurs de marque."
-                      checked={services.skillsIconBorderManual !== true}
-                      onChange={(automatic) =>
-                        onChange({ skillsIconBorderManual: !automatic })
-                      }
-                    />
-                    {services.skillsIconBorderManual === true ? (
-                      <ServicesManualColorField
-                        label="Couleur de bordure personnalisée"
-                        value={services.skillsIconBorderColor}
-                        onChange={(skillsIconBorderColor) =>
-                          onChange({
-                            skillsIconBorderColor,
-                            skillsIconBorderManual: true,
-                          })
-                        }
-                      />
-                    ) : null}
-                    <label className="block rounded-2xl border border-neutral-200/80 bg-white p-4">
-                      <span className="flex items-center justify-between gap-4">
-                        <span className="text-sm font-semibold text-neutral-900">
-                          Épaisseur de bordure
-                        </span>
-                        <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                          {clampSkillsIconBorderWidthPx(
-                            services.skillsIconBorderWidthPx,
-                            1
-                          )}
-                          px
-                        </span>
-                      </span>
-                      <input
-                        type="range"
-                        min={SKILLS_ICON_BORDER_WIDTH_PX_MIN}
-                        max={SKILLS_ICON_BORDER_WIDTH_PX_MAX}
-                        step={1}
-                        value={clampSkillsIconBorderWidthPx(
-                          services.skillsIconBorderWidthPx,
-                          1
-                        )}
-                        onChange={(event) =>
-                          onChange({
-                            skillsIconBorderWidthPx: clampSkillsIconBorderWidthPx(
-                              event.target.value,
-                              1
-                            ),
-                          })
-                        }
-                        className="mt-3 w-full accent-neutral-950"
-                      />
-                    </label>
-                  </>
-                ) : null}
-              </div>
-            </>
-          )}
+            </ServicesLayoutSettingsBand>
+          ) : null}
         </div>
       ) : null}
 
-      {subSection === 'palette' && settingsFocus === 'skills' ? (
-        <ServicesPalettePanel services={services} onChange={onChange} />
-      ) : null}
-
-      {subSection === 'background' && settingsFocus === 'skills' ? (
-        <div className="space-y-6">
+      {subSection === 'background' ? (
+        <div className="space-y-4">
           <SectionBackgroundSettingsFields
             settings={services}
             onChange={onChange}
-            renderColorField={({ label, value, onChange: onBgColorChange }) => {
+            renderColorField={({ label, value, onChange: onColorChange }) => {
               const slot = SERVICES_BACKGROUND_LABEL_SLOTS[label];
               if (!slot) {
-                return (
-                  <ServicesManualColorField
-                    label={label}
-                    value={value}
-                    onChange={onBgColorChange}
-                  />
-                );
+                return <ServicesManualColorField label={label} value={value} onChange={onColorChange} />;
               }
               return (
-                <ServicesColorField
-                  services={services}
-                  onChange={onChange}
-                  slot={slot}
-                  label={label}
-                  value={value}
-                />
+                <ServicesColorField services={services} onChange={onChange} slot={slot} label={label} value={value} />
               );
             }}
           />
+        </div>
+      ) : null}
+
+      {subSection === 'header' ? (
+        <div className="space-y-6">
+          <div>
+            <ServicesHeaderChoiceGrid
+              value={services.headerDesign ?? 'editorial'}
+              onChange={(headerDesign) => onChange({ headerDesign })}
+            />
+
+            <ServicesLayoutSettingsBand motionKey={services.headerDesign ?? 'editorial'}>
+              {services.headerDesign === 'index' ? (
+                <>
+                  <div>
+                    <ServicesSectionLabel>Rule label</ServicesSectionLabel>
+                    <div className="mt-3 space-y-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
+                        <input
+                          type="text"
+                          value={services.headerIndexLabelText}
+                          onChange={(event) => onChange({ headerIndexLabelText: event.target.value })}
+                          placeholder="Index"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                      <ServicesPreviewCardGrid
+                        label="Color"
+                        options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                          ...option,
+                          glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                        }))}
+                        value={services.headerIndexLabelColor ?? 'texteFort'}
+                        onChange={(headerIndexLabelColor) => onChange({ headerIndexLabelColor })}
+                        columns={3}
+                      />
+                      <ServicesSizePill
+                        label="Size"
+                        value={services.headerIndexLabelSize ?? 'md'}
+                        onChange={(headerIndexLabelSize) => onChange({ headerIndexLabelSize })}
+                      />
+                      <ServicesOptionGrid
+                        label="Weight"
+                        options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+                        value={services.headerIndexLabelWeight ?? 'regular'}
+                        onChange={(headerIndexLabelWeight: PortfolioServicesHeaderTitleWeight) =>
+                          onChange({ headerIndexLabelWeight })
+                        }
+                        columns={4}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200/70 pt-6">
+                    <ServicesSectionLabel>Counter</ServicesSectionLabel>
+                    <div className="mt-3 space-y-4">
+                      <ServicesPreviewCardGrid
+                        label="Numeral color"
+                        options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                          ...option,
+                          glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                        }))}
+                        value={services.headerIndexNumberColor ?? 'principal'}
+                        onChange={(headerIndexNumberColor) => onChange({ headerIndexNumberColor })}
+                        columns={3}
+                      />
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Count label</p>
+                        <input
+                          type="text"
+                          value={services.headerIndexCountLabelText}
+                          onChange={(event) => onChange({ headerIndexCountLabelText: event.target.value })}
+                          placeholder="Services"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200/70 pt-6">
+                    <ServicesSectionLabel>Title</ServicesSectionLabel>
+                    <div className="mt-3 space-y-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
+                        <input
+                          type="text"
+                          value={services.headerIndexTitleText}
+                          onChange={(event) => onChange({ headerIndexTitleText: event.target.value })}
+                          placeholder="Core services"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                      <ServicesPreviewCardGrid
+                        label="Color"
+                        options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                          ...option,
+                          glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                        }))}
+                        value={services.headerIndexTitleColor ?? 'texteFort'}
+                        onChange={(headerIndexTitleColor) => onChange({ headerIndexTitleColor })}
+                        columns={3}
+                      />
+                      <ServicesSizePill
+                        label="Size"
+                        value={services.headerIndexTitleSize ?? 'md'}
+                        onChange={(headerIndexTitleSize) => onChange({ headerIndexTitleSize })}
+                      />
+                      <ServicesOptionGrid
+                        label="Weight"
+                        options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+                        value={services.headerIndexTitleWeight ?? 'regular'}
+                        onChange={(headerIndexTitleWeight: PortfolioServicesHeaderTitleWeight) =>
+                          onChange({ headerIndexTitleWeight })
+                        }
+                        columns={4}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200/70 pt-6">
+                    <ServicesSectionLabel>Subtitle</ServicesSectionLabel>
+                    <div className="mt-3 space-y-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
+                        <input
+                          type="text"
+                          value={services.headerIndexSubtitleText}
+                          onChange={(event) => onChange({ headerIndexSubtitleText: event.target.value })}
+                          placeholder="A clear breakdown of what you can hire me for."
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                      <ServicesPreviewCardGrid
+                        label="Color"
+                        options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                          ...option,
+                          glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                        }))}
+                        value={services.headerIndexSubtitleColor ?? 'texteFort'}
+                        onChange={(headerIndexSubtitleColor) => onChange({ headerIndexSubtitleColor })}
+                        columns={3}
+                      />
+                      <ServicesSizePill
+                        label="Size"
+                        value={services.headerIndexSubtitleSize ?? 'md'}
+                        onChange={(headerIndexSubtitleSize) => onChange({ headerIndexSubtitleSize })}
+                      />
+                      <ServicesOptionGrid
+                        label="Weight"
+                        options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+                        value={services.headerIndexSubtitleWeight ?? 'regular'}
+                        onChange={(headerIndexSubtitleWeight: PortfolioServicesHeaderTitleWeight) =>
+                          onChange({ headerIndexSubtitleWeight })
+                        }
+                        columns={4}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200/70 pt-6">
+                    <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideTitleControls />
+                  </div>
+                </>
+              ) : services.headerDesign === 'marquee' ? (
+                <>
+                  <div>
+                    <ServicesSectionLabel>Words</ServicesSectionLabel>
+                    <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 1</p>
+                        <input
+                          type="text"
+                          value={services.headerMarqueeWord1Text}
+                          onChange={(event) => onChange({ headerMarqueeWord1Text: event.target.value })}
+                          placeholder="Core"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 2</p>
+                        <input
+                          type="text"
+                          value={services.headerMarqueeWord2Text}
+                          onChange={(event) => onChange({ headerMarqueeWord2Text: event.target.value })}
+                          placeholder="Services"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 3</p>
+                        <input
+                          type="text"
+                          value={services.headerMarqueeWord3Text}
+                          onChange={(event) => onChange({ headerMarqueeWord3Text: event.target.value })}
+                          placeholder="Optional"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 4</p>
+                        <input
+                          type="text"
+                          value={services.headerMarqueeWord4Text}
+                          onChange={(event) => onChange({ headerMarqueeWord4Text: event.target.value })}
+                          placeholder="Optional"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200/70 pt-6">
+                    <ServicesSectionLabel>Style</ServicesSectionLabel>
+                    <div className="mt-3 space-y-4">
+                      <ServicesPreviewCardGrid
+                        label="Word color"
+                        options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                          ...option,
+                          glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                        }))}
+                        value={services.headerMarqueeWordColor ?? 'principal'}
+                        onChange={(headerMarqueeWordColor) => onChange({ headerMarqueeWordColor })}
+                        columns={3}
+                      />
+                      <ServicesSizePill
+                        label="Size"
+                        value={services.headerMarqueeSize ?? 'md'}
+                        onChange={(headerMarqueeSize) => onChange({ headerMarqueeSize })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200/70 pt-6">
+                    <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideAlignment hideTitleControls />
+                  </div>
+                </>
+              ) : services.headerDesign === 'accent-count' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Badge text</p>
+                    <input
+                      type="text"
+                      value={services.headerAccentCountBadgeText}
+                      onChange={(event) => onChange({ headerAccentCountBadgeText: event.target.value })}
+                      placeholder="{count}+ services"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Lead text</p>
+                    <input
+                      type="text"
+                      value={services.headerAccentCountLeadText}
+                      onChange={(event) => onChange({ headerAccentCountLeadText: event.target.value })}
+                      placeholder="A curated set of services, ready when you need them."
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <ServicesPreviewCardGrid
+                    label="Badge color"
+                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={services.headerAccentCountBadgeColor ?? 'principal'}
+                    onChange={(headerAccentCountBadgeColor) => onChange({ headerAccentCountBadgeColor })}
+                    columns={3}
+                  />
+                  <ServicesPreviewCardGrid
+                    label="Lead color"
+                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={services.headerAccentCountLeadColor ?? 'secondaire'}
+                    onChange={(headerAccentCountLeadColor) => onChange({ headerAccentCountLeadColor })}
+                    columns={3}
+                  />
+                  <ServicesSizePill
+                    label="Size"
+                    value={services.headerAccentCountSize ?? 'md'}
+                    onChange={(headerAccentCountSize) => onChange({ headerAccentCountSize })}
+                  />
+                  <ServicesOptionGrid
+                    label="Lead weight"
+                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={services.headerAccentCountWeight ?? 'regular'}
+                    onChange={(headerAccentCountWeight: PortfolioServicesHeaderTitleWeight) =>
+                      onChange({ headerAccentCountWeight })
+                    }
+                    columns={4}
+                  />
+                  <ServicesOptionGrid
+                    label="Alignment"
+                    options={SERVICES_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
+                    value={services.headerAccentCountAlignment ?? 'left'}
+                    onChange={(headerAccentCountAlignment: PortfolioServicesHeaderAccentCountAlignment) =>
+                      onChange({ headerAccentCountAlignment })
+                    }
+                    columns={3}
+                  />
+                  <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideAlignment hideTitleControls />
+                </>
+              ) : services.headerDesign === 'serif-lead' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
+                    <input
+                      type="text"
+                      value={services.headerSerifLeadLabelText}
+                      onChange={(event) => onChange({ headerSerifLeadLabelText: event.target.value })}
+                      placeholder="Services"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <ServicesPreviewCardGrid
+                    label="Label color"
+                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={services.headerSerifLeadLabelColor ?? 'texteFort'}
+                    onChange={(headerSerifLeadLabelColor) => onChange({ headerSerifLeadLabelColor })}
+                    columns={3}
+                  />
+                  <ServicesSizePill
+                    label="Label size"
+                    value={services.headerSerifLeadLabelSize ?? 'md'}
+                    onChange={(headerSerifLeadLabelSize) => onChange({ headerSerifLeadLabelSize })}
+                  />
+                  <ServicesOptionGrid
+                    label="Label weight"
+                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={services.headerSerifLeadLabelWeight ?? 'regular'}
+                    onChange={(headerSerifLeadLabelWeight: PortfolioServicesHeaderTitleWeight) =>
+                      onChange({ headerSerifLeadLabelWeight })
+                    }
+                    columns={4}
+                  />
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
+                    <input
+                      type="text"
+                      value={services.headerSerifLeadTitleText}
+                      onChange={(event) => onChange({ headerSerifLeadTitleText: event.target.value })}
+                      placeholder="A focused set of services, built around what you need."
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <ServicesPreviewCardGrid
+                    label="Title color"
+                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={services.headerSerifLeadTitleColor ?? 'texteFort'}
+                    onChange={(headerSerifLeadTitleColor) => onChange({ headerSerifLeadTitleColor })}
+                    columns={3}
+                  />
+                  <ServicesSizePill
+                    label="Title size"
+                    value={services.headerSerifLeadTitleSize ?? 'md'}
+                    onChange={(headerSerifLeadTitleSize) => onChange({ headerSerifLeadTitleSize })}
+                  />
+                  <ServicesOptionGrid
+                    label="Title weight"
+                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={services.headerSerifLeadTitleWeight ?? 'regular'}
+                    onChange={(headerSerifLeadTitleWeight: PortfolioServicesHeaderTitleWeight) =>
+                      onChange({ headerSerifLeadTitleWeight })
+                    }
+                    columns={4}
+                  />
+                  <ServicesPreviewCardGrid
+                    label="Subtitle color"
+                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={services.headerSerifLeadSubtitleColor ?? 'texteFort'}
+                    onChange={(headerSerifLeadSubtitleColor) => onChange({ headerSerifLeadSubtitleColor })}
+                    columns={3}
+                  />
+                  <ServicesSizePill
+                    label="Subtitle size"
+                    value={services.headerSerifLeadSubtitleSize ?? 'md'}
+                    onChange={(headerSerifLeadSubtitleSize) => onChange({ headerSerifLeadSubtitleSize })}
+                  />
+                  <ServicesOptionGrid
+                    label="Subtitle weight"
+                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={services.headerSerifLeadSubtitleWeight ?? 'regular'}
+                    onChange={(headerSerifLeadSubtitleWeight: PortfolioServicesHeaderTitleWeight) =>
+                      onChange({ headerSerifLeadSubtitleWeight })
+                    }
+                    columns={4}
+                  />
+                  <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideTitleControls />
+                </>
+              ) : services.headerDesign === 'billboard' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Big background word</p>
+                    <input
+                      type="text"
+                      value={services.headerBillboardBigWord}
+                      onChange={(event) => onChange({ headerBillboardBigWord: event.target.value })}
+                      placeholder="SERVICES"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Count line</p>
+                    <input
+                      type="text"
+                      value={services.headerBillboardCountText}
+                      onChange={(event) => onChange({ headerBillboardCountText: event.target.value })}
+                      placeholder="{count} services"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
+                    <input
+                      type="text"
+                      value={services.headerBillboardTitleText}
+                      onChange={(event) => onChange({ headerBillboardTitleText: event.target.value })}
+                      placeholder="Core services"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <ServicesPreviewCardGrid
+                    label="Big word style"
+                    options={SERVICES_HEADER_BILLBOARD_WORD_STYLE_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: servicesHeaderBillboardWordStyleGlyph(option.value),
+                    }))}
+                    value={services.headerBillboardWordStyle ?? 'outline'}
+                    onChange={(headerBillboardWordStyle: PortfolioServicesHeaderBillboardWordStyle) =>
+                      onChange({ headerBillboardWordStyle })
+                    }
+                    columns={3}
+                  />
+                  <ServicesPreviewCardGrid
+                    label="Big word color"
+                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={services.headerBillboardWordColor ?? 'principal'}
+                    onChange={(headerBillboardWordColor) => onChange({ headerBillboardWordColor })}
+                    columns={3}
+                  />
+                  <ServicesPreviewCardGrid
+                    label="Title color"
+                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={services.headerBillboardTitleColor ?? 'principal'}
+                    onChange={(headerBillboardTitleColor) => onChange({ headerBillboardTitleColor })}
+                    columns={3}
+                  />
+                  <ServicesPreviewCardGrid
+                    label="Count line color"
+                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={services.headerBillboardMetaColor ?? 'secondaire'}
+                    onChange={(headerBillboardMetaColor) => onChange({ headerBillboardMetaColor })}
+                    columns={3}
+                  />
+                  <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideAlignment hideTitleControls />
+                </>
+              ) : services.headerDesign === 'masthead' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 1</p>
+                    <input
+                      type="text"
+                      value={services.headerMastheadLine1Text}
+                      onChange={(event) => onChange({ headerMastheadLine1Text: event.target.value })}
+                      placeholder="Core services."
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 2</p>
+                    <input
+                      type="text"
+                      value={services.headerMastheadLine2Text}
+                      onChange={(event) => onChange({ headerMastheadLine2Text: event.target.value })}
+                      placeholder="Chosen with intent."
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 3</p>
+                    <input
+                      type="text"
+                      value={services.headerMastheadLine3Text}
+                      onChange={(event) => onChange({ headerMastheadLine3Text: event.target.value })}
+                      placeholder="Kept up to date."
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <ServicesPreviewCardGrid
+                    label="Headline color"
+                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={services.headerMastheadHeadlineColor ?? 'principal'}
+                    onChange={(headerMastheadHeadlineColor) => onChange({ headerMastheadHeadlineColor })}
+                    columns={3}
+                  />
+                  <ServicesSizePill
+                    label="Headline size"
+                    value={services.headerMastheadHeadlineSize ?? 'md'}
+                    onChange={(headerMastheadHeadlineSize) => onChange({ headerMastheadHeadlineSize })}
+                  />
+                  <ServicesOptionGrid
+                    label="Headline weight"
+                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={services.headerMastheadHeadlineWeight ?? 'regular'}
+                    onChange={(headerMastheadHeadlineWeight: PortfolioServicesHeaderTitleWeight) =>
+                      onChange({ headerMastheadHeadlineWeight })
+                    }
+                    columns={4}
+                  />
+                  <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideTitleControls />
+                </>
+              ) : services.headerDesign === 'split-heading' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
+                    <input
+                      type="text"
+                      value={services.headerSplitHeadingTitleText}
+                      onChange={(event) => onChange({ headerSplitHeadingTitleText: event.target.value })}
+                      placeholder="Core services"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
+                    <input
+                      type="text"
+                      value={services.headerSplitHeadingLabelText}
+                      onChange={(event) => onChange({ headerSplitHeadingLabelText: event.target.value })}
+                      placeholder="Services"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <ServicesPreviewCardGrid
+                    label="Title color"
+                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={services.headerSplitHeadingTitleColor ?? 'principal'}
+                    onChange={(headerSplitHeadingTitleColor) => onChange({ headerSplitHeadingTitleColor })}
+                    columns={3}
+                  />
+                  <ServicesSizePill
+                    label="Title size"
+                    value={services.headerSplitHeadingTitleSize ?? 'md'}
+                    onChange={(headerSplitHeadingTitleSize) => onChange({ headerSplitHeadingTitleSize })}
+                  />
+                  <ServicesOptionGrid
+                    label="Title weight"
+                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={services.headerSplitHeadingTitleWeight ?? 'regular'}
+                    onChange={(headerSplitHeadingTitleWeight: PortfolioServicesHeaderTitleWeight) =>
+                      onChange({ headerSplitHeadingTitleWeight })
+                    }
+                    columns={4}
+                  />
+                  <ServicesPreviewCardGrid
+                    label="Label color"
+                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={services.headerSplitHeadingLabelColor ?? 'secondaire'}
+                    onChange={(headerSplitHeadingLabelColor) => onChange({ headerSplitHeadingLabelColor })}
+                    columns={3}
+                  />
+                  <ServicesSizePill
+                    label="Label size"
+                    value={services.headerSplitHeadingLabelSize ?? 'md'}
+                    onChange={(headerSplitHeadingLabelSize) => onChange({ headerSplitHeadingLabelSize })}
+                  />
+                  <ServicesOptionGrid
+                    label="Label weight"
+                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={services.headerSplitHeadingLabelWeight ?? 'regular'}
+                    onChange={(headerSplitHeadingLabelWeight: PortfolioServicesHeaderTitleWeight) =>
+                      onChange({ headerSplitHeadingLabelWeight })
+                    }
+                    columns={4}
+                  />
+                  <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideAlignment hideTitleControls />
+                </>
+              ) : (
+                <>
+                  <ServicesToggleRow
+                    label="Header motion"
+                    info="Respects reduced-motion preference"
+                    checked={services.headerAnimationEnabled !== false}
+                    onChange={(headerAnimationEnabled) => onChange({ headerAnimationEnabled })}
+                  />
+                  <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} />
+                </>
+              )}
+            </ServicesLayoutSettingsBand>
+          </div>
         </div>
       ) : null}
     </div>

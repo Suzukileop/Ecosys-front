@@ -1,6 +1,5 @@
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import type { PortfolioSectionBackgroundSettings } from '@/components/portfolio/portfolio-section-background-settings';
-import { PORTFOLIO_HEADER_BOTTOM_SPACING_OPTIONS } from '@/components/portfolio/portfolio-header-design-shared';
 import {
   applyToolsPaletteToSettings,
   DEFAULT_TOOLS_COLOR_BINDINGS,
@@ -15,7 +14,6 @@ import {
 import {
   type PortfolioStackAsideTitlePlacement,
   type PortfolioStackDesign,
-  type PortfolioStackHeaderDesign,
   type PortfolioStackPresentationSettings,
   type PortfolioStackSectionLayout,
   type PortfolioStackSubtitleSize,
@@ -38,7 +36,6 @@ import {
 export type {
   PortfolioStackAsideTitlePlacement,
   PortfolioStackDesign,
-  PortfolioStackHeaderDesign,
   PortfolioStackPresentationSettings,
   PortfolioStackSectionLayout,
   PortfolioStackSubtitleSize,
@@ -46,30 +43,27 @@ export type {
   PortfolioStackTitlePreset,
   PortfolioStackTitleSize,
 } from '@/components/portfolio/portfolio-stack-presentation';
-export type { PortfolioHeaderBottomSpacing } from '@/components/portfolio/portfolio-header-design-shared';
+export {
+  PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS,
+  STACK_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
+  STACK_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
+  STACK_HEADER_PALETTE_TOKEN_OPTIONS,
+  stackHeaderDesignFontClass,
+  stackHeaderDesignFontStyle,
+  stackHeaderPaletteTokenColor,
+  type PortfolioStackHeaderAccentCountAlignment,
+  type PortfolioStackHeaderDesignAlignment,
+  type PortfolioStackHeaderBillboardWordStyle,
+  type PortfolioStackHeaderDesign,
+  type PortfolioStackHeaderFont,
+  type PortfolioStackHeaderMarginBottom,
+  type PortfolioStackHeaderPaletteToken,
+  type PortfolioStackHeaderTitleSize,
+  type PortfolioStackHeaderTitleWeight,
+} from '@/components/portfolio/portfolio-stack-header-settings';
 export type { PortfolioStackSectionSettings } from '@/components/portfolio/portfolio-stack-merge';
 export { pickStackPresentationFields, mergeStackPresentationBase, resolveStackShowLevel, resolveStackIconBackgroundEnabled } from '@/components/portfolio/portfolio-stack-merge';
 export { stackPresentationToToolsGallery } from '@/components/portfolio/portfolio-stack-gallery-mapper';
-
-export const PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS: {
-  value: PortfolioStackHeaderDesign;
-  label: string;
-}[] = [
-  { value: 'mask', label: 'Reveal mask' },
-  { value: 'split', label: 'Split rule' },
-  { value: 'typewriter', label: 'Typewriter' },
-  { value: 'index', label: 'Index numeral' },
-  { value: 'masthead', label: 'Masthead' },
-  { value: 'marquee', label: 'Marquee' },
-  { value: 'focus', label: 'Focus pull' },
-  { value: 'terminal', label: 'Terminal' },
-  { value: 'bracket', label: 'Bracket frame' },
-  { value: 'underline', label: 'Ink underline' },
-  { value: 'cascade', label: 'Word cascade' },
-  { value: 'mosaic', label: 'Mosaic reveal' },
-];
-
-export const PORTFOLIO_STACK_HEADER_BOTTOM_SPACING_OPTIONS = PORTFOLIO_HEADER_BOTTOM_SPACING_OPTIONS;
 
 export const PORTFOLIO_STACK_TAGS_SIZE_OPTIONS: {
   value: PortfolioStackTagsSize;
@@ -691,8 +685,71 @@ export const PORTFOLIO_STACK_TITLE_PRESET_OPTIONS = [
 export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
   ...DEFAULT_SECTION_BACKGROUND,
   design: 'workflow-rail',
-  headerDesign: 'mask',
-  headerBottomSpacing: 'medium',
+  headerDesign: 'editorial',
+  headerAnimationEnabled: true,
+  headerDesignAlignment: 'left',
+  headerMarginBottom: 'md',
+  headerTitleSize: 'md',
+  headerTitleWeight: 'regular',
+  headerAccentCountBadgeText: '',
+  headerAccentCountLeadText: '',
+  headerAccentCountBadgeColor: 'principal',
+  headerAccentCountLeadColor: 'secondaire',
+  headerAccentCountSize: 'md',
+  headerAccentCountWeight: 'regular',
+  headerAccentCountAlignment: 'left',
+  headerSerifLeadLabelText: '',
+  headerSerifLeadTitleText: '',
+  headerSerifLeadLabelColor: 'texteFort',
+  headerSerifLeadTitleColor: 'texteFort',
+  headerSerifLeadSubtitleColor: 'texteFort',
+  headerSerifLeadLabelSize: 'md',
+  headerSerifLeadTitleSize: 'md',
+  headerSerifLeadSubtitleSize: 'md',
+  headerSerifLeadLabelWeight: 'regular',
+  headerSerifLeadTitleWeight: 'regular',
+  headerSerifLeadSubtitleWeight: 'regular',
+  headerBillboardBigWord: '',
+  headerBillboardCountText: '',
+  headerBillboardTitleText: '',
+  headerBillboardWordStyle: 'outline',
+  headerBillboardWordColor: 'principal',
+  headerBillboardTitleColor: 'principal',
+  headerBillboardMetaColor: 'secondaire',
+  headerSplitHeadingLabelText: '',
+  headerSplitHeadingTitleText: '',
+  headerSplitHeadingTitleColor: 'principal',
+  headerSplitHeadingLabelColor: 'secondaire',
+  headerSplitHeadingTitleSize: 'md',
+  headerSplitHeadingTitleWeight: 'regular',
+  headerSplitHeadingLabelSize: 'md',
+  headerSplitHeadingLabelWeight: 'regular',
+  headerMastheadLine1Text: '',
+  headerMastheadLine2Text: '',
+  headerMastheadLine3Text: '',
+  headerMastheadHeadlineColor: 'principal',
+  headerMastheadHeadlineSize: 'md',
+  headerMastheadHeadlineWeight: 'regular',
+  headerIndexLabelText: '',
+  headerIndexTitleText: '',
+  headerIndexCountLabelText: '',
+  headerIndexSubtitleText: '',
+  headerIndexLabelColor: 'texteFort',
+  headerIndexNumberColor: 'principal',
+  headerIndexTitleColor: 'texteFort',
+  headerIndexSubtitleColor: 'texteFort',
+  headerIndexLabelSize: 'md',
+  headerIndexLabelWeight: 'regular',
+  headerIndexTitleSize: 'md',
+  headerIndexTitleWeight: 'regular',
+  headerIndexSubtitleSize: 'md',
+  headerIndexSubtitleWeight: 'regular',
+  headerMarqueeWord1Text: '',
+  headerMarqueeWord2Text: '',
+  headerMarqueeWord3Text: '',
+  headerMarqueeWord4Text: '',
+  headerMarqueeWordColor: 'principal',
+  headerMarqueeSize: 'md',
   sectionLayout: 'stacked',
   asideTitleSticky: true,
   asideTitlePlacement: 'center',

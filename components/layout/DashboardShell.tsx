@@ -16,6 +16,7 @@ import {
   getSidebarCollapsedSnapshot,
   MESSAGING_DETAILS_OPEN_EVENT,
   notifyDashboardSidebarExpand,
+  PORTFOLIO_SETTINGS_OPEN_EVENT,
   setSidebarCollapsed,
   subscribeSidebarCollapsed,
   toggleSidebarCollapsedStore,
@@ -122,7 +123,11 @@ export function DashboardShell({
       setSidebarCollapsed(true);
     };
     window.addEventListener(MESSAGING_DETAILS_OPEN_EVENT, onDetailsOpen);
-    return () => window.removeEventListener(MESSAGING_DETAILS_OPEN_EVENT, onDetailsOpen);
+    window.addEventListener(PORTFOLIO_SETTINGS_OPEN_EVENT, onDetailsOpen);
+    return () => {
+      window.removeEventListener(MESSAGING_DETAILS_OPEN_EVENT, onDetailsOpen);
+      window.removeEventListener(PORTFOLIO_SETTINGS_OPEN_EVENT, onDetailsOpen);
+    };
   }, []);
 
   const creatorStudioPattern = isCreatorStudioPath(pathname);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
@@ -11,14 +11,11 @@ import {
   PORTFOLIO_TOOLS_BRAND_FLOAT_TILE_DENSITY_OPTIONS,
   PORTFOLIO_TOOLS_BRAND_FLOAT_COLUMNS_OPTIONS,
   PORTFOLIO_TOOLS_BRAND_FLOAT_CARD_STYLE_OPTIONS,
-  PORTFOLIO_TOOLS_HEADER_ALIGNMENT_OPTIONS,
-  PORTFOLIO_TOOLS_SUBTITLE_PRESET_OPTIONS,
   PORTFOLIO_TOOLS_BRAND_DIRECTORY_LEVEL_STYLE_OPTIONS,
   PORTFOLIO_TOOLS_CARD_GAP_OPTIONS,
   PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS,
   PORTFOLIO_TOOLS_DESIGN_OPTIONS,
   PORTFOLIO_TOOLS_HEADER_DESIGN_OPTIONS,
-  PORTFOLIO_TOOLS_HEADER_BOTTOM_SPACING_OPTIONS,
   PORTFOLIO_TOOLS_LEVEL_PROGRESS_COLUMNS_OPTIONS,
   PORTFOLIO_TOOLS_LEVEL_PROGRESS_ROW_GAP_OPTIONS,
   PORTFOLIO_TOOLS_LEVEL_BAR_STYLE_OPTIONS,
@@ -28,9 +25,11 @@ import {
   PORTFOLIO_TOOLS_LEVEL_BENTO_GRID_MODE_OPTIONS,
   PORTFOLIO_TOOLS_LEVEL_TABLE_GROUP_BY_OPTIONS,
   PORTFOLIO_TOOLS_TILE_SIZE_OPTIONS,
-  PORTFOLIO_TOOLS_TITLE_PRESET_OPTIONS,
+  TOOLS_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
+  TOOLS_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
+  TOOLS_HEADER_PALETTE_TOKEN_OPTIONS,
+  toolsHeaderPaletteTokenColor,
   type PortfolioToolsDesign,
-  type PortfolioToolsHeaderDesign,
   type PortfolioToolsBrandCardsIconPlacement,
   type PortfolioToolsBrandDirectoryLevelStyle,
   type PortfolioToolsBrandRowCellStyle,
@@ -39,6 +38,13 @@ import {
   type PortfolioToolsBrandFloatCardStyle,
   type PortfolioToolsCardGap,
   type PortfolioToolsContentAlignment,
+  type PortfolioToolsHeaderAccentCountAlignment,
+  type PortfolioToolsHeaderBillboardWordStyle,
+  type PortfolioToolsHeaderDesign,
+  type PortfolioToolsHeaderDesignAlignment,
+  type PortfolioToolsHeaderPaletteToken,
+  type PortfolioToolsHeaderTitleSize,
+  type PortfolioToolsHeaderTitleWeight,
   type PortfolioToolsLevelProgressRowGap,
   type PortfolioToolsLevelBarStyle,
   type PortfolioToolsLevelBarSize,
@@ -47,9 +53,7 @@ import {
   type PortfolioToolsLevelBentoGridMode,
   type PortfolioToolsLevelTableGroupBy,
   type PortfolioToolsSectionSettings,
-  type PortfolioToolsSubtitlePreset,
   type PortfolioToolsTileSize,
-  type PortfolioToolsTitlePreset,
   resolveToolsIconBackgroundEnabled,
   resolveToolsLevelIndicatorFullWidth,
   resolveToolsLevelIndicatorShowCategoryFilter,
@@ -588,10 +592,13 @@ function ToolsSwitchTrack({ checked }: { checked: boolean }) {
 
 function ToolsToggleRow({
   label,
+  info,
   checked,
   onChange,
 }: {
   label: string;
+  /** Non-obvious info (where to find something, hidden behavior) shown as a hover/focus tooltip. */
+  info?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
@@ -604,7 +611,10 @@ function ToolsToggleRow({
       className="flex w-full cursor-pointer flex-col gap-1 text-left"
     >
       <span className="flex items-center justify-between gap-4">
-        <span className="min-w-0 text-sm font-semibold text-neutral-950">{label}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className="min-w-0 truncate text-sm font-semibold text-neutral-950">{label}</span>
+          {info ? <ToolsInfoTooltip text={info} /> : null}
+        </span>
         <ToolsSwitchTrack checked={checked} />
       </span>
     </button>
@@ -993,6 +1003,51 @@ const TOOLS_ALIGNMENT_ICONS: Partial<Record<string, ReactNode>> = {
   right: <ToolsAlignRightIcon />,
 };
 
+/** Collapsed-state row shared by every design/header choice grid: a compact scaled-down
+ *  thumbnail, the selected design's name, and a trailing chevron — the whole row opens the
+ *  grid. The thumbnail wraps whatever wireframe is passed (sized for a full-width card) in a
+ *  fixed 128×80 box and scales it down, instead of the old wide preview box that left a lot of
+ *  empty space on both sides of the much narrower mini-schema it centered. */
+function ToolsDesignSummaryRow({
+  label,
+  name,
+  onOpen,
+  children,
+}: {
+  label: string;
+  name: string;
+  onOpen: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <p className="pf-stack-block-label">{label}</p>
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`Change ${label.toLowerCase()}`}
+        className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
+      >
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+          <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
+            {children}
+          </span>
+        </span>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{name}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+          <path
+            d="M7.5 4.5l5 5.5-5 5.5"
+            stroke="currentColor"
+            strokeWidth={1.75}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 function ToolsDesignChoiceGrid({
   value,
   onChange,
@@ -1041,169 +1096,257 @@ function ToolsDesignChoiceGrid({
   }
 
   return (
-    <div>
-      <p className="pf-stack-block-label">Design</p>
-      <div className="group relative w-full overflow-hidden rounded-2xl border border-neutral-200/80 p-3">
-        <ToolsDesignWireframe design={value} />
-        <button
-          type="button"
-          onClick={() => setShowGrid(true)}
-          aria-label="Change design"
-          className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
-        >
-          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-lg">
-            Change design
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowGrid(true)}
-          aria-label="Change design"
-          className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
-        >
-          Change
-        </button>
-      </div>
-      <p className="mt-2 text-sm font-semibold text-neutral-950">{selected.label}</p>
-    </div>
+    <ToolsDesignSummaryRow label="Design" name={selected.label} onOpen={() => setShowGrid(true)}>
+      <ToolsDesignWireframe design={value} />
+    </ToolsDesignSummaryRow>
   );
 }
 
 /** Mini wireframes for the 4 Header design picker cards — same ToolsMiniSlide mechanism as Design. */
+/** Small keyboard-accessible "i" tooltip — shows non-obvious info on hover or focus
+ *  instead of a permanent line of text under a toggle. */
+function ToolsInfoTooltip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const tooltipId = useId();
+  return (
+    <span className="relative inline-flex shrink-0">
+      {/* `span` not `button` — this can sit inside ToolsToggleRow's own <button>,
+       *  and a <button> can never nest another <button> (invalid HTML / hydration error). */}
+      <span
+        role="button"
+        tabIndex={0}
+        aria-describedby={open ? tooltipId : undefined}
+        aria-label={`More info: ${text}`}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onClick={(event) => event.stopPropagation()}
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+      >
+        <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
+          <circle cx="7" cy="4.35" r="0.95" fill="currentColor" />
+          <rect x="6.3" y="6.05" width="1.4" height="4.4" rx="0.7" fill="currentColor" />
+        </svg>
+      </span>
+      {open ? (
+        <span
+          id={tooltipId}
+          role="tooltip"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+        >
+          {text}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+/** S/M/L/XL, each button's own label rendered at the size it represents —
+ *  the pill illustrates the scale directly, no separate value readout needed. */
+const TOOLS_SIZE_PILL_OPTIONS: { value: PortfolioToolsHeaderTitleSize; label: string; fontPx: number }[] = [
+  { value: 'sm', label: 'S', fontPx: 12 },
+  { value: 'md', label: 'M', fontPx: 15 },
+  { value: 'lg', label: 'L', fontPx: 18 },
+  { value: 'xl', label: 'XL', fontPx: 22 },
+];
+
+function ToolsSizePill({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: PortfolioToolsHeaderTitleSize;
+  onChange: (value: PortfolioToolsHeaderTitleSize) => void;
+}) {
+  return (
+    <div>
+      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="pf-stack-segment grid grid-cols-4 gap-[3px] p-[3px]"
+        data-compact="true"
+      >
+        {TOOLS_SIZE_PILL_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.label}
+              onClick={() => onChange(option.value)}
+              data-active={active ? 'true' : 'false'}
+              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-2 font-semibold leading-none"
+              style={{ fontSize: `${option.fontPx}px` }}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Mini swatch for a palette-token color picker — the actual resolved color,
+ *  not just a text label. */
+function toolsHeaderPaletteTokenGlyph(token: PortfolioToolsHeaderPaletteToken): ReactNode {
+  return (
+    <circle
+      cx="32"
+      cy="17"
+      r="8"
+      fill={toolsHeaderPaletteTokenColor(token)}
+      style={{
+        stroke: 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, transparent)',
+        strokeWidth: 1,
+      }}
+    />
+  );
+}
+
+function toolsHeaderBillboardWordStyleGlyph(style: PortfolioToolsHeaderBillboardWordStyle): ReactNode {
+  switch (style) {
+    case 'outline':
+      return (
+        <text
+          x="32"
+          y="23"
+          textAnchor="middle"
+          fontSize="19"
+          fontWeight={900}
+          stroke="currentColor"
+          strokeWidth="1"
+          className="pf-stack-mini-ink"
+          style={{ fill: 'none' }}
+        >
+          Aa
+        </text>
+      );
+    case 'fill':
+      return (
+        <>
+          <text
+            x="32"
+            y="23"
+            textAnchor="middle"
+            fontSize="19"
+            fontWeight={900}
+            className="pf-stack-mini-ink"
+            opacity={0.4}
+            style={{ filter: 'blur(2px)' }}
+          >
+            Aa
+          </text>
+          <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-stack-mini-ink">
+            Aa
+          </text>
+        </>
+      );
+    case 'simple':
+      return (
+        <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-stack-mini-ink">
+          Aa
+        </text>
+      );
+    default: {
+      const _exhaustive: never = style;
+      return _exhaustive;
+    }
+  }
+}
+
+/** Mini wireframes for the 8 Header design picker cards — same ToolsMiniSlide mechanism as Design. */
 function ToolsHeaderDesignWireframe({ design }: { design: PortfolioToolsHeaderDesign }) {
   switch (design) {
-    case 'focus':
+    case 'editorial':
       return (
         <ToolsMiniSlide>
-          <circle className="pf-stack-mini-ring" cx="24" cy="15" r="6" strokeWidth={1.4} />
-          <line className="pf-stack-mini-ring" x1="24" y1="7" x2="24" y2="10.5" strokeWidth={1.4} />
-          <line className="pf-stack-mini-ring" x1="24" y1="19.5" x2="24" y2="23" strokeWidth={1.4} />
-          <rect className="pf-stack-mini-ink" x="20" y="28" width="60" height="10" rx="2" />
-          <rect className="pf-stack-mini-mute" x="20" y="46" width="40" height="4" rx="2" />
-        </ToolsMiniSlide>
-      );
-    case 'terminal':
-      return (
-        <ToolsMiniSlide>
-          <ToolsMiniType x={18} y={20} size={7}>
-            $
-          </ToolsMiniType>
-          <rect className="pf-stack-mini-accent" x="27" y="14" width="3" height="8" rx="1" />
-          <rect className="pf-stack-mini-ink" x="18" y="28" width="58" height="10" rx="2" />
-          <ToolsMiniType x={18} y={51} size={6}>
-            &gt;
-          </ToolsMiniType>
-          <rect className="pf-stack-mini-mute" x="27" y="46" width="34" height="4" rx="2" />
-        </ToolsMiniSlide>
-      );
-    case 'bracket':
-      return (
-        <ToolsMiniSlide>
-          <path className="pf-stack-mini-ring" d="M16 20 V14 H22" fill="none" strokeWidth={2} />
-          <path className="pf-stack-mini-ring" d="M84 20 V14 H78" fill="none" strokeWidth={2} />
-          <path className="pf-stack-mini-ring" d="M16 46 V52 H22" fill="none" strokeWidth={2} />
-          <path className="pf-stack-mini-ring" d="M84 46 V52 H78" fill="none" strokeWidth={2} />
-          <rect className="pf-stack-mini-ink" x="24" y="26" width="52" height="12" rx="2" />
-          <rect className="pf-stack-mini-mute" x="24" y="46" width="36" height="4" rx="2" />
-        </ToolsMiniSlide>
-      );
-    case 'underline':
-      return (
-        <ToolsMiniSlide>
-          <rect className="pf-stack-mini-ink" x="20" y="24" width="60" height="10" rx="2" />
-          <path
-            className="pf-stack-mini-ring"
-            d="M20 40 C 40 37, 60 43, 80 39"
-            fill="none"
-            strokeWidth={2}
-          />
-          <rect className="pf-stack-mini-mute" x="20" y="48" width="40" height="4" rx="2" />
-        </ToolsMiniSlide>
-      );
-    case 'cascade':
-      return (
-        <ToolsMiniSlide>
-          <circle className="pf-stack-mini-accent" cx="20" cy="14" r="2.1" />
-          <circle className="pf-stack-mini-accent" cx="28" cy="14" r="2.1" />
-          <circle className="pf-stack-mini-accent" cx="36" cy="14" r="2.1" />
-          <rect className="pf-stack-mini-ink" x="18" y="26" width="24" height="10" rx="2" />
-          <rect className="pf-stack-mini-ink" x="46" y="26" width="30" height="10" rx="2" />
-          <rect className="pf-stack-mini-ink" x="80" y="26" width="20" height="10" rx="2" />
-          <rect className="pf-stack-mini-mute" x="18" y="50" width="40" height="4" rx="2" />
-        </ToolsMiniSlide>
-      );
-    case 'mosaic':
-      return (
-        <ToolsMiniSlide>
-          <rect className="pf-stack-mini-accent" x="10" y="10" width="6" height="6" />
-          <rect className="pf-stack-mini-mute" x="18" y="10" width="6" height="6" opacity={0.55} />
-          <rect className="pf-stack-mini-mute" x="10" y="18" width="6" height="6" opacity={0.32} />
-          <rect className="pf-stack-mini-mute" x="18" y="18" width="6" height="6" opacity={0.18} />
-          <rect className="pf-stack-mini-ink" x="34" y="24" width="60" height="16" rx="2" />
-          <rect className="pf-stack-mini-mute" x="34" y="24" width="14" height="8" />
-          <rect className="pf-stack-mini-mute" x="62" y="24" width="14" height="8" opacity={0.6} />
-          <rect className="pf-stack-mini-mute" x="80" y="32" width="14" height="8" opacity={0.35} />
-          <rect className="pf-stack-mini-mute" x="34" y="48" width="40" height="4" rx="2" />
-        </ToolsMiniSlide>
-      );
-    case 'mask':
-      return (
-        <ToolsMiniSlide>
-          <rect className="pf-stack-mini-ink" x="20" y="28" width="60" height="10" rx="2" />
-          <rect className="pf-stack-mini-accent" x="58" y="28" width="22" height="10" rx="2" />
-          <rect className="pf-stack-mini-mute" x="20" y="46" width="40" height="4" rx="2" />
-        </ToolsMiniSlide>
-      );
-    case 'split':
-      return (
-        <ToolsMiniSlide>
-          <rect className="pf-stack-mini-ink" x="12" y="26" width="36" height="14" rx="2" />
-          <rect className="pf-stack-mini-mute" x="59" y="20" width="1.4" height="28" rx="0.7" />
-          <rect className="pf-stack-mini-mute" x="72" y="30" width="36" height="4" rx="2" />
-          <rect className="pf-stack-mini-mute" x="72" y="38" width="28" height="4" rx="2" />
-        </ToolsMiniSlide>
-      );
-    case 'typewriter':
-      return (
-        <ToolsMiniSlide>
-          <rect className="pf-stack-mini-ink" x="18" y="30" width="8" height="10" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="29" y="30" width="8" height="10" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="40" y="30" width="8" height="10" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="51" y="30" width="8" height="10" rx="1.5" />
-          <rect className="pf-stack-mini-accent" x="63" y="29" width="2" height="12" rx="1" />
-          <rect className="pf-stack-mini-mute" x="18" y="48" width="40" height="4" rx="2" />
-        </ToolsMiniSlide>
-      );
-    case 'index':
-      return (
-        <ToolsMiniSlide>
-          <text x="18" y="52" fontSize={40} fontWeight={800} opacity={0.45} className="pf-stack-mini-mute">
-            0
-          </text>
-          <rect className="pf-stack-mini-ink" x="48" y="30" width="46" height="10" rx="2" />
-          <rect className="pf-stack-mini-mute" x="48" y="46" width="32" height="4" rx="2" />
-        </ToolsMiniSlide>
-      );
-    case 'masthead':
-      return (
-        <ToolsMiniSlide>
-          <rect className="pf-stack-mini-accent" x="30" y="18" width="60" height="1.6" rx="0.8" />
-          <rect className="pf-stack-mini-ink" x="36" y="30" width="48" height="10" rx="2" />
-          <rect className="pf-stack-mini-mute" x="42" y="46" width="36" height="4" rx="2" />
-          <rect className="pf-stack-mini-accent" x="30" y="54" width="60" height="1.6" rx="0.8" />
+          <rect className="pf-stack-mini-accent" x="10" y="16" width="18" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="10" y="26" width="64" height="9" rx="2" />
+          <rect className="pf-stack-mini-mute" x="10" y="42" width="46" height="4" rx="2" />
         </ToolsMiniSlide>
       );
     case 'marquee':
       return (
         <ToolsMiniSlide>
-          <g transform="rotate(-4 60 36)" opacity={0.35}>
-            <rect className="pf-stack-mini-mute" x="0" y="30" width="26" height="10" rx="2" />
-            <rect className="pf-stack-mini-mute" x="32" y="30" width="26" height="10" rx="2" />
-            <rect className="pf-stack-mini-mute" x="64" y="30" width="26" height="10" rx="2" />
-            <rect className="pf-stack-mini-mute" x="96" y="30" width="26" height="10" rx="2" />
-          </g>
-          <rect className="pf-stack-mini-ink" x="30" y="28" width="60" height="10" rx="2" />
-          <rect className="pf-stack-mini-mute" x="38" y="46" width="44" height="4" rx="2" />
+          <text
+            x="60"
+            y="34"
+            fontSize={22}
+            fontWeight={800}
+            textAnchor="middle"
+            opacity={0.14}
+            className="pf-stack-mini-ink"
+          >
+            TOOLS
+          </text>
+          <rect className="pf-stack-mini-ink" x="18" y="30" width="84" height="10" rx="2" />
+        </ToolsMiniSlide>
+      );
+    case 'index':
+      return (
+        <ToolsMiniSlide>
+          <rect className="pf-stack-mini-mute" x="10" y="12" width="4" height="4" />
+          <rect className="pf-stack-mini-mute" x="20" y="13" width="90" height="1" />
+          <ToolsMiniType x={10} y={40} size={22}>
+            04
+          </ToolsMiniType>
+          <rect className="pf-stack-mini-mute" x="46" y="22" width="1" height="18" />
+          <rect className="pf-stack-mini-ink" x="54" y="24" width="46" height="7" rx="2" />
+        </ToolsMiniSlide>
+      );
+    case 'accent-count':
+      return (
+        <ToolsMiniSlide>
+          <rect className="pf-stack-mini-accent" x="10" y="12" width="26" height="8" rx="4" />
+          <rect className="pf-stack-mini-mute" x="10" y="26" width="40" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="10" y="33" width="60" height="7" rx="2" />
+        </ToolsMiniSlide>
+      );
+    case 'serif-lead':
+      return (
+        <ToolsMiniSlide>
+          <rect className="pf-stack-mini-mute" x="10" y="14" width="20" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="10" y="24" width="76" height="11" rx="2" />
+        </ToolsMiniSlide>
+      );
+    case 'billboard':
+      return (
+        <ToolsMiniSlide>
+          <text
+            x="60"
+            y="30"
+            fontSize={26}
+            fontWeight={900}
+            textAnchor="middle"
+            opacity={0.1}
+            className="pf-stack-mini-ink"
+          >
+            TOOLS
+          </text>
+          <rect className="pf-stack-mini-ink" x="18" y="30" width="60" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="18" y="42" width="40" height="3" rx="1.5" />
+        </ToolsMiniSlide>
+      );
+    case 'masthead':
+      return (
+        <ToolsMiniSlide>
+          <rect className="pf-stack-mini-mute" x="10" y="12" width="100" height="1" />
+          <rect className="pf-stack-mini-ink" x="10" y="20" width="100" height="12" rx="2" />
+          <rect className="pf-stack-mini-mute" x="10" y="38" width="100" height="1" />
+        </ToolsMiniSlide>
+      );
+    case 'split-heading':
+      return (
+        <ToolsMiniSlide>
+          <rect className="pf-stack-mini-ink" x="10" y="20" width="58" height="10" rx="2" />
+          <rect className="pf-stack-mini-mute" x="86" y="18" width="24" height="3" rx="1.5" />
         </ToolsMiniSlide>
       );
     default: {
@@ -1213,6 +1356,7 @@ function ToolsHeaderDesignWireframe({ design }: { design: PortfolioToolsHeaderDe
   }
 }
 
+/** Same collapsed-preview / expand-to-grid mechanism as Design above and Hero > Design Banner. */
 function ToolsHeaderDesignChoiceGrid({
   value,
   onChange,
@@ -1261,31 +1405,80 @@ function ToolsHeaderDesignChoiceGrid({
   }
 
   return (
-    <div>
-      <p className="pf-stack-block-label">Header design</p>
-      <div className="group relative w-full overflow-hidden rounded-2xl border border-neutral-200/80 p-3">
-        <ToolsHeaderDesignWireframe design={value} />
-        <button
-          type="button"
-          onClick={() => setShowGrid(true)}
-          aria-label="Change header design"
-          className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
-        >
-          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-lg">
-            Change header design
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowGrid(true)}
-          aria-label="Change header design"
-          className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
-        >
-          Change
-        </button>
-      </div>
-      <p className="mt-2 text-sm font-semibold text-neutral-950">{selected.label}</p>
-    </div>
+    <ToolsDesignSummaryRow label="Header design" name={selected.label} onOpen={() => setShowGrid(true)}>
+      <ToolsHeaderDesignWireframe design={value} />
+    </ToolsDesignSummaryRow>
+  );
+}
+
+const TOOLS_HEADER_MARGIN_BOTTOM_OPTIONS = [
+  { value: 'sm' as const, label: 'Small' },
+  { value: 'md' as const, label: 'Medium' },
+  { value: 'lg' as const, label: 'Large' },
+  { value: 'xl' as const, label: 'XL' },
+];
+
+const TOOLS_HEADER_TITLE_WEIGHT_OPTIONS = [
+  { value: 'light' as const, label: 'Light', description: 'Lighter than this design’s default.' },
+  { value: 'regular' as const, label: 'Regular', description: 'This design’s default weight.' },
+  { value: 'semibold' as const, label: 'Semibold', description: 'A step bolder.' },
+  { value: 'bold' as const, label: 'Bold', description: 'The boldest step.' },
+];
+
+/** Shared across every header design — bottom spacing, title size, and title weight.
+ *  Appended to each design's own advanced-settings branch in the Header tab.
+ *  `hideAlignment`/`hideTitleControls` drop controls a given design doesn't
+ *  actually consume (e.g. Billboard has no adjustable title size/weight and
+ *  ignores header alignment) — dead controls left visible are confusing. */
+function ToolsHeaderSharedAdvancedControls({
+  tools,
+  onChange,
+  hideAlignment = false,
+  hideTitleControls = false,
+}: {
+  tools: PortfolioToolsSectionSettings;
+  onChange: (patch: Partial<PortfolioToolsSectionSettings>) => void;
+  hideAlignment?: boolean;
+  hideTitleControls?: boolean;
+}) {
+  return (
+    <>
+      {hideAlignment ? null : (
+        <ToolsOptionGrid
+          label="Header alignment"
+          options={[
+            { value: 'left' as const, label: 'Left', description: 'Default editorial alignment.' },
+            { value: 'center' as const, label: 'Center', description: 'Centered title and subtitle.' },
+            { value: 'right' as const, label: 'Right', description: 'Right-aligned title and subtitle.' },
+          ]}
+          value={tools.headerDesignAlignment}
+          onChange={(headerDesignAlignment: PortfolioToolsHeaderDesignAlignment) => onChange({ headerDesignAlignment })}
+          columns={3}
+        />
+      )}
+      <ToolsSlider
+        label="Bottom spacing"
+        options={TOOLS_HEADER_MARGIN_BOTTOM_OPTIONS}
+        value={tools.headerMarginBottom ?? 'md'}
+        onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
+      />
+      {hideTitleControls ? null : (
+        <>
+          <ToolsSizePill
+            label="Title size"
+            value={tools.headerTitleSize ?? 'md'}
+            onChange={(headerTitleSize) => onChange({ headerTitleSize })}
+          />
+          <ToolsOptionGrid
+            label="Title weight"
+            options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
+            value={tools.headerTitleWeight ?? 'regular'}
+            onChange={(headerTitleWeight: PortfolioToolsHeaderTitleWeight) => onChange({ headerTitleWeight })}
+            columns={4}
+          />
+        </>
+      )}
+    </>
   );
 }
 
@@ -1341,7 +1534,6 @@ type ToolsSettingsPanelProps = {
   onSubSectionChange?: (value: ToolsSubSection) => void;
   designOptions?: { value: PortfolioToolsDesign; label: string; description: string }[];
   designOptionsFilter?: (design: PortfolioToolsDesign) => boolean;
-  titlePresetOptions?: { value: PortfolioToolsTitlePreset; label: string; description?: string }[];
   sectionToggleLabel?: string;
 };
 
@@ -1352,7 +1544,6 @@ export function ToolsSettingsPanel({
   onSubSectionChange,
   designOptions: designOptionsProp,
   designOptionsFilter,
-  titlePresetOptions: titlePresetOptionsProp,
   sectionToggleLabel = 'Afficher la section Tools',
 }: ToolsSettingsPanelProps) {
   const palette = mergeToolsPalette(DEFAULT_TOOLS_PALETTE, tools.toolsPalette);
@@ -1377,7 +1568,6 @@ export function ToolsSettingsPanel({
     : designOptionsFilter
       ? PORTFOLIO_TOOLS_DESIGN_OPTIONS.filter((item) => designOptionsFilter(item.value))
       : PORTFOLIO_TOOLS_DESIGN_OPTIONS;
-  const titlePresetOptions = titlePresetOptionsProp ?? PORTFOLIO_TOOLS_TITLE_PRESET_OPTIONS;
 
   return (
     <div className="space-y-6">
@@ -1998,67 +2188,621 @@ export function ToolsSettingsPanel({
       ) : null}
 
       {current === 'header' ? (
-        <div className="space-y-4">
-          <ToolsHeaderDesignChoiceGrid
-            value={tools.headerDesign ?? 'focus'}
-            onChange={(headerDesign) => onChange({ headerDesign })}
-          />
-          <ToolsLayoutSettingsBand motionKey={tools.headerDesign ?? 'focus'} title="Header settings">
-            <ToolsOptionGrid
-              label="Titre"
-              value={tools.titlePreset}
-              options={titlePresetOptions.map((item) => ({
-                value: item.value,
-                label: item.label,
-              }))}
-              onChange={(titlePreset: PortfolioToolsTitlePreset) => onChange({ titlePreset })}
+        <div className="space-y-6">
+          <div>
+            <ToolsHeaderDesignChoiceGrid
+              value={tools.headerDesign ?? 'editorial'}
+              onChange={(headerDesign) => onChange({ headerDesign })}
             />
-            {tools.titlePreset === 'custom' ? (
-              <label className="block">
-                <span className="pf-stack-block-label pf-stack-option-label">Titre personnalisé</span>
-                <input
-                  type="text"
-                  value={tools.titleCustom}
-                  onChange={(event) => onChange({ titleCustom: event.target.value })}
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900"
-                  placeholder="Workflow & Tools"
-                />
-              </label>
-            ) : null}
-            <ToolsOptionGrid
-              label="Alignement du titre"
-              value={tools.headerAlignment}
-              options={PORTFOLIO_TOOLS_HEADER_ALIGNMENT_OPTIONS}
-              icons={TOOLS_ALIGNMENT_ICONS}
-              onChange={(headerAlignment) => onChange({ headerAlignment })}
-            />
-            <ToolsOptionGrid
-              label="Sous-titre"
-              value={tools.subtitlePreset ?? 'none'}
-              options={PORTFOLIO_TOOLS_SUBTITLE_PRESET_OPTIONS}
-              onChange={(subtitlePreset: PortfolioToolsSubtitlePreset) => onChange({ subtitlePreset })}
-            />
-            {tools.subtitlePreset === 'custom' ? (
-              <label className="block">
-                <span className="pf-stack-block-label pf-stack-option-label">Texte du sous-titre</span>
-                <textarea
-                  rows={3}
-                  value={tools.subtitleCustom || tools.subtitle}
-                  onChange={(event) =>
-                    onChange({ subtitleCustom: event.target.value, subtitle: event.target.value })
-                  }
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900"
-                  placeholder="Outils et technologies que j'utilise au quotidien."
-                />
-              </label>
-            ) : null}
-            <ToolsSlider
-              label="Espacement sous le header"
-              value={tools.headerBottomSpacing ?? 'medium'}
-              options={PORTFOLIO_TOOLS_HEADER_BOTTOM_SPACING_OPTIONS}
-              onChange={(headerBottomSpacing) => onChange({ headerBottomSpacing })}
-            />
-          </ToolsLayoutSettingsBand>
+
+            <ToolsLayoutSettingsBand motionKey={tools.headerDesign ?? 'editorial'}>
+              {tools.headerDesign === 'index' ? (
+                <>
+                  <div>
+                    <p className="pf-stack-block-label">Rule label</p>
+                    <div className="mt-3 space-y-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
+                        <input
+                          type="text"
+                          value={tools.headerIndexLabelText}
+                          onChange={(event) => onChange({ headerIndexLabelText: event.target.value })}
+                          placeholder="Index"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                      <ToolsPreviewCardGrid
+                        label="Color"
+                        options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                          ...option,
+                          glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                        }))}
+                        value={tools.headerIndexLabelColor ?? 'texteFort'}
+                        onChange={(headerIndexLabelColor) => onChange({ headerIndexLabelColor })}
+                        columns={3}
+                      />
+                      <ToolsSizePill
+                        label="Size"
+                        value={tools.headerIndexLabelSize ?? 'md'}
+                        onChange={(headerIndexLabelSize) => onChange({ headerIndexLabelSize })}
+                      />
+                      <ToolsOptionGrid
+                        label="Weight"
+                        options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
+                        value={tools.headerIndexLabelWeight ?? 'regular'}
+                        onChange={(headerIndexLabelWeight: PortfolioToolsHeaderTitleWeight) =>
+                          onChange({ headerIndexLabelWeight })
+                        }
+                        columns={4}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200/70 pt-6">
+                    <p className="pf-stack-block-label">Counter</p>
+                    <div className="mt-3 space-y-4">
+                      <ToolsPreviewCardGrid
+                        label="Numeral color"
+                        options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                          ...option,
+                          glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                        }))}
+                        value={tools.headerIndexNumberColor ?? 'principal'}
+                        onChange={(headerIndexNumberColor) => onChange({ headerIndexNumberColor })}
+                        columns={3}
+                      />
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Count label</p>
+                        <input
+                          type="text"
+                          value={tools.headerIndexCountLabelText}
+                          onChange={(event) => onChange({ headerIndexCountLabelText: event.target.value })}
+                          placeholder="Tools"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200/70 pt-6">
+                    <p className="pf-stack-block-label">Title</p>
+                    <div className="mt-3 space-y-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
+                        <input
+                          type="text"
+                          value={tools.headerIndexTitleText}
+                          onChange={(event) => onChange({ headerIndexTitleText: event.target.value })}
+                          placeholder="Daily workflow"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                      <ToolsPreviewCardGrid
+                        label="Color"
+                        options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                          ...option,
+                          glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                        }))}
+                        value={tools.headerIndexTitleColor ?? 'texteFort'}
+                        onChange={(headerIndexTitleColor) => onChange({ headerIndexTitleColor })}
+                        columns={3}
+                      />
+                      <ToolsSizePill
+                        label="Size"
+                        value={tools.headerIndexTitleSize ?? 'md'}
+                        onChange={(headerIndexTitleSize) => onChange({ headerIndexTitleSize })}
+                      />
+                      <ToolsOptionGrid
+                        label="Weight"
+                        options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
+                        value={tools.headerIndexTitleWeight ?? 'regular'}
+                        onChange={(headerIndexTitleWeight: PortfolioToolsHeaderTitleWeight) =>
+                          onChange({ headerIndexTitleWeight })
+                        }
+                        columns={4}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200/70 pt-6">
+                    <p className="pf-stack-block-label">Subtitle</p>
+                    <div className="mt-3 space-y-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
+                        <input
+                          type="text"
+                          value={tools.headerIndexSubtitleText}
+                          onChange={(event) => onChange({ headerIndexSubtitleText: event.target.value })}
+                          placeholder="Apps and platforms I rely on daily."
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                      <ToolsPreviewCardGrid
+                        label="Color"
+                        options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                          ...option,
+                          glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                        }))}
+                        value={tools.headerIndexSubtitleColor ?? 'texteFort'}
+                        onChange={(headerIndexSubtitleColor) => onChange({ headerIndexSubtitleColor })}
+                        columns={3}
+                      />
+                      <ToolsSizePill
+                        label="Size"
+                        value={tools.headerIndexSubtitleSize ?? 'md'}
+                        onChange={(headerIndexSubtitleSize) => onChange({ headerIndexSubtitleSize })}
+                      />
+                      <ToolsOptionGrid
+                        label="Weight"
+                        options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
+                        value={tools.headerIndexSubtitleWeight ?? 'regular'}
+                        onChange={(headerIndexSubtitleWeight: PortfolioToolsHeaderTitleWeight) =>
+                          onChange({ headerIndexSubtitleWeight })
+                        }
+                        columns={4}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200/70 pt-6">
+                    <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideTitleControls />
+                  </div>
+                </>
+              ) : tools.headerDesign === 'marquee' ? (
+                <>
+                  <div>
+                    <p className="pf-stack-block-label">Words</p>
+                    <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 1</p>
+                        <input
+                          type="text"
+                          value={tools.headerMarqueeWord1Text}
+                          onChange={(event) => onChange({ headerMarqueeWord1Text: event.target.value })}
+                          placeholder="Daily"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 2</p>
+                        <input
+                          type="text"
+                          value={tools.headerMarqueeWord2Text}
+                          onChange={(event) => onChange({ headerMarqueeWord2Text: event.target.value })}
+                          placeholder="Tools"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 3</p>
+                        <input
+                          type="text"
+                          value={tools.headerMarqueeWord3Text}
+                          onChange={(event) => onChange({ headerMarqueeWord3Text: event.target.value })}
+                          placeholder="Optional"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 4</p>
+                        <input
+                          type="text"
+                          value={tools.headerMarqueeWord4Text}
+                          onChange={(event) => onChange({ headerMarqueeWord4Text: event.target.value })}
+                          placeholder="Optional"
+                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200/70 pt-6">
+                    <p className="pf-stack-block-label">Style</p>
+                    <div className="mt-3 space-y-4">
+                      <ToolsPreviewCardGrid
+                        label="Word color"
+                        options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                          ...option,
+                          glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                        }))}
+                        value={tools.headerMarqueeWordColor ?? 'principal'}
+                        onChange={(headerMarqueeWordColor) => onChange({ headerMarqueeWordColor })}
+                        columns={3}
+                      />
+                      <ToolsSizePill
+                        label="Size"
+                        value={tools.headerMarqueeSize ?? 'md'}
+                        onChange={(headerMarqueeSize) => onChange({ headerMarqueeSize })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-200/70 pt-6">
+                    <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideAlignment hideTitleControls />
+                  </div>
+                </>
+              ) : tools.headerDesign === 'accent-count' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Badge text</p>
+                    <input
+                      type="text"
+                      value={tools.headerAccentCountBadgeText}
+                      onChange={(event) => onChange({ headerAccentCountBadgeText: event.target.value })}
+                      placeholder="{count}+ tools"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Lead text</p>
+                    <input
+                      type="text"
+                      value={tools.headerAccentCountLeadText}
+                      onChange={(event) => onChange({ headerAccentCountLeadText: event.target.value })}
+                      placeholder="A curated set of apps that keep me productive."
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <ToolsPreviewCardGrid
+                    label="Badge color"
+                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={tools.headerAccentCountBadgeColor ?? 'principal'}
+                    onChange={(headerAccentCountBadgeColor) => onChange({ headerAccentCountBadgeColor })}
+                    columns={3}
+                  />
+                  <ToolsPreviewCardGrid
+                    label="Lead color"
+                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={tools.headerAccentCountLeadColor ?? 'secondaire'}
+                    onChange={(headerAccentCountLeadColor) => onChange({ headerAccentCountLeadColor })}
+                    columns={3}
+                  />
+                  <ToolsSizePill
+                    label="Size"
+                    value={tools.headerAccentCountSize ?? 'md'}
+                    onChange={(headerAccentCountSize) => onChange({ headerAccentCountSize })}
+                  />
+                  <ToolsOptionGrid
+                    label="Lead weight"
+                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={tools.headerAccentCountWeight ?? 'regular'}
+                    onChange={(headerAccentCountWeight: PortfolioToolsHeaderTitleWeight) =>
+                      onChange({ headerAccentCountWeight })
+                    }
+                    columns={4}
+                  />
+                  <ToolsOptionGrid
+                    label="Alignment"
+                    options={TOOLS_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
+                    value={tools.headerAccentCountAlignment ?? 'left'}
+                    onChange={(headerAccentCountAlignment: PortfolioToolsHeaderAccentCountAlignment) =>
+                      onChange({ headerAccentCountAlignment })
+                    }
+                    columns={3}
+                  />
+                  <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideAlignment hideTitleControls />
+                </>
+              ) : tools.headerDesign === 'serif-lead' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
+                    <input
+                      type="text"
+                      value={tools.headerSerifLeadLabelText}
+                      onChange={(event) => onChange({ headerSerifLeadLabelText: event.target.value })}
+                      placeholder="Tools"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <ToolsPreviewCardGrid
+                    label="Label color"
+                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={tools.headerSerifLeadLabelColor ?? 'texteFort'}
+                    onChange={(headerSerifLeadLabelColor) => onChange({ headerSerifLeadLabelColor })}
+                    columns={3}
+                  />
+                  <ToolsSizePill
+                    label="Label size"
+                    value={tools.headerSerifLeadLabelSize ?? 'md'}
+                    onChange={(headerSerifLeadLabelSize) => onChange({ headerSerifLeadLabelSize })}
+                  />
+                  <ToolsOptionGrid
+                    label="Label weight"
+                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={tools.headerSerifLeadLabelWeight ?? 'regular'}
+                    onChange={(headerSerifLeadLabelWeight: PortfolioToolsHeaderTitleWeight) =>
+                      onChange({ headerSerifLeadLabelWeight })
+                    }
+                    columns={4}
+                  />
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
+                    <input
+                      type="text"
+                      value={tools.headerSerifLeadTitleText}
+                      onChange={(event) => onChange({ headerSerifLeadTitleText: event.target.value })}
+                      placeholder="A curated set of apps, platforms, and daily tools."
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <ToolsPreviewCardGrid
+                    label="Title color"
+                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={tools.headerSerifLeadTitleColor ?? 'texteFort'}
+                    onChange={(headerSerifLeadTitleColor) => onChange({ headerSerifLeadTitleColor })}
+                    columns={3}
+                  />
+                  <ToolsSizePill
+                    label="Title size"
+                    value={tools.headerSerifLeadTitleSize ?? 'md'}
+                    onChange={(headerSerifLeadTitleSize) => onChange({ headerSerifLeadTitleSize })}
+                  />
+                  <ToolsOptionGrid
+                    label="Title weight"
+                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={tools.headerSerifLeadTitleWeight ?? 'regular'}
+                    onChange={(headerSerifLeadTitleWeight: PortfolioToolsHeaderTitleWeight) =>
+                      onChange({ headerSerifLeadTitleWeight })
+                    }
+                    columns={4}
+                  />
+                  <ToolsPreviewCardGrid
+                    label="Subtitle color"
+                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={tools.headerSerifLeadSubtitleColor ?? 'texteFort'}
+                    onChange={(headerSerifLeadSubtitleColor) => onChange({ headerSerifLeadSubtitleColor })}
+                    columns={3}
+                  />
+                  <ToolsSizePill
+                    label="Subtitle size"
+                    value={tools.headerSerifLeadSubtitleSize ?? 'md'}
+                    onChange={(headerSerifLeadSubtitleSize) => onChange({ headerSerifLeadSubtitleSize })}
+                  />
+                  <ToolsOptionGrid
+                    label="Subtitle weight"
+                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={tools.headerSerifLeadSubtitleWeight ?? 'regular'}
+                    onChange={(headerSerifLeadSubtitleWeight: PortfolioToolsHeaderTitleWeight) =>
+                      onChange({ headerSerifLeadSubtitleWeight })
+                    }
+                    columns={4}
+                  />
+                  <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideTitleControls />
+                </>
+              ) : tools.headerDesign === 'billboard' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Big background word</p>
+                    <input
+                      type="text"
+                      value={tools.headerBillboardBigWord}
+                      onChange={(event) => onChange({ headerBillboardBigWord: event.target.value })}
+                      placeholder="TOOLS"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Count line</p>
+                    <input
+                      type="text"
+                      value={tools.headerBillboardCountText}
+                      onChange={(event) => onChange({ headerBillboardCountText: event.target.value })}
+                      placeholder="{count} tools"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
+                    <input
+                      type="text"
+                      value={tools.headerBillboardTitleText}
+                      onChange={(event) => onChange({ headerBillboardTitleText: event.target.value })}
+                      placeholder="Daily workflow"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <ToolsPreviewCardGrid
+                    label="Big word style"
+                    options={TOOLS_HEADER_BILLBOARD_WORD_STYLE_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: toolsHeaderBillboardWordStyleGlyph(option.value),
+                    }))}
+                    value={tools.headerBillboardWordStyle ?? 'outline'}
+                    onChange={(headerBillboardWordStyle: PortfolioToolsHeaderBillboardWordStyle) =>
+                      onChange({ headerBillboardWordStyle })
+                    }
+                    columns={3}
+                  />
+                  <ToolsPreviewCardGrid
+                    label="Big word color"
+                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={tools.headerBillboardWordColor ?? 'principal'}
+                    onChange={(headerBillboardWordColor) => onChange({ headerBillboardWordColor })}
+                    columns={3}
+                  />
+                  <ToolsPreviewCardGrid
+                    label="Title color"
+                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={tools.headerBillboardTitleColor ?? 'principal'}
+                    onChange={(headerBillboardTitleColor) => onChange({ headerBillboardTitleColor })}
+                    columns={3}
+                  />
+                  <ToolsPreviewCardGrid
+                    label="Count line color"
+                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={tools.headerBillboardMetaColor ?? 'secondaire'}
+                    onChange={(headerBillboardMetaColor) => onChange({ headerBillboardMetaColor })}
+                    columns={3}
+                  />
+                  <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideAlignment hideTitleControls />
+                </>
+              ) : tools.headerDesign === 'masthead' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 1</p>
+                    <input
+                      type="text"
+                      value={tools.headerMastheadLine1Text}
+                      onChange={(event) => onChange({ headerMastheadLine1Text: event.target.value })}
+                      placeholder="Daily tools."
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 2</p>
+                    <input
+                      type="text"
+                      value={tools.headerMastheadLine2Text}
+                      onChange={(event) => onChange({ headerMastheadLine2Text: event.target.value })}
+                      placeholder="Chosen with intent."
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 3</p>
+                    <input
+                      type="text"
+                      value={tools.headerMastheadLine3Text}
+                      onChange={(event) => onChange({ headerMastheadLine3Text: event.target.value })}
+                      placeholder="Kept up to date."
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <ToolsPreviewCardGrid
+                    label="Headline color"
+                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={tools.headerMastheadHeadlineColor ?? 'principal'}
+                    onChange={(headerMastheadHeadlineColor) => onChange({ headerMastheadHeadlineColor })}
+                    columns={3}
+                  />
+                  <ToolsSizePill
+                    label="Headline size"
+                    value={tools.headerMastheadHeadlineSize ?? 'md'}
+                    onChange={(headerMastheadHeadlineSize) => onChange({ headerMastheadHeadlineSize })}
+                  />
+                  <ToolsOptionGrid
+                    label="Headline weight"
+                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={tools.headerMastheadHeadlineWeight ?? 'regular'}
+                    onChange={(headerMastheadHeadlineWeight: PortfolioToolsHeaderTitleWeight) =>
+                      onChange({ headerMastheadHeadlineWeight })
+                    }
+                    columns={4}
+                  />
+                  <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideTitleControls />
+                </>
+              ) : tools.headerDesign === 'split-heading' ? (
+                <>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
+                    <input
+                      type="text"
+                      value={tools.headerSplitHeadingTitleText}
+                      onChange={(event) => onChange({ headerSplitHeadingTitleText: event.target.value })}
+                      placeholder="Daily workflow"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
+                    <input
+                      type="text"
+                      value={tools.headerSplitHeadingLabelText}
+                      onChange={(event) => onChange({ headerSplitHeadingLabelText: event.target.value })}
+                      placeholder="Tools"
+                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    />
+                  </div>
+                  <ToolsPreviewCardGrid
+                    label="Title color"
+                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={tools.headerSplitHeadingTitleColor ?? 'principal'}
+                    onChange={(headerSplitHeadingTitleColor) => onChange({ headerSplitHeadingTitleColor })}
+                    columns={3}
+                  />
+                  <ToolsSizePill
+                    label="Title size"
+                    value={tools.headerSplitHeadingTitleSize ?? 'md'}
+                    onChange={(headerSplitHeadingTitleSize) => onChange({ headerSplitHeadingTitleSize })}
+                  />
+                  <ToolsOptionGrid
+                    label="Title weight"
+                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={tools.headerSplitHeadingTitleWeight ?? 'regular'}
+                    onChange={(headerSplitHeadingTitleWeight: PortfolioToolsHeaderTitleWeight) =>
+                      onChange({ headerSplitHeadingTitleWeight })
+                    }
+                    columns={4}
+                  />
+                  <ToolsPreviewCardGrid
+                    label="Label color"
+                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                      ...option,
+                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
+                    }))}
+                    value={tools.headerSplitHeadingLabelColor ?? 'secondaire'}
+                    onChange={(headerSplitHeadingLabelColor) => onChange({ headerSplitHeadingLabelColor })}
+                    columns={3}
+                  />
+                  <ToolsSizePill
+                    label="Label size"
+                    value={tools.headerSplitHeadingLabelSize ?? 'md'}
+                    onChange={(headerSplitHeadingLabelSize) => onChange({ headerSplitHeadingLabelSize })}
+                  />
+                  <ToolsOptionGrid
+                    label="Label weight"
+                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
+                    value={tools.headerSplitHeadingLabelWeight ?? 'regular'}
+                    onChange={(headerSplitHeadingLabelWeight: PortfolioToolsHeaderTitleWeight) =>
+                      onChange({ headerSplitHeadingLabelWeight })
+                    }
+                    columns={4}
+                  />
+                  <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideAlignment hideTitleControls />
+                </>
+              ) : (
+                <>
+                  <ToolsToggleRow
+                    label="Header motion"
+                    info="Respects reduced-motion preference"
+                    checked={tools.headerAnimationEnabled !== false}
+                    onChange={(headerAnimationEnabled) => onChange({ headerAnimationEnabled })}
+                  />
+                  <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} />
+                </>
+              )}
+            </ToolsLayoutSettingsBand>
+          </div>
         </div>
       ) : null}
 

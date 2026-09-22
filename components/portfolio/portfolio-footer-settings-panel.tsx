@@ -1,156 +1,351 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
-import {
-  PORTFOLIO_FOOTER_CTA_BUTTONS_ALIGN_OPTIONS,
-  PORTFOLIO_FOOTER_CONTACT_CTA_DESIGN_OPTIONS,
-  PORTFOLIO_FOOTER_CONTACT_ICON_SIZE_OPTIONS,
-  PORTFOLIO_FOOTER_DESCRIPTION_SOURCE_OPTIONS,
-  PORTFOLIO_FOOTER_DESIGN_OPTIONS,
-  PORTFOLIO_FOOTER_ALIGNMENT_OPTIONS,
-  PORTFOLIO_FOOTER_MARGIN_TOP_OPTIONS,
-  PORTFOLIO_FOOTER_MARKETPLACE_CTA_DESIGN_OPTIONS,
-  PORTFOLIO_FOOTER_PADDING_OPTIONS,
-  PORTFOLIO_FOOTER_PATTERN_OPTIONS,
-  PORTFOLIO_FOOTER_STYLE_TARGET_OPTIONS,
-  DEFAULT_FOOTER_CENTERED_LINKS,
-  DEFAULT_FOOTER_LINK_COLUMNS,
-  DEFAULT_FOOTER_MARKETPLACE_CTA_LABEL,
-  DEFAULT_FOOTER_COPYRIGHT_LABEL,
-  DEFAULT_FOOTER_LANDING_BRAND_GAP_PX,
-  DEFAULT_FOOTER_COLUMN_HEADING_GAP_PX,
-  FOOTER_LANDING_BRAND_GAP_PX_MAX,
-  FOOTER_LANDING_BRAND_GAP_PX_MIN,
-  FOOTER_COLUMN_HEADING_GAP_PX_MAX,
-  FOOTER_COLUMN_HEADING_GAP_PX_MIN,
-  FOOTER_MARGIN_TOP_PRESET_PX,
-  FOOTER_MARGIN_TOP_PX_MAX,
-  FOOTER_MARGIN_TOP_PX_MIN,
-  FOOTER_PADDING_PRESET_PX,
-  FOOTER_PADDING_PX_MAX,
-  FOOTER_PADDING_PX_MIN,
-  clampFooterLandingBrandGapPx,
-  clampFooterColumnHeadingGapPx,
-  clampFooterMarginTopPx,
-  clampFooterPaddingPx,
-  createFooterLinkColumn,
-  createFooterLinkItem,
-  footerColorLuminance,
-  footerContrastingPrimary,
-  isFooterBackgroundLight,
-  isLegacyLandingMarketingColumns,
-  normalizeFooterElementStyles,
-  patchFooterElementStyle,
-  resolveFooterMarginTopPx,
-  resolveFooterPaddingSides,
-  syncFooterLegacyTypographyFromElementStyles,
-  type PortfolioFooterSectionSettings,
-  type PortfolioFooterCenteredIdentity,
-  type PortfolioFooterStyleTarget,
-} from '@/components/portfolio/portfolio-footer-settings';
-import {
-  applyFooterPaletteToSettings,
-  DEFAULT_FOOTER_COLOR_BINDINGS,
-  DEFAULT_FOOTER_PALETTE,
-  FOOTER_STYLE_TARGET_COLOR_SLOT,
-  mergeFooterColorBindings,
-  mergeFooterPalette,
-  patchFooterColorBinding,
-  patchFooterColorField,
-  PORTFOLIO_FOOTER_COLOR_SLOT_OPTIONS,
-  type FooterColorSlot,
-} from '@/components/portfolio/portfolio-footer-palette-settings';
+import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
+import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import {
   PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS,
   resolveHeroPaletteColor,
   type HeroPaletteTokenId,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
-import { PortfolioElementStyleFields } from '@/components/portfolio/portfolio-element-style-fields';
-import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
-import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
+import {
+  DEFAULT_FOOTER_COLOR_BINDINGS,
+  DEFAULT_FOOTER_PALETTE,
+  mergeFooterColorBindings,
+  mergeFooterPalette,
+  patchFooterColorBinding,
+  patchFooterColorFieldManual,
+  type FooterColorSlot,
+} from '@/components/portfolio/portfolio-footer-palette-settings';
+import {
+  PORTFOLIO_FOOTER_DESIGN_OPTIONS,
+  DEFAULT_FOOTER_LINK_COLUMNS,
+  DEFAULT_FOOTER_LANDING_BRAND_GAP_PX,
+  isLegacyLandingMarketingColumns,
+  type PortfolioFooterDesign,
+  type PortfolioFooterSectionSettings,
+} from '@/components/portfolio/portfolio-footer-settings';
+import { FooterHeroColumnsWireframe } from '@/components/portfolio/portfolio-footer-design-hero-columns';
+import { FooterSplitFormWireframe } from '@/components/portfolio/portfolio-footer-design-split-form';
+import { FooterTimezoneEditorialWireframe } from '@/components/portfolio/portfolio-footer-design-timezone-editorial';
+import { FooterInvertedWordmarkWireframe } from '@/components/portfolio/portfolio-footer-design-inverted-wordmark';
+import { FooterServicesRevealWireframe } from '@/components/portfolio/portfolio-footer-design-services-reveal';
+import { FooterEditorialGridWireframe } from '@/components/portfolio/portfolio-footer-design-editorial-grid';
+import { FooterHeadlineRevealWireframe } from '@/components/portfolio/portfolio-footer-design-headline-reveal';
+import { FooterCompactWireframe } from '@/components/portfolio/portfolio-footer-design-compact';
+import { FooterCenteredMinimalWireframe } from '@/components/portfolio/portfolio-footer-design-centered-minimal';
+import { FooterLandingWireframe } from '@/components/portfolio/portfolio-footer-design-landing';
+import { FooterContactCardWireframe } from '@/components/portfolio/portfolio-footer-design-contact-card';
+import {
+  PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS,
+  FOOTER_HEADER_PALETTE_TOKEN_OPTIONS,
+  FOOTER_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
+  footerHeaderPaletteTokenColor,
+  type PortfolioFooterHeaderDesign,
+  type PortfolioFooterHeaderTitleSize,
+  type PortfolioFooterHeaderPaletteToken,
+} from '@/components/portfolio/portfolio-footer-header-settings';
 
-export type FooterSubSection = 'general' | 'palette' | 'content' | 'typography' | 'background';
+function FooterMinimalCtaWireframe() {
+  return (
+    <svg viewBox="0 0 120 72" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
+      <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
+      <rect className="pf-stack-mini-ink" x="8" y="12" width="30" height="6" rx="2" />
+      <rect className="pf-stack-mini-mute" x="8" y="24" width="60" height="2.5" rx="1.25" />
+      <rect className="pf-stack-mini-mute" x="8" y="30" width="46" height="2.5" rx="1.25" />
+      <rect className="pf-stack-mini-accent" x="8" y="40" width="26" height="8" rx="4" />
+      <rect className="pf-stack-mini-mute" x="8" y="58" width="20" height="2" rx="1" />
+      <rect className="pf-stack-mini-mute" x="32" y="58" width="20" height="2" rx="1" />
+      <circle className="pf-stack-mini-ring" cx="100" cy="59" r="4" strokeWidth={1.2} />
+      <circle className="pf-stack-mini-ring" cx="110" cy="59" r="4" strokeWidth={1.2} />
+    </svg>
+  );
+}
+
+function FooterMonumentalWireframe() {
+  return (
+    <svg viewBox="0 0 120 72" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
+      <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
+      <rect className="pf-stack-mini-ink" x="6" y="10" width="70" height="11" rx="2" />
+      <rect className="pf-stack-mini-ink" x="6" y="24" width="46" height="11" rx="2" opacity={0.55} />
+      <rect className="pf-stack-mini-mute" x="80" y="14" width="32" height="2.5" rx="1.25" />
+      <rect className="pf-stack-mini-mute" x="80" y="21" width="32" height="2.5" rx="1.25" />
+      <rect className="pf-stack-mini-mute" x="80" y="28" width="20" height="2.5" rx="1.25" />
+      <rect className="pf-stack-mini-mute" x="6" y="50" width="108" height="16" rx="3" opacity={0.18} />
+    </svg>
+  );
+}
+
+/** Abstract mini-schema preview for every "Section design" option — one wireframe per
+ *  design, no exceptions, matching the thumbnail convention already used by Info/Stack/
+ *  Services/Work's own design pickers (see the "Settings design standard" rules). */
+function FooterDesignWireframe({ design }: { design: PortfolioFooterDesign }) {
+  switch (design) {
+    case 'centered-minimal':
+      return <FooterCenteredMinimalWireframe />;
+    case 'landing':
+      return <FooterLandingWireframe />;
+    case 'minimal':
+      return <FooterMinimalCtaWireframe />;
+    case 'contact-card':
+      return <FooterContactCardWireframe />;
+    case 'monumental':
+      return <FooterMonumentalWireframe />;
+    case 'hero-columns':
+      return <FooterHeroColumnsWireframe />;
+    case 'split-form':
+      return <FooterSplitFormWireframe />;
+    case 'timezone-editorial':
+      return <FooterTimezoneEditorialWireframe />;
+    case 'inverted-wordmark':
+      return <FooterInvertedWordmarkWireframe />;
+    case 'services-reveal':
+      return <FooterServicesRevealWireframe />;
+    case 'editorial-grid':
+      return <FooterEditorialGridWireframe />;
+    case 'headline-reveal':
+      return <FooterHeadlineRevealWireframe />;
+    case 'compact':
+      return <FooterCompactWireframe />;
+    default:
+      return null;
+  }
+}
+
+/** Expanded-grid card: wireframe + name only — no description paragraph (see the
+ *  "Settings design standard" text-reduction rule). Same visual chrome as every other
+ *  section's design picker (2px accent border + tint + circular check badge when active). */
+function FooterPickerCard({
+  active,
+  label,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={label}
+      title={label}
+      data-active={active ? 'true' : 'false'}
+      onClick={onClick}
+      className="pf-stack-design-card relative rounded-2xl px-3 pb-3 pt-2.5 text-left"
+    >
+      {active ? (
+        <span
+          aria-hidden
+          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
+        >
+          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
+            <path
+              d="M4 10.5l3.5 3.5L16 6"
+              stroke="white"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      ) : null}
+      {children}
+      <span className="mt-2.5 block">
+        <span className="pf-stack-card-label block text-sm font-semibold leading-none tracking-tight">
+          {label}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+/** Collapsed-state row: a compact thumbnail, the selected design's name, and a trailing
+ *  chevron — the whole row opens the grid. Mirrors Work/Services' own summary row 1:1. */
+function FooterDesignSummaryRow({
+  name,
+  onOpen,
+  children,
+}: {
+  name: string;
+  onOpen: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <FooterSectionLabel>Design</FooterSectionLabel>
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label="Change section design"
+        className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
+      >
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+          <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
+            {children}
+          </span>
+        </span>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{name}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+          <path
+            d="M7.5 4.5l5 5.5-5 5.5"
+            stroke="currentColor"
+            strokeWidth={1.75}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+/** The main "Section design" picker — collapses to the selected design; click to expand
+ *  and change. Mirrors Work/Services' `*DesignChoiceGrid` pattern 1:1 for consistency. */
+function FooterDesignChoiceGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioFooterDesign;
+  onChange: (value: PortfolioFooterDesign) => void;
+}) {
+  const [showGrid, setShowGrid] = useState(false);
+  const selected =
+    PORTFOLIO_FOOTER_DESIGN_OPTIONS.find((option) => option.value === value) ??
+    PORTFOLIO_FOOTER_DESIGN_OPTIONS[0];
+
+  if (showGrid) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <FooterSectionLabel>Section design</FooterSectionLabel>
+          <button
+            type="button"
+            onClick={() => setShowGrid(false)}
+            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+          >
+            ← Back
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          {PORTFOLIO_FOOTER_DESIGN_OPTIONS.map((option) => {
+            const active = option.value === value;
+            return (
+              <FooterPickerCard
+                key={option.value}
+                active={active}
+                label={option.label}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              >
+                <FooterDesignWireframe design={option.value} />
+              </FooterPickerCard>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <FooterDesignSummaryRow name={selected.label} onOpen={() => setShowGrid(true)}>
+      <FooterDesignWireframe design={value} />
+    </FooterDesignSummaryRow>
+  );
+}
+
+export type FooterSubSection = 'general' | 'design' | 'background' | 'header';
 
 const FOOTER_SUB_SECTIONS: { id: FooterSubSection; label: string; description: string }[] = [
-  { id: 'general', label: 'General', description: 'Visibility, design, and layout.' },
-  {
-    id: 'palette',
-    label: 'Palette',
-    description: 'Follow Global theme tokens and bind each footer color.',
-  },
-  {
-    id: 'content',
-    label: 'Content',
-    description: 'Brand, description, contact details, links, and credit.',
-  },
-  {
-    id: 'typography',
-    label: 'Typography',
-    description: 'Icons, colors, sizes, and formatting for footer text. Typeface follows Global.',
-  },
-  {
-    id: 'background',
-    label: 'Background',
-    description: 'Fill, gradient, and pattern motifs behind this section.',
-  },
+  { id: 'general', label: 'General', description: 'Section visibility and defaults.' },
+  { id: 'design', label: 'Design', description: 'Layout and visual style.' },
+  { id: 'background', label: 'Background', description: 'Fill behind this section.' },
+  { id: 'header', label: 'Header', description: 'Title, subtitle, fonts, and colors.' },
 ];
 
-const FOOTER_CENTERED_IDENTITY_OPTIONS: {
-  value: PortfolioFooterCenteredIdentity;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'avatar', label: 'Avatar', description: 'Profile image, with initials as fallback.' },
-  { value: 'name', label: 'Name', description: 'Your public creator name.' },
-  { value: 'custom', label: 'Custom', description: 'A custom wordmark or logo image.' },
-];
+/** Map legacy subsection ids (saved UI state / search) onto the current Footer menu. */
+export function normalizeFooterSubSection(value: string | undefined): FooterSubSection {
+  if (value === 'general' || value === 'design' || value === 'background' || value === 'header') {
+    return value;
+  }
+  return 'general';
+}
 
-const FOOTER_BACKGROUND_LABEL_SLOTS: Record<string, FooterColorSlot> = {
-  Color: 'sectionBackground',
-  'Gradient start': 'sectionGradientFrom',
-  'Gradient end': 'sectionGradientTo',
-  'Couleur zone haut': 'sectionSplitA',
-  'Couleur zone gauche': 'sectionSplitA',
-  'Couleur zone bas': 'sectionSplitB',
-  'Couleur zone droite': 'sectionSplitB',
-  'Couleur de la ligne': 'sectionDivider',
-};
-
-function asFooterPatch(
-  patch: Record<string, unknown> | object
-): Partial<PortfolioFooterSectionSettings> {
+function asFooterPatch(patch: Record<string, unknown> | object): Partial<PortfolioFooterSectionSettings> {
   return patch as Partial<PortfolioFooterSectionSettings>;
+}
+
+/** Same animated switch as Services/Contact/Info's settings panels — shared settings-UI chrome. */
+function FooterSwitchTrack({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className="relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      style={{
+        backgroundColor: checked
+          ? 'var(--pf-palette-texte-fort, #171717)'
+          : 'color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 22%, var(--pf-palette-fond, #ffffff))',
+      }}
+    >
+      <span
+        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        style={{
+          left: checked ? '1.125rem' : '0.125rem',
+          backgroundColor: checked
+            ? 'var(--pf-palette-fond, #ffffff)'
+            : 'var(--pf-palette-texte-fort, #171717)',
+        }}
+      />
+    </span>
+  );
 }
 
 function FooterToggleRow({
   label,
-  description,
   checked,
   onChange,
 }: {
   label: string;
-  description?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-white px-4 py-3.5">
-      <span className="min-w-0">
-        <span className="block text-sm font-semibold text-neutral-950">{label}</span>
-        {description ? <span className="mt-1 block text-sm text-neutral-500">{description}</span> : null}
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full cursor-pointer flex-col gap-1 text-left"
+    >
+      <span className="flex items-center justify-between gap-4">
+        <span className="min-w-0 truncate text-sm font-medium text-neutral-950">{label}</span>
+        <FooterSwitchTrack checked={checked} />
       </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-neutral-900"
-      />
-    </label>
+    </button>
   );
 }
 
-function FooterOptionGrid<T extends string>({
+function FooterSectionLabel({ children }: { children: string }) {
+  return <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{children}</p>;
+}
+
+function FooterGroupLabel({ children }: { children: string }) {
+  return <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">{children}</p>;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Header tab — the shared 8-design GSAP Header mechanism (see Info/Work/  */
+/* Team/etc.), mounted above the Footer section independent of its own    */
+/* `design`. Small local segmented/pill/swatch controls, matching this     */
+/* file's own Tailwind-inline styling rather than Work's CSS-class set.    */
+/* ---------------------------------------------------------------------- */
+
+function FooterHeaderOptionGrid<T extends string>({
   label,
   options,
   value,
@@ -158,30 +353,34 @@ function FooterOptionGrid<T extends string>({
   columns = 2,
 }: {
   label: string;
-  options: { value: T; label: string; description: string }[];
+  options: { value: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
-  columns?: 2 | 3;
+  columns?: 1 | 2 | 3 | 4;
 }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-      <div className={`mt-3 grid gap-2 ${columns === 3 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'}`}>
+      <FooterGroupLabel>{label}</FooterGroupLabel>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="mt-2 grid gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+      >
         {options.map((option) => {
           const active = option.value === value;
           return (
             <button
               key={option.value}
               type="button"
+              role="radio"
+              aria-checked={active}
               onClick={() => onChange(option.value)}
-              className={`rounded-2xl border px-4 py-3 text-left transition ${
-                active
-                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+              className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition ${
+                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
               }`}
             >
-              <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
+              {option.label}
             </button>
           );
         })}
@@ -190,7 +389,240 @@ function FooterOptionGrid<T extends string>({
   );
 }
 
-function FooterColorField({
+const FOOTER_HEADER_SIZE_PILL_OPTIONS: { value: PortfolioFooterHeaderTitleSize; label: string; fontPx: number }[] = [
+  { value: 'sm', label: 'S', fontPx: 12 },
+  { value: 'md', label: 'M', fontPx: 15 },
+  { value: 'lg', label: 'L', fontPx: 18 },
+  { value: 'xl', label: 'XL', fontPx: 22 },
+];
+
+function FooterHeaderSizePill({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: PortfolioFooterHeaderTitleSize;
+  onChange: (value: PortfolioFooterHeaderTitleSize) => void;
+}) {
+  return (
+    <div>
+      <FooterGroupLabel>{label}</FooterGroupLabel>
+      <div role="radiogroup" aria-label={label} className="mt-2 grid grid-cols-4 gap-1.5">
+        {FOOTER_HEADER_SIZE_PILL_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onChange(option.value)}
+              className={`rounded-lg px-2.5 py-2 text-center font-semibold leading-none transition ${
+                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+              }`}
+              style={{ fontSize: `${option.fontPx}px` }}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function FooterHeaderPaletteSwatches({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: PortfolioFooterHeaderPaletteToken;
+  onChange: (value: PortfolioFooterHeaderPaletteToken) => void;
+}) {
+  return (
+    <div>
+      <FooterGroupLabel>{label}</FooterGroupLabel>
+      <div role="radiogroup" aria-label={label} className="mt-2 grid grid-cols-3 gap-1.5">
+        {FOOTER_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onChange(option.value)}
+              className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
+                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+              }`}
+            >
+              <span
+                aria-hidden
+                className="h-3 w-3 shrink-0 rounded-full border border-black/10"
+                style={{ backgroundColor: footerHeaderPaletteTokenColor(option.value) }}
+              />
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function FooterHeaderTextField({
+  label,
+  value,
+  placeholder,
+  onChange,
+  multiline = false,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  onChange: (value: string) => void;
+  multiline?: boolean;
+}) {
+  return (
+    <div>
+      <FooterSectionLabel>{label}</FooterSectionLabel>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          rows={2}
+          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+        />
+      ) : (
+        <input
+          type="text"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+        />
+      )}
+    </div>
+  );
+}
+
+function FooterHeaderMiniWireframe({ design }: { design: PortfolioFooterHeaderDesign }) {
+  return (
+    <svg viewBox="0 0 120 72" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
+      <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
+      {design === 'billboard' ? (
+        <>
+          <rect className="pf-stack-mini-mute" x="4" y="10" width="112" height="24" rx="2" opacity={0.35} />
+          <rect className="pf-stack-mini-ink" x="8" y="46" width="50" height="8" rx="2" />
+          <rect className="pf-stack-mini-mute" x="8" y="58" width="30" height="2.5" rx="1.25" />
+        </>
+      ) : design === 'masthead' ? (
+        <>
+          <rect className="pf-stack-mini-ink" x="8" y="12" width="90" height="10" rx="2" />
+          <rect className="pf-stack-mini-ink" x="8" y="26" width="70" height="10" rx="2" opacity={0.6} />
+          <rect className="pf-stack-mini-ink" x="8" y="40" width="80" height="10" rx="2" opacity={0.3} />
+        </>
+      ) : design === 'index' ? (
+        <>
+          <rect className="pf-stack-mini-mute" x="8" y="14" width="104" height="1.5" />
+          <rect className="pf-stack-mini-ink" x="8" y="26" width="22" height="18" rx="2" opacity={0.7} />
+          <rect className="pf-stack-mini-mute" x="40" y="26" width="1.5" height="18" />
+          <rect className="pf-stack-mini-ink" x="50" y="28" width="60" height="8" rx="2" />
+        </>
+      ) : design === 'serif-lead' ? (
+        <>
+          <rect className="pf-stack-mini-mute" x="8" y="14" width="24" height="2.5" rx="1.25" />
+          <rect className="pf-stack-mini-ink" x="8" y="26" width="100" height="10" rx="2" />
+          <rect className="pf-stack-mini-ink" x="8" y="40" width="70" height="10" rx="2" opacity={0.5} />
+        </>
+      ) : design === 'hero' ? (
+        <>
+          <rect className="pf-stack-mini-ink" x="22" y="14" width="76" height="10" rx="2" />
+          <rect className="pf-stack-mini-ink" x="30" y="28" width="60" height="10" rx="2" opacity={0.7} />
+          <rect className="pf-stack-mini-accent" x="42" y="48" width="36" height="10" rx="5" />
+        </>
+      ) : design === 'name' ? (
+        <>
+          <rect className="pf-stack-mini-ink" x="4" y="24" width="112" height="24" rx="2" />
+        </>
+      ) : design === 'timezone' ? (
+        <>
+          <rect className="pf-stack-mini-mute" x="8" y="12" width="18" height="2.5" rx="1.25" />
+          <rect className="pf-stack-mini-ink" x="8" y="20" width="44" height="8" rx="2" />
+          <rect className="pf-stack-mini-ink" x="8" y="30" width="36" height="8" rx="2" opacity={0.7} />
+          <rect className="pf-stack-mini-mute" x="8" y="42" width="30" height="2.5" rx="1.25" />
+          <rect className="pf-stack-mini-ink" x="86" y="12" width="24" height="6" rx="1.5" />
+          <rect className="pf-stack-mini-mute" x="92" y="20" width="18" height="2.5" rx="1.25" />
+        </>
+      ) : (
+        <>
+          <rect className="pf-stack-mini-ink" x="8" y="16" width="104" height="12" rx="2" />
+          <rect className="pf-stack-mini-ink" x="8" y="34" width="70" height="12" rx="2" opacity={0.55} />
+          <rect className="pf-stack-mini-mute" x="8" y="54" width="46" height="2.5" rx="1.25" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function FooterHeaderDesignGrid({
+  value,
+  onChange,
+}: {
+  value: PortfolioFooterHeaderDesign;
+  onChange: (value: PortfolioFooterHeaderDesign) => void;
+}) {
+  const [showGrid, setShowGrid] = useState(false);
+  const selected =
+    PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
+    PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS[0];
+
+  if (showGrid) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <FooterSectionLabel>Header design</FooterSectionLabel>
+          <button
+            type="button"
+            onClick={() => setShowGrid(false)}
+            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+          >
+            ← Back
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          {PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS.map((option) => {
+            const active = option.value === value;
+            return (
+              <FooterPickerCard
+                key={option.value}
+                active={active}
+                label={option.label}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              >
+                <FooterHeaderMiniWireframe design={option.value} />
+              </FooterPickerCard>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <FooterDesignSummaryRow name={selected.label} onOpen={() => setShowGrid(true)}>
+      <FooterHeaderMiniWireframe design={value} />
+    </FooterDesignSummaryRow>
+  );
+}
+
+function FooterManualColorField({
   label,
   value,
   onChange,
@@ -208,6 +640,7 @@ function FooterColorField({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           className="h-11 w-14 cursor-pointer rounded-xl border border-neutral-200 bg-white p-1"
+          aria-label={`${label} picker`}
         />
         <input
           type="text"
@@ -217,13 +650,16 @@ function FooterColorField({
             if (isValidProfileHexColor(next)) onChange(next);
           }}
           className="w-28 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-mono text-neutral-900"
+          aria-label={`${label} hex`}
         />
       </div>
     </div>
   );
 }
 
-function FooterPaletteColorField({
+/** Palette-bound color field — dropdown of theme tokens when the Hero palette is on,
+ *  manual hex picker when it's off. Same mechanism as Services/FAQ/Stack's own color fields. */
+function FooterColorField({
   footer,
   onChange,
   slot,
@@ -238,10 +674,10 @@ function FooterPaletteColorField({
 }) {
   if (footer.useHeroPalette === false) {
     return (
-      <FooterColorField
+      <FooterManualColorField
         label={label}
         value={value}
-        onChange={(hex) => onChange(asFooterPatch(patchFooterColorField(footer, slot, hex)))}
+        onChange={(hex) => onChange(asFooterPatch(patchFooterColorFieldManual(footer, slot, hex)))}
       />
     );
   }
@@ -265,11 +701,7 @@ function FooterPaletteColorField({
       <select
         value={token}
         onChange={(event) =>
-          onChange(
-            asFooterPatch(
-              patchFooterColorBinding(footer, slot, event.target.value as HeroPaletteTokenId)
-            )
-          )
+          onChange(asFooterPatch(patchFooterColorBinding(footer, slot, event.target.value as HeroPaletteTokenId)))
         }
         className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
         aria-label={`${label} palette token`}
@@ -284,201 +716,13 @@ function FooterPaletteColorField({
   );
 }
 
-function FooterPalettePanel({
-  footer,
-  onChange,
-}: {
-  footer: PortfolioFooterSectionSettings;
-  onChange: (patch: Partial<PortfolioFooterSectionSettings>) => void;
-}) {
-  const bindings = mergeFooterColorBindings(DEFAULT_FOOTER_COLOR_BINDINGS, footer.footerColorBindings);
-
-  return (
-    <div className="space-y-6">
-      <FooterToggleRow
-        label="Garder ces couleurs en sombre / clair"
-        description="Fige la palette actuelle du footer. Changer le mode Global (sombre ↔ clair) ne remplacera plus ces couleurs. Désactive puis réactive pour reprendre la palette du mode actif."
-        checked={footer.lockPaletteAcrossColorModes === true}
-        onChange={(lockPaletteAcrossColorModes) => {
-          if (!lockPaletteAcrossColorModes) {
-            onChange({ lockPaletteAcrossColorModes: false });
-            return;
-          }
-          // Snapshot current footer palette (already painted from active mode) and lock it.
-          const snapshot = mergeFooterPalette(DEFAULT_FOOTER_PALETTE, footer.footerPalette);
-          onChange(
-            asFooterPatch({
-              lockPaletteAcrossColorModes: true,
-              footerPalette: snapshot,
-              ...applyFooterPaletteToSettings({ ...footer, footerPalette: snapshot }),
-            })
-          );
-        }}
-      />
-
-      <p className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4 py-3 text-sm text-neutral-600">
-        The site color palette lives in <span className="font-semibold">Global → Theme</span>. Footer
-        bindings map each slot (background, text, CTAs) to one of those tokens.
-      </p>
-
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Color bindings</p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Change a binding to recolor that part of the footer from the Global palette.
-        </p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {PORTFOLIO_FOOTER_COLOR_SLOT_OPTIONS.map((slot) => (
-            <div key={slot.value}>
-              <label className="block">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                  {slot.label}
-                </span>
-                <select
-                  value={bindings[slot.value]}
-                  onChange={(event) =>
-                    onChange(
-                      asFooterPatch(
-                        patchFooterColorBinding(
-                          footer,
-                          slot.value,
-                          event.target.value as HeroPaletteTokenId
-                        )
-                      )
-                    )
-                  }
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800"
-                >
-                  {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
-                    <option key={token.value} value={token.value}>
-                      {token.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <p className="mt-1 text-xs text-neutral-500">{slot.description}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FooterMarketplaceCtaFields({
-  footer,
-  onChange,
-}: {
-  footer: PortfolioFooterSectionSettings;
-  onChange: (patch: Partial<PortfolioFooterSectionSettings>) => void;
-}) {
-  return (
-    <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Marketplace CTA</p>
-      <FooterToggleRow
-        label="Show Marketplace button"
-        description={
-          footer.design === 'landing'
-            ? 'Landing columns: hidden by default. Turn on to show Marketplace profile under the brand.'
-            : 'Paired with Contact me on every footer design — label, URL, and presets.'
-        }
-        checked={
-          footer.design === 'landing'
-            ? footer.showLandingMarketplaceLink === true
-            : footer.showMarketplaceLink
-        }
-        onChange={(enabled) =>
-          footer.design === 'landing'
-            ? onChange({ showLandingMarketplaceLink: enabled })
-            : onChange({ showMarketplaceLink: enabled })
-        }
-      />
-      {(footer.design === 'landing' ? footer.showLandingMarketplaceLink : footer.showMarketplaceLink) ? (
-        <div className="space-y-4 rounded-2xl border border-neutral-200/70 bg-white p-4">
-          <label className="block">
-            <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">Label</span>
-            <input
-              type="text"
-              value={footer.marketplaceCtaLabel ?? DEFAULT_FOOTER_MARKETPLACE_CTA_LABEL}
-              onChange={(event) => onChange({ marketplaceCtaLabel: event.target.value })}
-              placeholder={DEFAULT_FOOTER_MARKETPLACE_CTA_LABEL}
-              className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-            />
-          </label>
-          <label className="block">
-            <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-              Redirect URL
-            </span>
-            <input
-              type="text"
-              value={footer.marketplaceCtaHref ?? ''}
-              onChange={(event) => onChange({ marketplaceCtaHref: event.target.value })}
-              placeholder="Empty = /marketplace/{your-id} · or https://… · #contact"
-              className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-mono text-neutral-900"
-            />
-            <span className="mt-1.5 block text-xs text-neutral-500">
-              Leave empty for your NoProbleme marketplace profile. Any link works:{' '}
-              <span className="font-mono">https://…</span>, <span className="font-mono">#contact</span>, or{' '}
-              <span className="font-mono">__profile__</span>.
-            </span>
-          </label>
-          <FooterOptionGrid
-            label="Predefined designs"
-            options={PORTFOLIO_FOOTER_MARKETPLACE_CTA_DESIGN_OPTIONS}
-            value={footer.marketplaceCtaDesign ?? 'pill-outline'}
-            onChange={(marketplaceCtaDesign) => onChange({ marketplaceCtaDesign })}
-            columns={2}
-          />
-          <FooterToggleRow
-            label="Show arrow"
-            description="↗ icon next to the label."
-            checked={footer.marketplaceCtaShowArrow !== false}
-            onChange={(marketplaceCtaShowArrow) => onChange({ marketplaceCtaShowArrow })}
-          />
-          {(footer.marketplaceCtaDesign ?? 'text-arrow') !== 'text-arrow' ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {(footer.marketplaceCtaDesign === 'pill-dark' ||
-                footer.marketplaceCtaDesign === 'pill-accent') && (
-                <FooterColorField
-                  label="Button text"
-                  value={footer.marketplaceCtaTextColor ?? '#fafafa'}
-                  onChange={(marketplaceCtaTextColor) => onChange({ marketplaceCtaTextColor })}
-                />
-              )}
-              {footer.marketplaceCtaDesign === 'pill-dark' ? (
-                <FooterColorField
-                  label="Button background"
-                  value={footer.marketplaceCtaBackgroundColor ?? '#0a0a0a'}
-                  onChange={(marketplaceCtaBackgroundColor) =>
-                    onChange({ marketplaceCtaBackgroundColor })
-                  }
-                />
-              ) : null}
-              {footer.marketplaceCtaDesign === 'pill-outline' ? (
-                <FooterColorField
-                  label="Outline / text"
-                  value={footer.marketplaceCtaBorderColor ?? '#0a0a0a'}
-                  onChange={(marketplaceCtaBorderColor) => onChange({ marketplaceCtaBorderColor })}
-                />
-              ) : null}
-              {footer.marketplaceCtaDesign === 'pill-accent' ? (
-                <p className="sm:col-span-2 text-sm text-neutral-500">
-                  Accent pill uses the{' '}
-                  <span className="font-semibold text-neutral-700">General → accent</span> color for the
-                  fill.
-                </p>
-              ) : null}
-            </div>
-          ) : (
-            <p className="text-sm text-neutral-500">
-              Text + arrow color: Typography → Marketplace CTA (or accent). Your current look is{' '}
-              <span className="font-semibold text-neutral-700">Text + arrow</span>.
-            </p>
-          )}
-        </div>
-      ) : null}
-    </div>
-  );
-}
+const FOOTER_BACKGROUND_LABEL_SLOTS: Record<string, FooterColorSlot> = {
+  Color: 'sectionBackground',
+  'Gradient start': 'sectionGradientFrom',
+  'Gradient end': 'sectionGradientTo',
+  'Color A': 'sectionSplitA',
+  'Color B': 'sectionSplitB',
+};
 
 export function FooterSettingsPanel({
   footer,
@@ -492,71 +736,127 @@ export function FooterSettingsPanel({
   onSubSectionChange?: (value: FooterSubSection) => void;
 }) {
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<FooterSubSection>('general');
-  const [styleTarget, setStyleTarget] = useState<PortfolioFooterStyleTarget>('brand');
-  const subSection = controlledSubSection ?? uncontrolledSubSection;
+  const subSection = normalizeFooterSubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: FooterSubSection) => {
-    onSubSectionChange?.(value);
-    if (controlledSubSection === undefined) setUncontrolledSubSection(value);
+    const next = normalizeFooterSubSection(value);
+    onSubSectionChange?.(next);
+    if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
-  const activeMeta = FOOTER_SUB_SECTIONS.find((section) => section.id === subSection) ?? FOOTER_SUB_SECTIONS[0];
-  const elementStyles = normalizeFooterElementStyles(footer.elementStyles, footer);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Footer subsection</p>
-          <p className="mt-1 text-sm text-neutral-500">{activeMeta.description}</p>
-        </div>
-        <select
-          value={subSection}
-          onChange={(event) => setSubSection(event.target.value as FooterSubSection)}
-          className="min-w-[12rem] flex-1 rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-neutral-900 sm:max-w-xs"
-        >
-          {FOOTER_SUB_SECTIONS.map((section) => (
-            <option key={section.id} value={section.id}>
-              {section.label}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-wrap gap-2">
+        {FOOTER_SUB_SECTIONS.map((section) => (
+          <button
+            key={section.id}
+            type="button"
+            onClick={() => setSubSection(section.id)}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+              subSection === section.id
+                ? 'bg-neutral-900 text-white'
+                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+            }`}
+          >
+            {section.label}
+          </button>
+        ))}
       </div>
 
       {subSection === 'general' ? (
         <div className="space-y-6">
           <FooterToggleRow
-            label="Show section"
-            description="Display the footer on your public portfolio."
-            checked={footer.enabled}
+            label="Show Footer section"
+            checked={footer.enabled !== false}
             onChange={(enabled) => onChange({ enabled })}
           />
+
           <SectionColorModeControl
             value={footer.colorModeOverride}
-            onChange={(colorModeOverride) => onChange(asFooterPatch({ colorModeOverride }))}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
           />
-          {footer.useHeroPalette ? (
-            <FooterToggleRow
-              label="Garder ces couleurs en sombre / clair"
-              description="Fige la palette actuelle du footer. Le mode Global sombre ↔ clair ne la remplacera plus."
-              checked={footer.lockPaletteAcrossColorModes === true}
-              onChange={(lockPaletteAcrossColorModes) => {
-                if (!lockPaletteAcrossColorModes) {
-                  onChange({ lockPaletteAcrossColorModes: false });
-                  return;
-                }
-                const snapshot = mergeFooterPalette(DEFAULT_FOOTER_PALETTE, footer.footerPalette);
-                onChange(
-                  asFooterPatch({
-                    lockPaletteAcrossColorModes: true,
-                    footerPalette: snapshot,
-                    ...applyFooterPaletteToSettings({ ...footer, footerPalette: snapshot }),
-                  })
-                );
-              }}
-            />
-          ) : null}
-          <FooterOptionGrid
-            label="Design"
-            options={PORTFOLIO_FOOTER_DESIGN_OPTIONS}
+
+          <div className="space-y-5">
+            <FooterSectionLabel>Content visibility</FooterSectionLabel>
+
+            <div className="space-y-2">
+              <FooterGroupLabel>Section</FooterGroupLabel>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <FooterToggleRow
+                  label="Brand name"
+                  checked={footer.showBrand !== false}
+                  onChange={(showBrand) => onChange({ showBrand })}
+                />
+                <FooterToggleRow
+                  label="Avatar"
+                  checked={footer.showAvatar === true}
+                  onChange={(showAvatar) => onChange({ showAvatar })}
+                />
+                <FooterToggleRow
+                  label="Description"
+                  checked={footer.showDescription === true}
+                  onChange={(showDescription) => onChange({ showDescription })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <FooterGroupLabel>Contact info</FooterGroupLabel>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <FooterToggleRow
+                  label="Email"
+                  checked={footer.showEmail !== false}
+                  onChange={(showEmail) => onChange({ showEmail })}
+                />
+                <FooterToggleRow
+                  label="Phone"
+                  checked={footer.showPhone !== false}
+                  onChange={(showPhone) => onChange({ showPhone })}
+                />
+                <FooterToggleRow
+                  label="Location"
+                  checked={footer.showLocation !== false}
+                  onChange={(showLocation) => onChange({ showLocation })}
+                />
+                <FooterToggleRow
+                  label="Hours"
+                  checked={footer.showHours !== false}
+                  onChange={(showHours) => onChange({ showHours })}
+                />
+                <FooterToggleRow
+                  label="Contact icons"
+                  checked={footer.showContactIcons !== false}
+                  onChange={(showContactIcons) => onChange({ showContactIcons })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <FooterGroupLabel>Meta</FooterGroupLabel>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <FooterToggleRow
+                  label="Copyright"
+                  checked={footer.showCopyright !== false}
+                  onChange={(showCopyright) => onChange({ showCopyright })}
+                />
+                <FooterToggleRow
+                  label="Design credit"
+                  checked={footer.showDesignCredit !== false}
+                  onChange={(showDesignCredit) => onChange({ showDesignCredit })}
+                />
+                <FooterToggleRow
+                  label="Marketplace link"
+                  checked={footer.showMarketplaceLink === true}
+                  onChange={(showMarketplaceLink) => onChange({ showMarketplaceLink })}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {subSection === 'design' ? (
+        <div className="space-y-6">
+          <FooterDesignChoiceGrid
             value={footer.design}
             onChange={(design) => {
               if (design === 'centered-minimal') {
@@ -642,1129 +942,169 @@ export function FooterSettingsPanel({
               }
               onChange({ design });
             }}
-            columns={2}
-          />
-          {footer.design === 'editorial' ? (
-            <FooterOptionGrid
-              label="Column layout"
-              options={PORTFOLIO_FOOTER_ALIGNMENT_OPTIONS}
-              value={footer.alignment ?? 'split'}
-              onChange={(alignment) => onChange({ alignment })}
-              columns={3}
-            />
-          ) : null}
-          <FooterOptionGrid
-            label="Padding"
-            options={PORTFOLIO_FOOTER_PADDING_OPTIONS}
-            value={
-              footer.padding === 'custom'
-                ? ('' as 'standard')
-                : ((footer.padding ?? 'standard') as
-                    | 'compact'
-                    | 'standard'
-                    | 'comfortable'
-                    | 'spacious')
-            }
-            onChange={(padding) => {
-              const sides = FOOTER_PADDING_PRESET_PX[padding];
-              onChange({
-                padding,
-                paddingTopPx: sides.top,
-                paddingBottomPx: sides.bottom,
-                paddingLeftPx: sides.left,
-                paddingRightPx: sides.right,
-              });
-            }}
-            columns={2}
-          />
-          {footer.padding === 'custom' ? (
-            <p className="text-xs font-medium text-amber-700">
-              Manual padding — pick a preset above to reset all sides.
-            </p>
-          ) : null}
-          <div className="grid gap-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 sm:grid-cols-2">
-            <p className="sm:col-span-2 text-sm text-neutral-500">
-              Sur mobile, un padding horizontal sûr est rétabli automatiquement (le contenu ne
-              colle plus au bord).
-            </p>
-            {(
-              [
-                ['Top', 'paddingTopPx'],
-                ['Bottom', 'paddingBottomPx'],
-                ['Left', 'paddingLeftPx'],
-                ['Right', 'paddingRightPx'],
-              ] as const
-            ).map(([label, key]) => {
-              const sides = resolveFooterPaddingSides(footer);
-              const live =
-                key === 'paddingTopPx'
-                  ? sides.top
-                  : key === 'paddingBottomPx'
-                    ? sides.bottom
-                    : key === 'paddingLeftPx'
-                      ? sides.left
-                      : sides.right;
-              return (
-                <div key={key}>
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      {label}
-                    </p>
-                    <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                      {live}px
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={FOOTER_PADDING_PX_MIN}
-                    max={FOOTER_PADDING_PX_MAX}
-                    step={2}
-                    value={
-                      footer.padding === 'custom'
-                        ? clampFooterPaddingPx(footer[key], live)
-                        : live
-                    }
-                    onChange={(event) => {
-                      const px = clampFooterPaddingPx(Number(event.target.value), live);
-                      onChange({ padding: 'custom', [key]: px });
-                    }}
-                    className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                    aria-label={`Footer padding ${label.toLowerCase()} in pixels`}
-                  />
-                </div>
-              );
-            })}
-          </div>
-          <FooterOptionGrid
-            label="Margin top"
-            options={PORTFOLIO_FOOTER_MARGIN_TOP_OPTIONS}
-            value={
-              footer.marginTop === 'custom'
-                ? ('' as 'none')
-                : ((footer.marginTop ?? 'none') as
-                    | 'none'
-                    | 'compact'
-                    | 'standard'
-                    | 'comfortable'
-                    | 'spacious')
-            }
-            onChange={(marginTop) =>
-              onChange({
-                marginTop,
-                marginTopPx: FOOTER_MARGIN_TOP_PRESET_PX[marginTop],
-              })
-            }
-            columns={2}
-          />
-          {footer.marginTop === 'custom' ? (
-            <p className="text-xs font-medium text-amber-700">
-              Manual mode — pick a preset above to leave custom px.
-            </p>
-          ) : null}
-          <div>
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Margin top (px)
-              </p>
-              <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                {resolveFooterMarginTopPx(footer)}px
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-neutral-500">
-              Exact space above the footer. Drag to switch to manual.
-            </p>
-            <input
-              type="range"
-              min={FOOTER_MARGIN_TOP_PX_MIN}
-              max={FOOTER_MARGIN_TOP_PX_MAX}
-              step={2}
-              value={clampFooterMarginTopPx(footer.marginTopPx, resolveFooterMarginTopPx(footer))}
-              onChange={(event) => {
-                const px = clampFooterMarginTopPx(Number(event.target.value), 0);
-                onChange({ marginTop: 'custom', marginTopPx: px });
-              }}
-              className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-              aria-label="Footer margin top in pixels"
-            />
-            <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
-              <span>{FOOTER_MARGIN_TOP_PX_MIN}px</span>
-              <span>{FOOTER_MARGIN_TOP_PX_MAX}px</span>
-            </div>
-          </div>
-          {footer.design === 'landing' ? (
-            <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Landing — left column gap
-                </p>
-                <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                  {clampFooterLandingBrandGapPx(
-                    footer.landingBrandGapPx,
-                    DEFAULT_FOOTER_LANDING_BRAND_GAP_PX
-                  )}
-                  px
-                </span>
-              </div>
-              <p className="text-sm text-neutral-500">
-                Vertical space between brand, bio, social icons, and buttons.
-              </p>
-              <input
-                type="range"
-                min={FOOTER_LANDING_BRAND_GAP_PX_MIN}
-                max={FOOTER_LANDING_BRAND_GAP_PX_MAX}
-                step={1}
-                value={clampFooterLandingBrandGapPx(
-                  footer.landingBrandGapPx,
-                  DEFAULT_FOOTER_LANDING_BRAND_GAP_PX
-                )}
-                onChange={(event) =>
-                  onChange({
-                    landingBrandGapPx: clampFooterLandingBrandGapPx(
-                      Number(event.target.value),
-                      DEFAULT_FOOTER_LANDING_BRAND_GAP_PX
-                    ),
-                  })
-                }
-                className="mt-1 h-2 w-full cursor-pointer accent-neutral-900"
-                aria-label="Landing left column vertical gap"
-              />
-              <div className="flex justify-between text-[11px] text-neutral-400">
-                <span>{FOOTER_LANDING_BRAND_GAP_PX_MIN}px</span>
-                <span>{FOOTER_LANDING_BRAND_GAP_PX_MAX}px</span>
-              </div>
-            </div>
-          ) : null}
-          {footer.design === 'landing' || footer.design === 'editorial' ? (
-            <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Titre → liste (Contact / Links)
-                </p>
-                <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                  {clampFooterColumnHeadingGapPx(
-                    footer.columnHeadingGapPx,
-                    DEFAULT_FOOTER_COLUMN_HEADING_GAP_PX
-                  )}
-                  px
-                </span>
-              </div>
-              <p className="text-sm text-neutral-500">
-                Espacement commun sous les titres Contact et Links avant leurs éléments.
-              </p>
-              <input
-                type="range"
-                min={FOOTER_COLUMN_HEADING_GAP_PX_MIN}
-                max={FOOTER_COLUMN_HEADING_GAP_PX_MAX}
-                step={1}
-                value={clampFooterColumnHeadingGapPx(
-                  footer.columnHeadingGapPx,
-                  DEFAULT_FOOTER_COLUMN_HEADING_GAP_PX
-                )}
-                onChange={(event) =>
-                  onChange({
-                    columnHeadingGapPx: clampFooterColumnHeadingGapPx(
-                      Number(event.target.value),
-                      DEFAULT_FOOTER_COLUMN_HEADING_GAP_PX
-                    ),
-                  })
-                }
-                className="mt-1 h-2 w-full cursor-pointer accent-neutral-900"
-                aria-label="Espacement sous les titres Contact et Links"
-              />
-              <div className="flex justify-between text-[11px] text-neutral-400">
-                <span>{FOOTER_COLUMN_HEADING_GAP_PX_MIN}px</span>
-                <span>{FOOTER_COLUMN_HEADING_GAP_PX_MAX}px</span>
-              </div>
-            </div>
-          ) : null}
-          <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Contact CTA</p>
-            <FooterToggleRow
-              label="Show contact button"
-              description="“Contact me” — shown with Marketplace on every footer design."
-              checked={footer.showContactCta}
-              onChange={(showContactCta) => onChange({ showContactCta })}
-            />
-            <FooterOptionGrid
-              label="Buttons align (large screen)"
-              options={PORTFOLIO_FOOTER_CTA_BUTTONS_ALIGN_OPTIONS}
-              value={footer.ctaButtonsAlign ?? 'center'}
-              onChange={(ctaButtonsAlign) => onChange({ ctaButtonsAlign })}
-              columns={3}
-            />
-            {footer.showContactCta ? (
-              <>
-                <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                    Button label
-                  </span>
-                  <input
-                    type="text"
-                    value={footer.ctaButtonLabel}
-                    onChange={(event) => onChange({ ctaButtonLabel: event.target.value })}
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                  />
-                </label>
-                <FooterOptionGrid
-                  label="Predefined designs"
-                  options={PORTFOLIO_FOOTER_CONTACT_CTA_DESIGN_OPTIONS}
-                  value={footer.ctaDesign ?? 'pill-outline'}
-                  onChange={(ctaDesign) => onChange({ ctaDesign })}
-                  columns={2}
-                />
-                <p className="text-sm text-neutral-500">
-                  Contact me only. Marketplace has its own design under Marketplace CTA.
-                </p>
-                <div className="space-y-4 rounded-2xl border border-neutral-200/70 bg-white/80 p-4">
-                  <p className="text-sm font-semibold text-neutral-950">Colors</p>
-                  {(footer.ctaDesign ?? 'pill-outline') === 'pill-dark' ? (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FooterColorField
-                        label="Button background"
-                        value={footer.ctaButtonBackgroundColor ?? '#ffffff'}
-                        onChange={(ctaButtonBackgroundColor) => onChange({ ctaButtonBackgroundColor })}
-                      />
-                      <FooterColorField
-                        label="Button text"
-                        value={footer.ctaButtonTextColor ?? '#0a0a0a'}
-                        onChange={(ctaButtonTextColor) => onChange({ ctaButtonTextColor })}
-                      />
-                    </div>
-                  ) : null}
-                  {(footer.ctaDesign ?? 'pill-outline') === 'pill-outline' ? (
-                    <FooterColorField
-                      label="Outline / text"
-                      value={footer.ctaButtonBorderColor || footer.ctaButtonTextColor || '#ffffff'}
-                      onChange={(hex) =>
-                        onChange({ ctaButtonBorderColor: hex, ctaButtonTextColor: hex })
-                      }
-                    />
-                  ) : null}
-                  {(footer.ctaDesign ?? 'pill-outline') === 'pill-accent' ? (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FooterColorField
-                        label="Button text"
-                        value={footer.ctaButtonTextColor ?? '#ffffff'}
-                        onChange={(ctaButtonTextColor) => onChange({ ctaButtonTextColor })}
-                      />
-                      <p className="text-sm text-neutral-500 sm:col-span-1 self-end">
-                        Fill uses General → accent.
-                      </p>
-                    </div>
-                  ) : null}
-                  {(footer.ctaDesign ?? 'pill-outline') === 'text-arrow' ? (
-                    <p className="text-sm text-neutral-500">
-                      Text color: Typography → CTA button (or accent). Low-contrast colors are
-                      auto-boosted on dark footers.
-                    </p>
-                  ) : null}
-                </div>
-              </>
-            ) : null}
-          </div>
-          <FooterMarketplaceCtaFields footer={footer} onChange={onChange} />
-          <FooterToggleRow
-            label="Top border"
-            description="Separator line above the footer."
-            checked={footer.showTopBorder}
-            onChange={(showTopBorder) => onChange({ showTopBorder })}
-          />
-          <FooterToggleRow
-            label="Content divider"
-            description="Petit trait entre les blocs d’infos (vertical desktop, horizontal mobile) — tous les designs."
-            checked={footer.showContentDivider !== false}
-            onChange={(showContentDivider) => onChange({ showContentDivider })}
-          />
-          {footer.showContentDivider !== false ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="min-w-[10rem] flex-1">
-                  <FooterColorField
-                    label="Couleur du trait"
-                    value={
-                      footer.contentDividerColor?.trim() ||
-                      (isFooterBackgroundLight(footer) ? '#a3a3a3' : '#737373')
-                    }
-                    onChange={(contentDividerColor) => onChange({ contentDividerColor })}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onChange({ contentDividerColor: '' })}
-                  className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-                >
-                  Auto
-                </button>
-              </div>
-              <div>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Opacité
-                  </p>
-                  <span className="tabular-nums text-sm font-semibold text-neutral-700">
-                    {Math.min(100, Math.max(0, footer.contentDividerOpacity ?? 40))}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={8}
-                  max={100}
-                  step={2}
-                  value={Math.min(100, Math.max(0, footer.contentDividerOpacity ?? 40))}
-                  onChange={(event) =>
-                    onChange({ contentDividerOpacity: Number(event.target.value) })
-                  }
-                  className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-                  aria-label="Content divider opacity"
-                />
-              </div>
-            </div>
-          ) : null}
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Chrome colors</p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FooterColorField
-                label="Icons"
-                value={footer.iconColor}
-                onChange={(iconColor) => onChange({ iconColor })}
-              />
-              <FooterColorField
-                label="Marketplace link / CTA band"
-                value={footer.accentColor}
-                onChange={(accentColor) => onChange({ accentColor })}
-              />
-            </div>
-            <p className="text-sm text-neutral-500">
-              Text colors for brand, contact lines, meta, and CTA copy are in the{' '}
-              <span className="font-semibold text-neutral-700">Typography</span> tab.
-            </p>
-            <button
-              type="button"
-              onClick={() =>
-                onChange({
-                  primaryColor: footerContrastingPrimary(footer),
-                  textColor: isFooterBackgroundLight(footer) ? '#737373' : '#a3a3a3',
-                  iconColor: isFooterBackgroundLight(footer) ? '#525252' : '#737373',
-                })
-              }
-              className="text-sm font-semibold text-neutral-700 underline-offset-2 hover:underline"
-            >
-              Auto-contrast text from background
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {subSection === 'palette' ? <FooterPalettePanel footer={footer} onChange={onChange} /> : null}
-
-      {subSection === 'content' ? (
-        <div className="space-y-6">
-          {footer.design === 'centered-minimal' ? (
-            <div className="space-y-5 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Centered minimal content
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Choose the centered identity and the internal sections shown above your social icons.
-                </p>
-              </div>
-
-              <FooterOptionGrid
-                label="Identity"
-                options={FOOTER_CENTERED_IDENTITY_OPTIONS}
-                value={footer.centeredIdentity ?? 'name'}
-                onChange={(centeredIdentity) => onChange({ centeredIdentity })}
-                columns={3}
-              />
-
-              {(footer.centeredIdentity ?? 'name') === 'custom' ? (
-                <div className="grid gap-4 rounded-2xl border border-neutral-200/80 bg-white p-4 sm:grid-cols-2">
-                  <label className="block">
-                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                      Custom text
-                    </span>
-                    <input
-                      type="text"
-                      value={footer.centeredCustomText ?? ''}
-                      onChange={(event) => onChange({ centeredCustomText: event.target.value })}
-                      placeholder="Logo"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                      Logo image URL (optional)
-                    </span>
-                    <input
-                      type="text"
-                      inputMode="url"
-                      autoComplete="url"
-                      value={footer.centeredCustomLogoUrl ?? ''}
-                      onChange={(event) => onChange({ centeredCustomLogoUrl: event.target.value })}
-                      placeholder="https://…/logo.svg"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-mono text-neutral-900"
-                    />
-                  </label>
-                  <p className="text-xs text-neutral-500 sm:col-span-2">
-                    The logo URL takes priority. Custom text is used as its fallback.
-                  </p>
-                </div>
-              ) : null}
-
-              <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-white p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                      Internal links
-                    </p>
-                    <p className="mt-1 text-xs text-neutral-500">
-                      Supported anchors: #hero, #work, #skills, #services, #about, #experience, #faq, #contact.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onChange({
-                        centeredLinks: DEFAULT_FOOTER_CENTERED_LINKS.map((link) => ({ ...link })),
-                      })
-                    }
-                    className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-                  >
-                    Reset defaults
-                  </button>
-                </div>
-
-                {(footer.centeredLinks ?? []).map((link, index) => (
-                  <div key={link.id} className="grid gap-2 sm:grid-cols-[1fr_1.2fr_auto]">
-                    <input
-                      type="text"
-                      value={link.label}
-                      placeholder="Label"
-                      aria-label={`Centered link ${index + 1} label`}
-                      onChange={(event) =>
-                        onChange({
-                          centeredLinks: footer.centeredLinks.map((item, itemIndex) =>
-                            itemIndex === index ? { ...item, label: event.target.value } : item
-                          ),
-                        })
-                      }
-                      className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
-                    />
-                    <input
-                      type="text"
-                      value={link.href}
-                      placeholder="#hero · #work · #contact"
-                      aria-label={`Centered link ${index + 1} anchor`}
-                      onChange={(event) =>
-                        onChange({
-                          centeredLinks: footer.centeredLinks.map((item, itemIndex) =>
-                            itemIndex === index ? { ...item, href: event.target.value } : item
-                          ),
-                        })
-                      }
-                      className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm font-mono text-neutral-900"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onChange({
-                          centeredLinks: footer.centeredLinks.filter((_, itemIndex) => itemIndex !== index),
-                        })
-                      }
-                      className="rounded-xl px-2 text-xs font-semibold text-neutral-500 hover:text-red-600"
-                      aria-label={`Remove ${link.label || `link ${index + 1}`}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    onChange({
-                      centeredLinks: [
-                        ...(footer.centeredLinks ?? []),
-                        createFooterLinkItem({ label: 'Link', href: '#contact' }),
-                      ],
-                    })
-                  }
-                  className="text-left text-xs font-semibold text-neutral-700 underline-offset-2 hover:underline"
-                >
-                  + Add link
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          {footer.design !== 'centered-minimal' ? (
-          <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Brand</p>
-            <FooterToggleRow
-              label="Name / brand"
-              description="Show your name as the footer brand."
-              checked={footer.showBrand}
-              onChange={(showBrand) => onChange({ showBrand })}
-            />
-            <FooterToggleRow
-              label="Avatar / logo"
-              description="Use your profile photo as a small logo."
-              checked={footer.showAvatar}
-              onChange={(showAvatar) => onChange({ showAvatar })}
-            />
-            <FooterToggleRow
-              label="Description"
-              description="Short bio or why-me blurb under the brand."
-              checked={footer.showDescription}
-              onChange={(showDescription) => onChange({ showDescription })}
-            />
-            {footer.showDescription ? (
-              <>
-                <FooterOptionGrid
-                  label="Description source"
-                  options={PORTFOLIO_FOOTER_DESCRIPTION_SOURCE_OPTIONS}
-                  value={footer.descriptionSource}
-                  onChange={(descriptionSource) => onChange({ descriptionSource })}
-                  columns={3}
-                />
-                {footer.descriptionSource === 'custom' ? (
-                  <textarea
-                    value={footer.descriptionCustom}
-                    onChange={(event) => onChange({ descriptionCustom: event.target.value })}
-                    rows={3}
-                    placeholder="A short line about you or your studio…"
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                  />
-                ) : null}
-              </>
-            ) : null}
-          </div>
-          ) : null}
-
-          {footer.design === 'landing' || footer.design === 'contact-card' ? (
-            <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Columns
-                  </p>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Two columns by default: <span className="font-semibold text-neutral-700">Contact</span>{' '}
-                    (email, phone, …) and{' '}
-                    <span className="font-semibold text-neutral-700">Links</span> (Gallery, About us,
-                    Team, Services, Work when those sections are on). Marketplace and NoProbleme
-                    profile stay off by default.
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onChange({
-                        linkColumns: DEFAULT_FOOTER_LINK_COLUMNS.map((col) => ({
-                          ...col,
-                          links: col.links.map((link) => ({ ...link })),
-                        })),
-                      })
-                    }
-                    className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-                  >
-                    Reset Contact + Links
-                  </button>
-                  <button
-                    type="button"
-                    disabled={(footer.linkColumns?.length ?? 0) >= 2}
-                    onClick={() =>
-                      onChange({
-                        linkColumns: [
-                          ...(footer.linkColumns ?? []),
-                          createFooterLinkColumn({
-                            title: 'Links',
-                            links: [createFooterLinkItem({ label: 'Link', href: '#' })],
-                          }),
-                        ],
-                      })
-                    }
-                    className="rounded-xl border border-neutral-900 bg-neutral-900 px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Add column
-                  </button>
-                </div>
-              </div>
-              <FooterToggleRow
-                label="Marketplace link"
-                description="Adds “Marketplace” in the Links column. Hidden by default."
-                checked={footer.showMarketplaceColumnLink === true}
-                onChange={(showMarketplaceColumnLink) => onChange({ showMarketplaceColumnLink })}
-              />
-              <FooterToggleRow
-                label="NoProbleme profile link"
-                description="Adds “NoProbleme profile” in the Links column. Hidden by default."
-                checked={footer.showNopbProfileLink === true}
-                onChange={(showNopbProfileLink) => onChange({ showNopbProfileLink })}
-              />
-
-              {(footer.linkColumns ?? []).map((column, columnIndex) => (
-                <div
-                  key={column.id}
-                  className="space-y-3 rounded-2xl border border-neutral-200/80 bg-white p-4"
-                >
-                  <div className="flex flex-wrap items-center gap-3">
-                    <label className="min-w-0 flex-1">
-                      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                        Column title
-                      </span>
-                      <input
-                        type="text"
-                        value={column.title}
-                        onChange={(event) => {
-                          const next = (footer.linkColumns ?? []).map((col, index) =>
-                            index === columnIndex ? { ...col, title: event.target.value } : col
-                          );
-                          onChange({ linkColumns: next });
-                        }}
-                        className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onChange({
-                          linkColumns: (footer.linkColumns ?? []).filter(
-                            (_, index) => index !== columnIndex
-                          ),
-                        })
-                      }
-                      className="mt-6 text-xs font-semibold text-red-600 hover:underline"
-                    >
-                      Remove
-                    </button>
-                  </div>
-
-                  {column.id === 'contact' ? (
-                    <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm text-neutral-500">
-                      This column shows email, phone, location, and hours from the Contact toggles
-                      below.
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {column.links.map((link, linkIndex) => (
-                        <div key={link.id} className="grid gap-2 sm:grid-cols-[1fr_1.2fr_auto]">
-                          <input
-                            type="text"
-                            value={link.label}
-                            placeholder="Label"
-                            onChange={(event) => {
-                              const next = (footer.linkColumns ?? []).map((col, index) => {
-                                if (index !== columnIndex) return col;
-                                return {
-                                  ...col,
-                                  links: col.links.map((item, i) =>
-                                    i === linkIndex ? { ...item, label: event.target.value } : item
-                                  ),
-                                };
-                              });
-                              onChange({ linkColumns: next });
-                            }}
-                            className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
-                          />
-                          <input
-                            type="text"
-                            value={link.href}
-                            placeholder="#services · /marketplace · __profile__"
-                            onChange={(event) => {
-                              const next = (footer.linkColumns ?? []).map((col, index) => {
-                                if (index !== columnIndex) return col;
-                                return {
-                                  ...col,
-                                  links: col.links.map((item, i) =>
-                                    i === linkIndex ? { ...item, href: event.target.value } : item
-                                  ),
-                                };
-                              });
-                              onChange({ linkColumns: next });
-                            }}
-                            className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm font-mono text-neutral-900"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const next = (footer.linkColumns ?? []).map((col, index) => {
-                                if (index !== columnIndex) return col;
-                                return {
-                                  ...col,
-                                  links: col.links.filter((_, i) => i !== linkIndex),
-                                };
-                              });
-                              onChange({ linkColumns: next });
-                            }}
-                            className="rounded-xl px-2 text-xs font-semibold text-neutral-500 hover:text-red-600"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = (footer.linkColumns ?? []).map((col, index) =>
-                            index === columnIndex
-                              ? {
-                                  ...col,
-                                  links: [
-                                    ...col.links,
-                                    createFooterLinkItem({ label: 'Link', href: '#' }),
-                                  ],
-                                }
-                              : col
-                          );
-                          onChange({ linkColumns: next });
-                        }}
-                        className="text-xs font-semibold text-neutral-700 underline-offset-2 hover:underline"
-                      >
-                        + Add link
-                      </button>
-                      <p className="text-xs text-neutral-500">
-                        Use <span className="font-mono">__profile__</span> for the creator’s
-                        NoProbleme marketplace profile. Section anchors:{' '}
-                        <span className="font-mono">#services</span>,{' '}
-                        <span className="font-mono">#work</span>.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : null}
-
-          {footer.design === 'centered-minimal' ? (
-            <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Icons row
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Social profile links plus contact icons (email, phone, …) on the same centered row.
-                </p>
-              </div>
-              <FooterToggleRow
-                label="Social / website icons"
-                description="Show profile social links as circular icons."
-                checked={footer.showContactLinks}
-                onChange={(showContactLinks) => onChange({ showContactLinks })}
-              />
-              <FooterToggleRow
-                label="Email icon"
-                checked={footer.showEmail}
-                onChange={(showEmail) => onChange({ showEmail })}
-              />
-              <FooterToggleRow
-                label="Phone icon"
-                checked={footer.showPhone}
-                onChange={(showPhone) => onChange({ showPhone })}
-              />
-              <FooterToggleRow
-                label="Location icon"
-                checked={footer.showLocation}
-                onChange={(showLocation) => onChange({ showLocation })}
-              />
-              <FooterToggleRow
-                label="Hours icon"
-                checked={footer.showHours}
-                onChange={(showHours) => onChange({ showHours })}
-              />
-              <FooterToggleRow
-                label="Copyright"
-                description="© year and creator name under the divider."
-                checked={footer.showCopyright}
-                onChange={(showCopyright) => onChange({ showCopyright })}
-              />
-            </div>
-          ) : (
-            <>
-              <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Contact</p>
-                <FooterToggleRow
-                  label="Email"
-                  checked={footer.showEmail}
-                  onChange={(showEmail) => onChange({ showEmail })}
-                />
-                <FooterToggleRow
-                  label="Phone"
-                  checked={footer.showPhone}
-                  onChange={(showPhone) => onChange({ showPhone })}
-                />
-                <FooterToggleRow
-                  label="Location"
-                  checked={footer.showLocation}
-                  onChange={(showLocation) => onChange({ showLocation })}
-                />
-                <FooterToggleRow
-                  label="Availability / hours"
-                  checked={footer.showHours}
-                  onChange={(showHours) => onChange({ showHours })}
-                />
-                <FooterToggleRow
-                  label="Contact icons"
-                  description="Phone, email, location, and clock glyphs beside each line."
-                  checked={footer.showContactIcons !== false}
-                  onChange={(showContactIcons) => onChange({ showContactIcons })}
-                />
-              </div>
-
-              <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Links & credit</p>
-                <FooterToggleRow
-                  label="Social / contact links"
-                  description="Website and social shortcuts under the brand."
-                  checked={footer.showContactLinks}
-                  onChange={(showContactLinks) => onChange({ showContactLinks })}
-                />
-                <FooterToggleRow
-                  label="Copyright"
-                  description="© year and creator name (customize the label under Typography → Meta line)."
-                  checked={footer.showCopyright}
-                  onChange={(showCopyright) => onChange({ showCopyright })}
-                />
-                <FooterToggleRow
-                  label="Design credit"
-                  description={
-                    footer.design === 'landing' ||
-                    footer.design === 'editorial' ||
-                    footer.design === 'compact' ||
-                    footer.design === 'minimal'
-                      ? 'Not shown on this footer design.'
-                      : '“Design by NoProbleme” line.'
-                  }
-                  checked={footer.showDesignCredit}
-                  onChange={(showDesignCredit) => onChange({ showDesignCredit })}
-                />
-              </div>
-            </>
-          )}
-        </div>
-      ) : null}
-
-      {subSection === 'typography' ? (
-        <div className="space-y-6">
-          {footer.useHeroPalette ? (
-            <p className="rounded-2xl border border-amber-200/80 bg-amber-50/70 px-4 py-3 text-sm text-amber-950">
-              Palette is on — text and icon colors use Global tokens below. Pick a token, or turn off{' '}
-              <span className="font-semibold">Use global color palette</span> for free hex colors.
-            </p>
-          ) : null}
-
-          <p className="rounded-2xl border border-neutral-200/80 bg-white px-4 py-3 text-sm text-neutral-600">
-            Police du footer : <span className="font-semibold text-neutral-900">Global → Police principale</span>
-            {' '}(Geist, Aeonik…). Pas de serif / display propre au footer.
-          </p>
-
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Icons</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Contact-line glyphs (phone, email, pin, clock) and the Contact me envelope.
-              </p>
-            </div>
-            <FooterToggleRow
-              label="Show contact icons"
-              description="Glyphs beside phone, email, location, and hours."
-              checked={footer.showContactIcons !== false}
-              onChange={(showContactIcons) => onChange({ showContactIcons })}
-            />
-            <FooterToggleRow
-              label="Show Contact me icon"
-              description="Envelope glyph inside the Contact me button."
-              checked={footer.showCtaIcon !== false}
-              onChange={(showCtaIcon) => onChange({ showCtaIcon })}
-            />
-            <FooterOptionGrid
-              label="Contact icon size"
-              options={PORTFOLIO_FOOTER_CONTACT_ICON_SIZE_OPTIONS}
-              value={footer.contactIconSize ?? 'md'}
-              onChange={(contactIconSize) => onChange({ contactIconSize })}
-              columns={3}
-            />
-            <FooterPaletteColorField
-              footer={footer}
-              onChange={onChange}
-              slot="icon"
-              label="Icon color"
-              value={footer.iconColor}
-            />
-          </div>
-
-          <PortfolioElementStyleFields
-            targets={PORTFOLIO_FOOTER_STYLE_TARGET_OPTIONS}
-            activeTarget={styleTarget}
-            onTargetChange={(value) => setStyleTarget(value as PortfolioFooterStyleTarget)}
-            style={elementStyles[styleTarget]}
-            hideFontPicker
-            showDarkColor={footer.useHeroPalette === false}
-            onStyleChange={(patch) => {
-              const nextStyles = patchFooterElementStyle(elementStyles, styleTarget, patch, footer);
-              const slot = FOOTER_STYLE_TARGET_COLOR_SLOT[styleTarget];
-              if (footer.useHeroPalette && patch.color) {
-                onChange(
-                  asFooterPatch({
-                    elementStyles: nextStyles,
-                    ...syncFooterLegacyTypographyFromElementStyles(nextStyles),
-                    ...patchFooterColorField(footer, slot, patch.color),
-                  })
-                );
-                return;
-              }
-              onChange({
-                elementStyles: nextStyles,
-                ...syncFooterLegacyTypographyFromElementStyles(nextStyles),
-              });
-            }}
-            renderColorField={({ label, value }) => (
-              <FooterPaletteColorField
-                footer={footer}
-                onChange={(patch) => {
-                  if (patch.elementStyles) {
-                    const next = normalizeFooterElementStyles(patch.elementStyles, {
-                      ...footer,
-                      ...patch,
-                    });
-                    onChange({
-                      ...patch,
-                      elementStyles: next,
-                      ...syncFooterLegacyTypographyFromElementStyles(next),
-                    });
-                    return;
-                  }
-                  onChange(patch);
-                }}
-                slot={FOOTER_STYLE_TARGET_COLOR_SLOT[styleTarget]}
-                label={label}
-                value={value}
-              />
-            )}
-            extra={
-              styleTarget === 'meta' ? (
-                <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-                  <label className="block">
-                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                      Copyright label
-                    </span>
-                    <input
-                      type="text"
-                      value={footer.copyrightLabel ?? DEFAULT_FOOTER_COPYRIGHT_LABEL}
-                      onChange={(event) => onChange({ copyrightLabel: event.target.value })}
-                      placeholder={DEFAULT_FOOTER_COPYRIGHT_LABEL}
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </label>
-                  <p className="text-sm text-neutral-500">
-                    Placeholders:{' '}
-                    <span className="font-mono text-neutral-700">{'{year}'}</span>,{' '}
-                    <span className="font-mono text-neutral-700">{'{name}'}</span>. Empty uses{' '}
-                    <span className="font-mono text-neutral-700">{DEFAULT_FOOTER_COPYRIGHT_LABEL}</span>.
-                  </p>
-                  <FooterToggleRow
-                    label="Show copyright"
-                    description="Toggle the meta copyright line on the footer."
-                    checked={footer.showCopyright}
-                    onChange={(showCopyright) => onChange({ showCopyright })}
-                  />
-                </div>
-              ) : styleTarget === 'marketplaceLink' ? (
-                <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                  Marketplace arrow toggle stays under{' '}
-                  <span className="font-semibold text-neutral-700">Content → Marketplace CTA</span>.
-                </p>
-              ) : styleTarget === 'ctaButton' ? (
-                <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                  Button chrome stays under{' '}
-                  <span className="font-semibold text-neutral-700">General → Contact CTA</span>. Envelope
-                  icon is controlled in the Icons block above.
-                </p>
-              ) : null
-            }
           />
         </div>
       ) : null}
 
       {subSection === 'background' ? (
-        <div className="space-y-6">
-          {footer.useHeroPalette ? (
-            <p className="rounded-2xl border border-amber-200/80 bg-amber-50/70 px-4 py-3 text-sm text-amber-950">
-              Palette is on — background colors use Global tokens below. To pick a free hex, turn off{' '}
-              <span className="font-semibold">Use global color palette</span> (General or Palette tab).
-            </p>
-          ) : null}
+        <div className="space-y-4">
           <SectionBackgroundSettingsFields
             settings={footer}
-            onChange={(patch) => {
-              const next = { ...footer, ...patch };
-              const shouldFlipPrimary =
-                isFooterBackgroundLight(next) && footerColorLuminance(footer.primaryColor) > 0.85;
-              onChange({
-                ...patch,
-                ...(shouldFlipPrimary
-                  ? {
-                      primaryColor: footerContrastingPrimary(next),
-                      textColor: '#737373',
-                      iconColor: '#525252',
-                    }
-                  : {}),
-              });
-            }}
-            renderColorField={({ label, value, onChange: onBgColorChange }) => {
+            onChange={onChange}
+            renderColorField={({ label, value, onChange: onColorChange }) => {
               const slot = FOOTER_BACKGROUND_LABEL_SLOTS[label];
               if (!slot) {
-                return <FooterColorField label={label} value={value} onChange={onBgColorChange} />;
+                return <FooterManualColorField label={label} value={value} onChange={onColorChange} />;
               }
-              return (
-                <FooterPaletteColorField
-                  footer={footer}
-                  onChange={onChange}
-                  slot={slot}
-                  label={label}
-                  value={value}
-                />
-              );
+              return <FooterColorField footer={footer} onChange={onChange} slot={slot} label={label} value={value} />;
             }}
           />
-          <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Background pattern
-            </p>
-            <FooterOptionGrid
-              label="Motif"
-              options={PORTFOLIO_FOOTER_PATTERN_OPTIONS}
-              value={footer.pattern}
-              onChange={(pattern) => onChange({ pattern })}
-              columns={2}
-            />
-            {footer.pattern !== 'none' ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FooterPaletteColorField
-                  footer={footer}
-                  onChange={onChange}
-                  slot="pattern"
-                  label="Pattern color"
-                  value={footer.patternColor}
+        </div>
+      ) : null}
+
+      {subSection === 'header' ? (
+        <div className="space-y-6">
+          <FooterHeaderDesignGrid
+            value={footer.headerDesign ?? 'editorial'}
+            onChange={(headerDesign) => onChange({ headerDesign })}
+          />
+          <div key={footer.headerDesign ?? 'editorial'} className="space-y-6 border-t border-neutral-200/70 pt-6">
+            {(footer.headerDesign ?? 'editorial') === 'editorial' ? (
+              <>
+                <FooterHeaderTextField
+                  label="Title"
+                  value={footer.headerEditorialTitleText}
+                  placeholder="Let's work together."
+                  onChange={(headerEditorialTitleText) => onChange({ headerEditorialTitleText })}
+                  multiline
                 />
-                <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                    Pattern opacity · {footer.patternOpacity}%
-                  </span>
-                  <input
-                    type="range"
-                    min={4}
-                    max={60}
-                    step={1}
-                    value={footer.patternOpacity}
-                    onChange={(event) => onChange({ patternOpacity: Number(event.target.value) })}
-                    className="mt-3 w-full accent-neutral-900"
-                  />
-                </label>
-              </div>
+                <FooterHeaderTextField
+                  label="Subtitle (optional)"
+                  value={footer.headerEditorialSubtitleText}
+                  placeholder=""
+                  onChange={(headerEditorialSubtitleText) => onChange({ headerEditorialSubtitleText })}
+                />
+                <FooterHeaderPaletteSwatches
+                  label="Title color"
+                  value={footer.headerEditorialTitleColor ?? 'texteFort'}
+                  onChange={(headerEditorialTitleColor) => onChange({ headerEditorialTitleColor })}
+                />
+              </>
+            ) : footer.headerDesign === 'index' ? (
+              <>
+                <FooterHeaderTextField label="Rule label" value={footer.headerIndexLabelText} placeholder="Contact" onChange={(headerIndexLabelText) => onChange({ headerIndexLabelText })} />
+                <FooterHeaderTextField label="Title" value={footer.headerIndexTitleText} placeholder="Let's talk" onChange={(headerIndexTitleText) => onChange({ headerIndexTitleText })} />
+                <FooterHeaderTextField label="Subtitle" value={footer.headerIndexSubtitleText} placeholder="Reach out — I read every message." onChange={(headerIndexSubtitleText) => onChange({ headerIndexSubtitleText })} multiline />
+                <FooterHeaderTextField label="Count label (optional)" value={footer.headerIndexCountLabelText} placeholder="Links" onChange={(headerIndexCountLabelText) => onChange({ headerIndexCountLabelText })} />
+                <FooterHeaderPaletteSwatches label="Number color" value={footer.headerIndexNumberColor ?? 'principal'} onChange={(headerIndexNumberColor) => onChange({ headerIndexNumberColor })} />
+                <FooterHeaderPaletteSwatches label="Title color" value={footer.headerIndexTitleColor ?? 'texteFort'} onChange={(headerIndexTitleColor) => onChange({ headerIndexTitleColor })} />
+              </>
+            ) : footer.headerDesign === 'serif-lead' ? (
+              <>
+                <FooterHeaderTextField label="Label" value={footer.headerSerifLeadLabelText} placeholder="Contact" onChange={(headerSerifLeadLabelText) => onChange({ headerSerifLeadLabelText })} />
+                <FooterHeaderTextField label="Title" value={footer.headerSerifLeadTitleText} placeholder="A few ways to start a conversation and say hello." onChange={(headerSerifLeadTitleText) => onChange({ headerSerifLeadTitleText })} multiline />
+                <FooterHeaderPaletteSwatches label="Title color" value={footer.headerSerifLeadTitleColor ?? 'texteFort'} onChange={(headerSerifLeadTitleColor) => onChange({ headerSerifLeadTitleColor })} />
+              </>
+            ) : footer.headerDesign === 'billboard' ? (
+              <>
+                <FooterHeaderTextField label="Big word" value={footer.headerBillboardBigWord} placeholder="TALK" onChange={(headerBillboardBigWord) => onChange({ headerBillboardBigWord })} />
+                <FooterHeaderOptionGrid
+                  label="Word style"
+                  options={FOOTER_HEADER_BILLBOARD_WORD_STYLE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                  value={footer.headerBillboardWordStyle ?? 'outline'}
+                  onChange={(headerBillboardWordStyle) => onChange({ headerBillboardWordStyle })}
+                  columns={3}
+                />
+                <FooterHeaderPaletteSwatches label="Word color" value={footer.headerBillboardWordColor ?? 'principal'} onChange={(headerBillboardWordColor) => onChange({ headerBillboardWordColor })} />
+              </>
+            ) : footer.headerDesign === 'masthead' ? (
+              <>
+                <FooterHeaderTextField label="Line 1" value={footer.headerMastheadLine1Text} placeholder="Always open." onChange={(headerMastheadLine1Text) => onChange({ headerMastheadLine1Text })} />
+                <FooterHeaderTextField label="Line 2" value={footer.headerMastheadLine2Text} placeholder="Quick to reply." onChange={(headerMastheadLine2Text) => onChange({ headerMastheadLine2Text })} />
+                <FooterHeaderTextField label="Line 3" value={footer.headerMastheadLine3Text} placeholder="Easy to reach." onChange={(headerMastheadLine3Text) => onChange({ headerMastheadLine3Text })} />
+                <FooterHeaderPaletteSwatches label="Headline color" value={footer.headerMastheadHeadlineColor ?? 'principal'} onChange={(headerMastheadHeadlineColor) => onChange({ headerMastheadHeadlineColor })} />
+              </>
+            ) : footer.headerDesign === 'hero' ? (
+              <>
+                <FooterHeaderTextField
+                  label="Title"
+                  value={footer.headerHeroTitleText}
+                  placeholder={"Let's build a space\nthat feels alive."}
+                  onChange={(headerHeroTitleText) => onChange({ headerHeroTitleText })}
+                  multiline
+                />
+                <FooterHeaderTextField label="Button label" value={footer.headerHeroCtaLabel} placeholder="Get in touch" onChange={(headerHeroCtaLabel) => onChange({ headerHeroCtaLabel })} />
+                <FooterHeaderPaletteSwatches label="Title & button color" value={footer.headerHeroTitleColor ?? 'texteFort'} onChange={(headerHeroTitleColor) => onChange({ headerHeroTitleColor })} />
+              </>
+            ) : footer.headerDesign === 'name' ? (
+              <>
+                <p className="text-sm text-neutral-500">Always shows your creator name — nothing to type here.</p>
+                <FooterHeaderPaletteSwatches label="Name color" value={footer.headerNameColor ?? 'texteFort'} onChange={(headerNameColor) => onChange({ headerNameColor })} />
+              </>
+            ) : footer.headerDesign === 'timezone' ? (
+              <>
+                <FooterHeaderTextField label="Kicker" value={footer.headerTimezoneKickerText} placeholder="( Get in touch )" onChange={(headerTimezoneKickerText) => onChange({ headerTimezoneKickerText })} />
+                <FooterHeaderTextField
+                  label="Title"
+                  value={footer.headerTimezoneTitleText}
+                  placeholder={"Let's start\na conversation."}
+                  onChange={(headerTimezoneTitleText) => onChange({ headerTimezoneTitleText })}
+                  multiline
+                />
+                <FooterHeaderTextField
+                  label="Description"
+                  value={footer.headerTimezoneDescriptionText}
+                  placeholder="Reach out and tell us about your project — we read every message."
+                  onChange={(headerTimezoneDescriptionText) => onChange({ headerTimezoneDescriptionText })}
+                  multiline
+                />
+                <FooterHeaderPaletteSwatches label="Title color" value={footer.headerTimezoneTitleColor ?? 'texteFort'} onChange={(headerTimezoneTitleColor) => onChange({ headerTimezoneTitleColor })} />
+                <p className="text-sm text-neutral-500">The clock and location on the right always come from your real profile data.</p>
+              </>
             ) : null}
+
+            <div className="space-y-6 border-t border-neutral-200/70 pt-6">
+              <FooterHeaderOptionGrid
+                label="Header alignment"
+                options={[
+                  { value: 'left' as const, label: 'Left' },
+                  { value: 'center' as const, label: 'Center' },
+                  { value: 'right' as const, label: 'Right' },
+                ]}
+                value={footer.headerDesignAlignment ?? 'left'}
+                onChange={(headerDesignAlignment) => onChange({ headerDesignAlignment })}
+                columns={3}
+              />
+              <FooterHeaderOptionGrid
+                label="Bottom spacing"
+                options={[
+                  { value: 'sm' as const, label: 'Small' },
+                  { value: 'md' as const, label: 'Medium' },
+                  { value: 'lg' as const, label: 'Large' },
+                  { value: 'xl' as const, label: 'XL' },
+                ]}
+                value={footer.headerMarginBottom ?? 'md'}
+                onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
+                columns={4}
+              />
+              <FooterHeaderSizePill
+                label="Title size"
+                value={footer.headerTitleSize ?? 'xl'}
+                onChange={(headerTitleSize) => onChange({ headerTitleSize })}
+              />
+              <FooterHeaderOptionGrid
+                label="Title weight"
+                options={[
+                  { value: 'light' as const, label: 'Light' },
+                  { value: 'regular' as const, label: 'Regular' },
+                  { value: 'semibold' as const, label: 'Semibold' },
+                  { value: 'bold' as const, label: 'Bold' },
+                ]}
+                value={footer.headerTitleWeight ?? 'bold'}
+                onChange={(headerTitleWeight) => onChange({ headerTitleWeight })}
+                columns={4}
+              />
+            </div>
           </div>
         </div>
       ) : null}

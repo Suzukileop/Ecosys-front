@@ -26,10 +26,10 @@ const TOOLS_GALLERY_DEFAULTS: Pick<
   brandFloatTileDensity: 'comfortable',
   brandFloatContentAlignment: 'center',
   brandFloatCardStyle: 'framed',
-  // Stack's headerDesign (mask/split/typewriter/…) has no Tools equivalent and isn't
-  // read by the gallery renderers (Stack renders its own header separately) — any
-  // valid Tools value satisfies the type here.
-  headerDesign: 'focus',
+  // Stack's headerDesign (its own GSAP-animated Header) has no Tools equivalent and
+  // isn't read by the gallery renderers (Stack renders its own header separately) —
+  // any valid Tools value satisfies the type here.
+  headerDesign: 'editorial',
 };
 
 function mapStackTitlePresetToTools(

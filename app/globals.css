@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=Dancing+Script:wght@400;700&family=Pacifico&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600&family=Anton&family=Raleway:wght@400;500;600;700;800&family=Permanent+Marker&family=Righteous&family=Lobster&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,300..600&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=Dancing+Script:wght@400;700&family=Pacifico&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600&family=Anton&family=Raleway:wght@400;500;600;700;800&family=Permanent+Marker&family=Righteous&family=Lobster&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,300..600&family=Inter:wght@300;400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -1507,7 +1507,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 /* Legacy design: subtle zoom on the thumbnail when the card is hovered. A plain named
    class + .group:hover, not Tailwind's group-hover:scale-[...] — that combination (a
    variant + an arbitrary value) doesn't reliably compile in
-   portfolio-section-primitives.tsx (see the .pf-reel-grid note below for why). */
+   portfolio-section-primitives.tsx (see the .pf-reel-bento note below for why). */
 .pf-legacy-thumb-zoom {
   transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -1530,38 +1530,123 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 .pf-legacy-repo-link {
   color: var(--pf-legacy-muted);
-  border-color: color-mix(in srgb, var(--pf-legacy-muted) 40%, transparent);
-  transition: color 0.3s ease, border-color 0.3s ease;
+  transition: color 0.3s ease;
 }
 .pf-legacy-repo-link:hover {
   color: var(--pf-legacy-accent);
-  border-color: var(--pf-legacy-accent);
+}
+.pf-legacy-repo-link-rule {
+  background: color-mix(in srgb, var(--pf-legacy-muted) 45%, transparent);
+  transform: scaleX(0.32);
+  transform-origin: left;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.3s ease;
+}
+.pf-legacy-repo-link:hover .pf-legacy-repo-link-rule {
+  transform: scaleX(1);
+  background: var(--pf-legacy-accent);
 }
 
-/* Reel design: asymmetric 4/8 grid for the meta / story columns. A plain named class
-   instead of Tailwind's grid-cols-12 + sm:col-span-* utilities — those combinations don't
-   reliably compile in portfolio-section-primitives.tsx (it's past Tailwind's per-file
+/* Reel design: asymmetric bento grid — a narrow lead column (title + meta) beside a
+   bordered, tinted "card" column holding the story, task timeline and tools. A plain named
+   class instead of Tailwind's grid-cols-12 + sm:col-span-* utilities — those combinations
+   don't reliably compile in portfolio-section-primitives.tsx (it's past Tailwind's per-file
    scanning size where genuinely new utility+variant combinations can silently drop). */
-.pf-reel-grid {
+.pf-reel-bento {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  column-gap: 2.5rem;
+  column-gap: 2.75rem;
   row-gap: 2.5rem;
+  align-items: start;
 }
-.pf-reel-grid-meta,
-.pf-reel-grid-flow {
+.pf-reel-bento-lead {
   grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.pf-reel-bento-card {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 1.5rem;
+  padding: 2rem 1.75rem;
 }
 @media (min-width: 640px) {
-  .pf-reel-grid {
+  .pf-reel-bento {
     grid-template-columns: repeat(12, minmax(0, 1fr));
   }
-  .pf-reel-grid-meta {
+  .pf-reel-bento-lead {
     grid-column: span 4 / span 4;
   }
-  .pf-reel-grid-flow {
+  .pf-reel-bento-card {
     grid-column: span 8 / span 8;
+    padding: 2.5rem 2.75rem;
   }
+}
+
+/* Reel design: task timeline — one continuous vertical rule with the index isolated to its
+   left and the task copy to its right, instead of an inline "01 /" prefix on the same
+   baseline. The rule is a single absolutely-positioned element (not one per row) so it stays
+   unbroken regardless of how many lines each task wraps to. */
+.pf-reel-timeline {
+  position: relative;
+}
+.pf-reel-timeline-rule {
+  position: absolute;
+  top: 0.3em;
+  bottom: 0.3em;
+  left: 2rem;
+  width: 1px;
+}
+.pf-reel-timeline-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+.pf-reel-timeline-row {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  column-gap: 1.25rem;
+  align-items: baseline;
+}
+.pf-reel-timeline-index {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reel design: tools row — uppercase, tracked-out labels. Hovering the row dims every item
+   except the one under the pointer. Plain named classes (not group-hover: utilities) + the
+   opacity transition declared here (not via a Tailwind class) so it survives the global
+   color-mode transition-property override — see the thumb-zoom note above; each item also
+   carries data-pf-no-color-transition in JSX for the same reason. */
+.pf-reel-tools-row {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 1.75rem;
+  row-gap: 0.6rem;
+}
+.pf-reel-tools-item {
+  transition: opacity 0.25s ease;
+}
+.pf-reel-tools-row:hover .pf-reel-tools-item {
+  opacity: 0.4;
+}
+.pf-reel-tools-row .pf-reel-tools-item:hover {
+  opacity: 1;
+}
+
+/* Reel design: repository link — isolated bottom-right of the bento card. A short hairline
+   sits under the label at rest and grows to full width on hover, same mechanism as the
+   Legacy repo link above (see its note on data-pf-no-color-transition). */
+.pf-reel-repo-link-rule {
+  transform: scaleX(0.3);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.3s ease;
+}
+.pf-reel-repo-link:hover .pf-reel-repo-link-rule,
+.pf-reel-repo-link:focus-visible .pf-reel-repo-link-rule {
+  transform: scaleX(1);
 }
 
 /* Reel sticky-vertical: one pinned viewport; scroll runway drives role index.
@@ -1644,55 +1729,132 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   padding-top: calc(28vh + clamp(3.2rem, 7.2vw, 5.4rem) + 5.5rem);
   padding-bottom: 8vh;
 }
-/* Tighter meta|story gutter for sticky-vertical — no extra internal padding. */
-.pf-reel-sticky-v-pin .pf-reel-grid {
+/* Tighter lead|card gutter for sticky-vertical — no extra internal padding. */
+.pf-reel-sticky-v-pin .pf-reel-bento {
   column-gap: 1.25rem;
   row-gap: 1.75rem;
 }
 @media (min-width: 640px) {
-  .pf-reel-sticky-v-pin .pf-reel-grid-meta {
+  .pf-reel-sticky-v-pin .pf-reel-bento-lead {
     grid-column: span 3 / span 3;
   }
-  .pf-reel-sticky-v-pin .pf-reel-grid-flow {
+  .pf-reel-sticky-v-pin .pf-reel-bento-card {
     grid-column: span 9 / span 9;
   }
 }
 
-/* Cards design — stacked sticky with visible title headers.
-   Each card pins lower than the previous by one header-band step so prior
-   titles stay readable in a cascade (not fully covered). */
+/* Cards design — plain static stack on mobile/tablet; the sticky stacking-cards
+   cascade (every card pins at the SAME top offset, so each next card rises and
+   fully covers the last, while the covered card scales down + fades — driven by
+   a scroll-scrubbed GSAP tween in CardsExperienceList) only kicks in on desktop.
+   Gated on (hover: hover) and (pointer: fine) in addition to width on purpose:
+   width alone misclassifies large tablets as desktop (a 12.9" iPad is exactly
+   1024px wide in portrait, wider in landscape) — touch devices always get the
+   static stack regardless of how wide the screen is; only a real mouse/trackpad
+   pointer unlocks the depth illusion. Keep this condition in sync with
+   usePortfolioFinePointerDesktop() in portfolio-section-primitives.tsx. */
 .pf-exp-cards-stack {
-  --pf-exp-cards-stack-base: 7vh;
-  /* Matches the circled header band: title + meta + year/badge + card pad. */
-  --pf-exp-cards-stack-step: 5.85rem;
+  /* Keep in sync with STACK_TOP_OFFSET_PX in CardsExperienceList. */
+  --pf-exp-cards-stack-top: 6rem;
   display: flex;
   flex-direction: column;
   width: 100%;
   isolation: isolate;
 }
 .pf-exp-cards-stack-item {
-  position: sticky;
-  top: calc(
-    var(--pf-exp-cards-stack-base) +
-      (var(--pf-exp-cards-stack-index, 0) * var(--pf-exp-cards-stack-step))
-  );
-  z-index: 1;
+  position: static;
   margin-bottom: var(--pf-exp-cards-vertical-gap, 1.5rem);
 }
 .pf-exp-cards-stack-end {
-  flex: none;
-  width: 100%;
-  height: min(72vh, 36rem);
-  pointer-events: none;
-  visibility: hidden;
+  display: none;
 }
 .pf-exp-cards-stack-card {
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+  transform-origin: top center;
+  will-change: transform, opacity;
 }
 .pf-exp-cards-stack-header {
-  /* Peek strip: stays visible when the next card covers the body below. */
   position: relative;
   z-index: 2;
+}
+
+/* Cards design, task list: a generic depth-of-field on top of whichever
+   General → Tasks display style is active (grid / timeline / dashed /
+   lined / architectural-index) — hovering one task dims and softly blurs
+   its siblings, purely via opacity/filter so it never fights that
+   variant's own color/transform hover treatment in ExperienceTasksDisplay. */
+.pf-exp-cards-tasks [data-exp-task] {
+  transition:
+    opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pf-exp-cards-tasks:has([data-exp-task]:hover) [data-exp-task]:not(:hover) {
+    opacity: 0.4;
+    filter: blur(1px);
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .pf-exp-cards-stack:not(.pf-exp-cards-stack--static) .pf-exp-cards-stack-item {
+    position: sticky;
+    top: var(--pf-exp-cards-stack-top);
+    z-index: 1;
+  }
+  .pf-exp-cards-stack:not(.pf-exp-cards-stack--static) .pf-exp-cards-stack-end {
+    display: block;
+    flex: none;
+    width: 100%;
+    height: min(72vh, 36rem);
+    pointer-events: none;
+    visibility: hidden;
+  }
+}
+
+/* Work section, "Cascade" design — the Experience Cards stacking effect above,
+   reused verbatim (same sticky-top-offset + JS depth recede, no opacity fade),
+   with a project thumbnail added beside the text on desktop. Kept as its own
+   namespaced class set (not a reuse of .pf-exp-cards-*) since Work designs are
+   self-contained, same convention as every other projects-* design file. Keep
+   this condition and --pf-work-cascade-stack-top in sync with
+   CASCADE_TOP_OFFSET_PX in portfolio-work-projects-cascade.tsx. */
+.pf-work-cascade-stack {
+  --pf-work-cascade-stack-top: 6rem;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  isolation: isolate;
+}
+.pf-work-cascade-stack-item {
+  position: static;
+  margin-bottom: var(--pf-work-cascade-vertical-gap, 1.5rem);
+}
+.pf-work-cascade-stack-end {
+  display: none;
+}
+.pf-work-cascade-stack-card {
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+  transform-origin: top center;
+  will-change: transform, opacity;
+}
+.pf-work-cascade-stack-header {
+  position: relative;
+  z-index: 2;
+}
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .pf-work-cascade-stack:not(.pf-work-cascade-stack--static) .pf-work-cascade-stack-item {
+    position: sticky;
+    top: var(--pf-work-cascade-stack-top);
+    z-index: 1;
+  }
+  .pf-work-cascade-stack:not(.pf-work-cascade-stack--static) .pf-work-cascade-stack-end {
+    display: block;
+    flex: none;
+    width: 100%;
+    height: min(72vh, 36rem);
+    pointer-events: none;
+    visibility: hidden;
+  }
 }
 
 /* Milestone timeline — subtle track + scroll-driven bright progress fill. */
@@ -1750,17 +1912,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 .pf-exp-milestone-rail-node.is-active {
   transform: scale(1.12);
-}
-
-@media (min-width: 640px) {
-  .pf-exp-cards-stack {
-    --pf-exp-cards-stack-step: 6.35rem;
-  }
-}
-@media (min-width: 1024px) {
-  .pf-exp-cards-stack {
-    --pf-exp-cards-stack-step: 6.85rem;
-  }
 }
 
 /* Press design: the description / tasks / stack reveal must trigger only when the
@@ -1867,6 +2018,25 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   color: var(--exp-task-active) !important;
 }
 
+/* Lined Stack — no horizontal rules; one ultra-thin vertical thread runs behind
+   the 01 / 02 / 03 index column, and the active row's number turns pure white
+   while the rest stay dimmed. */
+.pf-exp-tasks-lined::before {
+  content: '';
+  position: absolute;
+  top: 0.55rem;
+  bottom: 0.55rem;
+  left: 0;
+  width: 1px;
+  background: var(--exp-task-rail);
+}
+.pf-exp-tasks-lined-index {
+  transition: color 0.45s cubic-bezier(0.33, 1, 0.68, 1);
+}
+.pf-exp-tasks-lined-item:hover .pf-exp-tasks-lined-index {
+  color: var(--exp-task-active) !important;
+}
+
 /* Architectural Index — structural 01 / studio line */
 .pf-exp-tasks-arch-index {
   transition: color 0.45s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.45s ease;
@@ -1885,14 +2055,77 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   letter-spacing: 0.08em;
 }
 
+/* Tools display — General → Tools display (mirrors the Tasks display family above). */
+
+/* Generic touch-scroll strip — hides the scrollbar so a horizontally scrollable row (Sticky
+   mobile tools, etc.) reads as a discreet swipeable line instead of a visible scroll widget. */
+.pf-scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.pf-scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Editorial List: one flowing line, middot-separated; hovering the row dims every word to
+   opacity-30, then the hovered word itself is pulled back to full opacity + pure white via
+   !important so its own :hover rule always wins over the row-level dim. */
+.pf-exp-tools-editorial-item {
+  opacity: 1;
+  transition: color 0.35s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.35s ease;
+}
+.pf-exp-tools-editorial-item:not(:last-child)::after {
+  content: '•';
+  display: inline-block;
+  margin: 0 0.65em;
+  opacity: 0.45;
+}
+.pf-exp-tools-editorial:hover .pf-exp-tools-editorial-item {
+  opacity: 0.3;
+}
+.pf-exp-tools-editorial-item:hover {
+  opacity: 1 !important;
+  color: var(--exp-tools-active) !important;
+}
+
+/* Kinetic Marquee: two identical copies back to back, translated by exactly -50% in an
+   infinite loop — because the copies are identical, the loop point is seamless regardless
+   of content width. */
+@keyframes pf-exp-tools-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+.pf-exp-tools-marquee-track {
+  animation: pf-exp-tools-marquee linear infinite;
+  animation-duration: var(--exp-tools-marquee-duration, 22s);
+  will-change: transform;
+}
+
+/* Mineral Pills: near-invisible fill at rest, a touch lighter + micro-zoom on hover. */
+.pf-exp-tools-pill {
+  background-color: var(--exp-tools-pill-bg);
+  transition: background-color 0.35s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pf-exp-tools-pill:hover {
+  background-color: var(--exp-tools-pill-bg-hover);
+  transform: scale(1.05);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pf-exp-task-dash,
   .pf-exp-tasks-grid-cell,
   .pf-exp-tasks-timeline-dot,
   .pf-exp-tasks-timeline-copy,
   .pf-exp-tasks-accordion-panel,
+  .pf-exp-tasks-lined-index,
   .pf-exp-tasks-arch-index,
-  .pf-exp-tasks-arch-slash {
+  .pf-exp-tasks-arch-slash,
+  .pf-exp-tools-editorial-item,
+  .pf-exp-tools-pill {
     transition: none !important;
   }
   .group\/task:hover .pf-exp-task-dash {
@@ -1901,6 +2134,12 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   }
   .group\/arch:hover .pf-exp-tasks-arch-slash {
     letter-spacing: 0.02em;
+  }
+  .pf-exp-tools-pill:hover {
+    transform: none;
+  }
+  .pf-exp-tools-marquee-track {
+    animation: none;
   }
 }
 
@@ -2055,7 +2294,8 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
   .pf-legacy-thumb-zoom,
   .pf-legacy-task-dash,
-  .pf-legacy-repo-link {
+  .pf-legacy-repo-link,
+  .pf-legacy-repo-link-rule {
     transition: none;
   }
 
@@ -2315,15 +2555,8 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-theme-root[data-pf-color-transitions='true'] .pf-about-trait-edu-fade,
-.pf-theme-root[data-pf-color-transitions='true'] .pf-about-trait-edu-spine,
 .pf-theme-root[data-pf-color-transitions='true'] .pf-about-trait-item-copy {
   transition: opacity var(--pf-about-trait-fade-dur, 0.28s)
-    var(--pf-about-trait-edu-fluid, cubic-bezier(0.65, 0, 0.35, 1));
-}
-
-.pf-theme-root[data-pf-color-transitions='true'] .pf-about-trait-edu-spine > span,
-.pf-theme-root[data-pf-color-transitions='true'] .pf-about-trait-edu-rule > span {
-  transition: transform var(--pf-about-trait-hover-dur, 0.42s)
     var(--pf-about-trait-edu-fluid, cubic-bezier(0.65, 0, 0.35, 1));
 }
 
@@ -2505,19 +2738,16 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 /*
- * Projects board — lifted surface + hairline so cards sit slightly off the page
- * (custom bg / border come from --pf-board-card-bg / --pf-board-card-line).
+ * Projects board — lifted surface + a near-invisible hairline so cards read as fused
+ * into the section background at rest, and only reveal an edge on hover/focus (custom
+ * bg / border come from --pf-board-card-bg / --pf-board-card-line).
  */
 .pf-theme-root .pf-projects-board-card {
-  background-color: var(
-    --pf-board-card-bg,
-    color-mix(in srgb, var(--pf-palette-principal, #ffffff) 5.5%, var(--pf-palette-fond, #0a0a0a))
-  );
-  border: 1px solid
-    var(
-      --pf-board-card-line,
-      color-mix(in srgb, var(--pf-palette-principal, #ffffff) 11%, transparent)
-    );
+  /* Neutral white lift, not the theme's accent color — a saturated principal color
+     (e.g. red) mixed in here would tint the card instead of reading as plain dark
+     mineral, which defeats the "fused with the rock texture" look this design wants. */
+  background-color: var(--pf-board-card-bg, color-mix(in srgb, #ffffff 5.5%, var(--pf-palette-fond, #0a0a0a)));
+  border: 1px solid var(--pf-board-card-line, color-mix(in srgb, #ffffff 4%, transparent));
   transition:
     border-color 0.45s cubic-bezier(0.22, 1, 0.36, 1),
     background-color 0.45s cubic-bezier(0.22, 1, 0.36, 1);
@@ -2528,7 +2758,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
     --pf-board-card-bg,
     color-mix(in srgb, #000000 3.4%, var(--pf-palette-fond, #f5f5f5))
   );
-  border-color: var(--pf-board-card-line, color-mix(in srgb, #000000 9%, transparent));
+  border-color: var(--pf-board-card-line, color-mix(in srgb, #000000 4%, transparent));
 }
 
 .pf-theme-root .pf-projects-board-card:hover,
@@ -4099,22 +4329,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   padding-left: var(--pf-footer-pad-l, 2.5rem);
 }
 
-@media (min-width: 1024px) {
-  .pf-footer-content-pad.pf-footer-editorial-lg-bottom {
-    padding-bottom: max(var(--pf-footer-pad-b, 0.75rem), 2.5rem);
-  }
-
-  .pf-footer-content-pad.pf-footer-landing-pad-x {
-    padding-left: max(var(--pf-footer-pad-l, 2.5rem), 7rem);
-    padding-right: max(var(--pf-footer-pad-r, 2.5rem), 7rem);
-  }
-
-  .pf-footer-content-pad.pf-footer-compact-pad-x {
-    padding-left: max(var(--pf-footer-pad-l, 2.5rem), 8rem);
-    padding-right: max(var(--pf-footer-pad-r, 2.5rem), 8rem);
-  }
-}
-
 @media (max-width: 639px) {
   .pf-footer-shell-x {
     padding-left: max(1.25rem, env(safe-area-inset-left, 0px)) !important;
@@ -4420,123 +4634,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   opacity: 1;
 }
 
-/* Tri-zone nav (nav-logo-social) — playful social icons, subtle menu dot, gentle brand lift. */
-.portfolio-nav-tri-zone-hover-menu {
-  position: relative;
-}
-
-.portfolio-nav-tri-zone-hover-dot {
-  background-color: var(--nav-item-hover-line, currentColor);
-  opacity: 0;
-  transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.portfolio-nav-tri-zone-hover-menu:hover .portfolio-nav-tri-zone-hover-dot,
-.portfolio-nav-tri-zone-hover-menu:focus-visible .portfolio-nav-tri-zone-hover-dot {
-  opacity: 1;
-}
-
-.portfolio-nav-tri-zone-hover-social {
-  transition:
-    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.32s ease;
-}
-
-.portfolio-nav-tri-zone-hover-social:hover,
-.portfolio-nav-tri-zone-hover-social:focus-visible {
-  transform: scale(1.1) rotate(-3deg);
-  opacity: 1;
-}
-
-.portfolio-nav-tri-zone-hover-brand {
-  transition:
-    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.32s ease;
-}
-
-.portfolio-nav-tri-zone-hover-brand:hover,
-.portfolio-nav-tri-zone-hover-brand:focus-visible {
-  transform: scale(1.03);
-  opacity: 0.88;
-}
-
-.portfolio-nav-tri-zone-hover-cta {
-  transition:
-    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.32s ease,
-    color 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.portfolio-nav-tri-zone-hover-cta:hover,
-.portfolio-nav-tri-zone-hover-cta:focus-visible {
-  transform: scale(1.05);
-  opacity: 0.9;
-}
-
-/* Logo-left nav + contact — utilitarian bar hover language */
-.portfolio-nav-logo-left-hover-line {
-  position: relative;
-}
-
-.portfolio-nav-logo-left-hover-line::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0.2em;
-  height: 1px;
-  border-radius: 999px;
-  background-color: var(--nav-item-hover-line, currentColor);
-  transform: scaleX(0);
-  transform-origin: left;
-  opacity: 0;
-  transition:
-    transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.28s ease;
-  pointer-events: none;
-}
-
-.portfolio-nav-logo-left-hover-line:hover::after,
-.portfolio-nav-logo-left-hover-line:focus-visible::after {
-  transform: scaleX(1);
-  opacity: 1;
-}
-
-.portfolio-nav-logo-left-cta-hover {
-  transition:
-    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-    filter 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.portfolio-nav-logo-left-cta-hover:hover,
-.portfolio-nav-logo-left-cta-hover:focus-visible {
-  transform: translateY(-1px);
-  filter: brightness(1.08);
-}
-
-.portfolio-nav-logo-left-brand-hover {
-  opacity: 0.85;
-  transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.portfolio-nav-logo-left-brand-hover:hover,
-.portfolio-nav-logo-left-brand-hover:focus-visible {
-  opacity: 1;
-}
-
-.portfolio-nav-logo-left-icon-hover {
-  transition:
-    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-    color 0.32s ease;
-}
-
-.portfolio-nav-logo-left-icon-hover:hover,
-.portfolio-nav-logo-left-icon-hover:focus-visible {
-  transform: scale(1.04);
-  color: var(--nav-item-hover-icon, currentColor);
-}
-
 /* Floating pill — capsule hover language (soft wash, subtle scale, no heavy borders). */
 .portfolio-nav-floating-pill-hover-pill {
   border-radius: 999px;
@@ -4665,7 +4762,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 /*
- * Structured/floating nav bar (classic, editorial, pill, tri-zone, split, logo-left) —
+ * Structured/floating nav bar (classic, editorial, pill, split) —
  * the overlay nav designs (case overlay, Duten panel, half panel) already respect
  * prefers-reduced-motion via framer-motion; this covers the shared CSS-transition bar
  * (fold reveal, opacity fades, mobile drawer slide) and the animated underline indicator.
@@ -4941,6 +5038,160 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-exp-mini-type {
   fill: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 62%, transparent);
   font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Experience layout-settings — compact preview-card grid (e.g. Thumbnail corners), reusing .pf-exp-design-card. */
+.pf-exp-preview-card {
+  padding: 0.65rem 0.6rem 0.6rem;
+}
+
+.pf-exp-preview-card .pf-exp-mini {
+  height: 2.35rem;
+}
+
+/* Loft "Hover moment" — each card plays the actual micro-interaction instead of naming it.
+ * Selected state (tinted fill + accent border + accent label) is dedicated to this picker —
+ * card + preview zone are separate elements, unlike ExperiencePickerCard's border-only tell. */
+.pf-exp-hover-card {
+  position: relative;
+  padding: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 12%, transparent);
+  background: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 3%, var(--pf-palette-fond, #0a0a0a));
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.pf-exp-hover-card:hover {
+  border-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 28%, transparent);
+}
+.pf-exp-hover-card:focus-visible {
+  outline: 2px solid var(--pf-palette-principal, #f97316);
+  outline-offset: 2px;
+}
+.pf-exp-hover-card[data-active='true'] {
+  border-color: var(--pf-palette-principal, #f97316);
+  background: color-mix(in srgb, var(--pf-palette-principal, #f97316) 12%, transparent);
+}
+.pf-exp-hover-card-label {
+  font-size: 11px;
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #f5f5f5) 58%, transparent);
+  transition: color 0.2s ease;
+}
+.pf-exp-hover-card[data-active='true'] .pf-exp-hover-card-label {
+  color: var(--pf-palette-principal, #f97316);
+}
+
+.pf-exp-hover-preview {
+  position: relative;
+  height: 36px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 6%, var(--pf-palette-fond, #0a0a0a));
+}
+
+/* 1. Project Curtain — a solid panel hidden below the frame, slides up to cover it. */
+.pf-exp-hover-curtain-panel {
+  position: absolute;
+  inset: 0;
+  background: var(--pf-palette-principal, #f97316);
+  transform: translateY(100%);
+  transition: transform 350ms ease;
+}
+.pf-exp-hover-card:hover .pf-exp-hover-curtain-panel,
+.pf-exp-hover-card:focus-visible .pf-exp-hover-curtain-panel {
+  transform: translateY(0);
+}
+
+/* 2. Magnetic Cue — a small dot nudges aside and grows, like it's being pulled. */
+.pf-exp-hover-magnetic-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 45%, transparent);
+  transform: translate(-50%, -50%);
+  transition: transform 300ms cubic-bezier(0.34, 1.3, 0.64, 1), background-color 300ms ease;
+}
+.pf-exp-hover-card:hover .pf-exp-hover-magnetic-dot,
+.pf-exp-hover-card:focus-visible .pf-exp-hover-magnetic-dot {
+  transform: translate(calc(-50% + 6px), -50%) scale(1.3);
+  background: var(--pf-palette-principal, #f97316);
+}
+
+/* 3. Press In — a small square eases down quickly, no bounce — a press, not a pull. */
+.pf-exp-hover-press-square {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 45%, transparent);
+  transform: translate(-50%, -50%);
+  transition: transform 150ms ease, background-color 150ms ease;
+}
+.pf-exp-hover-card:hover .pf-exp-hover-press-square,
+.pf-exp-hover-card:focus-visible .pf-exp-hover-press-square {
+  transform: translate(-50%, -50%) scale(0.8);
+  background: var(--pf-palette-principal, #f97316);
+}
+
+/* Touch devices have no hover — loop each preview on its own so the effect is still
+ * visible without depending on a pointer, staggered so the three cards don't move in sync. */
+@media (hover: none) {
+  .pf-exp-hover-curtain-panel {
+    animation: pf-exp-hover-loop-curtain 2.6s ease-in-out infinite;
+  }
+  .pf-exp-hover-magnetic-dot {
+    animation: pf-exp-hover-loop-magnetic 2.6s cubic-bezier(0.34, 1.3, 0.64, 1) infinite;
+  }
+  .pf-exp-hover-press-square {
+    animation: pf-exp-hover-loop-press 2.6s ease infinite;
+  }
+  .pf-exp-hover-card:nth-child(2) .pf-exp-hover-curtain-panel,
+  .pf-exp-hover-card:nth-child(2) .pf-exp-hover-magnetic-dot,
+  .pf-exp-hover-card:nth-child(2) .pf-exp-hover-press-square {
+    animation-delay: 0.3s;
+  }
+  .pf-exp-hover-card:nth-child(3) .pf-exp-hover-curtain-panel,
+  .pf-exp-hover-card:nth-child(3) .pf-exp-hover-magnetic-dot,
+  .pf-exp-hover-card:nth-child(3) .pf-exp-hover-press-square {
+    animation-delay: 0.6s;
+  }
+}
+
+@keyframes pf-exp-hover-loop-curtain {
+  0%, 60% { transform: translateY(100%); }
+  85%, 100% { transform: translateY(0); }
+}
+@keyframes pf-exp-hover-loop-magnetic {
+  0%, 60% {
+    transform: translate(-50%, -50%);
+    background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 45%, transparent);
+  }
+  85%, 100% {
+    transform: translate(calc(-50% + 6px), -50%) scale(1.3);
+    background-color: var(--pf-palette-principal, #f97316);
+  }
+}
+@keyframes pf-exp-hover-loop-press {
+  0%, 60% {
+    transform: translate(-50%, -50%) scale(1);
+    background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 45%, transparent);
+  }
+  85%, 100% {
+    transform: translate(-50%, -50%) scale(0.8);
+    background-color: var(--pf-palette-principal, #f97316);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-exp-hover-curtain-panel,
+  .pf-exp-hover-magnetic-dot,
+  .pf-exp-hover-press-square {
+    transition: none;
+    animation: none;
+  }
 }
 
 /* Accent years header — compact display block + roomy highlight chip. */
@@ -5401,7 +5652,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
 .pf-exp-block-label {
   margin: 0 0 0.9rem;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -5421,11 +5672,11 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
 .pf-exp-layout-settings-title {
   margin: 0 0 1.35rem;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 45%, transparent);
+  color: var(--pf-palette-texte-muted, #737373);
 }
 
 .pf-exp-layout-settings-body {
@@ -5522,6 +5773,66 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
 .pf-exp-option-label {
   margin-bottom: 1.2rem;
+}
+
+/* Progressive letter-size pill — compact slider alternative for an ordered axis with few
+   options (Card width, Element spacing, Vertical gap). Selected-state treatment follows the
+   standard segmented-pill spec: neutral track, active = light accent fill + thin accent border
+   + bold label. */
+.pf-exp-scale-pill {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: color-mix(
+    in srgb,
+    var(--pf-palette-texte-fort, #171717) 8%,
+    var(--pf-palette-fond, #ffffff)
+  );
+}
+
+.pf-exp-scale-pill-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 999px;
+  padding: 7px 4px;
+  text-align: center;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  color: #c4c4c4;
+  -webkit-text-fill-color: currentColor;
+  background: transparent;
+  border: 1.5px solid transparent;
+  transition:
+    color 0.18s ease,
+    font-weight 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.pf-exp-scale-pill-btn:hover {
+  color: var(--pf-palette-texte-fort, #e5e5e5);
+}
+
+.pf-exp-scale-pill-btn[data-active='true'] {
+  font-weight: 700;
+  color: var(--pf-palette-texte-fort, #f5f5f5);
+  -webkit-text-fill-color: currentColor;
+  background: color-mix(in srgb, var(--pf-palette-principal, #f97316) 14%, var(--pf-palette-fond, #0a0a0a));
+  border-color: color-mix(in srgb, var(--pf-palette-principal, #f97316) 55%, transparent);
+}
+
+.portfolio-studio-dock[data-color-mode='dark'] .pf-exp-scale-pill-btn[data-active='false'] {
+  color: #c4c4c4 !important;
+  -webkit-text-fill-color: #c4c4c4 !important;
+}
+
+.portfolio-studio-dock[data-color-mode='light'] .pf-exp-scale-pill-btn[data-active='false'] {
+  color: #6b6b6b !important;
+  -webkit-text-fill-color: #6b6b6b !important;
 }
 
 /* Stack design picker — same card/mini-wireframe/layout-settings mechanism as Experience (.pf-exp-*). */
@@ -9152,6 +9463,23 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   min-width: 0;
 }
 
+.pf-about-trait-card {
+  border-radius: 1.1rem;
+  border: 1px solid rgba(23, 23, 23, 0.6);
+  background-color: rgba(10, 10, 10, 0.3);
+  padding: 1.9rem 1.75rem 2.1rem;
+  transition:
+    border-color 0.38s ease,
+    background-color 0.38s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pf-about-trait-card:hover {
+    border-color: rgba(38, 38, 38, 0.9);
+    background-color: rgba(10, 10, 10, 0.42);
+  }
+}
+
 .pf-about-trait-block {
   min-width: 0;
 }
@@ -9241,9 +9569,21 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-about-trait-edu-list {
+  position: relative;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.pf-about-trait-edu-list::before {
+  content: '';
+  position: absolute;
+  top: 0.9rem;
+  bottom: 0.9rem;
+  left: 1rem;
+  width: 1px;
+  background-color: rgba(38, 38, 38, 0.95);
+  z-index: 0;
 }
 
 .pf-about-trait-edu-row {
@@ -9262,10 +9602,21 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
 .pf-about-trait-edu-body {
   position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  column-gap: 1.5rem;
+}
+
+.pf-about-trait-edu-index {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.2rem;
 }
 
 .pf-about-trait-edu-fade {
   position: relative;
+  min-width: 0;
   transition: opacity var(--pf-about-trait-fade-dur) var(--pf-about-trait-edu-fluid);
 }
 
@@ -9283,47 +9634,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   pointer-events: none;
   user-select: none;
   transform: translate3d(0, -50%, 0);
-}
-
-.pf-about-trait-edu-spine {
-  position: absolute;
-  inset-block: 0;
-  left: 0;
-  z-index: 1;
-  width: 2px;
-  overflow: hidden;
-  pointer-events: none;
-  transition: opacity var(--pf-about-trait-fade-dur) var(--pf-about-trait-edu-fluid);
-}
-
-.pf-about-trait-edu-spine > span {
-  display: block;
-  width: 2px;
-  height: 100%;
-  transform: translateZ(0) scaleY(0.18);
-  transform-origin: top center;
-  backface-visibility: hidden;
-  transition: transform var(--pf-about-trait-hover-dur) var(--pf-about-trait-edu-fluid);
-}
-
-.pf-about-trait-edu-rule {
-  position: relative;
-  z-index: 1;
-  margin-top: 2rem;
-  height: 2px;
-  width: 7rem;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.pf-about-trait-edu-rule > span {
-  display: block;
-  height: 2px;
-  width: 100%;
-  transform: translateZ(0) scaleX(0.22);
-  transform-origin: left center;
-  backface-visibility: hidden;
-  transition: transform var(--pf-about-trait-hover-dur) var(--pf-about-trait-edu-fluid);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -9407,9 +9717,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   }
 
   .pf-about-trait-edu-list:hover .pf-about-trait-edu-row .pf-about-trait-edu-fade,
-  .pf-about-trait-edu-list:focus-within .pf-about-trait-edu-row .pf-about-trait-edu-fade,
-  .pf-about-trait-edu-list:hover .pf-about-trait-edu-row .pf-about-trait-edu-spine,
-  .pf-about-trait-edu-list:focus-within .pf-about-trait-edu-row .pf-about-trait-edu-spine {
+  .pf-about-trait-edu-list:focus-within .pf-about-trait-edu-row .pf-about-trait-edu-fade {
     opacity: 0.3;
   }
 
@@ -9420,20 +9728,8 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   }
 
   .pf-about-trait-edu-list:hover .pf-about-trait-edu-row:hover .pf-about-trait-edu-fade,
-  .pf-about-trait-edu-row:focus-within .pf-about-trait-edu-fade,
-  .pf-about-trait-edu-list:hover .pf-about-trait-edu-row:hover .pf-about-trait-edu-spine,
-  .pf-about-trait-edu-row:focus-within .pf-about-trait-edu-spine {
+  .pf-about-trait-edu-row:focus-within .pf-about-trait-edu-fade {
     opacity: 1;
-  }
-
-  .pf-about-trait-edu-row:hover .pf-about-trait-edu-spine > span,
-  .pf-about-trait-edu-row:focus-within .pf-about-trait-edu-spine > span {
-    transform: translateZ(0) scaleY(1);
-  }
-
-  .pf-about-trait-edu-row:hover .pf-about-trait-edu-rule > span,
-  .pf-about-trait-edu-row:focus-within .pf-about-trait-edu-rule > span {
-    transform: translateZ(0) scaleX(1);
   }
 }
 
@@ -9452,9 +9748,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   .pf-about-trait-edu h3,
   .pf-about-trait-edu-row,
   .pf-about-trait-edu-body,
-  .pf-about-trait-edu-fade,
-  .pf-about-trait-edu-spine > span,
-  .pf-about-trait-edu-rule > span {
+  .pf-about-trait-edu-fade {
     animation: none !important;
     transition: none !important;
     transform: none !important;
@@ -9768,36 +10062,9 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   position: relative;
 }
 
-.pf-about-banner-headline-stage {
-  padding-top: clamp(0.35rem, 1.6vh, 1.15rem);
-  padding-bottom: clamp(1.15rem, 4.4vh, 3.1rem);
-}
-
-.pf-about-banner-headline {
-  padding-inline-end: 0.04em;
-  text-wrap: balance;
-  translate: 0 -0.055em;
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  font-style: italic;
-  font-weight: 500;
-}
-
-.pf-theme-root[data-portfolio-force-font='true'] .pf-about-banner-headline,
-.pf-theme-root[data-portfolio-force-font='true'] .pf-about-banner-headline * {
+.pf-theme-root[data-portfolio-force-font='true'] .pf-about-banner-bio,
+.pf-theme-root[data-portfolio-force-font='true'] .pf-about-banner-bio * {
   font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
-}
-
-.pf-about-banner-line {
-  display: block;
-  overflow: hidden;
-  margin-bottom: -0.045em;
-}
-
-.pf-about-banner-line-inner {
-  display: block;
-  padding: 0.08em 0 0.14em;
-  will-change: transform, clip-path;
-  backface-visibility: hidden;
 }
 
 .pf-about-banner-pair {
@@ -10017,59 +10284,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 @media (min-width: 1024px) {
-  .pf-about-banner .pf-about-banner-cover {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
-    align-content: stretch;
-    column-gap: clamp(1.75rem, 3vw, 2.75rem);
-    row-gap: 0;
-  }
-
-  .pf-about-banner .pf-about-banner-headline-stage {
-    grid-column: 2;
-    grid-row: 1;
-    padding-inline: 0;
-    min-width: 0;
-    width: max-content;
-    max-width: 100%;
-    justify-self: center;
-  }
-
-  .pf-about-banner .pf-about-banner-headline {
-    width: max-content;
-    max-width: 20ch;
-  }
-
-  .pf-about-banner .pf-about-banner-pair {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    display: grid;
-    grid-template-columns: subgrid;
-    column-gap: clamp(1.75rem, 3vw, 2.75rem);
-    row-gap: 0;
-    align-items: end;
-  }
-
-  .pf-about-banner .pf-about-banner-portrait-frame {
-    grid-column: 1;
-    justify-self: start;
-    align-self: end;
-    width: min(100%, 18rem);
-  }
-
-  .pf-about-banner .pf-about-banner-bio-slot {
-    grid-column: 2;
-    justify-self: stretch;
-    align-self: end;
-    display: flex;
-    align-items: flex-end;
-    width: 0;
-    min-width: 100%;
-    max-width: none;
-    overflow: hidden;
-  }
-
   .pf-about-banner-folio-meta {
     grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr);
     column-gap: clamp(2.5rem, 5.5vw, 5rem);
@@ -10436,8 +10650,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
  */
 .pf-about-classic {
   --pf-about-classic-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --pf-about-classic-glow-x: 50%;
-  --pf-about-classic-glow-y: 40%;
   width: 100%;
 }
 
@@ -10513,21 +10725,81 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   margin-top: clamp(3.35rem, 6.2vw, 4.75rem);
 }
 
-.pf-about-classic-edu-grid,
-.pf-about-classic-skills-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.35rem;
+/* Education — Option 1: editorial asymmetric index. No spine, no bullets,
+   just full-bleed rows split into a quiet date column and a bright title
+   column, separated by a near-invisible hairline (border-neutral-900). */
+.pf-about-classic-edu-index {
+  margin: 2.35rem 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.pf-about-classic-edu-grid {
-  margin-top: 1.35rem;
+.pf-about-classic-edu-row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: clamp(2.25rem, 7vw, 5rem);
+  row-gap: 0.5rem;
+  padding: clamp(1.35rem, 3vw, 1.85rem) 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--pf-about-classic-border) 55%, transparent);
+}
+
+.pf-about-classic-edu-row:first-child {
+  padding-top: 0.15rem;
+}
+
+.pf-about-classic-edu-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0.15rem;
+}
+
+.pf-about-classic-edu-when {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 8rem;
+}
+
+.pf-about-classic-edu-index-chip {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.pf-about-classic-edu-what {
+  flex: 1 1 16rem;
+  min-width: 0;
 }
 
 .pf-about-classic-skills {
-  margin-top: clamp(2.55rem, 4.6vw, 3.65rem);
+  margin-top: clamp(5rem, 9vw, 7rem);
 }
 
+.pf-about-classic-bento {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3.25rem, 7vw, 5rem);
+}
+
+.pf-about-classic-split-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  /* Mobile: Strengths/Systems stack in this same grid, so match the bento's
+     inter-section gap exactly — otherwise this pair reads tighter than every
+     other small section around it. */
+  gap: clamp(3.25rem, 7vw, 5rem);
+}
+
+.pf-about-classic-split-row > * {
+  min-width: 0;
+}
+
+/* Base shell shared by every block — no border/bg by default so blocks
+   float freely; individual --variant modifiers below opt back in to a
+   surface only where it earns its keep (asymmetric, not a grid of boxes). */
 .pf-about-classic-card {
   position: relative;
   display: flex;
@@ -10536,10 +10808,29 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   flex-direction: column;
   overflow: hidden;
   isolation: isolate;
-  border: 1px solid var(--pf-about-classic-border);
-  border-radius: 0.9rem;
-  background-color: var(--pf-about-classic-card);
-  padding: 1.4rem 1.35rem 1.45rem;
+  border-radius: 1.1rem;
+}
+
+.pf-about-classic-card--full {
+  width: 100%;
+}
+
+/* Languages — full-bleed graphic break: generous air + hairline rules, no box. */
+.pf-about-classic-card--languages {
+  border: none;
+  background: none;
+  padding: clamp(2.5rem, 5.5vw, 3.75rem) 0;
+  border-top: 1px solid color-mix(in srgb, var(--pf-about-classic-border) 42%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--pf-about-classic-border) 42%, transparent);
+}
+
+/* Skills / Strengths / Systems — no frame at all, they float on the black canvas. */
+.pf-about-classic-card--skills,
+.pf-about-classic-card--strengths,
+.pf-about-classic-card--systems {
+  border: none;
+  background: none;
+  padding: 0.15rem 0;
 }
 
 .pf-about-classic-card-inner {
@@ -10549,112 +10840,138 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   flex: 1;
 }
 
-.pf-about-classic-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  z-index: 0;
-  background: radial-gradient(
-    38rem circle at var(--pf-about-classic-glow-x) var(--pf-about-classic-glow-y),
-    color-mix(in srgb, var(--pf-about-classic-accent) 14%, transparent) 0%,
-    color-mix(in srgb, var(--pf-about-classic-accent) 6%, transparent) 22%,
-    transparent 58%
-  );
-  filter: blur(28px);
-}
-
-.pf-about-classic-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 1.35rem;
-  width: 2.35rem;
-  height: 1px;
-  background: var(--pf-about-classic-accent);
-  opacity: 0;
-  transform: scaleX(0.35);
-  transform-origin: left center;
-  pointer-events: none;
-  z-index: 2;
-}
-
+/* Languages — one clean flex row of blocks; inside each block the name/level
+   meta stacks directly below its massive acronym (no cramped side-by-side). */
 .pf-about-classic-langs {
   display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  margin: 1.15rem 0 0;
+  flex-wrap: wrap;
+  gap: 2rem clamp(2rem, 5vw, 4rem);
+  margin: 2.35rem 0 0;
   padding: 0;
   list-style: none;
 }
 
 .pf-about-classic-lang {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.55rem 0.7rem;
-  line-height: 1.2;
+  flex: 1 1 10rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 10rem;
 }
 
 .pf-about-classic-lang-code {
   font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  font-style: italic;
-  font-weight: 500;
-  font-size: 1.15em;
-  letter-spacing: 0.04em;
+  font-weight: 700;
+  font-style: normal;
+  font-size: clamp(2.15rem, 4.2vw, 3.15rem);
+  letter-spacing: -0.01em;
+  line-height: 1;
 }
 
-.pf-about-classic-lang-name {
-  font-weight: 500;
+.pf-about-classic-lang-meta {
+  font-size: 0.92rem;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+  opacity: 0.62;
 }
 
-.pf-about-classic-lang-level {
-  font-size: 0.86em;
-  letter-spacing: 0.02em;
-  opacity: 0.72;
+.pf-about-classic-lang-meta-level {
+  opacity: 0.85;
+}
+
+/* Strengths — plain floating keywords, no pill, no border, no fill. Contrast
+   comes only from alternating the ink and muted-body tones, generously spaced. */
+.pf-about-classic-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: clamp(1.5rem, 3.5vw, 2.5rem);
+  row-gap: 1rem;
+  margin: 2.35rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pf-about-classic-keyword {
+  font-size: 1rem;
+  letter-spacing: 0.01em;
 }
 
 .pf-about-classic-list {
   display: flex;
   flex-direction: column;
-  gap: 0.72rem;
-  margin: 1.15rem 0 0;
+  margin: 2.35rem 0 0;
   padding: 0;
   list-style: none;
 }
 
 .pf-about-classic-list-item {
   display: flex;
-  align-items: flex-start;
-  gap: 0.7rem;
+  align-items: baseline;
+  gap: 0.85rem;
+  padding: 1rem 0;
+  color: var(--pf-about-classic-body);
+  border-bottom: 1px solid color-mix(in srgb, var(--pf-about-classic-border) 45%, transparent);
 }
 
-.pf-about-classic-list-dash {
-  display: block;
-  width: 0.55rem;
-  height: 1px;
+.pf-about-classic-list-item:first-child {
+  padding-top: 0;
+}
+
+.pf-about-classic-list-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.pf-about-classic-list-index {
   flex-shrink: 0;
-  margin-top: 0.72em;
-  background: var(--pf-about-classic-accent);
-  opacity: 0.62;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: 0.72em;
+  font-style: italic;
+  color: var(--pf-about-classic-accent);
+  opacity: 0.6;
 }
 
 .pf-about-classic-card-label {
   margin: 0;
 }
 
-.pf-about-classic-edu-year {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
+.pf-about-classic-edu-range {
+  margin: 0;
+  /* Its own discreet token — dimmer than the institution line below, so the
+     big numerals stay quiet next to the bright degree title. */
+  color: color-mix(in srgb, var(--pf-about-classic-body) 55%, transparent);
+  line-height: 1;
+  letter-spacing: -0.01em;
 }
 
 .pf-about-classic-edu-title {
-  margin-top: 0.55rem;
+  margin-top: 0;
 }
 
 .pf-about-classic-edu-school {
-  margin-top: 0.4rem;
+  margin-top: 0.3rem;
+  color: color-mix(in srgb, var(--pf-about-classic-body) 82%, transparent);
+}
+
+/* Minimalist row hover — Education only: a sober, fluid micro-shift to the
+   right + muted-to-white text clarification, nothing else changes (no
+   shadow, no fill, no scale). Every other row/card in this layout is static. */
+.pf-about-classic-edu-range,
+.pf-about-classic-edu-school {
+  transition: color 450ms var(--pf-about-classic-ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* The rightward shift itself is driven by Framer's whileHover on the row
+     (a plain CSS :hover here would lose to the inline transform Framer
+     already keeps on this element from its entrance animation). */
+  .pf-about-classic-edu-row:hover .pf-about-classic-edu-range,
+  .pf-about-classic-edu-row:hover .pf-about-classic-edu-school {
+    color: var(--pf-about-classic-ink);
+  }
 }
 
 .pf-about-classic-kicker,
@@ -10666,10 +10983,10 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   backface-visibility: hidden;
 }
 
-.pf-about-classic-edu-grid > *,
-.pf-about-classic-skills-grid > * {
+.pf-about-classic-edu-row,
+.pf-about-classic-bento > *,
+.pf-about-classic-split-row > * {
   min-width: 0;
-  height: 100%;
   backface-visibility: hidden;
 }
 
@@ -10697,8 +11014,9 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-about-classic[data-pf-entry='armed']:not([data-pf-js='true']) .pf-about-classic-section-kicker,
-.pf-about-classic[data-pf-entry='armed']:not([data-pf-js='true']) .pf-about-classic-edu-grid > *,
-.pf-about-classic[data-pf-entry='armed']:not([data-pf-js='true']) .pf-about-classic-skills-grid > * {
+.pf-about-classic[data-pf-entry='armed']:not([data-pf-js='true']) .pf-about-classic-edu-row,
+.pf-about-classic[data-pf-entry='armed']:not([data-pf-js='true']) .pf-about-classic-bento > *,
+.pf-about-classic[data-pf-entry='armed']:not([data-pf-js='true']) .pf-about-classic-split-row > * {
   opacity: 0;
   transform: translateY(18px);
   animation: pf-about-classic-fade-up-safety 0.7s var(--pf-about-classic-ease) 2.4s forwards;
@@ -10725,38 +11043,9 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 @media (min-width: 640px) {
-  .pf-about-classic-edu-grid {
-    grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr);
-    gap: 1.65rem 1.85rem;
-  }
-
-  .pf-about-classic-edu-grid[data-count='1'] {
-    grid-template-columns: 1fr;
-  }
-
-  .pf-about-classic-edu-grid[data-count='3'] > :last-child {
-    grid-column: 1 / -1;
-  }
-
-  .pf-about-classic-skills-grid {
-    grid-template-columns: minmax(0, 1.65fr) minmax(0, 0.9fr);
-    gap: 1.55rem 1.75rem;
-  }
-
-  .pf-about-classic-skills-grid[data-count='1'] {
-    grid-template-columns: 1fr;
-  }
-
-  .pf-about-classic-skills-grid[data-count='3'] > :last-child {
-    grid-column: 1 / -1;
-  }
-
-  .pf-about-classic-card {
-    padding: 1.55rem 1.5rem 1.6rem;
-  }
-
-  .pf-about-classic-card::after {
-    left: 1.5rem;
+  .pf-about-classic-split-row {
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+    gap: 1.35rem;
   }
 
   .pf-about-classic-title {
@@ -10769,76 +11058,23 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   }
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .pf-about-classic-card {
-    transition:
-      transform 0.48s var(--pf-about-classic-ease),
-      border-color 0.38s ease,
-      box-shadow 0.38s ease;
-  }
-
-  .pf-about-classic-card-inner {
-    transition: transform 0.48s var(--pf-about-classic-ease);
-  }
-
-  .pf-about-classic-card::before {
-    transition: opacity 0.35s ease;
-  }
-
-  .pf-about-classic-card::after {
-    transition:
-      opacity 0.4s ease,
-      transform 0.5s var(--pf-about-classic-ease),
-      width 0.5s var(--pf-about-classic-ease);
-  }
-
-  .pf-about-classic-card:hover {
-    transform: translateY(-3px);
-    border-color: color-mix(
-      in srgb,
-      var(--pf-about-classic-accent) 46%,
-      var(--pf-about-classic-border)
-    );
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--pf-about-classic-accent) 16%, transparent);
-  }
-
-  .pf-about-classic-card:hover .pf-about-classic-card-inner {
-    transform: translateY(-3px);
-  }
-
-  .pf-about-classic-card:hover::before {
-    opacity: 1;
-  }
-
-  .pf-about-classic-card:hover::after {
-    opacity: 0.9;
-    transform: scaleX(1);
-    width: 3.65rem;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .pf-about-classic-kicker,
   .pf-about-classic-word-inner,
   .pf-about-classic-rule,
   .pf-about-classic-bio,
   .pf-about-classic-section-kicker,
-  .pf-about-classic-edu-grid > *,
-  .pf-about-classic-skills-grid > *,
+  .pf-about-classic-edu-row,
+  .pf-about-classic-bento > *,
+  .pf-about-classic-split-row > *,
   .pf-about-classic-card,
-  .pf-about-classic-card-inner,
-  .pf-about-classic-card::after {
+  .pf-about-classic-card-inner {
     animation: none !important;
     transition: none !important;
     transform: none !important;
     opacity: 1 !important;
     clip-path: none !important;
     will-change: auto;
-  }
-
-  .pf-about-classic-card::before,
-  .pf-about-classic-card::after {
-    opacity: 0 !important;
   }
 }
 
@@ -11052,12 +11288,13 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
 .pf-about-split-skills {
   margin: 0;
-  padding: 0 0 calc(2 * (var(--pf-about-split-skill-pad-hover) - var(--pf-about-split-skill-pad)));
+  padding: 0;
   list-style: none;
   border: 0;
-  transition: padding-bottom 0.4s var(--pf-about-split-gap-ease);
 }
 
+/* Row padding stays fixed — the hover emphasis below is opacity/transform
+   only, on purpose, so it can never reflow the sections after this list. */
 .pf-about-split-skill {
   position: relative;
   display: grid;
@@ -11070,9 +11307,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   padding-bottom: var(--pf-about-split-skill-pad);
   padding-left: calc(var(--pf-about-split-mark-w) + var(--pf-about-split-mark-gap));
   border: 0;
-  transition:
-    padding-top 0.4s var(--pf-about-split-gap-ease),
-    padding-bottom 0.4s var(--pf-about-split-gap-ease);
 }
 
 .pf-about-split-skill::before {
@@ -11340,17 +11574,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   .pf-about-split-skills:hover .pf-about-split-skill-title,
   .pf-about-split-skills:focus-within .pf-about-split-skill-title {
     opacity: 0.25;
-  }
-
-  .pf-about-split-skills:hover .pf-about-split-skill:hover,
-  .pf-about-split-skill:focus-within {
-    padding-top: var(--pf-about-split-skill-pad-hover);
-    padding-bottom: var(--pf-about-split-skill-pad-hover);
-  }
-
-  .pf-about-split-skills:has(.pf-about-split-skill:hover),
-  .pf-about-split-skills:has(.pf-about-split-skill:focus-within) {
-    padding-bottom: 0;
   }
 
   .pf-about-split-skill:hover::before,
@@ -11951,6 +12174,29 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
 }
 
+/*
+ * ABOUT INDEX — brutalist-chic / Swiss editorial
+ * Prefix: pf-about-index-
+ * No shell, no cards — sits directly on the section's own background/theme.
+ * Skills & Strengths keyword lines: hovering one word dims its row siblings
+ * (opacity only) and brightens the hovered word from bodyColor to subtitleColor.
+ */
+.pf-about-index-keyword {
+  color: var(--pf-about-index-muted, currentColor);
+  transition:
+    opacity 0.3s ease,
+    color 0.3s ease;
+}
+
+.pf-about-index-keywords:hover .pf-about-index-keyword {
+  opacity: 0.4;
+}
+
+.pf-about-index-keyword:hover {
+  color: var(--pf-about-index-bright, currentColor);
+  opacity: 1 !important;
+}
+
 /**
  * ABOUT PLATFORM — premium motion
  * Prefix: pf-about-platform-
@@ -12037,21 +12283,65 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   }
 }
 
+/* Perspective lives on this wrapper (not the card) so the card's own
+   rotateX/Y reads as genuine 3D depth instead of a flat skew. */
 .pf-about-platform-skill-shift {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   min-width: 0;
+  perspective: 1000px;
   will-change: transform;
   backface-visibility: hidden;
-}
-
-.pf-about-platform-skill-shift,
-.pf-about-platform-skill-rise {
   transition: none;
 }
 
+/* Discrete, two-state spring lift — a plain hover toggle, completely
+   separate from the card's own continuously-updated tilt rotation (see
+   AboutPlatformSkillCard) so the two motions never fight on one property. */
 .pf-about-platform-skill-rise {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  position: relative;
   min-width: 0;
   will-change: transform, opacity;
   backface-visibility: hidden;
+  border-radius: 1.15rem;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pf-about-platform-skill-rise {
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .pf-about-platform-skill-rise:hover {
+    transform: translateY(-7px) scale(1.016);
+  }
+}
+
+/* The shadow itself never animates (animating box-shadow's blur/spread
+   directly repaints every frame and is what actually reads as janky) — it's
+   pre-rendered at full strength on a pseudo-element and only its opacity
+   crossfades, a cheap GPU-composited property. */
+.pf-about-platform-skill-rise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 26px 54px -26px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pf-about-platform-skill-rise::after {
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .pf-about-platform-skill-rise:hover::after {
+    opacity: 1;
+  }
 }
 
 .pf-about-platform-root[data-pf-motion='armed'] .pf-about-platform-headline-line {
@@ -12078,13 +12368,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   transform: none;
 }
 
-.pf-about-platform-root:not([data-pf-motion='reduce']) .pf-about-platform-skill-rise {
-  opacity: 0;
-  visibility: hidden;
-  transform: translate3d(0, 40px, 0);
-}
-
-.pf-about-platform-root:not([data-pf-motion='reduce']) .pf-about-platform-badge-cell,
+.pf-about-platform-root:not([data-pf-motion='reduce']) .pf-about-platform-word,
 .pf-about-platform-root:not([data-pf-motion='reduce']) .pf-about-platform-lang,
 .pf-about-platform-root:not([data-pf-motion='reduce']) .pf-about-platform-edu-row {
   opacity: 0;
@@ -12092,9 +12376,74 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   transform: translate3d(36px, 0, 0);
 }
 
+/* ── About platform — skill cards: glassmorphic, cursor-tilted, equal-width/height ── */
+
+.pf-about-platform-skills-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  /* 640–1279px always caps at 2 columns, whatever the skill count — cramming
+     3-4 cards into a tablet width looks mediocre. */
+  .pf-about-platform-skills-grid:not([data-count='1']) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+/* ≥1280px only: a genuine desktop width gets up to 4 columns — every column
+   the same fraction (equal width) and every card in a row stretched to the
+   row's tallest (equal height, via align-items: stretch above), instead of
+   the earlier asymmetric per-count widths + cascading Y-offset. */
+@media (min-width: 1280px) {
+  .pf-about-platform-skills-grid {
+    column-gap: 0.875rem;
+    row-gap: 1.75rem;
+  }
+
+  .pf-about-platform-skills-grid[data-count='1'] {
+    grid-template-columns: minmax(0, 26rem);
+  }
+
+  .pf-about-platform-skills-grid[data-count='2'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pf-about-platform-skills-grid[data-count='3'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .pf-about-platform-skills-grid[data-count='4'],
+  .pf-about-platform-skills-grid:not([data-count='1']):not([data-count='2']):not([data-count='3']) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Glassmorphic surface: a translucent fill plus a background blur reads as
+   frosted glass rather than a flat tinted panel, and a hairline border gives
+   it a crisp, surgical edge. The tilt rotation lives here and only here —
+   continuously overwritten by JS every animation frame, so it stays free of
+   any CSS transition (one is added only for the reduced-motion/no-hover
+   fallback below, never for pointer devices). */
 .pf-about-platform-card {
   position: relative;
   isolation: isolate;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--pf-about-platform-fill) 55%, black 25%);
+  border-color: color-mix(in srgb, var(--pf-about-platform-line) 38%, transparent);
+  transform: rotateX(var(--pf-about-platform-tilt-x, 0deg)) rotateY(var(--pf-about-platform-tilt-y, 0deg));
+  transform-style: preserve-3d;
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .pf-about-platform-card {
+    background: color-mix(in srgb, var(--pf-about-platform-fill) 38%, transparent);
+    -webkit-backdrop-filter: blur(8px) saturate(140%);
+    backdrop-filter: blur(8px) saturate(140%);
+  }
 }
 
 .pf-about-platform-card-mark,
@@ -12105,24 +12454,126 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-about-platform-card-title {
-  color: var(--pf-about-platform-card-title, inherit);
+  color: var(--pf-about-platform-ink);
 }
 
 .pf-about-platform-card-body {
-  color: var(--pf-about-platform-card-body, inherit);
-  opacity: var(--pf-about-platform-card-body-opacity, 0.78);
+  color: var(--pf-about-platform-muted);
+  opacity: 0.5;
+  /* Always show the full description — no line-clamp/ellipsis. Every card in
+     a row is stretched to the tallest one's height (grid align-items: stretch
+     above), so a longer description just leaves more empty space below a
+     shorter neighbor's text instead of making that neighbor's whole card
+     shorter. */
 }
 
+.pf-about-platform-card-body[data-placeholder='true'] {
+  opacity: 0.52;
+}
+
+/* Free-floating — no icon-chip backdrop. The icon carries its own weight,
+   with a light rotation/scale spring on card hover instead. */
 .pf-about-platform-card-mark {
   display: inline-flex;
   width: 2.35rem;
   height: 2.35rem;
   align-items: center;
   justify-content: center;
-  border-radius: 0.7rem;
   color: var(--pf-about-platform-muted);
-  background: color-mix(in srgb, var(--pf-about-platform-muted) 9%, transparent);
   opacity: 0.92;
+  transform-origin: center;
+}
+
+/* Cursor-following highlight, reinforcing the glass surface's depth — its
+   position updates every mousemove frame (a cheap custom-property write);
+   only its opacity ever gets a CSS transition. */
+.pf-about-platform-card-glow {
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  background: radial-gradient(
+    16rem circle at var(--pf-about-platform-glow-x, 50%) var(--pf-about-platform-glow-y, 50%),
+    color-mix(in srgb, var(--pf-about-platform-accent, currentColor) 20%, transparent) 0%,
+    transparent 62%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  /* One shared, unhurried easing for every crossfading property below, so
+     each card reads as one fluid motion instead of separate snapping
+     pieces. */
+  .pf-about-platform-skill-slot {
+    opacity: 1;
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .pf-about-platform-card-title {
+    transition:
+      color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Icon spring: a slightly quicker, bouncier curve than the title/body
+     crossfades, so the mark reads as a distinct little "flick" of life
+     rather than joining the same slow fade. */
+  .pf-about-platform-card-mark {
+    transition:
+      color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .pf-about-platform-card-body {
+    transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .pf-about-platform-card-glow {
+    transition: opacity 0.45s ease;
+  }
+
+  /* Elegant focus: whichever card is under the pointer stays full-strength,
+     every other card dims to a quiet 0.4 rather than disappearing. */
+  .pf-about-platform-skills-grid:has(.pf-about-platform-skill-slot:hover)
+    .pf-about-platform-skill-slot:not(:hover) {
+    opacity: 0.4;
+  }
+
+  .pf-about-platform-skill-slot:hover .pf-about-platform-card-glow {
+    opacity: 1;
+  }
+
+  .pf-about-platform-skill-slot:hover .pf-about-platform-card-title {
+    color: #fff;
+    opacity: 1;
+  }
+
+  .pf-about-platform-skill-slot:hover .pf-about-platform-card-mark {
+    color: #fff;
+    opacity: 1;
+    transform: rotate(-9deg) scale(1.16);
+  }
+
+  .pf-about-platform-skill-slot:hover .pf-about-platform-card-body {
+    opacity: 0.9;
+  }
+}
+
+/* Light-theme ink swap — the hover title/icon turn near-black instead of
+   flat white so they still read against a light ground. */
+.pf-theme-root[data-portfolio-color-mode='light'] .pf-about-platform-card-title,
+.pf-theme-root[data-portfolio-color-mode='light'] .pf-about-platform-card-mark {
+  transition: color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pf-theme-root[data-portfolio-color-mode='light'] .pf-about-platform-skill-slot:hover .pf-about-platform-card-title,
+.pf-theme-root[data-portfolio-color-mode='light'] .pf-about-platform-skill-slot:hover .pf-about-platform-card-mark {
+  color: #111;
+}
+
+.pf-about-platform-card:focus-within {
+  outline: none;
 }
 
 .pf-about-platform-split-title {
@@ -12132,10 +12583,37 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   text-wrap: balance;
 }
 
+/* Sticky title "comes into focus" while its section is actively being read —
+   scrubbed by JS (see the gsap.context effect) between this dim rest state
+   and full opacity. Scoped to no-preference only: JS skips the whole scrub
+   setup for prefers-reduced-motion, so the dim base must not apply there
+   either, or those users would be stuck at 0.32 with nothing to ever bring
+   it back to 1. */
+@media (prefers-reduced-motion: no-preference) {
+  .pf-about-platform-split-title {
+    opacity: 0.32;
+  }
+}
+
+/* "You are here" rule under each sticky title — scaleX tracks the exact same
+   scroll progress as the title's own opacity scrub. */
+.pf-about-platform-title-progress {
+  display: block;
+  margin-top: 0.85rem;
+  width: 2.75rem;
+  height: 1px;
+  background: var(--pf-about-platform-accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+/* ── "I speak" — Display acronym + level label, no underline/gauge ──────── */
+
 .pf-about-platform-langs {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 1.5rem;
+  row-gap: 2.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -12143,9 +12621,8 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
 .pf-about-platform-lang {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.45rem 1.05rem;
+  flex-direction: column;
+  gap: 0.7rem;
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
@@ -12154,47 +12631,133 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   font-family: inherit;
   font-style: normal;
   font-weight: 700;
-  font-size: clamp(1.7rem, 2.6vw, 2.45rem);
-  letter-spacing: 0.06em;
-  line-height: 0.92;
+  /* Bumped from a 5xl cap to a genuine Display scale — easing down on
+     narrow columns so 3-across never forces a horizontal scroll. */
+  font-size: clamp(2.75rem, 8.5vw, 4.25rem);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+/* Mask + duplicate: the visible label sits at rest (translateY 0), an
+   identical near-white clone waits just below it (translateY 100%). On
+   hover the two swap places along the same vertical track — the resting
+   label exits upward as the brighter clone enters from underneath, instead
+   of a plain color crossfade. */
+.pf-about-platform-lang-level-mask {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  line-height: 1.5;
 }
 
 .pf-about-platform-lang-level {
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: lowercase;
-  opacity: 0.4;
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transform: translate3d(0, 0, 0);
 }
 
-.pf-about-platform-badges {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  align-content: flex-start;
-  column-gap: 0.7rem;
-  row-gap: 0.7rem;
+.pf-about-platform-lang-level--dup {
+  position: absolute;
+  inset: 0;
+  color: #fff;
+  transform: translate3d(0, 100%, 0);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pf-about-platform-lang-code {
+    transition:
+      color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .pf-about-platform-lang-level,
+  .pf-about-platform-lang-level--dup {
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .pf-about-platform-langs:has(.pf-about-platform-lang:hover) .pf-about-platform-lang:not(:hover) {
+    opacity: 0.15;
+    filter: blur(1px);
+  }
+
+  .pf-about-platform-lang:hover .pf-about-platform-lang-code {
+    color: #fff;
+  }
+
+  .pf-about-platform-lang:hover .pf-about-platform-lang-level {
+    transform: translate3d(0, -100%, 0);
+  }
+
+  .pf-about-platform-lang:hover .pf-about-platform-lang-level--dup {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.pf-theme-root[data-portfolio-color-mode='light'] .pf-about-platform-lang:hover .pf-about-platform-lang-code {
+  color: #111;
+}
+
+.pf-theme-root[data-portfolio-color-mode='light'] .pf-about-platform-lang-level--dup {
+  color: #111;
+}
+
+/* ── "What I bring" — floating words, no pills/borders ────────────────────── */
+
+.pf-about-platform-words {
   margin: 0;
   padding: 0;
 }
 
-.pf-about-platform-badge-cell {
-  display: inline-flex;
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-  transform-origin: 50% 50%;
+.pf-about-platform-word {
+  display: inline-block;
+  color: var(--pf-about-platform-ink);
+  font-weight: 300;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  /* !important: the entrance reveal (see skillRises/playIn in the component)
+     leaves this element's opacity permanently inline at 1 — there's no
+     [data-pf-motion='done'] rule to hand it back to CSS, since clearing it
+     would re-expose the "hidden until animated" baseline a few rules up and
+     the word would vanish. !important is the only way this rest/hover
+     opacity swing can still win that fight. */
+  opacity: 0.55 !important;
+  will-change: opacity, transform, color;
 }
 
-.pf-about-platform-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.48rem 0.95rem;
-  border: 1px solid color-mix(in srgb, var(--pf-about-platform-ink) 18%, transparent);
-  background: transparent;
-  border-radius: 999px;
-  line-height: 1.3;
-  white-space: nowrap;
+.pf-about-platform-word--minor {
+  font-size: 0.82em;
+  opacity: 0.4 !important;
 }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pf-about-platform-word {
+    transition:
+      opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Others don't just dim — they nearly vanish, so the hovered word reads
+     as the sole focus rather than one of several highlighted peers. */
+  .pf-about-platform-words:has(.pf-about-platform-word:hover) .pf-about-platform-word:not(:hover) {
+    opacity: 0.1 !important;
+  }
+
+  .pf-about-platform-word:hover {
+    opacity: 1 !important;
+    color: #fff;
+    transform: translate3d(0, -0.12em, 0);
+  }
+}
+
+.pf-theme-root[data-portfolio-color-mode='light'] .pf-about-platform-word:hover {
+  color: #111;
+}
+
+/* ── "Background" — airy timeline, drift parallax + spring hover reveal ──── */
 
 .pf-about-platform-edu-list {
   display: flex;
@@ -12209,176 +12772,83 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   grid-template-columns: minmax(7.25rem, 0.28fr) minmax(0, 1fr);
   column-gap: clamp(1.15rem, 3.2vw, 2.75rem);
   align-items: baseline;
-  padding-block: 1.15rem;
-  border-top: 1px solid color-mix(in srgb, var(--pf-about-platform-ink) 5%, transparent);
+  /* No divider line — rows are separated by pure whitespace instead. */
+  padding-block: 2.75rem;
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
 
-.pf-about-platform-edu-row:last-child {
-  border-bottom: 1px solid color-mix(in srgb, var(--pf-about-platform-ink) 5%, transparent);
+.pf-about-platform-edu-row:first-child {
+  padding-top: 0;
+}
+
+.pf-about-platform-edu-year,
+.pf-about-platform-edu-title-track {
+  will-change: transform;
 }
 
 .pf-about-platform-edu-year {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
   font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  opacity: 0.42;
+  opacity: 0.5;
   line-height: 1.4;
 }
 
 .pf-about-platform-edu-school {
+  letter-spacing: 0.02em;
   opacity: 0.58;
 }
 
-@media (min-width: 640px) {
-  .pf-about-platform-langs {
-    gap: 1.05rem;
-  }
-
-  .pf-about-platform-edu-list {
-    margin-top: 2.15rem;
-  }
-}
-
-.pf-about-platform-skills-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
-  gap: 1rem;
-}
-
-@media (min-width: 640px) {
-  .pf-about-platform-skills-grid:not([data-count='1']) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.25rem;
-  }
+/* Discrete divider mark ahead of the institution line — quieter than the
+   text it precedes, purely a typographic cue, never a full rule/border. */
+.pf-about-platform-edu-meta-slash {
+  margin-right: 0.55em;
+  opacity: 0.4;
+  font-weight: 400;
 }
 
 @media (min-width: 1024px) {
-  .pf-about-platform-skills-grid {
-    column-gap: 0.875rem;
-    row-gap: 1.75rem;
+  .pf-about-platform-edu-row {
+    padding-block: 3.5rem;
   }
 
-  .pf-about-platform-skills-grid[data-count='1'] {
-    grid-template-columns: minmax(0, 26rem);
-  }
-
-  .pf-about-platform-skills-grid[data-count='2'] {
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.95fr);
-  }
-
-  .pf-about-platform-skills-grid[data-count='3'] {
-    grid-template-columns: minmax(0, 1.16fr) minmax(0, 0.94fr) minmax(0, 1.06fr);
-  }
-
-  .pf-about-platform-skills-grid[data-count='4'],
-  .pf-about-platform-skills-grid:not([data-count='1']):not([data-count='2']):not([data-count='3']) {
-    grid-template-columns: minmax(0, 1.22fr) minmax(0, 0.86fr) minmax(0, 1.08fr) minmax(0, 0.76fr);
-  }
-
-  .pf-about-platform-skills--stagger[data-count='1'] {
-    padding-bottom: 0;
-  }
-
-  .pf-about-platform-skills--stagger[data-count='2'] {
-    padding-bottom: 6rem;
-  }
-
-  .pf-about-platform-skills--stagger[data-count='3'] {
-    padding-bottom: 9rem;
-  }
-
-  .pf-about-platform-skills--stagger[data-count='4'],
-  .pf-about-platform-skills--stagger:not([data-count='1']):not([data-count='2']):not([data-count='3']) {
-    padding-bottom: 14rem;
-  }
-}
-
-@media (min-width: 1280px) {
-  .pf-about-platform-skills--stagger[data-count='3'] {
-    padding-bottom: 11rem;
-  }
-
-  .pf-about-platform-skills--stagger[data-count='4'],
-  .pf-about-platform-skills--stagger:not([data-count='1']):not([data-count='2']):not([data-count='3']) {
-    padding-bottom: 16rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .pf-about-platform-root[data-pf-stagger='on'] .pf-about-platform-skill-slot {
-    margin-top: calc(var(--pf-about-platform-i, 0) * 1.15rem);
-  }
-
-  .pf-about-platform-root[data-pf-stagger='on'] .pf-about-platform-skills-grid[data-count='2'] .pf-about-platform-skill-slot:nth-child(2),
-  .pf-about-platform-root[data-pf-stagger='on'] .pf-about-platform-skills-grid[data-count='3'] .pf-about-platform-skill-slot:nth-child(2) {
-    width: 99%;
-    justify-self: end;
-  }
-
-  .pf-about-platform-root[data-pf-stagger='on'] .pf-about-platform-skills-grid[data-count='3'] .pf-about-platform-skill-slot:nth-child(3) {
-    width: 98%;
-    justify-self: start;
-  }
-
-  .pf-about-platform-root[data-pf-stagger='on'] .pf-about-platform-skills-grid:not([data-count='1']):not([data-count='2']):not([data-count='3']) .pf-about-platform-skill-slot:nth-child(4n + 2) {
-    width: 99%;
-    justify-self: end;
-  }
-
-  .pf-about-platform-root[data-pf-stagger='on'] .pf-about-platform-skills-grid:not([data-count='1']):not([data-count='2']):not([data-count='3']) .pf-about-platform-skill-slot:nth-child(4n) {
-    width: 98%;
-    justify-self: start;
-  }
-}
-
-@media (min-width: 1280px) {
-  .pf-about-platform-root[data-pf-stagger='on'] .pf-about-platform-skill-slot {
-    margin-top: calc(var(--pf-about-platform-i, 0) * 1.45rem);
+  .pf-about-platform-edu-row:first-child {
+    padding-top: 0;
   }
 }
 
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .pf-about-platform-skill-slot {
-    opacity: 1;
-    transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  .pf-about-platform-edu-body {
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  .pf-about-platform-card-title,
-  .pf-about-platform-card-body,
-  .pf-about-platform-card-mark {
-    transition:
-      color 0.65s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  .pf-about-platform-edu-row:hover .pf-about-platform-edu-body {
+    transform: translateY(-4px);
   }
 
-  .pf-about-platform-skills-grid:has(.pf-about-platform-skill-slot:hover) .pf-about-platform-skill-slot:not(:hover) {
-    opacity: 0.25;
+  .pf-about-platform-edu-degree {
+    display: inline-block;
+    transform-origin: left center;
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  .pf-about-platform-skill-slot:hover .pf-about-platform-card-title,
-  .pf-about-platform-skill-slot:hover .pf-about-platform-card-body {
-    color: #fff;
-    opacity: 1;
+  .pf-about-platform-edu-row:hover .pf-about-platform-edu-degree {
+    transform: scale(1.03);
   }
 
-  .pf-about-platform-skill-slot:hover .pf-about-platform-card-mark {
-    color: #fff;
-    opacity: 1;
+  .pf-about-platform-edu-school {
+    display: block;
+    transform: translate3d(0, 118%, 0);
+    transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
   }
-}
 
-.pf-theme-root[data-portfolio-color-mode='light'] .pf-about-platform-skill-slot:hover .pf-about-platform-card-title,
-.pf-theme-root[data-portfolio-color-mode='light'] .pf-about-platform-skill-slot:hover .pf-about-platform-card-body,
-.pf-theme-root[data-portfolio-color-mode='light'] .pf-about-platform-skill-slot:hover .pf-about-platform-card-mark {
-  color: #111;
-}
-
-.pf-about-platform-card:focus-within {
-  outline: none;
+  .pf-about-platform-edu-row:hover .pf-about-platform-edu-school {
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 .pf-about-platform-split-title-line {
@@ -12412,7 +12882,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
     animation: pf-about-platform-card-safety 0.7s ease 8s forwards;
   }
 
-  .pf-about-platform-root[data-pf-entry='armed'] .pf-about-platform-badge-cell,
+  .pf-about-platform-root[data-pf-entry='armed'] .pf-about-platform-word,
   .pf-about-platform-root[data-pf-entry='armed'] .pf-about-platform-lang,
   .pf-about-platform-root[data-pf-entry='armed'] .pf-about-platform-edu-row,
   .pf-about-platform-root[data-pf-entry='armed'] .pf-about-platform-split-list > * {
@@ -12479,7 +12949,9 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-theme-root[data-pf-color-transitions='true'] .pf-about-platform-card-mark {
   transition:
     background-color 0.45s ease,
-    color 0.45s ease;
+    color 0.45s ease,
+    opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .pf-about-platform-root[data-pf-motion='active'] .pf-about-platform-kicker,
@@ -12487,7 +12959,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-about-platform-root[data-pf-motion='active'] .pf-about-platform-split-title-line,
 .pf-about-platform-root[data-pf-motion='active'] .pf-about-platform-bio,
 .pf-about-platform-root[data-pf-motion='active'] .pf-about-platform-card,
-.pf-about-platform-root[data-pf-motion='active'] .pf-about-platform-badge-cell,
+.pf-about-platform-root[data-pf-motion='active'] .pf-about-platform-word,
 .pf-about-platform-root[data-pf-motion='active'] .pf-about-platform-lang,
 .pf-about-platform-root[data-pf-motion='active'] .pf-about-platform-edu-row,
 .pf-about-platform-root[data-pf-motion='done'] .pf-about-platform-kicker,
@@ -12495,7 +12967,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-about-platform-root[data-pf-motion='done'] .pf-about-platform-split-title-line,
 .pf-about-platform-root[data-pf-motion='done'] .pf-about-platform-bio,
 .pf-about-platform-root[data-pf-motion='done'] .pf-about-platform-card,
-.pf-about-platform-root[data-pf-motion='done'] .pf-about-platform-badge-cell,
+.pf-about-platform-root[data-pf-motion='done'] .pf-about-platform-word,
 .pf-about-platform-root[data-pf-motion='done'] .pf-about-platform-lang,
 .pf-about-platform-root[data-pf-motion='done'] .pf-about-platform-edu-row {
   animation: none;
@@ -12509,7 +12981,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   .pf-about-platform-card-mark,
   .pf-about-platform-skill-shift,
   .pf-about-platform-skill-rise,
-  .pf-about-platform-badge-cell,
+  .pf-about-platform-word,
   .pf-about-platform-lang,
   .pf-about-platform-edu-row,
   .pf-about-platform-split-title,
@@ -12769,99 +13241,144 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   padding-bottom: 3rem;
 }
 
+/* Bento grid — asymmetric by default: a tall "What I bring" card next to a
+   stacked Languages / Interests column (desktop). Single column, stacked
+   cards on mobile. data-pf-bento on .pf-about-portrait-after switches the
+   template when a block is toggled off in settings. */
+.pf-about-portrait-bento {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
 .pf-about-portrait-strengths {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   width: 100%;
+  border-radius: 1.75rem;
+  background: color-mix(in srgb, var(--pf-about-portrait-ink) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pf-about-portrait-ink) 8%, transparent);
+  padding: 2rem 1.5rem 1.5rem;
+}
+
+.pf-about-portrait-strengths-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  max-width: 100%;
+}
+
+.pf-about-portrait-strengths-count {
+  flex: 0 0 auto;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.25rem, 6vw, 3.5rem);
+  font-weight: 300;
+  line-height: 0.78;
+  letter-spacing: -0.02em;
+  color: var(--pf-about-portrait-ink);
+  opacity: 0.16;
 }
 
 .pf-about-portrait-strengths-title {
   margin: 0;
-}
-
-.pf-about-portrait-badges {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 0.7rem 0.8rem;
-  max-width: 52rem;
-  margin: 2.35rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.pf-about-portrait-badge-cell {
-  display: inline-flex;
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-  transform-origin: 50% 50%;
-}
-
-.pf-about-portrait-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.5rem 1.05rem;
-  border: 1px solid color-mix(in srgb, var(--pf-about-portrait-ink) 5%, transparent);
-  background: transparent;
-  border-radius: 999px;
-  line-height: 1.3;
-  white-space: nowrap;
-}
-
-.pf-about-portrait-meta {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  width: 100%;
-  max-width: none;
-  margin: 2.85rem 0 0;
-  gap: 1.65rem 2.4rem;
-  align-items: start;
-  justify-items: start;
   text-align: left;
 }
 
-.pf-about-portrait-meta--solo {
-  margin-top: 0;
+.pf-about-portrait-bring-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid color-mix(in srgb, var(--pf-about-portrait-ink) 10%, transparent);
+}
+
+.pf-about-portrait-bring-item {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 1.1rem 0.1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--pf-about-portrait-ink) 10%, transparent);
+  transition: padding-left 0.4s var(--pf-about-portrait-ease);
+}
+
+.pf-about-portrait-bring-index {
+  flex: 0 0 auto;
+  width: 2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  color: var(--pf-about-portrait-ink);
+  opacity: 0.4;
+  transition: opacity 0.35s var(--pf-about-portrait-ease);
+}
+
+.pf-about-portrait-bring-title {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+  transition: transform 0.4s var(--pf-about-portrait-ease);
+}
+
+.pf-about-portrait-bring-arrow {
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--pf-about-portrait-ink);
+  opacity: 0;
+  transform: translate3d(-6px, 0, 0);
+  transition:
+    opacity 0.32s var(--pf-about-portrait-ease),
+    transform 0.4s var(--pf-about-portrait-ease);
+}
+
+.pf-about-portrait-meta {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 1rem;
 }
 
 .pf-about-portrait-meta-col {
   min-width: 0;
-  max-width: 22rem;
+  width: 100%;
+  border-radius: 1.75rem;
+  background: color-mix(in srgb, var(--pf-about-portrait-ink) 3%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pf-about-portrait-ink) 7%, transparent);
+  padding: 1.65rem 1.5rem;
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
 
-.pf-about-portrait-meta-col--empty,
-.pf-about-portrait-meta-col--spacer {
-  display: none;
-}
-
 .pf-about-portrait-meta-kicker {
-  margin: 0 0 0.55rem;
+  margin: 0 0 0.85rem;
   padding: 0;
-  font-size: 0.58rem;
-  font-weight: 500;
+  font-size: 0.6rem;
+  font-weight: 600;
   line-height: 1.35;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: inherit;
-  opacity: 0.4;
+  opacity: 0.45;
 }
 
 .pf-about-portrait-meta-interests {
   margin: 0;
-  max-width: 22rem;
-  font-weight: 400;
+  max-width: 26rem;
+  font-weight: 500;
+  line-height: 1.4;
   letter-spacing: -0.012em;
-  opacity: 0.72;
 }
 
 .pf-about-portrait-langs {
   display: flex;
   flex-direction: column;
-  gap: 0.38rem;
+  gap: 1.15rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -12870,34 +13387,171 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-about-portrait-lang {
   display: flex;
   align-items: baseline;
-  gap: 0.4rem;
-  font-size: inherit;
-  line-height: 1.25;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding-bottom: 1.15rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--pf-about-portrait-ink) 10%, transparent);
+}
+
+.pf-about-portrait-lang:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .pf-about-portrait-lang-code {
   flex: 0 0 auto;
-  min-width: 1.55rem;
-  font-family: inherit;
-  font-weight: 700;
-  font-style: normal;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-weight: 600;
+  font-size: clamp(1.85rem, 4.5vw, 2.5rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 
-.pf-about-portrait-lang-dot {
+.pf-about-portrait-lang-meta {
+  display: flex;
   flex: 0 0 auto;
-  font-weight: 400;
-  line-height: 1;
-  color: color-mix(in srgb, var(--pf-about-portrait-ink) 34%, transparent);
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  min-width: 4rem;
 }
 
 .pf-about-portrait-lang-level {
-  font-size: 0.92em;
-  font-weight: 400;
+  font-size: 0.62rem;
+  font-weight: 600;
   font-style: normal;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   color: color-mix(in srgb, var(--pf-about-portrait-ink) 56%, transparent);
+  white-space: nowrap;
+}
+
+.pf-about-portrait-lang-bar {
+  position: relative;
+  width: 100%;
+  min-width: 3rem;
+  height: 2px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--pf-about-portrait-ink) 14%, transparent);
+}
+
+.pf-about-portrait-lang-bar-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  border-radius: inherit;
+  background: var(--pf-about-portrait-ink);
+  opacity: 0.85;
+}
+
+/* Education — a full-width closing band, same card shell + head grammar as
+   "What I bring" (ghost count + title), rows echo the Languages meta
+   alignment (title left, institution/year right) for a single coherent
+   system instead of a one-off treatment. */
+.pf-about-portrait-education {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  margin-top: 1rem;
+  border-radius: 1.75rem;
+  background: color-mix(in srgb, var(--pf-about-portrait-ink) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pf-about-portrait-ink) 8%, transparent);
+  padding: 2rem 1.5rem 1.5rem;
+}
+
+.pf-about-portrait-education--solo {
+  margin-top: 0;
+}
+
+.pf-about-portrait-education-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  max-width: 100%;
+}
+
+.pf-about-portrait-education-count {
+  flex: 0 0 auto;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.25rem, 6vw, 3.5rem);
+  font-weight: 300;
+  line-height: 0.78;
+  letter-spacing: -0.02em;
+  color: var(--pf-about-portrait-ink);
+  opacity: 0.16;
+}
+
+.pf-about-portrait-education-title {
+  margin: 0;
+  text-align: left;
+}
+
+.pf-about-portrait-edu-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid color-mix(in srgb, var(--pf-about-portrait-ink) 10%, transparent);
+}
+
+.pf-about-portrait-edu-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.1rem 0.1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--pf-about-portrait-ink) 10%, transparent);
+  transition: padding-left 0.4s var(--pf-about-portrait-ease);
+}
+
+.pf-about-portrait-edu-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.pf-about-portrait-edu-index {
+  flex: 0 0 auto;
+  width: 2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  color: var(--pf-about-portrait-ink);
+  opacity: 0.4;
+}
+
+.pf-about-portrait-edu-title {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.pf-about-portrait-edu-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding-left: 3rem;
+}
+
+.pf-about-portrait-edu-institution {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--pf-about-portrait-ink) 68%, transparent);
+}
+
+.pf-about-portrait-edu-year {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--pf-about-portrait-ink) 44%, transparent);
 }
 
 @media (min-width: 640px) {
@@ -12915,14 +13569,38 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
     padding-bottom: 3.5rem;
   }
 
-  .pf-about-portrait-badges {
-    margin-top: 2.85rem;
-    gap: 0.75rem 0.95rem;
+  .pf-about-portrait-bento {
+    gap: 1.25rem;
+  }
+
+  .pf-about-portrait-strengths,
+  .pf-about-portrait-meta-col,
+  .pf-about-portrait-education {
+    padding: 2.5rem 2.25rem;
   }
 
   .pf-about-portrait-meta {
-    margin-top: 3.5rem;
-    gap: 1.85rem 3rem;
+    gap: 1.25rem;
+  }
+
+  .pf-about-portrait-education {
+    margin-top: 1.25rem;
+  }
+
+  .pf-about-portrait-edu-item {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+
+  .pf-about-portrait-edu-meta {
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+    padding-left: 0;
+    text-align: right;
   }
 
   .pf-about-portrait-kicker {
@@ -13026,22 +13704,77 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
     gap: 4.75rem;
   }
 
-  .pf-about-portrait-badges {
-    margin-top: 3.15rem;
+  /* Asymmetric bento: tall "What I bring" card + a stacked Languages /
+     Interests column, matched in height. Falls back to a single wide
+     column when only one side of the grid has content (settings toggle). */
+  .pf-about-portrait-bento {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    align-items: stretch;
+    gap: 1.75rem;
+  }
+
+  .pf-about-portrait-after[data-pf-bento='meta-only'] .pf-about-portrait-bento,
+  .pf-about-portrait-after[data-pf-bento='bring-only'] .pf-about-portrait-bento {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pf-about-portrait-strengths {
+    padding: 3rem 2.75rem 2.25rem;
+  }
+
+  .pf-about-portrait-after[data-pf-bento='bring-only'] .pf-about-portrait-bring-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 2.75rem;
+    border-top: none;
+  }
+
+  .pf-about-portrait-after[data-pf-bento='bring-only']
+    .pf-about-portrait-bring-item:nth-child(odd) {
+    border-right: 1px solid color-mix(in srgb, var(--pf-about-portrait-ink) 10%, transparent);
+    padding-right: 1.75rem;
+  }
+
+  .pf-about-portrait-after[data-pf-bento='bring-only']
+    .pf-about-portrait-bring-item:nth-child(even) {
+    padding-left: 1.75rem;
   }
 
   .pf-about-portrait-meta {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1.15fr);
-    column-gap: 3.4rem;
-    margin-top: auto;
-    padding-top: 1.25rem;
-    max-width: none;
+    height: 100%;
+    justify-content: space-between;
   }
 
-  .pf-about-portrait-meta-col--empty,
-  .pf-about-portrait-meta-col--spacer {
-    display: block;
-    max-width: none;
+  .pf-about-portrait-after[data-pf-bento='meta-only'] .pf-about-portrait-meta {
+    flex-direction: row;
+  }
+
+  .pf-about-portrait-after[data-pf-bento='meta-only'] .pf-about-portrait-meta-col {
+    flex: 1 1 0;
+    padding: 2.75rem 2.5rem;
+  }
+
+  .pf-about-portrait-after[data-pf-bento='meta-only'] .pf-about-portrait-lang-code {
+    font-size: clamp(2.25rem, 3.2vw, 3rem);
+  }
+
+  .pf-about-portrait-education {
+    margin-top: 1.75rem;
+    padding: 3rem 2.75rem 2.25rem;
+  }
+
+  .pf-about-portrait-education--solo {
+    margin-top: 0;
+  }
+
+  .pf-about-portrait-edu-heading {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .pf-about-portrait-edu-meta {
+    max-width: 22rem;
   }
 }
 
@@ -13088,7 +13821,9 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
   .pf-about-portrait-root[data-pf-after='armed'] .pf-about-portrait-strengths-title,
   .pf-about-portrait-root[data-pf-after='armed'] .pf-about-portrait-badge-cell,
-  .pf-about-portrait-root[data-pf-after='armed'] .pf-about-portrait-meta-col:not(.pf-about-portrait-meta-col--empty):not(.pf-about-portrait-meta-col--spacer) {
+  .pf-about-portrait-root[data-pf-after='armed'] .pf-about-portrait-meta-col:not(.pf-about-portrait-meta-col--empty):not(.pf-about-portrait-meta-col--spacer),
+  .pf-about-portrait-root[data-pf-after='armed'] .pf-about-portrait-education-title,
+  .pf-about-portrait-root[data-pf-after='armed'] .pf-about-portrait-edu-item {
     opacity: 0;
     animation: pf-about-portrait-after-safety 0.6s var(--pf-about-portrait-ease) 8s forwards;
   }
@@ -13100,14 +13835,19 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   .pf-about-portrait-root[data-pf-after='active'] .pf-about-portrait-strengths-title,
   .pf-about-portrait-root[data-pf-after='active'] .pf-about-portrait-badge-cell,
   .pf-about-portrait-root[data-pf-after='active'] .pf-about-portrait-meta-col,
+  .pf-about-portrait-root[data-pf-after='active'] .pf-about-portrait-education-title,
+  .pf-about-portrait-root[data-pf-after='active'] .pf-about-portrait-edu-item,
   .pf-about-portrait-root[data-pf-after='done'] .pf-about-portrait-strengths-title,
   .pf-about-portrait-root[data-pf-after='done'] .pf-about-portrait-badge-cell,
-  .pf-about-portrait-root[data-pf-after='done'] .pf-about-portrait-meta-col {
+  .pf-about-portrait-root[data-pf-after='done'] .pf-about-portrait-meta-col,
+  .pf-about-portrait-root[data-pf-after='done'] .pf-about-portrait-education-title,
+  .pf-about-portrait-root[data-pf-after='done'] .pf-about-portrait-edu-item {
     animation: none;
   }
 
   .pf-about-portrait-root[data-pf-after='done'] .pf-about-portrait-badge-cell,
-  .pf-about-portrait-root[data-pf-after='done'] .pf-about-portrait-meta-col {
+  .pf-about-portrait-root[data-pf-after='done'] .pf-about-portrait-meta-col,
+  .pf-about-portrait-root[data-pf-after='done'] .pf-about-portrait-edu-item {
     will-change: auto;
   }
 }
@@ -13166,8 +13906,31 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
     transform: translate3d(0, 0, 0);
   }
 
-  .pf-about-portrait-badge:hover {
-    border-color: color-mix(in srgb, var(--pf-about-portrait-ink) 18%, transparent);
+  .pf-about-portrait-bring-item:hover {
+    padding-left: 0.85rem;
+    background: color-mix(in srgb, var(--pf-about-portrait-ink) 4%, transparent);
+  }
+
+  .pf-about-portrait-bring-item:hover .pf-about-portrait-bring-index {
+    opacity: 0.9;
+  }
+
+  .pf-about-portrait-bring-item:hover .pf-about-portrait-bring-title {
+    transform: translate3d(0.2rem, 0, 0);
+  }
+
+  .pf-about-portrait-bring-item:hover .pf-about-portrait-bring-arrow {
+    opacity: 0.85;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .pf-about-portrait-edu-item:hover {
+    padding-left: 0.85rem;
+    background: color-mix(in srgb, var(--pf-about-portrait-ink) 4%, transparent);
+  }
+
+  .pf-about-portrait-edu-item:hover .pf-about-portrait-edu-index {
+    opacity: 0.9;
   }
 }
 
@@ -13189,8 +13952,12 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
     transform 0.45s var(--pf-about-portrait-ease);
 }
 
-.pf-theme-root[data-pf-color-transitions='true'] .pf-about-portrait-badge {
-  transition: border-color 0.4s var(--pf-about-portrait-ease);
+.pf-theme-root[data-pf-color-transitions='true'] .pf-about-portrait-bring-item {
+  transition: padding-left 0.4s var(--pf-about-portrait-ease);
+}
+
+.pf-theme-root[data-pf-color-transitions='true'] .pf-about-portrait-edu-item {
+  transition: padding-left 0.4s var(--pf-about-portrait-ease);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -13213,7 +13980,10 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   .pf-about-portrait-meta-col,
   .pf-about-portrait-meta-kicker,
   .pf-about-portrait-meta-interests,
-  .pf-about-portrait-lang {
+  .pf-about-portrait-lang,
+  .pf-about-portrait-education,
+  .pf-about-portrait-education-title,
+  .pf-about-portrait-edu-item {
     animation: none !important;
     transition: none !important;
     transform: none !important;
@@ -13232,7 +14002,9 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   .pf-about-portrait-meta-col,
   .pf-about-portrait-meta-kicker,
   .pf-about-portrait-meta-interests,
-  .pf-about-portrait-lang {
+  .pf-about-portrait-lang,
+  .pf-about-portrait-education-title,
+  .pf-about-portrait-edu-item {
     opacity: 1 !important;
   }
 
@@ -13329,6 +14101,147 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   font-size: 0.86em;
   letter-spacing: 0.02em;
   opacity: 0.72;
+}
+
+/* ── Value steps — "What I bring": floating words, no pills/borders ──────── */
+
+.pf-value-word {
+  display: inline-block;
+  letter-spacing: 0.06em;
+  opacity: 0.5;
+  will-change: opacity, transform, color;
+}
+
+.pf-value-word--minor {
+  font-size: 0.8em;
+  opacity: 0.42;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pf-value-word {
+    transition:
+      opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .pf-value-words:has(.pf-value-word:hover) .pf-value-word:not(:hover) {
+    opacity: 0.3;
+  }
+
+  .pf-value-word:hover {
+    opacity: 1;
+    color: #fff;
+  }
+}
+
+.pf-theme-root[data-portfolio-color-mode='light'] .pf-value-word:hover {
+  color: #111;
+}
+
+/* ── Value steps — "I speak": Display acronym + hover gauge ──────────────── */
+
+.pf-value-lang-code {
+  display: inline-block;
+  line-height: 1;
+}
+
+.pf-value-lang-name {
+  letter-spacing: -0.01em;
+}
+
+.pf-value-lang-gauge {
+  width: 100%;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0.22;
+}
+
+.pf-value-lang-gauge-fill {
+  height: 100%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pf-value-lang-code,
+  .pf-value-lang-name {
+    transition:
+      color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .pf-value-lang-gauge {
+    transition: opacity 0.4s ease;
+  }
+
+  .pf-value-lang-gauge-fill {
+    transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .pf-value-langs:has(.pf-value-lang:hover) .pf-value-lang:not(:hover) {
+    opacity: 0.15;
+    filter: blur(1px);
+  }
+
+  .pf-value-lang:hover .pf-value-lang-code,
+  .pf-value-lang:hover .pf-value-lang-name {
+    color: #fff;
+  }
+
+  .pf-value-lang:hover .pf-value-lang-gauge {
+    opacity: 1;
+  }
+
+  .pf-value-lang:hover .pf-value-lang-gauge-fill {
+    transform: scaleX(var(--pf-value-lang-fill, 1));
+  }
+}
+
+.pf-theme-root[data-portfolio-color-mode='light'] .pf-value-lang:hover .pf-value-lang-code,
+.pf-theme-root[data-portfolio-color-mode='light'] .pf-value-lang:hover .pf-value-lang-name {
+  color: #111;
+}
+
+/* ── Value steps — "Background": airy timeline, parallax + spring hover ──── */
+
+.pf-value-edu-row {
+  will-change: transform, opacity;
+}
+
+.pf-value-edu-year,
+.pf-value-edu-title-track {
+  will-change: transform;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pf-value-edu-body {
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .pf-value-edu-row:hover .pf-value-edu-body {
+    transform: translateY(-5px);
+  }
+
+  .pf-value-edu-title {
+    display: inline-block;
+    transform-origin: left center;
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .pf-value-edu-row:hover .pf-value-edu-title {
+    transform: scale(1.035);
+  }
+
+  .pf-value-edu-meta {
+    display: block;
+    transform: translate3d(0, 118%, 0);
+    transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .pf-value-edu-row:hover .pf-value-edu-meta {
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 .pf-about-values-step,
@@ -14394,5 +15307,891 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   .pf-pages-slide-out,
   .pf-pages-slide-in {
     animation: none !important;
+  }
+}
+
+/* ============================================================
+   FAQ — nine bespoke, self-contained designs (see each component's own
+   file under components/portfolio/portfolio-faq-*.tsx): Kinetic Split,
+   Floating Gallery, Editorial Masonry, Prism Cards, Star Scroll, Tri Grid,
+   Split Index, Centered Focus and Bento Dual. All stay monochrome except
+   Bento Dual's own vivid accent — none of the rest read the section's
+   accent hue — but two different ways of handling light/dark coexist:
+   Kinetic Split, Floating Gallery and Editorial Masonry track the site's
+   own Global → Theme toggle live via `--pf-palette-fond`/
+   `--pf-palette-texte-fort` (paper/ink swap on mode change, tinted by
+   whatever palette family is active). Prism Cards, Star Scroll, Tri Grid,
+   Split Index, Centered Focus and Bento Dual instead read a
+   `[data-pf-faq-mode]` attribute set from a resolved `activeColorMode`
+   prop — a fixed light recipe / fixed dark recipe pair per design, chosen
+   by mode (so it can also honor this section's own colorModeOverride pin,
+   not just the Global toggle), rather than the active palette family's
+   exact hue. Editorial Masonry's own tokens are defined further below.
+   ============================================================ */
+.pf-faq-kinetic,
+.pf-faq-gallery {
+  --pfk-ink: var(--pf-palette-fond, #000000);
+  --pfk-paper: var(--pf-palette-texte-fort, #ffffff);
+  --pfk-mist: color-mix(in srgb, var(--pfk-paper) 46%, var(--pfk-ink));
+  --pfk-ghost: color-mix(in srgb, var(--pfk-paper) 16%, var(--pfk-ink));
+  --pfk-glass-fill: color-mix(in srgb, var(--pfk-paper) 10%, var(--pfk-ink));
+  --pfk-glass-edge: color-mix(in srgb, var(--pfk-paper) 14%, var(--pfk-ink));
+  --pfk-answer-ink: color-mix(in srgb, var(--pfk-paper) 72%, var(--pfk-ink));
+  background: var(--pfk-ink);
+  color: var(--pfk-mist);
+  border-radius: 28px;
+  isolation: isolate;
+}
+.pf-faq-kinetic *,
+.pf-faq-gallery * {
+  box-sizing: border-box;
+}
+.pf-faq-kinetic ::selection,
+.pf-faq-gallery ::selection {
+  background: var(--pfk-paper);
+  color: var(--pfk-ink);
+}
+.pf-faq-kinetic-display,
+.pf-faq-gallery-display {
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+}
+
+/* ---------- Kinetic Split (Concept 01) ---------- */
+.pf-faq-kinetic-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+  gap: clamp(40px, 8vw, 120px);
+  align-items: start;
+}
+.pf-faq-kinetic-left { position: sticky; top: clamp(16px, 4vw, 40px); }
+.pf-faq-kinetic-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--pfk-ghost);
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+.pf-faq-kinetic-list { list-style: none; margin: 0; padding: 0; }
+.pf-faq-kinetic-item + .pf-faq-kinetic-item { margin-top: 2px; }
+.pf-faq-kinetic-trigger {
+  display: flex;
+  align-items: baseline;
+  gap: 22px;
+  width: 100%;
+  text-align: left;
+  padding-block: 22px;
+  opacity: 0.82;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.pf-faq-kinetic-item.is-open .pf-faq-kinetic-trigger { opacity: 1; }
+.pf-faq-kinetic-index {
+  flex: none;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--pfk-ghost);
+  font-variant-numeric: tabular-nums;
+  padding-top: 0.4em;
+}
+.pf-faq-kinetic-text {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 300;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  color: var(--pfk-mist);
+  will-change: transform, font-size, color;
+}
+.pf-faq-kinetic-item.is-open .pf-faq-kinetic-text,
+.pf-faq-kinetic-trigger:hover .pf-faq-kinetic-text {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  color: var(--pfk-paper);
+}
+.pf-faq-kinetic-panel { height: 0; overflow: hidden; }
+.pf-faq-kinetic-panel-inner { padding: 2px 0 34px 44px; max-width: 62ch; }
+.pf-faq-kinetic-answer {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--pfk-answer-ink);
+  font-weight: 300;
+}
+.pf-faq-kinetic-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
+.pf-faq-kinetic-line-inner { display: inline-block; will-change: transform; }
+
+@media (max-width: 768px) {
+  .pf-faq-kinetic-grid { grid-template-columns: 1fr; gap: 36px; }
+  .pf-faq-kinetic-left { position: static; }
+  .pf-faq-kinetic-panel-inner { padding-left: 0; max-width: none; }
+}
+
+/* ---------- Floating Gallery (Concept 02) ---------- */
+.pf-faq-gallery-head { margin-bottom: clamp(28px, 6vw, 48px); }
+.pf-faq-gallery-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--pfk-ghost);
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+.pf-faq-gallery-row {
+  position: relative;
+  padding-block: 26px;
+  border-top: 1px solid var(--pfk-ghost);
+}
+.pf-faq-gallery-list .pf-faq-gallery-row:last-child { border-bottom: 1px solid var(--pfk-ghost); }
+.pf-faq-gallery-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.pf-faq-gallery-q {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 300;
+  font-size: clamp(1.15rem, 2.6vw, 1.7rem);
+  color: var(--pfk-mist);
+  transition: color 0.4s ease;
+}
+.pf-faq-gallery-row.is-open .pf-faq-gallery-q {
+  color: var(--pfk-paper);
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+}
+.pf-faq-gallery-plus {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--pfk-ghost);
+  display: grid;
+  place-items: center;
+  color: var(--pfk-mist);
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s ease, border-color 0.4s ease;
+}
+.pf-faq-gallery-row.is-open .pf-faq-gallery-plus {
+  transform: rotate(135deg);
+  background: var(--pfk-paper);
+  color: var(--pfk-ink);
+  border-color: var(--pfk-paper);
+}
+.pf-faq-gallery-glass {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 30;
+  padding: clamp(28px, 4vw, 44px);
+  border-radius: 22px;
+  background: var(--pfk-glass-fill);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: 0 1px 0 var(--pfk-glass-edge) inset, 0 40px 80px -30px rgba(0, 0, 0, 0.9);
+  opacity: 0;
+  pointer-events: none;
+}
+.pf-faq-gallery-glass.is-visible { pointer-events: auto; }
+.pf-faq-gallery-glass-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.pf-faq-gallery-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--pfk-ghost);
+  display: grid;
+  place-items: center;
+  color: var(--pfk-mist);
+  background: none;
+  cursor: pointer;
+}
+.pf-faq-gallery-close:hover { color: var(--pfk-paper); border-color: var(--pfk-paper); }
+.pf-faq-gallery-glass h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(1.4rem, 3vw, 2.1rem);
+  color: var(--pfk-paper);
+  max-width: 26ch;
+  margin: 0 0 18px;
+  text-wrap: balance;
+}
+.pf-faq-gallery-glass p {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--pfk-answer-ink);
+  font-weight: 300;
+  max-width: 58ch;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .pf-faq-gallery-glass {
+    position: fixed;
+    inset: auto 14px 14px 14px;
+    border-radius: 20px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+}
+
+/* ---------- Editorial Masonry (Concept 03) ----------
+   Unlike Kinetic Split / Floating Gallery, this design tracks the site's
+   own Global → Theme light/dark mode (and palette family) instead of
+   painting a fixed stage: paper/ink come straight from the same
+   `--pf-palette-fond` / `--pf-palette-texte-fort` tokens every other
+   section already reads, which the color-mode toggle repaints live.
+   Everything else stays purely monochrome — only these two neutral
+   tokens are used, never the family's accent hue. */
+.pf-faq-masonry {
+  --pfm-paper: var(--pf-palette-fond, #ffffff);
+  --pfm-ink: var(--pf-palette-texte-fort, #0a0a0a);
+  --pfm-slate: color-mix(in srgb, var(--pfm-ink) 56%, var(--pfm-paper));
+  --pfm-muted: color-mix(in srgb, var(--pfm-ink) 72%, var(--pfm-paper));
+  --pfm-index: color-mix(in srgb, var(--pfm-ink) 34%, var(--pfm-paper));
+  --pfm-line: color-mix(in srgb, var(--pfm-ink) 8%, var(--pfm-paper));
+  background: var(--pfm-paper);
+  color: var(--pfm-ink);
+  border-radius: 28px;
+  isolation: isolate;
+}
+.pf-faq-masonry * { box-sizing: border-box; }
+.pf-faq-masonry ::selection { background: var(--pfm-ink); color: var(--pfm-paper); }
+.pf-faq-masonry-head {
+  margin-bottom: clamp(32px, 7vw, 64px);
+  max-width: 46ch;
+  text-align: left;
+}
+.pf-faq-masonry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: clamp(32px, 6vw, 96px);
+  align-items: start;
+}
+.pf-faq-masonry-col--right { margin-top: clamp(56px, 9vw, 128px); }
+.pf-faq-masonry-row {
+  border-bottom: 1px solid var(--pfm-line);
+}
+.pf-faq-masonry-trigger {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  text-align: left;
+  padding-block: 22px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.pf-faq-masonry-index {
+  flex: none;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--pfm-index);
+  font-variant-numeric: tabular-nums;
+}
+.pf-faq-masonry-q {
+  flex: 1;
+  min-width: 0;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  line-height: 1.35;
+  color: var(--pfm-muted);
+  will-change: transform, color;
+}
+.pf-faq-masonry-row.is-open .pf-faq-masonry-q { color: var(--pfm-ink); }
+.pf-faq-masonry-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  color: var(--pfm-ink);
+  will-change: transform;
+}
+.pf-faq-masonry-panel { height: 0; overflow: hidden; }
+.pf-faq-masonry-panel-inner { padding: 2px 40px 30px 34px; max-width: 58ch; }
+.pf-faq-masonry-answer {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--pfm-slate);
+  font-weight: 400;
+}
+.pf-faq-masonry-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
+.pf-faq-masonry-line-inner { display: inline-block; will-change: transform; }
+
+@media (max-width: 768px) {
+  .pf-faq-masonry-grid { grid-template-columns: 1fr; row-gap: 4px; }
+  .pf-faq-masonry-col--right { margin-top: 0; }
+  .pf-faq-masonry-trigger { padding-block: 26px; gap: 14px; }
+  .pf-faq-masonry-panel-inner { padding-left: 0; padding-right: 0; max-width: none; }
+}
+
+/* ---------- Prism Cards (Concept 04) ----------
+   Not a monochrome stage like the three above — a soft neutral canvas of
+   large white accordion cards, each flipping to a fixed violet-electric
+   fill (liquid radial reveal seeded at the click point) while it's open.
+   Ignores the section's accent palette like its siblings, but — like Star
+   Scroll below — follows the section's resolved light/dark mode: the
+   neutral stage/card/text tokens swap under `[data-pf-faq-mode='dark']`
+   below, while the violet-electric active fill stays the same in both. */
+.pf-faq-prism {
+  --pfp-stage: #f3f2f0;
+  --pfp-card: #ffffff;
+  --pfp-card-border: transparent;
+  --pfp-card-shadow: 0 1px 2px rgba(13, 10, 26, 0.03), 0 20px 44px -30px rgba(13, 10, 26, 0.14);
+  --pfp-ink: #0d0a1a;
+  --pfp-muted: rgba(13, 10, 26, 0.58);
+  --pfp-icon-border: rgba(13, 10, 26, 0.14);
+  --pfp-active-from: #6d28d9;
+  --pfp-active-to: #4338ca;
+  --pfp-active-ink: #ffffff;
+  --pfp-active-muted: rgba(255, 255, 255, 0.82);
+  background: var(--pfp-stage);
+  border-radius: 28px;
+  isolation: isolate;
+}
+.pf-faq-prism[data-pf-faq-mode='dark'] {
+  --pfp-stage: #131217;
+  --pfp-card: #1d1c22;
+  --pfp-card-border: rgba(247, 246, 249, 0.07);
+  --pfp-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 20px 44px -28px rgba(0, 0, 0, 0.6);
+  --pfp-ink: #f6f5f8;
+  --pfp-muted: rgba(246, 245, 248, 0.6);
+  --pfp-icon-border: rgba(246, 245, 248, 0.18);
+  --pfp-active-from: #7c3aed;
+  --pfp-active-to: #4f46e5;
+}
+.pf-faq-prism * { box-sizing: border-box; }
+.pf-faq-prism-head { margin-bottom: clamp(28px, 6vw, 48px); max-width: 56ch; }
+.pf-faq-prism-list { display: flex; flex-direction: column; gap: clamp(12px, 2vw, 18px); }
+.pf-faq-prism-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 26px;
+  background: var(--pfp-card);
+  border: 1px solid var(--pfp-card-border);
+  box-shadow: var(--pfp-card-shadow);
+  transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+  will-change: transform, opacity;
+}
+.pf-faq-prism-fill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0;
+  background: linear-gradient(135deg, var(--pfp-active-from), var(--pfp-active-to));
+  clip-path: circle(0% at 50% 50%);
+  pointer-events: none;
+}
+.pf-faq-prism-trigger {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  text-align: left;
+  padding: clamp(22px, 3vw, 30px) clamp(22px, 4vw, 34px);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.pf-faq-prism-q {
+  min-width: 0;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  font-size: clamp(1.05rem, 0.85rem + 0.9vw, 1.45rem);
+  color: var(--pfp-ink);
+  transition: color 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.pf-faq-prism-card.is-open .pf-faq-prism-q { color: var(--pfp-active-ink); }
+.pf-faq-prism-icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid var(--pfp-icon-border);
+  display: grid;
+  place-items: center;
+  color: var(--pfp-ink);
+  transition: background-color 0.6s cubic-bezier(0.65, 0, 0.35, 1), border-color 0.6s cubic-bezier(0.65, 0, 0.35, 1), color 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.pf-faq-prism-card.is-open .pf-faq-prism-icon {
+  background: var(--pfp-active-ink);
+  border-color: var(--pfp-active-ink);
+  color: var(--pfp-active-from);
+}
+.pf-faq-prism-panel { position: relative; z-index: 1; height: 0; overflow: hidden; }
+.pf-faq-prism-panel-inner { padding: 2px clamp(22px, 4vw, 34px) clamp(24px, 3vw, 32px); max-width: 62ch; }
+.pf-faq-prism-answer {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.65;
+  font-weight: 400;
+  color: var(--pfp-muted);
+  transition: color 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.pf-faq-prism-card.is-open .pf-faq-prism-answer { color: var(--pfp-active-muted); }
+.pf-faq-prism-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
+.pf-faq-prism-line-inner { display: inline-block; will-change: transform; }
+
+@media (max-width: 768px) {
+  .pf-faq-prism-card { border-radius: 20px; }
+  .pf-faq-prism-trigger { padding: 20px 20px; gap: 14px; }
+  .pf-faq-prism-panel-inner { padding-left: 20px; padding-right: 20px; max-width: none; }
+  .pf-faq-prism-q { font-size: clamp(1rem, 4.4vw, 1.2rem); }
+}
+
+/* ---------- Star Scroll (Concept 05) ----------
+   Same resolved-mode premise as Prism Cards — a `[data-pf-faq-mode]`
+   attribute (driven by the `activeColorMode` prop, which honors this
+   section's own colorModeOverride pin, not just the Global toggle) swaps
+   between a fixed light recipe and a fixed dark recipe, rather than
+   reading the active palette family's exact hue. Cards are barely
+   distinguishable from the stage at rest (color-mix blends of ink into
+   fond) — "almost melted into the background" per spec — and only step
+   up in contrast on hover/open. Every color carries a `.5s ease`
+   transition so a mode flip crossfades instead of snapping. */
+.pf-faq-star {
+  --pfs-fond: #fafafa;
+  --pfs-ink: #0a0a0a;
+  --pfs-card: color-mix(in srgb, var(--pfs-ink) 5%, var(--pfs-fond));
+  --pfs-card-hover: color-mix(in srgb, var(--pfs-ink) 9%, var(--pfs-fond));
+  --pfs-border: color-mix(in srgb, var(--pfs-ink) 11%, var(--pfs-fond));
+  --pfs-muted: color-mix(in srgb, var(--pfs-ink) 62%, var(--pfs-fond));
+  background: var(--pfs-fond);
+  color: var(--pfs-ink);
+  border-radius: 28px;
+  isolation: isolate;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+.pf-faq-star[data-pf-faq-mode='dark'] {
+  --pfs-fond: #050505;
+  --pfs-ink: #fafafa;
+}
+.pf-faq-star * { box-sizing: border-box; }
+.pf-faq-star ::selection { background: var(--pfs-ink); color: var(--pfs-fond); }
+.pf-faq-star-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: clamp(36px, 7vw, 72px);
+}
+.pf-faq-star-title { min-width: 0; max-width: 60ch; }
+.pf-faq-star-mark {
+  flex: none;
+  width: clamp(46px, 6vw, 68px);
+  height: clamp(46px, 6vw, 68px);
+  color: var(--pfs-ink);
+  transition: color 0.5s ease;
+  will-change: transform;
+}
+.pf-faq-star-mark svg { width: 100%; height: 100%; display: block; }
+.pf-faq-star-list { display: flex; flex-direction: column; gap: 10px; }
+.pf-faq-star-row {
+  border-radius: clamp(18px, 2.2vw, 26px);
+  border: 1px solid var(--pfs-border);
+  background: var(--pfs-card);
+  transition: background-color 0.4s ease, border-color 0.5s ease, opacity 0.4s ease;
+  overflow: hidden;
+}
+.pf-faq-star-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  text-align: left;
+  padding: clamp(20px, 2.6vw, 28px) clamp(22px, 3vw, 32px);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.pf-faq-star-q {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  color: var(--pfs-ink);
+  transition: color 0.5s ease;
+}
+.pf-faq-star-icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: var(--pfs-ink);
+  transition: color 0.5s ease;
+  will-change: transform;
+}
+.pf-faq-star-panel { height: 0; overflow: hidden; }
+.pf-faq-star-panel-inner { padding: 0 clamp(22px, 3vw, 32px) clamp(22px, 2.8vw, 30px); max-width: 62ch; }
+.pf-faq-star-answer {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.65;
+  font-weight: 400;
+  color: var(--pfs-muted);
+  transition: color 0.5s ease;
+}
+.pf-faq-star-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
+.pf-faq-star-line-inner { display: inline-block; will-change: transform; }
+
+@media (max-width: 768px) {
+  .pf-faq-star-head { margin-bottom: 32px; }
+  .pf-faq-star-trigger { padding: 20px; gap: 14px; }
+  .pf-faq-star-q { font-size: 1.05rem; }
+  .pf-faq-star-panel-inner { max-width: none; }
+}
+
+/* ---------- Tri Grid (Concept 06) ----------
+   Resolved-mode premise like Prism Cards / Star Scroll — `[data-pf-faq-mode]`
+   swaps a pure white stage for a pure black one. No cards, no borders: only
+   whitespace and opacity separate the three columns. */
+.pf-faq-tri {
+  --pft-fond: #ffffff;
+  --pft-ink: #000000;
+  --pft-muted: color-mix(in srgb, var(--pft-ink) 70%, var(--pft-fond));
+  background: var(--pft-fond);
+  color: var(--pft-ink);
+  border-radius: 28px;
+  isolation: isolate;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+.pf-faq-tri[data-pf-faq-mode='dark'] { --pft-fond: #000000; --pft-ink: #ffffff; }
+.pf-faq-tri * { box-sizing: border-box; }
+.pf-faq-tri-head { margin-bottom: clamp(40px, 7vw, 72px); max-width: 60ch; }
+.pf-faq-tri-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(28px, 4vw, 48px);
+  align-items: start;
+}
+.pf-faq-tri-col--offset { margin-top: clamp(48px, 8vw, 96px); }
+.pf-faq-tri-block {
+  opacity: 0.78;
+  padding-bottom: clamp(28px, 4vw, 40px);
+  transition: opacity 0.4s ease, filter 0.4s ease;
+  will-change: opacity, filter;
+}
+.pf-faq-tri-mask { overflow: hidden; }
+.pf-faq-tri-q {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: clamp(1.02rem, 1.6vw, 1.22rem);
+  color: var(--pft-muted);
+  margin: 0 0 10px;
+  transition: color 0.4s ease;
+}
+.pf-faq-tri-a {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.94rem;
+  line-height: 1.62;
+  color: color-mix(in srgb, var(--pft-ink) 55%, var(--pft-fond));
+  margin: 0;
+  transition: color 0.5s ease;
+}
+
+@media (max-width: 768px) {
+  .pf-faq-tri-grid { grid-template-columns: 1fr; gap: 8px; }
+  .pf-faq-tri-col--offset { margin-top: 0; }
+  .pf-faq-tri-block { opacity: 1; padding-bottom: 28px; }
+}
+
+/* ---------- Split Index (Concept 07) ----------
+   Same resolved-mode `[data-pf-faq-mode]` premise. A borderless two-zone
+   row: a narrow index rail, a wide list of hairline-divided rows with a
+   filled index badge per row. */
+.pf-faq-split {
+  --pfsi-fond: #fffdf9;
+  --pfsi-ink: #0a0a0a;
+  --pfsi-muted: color-mix(in srgb, var(--pfsi-ink) 70%, var(--pfsi-fond));
+  --pfsi-line: color-mix(in srgb, var(--pfsi-ink) 9%, var(--pfsi-fond));
+  background: var(--pfsi-fond);
+  color: var(--pfsi-ink);
+  border-radius: 28px;
+  isolation: isolate;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+.pf-faq-split[data-pf-faq-mode='dark'] { --pfsi-fond: #000000; --pfsi-ink: #ffffff; }
+.pf-faq-split * { box-sizing: border-box; }
+.pf-faq-split-head { margin-bottom: clamp(40px, 7vw, 72px); max-width: 60ch; }
+.pf-faq-split-row {
+  display: grid;
+  grid-template-columns: minmax(96px, 0.22fr) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+  align-items: start;
+}
+.pf-faq-split-rail-label {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pfsi-muted);
+  transition: color 0.5s ease;
+}
+.pf-faq-split-list { display: flex; flex-direction: column; }
+.pf-faq-split-item { border-bottom: 1px solid var(--pfsi-line); transition: border-color 0.5s ease; }
+.pf-faq-split-list .pf-faq-split-item:first-child { border-top: 1px solid var(--pfsi-line); }
+.pf-faq-split-trigger {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  text-align: left;
+  padding-block: 22px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.pf-faq-split-badge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: var(--pfsi-ink);
+  color: var(--pfsi-fond);
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+.pf-faq-split-q {
+  flex: 1;
+  min-width: 0;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
+  font-size: clamp(1.02rem, 1.6vw, 1.2rem);
+  color: var(--pfsi-muted);
+  transition: color 0.5s ease;
+}
+.pf-faq-split-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  color: var(--pfsi-ink);
+  transition: color 0.5s ease;
+  will-change: transform;
+}
+.pf-faq-split-panel { height: 0; overflow: hidden; }
+.pf-faq-split-panel-inner { padding: 0 30px 26px 48px; max-width: 60ch; }
+.pf-faq-split-answer {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--pfsi-ink) 60%, var(--pfsi-fond));
+  transition: color 0.5s ease;
+}
+.pf-faq-split-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
+.pf-faq-split-line-inner { display: inline-block; will-change: transform; }
+
+@media (max-width: 768px) {
+  .pf-faq-split-row { grid-template-columns: 1fr; gap: 20px; }
+  .pf-faq-split-rail-label { display: block; padding-bottom: 14px; border-bottom: 1px solid var(--pfsi-line); }
+  .pf-faq-split-trigger { padding-block: 22px; gap: 14px; }
+  .pf-faq-split-panel-inner { padding-left: 0; padding-right: 0; max-width: none; }
+}
+
+/* ---------- Centered Focus (Concept 08) ----------
+   Same resolved-mode `[data-pf-faq-mode]` premise. No rule under the title,
+   no dividers — a centered column resting at opacity .2 until hovered. */
+.pf-faq-focus {
+  --pff-fond: #ffffff;
+  --pff-ink: #000000;
+  --pff-muted: color-mix(in srgb, var(--pff-ink) 55%, var(--pff-fond));
+  background: var(--pff-fond);
+  color: var(--pff-ink);
+  border-radius: 28px;
+  isolation: isolate;
+  text-align: center;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+.pf-faq-focus[data-pf-faq-mode='dark'] { --pff-fond: #000000; --pff-ink: #ffffff; }
+.pf-faq-focus * { box-sizing: border-box; }
+.pf-faq-focus-head { margin: 0 auto clamp(48px, 8vw, 88px); max-width: 56ch; }
+.pf-faq-focus-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(4px, 1vw, 10px);
+  max-width: 46rem;
+  margin: 0 auto;
+}
+.pf-faq-focus-row {
+  width: 100%;
+  opacity: 0.2;
+  will-change: opacity, transform, filter;
+}
+.pf-faq-focus-trigger {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  padding-block: clamp(10px, 1.6vw, 16px);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.pf-faq-focus-q {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  color: var(--pff-muted);
+  transition: color 0.35s ease;
+}
+.pf-faq-focus-panel { height: 0; overflow: hidden; width: 100%; }
+.pf-faq-focus-panel-inner { padding: 10px 0 clamp(24px, 4vw, 40px); max-width: 56ch; margin: 0 auto; }
+.pf-faq-focus-answer {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: color-mix(in srgb, var(--pff-ink) 62%, var(--pff-fond));
+}
+.pf-faq-focus-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
+.pf-faq-focus-line-inner { display: inline-block; will-change: transform; }
+
+@media (max-width: 768px) {
+  .pf-faq-focus-list { gap: 2px; }
+  .pf-faq-focus-trigger { padding-block: clamp(16px, 4vw, 22px); }
+  .pf-faq-focus-panel-inner { padding-bottom: clamp(28px, 6vw, 36px); }
+}
+
+/* ---------- Bento Dual (Concept 09) ----------
+   The only one of the nine with a vivid, mode-specific accent fill on the
+   cards themselves (amber in light mode, the palette's Secondary token in
+   dark mode — `--pfbd-card`'s dark-mode value below is just the fallback;
+   `FaqBentoDualDesign` overrides it inline with the resolved secondary hex) —
+   everything else (the neutral stage) still resolves from
+   `[data-pf-faq-mode]` like its siblings. */
+.pf-faq-bento {
+  --pfbd-fond: #ffffff;
+  --pfbd-ink: #0a0a0a;
+  --pfbd-card: #ffe14d;
+  --pfbd-card-ink: #14110d;
+  --pfbd-answer-bg: #14110d;
+  --pfbd-answer-ink: #fbfaf7;
+  --pfbd-border: color-mix(in srgb, var(--pfbd-card-ink) 14%, var(--pfbd-card));
+  background: var(--pfbd-fond);
+  color: var(--pfbd-ink);
+  border-radius: 28px;
+  isolation: isolate;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+.pf-faq-bento[data-pf-faq-mode='dark'] {
+  --pfbd-fond: #000000;
+  --pfbd-ink: #ffffff;
+  --pfbd-card: #6d5ef5;
+  --pfbd-card-ink: #f5f3ff;
+  --pfbd-answer-bg: #f5f3ff;
+  --pfbd-answer-ink: #14103a;
+}
+.pf-faq-bento * { box-sizing: border-box; }
+.pf-faq-bento-head { margin-bottom: clamp(32px, 6vw, 56px); max-width: 60ch; }
+.pf-faq-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 2vw, 22px);
+}
+.pf-faq-bento-card {
+  position: relative;
+  min-height: clamp(150px, 20vw, 190px);
+  border-radius: var(--pfbd-radius, clamp(20px, 2.4vw, 28px));
+  border: var(--pfbd-border-width, 1px) solid var(--pfbd-border);
+  background: color-mix(in srgb, var(--pfbd-card) var(--pfbd-card-opacity, 100%), var(--pfbd-fond));
+  overflow: hidden;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transition: opacity 0.4s ease, filter 0.4s ease, background-color 0.5s ease, border-color 0.5s ease;
+  will-change: transform, opacity, filter;
+}
+.pf-faq-bento-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: clamp(20px, 3vw, 28px);
+}
+.pf-faq-bento-layer-a { transform: translateY(0%); }
+.pf-faq-bento-layer-b {
+  transform: translateY(100%);
+  background: var(--pfbd-answer-bg);
+  align-items: flex-start;
+  transition: background-color 0.5s ease;
+}
+.pf-faq-bento-q {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+  color: var(--pfbd-card-ink);
+  margin: 0;
+  transition: color 0.5s ease;
+}
+.pf-faq-bento-a {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: var(--pfbd-answer-ink);
+  margin: 0;
+  transition: color 0.5s ease;
+}
+.pf-faq-bento-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
+.pf-faq-bento-line-inner { display: inline-block; will-change: transform, opacity; }
+
+@media (max-width: 768px) {
+  .pf-faq-bento-grid { grid-template-columns: 1fr; }
+  .pf-faq-bento-card { min-height: 140px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-faq-kinetic-trigger,
+  .pf-faq-gallery-q,
+  .pf-faq-gallery-plus,
+  .pf-faq-masonry-q,
+  .pf-faq-masonry-icon,
+  .pf-faq-prism-q,
+  .pf-faq-prism-icon,
+  .pf-faq-prism-answer,
+  .pf-faq-star-row,
+  .pf-faq-star-q,
+  .pf-faq-star-icon,
+  .pf-faq-tri-block,
+  .pf-faq-tri-q,
+  .pf-faq-split-q,
+  .pf-faq-split-icon,
+  .pf-faq-focus-q,
+  .pf-faq-bento-card {
+    transition: none !important;
   }
 }

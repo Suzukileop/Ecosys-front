@@ -10,11 +10,7 @@ import type {
   PortfolioNavLayoutDesign,
   PortfolioNavSettings,
 } from '@/components/portfolio/portfolio-settings-types';
-import {
-  DEFAULT_EDITORIAL_BAR_MAIL_CONTACT,
-  DEFAULT_EDITORIAL_BAR_PHONE_CONTACT,
-  DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES,
-} from '@/components/portfolio/portfolio-settings-types';
+import { DEFAULT_EDITORIAL_BAR_MAIL_CONTACT } from '@/components/portfolio/portfolio-settings-types';
 
 export type { PortfolioNavLayoutDesign };
 
@@ -23,31 +19,15 @@ const FLOATING_PILL_INK = '#1a1a1a';
 const FLOATING_PILL_CONTACT_FILL = '#1a1a1a';
 const FLOATING_PILL_CONTACT_INK = '#ffffff';
 
-const TRI_ZONE_BAR_FILL = '#ffffff';
-const TRI_ZONE_INK = '#1a1a1a';
-const TRI_ZONE_BORDER = '#e5e5e5';
-const TRI_ZONE_ICON_FILL = '#ffffff';
-
 const SPLIT_BAR_FILL = 'transparent';
 const SPLIT_INK = '#ffffff';
 const SPLIT_BORDER = 'rgba(255,255,255,0.2)';
-
-const LOGO_LEFT_BAR_FILL = '#ffffff';
-const LOGO_LEFT_INK = '#1a1a1a';
-const LOGO_LEFT_BORDER = '#e5e5e5';
-const LOGO_LEFT_CONTACT_FILL = '#171717';
-const LOGO_LEFT_CONTACT_INK = '#ffffff';
 
 export const PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS: {
   value: PortfolioNavLayoutDesign;
   label: string;
   description: string;
 }[] = [
-  {
-    value: 'classic',
-    label: 'Classic',
-    description: 'Follows the Layout / Extras settings.',
-  },
   {
     value: 'editorial-bar',
     label: 'Editorial bar',
@@ -59,19 +39,9 @@ export const PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS: {
     description: 'Contact button in a contrast color.',
   },
   {
-    value: 'nav-logo-social',
-    label: 'Social nav',
-    description: 'Up to 3 social icons shown.',
-  },
-  {
     value: 'center-logo-split',
     label: 'Split menu',
     description: 'Hero-bar style, links split around logo.',
-  },
-  {
-    value: 'logo-left-nav-contact',
-    label: 'Contact nav',
-    description: 'Contact button always at the outer edge.',
   },
   {
     value: 'case-overlay',
@@ -124,22 +94,10 @@ export function portfolioNavFloatingPillShowsContact(
   return (settings.floatingPillShowContact ?? true) && (settings.contactButtonEnabled ?? false);
 }
 
-export function portfolioNavUsesTriZoneLayout(
-  settings: Pick<PortfolioNavSettings, 'navLayoutDesign' | 'enabled'>
-): boolean {
-  return settings.enabled && portfolioNavLayoutDesignId(settings) === 'nav-logo-social';
-}
-
 export function portfolioNavUsesCenterLogoSplitLayout(
   settings: Pick<PortfolioNavSettings, 'navLayoutDesign' | 'enabled'>
 ): boolean {
   return settings.enabled && portfolioNavLayoutDesignId(settings) === 'center-logo-split';
-}
-
-export function portfolioNavUsesLogoLeftNavContactLayout(
-  settings: Pick<PortfolioNavSettings, 'navLayoutDesign' | 'enabled'>
-): boolean {
-  return settings.enabled && portfolioNavLayoutDesignId(settings) === 'logo-left-nav-contact';
 }
 
 export function portfolioNavUsesCaseOverlayLayout(
@@ -177,7 +135,7 @@ export function portfolioNavUsesStructuredBarLayout(
   return settings.enabled && (id === 'editorial-bar' || id === 'floating-pill');
 }
 
-/** Literal brand label shown in structured nav layouts (editorial, pill, tri-zone, split, logo-left). */
+/** Literal brand label shown in structured nav layouts (editorial, pill, split, overlay, panel). */
 export const PORTFOLIO_NAV_IN_BAR_BRAND_LABEL = 'Logo';
 
 export function portfolioNavUsesInBarBrandLayout(
@@ -188,9 +146,7 @@ export function portfolioNavUsesInBarBrandLayout(
   return (
     id === 'editorial-bar' ||
     id === 'floating-pill' ||
-    id === 'nav-logo-social' ||
     id === 'center-logo-split' ||
-    id === 'logo-left-nav-contact' ||
     id === 'case-overlay' ||
     id === 'duten-panel' ||
     id === 'half-panel-left'
@@ -229,32 +185,6 @@ function floatingPillBindings(
     contactBackground: 'texteFort' as const,
     contactText: 'neutre' as const,
     contactBorder: 'texteFort' as const,
-    customExtraBackground: 'neutre' as const,
-    customExtraText: 'texteFort' as const,
-    customExtraBorder: 'bordure' as const,
-  };
-}
-
-function triZoneBindings(navigation?: Pick<PortfolioNavSettings, 'navColorBindings'>) {
-  return {
-    ...mergeNavColorBindings(DEFAULT_NAV_COLOR_BINDINGS, navigation?.navColorBindings),
-    barBackground: 'neutre' as const,
-    barBorder: 'bordure' as const,
-    itemText: 'texteFort' as const,
-    itemIcon: 'texteFort' as const,
-    itemBackground: 'neutre' as const,
-    itemBorder: 'bordure' as const,
-    itemHoverText: 'texteFort' as const,
-    itemHoverIcon: 'texteFort' as const,
-    itemHoverBackground: 'neutre' as const,
-    itemHoverBorder: 'bordure' as const,
-    activeAccent: 'texteFort' as const,
-    linkIconBackground: 'neutre' as const,
-    linkIconColor: 'texteFort' as const,
-    linkIconBorder: 'bordure' as const,
-    contactBackground: 'neutre' as const,
-    contactText: 'texteFort' as const,
-    contactBorder: 'bordure' as const,
     customExtraBackground: 'neutre' as const,
     customExtraText: 'texteFort' as const,
     customExtraBorder: 'bordure' as const,
@@ -487,147 +417,6 @@ function splitLogoBindings(navigation?: Pick<PortfolioNavSettings, 'navColorBind
   };
 }
 
-function logoLeftNavContactBindings(
-  navigation?: Pick<PortfolioNavSettings, 'navColorBindings'>
-) {
-  return {
-    ...mergeNavColorBindings(DEFAULT_NAV_COLOR_BINDINGS, navigation?.navColorBindings),
-    barBackground: 'neutre' as const,
-    barBorder: 'bordure' as const,
-    itemText: 'texteFort' as const,
-    itemIcon: 'texteFort' as const,
-    itemBackground: 'neutre' as const,
-    itemBorder: 'bordure' as const,
-    itemHoverText: 'texteFort' as const,
-    itemHoverIcon: 'texteFort' as const,
-    itemHoverBackground: 'neutre' as const,
-    itemHoverBorder: 'bordure' as const,
-    activeAccent: 'principal' as const,
-    contactBackground: 'principal' as const,
-    contactText: 'texteFort' as const,
-    contactBorder: 'principal' as const,
-    customExtraBackground: 'neutre' as const,
-    customExtraText: 'texteFort' as const,
-    customExtraBorder: 'bordure' as const,
-  };
-}
-
-function buildLogoLeftNavContactPatch(
-  brandText: string,
-  contactLabel: string,
-  navigation?: Pick<
-    PortfolioNavSettings,
-    | 'navPalette'
-    | 'navColorBindings'
-    | 'useNavPalette'
-    | 'customExtraText'
-    | 'contactButtonLabel'
-  >
-): Partial<PortfolioNavSettings> {
-  const structure: Partial<PortfolioNavSettings> = {
-    navLayoutDesign: 'logo-left-nav-contact',
-    placement: 'top-center',
-    barWidth: 'full',
-    barDesign: 'classic',
-    contentMode: 'text',
-    buttonDesign: 'clean',
-    activeStyle: 'filled-pill',
-    labelCase: 'titlecase',
-    itemGap: 'lg',
-    barBorderEnabled: false,
-    barShadowEnabled: false,
-    glassEffect: false,
-    barPadding: 'md',
-    buttonPadding: 'sm',
-    itemBorderEnabled: false,
-    presence: 'full',
-    displayMode: 'always',
-    edgeOffset: 'sm',
-    logoLeftNavContactLogoSide: 'left',
-    customExtraEnabled: true,
-    customExtraLayoutPlacement: 'free-side',
-    customExtraSide: 'left',
-    customExtraDisplay: 'text',
-    customExtraText: brandText,
-    customExtraShape: 'soft',
-    customExtraBorderEnabled: false,
-    customExtraPaddingX: 0,
-    customExtraPaddingY: 0,
-    customExtraLogoSizePx: 24,
-    customExtraGapPx: 0,
-    customExtraFontSizePx: 16,
-    customExtraFontWeight: 'semibold',
-    customExtraColorsManual: true,
-    customExtraBackgroundColor: 'transparent',
-    customExtraTextColor: LOGO_LEFT_INK,
-    contactButtonEnabled: true,
-    contactButtonDetached: false,
-    contactButtonSide: 'right',
-    contactExtrasPlacement: 'free-side',
-    contactButtonDisplay: 'button',
-    contactButtonShape: 'rounded',
-    contactButtonIcon: 'phone',
-    contactButtonIconPosition: 'left',
-    contactButtonBorderEnabled: false,
-    contactButtonGlassEffect: false,
-    contactButtonShadowEnabled: false,
-    contactButtonLabel: contactLabel,
-    linkIconsEnabled: false,
-    extrasPlacement: 'free-side',
-    navColorBindings: logoLeftNavContactBindings(navigation),
-  };
-
-  if (navigation?.useNavPalette === false) {
-    return {
-      ...structure,
-      barBackgroundColor: LOGO_LEFT_BAR_FILL,
-      barBorderColor: LOGO_LEFT_BORDER,
-      itemTextColor: LOGO_LEFT_INK,
-      itemIconColor: LOGO_LEFT_INK,
-      itemBackgroundColor: 'transparent',
-      itemHoverBackgroundColor: 'transparent',
-      activeAccentColor: LOGO_LEFT_CONTACT_FILL,
-      contactButtonBackgroundColor: LOGO_LEFT_CONTACT_FILL,
-      contactButtonColor: LOGO_LEFT_CONTACT_INK,
-      contactButtonBorderColor: LOGO_LEFT_CONTACT_FILL,
-      contactButtonIconPosition: 'left',
-    };
-  }
-
-  const paletteSync = applyNavPaletteToSettings({
-    ...navigation,
-    navColorBindings: logoLeftNavContactBindings(navigation),
-    customExtraColorsManual: true,
-  });
-  const palette = mergeNavPalette(DEFAULT_NAV_PALETTE, navigation?.navPalette);
-  const brandInk = resolveHeroPaletteColor(palette, 'texteFort');
-  const accent = resolveHeroPaletteColor(palette, 'principal');
-  const onAccent = resolveHeroPaletteColor(palette, 'neutre');
-
-  return {
-    ...structure,
-    ...paletteSync,
-    useNavPalette: true,
-    customExtraColorsManual: true,
-    barBackgroundColor: LOGO_LEFT_BAR_FILL,
-    barBorderColor: LOGO_LEFT_BORDER,
-    itemTextColor: brandInk,
-    itemIconColor: brandInk,
-    itemBackgroundColor: 'transparent',
-    itemHoverBackgroundColor: 'transparent',
-    itemHoverTextColor: brandInk,
-    itemHoverIconColor: brandInk,
-    activeAccentColor: accent,
-    customExtraBackgroundColor: 'transparent',
-    customExtraTextColor: brandInk,
-    contactButtonBackgroundColor: accent,
-    contactButtonColor: onAccent,
-    contactButtonBorderColor: accent,
-    contactButtonBorderEnabled: false,
-    contactButtonIconPosition: 'left',
-  };
-}
-
 function buildCenterLogoSplitPatch(
   brandText: string,
   navigation?: Pick<
@@ -712,117 +501,6 @@ function buildCenterLogoSplitPatch(
     itemHoverBackgroundColor: 'transparent',
     customExtraBackgroundColor: 'transparent',
     customExtraTextColor: brandInk,
-  };
-}
-
-function buildTriZonePatch(
-  brandText: string,
-  navigation?: Pick<
-    PortfolioNavSettings,
-    | 'navPalette'
-    | 'navColorBindings'
-    | 'useNavPalette'
-    | 'customExtraText'
-    | 'contactButtonLabel'
-  >
-): Partial<PortfolioNavSettings> {
-  const structure: Partial<PortfolioNavSettings> = {
-    navLayoutDesign: 'nav-logo-social',
-    placement: 'top-center',
-    barWidth: 'full',
-    barDesign: 'classic',
-    contentMode: 'text',
-    buttonDesign: 'clean',
-    activeStyle: 'accent-text',
-    labelCase: 'normal',
-    itemGap: 'md',
-    barBorderEnabled: false,
-    barShadowEnabled: false,
-    glassEffect: false,
-    barPadding: 'md',
-    buttonPadding: 'sm',
-    navBarHeight: 'sm',
-    itemBorderEnabled: false,
-    presence: 'full',
-    displayMode: 'always',
-    edgeOffset: 'sm',
-    customExtraEnabled: true,
-    customExtraLayoutPlacement: 'free-side',
-    customExtraSide: 'left',
-    customExtraDisplay: 'text',
-    customExtraText: brandText,
-    customExtraShape: 'soft',
-    customExtraBorderEnabled: false,
-    customExtraPaddingX: 0,
-    customExtraPaddingY: 0,
-    customExtraLogoSizePx: 22,
-    customExtraGapPx: 0,
-    customExtraFontSizePx: 14,
-    customExtraFontWeight: 'semibold',
-    customExtraColorsManual: true,
-    customExtraBackgroundColor: 'transparent',
-    customExtraTextColor: TRI_ZONE_INK,
-    contactButtonEnabled: false,
-    linkIconsEnabled: true,
-    linkIconSources: [...DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES],
-    triZoneSocialLinkIds: [],
-    triZoneSlotMode: 'social',
-    triZoneContactSide: 'right',
-    triZoneSocialLinkSize: 'sm',
-    triZoneSocialLinkMonochrome: false,
-    triZoneSocialLinkGap: 'md',
-    triZoneShowSocial: true,
-    triZoneShowPhone: false,
-    triZoneShowMail: false,
-    editorialBarPhoneContact: { ...DEFAULT_EDITORIAL_BAR_PHONE_CONTACT },
-    editorialBarMailContact: { ...DEFAULT_EDITORIAL_BAR_MAIL_CONTACT },
-    extrasPlacement: 'free-side',
-    navColorBindings: triZoneBindings(navigation),
-  };
-
-  if (navigation?.useNavPalette === false) {
-    return {
-      ...structure,
-      barBackgroundColor: TRI_ZONE_BAR_FILL,
-      barBorderColor: TRI_ZONE_BORDER,
-      itemTextColor: TRI_ZONE_INK,
-      itemIconColor: TRI_ZONE_INK,
-      itemBackgroundColor: 'transparent',
-      itemHoverBackgroundColor: 'transparent',
-      activeAccentColor: TRI_ZONE_INK,
-      linkIconBackgroundColor: TRI_ZONE_ICON_FILL,
-      linkIconColor: TRI_ZONE_INK,
-      linkIconBorderColor: TRI_ZONE_BORDER,
-      contactButtonBackgroundColor: TRI_ZONE_ICON_FILL,
-      contactButtonColor: TRI_ZONE_INK,
-      contactButtonBorderColor: TRI_ZONE_BORDER,
-      contactButtonBorderEnabled: true,
-      contactButtonDisplay: 'icon',
-      contactButtonIcon: 'phone',
-      contactButtonShape: 'pill',
-      contactButtonShadowEnabled: false,
-    };
-  }
-
-  const paletteSync = applyNavPaletteToSettings({
-    ...navigation,
-    navColorBindings: triZoneBindings(navigation),
-    customExtraColorsManual: true,
-  });
-
-  return {
-    ...structure,
-    ...paletteSync,
-    useNavPalette: true,
-    customExtraColorsManual: true,
-    itemBackgroundColor: 'transparent',
-    itemHoverBackgroundColor: 'transparent',
-    customExtraBackgroundColor: 'transparent',
-    contactButtonBorderEnabled: true,
-    contactButtonDisplay: 'icon',
-    contactButtonIcon: 'phone',
-    contactButtonShape: 'pill',
-    contactButtonShadowEnabled: false,
   };
 }
 
@@ -1120,18 +798,8 @@ export function portfolioNavLayoutDesignPatch(
     return buildFloatingPillPatch(brandText, contactLabel, navigation);
   }
 
-  if (design === 'nav-logo-social') {
-    return buildTriZonePatch(brandText, navigation);
-  }
-
   if (design === 'center-logo-split') {
     return buildCenterLogoSplitPatch(brandText, navigation);
-  }
-
-  if (design === 'logo-left-nav-contact') {
-    const contactLabel =
-      (navigation?.contactButtonLabel ?? 'Contact').trim() || 'Contact';
-    return buildLogoLeftNavContactPatch(brandText, contactLabel, navigation);
   }
 
   if (design === 'case-overlay') {

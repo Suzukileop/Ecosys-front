@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import { heroSectionBackgroundStyle } from '@/components/portfolio/portfolio-hero-background-settings';
 import { PortfolioHeroSwissEditorial } from '@/components/portfolio/hero-variants/PortfolioHeroSwissEditorial';
+import { PortfolioHeroCinematicReveal } from '@/components/portfolio/hero-variants/PortfolioHeroCinematicReveal';
 import { PortfolioHeroPortraitIdentity } from '@/components/portfolio/hero-variants/PortfolioHeroPortraitIdentity';
 import { PortfolioHeroEditorialRail } from '@/components/portfolio/hero-variants/PortfolioHeroEditorialRail';
 import { PortfolioHeroStatementCta } from '@/components/portfolio/hero-variants/PortfolioHeroStatementCta';
@@ -45,6 +46,9 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
     </section>
   );
 
+  if (design === 'cinematic-reveal') {
+    return shell(<PortfolioHeroCinematicReveal data={heroDataForVariant} />);
+  }
   if (design === 'portrait-identity') {
     return shell(<PortfolioHeroPortraitIdentity data={heroDataForVariant} />);
   }

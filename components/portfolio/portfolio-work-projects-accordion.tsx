@@ -2,9 +2,11 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import gsap from 'gsap';
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -23,6 +25,20 @@ const ENTER_HIDDEN: CSSProperties = {
   opacity: 0,
   transform: 'translate3d(0, 22px, 0)',
 };
+// Every element below that declares its own transform/opacity transition via a CSS
+// class also carries `data-pf-no-color-transition=""` in its JSX. Without it, the
+// global theme color-crossfade rule in globals.css
+// (`.pf-theme-root[data-pf-color-transitions='true'] *:not([data-pf-no-color-transition])...`)
+// silently wins the specificity fight (it out-specifies any single- or double-class
+// selector here) and overwrites `transition-property` with its own list
+// (background-color, border-color, color, fill, stroke, box-shadow, outline-color,
+// text-decoration-color, -webkit-text-fill-color) — which does NOT include `transform`
+// or `opacity`. The practical effect: any hover/open-state transform or opacity
+// transition on an element missing that attribute snaps instantly instead of easing,
+// while color happens to keep working (coincidentally in that list) at the global
+// rule's own 620ms duration instead of whatever this file intended. Found this by
+// reading globals.css after a "transitions feel brutal" report kept reproducing even
+// after fixing the specific color-transition bug below.
 const ACCORDION_CSS = `
 .portfolio-acc-enter {
   will-change: opacity, transform;
@@ -34,28 +50,43 @@ const ACCORDION_CSS = `
   opacity: 1 !important;
   transform: translate3d(0, 0, 0) !important;
 }
-.portfolio-acc-media {
-  transform: scale(1.07);
-  filter: blur(10px);
-  transform-origin: center center;
-  animation: portfolio-acc-media-settle 0.95s ${EASE_OUT} forwards;
-}
-@keyframes portfolio-acc-media-settle {
-  to {
-    transform: scale(1);
-    filter: blur(0);
-  }
-}
 .portfolio-acc-list .portfolio-acc-title {
   display: inline-block;
   max-width: 100%;
   transform: translateX(0);
-  transition: transform 0.7s ${EASE_OUT};
-  will-change: transform;
+  /* This rule's specificity beats the .transition-colors Tailwind utility on
+     the same element, so it silently wins the cascade and its transition
+     shorthand overrides that class entirely — color, opacity and font-size
+     must all be listed here too, or the title's open/closed state swap snaps
+     instantly instead of fading (font-size in particular needs a slower,
+     springier ease — it's the biggest visual jump on toggle). */
+  transition:
+    transform 0.7s ${EASE_OUT},
+    color 0.4s ${EASE_OUT},
+    opacity 0.5s ${EASE_OUT},
+    font-size 0.65s ${EASE_OUT};
+  will-change: transform, color, opacity, font-size;
 }
 [data-acc-ready='1'] .portfolio-acc-item:hover .portfolio-acc-title,
 [data-acc-ready='1'] .portfolio-acc-item:focus-within .portfolio-acc-title {
   transform: translateX(0.4rem);
+}
+/* Inactive titles pop to pure white on hover/focus — color value only (the
+   existing 0.4s transition above still carries it); needs !important because
+   this is fighting the inline style={{color}} on the same element, which no
+   plain-specificity external rule can ever out-rank. Scoped to closed items
+   only — the open item is already at titleInk, so this would be a no-op for
+   it visually, but scoping keeps the intent explicit. */
+[data-acc-ready='1'] .portfolio-acc-item[data-open='false']:hover .portfolio-acc-title,
+[data-acc-ready='1'] .portfolio-acc-item[data-open='false']:focus-within .portfolio-acc-title {
+  color: #ffffff !important;
+}
+.portfolio-acc-tags {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.portfolio-acc-tags::-webkit-scrollbar {
+  display: none;
 }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   [data-acc-ready='1'] .portfolio-acc-item {
@@ -74,14 +105,8 @@ const ACCORDION_CSS = `
     animation: none !important;
     will-change: auto !important;
   }
-  .portfolio-acc-media {
-    animation: none !important;
-    transform: none !important;
-    filter: none !important;
-  }
   .portfolio-acc-list .portfolio-acc-item,
-  .portfolio-acc-list .portfolio-acc-title,
-  .portfolio-acc-plus-v {
+  .portfolio-acc-list .portfolio-acc-title {
     transition-duration: 0.01ms !important;
   }
 }
@@ -374,6 +399,7 @@ export function ProjectsAccordionSectionHeader({
         <div
           className="portfolio-acc-enter inline-flex max-w-3xl flex-col"
           style={enterStyle(40)}
+          data-pf-no-color-transition=""
         >
           <h2
             className="text-3xl tracking-[-0.035em] sm:text-4xl lg:text-[3.15rem] lg:leading-[1.08]"
@@ -400,6 +426,7 @@ export function ProjectsAccordionSectionHeader({
             heading ? 'mt-5' : ''
           }`}
           style={enterStyle(heading ? 130 : 40, { color: subtitleColor })}
+          data-pf-no-color-transition=""
         >
           {sub}
         </p>
@@ -409,172 +436,175 @@ export function ProjectsAccordionSectionHeader({
 }
 
 /**
- * Consult — ghost text link under the preview (no filled chrome, no flanking rules).
+ * The single large preview image — imposing, organic, and the *only* click target
+ * for the active project now (replaces the old standalone "Consult" text link: the
+ * whole image is the interactive zone, with a label that only reveals on hover so
+ * the image itself stays a clean surface at rest). GSAP drives:
+ * - the scale/blur/lift settle whenever the active project (and so the image)
+ *   changes, instead of a CSS @keyframes animation retriggered by remounting on
+ *   `key={mediaUrl}`;
+ * - a soft mouse-parallax drift on desktop pointer devices — the photo leans
+ *   gently toward the cursor with a short lag, independent of the settle tween
+ *   (GSAP composes `scale`/`yPercent` and `x`/`y` on the same element cleanly
+ *   since they're tracked as separate transform components, not raw strings).
+ * The edge facing the text column fades out via a CSS mask instead of ending in
+ * a hard rectangle — the "organic, bleeding" edge instead of a strict 50/50 split.
  */
-function AccordionConsultLink({
-  href,
-  label,
-  accent,
-  ink,
-}: {
-  href: string;
-  label: string;
-  accent: string;
-  ink: string;
-}) {
-  const color = accent || ink;
-  return (
-    <div className="mt-6 sm:mt-7">
-      <Link
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group/consult inline-flex items-center gap-2.5 bg-transparent text-[11px] font-semibold uppercase tracking-[0.2em] transition-opacity duration-300 hover:opacity-65 focus:outline-none focus-visible:opacity-65"
-        style={{ color, backgroundColor: 'transparent' }}
-        data-pf-no-color-transition=""
-      >
-        <span
-          className="border-b pb-[0.12em] transition-[border-color,opacity] duration-300"
-          style={{ borderColor: color }}
-          data-pf-no-color-transition=""
-        >
-          {label}
-        </span>
-        <span
-          aria-hidden
-          className="inline-block transition-transform duration-300 group-hover/consult:translate-x-1"
-          data-pf-no-color-transition=""
-        >
-          →
-        </span>
-      </Link>
-    </div>
-  );
-}
-
 function AccordionPreview({
   item,
   surface,
-  ink,
   muted,
   accent,
-  toolsLabel,
-  showToolsLabel,
-  showTools,
-  showConsult,
-  consultLabel,
+  ink,
+  href,
+  ctaLabel,
+  previewFirst,
   shiftRef,
 }: {
   item: MarketplaceContentItem | null;
   surface: string;
-  ink: string;
   muted: string;
   accent: string;
-  toolsLabel: string;
-  showToolsLabel: boolean;
-  showTools: boolean;
-  showConsult: boolean;
-  consultLabel: string;
+  ink: string;
+  href: string | null;
+  ctaLabel: string;
+  previewFirst: boolean;
   shiftRef?: RefObject<HTMLDivElement | null>;
 }) {
   const mediaUrl = item?.mediaUrl?.trim() || null;
-  const tools = item ? workToolLabels(item) : [];
   const title = item?.title?.trim() || '';
-  const href = item?.linkUrl?.trim() || null;
-  const consult =
-    showConsult && href
-      ? { href, label: consultLabel.trim() || 'Consult' }
-      : null;
-  const labelText = toolsLabel.trim() || 'Tools I use';
+  const mediaRef = useRef<HTMLDivElement | null>(null);
+  const frameRef = useRef<HTMLDivElement | null>(null);
 
-  return (
-    <div className="flex min-w-0 flex-col">
-      <div ref={shiftRef} className="min-w-0 will-change-transform">
+  // Cinematic reveal: a fast vertical curtain-lift (clip-path) instead of the
+  // old blur/scale settle — needed now that hovering a title (not just opening
+  // it) retriggers this, so it has to read as snappy even fired several times
+  // in quick succession rather than a single deliberate "open" moment.
+  useLayoutEffect(() => {
+    const el = mediaRef.current;
+    if (!el || !mediaUrl || typeof window === 'undefined' || motionReduced()) return;
+    const tween = gsap.fromTo(
+      el,
+      { clipPath: 'inset(0% 0 100% 0)', scale: 1.06 },
+      { clipPath: 'inset(0% 0 0% 0)', scale: 1, duration: 0.68, ease: 'power4.inOut' }
+    );
+    return () => {
+      tween.kill();
+    };
+  }, [mediaUrl]);
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    const media = mediaRef.current;
+    if (!frame || !media || typeof window === 'undefined') return;
+    if (motionReduced() || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+    const setX = gsap.quickTo(media, 'x', { duration: 0.7, ease: 'power3.out' });
+    const setY = gsap.quickTo(media, 'y', { duration: 0.7, ease: 'power3.out' });
+
+    const onMove = (event: MouseEvent) => {
+      const rect = frame.getBoundingClientRect();
+      // Inverse drift (image leans away from the cursor, not toward it) reads
+      // as a lighter, more "floating" surface than the usual toward-cursor tilt.
+      setX(((event.clientX - rect.left) / rect.width - 0.5) * -14);
+      setY(((event.clientY - rect.top) / rect.height - 0.5) * -10);
+    };
+    const onLeave = () => {
+      setX(0);
+      setY(0);
+    };
+
+    frame.addEventListener('mousemove', onMove);
+    frame.addEventListener('mouseleave', onLeave);
+    return () => {
+      frame.removeEventListener('mousemove', onMove);
+      frame.removeEventListener('mouseleave', onLeave);
+      setX(0);
+      setY(0);
+    };
+  }, [mediaUrl]);
+
+  // No more rigid card: no border-radius, no boxed background surface. The edge
+  // facing the text column dissolves via a mask, and the opposite corner is
+  // sliced off at an angle (mirrored by previewSide) — an asymmetric silhouette
+  // instead of a rectangle, and the frame runs close to full column height so
+  // it reads as bleeding to the edge rather than sitting in a contained tile.
+  const fadeMask = previewFirst
+    ? 'linear-gradient(to left, black 80%, transparent)'
+    : 'linear-gradient(to right, black 80%, transparent)';
+  const clipShape = previewFirst
+    ? 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 7%, 5% 0%)'
+    : 'polygon(0% 0%, 95% 0%, 100% 7%, 100% 100%, 0% 100%)';
+
+  const content = (
+    <div
+      ref={frameRef}
+      className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[5/4] lg:aspect-auto lg:min-h-[34rem] xl:min-h-[42rem]"
+      style={{
+        WebkitMaskImage: fadeMask,
+        maskImage: fadeMask,
+        clipPath: clipShape,
+      }}
+    >
+      {mediaUrl ? (
+        <div key={mediaUrl} ref={mediaRef} className="absolute inset-0 will-change-transform">
+          <Image
+            src={mediaUrl}
+            alt={title || 'Project preview'}
+            fill
+            sizes="(max-width: 1024px) 100vw, 55vw"
+            className="scale-[1.08] object-cover object-center"
+            priority
+          />
+        </div>
+      ) : (
         <div
-          className="relative aspect-[4/3] w-full overflow-hidden rounded-[1.15rem] sm:aspect-[5/4] sm:rounded-[1.25rem] lg:aspect-[4/3] lg:min-h-[24rem]"
-          style={{ backgroundColor: surface }}
+          className="flex h-full w-full items-center justify-center px-8 text-center text-sm font-light leading-[1.7]"
+          style={{ color: muted, backgroundColor: surface }}
         >
-          {mediaUrl ? (
-          <div key={mediaUrl} className="portfolio-acc-media absolute inset-0">
-            <Image
-              src={mediaUrl}
-              alt={title || 'Project preview'}
-              fill
-              sizes="(max-width: 1024px) 100vw, 55vw"
-              className="object-cover object-center"
-              priority
-            />
-          </div>
-        ) : (
-            <div
-              className="flex h-full w-full items-center justify-center px-8 text-center text-sm font-light leading-[1.7]"
-              style={{ color: muted }}
-            >
-              {title || 'Add a thumbnail in Information → Portfolio'}
-            </div>
-          )}
+          {title || 'Add a thumbnail in Information → Portfolio'}
         </div>
-      </div>
+      )}
 
-      {consult ? (
-        <AccordionConsultLink
-          href={consult.href}
-          label={consult.label}
-          accent={accent}
-          ink={ink}
-        />
-      ) : null}
-
-      {showTools ? (
-        <div className={consult ? 'mt-8 sm:mt-9' : 'mt-7 sm:mt-8'}>
-          {showToolsLabel ? (
-            <p
-              className="text-[10px] font-medium uppercase tracking-[0.22em] sm:text-[11px]"
-              style={{ color: muted, opacity: 0.72 }}
-            >
-              {labelText}
-            </p>
-          ) : null}
-          {tools.length > 0 ? (
-            <p
-              className={`max-w-md text-sm font-light leading-[1.7] tracking-[0.02em] sm:text-[0.95rem] sm:leading-[1.75] ${
-                showToolsLabel ? 'mt-3' : ''
-              }`}
-              style={{ color: muted }}
-              aria-label={labelText}
-            >
-              {tools.join('  ·  ')}
-            </p>
-          ) : (
-            <p
-              className={`${showToolsLabel ? 'mt-3' : ''} text-sm font-light leading-[1.7]`}
-              style={{ color: muted, opacity: 0.7 }}
-            >
-              No stack tags for this project yet.
-            </p>
-          )}
-        </div>
+      {href ? (
+        <>
+          <div
+            className="pointer-events-none absolute inset-0 bg-black/0 opacity-0 transition-opacity duration-500 group-hover/preview:opacity-100"
+            style={{ backgroundColor: 'rgba(0,0,0,0.22)' }}
+            data-pf-no-color-transition=""
+            aria-hidden
+          />
+          <span
+            className="pointer-events-none absolute bottom-6 left-6 inline-flex translate-y-2 items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] opacity-0 transition-all duration-500 group-hover/preview:translate-y-0 group-hover/preview:opacity-100 sm:bottom-8 sm:left-8"
+            style={{ color: accent || ink }}
+            data-pf-no-color-transition=""
+          >
+            <span className="border-b pb-[0.12em]" style={{ borderColor: accent || ink }}>
+              {ctaLabel}
+            </span>
+            <span aria-hidden>↗</span>
+          </span>
+        </>
       ) : null}
     </div>
   );
-}
 
-function AccordionPlus({ open, ink }: { open: boolean; ink: string }) {
   return (
-    <span className="relative mt-1 inline-block h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden>
-      <span
-        className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2"
-        style={{ backgroundColor: ink }}
-      />
-      <span
-        className="portfolio-acc-plus-v absolute left-1/2 top-0 h-full w-px origin-center transition-transform duration-500"
-        style={{
-          backgroundColor: ink,
-          transform: open ? 'translateX(-50%) rotate(90deg)' : 'translateX(-50%) rotate(0deg)',
-          transitionTimingFunction: EASE_OUT,
-        }}
-      />
-    </span>
+    <div ref={shiftRef} className="group/preview min-w-0 will-change-transform">
+      {href ? (
+        <Link
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block focus:outline-none"
+          aria-label={`${ctaLabel}: ${title || 'project'}`}
+        >
+          {content}
+        </Link>
+      ) : (
+        content
+      )}
+    </div>
   );
 }
 
@@ -583,6 +613,8 @@ function AccordionItem({
   index,
   open,
   onToggle,
+  onPreviewHover,
+  onPreviewLeave,
   panelId,
   headerId,
   accent,
@@ -592,11 +624,15 @@ function AccordionItem({
   showDescription,
   showRoleInPanel,
   showCategoryInPanel,
+  showTools,
+  mobileThumbnailSurface,
 }: {
   item: MarketplaceContentItem;
   index: number;
   open: boolean;
   onToggle: () => void;
+  onPreviewHover: () => void;
+  onPreviewLeave: () => void;
   panelId: string;
   headerId: string;
   accent: string;
@@ -606,51 +642,86 @@ function AccordionItem({
   showDescription: boolean;
   showRoleInPanel: boolean;
   showCategoryInPanel: boolean;
+  showTools: boolean;
+  /** Below `lg` there's no separate side preview column, so each item shows its
+   *  own thumbnail inline, at the bottom of its own open panel (after the tags) —
+   *  instead of a shared image ending up stranded after the whole list. */
+  mobileThumbnailSurface: string;
 }) {
   const description = item.description?.trim() || '';
   const role = workRoleLabel(item);
   const category = workCategoryLabel(item);
+  const tools = showTools ? workToolLabels(item) : [];
   const showRole = showRoleInPanel !== false && Boolean(role);
   const showCategory = showCategoryInPanel !== false && Boolean(category);
-  const showMeta = showRole || showCategory;
-  const showBody = open && ((showDescription && Boolean(description)) || showMeta);
   const roleColor =
     accent && !sameHex(accent, muted) && !sameHex(accent, titleInk) ? accent : titleInk;
+  const mobileMediaUrl = item.mediaUrl?.trim() || null;
+
+  // One flat, single-line list — role first (accent ink), category + tools grey —
+  // instead of a role/category row plus a separate tools paragraph underneath.
+  const metaItems: { text: string; isRole: boolean }[] = [
+    ...(showRole ? [{ text: role, isRole: true }] : []),
+    ...(showCategory ? [{ text: category, isRole: false }] : []),
+    ...tools.map((tool) => ({ text: tool, isRole: false })),
+  ];
+  const showMetaLine = metaItems.length > 0;
+  const showBody =
+    open && ((showDescription && Boolean(description)) || showMetaLine || Boolean(mobileMediaUrl));
 
   return (
-    <div className="portfolio-acc-item min-w-0">
+    <div
+      className="portfolio-acc-item min-w-0"
+      data-open={open ? 'true' : 'false'}
+      data-pf-no-color-transition=""
+    >
       {index > 0 ? (
         <div
           className="mb-1 h-px w-[min(100%,19rem)]"
-          style={{ backgroundColor: border, opacity: 0.32 }}
+          style={{ backgroundColor: border, opacity: 0.24 }}
           aria-hidden
         />
       ) : null}
 
+      {/* focus:outline-none flips outline-style/width to solid/2px instantly on
+          click, but without data-pf-no-color-transition the global color-crossfade
+          rule still fades outline-color from opaque to transparent over ~620ms —
+          a solid frame flashing in on every click before fading back out. */}
       <button
         type="button"
         id={headerId}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={onToggle}
+        onMouseEnter={onPreviewHover}
+        onFocus={onPreviewHover}
+        onMouseLeave={onPreviewLeave}
         className={`flex w-full items-baseline gap-4 text-left sm:gap-5 ${
-          open ? 'pb-3 pt-5 sm:pb-4 sm:pt-6' : 'py-5 sm:py-6'
-        } ${index === 0 ? '!pt-0' : ''} rounded-sm focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[6px]`}
-        style={{ outlineColor: accent || titleInk }}
+          open ? 'pb-5 pt-9 sm:pb-6 sm:pt-12 lg:pt-14' : 'py-8 sm:py-10 lg:py-11'
+        } ${index === 0 ? '!pt-0' : ''} rounded-sm focus:outline-none`}
+        data-pf-no-color-transition=""
       >
         <span
-          className="w-7 shrink-0 font-light tabular-nums text-[11px] tracking-[0.14em] sm:w-8 sm:text-xs"
-          style={{ color: muted, opacity: open ? 0.9 : 0.48 }}
+          className="w-7 shrink-0 font-light tabular-nums text-xs tracking-[0.14em] transition-[color,opacity] duration-300 sm:w-8 sm:text-sm"
+          style={{ color: open ? titleInk : muted, opacity: open ? 0.9 : 0.4 }}
+          data-pf-no-color-transition=""
         >
           {formatAccordionIndex(index)}
         </span>
+        {/* Active title goes gigantic (display-scale) and full-opacity; closed
+            titles shrink back down and fade to ~0.3 — this size/opacity swing is
+            the sole state indicator now (no more +/- glyph). */}
         <span
-          className="portfolio-acc-title min-w-0 flex-1 text-[1.2rem] leading-[1.2] tracking-[-0.03em] sm:text-[1.45rem] lg:text-[1.6rem]"
-          style={{ color: titleInk, opacity: open ? 1 : 0.78 }}
+          className={`portfolio-acc-title min-w-0 flex-1 tracking-[-0.03em] ${
+            open
+              ? 'text-[2.15rem] leading-[0.98] sm:text-[3.1rem] lg:text-[4.1rem] xl:text-[4.6rem]'
+              : 'text-[1.2rem] leading-[1.16] sm:text-[1.45rem] lg:text-[1.6rem]'
+          }`}
+          style={{ color: open ? titleInk : muted, opacity: open ? 1 : 0.18 }}
+          data-pf-no-color-transition=""
         >
           <EditorialTitleText title={item.title} open={open} />
         </span>
-        <AccordionPlus open={open} ink={titleInk} />
       </button>
 
       <div
@@ -665,7 +736,7 @@ function AccordionItem({
       >
         <div className="min-h-0 overflow-hidden">
           <div
-            className="pb-7 pl-[2.75rem] pr-8 sm:pb-8 sm:pl-[3.25rem]"
+            className="pb-8 pl-[2.75rem] pr-8 sm:pb-10 sm:pl-[3.25rem]"
             style={{
               opacity: showBody ? 1 : 0,
               transform: showBody ? 'translate3d(0, 0, 0)' : 'translate3d(0, 10px, 0)',
@@ -674,40 +745,61 @@ function AccordionItem({
             }}
           >
             {showDescription && description ? (
-              <p
-                className="max-w-xl text-sm leading-[1.7] sm:text-[0.95rem] sm:leading-[1.75]"
-                style={{ color: muted }}
-              >
+              <p className="max-w-md text-base leading-relaxed" style={{ color: muted }}>
                 {description}
               </p>
             ) : null}
-            {showMeta ? (
-              <div
-                className={`flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 ${
+
+            {showMetaLine ? (
+              <ul
+                className={`portfolio-acc-tags group/tags flex flex-nowrap items-baseline gap-x-3 overflow-x-auto ${
                   showDescription && description ? 'mt-7' : 'mt-1'
                 }`}
+                aria-label="Role, category and tools"
               >
-                {showRole ? (
-                  <p
-                    className="min-w-0 text-[10px] font-medium uppercase tracking-[0.18em] sm:text-[11px]"
-                    style={{ color: roleColor }}
+                {metaItems.map((meta, metaIndex) => (
+                  <li
+                    key={`${meta.text}-${metaIndex}`}
+                    className="flex shrink-0 items-baseline gap-3 whitespace-nowrap text-[0.68rem] font-medium uppercase tracking-[0.22em] opacity-50 transition-opacity duration-300 hover:!opacity-100 group-hover/tags:opacity-25"
+                    style={{ color: meta.isRole ? roleColor : muted }}
                   >
-                    {role}
-                  </p>
-                ) : (
-                  <span />
-                )}
-                {showCategory ? (
-                  <p
-                    className="shrink-0 text-[10px] font-light uppercase tracking-[0.18em] sm:text-[11px]"
-                    style={{ color: muted, opacity: 0.72 }}
-                  >
-                    {category}
-                  </p>
-                ) : null}
-              </div>
+                    {metaIndex > 0 ? (
+                      <span aria-hidden className="font-normal opacity-40" style={{ color: muted }}>
+                        /
+                      </span>
+                    ) : null}
+                    <span>{meta.text}</span>
+                  </li>
+                ))}
+              </ul>
             ) : null}
           </div>
+
+          {mobileMediaUrl ? (
+            <div
+              className="w-full lg:hidden"
+              style={{
+                opacity: showBody ? 1 : 0,
+                transform: showBody ? 'translate3d(0, 0, 0)' : 'translate3d(0, 10px, 0)',
+                transition: `opacity 0.45s ${EASE_OUT}, transform 0.5s ${EASE_OUT}`,
+                transitionDelay: showBody ? '110ms' : '0ms',
+              }}
+            >
+              <div
+                className="relative aspect-[4/3] w-full overflow-hidden"
+                style={{ backgroundColor: mobileThumbnailSurface }}
+              >
+                <Image
+                  src={mobileMediaUrl}
+                  alt={item.title?.trim() || 'Project preview'}
+                  fill
+                  sizes="100vw"
+                  className="object-cover object-center"
+                  data-pf-no-color-transition=""
+                />
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
@@ -732,9 +824,17 @@ export function ProjectsAccordionGallery({
   const listShiftRef = useRef<HTMLDivElement>(null);
   const [openId, setOpenId] = useState<string | null | undefined>(undefined);
   const [previewId, setPreviewId] = useState<string | undefined>(undefined);
+  const previewTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useAccordionEntrance(rootRef, items.length);
   useDesktopKineticShift(rootRef, previewShiftRef, listShiftRef, items.length > 0);
+
+  useEffect(
+    () => () => {
+      if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current);
+    },
+    []
+  );
 
   if (items.length === 0) return null;
 
@@ -747,8 +847,13 @@ export function ProjectsAccordionGallery({
         : items.some((item) => item.id === openId)
           ? openId
           : firstId;
-  const effectivePreviewId =
-    previewId && items.some((item) => item.id === previewId) ? previewId : firstId;
+  // Hovering (or keyboard-focusing) a title previews its image immediately,
+  // even over a *different* open project — takes priority over the open item
+  // whenever it's set. A short debounce in each direction (scheduled below)
+  // keeps moving across adjacent titles from flashing back to the open item
+  // between hovers.
+  const hoverPreviewId =
+    previewId && items.some((item) => item.id === previewId) ? previewId : null;
 
   const accent = presentation.ctaColor || presentation.categoryActiveColor;
   const titleInk = accordionTitleInk(presentation);
@@ -758,8 +863,14 @@ export function ProjectsAccordionGallery({
     ? presentation.cardBackgroundColor
     : `${border}55`;
 
-  const active = items.find((item) => item.id === (effectiveOpenId ?? effectivePreviewId)) ?? items[0];
+  const active =
+    items.find((item) => item.id === (hoverPreviewId ?? effectiveOpenId ?? firstId)) ?? items[0];
   const previewFirst = board.previewSide === 'left';
+
+  const schedulePreview = (id: string | undefined, delay: number) => {
+    if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current);
+    previewTimeoutRef.current = setTimeout(() => setPreviewId(id), delay);
+  };
 
   const toggleItem = (itemId: string, isOpen: boolean) => {
     if (isOpen) {
@@ -781,12 +892,15 @@ export function ProjectsAccordionGallery({
               className="portfolio-acc-enter"
               role="listitem"
               style={enterStyle(previewFirst ? 90 + index * 78 : 70 + index * 78)}
+              data-pf-no-color-transition=""
             >
               <AccordionItem
                 item={item}
                 index={index}
                 open={open}
                 onToggle={() => toggleItem(item.id, open)}
+                onPreviewHover={() => schedulePreview(item.id, 70)}
+                onPreviewLeave={() => schedulePreview(undefined, 120)}
                 panelId={`${baseId}-panel-${index}`}
                 headerId={`${baseId}-header-${index}`}
                 accent={accent}
@@ -796,6 +910,8 @@ export function ProjectsAccordionGallery({
                 showDescription={board.showDescription}
                 showRoleInPanel={board.showRoleInPanel}
                 showCategoryInPanel={board.showCategoryInPanel}
+                showTools={board.showTools}
+                mobileThumbnailSurface={previewSurface}
               />
             </div>
           );
@@ -805,19 +921,21 @@ export function ProjectsAccordionGallery({
   );
 
   const preview = (
-    <div className="min-w-0 w-full lg:sticky lg:top-28 lg:self-start xl:top-24">
-      <div className="portfolio-acc-enter" style={enterStyle(previewFirst ? 40 : 110)}>
+    <div className="hidden min-w-0 w-full lg:sticky lg:top-28 lg:block lg:self-start xl:top-24">
+      <div
+        className="portfolio-acc-enter"
+        style={enterStyle(previewFirst ? 40 : 110)}
+        data-pf-no-color-transition=""
+      >
         <AccordionPreview
           item={active}
           surface={previewSurface}
-          ink={titleInk}
           muted={muted}
           accent={accent}
-          toolsLabel={board.toolsLabel?.trim() || 'Tools I use'}
-          showToolsLabel={board.showToolsLabel}
-          showTools={board.showTools}
-          showConsult={board.showConsult}
-          consultLabel={board.consultLabel}
+          ink={titleInk}
+          href={board.showConsult ? active?.linkUrl?.trim() || null : null}
+          ctaLabel={board.consultLabel.trim() || 'View project'}
+          previewFirst={previewFirst}
           shiftRef={previewShiftRef}
         />
       </div>
@@ -827,10 +945,10 @@ export function ProjectsAccordionGallery({
   return (
     <div
       ref={rootRef}
-      className={`grid w-full items-start gap-10 lg:gap-16 xl:gap-20 ${
+      className={`grid w-full items-start gap-5 lg:gap-6 xl:gap-8 ${
         previewFirst
-          ? 'lg:grid-cols-[minmax(0,1.18fr)_minmax(0,0.9fr)]'
-          : 'lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.18fr)]'
+          ? 'lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]'
+          : 'lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]'
       }`}
     >
       <AccordionMotionStyles />

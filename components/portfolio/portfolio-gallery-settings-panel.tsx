@@ -5,38 +5,17 @@ import {
   galleryDesignUsesCarouselNav,
   galleryDesignUsesColumns,
   galleryDesignUsesCaptionCardWidth,
-  gallerySectionLayoutIsAside,
   PORTFOLIO_GALLERY_DESIGN_OPTIONS,
   PORTFOLIO_GALLERY_FEATURED_RAIL_OPTIONS,
   PORTFOLIO_GALLERY_FEATURED_WIDTH_SCOPE_OPTIONS,
-  PORTFOLIO_GALLERY_ILLUSTRATION_OPTIONS,
-  PORTFOLIO_GALLERY_ILLUSTRATION_PLACEMENT_OPTIONS,
-  PORTFOLIO_GALLERY_SECTION_LAYOUT_OPTIONS,
-  PORTFOLIO_GALLERY_SUBTITLE_PRESET_OPTIONS,
-  PORTFOLIO_GALLERY_TITLE_PRESET_OPTIONS,
   type PortfolioGallerySectionSettings,
 } from '@/components/portfolio/portfolio-gallery-settings';
-import {
-  applyGalleryPaletteToSettings,
-  mergeGalleryColorBindings,
-  patchGalleryColorBinding,
-  PORTFOLIO_GALLERY_COLOR_SLOT_OPTIONS,
-} from '@/components/portfolio/portfolio-gallery-palette-settings';
-import {
-  PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS,
-  type HeroPaletteTokenId,
-} from '@/components/portfolio/portfolio-hero-palette-settings';
-import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 
-export type GallerySettingsSubSection = 'general' | 'layout' | 'media' | 'header' | 'background' | 'palette';
+export type GallerySettingsSubSection = 'general' | 'layout';
 
 const SUB_SECTIONS: { value: GallerySettingsSubSection; label: string }[] = [
   { value: 'general', label: 'Général' },
   { value: 'layout', label: 'Disposition' },
-  { value: 'media', label: 'Médias' },
-  { value: 'header', label: 'En-tête' },
-  { value: 'background', label: 'Arrière-plan' },
-  { value: 'palette', label: 'Palette' },
 ];
 
 function Toggle({
@@ -127,6 +106,8 @@ function Color({
   );
 }
 
+/** Same mini-wireframe/picker-card mechanism as Tools/Stack's Header design grid. */
+/** Same animated switch + segmented option grid as Tools/Stack's layout settings. */
 export function GallerySettingsPanel({
   gallery,
   onChange,
@@ -138,7 +119,6 @@ export function GallerySettingsPanel({
   subSection?: GallerySettingsSubSection;
   onSubSectionChange?: (value: GallerySettingsSubSection) => void;
 }) {
-  const paletteBindings = mergeGalleryColorBindings(gallery.galleryColorBindings);
   return (
     <div className="space-y-6">
       <Select label="Réglages de la galerie" value={subSection} options={SUB_SECTIONS} onChange={(value) => onSubSectionChange?.(value)} />
@@ -249,8 +229,8 @@ export function GallerySettingsPanel({
               />
               {gallery.design === 'caption-carousel' || gallery.design === 'cinema-strip' ? (
                 <p className="text-sm text-neutral-500">
-                  Largeur de chaque carte uniquement. La hauteur de l’image suit le ratio (onglet
-                  Médias) : portrait s’allonge, cinéma s’aplatit.
+                  Largeur de chaque carte uniquement. La hauteur de l’image suit son ratio propre :
+                  portrait s’allonge, cinéma s’aplatit.
                 </p>
               ) : null}
             </>
@@ -315,173 +295,8 @@ export function GallerySettingsPanel({
             onChange={(placement) => onChange({ placement })}
           />
           <p className="text-sm text-neutral-500">
-            Placement horizontal du bloc média dans la section — distinct de la disposition titre /
-            grille (En-tête) et du placement du titre de chaque média (Médias).
+            Placement horizontal du bloc média dans la section.
           </p>
-        </div>
-      ) : null}
-
-      {subSection === 'media' ? (
-        <div className="space-y-5">
-          <Select
-            label="Placement du titre des médias"
-            value={gallery.titlePlacement}
-            options={[
-              { value: 'under', label: 'Sous le média' },
-              { value: 'overlay', label: 'Superposé' },
-              { value: 'hidden', label: 'Masqué' },
-            ]}
-            onChange={(titlePlacement) => onChange({ titlePlacement })}
-          />
-          <p className="text-sm text-neutral-500">
-            Position du titre sur chaque élément de la grille — distinct de la disposition du titre
-            de section (En-tête).
-          </p>
-          {gallery.design === 'tall-row' ? (
-            <Select
-              label="Titre sur l’image haute + rangée"
-              value={gallery.tallRowTitleReveal ?? 'always'}
-              options={[
-                { value: 'always', label: 'Toujours visible sur la photo' },
-                { value: 'hover', label: 'Au survol — assombrit un peu l’image' },
-              ]}
-              onChange={(tallRowTitleReveal) => onChange({ tallRowTitleReveal })}
-            />
-          ) : null}
-          <Select
-            label="Ratio de l’image"
-            value={gallery.imageAspect}
-            options={[
-              { value: 'auto', label: 'Original — proportions du fichier' },
-              { value: 'square', label: 'Carré — 1:1' },
-              { value: 'portrait', label: 'Portrait — 4:5' },
-              { value: 'landscape', label: 'Paysage — 4:3' },
-              { value: 'cinema', label: 'Cinéma — 16:7' },
-            ]}
-            onChange={(imageAspect) => onChange({ imageAspect })}
-          />
-          <p className="text-sm text-neutral-500">
-            Forme du cadre photo sur toutes les cartes. Indépendant de la largeur des cartes
-            (Disposition). Portrait = plus haut que large, paysage = plus large que haut.
-          </p>
-          <Select label="Ajustement" value={gallery.objectFit} options={[{ value: 'cover', label: 'Couvrir' }, { value: 'contain', label: 'Contenir' }]} onChange={(objectFit) => onChange({ objectFit })} />
-          <Select label="Position" value={gallery.objectPosition} options={[{ value: 'center', label: 'Centre' }, { value: 'top', label: 'Haut' }, { value: 'bottom', label: 'Bas' }, { value: 'left', label: 'Gauche' }, { value: 'right', label: 'Droite' }]} onChange={(objectPosition) => onChange({ objectPosition })} />
-          <Toggle label="Zoom au survol" checked={gallery.hoverZoom} onChange={(hoverZoom) => onChange({ hoverZoom })} />
-          <Range label="Opacité overlay" value={gallery.overlayOpacity} min={0} max={90} suffix="%" onChange={(overlayOpacity) => onChange({ overlayOpacity })} />
-          {!gallery.useHeroPalette ? <><Color label="Titre des médias" value={gallery.itemTitleColor} onChange={(itemTitleColor) => onChange({ itemTitleColor })} /><Color label="Overlay" value={gallery.overlayColor} onChange={(overlayColor) => onChange({ overlayColor })} /></> : null}
-        </div>
-      ) : null}
-
-      {subSection === 'header' ? (
-        <div className="space-y-5">
-          <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Disposition titre / grille</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                Composition du titre de section par rapport à la grille — pas le placement du titre
-                de chaque média (Médias), ni le placement du bloc galerie (Disposition).
-              </p>
-            </div>
-            <div className="grid gap-3">
-              {PORTFOLIO_GALLERY_SECTION_LAYOUT_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => onChange({ sectionLayout: option.value })}
-                  className={`rounded-2xl border p-4 text-left ${
-                    (gallery.sectionLayout ?? 'stacked') === option.value
-                      ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                      : 'border-neutral-200 bg-white'
-                  }`}
-                >
-                  <span className="block text-sm font-bold text-neutral-950">{option.label}</span>
-                  <span className="mt-1 block text-xs text-neutral-500">{option.description}</span>
-                </button>
-              ))}
-            </div>
-            {gallerySectionLayoutIsAside(gallery.sectionLayout) ? (
-              <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                En côte à côte, le titre de section et la grille s’affichent en deux colonnes sur
-                grand écran (empilés sur mobile).
-              </p>
-            ) : gallery.sectionLayout === 'over-thumbs' ? (
-              <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                Titre centré au-dessus des miniatures (Image haute + rangée), ou dans le vide à
-                côté de l’image à la une si sa largeur laisse de la place.
-              </p>
-            ) : null}
-          </div>
-
-          <Select label="Title" value={gallery.titlePreset} options={PORTFOLIO_GALLERY_TITLE_PRESET_OPTIONS} onChange={(titlePreset) => onChange({ titlePreset })} />
-          {gallery.titlePreset === 'custom' ? <input value={gallery.titleCustom} onChange={(event) => onChange({ titleCustom: event.target.value, title: event.target.value })} className="w-full rounded-xl border px-3 py-2.5" placeholder="Gallery" /> : null}
-          <Select label="Subtitle" value={gallery.subtitlePreset} options={PORTFOLIO_GALLERY_SUBTITLE_PRESET_OPTIONS} onChange={(subtitlePreset) => onChange({ subtitlePreset })} />
-          {gallery.subtitlePreset === 'custom' ? <textarea value={gallery.subtitleCustom} onChange={(event) => onChange({ subtitleCustom: event.target.value, subtitle: event.target.value })} className="w-full rounded-xl border px-3 py-2.5" rows={3} /> : null}
-          {gallerySectionLayoutIsAside(gallery.sectionLayout) || gallery.sectionLayout === 'over-thumbs' ? (
-            <p className="text-sm text-neutral-500">
-              Alignement horizontal masqué : le titre est déjà{' '}
-              {gallery.sectionLayout === 'over-thumbs'
-                ? 'centré au-dessus des miniatures'
-                : gallery.sectionLayout === 'aside-right'
-                  ? 'placé à droite de la grille'
-                  : 'placé à gauche de la grille'}
-              .
-            </p>
-          ) : (
-            <Select
-              label="Alignement"
-              value={gallery.headerAlignment}
-              options={[
-                { value: 'left', label: 'Gauche' },
-                { value: 'center', label: 'Centre' },
-              ]}
-              onChange={(headerAlignment) => onChange({ headerAlignment })}
-            />
-          )}
-          {!gallery.useHeroPalette ? <><Color label="Titre" value={gallery.titleColor} onChange={(titleColor) => onChange({ titleColor })} /><Color label="Sous-titre" value={gallery.subtitleColor} onChange={(subtitleColor) => onChange({ subtitleColor })} /></> : null}
-
-          <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4">
-            <div>
-              <p className="text-sm font-semibold text-neutral-950">Illustration décorative</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                SVG décoratif à côté de la grille. Distinct du placement des médias dans Disposition.
-              </p>
-            </div>
-            <Select
-              label="Style SVG"
-              value={gallery.illustrationVariant ?? 'none'}
-              options={PORTFOLIO_GALLERY_ILLUSTRATION_OPTIONS}
-              onChange={(illustrationVariant) => onChange({ illustrationVariant })}
-            />
-            {(gallery.illustrationVariant ?? 'none') !== 'none' ? (
-              <Select
-                label="Placement du SVG"
-                value={gallery.illustrationPlacement ?? 'right'}
-                options={PORTFOLIO_GALLERY_ILLUSTRATION_PLACEMENT_OPTIONS}
-                onChange={(illustrationPlacement) => onChange({ illustrationPlacement })}
-              />
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
-      {subSection === 'background' ? <SectionBackgroundSettingsFields settings={gallery} onChange={onChange} /> : null}
-
-      {subSection === 'palette' ? (
-        <div className="space-y-5">
-          <Toggle
-            label="Utiliser la palette Hero"
-            checked={gallery.useHeroPalette}
-            onChange={(useHeroPalette) => onChange(useHeroPalette ? { useHeroPalette, ...applyGalleryPaletteToSettings(gallery) } : { useHeroPalette })}
-          />
-          {gallery.useHeroPalette ? PORTFOLIO_GALLERY_COLOR_SLOT_OPTIONS.map((slot) => (
-            <Select
-              key={slot.value}
-              label={slot.label}
-              value={paletteBindings[slot.value]}
-              options={PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS}
-              onChange={(token) => onChange(patchGalleryColorBinding(gallery, slot.value, token as HeroPaletteTokenId))}
-            />
-          )) : <p className="text-sm text-neutral-500">Palette désactivée : utilisez les couleurs manuelles dans Médias, En-tête et Arrière-plan.</p>}
         </div>
       ) : null}
     </div>

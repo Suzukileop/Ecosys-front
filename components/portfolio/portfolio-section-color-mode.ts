@@ -38,3 +38,25 @@ export function resolveSectionActiveMode(
 ): 'light' | 'dark' {
   return override === 'light' || override === 'dark' ? override : globalMode;
 }
+
+/**
+ * A section pinned to Light or Dark (override !== 'auto') needs its own opaque
+ * background to actually read as an independent mode — otherwise its content
+ * colors flip while the surrounding canvas keeps following Global, wrecking
+ * contrast (dark text pinned over a still-dark global page, etc.). 'auto'
+ * sections, and any section whose owner already turned its own background on
+ * from the Background tab, are left untouched.
+ */
+export function resolveSectionBackgroundIsolation<
+  T extends { sectionBackgroundEnabled: boolean; sectionBackgroundFill: 'solid' | 'gradient' | 'image' | 'split' },
+>(presentation: T, override: PortfolioSectionColorMode | undefined, fond: string): T {
+  if ((override ?? 'auto') === 'auto' || presentation.sectionBackgroundEnabled) {
+    return presentation;
+  }
+  return {
+    ...presentation,
+    sectionBackgroundEnabled: true,
+    sectionBackgroundFill: 'solid' as const,
+    sectionBackgroundColor: fond,
+  } as T;
+}

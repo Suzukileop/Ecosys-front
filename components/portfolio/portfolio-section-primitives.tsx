@@ -100,8 +100,6 @@ import {
   portfolioNavItemHoverIconClass,
   portfolioNavItemHoverPresentation,
   portfolioNavEditorialBarItemHoverPresentation,
-  portfolioNavTriZoneItemHoverPresentation,
-  portfolioNavLogoLeftNavContactItemHoverPresentation,
   portfolioNavFloatingPillItemHoverPresentation,
   portfolioNavCenterLogoSplitItemHoverPresentation,
   portfolioNavItemHoverTextClass,
@@ -134,9 +132,7 @@ import {
   portfolioNavUsesFloatingPillLayout,
   portfolioNavFloatingPillShowsLogo,
   portfolioNavFloatingPillShowsContact,
-  portfolioNavUsesLogoLeftNavContactLayout,
   portfolioNavUsesStructuredBarLayout,
-  portfolioNavUsesTriZoneLayout,
 } from '@/components/portfolio/portfolio-nav-layout-design';
 import { splitNavMenuEntries } from '@/components/portfolio/portfolio-nav-split-layout';
 import {
@@ -200,13 +196,10 @@ import {
   PortfolioNavCenterBrand,
   PortfolioNavColorModeToggleButton,
   PortfolioNavColorModeToggleProvider,
-  PortfolioNavContactCta,
   PortfolioNavEditorialRightSlot,
   PortfolioNavFloatingPillRightSlot,
   PortfolioNavFreeSpaceLinks,
   PortfolioNavInlineExtras,
-  PortfolioNavSocialIconStrip,
-  PortfolioNavTriZoneSideSlot,
   type PortfolioNavChromeLink,
 } from '@/components/portfolio/portfolio-nav-extras';
 import {
@@ -338,6 +331,8 @@ import {
   experienceCardsBorderRadiusClass,
   experienceCardsCardWidthClass,
   experienceCardsElementSpacingClasses,
+  experienceCardsTasksGapClass,
+  experienceCardsTitleFontSize,
   resolveExperienceCardsVerticalGapPx,
   type PortfolioExperienceCardsBorderRadius,
   experienceLegacyThumbnailAspectRatio,
@@ -359,7 +354,6 @@ import {
   type PortfolioExperienceDuotoneThumbnailHeight,
   type PortfolioExperienceDuotoneStickyVerticalGap,
   type PortfolioExperienceDuotoneRepoCtaMode,
-  experienceCardsGridGapStyle,
   isExperienceDetailsElement,
   isExperienceStoryElement,
   normalizeExperienceElementOrder,
@@ -386,6 +380,7 @@ import {
   type PortfolioExperiencePresentationSettings,
   type PortfolioExperiencePeriodDesign,
   type PortfolioExperienceTasksDisplay,
+  type PortfolioExperienceToolsBadgeStyle,
   type PortfolioExperienceProofLinkStyle,
   type PortfolioExperienceRepoLinkStyle,
   type PortfolioExperienceReelStatusStyle,
@@ -394,8 +389,6 @@ import {
   type PortfolioExperienceGalleryThumbnailFit,
   type PortfolioExperienceGalleryBigTitleStyle,
   type PortfolioExperienceGalleryBigTitleColor,
-  type PortfolioExperienceSpotlightTitleColor,
-  type PortfolioExperienceSpotlightThumbnailFit,
   type PortfolioExperienceItemGap,
   type PortfolioExperienceLoftThumbnailFit,
   type PortfolioExperienceLoftThumbnailRadius,
@@ -574,8 +567,6 @@ import {
   faqItemBorderCssVars,
   faqItemShellClass,
   faqListShellClass,
-  faqPanelInnerClass,
-  faqPanelShadowStyle,
   faqSeparatedCardFrameClass,
   faqSummaryHorizontalPaddingClass,
   faqSummaryPaddingClass,
@@ -641,8 +632,29 @@ import {
   type PortfolioContactIconPlacement,
   type PortfolioContactPresentationSettings,
 } from '@/components/portfolio/portfolio-contact-settings';
+import {
+  ContactHeaderEditorialHeader,
+  ContactHeaderMarqueeHeader,
+  ContactHeaderIndexHeader,
+  ContactHeaderAccentCountHeader,
+  ContactHeaderSerifLeadHeader,
+  ContactHeaderBillboardHeader,
+  ContactHeaderMastheadHeader,
+  ContactHeaderSplitHeadingHeader,
+} from '@/components/portfolio/contact-portfolio-header-designs';
 import { ContactMessageForm } from '@/components/portfolio/portfolio-contact-message-form';
 import { ContactInquiryIllustration } from '@/components/portfolio/ContactInquiryIllustration';
+import { ContactDesignEditorialFocus } from '@/components/portfolio/portfolio-contact-design-editorial-focus';
+import { ContactDesignSplitGrid } from '@/components/portfolio/portfolio-contact-design-split-grid';
+import { ContactDesignLiquidDistortion } from '@/components/portfolio/portfolio-contact-design-liquid-distortion';
+import { ContactDesignSequentialReveal } from '@/components/portfolio/portfolio-contact-design-sequential-reveal';
+import { ContactDesignStudioOverlap } from '@/components/portfolio/portfolio-contact-design-studio-overlap';
+import { ContactDesignBorderlessGrid } from '@/components/portfolio/portfolio-contact-design-borderless-grid';
+import { ContactDesignBrokenGrid } from '@/components/portfolio/portfolio-contact-design-broken-grid';
+import { ContactDesignNumberedNarrative } from '@/components/portfolio/portfolio-contact-design-numbered-narrative';
+import { ContactDesignBrutalistOverlap } from '@/components/portfolio/portfolio-contact-design-brutalist-overlap';
+import { ContactDesignSplitManifesto } from '@/components/portfolio/portfolio-contact-design-split-manifesto';
+import { ContactDesignMagneticOverlap } from '@/components/portfolio/portfolio-contact-design-magnetic-overlap';
 import { FaqSectionIllustration } from '@/components/portfolio/FaqSectionIllustration';
 import {
   DEFAULT_FOOTER_PRESENTATION,
@@ -667,7 +679,6 @@ import {
   footerShellClass,
   footerTopMarginClass,
   footerTopMarginStyle,
-  footerLandingBrandGapStyle,
   footerColumnHeadingGapStyle,
   clampFooterColumnHeadingGapPx,
   resolveFooterCopyrightLabel,
@@ -676,9 +687,6 @@ import {
   resolveFooterCtaSubtitle,
   resolveFooterDescription,
   resolveFooterLinkHref,
-  isFooterNopbProfileLink,
-  isFooterMarketplaceColumnLink,
-  resolveFooterLandingSectionLinks,
   resolveFooterInternalLinksColumn,
   DEFAULT_FOOTER_CONNECT_LABEL,
   DEFAULT_FOOTER_ACCENT_COLOR,
@@ -686,6 +694,18 @@ import {
   resolveFooterMarketplaceCtaHref,
   type PortfolioFooterPresentationSettings,
 } from '@/components/portfolio/portfolio-footer-settings';
+import { FooterDesignMonumental } from '@/components/portfolio/portfolio-footer-design-monumental';
+import { FooterDesignContactCard } from '@/components/portfolio/portfolio-footer-design-contact-card';
+import { FooterDesignCompact } from '@/components/portfolio/portfolio-footer-design-compact';
+import { FooterDesignCenteredMinimal } from '@/components/portfolio/portfolio-footer-design-centered-minimal';
+import { FooterDesignLanding } from '@/components/portfolio/portfolio-footer-design-landing';
+import { FooterDesignHeroColumns } from '@/components/portfolio/portfolio-footer-design-hero-columns';
+import { FooterDesignSplitForm } from '@/components/portfolio/portfolio-footer-design-split-form';
+import { FooterDesignTimezoneEditorial } from '@/components/portfolio/portfolio-footer-design-timezone-editorial';
+import { FooterDesignInvertedWordmark } from '@/components/portfolio/portfolio-footer-design-inverted-wordmark';
+import { FooterDesignServicesReveal } from '@/components/portfolio/portfolio-footer-design-services-reveal';
+import { FooterDesignEditorialGrid } from '@/components/portfolio/portfolio-footer-design-editorial-grid';
+import { FooterDesignHeadlineReveal } from '@/components/portfolio/portfolio-footer-design-headline-reveal';
 import {
   sectionBackgroundStyle,
   DEFAULT_SECTION_BACKGROUND_COLOR,
@@ -3209,6 +3229,25 @@ function usePortfolioXlUp() {
   return usePortfolioMinWidth(1280);
 }
 
+/** True only for a genuine desktop/laptop pointer: wide viewport AND a persistent,
+ * precise pointer (mouse/trackpad) with hover support. Width alone is not a reliable
+ * "desktop" signal — large tablets (e.g. a 12.9" iPad in portrait is exactly 1024px
+ * wide, wider still in landscape) would otherwise be misclassified as desktop. Used
+ * to gate depth/parallax effects that are only legible with a hovering cursor and
+ * should stay static on touch, regardless of how wide the touch screen is. */
+function usePortfolioFinePointerDesktop(minWidthPx = 1024) {
+  const query = `(min-width: ${minWidthPx}px) and (hover: hover) and (pointer: fine)`;
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      const mq = window.matchMedia(query);
+      mq.addEventListener('change', onStoreChange);
+      return () => mq.removeEventListener('change', onStoreChange);
+    },
+    () => window.matchMedia(query).matches,
+    () => false
+  );
+}
+
 type NavPresenceState = {
   /** Combined with display visibility — false when reveal mode is collapsed. */
   expanded: boolean;
@@ -4056,37 +4095,25 @@ export function PortfolioFloatingNav({
         : floatingPillHasRightColumn
           ? 'grid-cols-[minmax(0,1fr)_auto]'
           : 'grid-cols-[minmax(0,1fr)]';
-  const triZoneLayout = portfolioNavUsesTriZoneLayout(settings);
   const centerLogoSplitLayout = portfolioNavUsesCenterLogoSplitLayout(settings);
-  const logoLeftNavContactLayout = portfolioNavUsesLogoLeftNavContactLayout(settings);
   const effectiveButtonDesign = settings.buttonDesign;
-  const logoLeftNavContactLogoOnRight =
-    logoLeftNavContactLayout && (settings.logoLeftNavContactLogoSide ?? 'left') === 'right';
   const structuredBarLayout = portfolioNavUsesStructuredBarLayout(settings);
   const inlineExtras =
     structuredBarLayout ||
     (anyFreeSideExtras && portfolioNavBarHostsInlineExtras(barWidth, effectivePlacement));
-  const triZoneShell = triZoneLayout;
   const placementIsStart =
     effectivePlacement === 'top-left' || effectivePlacement === 'bottom-left';
   const placementIsEnd =
     effectivePlacement === 'top-right' || effectivePlacement === 'bottom-right';
   const placementIsCentered = !vertical && !placementIsStart && !placementIsEnd;
-  const itemsGapClass =
-    triZoneLayout || centerLogoSplitLayout || logoLeftNavContactLayout
+  const itemsGapClass = centerLogoSplitLayout
     ? portfolioNavTriZoneItemGapClass(itemGap, vertical)
     : portfolioNavItemGapClass(itemGap, vertical);
   const navContentGutterClass =
     !vertical && barWidth === 'full' ? portfolioEditorialGutterX(contentGutter) : '';
   const navUsesGlobalGutterInset = !vertical && barWidth === 'full';
   const innerBarLayoutClass =
-    logoLeftNavContactLayout
-      ? `grid w-full max-w-full items-center gap-x-4 sm:gap-x-6 !grid ${structuredBarHeightClass} ${
-          logoLeftNavContactLogoOnRight
-            ? 'grid-cols-[minmax(0,1fr)_auto]'
-            : 'grid-cols-[auto_minmax(0,1fr)]'
-        }`
-      : editorialBarLayout || triZoneLayout || centerLogoSplitLayout
+    editorialBarLayout || centerLogoSplitLayout
       ? `grid w-full max-w-full items-center gap-x-3 sm:gap-x-4 ${structuredBarHeightClass} ${
           centerLogoSplitLayout
             ? 'grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] !grid'
@@ -4128,8 +4155,6 @@ export function PortfolioFloatingNav({
       : 'justify-items-start items-center'
     : centerLogoSplitLayout
       ? 'w-full justify-items-stretch items-center'
-      : logoLeftNavContactLayout
-        ? 'w-full justify-items-stretch items-center'
     : placementIsStart
       ? 'justify-items-start items-center'
       : placementIsEnd
@@ -4137,7 +4162,7 @@ export function PortfolioFloatingNav({
         : 'place-items-center';
   /** Full-width bars must stretch the fold stack — centering shrink-wraps and collapses free-space slots. */
   const foldStackWidthClass =
-    !vertical && (barWidth === 'full' || editorialBarLayout || triZoneLayout || centerLogoSplitLayout || logoLeftNavContactLayout) && !collapsedToHandle
+    !vertical && (barWidth === 'full' || editorialBarLayout || centerLogoSplitLayout) && !collapsedToHandle
       ? 'w-full'
       : '';
   const foldMotion =
@@ -4148,11 +4173,9 @@ export function PortfolioFloatingNav({
       const menuAccentColor =
         editorialBarLayout || floatingPillLayout
           ? resolvePortfolioNavEditorialBarMenuAccentColor(settings, navPalette)
-          : logoLeftNavContactLayout
-            ? (settings.activeAccentColor ?? '#171717')
           : settings.activeAccentColor ?? '#f97316';
       const splitHeroBarHover =
-        editorialBarLayout || centerLogoSplitLayout || floatingPillLayout || triZoneLayout || logoLeftNavContactLayout;
+        editorialBarLayout || centerLogoSplitLayout || floatingPillLayout;
       const label = formatNavLabel(item.label, settings.labelCase);
       const itemColors = portfolioNavItemColorStyles(
         settings.itemIconColor ?? '#525252',
@@ -4190,24 +4213,13 @@ export function PortfolioFloatingNav({
             activeStyle: settings.activeStyle,
             contentMode: effectiveContentMode,
           })
-        : triZoneLayout
-          ? portfolioNavTriZoneItemHoverPresentation({
+        : floatingPillLayout
+          ? portfolioNavFloatingPillItemHoverPresentation({
               active,
               activeStyle: settings.activeStyle,
               contentMode: effectiveContentMode,
             })
-          : floatingPillLayout
-            ? portfolioNavFloatingPillItemHoverPresentation({
-                active,
-                activeStyle: settings.activeStyle,
-                contentMode: effectiveContentMode,
-              })
-            : logoLeftNavContactLayout
-              ? portfolioNavLogoLeftNavContactItemHoverPresentation({
-                  active,
-                  contentMode: effectiveContentMode,
-                })
-            : centerLogoSplitLayout && splitSide
+          : centerLogoSplitLayout && splitSide
               ? portfolioNavCenterLogoSplitItemHoverPresentation({
                   active,
                   activeStyle: settings.activeStyle,
@@ -4297,7 +4309,6 @@ export function PortfolioFloatingNav({
               !editorialBarLayout &&
               !centerLogoSplitLayout &&
               !floatingPillLayout &&
-              !triZoneLayout &&
               (usesFlatIndicator || settings.activeStyle === 'filled-pill')
             ? { color: settings.itemTextColor ?? '#525252', opacity: 0.55 }
             : undefined;
@@ -4615,13 +4626,11 @@ export function PortfolioFloatingNav({
           <div
             ref={innerRef}
             className={`${foldMotion} col-start-1 row-start-1 ${innerBarLayoutClass} ${containerClass} ${
-              triZoneLayout || centerLogoSplitLayout || logoLeftNavContactLayout
-                ? '!rounded-none !border-0 !shadow-none !overflow-visible'
-                : ''
+              centerLogoSplitLayout ? '!rounded-none !border-0 !shadow-none !overflow-visible' : ''
             } ${
               editorialBarLayout || floatingPillLayout ? '!overflow-visible' : ''
             } ${
-              inlineExtras && !structuredBarLayout && !triZoneShell ? '!justify-start' : ''
+              inlineExtras && !structuredBarLayout ? '!justify-start' : ''
             } ${navContentGutterClass} ${
               presence.dimResting ? 'portfolio-nav-dim-rest' : ''
             } ${
@@ -4641,57 +4650,7 @@ export function PortfolioFloatingNav({
             }}
             aria-hidden={!presence.expanded}
           >
-          {logoLeftNavContactLayout ? (
-            logoLeftNavContactLogoOnRight ? (
-              <>
-                <div className="flex min-w-0 items-center justify-start justify-self-stretch gap-3 sm:gap-4">
-                  {menuControlAlign === 'left' ? expandedToggleButton : null}
-                  <PortfolioNavContactCta
-                    settings={settings}
-                    contactHref={contactHref}
-                    onContactNavigate={onContactNavigate}
-                    compact
-                  />
-                  <PortfolioNavColorModeToggleButton settings={settings} compact />
-                  <div
-                    className={`flex min-w-0 items-center justify-start ${itemsGapClass} ${splitNavScrollClass}`}
-                  >
-                    {renderNavSectionButtons()}
-                  </div>
-                  {menuControlAlign === 'right' || menuControlAlign === 'center'
-                    ? expandedToggleButton
-                    : null}
-                </div>
-                <div className="flex shrink-0 items-center justify-self-end">
-                  <PortfolioNavCenterBrand settings={settings} compact />
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex shrink-0 items-center justify-self-start">
-                  <PortfolioNavCenterBrand settings={settings} compact />
-                </div>
-                <div className="flex min-w-0 items-center justify-end justify-self-stretch gap-3 sm:gap-4">
-                  {menuControlAlign === 'left' ? expandedToggleButton : null}
-                  <div
-                    className={`flex min-w-0 items-center justify-end ${itemsGapClass} ${splitNavScrollClass}`}
-                  >
-                    {renderNavSectionButtons()}
-                  </div>
-                  <PortfolioNavContactCta
-                    settings={settings}
-                    contactHref={contactHref}
-                    onContactNavigate={onContactNavigate}
-                    compact
-                  />
-                  <PortfolioNavColorModeToggleButton settings={settings} compact />
-                  {menuControlAlign === 'right' || menuControlAlign === 'center'
-                    ? expandedToggleButton
-                    : null}
-                </div>
-              </>
-            )
-          ) : centerLogoSplitLayout ? (
+          {centerLogoSplitLayout ? (
             <>
               <div className="flex w-full min-w-0 items-center justify-start justify-self-stretch gap-2">
                 {menuControlAlign === 'left' ? expandedToggleButton : null}
@@ -4754,7 +4713,7 @@ export function PortfolioFloatingNav({
                 </div>
               ) : null}
               <div
-                className={`flex min-w-0 items-center justify-center justify-self-center ${itemsGapClass} ${splitNavScrollClass}`}
+                className={`flex min-w-0 items-center justify-center justify-self-center overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [overflow-y:visible] ${itemsGapClass}`}
               >
                 {renderNavSectionButtons()}
               </div>
@@ -4771,36 +4730,6 @@ export function PortfolioFloatingNav({
                     : null}
                 </div>
               ) : null}
-            </>
-          ) : triZoneLayout ? (
-            <>
-              <div className="flex min-w-0 items-center justify-self-start gap-2">
-                {menuControlAlign === 'left' ? expandedToggleButton : null}
-                <div
-                  className={`flex items-center ${itemsGapClass} ${
-                    allowScroll
-                      ? 'min-w-0 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [overflow-y:visible]'
-                      : ''
-                  }`}
-                >
-                  {renderNavSectionButtons()}
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center justify-center justify-self-center px-1 sm:px-2">
-                <PortfolioNavCenterBrand settings={settings} compact />
-              </div>
-              <div className="flex min-w-0 items-center justify-end justify-self-end gap-2">
-                <PortfolioNavTriZoneSideSlot
-                  settings={settings}
-                  links={chromeLinks}
-                  contactPhone={contactPhone}
-                  contactEmail={contactEmail}
-                  compact
-                />
-                {menuControlAlign === 'right' || menuControlAlign === 'center'
-                  ? expandedToggleButton
-                  : null}
-              </div>
             </>
           ) : (
             <>
@@ -4903,10 +4832,8 @@ export function PortfolioFloatingNav({
       </div>
     </nav>
       {!inlineExtras &&
-      !triZoneLayout &&
       !editorialBarLayout &&
       !centerLogoSplitLayout &&
-      !logoLeftNavContactLayout &&
       !floatingPillLayout ? (
         <PortfolioNavFreeSpaceLinks
           settings={settings}
@@ -4926,103 +4853,6 @@ export function PortfolioFloatingNav({
     </>
     </PortfolioNavColorModeToggleProvider>,
     document.body
-  );
-}
-
-type PerPageNavItem = {
-  id: string;
-  label: string;
-  icon: PortfolioNavIconVariant;
-};
-
-export function PortfolioPerPageNav({
-  items,
-  settings,
-}: {
-  items: PerPageNavItem[];
-  settings: PortfolioNavSettings;
-}) {
-  const sectionIds = useMemo(() => items.map((item) => item.id), [items]);
-  const { activeId, lockForNavigation } = usePortfolioSectionSpy(sectionIds, items.length > 0);
-  const visible = useNavVisibility(settings.displayMode);
-
-  if (!settings.enabled) return null;
-  if (settings.hideWhenSingle && items.length <= 1) return null;
-  if (items.length === 0) return null;
-
-  const activeIndex = Math.max(
-    0,
-    items.findIndex((item) => item.id === activeId)
-  );
-  const activeItem = items[activeIndex] ?? items[0];
-  const prevItem = activeIndex > 0 ? items[activeIndex - 1] : null;
-  const nextItem = activeIndex < items.length - 1 ? items[activeIndex + 1] : null;
-
-  const goTo = (id: string) => {
-    if (scrollToPortfolioSection(id)) {
-      lockForNavigation(id);
-    }
-  };
-
-  return (
-    <nav
-      className={`pointer-events-none fixed bottom-5 right-4 z-50 flex flex-col items-end gap-3 transition-opacity duration-300 sm:bottom-8 sm:right-6 pb-[env(safe-area-inset-bottom,0px)] ${
-        visible ? 'opacity-100' : 'opacity-0'
-      }`}
-      aria-label="Page navigation"
-      aria-hidden={!visible}
-    >
-      <div className="pointer-events-auto flex flex-col items-center gap-2 rounded-full border border-neutral-200/90 bg-white/95 px-2.5 py-3 shadow-[0_12px_40px_rgba(0,0,0,0.08)] backdrop-blur-md">
-        {items.map((item) => {
-          const active = item.id === activeId;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => goTo(item.id)}
-              aria-label={item.label}
-              title={item.label}
-              className={`h-2.5 w-2.5 rounded-full transition ${
-                active ? 'scale-125 bg-neutral-950' : 'bg-neutral-300 hover:bg-neutral-500'
-              }`}
-            />
-          );
-        })}
-      </div>
-
-      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-neutral-200/90 bg-white/95 px-2 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.08)] backdrop-blur-md">
-        <button
-          type="button"
-          onClick={() => prevItem && goTo(prevItem.id)}
-          disabled={!prevItem}
-          aria-label="Previous section"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-35"
-        >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <div className="min-w-[5.5rem] px-1 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
-            {activeIndex + 1} / {items.length}
-          </p>
-          <p className="truncate text-xs font-semibold text-neutral-900">
-            {formatNavLabel(activeItem.label, settings.labelCase)}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => nextItem && goTo(nextItem.id)}
-          disabled={!nextItem}
-          aria-label="Next section"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-35"
-        >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
-    </nav>
   );
 }
 
@@ -7305,12 +7135,12 @@ export function ServicesOrderCtaHrefProvider({
   );
 }
 
-function useServicesOrderCtaNav(): ServicesOrderCtaNav {
+export function useServicesOrderCtaNav(): ServicesOrderCtaNav {
   const value = useContext(ServicesOrderCtaHrefContext);
   return value.href ? value : { href: '#contact', onNavigate: value.onNavigate };
 }
 
-function handleServicesOrderCtaClick(
+export function handleServicesOrderCtaClick(
   event: ReactMouseEvent<HTMLAnchorElement>,
   href: string,
   onNavigate?: (href: string) => void
@@ -15521,7 +15351,18 @@ export function ExperienceMilestoneHeader({
       }
     }, header);
 
-    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+    const refreshId = window.setTimeout(() => {
+      try {
+        ScrollTrigger.refresh();
+      } catch (error) {
+        // GSAP's ScrollTrigger.refresh() can throw internally on an edge case
+        // (e.g. "Cannot read properties of undefined (reading 'end')") during
+        // its own init-time recompute; uncaught, that crash propagates up
+        // through this deferred setTimeout with no React boundary to catch it
+        // and takes down the whole page. Never let a best-effort refresh do that.
+        console.error('[ScrollTrigger] deferred refresh() failed', error);
+      }
+    }, 90);
     return () => {
       window.clearTimeout(refreshId);
       ctx.revert();
@@ -15589,6 +15430,7 @@ function ExperienceTasksDisplay({
   isDark,
   label = '',
   size = 'md',
+  strongIndex = false,
 }: {
   tasks: string[];
   display?: PortfolioExperienceTasksDisplay;
@@ -15597,6 +15439,9 @@ function ExperienceTasksDisplay({
   isDark: boolean;
   label?: string;
   size?: 'md' | 'lg';
+  /** Cards design only: continuous hairline rail + full-contrast numerals for
+   * 'architectural-index', so the numbered list reads as the card's spine. */
+  strongIndex?: boolean;
   /** Kept for callers that still pass entry tools. */
   tools?: string[];
 }) {
@@ -15637,6 +15482,7 @@ function ExperienceTasksDisplay({
             <li
               key={`${task}-${index}`}
               data-pf-no-color-transition=""
+              data-exp-task=""
               className="pf-exp-tasks-grid-cell group/task flex gap-3 px-3 py-3 sm:px-3.5 sm:py-3.5"
               style={
                 {
@@ -15678,6 +15524,7 @@ function ExperienceTasksDisplay({
             <li
               key={`${task}-${index}`}
               data-pf-no-color-transition=""
+              data-exp-task=""
               className="pf-exp-tasks-timeline-item group/task relative flex gap-4 py-3.5 pl-1 first:pt-0 last:pb-0"
               style={
                 {
@@ -15712,16 +15559,25 @@ function ExperienceTasksDisplay({
     return (
       <div>
         {sectionLabel}
-        <ul className="pf-exp-tasks-lined">
+        <ul
+          className="pf-exp-tasks-lined relative space-y-0 pl-4"
+          style={
+            {
+              ['--exp-task-rail' as string]: railColor,
+              ['--exp-task-active' as string]: activeInk,
+            } as CSSProperties
+          }
+        >
           {tasks.map((task, index) => (
             <li
               key={`${task}-${index}`}
               data-pf-no-color-transition=""
-              className="flex items-baseline gap-3 border-b py-3.5 last:border-b-0"
-              style={{ color: bodyColor, borderColor: railColor }}
+              data-exp-task=""
+              className="pf-exp-tasks-lined-item group/task flex items-baseline gap-3 py-3.5 first:pt-0 last:pb-0"
+              style={{ color: bodyColor }}
             >
               <span
-                className="pf-exp-task-index shrink-0 font-mono text-[0.65rem] tracking-[0.1em]"
+                className="pf-exp-task-index pf-exp-tasks-lined-index shrink-0 font-mono text-[0.65rem] tracking-[0.1em]"
                 style={{ color: indexInk }}
                 aria-hidden
               >
@@ -15736,24 +15592,43 @@ function ExperienceTasksDisplay({
   }
 
   if (display === 'architectural-index') {
+    const indexColor = strongIndex ? activeInk : indexInk;
     return (
       <div>
         {sectionLabel}
-        <ul className={size === 'lg' ? 'space-y-3.5 sm:space-y-4' : 'space-y-3.5'}>
+        <ul
+          className={
+            strongIndex
+              ? "relative space-y-7 before:absolute before:bottom-1 before:left-8 before:top-1 before:w-px before:bg-[var(--pf-arch-rail)] before:content-[''] sm:before:left-9"
+              : size === 'lg'
+                ? 'space-y-3.5 sm:space-y-4'
+                : 'space-y-3.5'
+          }
+          style={strongIndex ? ({ ['--pf-arch-rail' as string]: railColor } as CSSProperties) : undefined}
+        >
           {tasks.map((task, index) => (
             <li
               key={`${task}-${index}`}
               data-pf-no-color-transition=""
-              className="group/arch flex items-baseline gap-4"
+              data-exp-task=""
+              className={
+                strongIndex
+                  ? 'group/arch flex items-baseline gap-6 sm:gap-7'
+                  : 'group/arch flex items-baseline gap-4'
+              }
               style={{ color: bodyColor }}
             >
               <span
-                className="pf-exp-task-index pf-exp-tasks-arch-index shrink-0 font-mono text-[0.72rem] tracking-[0.06em] sm:text-[0.78rem]"
-                style={{ color: indexInk }}
+                className={
+                  strongIndex
+                    ? 'pf-exp-task-index pf-exp-tasks-arch-index w-8 shrink-0 text-right font-mono text-[0.72rem] tracking-[0.06em] sm:w-9 sm:text-[0.78rem]'
+                    : 'pf-exp-task-index pf-exp-tasks-arch-index shrink-0 font-mono text-[0.72rem] tracking-[0.06em] sm:text-[0.78rem]'
+                }
+                style={{ color: indexColor }}
                 aria-hidden
               >
                 {String(index + 1).padStart(2, '0')}
-                <span className="pf-exp-tasks-arch-slash"> /</span>
+                {strongIndex ? null : <span className="pf-exp-tasks-arch-slash"> /</span>}
               </span>
               <span className={`${textClass} min-w-0`}>{task}</span>
             </li>
@@ -15772,6 +15647,7 @@ function ExperienceTasksDisplay({
           <li
             key={`${task}-${index}`}
             data-pf-no-color-transition=""
+            data-exp-task=""
             className="group/task flex gap-3"
             style={
               {
@@ -15793,6 +15669,183 @@ function ExperienceTasksDisplay({
         ))}
       </ul>
     </div>
+  );
+}
+
+/** Shared Award-level tools/tech badge presentations — synced from General → Tools display
+ * across every Experience design, the same way ExperienceTasksDisplay covers tasks. */
+function ExperienceToolsDisplay({
+  tools,
+  style = 'mineral-pills',
+  ink,
+  muted,
+  background,
+  isDark,
+  size = 'md',
+  layout = 'wrap',
+}: {
+  tools: string[];
+  style?: PortfolioExperienceToolsBadgeStyle;
+  ink: string;
+  muted: string;
+  background: string;
+  isDark: boolean;
+  size?: 'sm' | 'md';
+  /** 'scroll-x': a discreet horizontal strip with touch scroll instead of wrapping to a new
+   * line — Sticky mobile tier, to avoid a staircase of wrapped tags. Editorial List and
+   * Mineral Pills only; Kinetic Marquee already scrolls on its own and Numbered Index's
+   * two-column grid doesn't read well as a single scrolling row. */
+  layout?: 'wrap' | 'scroll-x';
+}) {
+  if (tools.length === 0) return null;
+
+  const activeColor = isDark ? '#ffffff' : ink;
+  const scrollX = layout === 'scroll-x';
+
+  if (style === 'editorial-list') {
+    return (
+      <ul
+        data-pf-no-color-transition=""
+        className={
+          scrollX
+            ? 'pf-exp-tools-editorial pf-scrollbar-hide flex flex-nowrap items-baseline gap-y-1.5 overflow-x-auto'
+            : 'pf-exp-tools-editorial flex flex-wrap items-baseline gap-y-1.5'
+        }
+        style={
+          {
+            ['--exp-tools-active' as string]: activeColor,
+          } as CSSProperties
+        }
+      >
+        {tools.map((tool, index) => (
+          <li
+            key={`${tool}-${index}`}
+            data-pf-no-color-transition=""
+            className={`pf-exp-tools-editorial-item ${scrollX ? 'shrink-0 whitespace-nowrap' : ''} ${
+              size === 'sm' ? 'text-[0.85rem]' : 'text-[0.92rem] sm:text-[0.98rem]'
+            }`}
+            style={{ color: muted, fontFamily: REEL_SANS }}
+          >
+            {tool}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (style === 'kinetic-marquee') {
+    const strokeColor = `color-mix(in srgb, ${ink} 14%, ${background})`;
+    // Duration scales with the tool count so the apparent drift speed stays constant
+    // regardless of how many words are looping.
+    const durationSec = Math.max(12, tools.length * 2.4);
+    return (
+      <div
+        data-pf-no-color-transition=""
+        className="pf-exp-tools-marquee relative w-full overflow-hidden"
+        style={{ ['--exp-tools-marquee-duration' as string]: `${durationSec}s` } as CSSProperties}
+      >
+        <span className="sr-only">{tools.join(', ')}</span>
+        <div aria-hidden className="pf-exp-tools-marquee-track flex w-max items-center">
+          {[0, 1].map((copy) => (
+            <div key={copy} className="flex shrink-0 items-center">
+              {tools.map((tool, index) => (
+                <span
+                  key={`${copy}-${tool}-${index}`}
+                  className={`shrink-0 whitespace-nowrap font-bold uppercase ${
+                    size === 'sm'
+                      ? 'text-[2.2rem] sm:text-[2.8rem]'
+                      : 'text-[2.8rem] sm:text-[3.6rem]'
+                  }`}
+                  style={{
+                    color: 'transparent',
+                    WebkitTextStroke: `1px ${strokeColor}`,
+                    letterSpacing: '0.01em',
+                  }}
+                >
+                  {tool}
+                  <span
+                    className="mx-8 inline-block align-middle text-[0.5em]"
+                    style={{ color: strokeColor }}
+                  >
+                    ·
+                  </span>
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (style === 'numbered-index') {
+    const indexInk = isDark
+      ? 'color-mix(in srgb, #ffffff 40%, transparent)'
+      : 'color-mix(in srgb, #171717 40%, transparent)';
+    return (
+      <ul
+        data-pf-no-color-transition=""
+        className="grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2"
+      >
+        {tools.map((tool, index) => (
+          <li
+            key={`${tool}-${index}`}
+            data-pf-no-color-transition=""
+            className="flex items-baseline gap-2"
+          >
+            <span
+              className={`shrink-0 font-mono tracking-[0.06em] ${
+                size === 'sm' ? 'text-[0.65rem]' : 'text-[0.7rem]'
+              }`}
+              style={{ color: indexInk }}
+              aria-hidden
+            >
+              {String(index + 1).padStart(2, '0')} /
+            </span>
+            <span
+              className={size === 'sm' ? 'text-[0.85rem]' : 'text-[0.92rem]'}
+              style={{ color: ink, fontFamily: REEL_SANS }}
+            >
+              {tool}
+            </span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  /* mineral-pills — default */
+  const pillBg = `color-mix(in srgb, ${ink} 6%, ${background})`;
+  const pillBgHover = `color-mix(in srgb, ${ink} 13%, ${background})`;
+  const pillInk = `color-mix(in srgb, ${ink} 82%, ${muted} 18%)`;
+  return (
+    <ul
+      className={
+        scrollX
+          ? 'pf-scrollbar-hide flex flex-nowrap gap-2 overflow-x-auto'
+          : 'flex flex-wrap gap-2'
+      }
+    >
+      {tools.map((tool, index) => (
+        <li
+          key={`${tool}-${index}`}
+          data-pf-no-color-transition=""
+          className={`pf-exp-tools-pill rounded-full font-medium uppercase tracking-wider ${
+            scrollX ? 'shrink-0' : ''
+          } ${size === 'sm' ? 'px-3 py-1 text-[0.62rem]' : 'px-3.5 py-1.5 text-[0.68rem]'}`}
+          style={
+            {
+              color: pillInk,
+              fontFamily: REEL_SANS,
+              ['--exp-tools-pill-bg' as string]: pillBg,
+              ['--exp-tools-pill-bg-hover' as string]: pillBgHover,
+            } as CSSProperties
+          }
+        >
+          {tool}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -15997,17 +16050,6 @@ function ExperienceEditorialEntry({
     : 'sm:grid-cols-[7.5rem_minmax(0,1fr)] lg:grid-cols-[8.5rem_minmax(0,1fr)]';
 
   const expandHoverBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-  const toolTagStyle: CSSProperties = isDark
-    ? {
-        borderColor: 'rgba(255,255,255,0.16)',
-        backgroundColor: 'rgba(255,255,255,0.06)',
-        color: bodyColor,
-      }
-    : {
-        borderColor: 'rgba(0,0,0,0.12)',
-        backgroundColor: 'rgba(0,0,0,0.04)',
-        color: bodyColor,
-      };
   const stackLabel = resolveExperienceBlockLabel(toolsLabel, 'Stack');
   const showTasksHeading = experienceBlockLabelVisible(presentation, 'tasks');
   const showStackHeading = experienceBlockLabelVisible(presentation, 'tools');
@@ -16072,17 +16114,14 @@ function ExperienceEditorialEntry({
             {stackHeading}
           </p>
         ) : null}
-        <div className="flex flex-wrap gap-2">
-          {tools.map((tool) => (
-            <span
-              key={tool}
-              className="inline-flex rounded-full border px-4 py-2 text-[0.82rem] font-medium"
-              style={toolTagStyle}
-            >
-              {tool}
-            </span>
-          ))}
-        </div>
+        <ExperienceToolsDisplay
+          tools={tools}
+          style={presentation.toolsBadgeStyle}
+          ink={titleColor}
+          muted={mutedColor}
+          background={presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR}
+          isDark={isDark}
+        />
       </div>
     ) : null;
 
@@ -16698,17 +16737,6 @@ function MilestoneExperienceEntry({
   const softBodyColor = `color-mix(in srgb, ${bodyColor} 68%, transparent)`;
   const softTaskMuted = `color-mix(in srgb, ${mutedColor} 75%, transparent)`;
   const softMetaColor = `color-mix(in srgb, ${mutedColor} 88%, transparent)`;
-  const toolTagStyle: CSSProperties = isDark
-    ? {
-        borderColor: 'rgba(255,255,255,0.1)',
-        backgroundColor: 'rgba(255,255,255,0.04)',
-        color: `color-mix(in srgb, ${bodyColor} 42%, transparent)`,
-      }
-    : {
-        borderColor: 'rgba(0,0,0,0.08)',
-        backgroundColor: 'rgba(255,255,255,0.55)',
-        color: `color-mix(in srgb, ${bodyColor} 55%, transparent)`,
-      };
   const linkVariant = resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'milestone');
   const linkPalette = experienceLinkButtonPalette({
     ink: titleColor,
@@ -16848,17 +16876,14 @@ function MilestoneExperienceEntry({
                     {stackLabel}
                   </p>
                 ) : null}
-                <div className="flex flex-wrap gap-2">
-                  {tools.map((tool) => (
-                    <span
-                      key={tool}
-                      className="inline-flex rounded-full border px-3 py-1.5 text-[0.875rem] font-medium"
-                      style={toolTagStyle}
-                    >
-                      {tool}
-                    </span>
-                  ))}
-                </div>
+                <ExperienceToolsDisplay
+                  tools={tools}
+                  style={presentation.toolsBadgeStyle}
+                  ink={titleColor}
+                  muted={mutedColor}
+                  background={presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR}
+                  isDark={isDark}
+                />
               </div>
             ) : null}
 
@@ -17068,6 +17093,7 @@ function TableExperienceRow({
   onExpandedChange,
   hairlineColor,
   tasksDisplay = 'editorial-dash',
+  toolsBadgeStyle = 'mineral-pills',
   striped = false,
   rowIndex = 0,
   repoLinkButtonStyle = 'icon',
@@ -17093,6 +17119,7 @@ function TableExperienceRow({
   onExpandedChange: (expanded: boolean) => void;
   hairlineColor: string;
   tasksDisplay?: PortfolioExperienceTasksDisplay;
+  toolsBadgeStyle?: PortfolioExperienceToolsBadgeStyle;
   striped?: boolean;
   rowIndex?: number;
   repoLinkButtonStyle?: PortfolioExperienceRepoLinkStyle;
@@ -17108,17 +17135,6 @@ function TableExperienceRow({
     .join(' · ');
   const hasDetails =
     Boolean(description?.trim()) || tasks.length > 0 || tools.length > 0 || links.length > 0;
-  const toolTagStyle: CSSProperties = isDark
-    ? {
-        borderColor: 'rgba(255,255,255,0.14)',
-        backgroundColor: 'transparent',
-        color: mutedColor,
-      }
-    : {
-        borderColor: 'rgba(0,0,0,0.12)',
-        backgroundColor: 'transparent',
-        color: mutedColor,
-      };
   const panelTransition = motionDisabled
     ? { duration: 0 }
     : {
@@ -17250,16 +17266,15 @@ function TableExperienceRow({
                 ) : null}
 
                 {tools.length > 0 ? (
-                  <div className="flex flex-wrap gap-2.5 pt-1">
-                    {tools.map((tool) => (
-                      <span
-                        key={tool}
-                        className="inline-flex rounded-full border px-3.5 py-1.5 text-[0.9375rem] font-medium sm:text-base"
-                        style={toolTagStyle}
-                      >
-                        {tool}
-                      </span>
-                    ))}
+                  <div className="pt-1">
+                    <ExperienceToolsDisplay
+                      tools={tools}
+                      style={toolsBadgeStyle}
+                      ink={titleColor}
+                      muted={mutedColor}
+                      background={background || DEFAULT_SECTION_BACKGROUND_COLOR}
+                      isDark={isDark}
+                    />
                   </div>
                 ) : null}
 
@@ -17369,6 +17384,7 @@ function TableExperienceBlock({
       onExpandedChange={onExpandedChange}
       hairlineColor={hairlineColor}
       tasksDisplay={presentation.tasksDisplay ?? 'editorial-dash'}
+      toolsBadgeStyle={presentation.toolsBadgeStyle ?? 'mineral-pills'}
       striped={presentation.tableStripedRows === true}
       rowIndex={rowIndex}
       repoLinkButtonStyle={resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'table')}
@@ -17494,7 +17510,18 @@ export function TableExperienceHeader({
       }
     }, header);
 
-    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+    const refreshId = window.setTimeout(() => {
+      try {
+        ScrollTrigger.refresh();
+      } catch (error) {
+        // GSAP's ScrollTrigger.refresh() can throw internally on an edge case
+        // (e.g. "Cannot read properties of undefined (reading 'end')") during
+        // its own init-time recompute; uncaught, that crash propagates up
+        // through this deferred setTimeout with no React boundary to catch it
+        // and takes down the whole page. Never let a best-effort refresh do that.
+        console.error('[ScrollTrigger] deferred refresh() failed', error);
+      }
+    }, 90);
     return () => {
       window.clearTimeout(refreshId);
       ctx.revert();
@@ -17719,6 +17746,95 @@ function formatExperienceCardTitle(title: string): string {
   return trimmed.charAt(0).toLocaleUpperCase('fr-FR') + trimmed.slice(1);
 }
 
+/**
+ * "View repository ↗" — hovering swaps the label (and the arrow) for an identical
+ * copy that slides in from below while the original slides out the top, inside an
+ * `overflow: hidden` mask. A single paused timeline drives both; leaving reverses
+ * it, so a fast in/out never stutters.
+ */
+function CardsRepoLink({
+  href,
+  label,
+  ink,
+}: {
+  href: string;
+  label: string;
+  ink: string;
+}) {
+  const textCloneRef = useRef<HTMLSpanElement | null>(null);
+  const arrowCloneRef = useRef<SVGSVGElement | null>(null);
+  const timelineRef = useRef<gsap.core.Timeline | null>(null);
+
+  useLayoutEffect(() => {
+    const textClone = textCloneRef.current;
+    const arrowClone = arrowCloneRef.current;
+    if (!textClone || !arrowClone) return undefined;
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return undefined;
+    }
+
+    const tl = gsap.timeline({ paused: true, defaults: { duration: 0.5, ease: 'power3.inOut' } })
+      .to(textClone.parentElement, { yPercent: -100 }, 0)
+      .to(arrowClone.parentElement, { yPercent: -100 }, 0);
+    timelineRef.current = tl;
+
+    return () => {
+      tl.kill();
+      timelineRef.current = null;
+    };
+  }, [label]);
+
+  const onEnter = () => timelineRef.current?.play();
+  const onLeave = () => timelineRef.current?.reverse();
+
+  const isExternal = /^https?:\/\//i.test(href);
+  const anchorProps = isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+
+  return (
+    <a
+      href={href}
+      {...anchorProps}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      className="group/repo inline-flex items-center gap-2.5 text-[0.82rem] font-medium tracking-[0.02em] outline-none focus-visible:opacity-70"
+      style={{ color: ink }}
+      data-pf-no-color-transition=""
+    >
+      <span className="relative inline-block h-[1.2em] overflow-hidden">
+        <span className="block">{label}</span>
+        <span ref={textCloneRef} className="absolute inset-x-0 top-full block">
+          {label}
+        </span>
+      </span>
+      <span className="relative inline-block h-[1em] w-[1em] shrink-0 overflow-hidden" aria-hidden>
+        <svg viewBox="0 0 16 16" className="absolute inset-0 h-full w-full" fill="none">
+          <path
+            d="M4 12L12 4M12 4H6M12 4V10"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <svg
+          ref={arrowCloneRef}
+          viewBox="0 0 16 16"
+          className="absolute inset-x-0 top-full h-full w-full"
+          fill="none"
+        >
+          <path
+            d="M4 12L12 4M12 4H6M12 4V10"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+    </a>
+  );
+}
+
 function CardsExperienceEntry({
   period,
   title,
@@ -17756,132 +17872,218 @@ function CardsExperienceEntry({
   presentation: PortfolioExperiencePresentationSettings;
   stackIndex?: number;
 }) {
+  const reduceMotion = useReducedMotion();
+  const articleRef = useRef<HTMLElement | null>(null);
+  const titleInnerRef = useRef<HTMLSpanElement | null>(null);
+  const descRef = useRef<HTMLParagraphElement | null>(null);
+  const tasksListRef = useRef<HTMLDivElement | null>(null);
+
   const secondary = experienceSecondaryStatusColor(presentation);
   const metaParts = [
     organization?.trim() || '',
     location?.trim() || '',
     employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : '',
   ].filter(Boolean);
+  const statusLabel = status === 'ONGOING' ? 'Ongoing' : status === 'FINISHED' ? 'Finished' : null;
+  const statusColor = status === 'ONGOING' ? accent : secondary;
+  // Period, status and org/role fold into one micro-typographic label line above
+  // the title instead of a floating badge — each part keeps its own ink so the
+  // status word still reads as a signal, not just more grey text.
+  const labelParts: { text: string; color: string }[] = [];
+  if (period) labelParts.push({ text: period, color: mutedColor });
+  if (statusLabel) labelParts.push({ text: statusLabel, color: statusColor });
+  metaParts.forEach((part) => labelParts.push({ text: part, color: mutedColor }));
+
   const sectionBg = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
-  // Opaque fill so stacked cards cleanly cover the one underneath.
+  // Just opaque enough for the stacking cascade to cleanly cover the card underneath —
+  // no border, no inner panel. Content floats straight on this near-flat backing.
   const cardStyle: CSSProperties = isDark
-    ? {
-        borderColor: 'rgba(255,255,255,0.1)',
-        backgroundColor: `color-mix(in srgb, ${sectionBg} 92%, white 8%)`,
-      }
-    : {
-        borderColor: 'rgba(0,0,0,0.08)',
-        backgroundColor: '#ffffff',
-      };
-  const toolTagStyle: CSSProperties = isDark
-    ? {
-        borderColor: 'rgba(255,255,255,0.14)',
-        backgroundColor: 'transparent',
-        color: bodyColor,
-      }
-    : {
-        borderColor: 'rgba(0,0,0,0.12)',
-        backgroundColor: 'transparent',
-        color: bodyColor,
-      };
-  const softTaskColor = `color-mix(in srgb, ${bodyColor} 60%, transparent)`;
-  const softTaskMuted = `color-mix(in srgb, ${mutedColor} 70%, transparent)`;
-  const tasksDisplay =
-    presentation.tasksDisplay === 'editorial-dash' || !presentation.tasksDisplay
-      ? 'architectural-index'
-      : presentation.tasksDisplay;
+    ? { backgroundColor: `color-mix(in srgb, ${sectionBg} 97%, white 3%)` }
+    : { backgroundColor: '#ffffff' };
   const spacing = experienceCardsElementSpacingClasses(presentation.cardsElementSpacing);
+  const radiusClass = experienceCardsBorderRadiusClass(presentation.cardsBorderRadius);
+  const hasContent = Boolean(description) || tasks.length > 0 || tools.length > 0;
+
+  // Entrance, once per card: the title slides up out of its mask, the description
+  // fades/slides in right after, then the task list cascades in at a tight stagger.
+  // Tasks only get a plain rise+fade (no horizontal offset) — a per-item x jitter
+  // was tailored to the old hardcoded numbered list and would misalign the grid/
+  // timeline-rail layouts the shared display can now render (see tasksDisplay).
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const article = articleRef.current;
+    if (!article) return undefined;
+
+    gsap.registerPlugin(ScrollTrigger);
+    const scroller = getScrollParent(article) ?? undefined;
+    const titleInner = titleInnerRef.current;
+    const desc = descRef.current;
+    const taskItems = tasksListRef.current
+      ? Array.from(tasksListRef.current.querySelectorAll<HTMLElement>('[data-exp-task]'))
+      : [];
+
+    // Guards the sticky-stack recede effect in CardsExperienceList: that effect
+    // reads this attribute per card and holds its recede progress at 0 until
+    // the card reports itself 'true' here. Without it, a fast scroll can carry
+    // the NEXT card all the way to fully covering this one (recede progress 1)
+    // while this card's own title/description/tasks are still mid-reveal —
+    // confirmed live: on a fast fling, the covering card locks in before this
+    // one's entrance timeline (real-time, ~0.9s) has caught up to the scroll
+    // position, so its content visibly snaps/finishes while already fading out
+    // underneath the next card. Gating removes that race entirely instead of
+    // just shortening the odds of hitting it.
+    article.setAttribute('data-entrance-ready', 'false');
+
+    const ctx = gsap.context(() => {
+      if (reduceMotion) {
+        if (titleInner) gsap.set(titleInner, { yPercent: 0 });
+        if (desc) gsap.set(desc, { autoAlpha: 1, y: 0 });
+        if (taskItems.length) gsap.set(taskItems, { autoAlpha: 1, y: 0 });
+        article.setAttribute('data-entrance-ready', 'true');
+        return;
+      }
+
+      if (titleInner) gsap.set(titleInner, { yPercent: 110 });
+      if (desc) gsap.set(desc, { autoAlpha: 0, y: 14 });
+      if (taskItems.length) gsap.set(taskItems, { autoAlpha: 0, y: 10 });
+
+      const tl = gsap.timeline({
+        scrollTrigger: { trigger: article, scroller, start: 'top 82%', once: true },
+        // The reveal leaves opacity/visibility inline forever unless cleared —
+        // hand them back to CSS once settled so the :has()-driven hover dim
+        // below (data-exp-task) can still move this same opacity property.
+        onComplete: () => {
+          if (taskItems.length) gsap.set(taskItems, { clearProps: 'opacity,visibility' });
+          article.setAttribute('data-entrance-ready', 'true');
+        },
+      });
+      if (titleInner) tl.to(titleInner, { yPercent: 0, duration: 0.9, ease: 'power4.out' }, 0);
+      if (desc) tl.to(desc, { autoAlpha: 1, y: 0, duration: 0.7, ease: 'power2.out' }, 0.22);
+      if (taskItems.length) {
+        tl.to(
+          taskItems,
+          { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.04, ease: 'power3.out' },
+          0.32
+        );
+      }
+    }, article);
+
+    const refreshId = window.setTimeout(() => {
+      try {
+        ScrollTrigger.refresh();
+      } catch (error) {
+        // GSAP's ScrollTrigger.refresh() can throw internally on an edge case
+        // (e.g. "Cannot read properties of undefined (reading 'end')") during
+        // its own init-time recompute; uncaught, that crash propagates up
+        // through this deferred setTimeout with no React boundary to catch it
+        // and takes down the whole page. Never let a best-effort refresh do that.
+        console.error('[ScrollTrigger] deferred refresh() failed', error);
+      }
+    }, 90);
+    return () => {
+      window.clearTimeout(refreshId);
+      ctx.revert();
+    };
+  }, [reduceMotion, title, description, tasks.length]);
 
   return (
     <article
-      className={`pf-exp-cards-stack-card flex min-w-0 flex-col border ${spacing.cardPad} ${experienceCardsBorderRadiusClass(presentation.cardsBorderRadius)}`}
+      ref={articleRef}
+      data-entrance-ready="false"
+      className={`pf-exp-cards-stack-card flex min-w-0 flex-col ${spacing.cardPad} ${radiusClass}`}
       style={{ ...cardStyle, zIndex: stackIndex + 1 }}
     >
-      <div className="pf-exp-cards-stack-header flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          {title ? (
-            <h4
-              className="font-serif text-[1.35rem] font-bold leading-[1.2] tracking-[-0.025em] sm:text-[1.55rem] lg:text-[1.7rem]"
-              style={{ color: titleColor, fontFamily: SERIF }}
-            >
-              {formatExperienceCardTitle(title)}
-            </h4>
-          ) : null}
-          {metaParts.length > 0 ? (
-            <p className="mt-1.5 text-[0.9rem] sm:text-[0.95rem]" style={{ color: mutedColor }}>
-              {metaParts.join(' · ')}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          {period ? (
-            <p className="text-[0.875rem] tabular-nums sm:text-[0.95rem]" style={{ color: mutedColor }}>
-              {period}
-            </p>
-          ) : null}
-          <ExperienceEditorialOngoingBadge
-            status={status}
-            isDark={isDark}
-            accentColor={accent}
-            secondaryColor={secondary}
-          />
-        </div>
-      </div>
-
-      {description ? (
-        <p
-          className={`${spacing.sectionGap} text-[0.98rem] leading-[1.7] sm:text-[1.02rem]`}
-          style={{ color: bodyColor }}
-        >
-          {description}
-        </p>
-      ) : null}
-
-      {tasks.length > 0 ? (
-        <div className={`${spacing.sectionGap} ${spacing.tasksSpace}`}>
-          <ExperienceTasksDisplay
-            tasks={tasks}
-            display={tasksDisplay}
-            bodyColor={softTaskColor}
-            mutedColor={softTaskMuted}
-            isDark={isDark}
-            label=""
-            size="md"
-          />
-        </div>
-      ) : null}
-
-      {tools.length > 0 ? (
-        <div className={spacing.toolsGap}>
-          <div className="flex flex-wrap gap-2">
-            {tools.map((tool) => (
-              <span
-                key={tool}
-                className="inline-flex rounded-full border px-3 py-1.5 text-[0.875rem] font-medium sm:text-[0.9375rem]"
-                style={toolTagStyle}
-              >
-                {tool}
+      <div className="pf-exp-cards-stack-header">
+        {labelParts.length > 0 ? (
+          <p
+            className="mb-4 flex flex-wrap items-center gap-x-2.5 text-[0.62rem] font-semibold uppercase sm:mb-5 sm:text-[0.66rem]"
+            style={{ letterSpacing: '0.18em', opacity: 0.65 }}
+          >
+            {labelParts.map((part, index) => (
+              <span key={`${part.text}-${index}`} className="flex items-center gap-x-2.5">
+                {index > 0 ? (
+                  <span aria-hidden style={{ color: mutedColor, opacity: 0.45 }}>
+                    &middot;
+                  </span>
+                ) : null}
+                <span style={{ color: part.color }}>{part.text}</span>
               </span>
             ))}
-          </div>
+          </p>
+        ) : null}
+        {title ? (
+          <h4
+            className="overflow-hidden"
+            style={{
+              fontSize: experienceCardsTitleFontSize(presentation.cardsTitleSize),
+              lineHeight: 0.95,
+              fontFamily: SERIF,
+            }}
+          >
+            <span ref={titleInnerRef} className="block" style={{ color: titleColor }}>
+              {formatExperienceCardTitle(title)}
+            </span>
+          </h4>
+        ) : null}
+      </div>
+
+      {hasContent ? (
+        <div className="mt-14 flex flex-col gap-9 sm:mt-20 sm:gap-10 lg:mt-24">
+          {description ? (
+            <p
+              ref={descRef}
+              className="max-w-2xl"
+              style={{
+                color: bodyColor,
+                opacity: 0.6,
+                fontSize: '0.98rem',
+                lineHeight: 1.7,
+                fontWeight: 300,
+              }}
+            >
+              {description}
+            </p>
+          ) : null}
+
+          {tasks.length > 0 ? (
+            <div ref={tasksListRef} className="pf-exp-cards-tasks">
+              <ExperienceTasksDisplay
+                tasks={tasks}
+                display={presentation.tasksDisplay ?? 'editorial-dash'}
+                bodyColor={bodyColor}
+                mutedColor={mutedColor}
+                isDark={isDark}
+                label=""
+                size="lg"
+                strongIndex={(presentation.tasksDisplay ?? 'editorial-dash') === 'architectural-index'}
+              />
+            </div>
+          ) : null}
+
+          {tools.length > 0 ? (
+            <ul className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Stack">
+              {tools.map((tool) => (
+                <li
+                  key={tool}
+                  className="text-[0.62rem] font-medium uppercase"
+                  style={{ color: mutedColor, opacity: 0.5, letterSpacing: '0.16em' }}
+                >
+                  {tool}
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       ) : null}
 
       {links.length > 0 ? (
-        <div className={`${spacing.linksGap} flex flex-col items-start gap-2.5`}>
+        <div className={`${spacing.linksGap} flex flex-col items-start gap-3`}>
           {links.map((link) => (
-            <PortfolioLinkButton
+            <CardsRepoLink
               key={link.id}
-              variant={resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'cards')}
               href={link.url}
               label={link.label || 'View repository'}
-              palette={experienceLinkButtonPalette({
-                ink: titleColor,
-                muted: mutedColor,
-                accent,
-                background: sectionBg,
-                isDark,
-              })}
+              ink={titleColor}
             />
           ))}
         </div>
@@ -17960,6 +18162,50 @@ function CardsExperienceBlock({
   );
 }
 
+/** Sticky top offset (px) each stacked card locks to — keep in sync with the
+ * --pf-exp-cards-stack-top CSS custom property (6rem) above. Used to time each card's
+ * neighbor progress so it reaches 1 exactly as the next card locks into place. */
+const CARDS_STACK_TOP_OFFSET_PX = 96;
+/** "Escalier" depth cue: every card behind the current front one keeps a small,
+ * fully-legible sliver peeking out above it — like a fanned deck of cards —
+ * instead of receding to near-invisibility after just one card covers it.
+ * transform: scale(1 - depth * SCALE_STEP) translateY(-depth * SINK_PX).
+ * `depth` is a cumulative step count (see buildCardsStackDepths below), not
+ * the single 0..1 progress against just the immediate next card: a card
+ * already fully covered keeps climbing an extra notch every time one more
+ * card arrives in front of it, which is what actually produces a multi-layer
+ * staircase instead of one receded card with everything behind it hidden at
+ * an identical, frozen offset. Scale is applied before translateY in the
+ * transform string on purpose: translateY then runs in the already-scaled
+ * coordinate space instead of a fixed screen-pixel offset.
+ *
+ * Deliberately NO opacity fade here (confirmed live, not just theorized): a
+ * covering card needs to stay at true 100% opacity to fully occlude whatever
+ * sits behind it — even a 2-3% reduction (e.g. depth ~0.3-0.4 on a gentle
+ * curve) is enough for large/bold text on a light card to ghost faintly
+ * through, since CSS opacity composites the whole subtree as one blended
+ * layer. Position (translateY) is the only depth cue that can't leak — it's
+ * a geometry change, not a transparency one, so full occlusion is guaranteed
+ * regardless of how many steps a card has climbed. */
+const CARDS_STACK_SCALE_STEP = 0.02;
+const CARDS_STACK_SINK_PX = 20;
+
+/** Cumulative per-card "steps buried" — depths[i] is how many full steps of
+ * cover card i has accumulated from every card ahead of it (not just its
+ * immediate neighbor), so cards already covered keep compacting further back
+ * as more cards arrive in front instead of freezing the moment their own
+ * direct neighbor locks. `stepProgress[k]` is the 0..1 approach progress of
+ * card k+1 toward covering card k. Returns an array of length
+ * `stepProgress.length + 1`; index `stepProgress.length` is the sentinel base
+ * case (0) for the frontmost card, which is never covered. */
+function buildCardsStackDepths(stepProgress: number[]): number[] {
+  const depths = new Array<number>(stepProgress.length + 1).fill(0);
+  for (let i = stepProgress.length - 1; i >= 0; i -= 1) {
+    depths[i] = stepProgress[i] + depths[i + 1];
+  }
+  return depths;
+}
+
 export function CardsExperienceList({
   blocks,
   presentation = DEFAULT_EXPERIENCE_PRESENTATION,
@@ -17971,6 +18217,185 @@ export function CardsExperienceList({
   motionProfile?: PortfolioGlobalMotionProfile;
   forceSingleColumn?: boolean;
 }) {
+  const reduceMotion = useReducedMotion();
+  const stackRef = useRef<HTMLDivElement | null>(null);
+  const cascadeEnabled = presentation.cardsStackEffect !== 'static';
+  // Reactive (not a one-time matchMedia snapshot) so resizing/rotating across the
+  // breakpoint tears down/recreates the scroll listener instead of leaving it stuck
+  // at mount width. Gated on a fine pointer + hover, not just width: mobile/tablet
+  // (touch, no hover) always gets the plain static stack, even when wide enough in
+  // landscape to clear the desktop width — only a real desktop/laptop pointer gets
+  // the sticky depth cascade, matching the CSS media query below.
+  const isDesktopWidth = usePortfolioFinePointerDesktop(1024);
+
+  // Equal card height (opt-in, "Equal card height" toggle): every card is
+  // stretched to match the tallest one via min-height. Two reasons this needs
+  // real measurement instead of a CSS-only fix: (1) cards are sequential sticky
+  // siblings, not a grid row, so there's no `align-items: stretch` to reach
+  // for; (2) it's not just cosmetic here — in cascade mode, a card that's
+  // SHORTER than the one it's covering would leave that taller card visibly
+  // peeking out underneath, since the cover is only as big as its own box.
+  // Declared (and so runs) before the recede effect below, so that effect's
+  // very first measurement already sees equalized heights.
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined' || presentation.cardsEqualHeight !== true) return undefined;
+    const stack = stackRef.current;
+    if (!stack) return undefined;
+    const cards = Array.from(
+      stack.querySelectorAll<HTMLElement>(':scope > .pf-exp-cards-stack-item > .pf-exp-cards-stack-card')
+    );
+    if (cards.length < 2) return undefined;
+
+    let ticking = false;
+    const equalize = () => {
+      ticking = false;
+      // Reset first so a shorter card's real content height is what gets
+      // measured, not a min-height this same effect applied last pass.
+      cards.forEach((card) => {
+        card.style.minHeight = '';
+      });
+      const tallest = Math.max(...cards.map((card) => card.getBoundingClientRect().height));
+      cards.forEach((card) => {
+        card.style.minHeight = `${Math.ceil(tallest)}px`;
+      });
+      // Equalizing changes document height/flow, which the per-card entrance
+      // ScrollTriggers and the recede effect below both depend on.
+      ScrollTrigger.refresh();
+    };
+    const onResize = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(equalize);
+    };
+
+    equalize();
+    // Re-measure once more after webfonts finish loading — text set in a
+    // fallback font can wrap differently once the real one swaps in.
+    let cancelled = false;
+    void document.fonts?.ready?.then(() => {
+      if (!cancelled) equalize();
+    });
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('resize', onResize);
+      cards.forEach((card) => {
+        card.style.minHeight = '';
+      });
+    };
+  }, [
+    blocks,
+    presentation.cardsEqualHeight,
+    presentation.cardsCardWidth,
+    presentation.cardsElementSpacing,
+    presentation.cardsTasksGap,
+    presentation.cardsTitleSize,
+    presentation.tasksDisplay,
+    presentation.toolsBadgeStyle,
+    presentation.showTitle,
+    presentation.showPeriod,
+    presentation.showOrganization,
+    presentation.showMeta,
+    presentation.showDescription,
+    presentation.showTasks,
+    presentation.showTools,
+    presentation.showProof,
+  ]);
+
+  // Premium stacking-cards depth cue (desktop, cascade mode only): as the next card
+  // slides up and locks into the shared sticky top, the card it's about to cover
+  // shrinks + sinks + fades so it visually recedes behind it instead of just vanishing
+  // underneath. CSS sticky alone already handles the full-cover pinning — this is
+  // vanilla JS (no GSAP/ScrollTrigger) on purpose: getBoundingClientRect() on the next
+  // card per frame, rAF-throttled via a ticking flag, listening on the actual scroll
+  // container (not always `window` — this app also renders inside a nested
+  // overflow-y:auto "pages" container, and a scroll listener on the wrong target
+  // silently never fires).
+  //
+  // Gating: the per-section "Scroll cascade effect" toggle (`cascadeEnabled`) is the
+  // sole on/off switch here, plus the desktop breakpoint. OS-level prefers-reduced-motion
+  // is still respected for accessibility. Deliberately NOT gated behind the site's global
+  // motionProfile ('none'/'editorial'/...) — that setting governs section entrance/reveal
+  // animations elsewhere and is unrelated to this section's own dedicated toggle; gating on
+  // it too made the global switch silently override the local one, which is surprising and
+  // not what the local toggle is for.
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined' || !cascadeEnabled || !isDesktopWidth || reduceMotion) {
+      return;
+    }
+    const stack = stackRef.current;
+    if (!stack) return;
+
+    const items = Array.from(
+      stack.querySelectorAll<HTMLElement>(':scope > .pf-exp-cards-stack-item')
+    );
+    const pairs = items
+      .map((item, index) => ({
+        card: item.querySelector<HTMLElement>('.pf-exp-cards-stack-card'),
+        nextItem: items[index + 1],
+      }))
+      .filter(
+        (pair): pair is { card: HTMLElement; nextItem: HTMLElement } =>
+          Boolean(pair.card && pair.nextItem)
+      );
+    if (pairs.length === 0) return;
+
+    const scrollTarget: EventTarget = getScrollParent(stack) ?? window;
+    let ticking = false;
+
+    const update = () => {
+      ticking = false;
+      // Distance a card travels from "just entering at the viewport bottom" to
+      // "locked at the sticky top" — the same range the next card scrolls through
+      // while it rises to cover the current one.
+      const travel = Math.max(window.innerHeight - CARDS_STACK_TOP_OFFSET_PX, 1);
+      const stepProgress = pairs.map(({ nextItem }) => {
+        const remaining = nextItem.getBoundingClientRect().top - CARDS_STACK_TOP_OFFSET_PX;
+        return Math.min(1, Math.max(0, 1 - remaining / travel));
+      });
+      const depths = buildCardsStackDepths(stepProgress);
+      pairs.forEach(({ card }, i) => {
+        let depth = depths[i];
+        // Hold this card at depth 0 (fully shown, un-receded) until its own
+        // entrance reveal (title/description/tasks) has actually finished — see
+        // the 'data-entrance-ready' comment in CardsExperienceEntry. Without
+        // this, a fast scroll can fully cover a card before its own content
+        // has finished appearing, so its reveal visibly races the next card's
+        // cover instead of the two happening one after the other.
+        if (card.getAttribute('data-entrance-ready') !== 'true') depth = 0;
+        const scale = 1 - depth * CARDS_STACK_SCALE_STEP;
+        const sink = depth * CARDS_STACK_SINK_PX;
+        card.style.transform = `scale(${scale}) translateY(-${sink}px)`;
+      });
+    };
+
+    const onScrollOrResize = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
+    };
+
+    update();
+    scrollTarget.addEventListener('scroll', onScrollOrResize, { passive: true });
+    window.addEventListener('resize', onScrollOrResize);
+
+    return () => {
+      scrollTarget.removeEventListener('scroll', onScrollOrResize);
+      window.removeEventListener('resize', onScrollOrResize);
+      pairs.forEach(({ card }) => {
+        card.style.transform = '';
+      });
+    };
+  }, [
+    blocks,
+    cascadeEnabled,
+    isDesktopWidth,
+    reduceMotion,
+    presentation.cardsCardWidth,
+    presentation.cardsVerticalGap,
+  ]);
+
   if (blocks.length === 0) return null;
 
   return (
@@ -17980,7 +18405,8 @@ export function CardsExperienceList({
       )}
     >
       <div
-        className="pf-exp-cards-stack"
+        ref={stackRef}
+        className={`pf-exp-cards-stack${cascadeEnabled ? '' : ' pf-exp-cards-stack--static'}`}
         style={
           {
             ['--pf-exp-cards-vertical-gap' as string]: `${resolveExperienceCardsVerticalGapPx(
@@ -17990,17 +18416,7 @@ export function CardsExperienceList({
         }
       >
         {blocks.map((block, index) => (
-          <div
-            key={block.id}
-            className="pf-exp-cards-stack-item"
-            style={
-              {
-                zIndex: index + 1,
-                // Progressive offset = prior title headers stay visible in the cascade.
-                ['--pf-exp-cards-stack-index' as string]: index,
-              } as CSSProperties
-            }
-          >
+          <div key={block.id} className="pf-exp-cards-stack-item" style={{ zIndex: index + 1 }}>
             <CardsExperienceBlock
               block={block}
               presentation={presentation}
@@ -18234,17 +18650,23 @@ const reelRevealItem = {
 function ReelRevealItem({
   children,
   className,
+  style,
   enabled,
 }: {
   children: ReactNode;
   className?: string;
+  style?: CSSProperties;
   enabled: boolean;
 }) {
   if (!enabled) {
-    return <div className={className}>{children}</div>;
+    return (
+      <div className={className} style={style}>
+        {children}
+      </div>
+    );
   }
   return (
-    <motion.div className={className} variants={reelRevealItem}>
+    <motion.div className={className} style={style} variants={reelRevealItem}>
       {children}
     </motion.div>
   );
@@ -18295,6 +18717,8 @@ function ReelExperienceEntry({
   background,
   repoLinkButtonStyle = 'icon',
   showProof = true,
+  showTools = true,
+  isDark = false,
 }: {
   index: number;
   block: ProfileMediaBlock;
@@ -18309,6 +18733,8 @@ function ReelExperienceEntry({
   background: string;
   repoLinkButtonStyle?: PortfolioExperienceRepoLinkStyle;
   showProof?: boolean;
+  showTools?: boolean;
+  isDark?: boolean;
 }) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const reduceMotion = useReducedMotion();
@@ -18317,6 +18743,7 @@ function ReelExperienceEntry({
 
   const { period, title, organization, description, status, tasks, tools, links, location, employmentType } =
     resolveExperienceContent(block);
+  const displayTools = showTools ? tools : [];
 
   const metaLine = [organization, location, employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : null]
     .filter((part): part is string => Boolean(part))
@@ -18324,6 +18751,7 @@ function ReelExperienceEntry({
 
   const hasStatus = status === 'ONGOING' || status === 'FINISHED';
   const repoLink = showProof ? (links[0] ?? null) : null;
+  const cardBackground = `color-mix(in srgb, ${titleColor} 4%, transparent)`;
 
   const SectionTag = fadeReveal ? motion.section : 'section';
 
@@ -18353,82 +18781,86 @@ function ReelExperienceEntry({
         <div className="h-px w-full shrink-0" style={{ backgroundColor: hairline }} aria-hidden />
       </ReelRevealItem>
 
-      {title ? (
-        <ReelRevealItem enabled={fadeReveal}>
-          <h3
-            className="pf-exp-lead-reveal mt-10 max-w-[18ch] text-[clamp(2.6rem,6vw,5rem)] max-[800px]:text-[2.2rem]"
-            style={{
-              fontFamily: REEL_SERIF,
-              fontWeight: 450,
-              lineHeight: 1.04,
-              letterSpacing: '-0.015em',
-            }}
-            data-pf-lead-step="1"
-            data-pf-no-color-transition=""
-          >
-            {reelTwoToneTitle(title, titleColor, mutedColor)}
-          </h3>
-        </ReelRevealItem>
-      ) : null}
-
-      <ReelRevealItem enabled={fadeReveal}>
-        <div className="my-[2.4rem] h-px w-full shrink-0" style={{ backgroundColor: hairline }} aria-hidden />
-      </ReelRevealItem>
-
-      <ReelRevealGroup enabled={fadeReveal} className="pf-reel-grid">
-        <ReelRevealItem enabled={fadeReveal} className="pf-reel-grid-meta">
-          {period ? (
-            <p
-              className="text-[1.6rem] font-semibold"
-              style={{ color: titleColor, fontFamily: REEL_SANS }}
+      <ReelRevealGroup enabled={fadeReveal} className="pf-reel-bento mt-10">
+        <ReelRevealItem enabled={fadeReveal} className="pf-reel-bento-lead">
+          {title ? (
+            <h3
+              className="pf-exp-lead-reveal max-w-[15ch] text-[clamp(2.1rem,4.4vw,3.4rem)] max-[800px]:text-[1.9rem]"
+              style={{
+                fontFamily: REEL_SERIF,
+                fontWeight: 450,
+                lineHeight: 1.05,
+                letterSpacing: '-0.015em',
+              }}
+              data-pf-lead-step="1"
+              data-pf-no-color-transition=""
             >
-              {period}
+              {reelTwoToneTitle(title, titleColor, mutedColor)}
+            </h3>
+          ) : null}
+
+          {period || hasStatus || metaLine ? (
+            <div className="flex flex-col gap-3">
+              {period ? (
+                <p
+                  className="text-[1.4rem] font-semibold"
+                  style={{ color: titleColor, fontFamily: REEL_SANS }}
+                >
+                  {period}
+                </p>
+              ) : null}
+
+              {hasStatus ? (
+                <ReelStatusIndicator
+                  status={status as 'ONGOING' | 'FINISHED'}
+                  presentationStyle={statusStyle}
+                  accent={accent}
+                  secondaryColor={secondaryColor}
+                  bodyColor={bodyColor}
+                  hairline={hairline}
+                />
+              ) : null}
+
+              {metaLine ? (
+                <p className="text-[0.92rem]" style={{ color: mutedColor, fontFamily: REEL_SANS }}>
+                  {metaLine}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </ReelRevealItem>
+
+        <ReelRevealItem
+          enabled={fadeReveal}
+          className="pf-reel-bento-card"
+          style={{ backgroundColor: cardBackground, borderColor: hairline }}
+        >
+          {description ? (
+            <p
+              className="pf-exp-lead-reveal m-0 p-0 text-left text-[1.05rem] leading-[1.85]"
+              style={{ color: bodyColor, fontFamily: REEL_SANS }}
+              data-pf-lead-step="2"
+              data-pf-no-color-transition=""
+            >
+              {description}
             </p>
           ) : null}
 
-          {hasStatus ? (
-            <ReelStatusIndicator
-              status={status as 'ONGOING' | 'FINISHED'}
-              presentationStyle={statusStyle}
-              accent={accent}
-              secondaryColor={secondaryColor}
-              bodyColor={bodyColor}
-              hairline={hairline}
-            />
-          ) : null}
-        </ReelRevealItem>
-
-        <ReelRevealGroup enabled={fadeReveal} className="pf-reel-grid-flow">
-          {description ? (
-            <ReelRevealItem enabled={fadeReveal}>
-              <p
-                className="pf-exp-lead-reveal m-0 p-0 text-left text-[1.05rem] leading-[1.85]"
-                style={{ color: bodyColor, fontFamily: REEL_SANS }}
-                data-pf-lead-step="2"
-                data-pf-no-color-transition=""
-              >
-                {description}
-              </p>
-            </ReelRevealItem>
-          ) : null}
-
           {tasks.length > 0 ? (
-            <ReelRevealGroup enabled={fadeReveal} className={description ? 'mt-9 space-y-3' : 'space-y-3'}>
-              {tasks.map((task, taskIndex) => (
-                <ReelRevealItem key={taskIndex} enabled={fadeReveal}>
-                  <div
-                    className="pf-exp-lead-reveal flex items-baseline gap-4"
-                    data-pf-lead-step="4"
-                    data-pf-no-color-transition=""
-                  >
+            <div
+              className={`pf-reel-timeline ${description ? 'mt-9' : ''}`}
+              data-pf-lead-step="4"
+              data-pf-no-color-transition=""
+            >
+              <span className="pf-reel-timeline-rule" style={{ backgroundColor: hairline }} aria-hidden />
+              <div className="pf-reel-timeline-rows">
+                {tasks.map((task, taskIndex) => (
+                  <div key={taskIndex} className="pf-reel-timeline-row">
                     <span
-                      className="pf-exp-task-index shrink-0 font-mono"
-                      style={{
-                        color: `color-mix(in srgb, ${titleColor} 40%, transparent)`,
-                        fontSize: '0.78rem',
-                      }}
+                      className="pf-reel-timeline-index font-mono text-[0.72rem] font-semibold"
+                      style={{ color: titleColor }}
                     >
-                      {String(taskIndex + 1).padStart(2, '0')} /
+                      {String(taskIndex + 1).padStart(2, '0')}
                     </span>
                     <span
                       className="text-[0.98rem] leading-snug"
@@ -18437,55 +18869,46 @@ function ReelExperienceEntry({
                       {task}
                     </span>
                   </div>
-                </ReelRevealItem>
-              ))}
-            </ReelRevealGroup>
-          ) : null}
-
-          {tools.length > 0 || repoLink || metaLine ? (
-            <ReelRevealItem enabled={fadeReveal}>
-              <div
-                className="mt-12 flex flex-col gap-8 border-t pt-8"
-                style={{ borderColor: hairline }}
-              >
-                {tools.length > 0 ? (
-                  <p className="text-[0.9rem]" style={{ color: mutedColor, fontFamily: REEL_SANS }}>
-                    {tools.join('   •   ')}
-                  </p>
-                ) : null}
-
-                {repoLink || metaLine ? (
-                  <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-                    {repoLink ? (
-                      <PortfolioLinkButton
-                        variant={repoLinkButtonStyle}
-                        href={repoLink.url}
-                        label={repoLink.label || 'View repository'}
-                        palette={experienceLinkButtonPalette({
-                          ink: titleColor,
-                          muted: mutedColor,
-                          accent,
-                          background,
-                          border: hairline,
-                        })}
-                      />
-                    ) : (
-                      <span aria-hidden />
-                    )}
-                    {metaLine ? (
-                      <p
-                        className="ml-auto text-right text-[0.95rem]"
-                        style={{ color: mutedColor, fontFamily: REEL_SANS }}
-                      >
-                        {metaLine}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
+                ))}
               </div>
-            </ReelRevealItem>
+            </div>
           ) : null}
-        </ReelRevealGroup>
+
+          {displayTools.length > 0 ? (
+            <div className="pf-reel-tools-row mt-12 border-t pt-8" style={{ borderColor: hairline }}>
+              {displayTools.map((tool, toolIndex) => (
+                <span
+                  key={toolIndex}
+                  data-pf-no-color-transition=""
+                  className="pf-reel-tools-item text-xs font-semibold uppercase tracking-[0.18em]"
+                  style={{ color: titleColor }}
+                >
+                  {tool}
+                </span>
+              ))}
+            </div>
+          ) : null}
+
+          {repoLink ? (
+            <div
+              className={`flex justify-end ${displayTools.length > 0 ? 'mt-8' : 'mt-12 border-t pt-8'}`}
+              style={displayTools.length > 0 ? undefined : { borderColor: hairline }}
+            >
+              <PortfolioLinkButton
+                variant={repoLinkButtonStyle}
+                href={repoLink.url}
+                label={repoLink.label || 'View repository'}
+                palette={experienceLinkButtonPalette({
+                  ink: titleColor,
+                  muted: mutedColor,
+                  accent,
+                  background,
+                  border: hairline,
+                })}
+              />
+            </div>
+          ) : null}
+        </ReelRevealItem>
       </ReelRevealGroup>
     </SectionTag>
   );
@@ -18504,6 +18927,8 @@ function ReelStickyVerticalExperience({
   statusStyle,
   repoLinkButtonStyle = 'icon',
   showProof = true,
+  showTools = true,
+  isDark = false,
 }: {
   blocks: ProfileMediaBlock[];
   accent: string;
@@ -18516,6 +18941,8 @@ function ReelStickyVerticalExperience({
   statusStyle: PortfolioExperienceReelStatusStyle;
   repoLinkButtonStyle?: PortfolioExperienceRepoLinkStyle;
   showProof?: boolean;
+  showTools?: boolean;
+  isDark?: boolean;
 }) {
   const reduceMotion = useReducedMotion();
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -18549,6 +18976,7 @@ function ReelStickyVerticalExperience({
   const description = active?.description ?? null;
   const tasks = active?.tasks ?? [];
   const tools = active?.tools ?? [];
+  const displayTools = showTools ? tools : [];
 
   useLayoutEffect(() => {
     if (typeof window === 'undefined' || blocks.length === 0) return;
@@ -18812,29 +19240,44 @@ function ReelStickyVerticalExperience({
         </div>
 
         <div ref={footerRef} className="pf-reel-sticky-v-footer">
-            <div className="pf-reel-grid">
-              <div className="pf-reel-grid-meta">
-                {period ? (
-                  <p
-                    className="text-[1.6rem] font-semibold"
-                    style={{ color: titleColor, fontFamily: REEL_SANS }}
-                  >
-                    {period}
-                  </p>
-                ) : null}
-                {hasStatus && active ? (
-                  <ReelStatusIndicator
-                    status={active.status as 'ONGOING' | 'FINISHED'}
-                    presentationStyle={statusStyle}
-                    accent={accent}
-                    secondaryColor={secondaryColor}
-                    bodyColor={bodyColor}
-                    hairline={hairline}
-                  />
+            <div className="pf-reel-bento">
+              <div className="pf-reel-bento-lead">
+                {period || (hasStatus && active) || metaLine ? (
+                  <div className="flex flex-col gap-3">
+                    {period ? (
+                      <p
+                        className="text-[1.4rem] font-semibold"
+                        style={{ color: titleColor, fontFamily: REEL_SANS }}
+                      >
+                        {period}
+                      </p>
+                    ) : null}
+                    {hasStatus && active ? (
+                      <ReelStatusIndicator
+                        status={active.status as 'ONGOING' | 'FINISHED'}
+                        presentationStyle={statusStyle}
+                        accent={accent}
+                        secondaryColor={secondaryColor}
+                        bodyColor={bodyColor}
+                        hairline={hairline}
+                      />
+                    ) : null}
+                    {metaLine ? (
+                      <p className="text-[0.92rem]" style={{ color: mutedColor, fontFamily: REEL_SANS }}>
+                        {metaLine}
+                      </p>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
 
-              <div className="pf-reel-grid-flow">
+              <div
+                className="pf-reel-bento-card"
+                style={{
+                  backgroundColor: `color-mix(in srgb, ${titleColor} 4%, transparent)`,
+                  borderColor: hairline,
+                }}
+              >
                 {description ? (
                   <p className="text-[1.05rem] leading-[1.85]" style={{ color: bodyColor, fontFamily: REEL_SANS }}>
                     {description}
@@ -18842,61 +19285,61 @@ function ReelStickyVerticalExperience({
                 ) : null}
 
                 {tasks.length > 0 ? (
-                  <div className={description ? 'mt-9 space-y-3' : 'space-y-3'}>
-                    {tasks.map((task, taskIndex) => (
-                      <div key={taskIndex} className="flex items-baseline gap-4">
-                        <span className="shrink-0 font-mono" style={{ color: secondaryColor, fontSize: '0.78rem' }}>
-                          {String(taskIndex + 1).padStart(2, '0')} /
-                        </span>
-                        <span
-                          className="text-[0.98rem] leading-snug"
-                          style={{ color: bodyColor, fontFamily: REEL_SANS }}
-                        >
-                          {task}
-                        </span>
-                      </div>
+                  <div className={`pf-reel-timeline ${description ? 'mt-9' : ''}`}>
+                    <span className="pf-reel-timeline-rule" style={{ backgroundColor: hairline }} aria-hidden />
+                    <div className="pf-reel-timeline-rows">
+                      {tasks.map((task, taskIndex) => (
+                        <div key={taskIndex} className="pf-reel-timeline-row">
+                          <span
+                            className="pf-reel-timeline-index font-mono text-[0.72rem] font-semibold"
+                            style={{ color: titleColor }}
+                          >
+                            {String(taskIndex + 1).padStart(2, '0')}
+                          </span>
+                          <span
+                            className="text-[0.98rem] leading-snug"
+                            style={{ color: bodyColor, fontFamily: REEL_SANS }}
+                          >
+                            {task}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {displayTools.length > 0 ? (
+                  <div className="pf-reel-tools-row mt-12 border-t pt-8" style={{ borderColor: hairline }}>
+                    {displayTools.map((tool, toolIndex) => (
+                      <span
+                        key={toolIndex}
+                        data-pf-no-color-transition=""
+                        className="pf-reel-tools-item text-xs font-semibold uppercase tracking-[0.18em]"
+                        style={{ color: titleColor }}
+                      >
+                        {tool}
+                      </span>
                     ))}
                   </div>
                 ) : null}
 
-                {tools.length > 0 || repoLink || metaLine ? (
+                {repoLink ? (
                   <div
-                    className="mt-12 flex flex-col gap-8 border-t pt-8"
-                    style={{ borderColor: hairline }}
+                    className={`flex justify-end ${displayTools.length > 0 ? 'mt-8' : 'mt-12 border-t pt-8'}`}
+                    style={displayTools.length > 0 ? undefined : { borderColor: hairline }}
                   >
-                    {tools.length > 0 ? (
-                      <p className="text-[0.9rem]" style={{ color: mutedColor, fontFamily: REEL_SANS }}>
-                        {tools.join('   •   ')}
-                      </p>
-                    ) : null}
-                    {repoLink || metaLine ? (
-                      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-                        {repoLink ? (
-                          <PortfolioLinkButton
-                            variant={repoLinkButtonStyle}
-                            href={repoLink.url}
-                            label={repoLink.label || 'View repository'}
-                            palette={experienceLinkButtonPalette({
-                              ink: titleColor,
-                              muted: mutedColor,
-                              accent,
-                              background,
-                              border: hairline,
-                            })}
-                          />
-                        ) : (
-                          <span aria-hidden />
-                        )}
-                        {metaLine ? (
-                          <p
-                            className="ml-auto text-right text-[0.95rem]"
-                            style={{ color: mutedColor, fontFamily: REEL_SANS }}
-                          >
-                            {metaLine}
-                          </p>
-                        ) : null}
-                      </div>
-                    ) : null}
+                    <PortfolioLinkButton
+                      variant={repoLinkButtonStyle}
+                      href={repoLink.url}
+                      label={repoLink.label || 'View repository'}
+                      palette={experienceLinkButtonPalette({
+                        ink: titleColor,
+                        muted: mutedColor,
+                        accent,
+                        background,
+                        border: hairline,
+                      })}
+                    />
                   </div>
                 ) : null}
               </div>
@@ -18961,6 +19404,8 @@ export function ReelExperienceList({
         statusStyle={statusStyle}
         repoLinkButtonStyle={resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'reel')}
         showProof={presentation.showProof !== false}
+        showTools={presentation.showTools !== false}
+        isDark={isDark}
       />
     );
   }
@@ -18983,6 +19428,8 @@ export function ReelExperienceList({
           background={background}
           repoLinkButtonStyle={resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'reel')}
           showProof={presentation.showProof !== false}
+          showTools={presentation.showTools !== false}
+          isDark={isDark}
         />
       ))}
     </div>
@@ -19117,6 +19564,9 @@ function DuotoneLeftPanel({
   repoCtaMode = 'footer',
   consultHref,
   isDark = true,
+  active,
+  lane = 'active',
+  titleScale = 'default',
 }: {
   block: ProfileMediaBlock;
   ink: string;
@@ -19149,6 +19599,15 @@ function DuotoneLeftPanel({
   /** Repository URL used when repoCtaMode is thumb-cursor. */
   consultHref?: string | null;
   isDark?: boolean;
+  /** Desktop Sticky mode only: this panel is pinned and cross-fades between roles — same
+   * absolute-layer story-reveal treatment DuotoneRightPanel used before the columns swapped
+   * roles. Undefined (the default) keeps every other mode's plain, non-absolute layout. */
+  active?: boolean;
+  /** Sticky fade direction: above = already scrolled past, below = still ahead. */
+  lane?: 'active' | 'above' | 'below';
+  /** Sticky mobile tier: a smaller, more line-height-generous clamp so the giant title never
+   * gets stuck at its desktop floor on narrow phones. */
+  titleScale?: 'default' | 'compact';
 }) {
   const { period, title, organization, status, location, employmentType } = resolveExperienceContent(block);
 
@@ -19184,14 +19643,23 @@ function DuotoneLeftPanel({
   const titleNode = showTitleBlock ? (
     <h3
       data-pf-no-color-transition=""
-      className="pf-duotone-left-title max-[800px]:text-[1.9rem]"
+      className="pf-duotone-left-title"
       style={{
         color: ink,
         fontFamily: REEL_SERIF,
         fontWeight: premium ? 400 : 640,
-        lineHeight: premium ? 0.95 : 1.08,
+        // Compact (sticky mobile tier): a touch looser than the desktop 0.95 — the giant
+        // title now wraps to 2-3 lines on a phone, and 0.95 reads cramped once it wraps.
+        lineHeight: premium ? (titleScale === 'compact' ? 1.08 : 0.95) : 1.08,
         letterSpacing: '-0.02em',
-        fontSize: premium ? 'clamp(3rem, 6vw, 5.5rem)' : 'clamp(2rem, 3vw, 3.1rem)',
+        // Compact's own clamp (not just a smaller desktop floor): 6vw of a 375px phone is
+        // ~1.4rem, well under the desktop clamp's 3rem floor, which is why that floor used
+        // to win on every phone regardless of screen width.
+        fontSize: premium
+          ? titleScale === 'compact'
+            ? 'clamp(2.1rem, 9vw, 3rem)'
+            : 'clamp(3rem, 6vw, 5.5rem)'
+          : 'clamp(2rem, 3vw, 3.1rem)',
       }}
     >
       {title}
@@ -19260,6 +19728,34 @@ function DuotoneLeftPanel({
       isDark={isDark}
     />
   ) : null;
+
+  if (active !== undefined) {
+    // Desktop Sticky tier only: pinned title + thumbnail, cross-fading between roles.
+    // Reuses the exact absolute/story-layer CSS the (now plain-flow) info column used
+    // before the two columns swapped which one gets pinned.
+    return (
+      <div
+        data-pf-no-color-transition=""
+        data-active={active ? 'true' : 'false'}
+        data-lane={lane}
+        data-in-view={active ? 'true' : 'false'}
+        className={`pf-duotone-right-panel pf-duotone-left-panel absolute inset-0 flex flex-col justify-center overflow-hidden ${premiumGapClass}`}
+        aria-hidden={active === false}
+      >
+        {titleNode ? (
+          <div data-pf-no-color-transition="" data-layer="0" className="pf-duotone-story-layer">
+            {titleNode}
+          </div>
+        ) : null}
+        {thumbNode ? (
+          <div data-pf-no-color-transition="" data-layer="1" className="pf-duotone-story-layer">
+            {thumbNode}
+            {consultCursorNode}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   if (scrollPart === 'title') {
     return titleNode ? (
@@ -19347,10 +19843,12 @@ function DuotoneRightPanel({
   background,
   isDark,
   active,
+  lane = 'active',
   className = '',
   enhanced = false,
   bare = false,
   tasksDisplay = 'editorial-dash',
+  toolsBadgeStyle = 'mineral-pills',
   showDescription = true,
   showTasks = true,
   showTools = true,
@@ -19359,8 +19857,9 @@ function DuotoneRightPanel({
   showMeta = true,
   repoLinkButtonStyle = 'icon',
   premium = false,
+  wideMeasure = false,
+  toolsLayout = 'wrap',
   stickyVerticalGap,
-  lane = 'active',
   flushTop = false,
   hideRepoButton = false,
 }: {
@@ -19373,8 +19872,12 @@ function DuotoneRightPanel({
   border: string;
   background: string;
   isDark: boolean;
+  /** Desktop Sticky tier only: this panel is pinned and cross-fades between roles. Undefined
+   * (the default) keeps every other mode's plain, non-absolute layout. */
   active?: boolean;
-  /** Extra classes for the plain (active === undefined) layout only — e.g. mobile top spacing. */
+  /** Sticky fade direction: above = already scrolled past, below = still ahead. */
+  lane?: 'active' | 'above' | 'below';
+  /** Extra layout classes — e.g. mobile top spacing. */
   className?: string;
   /** Slide-mode-only polish: card depth, pill lift. Off elsewhere. */
   enhanced?: boolean;
@@ -19383,6 +19886,8 @@ function DuotoneRightPanel({
   bare?: boolean;
   /** General → Tasks display setting — same options every other design offers. */
   tasksDisplay?: PortfolioExperienceTasksDisplay;
+  /** General → Tools display setting — same options every other design offers. */
+  toolsBadgeStyle?: PortfolioExperienceToolsBadgeStyle;
   /** General → Content visibility toggles — respected here the same way Cards/Editorial do. */
   showDescription?: boolean;
   showTasks?: boolean;
@@ -19396,10 +19901,15 @@ function DuotoneRightPanel({
   /** Sticky scroll mode only: squared, discreet stack chips instead of rounded pills, and the
    * period / org / status row (moved here from the left panel) laid out horizontally. */
   premium?: boolean;
+  /** Sticky tablet/mobile tiers: a single full-width column, so the narrow editorial measure
+   * (built for the pinned/flowing two-column desktop layout) would look absurdly cramped —
+   * this swaps it for a wider, still-airy measure instead. */
+  wideMeasure?: boolean;
+  /** Sticky mobile tier: a discreet horizontally-scrollable strip instead of wrapping tags,
+   * so the tools row never staircases down the screen. Forwarded to ExperienceToolsDisplay. */
+  toolsLayout?: 'wrap' | 'scroll-x';
   /** Sticky mode only — vertical editorial rhythm between description / tasks / stack. */
   stickyVerticalGap?: PortfolioExperienceDuotoneStickyVerticalGap;
-  /** Sticky fade direction: above = already scrolled past, below = still ahead. */
-  lane?: 'active' | 'above' | 'below';
   /** Scroll mode: drop top padding so editorial top edges align with the thumbnail. */
   flushTop?: boolean;
   /** When thumb-cursor CTA is on, hide the footer repository button. */
@@ -19419,10 +19929,9 @@ function DuotoneRightPanel({
   const displayMetaLine = showMeta ? metaLine : '';
   const displayStatusLabel = showMeta ? statusLabel : null;
   const hasMetaRow = premium && Boolean(displayPeriod || displayMetaLine || displayStatusLabel);
-  // Card surface a shade off the page background, chips a shade off the card —
-  // both mixed from the same ink/background tokens, no new colors introduced.
+  // Card surface a shade off the page background — the tools badges derive their own tone
+  // from the same ink/background tokens inside ExperienceToolsDisplay.
   const cardBg = `color-mix(in srgb, ${ink} 4%, ${background})`;
-  const chipBg = `color-mix(in srgb, ${ink} 9%, ${background})`;
   const stickySpacing = flushTop
     ? experienceDuotoneScrollEditorialSpacing(stickyVerticalGap ?? 'md')
     : experienceDuotoneStickyEditorialSpacing(stickyVerticalGap ?? 'md');
@@ -19439,7 +19948,13 @@ function DuotoneRightPanel({
       className={
         active === undefined
           ? `flex w-full flex-col justify-center ${className}`
-          : 'pf-duotone-right-panel absolute inset-0 flex flex-col justify-center pl-10 lg:pl-14 xl:pl-16'
+          // No extra left padding here on top of the column gap — that used to stack with
+          // the flex gap below and blow the middle gutter out past Scroll mode's. The gap
+          // between the two columns comes from the row's own gap-* only, same as Scroll.
+          // Pushed below dead-center on purpose: the left title/thumb column keeps its own
+          // anchor, so this offset breaks the two columns' rectilinear alignment into a
+          // diagonal cascade instead of a static side-by-side corridor.
+          : 'pf-duotone-right-panel absolute inset-0 flex flex-col justify-center translate-y-8 lg:translate-y-12 xl:translate-y-16'
       }
       aria-hidden={active === false}
     >
@@ -19448,7 +19963,10 @@ function DuotoneRightPanel({
           bare
             ? 'w-full'
             : premium
-              ? `w-full ${flushTop ? 'p-0' : 'p-10 max-[800px]:p-6'}`
+              ? // No left inset here (top/right/bottom only) — the pinned panel already sits
+                // one column-gap away from the title column, and adding a pl on top of that
+                // gap was stacking with it, blowing the middle gutter out past Scroll mode's.
+                `w-full ${flushTop ? 'p-0' : 'pt-10 pr-10 pb-10 max-[800px]:p-6'}`
               : `w-full rounded-[14px] border p-10 max-[800px]:p-6 ${
                   enhanced ? 'transition-shadow duration-300' : ''
                 }`
@@ -19512,7 +20030,18 @@ function DuotoneRightPanel({
               {displayDescription ? (
                 <div {...layerProps(1)}>
                   <p
-                    className="text-[1.02rem] leading-[1.85]"
+                    // Scroll/sticky two-column desktop (premium, narrow): a wide-ish measure
+                    // and a much taller line-height air out the central gutter and read as
+                    // editorial copy, without wrapping every line after only a few words.
+                    // Sticky tablet/mobile (wideMeasure): same airy leading, full-width measure
+                    // instead. Slide/mobile-plain: the original denser paragraph.
+                    className={
+                      wideMeasure
+                        ? 'max-w-2xl text-[1.02rem] leading-[1.9]'
+                        : premium
+                          ? 'max-w-[58ch] text-[1.02rem] leading-[2.15]'
+                          : 'text-[1.02rem] leading-[1.85]'
+                    }
                     style={{ color: ink, fontFamily: REEL_SANS }}
                   >
                     {displayDescription}
@@ -19521,12 +20050,7 @@ function DuotoneRightPanel({
               ) : null}
 
               {displayTasks.length > 0 ? (
-                <div
-                  {...layerProps(
-                    2,
-                    premium ? (displayDescription ? tasksMtClass : '') : 'mt-9'
-                  )}
-                >
+                <div {...layerProps(2, premium ? (displayDescription ? tasksMtClass : '') : 'mt-9')}>
                   <ExperienceTasksDisplay
                     tasks={displayTasks}
                     display={tasksDisplay}
@@ -19551,27 +20075,16 @@ function DuotoneRightPanel({
               className={`${active !== undefined ? 'pf-duotone-story-layer ' : ''}pf-duotone-chrome ${stackMtClass} flex flex-col ${stackGapClass} border-t ${stackPtClass}`}
               style={{ borderColor: `color-mix(in srgb, ${muted} 12%, transparent)` }}
             >
-              {displayTools.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {displayTools.map((tool) => (
-                    <span
-                      key={tool}
-                      className="rounded-none border px-3 py-1 font-medium uppercase transition-opacity duration-200 hover:opacity-100"
-                      data-pf-no-color-transition=""
-                      style={{
-                        borderColor: `color-mix(in srgb, ${muted} 62%, transparent)`,
-                        color: `color-mix(in srgb, ${ink} 48%, ${muted} 52%)`,
-                        fontSize: '0.72rem',
-                        letterSpacing: '0.04em',
-                        fontFamily: REEL_SANS,
-                        opacity: 0.78,
-                      }}
-                    >
-                      {tool}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
+              <ExperienceToolsDisplay
+                tools={displayTools}
+                style={toolsBadgeStyle}
+                ink={ink}
+                muted={muted}
+                background={background}
+                isDark={isDark}
+                size="md"
+                layout={toolsLayout}
+              />
               {repoLink ? (
                 <div className="self-start">
                   <PortfolioLinkButton
@@ -19588,24 +20101,17 @@ function DuotoneRightPanel({
         ) : (
           <>
             {displayTools.length > 0 ? (
-              <div className="mt-9 flex flex-wrap gap-2">
-                {displayTools.map((tool) => (
-                  <span
-                    key={tool}
-                    className={`rounded-full border px-3 py-1 text-[0.8rem] font-medium ${
-                      enhanced ? 'transition-transform duration-200 hover:-translate-y-0.5' : ''
-                    }`}
-                    data-pf-no-color-transition=""
-                    style={{
-                      backgroundColor: chipBg,
-                      borderColor: `color-mix(in srgb, ${ink} 22%, transparent)`,
-                      color: ink,
-                      fontFamily: REEL_SANS,
-                    }}
-                  >
-                    {tool}
-                  </span>
-                ))}
+              <div className="mt-9">
+                <ExperienceToolsDisplay
+                  tools={displayTools}
+                  style={toolsBadgeStyle}
+                  ink={ink}
+                  muted={muted}
+                  background={background}
+                  isDark={isDark}
+                  size="md"
+                  layout={toolsLayout}
+                />
               </div>
             ) : null}
 
@@ -19627,7 +20133,6 @@ function DuotoneRightPanel({
   );
 }
 
-/** Duotone design — full-width intro screen shown before the first role. */
 /** Duotone design: chevron used by the Slide scroll mode's prev/next controls. */
 /** General → Content settings this design now respects, resolved once and passed down. */
 type DuotoneContentFlags = {
@@ -19640,6 +20145,7 @@ type DuotoneContentFlags = {
   showProof: boolean;
   showEntryMedia: boolean;
   tasksDisplay: PortfolioExperienceTasksDisplay;
+  toolsBadgeStyle: PortfolioExperienceToolsBadgeStyle;
   repoLinkButtonStyle: PortfolioExperienceRepoLinkStyle;
   isDark: boolean;
 };
@@ -19655,31 +20161,6 @@ function DuotoneChevronIcon({ direction }: { direction: 'left' | 'right' }) {
         strokeLinejoin="round"
       />
     </svg>
-  );
-}
-
-function DuotoneIntroPanel({ ink, muted, accent }: { ink: string; muted: string; accent: string }) {
-  return (
-    <div className="flex w-full flex-col pt-[20vh] pb-[5vh] max-[800px]:pt-16 max-[800px]:pb-6">
-      <span className="text-[0.85rem] font-semibold" style={{ color: accent, fontFamily: REEL_SANS }}>
-        Experience
-      </span>
-      <h2
-        className="mt-3 max-w-[16ch] text-[clamp(2.6rem,6vw,5.2rem)]"
-        style={{
-          color: ink,
-          fontFamily: REEL_SERIF,
-          fontWeight: 440,
-          lineHeight: 1.08,
-          letterSpacing: '-0.015em',
-        }}
-      >
-        Where I&apos;ve worked, one role at a time.
-      </h2>
-      <p className="mt-3 max-w-[34rem] text-[1.1rem]" style={{ color: muted, fontFamily: REEL_SANS }}>
-        Three positions, each on its own screen.
-      </p>
-    </div>
   );
 }
 
@@ -19788,7 +20269,10 @@ function DuotoneScrollRoles({
               />
             </div>
             <div
-              className="min-w-0 w-full self-start"
+              // Deliberately NOT flush with the thumbnail's top edge (row 2 start): this
+              // downward offset breaks the rectilinear title/thumb ↔ description alignment
+              // so the two columns read as a diagonal cascade instead of a rigid grid.
+              className="min-w-0 w-full self-start mt-10 lg:mt-16 xl:mt-24"
               style={{ gridColumn: infoCol, gridRow: 2 }}
             >
               <DuotoneRightPanel
@@ -20069,30 +20553,60 @@ function DuotoneSlideRoles({
 }
 
 /**
- * Duotone design — split 50/50 layout, one flat background. Three scroll modes on desktop:
- * Sticky (story panel pinned, crossfades as you scroll the role list), Scroll (plain, no
- * pinning), Slide (one role at a time, chevron-navigated, smooth horizontal slide).
- * Mobile always uses the simple stacked layout regardless of the chosen mode.
+ * Duotone "Sticky" mode — its own fully bespoke 3-tier responsive layout (unlike Scroll and
+ * Slide, which share DuotoneExperienceList's generic desktop/mobile split):
+ *
+ * - Desktop (xl+, ≥1280px): the original Sticky mechanic — title + thumbnail scroll in normal
+ *   flow (each block sized by its own stickyVerticalGap min-height) while the description /
+ *   timeline / tools panel is pinned (`position: sticky`) and cross-fades between roles,
+ *   nudged below dead-center so the two columns read as a diagonal cascade rather than a
+ *   rigid side-by-side corridor.
+ * - Tablet (800px–1279px): sticky is deliberately OFF — a cramped two-column pin at this width
+ *   reads as broken, not premium. Single unified column instead: giant title, a large centered
+ *   thumbnail, then description / timeline / tools at full width.
+ * - Mobile (<800px): the same single-column shape, tighter (py-8) spacing, a title clamp that
+ *   actually shrinks on narrow phones (the shared desktop clamp's 3rem floor otherwise wins
+ *   regardless of viewport), and a horizontally swipeable tools strip instead of wrapped tags.
  */
-export function DuotoneExperienceList({
+function DuotoneStickyExperience({
   blocks,
-  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+  ink,
+  muted,
+  accent,
+  secondary,
+  border,
+  background,
+  flags,
+  thumbnailEffect,
+  thumbnailHeight,
+  swapSides,
+  verticalGap,
+  repoCtaMode,
 }: {
   blocks: ProfileMediaBlock[];
-  presentation?: PortfolioExperiencePresentationSettings;
-  motionProfile?: PortfolioGlobalMotionProfile;
-  forceSingleColumn?: boolean;
+  ink: string;
+  muted: string;
+  accent: string;
+  secondary: string;
+  border: string;
+  background: string;
+  flags: DuotoneContentFlags;
+  thumbnailEffect: PortfolioExperienceDuotoneThumbnailEffect;
+  thumbnailHeight: PortfolioExperienceDuotoneThumbnailHeight;
+  swapSides: boolean;
+  verticalGap: PortfolioExperienceDuotoneStickyVerticalGap;
+  repoCtaMode: PortfolioExperienceDuotoneRepoCtaMode;
 }) {
-  const scrollMode = presentation.duotoneScrollMode ?? 'sticky';
   const [activeIndex, setActiveIndex] = useState(0);
   const sectionRefs = useRef<Array<HTMLElement | null>>([]);
+  const thumbCursorCta = repoCtaMode === 'thumb-cursor';
+  const sectionMinVh = experienceDuotoneStickySectionVh(verticalGap);
 
   useEffect(() => {
-    if (scrollMode !== 'sticky') return;
     const sections = sectionRefs.current.filter((el): el is HTMLElement => Boolean(el));
     if (sections.length === 0) return;
-    // Center-band observer: switch roles when a left panel owns the middle of the viewport,
-    // with fine thresholds so the handoff stays smooth instead of snapping at a hard 50%.
+    // Center-band observer: switch roles when a title/thumbnail block owns the middle of the
+    // viewport, with fine thresholds so the handoff stays smooth instead of snapping at 50%.
     const observer = new IntersectionObserver(
       (entries) => {
         let best: { index: number; ratio: number } | null = null;
@@ -20108,14 +20622,225 @@ export function DuotoneExperienceList({
           setActiveIndex((current) => (current === best!.index ? current : best!.index));
         }
       },
-      {
-        threshold: [0.2, 0.35, 0.5, 0.65, 0.8],
-        rootMargin: '-18% 0px -18% 0px',
-      }
+      { threshold: [0.2, 0.35, 0.5, 0.65, 0.8], rootMargin: '-18% 0px -18% 0px' }
     );
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
-  }, [blocks.length, scrollMode]);
+  }, [blocks.length]);
+
+  if (blocks.length === 0) return null;
+
+  // Sticky-only defaults: a rail-and-index task list and a dotted editorial tools line read
+  // as a deliberate timeline next to a pinned title. Swapped in only when the shared General
+  // settings still sit at their own global defaults — same override precedent Cards uses for
+  // tasksDisplay — so an explicit user choice elsewhere is never second-guessed.
+  const tasksDisplay: PortfolioExperienceTasksDisplay =
+    flags.tasksDisplay === 'editorial-dash' ? 'accordion-stack' : flags.tasksDisplay;
+  const toolsBadgeStyle: PortfolioExperienceToolsBadgeStyle =
+    flags.toolsBadgeStyle === 'mineral-pills' ? 'editorial-list' : flags.toolsBadgeStyle;
+
+  return (
+    <>
+      {/* Desktop (xl+): title/thumbnail scrolls in flow, description/timeline/tools is pinned
+          and cross-fades between roles. */}
+      <div className="relative z-[1] hidden w-full xl:block">
+        {/* Explicit height (not min-height/auto) so the sticky panel always has real room to
+            stick — an auto-height row gives the pinned column's sticky child nothing to stick
+            within, and it just sits static instead of tracking the scroll. */}
+        <div
+          // Same column gap as Scroll mode (gap-x-14 lg:gap-x-20 xl:gap-x-28) — no separate
+          // padding added on either column, so the middle gutter reads identically tight.
+          className="relative flex w-full gap-14 lg:gap-20 xl:gap-28"
+          style={{ height: `${blocks.length * sectionMinVh}vh` }}
+        >
+          {(() => {
+            // Title/thumbnail scrolls in normal flow — each block sized via its own
+            // stickyVerticalGap-driven min-height (DuotoneLeftPanel's panelMinHeight) — while
+            // the description/timeline/tools panel is pinned and cross-fades between roles.
+            const titleColumn = (
+              <div key="title" className="flex h-full min-w-0 w-[46%] shrink-0 flex-col xl:w-[48%]">
+                {blocks.map((block, index) => {
+                  const { links } = resolveExperienceContent(block);
+                  const consultHref =
+                    flags.showProof && thumbCursorCta && links[0]?.url ? links[0].url : null;
+                  return (
+                    <DuotoneLeftPanel
+                      key={block.id}
+                      block={block}
+                      ink={ink}
+                      muted={muted}
+                      secondary={secondary}
+                      border={border}
+                      registerRef={(el) => {
+                        sectionRefs.current[index] = el;
+                      }}
+                      premium
+                      accent={accent}
+                      thumbnailEffect={thumbnailEffect}
+                      thumbnailHeight={thumbnailHeight}
+                      stickyVerticalGap={verticalGap}
+                      inView={index === activeIndex}
+                      repoCtaMode={repoCtaMode}
+                      consultHref={consultHref}
+                      {...flags}
+                    />
+                  );
+                })}
+              </div>
+            );
+            const infoColumn = (
+              <div key="info" className="relative h-full min-w-0 flex-1">
+                <div className="sticky top-0 h-screen w-full">
+                  {blocks.map((block, index) => (
+                    <DuotoneRightPanel
+                      key={block.id}
+                      block={block}
+                      ink={ink}
+                      muted={muted}
+                      secondary={secondary}
+                      accent={accent}
+                      border={border}
+                      background={background}
+                      active={index === activeIndex}
+                      lane={
+                        index === activeIndex ? 'active' : index < activeIndex ? 'above' : 'below'
+                      }
+                      premium
+                      stickyVerticalGap={verticalGap}
+                      hideRepoButton={thumbCursorCta}
+                      {...flags}
+                      tasksDisplay={tasksDisplay}
+                      toolsBadgeStyle={toolsBadgeStyle}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+            return swapSides ? [infoColumn, titleColumn] : [titleColumn, infoColumn];
+          })()}
+        </div>
+      </div>
+
+      {/* Tablet (800px–1279px): single unified column — sticky pinning would only cramp two
+          columns this narrow, so it's off entirely; giant title, a large centered thumbnail,
+          then description / timeline / tools at full width. */}
+      <div className="relative z-[1] hidden w-full min-[800px]:block xl:hidden">
+        <div className="flex flex-col">
+          {blocks.map((block, index) => {
+            const { links } = resolveExperienceContent(block);
+            const consultHref =
+              flags.showProof && thumbCursorCta && links[0]?.url ? links[0].url : null;
+            return (
+              <div key={block.id} className={index > 0 ? 'mt-24' : ''}>
+                <div className="mx-auto w-full max-w-2xl">
+                  <DuotoneLeftPanel
+                    block={block}
+                    ink={ink}
+                    muted={muted}
+                    secondary={secondary}
+                    border={border}
+                    premium
+                    naturalHeight
+                    // No scroll-linked reveal here (one panel per block, normal flow) — settle
+                    // straight into the resting state instead of the pre-reveal dim/zoom.
+                    inView
+                    accent={accent}
+                    thumbnailEffect={thumbnailEffect}
+                    thumbnailHeight={thumbnailHeight}
+                    repoCtaMode={repoCtaMode}
+                    consultHref={consultHref}
+                    {...flags}
+                  />
+                </div>
+                <div className="mt-12">
+                  <DuotoneRightPanel
+                    block={block}
+                    ink={ink}
+                    muted={muted}
+                    secondary={secondary}
+                    accent={accent}
+                    border={border}
+                    background={background}
+                    premium
+                    wideMeasure
+                    hideRepoButton={thumbCursorCta}
+                    {...flags}
+                    tasksDisplay={tasksDisplay}
+                    toolsBadgeStyle={toolsBadgeStyle}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Mobile (<800px): vertical narration — tight (py-8) stacking, a title clamp that
+          actually shrinks on a phone, and a swipeable tools strip instead of a wrapped stack. */}
+      <div className="relative z-[1] flex w-full flex-col min-[800px]:hidden">
+        {blocks.map((block, index) => {
+          const { links } = resolveExperienceContent(block);
+          const consultHref =
+            flags.showProof && thumbCursorCta && links[0]?.url ? links[0].url : null;
+          return (
+            <div key={block.id} className="py-8">
+              <DuotoneLeftPanel
+                block={block}
+                ink={ink}
+                muted={muted}
+                secondary={secondary}
+                border={border}
+                premium
+                naturalHeight
+                inView
+                titleScale="compact"
+                accent={accent}
+                thumbnailEffect={thumbnailEffect}
+                thumbnailHeight={thumbnailHeight}
+                repoCtaMode={repoCtaMode}
+                consultHref={consultHref}
+                {...flags}
+              />
+              <div className="mt-8">
+                <DuotoneRightPanel
+                  block={block}
+                  ink={ink}
+                  muted={muted}
+                  secondary={secondary}
+                  accent={accent}
+                  border={border}
+                  background={background}
+                  premium
+                  wideMeasure
+                  toolsLayout="scroll-x"
+                  hideRepoButton={thumbCursorCta}
+                  {...flags}
+                  tasksDisplay={tasksDisplay}
+                  toolsBadgeStyle={toolsBadgeStyle}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+export function DuotoneExperienceList({
+  blocks,
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
+}: {
+  blocks: ProfileMediaBlock[];
+  presentation?: PortfolioExperiencePresentationSettings;
+  motionProfile?: PortfolioGlobalMotionProfile;
+  forceSingleColumn?: boolean;
+}) {
+  const scrollMode = presentation.duotoneScrollMode ?? 'sticky';
+  // Slide mode's own prev/next state. Sticky now owns its own activeIndex + scroll observer
+  // locally (DuotoneStickyExperience) — its pinned column and the column it watches both
+  // swapped sides, and it never needs to share state with Slide.
+  const [activeIndex, setActiveIndex] = useState(0);
 
   if (blocks.length === 0) return null;
 
@@ -20161,6 +20886,7 @@ export function DuotoneExperienceList({
     showProof: presentation.showProof !== false,
     showEntryMedia: presentation.showEntryMedia !== false,
     tasksDisplay: presentation.tasksDisplay,
+    toolsBadgeStyle: presentation.toolsBadgeStyle,
     repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'icon'),
     isDark,
   };
@@ -20177,7 +20903,6 @@ export function DuotoneExperienceList({
   const thumbnailHeight = presentation.duotoneThumbnailHeight ?? 'md';
   const stickySwapSides = presentation.duotoneStickySwapSides === true;
   const stickyVerticalGap = presentation.duotoneStickyVerticalGap ?? 'md';
-  const stickySectionVh = experienceDuotoneStickySectionVh(stickyVerticalGap);
   const repoCtaMode = presentation.duotoneRepoCtaMode ?? 'footer';
   const thumbCursorCta = repoCtaMode === 'thumb-cursor';
 
@@ -20194,152 +20919,92 @@ export function DuotoneExperienceList({
         />
       ) : null}
 
-      {/* Desktop: intro screen, then the selected scroll mode. */}
-      <div className="relative z-[1] flex w-full flex-col max-[800px]:hidden">
-        <DuotoneIntroPanel ink={ink} muted={muted} accent={accent} />
-        {scrollMode === 'scroll' ? (
-          // Same breathing room below the section intro as Sticky before the role list.
-          <div style={{ marginTop: '10vh' }}>
-            <DuotoneScrollRoles
-              blocks={blocks}
-              ink={ink}
-              muted={muted}
-              accent={accent}
-              secondary={secondary}
-              border={border}
-              background={background}
-              flags={flags}
-              thumbnailEffect={thumbnailEffect}
-              thumbnailHeight={thumbnailHeight}
-              swapSides={stickySwapSides}
-              alternateSides={presentation.duotoneAlternateSides === true}
-              verticalGap={stickyVerticalGap}
-              repoCtaMode={repoCtaMode}
-              fullWidthTitle={presentation.duotoneScrollFullWidthTitle === true}
-            />
+      {scrollMode === 'sticky' ? (
+        <DuotoneStickyExperience
+          blocks={blocks}
+          ink={ink}
+          muted={muted}
+          accent={accent}
+          secondary={secondary}
+          border={border}
+          background={background}
+          flags={flags}
+          thumbnailEffect={thumbnailEffect}
+          thumbnailHeight={thumbnailHeight}
+          swapSides={stickySwapSides}
+          verticalGap={stickyVerticalGap}
+          repoCtaMode={repoCtaMode}
+        />
+      ) : (
+        <>
+          {/* Desktop: the selected scroll mode. */}
+          <div className="relative z-[1] flex w-full flex-col max-[800px]:hidden">
+            {scrollMode === 'scroll' ? (
+              <DuotoneScrollRoles
+                blocks={blocks}
+                ink={ink}
+                muted={muted}
+                accent={accent}
+                secondary={secondary}
+                border={border}
+                background={background}
+                flags={flags}
+                thumbnailEffect={thumbnailEffect}
+                thumbnailHeight={thumbnailHeight}
+                swapSides={stickySwapSides}
+                alternateSides={presentation.duotoneAlternateSides === true}
+                verticalGap={stickyVerticalGap}
+                repoCtaMode={repoCtaMode}
+                fullWidthTitle={presentation.duotoneScrollFullWidthTitle === true}
+              />
+            ) : (
+              <DuotoneSlideRoles
+                blocks={blocks}
+                ink={ink}
+                muted={muted}
+                accent={accent}
+                secondary={secondary}
+                border={border}
+                background={background}
+                activeIndex={activeIndex}
+                onNavigate={(next) => setActiveIndex(Math.max(0, Math.min(blocks.length - 1, next)))}
+                navStyle={presentation.duotoneSlideNavStyle ?? 'chevron'}
+                flags={flags}
+                frameBorderColor={frameBorderColor}
+                frameRadiusPx={frameRadiusPx}
+                autoAdvance={presentation.duotoneAutoAdvance === true}
+              />
+            )}
           </div>
-        ) : scrollMode === 'slide' ? (
-          <DuotoneSlideRoles
-            blocks={blocks}
-            ink={ink}
-            muted={muted}
-            accent={accent}
-            secondary={secondary}
-            border={border}
-            background={background}
-            activeIndex={activeIndex}
-            onNavigate={(next) => setActiveIndex(Math.max(0, Math.min(blocks.length - 1, next)))}
-            navStyle={presentation.duotoneSlideNavStyle ?? 'chevron'}
-            flags={flags}
-            frameBorderColor={frameBorderColor}
-            frameRadiusPx={frameRadiusPx}
-            autoAdvance={presentation.duotoneAutoAdvance === true}
-          />
-        ) : (
-          // Extra breathing room below the intro screen before the pinned entries start.
-          <div style={{ marginTop: '10vh' }}>
-            {/* Explicit height (not min-height/auto) so the sticky panel always ends exactly
-                at the last entry, regardless of how an ancestor stretches or sizes this section. */}
-            <div
-              className="relative flex w-full gap-16 lg:gap-24 xl:gap-36"
-              style={{ height: `${blocks.length * stickySectionVh}vh` }}
-            >
-              {(() => {
-                const titleColumn = (
-                  <div key="title" className="flex h-full w-[46%] shrink-0 flex-col lg:w-[48%]">
-                    {blocks.map((block, index) => {
-                      const { links } = resolveExperienceContent(block);
-                      const consultHref =
-                        flags.showProof && thumbCursorCta && links[0]?.url ? links[0].url : null;
-                      return (
-                      <DuotoneLeftPanel
-                        key={block.id}
-                        block={block}
-                        ink={ink}
-                        muted={muted}
-                        secondary={secondary}
-                        border={border}
-                        registerRef={(el) => {
-                          sectionRefs.current[index] = el;
-                        }}
-                        premium
-                        accent={accent}
-                        thumbnailEffect={thumbnailEffect}
-                        thumbnailHeight={thumbnailHeight}
-                        stickyVerticalGap={stickyVerticalGap}
-                        inView={index === activeIndex}
-                        repoCtaMode={repoCtaMode}
-                        consultHref={consultHref}
-                        {...flags}
-                      />
-                      );
-                    })}
-                  </div>
-                );
-                const infoColumn = (
-                  <div key="info" className="relative h-full min-w-0 flex-1">
-                    <div className="sticky top-0 h-screen w-full">
-                      {blocks.map((block, index) => (
-                        <DuotoneRightPanel
-                          key={block.id}
-                          block={block}
-                          ink={ink}
-                          muted={muted}
-                          secondary={secondary}
-                          accent={accent}
-                          border={border}
-                          background={background}
-                          active={index === activeIndex}
-                          lane={
-                            index === activeIndex
-                              ? 'active'
-                              : index < activeIndex
-                                ? 'above'
-                                : 'below'
-                          }
-                          premium
-                          stickyVerticalGap={stickyVerticalGap}
-                          hideRepoButton={thumbCursorCta}
-                          {...flags}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-                return stickySwapSides ? [infoColumn, titleColumn] : [titleColumn, infoColumn];
-              })()}
-            </div>
-          </div>
-        )}
-      </div>
 
-      {/* Mobile: intro screen, then simple stacked pairs, no pinning — regardless of desktop mode. */}
-      <div className="relative z-[1] hidden w-full flex-col max-[800px]:flex">
-        <DuotoneIntroPanel ink={ink} muted={muted} accent={accent} />
-        {blocks.map((block, index) => (
-          <div key={block.id} className="py-10">
-            <DuotoneLeftPanel
-              block={block}
-              ink={ink}
-              muted={muted}
-              secondary={secondary}
-              border={border}
-              {...flags}
-            />
-            <DuotoneRightPanel
-              block={block}
-              ink={ink}
-              muted={muted}
-              secondary={secondary}
-              accent={accent}
-              border={border}
-              background={background}
-              className="mt-8"
-              {...flags}
-            />
+          {/* Mobile: simple stacked pairs, no pinning — regardless of desktop mode. */}
+          <div className="relative z-[1] hidden w-full flex-col max-[800px]:flex">
+            {blocks.map((block, index) => (
+              <div key={block.id} className="py-10">
+                <DuotoneLeftPanel
+                  block={block}
+                  ink={ink}
+                  muted={muted}
+                  secondary={secondary}
+                  border={border}
+                  {...flags}
+                />
+                <DuotoneRightPanel
+                  block={block}
+                  ink={ink}
+                  muted={muted}
+                  secondary={secondary}
+                  accent={accent}
+                  border={border}
+                  background={background}
+                  className="mt-8"
+                  {...flags}
+                />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   );
 }
@@ -20435,16 +21100,16 @@ function GalleryDetailContent({
       ) : null}
 
       {displayTools.length > 0 ? (
-        <div className={compact ? 'mt-5 flex flex-wrap gap-1.5' : 'mt-8 flex flex-wrap gap-2'}>
-          {displayTools.map((tool) => (
-            <span
-              key={tool}
-              className={compact ? 'rounded-full border px-2.5 py-1 text-[0.78rem]' : 'rounded-full border px-3 py-1.5 text-[0.85rem]'}
-              style={{ borderColor: border, color: muted }}
-            >
-              {tool}
-            </span>
-          ))}
+        <div className={compact ? 'mt-5' : 'mt-8'}>
+          <ExperienceToolsDisplay
+            tools={displayTools}
+            style={flags.toolsBadgeStyle}
+            ink={ink}
+            muted={muted}
+            background={cardBg}
+            isDark={isDark}
+            size={compact ? 'sm' : 'md'}
+          />
         </div>
       ) : null}
 
@@ -20468,11 +21133,12 @@ function GalleryExperienceCard({
   secondaryColor,
   titleColor,
   mutedColor,
-  bodyColor,
   border,
   isDark,
   flags,
   thumbnailFit,
+  thumbnailRadius,
+  hoverEffect,
   onOpen,
 }: {
   block: ProfileMediaBlock;
@@ -20480,11 +21146,12 @@ function GalleryExperienceCard({
   secondaryColor: string;
   titleColor: string;
   mutedColor: string;
-  bodyColor: string;
   border: string;
   isDark: boolean;
   flags: DuotoneContentFlags;
   thumbnailFit: PortfolioExperienceGalleryThumbnailFit;
+  thumbnailRadius: PortfolioExperienceCardsBorderRadius;
+  hoverEffect: PortfolioExperienceLoftHoverEffect;
   onOpen: () => void;
 }) {
   const { period, title, organization, status, tasks, tools, location, employmentType } =
@@ -20496,94 +21163,114 @@ function GalleryExperienceCard({
   const initial = (title || organization || '•').trim().charAt(0).toUpperCase();
   const displayTools = flags.showTools ? tools : [];
   const visibleTools = displayTools.slice(0, 4);
-  const extraToolCount = displayTools.length - visibleTools.length;
   const cardBg = `color-mix(in srgb, ${titleColor} 3%, transparent)`;
+  const rimColor = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.22)';
+  const veilColor = isDark ? 'rgba(0,0,0,0.34)' : 'rgba(0,0,0,0.16)';
 
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="group flex w-full flex-col overflow-hidden rounded-2xl border text-left"
-      style={{
-        borderColor: border,
-        backgroundColor: cardBg,
-        boxShadow: isDark ? '0 0 0 rgba(0,0,0,0)' : '0 1px 2px rgba(15,15,15,0.04)',
-      }}
+      data-pf-no-color-transition=""
+      className={`pf-loft-hover-${hoverEffect} flex h-full w-full flex-col overflow-hidden border text-left ${experienceCardsBorderRadiusClass(thumbnailRadius)}`}
+      style={
+        {
+          borderColor: border,
+          backgroundColor: cardBg,
+          boxShadow: isDark ? '0 0 0 rgba(0,0,0,0)' : '0 1px 2px rgba(15,15,15,0.04)',
+          ['--loft-glow' as string]: `color-mix(in srgb, ${accent} 32%, transparent)`,
+          ['--loft-rim' as string]: rimColor,
+          ['--loft-veil' as string]: veilColor,
+        } as CSSProperties
+      }
     >
       {flags.showEntryMedia ? (
         <div
-          className="relative aspect-[4/3] w-full shrink-0 overflow-hidden"
+          data-pf-no-color-transition=""
+          className="pf-loft-card-thumb relative aspect-[4/3] w-full shrink-0 overflow-hidden"
           style={{ backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)` }}
         >
-          {mediaUrl && thumbnailFit === 'contain' ? (
-            <>
-              {/* Frosted-glass ambient fill: the same image, blurred and scaled past the
-                  frame's edges (hiding the soft blur fringe), stands in for a flat letterbox
-                  color — the full image on top then reads as glass floating over it. */}
-              <div className="absolute inset-0 scale-125" style={{ filter: 'blur(28px) saturate(1.15)' }} aria-hidden>
-                <ProductThumbnailMedia url={mediaUrl} alt="" fit="cover" className="h-full w-full" />
-              </div>
-              <div
-                className="absolute inset-0"
-                style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.32)' : 'rgba(255,255,255,0.28)' }}
-                aria-hidden
-              />
-              <div
-                data-pf-no-color-transition=""
-                className="absolute inset-0 p-4 transition-transform duration-1000 ease-out group-hover:scale-[1.04]"
-                style={{ willChange: 'transform' }}
-              >
-                <ProductThumbnailMedia
-                  url={mediaUrl}
-                  alt={title || 'Experience'}
-                  fit="contain"
-                  className="h-full w-full drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)]"
+          <div data-pf-no-color-transition="" className="pf-loft-card-media absolute inset-0">
+            {mediaUrl && thumbnailFit === 'contain' ? (
+              <>
+                {/* Frosted-glass ambient fill: the same image, blurred and scaled past the
+                    frame's edges (hiding the soft blur fringe), stands in for a flat letterbox
+                    color — the full image on top then reads as glass floating over it. */}
+                <div className="absolute inset-0 scale-125" style={{ filter: 'blur(28px) saturate(1.15)' }} aria-hidden>
+                  <ProductThumbnailMedia url={mediaUrl} alt="" fit="cover" className="h-full w-full" />
+                </div>
+                <div
+                  className="absolute inset-0"
+                  style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.32)' : 'rgba(255,255,255,0.28)' }}
+                  aria-hidden
                 />
-              </div>
-            </>
-          ) : mediaUrl ? (
-            <div
-              data-pf-no-color-transition=""
-              className="absolute inset-0 transition-transform duration-1000 ease-out group-hover:scale-[1.06]"
-              style={{ willChange: 'transform' }}
-            >
+                <div className="absolute inset-0 p-4">
+                  <ProductThumbnailMedia
+                    url={mediaUrl}
+                    alt={title || 'Experience'}
+                    fit="contain"
+                    className="h-full w-full drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)]"
+                  />
+                </div>
+              </>
+            ) : mediaUrl ? (
               <ProductThumbnailMedia
                 url={mediaUrl}
                 alt={title || 'Experience'}
                 fit="cover"
                 className="h-full w-full object-top"
               />
-            </div>
-          ) : (
+            ) : (
+              <div
+                className="flex h-full w-full items-center justify-center text-[3.5rem] font-semibold"
+                style={{ color: `color-mix(in srgb, ${accent} 55%, transparent)` }}
+                aria-hidden
+              >
+                {initial}
+              </div>
+            )}
+          </div>
+
+          {hoverEffect === 'curtain' ? (
+            <>
+              <div
+                data-pf-no-color-transition=""
+                className="pf-loft-curtain-veil pointer-events-none absolute inset-0"
+                aria-hidden
+              />
+              <div
+                data-pf-no-color-transition=""
+                className="pf-loft-curtain-glow pointer-events-none absolute inset-0"
+                aria-hidden
+              />
+            </>
+          ) : null}
+
+          {hoverEffect === 'magnetic' ? (
             <div
               data-pf-no-color-transition=""
-              className="absolute inset-0 flex items-center justify-center text-[3.5rem] font-semibold transition-transform duration-1000 ease-out group-hover:scale-105"
-              style={{ color: `color-mix(in srgb, ${accent} 55%, transparent)`, willChange: 'transform' }}
+              className="pf-loft-magnetic-cue pointer-events-none absolute inset-0 flex items-center justify-center"
               aria-hidden
             >
-              {initial}
+              <span
+                data-pf-no-color-transition=""
+                className="pf-loft-magnetic-pill rounded-full px-3.5 py-1.5 font-mono text-[0.68rem] font-medium uppercase tracking-[0.14em]"
+                style={{
+                  color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.88)',
+                  backgroundColor: isDark ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.4)',
+                }}
+              >
+                [ View case ↗ ]
+              </span>
             </div>
-          )}
-          <div
-            data-pf-no-color-transition=""
-            className="pointer-events-none absolute inset-0 flex items-end justify-end p-4 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100"
-            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55), transparent 55%)' }}
-          >
-            <span
-              data-pf-no-color-transition=""
-              className="translate-y-2 rounded-full border px-3.5 py-1.5 text-[0.8rem] font-semibold text-white backdrop-blur-md transition-transform duration-500 ease-out group-hover:translate-y-0"
-              style={{ backgroundColor: 'rgba(255,255,255,0.14)', borderColor: 'rgba(255,255,255,0.35)' }}
-            >
-              View details ↗
-            </span>
-          </div>
+          ) : null}
         </div>
       ) : null}
 
       <div className="flex flex-1 flex-col gap-2.5 p-5">
         <div className="flex items-start justify-between gap-3">
           {flags.showTitle && title ? (
-            <h3 className="min-w-0 text-[1.1rem] font-semibold leading-snug" style={{ color: titleColor }}>
+            <h3 className="pf-loft-card-title min-w-0 text-[1.1rem] font-semibold leading-snug" style={{ color: titleColor }}>
               {title}
             </h3>
           ) : null}
@@ -20605,21 +21292,16 @@ function GalleryExperienceCard({
           </p>
         ) : null}
         {visibleTools.length > 0 ? (
-          <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
-            {visibleTools.map((tool) => (
-              <span
-                key={tool}
-                className="rounded-full border px-2.5 py-1 text-[0.75rem]"
-                style={{ borderColor: border, color: bodyColor }}
-              >
-                {tool}
-              </span>
-            ))}
-            {extraToolCount > 0 ? (
-              <span className="rounded-full px-2.5 py-1 text-[0.75rem]" style={{ color: mutedColor }}>
-                +{extraToolCount}
-              </span>
-            ) : null}
+          <div className="mt-auto pt-2">
+            <ExperienceToolsDisplay
+              tools={visibleTools}
+              style={flags.toolsBadgeStyle}
+              ink={titleColor}
+              muted={mutedColor}
+              background={cardBg}
+              isDark={isDark}
+              size="sm"
+            />
           </div>
         ) : null}
       </div>
@@ -20638,6 +21320,7 @@ function GalleryExperienceModal({
   isDark,
   flags,
   thumbnailFit,
+  thumbnailRadius,
   onClose,
   onPrev,
   onNext,
@@ -20654,6 +21337,7 @@ function GalleryExperienceModal({
   isDark: boolean;
   flags: DuotoneContentFlags;
   thumbnailFit: PortfolioExperienceGalleryThumbnailFit;
+  thumbnailRadius: PortfolioExperienceCardsBorderRadius;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
@@ -20700,7 +21384,7 @@ function GalleryExperienceModal({
       role="presentation"
     >
       <div
-        className={`relative flex max-h-[88vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl ${isDark ? 'border' : 'border-0'} shadow-2xl transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:flex-row`}
+        className={`relative flex max-h-[88vh] w-full max-w-7xl flex-col overflow-hidden ${experienceCardsBorderRadiusClass(thumbnailRadius)} ${isDark ? 'border' : 'border-0'} shadow-2xl transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:flex-row`}
         style={{
           borderColor: isDark ? border : 'transparent',
           backgroundColor: cardBg,
@@ -20809,85 +21493,60 @@ function GalleryExperienceModal({
 }
 
 /**
- * Sizes `textRef`'s font so its rendered ink exactly fills `containerRef`'s
- * width — on mount, on resize (debounced), and once web fonts finish loading.
- * Not vw-based: the same vw value maps to a different rendered width
- * depending on the word's own glyph widths, so only a measure-then-scale
- * pass can hit an exact width at any screen size or word length — never
- * overflowing, never leaving a gap.
+ * Sizes `textRef`'s font so its rendered box exactly fills `containerRef`'s
+ * width — on mount, on any container-width change, and once web fonts
+ * finish loading. Not vw-based: the same vw value maps to a different
+ * rendered width depending on the word's own glyph widths, so only a
+ * measure-then-scale pass can hit an exact width at any screen size or word
+ * length — never overflowing, never leaving a gap.
  *
- * getBoundingClientRect() (and a CSS box in general) reflects the glyphs'
- * *advance* width, not their painted ink — every font reserves a sliver of
- * side bearing before the first stroke and after the last one, which reads
- * as a fine margin at this size. Canvas's measureText() exposes the real ink
- * bounds (actualBoundingBoxLeft/Right), so this sizes off that instead and
- * shifts the box left by the leading bearing so the ink itself — not the
- * box — touches both edges.
+ * Measures with the *same* DOM element it then resizes (reset to a
+ * reference font-size, read its real getBoundingClientRect().width, scale
+ * from there) rather than a parallel canvas measurement — a canvas's font
+ * resolution can silently mismatch the real element's (wrong weight, wrong
+ * fallback while a webfont is still loading), which under- or over-sizes
+ * the result. Measuring the live element guarantees the measurement and the
+ * final render always agree.
  */
 function useFitWidthTextSize(
   containerRef: RefObject<HTMLElement | null>,
   textRef: RefObject<HTMLElement | null>,
   text: string
 ) {
-  const fitCanvasRef = useRef<HTMLCanvasElement | null>(null);
-
   useLayoutEffect(() => {
     const container = containerRef.current;
     const textEl = textRef.current;
     if (!container || !textEl) return undefined;
 
     const REFERENCE_PX = 100;
-    const SAFETY_MARGIN = 0.996; // ~0.4% headroom so rounding never clips a pixel
 
     const fit = () => {
       const targetWidth = container.getBoundingClientRect().width;
       if (targetWidth <= 0) return;
 
-      const computed = window.getComputedStyle(textEl);
-      if (!fitCanvasRef.current) fitCanvasRef.current = document.createElement('canvas');
-      const ctx = fitCanvasRef.current.getContext('2d');
-
-      if (ctx) {
-        ctx.font = `${computed.fontWeight} ${REFERENCE_PX}px ${computed.fontFamily}`;
-        if ('letterSpacing' in ctx) {
-          // letter-spacing scales with font-size — rescale the currently
-          // resolved px value to what it would be at REFERENCE_PX.
-          const currentSizePx = parseFloat(computed.fontSize) || REFERENCE_PX;
-          const letterSpacingPx = parseFloat(computed.letterSpacing);
-          if (Number.isFinite(letterSpacingPx) && currentSizePx > 0) {
-            (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing =
-              `${(letterSpacingPx / currentSizePx) * REFERENCE_PX}px`;
-          }
-        }
-        ctx.textAlign = 'left';
-        const metrics = ctx.measureText(text.toUpperCase());
-        const inkWidth = metrics.actualBoundingBoxRight + metrics.actualBoundingBoxLeft;
-        if (Number.isFinite(inkWidth) && inkWidth > 0) {
-          const ratio = (targetWidth / inkWidth) * SAFETY_MARGIN;
-          textEl.style.fontSize = `${REFERENCE_PX * ratio}px`;
-          textEl.style.marginLeft = `${metrics.actualBoundingBoxLeft * ratio}px`;
-          return;
-        }
-      }
-
-      // Fallback for browsers without ink-bounds metrics: a box-based fit.
-      // May leave a hair of side-bearing whitespace, but never overflows.
-      textEl.style.marginLeft = '0px';
+      textEl.style.removeProperty('margin-left'); // clear a stale offset from an older build
       textEl.style.fontSize = `${REFERENCE_PX}px`;
       const measuredWidth = textEl.getBoundingClientRect().width;
       if (measuredWidth <= 0) return;
-      const ratio = (targetWidth / measuredWidth) * SAFETY_MARGIN;
-      textEl.style.fontSize = `${REFERENCE_PX * ratio}px`;
+
+      textEl.style.fontSize = `${REFERENCE_PX * (targetWidth / measuredWidth)}px`;
     };
 
     fit();
 
     let resizeTimer: ReturnType<typeof setTimeout> | undefined;
-    const onResize = () => {
+    const scheduleFit = () => {
       if (resizeTimer) clearTimeout(resizeTimer);
       resizeTimer = setTimeout(fit, 100);
     };
-    window.addEventListener('resize', onResize);
+
+    // A window 'resize' listener misses container-width changes that aren't
+    // caused by the window itself — a dashboard preview panel resizing, a
+    // sidebar collapsing, a scrollbar appearing — which is exactly what left
+    // the fit stale (word not spanning the full width) in the embedded
+    // preview. ResizeObserver catches every one of those directly.
+    const observer = new ResizeObserver(scheduleFit);
+    observer.observe(container);
 
     // Fonts can still be loading at first paint — re-measure once the real
     // glyph metrics are in so the fit isn't computed against a fallback font.
@@ -20900,7 +21559,7 @@ function useFitWidthTextSize(
 
     return () => {
       cancelled = true;
-      window.removeEventListener('resize', onResize);
+      observer.disconnect();
       if (resizeTimer) clearTimeout(resizeTimer);
     };
   }, [text]);
@@ -20978,61 +21637,6 @@ export function GalleryFitWidthTitle({
   );
 }
 
-/** Gallery design's own section heading — a horizontal split header (title + count line),
- * distinct from Duotone's centered/stacked intro, topped by an optional full-bleed word. */
-function GalleryIntroPanel({
-  ink,
-  muted,
-  accent,
-  isDark,
-  count,
-  bigTitleEnabled,
-  bigTitleText,
-  bigTitleStyle,
-  bigTitleColor,
-}: {
-  ink: string;
-  muted: string;
-  accent: string;
-  isDark: boolean;
-  count: number;
-  bigTitleEnabled: boolean;
-  bigTitleText: string;
-  bigTitleStyle: PortfolioExperienceGalleryBigTitleStyle;
-  bigTitleColor: PortfolioExperienceGalleryBigTitleColor;
-}) {
-  return (
-    <div className="mb-10 sm:mb-14">
-      {bigTitleEnabled && bigTitleText.trim() ? (
-        <GalleryFitWidthTitle
-          text={bigTitleText}
-          ink={ink}
-          accent={accent}
-          isDark={isDark}
-          titleStyle={bigTitleStyle}
-          colorMode={bigTitleColor}
-        />
-      ) : null}
-      <div
-        className={`flex flex-col gap-5 border-b pb-8 sm:flex-row sm:items-end sm:justify-between sm:gap-10 sm:pb-10 ${
-          bigTitleEnabled && bigTitleText.trim() ? 'mt-6 sm:mt-8' : ''
-        }`}
-        style={{ borderColor: `color-mix(in srgb, ${ink} 12%, transparent)` }}
-      >
-        <h2
-          className="text-[clamp(1.9rem,4vw,2.75rem)] font-semibold leading-[1.08] tracking-[-0.02em]"
-          style={{ color: ink }}
-        >
-          Roles I&apos;ve taken on
-        </h2>
-        <p className="max-w-xs text-[0.95rem] leading-relaxed sm:text-right" style={{ color: muted }}>
-          {count} {count === 1 ? 'role' : 'roles'} — click any card for the full story.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export function GalleryExperienceList({
   blocks,
   presentation = DEFAULT_EXPERIENCE_PRESENTATION,
@@ -21065,12 +21669,6 @@ export function GalleryExperienceList({
     DEFAULT_EXPERIENCE_MUTED_COLOR,
     DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
   );
-  const bodyColor = ensureExperienceInkContrast(
-    resolveExperienceTextColor(styles.tasks, colorMode) || resolveExperienceTextColor(styles.description, colorMode),
-    isDark,
-    DEFAULT_EXPERIENCE_BODY_COLOR,
-    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
-  );
   const border = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
   const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
 
@@ -21084,17 +21682,27 @@ export function GalleryExperienceList({
     showProof: presentation.showProof !== false,
     showEntryMedia: presentation.showEntryMedia !== false,
     tasksDisplay: presentation.tasksDisplay,
+    toolsBadgeStyle: presentation.toolsBadgeStyle,
     repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'icon'),
     isDark,
   };
 
   const columns = presentation.galleryColumns ?? 3;
   const thumbnailFit = presentation.galleryThumbnailFit ?? 'cover';
+  const thumbnailRadius = presentation.galleryThumbnailRadius ?? 'md';
+  const hoverEffect = presentation.galleryHoverEffect ?? 'curtain';
+  const gap = presentation.galleryGap ?? 'md';
+  const gapClass: Record<PortfolioExperienceItemGap, string> = {
+    sm: 'gap-4 sm:gap-5',
+    md: 'gap-6 sm:gap-8',
+    lg: 'gap-8 sm:gap-10',
+    xl: 'gap-10 sm:gap-14',
+  };
   const gridClass = forceSingleColumn
-    ? 'grid grid-cols-1'
+    ? `grid grid-cols-1 ${gapClass[gap]}`
     : columns === 2
-      ? 'grid grid-cols-1 sm:grid-cols-2'
-      : 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3';
+      ? `grid grid-cols-1 sm:grid-cols-2 ${gapClass[gap]}`
+      : `grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 ${gapClass[gap]}`;
 
   return (
     <>
@@ -21104,7 +21712,7 @@ export function GalleryExperienceList({
           forceSingleColumn ? 'left' : presentation.listPlacement
         )}
       >
-        <div className={gridClass} style={experienceCardsGridGapStyle(presentation)}>
+        <div className={gridClass}>
           {blocks.map((block, index) => (
             <div key={block.id} className="h-full">
               <GalleryExperienceCard
@@ -21113,11 +21721,12 @@ export function GalleryExperienceList({
                 secondaryColor={secondary}
                 titleColor={ink}
                 mutedColor={muted}
-                bodyColor={bodyColor}
                 border={border}
                 isDark={isDark}
                 flags={flags}
                 thumbnailFit={thumbnailFit}
+                thumbnailRadius={thumbnailRadius}
+                hoverEffect={hoverEffect}
                 onOpen={() => setOpenIndex(index)}
               />
             </div>
@@ -21137,6 +21746,7 @@ export function GalleryExperienceList({
           isDark={isDark}
           flags={flags}
           thumbnailFit={thumbnailFit}
+          thumbnailRadius={thumbnailRadius}
           onClose={() => setOpenIndex(null)}
           onPrev={() => setOpenIndex((current) => (current !== null && current > 0 ? current - 1 : current))}
           onNext={() =>
@@ -21147,373 +21757,6 @@ export function GalleryExperienceList({
         />
       ) : null}
     </>
-  );
-}
-
-function SpotlightMarqueeTrack({
-  words,
-  ink,
-  muted,
-  accent,
-  colorMode,
-  hidden = false,
-}: {
-  words: string[];
-  ink: string;
-  muted: string;
-  accent: string;
-  colorMode: PortfolioExperienceSpotlightTitleColor;
-  hidden?: boolean;
-}) {
-  const REPEATS = 4;
-  const sequence = Array.from({ length: REPEATS }, () => words).flat();
-
-  return (
-    <div className="flex shrink-0 items-center" aria-hidden={hidden}>
-      {sequence.map((word, index) => {
-        const wordColor =
-          colorMode === 'muted'
-            ? muted
-            : colorMode === 'accent'
-              ? accent
-              : colorMode === 'alternating'
-                ? index % 2 === 0
-                  ? ink
-                  : accent
-                : ink;
-        const dotColor = colorMode === 'muted' ? muted : colorMode === 'accent' ? ink : accent;
-        return (
-          <span key={index} className="flex shrink-0 items-center gap-8 pr-8 sm:gap-12 sm:pr-12">
-            <span
-              className="whitespace-nowrap text-[3rem] font-black uppercase leading-none tracking-tight sm:text-[4.5rem]"
-              style={{ color: wordColor }}
-            >
-              {word}
-            </span>
-            <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
-          </span>
-        );
-      })}
-    </div>
-  );
-}
-
-/** Spotlight design's title — a horizontally scrolling marquee band cycling
- * through up to 4 customizable words, not a single word repeated flatly.
- * A different mechanism from Gallery's title on purpose: no measure-and-scale
- * JS, no exact-edge-to-edge fit — motion carries it instead of a color
- * treatment on the same static typographic shape. */
-function SpotlightBigTitle({
-  words,
-  ink,
-  muted,
-  accent,
-  colorMode,
-}: {
-  words: string[];
-  ink: string;
-  muted: string;
-  accent: string;
-  colorMode: PortfolioExperienceSpotlightTitleColor;
-}) {
-  return (
-    <div
-      className="w-full overflow-hidden border-y py-5 sm:py-7 [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]"
-      style={{ borderColor: `color-mix(in srgb, ${ink} 10%, transparent)` }}
-    >
-      <div className="portfolio-marquee flex w-max will-change-transform">
-        <SpotlightMarqueeTrack words={words} ink={ink} muted={muted} accent={accent} colorMode={colorMode} />
-        <SpotlightMarqueeTrack words={words} ink={ink} muted={muted} accent={accent} colorMode={colorMode} hidden />
-      </div>
-    </div>
-  );
-}
-
-/** One Spotlight row: large media on one side, story on the other, alternating per entry. */
-function SpotlightExperienceRow({
-  block,
-  index,
-  reverse,
-  ink,
-  muted,
-  bodyColor,
-  accent,
-  secondary,
-  border,
-  isDark,
-  flags,
-  thumbnailFit,
-}: {
-  block: ProfileMediaBlock;
-  index: number;
-  reverse: boolean;
-  ink: string;
-  muted: string;
-  bodyColor: string;
-  accent: string;
-  secondary: string;
-  border: string;
-  isDark: boolean;
-  flags: DuotoneContentFlags;
-  thumbnailFit: PortfolioExperienceSpotlightThumbnailFit;
-}) {
-  const { period, title, organization, description, status, tasks, tools, links, location, employmentType } =
-    resolveExperienceContent(block);
-  const metaLine = [organization, location, employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : null]
-    .filter((part): part is string => Boolean(part))
-    .join('  ·  ');
-  const combinedMeta = [flags.showPeriod ? period : null, flags.showMeta ? metaLine : null]
-    .filter((part): part is string => Boolean(part))
-    .join('  ·  ');
-  const mediaUrl = flags.showEntryMedia && typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
-  const repoLink = flags.showProof ? (links[0] ?? null) : null;
-  const displayTasks = flags.showTasks ? tasks : [];
-  const displayTools = flags.showTools ? tools : [];
-  const indexLabel = String(index + 1).padStart(2, '0');
-  const initial = (title || organization || '•').trim().charAt(0).toUpperCase();
-
-  return (
-    <article className="relative">
-      {/* Index label as a normal in-flow eyebrow line above the row — never
-          overlapping the media, so it can't get hidden behind a thumbnail. */}
-      <div className="mb-6 flex items-center gap-3 sm:mb-8">
-        <span className="text-[0.8rem] font-bold tracking-[0.16em]" style={{ color: muted }}>
-          {indexLabel}
-        </span>
-        <span className="h-px flex-1" style={{ backgroundColor: border }} aria-hidden />
-      </div>
-
-      <div
-        data-pf-no-color-transition=""
-        className={`flex flex-col gap-12 transition-transform duration-500 ease-out hover:-translate-y-1 sm:gap-16 lg:items-center lg:gap-24 ${
-          reverse ? 'lg:flex-row-reverse' : 'lg:flex-row'
-        }`}
-      >
-      {flags.showEntryMedia ? (
-        <div className="group/media relative z-[1] w-full shrink-0 lg:w-[52%]">
-          <div
-            className="relative aspect-[4/3] w-full overflow-hidden rounded-[1.75rem]"
-            style={{ backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)` }}
-          >
-            {mediaUrl && thumbnailFit === 'glass' ? (
-              <>
-                {/* Frosted-glass ambient fill: the same image, blurred and scaled past the
-                    frame's edges, stands in for a flat letterbox color — the full image on
-                    top then reads as glass floating over it. */}
-                <div className="absolute inset-0 scale-125" style={{ filter: 'blur(28px) saturate(1.15)' }} aria-hidden>
-                  <ProductThumbnailMedia url={mediaUrl} alt="" fit="cover" className="h-full w-full" />
-                </div>
-                <div
-                  className="absolute inset-0"
-                  style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.32)' : 'rgba(255,255,255,0.28)' }}
-                  aria-hidden
-                />
-                <div
-                  data-pf-no-color-transition=""
-                  className="absolute inset-0 p-5 [transform:scale(1)_rotate(0deg)] transition-transform duration-700 ease-out group-hover/media:[transform:scale(1.04)_rotate(0.4deg)]"
-                >
-                  <ProductThumbnailMedia
-                    url={mediaUrl}
-                    alt={title || 'Experience'}
-                    fit="contain"
-                    className="h-full w-full drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)]"
-                  />
-                </div>
-              </>
-            ) : mediaUrl ? (
-              <div
-                data-pf-no-color-transition=""
-                className="absolute inset-0 [transform:scale(1)_rotate(0deg)] transition-transform duration-700 ease-out group-hover/media:[transform:scale(1.06)_rotate(0.6deg)]"
-              >
-                <ProductThumbnailMedia url={mediaUrl} alt={title || 'Experience'} fit="cover" className="h-full w-full" />
-              </div>
-            ) : (
-              <div
-                data-pf-no-color-transition=""
-                className="absolute inset-0 flex items-center justify-center text-[3.5rem] font-semibold [transform:scale(1)_rotate(0deg)] transition-transform duration-700 ease-out group-hover/media:[transform:scale(1.06)_rotate(0.6deg)]"
-                style={{ color: `color-mix(in srgb, ${accent} 55%, transparent)` }}
-                aria-hidden
-              >
-                {initial}
-              </div>
-            )}
-          </div>
-        </div>
-      ) : null}
-
-      <div className="relative z-[1] flex min-w-0 flex-1 flex-col lg:pl-2 xl:pl-4">
-        {/* Contrast ladder (Awwwards): status accent → title ink → meta quiet →
-            body soft-ink → tasks softer → tools whisper → CTA max contrast. */}
-        {flags.showMeta && (status === 'ONGOING' || status === 'FINISHED') ? (
-          <div className="flex items-center gap-2.5">
-            <span
-              className="h-1.5 w-1.5 rounded-full"
-              style={{
-                backgroundColor: status === 'ONGOING' ? accent : secondary,
-                opacity: 0.9,
-              }}
-              aria-hidden
-            />
-            <span
-              className="text-[0.7rem] font-semibold uppercase tracking-[0.2em]"
-              style={{
-                color: status === 'ONGOING' ? accent : secondary,
-                opacity: 0.92,
-              }}
-            >
-              {status === 'ONGOING' ? 'Ongoing' : 'Finished'}
-            </span>
-          </div>
-        ) : null}
-        {flags.showTitle && title ? (
-          <h3
-            className="mt-8 text-[1.9rem] font-semibold leading-[1.08] tracking-[-0.025em] sm:mt-9 sm:text-[2.45rem]"
-            style={{ color: ink }}
-          >
-            {title}
-          </h3>
-        ) : null}
-        {combinedMeta ? (
-          <p
-            className="mt-6 text-[0.9rem] tracking-[0.01em] sm:mt-7 sm:text-[0.92rem]"
-            style={{ color: `color-mix(in srgb, ${muted} 78%, transparent)` }}
-          >
-            {combinedMeta}
-          </p>
-        ) : null}
-        {flags.showDescription && description ? (
-          <p
-            className="mt-10 max-w-xl text-[1.02rem] leading-[1.85] sm:mt-11"
-            style={{ color: `color-mix(in srgb, ${bodyColor} 86%, ${muted} 14%)` }}
-          >
-            {description}
-          </p>
-        ) : null}
-        {displayTasks.length > 0 ? (
-          <div className="mt-11 sm:mt-12">
-            <ExperienceTasksDisplay
-              tasks={displayTasks}
-              display={flags.tasksDisplay}
-              bodyColor={`color-mix(in srgb, ${bodyColor} 64%, ${muted} 36%)`}
-              mutedColor={`color-mix(in srgb, ${muted} 88%, transparent)`}
-              isDark={isDark}
-              label=""
-              size="lg"
-              tools={displayTools}
-            />
-          </div>
-        ) : null}
-        {/* Tools: mid-dot separators — quietest editorial line before the CTA. */}
-        {displayTools.length > 0 ? (
-          <p
-            className="mt-12 max-w-xl font-mono text-[0.7rem] font-normal uppercase tracking-[0.12em] sm:mt-14 sm:text-[0.74rem]"
-            style={{ color: `color-mix(in srgb, ${muted} 58%, transparent)` }}
-          >
-            {displayTools.join('  ·  ')}
-          </p>
-        ) : null}
-        {repoLink ? (
-          <div className="mt-12 sm:mt-14">
-            <PortfolioLinkButton
-              variant={flags.repoLinkButtonStyle}
-              href={repoLink.url}
-              label={repoLink.label || 'View repository'}
-              palette={experienceLinkButtonPalette({
-                ink,
-                muted,
-                accent,
-                border,
-                isDark,
-              })}
-            />
-          </div>
-        ) : null}
-      </div>
-      </div>
-    </article>
-  );
-}
-
-export function SpotlightExperienceList({
-  blocks,
-  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
-  forceSingleColumn = false,
-}: {
-  blocks: ProfileMediaBlock[];
-  presentation?: PortfolioExperiencePresentationSettings;
-  motionProfile?: PortfolioGlobalMotionProfile;
-  forceSingleColumn?: boolean;
-}) {
-  if (blocks.length === 0) return null;
-
-  const isDark = presentation.activeColorMode !== 'light';
-  const colorMode = resolveExperienceColorMode(presentation);
-  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
-  const accent = experienceAccentColor(presentation.accentColor);
-  const secondary = experienceSecondaryStatusColor(presentation);
-  const ink = ensureExperienceInkContrast(
-    presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
-    isDark,
-    DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
-  );
-  const muted = ensureExperienceInkContrast(
-    presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
-    isDark,
-    DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
-  );
-  const bodyColor = ensureExperienceInkContrast(
-    resolveExperienceTextColor(styles.tasks, colorMode) || resolveExperienceTextColor(styles.description, colorMode),
-    isDark,
-    DEFAULT_EXPERIENCE_BODY_COLOR,
-    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
-  );
-  const border = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
-
-  const flags: DuotoneContentFlags = {
-    showTitle: presentation.showTitle !== false,
-    showPeriod: presentation.showPeriod !== false,
-    showMeta: presentation.showMeta !== false,
-    showDescription: presentation.showDescription !== false,
-    showTasks: presentation.showTasks !== false,
-    showTools: presentation.showTools !== false,
-    showProof: presentation.showProof !== false,
-    showEntryMedia: presentation.showEntryMedia !== false,
-    tasksDisplay: presentation.tasksDisplay,
-    repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'spotlight'),
-    isDark,
-  };
-
-  const thumbnailFit = presentation.spotlightThumbnailFit ?? 'cover';
-
-  return (
-    <div
-      className={experienceListShellClass(
-        forceSingleColumn ? 'full' : presentation.listMaxWidth,
-        forceSingleColumn ? 'left' : presentation.listPlacement
-      )}
-    >
-      <div className="flex flex-col gap-24 sm:gap-32">
-        {blocks.map((block, index) => (
-          <SpotlightExperienceRow
-            key={block.id}
-            block={block}
-            index={index}
-            reverse={index % 2 === 1}
-            ink={ink}
-            muted={muted}
-            bodyColor={bodyColor}
-            accent={accent}
-            secondary={secondary}
-            border={border}
-            isDark={isDark}
-            flags={flags}
-            thumbnailFit={thumbnailFit}
-          />
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -21913,12 +22156,17 @@ function LoftExperienceModal({
               {displayTools.length > 0 || repoLink ? (
                 <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4 sm:mt-12">
                   {displayTools.length > 0 ? (
-                    <p
-                      className="min-w-0 flex-1 font-mono text-[0.7rem] font-normal uppercase tracking-[0.08em] sm:text-[0.74rem]"
-                      style={{ color: muted }}
-                    >
-                      {displayTools.join('  ·  ')}
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <ExperienceToolsDisplay
+                        tools={displayTools}
+                        style={flags.toolsBadgeStyle}
+                        ink={ink}
+                        muted={muted}
+                        background={background}
+                        isDark={isDark}
+                        size="sm"
+                      />
+                    </div>
                   ) : null}
                   {repoLink ? (
                     <div className="shrink-0">
@@ -21991,6 +22239,7 @@ export function LoftExperienceList({
     showProof: presentation.showProof !== false,
     showEntryMedia: presentation.showEntryMedia !== false,
     tasksDisplay: presentation.tasksDisplay,
+    toolsBadgeStyle: presentation.toolsBadgeStyle,
     repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'icon'),
     isDark,
   };
@@ -22073,6 +22322,7 @@ function PressExperienceRow({
   muted,
   bodyColor,
   accent,
+  background,
   flags,
   thumbnailRadius,
 }: {
@@ -22081,6 +22331,7 @@ function PressExperienceRow({
   muted: string;
   bodyColor: string;
   accent: string;
+  background: string;
   flags: DuotoneContentFlags;
   thumbnailRadius: PortfolioExperienceCardsBorderRadius;
 }) {
@@ -22199,22 +22450,16 @@ function PressExperienceRow({
         ) : null}
 
         {displayTools.length > 0 ? (
-          <div
-            data-pf-no-color-transition=""
-            className="pf-press-stack mt-auto hidden flex-row flex-wrap gap-2 pt-8 lg:flex"
-          >
-            {displayTools.map((tool) => (
-              <span
-                key={tool}
-                className="rounded-none border px-3 py-1 text-[0.7rem] font-medium uppercase tracking-[0.04em]"
-                style={{
-                  borderColor: `color-mix(in srgb, ${muted} 45%, transparent)`,
-                  color: muted,
-                }}
-              >
-                {tool}
-              </span>
-            ))}
+          <div data-pf-no-color-transition="" className="pf-press-stack mt-auto hidden pt-8 lg:block">
+            <ExperienceToolsDisplay
+              tools={displayTools}
+              style={flags.toolsBadgeStyle}
+              ink={ink}
+              muted={muted}
+              background={background}
+              isDark={flags.isDark}
+              size="sm"
+            />
           </div>
         ) : null}
       </div>
@@ -22257,6 +22502,7 @@ export function PressExperienceList({
     DEFAULT_EXPERIENCE_BODY_COLOR_DARK
   );
   const border = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
+  const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
 
   const flags: DuotoneContentFlags = {
     showTitle: presentation.showTitle !== false,
@@ -22268,13 +22514,12 @@ export function PressExperienceList({
     showProof: presentation.showProof !== false,
     showEntryMedia: presentation.showEntryMedia !== false,
     tasksDisplay: presentation.tasksDisplay,
+    toolsBadgeStyle: presentation.toolsBadgeStyle,
     repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'icon'),
     isDark,
   };
 
-  const introText = presentation.pressIntroText?.trim() || '';
   const thumbnailRadius = presentation.pressThumbnailRadius ?? 'md';
-  const showTwoColumn = Boolean(introText) && !forceSingleColumn;
   return (
     <div
       className={experienceListShellClass(
@@ -22284,19 +22529,7 @@ export function PressExperienceList({
     >
       <div className="h-px w-full" style={{ backgroundColor: border }} aria-hidden />
 
-      <div
-        className={`mt-10 grid grid-cols-1 gap-10 sm:mt-14 ${
-          showTwoColumn ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] lg:gap-16' : ''
-        }`}
-      >
-        {showTwoColumn ? (
-          <div className="lg:max-w-xs">
-            <p className="text-[1.05rem] leading-relaxed" style={{ color: ink, fontFamily: SERIF }}>
-              {introText}
-            </p>
-          </div>
-        ) : null}
-
+      <div className="mt-10 grid grid-cols-1 gap-10 sm:mt-14">
         <div className="space-y-12 sm:space-y-16">
           {blocks.map((block) => (
             <PressExperienceRow
@@ -22306,6 +22539,7 @@ export function PressExperienceList({
               muted={muted}
               bodyColor={bodyColor}
               accent={accent}
+              background={background}
               flags={flags}
               thumbnailRadius={thumbnailRadius}
             />
@@ -22464,6 +22698,7 @@ function LegacyExperienceCard({
   accent,
   secondary,
   border,
+  background,
   isLast,
   flags,
   thumbnailRadius,
@@ -22483,6 +22718,7 @@ function LegacyExperienceCard({
   accent: string;
   secondary: string;
   border: string;
+  background: string;
   isLast: boolean;
   flags: DuotoneContentFlags;
   thumbnailRadius: PortfolioExperienceCardsBorderRadius;
@@ -22518,9 +22754,22 @@ function LegacyExperienceCard({
 
   return (
     <div className={!isLast ? experienceLegacyItemGapClass(itemGap) : ''}>
-      <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
+      {/* gap-8/14 (tighter than the old gap-10/16) plus the ambient glow below: together they
+          break the hard pixel-straight seam between the two columns instead of a clean,
+          hermetic split down the middle. */}
+      <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-14">
         {flags.showEntryMedia ? (
-          <div className={`group ${reverse ? 'lg:order-2' : ''}`}>
+          <div className={`group relative ${reverse ? 'lg:order-2' : ''}`}>
+            {/* Soft ambient bleed: extends past the thumbnail's own edges into the gutter,
+                so the boundary between the two columns reads as a glow, not a hard line. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-8 -z-10 hidden blur-3xl lg:block"
+              style={{
+                background: `radial-gradient(closest-side, color-mix(in srgb, ${accent} 45%, transparent), transparent 72%)`,
+                opacity: 0.5,
+              }}
+            />
             <div
               ref={thumbRef}
               className={`relative w-full overflow-hidden ${experienceCardsBorderRadiusClass(
@@ -22593,15 +22842,23 @@ function LegacyExperienceCard({
           {(flags.showDescription && description) || stackTools.length > 0 || hoverTasks.length > 0 || repoLink ? (
             <div className="mt-12 space-y-12 sm:space-y-16">
               {flags.showDescription && description ? (
-                <p className="max-w-lg text-lg leading-relaxed" style={{ color: faint }}>
+                // Wider measure + looser leading: shorter, airier block instead of a dense
+                // uniform slab, and it fills more of the space toward the middle.
+                <p className="max-w-xl text-lg leading-loose" style={{ color: faint, opacity: 0.82 }}>
                   {description}
                 </p>
               ) : null}
 
               {stackTools.length > 0 ? (
-                <p className="text-sm" style={{ color: muted }}>
-                  {stackTools.join('   •   ')}
-                </p>
+                <ExperienceToolsDisplay
+                  tools={stackTools}
+                  style={flags.toolsBadgeStyle}
+                  ink={ink}
+                  muted={muted}
+                  background={background}
+                  isDark={flags.isDark}
+                  size="sm"
+                />
               ) : null}
 
               {hoverTasks.length > 0 ? (
@@ -22635,18 +22892,22 @@ function LegacyExperienceCard({
               ) : null}
 
               {repoLink ? (
-                <PortfolioLinkButton
-                  variant={flags.repoLinkButtonStyle}
-                  href={repoLink.url}
-                  label={repoLink.label || 'View repository'}
-                  palette={experienceLinkButtonPalette({
-                    ink,
-                    muted,
-                    accent,
-                    border,
-                    isDark: flags.isDark,
-                  })}
-                />
+                // Extra breathing room on top of the shared space-y rhythm — reads as a
+                // separate action, not just another content block stacked under the tags.
+                <div className="pt-4 sm:pt-6">
+                  <PortfolioLinkButton
+                    variant={flags.repoLinkButtonStyle}
+                    href={repoLink.url}
+                    label={repoLink.label || 'View repository'}
+                    palette={experienceLinkButtonPalette({
+                      ink,
+                      muted,
+                      accent,
+                      border,
+                      isDark: flags.isDark,
+                    })}
+                  />
+                </div>
               ) : null}
             </div>
           ) : null}
@@ -22725,6 +22986,7 @@ export function LegacyExperienceList({
     DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
   );
   const border = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
+  const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
 
   const flags: DuotoneContentFlags = {
     showTitle: presentation.showTitle !== false,
@@ -22736,6 +22998,7 @@ export function LegacyExperienceList({
     showProof: presentation.showProof !== false,
     showEntryMedia: presentation.showEntryMedia !== false,
     tasksDisplay: presentation.tasksDisplay,
+    toolsBadgeStyle: presentation.toolsBadgeStyle,
     repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'legacy'),
     isDark,
   };
@@ -22767,6 +23030,7 @@ export function LegacyExperienceList({
             accent={accent}
             secondary={secondary}
             border={border}
+            background={background}
             isLast={index === blocks.length - 1}
             flags={flags}
             thumbnailRadius={thumbnailRadius}
@@ -22798,211 +23062,12 @@ function experienceContentFlags(
     showProof: presentation.showProof !== false,
     showEntryMedia: presentation.showEntryMedia !== false,
     tasksDisplay: presentation.tasksDisplay,
+    toolsBadgeStyle: presentation.toolsBadgeStyle,
     repoLinkButtonStyle: resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, nativeLink),
     isDark,
   };
 }
 
-function AsymmetricExperienceRow({
-  block,
-  ink,
-  muted,
-  bodyColor,
-  accent,
-  border,
-  background,
-  flags,
-  stacked,
-}: {
-  block: ProfileMediaBlock;
-  ink: string;
-  muted: string;
-  bodyColor: string;
-  accent: string;
-  border: string;
-  background: string;
-  flags: DuotoneContentFlags;
-  stacked: boolean;
-}) {
-  const { period, title, organization, description, status, tasks, tools, links, location, employmentType } =
-    resolveExperienceContent(block);
-  const mediaUrl = flags.showEntryMedia && typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
-  const initial = (title || organization || '•').trim().charAt(0).toUpperCase();
-  const repoLink = flags.showProof ? (links[0] ?? null) : null;
-  const displayTasks = flags.showTasks ? tasks : [];
-  const displayTools = flags.showTools ? tools : [];
-  const metaLine = [organization, location, employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : null]
-    .filter((part): part is string => Boolean(part))
-    .join('  ·  ');
-  const statusLabel = status === 'ONGOING' ? 'Ongoing' : status === 'FINISHED' ? 'Completed' : null;
-
-  const visual = (
-    <div
-      className={`relative overflow-hidden ${
-        stacked ? 'aspect-[4/5]' : 'min-h-[22rem] sm:min-h-[28rem] lg:h-full lg:min-h-[32rem]'
-      }`}
-      style={{ backgroundColor: `color-mix(in srgb, ${accent} 10%, ${background})` }}
-    >
-      {mediaUrl ? (
-        <ProductThumbnailMedia
-          url={mediaUrl}
-          alt={title || 'Experience'}
-          fit="cover"
-          className="h-full w-full"
-        />
-      ) : (
-        <div
-          className="flex h-full w-full items-center justify-center text-[7rem] font-semibold"
-          style={{ color: `color-mix(in srgb, ${ink} 18%, transparent)` }}
-          aria-hidden
-        >
-          {initial}
-        </div>
-      )}
-    </div>
-  );
-
-  const showVisual = flags.showEntryMedia;
-  const split = !stacked && showVisual;
-
-  return (
-    <article
-      className={split ? 'relative grid grid-cols-1 lg:grid-cols-2 lg:items-stretch' : 'grid grid-cols-1'}
-      style={{ borderBottom: `1px solid ${border}` }}
-    >
-      {showVisual ? <div className={split ? 'lg:min-h-0' : ''}>{visual}</div> : null}
-      <div
-        className={`flex flex-col justify-center py-10 sm:py-12 ${
-          split ? 'lg:border-l lg:py-16 lg:pl-12 xl:pl-16 lg:pr-0' : ''
-        }`}
-        style={split ? { borderColor: border } : undefined}
-      >
-        {flags.showPeriod && period ? (
-          <p className="font-mono text-[0.72rem] uppercase tracking-[0.18em]" style={{ color: muted }}>
-            {period}
-          </p>
-        ) : null}
-        {flags.showTitle && title ? (
-          <h3
-            className="mt-5 max-w-[14ch] text-[clamp(2.1rem,4.6vw,4.4rem)] font-semibold leading-[1.02] tracking-[-0.045em]"
-            style={{ color: ink }}
-          >
-            {title}
-          </h3>
-        ) : null}
-        {flags.showMeta && (metaLine || statusLabel) ? (
-          <p className="mt-5 text-[0.92rem]" style={{ color: muted }}>
-            {[metaLine, statusLabel].filter(Boolean).join('  ·  ')}
-          </p>
-        ) : null}
-        {flags.showDescription && description ? (
-          <p className="mt-10 max-w-md text-[1.02rem] leading-[1.75]" style={{ color: bodyColor }}>
-            {description}
-          </p>
-        ) : null}
-        {displayTasks.length > 0 ? (
-          <div className="mt-12 max-w-md">
-            <ExperienceTasksDisplay
-              tasks={displayTasks}
-              display={flags.tasksDisplay}
-              bodyColor={bodyColor}
-              mutedColor={muted}
-              isDark={flags.isDark}
-              label=""
-              size="md"
-            />
-          </div>
-        ) : null}
-        {displayTools.length > 0 ? (
-          <p className="mt-12 font-mono text-[0.7rem] uppercase tracking-[0.14em]" style={{ color: muted }}>
-            {displayTools.join('  ·  ')}
-          </p>
-        ) : null}
-        {repoLink ? (
-          <div className="mt-12">
-            <PortfolioLinkButton
-              variant={flags.repoLinkButtonStyle}
-              href={repoLink.url}
-              label={repoLink.label || 'View repository'}
-              palette={experienceLinkButtonPalette({
-                ink,
-                muted,
-                accent,
-                border,
-                background,
-                isDark: flags.isDark,
-              })}
-            />
-          </div>
-        ) : null}
-      </div>
-    </article>
-  );
-}
-
-export function AsymmetricExperienceList({
-  blocks,
-  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
-  forceSingleColumn = false,
-}: {
-  blocks: ProfileMediaBlock[];
-  presentation?: PortfolioExperiencePresentationSettings;
-  motionProfile?: PortfolioGlobalMotionProfile;
-  forceSingleColumn?: boolean;
-}) {
-  if (blocks.length === 0) return null;
-
-  const isDark = presentation.activeColorMode !== 'light';
-  const colorMode = resolveExperienceColorMode(presentation);
-  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
-  const accent = experienceAccentColor(presentation.accentColor);
-  const ink = ensureExperienceInkContrast(
-    presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
-    isDark,
-    DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
-  );
-  const muted = ensureExperienceInkContrast(
-    presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
-    isDark,
-    DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
-  );
-  const bodyColor = ensureExperienceInkContrast(
-    resolveExperienceTextColor(styles.tasks, colorMode) || resolveExperienceTextColor(styles.description, colorMode),
-    isDark,
-    DEFAULT_EXPERIENCE_BODY_COLOR,
-    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
-  );
-  const border = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
-  const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
-  const flags = experienceContentFlags(presentation, isDark, 'reel');
-  const stacked = forceSingleColumn;
-
-  return (
-    <div
-      className={experienceListShellClass(
-        stacked ? 'full' : presentation.listMaxWidth,
-        stacked ? 'left' : presentation.listPlacement
-      )}
-    >
-      {blocks.map((block) => (
-        <AsymmetricExperienceRow
-          key={block.id}
-          block={block}
-          ink={ink}
-          muted={muted}
-          bodyColor={bodyColor}
-          accent={accent}
-          border={border}
-          background={background}
-          flags={flags}
-          stacked={stacked}
-        />
-      ))}
-    </div>
-  );
-}
 
 function KineticExperienceRow({
   block,
@@ -23086,12 +23151,17 @@ function KineticExperienceRow({
         </div>
         <div className="flex flex-col items-start gap-8 sm:items-end">
           {displayTools.length > 0 ? (
-            <p
-              className="max-w-xs font-mono text-[0.68rem] uppercase tracking-[0.16em] sm:text-right"
-              style={{ color: muted }}
-            >
-              {displayTools.join('  ·  ')}
-            </p>
+            <div className="max-w-xs">
+              <ExperienceToolsDisplay
+                tools={displayTools}
+                style={flags.toolsBadgeStyle}
+                ink={ink}
+                muted={muted}
+                background={background}
+                isDark={flags.isDark}
+                size="sm"
+              />
+            </div>
           ) : null}
           {repoLink ? (
             <PortfolioLinkButton
@@ -23545,12 +23615,9 @@ export function EditorialFaqItem({
   onExclusiveToggle?: (itemId: string, open: boolean) => void;
 }) {
   const design = presentation.itemDesign;
-  const sectionDesign = presentation.design;
-  const colorQuestionOnOpen =
-    sectionDesign === 'panel' || sectionDesign === 'split' || sectionDesign === 'cta-split';
-  const plainExpandIcon = design === 'two-column' || colorQuestionOnOpen;
+  const plainExpandIcon = design === 'two-column';
   const isCard = faqIsCardDesign(design);
-  const shellClass = faqItemShellClass(design, presentation.itemGap, sectionDesign);
+  const shellClass = faqItemShellClass(design, presentation.itemGap);
   const accentStyle = faqItemAccentStyle(design, presentation.accentColor);
   const accent = presentation.accentColor;
   const expandFill = presentation.cardBackgroundColor;
@@ -23566,7 +23633,7 @@ export function EditorialFaqItem({
 
   const questionTextStyle = {
     ...presentation.elementStyles.question,
-    ...(design === 'two-column' || colorQuestionOnOpen ? { weight: 'semibold' as const, bold: false } : {}),
+    ...(design === 'two-column' ? { weight: 'semibold' as const, bold: false } : {}),
   };
   const questionClass = `min-w-0 flex-1 leading-snug transition-colors duration-300 ${elementTextStyleClass(questionTextStyle, 'body')}`;
   const questionStyle = elementTextInlineStyle(questionTextStyle);
@@ -23604,7 +23671,7 @@ export function EditorialFaqItem({
   const [localOpen, setLocalOpen] = useState(false);
   const isOpen = !expandable ? true : exclusive ? exclusiveOpen === item.id : localOpen;
   const openFill = design === 'two-column' && isOpen;
-  const openQuestionColor = openFill ? '#ffffff' : colorQuestionOnOpen && isOpen ? accent : undefined;
+  const openQuestionColor = openFill ? '#ffffff' : undefined;
   const flushAnswers = presentation.answerFlushWithQuestion === true || isRaised;
   const answerPadding = faqAnswerPaddingClass(
     design,
@@ -23648,7 +23715,7 @@ export function EditorialFaqItem({
       }
       style={
         plainExpandIcon
-          ? { color: openFill ? '#ffffff' : colorQuestionOnOpen && isOpen ? accent : presentation.expandIconColor }
+          ? { color: openFill ? '#ffffff' : presentation.expandIconColor }
           : {
               ...iconStyles.base,
               ['--faq-expand-open-bg' as string]: String(iconStyles.open.backgroundColor ?? ''),
@@ -23853,7 +23920,6 @@ export function EditorialFaqList({
   askCtaHref = '#contact',
   askCtaLabel = 'Ask a question',
   updatedLabel,
-  embeddedHeader,
 }: {
   items: FaqItem[];
   presentation?: PortfolioFaqPresentationSettings;
@@ -23861,16 +23927,9 @@ export function EditorialFaqList({
   askCtaHref?: string;
   askCtaLabel?: string;
   updatedLabel?: string | null;
-  embeddedHeader?: ReactNode;
 }) {
   const [exclusiveOpenId, setExclusiveOpenId] = useState<string | null>(null);
-  const exclusive =
-    presentation.expandable !== false &&
-    (presentation.design === 'two-column' ||
-      presentation.design === 'panel' ||
-      presentation.design === 'split' ||
-      presentation.design === 'cta-split' ||
-      presentation.accordionExclusive === true);
+  const exclusive = presentation.expandable !== false && presentation.accordionExclusive === true;
 
   useEffect(() => {
     if (!exclusive || !exclusiveOpenId) return;
@@ -23884,10 +23943,7 @@ export function EditorialFaqList({
     return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [exclusive, exclusiveOpenId]);
   const illustrationVariant = presentation.illustrationVariant ?? 'none';
-  const showIllustration =
-    illustrationVariant !== 'none' &&
-    presentation.design !== 'split' &&
-    presentation.design !== 'cta-split';
+  const showIllustration = illustrationVariant !== 'none';
   const illustrationPlacement = presentation.illustrationPlacement ?? 'right';
   const isRaised = presentation.itemDesign === 'raised';
   const accent = presentation.accentColor || '#f97316';
@@ -23906,7 +23962,7 @@ export function EditorialFaqList({
 
   const list = (
     <div
-      className={faqListShellClass(presentation.itemDesign, presentation.itemGap, presentation.design)}
+      className={faqListShellClass(presentation.itemDesign, presentation.itemGap)}
       style={itemBorderVars}
     >
       {items.map((item, index) => (
@@ -23977,27 +24033,7 @@ export function EditorialFaqList({
     </div>
   );
 
-  const isPanel = presentation.design === 'panel';
-  const panelList = isPanel ? (
-    <div className="relative" style={faqPanelShadowStyle(presentation.panelShadow, presentation.panelShadowIntensity)}>
-      <div
-        className={faqPanelInnerClass(presentation)}
-        style={{
-          backgroundColor: presentation.cardBackgroundEnabled
-            ? presentation.cardBackgroundColor
-            : DEFAULT_FAQ_PRESENTATION.cardBackgroundColor,
-        }}
-      >
-        {embeddedHeader ? <div className="mb-8 sm:mb-10">{embeddedHeader}</div> : null}
-        {list}
-        {footer}
-      </div>
-    </div>
-  ) : (
-    framedList
-  );
-
-  if (!showIllustration) return panelList;
+  if (!showIllustration) return framedList;
 
   const illustration = (
     <div
@@ -24023,11 +24059,11 @@ export function EditorialFaqList({
       {illustrationPlacement === 'left' ? (
         <>
           {illustration}
-          <div className="min-w-0">{panelList}</div>
+          <div className="min-w-0">{framedList}</div>
         </>
       ) : (
         <>
-          <div className="min-w-0">{panelList}</div>
+          <div className="min-w-0">{framedList}</div>
           {illustration}
         </>
       )}
@@ -26178,10 +26214,13 @@ export function EditorialContactSection({
   ctaHref,
   ctaLabel = 'Start a project',
   responseTimeLabel,
+  heroImageUrl,
+  heroImageAlt,
+  contentGutter = DEFAULT_CONTENT_GUTTER,
+  globalColorMode = 'dark',
   membersOnlyNode,
   renderSocialIcon,
   socialBrandClass,
-  editorialLayout = false,
   sectionTitle,
   sectionSubtitle,
   presentation = DEFAULT_CONTACT_PRESENTATION,
@@ -26189,18 +26228,7 @@ export function EditorialContactSection({
   titleTypographyStyle,
   subtitleTypographyClass,
   subtitleTypographyStyle,
-  titleDecorationStyle,
-  subtitleDecorationStyle,
-  titleChromeClass,
-  titleChromeStyle,
-  customTitleSizing,
-  customSubtitleSizing,
-  orientation,
-  centered,
-  alignRight = false,
-  alwaysCentered,
   suppressBackground = false,
-  scrollBehavior = 'sticky',
   motionProfile = DEFAULT_MOTION_PROFILE,
   topSpacingClass = 'pt-12 sm:pt-16 lg:pt-20',
   topSpacingStyle,
@@ -26215,10 +26243,19 @@ export function EditorialContactSection({
   ctaHref: string;
   ctaLabel?: string;
   responseTimeLabel?: string | null;
+  /** Real creator photo for "Sequential reveal"'s clip-path hero image (falls back to initials). */
+  heroImageUrl?: string | null;
+  heroImageAlt?: string;
+  /** Same site-wide editorial gutter every other section uses — premium full-bleed designs
+   *  don't go through `PortfolioSectionShell` (which applies this automatically), so they need
+   *  it passed in explicitly to line their own content up with the rest of the page. */
+  contentGutter?: PortfolioContentGutter;
+  /** The portfolio's real active appearance (settings.global.colorMode) — only "Studio overlap"
+   *  reads this; every other premium design owns a fixed black canvas regardless of it. */
+  globalColorMode?: 'light' | 'dark';
   membersOnlyNode?: React.ReactNode;
   renderSocialIcon?: (platform: string, className: string) => React.ReactNode;
   socialBrandClass?: (platform: string) => string;
-  editorialLayout?: boolean;
   sectionTitle?: string;
   sectionSubtitle?: React.ReactNode;
   presentation?: PortfolioContactPresentationSettings;
@@ -26226,20 +26263,8 @@ export function EditorialContactSection({
   titleTypographyStyle?: React.CSSProperties;
   subtitleTypographyClass?: string;
   subtitleTypographyStyle?: React.CSSProperties;
-  titleDecorationStyle?: React.CSSProperties;
-  subtitleDecorationStyle?: React.CSSProperties;
-  titleChromeClass?: string;
-  titleChromeStyle?: React.CSSProperties;
-  customTitleSizing?: boolean;
-  customSubtitleSizing?: boolean;
-  orientation?: 'horizontal' | 'vertical';
-  centered?: boolean;
-  alignRight?: boolean;
-  alwaysCentered?: boolean;
   /** When a global solid is active, sections without their own fill stay clear; an enabled section fill paints on top. */
   suppressBackground?: boolean;
-  /** Global scroll behavior for section titles. */
-  scrollBehavior?: 'sticky' | 'static';
   motionProfile?: PortfolioGlobalMotionProfile;
   /** Global padding-top above the section title. */
   topSpacingClass?: string;
@@ -26329,6 +26354,38 @@ export function EditorialContactSection({
           : ' to discuss your objectives.'}
       </>
     );
+
+  // Header — one shared, GSAP-animated header (chosen from 8 editorial layouts, same
+  // mechanism as Portfolio/Work, Stack, and Tools). Count = visible contact methods
+  // (email/phone/location) + visible social links, used by 3 of the 8 designs.
+  const contactHeaderItemCount =
+    [visibleEmail, visiblePhone, visibleLocation].filter((value) => Boolean(value?.trim())).length +
+    visibleLinks.length;
+  const contactHeaderProps = {
+    title: resolvedTitle,
+    subtitle: typeof sectionSubtitle === 'string' ? sectionSubtitle : undefined,
+    presentation,
+    itemCount: contactHeaderItemCount,
+  };
+  const renderContactHeader = () =>
+    presentation.headerDesign === 'marquee' ? (
+      <ContactHeaderMarqueeHeader {...contactHeaderProps} />
+    ) : presentation.headerDesign === 'index' ? (
+      <ContactHeaderIndexHeader {...contactHeaderProps} />
+    ) : presentation.headerDesign === 'accent-count' ? (
+      <ContactHeaderAccentCountHeader {...contactHeaderProps} />
+    ) : presentation.headerDesign === 'serif-lead' ? (
+      <ContactHeaderSerifLeadHeader {...contactHeaderProps} />
+    ) : presentation.headerDesign === 'billboard' ? (
+      <ContactHeaderBillboardHeader {...contactHeaderProps} />
+    ) : presentation.headerDesign === 'masthead' ? (
+      <ContactHeaderMastheadHeader {...contactHeaderProps} />
+    ) : presentation.headerDesign === 'split-heading' ? (
+      <ContactHeaderSplitHeadingHeader {...contactHeaderProps} />
+    ) : (
+      <ContactHeaderEditorialHeader {...contactHeaderProps} />
+    );
+
   const withContactIllustration = (content: React.ReactNode) => {
     if (presentation.illustrationVariant === 'none') return content;
     const illustration = <FaqSectionIllustration variant={presentation.illustrationVariant} />;
@@ -26361,6 +26418,197 @@ export function EditorialContactSection({
       </div>
     );
   };
+
+  // Premium, full-bleed designs — each owns its whole composition (no card, no form,
+  // no standard section spacing); the black canvas and padding live inside the design
+  // component itself, keyed by presentation.cardDesign.
+  if (presentation.cardDesign === 'editorial-focus') {
+    return (
+      <section id="contact">
+        <ContactDesignEditorialFocus
+          email={visibleEmail}
+          phone={visiblePhone}
+          locationLabel={visibleLocation}
+          links={visibleLinks}
+          ctaHref={ctaHref}
+          presentation={presentation}
+        />
+      </section>
+    );
+  }
+
+  if (presentation.cardDesign === 'split-grid') {
+    return (
+      <section id="contact">
+        <ContactDesignSplitGrid
+          email={visibleEmail}
+          phone={visiblePhone}
+          locationLabel={visibleLocation}
+          links={visibleLinks}
+          presentation={presentation}
+        />
+      </section>
+    );
+  }
+
+  if (presentation.cardDesign === 'liquid-distortion') {
+    return (
+      <section id="contact">
+        <ContactDesignLiquidDistortion
+          email={visibleEmail}
+          phone={visiblePhone}
+          locationLabel={visibleLocation}
+          links={visibleLinks}
+          presentation={presentation}
+        />
+      </section>
+    );
+  }
+
+  if (presentation.cardDesign === 'sequential-reveal') {
+    return (
+      <section id="contact">
+        <ContactDesignSequentialReveal
+          creatorId={creatorId}
+          email={visibleEmail}
+          heroImageUrl={heroImageUrl ?? null}
+          heroImageAlt={heroImageAlt ?? ''}
+          sectionTitle={sectionTitle}
+          presentation={presentation}
+          contentGutter={contentGutter}
+        />
+      </section>
+    );
+  }
+
+  if (presentation.cardDesign === 'studio-overlap') {
+    return (
+      <section id="contact">
+        <ContactDesignStudioOverlap
+          email={visibleEmail}
+          phone={visiblePhone}
+          locationLabel={visibleLocation}
+          heroImageUrl={heroImageUrl ?? null}
+          heroImageAlt={heroImageAlt ?? ''}
+          sectionTitle={sectionTitle}
+          presentation={presentation}
+          contentGutter={contentGutter}
+          colorMode={globalColorMode}
+        />
+      </section>
+    );
+  }
+
+  if (presentation.cardDesign === 'borderless-grid') {
+    return (
+      <section id="contact">
+        <ContactDesignBorderlessGrid
+          email={visibleEmail}
+          phone={visiblePhone}
+          locationLabel={visibleLocation}
+          links={visibleLinks}
+          sectionTitle={sectionTitle}
+          presentation={presentation}
+          contentGutter={contentGutter}
+          colorMode={globalColorMode}
+        />
+      </section>
+    );
+  }
+
+  if (presentation.cardDesign === 'broken-grid') {
+    return (
+      <section id="contact">
+        <ContactDesignBrokenGrid
+          email={visibleEmail}
+          phone={visiblePhone}
+          locationLabel={visibleLocation}
+          links={visibleLinks}
+          heroImageUrl={heroImageUrl ?? null}
+          heroImageAlt={heroImageAlt ?? ''}
+          sectionTitle={sectionTitle}
+          contentGutter={contentGutter}
+          colorMode={globalColorMode}
+        />
+      </section>
+    );
+  }
+
+  if (presentation.cardDesign === 'numbered-narrative') {
+    return (
+      <section id="contact">
+        <ContactDesignNumberedNarrative
+          creatorId={creatorId}
+          email={visibleEmail}
+          phone={visiblePhone}
+          locationLabel={visibleLocation}
+          links={visibleLinks}
+          heroImageUrl={heroImageUrl ?? null}
+          heroImageAlt={heroImageAlt ?? ''}
+          sectionTitle={sectionTitle}
+          presentation={presentation}
+          contentGutter={contentGutter}
+          colorMode={globalColorMode}
+        />
+      </section>
+    );
+  }
+
+  if (presentation.cardDesign === 'brutalist-overlap') {
+    return (
+      <section id="contact">
+        <ContactDesignBrutalistOverlap
+          email={visibleEmail}
+          locationLabel={visibleLocation}
+          links={visibleLinks}
+          heroImageUrl={heroImageUrl ?? null}
+          heroImageAlt={heroImageAlt ?? ''}
+          sectionTitle={sectionTitle}
+          contentGutter={contentGutter}
+          colorMode={globalColorMode}
+        />
+      </section>
+    );
+  }
+
+  if (presentation.cardDesign === 'split-manifesto') {
+    return (
+      <section id="contact">
+        <ContactDesignSplitManifesto
+          email={visibleEmail}
+          phone={visiblePhone}
+          locationLabel={visibleLocation}
+          links={visibleLinks}
+          heroImageUrl={heroImageUrl ?? null}
+          heroImageAlt={heroImageAlt ?? ''}
+          ctaHref={ctaHref}
+          ctaLabel={resolvedCtaLabel}
+          sectionTitle={sectionTitle}
+          presentation={presentation}
+          contentGutter={contentGutter}
+          colorMode={globalColorMode}
+        />
+      </section>
+    );
+  }
+
+  if (presentation.cardDesign === 'magnetic-overlap') {
+    return (
+      <section id="contact">
+        <ContactDesignMagneticOverlap
+          email={visibleEmail}
+          phone={visiblePhone}
+          links={visibleLinks}
+          heroImageUrl={heroImageUrl ?? null}
+          heroImageAlt={heroImageAlt ?? ''}
+          sectionTitle={sectionTitle}
+          presentation={presentation}
+          contentGutter={contentGutter}
+          colorMode={globalColorMode}
+        />
+      </section>
+    );
+  }
 
   if (isInquiry) {
     const inquiryTitleClass =
@@ -26683,30 +26931,7 @@ export function EditorialContactSection({
           ? 'grid gap-3 sm:grid-cols-2'
           : 'grid gap-3 sm:grid-cols-1 max-w-xl';
 
-    const deskHeader = (
-      <EditorialSectionStickyHeader
-        title={resolvedTitle}
-        subtitle={resolvedSubtitle}
-        subtitleSerif={presentation.subtitleSerif}
-        editorialLayout={editorialLayout}
-        centered
-        alignRight={false}
-        alwaysCentered
-        className="relative z-[1] mb-8 w-full lg:mb-10"
-        titleTypographyClass={titleTypographyClass}
-        titleTypographyStyle={titleTypographyStyle}
-        titleDecorationStyle={titleDecorationStyle}
-        titleChromeClass={titleChromeClass}
-        titleChromeStyle={titleChromeStyle}
-        customTitleSizing={customTitleSizing}
-        subtitleTypographyClass={subtitleTypographyClass}
-        subtitleTypographyStyle={subtitleTypographyStyle}
-        subtitleDecorationStyle={subtitleDecorationStyle}
-        customSubtitleSizing={customSubtitleSizing}
-        orientation={orientation}
-        scrollBehavior="static"
-      />
-    );
+    const deskHeader = <div className="relative z-[1] w-full">{renderContactHeader()}</div>;
 
     const deskBody = (
       <div className="relative z-[1] w-full" style={chromeVars}>
@@ -27363,30 +27588,7 @@ export function EditorialContactSection({
       </ContactCardShell>
     ) : null;
 
-    const editorialHeader = (
-      <EditorialSectionStickyHeader
-        title={resolvedTitle}
-        subtitle={resolvedSubtitle}
-        subtitleSerif={presentation.subtitleSerif}
-        editorialLayout={editorialLayout}
-        centered={false}
-        alignRight={false}
-        alwaysCentered={false}
-        className="relative z-[1] mb-8 w-full lg:mb-10"
-        titleTypographyClass={titleTypographyClass}
-        titleTypographyStyle={titleTypographyStyle}
-        titleDecorationStyle={titleDecorationStyle}
-        titleChromeClass={titleChromeClass}
-        titleChromeStyle={titleChromeStyle}
-        customTitleSizing={customTitleSizing}
-        subtitleTypographyClass={subtitleTypographyClass}
-        subtitleTypographyStyle={subtitleTypographyStyle}
-        subtitleDecorationStyle={subtitleDecorationStyle}
-        customSubtitleSizing={customSubtitleSizing}
-        orientation={orientation}
-        scrollBehavior="static"
-      />
-    );
+    const editorialHeader = <div className="relative z-[1] w-full">{renderContactHeader()}</div>;
 
     const editorialBody = (
       <div className="relative z-[1] w-full" style={chromeVars}>
@@ -27475,30 +27677,7 @@ export function EditorialContactSection({
         />
       ) : null;
 
-    const directoryHeader = (
-      <EditorialSectionStickyHeader
-        title={resolvedTitle}
-        subtitle={resolvedSubtitle}
-        subtitleSerif={presentation.subtitleSerif}
-        editorialLayout={editorialLayout}
-        centered
-        alignRight={false}
-        alwaysCentered
-        className="relative z-[1] mb-0 w-full"
-        titleTypographyClass={titleTypographyClass}
-        titleTypographyStyle={titleTypographyStyle}
-        titleDecorationStyle={titleDecorationStyle}
-        titleChromeClass={titleChromeClass}
-        titleChromeStyle={titleChromeStyle}
-        customTitleSizing={customTitleSizing}
-        subtitleTypographyClass={subtitleTypographyClass}
-        subtitleTypographyStyle={subtitleTypographyStyle}
-        subtitleDecorationStyle={subtitleDecorationStyle}
-        customSubtitleSizing={customSubtitleSizing}
-        orientation={orientation}
-        scrollBehavior="static"
-      />
-    );
+    const directoryHeader = <div className="relative z-[1] w-full">{renderContactHeader()}</div>;
 
     const directoryBody = (
       <div className="relative z-[1] w-full" style={chromeVars}>
@@ -27577,28 +27756,7 @@ export function EditorialContactSection({
   const contactAside =
     presentation.sectionLayout === 'aside-left' || presentation.sectionLayout === 'aside-right';
   const header = (
-    <EditorialSectionStickyHeader
-      title={resolvedTitle}
-      subtitle={resolvedSubtitle}
-      subtitleSerif={presentation.subtitleSerif}
-      editorialLayout={editorialLayout}
-      centered={centered}
-      alignRight={alignRight}
-      alwaysCentered={alwaysCentered}
-      className={`relative z-[1] ${contactAside ? 'mb-0 w-full' : 'mb-10 lg:mb-12'}`}
-      titleTypographyClass={titleTypographyClass}
-      titleTypographyStyle={titleTypographyStyle}
-      titleDecorationStyle={titleDecorationStyle}
-      titleChromeClass={titleChromeClass}
-      titleChromeStyle={titleChromeStyle}
-      customTitleSizing={customTitleSizing}
-      subtitleTypographyClass={subtitleTypographyClass}
-      subtitleTypographyStyle={subtitleTypographyStyle}
-      subtitleDecorationStyle={subtitleDecorationStyle}
-      customSubtitleSizing={customSubtitleSizing}
-      orientation={orientation}
-      scrollBehavior={scrollBehavior}
-    />
+    <div className={`relative z-[1] ${contactAside ? 'w-full' : ''}`}>{renderContactHeader()}</div>
   );
 
   const contactListCard = hasContactList ? (
@@ -27733,30 +27891,266 @@ export function EditorialContactSection({
   );
 }
 
-/** Thin rule between footer info blocks — vertical on lg+, horizontal when stacked. */
-function FooterInfoDivider({
-  enabled,
-  style,
-  horizontalOnly = false,
+/**
+ * "Contact CTA" (design `minimal`) interactive body — borderless two-column layout (no central
+ * rule, no icon chips). At rest every secondary line (bio, location/phone/email, social icons)
+ * sits at a soft readable opacity; hovering the email, the CTA button or a social icon snaps
+ * that one element to full-contrast pure white/black with a small directional nudge while every
+ * other line in both columns recedes to near-invisible + a light blur — a theatrical depth-of-
+ * field focus, same `gsap.context` + mouseenter/mouseleave idiom as Editorial Grid's dim group.
+ */
+function FooterContactCtaBody({
+  creatorName,
+  showBrand,
+  brandClass,
+  brandStyle,
+  bio,
+  descriptionClass,
+  descriptionStyle,
+  ctaRow,
+  contactItems,
+  contactLineClass,
+  contactLineStyle,
+  socialLinks,
+  iconStyle,
+  lightBackground,
+  copyright,
+  avatarUrl,
+  showAvatar,
 }: {
-  enabled: boolean;
-  style: CSSProperties;
-  /** Force a full-width horizontal rule (compact / stacked sections). */
-  horizontalOnly?: boolean;
+  creatorName: string;
+  showBrand: boolean;
+  brandClass: string;
+  brandStyle: CSSProperties;
+  bio: string | null;
+  descriptionClass: string;
+  descriptionStyle: CSSProperties;
+  ctaRow: ReactNode;
+  contactItems: { id: string; label: string; href?: string }[];
+  contactLineClass: string;
+  contactLineStyle: CSSProperties;
+  socialLinks: EditorialContactLink[];
+  iconStyle: CSSProperties;
+  lightBackground: boolean;
+  copyright: ReactNode;
+  /** Optional portrait filling the wide empty gap on the right at desktop widths —
+   *  opt-in via the existing site-wide "Avatar" content-visibility toggle, same one
+   *  the other Footer designs (e.g. Centered minimal) already read. */
+  avatarUrl?: string | null;
+  showAvatar?: boolean;
 }) {
-  if (!enabled) return null;
-  if (horizontalOnly) {
-    return <span className="h-px w-full shrink-0" style={style} aria-hidden />;
-  }
+  const showPortrait = Boolean(showAvatar && avatarUrl);
+  const groupRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const group = groupRef.current;
+    if (!group) return undefined;
+    if (typeof window === 'undefined') return undefined;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+
+    const dimTargets = Array.from(group.querySelectorAll<HTMLElement>('[data-fcta-dim]'));
+    const triggers = Array.from(group.querySelectorAll<HTMLElement>('[data-fcta-trigger]'));
+    if (dimTargets.length === 0 || triggers.length === 0) return undefined;
+
+    const focusColor = lightBackground ? '#0a0a0a' : '#fafafa';
+
+    let ctx: gsap.Context | undefined;
+    try {
+      ctx = gsap.context(() => {
+        const restColor = new Map<HTMLElement, string>();
+        const restOpacity = new Map<HTMLElement, number>();
+        dimTargets.forEach((el) => {
+          restColor.set(el, getComputedStyle(el).color);
+          restOpacity.set(el, Number(el.dataset.fctaRestOpacity || 1));
+        });
+
+        const onEnter = (event: Event) => {
+          const target = event.currentTarget as HTMLElement;
+          const offsetX = Number(target.dataset.fctaOffsetX || 0);
+          const offsetY = Number(target.dataset.fctaOffsetY || 0);
+          const scale = Number(target.dataset.fctaScale || 1);
+          dimTargets.forEach((el) => {
+            if (el === target) {
+              gsap.to(el, {
+                opacity: 1,
+                filter: 'blur(0px)',
+                color: focusColor,
+                x: offsetX,
+                y: offsetY,
+                scale,
+                duration: 0.45,
+                ease: 'power2.out',
+                overwrite: 'auto',
+              });
+            } else {
+              gsap.to(el, {
+                opacity: 0.08,
+                filter: 'blur(1.5px)',
+                duration: 0.45,
+                ease: 'power2.out',
+                overwrite: 'auto',
+              });
+            }
+          });
+        };
+
+        const onLeave = () => {
+          dimTargets.forEach((el) => {
+            gsap.to(el, {
+              opacity: restOpacity.get(el) ?? 1,
+              filter: 'blur(0px)',
+              color: restColor.get(el) || '',
+              x: 0,
+              y: 0,
+              scale: 1,
+              duration: 0.45,
+              ease: 'power2.out',
+              overwrite: 'auto',
+            });
+          });
+        };
+
+        triggers.forEach((item) => {
+          item.addEventListener('mouseenter', onEnter);
+          item.addEventListener('mouseleave', onLeave);
+        });
+
+        return () => {
+          triggers.forEach((item) => {
+            item.removeEventListener('mouseenter', onEnter);
+            item.removeEventListener('mouseleave', onLeave);
+          });
+        };
+      }, group);
+    } catch (error) {
+      console.error('[FooterContactCtaBody] hover focus failed to initialize', error);
+      ctx?.revert();
+      gsap.set(dimTargets, { clearProps: 'all' });
+    }
+
+    return () => ctx?.revert();
+  }, [contactItems, socialLinks, lightBackground]);
+
+  const cleanBrandClass = brandClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim();
+  const cleanDescriptionClass = descriptionClass.replace(/\bfont-(?:bold|medium)\b/g, '').trim();
+  const cleanContactLineClass = contactLineClass
+    .replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '')
+    .trim();
+
   return (
-    <>
-      <span className="h-px w-full shrink-0 lg:hidden" style={style} aria-hidden />
-      <span
-        className="mx-5 hidden w-px shrink-0 self-stretch lg:mx-6 lg:block xl:mx-8"
-        style={style}
-        aria-hidden
-      />
-    </>
+    <div ref={groupRef} className="flex min-w-0 flex-col gap-10 sm:gap-12">
+      <div
+        className={`grid w-full grid-cols-1 gap-10 lg:items-start lg:gap-16 xl:gap-24 ${
+          showPortrait ? 'lg:grid-cols-[1.1fr_1fr_auto]' : 'lg:grid-cols-2'
+        }`}
+      >
+        <div className="min-w-0 space-y-6 text-left sm:space-y-7 lg:pr-8 xl:pr-12">
+          {showBrand ? (
+            <p className={`tracking-tight font-semibold ${cleanBrandClass}`} style={{ ...brandStyle, fontWeight: 600 }}>
+              {creatorName}
+            </p>
+          ) : null}
+          {bio ? (
+            <p
+              data-fcta-dim=""
+              data-fcta-rest-opacity="0.6"
+              data-pf-no-color-transition=""
+              className={`text-pretty sm:text-base ${cleanDescriptionClass}`}
+              style={{ ...descriptionStyle, fontSize: '1rem', lineHeight: 1.6, opacity: 0.6 }}
+            >
+              {bio}
+            </p>
+          ) : null}
+          {ctaRow ? (
+            <div
+              data-fcta-dim=""
+              data-fcta-trigger=""
+              data-fcta-rest-opacity="1"
+              data-fcta-offset-y="-5"
+              data-fcta-scale="1.04"
+              data-pf-no-color-transition=""
+              className="inline-flex w-fit [&_a]:!font-semibold"
+            >
+              {ctaRow}
+            </div>
+          ) : null}
+        </div>
+
+        {contactItems.length > 0 || socialLinks.length > 0 ? (
+          <div className="flex min-w-0 flex-col items-start gap-8 text-left">
+            {contactItems.length > 0 ? (
+              <ul className="flex w-full max-w-md flex-col items-start gap-6">
+                {contactItems.map((item) =>
+                  item.href ? (
+                    <li key={item.id} className="w-full">
+                      <a
+                        href={item.href}
+                        data-fcta-dim=""
+                        data-fcta-trigger=""
+                        data-fcta-rest-opacity="0.5"
+                        data-fcta-offset-x="5"
+                        data-pf-no-color-transition=""
+                        className={`inline-block text-pretty ${cleanContactLineClass} font-semibold`}
+                        style={{ ...contactLineStyle, opacity: 0.5, fontSize: '1.125rem' }}
+                      >
+                        {item.label}
+                      </a>
+                    </li>
+                  ) : (
+                    <li key={item.id} className="w-full">
+                      <span
+                        data-fcta-dim=""
+                        data-fcta-rest-opacity="0.5"
+                        data-pf-no-color-transition=""
+                        className={`inline-block text-pretty ${cleanContactLineClass} font-semibold`}
+                        style={{ ...contactLineStyle, opacity: 0.5, fontSize: '1.125rem' }}
+                      >
+                        {item.label}
+                      </span>
+                    </li>
+                  )
+                )}
+              </ul>
+            ) : null}
+
+            {socialLinks.length > 0 ? (
+              <nav className="flex flex-wrap items-center gap-6" aria-label="Social">
+                {socialLinks.map((link) => (
+                  <a
+                    key={link.id}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={link.label}
+                    title={link.label}
+                    data-fcta-dim=""
+                    data-fcta-trigger=""
+                    data-fcta-rest-opacity="0.5"
+                    data-fcta-offset-x="5"
+                    data-pf-no-color-transition=""
+                    className="inline-flex items-center justify-center"
+                    style={{ ...iconStyle, opacity: 0.5 }}
+                  >
+                    <FooterSocialLinkIcon link={link} bare iconClassName="h-5 w-5" />
+                  </a>
+                ))}
+              </nav>
+            ) : null}
+          </div>
+        ) : null}
+
+        {showPortrait ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={avatarUrl!}
+            alt=""
+            className="hidden aspect-[4/5] w-full max-w-[19rem] shrink-0 rounded-[1.5rem] object-cover lg:block lg:w-64 xl:w-72"
+          />
+        ) : null}
+      </div>
+
+      {copyright}
+    </div>
   );
 }
 
@@ -27780,6 +28174,9 @@ export function EditorialPortfolioFooter({
   motionProfile = DEFAULT_MOTION_PROFILE,
   bottomClearanceClass,
   visibleSectionLinks,
+  globalColorMode = 'dark',
+  timezoneId,
+  contentGutter = DEFAULT_CONTENT_GUTTER,
 }: {
   creatorName: string;
   creatorId: string;
@@ -27805,7 +28202,246 @@ export function EditorialPortfolioFooter({
   bottomClearanceClass?: string;
   /** Landing Links — show Gallery / About us / Team / Services / Work only when the section is on. */
   visibleSectionLinks?: Partial<Record<PortfolioFooterAutoSectionKey, boolean>>;
+  /** Resolved active color mode (Global → Theme, honoring the section's own override) — the
+   *  premium full-bleed designs (Monumental's siblings) branch their literal colors on this
+   *  instead of reading the shared CSS palette tokens. */
+  globalColorMode?: 'light' | 'dark';
+  /** IANA timezone id (profile.timezoneId) — only consumed by the Timezone editorial design. */
+  timezoneId?: string | null;
+  /** Site-wide editorial gutter (settings.global.contentGutter) — the full-bleed premium
+   *  designs bypass the legacy shell, so this is threaded in explicitly wherever one of them
+   *  needs to line its own horizontal padding up with the rest of the page. */
+  contentGutter?: PortfolioContentGutter;
 }) {
+  if (presentation.design === 'monumental') {
+    return (
+      <FooterDesignMonumental
+        creatorName={creatorName}
+        creatorId={creatorId}
+        email={email ?? null}
+        phone={phone ?? null}
+        locationLabel={locationLabel ?? null}
+        links={links}
+        presentation={presentation}
+        visibleSectionLinks={visibleSectionLinks}
+        contentGutter={contentGutter}
+      />
+    );
+  }
+
+  if (presentation.design === 'compact') {
+    return (
+      <FooterDesignCompact
+        creatorName={creatorName}
+        creatorId={creatorId}
+        bio={bio}
+        email={email ?? null}
+        phone={phone ?? null}
+        locationLabel={locationLabel ?? null}
+        links={links}
+        presentation={presentation}
+        colorMode={globalColorMode}
+        contentGutter={contentGutter}
+      />
+    );
+  }
+
+  if (presentation.design === 'centered-minimal') {
+    return (
+      <FooterDesignCenteredMinimal
+        creatorName={creatorName}
+        creatorId={creatorId}
+        avatarUrl={avatarUrl}
+        email={email}
+        phone={phone}
+        locationLabel={locationLabel}
+        hoursLabel={hoursLabel}
+        links={links}
+        presentation={presentation}
+        colorMode={globalColorMode}
+        contentGutter={contentGutter}
+      />
+    );
+  }
+
+  if (presentation.design === 'landing') {
+    return (
+      <FooterDesignLanding
+        creatorName={creatorName}
+        creatorId={creatorId}
+        avatarUrl={avatarUrl}
+        bio={bio}
+        email={email}
+        phone={phone}
+        locationLabel={locationLabel}
+        hoursLabel={hoursLabel}
+        links={links}
+        presentation={presentation}
+        visibleSectionLinks={visibleSectionLinks}
+        colorMode={globalColorMode}
+        contentGutter={contentGutter}
+      />
+    );
+  }
+
+  if (presentation.design === 'contact-card') {
+    return (
+      <FooterDesignContactCard
+        creatorName={creatorName}
+        creatorId={creatorId}
+        email={email ?? null}
+        phone={phone ?? null}
+        locationLabel={locationLabel ?? null}
+        links={links}
+        presentation={presentation}
+        visibleSectionLinks={visibleSectionLinks}
+        colorMode={globalColorMode}
+        contentGutter={contentGutter}
+      />
+    );
+  }
+
+  if (
+    presentation.design === 'hero-columns' ||
+    presentation.design === 'split-form' ||
+    presentation.design === 'timezone-editorial' ||
+    presentation.design === 'inverted-wordmark' ||
+    presentation.design === 'services-reveal' ||
+    presentation.design === 'editorial-grid' ||
+    presentation.design === 'headline-reveal'
+  ) {
+    const premiumCopyrightText = resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName);
+    const premiumContactHref = contactHref ?? '#footer';
+    const premiumNavLinks = resolveFooterInternalLinksColumn(presentation, visibleSectionLinks).links.map(
+      (link) => ({ id: link.id, label: link.label, url: link.href })
+    );
+
+    if (presentation.design === 'hero-columns') {
+      return (
+        <FooterDesignHeroColumns
+          creatorName={creatorName}
+          creatorId={creatorId}
+          avatarUrl={avatarUrl}
+          bio={bio}
+          email={email}
+          phone={phone}
+          locationLabel={locationLabel}
+          hoursLabel={hoursLabel}
+          isAvailable={isAvailable}
+          links={links}
+          navLinks={premiumNavLinks}
+          copyrightText={premiumCopyrightText}
+          colorMode={globalColorMode}
+          manifesto={presentation.heroColumnsManifesto}
+          contentGutter={contentGutter}
+        />
+      );
+    }
+
+    if (presentation.design === 'split-form') {
+      return (
+        <FooterDesignSplitForm
+          creatorName={creatorName}
+          creatorId={creatorId}
+          avatarUrl={avatarUrl}
+          bio={bio}
+          email={email}
+          phone={phone}
+          locationLabel={locationLabel}
+          hoursLabel={hoursLabel}
+          links={links}
+          navLinks={premiumNavLinks}
+          colorMode={globalColorMode}
+          headline={presentation.splitFormHeadline}
+          description={presentation.splitFormDescription}
+          contentGutter={contentGutter}
+        />
+      );
+    }
+
+    if (presentation.design === 'timezone-editorial') {
+      return (
+        <FooterDesignTimezoneEditorial
+          creatorName={creatorName}
+          creatorId={creatorId}
+          avatarUrl={avatarUrl}
+          email={email}
+          phone={phone}
+          links={links}
+          copyrightText={premiumCopyrightText}
+          colorMode={globalColorMode}
+          contentGutter={contentGutter}
+        />
+      );
+    }
+
+    if (presentation.design === 'inverted-wordmark') {
+      return (
+        <FooterDesignInvertedWordmark
+          creatorName={creatorName}
+          navLinks={premiumNavLinks}
+          links={links}
+          copyrightText={premiumCopyrightText}
+          colorMode={globalColorMode}
+          creditLabel={presentation.invertedWordmarkCredit}
+          contentGutter={contentGutter}
+        />
+      );
+    }
+
+    if (presentation.design === 'editorial-grid') {
+      return (
+        <FooterDesignEditorialGrid
+          creatorName={creatorName}
+          creatorId={creatorId}
+          avatarUrl={avatarUrl}
+          email={email}
+          phone={phone}
+          locationLabel={locationLabel}
+          links={links}
+          navLinks={premiumNavLinks}
+          contactHref={premiumContactHref}
+          colorMode={globalColorMode}
+          tagline={presentation.editorialGridTagline}
+          contentGutter={contentGutter}
+        />
+      );
+    }
+
+    if (presentation.design === 'headline-reveal') {
+      return (
+        <FooterDesignHeadlineReveal
+          creatorName={creatorName}
+          creatorId={creatorId}
+          bio={bio}
+          email={email}
+          phone={phone}
+          locationLabel={locationLabel}
+          links={links}
+          navLinks={premiumNavLinks}
+          copyrightText={premiumCopyrightText}
+          contactHref={premiumContactHref}
+          colorMode={globalColorMode}
+          contentGutter={contentGutter}
+        />
+      );
+    }
+
+    return (
+      <FooterDesignServicesReveal
+        creatorName={creatorName}
+        email={email}
+        phone={phone}
+        locationLabel={locationLabel}
+        navLinks={premiumNavLinks}
+        links={links}
+        copyrightText={premiumCopyrightText}
+        colorMode={globalColorMode}
+        contentGutter={contentGutter}
+      />
+    );
+  }
+
   const bgStyle =
     !transparentBase && presentation.sectionBackgroundEnabled
       ? sectionBackgroundStyle(presentation)
@@ -27832,19 +28468,10 @@ export function EditorialPortfolioFooter({
   const columnHeadingStyleBase = elementTextInlineStyle(elementStyles.columnHeading);
   const contactLineClass = elementTextStyleClass(elementStyles.contactLine, 'body');
   const contactLineStyleBase = elementTextInlineStyle(elementStyles.contactLine);
-  const invertLandingColumns = presentation.design === 'landing';
-  const columnHeadingStyle = invertLandingColumns
-    ? { ...columnHeadingStyleBase, color: contactLineStyleBase.color }
-    : columnHeadingStyleBase;
-  const contactLineStyle = invertLandingColumns
-    ? { ...contactLineStyleBase, color: columnHeadingStyleBase.color }
-    : contactLineStyleBase;
-  const landingColumnTextClass = invertLandingColumns
-    ? `${contactLineClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()} font-normal`
-    : contactLineClass;
-  const landingColumnTextStyle = invertLandingColumns
-    ? { ...contactLineStyle, color: columnHeadingStyle.color, fontWeight: 400 }
-    : contactLineStyle;
+  const columnHeadingStyle = columnHeadingStyleBase;
+  const contactLineStyle = contactLineStyleBase;
+  const landingColumnTextClass = contactLineClass;
+  const landingColumnTextStyle = contactLineStyle;
   const socialLabelClass = elementTextStyleClass(elementStyles.socialLabel, 'body');
   const socialLabelStyle = elementTextInlineStyle(elementStyles.socialLabel);
   const metaClass = elementTextStyleClass(elementStyles.meta, 'body');
@@ -27858,9 +28485,7 @@ export function EditorialPortfolioFooter({
   const ctaButtonTextClass = elementTextStyleClass(elementStyles.ctaButton, 'body');
   const ctaButtonTextStyle = elementTextInlineStyle(elementStyles.ctaButton);
   const iconStyleBase = footerIconStyle(presentation.iconColor);
-  const iconStyle = invertLandingColumns
-    ? { ...iconStyleBase, color: landingColumnTextStyle.color }
-    : iconStyleBase;
+  const iconStyle = iconStyleBase;
   const patternStyle = footerPatternStyle(presentation);
 
   const description = presentation.showDescription
@@ -27868,7 +28493,7 @@ export function EditorialPortfolioFooter({
         source: presentation.descriptionSource,
         custom: presentation.descriptionCustom,
         bio,
-        maxLength: presentation.design === 'compact' ? 120 : presentation.design === 'landing' ? 280 : 220,
+        maxLength: 220,
       })
     : null;
 
@@ -27902,48 +28527,24 @@ export function EditorialPortfolioFooter({
     contactItems.push({ id: 'hours', label: hoursValue, icon: 'hours' });
   }
 
-  const visibleLinks =
-    presentation.design === 'centered-minimal'
-      ? presentation.showContactLinks !== false
-        ? links.map((link) => {
-            const url = link.url.trim();
-            let hostname = '';
-            try {
-              hostname = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname.replace(
-                /^www\./i,
-                ''
-              );
-            } catch {
-              hostname = '';
-            }
-            const rawLabel = link.label?.trim() ?? '';
-            const label =
-              link.type === 'WEBSITE' && /^site\s*web$/i.test(rawLabel)
-                ? 'Website'
-                : rawLabel || hostname || url;
-            return { ...link, label };
-          })
-        : []
-      : presentation.showContactLinks
-        ? links.map((link) => {
-            const url = link.url.trim();
-            let hostname = '';
-            try {
-              hostname = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname.replace(
-                /^www\./i,
-                ''
-              );
-            } catch {
-              hostname = '';
-            }
-            const rawLabel = link.label?.trim() ?? '';
-            const label =
-              link.type === 'WEBSITE' && /^site\s*web$/i.test(rawLabel)
-                ? 'Website'
-                : rawLabel || hostname || url;
-            return { ...link, label };
-          })
-        : [];
+  const visibleLinks = presentation.showContactLinks
+    ? links.map((link) => {
+        const url = link.url.trim();
+        let hostname = '';
+        try {
+          hostname = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname.replace(
+            /^www\./i,
+            ''
+          );
+        } catch {
+          hostname = '';
+        }
+        const rawLabel = link.label?.trim() ?? '';
+        const label =
+          link.type === 'WEBSITE' && /^site\s*web$/i.test(rawLabel) ? 'Website' : rawLabel || hostname || url;
+        return { ...link, label };
+      })
+    : [];
   const ctaHref =
     contactHref?.trim() ||
     (emailValue ? `mailto:${emailValue}` : '#footer');
@@ -27953,31 +28554,6 @@ export function EditorialPortfolioFooter({
     responseTimeLabel,
     hoursLabel,
   });
-
-  const socialIconsLanding =
-    visibleLinks.length > 0 ? (
-      <nav className="flex flex-wrap gap-3" aria-label="Social">
-        {visibleLinks.map((link) => (
-          <a
-            key={link.id}
-            href={link.url}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={link.label}
-            className={`flex h-11 w-11 items-center justify-center rounded-xl border transition hover:opacity-90 ${
-              lightBackground
-                ? 'border-black/10 bg-white hover:border-orange-500/30'
-                : 'border-white/25 bg-white/10 hover:border-white/45'
-            }`}
-            data-pf-no-color-transition=""
-            style={iconStyle}
-            title={link.label}
-          >
-            <FooterSocialLinkIcon link={link} bare iconClassName="h-5 w-5" />
-          </a>
-        ))}
-      </nav>
-    ) : null;
 
   const socialIconsRow =
     visibleLinks.length > 0 ? (
@@ -28024,19 +28600,13 @@ export function EditorialPortfolioFooter({
     ) : null;
 
   const showContactIcons = presentation.showContactIcons !== false;
-  const contactIconSizeClass =
-    presentation.design === 'landing'
-      ? 'h-6 w-6'
-      : footerContactIconSizeClass(presentation.contactIconSize ?? 'sm');
+  const contactIconSizeClass = footerContactIconSizeClass(presentation.contactIconSize ?? 'sm');
   const contactIconSizeClassCompact = footerContactIconSizeClassCompact(
     presentation.contactIconSize ?? 'sm'
   );
-  // Contact CTA (minimal) always left-aligns the contact rail; editorial center may center.
-  const contactLinesCentered = presentation.design === 'editorial';
-
   const renderFooterContactList = (
     items: typeof contactItems,
-    centered = contactLinesCentered,
+    centered = false,
     options?: {
       iconAlign?: 'start' | 'center';
       lineClass?: string;
@@ -28094,16 +28664,7 @@ export function EditorialPortfolioFooter({
     ) : null;
   };
 
-  const contactStack = renderFooterContactList(
-    contactItems,
-    contactLinesCentered,
-    invertLandingColumns
-      ? {
-          iconAlign: 'center',
-          glyphStyle: { ...iconStyleBase, color: landingColumnTextStyle.color },
-        }
-      : undefined
-  );
+  const contactStack = renderFooterContactList(contactItems, false, undefined);
 
   const contactInline =
     contactItems.length > 0 ? (
@@ -28196,11 +28757,7 @@ export function EditorialPortfolioFooter({
     </>
   );
 
-  const marketplaceLink = (
-    presentation.design === 'landing'
-      ? presentation.showLandingMarketplaceLink === true
-      : presentation.showMarketplaceLink
-  ) ? (
+  const marketplaceLink = presentation.showMarketplaceLink ? (
     marketplaceExternal ? (
       <a
         href={marketplaceHref}
@@ -28228,27 +28785,6 @@ export function EditorialPortfolioFooter({
         }}
       >
         {marketplaceCtaContent}
-      </Link>
-    )
-  ) : null;
-
-  /** Separated-columns: same CTA, slightly larger hit area on outline/pill. */
-  const marketplaceButton = presentation.showMarketplaceLink ? (
-    marketplaceExternal ? (
-      <a
-        href={marketplaceHref}
-        target={marketplaceHref.startsWith('http') ? '_blank' : undefined}
-        rel={marketplaceHref.startsWith('http') ? 'noreferrer' : undefined}
-        className={marketplaceCtaChromeClass}
-        style={marketplaceCtaChromeStyle}
-      >
-        {marketplaceLabel}
-        {marketplaceShowArrow ? <ArrowUpRight className="h-4 w-4 shrink-0" /> : null}
-      </a>
-    ) : (
-      <Link href={marketplaceHref} className={marketplaceCtaChromeClass} style={marketplaceCtaChromeStyle}>
-        {marketplaceLabel}
-        {marketplaceShowArrow ? <ArrowUpRight className="h-4 w-4 shrink-0" /> : null}
       </Link>
     )
   ) : null;
@@ -28319,430 +28855,7 @@ export function EditorialPortfolioFooter({
 
   let body: React.ReactNode;
 
-  if (presentation.design === 'centered-minimal') {
-    const centeredInitials =
-      creatorName
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase() ?? '')
-        .join('') || 'NP';
-    const centeredIdentity = presentation.centeredIdentity ?? 'name';
-    const centeredLinks = presentation.centeredLinks ?? [];
-    const customLogoUrl = presentation.centeredCustomLogoUrl?.trim();
-    const customText = presentation.centeredCustomText?.trim() || creatorName;
-
-    const identity =
-      centeredIdentity === 'avatar' ? (
-        avatarUrl?.trim() ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={avatarUrl}
-            alt={`${creatorName} avatar`}
-            className="h-16 w-16 rounded-full object-cover"
-          />
-        ) : (
-          <span
-            className={`flex h-16 w-16 items-center justify-center rounded-full border text-base ${brandClass}`}
-            style={{ ...brandStyle, borderColor: presentation.accentColor }}
-            aria-label={creatorName}
-          >
-            {centeredInitials}
-          </span>
-        )
-      ) : centeredIdentity === 'custom' && customLogoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={customLogoUrl}
-          alt={customText}
-          className="max-h-16 max-w-[15rem] object-contain"
-        />
-      ) : (
-        <p
-          className={`tracking-tight font-semibold ${brandClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
-          style={{ ...brandStyle, fontWeight: 600 }}
-        >
-          {centeredIdentity === 'custom' ? customText : creatorName}
-        </p>
-      );
-
-    body = (
-      <>
-        <div className="flex justify-center">{identity}</div>
-        {centeredLinks.length > 0 ? (
-          <nav
-            className="flex max-w-3xl flex-wrap items-center justify-center gap-x-7 gap-y-3 sm:gap-x-9"
-            aria-label="Portfolio sections"
-          >
-            {centeredLinks.map((item) => {
-              const href = resolveFooterLinkHref(item.href, creatorId);
-              return (
-                <Link
-                  key={item.id}
-                  href={href}
-                  aria-label={`Go to ${item.label}`}
-                  className={`font-semibold transition hover:opacity-70 ${contactLineClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
-                  data-pf-no-color-transition=""
-                  style={{ ...contactLineStyle, fontWeight: 600 }}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        ) : null}
-        {visibleLinks.length > 0 || contactItems.length > 0 ? (
-          <nav
-            className="flex flex-wrap items-center justify-center gap-2.5"
-            aria-label="Social and contact links"
-          >
-            {visibleLinks.map((link) => (
-              <a
-                key={link.id}
-                href={link.url}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={link.label}
-                title={link.label}
-                className="flex h-9 w-9 items-center justify-center rounded-full border bg-transparent transition hover:opacity-70"
-                data-pf-no-color-transition=""
-                style={{ ...iconStyle, borderColor: presentation.iconColor }}
-              >
-                <FooterSocialLinkIcon link={link} bare />
-              </a>
-            ))}
-            {contactItems.map((item) => {
-              const chipClass =
-                'flex h-9 w-9 items-center justify-center rounded-full border bg-transparent transition hover:opacity-70';
-              const chipStyle = { ...iconStyle, borderColor: presentation.iconColor };
-              const glyph = (
-                <FooterContactIcon type={item.icon} className="h-4 w-4" style={iconStyle} />
-              );
-              if (item.href) {
-                return (
-                  <a
-                    key={item.id}
-                    href={item.href}
-                    aria-label={item.label}
-                    title={item.label}
-                    className={chipClass}
-                    data-pf-no-color-transition=""
-                    style={chipStyle}
-                  >
-                    {glyph}
-                  </a>
-                );
-              }
-              return (
-                <span
-                  key={item.id}
-                  aria-label={item.label}
-                  title={item.label}
-                  className={chipClass}
-                  data-pf-no-color-transition=""
-                  style={chipStyle}
-                >
-                  {glyph}
-                </span>
-              );
-            })}
-          </nav>
-        ) : null}
-        <div
-          aria-hidden
-          className="mt-1 h-px w-full max-w-xl"
-          style={contentDividerStyle}
-        />
-        <p
-          className={`text-center text-pretty ${copyrightClass}`}
-          style={copyrightStyle}
-        >
-          {resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName)}
-        </p>
-      </>
-    );
-  } else if (presentation.design === 'landing') {
-    const rawColumns = presentation.linkColumns ?? [];
-    const linkColumns = rawColumns
-      .map((col) => {
-        let links = (col.links ?? []).filter((link) => link.label.trim() || link.href.trim());
-        const isLinksColumn =
-          col.id === 'links' || col.title.trim().toLowerCase() === 'links';
-        if (presentation.showMarketplaceColumnLink === true && isLinksColumn) {
-          if (!links.some((link) => isFooterMarketplaceColumnLink(link))) {
-            links = [
-              { id: 'marketplace', label: 'Marketplace', href: '/marketplace' },
-              ...links,
-            ];
-          }
-        } else {
-          links = links.filter((link) => !isFooterMarketplaceColumnLink(link));
-        }
-        if (presentation.showNopbProfileLink === true && isLinksColumn) {
-          if (!links.some((link) => isFooterNopbProfileLink(link))) {
-            const insertAt = Math.min(
-              links.some((link) => isFooterMarketplaceColumnLink(link)) ? 1 : 0,
-              links.length
-            );
-            links = [
-              ...links.slice(0, insertAt),
-              { id: 'profile', label: 'NoProbleme profile', href: '__profile__' },
-              ...links.slice(insertAt),
-            ];
-          }
-        } else {
-          links = links.filter((link) => !isFooterNopbProfileLink(link));
-        }
-        if (isLinksColumn) {
-          links = resolveFooterLandingSectionLinks(links, visibleSectionLinks);
-        }
-        return { ...col, links };
-      })
-      .filter((col) => {
-        // Drop empty rails (legacy Product/Creators/Legal leftovers) — no blank 4th column.
-        if (col.id === 'contact') return true;
-        return col.links.length > 0;
-      });
-    const brandInitials = creatorName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() ?? '')
-      .join('') || 'NP';
-    const year = new Date().getFullYear();
-    const copyrightText = presentation.showCopyright
-      ? resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName, year)
-      : null;
-
-    body = (
-      <>
-        {/*
-          Content-sized columns + space-between: Links sits on the right edge
-          instead of leaving a hollow equal-grid track after it.
-        */}
-        <div
-          className={`mb-0 flex w-full flex-col md:flex-row md:items-stretch md:justify-between ${
-            showContentDivider ? 'gap-8 md:gap-0' : 'gap-10 md:gap-x-8 lg:gap-x-12'
-          }`}
-        >
-          <div
-            className="flex min-w-0 max-w-sm flex-col md:max-w-md lg:max-w-lg"
-            style={footerLandingBrandGapStyle(presentation)}
-          >
-            {presentation.showBrand ? (
-              <div className="flex items-center gap-3">
-                {presentation.showAvatar && avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={avatarUrl}
-                    alt=""
-                    className="h-11 w-11 rounded-full object-cover sm:h-12 sm:w-12"
-                  />
-                ) : (
-                  <div
-                    className="flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold text-white sm:h-12 sm:w-12"
-                    style={{ backgroundColor: presentation.accentColor }}
-                    aria-hidden
-                  >
-                    {brandInitials}
-                  </div>
-                )}
-                <span
-                  className={`tracking-tight font-semibold ${brandClass.replace(/\btext-(?:sm|base|lg|xl|2xl)\b/g, '').trim()}`}
-                  style={{ ...brandStyle, fontWeight: 600, fontSize: '2.25rem', lineHeight: 1.15 }}
-                >
-                  {creatorName}
-                </span>
-              </div>
-            ) : null}
-            {description ? (
-              <p
-                className={`max-w-sm text-sm leading-relaxed ${descriptionClass}`}
-                style={{
-                  ...descriptionStyle,
-                  ...(invertLandingColumns ? { color: landingColumnTextStyle.color } : null),
-                }}
-              >
-                {description}
-              </p>
-            ) : null}
-            {socialIconsLanding}
-            {dualCtaRowStart}
-          </div>
-
-          {linkColumns.map((col) => {
-            const isContactColumn = col.id === 'contact';
-            return (
-              <Fragment key={col.id}>
-                <FooterInfoDivider enabled={showContentDivider} style={contentDividerStyle} />
-                <div
-                  className={`min-w-0 shrink-0 ${
-                    isContactColumn ? 'md:max-w-sm lg:max-w-md' : 'md:max-w-[14rem] lg:max-w-[16rem]'
-                  }`}
-                >
-                  {col.title.trim() ? (
-                    <h4
-                      className={`text-lg font-semibold ${landingColumnTextClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
-                      style={{
-                        ...landingColumnTextStyle,
-                        color: columnHeadingStyle.color,
-                        fontFamily: undefined,
-                        fontSize: '1.875rem',
-                        fontWeight: 600,
-                        textTransform: 'none',
-                        letterSpacing: 'normal',
-                        marginBottom: `${clampFooterColumnHeadingGapPx(presentation.columnHeadingGapPx) + 36}px`,
-                      }}
-                    >
-                      {col.title.trim().charAt(0).toUpperCase() +
-                        col.title.trim().slice(1).toLowerCase()}
-                    </h4>
-                  ) : null}
-                  {isContactColumn ? (
-                    contactStack ?? (
-                      <p className={`text-sm ${descriptionClass}`} style={descriptionStyle}>
-                        No contact details enabled.
-                      </p>
-                    )
-                  ) : (
-                    <ul className="space-y-2.5">
-                      {col.links.map((link) => {
-                        const href = resolveFooterLinkHref(link.href, creatorId);
-                        const external = href.startsWith('http') || href.startsWith('mailto:');
-                        return (
-                          <li key={link.id}>
-                            {external ? (
-                              <a
-                                href={href}
-                                className={`text-sm transition hover:opacity-80 ${landingColumnTextClass}`}
-                                data-pf-no-color-transition=""
-                                style={landingColumnTextStyle}
-                                {...(href.startsWith('http')
-                                  ? { target: '_blank', rel: 'noreferrer' }
-                                  : {})}
-                              >
-                                {link.label}
-                              </a>
-                            ) : (
-                              <Link
-                                href={href}
-                                className={`text-sm transition hover:opacity-80 ${landingColumnTextClass}`}
-                                data-pf-no-color-transition=""
-                                style={landingColumnTextStyle}
-                              >
-                                {link.label}
-                              </Link>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-              </Fragment>
-            );
-          })}
-        </div>
-
-        {copyrightText ? (
-          <div className={`border-t pt-5 ${dividerClass}`}>
-            <p
-              className={copyrightClass}
-              style={copyrightStyle}
-            >
-              {copyrightText}
-            </p>
-          </div>
-        ) : null}
-      </>
-    );
-  } else if (presentation.design === 'compact') {
-    // Design 2 — Compact SaaS (portfolio utility footer)
-    // Hierarchy: brand block → contact → divider → meta. Socials sit with the brand
-    // (not stranded on the far right). No design-credit / views noise.
-    const compactCopyright = presentation.showCopyright ? (
-      <p className={copyrightClass} style={copyrightStyle}>
-        {resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName)}
-      </p>
-    ) : null;
-    const compactSocials =
-      visibleLinks.length > 0 ? (
-        <nav className="flex flex-wrap gap-3" aria-label="Social">
-          {visibleLinks.map((link) => (
-            <a
-              key={link.id}
-              href={link.url}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={link.label}
-              className={`flex h-12 w-12 items-center justify-center rounded-xl border transition hover:opacity-90 ${
-                lightBackground
-                  ? 'border-black/8 bg-white hover:border-orange-500/30'
-                  : 'border-white/10 bg-neutral-900 hover:border-orange-500/40'
-              }`}
-              data-pf-no-color-transition=""
-              style={iconStyle}
-              title={link.label}
-            >
-              <FooterSocialLinkIcon link={link} bare iconClassName="h-6 w-6" />
-            </a>
-          ))}
-        </nav>
-      ) : null;
-
-    body = (
-      <>
-        <div className="flex min-w-0 flex-col gap-6 sm:gap-7">
-          <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
-            <div className="min-w-0 max-w-xl space-y-3">
-              {presentation.showBrand ? (
-                <p
-                  className={`tracking-tight font-semibold ${brandClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
-                  style={{ ...brandStyle, fontWeight: 600 }}
-                >
-                  {creatorName}
-                </p>
-              ) : null}
-              {description ? (
-                <p
-                  className={`text-pretty text-sm leading-relaxed sm:text-[0.9375rem] ${descriptionClass}`}
-                  style={descriptionStyle}
-                >
-                  {description}
-                </p>
-              ) : null}
-            </div>
-            {compactSocials ? <div className="shrink-0">{compactSocials}</div> : null}
-          </div>
-
-          {contactInline ? (
-            <>
-              <FooterInfoDivider
-                enabled={showContentDivider}
-                style={contentDividerStyle}
-                horizontalOnly
-              />
-              <div
-                className={`max-w-3xl text-sm leading-relaxed sm:text-[0.9375rem] ${
-                  lightBackground ? 'text-neutral-600' : 'text-neutral-400'
-                }`}
-              >
-                {contactInline}
-              </div>
-            </>
-          ) : null}
-        </div>
-
-        {dualCtaRow ? <div className="pt-1">{dualCtaRow}</div> : null}
-
-        <div
-          className={`flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6 ${dividerClass}`}
-        >
-          {compactCopyright}
-        </div>
-      </>
-    );
-  } else if (presentation.design === 'minimal') {
+  if (presentation.design === 'minimal') {
     // Design 3 — Contact CTA: name + bio + CTA | location + contact + socials
     const minimalCopyright = presentation.showCopyright ? (
       <div className={`border-t pt-5 ${dividerClass}`}>
@@ -28771,84 +28884,28 @@ export function EditorialPortfolioFooter({
       ...(ctaLocationItem ? [ctaLocationItem] : []),
       ...contactItems.filter((item) => item.id === 'phone' || item.id === 'email'),
     ];
-    const ctaContactList = renderFooterContactList(ctaContactColumnItems, false, {
-      iconAlign: 'center',
-      lineClass: `${contactLineClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()} font-semibold`,
-      lineStyle: { ...contactLineStyle, fontWeight: 600 },
-    });
-    const ctaSocialIcons =
-      visibleLinks.length > 0 ? (
-        <nav className="flex flex-wrap gap-3" aria-label="Social">
-          {visibleLinks.map((link) => (
-            <a
-              key={link.id}
-              href={link.url}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={link.label}
-              className={`flex h-12 w-12 items-center justify-center rounded-xl border transition hover:opacity-90 ${
-                lightBackground
-                  ? 'border-black/8 bg-white hover:border-orange-500/30'
-                  : 'border-white/10 bg-neutral-900 hover:border-orange-500/40'
-              }`}
-              data-pf-no-color-transition=""
-              style={iconStyle}
-              title={link.label}
-            >
-              <FooterSocialLinkIcon link={link} bare iconClassName="h-6 w-6" />
-            </a>
-          ))}
-        </nav>
-      ) : null;
-
     body = (
-      <>
-        <div className="flex min-w-0 flex-col gap-8 sm:gap-10">
-          <div
-            className={`grid w-full grid-cols-1 lg:grid-cols-2 lg:items-stretch ${
-              showContentDivider ? 'gap-8 lg:gap-0' : 'gap-8 sm:gap-10 lg:gap-16 xl:gap-20'
-            }`}
-          >
-            <div className="min-w-0 space-y-7 text-left sm:space-y-8 lg:pr-10 xl:pr-14">
-              {presentation.showBrand ? (
-                <p
-                  className={`tracking-tight font-semibold ${brandClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
-                  style={{ ...brandStyle, fontWeight: 600 }}
-                >
-                  {creatorName}
-                </p>
-              ) : null}
-              {ctaBio ? (
-                <p
-                  className={`text-pretty text-sm leading-relaxed sm:text-[0.9375rem] ${descriptionClass.replace(/\bfont-(?:bold|medium)\b/g, '').trim()}`}
-                  style={descriptionStyle}
-                >
-                  {ctaBio}
-                </p>
-              ) : null}
-              {dualCtaRowStart ? (
-                <div className="[&_a]:!font-semibold">{dualCtaRowStart}</div>
-              ) : null}
-            </div>
-
-            {ctaContactList || ctaSocialIcons ? (
-              <div className="flex min-w-0 w-full flex-col lg:flex-row lg:items-stretch">
-                <FooterInfoDivider enabled={showContentDivider} style={contentDividerStyle} />
-                <div className="flex min-w-0 flex-1 flex-col items-start gap-5 text-left lg:items-end lg:pt-1">
-                  <div className="flex w-full max-w-md flex-col items-start gap-5">
-                    {ctaContactList}
-                    {ctaSocialIcons}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          {minimalCopyright}
-        </div>
-      </>
+      <FooterContactCtaBody
+        creatorName={creatorName}
+        showBrand={Boolean(presentation.showBrand)}
+        brandClass={brandClass}
+        brandStyle={brandStyle}
+        bio={ctaBio}
+        descriptionClass={descriptionClass}
+        descriptionStyle={descriptionStyle}
+        ctaRow={dualCtaRowStart}
+        contactItems={ctaContactColumnItems}
+        contactLineClass={contactLineClass}
+        contactLineStyle={contactLineStyle}
+        socialLinks={visibleLinks}
+        iconStyle={iconStyle}
+        lightBackground={lightBackground}
+        copyright={minimalCopyright}
+        avatarUrl={avatarUrl}
+        showAvatar={presentation.showAvatar}
+      />
     );
-  } else if (presentation.design === 'contact-card') {
+  } else {
     const cardBg = presentation.accentColor?.trim() || DEFAULT_FOOTER_ACCENT_COLOR;
     const cardIsLight = footerColorLuminance(cardBg) > 0.55;
     const cardText = cardIsLight ? '#0a0a0a' : '#fafafa';
@@ -28979,107 +29036,6 @@ export function EditorialPortfolioFooter({
         </div>
       </>
     );
-  } else {
-    const editorialLocationItem = locationValue
-      ? contactItems.find((item) => item.id === 'location') ?? {
-          id: 'location',
-          label: locationValue,
-          icon: 'location' as const,
-        }
-      : null;
-    const editorialContactItems = [
-      ...contactItems.filter((item) => item.id === 'phone' || item.id === 'email'),
-      ...(editorialLocationItem ? [editorialLocationItem] : []),
-    ];
-    const editorialContactList = renderFooterContactList(editorialContactItems, true, {
-      iconAlign: 'center',
-      lineClass: `${contactLineClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()} font-semibold`,
-      lineStyle: { ...contactLineStyle, fontWeight: 600 },
-    });
-    const editorialHeading = (label: string) => (
-      <p
-        className={`font-semibold ${columnHeadingClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
-        style={{
-          ...columnHeadingStyle,
-          fontWeight: 600,
-          ...footerColumnHeadingGapStyle(presentation),
-        }}
-      >
-        {label}
-      </p>
-    );
-    const socialIconsOnly =
-      visibleLinks.length > 0 ? (
-        <nav
-          className="flex flex-wrap justify-center gap-5"
-          aria-label="Social"
-        >
-          {visibleLinks.map((link) => (
-            <a
-              key={link.id}
-              href={link.url}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={link.label}
-              className={`flex h-24 w-24 items-center justify-center rounded-xl border transition hover:opacity-90 ${
-                lightBackground
-                  ? 'border-black/8 bg-white hover:border-orange-500/30'
-                  : 'border-white/10 bg-neutral-900 hover:border-orange-500/40'
-              }`}
-              data-pf-no-color-transition=""
-              style={iconStyle}
-              title={link.label}
-            >
-              <FooterSocialLinkIcon link={link} bare iconClassName="h-12 w-12" />
-            </a>
-          ))}
-        </nav>
-      ) : null;
-
-    body = (
-      <>
-        <div
-          className={`flex w-full flex-col items-center ${
-            showContentDivider ? 'gap-8 lg:flex-row lg:items-stretch lg:justify-center lg:gap-0' : 'gap-10 lg:flex-row lg:items-start lg:justify-center lg:gap-x-14'
-          }`}
-        >
-          <div className="flex min-w-0 w-full max-w-md flex-col items-center space-y-4 text-center lg:w-auto lg:px-1">
-            {editorialHeading('Networks')}
-            {socialIconsOnly}
-            {!socialIconsOnly && presentation.showBrand ? (
-              <p
-                className={`font-semibold ${brandClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim()}`}
-                style={{ ...brandStyle, fontWeight: 600 }}
-              >
-                {creatorName}
-              </p>
-            ) : null}
-            {description ? (
-              <p
-                className={`mx-auto max-w-xs text-pretty leading-relaxed ${descriptionClass}`}
-                style={descriptionStyle}
-              >
-                {description}
-              </p>
-            ) : null}
-          </div>
-          <FooterInfoDivider enabled={showContentDivider} style={contentDividerStyle} />
-          <div className="flex min-w-0 w-full max-w-md flex-col items-center space-y-4 text-center lg:w-auto lg:px-1">
-            {editorialHeading('Contact')}
-            {editorialContactList}
-          </div>
-        </div>
-        {contactCtaButton || marketplaceButton || marketplaceLink ? (
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {contactCtaButton}
-            {marketplaceButton ?? marketplaceLink}
-          </div>
-        ) : null}
-        {copyrightLine ? (
-          <div className="w-full text-center">{copyrightLine}</div>
-        ) : null}
-      </>
-    );
   }
 
   const fallbackBg = bgStyle || transparentBase ? '' : lightBackground ? 'bg-neutral-100' : 'bg-neutral-950';
@@ -29112,15 +29068,7 @@ export function EditorialPortfolioFooter({
         className={`relative z-[1] min-w-0 w-full pf-footer-shell-x ${contentClassName}`}
       >
         <div
-          className={`min-w-0 w-full ${footerContentPaddingClassName()} ${
-            presentation.design === 'editorial' ? 'pf-footer-editorial-lg-bottom' : ''
-          } ${
-            presentation.design === 'landing' ||
-            presentation.design === 'compact' ||
-            presentation.design === 'minimal'
-              ? 'pf-footer-landing-pad-x'
-              : ''
-          } ${presentation.design === 'compact' ? 'pf-footer-compact-pad-x' : ''}`}
+          className={`min-w-0 w-full ${footerContentPaddingClassName()}`}
           style={footerContentPaddingStyle(presentation)}
         >
         <PortfolioMotionItem profile={motionProfile} index={0} className="w-full min-w-0">
@@ -29138,7 +29086,7 @@ export function EditorialPortfolioFooter({
   );
 }
 
-function FooterSocialLinkIcon({
+export function FooterSocialLinkIcon({
   link,
   bare = false,
   iconClassName = 'h-4 w-4',
@@ -29217,7 +29165,7 @@ function FooterCtaMailIcon({ className }: { className?: string }) {
   return <ContactEmailIcon className={className} />;
 }
 
-function FooterContactIcon({
+export function FooterContactIcon({
   type,
   className = 'h-4 w-4',
   style,

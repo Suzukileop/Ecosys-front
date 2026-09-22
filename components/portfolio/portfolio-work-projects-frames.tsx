@@ -2,20 +2,24 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 import {
+  forwardRef,
+  useCallback,
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
   type RefObject,
 } from 'react';
 import type { MarketplaceContentItem } from '@/types/marketplace';
 import type {
   PortfolioWorkPresentationSettings,
   PortfolioWorkProjectsFramesCardGap,
-  PortfolioWorkProjectsFramesRadius,
   PortfolioWorkProjectsFramesSettings,
-  PortfolioWorkProjectsFramesThumbnailSize,
 } from '@/components/portfolio/portfolio-work-settings';
 import {
   DEFAULT_PROJECTS_FRAMES_SETTINGS,
@@ -25,8 +29,10 @@ import {
 
 const FRAMES_ENTRANCE_MS = 920;
 const FRAMES_ENTRANCE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
-const FRAMES_IMAGE_PARALLAX = 0.75;
-const FRAMES_TEXT_PARALLAX = 1.2;
+const FRAMES_REVEAL_MS = 1150;
+const FRAMES_IMAGE_PARALLAX = 0.6;
+const FRAMES_COPY_PARALLAX = 1.05;
+const FRAMES_TITLE_PARALLAX = 0.3;
 const FRAMES_PARALLAX_TRAVEL = 64;
 const FRAMES_DESKTOP_MQ = '(min-width: 768px)';
 
@@ -53,64 +59,34 @@ function workCategoryLabel(item: MarketplaceContentItem): string {
   return '';
 }
 
-function framesThumbSizeClass(size: PortfolioWorkProjectsFramesThumbnailSize): string {
-  const base = 'relative aspect-[16/10] w-full shrink-0 overflow-hidden md:aspect-auto md:self-start';
-  switch (size) {
-    case 'md':
-      return `${base} md:w-[min(48%,26rem)] md:min-h-[16rem] lg:w-[min(46%,28rem)] lg:min-h-[17rem] xl:min-h-[18rem]`;
-    case 'lg':
-      return `${base} md:w-[min(58%,34rem)] md:min-h-[20rem] lg:w-[min(56%,38rem)] lg:min-h-[22rem] xl:min-h-[23rem]`;
-    case 'xl':
-      return `${base} md:w-[min(74%,48rem)] md:min-h-[26rem] lg:w-[min(72%,52rem)] lg:min-h-[28rem] xl:w-[min(70%,56rem)] xl:min-h-[30rem]`;
-    case 'half':
-      return `${base} md:w-1/2 md:min-h-[26rem] lg:min-h-[30rem] xl:min-h-[34rem]`;
-    case 'xxl':
-    default:
-      return `${base} md:w-[min(86%,60rem)] md:min-h-[30rem] lg:w-[min(84%,68rem)] lg:min-h-[34rem] xl:w-[min(82%,74rem)] xl:min-h-[38rem]`;
-  }
-}
-
-function framesCopyMaxClass(size: PortfolioWorkProjectsFramesThumbnailSize): string {
-  if (size === 'half' || size === 'xxl') return '';
-  if (size === 'xl') return 'md:max-w-[min(100%,26rem)] lg:max-w-[28rem]';
-  if (size === 'lg') return 'md:max-w-[min(100%,24rem)] lg:max-w-[26rem]';
-  return 'md:max-w-[min(100%,22rem)] lg:max-w-[24rem]';
-}
-
-function framesCardRadiusClass(radius: PortfolioWorkProjectsFramesRadius): string {
-  if (radius === 'none') return 'rounded-none';
-  if (radius === 'md') return 'rounded-2xl';
-  return 'rounded-[1.75rem] sm:rounded-[2rem]';
-}
-
-/** Thumbnail corners follow the card; flush images only round the outer edge. */
-function framesThumbRadiusClass(
-  radius: PortfolioWorkProjectsFramesRadius,
-  flush: boolean,
-  imageOnRight: boolean
-): string {
-  if (radius === 'none') return 'rounded-none';
-
-  if (!flush) {
-    if (radius === 'md') return 'rounded-xl';
-    return 'rounded-[1.15rem] sm:rounded-[1.35rem]';
-  }
-
-  // Flush to card edge — round only the outer corners that meet the card shell.
-  if (radius === 'md') {
-    return imageOnRight
-      ? 'rounded-t-2xl md:rounded-t-none md:rounded-r-2xl'
-      : 'rounded-t-2xl md:rounded-t-none md:rounded-l-2xl';
-  }
-  return imageOnRight
-    ? 'rounded-t-[1.75rem] md:rounded-t-none md:rounded-r-[2rem]'
-    : 'rounded-t-[1.75rem] md:rounded-t-none md:rounded-l-[2rem]';
+/** Curtain-open scroll reveal — a plain rectangular inset with no rounding baked in.
+ * The organic diagonal cutout itself is a separate, breakpoint-aware border-radius (see
+ * the [data-frames-media-frame] rules below) so it can be switched off entirely on
+ * mobile, where the image bleeds edge-to-edge, without fighting this clip-path. */
+function framesClipPath(revealed: boolean): string {
+  const inset = revealed ? '0% 0% 0% 0%' : '0% 0% 38% 0%';
+  return `inset(${inset})`;
 }
 
 function framesCardGapClass(gap: PortfolioWorkProjectsFramesCardGap): string {
-  if (gap === 'md') return 'gap-20 sm:gap-28 lg:gap-36';
-  if (gap === 'xl') return 'gap-28 sm:gap-40 lg:gap-52 xl:gap-60';
-  return 'gap-12 sm:gap-16 lg:gap-20 xl:gap-24';
+  if (gap === 'md') return 'gap-24 sm:gap-32 lg:gap-40';
+  if (gap === 'xl') return 'gap-32 sm:gap-44 lg:gap-56 xl:gap-64';
+  return 'gap-16 sm:gap-24 lg:gap-28 xl:gap-32';
+}
+
+/** Tablet (768–1023px): an even 50/50 split with the two columns pulled close
+ * together — no leftover gap column. Desktop (≥1024px) keeps the original,
+ * more generous 7/4 split with breathing room between image and copy. */
+function framesImageColumnClass(imageOnRight: boolean): string {
+  return imageOnRight
+    ? 'md:col-span-6 md:col-start-7 lg:col-span-7 lg:col-start-6'
+    : 'md:col-span-6 md:col-start-1 lg:col-span-7 lg:col-start-1';
+}
+
+function framesCopyColumnClass(imageOnRight: boolean): string {
+  return imageOnRight
+    ? 'md:col-span-6 md:col-start-1 lg:col-span-4 lg:col-start-1'
+    : 'md:col-span-6 md:col-start-7 lg:col-span-4 lg:col-start-9';
 }
 
 function getScrollParent(node: HTMLElement | null): HTMLElement | Window {
@@ -156,8 +132,10 @@ function useFramesGalleryMotion(itemsKey: string): {
     const resetParallax = () => {
       for (const row of rows) {
         const media = row.querySelector<HTMLElement>('[data-frames-media-shift]');
+        const title = row.querySelector<HTMLElement>('[data-frames-title-shift]');
         const copy = row.querySelector<HTMLElement>('[data-frames-copy]');
         if (media) media.style.transform = '';
+        if (title) title.style.transform = '';
         if (copy) {
           copy.style.transform = '';
           copy.style.opacity = '';
@@ -198,8 +176,9 @@ function useFramesGalleryMotion(itemsKey: string): {
         const id = row.dataset.framesId;
         if (!id || !revealedRef.current.has(id)) continue;
         const media = row.querySelector<HTMLElement>('[data-frames-media-shift]');
+        const title = row.querySelector<HTMLElement>('[data-frames-title-shift]');
         const copy = row.querySelector<HTMLElement>('[data-frames-copy]');
-        if (!media && !copy) continue;
+        if (!media && !title && !copy) continue;
 
         const rect = row.getBoundingClientRect();
         const centered = (rect.top + rect.height * 0.5 - vh * 0.5) / vh;
@@ -208,8 +187,11 @@ function useFramesGalleryMotion(itemsKey: string): {
         if (media) {
           media.style.transform = `translate3d(0, ${(clamped * FRAMES_PARALLAX_TRAVEL * FRAMES_IMAGE_PARALLAX).toFixed(2)}px, 0)`;
         }
+        if (title) {
+          title.style.transform = `translate3d(0, ${(clamped * FRAMES_PARALLAX_TRAVEL * FRAMES_TITLE_PARALLAX).toFixed(2)}px, 0)`;
+        }
         if (copy) {
-          copy.style.transform = `translate3d(0, ${(clamped * FRAMES_PARALLAX_TRAVEL * FRAMES_TEXT_PARALLAX).toFixed(2)}px, 0)`;
+          copy.style.transform = `translate3d(0, ${(clamped * FRAMES_PARALLAX_TRAVEL * FRAMES_COPY_PARALLAX).toFixed(2)}px, 0)`;
           const fade = Math.max(0.48, 1 - Math.max(0, Math.abs(clamped) - 0.22) * 0.85);
           copy.style.opacity = fade.toFixed(3);
         }
@@ -286,59 +268,171 @@ export function ProjectsFramesSectionHeader({
   );
 }
 
-/** Stack as a quiet vertical list — plain text, no chips or hairline tags. */
+/** Tools as one quiet uppercase line, dot-separated — each word animates on hover without
+ * shifting its neighbors (transform/opacity only), and scrolls sideways if it overflows. */
 function FramesStackList({ tools, ink }: { tools: string[]; ink: string }) {
   if (tools.length === 0) return null;
   return (
-    <ul className="m-0 flex list-none flex-col gap-1.5 p-0" aria-label="Stack">
-      {tools.map((tool) => (
-        <li
-          key={tool}
-          className="text-[13px] font-normal leading-[1.75] tracking-[-0.01em] sm:text-sm sm:leading-[1.8]"
-          style={{ color: ink }}
-        >
-          {tool}
+    <ul
+      className="m-0 flex list-none items-center gap-x-2.5 overflow-x-auto whitespace-nowrap p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      aria-label="Stack"
+    >
+      {tools.map((tool, index) => (
+        <li key={tool} className="flex shrink-0 items-center gap-x-2.5">
+          <span
+            className="inline-block text-[10px] font-medium uppercase leading-none tracking-[0.2em] opacity-70 transition-[transform,opacity,letter-spacing] duration-300 ease-out hover:scale-110 hover:tracking-[0.3em] hover:opacity-100 sm:text-[11px]"
+            style={{ color: ink }}
+          >
+            {tool}
+          </span>
+          {index < tools.length - 1 ? (
+            <span aria-hidden className="text-[10px] leading-none sm:text-[11px]" style={{ color: ink, opacity: 0.35 }}>
+              •
+            </span>
+          ) : null}
         </li>
       ))}
     </ul>
   );
 }
 
-function FramesConsultLink({
-  href,
-  label,
-  accent,
-}: {
-  href: string;
-  label: string;
-  accent: string;
-}) {
+/** Internal vs external project link, ref-forwarding so the cursor's bounds check can watch it. */
+const FramesProjectLink = forwardRef<
+  HTMLAnchorElement,
+  {
+    href: string;
+    className?: string;
+    ariaLabel: string;
+    children: ReactNode;
+    onMouseEnter?: (event: ReactMouseEvent<HTMLAnchorElement>) => void;
+    onMouseLeave?: () => void;
+  }
+>(function FramesProjectLink({ href, className, ariaLabel, children, onMouseEnter, onMouseLeave }, ref) {
+  const external = /^https?:\/\//i.test(href);
+  if (external) {
+    return (
+      <a
+        ref={ref}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={ariaLabel}
+        className={className}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        data-pf-no-color-transition=""
+      >
+        {children}
+      </a>
+    );
+  }
   return (
     <Link
+      ref={ref}
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+      aria-label={ariaLabel}
+      className={className}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       data-pf-no-color-transition=""
-      className="group/cta relative inline-flex w-fit items-center gap-3 text-[13px] font-medium tracking-[0.03em] transition-opacity duration-500 ease-out hover:opacity-70 focus:outline-none focus-visible:opacity-70"
-      style={{ color: accent }}
     >
-      <span className="relative pb-0.5">
-        {label}
-        <span
-          aria-hidden
-          data-pf-no-color-transition=""
-          className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-100 opacity-35 transition-[opacity,transform] duration-500 ease-out group-hover/cta:scale-x-110 group-hover/cta:opacity-100"
-          style={{ backgroundColor: accent }}
-        />
-      </span>
-      <span
-        aria-hidden
-        data-pf-no-color-transition=""
-        className="inline-block transition-transform duration-500 ease-out group-hover/cta:translate-x-1.5"
-      >
-        →
-      </span>
+      {children}
     </Link>
+  );
+});
+
+/** Textured circle that replaces the OS cursor over the image/title — liquid-inertia follow,
+ * dismissed the instant the pointer leaves the trigger's bounds. */
+function FramesViewCursor({
+  anchor,
+  containerRef,
+  onDismiss,
+  label = 'View',
+}: {
+  anchor: { x: number; y: number } | null;
+  containerRef: RefObject<HTMLElement | null>;
+  onDismiss: () => void;
+  label?: string;
+}) {
+  const elRef = useRef<HTMLDivElement>(null);
+  const target = useRef({ x: 0, y: 0 });
+  const current = useRef({ x: 0, y: 0 });
+  const rafId = useRef<number | null>(null);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+
+  useLayoutEffect(() => {
+    if (!anchor) return;
+    target.current = anchor;
+    current.current = anchor;
+    if (elRef.current) {
+      elRef.current.style.transform = `translate3d(${anchor.x}px, ${anchor.y}px, 0) translate(-50%, -50%)`;
+    }
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const handleMove = (event: MouseEvent) => {
+      target.current = { x: event.clientX, y: event.clientY };
+    };
+    window.addEventListener('mousemove', handleMove);
+
+    const lerpFactor = reduceMotion ? 1 : 0.2;
+    const tick = () => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      const stillInside =
+        rect &&
+        target.current.x >= rect.left &&
+        target.current.x <= rect.right &&
+        target.current.y >= rect.top &&
+        target.current.y <= rect.bottom;
+      if (!stillInside) {
+        onDismiss();
+        return;
+      }
+
+      current.current = {
+        x: current.current.x + (target.current.x - current.current.x) * lerpFactor,
+        y: current.current.y + (target.current.y - current.current.y) * lerpFactor,
+      };
+      if (elRef.current) {
+        elRef.current.style.transform = `translate3d(${current.current.x}px, ${current.current.y}px, 0) translate(-50%, -50%)`;
+      }
+      rafId.current = requestAnimationFrame(tick);
+    };
+    rafId.current = requestAnimationFrame(tick);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+    };
+  }, [anchor, containerRef, onDismiss]);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      ref={elRef}
+      aria-hidden="true"
+      data-pf-no-color-transition=""
+      className="pointer-events-none fixed left-0 top-0 z-[999] transition-opacity duration-200 ease-out"
+      style={{ opacity: anchor ? 1 : 0 }}
+    >
+      <div
+        className="flex h-[6.25rem] w-[6.25rem] flex-col items-center justify-center gap-1 rounded-full border border-white/25 bg-white/92 text-neutral-900 shadow-[0_18px_44px_-16px_rgba(0,0,0,0.55)]"
+        style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.08) 1px, transparent 0)',
+          backgroundSize: '5px 5px',
+        }}
+      >
+        <span className="text-[11px] font-medium uppercase tracking-[0.22em]">{label}</span>
+        <span aria-hidden className="text-sm leading-none">
+          ↗
+        </span>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -367,25 +461,22 @@ function FramesCard({
   const accent = presentation.ctaColor || presentation.categoryActiveColor;
   const titleColor = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
   const muted = presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
-  const cardBg = presentation.cardBackgroundEnabled
-    ? presentation.cardBackgroundColor
-    : 'transparent';
-  const border =
-    presentation.cardBorder === 'none' ? 'transparent' : presentation.cardBorderColor;
-  const ruleColor = border === 'transparent' ? muted : border;
 
   const showRole = board.showRole && Boolean(role);
   const showCategory = board.showCategory && Boolean(category);
   const showMeta = showRole || showCategory;
   const showDescription = board.showDescription && Boolean(description);
   const showStack = board.showStack && tools.length > 0;
-  const showConsult = board.showConsult && Boolean(href);
-  const consultLabel = board.consultLabel.trim() || 'Consult';
-  const flushImage = board.imagePadding === false;
-  const radius = board.radius;
-  const halfSplit = board.thumbnailSize === 'half';
-  const showForceLine = presentation.cardBorder === 'none' && !flushImage;
-  const flushTopPad = radius === 'none' ? 'md:pt-0' : radius === 'md' ? 'md:pt-4' : 'md:pt-5';
+
+  const corner: 'a' | 'b' = index % 2 === 0 ? 'a' : 'b';
+  const floatDelay = `${(index % 4) * 0.55}s`;
+
+  const linkRef = useRef<HTMLAnchorElement>(null);
+  const [cursorAnchor, setCursorAnchor] = useState<{ x: number; y: number } | null>(null);
+  const dismissCursor = useCallback(() => setCursorAnchor(null), []);
+  const handleEnter = useCallback((event: ReactMouseEvent<HTMLAnchorElement>) => {
+    setCursorAnchor({ x: event.clientX, y: event.clientY });
+  }, []);
 
   const motionStyle: CSSProperties = {
     opacity: revealed ? 1 : 0,
@@ -394,56 +485,113 @@ function FramesCard({
     transitionDelay: revealed ? `${Math.min(index, 3) * 95}ms` : '0ms',
   };
 
-  const media = (
-    <div
-      className={`${framesThumbSizeClass(board.thumbnailSize)} ${framesThumbRadiusClass(
-        radius,
-        flushImage,
-        imageOnRight
-      )} ${halfSplit ? 'md:basis-1/2 md:grow-0' : ''}`}
-      style={{ backgroundColor: border === 'transparent' ? `${muted}22` : `${border}66` }}
+  const titleWords = item.title.trim().split(/\s+/).filter(Boolean);
+
+  const titleNode = (
+    <h3
+      className="pf-frames-title relative z-10 font-black leading-[0.92] tracking-[-0.045em] text-[clamp(2.1rem,11vw,3.25rem)] transition-[color,-webkit-text-stroke-width] duration-500 ease-out sm:text-[clamp(2.4rem,9vw,3.75rem)] md:text-[clamp(2.75rem,6vw,4.25rem)] lg:text-[clamp(3.25rem,6.5vw,6rem)] [color:var(--pf-frames-ink)] group-hover/frame:text-transparent group-hover/frame:[-webkit-text-stroke:1.5px_var(--pf-frames-ink)] group-focus-visible/frame:text-transparent group-focus-visible/frame:[-webkit-text-stroke:1.5px_var(--pf-frames-ink)]"
+      style={{ '--pf-frames-ink': titleColor } as CSSProperties}
     >
-      {mediaUrl ? (
-        <div
-          data-frames-media-shift=""
-          className="absolute -top-[20%] left-0 h-[140%] w-full will-change-transform"
-        >
-          <Image
-            src={mediaUrl}
-            alt={item.title}
-            fill
-            sizes="(max-width: 768px) 100vw, 70vw"
-            className="object-cover object-center transition-transform duration-[1.15s] ease-out group-hover/frame:scale-[1.045]"
-          />
-        </div>
-      ) : (
-        <div
-          className="flex h-full min-h-[11rem] w-full items-center justify-center px-6 text-center text-sm leading-[1.8]"
-          style={{ color: muted }}
-        >
-          Add a thumbnail in Information → Portfolio
-        </div>
-      )}
+      {titleWords.map((word, wordIndex) => (
+        <span key={`${wordIndex}-${word}`} className="inline-block overflow-hidden align-top">
+          <span
+            className="pf-frames-word inline-block will-change-transform"
+            data-revealed={revealed ? 'true' : 'false'}
+            style={{ transitionDelay: revealed ? `${180 + wordIndex * 55}ms` : '0ms' }}
+          >
+            {word}
+            {wordIndex < titleWords.length - 1 ? ' ' : ''}
+          </span>
+        </span>
+      ))}
+    </h3>
+  );
+
+  const mediaNode = mediaUrl ? (
+    <div
+      data-frames-media-frame=""
+      data-frames-corner={corner}
+      className="relative w-full overflow-hidden shadow-[0_40px_90px_-40px_rgba(0,0,0,0.55)] max-md:mx-[calc(50%-50vw)] max-md:aspect-auto max-md:h-[48dvh] max-md:w-screen md:aspect-[16/11]"
+      style={{
+        backgroundColor: `${muted}22`,
+        clipPath: framesClipPath(revealed),
+        transform: revealed ? 'scale(1)' : 'scale(1.14)',
+        transition: `clip-path ${FRAMES_REVEAL_MS}ms ${FRAMES_ENTRANCE_EASE}, transform ${FRAMES_REVEAL_MS}ms ${FRAMES_ENTRANCE_EASE}`,
+      }}
+    >
+      <Image
+        src={mediaUrl}
+        alt={item.title}
+        fill
+        sizes="(max-width: 768px) 100vw, 60vw"
+        className="object-cover object-center transition-transform duration-[1.2s] ease-out group-hover/frame:scale-[1.06]"
+      />
+    </div>
+  ) : (
+    <div
+      className="relative flex w-full items-center justify-center px-6 text-center text-sm leading-[1.8] max-md:mx-[calc(50%-50vw)] max-md:h-[48dvh] max-md:w-screen md:aspect-[16/11]"
+      style={{ color: muted }}
+    >
+      Add a thumbnail in Information → Portfolio
     </div>
   );
 
-  const info = (
-    <div
-      data-frames-copy=""
-      className={`flex min-w-0 flex-col will-change-transform ${
-        halfSplit ? 'md:w-1/2 md:basis-1/2 md:grow-0 md:shrink-0' : `flex-1 ${framesCopyMaxClass(board.thumbnailSize)}`
-      } ${
-        flushImage
-          ? imageOnRight
-            ? `px-5 pb-8 pt-6 sm:px-6 ${flushTopPad} md:pb-8 md:pl-6 md:pr-10 lg:pr-14`
-            : `px-5 pb-8 pt-6 sm:px-6 ${flushTopPad} md:pb-8 md:pr-6 md:pl-10 lg:pl-14`
-          : imageOnRight
-            ? 'px-0.5 pb-1 pt-0 md:pl-1 md:pr-3 lg:pr-6'
-            : 'px-0.5 pb-1 pt-0 md:pr-1 md:pl-3 lg:pl-6'
-      }`}
+  const mobileMeta = showMeta ? (
+    <p className="mb-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[10px] font-medium uppercase tracking-[0.24em] md:hidden">
+      {showRole ? <span style={{ color: accent }}>{role}</span> : null}
+      {showRole && showCategory ? (
+        <span style={{ color: muted, opacity: 0.4 }} aria-hidden>
+          ·
+        </span>
+      ) : null}
+      {showCategory ? <span style={{ color: muted }}>{category}</span> : null}
+    </p>
+  ) : null;
+
+  const stageChildren = (
+    <>
+      <div data-frames-float="" style={{ animationDelay: floatDelay, animationDuration: '7s' }}>
+        <div data-frames-media-shift="" className="will-change-transform">
+          {mediaNode}
+        </div>
+      </div>
+      <div
+        data-frames-float=""
+        style={{ animationDelay: floatDelay, animationDuration: '9.5s' }}
+        className="relative z-10 -mt-[clamp(0.85rem,5vw,1.5rem)] md:-mt-[clamp(1rem,3vw,1.75rem)] lg:-mt-[clamp(1.25rem,2.4vw,2.5rem)]"
+      >
+        {mobileMeta}
+        <div data-frames-title-shift="" className="will-change-transform">
+          {titleNode}
+        </div>
+      </div>
+    </>
+  );
+
+  const stage = href ? (
+    <FramesProjectLink
+      ref={linkRef}
+      href={href}
+      ariaLabel={item.title || 'Project'}
+      className="group/frame block cursor-none focus:outline-none"
+      onMouseEnter={handleEnter}
+      onMouseLeave={dismissCursor}
+    >
+      {stageChildren}
+    </FramesProjectLink>
+  ) : (
+    <div className="group/frame">{stageChildren}</div>
+  );
+
+  return (
+    <article
+      data-frames-row=""
+      data-frames-id={item.id}
+      className="relative w-full"
+      style={motionStyle}
     >
       {showMeta ? (
-        <p className="mb-4 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[10px] font-medium uppercase tracking-[0.2em] sm:mb-5 sm:text-[11px]">
+        <p className="mb-3 hidden flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[10px] font-medium uppercase tracking-[0.24em] sm:mb-4 sm:text-[11px] md:flex">
           {showRole ? <span style={{ color: accent }}>{role}</span> : null}
           {showRole && showCategory ? (
             <span style={{ color: muted, opacity: 0.4 }} aria-hidden>
@@ -454,70 +602,41 @@ function FramesCard({
         </p>
       ) : null}
 
-      <h3
-        className="text-[1.65rem] font-semibold leading-[1.12] tracking-[-0.038em] sm:text-[1.9rem] lg:text-[2.15rem] xl:text-[2.35rem]"
-        style={{ color: titleColor }}
-      >
-        {item.title}
-      </h3>
+      <div className="md:grid md:grid-cols-12 md:gap-x-4 lg:gap-x-6">
+        <div className={framesImageColumnClass(imageOnRight)}>{stage}</div>
 
-      {showDescription ? (
-        <p
-          className="mt-5 max-w-xl text-[15px] leading-[1.8] sm:mt-6 sm:text-base sm:leading-[1.85]"
-          style={{ color: muted }}
-        >
-          {description}
-        </p>
-      ) : null}
-
-      {showStack || showConsult ? (
-        <div className="mt-8 flex flex-col items-start gap-8 sm:mt-10 sm:gap-9">
-          {showStack ? <FramesStackList tools={tools} ink={muted} /> : null}
-          {showConsult && href ? (
-            <FramesConsultLink href={href} label={consultLabel} accent={accent || titleColor} />
-          ) : null}
-        </div>
-      ) : null}
-    </div>
-  );
-
-  return (
-    <article
-      data-frames-row=""
-      data-frames-id={item.id}
-      className={`group/frame relative ${
-        presentation.cardBorder === 'none' ? 'border-0' : 'border'
-      } ${framesCardRadiusClass(radius)}`}
-      style={{
-        backgroundColor: cardBg,
-        borderColor: border,
-        ...motionStyle,
-      }}
-    >
-      <div className={`flex flex-col ${flushImage ? 'p-0' : 'p-4 sm:p-5 md:p-6 lg:p-8'}`}>
-        {showForceLine ? (
+        {showDescription || showStack ? (
           <div
-            className="mb-6 h-px w-full shrink-0 sm:mb-7 md:mb-8"
-            style={{ backgroundColor: ruleColor, opacity: 0.32 }}
-            aria-hidden
-          />
+            data-frames-copy=""
+            className={`mt-5 will-change-transform sm:mt-6 md:mt-0 md:self-end ${framesCopyColumnClass(
+              imageOnRight
+            )}`}
+          >
+            {showDescription ? (
+              <p
+                className="max-w-xs text-[12px] font-light leading-[1.55] line-clamp-2 sm:text-[13px] md:text-sm md:leading-[1.9] md:line-clamp-none"
+                style={{ color: muted, opacity: 0.85 }}
+              >
+                {description}
+              </p>
+            ) : null}
+            {showStack ? (
+              <div className={showDescription ? 'mt-4 sm:mt-5 md:mt-6 lg:mt-8' : ''}>
+                <FramesStackList tools={tools} ink={muted} />
+              </div>
+            ) : null}
+          </div>
         ) : null}
-        <div
-          className={`flex flex-col md:items-start ${
-            flushImage ? 'gap-8 md:gap-12 lg:gap-16' : 'gap-8 sm:gap-10 md:gap-14 lg:gap-16'
-          } ${imageOnRight ? 'md:flex-row-reverse' : 'md:flex-row'} ${
-            halfSplit ? '' : 'md:justify-between'
-          }`}
-        >
-          {media}
-          {info}
-        </div>
       </div>
+
+      {href ? (
+        <FramesViewCursor anchor={cursorAnchor} containerRef={linkRef} onDismiss={dismissCursor} />
+      ) : null}
     </article>
   );
 }
 
-/** Horizontal image + info frames — Projects frames design only. */
+/** Floating, immersive image + title spread — Projects frames design only. */
 export function ProjectsFramesGallery({
   items,
   presentation = DEFAULT_WORK_PRESENTATION,
@@ -542,9 +661,47 @@ export function ProjectsFramesGallery({
       className={`flex w-full flex-col ${framesCardGapClass(board.cardGap)}`}
     >
       <style>{`
+        @keyframes pf-frames-float {
+          0%, 100% { transform: translate3d(0, 0, 0); }
+          50% { transform: translate3d(0, -14px, 0); }
+        }
+        [data-frames-gallery] [data-frames-float] {
+          animation-name: pf-frames-float;
+          animation-timing-function: ease-in-out;
+          animation-iteration-count: infinite;
+        }
+        [data-frames-gallery] [data-frames-media-frame] {
+          border-radius: 0px;
+          transition: border-radius 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @media (min-width: 768px) {
+          [data-frames-gallery] [data-frames-media-frame][data-frames-corner='a'] {
+            border-radius: clamp(1.75rem, 7vw, 5rem) 0px clamp(1.75rem, 7vw, 5rem) 0px;
+          }
+          [data-frames-gallery] [data-frames-media-frame][data-frames-corner='b'] {
+            border-radius: 0px clamp(1.75rem, 7vw, 5rem) 0px clamp(1.75rem, 7vw, 5rem);
+          }
+        }
+        [data-frames-gallery] .pf-frames-word {
+          transform: translate3d(0, 100%, 0);
+          transition: transform 0.92s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        [data-frames-gallery] .pf-frames-word[data-revealed='true'] {
+          transform: translate3d(0, 0, 0);
+        }
         @media (prefers-reduced-motion: reduce) {
           [data-frames-gallery] [data-frames-row] {
             opacity: 1 !important;
+            transform: none !important;
+            transition: none !important;
+          }
+          [data-frames-gallery] [data-frames-float] {
+            animation: none !important;
+          }
+          [data-frames-gallery] [data-frames-media-shift] > div {
+            transition: none !important;
+          }
+          [data-frames-gallery] .pf-frames-word {
             transform: none !important;
             transition: none !important;
           }

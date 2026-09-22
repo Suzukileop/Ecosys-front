@@ -6,40 +6,91 @@ import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import {
   DEFAULT_WORK_PRESENTATION,
   WORK_HEADER_MARGIN_BOTTOM_REM,
-  workHeaderFontClass,
-  workSubtitleColorStyle,
-  workTitleColorStyle,
+  workPaletteTokenColor,
   type PortfolioWorkHeaderTitleSize,
-  type PortfolioWorkHeaderTitleWeight,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
 
-function prefersReducedMotion(): boolean {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+/** Nearest scrollable ancestor — ScrollTrigger needs this explicitly inside an
+ *  embedded/iframe dashboard preview, where `window` isn't the real scroller. */
+function workHeaderScrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
 }
 
-const TITLE_SIZE_CLASS: Record<PortfolioWorkHeaderTitleSize, string> = {
-  sm: 'text-4xl sm:text-5xl lg:text-6xl',
-  md: 'text-5xl sm:text-6xl lg:text-7xl',
-  lg: 'text-6xl sm:text-7xl lg:text-8xl',
-  xl: 'text-7xl sm:text-8xl lg:text-9xl',
+// Two short default words — a user who hasn't touched any of the 4 word
+// fields yet still sees a live band. As soon as any field is filled in,
+// only the filled slots show (each is independently droppable).
+const DEFAULT_WORD_1 = 'Selected';
+const DEFAULT_WORD_2 = 'Work';
+const MARQUEE_REPEATS = 4;
+const MARQUEE_SPEED_PX = 44; // Experience's "medium" default
+const MARQUEE_GAP = '1rem'; // "md" default
+
+const WORD_SIZE: Record<PortfolioWorkHeaderTitleSize, string> = {
+  sm: 'clamp(1.9rem, 4.6vw, 3.4rem)',
+  md: 'clamp(2.35rem, 5.6vw, 4.35rem)',
+  lg: 'clamp(2.8rem, 6.6vw, 5.3rem)',
+  xl: 'clamp(3.3rem, 7.6vw, 6.3rem)',
 };
 
-/** Marquee's foreground title is bold by identity — "regular" preserves that prior default. */
-const TITLE_WEIGHT_CLASS: Record<PortfolioWorkHeaderTitleWeight, string> = {
-  light: '!font-normal',
-  regular: '!font-bold',
-  semibold: '!font-extrabold',
-  bold: '!font-black',
-};
+function WorkMarqueeTrack({
+  words,
+  ink,
+  fontSize,
+  hidden = false,
+}: {
+  words: string[];
+  ink: string;
+  fontSize: string;
+  hidden?: boolean;
+}) {
+  const sequence = Array.from({ length: MARQUEE_REPEATS }, () => words).flat();
+  return (
+    <div className="flex shrink-0 items-center" aria-hidden={hidden}>
+      {sequence.map((word, index) => {
+        const outline = index % 2 === 1;
+        return (
+          <span key={`${word}-${index}`} className="flex shrink-0 items-center" style={{ gap: MARQUEE_GAP, paddingRight: MARQUEE_GAP }}>
+            <span
+              className="whitespace-nowrap uppercase leading-none"
+              style={{
+                fontSize,
+                fontWeight: 400,
+                letterSpacing: '-0.04em',
+                ...(outline
+                  ? { color: 'transparent', WebkitTextFillColor: 'transparent', WebkitTextStroke: `1px ${ink}` }
+                  : { color: ink, opacity: 0.85 }),
+              }}
+            >
+              {word}
+            </span>
+            <span aria-hidden className="h-[0.55rem] w-[0.55rem] shrink-0 rounded-full" style={{ backgroundColor: ink }} />
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 /**
- * Marquee — a bold foreground title over a slow, continuously scrolling
- * decorative word band. Entrance reveal + an endless GSAP marquee loop.
+ * Marquee — exact disposition + motion copy of Experience's Spotlight header
+ * (`ExperienceSpotlightHeader`): an infinite, kinetic band of the header's
+ * own dedicated words (independent of the section title), alternating
+ * fill/outline, looping via a GSAP tween that slows to a stop on hover. On
+ * scroll the whole band drifts up and fades.
  */
 export function WorkMarqueeHeader({
-  sectionTitle,
-  sectionSubtitle,
   presentation: presentationProp,
   trailing,
 }: {
@@ -49,115 +100,122 @@ export function WorkMarqueeHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
-  const centered = presentation.headerAlignment === 'center';
   const animationEnabled = presentation.headerAnimationEnabled !== false;
-  const title = sectionTitle.trim();
-  const subtitle = sectionSubtitle?.trim() || '';
-  const titleInk = workTitleColorStyle(presentation.titleColor).color as string;
-  const bandWord = (title || 'PORTFOLIO').toUpperCase();
-  const bandText = Array.from({ length: 8 }, () => bandWord).join(' • ');
+  const rawWords = [
+    presentation.marqueeWord1Text,
+    presentation.marqueeWord2Text,
+    presentation.marqueeWord3Text,
+    presentation.marqueeWord4Text,
+  ].map((word) => (word ?? '').trim());
+  const anyWordProvided = rawWords.some(Boolean);
+  const displayWords = anyWordProvided ? rawWords.filter(Boolean) : [DEFAULT_WORD_1, DEFAULT_WORD_2];
+  const wordsKey = displayWords.join('|');
+  const ink = workPaletteTokenColor(presentation.marqueeWordColor ?? 'principal');
+  const fontSize = WORD_SIZE[presentation.marqueeSize ?? 'md'];
 
-  const headerRef = useRef<HTMLElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
-    const header = headerRef.current;
-    if (!header) return;
-    const track = header.querySelector<HTMLElement>('.pf-work-marquee-track');
-    const foregroundBlock = header.querySelector<HTMLElement>('.pf-work-marquee-foreground');
-    const reduced = prefersReducedMotion() || !animationEnabled;
-
-    if (reduced) {
-      const foreground = header.querySelectorAll<HTMLElement>('.pf-work-marquee-item');
-      gsap.set(foreground, { opacity: 1, y: 0 });
-      return;
-    }
+    if (typeof window === 'undefined') return;
+    const root = rootRef.current;
+    const row = rowRef.current;
+    if (!root || !row) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !animationEnabled) return;
 
     gsap.registerPlugin(ScrollTrigger);
-    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+
+    let loop: ReturnType<typeof gsap.to> | null = null;
+
+    const buildLoop = () => {
+      const first = row.firstElementChild as HTMLElement | null;
+      const wrapWidth = first?.offsetWidth ?? 0;
+      if (wrapWidth < 8) return;
+      loop?.kill();
+      gsap.set(row, { x: -wrapWidth });
+      loop = gsap.to(row, { x: 0, duration: Math.max(12, wrapWidth / MARQUEE_SPEED_PX), ease: 'none', repeat: -1 });
+    };
+
+    const scroller = workHeaderScrollParent(root);
 
     const ctx = gsap.context(() => {
-      const foreground = header.querySelectorAll<HTMLElement>('.pf-work-marquee-item');
-      if (foreground.length) {
-        gsap.fromTo(
-          foreground,
-          { opacity: 0, y: 16 },
-          { opacity: 1, y: 0, duration: 0.75, ease: 'power3.out', stagger: 0.08 }
-        );
-      }
+      buildLoop();
+      gsap.fromTo(
+        root,
+        { y: 0, opacity: 1 },
+        {
+          y: -18,
+          opacity: 0,
+          ease: 'none',
+          scrollTrigger: { trigger: root, scroller, start: 'top 16%', end: 'top -22%', scrub: 0.5, invalidateOnRefresh: true },
+        }
+      );
+    }, root);
 
-      if (track) {
-        gsap.to(track, { xPercent: -50, duration: 22, ease: 'none', repeat: -1 });
-      }
+    const onEnter = () => {
+      if (loop) gsap.to(loop, { timeScale: 0, duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
+    };
+    const onLeave = () => {
+      if (loop) gsap.to(loop, { timeScale: 1, duration: 1.2, ease: 'power3.out', overwrite: 'auto' });
+    };
+    root.addEventListener('mouseenter', onEnter);
+    root.addEventListener('mouseleave', onLeave);
 
-      if (foregroundBlock) {
-        gsap.fromTo(
-          foregroundBlock,
-          { opacity: 1, y: 0 },
-          {
-            opacity: 0.6,
-            y: -8,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: header,
-              start: 'top 18%',
-              end: 'top -18%',
-              scrub: 0.5,
-              invalidateOnRefresh: true,
-            },
-          }
-        );
+    const resize = new ResizeObserver(() => {
+      buildLoop();
+      ScrollTrigger.refresh();
+    });
+    resize.observe(row);
+
+    void document.fonts?.ready?.then(() => {
+      buildLoop();
+      ScrollTrigger.refresh();
+    });
+
+    const refreshId = window.setTimeout(() => {
+      try {
+        ScrollTrigger.refresh();
+      } catch (error) {
+        // GSAP's ScrollTrigger.refresh() can throw internally on an edge case
+        // (e.g. "Cannot read properties of undefined (reading 'end')") during
+        // its own init-time recompute; uncaught, that crash propagates up
+        // through this deferred setTimeout with no React boundary to catch it
+        // and takes down the whole page. Never let a best-effort refresh do that.
+        console.error('[ScrollTrigger] deferred refresh() failed', error);
       }
-    }, header);
+    }, 90);
 
     return () => {
       window.clearTimeout(refreshId);
+      root.removeEventListener('mouseenter', onEnter);
+      root.removeEventListener('mouseleave', onLeave);
+      resize.disconnect();
+      loop?.kill();
       ctx.revert();
     };
-  }, [animationEnabled, title, subtitle]);
+  }, [animationEnabled, wordsKey, fontSize]);
 
   return (
-    <header
-      ref={headerRef}
-      className={`pf-work-marquee-header relative w-full overflow-hidden ${centered ? 'text-center' : 'text-left'}`}
+    <div
+      className="w-full"
       style={{ marginBottom: `${WORK_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
+      data-work-header="marquee"
     >
       <div
-        className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 select-none overflow-hidden opacity-[0.05]"
-        aria-hidden
+        ref={rootRef}
+        className="w-full overflow-hidden"
+        style={{
+          padding: '1.35rem 0 1.5rem',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%)',
+          maskImage: 'linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%)',
+        }}
       >
-        <div className="pf-work-marquee-track flex w-max whitespace-nowrap">
-          <span
-            className="px-4 text-7xl font-black uppercase tracking-tight sm:text-9xl"
-            style={{ color: titleInk }}
-          >
-            {bandText}
-          </span>
-          <span
-            className="px-4 text-7xl font-black uppercase tracking-tight sm:text-9xl"
-            style={{ color: titleInk }}
-          >
-            {bandText}
-          </span>
+        <div ref={rowRef} className="flex w-max whitespace-nowrap will-change-transform">
+          <WorkMarqueeTrack words={displayWords} ink={ink} fontSize={fontSize} />
+          <WorkMarqueeTrack words={displayWords} ink={ink} fontSize={fontSize} hidden />
         </div>
       </div>
-
-      <div className={`pf-work-marquee-foreground relative flex flex-col gap-4 ${centered ? 'items-center' : 'items-start'}`}>
-        <h2
-          className={`pf-work-marquee-item mb-0 ${workHeaderFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} tracking-[-0.02em]`}
-          style={workTitleColorStyle(presentation.titleColor)}
-        >
-          {title}
-        </h2>
-        {subtitle ? (
-          <p
-            className={`pf-work-marquee-item mb-0 max-w-xl ${workHeaderFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
-            style={workSubtitleColorStyle(presentation.subtitleColor)}
-          >
-            {subtitle}
-          </p>
-        ) : null}
-        {trailing ? <div className="pf-work-marquee-item">{trailing}</div> : null}
-      </div>
-    </header>
+      {trailing ? <div className="mt-4">{trailing}</div> : null}
+    </div>
   );
 }

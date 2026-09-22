@@ -11,6 +11,7 @@ import {
 } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import gsap from 'gsap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
 import type { MarketplaceContentItem } from '@/types/marketplace';
@@ -48,6 +49,18 @@ const CASE_MOTION_CSS = `
     transform: none !important;
     opacity: 1 !important;
   }
+  [data-case-gallery] .pf-work-case-word-inner,
+  [data-case-gallery] .pf-work-case-lift,
+  [data-case-gallery] [data-case-wash],
+  [data-case-gallery] [data-case-clip] {
+    transform: none !important;
+    opacity: 1 !important;
+    transition: none !important;
+    clip-path: none !important;
+  }
+  [data-case-gallery] [data-case-wash] {
+    opacity: 0 !important;
+  }
 }
 [data-case-gallery] [data-case-rule] {
   width: 4.75rem;
@@ -60,6 +73,83 @@ const CASE_MOTION_CSS = `
 [data-case-gallery] [data-case-row]:focus-within [data-case-rule] {
   width: 8.25rem;
   opacity: 0.55;
+}
+[data-case-gallery] .pf-work-case-word-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+[data-case-gallery] .pf-work-case-word-inner {
+  display: inline-block;
+  transform: translate3d(0, 108%, 0);
+  transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+[data-case-gallery] [data-case-row][data-case-revealed='true'] .pf-work-case-word-inner {
+  transform: translate3d(0, 0, 0);
+}
+[data-case-gallery] [data-case-wash] {
+  opacity: 0;
+  transition: opacity 0.85s ${CASE_EASE};
+}
+[data-case-gallery] [data-case-row]:hover [data-case-wash],
+[data-case-gallery] [data-case-row]:focus-within [data-case-wash] {
+  opacity: 0.22;
+}
+[data-case-gallery] [data-case-clip] {
+  will-change: clip-path, transform;
+}
+[data-case-gallery][data-cursor-ready='true'] [data-cursor-target] {
+  cursor: none;
+}
+.pf-work-case-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  margin-top: -7px;
+  border-radius: 999px;
+  background: var(--pf-case-cursor-accent, #fff);
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    width 0.35s ${CASE_EASE},
+    height 0.35s ${CASE_EASE},
+    margin 0.35s ${CASE_EASE},
+    opacity 0.25s ease;
+}
+.pf-work-case-cursor[data-cursor-active='true'] {
+  opacity: 1;
+}
+.pf-work-case-cursor[data-cursor-state='view'] {
+  width: 108px;
+  height: 108px;
+  margin-left: -54px;
+  margin-top: -54px;
+}
+.pf-work-case-cursor-label {
+  opacity: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0a0a0a;
+  white-space: nowrap;
+  transition: opacity 0.25s ease 0.05s;
+}
+.pf-work-case-cursor[data-cursor-state='view'] .pf-work-case-cursor-label {
+  opacity: 1;
+}
+@media (pointer: coarse) {
+  .pf-work-case-cursor {
+    display: none;
+  }
 }
 `;
 
@@ -133,6 +223,30 @@ function EditorialTitleText({
   );
 }
 
+/** Split-text reveal — same first-word-italic contrast as `EditorialTitleText`, but each
+ *  word is individually masked so it slides up on its own beat once the row is revealed
+ *  (driven by the row's `data-case-revealed` attribute, see CASE_MOTION_CSS). */
+function CaseRevealTitle({ text, allowItalic }: { text: string; allowItalic: boolean }) {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  return (
+    <>
+      {words.map((word, index) => (
+        <span className="pf-work-case-word-mask" key={`${word}-${index}`}>
+          <span
+            className={`pf-work-case-word-inner${
+              index === 0 && allowItalic ? ' font-light italic tracking-[-0.03em]' : ' font-semibold'
+            }`}
+            style={{ transitionDelay: `${80 + index * 55}ms` }}
+          >
+            {word}
+            {index < words.length - 1 ? ' ' : ''}
+          </span>
+        </span>
+      ))}
+    </>
+  );
+}
+
 function caseEnterStyle(revealed: boolean, delayMs: number): CSSProperties {
   if (!revealed) return CASE_HIDDEN;
   return {
@@ -176,15 +290,22 @@ function CaseConsultAnchor({
   style,
   children,
   noColorTransition = false,
+  ariaLabel,
+  magnetic = false,
 }: {
   href: string;
   className: string;
   style?: CSSProperties;
   children: ReactNode;
   noColorTransition?: boolean;
+  ariaLabel?: string;
+  /** Marks this anchor as a magnetic-cursor target (see CaseMagneticCursor). */
+  magnetic?: boolean;
 }) {
   const external = /^https?:\/\//i.test(href);
-  const extra = noColorTransition ? { 'data-pf-no-color-transition': '' } : null;
+  const extra: Record<string, string> = {};
+  if (noColorTransition) extra['data-pf-no-color-transition'] = '';
+  if (magnetic) extra['data-cursor-target'] = '';
   if (external) {
     return (
       <a
@@ -193,6 +314,7 @@ function CaseConsultAnchor({
         rel="noopener noreferrer"
         className={className}
         style={style}
+        aria-label={ariaLabel}
         {...extra}
       >
         {children}
@@ -200,7 +322,7 @@ function CaseConsultAnchor({
     );
   }
   return (
-    <Link href={href} className={className} style={style} {...extra}>
+    <Link href={href} className={className} style={style} aria-label={ariaLabel} {...extra}>
       {children}
     </Link>
   );
@@ -375,26 +497,39 @@ function CaseThumbnail({
   alt,
   surface,
   height = 'xl',
+  wash,
+  clipStyle,
 }: {
   url: string | null;
   alt: string;
   surface: string;
   height?: PortfolioWorkProjectsCaseSettings['thumbnailHeight'];
+  wash: string;
+  clipStyle: CSSProperties;
 }) {
   return (
     <div className={caseThumbHeightClass(height)} style={{ backgroundColor: surface }}>
       {url ? (
         <div
           data-case-media-shift=""
+          data-case-clip=""
           className="absolute -top-[18%] left-0 h-[136%] w-full will-change-transform"
+          style={clipStyle}
         >
           <Image
             src={url}
             alt={alt}
             fill
             sizes="(max-width: 640px) 100vw, 54vw"
-            className="object-cover object-center transition-transform duration-[1.15s] ease-out will-change-transform group-hover/sheet:scale-[1.045] group-focus-within/sheet:scale-[1.045]"
+            className="object-cover object-center transition-transform duration-[1.6s] ease-out will-change-transform group-hover/sheet:scale-[1.07] group-focus-within/sheet:scale-[1.07]"
             data-pf-no-color-transition=""
+          />
+          <span
+            aria-hidden
+            data-case-wash=""
+            data-pf-no-color-transition=""
+            className="pointer-events-none absolute inset-0"
+            style={{ backgroundColor: wash, mixBlendMode: 'color' }}
           />
         </div>
       ) : (
@@ -423,11 +558,11 @@ function CaseDefRow({
 }) {
   return (
     <div
-      className={`relative py-5 sm:py-6 ${
+      className={
         showLabel
-          ? 'grid grid-cols-1 gap-2 sm:grid-cols-[6.75rem_minmax(0,1fr)] sm:items-baseline sm:gap-x-8 sm:gap-y-0'
-          : ''
-      }`}
+          ? 'relative grid grid-cols-1 gap-2 py-5 sm:grid-cols-[6.75rem_minmax(0,1fr)] sm:items-baseline sm:gap-x-8 sm:gap-y-0 sm:py-6'
+          : 'relative py-3.5 sm:py-4'
+      }
     >
       {showLabel ? (
         <dt
@@ -449,6 +584,66 @@ function CaseDefRow({
           style={{ backgroundColor: rule }}
         />
       ) : null}
+    </div>
+  );
+}
+
+/** Magnetic cursor — lerps to the pointer, morphs into a "View project" pill over the
+ *  invisible full-row link (`[data-cursor-target]`). Disabled on touch / reduced-motion. */
+function CaseMagneticCursor({
+  stageRef,
+  accent,
+}: {
+  stageRef: RefObject<HTMLElement | null>;
+  accent: string;
+}) {
+  const cursorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    const cursor = cursorRef.current;
+    if (!stage || !cursor) return undefined;
+    if (prefersReducedMotion()) return undefined;
+    if (!window.matchMedia('(pointer: fine)').matches) return undefined;
+
+    const moveX = gsap.quickTo(cursor, 'x', { duration: 0.3, ease: 'power3.out' });
+    const moveY = gsap.quickTo(cursor, 'y', { duration: 0.3, ease: 'power3.out' });
+
+    const onMove = (event: PointerEvent) => {
+      moveX(event.clientX);
+      moveY(event.clientY);
+    };
+    const onEnter = () => cursor.setAttribute('data-cursor-state', 'view');
+    const onLeave = () => cursor.setAttribute('data-cursor-state', 'idle');
+
+    stage.addEventListener('pointermove', onMove);
+    stage.setAttribute('data-cursor-ready', 'true');
+    const targets = Array.from(stage.querySelectorAll<HTMLElement>('[data-cursor-target]'));
+    targets.forEach((el) => {
+      el.addEventListener('pointerenter', onEnter);
+      el.addEventListener('pointerleave', onLeave);
+    });
+    cursor.setAttribute('data-cursor-active', 'true');
+
+    return () => {
+      stage.removeEventListener('pointermove', onMove);
+      stage.removeAttribute('data-cursor-ready');
+      targets.forEach((el) => {
+        el.removeEventListener('pointerenter', onEnter);
+        el.removeEventListener('pointerleave', onLeave);
+      });
+    };
+  }, [stageRef]);
+
+  return (
+    <div
+      ref={cursorRef}
+      className="pf-work-case-cursor"
+      data-cursor-state="idle"
+      aria-hidden
+      style={{ ['--pf-case-cursor-accent' as string]: accent }}
+    >
+      <span className="pf-work-case-cursor-label">View project</span>
     </div>
   );
 }
@@ -700,7 +895,18 @@ function CaseSheet({
   const frameBorderColor = sheetFrame === 'accent' ? accent : rule;
   const frameBorderWidth =
     sheetFrame === 'solid' ? 2 : sheetFrame === 'thin' || sheetFrame === 'accent' ? 1 : 0;
-  const staggerCopy = index % 2 === 0;
+  /** Zig-zag rhythm (toggleable) — even rows sit image-left/copy-right (copy overflows
+   *  the image's top-right), odd rows mirror to image-right/copy-left (copy overflows
+   *  top-left). Off keeps every row on the "even" (image-left) side. */
+  const zigzagOn = settings.zigzagEnabled !== false;
+  const isEven = zigzagOn ? index % 2 === 0 : true;
+  const revealDelay = Math.min(index, 4) * 90;
+  const mediaClipStyle: CSSProperties = revealed
+    ? {
+        clipPath: 'inset(0% 0% 0% 0%)',
+        transition: `clip-path 1.05s ${CASE_EASE} ${revealDelay}ms`,
+      }
+    : { clipPath: isEven ? 'inset(0% 100% 0% 0%)' : 'inset(0% 0% 0% 100%)' };
 
   const rows: { key: string; label: string; content: ReactNode }[] = [];
   if (showDescription) {
@@ -708,7 +914,10 @@ function CaseSheet({
       key: 'description',
       label: descriptionLabel,
       content: (
-        <p className="max-w-[38em] text-[15px] leading-[1.85] sm:text-base sm:leading-[1.9]">
+        <p
+          className="max-w-[36em] text-[15px] font-light italic leading-[1.85] tracking-[-0.01em] sm:text-[1.05rem] sm:leading-[1.9]"
+          style={{ opacity: 0.86 }}
+        >
           {description}
         </p>
       ),
@@ -723,8 +932,8 @@ function CaseSheet({
           {tools.map((tool, toolIndex) => (
             <li
               key={tool}
-              className="flex items-center text-[11px] font-medium tracking-[0.12em] uppercase sm:text-xs"
-              style={{ color: tagInk, opacity: 0.78 }}
+              className="flex items-center text-[10px] font-medium tracking-[0.14em] uppercase sm:text-[11px]"
+              style={{ color: tagInk, opacity: 0.62 }}
             >
               {toolIndex > 0 ? (
                 <span className="mx-2.5 opacity-35" aria-hidden>
@@ -757,11 +966,12 @@ function CaseSheet({
 
   const body = (
     <>
-      <div className="flex items-baseline justify-between gap-4">
+      <div className="flex items-start justify-between gap-4">
         <p className="flex min-w-0 items-baseline gap-3">
           <span
-            className="shrink-0 font-mono text-[10px] font-medium tabular-nums tracking-[0.2em] sm:text-[11px]"
-            style={{ color: muted, opacity: 0.46 }}
+            className="shrink-0 font-mono font-extralight leading-none tabular-nums tracking-tight"
+            style={{ color: categoryColor, opacity: 0.92, fontSize: 'clamp(1.85rem, 3.2vw, 2.6rem)' }}
+            data-pf-no-color-transition=""
           >
             {formatCaseIndex(index)}
           </span>
@@ -776,7 +986,7 @@ function CaseSheet({
         </p>
         {showRole ? (
           <span
-            className="max-w-[48%] truncate text-right text-[10px] font-medium uppercase tracking-[0.16em] sm:text-[11px]"
+            className="max-w-[48%] truncate pt-1 text-right text-[10px] font-medium uppercase tracking-[0.16em] sm:text-[11px]"
             style={{ color: muted, opacity: 0.58 }}
           >
             {role}
@@ -785,14 +995,14 @@ function CaseSheet({
       </div>
 
       <h3
-        className="mt-5 font-normal leading-[1.06] tracking-[-0.045em] sm:mt-6"
+        className="mt-4 font-normal leading-[0.96] tracking-[-0.055em] sm:mt-5"
         data-pf-no-color-transition=""
         style={{
           color: ink,
-          fontSize: 'clamp(1.7rem, 3.2vw, 2.75rem)',
+          fontSize: 'clamp(2.15rem, 4.6vw, 4rem)',
         }}
       >
-        <EditorialTitleText text={title} allowItalic />
+        <CaseRevealTitle text={title} allowItalic />
       </h3>
 
       {rows.length > 0 ? (
@@ -834,42 +1044,41 @@ function CaseSheet({
     </>
   );
 
+  const overlapClass = showThumb
+    ? isEven
+      ? 'sm:-mt-10 lg:-mt-16'
+      : 'sm:-mt-5 lg:-mt-8'
+    : '';
+
   return (
     <div
       data-case-row=""
       data-case-id={item.id}
-      className="group/sheet flex flex-col gap-8 sm:flex-row sm:items-start lg:gap-12 xl:gap-16"
+      data-case-revealed={revealed ? 'true' : 'false'}
+      className={`group/sheet relative flex flex-col gap-8 sm:items-start lg:gap-12 xl:gap-16 ${
+        isEven ? 'sm:flex-row' : 'sm:flex-row-reverse'
+      }`}
       data-pf-no-color-transition=""
-      style={caseEnterStyle(revealed, Math.min(index, 4) * 90)}
+      style={caseEnterStyle(revealed, revealDelay)}
     >
       {showThumb ? (
-        <div
-          className={`w-full shrink-0 overflow-hidden sm:w-[52%] lg:w-[54%] ${
-            staggerCopy ? '' : 'sm:pt-8 lg:pt-12'
-          }`}
-        >
+        <div className="w-full shrink-0 overflow-hidden sm:w-[52%] lg:w-[54%]">
           <CaseThumbnail
             url={mediaUrl}
             alt={title}
             surface={tagSurface || surface}
             height={thumbnailHeight}
+            wash={categoryColor}
+            clipStyle={mediaClipStyle}
           />
         </div>
       ) : null}
 
       <article
         data-case-copy=""
-        className={`relative min-w-0 will-change-transform ${
+        className={`relative z-[1] min-w-0 will-change-transform ${
           showThumb ? 'w-full sm:w-[48%] lg:w-[46%]' : 'w-full'
-        } ${
-          framed
-            ? 'p-5 sm:p-6 lg:p-8'
-            : showThumb
-              ? staggerCopy
-                ? 'sm:pt-8 lg:pt-14'
-                : ''
-              : ''
-        }`}
+        } ${overlapClass} ${framed ? 'p-5 sm:p-6 lg:p-8' : ''}`}
         data-pf-no-color-transition=""
         style={
           framed
@@ -889,8 +1098,25 @@ function CaseSheet({
             style={{ backgroundColor: accent }}
           />
         ) : null}
-        {body}
+        <div
+          className="pf-work-case-lift transition-transform duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] will-change-transform group-hover/sheet:-translate-y-2 group-focus-within/sheet:-translate-y-2"
+          data-pf-no-color-transition=""
+        >
+          {body}
+        </div>
       </article>
+
+      {href ? (
+        <CaseConsultAnchor
+          href={href}
+          className="absolute inset-0 z-[2]"
+          ariaLabel={`View ${title}`}
+          magnetic
+          noColorTransition
+        >
+          <span className="sr-only">{`View ${title}`}</span>
+        </CaseConsultAnchor>
+      ) : null}
     </div>
   );
 }
@@ -1014,13 +1240,14 @@ export function ProjectsCaseGallery({
     presentation.projectsCase
   );
   const gapClass = caseSheetGapClass(settings.sheetGap ?? 'xl');
+  const accent = presentation.ctaColor || presentation.categoryActiveColor || '#2563eb';
 
   if (items.length === 0) return null;
 
   return (
     <section
       ref={rootRef}
-      className="w-full"
+      className="relative w-full"
       aria-label="Project cases"
       data-case-gallery=""
       data-pf-no-color-transition=""
@@ -1037,6 +1264,7 @@ export function ProjectsCaseGallery({
           />
         </div>
       ))}
+      <CaseMagneticCursor stageRef={rootRef} accent={accent} />
     </section>
   );
 }

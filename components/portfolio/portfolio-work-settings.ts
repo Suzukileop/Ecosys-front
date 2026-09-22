@@ -54,18 +54,26 @@ export type PortfolioWorkHeaderFont = 'sans' | 'serif' | 'display';
  * projects render in). One shared, GSAP-animated header mounts above every project layout.
  */
 export type PortfolioWorkHeaderDesign =
-  | 'minimal'
   | 'editorial'
   | 'marquee'
   | 'index'
   | 'accent-count'
   | 'serif-lead'
   | 'billboard'
-  | 'masthead';
+  | 'masthead'
+  | 'split-heading';
 
-export type PortfolioWorkAccentCountBadgeColor = 'accent' | 'principal' | 'secondaire';
+/** Per-element header colors — real palette tokens only, no ad-hoc CTA/accent field. */
+export type PortfolioWorkPaletteToken = 'principal' | 'secondaire' | 'texteFort';
 
-export type PortfolioWorkHeaderAlignment = 'left' | 'center';
+/** Accent count header — its own 3-way alignment, independent of the shared left/center. */
+export type PortfolioWorkAccentCountAlignment = 'left' | 'center' | 'right';
+
+/** Billboard header — outline (stroke only), fill (solid color), or simple
+ *  (solid color, no glow) big word. */
+export type PortfolioWorkBillboardWordStyle = 'outline' | 'fill' | 'simple';
+
+export type PortfolioWorkHeaderAlignment = 'left' | 'center' | 'right';
 
 /** Bottom spacing under every header design — one shared scale, same 4 steps everywhere. */
 export type PortfolioWorkHeaderMarginBottom = 'sm' | 'md' | 'lg' | 'xl';
@@ -145,13 +153,13 @@ export type PortfolioWorkSectionDesign =
   | 'projects-grid'
   | 'projects-split'
   | 'projects-carousel'
-  | 'projects-spotlight'
   | 'projects-showcase'
-  | 'projects-editorial'
   | 'projects-ledger'
-  | 'projects-folio'
   | 'projects-spec'
-  | 'projects-case';
+  | 'projects-case'
+  | 'projects-press'
+  | 'projects-duotone'
+  | 'projects-cascade';
 
 export const DEFAULT_PORTFOLIO_WORK_SECTION_DESIGN: PortfolioWorkSectionDesign = 'projects-board';
 
@@ -163,13 +171,13 @@ const PORTFOLIO_WORK_SECTION_DESIGNS: readonly PortfolioWorkSectionDesign[] = [
   'projects-grid',
   'projects-split',
   'projects-carousel',
-  'projects-spotlight',
   'projects-showcase',
-  'projects-editorial',
   'projects-ledger',
-  'projects-folio',
   'projects-spec',
   'projects-case',
+  'projects-press',
+  'projects-duotone',
+  'projects-cascade',
 ];
 
 /** Maps removed `classic` (and invalid ids) onto a live named design. */
@@ -185,24 +193,37 @@ export function resolveWorkSectionDesign(value: unknown): PortfolioWorkSectionDe
 }
 
 /** Options that apply only when `sectionDesign === 'projects-board'`. */
+export type PortfolioWorkProjectsBoardColumns = 1 | 2 | 3 | 4;
+
+/** Thumbnail aspect ratio — matters most at 1 per row, where the card spans the
+ *  full row width and a fixed ratio can otherwise look oversized or cramped. */
+export type PortfolioWorkProjectsBoardThumbnailSize = 'compact' | 'standard' | 'large';
+
 export type PortfolioWorkProjectsBoardSettings = {
   /** Thumbnail above each card. */
   showThumbnail: boolean;
+  /** Thumbnail aspect ratio (compact/standard/large). */
+  thumbnailSize: PortfolioWorkProjectsBoardThumbnailSize;
   /** Role label in the card footer (accent). */
   showRole: boolean;
   /** Category in the card footer, beside the role. */
   showCategory: boolean;
-  /** Consult control in the same corner of every thumbnail (uses project link). */
+  /** "View project" text link at the bottom of every card (uses project link). */
   showConsultOnHover: boolean;
   consultLabel: string;
+  /** Cards per row on large screens. 2 (default) keeps the asymmetric diagonal
+   *  rhythm (wide/narrow pairs); 1, 3 and 4 switch to an even, non-offset grid. */
+  columnsPerRow: PortfolioWorkProjectsBoardColumns;
 };
 
 export const DEFAULT_PROJECTS_BOARD_SETTINGS: PortfolioWorkProjectsBoardSettings = {
   showThumbnail: true,
+  thumbnailSize: 'standard',
   showRole: true,
   showCategory: true,
   showConsultOnHover: true,
-  consultLabel: 'Consult',
+  consultLabel: 'View project',
+  columnsPerRow: 2,
 };
 
 export function mergeProjectsBoardSettings(
@@ -215,9 +236,28 @@ export function mergeProjectsBoardSettings(
     typeof record.consultLabel === 'string' && record.consultLabel.trim()
       ? record.consultLabel.trim().slice(0, 32)
       : base.consultLabel;
+  const columnsPerRow =
+    record.columnsPerRow === 1 ||
+    record.columnsPerRow === 2 ||
+    record.columnsPerRow === 3 ||
+    record.columnsPerRow === 4
+      ? record.columnsPerRow
+      : record.columnsPerRow === '1' ||
+          record.columnsPerRow === '2' ||
+          record.columnsPerRow === '3' ||
+          record.columnsPerRow === '4'
+        ? (Number(record.columnsPerRow) as PortfolioWorkProjectsBoardColumns)
+        : base.columnsPerRow;
+  const thumbnailSize =
+    record.thumbnailSize === 'compact' ||
+    record.thumbnailSize === 'standard' ||
+    record.thumbnailSize === 'large'
+      ? record.thumbnailSize
+      : base.thumbnailSize;
   return {
     showThumbnail:
       typeof record.showThumbnail === 'boolean' ? record.showThumbnail : base.showThumbnail,
+    thumbnailSize,
     showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
     showCategory: typeof record.showCategory === 'boolean' ? record.showCategory : base.showCategory,
     showConsultOnHover:
@@ -225,8 +265,37 @@ export function mergeProjectsBoardSettings(
         ? record.showConsultOnHover
         : base.showConsultOnHover,
     consultLabel: label,
+    columnsPerRow,
   };
 }
+
+export const PORTFOLIO_WORK_PROJECTS_BOARD_COLUMNS_OPTIONS: {
+  value: PortfolioWorkProjectsBoardColumns;
+  label: string;
+  description: string;
+}[] = [
+  { value: 1, label: '1 per row', description: 'Full-width cards, stacked — large editorial spotlight.' },
+  { value: 2, label: '2 per row', description: 'Asymmetric diagonal pairs (default).' },
+  {
+    value: 3,
+    label: '3 per row',
+    description: 'Even 3-column grid on desktop — 2 on tablet, 1 on mobile.',
+  },
+  {
+    value: 4,
+    label: '4 per row',
+    description: 'Dense even grid — 4 on large desktop, 3 on laptop, 2 on tablet, 1 on mobile.',
+  },
+];
+
+export const PORTFOLIO_WORK_PROJECTS_BOARD_THUMBNAIL_SIZE_OPTIONS: {
+  value: PortfolioWorkProjectsBoardThumbnailSize;
+  label: string;
+}[] = [
+  { value: 'compact', label: 'Compact' },
+  { value: 'standard', label: 'Standard' },
+  { value: 'large', label: 'Large' },
+];
 
 /** Options that apply only when `sectionDesign === 'projects-accordion'`. */
 export type PortfolioWorkProjectsAccordionSettings = {
@@ -893,112 +962,6 @@ export const PORTFOLIO_WORK_CAROUSEL_GAP_OPTIONS: {
   { value: 'xl', label: 'Large', description: 'Grand air entre chaque image.' },
 ];
 
-/** Options that apply only when `sectionDesign === 'projects-spotlight'`. */
-export type PortfolioWorkProjectsSpotlightStackStyle = 'tags' | 'hairline' | 'list';
-
-export type PortfolioWorkProjectsSpotlightSettings = {
-  /** Title selector list on the left or right (details take the other side). */
-  listSide: 'left' | 'right';
-  showRole: boolean;
-  showDescription: boolean;
-  showConsult: boolean;
-  consultLabel: string;
-  showStack: boolean;
-  /** Three stack presentations: pills, hairline row, or vertical list. */
-  stackStyle: PortfolioWorkProjectsSpotlightStackStyle;
-  /** Fill the outer frame with the card background color. */
-  showFrameFill: boolean;
-  /** Corner radius of the outer frame. */
-  frameRadius: PortfolioWorkCardRadius;
-};
-
-export const DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS: PortfolioWorkProjectsSpotlightSettings = {
-  listSide: 'right',
-  showRole: true,
-  showDescription: true,
-  showConsult: true,
-  consultLabel: 'Consult',
-  showStack: true,
-  stackStyle: 'tags',
-  showFrameFill: true,
-  frameRadius: 'xl',
-};
-
-export function mergeProjectsSpotlightSettings(
-  base: PortfolioWorkProjectsSpotlightSettings,
-  patch: unknown
-): PortfolioWorkProjectsSpotlightSettings {
-  if (!patch || typeof patch !== 'object') return base;
-  const record = patch as Record<string, unknown>;
-  return {
-    listSide: record.listSide === 'left' || record.listSide === 'right' ? record.listSide : base.listSide,
-    showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
-    showDescription:
-      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
-    showConsult: typeof record.showConsult === 'boolean' ? record.showConsult : base.showConsult,
-    consultLabel:
-      typeof record.consultLabel === 'string' && record.consultLabel.trim()
-        ? record.consultLabel.trim()
-        : base.consultLabel,
-    showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
-    stackStyle:
-      record.stackStyle === 'tags' ||
-      record.stackStyle === 'hairline' ||
-      record.stackStyle === 'list'
-        ? record.stackStyle
-        : base.stackStyle,
-    showFrameFill:
-      typeof record.showFrameFill === 'boolean' ? record.showFrameFill : base.showFrameFill,
-    frameRadius:
-      record.frameRadius === 'none' ||
-      record.frameRadius === 'sm' ||
-      record.frameRadius === 'md' ||
-      record.frameRadius === 'lg' ||
-      record.frameRadius === 'xl'
-        ? record.frameRadius
-        : base.frameRadius,
-  };
-}
-
-export const PORTFOLIO_WORK_SPOTLIGHT_LIST_SIDE_OPTIONS: {
-  value: PortfolioWorkProjectsSpotlightSettings['listSide'];
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'right',
-    label: 'Titres à droite',
-    description: 'Détails à gauche, sélecteur de titres à droite (défaut).',
-  },
-  {
-    value: 'left',
-    label: 'Titres à gauche',
-    description: 'Sélecteur à gauche, détails à droite.',
-  },
-];
-
-export const PORTFOLIO_WORK_SPOTLIGHT_STACK_STYLE_OPTIONS: {
-  value: PortfolioWorkProjectsSpotlightStackStyle;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'tags',
-    label: 'Tags',
-    description: 'Labels séparés par | , couleur titre.',
-  },
-  {
-    value: 'hairline',
-    label: 'Ligne',
-    description: 'Labels compacts séparés par | .',
-  },
-  {
-    value: 'list',
-    label: 'Liste',
-    description: 'Stack en liste verticale aérée.',
-  },
-];
-
 /** Options that apply only when `sectionDesign === 'projects-showcase'`. */
 export type PortfolioWorkProjectsShowcaseRadius = 'none' | 'md' | 'xl';
 
@@ -1072,81 +1035,6 @@ export const PORTFOLIO_WORK_SHOWCASE_RADIUS_OPTIONS: {
   { value: 'xl', label: 'Large', description: 'Editorial rounded media (default).' },
 ];
 
-/** Options that apply only when `sectionDesign === 'projects-editorial'`. */
-export type PortfolioWorkProjectsEditorialRightPanel = 'info' | 'thumbnail';
-
-export type PortfolioWorkProjectsEditorialSettings = {
-  /** Right rail: project info (default) or media thumbnail only. */
-  rightPanel: PortfolioWorkProjectsEditorialRightPanel;
-  /**
-   * Thumbnail mode only: on hover, darken from bottom and reveal
-   * description / stack / Consult on the image.
-   */
-  thumbnailHoverReveal: boolean;
-  showRole: boolean;
-  showDescription: boolean;
-  showStack: boolean;
-  showConsult: boolean;
-  consultLabel: string;
-  descriptionLabel: string;
-  categoryLabel: string;
-  stackLabel: string;
-  roleLabel: string;
-};
-
-export const DEFAULT_PROJECTS_EDITORIAL_SETTINGS: PortfolioWorkProjectsEditorialSettings = {
-  rightPanel: 'info',
-  thumbnailHoverReveal: true,
-  showRole: true,
-  showDescription: true,
-  showStack: true,
-  showConsult: true,
-  consultLabel: 'Consult this project',
-  descriptionLabel: 'Description',
-  categoryLabel: 'Category',
-  stackLabel: 'Stack',
-  roleLabel: '',
-};
-
-export function mergeProjectsEditorialSettings(
-  base: PortfolioWorkProjectsEditorialSettings,
-  patch: unknown
-): PortfolioWorkProjectsEditorialSettings {
-  if (!patch || typeof patch !== 'object') return base;
-  const record = patch as Record<string, unknown>;
-  return {
-    rightPanel:
-      record.rightPanel === 'info' || record.rightPanel === 'thumbnail'
-        ? record.rightPanel
-        : base.rightPanel,
-    thumbnailHoverReveal:
-      typeof record.thumbnailHoverReveal === 'boolean'
-        ? record.thumbnailHoverReveal
-        : base.thumbnailHoverReveal,
-    showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
-    showDescription:
-      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
-    showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
-    showConsult: typeof record.showConsult === 'boolean' ? record.showConsult : base.showConsult,
-    consultLabel:
-      typeof record.consultLabel === 'string' && record.consultLabel.trim()
-        ? record.consultLabel.trim()
-        : base.consultLabel,
-    descriptionLabel:
-      typeof record.descriptionLabel === 'string' && record.descriptionLabel.trim()
-        ? record.descriptionLabel.trim()
-        : base.descriptionLabel,
-    categoryLabel:
-      typeof record.categoryLabel === 'string' && record.categoryLabel.trim()
-        ? record.categoryLabel.trim()
-        : base.categoryLabel,
-    stackLabel:
-      typeof record.stackLabel === 'string' && record.stackLabel.trim()
-        ? record.stackLabel.trim()
-        : base.stackLabel,
-    roleLabel: typeof record.roleLabel === 'string' ? record.roleLabel.trim() : base.roleLabel,
-  };
-}
 
 /** Options that apply only when `sectionDesign === 'projects-ledger'`. */
 export type PortfolioWorkProjectsLedgerExpandMode = 'hover' | 'click' | 'always';
@@ -1161,6 +1049,8 @@ export type PortfolioWorkProjectsLedgerSettings = {
   showConsult: boolean;
   showCount: boolean;
   consultLabel: string;
+  /** Alternating row background tint, ledger-book style. */
+  stripedRows: boolean;
 };
 
 export const DEFAULT_PROJECTS_LEDGER_SETTINGS: PortfolioWorkProjectsLedgerSettings = {
@@ -1172,6 +1062,7 @@ export const DEFAULT_PROJECTS_LEDGER_SETTINGS: PortfolioWorkProjectsLedgerSettin
   showConsult: true,
   showCount: true,
   consultLabel: 'Consult this project',
+  stripedRows: false,
 };
 
 export function mergeProjectsLedgerSettings(
@@ -1198,81 +1089,8 @@ export function mergeProjectsLedgerSettings(
       typeof record.consultLabel === 'string' && record.consultLabel.trim()
         ? record.consultLabel.trim()
         : base.consultLabel,
-  };
-}
-
-/** Options that apply only when `sectionDesign === 'projects-folio'`. */
-export type PortfolioWorkProjectsFolioStackDesign =
-  | 'index'
-  | 'list'
-  | 'inline'
-  | 'grid'
-  | 'rail'
-  | 'tags-soft'
-  | 'tags-outline'
-  | 'tags-solid';
-
-export type PortfolioWorkProjectsFolioSettings = {
-  showRole: boolean;
-  showDescription: boolean;
-  showStack: boolean;
-  showConsult: boolean;
-  consultLabel: string;
-  /** Label above the core stack list (default: Core stack). */
-  stackLabel: string;
-  /** Visual treatment for the tools / core stack block. */
-  stackDesign: PortfolioWorkProjectsFolioStackDesign;
-};
-
-export const DEFAULT_PROJECTS_FOLIO_SETTINGS: PortfolioWorkProjectsFolioSettings = {
-  showRole: true,
-  showDescription: true,
-  showStack: true,
-  showConsult: true,
-  consultLabel: 'Consult this project',
-  stackLabel: 'Core stack',
-  stackDesign: 'tags-outline',
-};
-
-function normalizeFolioStackDesign(value: unknown): PortfolioWorkProjectsFolioStackDesign | null {
-  if (value === 'tags') return 'tags-outline'; // legacy → current default
-  if (
-    value === 'index' ||
-    value === 'list' ||
-    value === 'inline' ||
-    value === 'grid' ||
-    value === 'rail' ||
-    value === 'tags-soft' ||
-    value === 'tags-outline' ||
-    value === 'tags-solid'
-  ) {
-    return value;
-  }
-  return null;
-}
-
-export function mergeProjectsFolioSettings(
-  base: PortfolioWorkProjectsFolioSettings,
-  patch: unknown
-): PortfolioWorkProjectsFolioSettings {
-  if (!patch || typeof patch !== 'object') return base;
-  const record = patch as Record<string, unknown>;
-  const stackDesign = normalizeFolioStackDesign(record.stackDesign);
-  return {
-    showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
-    showDescription:
-      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
-    showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
-    showConsult: typeof record.showConsult === 'boolean' ? record.showConsult : base.showConsult,
-    consultLabel:
-      typeof record.consultLabel === 'string' && record.consultLabel.trim()
-        ? record.consultLabel.trim()
-        : base.consultLabel,
-    stackLabel:
-      typeof record.stackLabel === 'string' && record.stackLabel.trim()
-        ? record.stackLabel.trim()
-        : base.stackLabel,
-    stackDesign: stackDesign ?? base.stackDesign,
+    stripedRows:
+      typeof record.stripedRows === 'boolean' ? record.stripedRows : base.stripedRows,
   };
 }
 
@@ -1423,6 +1241,8 @@ export type PortfolioWorkProjectsCaseSettings = {
   stackLabel: string;
   /** Label for the consult row (default: Link). */
   linkLabel: string;
+  /** Alternates image/copy sides per row (zig-zag). Off = every row keeps the same side. */
+  zigzagEnabled: boolean;
 };
 
 export const DEFAULT_PROJECTS_CASE_SETTINGS: PortfolioWorkProjectsCaseSettings = {
@@ -1432,15 +1252,16 @@ export const DEFAULT_PROJECTS_CASE_SETTINGS: PortfolioWorkProjectsCaseSettings =
   showStack: true,
   showConsult: true,
   consultLabel: 'Consult this project',
-  consultDesign: 'bracket',
+  consultDesign: 'footer',
   sheetGap: 'xl',
-  sheetFrame: 'thin',
+  sheetFrame: 'none',
   showThumbnail: true,
   thumbnailHeight: 'xl',
-  showFieldLabels: true,
+  showFieldLabels: false,
   descriptionLabel: 'Summary',
   stackLabel: 'Stack',
   linkLabel: 'Link',
+  zigzagEnabled: true,
 };
 
 export function mergeProjectsCaseSettings(
@@ -1508,8 +1329,383 @@ export function mergeProjectsCaseSettings(
       typeof record.linkLabel === 'string' && record.linkLabel.trim()
         ? record.linkLabel.trim()
         : base.linkLabel,
+    zigzagEnabled:
+      typeof record.zigzagEnabled === 'boolean' ? record.zigzagEnabled : base.zigzagEnabled,
   };
 }
+
+/** Eyebrow font size, on `sectionDesign === 'projects-press'`. */
+export type PortfolioWorkProjectsPressEyebrowSize = 'sm' | 'md' | 'lg';
+
+export const PORTFOLIO_WORK_PRESS_EYEBROW_SIZE_OPTIONS: {
+  value: PortfolioWorkProjectsPressEyebrowSize;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'sm', label: 'Small', description: 'Quieter — a discreet side label.' },
+  { value: 'md', label: 'Medium', description: 'Default size.' },
+  { value: 'lg', label: 'Large', description: 'Bolder — reads more like a heading.' },
+];
+
+/** Options that apply only when `sectionDesign === 'projects-press'`. */
+export type PortfolioWorkProjectsPressSettings = {
+  /** Left-column blurb shown beside the row feed on large screens (empty = single column). */
+  introText: string;
+  /** Small left-column eyebrow word, aligned with the top of the first row — large screens
+   *  only. Empty falls back to "Project". Its presence (always, via the fallback) is what
+   *  shifts the row feed into the two-column layout, giving it breathing room on the left. */
+  eyebrowText: string;
+  /** Pins the eyebrow (+ intro text, if set) in place while the row feed scrolls past it —
+   *  large screens only. Defaults on. */
+  eyebrowSticky: boolean;
+  /** Eyebrow font size. */
+  eyebrowSize: PortfolioWorkProjectsPressEyebrowSize;
+  /** Corner radius of each row's square thumbnail. */
+  thumbnailRadius: PortfolioWorkCardRadius;
+};
+
+export const DEFAULT_PROJECTS_PRESS_SETTINGS: PortfolioWorkProjectsPressSettings = {
+  introText: '',
+  eyebrowText: '',
+  eyebrowSticky: true,
+  eyebrowSize: 'md',
+  thumbnailRadius: 'md',
+};
+
+export function mergeProjectsPressSettings(
+  base: PortfolioWorkProjectsPressSettings,
+  patch: unknown
+): PortfolioWorkProjectsPressSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    introText: typeof record.introText === 'string' ? record.introText : base.introText,
+    eyebrowText: typeof record.eyebrowText === 'string' ? record.eyebrowText : base.eyebrowText,
+    eyebrowSticky:
+      typeof record.eyebrowSticky === 'boolean' ? record.eyebrowSticky : base.eyebrowSticky,
+    eyebrowSize:
+      record.eyebrowSize === 'sm' || record.eyebrowSize === 'md' || record.eyebrowSize === 'lg'
+        ? record.eyebrowSize
+        : base.eyebrowSize,
+    thumbnailRadius:
+      record.thumbnailRadius === 'none' ||
+      record.thumbnailRadius === 'sm' ||
+      record.thumbnailRadius === 'md' ||
+      record.thumbnailRadius === 'lg' ||
+      record.thumbnailRadius === 'xl'
+        ? record.thumbnailRadius
+        : base.thumbnailRadius,
+  };
+}
+
+/** Options that apply only when `sectionDesign === 'projects-duotone'`. */
+export type PortfolioWorkProjectsDuotoneScrollMode = 'sticky' | 'scroll' | 'slide';
+export type PortfolioWorkProjectsDuotoneThumbnailEffect = 'grayscale' | 'tint' | 'none';
+export type PortfolioWorkProjectsDuotoneThumbnailHeight = 'sm' | 'md' | 'lg';
+export type PortfolioWorkProjectsDuotoneFrameColor = 'none' | 'neutral' | 'muted';
+export type PortfolioWorkProjectsDuotoneFrameRadius = 'none' | 'sm' | 'lg';
+export type PortfolioWorkProjectsDuotoneSlideNavStyle = 'chevron' | 'text';
+export type PortfolioWorkProjectsDuotoneVerticalGap = 'sm' | 'md' | 'lg' | 'xl';
+
+export type PortfolioWorkProjectsDuotoneSettings = {
+  /** Sticky: story panel pinned, crossfades as the project list scrolls. Scroll: plain, no
+   *  pinning. Slide: one project at a time, chevron-navigated. */
+  scrollMode: PortfolioWorkProjectsDuotoneScrollMode;
+  /** Full-width intro screen shown before the first project (desktop only). */
+  showIntro: boolean;
+  thumbnailEffect: PortfolioWorkProjectsDuotoneThumbnailEffect;
+  thumbnailHeight: PortfolioWorkProjectsDuotoneThumbnailHeight;
+  /** Scroll / Slide modes only: an optional frame drawn around each screen. */
+  frameColor: PortfolioWorkProjectsDuotoneFrameColor;
+  frameRadius: PortfolioWorkProjectsDuotoneFrameRadius;
+  /** Slide mode only. */
+  slideNavStyle: PortfolioWorkProjectsDuotoneSlideNavStyle;
+  /** Slide mode only — advance every 5s, paused while the frame is hovered. */
+  autoAdvance: boolean;
+  /** Sticky / Scroll: swap which side the thumbnail column renders on. */
+  swapSides: boolean;
+  /** Scroll mode only: alternate sides every other project. */
+  alternateSides: boolean;
+  /** Scroll mode only: title spans both columns above thumbnail + details. */
+  scrollFullWidthTitle: boolean;
+  /** Sticky / Scroll: vertical air between title / media / details blocks. */
+  verticalGap: PortfolioWorkProjectsDuotoneVerticalGap;
+};
+
+export const DEFAULT_PROJECTS_DUOTONE_SETTINGS: PortfolioWorkProjectsDuotoneSettings = {
+  scrollMode: 'sticky',
+  showIntro: false,
+  thumbnailEffect: 'grayscale',
+  thumbnailHeight: 'md',
+  frameColor: 'none',
+  frameRadius: 'sm',
+  slideNavStyle: 'chevron',
+  autoAdvance: false,
+  swapSides: false,
+  alternateSides: false,
+  scrollFullWidthTitle: false,
+  verticalGap: 'md',
+};
+
+export function mergeProjectsDuotoneSettings(
+  base: PortfolioWorkProjectsDuotoneSettings,
+  patch: unknown
+): PortfolioWorkProjectsDuotoneSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    scrollMode:
+      record.scrollMode === 'sticky' || record.scrollMode === 'scroll' || record.scrollMode === 'slide'
+        ? record.scrollMode
+        : base.scrollMode,
+    showIntro: typeof record.showIntro === 'boolean' ? record.showIntro : base.showIntro,
+    thumbnailEffect:
+      record.thumbnailEffect === 'grayscale' ||
+      record.thumbnailEffect === 'tint' ||
+      record.thumbnailEffect === 'none'
+        ? record.thumbnailEffect
+        : base.thumbnailEffect,
+    thumbnailHeight:
+      record.thumbnailHeight === 'sm' || record.thumbnailHeight === 'md' || record.thumbnailHeight === 'lg'
+        ? record.thumbnailHeight
+        : base.thumbnailHeight,
+    frameColor:
+      record.frameColor === 'none' || record.frameColor === 'neutral' || record.frameColor === 'muted'
+        ? record.frameColor
+        : base.frameColor,
+    frameRadius:
+      record.frameRadius === 'none' || record.frameRadius === 'sm' || record.frameRadius === 'lg'
+        ? record.frameRadius
+        : base.frameRadius,
+    slideNavStyle:
+      record.slideNavStyle === 'chevron' || record.slideNavStyle === 'text'
+        ? record.slideNavStyle
+        : base.slideNavStyle,
+    autoAdvance: typeof record.autoAdvance === 'boolean' ? record.autoAdvance : base.autoAdvance,
+    swapSides: typeof record.swapSides === 'boolean' ? record.swapSides : base.swapSides,
+    alternateSides:
+      typeof record.alternateSides === 'boolean' ? record.alternateSides : base.alternateSides,
+    scrollFullWidthTitle:
+      typeof record.scrollFullWidthTitle === 'boolean'
+        ? record.scrollFullWidthTitle
+        : base.scrollFullWidthTitle,
+    verticalGap:
+      record.verticalGap === 'sm' ||
+      record.verticalGap === 'md' ||
+      record.verticalGap === 'lg' ||
+      record.verticalGap === 'xl'
+        ? record.verticalGap
+        : base.verticalGap,
+  };
+}
+
+/** Options that apply only when `sectionDesign === 'projects-cascade'`. */
+export type PortfolioWorkProjectsCascadeStackEffect = 'cascade' | 'static';
+export type PortfolioWorkProjectsCascadeCardWidth = 'small' | 'medium' | 'full';
+export type PortfolioWorkProjectsCascadeVerticalGap = 'sm' | 'md' | 'lg';
+export type PortfolioWorkProjectsCascadeImageRadius = 'none' | 'md' | 'xl';
+export type PortfolioWorkProjectsCascadeCardHeight = 'compact' | 'standard' | 'tall' | 'xl';
+
+export type PortfolioWorkProjectsCascadeSettings = {
+  /** Same stacking-cards scroll effect as Experience → Cards: cascade (sticky, full-cover,
+   *  depth recede) vs. static (plain vertical stack, no pinning). */
+  stackEffect: PortfolioWorkProjectsCascadeStackEffect;
+  /** Stretch every card to the tallest one's height (min-height, JS-measured). */
+  equalHeight: boolean;
+  cardWidth: PortfolioWorkProjectsCascadeCardWidth;
+  verticalGap: PortfolioWorkProjectsCascadeVerticalGap;
+  imageRadius: PortfolioWorkProjectsCascadeImageRadius;
+  /** Minimum card height on desktop (drives thumbnail height via items-stretch). */
+  cardHeight: PortfolioWorkProjectsCascadeCardHeight;
+  showCategory: boolean;
+  showRole: boolean;
+  showDescription: boolean;
+  showTags: boolean;
+  showTools: boolean;
+  showLink: boolean;
+  linkLabel: string;
+};
+
+export const DEFAULT_PROJECTS_CASCADE_SETTINGS: PortfolioWorkProjectsCascadeSettings = {
+  stackEffect: 'cascade',
+  equalHeight: false,
+  cardWidth: 'full',
+  verticalGap: 'md',
+  imageRadius: 'md',
+  cardHeight: 'tall',
+  showCategory: true,
+  showRole: true,
+  showDescription: true,
+  showTags: true,
+  showTools: true,
+  showLink: true,
+  linkLabel: 'View project',
+};
+
+export function mergeProjectsCascadeSettings(
+  base: PortfolioWorkProjectsCascadeSettings,
+  patch: unknown
+): PortfolioWorkProjectsCascadeSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    stackEffect:
+      record.stackEffect === 'cascade' || record.stackEffect === 'static'
+        ? record.stackEffect
+        : base.stackEffect,
+    equalHeight: typeof record.equalHeight === 'boolean' ? record.equalHeight : base.equalHeight,
+    cardWidth:
+      record.cardWidth === 'small' || record.cardWidth === 'medium' || record.cardWidth === 'full'
+        ? record.cardWidth
+        : base.cardWidth,
+    verticalGap:
+      record.verticalGap === 'sm' || record.verticalGap === 'md' || record.verticalGap === 'lg'
+        ? record.verticalGap
+        : base.verticalGap,
+    imageRadius:
+      record.imageRadius === 'none' || record.imageRadius === 'md' || record.imageRadius === 'xl'
+        ? record.imageRadius
+        : base.imageRadius,
+    cardHeight:
+      record.cardHeight === 'compact' ||
+      record.cardHeight === 'standard' ||
+      record.cardHeight === 'tall' ||
+      record.cardHeight === 'xl'
+        ? record.cardHeight
+        : base.cardHeight,
+    showCategory: typeof record.showCategory === 'boolean' ? record.showCategory : base.showCategory,
+    showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    showTags: typeof record.showTags === 'boolean' ? record.showTags : base.showTags,
+    showTools: typeof record.showTools === 'boolean' ? record.showTools : base.showTools,
+    showLink: typeof record.showLink === 'boolean' ? record.showLink : base.showLink,
+    linkLabel:
+      typeof record.linkLabel === 'string' && record.linkLabel.trim()
+        ? record.linkLabel.trim()
+        : base.linkLabel,
+  };
+}
+
+export const PORTFOLIO_WORK_CASCADE_STACK_EFFECT_OPTIONS: {
+  value: PortfolioWorkProjectsCascadeStackEffect;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'cascade', label: 'Cascade', description: 'Stacked sticky cards, each covering the previous one while scrolling.' },
+  { value: 'static', label: 'Static', description: 'Simple vertical stack, no scroll effect.' },
+];
+
+export const PORTFOLIO_WORK_CASCADE_CARD_WIDTH_OPTIONS: {
+  value: PortfolioWorkProjectsCascadeCardWidth;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'small', label: 'Narrow', description: 'Tighter column.' },
+  { value: 'medium', label: 'Medium', description: 'Intermediate width.' },
+  { value: 'full', label: 'Full', description: 'Full width — default.' },
+];
+
+export const PORTFOLIO_WORK_CASCADE_VERTICAL_GAP_OPTIONS: {
+  value: PortfolioWorkProjectsCascadeVerticalGap;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'sm', label: 'Tight', description: 'More compact rhythm.' },
+  { value: 'md', label: 'Medium', description: 'Balanced spacing — default.' },
+  { value: 'lg', label: 'Large', description: 'More air between cards.' },
+];
+
+export const PORTFOLIO_WORK_CASCADE_IMAGE_RADIUS_OPTIONS: {
+  value: PortfolioWorkProjectsCascadeImageRadius;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: 'None', description: 'Sharp corners.' },
+  { value: 'md', label: 'Medium', description: 'Slightly rounded corners — default.' },
+  { value: 'xl', label: 'Large', description: 'Well-rounded corners.' },
+];
+
+export const PORTFOLIO_WORK_CASCADE_CARD_HEIGHT_OPTIONS: {
+  value: PortfolioWorkProjectsCascadeCardHeight;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'compact', label: 'Compact', description: 'Shorter card, smaller thumbnail.' },
+  { value: 'standard', label: 'Standard', description: 'Balanced height.' },
+  { value: 'tall', label: 'Tall', description: 'Larger thumbnail — default.' },
+  { value: 'xl', label: 'Extra tall', description: 'Maximum card height, imposing thumbnail.' },
+];
+
+export const PORTFOLIO_WORK_DUOTONE_SCROLL_MODE_OPTIONS: {
+  value: PortfolioWorkProjectsDuotoneScrollMode;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'sticky', label: 'Sticky', description: 'Story panel pinned, crossfades as you scroll the list.' },
+  { value: 'scroll', label: 'Scroll', description: 'Plain stack — no pinning, everything scrolls together.' },
+  { value: 'slide', label: 'Slide', description: 'One project at a time, chevron-navigated.' },
+];
+
+export const PORTFOLIO_WORK_DUOTONE_THUMBNAIL_EFFECT_OPTIONS: {
+  value: PortfolioWorkProjectsDuotoneThumbnailEffect;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'grayscale', label: 'Grayscale', description: 'Desaturated thumbnail — the classic duotone look.' },
+  { value: 'tint', label: 'Tint', description: 'Grayscale with an accent-color wash on top.' },
+  { value: 'none', label: 'None', description: 'Full-color thumbnail, no filter.' },
+];
+
+export const PORTFOLIO_WORK_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS: {
+  value: PortfolioWorkProjectsDuotoneThumbnailHeight;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'sm', label: 'Petite', description: 'Ratio 16:9, plus compacte.' },
+  { value: 'md', label: 'Moyenne', description: 'Ratio 4:3 — défaut.' },
+  { value: 'lg', label: 'Grande', description: 'Ratio carré 1:1.' },
+];
+
+export const PORTFOLIO_WORK_DUOTONE_FRAME_COLOR_OPTIONS: {
+  value: PortfolioWorkProjectsDuotoneFrameColor;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: 'Aucun', description: 'Pas de cadre — Scroll et Slide uniquement.' },
+  { value: 'neutral', label: 'Neutre', description: 'Cadre discret basé sur la bordure.' },
+  { value: 'muted', label: 'Atténué', description: 'Cadre basé sur la couleur muted.' },
+];
+
+export const PORTFOLIO_WORK_DUOTONE_FRAME_RADIUS_OPTIONS: {
+  value: PortfolioWorkProjectsDuotoneFrameRadius;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: 'Carré', description: 'Coins droits.' },
+  { value: 'sm', label: 'Léger', description: 'Arrondi discret — défaut.' },
+  { value: 'lg', label: 'Large', description: 'Arrondi prononcé.' },
+];
+
+export const PORTFOLIO_WORK_DUOTONE_SLIDE_NAV_STYLE_OPTIONS: {
+  value: PortfolioWorkProjectsDuotoneSlideNavStyle;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'chevron', label: 'Flèches', description: 'Boutons ronds précédent / suivant.' },
+  { value: 'text', label: 'Texte', description: 'Liens texte "Previous" / "Next".' },
+];
+
+export const PORTFOLIO_WORK_DUOTONE_VERTICAL_GAP_OPTIONS: {
+  value: PortfolioWorkProjectsDuotoneVerticalGap;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'sm', label: 'Serré', description: 'Rythme plus compact.' },
+  { value: 'md', label: 'Moyen', description: 'Espacement équilibré — défaut.' },
+  { value: 'lg', label: 'Grand', description: 'Plus d’air entre les éléments.' },
+  { value: 'xl', label: 'Très grand', description: 'Respiration maximale.' },
+];
 
 export const PORTFOLIO_WORK_CASE_THUMBNAIL_HEIGHT_OPTIONS: {
   value: PortfolioWorkProjectsCaseSettings['thumbnailHeight'];
@@ -1624,53 +1820,6 @@ export const PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS: {
   },
 ];
 
-export const PORTFOLIO_WORK_FOLIO_STACK_DESIGN_OPTIONS: {
-  value: PortfolioWorkProjectsFolioStackDesign;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'tags-outline',
-    label: 'Tags outline',
-    description: 'Pastilles transparentes, bordure seulement (défaut).',
-  },
-  {
-    value: 'tags-soft',
-    label: 'Tags soft',
-    description: 'Pastilles teintées accent.',
-  },
-  {
-    value: 'tags-solid',
-    label: 'Tags solid',
-    description: 'Pastilles pleines (token tools / titre — pas la CTA).',
-  },
-  {
-    value: 'index',
-    label: 'Index',
-    description: '01 ········· outil — table des matières.',
-  },
-  {
-    value: 'list',
-    label: 'Liste',
-    description: 'Liste uppercase tracked, une ligne par outil.',
-  },
-  {
-    value: 'inline',
-    label: 'Inline',
-    description: 'Outils en une phrase séparés par ·',
-  },
-  {
-    value: 'grid',
-    label: 'Grille',
-    description: 'Grille 2 colonnes compacte.',
-  },
-  {
-    value: 'rail',
-    label: 'Rail',
-    description: 'Barre accent + outils empilés à droite.',
-  },
-];
-
 export const PORTFOLIO_WORK_LEDGER_EXPAND_OPTIONS: {
   value: PortfolioWorkProjectsLedgerExpandMode;
   label: string;
@@ -1693,23 +1842,6 @@ export const PORTFOLIO_WORK_LEDGER_EXPAND_OPTIONS: {
   },
 ];
 
-export const PORTFOLIO_WORK_EDITORIAL_RIGHT_PANEL_OPTIONS: {
-  value: PortfolioWorkProjectsEditorialRightPanel;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'info',
-    label: 'Infos',
-    description: 'Description, stack et Consult à droite (sticky).',
-  },
-  {
-    value: 'thumbnail',
-    label: 'Miniature',
-    description: 'Uniquement la miniature projet à droite — sans bordure ni radius.',
-  },
-];
-
 export const PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS: {
   value: PortfolioWorkSectionDesign;
   label: string;
@@ -1718,7 +1850,7 @@ export const PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS: {
   {
     value: 'projects-board',
     label: 'Projects board',
-    description: 'Two equal cards per row — thumbnail, title, description, tags at the bottom, Consult on the image.',
+    description: 'Asymmetric two-up cards — thumbnail, big title, description, tags and a case-study link at the bottom.',
   },
   {
     value: 'projects-accordion',
@@ -1733,7 +1865,8 @@ export const PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS: {
   {
     value: 'projects-index',
     label: 'Index',
-    description: 'Numbered rows with thin rules — title + stack, description on the right.',
+    description:
+      'Cinematic full-bleed scenes — one project fills the screen, scroll-scrubbed curtain wipe, reactive backdrop, magnetic cursor.',
   },
   {
     value: 'projects-grid',
@@ -1748,13 +1881,8 @@ export const PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS: {
   {
     value: 'projects-carousel',
     label: 'Carousel',
-    description: 'Image-only horizontal carousel — configure slide size, ratio, and spacing.',
-  },
-  {
-    value: 'projects-spotlight',
-    label: 'Spotlight',
     description:
-      'Cadre fin — détails projet à gauche, sélecteur de titres à droite (pas accordion).',
+      'Horizontal drag carousel — hover a slide for a frosted dark veil with a staggered text reveal.',
   },
   {
     value: 'projects-showcase',
@@ -1763,33 +1891,37 @@ export const PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS: {
       'Large media + details — chevrons and three thumbnails to switch the active project.',
   },
   {
-    value: 'projects-editorial',
-    label: 'Editorial',
-    description:
-      'Grand numéro + rôle + titre à gauche, description / catégorie / stack à droite — sans image.',
-  },
-  {
     value: 'projects-ledger',
     label: 'Ledger',
     description:
       'Index typographique Framer — lignes, titres, rôle, détails au survol. Données seulement, sans miniature.',
   },
   {
-    value: 'projects-folio',
-    label: 'Folio',
-    description:
-      'Dossier sticky à gauche + liste de titres à droite — lecture éditoriale, données seulement, sans miniature.',
-  },
-  {
     value: 'projects-spec',
     label: 'Spec',
     description:
-      'Fiche technique / datasheet — titre + grille label/valeur. Données seulement, sans miniature.',
+      'Editorial datasheet — clean and textual at rest; hovering a title reveals a floating cursor-tracking image.',
   },
   {
     value: 'projects-case',
     label: 'Case',
     description: 'Grande miniature 50/50 à gauche + fiche Spec à droite.',
+  },
+  {
+    value: 'projects-press',
+    label: 'Press',
+    description: 'Newsroom feed — thumbnail rows with just a role, category, and title.',
+  },
+  {
+    value: 'projects-duotone',
+    label: 'Duotone',
+    description: 'One project per screen, split 50/50 — details on one side, a framed thumbnail on the other. Sticky, Scroll, or Slide.',
+  },
+  {
+    value: 'projects-cascade',
+    label: 'Cascade',
+    description:
+      "Same stacking-cards scroll effect as Experience — full-cover sticky cards receding behind each other — with each project's thumbnail beside the text.",
   },
 ];
 
@@ -1799,11 +1931,6 @@ export const PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  {
-    value: 'minimal',
-    label: 'Minimal',
-    description: 'Title + subtitle, clean and quiet — no extra motion or ornament.',
-  },
   {
     value: 'editorial',
     label: 'Editorial',
@@ -1817,7 +1944,7 @@ export const PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS: {
   {
     value: 'index',
     label: 'Index',
-    description: 'Large faded index numeral beside the title.',
+    description: 'Ledger-style divider rule, a counting project-count numeral, and the title split by a vertical rule.',
   },
   {
     value: 'accent-count',
@@ -1838,6 +1965,11 @@ export const PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS: {
     value: 'masthead',
     label: 'Masthead',
     description: 'Monumental uppercase headline with an intro line underneath.',
+  },
+  {
+    value: 'split-heading',
+    label: 'Split heading',
+    description: 'Title left with an editorial italic word, small label top-right.',
   },
 ];
 
@@ -2096,38 +2228,6 @@ export function workSectionDesignSettingsPatch(
       projectsCarousel: { ...DEFAULT_PROJECTS_CAROUSEL_SETTINGS },
     };
   }
-  if (sectionDesign === 'projects-spotlight') {
-    return {
-      sectionDesign,
-      galleryLayout: 'list',
-      itemsPerRow: 1,
-      cardDesign: 'minimal',
-      showCardMedia: false,
-      noMediaInfoLayout: 'fill',
-      contentPlacement: 'side',
-      cardMaxWidth: 'full',
-      cardBorder: 'soft',
-      cardShadow: 'none',
-      cardBackgroundEnabled: true,
-      cardBorderRadius: 'xl',
-      cardPadding: 'lg',
-      cardGap: 'lg',
-      cardAlignment: 'left',
-      cardContentAlignment: 'left',
-      cardContentVerticalAlign: 'top',
-      showCardTitle: true,
-      showCardDescription: true,
-      showCardTools: true,
-      showCardToolIcons: false,
-      showCardToolList: true,
-      showToolsLabel: false,
-      toolsDisplay: 'list',
-      showCardCta: true,
-      showCategoryOnCard: false,
-      showMarketplaceLink: false,
-      projectsSpotlight: { ...DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS },
-    };
-  }
   if (sectionDesign === 'projects-showcase') {
     return {
       sectionDesign,
@@ -2160,38 +2260,6 @@ export function workSectionDesignSettingsPatch(
       projectsShowcase: { ...DEFAULT_PROJECTS_SHOWCASE_SETTINGS },
     };
   }
-  if (sectionDesign === 'projects-editorial') {
-    return {
-      sectionDesign,
-      galleryLayout: 'list',
-      itemsPerRow: 1,
-      cardDesign: 'minimal',
-      showCardMedia: false,
-      noMediaInfoLayout: 'fill',
-      contentPlacement: 'side',
-      cardMaxWidth: 'full',
-      cardBorder: 'none',
-      cardShadow: 'none',
-      cardBackgroundEnabled: false,
-      cardBorderRadius: 'none',
-      cardPadding: 'none',
-      cardGap: 'lg',
-      cardAlignment: 'left',
-      cardContentAlignment: 'left',
-      cardContentVerticalAlign: 'top',
-      showCardTitle: true,
-      showCardDescription: true,
-      showCardTools: true,
-      showCardToolIcons: false,
-      showCardToolList: true,
-      showToolsLabel: false,
-      toolsDisplay: 'list',
-      showCardCta: true,
-      showCategoryOnCard: true,
-      showMarketplaceLink: false,
-      projectsEditorial: { ...DEFAULT_PROJECTS_EDITORIAL_SETTINGS },
-    };
-  }
   if (sectionDesign === 'projects-ledger') {
     return {
       sectionDesign,
@@ -2222,38 +2290,6 @@ export function workSectionDesignSettingsPatch(
       showCategoryOnCard: true,
       showMarketplaceLink: false,
       projectsLedger: { ...DEFAULT_PROJECTS_LEDGER_SETTINGS },
-    };
-  }
-  if (sectionDesign === 'projects-folio') {
-    return {
-      sectionDesign,
-      galleryLayout: 'list',
-      itemsPerRow: 1,
-      cardDesign: 'minimal',
-      showCardMedia: false,
-      noMediaInfoLayout: 'fill',
-      contentPlacement: 'side',
-      cardMaxWidth: 'full',
-      cardBorder: 'none',
-      cardShadow: 'none',
-      cardBackgroundEnabled: false,
-      cardBorderRadius: 'none',
-      cardPadding: 'none',
-      cardGap: 'lg',
-      cardAlignment: 'left',
-      cardContentAlignment: 'left',
-      cardContentVerticalAlign: 'top',
-      showCardTitle: true,
-      showCardDescription: true,
-      showCardTools: true,
-      showCardToolIcons: false,
-      showCardToolList: true,
-      showToolsLabel: false,
-      toolsDisplay: 'list',
-      showCardCta: true,
-      showCategoryOnCard: true,
-      showMarketplaceLink: false,
-      projectsFolio: { ...DEFAULT_PROJECTS_FOLIO_SETTINGS },
     };
   }
   if (sectionDesign === 'projects-spec') {
@@ -2318,6 +2354,102 @@ export function workSectionDesignSettingsPatch(
       showCategoryOnCard: true,
       showMarketplaceLink: false,
       projectsCase: { ...DEFAULT_PROJECTS_CASE_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-press') {
+    return {
+      sectionDesign,
+      galleryLayout: 'list',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: true,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: false,
+      cardBorderRadius: 'none',
+      cardPadding: 'md',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: true,
+      showCardToolIcons: false,
+      showCardToolList: true,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: false,
+      showCategoryOnCard: true,
+      showMarketplaceLink: false,
+      projectsPress: { ...DEFAULT_PROJECTS_PRESS_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-duotone') {
+    return {
+      sectionDesign,
+      galleryLayout: 'stack',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: true,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: false,
+      cardBorderRadius: 'none',
+      cardPadding: 'none',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: true,
+      showCardToolIcons: false,
+      showCardToolList: true,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: false,
+      showCategoryOnCard: true,
+      showMarketplaceLink: false,
+      projectsDuotone: { ...DEFAULT_PROJECTS_DUOTONE_SETTINGS },
+    };
+  }
+  if (sectionDesign === 'projects-cascade') {
+    return {
+      sectionDesign,
+      galleryLayout: 'stack',
+      itemsPerRow: 1,
+      cardDesign: 'minimal',
+      showCardMedia: true,
+      noMediaInfoLayout: 'fill',
+      contentPlacement: 'side',
+      cardMaxWidth: 'full',
+      cardBorder: 'none',
+      cardShadow: 'none',
+      cardBackgroundEnabled: false,
+      cardBorderRadius: 'none',
+      cardPadding: 'none',
+      cardGap: 'lg',
+      cardAlignment: 'left',
+      cardContentAlignment: 'left',
+      cardContentVerticalAlign: 'top',
+      showCardTitle: true,
+      showCardDescription: true,
+      showCardTools: true,
+      showCardToolIcons: false,
+      showCardToolList: true,
+      showToolsLabel: false,
+      toolsDisplay: 'list',
+      showCardCta: false,
+      showCategoryOnCard: true,
+      showMarketplaceLink: false,
+      projectsCascade: { ...DEFAULT_PROJECTS_CASCADE_SETTINGS },
     };
   }
   return { sectionDesign: DEFAULT_PORTFOLIO_WORK_SECTION_DESIGN };
@@ -2909,16 +3041,91 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   /** Accent count header — badge text supports a {count} token for the project count. */
   accentCountBadgeText: string;
   accentCountLeadText: string;
-  accentCountBadgeColor: PortfolioWorkAccentCountBadgeColor;
+  /** Accent count header — badge and lead bound to a palette token, independently. */
+  accentCountBadgeColor: PortfolioWorkPaletteToken;
+  accentCountLeadColor: PortfolioWorkPaletteToken;
+  /** Accent count header — one size/weight for the whole line (badge + lead flow together). */
+  accentCountSize: PortfolioWorkHeaderTitleSize;
+  accentCountWeight: PortfolioWorkHeaderTitleWeight;
+  /** Accent count header — its own 3-way alignment (adds "right", unlike the shared control). */
+  accentCountAlignment: PortfolioWorkAccentCountAlignment;
   /** Serif lead header — small label above the large serif title. */
   serifLeadLabelText: string;
+  /** Serif lead header — the large serif title itself, independent of the section title. */
+  serifLeadTitleText: string;
+  /** Serif lead header — each element bound to a palette token, independently. */
+  serifLeadLabelColor: PortfolioWorkPaletteToken;
+  serifLeadTitleColor: PortfolioWorkPaletteToken;
+  serifLeadSubtitleColor: PortfolioWorkPaletteToken;
+  /** Serif lead header — each element sized/weighted independently. */
+  serifLeadLabelSize: PortfolioWorkHeaderTitleSize;
+  serifLeadTitleSize: PortfolioWorkHeaderTitleSize;
+  serifLeadSubtitleSize: PortfolioWorkHeaderTitleSize;
+  serifLeadLabelWeight: PortfolioWorkHeaderTitleWeight;
+  serifLeadTitleWeight: PortfolioWorkHeaderTitleWeight;
+  serifLeadSubtitleWeight: PortfolioWorkHeaderTitleWeight;
   /** Billboard header — big faint background word + a {count}-token project line. */
   billboardBigWord: string;
   billboardCountText: string;
+  /** Billboard header — the editorial split title beneath the big word, independent of the section title. */
+  billboardTitleText: string;
+  /** Billboard header — outline (stroke only) or fill (solid) big word. */
+  billboardWordStyle: PortfolioWorkBillboardWordStyle;
+  /** Billboard header — each element bound to a palette token, independently. */
+  billboardWordColor: PortfolioWorkPaletteToken;
+  billboardTitleColor: PortfolioWorkPaletteToken;
+  billboardMetaColor: PortfolioWorkPaletteToken;
   /** Split heading header — small label on the side opposite the narrative title. */
   splitHeadingLabelText: string;
-  /** Masthead header — monumental headline text, independent of the section title. */
-  mastheadHeadlineText: string;
+  /** Split heading header — the narrative title itself, independent of the section title. */
+  splitHeadingTitleText: string;
+  /** Split heading header — each element bound to a palette token, independently. */
+  splitHeadingTitleColor: PortfolioWorkPaletteToken;
+  splitHeadingLabelColor: PortfolioWorkPaletteToken;
+  /** Split heading header — each element sized/weighted independently. */
+  splitHeadingTitleSize: PortfolioWorkHeaderTitleSize;
+  splitHeadingTitleWeight: PortfolioWorkHeaderTitleWeight;
+  splitHeadingLabelSize: PortfolioWorkHeaderTitleSize;
+  splitHeadingLabelWeight: PortfolioWorkHeaderTitleWeight;
+  /** Masthead header — up to 3 independent lines, monumental headline text,
+   *  each stacked into the mast (no more period-splitting a single string). */
+  mastheadLine1Text: string;
+  mastheadLine2Text: string;
+  mastheadLine3Text: string;
+  /** Masthead header — one color for the whole headline, across every line. */
+  mastheadHeadlineColor: PortfolioWorkPaletteToken;
+  /** Masthead header — one size/weight for the whole headline, across every line. */
+  mastheadHeadlineSize: PortfolioWorkHeaderTitleSize;
+  mastheadHeadlineWeight: PortfolioWorkHeaderTitleWeight;
+  /** Index header — small label on the top divider rule (e.g. "Index", "Catalog"). */
+  indexLabelText: string;
+  /** Index header — the title beside the counting numeral, independent of the section title. */
+  indexTitleText: string;
+  /** Index header — caption under the counter (e.g. "Projects"). Empty falls back to automatic "Project" / "Projects" pluralization. */
+  indexCountLabelText: string;
+  /** Index header — the small subtitle under the title, independent of the section subtitle. */
+  indexSubtitleText: string;
+  /** Index header — each element bound to a palette token, independently. */
+  indexLabelColor: PortfolioWorkPaletteToken;
+  indexNumberColor: PortfolioWorkPaletteToken;
+  indexTitleColor: PortfolioWorkPaletteToken;
+  indexSubtitleColor: PortfolioWorkPaletteToken;
+  /** Index header — each element sized/weighted independently. */
+  indexLabelSize: PortfolioWorkHeaderTitleSize;
+  indexLabelWeight: PortfolioWorkHeaderTitleWeight;
+  indexTitleSize: PortfolioWorkHeaderTitleSize;
+  indexTitleWeight: PortfolioWorkHeaderTitleWeight;
+  indexSubtitleSize: PortfolioWorkHeaderTitleSize;
+  indexSubtitleWeight: PortfolioWorkHeaderTitleWeight;
+  /** Marquee header — up to 4 independent words in the repeating band, each its own field (empty slots are dropped). */
+  marqueeWord1Text: string;
+  marqueeWord2Text: string;
+  marqueeWord3Text: string;
+  marqueeWord4Text: string;
+  /** Marquee header — alternating fill/outline words bound to one palette token. */
+  marqueeWordColor: PortfolioWorkPaletteToken;
+  /** Marquee header — scales the repeating word band. */
+  marqueeSize: PortfolioWorkHeaderTitleSize;
   /**
    * `stacked` — title above the gallery (default).
    * `aside-left` / `aside-right` — title beside the gallery on large screens.
@@ -2946,20 +3153,20 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   projectsSplit: PortfolioWorkProjectsSplitSettings;
   /** Carousel design–only options (image-only horizontal slides). */
   projectsCarousel: PortfolioWorkProjectsCarouselSettings;
-  /** Spotlight design–only options (left details + right title selector). */
-  projectsSpotlight: PortfolioWorkProjectsSpotlightSettings;
   /** Showcase design–only options (media + details + thumbnail selector). */
   projectsShowcase: PortfolioWorkProjectsShowcaseSettings;
-  /** Editorial design–only options (number + title left, meta rail right). */
-  projectsEditorial: PortfolioWorkProjectsEditorialSettings;
   /** Ledger design–only options (typographic index rows, data-only). */
   projectsLedger: PortfolioWorkProjectsLedgerSettings;
-  /** Folio design–only options (sticky dossier + title list, data-only). */
-  projectsFolio: PortfolioWorkProjectsFolioSettings;
   /** Spec design–only options (technical datasheet rows, data-only). */
   projectsSpec: PortfolioWorkProjectsSpecSettings;
   /** Case design–only options (50/50 thumbnail + Spec datasheet). */
   projectsCase: PortfolioWorkProjectsCaseSettings;
+  /** Press design–only options (newsroom feed — intro blurb + thumbnail radius). */
+  projectsPress: PortfolioWorkProjectsPressSettings;
+  /** Duotone design–only options (split 50/50, sticky/scroll/slide). */
+  projectsDuotone: PortfolioWorkProjectsDuotoneSettings;
+  /** Cascade design–only options (Experience Cards stacking scroll effect + thumbnail). */
+  projectsCascade: PortfolioWorkProjectsCascadeSettings;
   /** Cards per row on large screens (stack / grid / overlay). */
   itemsPerRow: PortfolioWorkItemsPerRow;
   /** Max width of each project card (full = stretch to column). */
@@ -3117,7 +3324,7 @@ export const DEFAULT_WORK_PRESENTATION: PortfolioWorkPresentationSettings = {
   subtitleFont: 'sans',
   titleColor: DEFAULT_WORK_TITLE_COLOR,
   subtitleColor: DEFAULT_WORK_SUBTITLE_COLOR,
-  headerDesign: 'minimal',
+  headerDesign: 'editorial',
   headerAnimationEnabled: true,
   headerAlignment: 'left',
   headerMarginBottom: 'md',
@@ -3125,12 +3332,63 @@ export const DEFAULT_WORK_PRESENTATION: PortfolioWorkPresentationSettings = {
   headerTitleWeight: 'regular',
   accentCountBadgeText: '',
   accentCountLeadText: '',
-  accentCountBadgeColor: 'accent',
+  accentCountBadgeColor: 'principal',
+  accentCountLeadColor: 'secondaire',
+  accentCountSize: 'md',
+  accentCountWeight: 'regular',
+  accentCountAlignment: 'left',
   serifLeadLabelText: '',
+  serifLeadTitleText: '',
+  serifLeadLabelColor: 'texteFort',
+  serifLeadTitleColor: 'texteFort',
+  serifLeadSubtitleColor: 'texteFort',
+  serifLeadLabelSize: 'md',
+  serifLeadTitleSize: 'md',
+  serifLeadSubtitleSize: 'md',
+  serifLeadLabelWeight: 'regular',
+  serifLeadTitleWeight: 'regular',
+  serifLeadSubtitleWeight: 'regular',
   billboardBigWord: '',
   billboardCountText: '',
+  billboardTitleText: '',
+  billboardWordStyle: 'outline',
+  billboardWordColor: 'principal',
+  billboardTitleColor: 'principal',
+  billboardMetaColor: 'secondaire',
   splitHeadingLabelText: '',
-  mastheadHeadlineText: '',
+  splitHeadingTitleText: '',
+  splitHeadingTitleColor: 'principal',
+  splitHeadingLabelColor: 'secondaire',
+  splitHeadingTitleSize: 'md',
+  splitHeadingTitleWeight: 'regular',
+  splitHeadingLabelSize: 'md',
+  splitHeadingLabelWeight: 'regular',
+  mastheadLine1Text: '',
+  mastheadLine2Text: '',
+  mastheadLine3Text: '',
+  mastheadHeadlineColor: 'principal',
+  mastheadHeadlineSize: 'md',
+  mastheadHeadlineWeight: 'regular',
+  indexLabelText: '',
+  indexTitleText: '',
+  indexCountLabelText: '',
+  indexSubtitleText: '',
+  indexLabelColor: 'texteFort',
+  indexNumberColor: 'principal',
+  indexTitleColor: 'texteFort',
+  indexSubtitleColor: 'texteFort',
+  indexLabelSize: 'md',
+  indexLabelWeight: 'regular',
+  indexTitleSize: 'md',
+  indexTitleWeight: 'regular',
+  indexSubtitleSize: 'md',
+  indexSubtitleWeight: 'regular',
+  marqueeWord1Text: '',
+  marqueeWord2Text: '',
+  marqueeWord3Text: '',
+  marqueeWord4Text: '',
+  marqueeWordColor: 'principal',
+  marqueeSize: 'md',
   sectionLayout: 'stacked',
   illustrationVariant: 'none',
   illustrationPlacement: 'right',
@@ -3144,13 +3402,13 @@ export const DEFAULT_WORK_PRESENTATION: PortfolioWorkPresentationSettings = {
   projectsGrid: { ...DEFAULT_PROJECTS_GRID_SETTINGS },
   projectsSplit: { ...DEFAULT_PROJECTS_SPLIT_SETTINGS },
   projectsCarousel: { ...DEFAULT_PROJECTS_CAROUSEL_SETTINGS },
-  projectsSpotlight: { ...DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS },
   projectsShowcase: { ...DEFAULT_PROJECTS_SHOWCASE_SETTINGS },
-  projectsEditorial: { ...DEFAULT_PROJECTS_EDITORIAL_SETTINGS },
   projectsLedger: { ...DEFAULT_PROJECTS_LEDGER_SETTINGS },
-  projectsFolio: { ...DEFAULT_PROJECTS_FOLIO_SETTINGS },
   projectsSpec: { ...DEFAULT_PROJECTS_SPEC_SETTINGS },
   projectsCase: { ...DEFAULT_PROJECTS_CASE_SETTINGS },
+  projectsPress: { ...DEFAULT_PROJECTS_PRESS_SETTINGS },
+  projectsDuotone: { ...DEFAULT_PROJECTS_DUOTONE_SETTINGS },
+  projectsCascade: { ...DEFAULT_PROJECTS_CASCADE_SETTINGS },
   itemsPerRow: 1,
   cardMaxWidth: 'full',
   cardDesign: 'editorial',
@@ -3292,7 +3550,6 @@ export const PORTFOLIO_WORK_HEADER_FONT_OPTIONS: {
 
 export const WORK_SECTION_LAYOUTS = ['stacked', 'aside-left', 'aside-right'] as const;
 export const WORK_HEADER_DESIGNS = [
-  'minimal',
   'editorial',
   'marquee',
   'index',
@@ -3300,6 +3557,7 @@ export const WORK_HEADER_DESIGNS = [
   'serif-lead',
   'billboard',
   'masthead',
+  'split-heading',
 ] as const;
 export const WORK_HEADER_MARGIN_BOTTOM_STEPS = ['sm', 'md', 'lg', 'xl'] as const;
 export const WORK_HEADER_TITLE_SIZES = ['sm', 'md', 'lg', 'xl'] as const;
@@ -3321,18 +3579,18 @@ export const PORTFOLIO_WORK_SECTION_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'stacked',
-    label: 'Empilé',
-    description: 'Titre au-dessus, projets en dessous.',
+    label: 'Stacked',
+    description: 'Title above, gallery below.',
   },
   {
     value: 'aside-left',
-    label: 'Titre à gauche',
-    description: 'Titre à gauche, galerie à droite (côte à côte).',
+    label: 'Title left',
+    description: 'Title on the left, gallery on the right (side by side).',
   },
   {
     value: 'aside-right',
-    label: 'Titre à droite',
-    description: 'Galerie à gauche, titre à droite (côte à côte).',
+    label: 'Title right',
+    description: 'Gallery on the left, title on the right (side by side).',
   },
 ];
 
@@ -3921,6 +4179,51 @@ export function workTitleColorStyle(color: string): CSSProperties {
 export function workSubtitleColorStyle(color: string): CSSProperties {
   return { color: sanitizeHex(color, DEFAULT_WORK_SUBTITLE_COLOR) };
 }
+
+/** Resolves a palette-token choice to a concrete color — no free-form hex,
+ *  no ad-hoc CTA/accent field, every header element bound to one of our
+ *  actual palette colors. */
+export function workPaletteTokenColor(token: PortfolioWorkPaletteToken): string {
+  if (token === 'secondaire') return 'var(--pf-palette-secondaire, #3b82f6)';
+  if (token === 'texteFort') return 'var(--pf-palette-texte-fort, #f5f5f5)';
+  return 'var(--pf-palette-principal, #f97316)';
+}
+
+export const WORK_PALETTE_TOKENS = ['principal', 'secondaire', 'texteFort'] as const;
+
+export const WORK_PALETTE_TOKEN_OPTIONS: {
+  value: PortfolioWorkPaletteToken;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'principal', label: 'Principal', description: 'Global principal token.' },
+  { value: 'secondaire', label: 'Secondary', description: 'Global secondary token.' },
+  { value: 'texteFort', label: 'Strong text', description: 'Strong ink token.' },
+];
+
+export const WORK_ACCENT_COUNT_ALIGNMENTS = ['left', 'center', 'right'] as const;
+
+export const WORK_ACCENT_COUNT_ALIGNMENT_OPTIONS: {
+  value: PortfolioWorkAccentCountAlignment;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'left', label: 'Left', description: 'Default editorial alignment.' },
+  { value: 'center', label: 'Center', description: 'Centered line.' },
+  { value: 'right', label: 'Right', description: 'Right-aligned line.' },
+];
+
+export const WORK_BILLBOARD_WORD_STYLES = ['outline', 'fill', 'simple'] as const;
+
+export const WORK_BILLBOARD_WORD_STYLE_OPTIONS: {
+  value: PortfolioWorkBillboardWordStyle;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'outline', label: 'Outline', description: 'Stroke only, with a soft glow.' },
+  { value: 'fill', label: 'Fill', description: 'Solid characters, with a soft glow.' },
+  { value: 'simple', label: 'Simple', description: 'Solid characters, no glow — plain.' },
+];
 
 export function workCardIsStacked(
   design: PortfolioWorkCardDesign,
@@ -4970,14 +5273,16 @@ export function mergeWorkPresentation(
     headerDesign: pickAllowlisted(
       record.headerDesign,
       WORK_HEADER_DESIGNS,
-      base.headerDesign ?? 'minimal'
+      base.headerDesign ?? 'editorial'
     ),
     headerAnimationEnabled:
       typeof record.headerAnimationEnabled === 'boolean'
         ? record.headerAnimationEnabled
         : (base.headerAnimationEnabled ?? true),
     headerAlignment:
-      headerAlignment === 'left' || headerAlignment === 'center' ? headerAlignment : base.headerAlignment,
+      headerAlignment === 'left' || headerAlignment === 'center' || headerAlignment === 'right'
+        ? headerAlignment
+        : base.headerAlignment,
     headerMarginBottom: pickAllowlisted(
       record.headerMarginBottom,
       WORK_HEADER_MARGIN_BOTTOM_STEPS,
@@ -4997,22 +5302,237 @@ export function mergeWorkPresentation(
       typeof record.accentCountBadgeText === 'string' ? record.accentCountBadgeText : base.accentCountBadgeText,
     accentCountLeadText:
       typeof record.accentCountLeadText === 'string' ? record.accentCountLeadText : base.accentCountLeadText,
-    accentCountBadgeColor:
-      record.accentCountBadgeColor === 'accent' ||
-      record.accentCountBadgeColor === 'principal' ||
-      record.accentCountBadgeColor === 'secondaire'
-        ? record.accentCountBadgeColor
-        : base.accentCountBadgeColor,
+    accentCountBadgeColor: pickAllowlisted(
+      record.accentCountBadgeColor,
+      WORK_PALETTE_TOKENS,
+      base.accentCountBadgeColor ?? 'principal'
+    ),
+    accentCountLeadColor: pickAllowlisted(
+      record.accentCountLeadColor,
+      WORK_PALETTE_TOKENS,
+      base.accentCountLeadColor ?? 'secondaire'
+    ),
+    accentCountSize: pickAllowlisted(
+      record.accentCountSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.accentCountSize ?? 'md'
+    ),
+    accentCountWeight: pickAllowlisted(
+      record.accentCountWeight,
+      WORK_HEADER_TITLE_WEIGHTS,
+      base.accentCountWeight ?? 'regular'
+    ),
+    accentCountAlignment: pickAllowlisted(
+      record.accentCountAlignment,
+      WORK_ACCENT_COUNT_ALIGNMENTS,
+      base.accentCountAlignment ?? 'left'
+    ),
     serifLeadLabelText:
       typeof record.serifLeadLabelText === 'string' ? record.serifLeadLabelText : base.serifLeadLabelText,
+    serifLeadTitleText:
+      typeof record.serifLeadTitleText === 'string' ? record.serifLeadTitleText : base.serifLeadTitleText,
+    serifLeadLabelColor: pickAllowlisted(
+      record.serifLeadLabelColor,
+      WORK_PALETTE_TOKENS,
+      base.serifLeadLabelColor ?? 'texteFort'
+    ),
+    serifLeadTitleColor: pickAllowlisted(
+      record.serifLeadTitleColor,
+      WORK_PALETTE_TOKENS,
+      base.serifLeadTitleColor ?? 'texteFort'
+    ),
+    serifLeadSubtitleColor: pickAllowlisted(
+      record.serifLeadSubtitleColor,
+      WORK_PALETTE_TOKENS,
+      base.serifLeadSubtitleColor ?? 'texteFort'
+    ),
+    serifLeadLabelSize: pickAllowlisted(
+      record.serifLeadLabelSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.serifLeadLabelSize ?? 'md'
+    ),
+    serifLeadTitleSize: pickAllowlisted(
+      record.serifLeadTitleSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.serifLeadTitleSize ?? 'md'
+    ),
+    serifLeadSubtitleSize: pickAllowlisted(
+      record.serifLeadSubtitleSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.serifLeadSubtitleSize ?? 'md'
+    ),
+    serifLeadLabelWeight: pickAllowlisted(
+      record.serifLeadLabelWeight,
+      WORK_HEADER_TITLE_WEIGHTS,
+      base.serifLeadLabelWeight ?? 'regular'
+    ),
+    serifLeadTitleWeight: pickAllowlisted(
+      record.serifLeadTitleWeight,
+      WORK_HEADER_TITLE_WEIGHTS,
+      base.serifLeadTitleWeight ?? 'regular'
+    ),
+    serifLeadSubtitleWeight: pickAllowlisted(
+      record.serifLeadSubtitleWeight,
+      WORK_HEADER_TITLE_WEIGHTS,
+      base.serifLeadSubtitleWeight ?? 'regular'
+    ),
     billboardBigWord:
       typeof record.billboardBigWord === 'string' ? record.billboardBigWord : base.billboardBigWord,
     billboardCountText:
       typeof record.billboardCountText === 'string' ? record.billboardCountText : base.billboardCountText,
+    billboardTitleText:
+      typeof record.billboardTitleText === 'string' ? record.billboardTitleText : base.billboardTitleText,
+    billboardWordStyle: pickAllowlisted(
+      record.billboardWordStyle,
+      WORK_BILLBOARD_WORD_STYLES,
+      base.billboardWordStyle ?? 'outline'
+    ),
+    billboardWordColor: pickAllowlisted(
+      record.billboardWordColor,
+      WORK_PALETTE_TOKENS,
+      base.billboardWordColor ?? 'principal'
+    ),
+    billboardTitleColor: pickAllowlisted(
+      record.billboardTitleColor,
+      WORK_PALETTE_TOKENS,
+      base.billboardTitleColor ?? 'principal'
+    ),
+    billboardMetaColor: pickAllowlisted(
+      record.billboardMetaColor,
+      WORK_PALETTE_TOKENS,
+      base.billboardMetaColor ?? 'secondaire'
+    ),
     splitHeadingLabelText:
       typeof record.splitHeadingLabelText === 'string' ? record.splitHeadingLabelText : base.splitHeadingLabelText,
-    mastheadHeadlineText:
-      typeof record.mastheadHeadlineText === 'string' ? record.mastheadHeadlineText : base.mastheadHeadlineText,
+    splitHeadingTitleText:
+      typeof record.splitHeadingTitleText === 'string' ? record.splitHeadingTitleText : base.splitHeadingTitleText,
+    splitHeadingTitleColor: pickAllowlisted(
+      record.splitHeadingTitleColor,
+      WORK_PALETTE_TOKENS,
+      base.splitHeadingTitleColor ?? 'principal'
+    ),
+    splitHeadingLabelColor: pickAllowlisted(
+      record.splitHeadingLabelColor,
+      WORK_PALETTE_TOKENS,
+      base.splitHeadingLabelColor ?? 'secondaire'
+    ),
+    splitHeadingTitleSize: pickAllowlisted(
+      record.splitHeadingTitleSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.splitHeadingTitleSize ?? 'md'
+    ),
+    splitHeadingTitleWeight: pickAllowlisted(
+      record.splitHeadingTitleWeight,
+      WORK_HEADER_TITLE_WEIGHTS,
+      base.splitHeadingTitleWeight ?? 'regular'
+    ),
+    splitHeadingLabelSize: pickAllowlisted(
+      record.splitHeadingLabelSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.splitHeadingLabelSize ?? 'md'
+    ),
+    splitHeadingLabelWeight: pickAllowlisted(
+      record.splitHeadingLabelWeight,
+      WORK_HEADER_TITLE_WEIGHTS,
+      base.splitHeadingLabelWeight ?? 'regular'
+    ),
+    mastheadLine1Text:
+      typeof record.mastheadLine1Text === 'string' ? record.mastheadLine1Text : base.mastheadLine1Text,
+    mastheadLine2Text:
+      typeof record.mastheadLine2Text === 'string' ? record.mastheadLine2Text : base.mastheadLine2Text,
+    mastheadLine3Text:
+      typeof record.mastheadLine3Text === 'string' ? record.mastheadLine3Text : base.mastheadLine3Text,
+    mastheadHeadlineColor: pickAllowlisted(
+      record.mastheadHeadlineColor,
+      WORK_PALETTE_TOKENS,
+      base.mastheadHeadlineColor ?? 'principal'
+    ),
+    mastheadHeadlineSize: pickAllowlisted(
+      record.mastheadHeadlineSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.mastheadHeadlineSize ?? 'md'
+    ),
+    mastheadHeadlineWeight: pickAllowlisted(
+      record.mastheadHeadlineWeight,
+      WORK_HEADER_TITLE_WEIGHTS,
+      base.mastheadHeadlineWeight ?? 'regular'
+    ),
+    indexLabelText:
+      typeof record.indexLabelText === 'string' ? record.indexLabelText : base.indexLabelText,
+    indexTitleText:
+      typeof record.indexTitleText === 'string' ? record.indexTitleText : base.indexTitleText,
+    indexCountLabelText:
+      typeof record.indexCountLabelText === 'string' ? record.indexCountLabelText : base.indexCountLabelText,
+    indexSubtitleText:
+      typeof record.indexSubtitleText === 'string' ? record.indexSubtitleText : base.indexSubtitleText,
+    indexLabelColor: pickAllowlisted(
+      record.indexLabelColor,
+      WORK_PALETTE_TOKENS,
+      base.indexLabelColor ?? 'texteFort'
+    ),
+    indexNumberColor: pickAllowlisted(
+      record.indexNumberColor,
+      WORK_PALETTE_TOKENS,
+      base.indexNumberColor ?? 'principal'
+    ),
+    indexTitleColor: pickAllowlisted(
+      record.indexTitleColor,
+      WORK_PALETTE_TOKENS,
+      base.indexTitleColor ?? 'texteFort'
+    ),
+    indexSubtitleColor: pickAllowlisted(
+      record.indexSubtitleColor,
+      WORK_PALETTE_TOKENS,
+      base.indexSubtitleColor ?? 'texteFort'
+    ),
+    indexLabelSize: pickAllowlisted(
+      record.indexLabelSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.indexLabelSize ?? 'md'
+    ),
+    indexLabelWeight: pickAllowlisted(
+      record.indexLabelWeight,
+      WORK_HEADER_TITLE_WEIGHTS,
+      base.indexLabelWeight ?? 'regular'
+    ),
+    indexTitleSize: pickAllowlisted(
+      record.indexTitleSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.indexTitleSize ?? 'md'
+    ),
+    indexTitleWeight: pickAllowlisted(
+      record.indexTitleWeight,
+      WORK_HEADER_TITLE_WEIGHTS,
+      base.indexTitleWeight ?? 'regular'
+    ),
+    indexSubtitleSize: pickAllowlisted(
+      record.indexSubtitleSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.indexSubtitleSize ?? 'md'
+    ),
+    indexSubtitleWeight: pickAllowlisted(
+      record.indexSubtitleWeight,
+      WORK_HEADER_TITLE_WEIGHTS,
+      base.indexSubtitleWeight ?? 'regular'
+    ),
+    marqueeWord1Text:
+      typeof record.marqueeWord1Text === 'string' ? record.marqueeWord1Text : base.marqueeWord1Text,
+    marqueeWord2Text:
+      typeof record.marqueeWord2Text === 'string' ? record.marqueeWord2Text : base.marqueeWord2Text,
+    marqueeWord3Text:
+      typeof record.marqueeWord3Text === 'string' ? record.marqueeWord3Text : base.marqueeWord3Text,
+    marqueeWord4Text:
+      typeof record.marqueeWord4Text === 'string' ? record.marqueeWord4Text : base.marqueeWord4Text,
+    marqueeWordColor: pickAllowlisted(
+      record.marqueeWordColor,
+      WORK_PALETTE_TOKENS,
+      base.marqueeWordColor ?? 'principal'
+    ),
+    marqueeSize: pickAllowlisted(
+      record.marqueeSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.marqueeSize ?? 'md'
+    ),
     sectionLayout: pickAllowlisted(
       record.sectionLayout,
       WORK_SECTION_LAYOUTS,
@@ -5082,25 +5602,13 @@ export function mergeWorkPresentation(
       mergeProjectsCarouselSettings(DEFAULT_PROJECTS_CAROUSEL_SETTINGS, base.projectsCarousel),
       record.projectsCarousel
     ),
-    projectsSpotlight: mergeProjectsSpotlightSettings(
-      mergeProjectsSpotlightSettings(DEFAULT_PROJECTS_SPOTLIGHT_SETTINGS, base.projectsSpotlight),
-      record.projectsSpotlight
-    ),
     projectsShowcase: mergeProjectsShowcaseSettings(
       mergeProjectsShowcaseSettings(DEFAULT_PROJECTS_SHOWCASE_SETTINGS, base.projectsShowcase),
       record.projectsShowcase
     ),
-    projectsEditorial: mergeProjectsEditorialSettings(
-      mergeProjectsEditorialSettings(DEFAULT_PROJECTS_EDITORIAL_SETTINGS, base.projectsEditorial),
-      record.projectsEditorial
-    ),
     projectsLedger: mergeProjectsLedgerSettings(
       mergeProjectsLedgerSettings(DEFAULT_PROJECTS_LEDGER_SETTINGS, base.projectsLedger),
       record.projectsLedger
-    ),
-    projectsFolio: mergeProjectsFolioSettings(
-      mergeProjectsFolioSettings(DEFAULT_PROJECTS_FOLIO_SETTINGS, base.projectsFolio),
-      record.projectsFolio
     ),
     projectsSpec: mergeProjectsSpecSettings(
       mergeProjectsSpecSettings(DEFAULT_PROJECTS_SPEC_SETTINGS, base.projectsSpec),
@@ -5109,6 +5617,18 @@ export function mergeWorkPresentation(
     projectsCase: mergeProjectsCaseSettings(
       mergeProjectsCaseSettings(DEFAULT_PROJECTS_CASE_SETTINGS, base.projectsCase),
       record.projectsCase
+    ),
+    projectsPress: mergeProjectsPressSettings(
+      mergeProjectsPressSettings(DEFAULT_PROJECTS_PRESS_SETTINGS, base.projectsPress),
+      record.projectsPress
+    ),
+    projectsDuotone: mergeProjectsDuotoneSettings(
+      mergeProjectsDuotoneSettings(DEFAULT_PROJECTS_DUOTONE_SETTINGS, base.projectsDuotone),
+      record.projectsDuotone
+    ),
+    projectsCascade: mergeProjectsCascadeSettings(
+      mergeProjectsCascadeSettings(DEFAULT_PROJECTS_CASCADE_SETTINGS, base.projectsCascade),
+      record.projectsCascade
     ),
     itemsPerRow: (() => {
       const resolvedLayout =

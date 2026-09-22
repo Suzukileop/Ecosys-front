@@ -1,0 +1,10 @@
+export { InfoHeaderEditorialHeader } from './InfoHeaderEditorialHeader';
+export { InfoHeaderMarqueeHeader } from './InfoHeaderMarqueeHeader';
+export { InfoHeaderIndexHeader } from './InfoHeaderIndexHeader';
+export { InfoHeaderAccentCountHeader } from './InfoHeaderAccentCountHeader';
+export { InfoHeaderSerifLeadHeader } from './InfoHeaderSerifLeadHeader';
+export { InfoHeaderBillboardHeader } from './InfoHeaderBillboardHeader';
+export { InfoHeaderMastheadHeader } from './InfoHeaderMastheadHeader';
+export { InfoHeaderSplitHeadingHeader } from './InfoHeaderSplitHeadingHeader';
+export { InfoHeaderChapterHeader } from './InfoHeaderChapterHeader';
+export { InfoHeaderCoverHeader } from './InfoHeaderCoverHeader';

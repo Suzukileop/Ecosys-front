@@ -1,106 +1,186 @@
 'use client';
 
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   DEFAULT_WORK_PRESENTATION,
   WORK_HEADER_MARGIN_BOTTOM_REM,
-  WORK_HEADER_TITLE_WEIGHT_CLASS,
-  workHeaderFontClass,
-  workSubtitleColorStyle,
-  workTitleColorStyle,
+  workPaletteTokenColor,
   type PortfolioWorkHeaderTitleSize,
+  type PortfolioWorkHeaderTitleWeight,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
 
-function prefersReducedMotion(): boolean {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
+const DEFAULT_LABEL_TEXT = 'Index';
+const DEFAULT_TITLE_TEXT = 'Selected work';
+const DEFAULT_SUBTITLE_TEXT = 'Selected projects.';
+const COUNT_DURATION_MS = 800;
+const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
-const TITLE_SIZE_CLASS: Record<PortfolioWorkHeaderTitleSize, string> = {
-  sm: 'text-4xl sm:text-5xl lg:text-6xl',
-  md: 'text-5xl sm:text-6xl lg:text-7xl',
-  lg: 'text-6xl sm:text-7xl lg:text-8xl',
-  xl: 'text-7xl sm:text-8xl lg:text-9xl',
+/** Label is a small uppercase kicker — sizes stay compact at every step. */
+const LABEL_SIZE: Record<PortfolioWorkHeaderTitleSize, string> = {
+  sm: '0.6rem',
+  md: '0.68rem',
+  lg: '0.76rem',
+  xl: '0.85rem',
+};
+const LABEL_WEIGHT: Record<PortfolioWorkHeaderTitleWeight, number> = {
+  light: 400,
+  regular: 600,
+  semibold: 700,
+  bold: 800,
+};
+const TITLE_SIZE: Record<PortfolioWorkHeaderTitleSize, string> = {
+  sm: 'clamp(1.9rem, 4.4vw, 3.1rem)',
+  md: 'clamp(2.3rem, 5.3vw, 3.85rem)',
+  lg: 'clamp(2.75rem, 6.2vw, 4.6rem)',
+  xl: 'clamp(3.2rem, 7.1vw, 5.4rem)',
+};
+const TITLE_WEIGHT: Record<PortfolioWorkHeaderTitleWeight, number> = {
+  light: 300,
+  regular: 300,
+  semibold: 500,
+  bold: 650,
+};
+const SUBTITLE_SIZE: Record<PortfolioWorkHeaderTitleSize, string> = {
+  sm: '0.8125rem',
+  md: '0.9375rem',
+  lg: '1.0625rem',
+  xl: '1.1875rem',
+};
+const SUBTITLE_WEIGHT: Record<PortfolioWorkHeaderTitleWeight, number> = {
+  light: 350,
+  regular: 400,
+  semibold: 500,
+  bold: 600,
 };
 
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
+}
+
 /**
- * Index — a large faded numeral beside the title, editorial-catalog style.
- * Numeral scales in first, title line-reveals alongside it.
+ * Index — a ledger-style divider rule up top, a counting numeral (the
+ * project count itself, ticking up from zero) on the left, split from the
+ * title by a vertical rule. Strictly two phases, driven by React state (not
+ * left to CSS/GSAP timing to get out of sync with re-renders): first the
+ * counter runs on its own, and only once it fully finishes does the
+ * title/subtitle on the right fade in — never before, never partially.
  */
 export function WorkIndexHeader({
-  sectionTitle,
-  sectionSubtitle,
   presentation: presentationProp,
   trailing,
+  projectCount,
 }: {
   sectionTitle: string;
   sectionSubtitle?: string;
   presentation?: PortfolioWorkPresentationSettings;
   trailing?: ReactNode;
+  projectCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
   const animationEnabled = presentation.headerAnimationEnabled !== false;
-  const title = sectionTitle.trim();
-  const subtitle = sectionSubtitle?.trim() || '';
-  const titleInk = workTitleColorStyle(presentation.titleColor).color as string;
+  const title = (presentation.indexTitleText || DEFAULT_TITLE_TEXT).trim();
+  const subtitle = (presentation.indexSubtitleText || DEFAULT_SUBTITLE_TEXT).trim();
+  const label = (presentation.indexLabelText || DEFAULT_LABEL_TEXT).trim();
+  const count = Math.max(0, projectCount ?? 0);
+  const countLabelCustom = presentation.indexCountLabelText?.trim();
+  const countLabel = countLabelCustom || (count === 1 ? 'Project' : 'Projects');
+
+  const labelTone = workPaletteTokenColor(presentation.indexLabelColor ?? 'texteFort');
+  const numberTone = workPaletteTokenColor(presentation.indexNumberColor ?? 'principal');
+  const titleTone = workPaletteTokenColor(presentation.indexTitleColor ?? 'texteFort');
+  const subtitleTone = workPaletteTokenColor(presentation.indexSubtitleColor ?? 'texteFort');
+  const labelMuted = `color-mix(in srgb, ${labelTone} 55%, transparent)`;
+  const ruleTone = `color-mix(in srgb, ${titleTone} 16%, transparent)`;
+  const ruleToneSoft = `color-mix(in srgb, ${titleTone} 12%, transparent)`;
+
+  const labelFontSize = LABEL_SIZE[presentation.indexLabelSize ?? 'md'];
+  const labelFontWeight = LABEL_WEIGHT[presentation.indexLabelWeight ?? 'regular'];
+  const titleFontSize = TITLE_SIZE[presentation.indexTitleSize ?? 'md'];
+  const titleFontWeight = TITLE_WEIGHT[presentation.indexTitleWeight ?? 'regular'];
+  const subtitleFontSize = SUBTITLE_SIZE[presentation.indexSubtitleSize ?? 'md'];
+  const subtitleFontWeight = SUBTITLE_WEIGHT[presentation.indexSubtitleWeight ?? 'regular'];
 
   const headerRef = useRef<HTMLElement>(null);
 
-  useLayoutEffect(() => {
+  // `revealed` only ever flips true once the count-up has fully finished —
+  // it's real React state, so a re-render can never silently snap the
+  // title/subtitle back to hidden or show them early.
+  const [leftVisible, setLeftVisible] = useState(!animationEnabled);
+  const [revealed, setRevealed] = useState(!animationEnabled);
+  const [displayCount, setDisplayCount] = useState(animationEnabled ? 0 : count);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const skip = !animationEnabled || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (skip) {
+      // Deferred a tick (not a synchronous setState in the effect body) —
+      // avoids the cascading-render lint warning while still resolving
+      // effectively immediately from the user's perspective.
+      queueMicrotask(() => {
+        setLeftVisible(true);
+        setRevealed(true);
+        setDisplayCount(count);
+      });
+      return;
+    }
+
     const header = headerRef.current;
     if (!header) return;
-    if (prefersReducedMotion() || !animationEnabled) return;
 
-    gsap.registerPlugin(ScrollTrigger);
-    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 90);
+    let cancelled = false;
+    let rafId = 0;
 
-    const ctx = gsap.context(() => {
-      const numeral = header.querySelector<HTMLElement>('.pf-work-index-numeral');
-      const lines = header.querySelectorAll<HTMLElement>('.pf-work-index-title-line');
-      const sub = header.querySelector<HTMLElement>('.pf-work-index-sub');
-
-      const tl = gsap.timeline({ defaults: { overwrite: 'auto' } });
-      if (numeral) {
-        tl.fromTo(
-          numeral,
-          { opacity: 0, scale: 0.85 },
-          { opacity: 1, scale: 1, duration: 0.7, ease: 'power2.out' },
-          0
-        );
-      }
-      if (lines.length) {
-        tl.set(lines, { yPercent: 110 }, 0);
-        tl.to(lines, { yPercent: 0, duration: 0.95, ease: 'power3.out', stagger: 0.06 }, 0.12);
-      }
-      if (sub) {
-        tl.fromTo(sub, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }, 0.38);
-      }
-
-      gsap.fromTo(
-        header,
-        { opacity: 1, y: 0 },
-        {
-          opacity: 0.6,
-          y: -8,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: header,
-            start: 'top 18%',
-            end: 'top -18%',
-            scrub: 0.5,
-            invalidateOnRefresh: true,
-          },
+    const runCountUp = () => {
+      setLeftVisible(true);
+      const start = performance.now();
+      const tick = (now: number) => {
+        if (cancelled) return;
+        const progress = Math.min(1, (now - start) / COUNT_DURATION_MS);
+        setDisplayCount(Math.round(easeOutCubic(progress) * count));
+        if (progress < 1) {
+          rafId = requestAnimationFrame(tick);
+        } else {
+          setRevealed(true);
         }
-      );
-    }, header);
+      };
+      rafId = requestAnimationFrame(tick);
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            runCountUp();
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: '50px' }
+    );
+    observer.observe(header);
 
     return () => {
-      window.clearTimeout(refreshId);
-      ctx.revert();
+      cancelled = true;
+      if (rafId) cancelAnimationFrame(rafId);
+      observer.disconnect();
     };
-  }, [animationEnabled, title, subtitle]);
+  }, [animationEnabled, count]);
+
+  const leftStyle = (delayMs: number): CSSProperties => ({
+    opacity: leftVisible ? 1 : 0,
+    transition: `opacity 0.5s ${EASE} ${delayMs}ms`,
+  });
+  const scaleStyle = (axis: 'X' | 'Y', delayMs: number): CSSProperties => ({
+    transform: leftVisible ? `scale${axis}(1)` : `scale${axis}(0)`,
+    transition: `transform 0.6s ${EASE} ${delayMs}ms`,
+  });
+  const revealStyle = (delayMs: number): CSSProperties => ({
+    opacity: revealed ? 1 : 0,
+    transform: revealed ? 'translateY(0) scale(1)' : 'translateY(18px) scale(0.98)',
+    transition: `opacity 0.7s ${EASE} ${delayMs}ms, transform 0.7s ${EASE} ${delayMs}ms`,
+  });
 
   return (
     <header
@@ -108,27 +188,49 @@ export function WorkIndexHeader({
       className="pf-work-index-header relative w-full text-left"
       style={{ marginBottom: `${WORK_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
     >
-      <div className="flex items-start gap-5 sm:gap-7">
+      <div className="mb-6 flex items-center gap-4 sm:mb-8">
         <span
-          className="pf-work-index-numeral shrink-0 text-5xl font-light leading-none tracking-[-0.03em] sm:text-6xl lg:text-7xl"
-          style={{ color: `color-mix(in srgb, ${titleInk} 16%, transparent)` }}
-          aria-hidden
+          className="shrink-0 uppercase leading-none tracking-[0.28em]"
+          style={{ color: labelMuted, fontSize: labelFontSize, fontWeight: labelFontWeight, ...leftStyle(0) }}
         >
-          01
+          {label}
         </span>
-        <div className="min-w-0 flex-1 pt-1 sm:pt-2">
-          <h2
-            className={`mb-0 ${workHeaderFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${WORK_HEADER_TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} leading-[1.05]`}
-            style={workTitleColorStyle(presentation.titleColor)}
+        <span
+          className="h-px flex-1 origin-left"
+          style={{ backgroundColor: ruleTone, ...scaleStyle('X', 40) }}
+          aria-hidden
+        />
+      </div>
+
+      <div className="flex items-stretch gap-6 sm:gap-10">
+        <div className="flex shrink-0 flex-col items-start">
+          <span
+            className="text-6xl font-light leading-none tracking-[-0.03em] sm:text-7xl lg:text-8xl"
+            style={{ color: numberTone }}
           >
-            <span className="pf-work-index-title-mask block overflow-hidden">
-              <span className="pf-work-index-title-line block">{title}</span>
-            </span>
+            {String(displayCount).padStart(2, '0')}
+          </span>
+          <span
+            className="mt-2 text-[0.68rem] font-medium uppercase tracking-[0.16em]"
+            style={{ color: labelMuted, ...leftStyle(150) }}
+          >
+            {countLabel}
+          </span>
+        </div>
+
+        <span className="w-px origin-top self-stretch" style={{ backgroundColor: ruleToneSoft, ...scaleStyle('Y', 100) }} aria-hidden />
+
+        <div className="min-w-0 flex-1 pt-1">
+          <h2
+            className="mb-0 leading-[1.05]"
+            style={{ color: titleTone, fontSize: titleFontSize, fontWeight: titleFontWeight, ...revealStyle(0) }}
+          >
+            {title}
           </h2>
           {subtitle ? (
             <p
-              className={`pf-work-index-sub mb-0 mt-3 max-w-md ${workHeaderFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
-              style={workSubtitleColorStyle(presentation.subtitleColor)}
+              className="mb-0 mt-3 max-w-md leading-relaxed"
+              style={{ color: subtitleTone, fontSize: subtitleFontSize, fontWeight: subtitleFontWeight, ...revealStyle(120) }}
             >
               {subtitle}
             </p>

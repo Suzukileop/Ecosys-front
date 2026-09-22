@@ -10,10 +10,10 @@ export const PORTFOLIO_HERO_PORTRAIT_IDENTITY_BOTTOM_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'Serré', description: 'Peu d’espace au-dessus du cadre.' },
-  { value: 'medium', label: 'Moyenne', description: 'Espacement intermédiaire.' },
+  { value: 'tight', label: 'Tight', description: 'Peu d’espace au-dessus du cadre.' },
+  { value: 'medium', label: 'Medium', description: 'Espacement intermédiaire.' },
   { value: 'large', label: 'Large', description: 'Espace généreux.' },
-  { value: 'xlarge', label: 'Très grand', description: 'Très grand espace au-dessus du cadre.' },
+  { value: 'xlarge', label: 'Extra large', description: 'Très grand espace au-dessus du cadre.' },
 ];
 
 export const PORTFOLIO_HERO_IDENTITY_INDEX_PORTRAIT_RADIUS_OPTIONS: {
@@ -69,9 +69,9 @@ export const PORTFOLIO_HERO_EDITORIAL_OVERLAP_WIDTH_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'medium', label: 'Moyen', description: 'Largeur intermédiaire.' },
+  { value: 'medium', label: 'Medium', description: 'Largeur intermédiaire.' },
   { value: 'large', label: 'Large', description: 'Cadre généreux.' },
-  { value: 'full', label: 'Plein', description: 'Pleine largeur du hero.' },
+  { value: 'full', label: 'Full', description: 'Pleine largeur du hero.' },
 ];
 
 export const PORTFOLIO_HERO_EDITORIAL_OVERLAP_ALIGN_OPTIONS: {
@@ -79,9 +79,9 @@ export const PORTFOLIO_HERO_EDITORIAL_OVERLAP_ALIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Gauche', description: 'Collé à gauche.' },
-  { value: 'center', label: 'Centre', description: 'Centré horizontalement.' },
-  { value: 'right', label: 'Droite', description: 'Collé à droite.' },
+  { value: 'left', label: 'Left', description: 'Collé à gauche.' },
+  { value: 'center', label: 'Center', description: 'Centré horizontalement.' },
+  { value: 'right', label: 'Right', description: 'Collé à droite.' },
 ];
 
 export const PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS: {
@@ -107,6 +107,7 @@ export const PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS: {
  */
 
 export type PortfolioHeroBannerDesign =
+  | 'cinematic-reveal'
   | 'swiss-editorial'
   | 'portrait-identity'
   | 'editorial-rail'
@@ -131,6 +132,12 @@ export const PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
+  {
+    value: 'cinematic-reveal',
+    label: 'Cinematic reveal',
+    description:
+      'Scène plein écran premium : halo qui suit le curseur, nom en révélation kinétique lettre par lettre, portrait avec tilt 3D et anneau animé, bandeau défilant en bas.',
+  },
   {
     value: 'swiss-editorial',
     label: 'Swiss editorial',
@@ -219,6 +226,7 @@ export const PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS: {
 
 export function isPortfolioHeroBannerDesign(value: unknown): value is PortfolioHeroBannerDesign {
   return (
+    value === 'cinematic-reveal' ||
     value === 'swiss-editorial' ||
     value === 'portrait-identity' ||
     value === 'editorial-rail' ||
@@ -297,6 +305,15 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
   heroImageGrayscale?: boolean;
 } {
   switch (design) {
+    case 'cinematic-reveal':
+      return {
+        heroBannerDesign: design,
+        showAvailabilityBadge: true,
+        showTools: false,
+        showContactCta: true,
+        heroEditorialRailSelectedTools: [],
+        heroImageGrayscale: false,
+      };
     case 'swiss-editorial':
       return {
         heroBannerDesign: design,

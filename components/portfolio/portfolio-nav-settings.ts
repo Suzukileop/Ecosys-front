@@ -1019,7 +1019,7 @@ export function portfolioNavItemGapClass(itemGap: PortfolioNavItemGap, vertical:
   return map[itemGap];
 }
 
-/** Nav · logo · social — slightly roomier horizontal link spacing. */
+/** Split menu (center-logo-split) — slightly roomier horizontal link spacing. */
 export function portfolioNavTriZoneItemGapClass(
   itemGap: PortfolioNavItemGap,
   vertical: boolean
@@ -1724,11 +1724,7 @@ const NAV_HOVER_DOT_BELOW =
 const NAV_HOVER_DOT_LEFT =
   'pointer-events-none absolute left-0 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full opacity-0 transition-opacity duration-320 ease-out group-hover:opacity-100 group-focus-visible:opacity-100';
 
-type PortfolioNavLayoutHoverDesign =
-  | 'editorial-bar'
-  | 'floating-pill'
-  | 'nav-logo-social'
-  | 'center-logo-split';
+type PortfolioNavLayoutHoverDesign = 'editorial-bar' | 'floating-pill' | 'center-logo-split';
 
 function portfolioNavActiveIndicatorHoverParts(
   activeStyle: PortfolioNavActiveStyle,
@@ -1837,9 +1833,6 @@ function portfolioNavIndicatorHoverShellClass(
           ? `portfolio-nav-center-split-hover-tone portfolio-nav-center-split-hover-tone--left ${NAV_EDITORIAL_HOVER_EASE}`
           : `portfolio-nav-center-split-hover-tone portfolio-nav-center-split-hover-tone--right ${NAV_EDITORIAL_HOVER_EASE}`;
       }
-      if (design === 'nav-logo-social' && activeStyle === 'dot') {
-        return PORTFOLIO_NAV_TRI_ZONE_INTERACTION.menu;
-      }
       return '';
   }
 }
@@ -1938,14 +1931,6 @@ function portfolioNavLayoutMenuHoverPresentation(params: {
   };
 }
 
-/** Tri-zone (nav-logo-social) — social-forward hover shells for menu, brand, icons, and CTA. */
-export const PORTFOLIO_NAV_TRI_ZONE_INTERACTION = {
-  menu: `portfolio-nav-tri-zone-hover-menu ${NAV_EDITORIAL_HOVER_EASE}`,
-  socialIcon: 'portfolio-nav-tri-zone-hover-social',
-  brand: 'portfolio-nav-tri-zone-hover-brand',
-  cta: 'portfolio-nav-tri-zone-hover-cta',
-} as const;
-
 /** Editorial bar — shared interactive shells for menu, CTA, brand, and icon controls. */
 export const PORTFOLIO_NAV_EDITORIAL_INTERACTION = {
   menuLine: `portfolio-nav-editorial-hover-line ${NAV_EDITORIAL_HOVER_EASE}`,
@@ -1954,15 +1939,6 @@ export const PORTFOLIO_NAV_EDITORIAL_INTERACTION = {
   brand: 'portfolio-nav-editorial-brand-hover',
   icon: 'portfolio-nav-editorial-icon-hover',
   ctaIcon: 'portfolio-nav-editorial-cta-icon shrink-0',
-} as const;
-
-/** Logo-left nav + contact — utilitarian bar interactive shells. */
-export const PORTFOLIO_NAV_LOGO_LEFT_INTERACTION = {
-  menuLine: `portfolio-nav-logo-left-hover-line ${NAV_EDITORIAL_HOVER_EASE}`,
-  cta: 'portfolio-nav-logo-left-cta-hover',
-  brand: 'portfolio-nav-logo-left-brand-hover',
-  icon: 'portfolio-nav-logo-left-icon-hover',
-  ctaIcon: 'portfolio-nav-logo-left-cta-icon shrink-0',
 } as const;
 
 /** Center-logo-split hero bar — directional nudge + inner-edge underline toward logo. */
@@ -2012,51 +1988,6 @@ export function portfolioNavFloatingPillItemHoverPresentation(params: {
 }
 
 /**
- * Logo-left-nav-contact menu hover — accent tint + left-growing underline, no inline opacity.
- */
-export function portfolioNavLogoLeftNavContactItemHoverPresentation(params: {
-  active: boolean;
-  contentMode: PortfolioNavContentMode;
-}): PortfolioNavItemHoverPresentation {
-  const { active, contentMode } = params;
-
-  if (active) {
-    return {
-      shellClass: 'group relative',
-      iconClass: 'inline-flex',
-      textClass: '',
-      showHoverDot: false,
-      hoverDotClass: '',
-    };
-  }
-
-  const colorHoverEase = `transition-[color] ${NAV_EDITORIAL_HOVER_EASE}`;
-
-  if (contentMode === 'icons') {
-    return {
-      shellClass: [
-        'group relative border-0 bg-transparent',
-        PORTFOLIO_NAV_LOGO_LEFT_INTERACTION.icon,
-      ].join(' '),
-      iconClass: `inline-flex [color:var(--nav-item-icon)] group-hover:[color:var(--nav-item-hover-icon)] ${colorHoverEase}`,
-      textClass: '',
-      showHoverDot: false,
-      hoverDotClass: '',
-    };
-  }
-
-  return {
-    shellClass: ['group relative border-0 bg-transparent', PORTFOLIO_NAV_LOGO_LEFT_INTERACTION.menuLine].join(
-      ' '
-    ),
-    iconClass: `inline-flex [color:var(--nav-item-icon)] group-hover:[color:var(--nav-item-hover-icon)] ${colorHoverEase}`,
-    textClass: `[color:var(--nav-item-text)] group-hover:[color:var(--nav-item-hover-text)] ${colorHoverEase}`,
-    showHoverDot: false,
-    hoverDotClass: '',
-  };
-}
-
-/**
  * Center-logo-split menu hover — follows the active indicator style.
  */
 export function portfolioNavCenterLogoSplitItemHoverPresentation(params: {
@@ -2068,20 +1999,6 @@ export function portfolioNavCenterLogoSplitItemHoverPresentation(params: {
   return portfolioNavLayoutMenuHoverPresentation({
     ...params,
     design: 'center-logo-split',
-  });
-}
-
-/**
- * Tri-zone menu hover — follows the active indicator style.
- */
-export function portfolioNavTriZoneItemHoverPresentation(params: {
-  active: boolean;
-  activeStyle: PortfolioNavActiveStyle;
-  contentMode: PortfolioNavContentMode;
-}): PortfolioNavItemHoverPresentation {
-  return portfolioNavLayoutMenuHoverPresentation({
-    ...params,
-    design: 'nav-logo-social',
   });
 }
 

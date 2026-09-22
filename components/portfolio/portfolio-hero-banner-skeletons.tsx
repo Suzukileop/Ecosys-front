@@ -1,8 +1,17 @@
 import type { ReactNode } from 'react';
 import {
   DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN,
+  resolveHeroCurrentlyLabel,
+  resolveHeroSignatureWord,
+  resolveHeroSpecializedInLabel,
   type PortfolioHeroBannerDesign,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
+import {
+  DEFAULT_HERO_PALETTE,
+  mergeHeroPalette,
+  resolveHeroPaletteColor,
+} from '@/components/portfolio/portfolio-hero-palette-settings';
+import type { PortfolioHeroSectionSettings } from '@/components/portfolio/portfolio-settings-types';
 
 function Bone({ className = '' }: { className?: string }) {
   return <div className={`animate-pulse rounded-md bg-neutral-200 ${className}`.trim()} />;
@@ -12,7 +21,7 @@ const HERO_SHELL =
   'relative isolate flex min-h-[100dvh] min-h-screen w-full flex-col overflow-x-clip bg-white px-5 pb-16 pt-20 sm:px-10 md:px-16 lg:px-20 xl:px-40';
 
 const HERO_SHELL_PREVIEW =
-  'relative isolate min-h-[5.5rem] overflow-hidden bg-white px-2 pb-2 pt-2.5';
+  'relative isolate flex h-full flex-col justify-center overflow-hidden bg-white px-2 pb-2 pt-2.5';
 
 function CirclePortrait({ className = '' }: { className?: string }) {
   return <Bone className={`aspect-square rounded-full bg-neutral-300 ${className}`.trim()} />;
@@ -25,6 +34,21 @@ function shellClass(preview?: boolean) {
 }
 
 function SwissEditorialHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={`${shellClass(true)} bg-neutral-50`} aria-hidden>
+        <div className="relative mx-auto flex w-full items-start gap-2">
+          <div className="min-w-0 flex-1 space-y-2">
+            <Bone className="h-4 w-full rounded-sm" />
+            <Bone className="h-4 w-[65%] rounded-sm" />
+          </div>
+          <div className="w-14 shrink-0 overflow-hidden rounded-[0.4rem_42%_0.55rem_28%] bg-neutral-100">
+            <Bone className="aspect-[3/4] w-full rounded-none bg-neutral-300" />
+          </div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className={`${shellClass(preview)} bg-neutral-50`} aria-hidden>
       <div
@@ -70,6 +94,22 @@ function SwissEditorialHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps =
 }
 
 function PortraitIdentityHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={shellClass(true)} aria-hidden>
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-2">
+          <Bone className="h-2.5 w-[55%]" />
+          <div className="w-full border-t border-neutral-200" />
+          <div className="flex items-center gap-2">
+            <div className="w-14 max-w-[3.5rem] shrink-0 overflow-hidden rounded-none bg-neutral-100 ring-1 ring-neutral-200/80">
+              <Bone className="aspect-[4/5] w-full rounded-none bg-neutral-300" />
+            </div>
+            <Bone className="h-5 w-[60%]" />
+          </div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className={shellClass(preview)} aria-hidden>
       <div
@@ -156,6 +196,21 @@ function PortraitIdentityHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps
 }
 
 function EditorialRailHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={shellClass(true)} aria-hidden>
+        <div className="mx-auto grid min-h-0 max-w-6xl grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] items-stretch gap-x-2">
+          <div className="flex min-h-0 flex-col justify-center gap-1.5">
+            <Bone className="h-4 w-[92%]" />
+            <Bone className="h-4 w-[78%]" />
+          </div>
+          <div className="relative ml-auto aspect-[3/4] h-full max-h-full w-full overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200/80">
+            <Bone className="absolute inset-0 rounded-none bg-neutral-300" />
+          </div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className={shellClass(preview)} aria-hidden>
       <div
@@ -212,6 +267,16 @@ function EditorialRailHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = 
 }
 
 function StatementCtaHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={shellClass(true)} aria-hidden>
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-2">
+          <CirclePortrait className="w-[min(100%,3rem)]" />
+          <Bone className="h-2 w-[60%]" />
+        </div>
+      </section>
+    );
+  }
   return (
     <section className={shellClass(preview)} aria-hidden>
       <div
@@ -278,6 +343,19 @@ function StatementCtaHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {
 }
 
 function PortraitBalanceHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={shellClass(true)} aria-hidden>
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] items-stretch gap-2">
+          <div className="flex flex-col justify-center gap-1.5">
+            <Bone className="h-4 w-[85%]" />
+            <Bone className="h-4 w-[65%]" />
+          </div>
+          <Bone className="aspect-[5/6] h-full w-full rounded-none bg-neutral-300" />
+        </div>
+      </section>
+    );
+  }
   return (
     <section className={shellClass(preview)} aria-hidden>
       <div
@@ -342,6 +420,21 @@ function PortraitBalanceHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps 
 }
 
 function LeftPortraitHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={shellClass(true)} aria-hidden>
+        <div className="mx-auto grid max-w-6xl grid-cols-[minmax(2.25rem,38%)_minmax(0,1fr)] items-stretch gap-2">
+          <div className="overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200/80">
+            <Bone className="aspect-[3/4] h-full w-full rounded-2xl bg-neutral-300" />
+          </div>
+          <div className="flex flex-col justify-center gap-1.5">
+            <Bone className="h-2.5 w-[85%]" />
+            <Bone className="h-2.5 w-[60%]" />
+          </div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className={shellClass(preview)} aria-hidden>
       <div
@@ -403,6 +496,19 @@ function LeftPortraitHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {
 }
 
 function CirclePortraitHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={shellClass(true)} aria-hidden>
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-center gap-3">
+          <CirclePortrait className="h-10 w-10 max-w-none shrink-0" />
+          <div className="flex flex-col gap-1.5">
+            <Bone className="h-2.5 w-20" />
+            <Bone className="h-2.5 w-14" />
+          </div>
+        </div>
+      </section>
+    );
+  }
   /* Default: title-bottom — upper 2-col centered; bottom title with rules */
   return (
     <section className={shellClass(preview)} aria-hidden>
@@ -484,6 +590,23 @@ function CirclePortraitHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps =
 }
 
 function ExperienceSplitHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={shellClass(true)} aria-hidden>
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-2">
+          <div className="flex flex-1 flex-col gap-1.5">
+            <Bone className="h-3 w-[85%]" />
+            <Bone className="h-3 w-[60%]" />
+          </div>
+          <div className="h-10 w-px shrink-0 bg-neutral-300" />
+          <div className="flex flex-1 flex-col gap-1.5">
+            <Bone className="h-2 w-[70%]" />
+            <Bone className="h-2 w-[50%]" />
+          </div>
+        </div>
+      </section>
+    );
+  }
   /* Default: bio-right — L-frame copy left; portrait + years/bio aside right */
   return (
     <section className={`${shellClass(preview)}${preview ? '' : ' justify-center'}`} aria-hidden>
@@ -564,6 +687,19 @@ function ExperienceSplitHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps 
 }
 
 function EditorialOverlapHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={`${shellClass(true)} overflow-hidden`} aria-hidden>
+        <div className="relative mx-auto h-full w-full max-w-6xl">
+          <Bone className="absolute bottom-0 right-0 aspect-[16/10] w-[72%] rounded-2xl bg-neutral-300" />
+          <div className="relative z-[1] space-y-1.5">
+            <Bone className="h-3 w-[55%]" />
+            <Bone className="h-3 w-[42%]" />
+          </div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className={shellClass(preview)} aria-hidden>
       <div
@@ -595,6 +731,19 @@ function EditorialOverlapHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps
 }
 
 function SelectedWorksHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={shellClass(true)} aria-hidden>
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-2">
+          <div className="grid grid-cols-2 items-start gap-2">
+            <Bone className="h-3 w-[80%]" />
+            <Bone className="h-1.5 w-[85%]" />
+          </div>
+          <Bone className="aspect-[4/5] w-[32%] rounded-2xl bg-neutral-300" />
+        </div>
+      </section>
+    );
+  }
   return (
     <section className={shellClass(preview)} aria-hidden>
       <div
@@ -636,6 +785,17 @@ function SelectedWorksHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = 
 }
 
 function IdentityIndexHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={shellClass(true)} aria-hidden>
+        <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-1.5">
+          <Bone className="h-4 w-[55%]" />
+          <div className="h-px w-full bg-neutral-200" />
+          <Bone className="h-2 w-[35%]" />
+        </div>
+      </section>
+    );
+  }
   return (
     <section className={shellClass(preview)} aria-hidden>
       <div
@@ -686,6 +846,19 @@ function IdentityIndexHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = 
 }
 
 function StudioSplitHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={shellClass(true)} aria-hidden>
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-1.5">
+          <div className="grid grid-cols-2 gap-2 bg-neutral-900 p-1.5">
+            <Bone className="h-3 w-[80%] bg-neutral-400" />
+            <Bone className="h-1.5 w-[85%] bg-neutral-500" />
+          </div>
+          <Bone className="-mt-2 aspect-[16/9] w-full rounded-lg bg-neutral-300" />
+        </div>
+      </section>
+    );
+  }
   return (
     <section className={shellClass(preview)} aria-hidden>
       <div
@@ -768,6 +941,19 @@ function StudioSplitHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}
 }
 
 function WorkDuoHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={shellClass(true)} aria-hidden>
+        <div className="mx-auto grid max-w-6xl grid-cols-2 items-center gap-2">
+          <div className="flex flex-col gap-1.5">
+            <Bone className="h-3 w-[85%]" />
+            <Bone className="h-3 w-[65%]" />
+          </div>
+          <Bone className="aspect-[3/4] w-full rounded-2xl bg-neutral-300" />
+        </div>
+      </section>
+    );
+  }
   return (
     <section className={shellClass(preview)} aria-hidden>
       <div
@@ -823,6 +1009,19 @@ function WorkDuoHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
 }
 
 function BowlIntroHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={`${shellClass(true)} overflow-hidden`} aria-hidden>
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-2">
+          <Bone className="aspect-[3/4] w-[28%] rounded-[1.2rem] bg-neutral-300" />
+          <div className="flex flex-1 flex-col gap-1.5">
+            <Bone className="h-4 w-[85%] bg-neutral-300" />
+            <Bone className="h-4 w-[65%] bg-neutral-300" />
+          </div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className={`${shellClass(preview)} overflow-hidden`} aria-hidden>
       {!preview ? (
@@ -887,10 +1086,53 @@ function BowlIntroHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) 
   );
 }
 
+function CinematicRevealHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className={`${shellClass(true)} overflow-hidden bg-neutral-900`} aria-hidden>
+        <div className="relative mx-auto h-full w-full">
+          <div className="absolute inset-x-1 top-1/2 h-6 -translate-y-1/2 rounded-sm border-2 border-neutral-700" />
+          <div className="absolute right-0.5 top-0.5 aspect-[4/5] w-[26%] rounded-lg bg-neutral-600" />
+          <div className="absolute bottom-0.5 left-0.5 h-2.5 w-[30%] rounded-sm bg-neutral-500" />
+          <div className="absolute bottom-0.5 right-0.5 h-2.5 w-[24%] rounded-sm bg-neutral-800" />
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section className={`${shellClass(preview)} overflow-hidden bg-neutral-900`} aria-hidden>
+      <div className="relative z-[1] mx-auto flex h-full max-w-6xl flex-1 flex-col gap-6">
+        <Bone className="h-7 w-40 self-start rounded-full bg-neutral-700" />
+        <div className="relative flex-1">
+          <div
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+            aria-hidden
+          >
+            <div className="h-20 w-[80%] rounded-md border-4 border-neutral-800 sm:h-28 md:h-36" />
+          </div>
+          <div className="absolute right-0 top-0 aspect-[4/5] w-[24%] max-w-[14rem] overflow-hidden rounded-2xl bg-neutral-600" />
+          <div className="absolute bottom-0 left-0 max-w-[14rem] space-y-3">
+            <Bone className="h-2 w-24 bg-neutral-700" />
+            <Bone className="h-3 w-28 rounded-sm bg-neutral-500" />
+            <Bone className="h-3 w-24 rounded-sm bg-neutral-500" />
+          </div>
+          <Bone className="absolute bottom-0 right-0 h-10 w-40 max-w-[45%] bg-neutral-800" />
+        </div>
+        <div className="mt-auto flex items-center gap-6 overflow-hidden border-t border-neutral-800 pt-5">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Bone key={index} className="h-2.5 w-20 shrink-0 bg-neutral-700" />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const HERO_BANNER_SKELETONS: Record<
   PortfolioHeroBannerDesign,
   (props: HeroBannerSkeletonProps) => ReactNode
 > = {
+  'cinematic-reveal': CinematicRevealHeroBannerSkeleton,
   'swiss-editorial': SwissEditorialHeroBannerSkeleton,
   'portrait-identity': PortraitIdentityHeroBannerSkeleton,
   'editorial-rail': EditorialRailHeroBannerSkeleton,
@@ -918,11 +1160,769 @@ export function PortfolioHeroBannerSkeleton({
   return <Render preview={preview} />;
 }
 
-/** Mini wireframe for Hero → Banner design picker. */
-export function HeroBannerDesignPreview({ design }: { design: PortfolioHeroBannerDesign }) {
+const PREVIEW_SWISS_SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
+/** Generic filler — same Lorem ipsum convention as the real Swiss editorial banner's own
+ *  empty-state fallback, just short enough for the card. */
+const PREVIEW_SAMPLE_STATEMENT = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.';
+
+/** Shared palette lookup for every "real content at scale" banner preview card. */
+type PreviewPalette = {
+  fond: string;
+  ink: string;
+  muted: string;
+  principal: string;
+  neutre: string;
+  bordure: string;
+};
+
+function previewPalette(hero: PortfolioHeroSectionSettings): PreviewPalette {
+  const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, hero.palette);
+  return {
+    fond: resolveHeroPaletteColor(palette, 'fond'),
+    ink: resolveHeroPaletteColor(palette, 'texteFort'),
+    muted: resolveHeroPaletteColor(palette, 'texteMuted'),
+    principal: resolveHeroPaletteColor(palette, 'principal'),
+    neutre: resolveHeroPaletteColor(palette, 'neutre'),
+    bordure: resolveHeroPaletteColor(palette, 'bordure'),
+  };
+}
+
+const PREVIEW_LOREM_WORDS =
+  'Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud'.split(
+    ' '
+  );
+
+/** A short, deterministic Lorem ipsum slice — real generic filler, never fabricated identity. */
+function previewLorem(count: number, start = 0): string {
+  return PREVIEW_LOREM_WORDS.slice(start, start + count).join(' ');
+}
+
+/** Square card shell every banner preview renders into — sized via container query units
+ *  so each design's typography scales with the card's real rendered width, not the viewport. */
+function PreviewCardShell({ fond, children }: { fond: string; children: ReactNode }) {
   return (
     <div
-      className="overflow-hidden rounded-xl border border-neutral-200/80 bg-white"
+      className="relative aspect-square overflow-hidden rounded-xl border border-neutral-200/80"
+      style={{ backgroundColor: fond, containerType: 'inline-size' }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function PreviewText({
+  children,
+  color,
+  size,
+  weight = 400,
+  clamp,
+  italic = false,
+  uppercase = false,
+  tracking,
+  fontFamily,
+  className = '',
+}: {
+  children: ReactNode;
+  color: string;
+  size: string;
+  weight?: number;
+  clamp?: number;
+  italic?: boolean;
+  uppercase?: boolean;
+  tracking?: string;
+  fontFamily?: string;
+  className?: string;
+}) {
+  return (
+    <p
+      className={`m-0 min-w-0 ${className}`}
+      style={{
+        color,
+        fontSize: size,
+        fontWeight: weight,
+        lineHeight: 1.3,
+        fontStyle: italic ? 'italic' : undefined,
+        textTransform: uppercase ? 'uppercase' : undefined,
+        letterSpacing: tracking,
+        fontFamily,
+        // A single long Lorem ipsum word (e.g. "consectetur") can't wrap on its own —
+        // without this it overflows past a narrow flex/grid column instead of clipping.
+        overflowWrap: 'anywhere',
+        ...(clamp
+          ? {
+              display: '-webkit-box',
+              WebkitLineClamp: clamp,
+              WebkitBoxOrient: 'vertical' as const,
+              overflow: 'hidden',
+            }
+          : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }),
+      }}
+    >
+      {children}
+    </p>
+  );
+}
+
+function PreviewDot({ color, size = '1.2em' }: { color: string; size?: string }) {
+  return (
+    <span
+      className="inline-block shrink-0 rounded-full"
+      style={{ width: size, height: size, backgroundColor: color }}
+    />
+  );
+}
+
+function PreviewBox({
+  bg,
+  radius = '0px',
+  aspect,
+  width,
+  height,
+  className = '',
+  ring,
+}: {
+  bg: string;
+  radius?: string;
+  aspect?: string;
+  width?: string;
+  height?: string;
+  className?: string;
+  ring?: string;
+}) {
+  return (
+    <div
+      className={`shrink-0 ${className}`}
+      style={{
+        backgroundColor: bg,
+        borderRadius: radius,
+        aspectRatio: aspect,
+        width,
+        height,
+        boxShadow: ring ? `inset 0 0 0 1px ${ring}` : undefined,
+      }}
+    />
+  );
+}
+
+function PreviewPill({
+  children,
+  color,
+  border,
+  bg,
+  size = '4.5cqw',
+}: {
+  children: ReactNode;
+  color: string;
+  border?: string;
+  bg?: string;
+  size?: string;
+}) {
+  return (
+    <span
+      className="inline-block shrink-0 whitespace-nowrap rounded-full px-[8%] py-[4%]"
+      style={{
+        color,
+        backgroundColor: bg,
+        border: border ? `1px solid ${border}` : undefined,
+        fontSize: size,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * "Real content at scale" thumbnail for Swiss editorial — reuses the design's actual
+ * typography, proportions and configured labels/palette instead of an abstract skeleton,
+ * abbreviated (one short statement, truncated wordmark) to fit a tiny square card.
+ */
+function SwissEditorialContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, hero.palette);
+  const fond = resolveHeroPaletteColor(palette, 'fond');
+  const ink = resolveHeroPaletteColor(palette, 'texteFort');
+  const muted = resolveHeroPaletteColor(palette, 'texteMuted');
+  const principal = resolveHeroPaletteColor(palette, 'principal');
+  const neutre = resolveHeroPaletteColor(palette, 'neutre');
+
+  // Generic Lorem ipsum filler when there's no custom signature word — matches the real
+  // Swiss editorial banner's own fallback ('LOREM') for a creator with no name set.
+  const signature = resolveHeroSignatureWord(hero, '').slice(0, 8);
+  const currentlyLabel = resolveHeroCurrentlyLabel(hero);
+  const specializedLabel = resolveHeroSpecializedInLabel(hero);
+
+  return (
+    <div
+      className="relative aspect-square overflow-hidden rounded-xl border border-neutral-200/80"
+      style={{ backgroundColor: fond, containerType: 'inline-size' }}
+    >
+      <div className="flex h-full w-full flex-col justify-between p-[7%]">
+        <div className="flex items-start justify-between gap-[4%]">
+          <p
+            className="m-0 flex-1 overflow-hidden italic"
+            style={{
+              color: ink,
+              fontFamily: PREVIEW_SWISS_SERIF,
+              fontSize: '9.5cqw',
+              lineHeight: 1.22,
+              opacity: 0.92,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
+            {PREVIEW_SAMPLE_STATEMENT}
+          </p>
+          <div
+            className="shrink-0"
+            style={{
+              width: '24%',
+              aspectRatio: '3 / 4',
+              backgroundColor: neutre,
+              borderRadius: '18% 42% 22% 30%',
+            }}
+          />
+        </div>
+
+        <div className="flex items-center gap-[3%]" style={{ fontSize: '5.4cqw' }}>
+          <span
+            className="inline-block shrink-0 rounded-full"
+            style={{ width: '1.3em', height: '1.3em', backgroundColor: principal }}
+          />
+          <span
+            className="truncate uppercase"
+            style={{ color: muted, letterSpacing: '0.07em' }}
+            title={`${currentlyLabel} · ${specializedLabel}`}
+          >
+            {currentlyLabel}
+          </span>
+        </div>
+
+        <p
+          className="m-0 truncate font-normal uppercase"
+          style={{
+            color: ink,
+            fontFamily: PREVIEW_SWISS_SERIF,
+            fontSize: '20cqw',
+            lineHeight: 0.85,
+            letterSpacing: '-0.04em',
+            opacity: 0.96,
+          }}
+        >
+          {signature}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function PortraitIdentityContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="flex h-full w-full flex-col gap-[6%] p-[8%]">
+        <div className="flex items-center gap-[3%]">
+          <PreviewDot color={p.principal} size="1.1em" />
+          <PreviewText color={p.muted} size="5.8cqw" uppercase tracking="0.05em">
+            {previewLorem(3)}
+          </PreviewText>
+        </div>
+        <div style={{ borderTop: `1px solid ${p.bordure}` }} />
+        <div className="flex flex-1 items-center gap-[6%]">
+          <PreviewBox bg={p.neutre} aspect="4 / 5" width="26%" radius="6%" ring={p.bordure} />
+          <PreviewText color={p.ink} size="13cqw" weight={700} clamp={2} className="min-w-0 flex-1">
+            {previewLorem(2, 3)}
+          </PreviewText>
+        </div>
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+function EditorialRailContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="grid h-full w-full grid-cols-[1.6fr_1fr] items-stretch gap-[5%] p-[8%]">
+        <div className="flex min-h-0 flex-col justify-center gap-[5%]">
+          <div className="flex items-center gap-[3%]">
+            <PreviewDot color={p.principal} size="1em" />
+            <PreviewText color={p.muted} size="5.2cqw" uppercase tracking="0.05em">
+              {previewLorem(2)}
+            </PreviewText>
+          </div>
+          <PreviewText color={p.ink} size="10cqw" weight={700} clamp={2}>
+            {previewLorem(4, 2)}
+          </PreviewText>
+          <PreviewText color={p.muted} size="5cqw" clamp={2}>
+            {previewLorem(9, 6)}
+          </PreviewText>
+          <div className="mt-auto flex flex-wrap gap-[4%]">
+            {['UI', 'UX', '3D', 'Web'].map((tag) => (
+              <PreviewPill key={tag} color={p.muted} border={p.bordure} size="4.2cqw">
+                {tag}
+              </PreviewPill>
+            ))}
+          </div>
+        </div>
+        <PreviewBox bg={p.neutre} aspect="3 / 4" radius="8%" ring={p.bordure} className="h-full w-full" />
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+function StatementCtaContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="flex h-full w-full flex-col items-center gap-[5%] p-[8%] text-center">
+        <PreviewText color={p.ink} size="9cqw" weight={700} clamp={1} className="w-full">
+          {previewLorem(4)}
+        </PreviewText>
+        <div className="flex items-center gap-[2%]">
+          <PreviewDot color={p.principal} size="0.9em" />
+          <PreviewText color={p.muted} size="4.8cqw" uppercase tracking="0.05em">
+            {previewLorem(2, 4)}
+          </PreviewText>
+        </div>
+        <PreviewBox bg={p.neutre} radius="50%" width="26%" ring={p.bordure} />
+        <PreviewText color={p.muted} size="5cqw" clamp={2} className="w-full">
+          {previewLorem(10, 6)}
+        </PreviewText>
+        <div className="mt-auto flex w-full items-baseline justify-between gap-[2%]" style={{ borderTop: `1px solid ${p.bordure}`, paddingTop: '5%' }}>
+          {Array.from({ length: 4 }).map((_, index) => (
+            <PreviewText key={index} color={p.muted} size="4cqw">
+              {previewLorem(1, index)}
+            </PreviewText>
+          ))}
+        </div>
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+function PortraitBalanceContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="grid h-full w-full grid-cols-[1.2fr_1fr] gap-[5%] p-[8%]">
+        <div className="flex min-h-0 flex-col justify-between">
+          <div className="flex flex-col gap-[4%]">
+            <PreviewText color={p.muted} size="5cqw" uppercase tracking="0.05em">
+              {previewLorem(2)}
+            </PreviewText>
+            <div style={{ width: '30%', borderTop: `1px solid ${p.bordure}` }} />
+            <PreviewText color={p.ink} size="10cqw" weight={700} clamp={2}>
+              {previewLorem(3, 2)}
+            </PreviewText>
+          </div>
+          <div className="flex flex-col gap-[4%]">
+            <div className="flex flex-wrap gap-[3%]">
+              {['UI', 'UX', '3D'].map((tag) => (
+                <PreviewPill key={tag} color={p.muted} border={p.bordure} size="4cqw">
+                  {tag}
+                </PreviewPill>
+              ))}
+            </div>
+            <div style={{ borderTop: `1px solid ${p.bordure}` }} />
+            <PreviewText color={p.muted} size="4.6cqw" clamp={3}>
+              {previewLorem(12, 8)}
+            </PreviewText>
+          </div>
+        </div>
+        <PreviewBox bg={p.neutre} aspect="5 / 6" radius="0px" ring={p.bordure} className="h-full w-full" />
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+function LeftPortraitContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="grid h-full w-full grid-cols-[38%_1fr] items-stretch gap-[5%] p-[8%]">
+        <PreviewBox bg={p.neutre} radius="8%" ring={p.bordure} className="h-full w-full" />
+        <div className="flex min-h-0 flex-col justify-between">
+          <div className="flex flex-col gap-[4%]">
+            <div className="flex items-center gap-[3%]">
+              <PreviewDot color={p.principal} size="0.9em" />
+              <PreviewText color={p.muted} size="5cqw" uppercase tracking="0.05em">
+                {previewLorem(2)}
+              </PreviewText>
+            </div>
+            <PreviewText color={p.ink} size="10cqw" weight={700} clamp={2}>
+              {previewLorem(3, 2)}
+            </PreviewText>
+          </div>
+          <div className="flex flex-col gap-[5%]">
+            <PreviewText color={p.muted} size="4.6cqw" clamp={3}>
+              {previewLorem(12, 8)}
+            </PreviewText>
+            <PreviewPill color={p.fond} bg={p.ink} size="4.6cqw">
+              {previewLorem(2, 0)}
+            </PreviewPill>
+          </div>
+        </div>
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+function CirclePortraitContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="flex h-full w-full flex-col gap-[4%] p-[8%]">
+        <div className="grid flex-1 grid-cols-2 items-center gap-[5%]">
+          <div className="flex flex-col items-center gap-[5%]">
+            <PreviewBox bg={p.neutre} radius="50%" width="62%" ring={p.bordure} />
+            <div className="flex items-center gap-[2%]">
+              <PreviewDot color={p.principal} size="0.85em" />
+              <PreviewText color={p.muted} size="4.4cqw" uppercase tracking="0.04em">
+                {previewLorem(2)}
+              </PreviewText>
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-[6%] text-center">
+            <PreviewText color={p.muted} size="4.8cqw" clamp={3}>
+              {previewLorem(11, 6)}
+            </PreviewText>
+            <PreviewPill color={p.fond} bg={p.ink} size="4.4cqw">
+              {previewLorem(2, 0)}
+            </PreviewPill>
+          </div>
+        </div>
+        <div className="flex flex-col gap-[3%]">
+          <div style={{ width: '22%', borderTop: `2px solid ${p.muted}` }} />
+          <PreviewText color={p.ink} size="8.5cqw" weight={700}>
+            {previewLorem(2, 2)}
+          </PreviewText>
+          <PreviewText color={p.muted} size="4.6cqw">
+            {previewLorem(3, 4)}
+          </PreviewText>
+        </div>
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+function ExperienceSplitContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="grid h-full w-full grid-cols-[1fr_38%] items-start gap-[5%] p-[8%]">
+        <div
+          className="flex min-w-0 flex-col gap-[6%]"
+          style={{ borderRight: `1px solid ${p.bordure}`, borderBottom: `1px solid ${p.bordure}`, paddingRight: '8%', paddingBottom: '8%' }}
+        >
+          <PreviewText color={p.ink} size="10cqw" weight={700} clamp={2}>
+            {previewLorem(3, 2)}
+          </PreviewText>
+          <PreviewText color={p.muted} size="4.8cqw" uppercase tracking="0.04em">
+            {previewLorem(2)}
+          </PreviewText>
+          <div className="flex gap-[3%]">
+            <PreviewPill color={p.fond} bg={p.ink} size="4.2cqw">
+              {previewLorem(1, 0)}
+            </PreviewPill>
+            <PreviewPill color={p.muted} border={p.bordure} size="4.2cqw">
+              {previewLorem(1, 1)}
+            </PreviewPill>
+          </div>
+        </div>
+        <div className="flex min-w-0 flex-col items-start gap-[4%]">
+          <PreviewBox bg={p.neutre} aspect="3 / 4" width="55%" ring={p.bordure} />
+          <PreviewText color={p.ink} size="9cqw" weight={700} className="w-full">
+            {previewLorem(1, 10)}
+          </PreviewText>
+          <PreviewText color={p.muted} size="4.2cqw" clamp={2} className="w-full">
+            {previewLorem(6, 8)}
+          </PreviewText>
+        </div>
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+function EditorialOverlapContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="relative h-full w-full p-[8%]">
+        <PreviewBox bg={p.neutre} aspect="16 / 10" ring={p.bordure} className="absolute bottom-[8%] right-[8%] w-[68%]" />
+        <div className="relative z-[1] flex max-w-[70%] flex-col gap-[3%]">
+          <PreviewText color={p.ink} size="9cqw" weight={700} clamp={2}>
+            {previewLorem(4, 2)}
+          </PreviewText>
+        </div>
+        <div
+          className="absolute bottom-[8%] left-[8%] z-[1] flex w-[52%] flex-col gap-[3%] p-[6%]"
+          style={{ backgroundColor: p.fond, borderTopRightRadius: '18%' }}
+        >
+          <PreviewText color={p.principal} size="4.4cqw" uppercase tracking="0.05em">
+            {previewLorem(2)}
+          </PreviewText>
+          <PreviewText color={p.muted} size="4.6cqw" clamp={2}>
+            {previewLorem(7, 6)}
+          </PreviewText>
+        </div>
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+function SelectedWorksContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="flex h-full w-full flex-col gap-[5%] p-[8%]">
+        <div className="grid grid-cols-2 items-start gap-[5%]">
+          <PreviewText color={p.ink} size="9.5cqw" weight={700} clamp={2}>
+            {previewLorem(3, 2)}
+          </PreviewText>
+          <PreviewText color={p.muted} size="4.6cqw" clamp={3}>
+            {previewLorem(10, 6)}
+          </PreviewText>
+        </div>
+        <div className="mt-auto flex flex-col gap-[4%]">
+          <PreviewText color={p.muted} size="4.2cqw" uppercase tracking="0.05em" className="text-right">
+            {previewLorem(2, 16)}
+          </PreviewText>
+          <div className="grid grid-cols-3 gap-[4%]">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <PreviewBox key={index} bg={p.neutre} aspect="4 / 5" radius="10%" ring={p.bordure} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+function IdentityIndexContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="flex h-full w-full flex-col items-center gap-[5%] p-[8%] text-center">
+        <div style={{ width: '14%', borderTop: `2px solid ${p.ink}` }} />
+        <PreviewText color={p.ink} size="11cqw" weight={700} clamp={1} className="w-full">
+          {previewLorem(2, 2)}
+        </PreviewText>
+        <div className="grid w-full grid-cols-3 gap-[4%]">
+          {['02', '05', '12'].map((value, index) => (
+            <div key={value} className="flex flex-col items-center gap-[2%]">
+              <PreviewText color={p.muted} size="3.8cqw" uppercase tracking="0.05em">
+                {previewLorem(1, index)}
+              </PreviewText>
+              <PreviewText color={p.ink} size="6cqw" weight={700}>
+                {value}
+              </PreviewText>
+            </div>
+          ))}
+        </div>
+        <div className="w-full" style={{ borderTop: `1px solid ${p.bordure}` }} />
+        <PreviewText color={p.muted} size="4.6cqw" clamp={2} className="mt-auto w-full">
+          {previewLorem(9, 6)}
+        </PreviewText>
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+function StudioSplitContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  // The inverted band is a fixed near-black surface regardless of site mode (same intent
+  // as the abstract skeleton's hardcoded bg-neutral-900) — only the accent dot stays palette-driven.
+  const bandBg = '#171717';
+  const bandInk = '#FAFAFA';
+  const bandMuted = '#A3A3A3';
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="flex h-full w-full flex-col">
+        <div className="grid grid-cols-2 gap-[5%] p-[8%]" style={{ backgroundColor: bandBg }}>
+          <div className="flex flex-col gap-[4%]">
+            <PreviewText color={bandMuted} size="4.4cqw" uppercase tracking="0.05em">
+              {previewLorem(2)}
+            </PreviewText>
+            <PreviewText color={bandInk} size="8.5cqw" weight={700} clamp={2}>
+              {previewLorem(3, 2)}
+            </PreviewText>
+          </div>
+          <div className="flex flex-col gap-[4%]">
+            <PreviewText color={bandMuted} size="4.2cqw" clamp={3}>
+              {previewLorem(9, 8)}
+            </PreviewText>
+            <div className="flex items-center gap-[2%]">
+              <PreviewDot color={p.principal} size="0.8em" />
+              <PreviewText color={bandMuted} size="4cqw" uppercase>
+                {previewLorem(2, 5)}
+              </PreviewText>
+            </div>
+          </div>
+        </div>
+        <div className="relative -mt-[8%] flex-1 px-[4%]">
+          <PreviewBox bg={p.neutre} aspect="16 / 9" radius="6%" ring={p.bordure} className="w-full" />
+        </div>
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+function WorkDuoContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="grid h-full w-full grid-cols-[0.95fr_1.15fr] gap-[5%] p-[8%]">
+        <div className="flex min-h-0 flex-col justify-between">
+          <div className="flex flex-col gap-[4%]">
+            <PreviewText color={p.muted} size="4.6cqw" uppercase tracking="0.05em">
+              {previewLorem(2)}
+            </PreviewText>
+            <PreviewText color={p.ink} size="9.5cqw" weight={700} clamp={2}>
+              {previewLorem(3, 2)}
+            </PreviewText>
+            <PreviewText color={p.muted} size="4.4cqw" clamp={2}>
+              {previewLorem(7, 6)}
+            </PreviewText>
+          </div>
+          <PreviewText color={p.ink} size="12cqw" weight={700}>
+            {previewLorem(1, 14)}
+          </PreviewText>
+        </div>
+        <div className="flex min-h-0 flex-col gap-[4%]">
+          <PreviewText color={p.muted} size="4cqw" uppercase tracking="0.05em" className="text-right">
+            {previewLorem(2, 16)}
+          </PreviewText>
+          <div className="grid flex-1 grid-cols-2 gap-[4%]">
+            <PreviewBox bg={p.neutre} aspect="3 / 4" radius="10%" ring={p.bordure} />
+            <PreviewBox bg={p.neutre} aspect="3 / 4" radius="10%" ring={p.bordure} />
+          </div>
+        </div>
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+function BowlIntroContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="grid h-full w-full grid-cols-[0.9fr_1.1fr] items-center gap-[5%] p-[8%]">
+        <div className="flex flex-col items-center gap-[4%]">
+          <PreviewPill color={p.fond} bg={p.ink} size="4.2cqw">
+            {previewLorem(2, 0)}
+          </PreviewPill>
+          <PreviewBox bg={p.neutre} aspect="3 / 4" radius="24%" ring={p.bordure} className="w-full" />
+        </div>
+        <div className="flex min-w-0 flex-col gap-[4%]">
+          <PreviewText color={p.ink} size="9.5cqw" weight={700} clamp={2}>
+            {previewLorem(3, 2)}
+          </PreviewText>
+          <PreviewText color={p.muted} size="4.6cqw" clamp={2}>
+            {previewLorem(8, 6)}
+          </PreviewText>
+          <div className="flex gap-[3%]">
+            <PreviewPill color={p.fond} bg={p.ink} size="4.2cqw">
+              {previewLorem(1, 0)}
+            </PreviewPill>
+            <PreviewPill color={p.muted} border={p.bordure} size="4.2cqw">
+              {previewLorem(1, 1)}
+            </PreviewPill>
+          </div>
+        </div>
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+function CinematicRevealContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="relative flex h-full w-full flex-col justify-between overflow-hidden p-[8%]">
+        {/* Monumental outlined family-name, layered behind everything else. */}
+        <p
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-1/2 m-0 -translate-y-1/2 text-center font-black uppercase"
+          style={{
+            fontSize: '30cqw',
+            lineHeight: 0.85,
+            letterSpacing: '-0.03em',
+            color: 'transparent',
+            WebkitTextStroke: `1px ${p.bordure}`,
+          }}
+        >
+          {previewLorem(1, 2).slice(0, 6)}
+        </p>
+
+        <div className="relative z-[1] flex items-center gap-[2%]">
+          <PreviewDot color={p.principal} size="0.9em" />
+          <PreviewText color={p.muted} size="4.4cqw" uppercase tracking="0.05em">
+            {previewLorem(2)}
+          </PreviewText>
+        </div>
+
+        <PreviewBox
+          bg={p.neutre}
+          aspect="4 / 5"
+          radius="14%"
+          ring={p.bordure}
+          className="absolute right-[6%] top-[6%] z-[1] w-[26%]"
+        />
+
+        <div className="relative z-[1] mt-auto flex items-end justify-between gap-[4%]">
+          <div className="flex max-w-[42%] flex-col gap-[6%]">
+            <PreviewText color={p.principal} size="3.6cqw" weight={700} uppercase tracking="0.05em">
+              {previewLorem(2, 4)}
+            </PreviewText>
+            <PreviewText color={p.ink} size="3.4cqw" weight={600} uppercase tracking="0.04em">
+              {previewLorem(2, 0)} ↗
+            </PreviewText>
+          </div>
+          <PreviewText color={p.muted} size="3.2cqw" clamp={3} className="max-w-[42%] text-left">
+            {previewLorem(9, 6)}
+          </PreviewText>
+        </div>
+      </div>
+    </PreviewCardShell>
+  );
+}
+
+const HERO_BANNER_CONTENT_PREVIEWS: Partial<
+  Record<PortfolioHeroBannerDesign, (props: { hero: PortfolioHeroSectionSettings }) => ReactNode>
+> = {
+  'cinematic-reveal': CinematicRevealContentPreview,
+  'swiss-editorial': SwissEditorialContentPreview,
+  'portrait-identity': PortraitIdentityContentPreview,
+  'editorial-rail': EditorialRailContentPreview,
+  'statement-cta': StatementCtaContentPreview,
+  'portrait-balance': PortraitBalanceContentPreview,
+  'left-portrait': LeftPortraitContentPreview,
+  'circle-portrait': CirclePortraitContentPreview,
+  'experience-split': ExperienceSplitContentPreview,
+  'editorial-overlap': EditorialOverlapContentPreview,
+  'selected-works': SelectedWorksContentPreview,
+  'identity-index': IdentityIndexContentPreview,
+  'studio-split': StudioSplitContentPreview,
+  'work-duo': WorkDuoContentPreview,
+  'bowl-intro': BowlIntroContentPreview,
+};
+
+/** Mini wireframe for Hero → Banner design picker. */
+export function HeroBannerDesignPreview({
+  design,
+  hero,
+}: {
+  design: PortfolioHeroBannerDesign;
+  hero?: PortfolioHeroSectionSettings;
+}) {
+  const ContentPreview = hero ? HERO_BANNER_CONTENT_PREVIEWS[design] : undefined;
+  if (ContentPreview) {
+    return <ContentPreview hero={hero!} />;
+  }
+  return (
+    <div
+      className="aspect-square overflow-hidden rounded-xl border border-neutral-200/80 bg-white"
       aria-hidden
     >
       <PortfolioHeroBannerSkeleton design={design} preview />

@@ -23,6 +23,8 @@ import {
   portfolioMonochromeSocialBrandClass,
 } from '@/components/portfolio/portfolio-themes';
 import { SOCIAL_PLATFORMS } from '@/types/ecosystem';
+import type { ProfileServiceItem } from '@/types/ecosystem';
+import type { PortfolioServiceItem } from '@/components/portfolio/PortfolioServicesChrome';
 import type { MarketplaceContentItem, MarketplaceCreatorPublicProfile } from '@/types/marketplace';
 import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
 import { PortfolioHeroSection } from '@/components/portfolio/PortfolioHeroSection';
@@ -63,17 +65,14 @@ import {
   ReelExperienceList,
   DuotoneExperienceList,
   GalleryExperienceList,
-  SpotlightExperienceList,
   LoftExperienceList,
   PressExperienceList,
   LegacyExperienceList,
-  AsymmetricExperienceList,
   KineticExperienceList,
   EditorialFaqList,
   EditorialGallerySection,
   EditorialPortfolioFooter,
   EditorialSectionStickyHeader,
-  EditorialServicesCarousel,
   EditorialTeamGallery,
   EditorialSideInfoHeading,
   EditorialSideInfoPanel,
@@ -97,7 +96,6 @@ import {
   ExperienceTableHeader,
 } from '@/components/portfolio/experience-header-designs';
 import {
-  WorkMinimalHeader,
   WorkEditorialHeader,
   WorkMarqueeHeader,
   WorkIndexHeader,
@@ -105,7 +103,40 @@ import {
   WorkSerifLeadHeader,
   WorkBillboardHeader,
   WorkMastheadHeader,
+  WorkSplitHeadingHeader,
 } from '@/components/portfolio/work-header-designs';
+import {
+  StackHeaderEditorialHeader,
+  StackHeaderMarqueeHeader,
+  StackHeaderIndexHeader,
+  StackHeaderAccentCountHeader,
+  StackHeaderSerifLeadHeader,
+  StackHeaderBillboardHeader,
+  StackHeaderMastheadHeader,
+  StackHeaderSplitHeadingHeader,
+} from '@/components/portfolio/stack-portfolio-header-designs';
+import {
+  InfoHeaderEditorialHeader,
+  InfoHeaderMarqueeHeader,
+  InfoHeaderIndexHeader,
+  InfoHeaderAccentCountHeader,
+  InfoHeaderSerifLeadHeader,
+  InfoHeaderBillboardHeader,
+  InfoHeaderMastheadHeader,
+  InfoHeaderSplitHeadingHeader,
+  InfoHeaderChapterHeader,
+  InfoHeaderCoverHeader,
+} from '@/components/portfolio/info-portfolio-header-designs';
+import {
+  ToolsHeaderEditorialHeader,
+  ToolsHeaderMarqueeHeader,
+  ToolsHeaderIndexHeader,
+  ToolsHeaderAccentCountHeader,
+  ToolsHeaderSerifLeadHeader,
+  ToolsHeaderBillboardHeader,
+  ToolsHeaderMastheadHeader,
+  ToolsHeaderSplitHeadingHeader,
+} from '@/components/portfolio/tools-portfolio-header-designs';
 import {
   isProjectsBoardDesign,
   ProjectsBoardGallery,
@@ -141,30 +172,15 @@ import {
   ProjectsCarouselSectionHeader,
 } from '@/components/portfolio/portfolio-work-projects-carousel';
 import {
-  isProjectsSpotlightDesign,
-  ProjectsSpotlightGallery,
-  ProjectsSpotlightSectionHeader,
-} from '@/components/portfolio/portfolio-work-projects-spotlight';
-import {
   isProjectsShowcaseDesign,
   ProjectsShowcaseGallery,
   ProjectsShowcaseSectionHeader,
 } from '@/components/portfolio/portfolio-work-projects-showcase';
 import {
-  isProjectsEditorialDesign,
-  ProjectsEditorialGallery,
-  ProjectsEditorialSectionHeader,
-} from '@/components/portfolio/portfolio-work-projects-editorial';
-import {
   isProjectsLedgerDesign,
   ProjectsLedgerGallery,
   ProjectsLedgerSectionHeader,
 } from '@/components/portfolio/portfolio-work-projects-ledger';
-import {
-  isProjectsFolioDesign,
-  ProjectsFolioGallery,
-  ProjectsFolioSectionHeader,
-} from '@/components/portfolio/portfolio-work-projects-folio';
 import {
   isProjectsSpecDesign,
   ProjectsSpecGallery,
@@ -176,14 +192,33 @@ import {
   ProjectsCaseSectionHeader,
 } from '@/components/portfolio/portfolio-work-projects-case';
 import {
-  galleryHeaderFontClass,
-  galleryHeaderFontStyle,
-  gallerySectionLayoutEmbedsHeader,
+  isProjectsPressDesign,
+  ProjectsPressGallery,
+} from '@/components/portfolio/portfolio-work-projects-press';
+import {
+  isProjectsDuotoneDesign,
+  ProjectsDuotoneGallery,
+} from '@/components/portfolio/portfolio-work-projects-duotone';
+import {
+  isProjectsCascadeDesign,
+  ProjectsCascadeGallery,
+} from '@/components/portfolio/portfolio-work-projects-cascade';
+import {
   gallerySectionLayoutIsAside,
   pickGalleryPresentationSettings,
   resolveGallerySectionSubtitle,
   resolveGallerySectionTitle,
 } from '@/components/portfolio/portfolio-gallery-settings';
+import {
+  GalleryHeaderEditorialHeader,
+  GalleryHeaderMarqueeHeader,
+  GalleryHeaderIndexHeader,
+  GalleryHeaderAccentCountHeader,
+  GalleryHeaderSerifLeadHeader,
+  GalleryHeaderBillboardHeader,
+  GalleryHeaderMastheadHeader,
+  GalleryHeaderSplitHeadingHeader,
+} from '@/components/portfolio/gallery-portfolio-header-designs';
 import { applyGalleryPaletteToSettings } from '@/components/portfolio/portfolio-gallery-palette-settings';
 import { PortfolioMotionItem } from '@/components/portfolio/PortfolioMotionItem';
 
@@ -218,44 +253,100 @@ import {
   resolveServicesSectionSubtitle,
   resolveServicesSectionTitle,
   resolveServicesOrderCtaHref,
-  servicesHeaderFontClass,
-  servicesHeaderFontStyle,
-  servicesSubtitleColorStyle,
-  servicesTitleColorStyle,
 } from '@/components/portfolio/portfolio-services-settings';
 import {
   resolveDistinctBlockSectionSubtitle,
   resolveDistinctBlockSectionTitle,
   resolvePortfolioContentSectionOrder,
-  resolveServicesBlockPresentation,
   servicesUsesDistinctSections,
 } from '@/components/portfolio/portfolio-services-block-settings';
 import {
   pickFaqPresentationSettings,
   resolveFaqSectionSubtitle,
   resolveFaqSectionTitle,
-  faqHeaderFontClass,
-  FAQ_READY_TITLE_CLASS,
-  faqHeaderFontStyle,
   faqListPlacementClass,
   faqListMaxWidthClass,
-  faqSubtitleColorStyle,
-  faqTitleColorStyle,
   faqSectionLayoutIsAside,
-  faqDesignShowsTitleKicker,
-  faqDesignIsSplit,
-  faqDesignIsCtaSplit,
 } from '@/components/portfolio/portfolio-faq-settings';
+import {
+  FaqHeaderEditorialHeader,
+  FaqHeaderMarqueeHeader,
+  FaqHeaderIndexHeader,
+  FaqHeaderAccentCountHeader,
+  FaqHeaderSerifLeadHeader,
+  FaqHeaderBillboardHeader,
+  FaqHeaderMastheadHeader,
+  FaqHeaderSplitHeadingHeader,
+} from '@/components/portfolio/faq-portfolio-header-designs';
+import { FaqKineticSplitDesign } from '@/components/portfolio/portfolio-faq-kinetic-split';
+import { FaqFloatingGalleryDesign } from '@/components/portfolio/portfolio-faq-floating-gallery';
+import { FaqEditorialMasonryDesign } from '@/components/portfolio/portfolio-faq-editorial-masonry';
+import { FaqPrismCardsDesign } from '@/components/portfolio/portfolio-faq-prism-cards';
+import { FaqStarScrollDesign } from '@/components/portfolio/portfolio-faq-star-scroll';
+import { FaqTriGridDesign } from '@/components/portfolio/portfolio-faq-tri-grid';
+import { FaqSplitIndexDesign } from '@/components/portfolio/portfolio-faq-split-index';
+import { FaqCenteredFocusDesign } from '@/components/portfolio/portfolio-faq-centered-focus';
+import { FaqBentoDualDesign } from '@/components/portfolio/portfolio-faq-bento-dual';
 import {
   pickTeamPresentationSettings,
   resolveTeamSectionSubtitle,
   resolveTeamSectionTitle,
-  teamHeaderFontClass,
-  teamHeaderFontStyle,
   teamSectionLayoutIsAside,
-  teamSubtitleColorStyle,
-  teamTitleColorStyle,
 } from '@/components/portfolio/portfolio-team-settings';
+import {
+  TeamHeaderEditorialHeader,
+  TeamHeaderMarqueeHeader,
+  TeamHeaderIndexHeader,
+  TeamHeaderAccentCountHeader,
+  TeamHeaderSerifLeadHeader,
+  TeamHeaderBillboardHeader,
+  TeamHeaderMastheadHeader,
+  TeamHeaderSplitHeadingHeader,
+} from '@/components/portfolio/team-portfolio-header-designs';
+import {
+  FooterHeaderEditorialHeader,
+  FooterHeaderIndexHeader,
+  FooterHeaderSerifLeadHeader,
+  FooterHeaderBillboardHeader,
+  FooterHeaderMastheadHeader,
+  FooterHeaderHeroHeader,
+  FooterHeaderNameHeader,
+  FooterHeaderTimezoneHeader,
+} from '@/components/portfolio/footer-portfolio-header-designs';
+import {
+  ServicesHeaderEditorialHeader,
+  ServicesHeaderMarqueeHeader,
+  ServicesHeaderIndexHeader,
+  ServicesHeaderAccentCountHeader,
+  ServicesHeaderSerifLeadHeader,
+  ServicesHeaderBillboardHeader,
+  ServicesHeaderMastheadHeader,
+  ServicesHeaderSplitHeadingHeader,
+} from '@/components/portfolio/services-portfolio-header-designs';
+import {
+  isServicesShowcaseHeroDesign,
+  ServicesShowcaseHero,
+} from '@/components/portfolio/portfolio-services-design-showcase-hero';
+import {
+  isServicesPricingGridDesign,
+  ServicesPricingGridSection,
+} from '@/components/portfolio/portfolio-services-pricing-grid';
+import {
+  isServicesPricingBentoDesign,
+  ServicesPricingBentoSection,
+} from '@/components/portfolio/portfolio-services-pricing-bento';
+import {
+  isServicesPricingMonolithDesign,
+  ServicesPricingMonolithSection,
+} from '@/components/portfolio/portfolio-services-pricing-monolith';
+import {
+  isServicesPricingAuroraDesign,
+  ServicesPricingAuroraSection,
+} from '@/components/portfolio/portfolio-services-pricing-aurora';
+import {
+  isServicesPricingToggleDesign,
+  ServicesPricingToggleSection,
+} from '@/components/portfolio/portfolio-services-pricing-toggle';
 import {
   pickInfoPresentationSettings,
   resolveInfoSectionSubtitle,
@@ -324,6 +415,7 @@ import {
   contactHeaderFontStyle,
   contactSubtitleColorStyle,
   contactTitleColorStyle,
+  isContactPremiumDesign,
 } from '@/components/portfolio/portfolio-contact-settings';
 import { pickFooterPresentationSettings, portfolioFooterNavClearanceClass } from '@/components/portfolio/portfolio-footer-settings';
 import {
@@ -344,6 +436,7 @@ import {
 import { resolveActivePortfolioPalette } from '@/components/portfolio/portfolio-color-mode';
 import {
   resolveSectionActiveMode,
+  resolveSectionBackgroundIsolation,
   resolveSectionPalette,
 } from '@/components/portfolio/portfolio-section-color-mode';
 import { resolveHeroPaletteColor } from '@/components/portfolio/portfolio-hero-palette-settings';
@@ -703,6 +796,23 @@ function SectionAsideContent({
   );
 }
 
+/**
+ * Every Services pricing design renders off `PortfolioServiceItem` (`tasks: {value}[]`) —
+ * the studio-editor shape — rather than the real public-page shape `ProfileServiceItem`
+ * (`tasks?: string[]`) that `services` actually is here (from `profile.profileServices`).
+ * Converts once at the dispatch call sites below instead of editing each design file.
+ */
+function toPortfolioServiceItems(items: ProfileServiceItem[]): PortfolioServiceItem[] {
+  return items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    basePriceCents: item.basePriceCents,
+    deadline: item.deadline ?? '',
+    tasks: (item.tasks ?? []).map((value) => ({ value })),
+  }));
+}
+
 export function PublicCreatorPortfolioPage({
   creatorId,
   profile,
@@ -823,6 +933,10 @@ export function PublicCreatorPortfolioPage({
     [strengths]
   );
   const services = profile.profileServices ?? [];
+  const availableServices = useMemo(
+    () => services.map((item) => ({ id: item.id, title: item.title })),
+    [services]
+  );
   const faqItems = profile.faqItems ?? [];
   const teamMembers = profile.teamMembers ?? [];
   const galleryItems = profile.galleryItems ?? [];
@@ -923,17 +1037,17 @@ export function PublicCreatorPortfolioPage({
     const meta = {
       availableTools: strengthNames,
       availableWorks: availableHeroWorks.map(({ id, title, imageUrl }) => ({ id, title, imageUrl })),
+      availableServices,
       navSocialLinkOptions,
     };
     window.parent.postMessage(
       { source: PORTFOLIO_STUDIO_PREVIEW_SOURCE, type: 'ready', meta },
       window.location.origin
     );
-  }, [hideOwnerChrome, strengthNames, availableHeroWorks, navSocialLinkOptions]);
+  }, [hideOwnerChrome, strengthNames, availableHeroWorks, availableServices, navSocialLinkOptions]);
 
   const navChromeLinks = useMemo(() => {
     const structuredBar =
-      settings.navigation.navLayoutDesign === 'nav-logo-social' ||
       settings.navigation.navLayoutDesign === 'editorial-bar' ||
       settings.navigation.navLayoutDesign === 'duten-panel' ||
       settings.navigation.navLayoutDesign === 'half-panel-left';
@@ -968,7 +1082,11 @@ export function PublicCreatorPortfolioPage({
   const showTeamSection = hasTeamSection && settings.team.enabled;
   const showGallerySection = hasGallerySection && settings.gallery.enabled;
   const showAboutUsSection = hasAboutUsSection && settings.aboutUs.enabled;
-  const showContactSectionResolved = hasContactSection && settings.contact.enabled;
+  // Contact's Design tab now has 4 real premium designs — but only those 4 (not the 9
+  // legacy card designs, which still have no UI to pick/reconfigure them). Any account
+  // still on a legacy `cardDesign` stays hidden until it's switched to one of the new ones.
+  const showContactSectionResolved =
+    hasContactSection && settings.contact.enabled && isContactPremiumDesign(settings.contact.cardDesign);
   const showToolsSection = strengths.length > 0 && settings.tools.enabled;
   const showStackSection = stackItems.length > 0 && settings.stack.enabled;
   const footerVisibleSectionLinks = {
@@ -1070,8 +1188,21 @@ export function PublicCreatorPortfolioPage({
     [settings.work.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
   );
   const workPresentation = useMemo(
-    () => applyHeroPaletteToWork(pickWorkPresentationSettings(settings.work), workPalette),
+    () =>
+      resolveSectionBackgroundIsolation(
+        applyHeroPaletteToWork(pickWorkPresentationSettings(settings.work), workPalette),
+        settings.work.colorModeOverride,
+        workPalette.fond
+      ),
     [settings.work, workPalette]
+  );
+  const workColorMode = useMemo(
+    () =>
+      resolveSectionActiveMode(
+        settings.work.colorModeOverride,
+        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+      ),
+    [settings.work.colorModeOverride, settings.global.colorMode]
   );
   const workSectionTitle = useMemo(
     () => resolveWorkSectionTitle(settings.work),
@@ -1092,7 +1223,11 @@ export function PublicCreatorPortfolioPage({
   );
   const aboutPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToAbout(pickAboutPresentationSettings(settings.about), aboutPalette),
+      ...resolveSectionBackgroundIsolation(
+        applyHeroPaletteToAbout(pickAboutPresentationSettings(settings.about), aboutPalette),
+        settings.about.colorModeOverride,
+        aboutPalette.fond
+      ),
       activeColorMode: resolveSectionActiveMode(
         settings.about.colorModeOverride,
         (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
@@ -1144,7 +1279,7 @@ export function PublicCreatorPortfolioPage({
             periodRuleFollowPalette: false as const,
           };
     return {
-      ...painted,
+      ...resolveSectionBackgroundIsolation(painted, experienceOverride, experiencePalette.fond),
       ...periodRulePair,
       activeColorMode: mode,
     };
@@ -1173,9 +1308,15 @@ export function PublicCreatorPortfolioPage({
   );
   const galleryPresentation = useMemo(() => {
     const picked = pickGalleryPresentationSettings(settings.gallery);
-    return picked.useHeroPalette === false
-      ? picked
-      : { ...picked, ...applyGalleryPaletteToSettings(picked, galleryPalette) };
+    const painted =
+      picked.useHeroPalette === false
+        ? picked
+        : { ...picked, ...applyGalleryPaletteToSettings(picked, galleryPalette) };
+    return resolveSectionBackgroundIsolation(
+      painted,
+      settings.gallery.colorModeOverride,
+      galleryPalette.fond
+    );
   }, [settings.gallery, galleryPalette]);
   const gallerySectionTitle = useMemo(
     () => resolveGallerySectionTitle(settings.gallery),
@@ -1201,9 +1342,13 @@ export function PublicCreatorPortfolioPage({
   );
   const servicesPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToServices(
-        pickServicesPresentationSettings(settings.services),
-        servicesPalette
+      ...resolveSectionBackgroundIsolation(
+        applyHeroPaletteToServices(
+          pickServicesPresentationSettings(settings.services),
+          servicesPalette
+        ),
+        settings.services.colorModeOverride,
+        servicesPalette.fond
       ),
       activeColorMode: resolveSectionActiveMode(
         settings.services.colorModeOverride,
@@ -1275,8 +1420,24 @@ export function PublicCreatorPortfolioPage({
     [settings.faq.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
   );
   const faqPresentation = useMemo(
-    () => applyHeroPaletteToFaq(pickFaqPresentationSettings(settings.faq), faqPalette),
+    () =>
+      resolveSectionBackgroundIsolation(
+        applyHeroPaletteToFaq(pickFaqPresentationSettings(settings.faq), faqPalette),
+        settings.faq.colorModeOverride,
+        faqPalette.fond
+      ),
     [settings.faq, faqPalette]
+  );
+  // Prism Cards, Star Scroll, Tri Grid, Split Index, Centered Focus and Bento Dual
+  // read this to resolve `[data-pf-faq-mode]` — Kinetic Split, Floating Gallery and
+  // Editorial Masonry track `--pf-palette-fond` directly instead.
+  const faqActiveColorMode = useMemo(
+    () =>
+      resolveSectionActiveMode(
+        settings.faq.colorModeOverride,
+        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+      ),
+    [settings.faq.colorModeOverride, settings.global.colorMode]
   );
   const faqSectionTitle = useMemo(() => resolveFaqSectionTitle(settings.faq), [settings.faq]);
   const faqSectionSubtitle = useMemo(() => resolveFaqSectionSubtitle(settings.faq), [settings.faq]);
@@ -1291,7 +1452,11 @@ export function PublicCreatorPortfolioPage({
   );
   const teamPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToTeam(pickTeamPresentationSettings(settings.team), teamPalette),
+      ...resolveSectionBackgroundIsolation(
+        applyHeroPaletteToTeam(pickTeamPresentationSettings(settings.team), teamPalette),
+        settings.team.colorModeOverride,
+        teamPalette.fond
+      ),
       activeColorMode: resolveSectionActiveMode(
         settings.team.colorModeOverride,
         (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
@@ -1312,7 +1477,11 @@ export function PublicCreatorPortfolioPage({
   );
   const infoPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToInfo(pickInfoPresentationSettings(settings.info), infoPalette),
+      ...resolveSectionBackgroundIsolation(
+        applyHeroPaletteToInfo(pickInfoPresentationSettings(settings.info), infoPalette),
+        settings.info.colorModeOverride,
+        infoPalette.fond
+      ),
       activeColorMode: resolveSectionActiveMode(
         settings.info.colorModeOverride,
         (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
@@ -1320,6 +1489,24 @@ export function PublicCreatorPortfolioPage({
     }),
     [settings.info, settings.global.colorMode, infoPalette]
   );
+  // About · terminal "Always dark" — colors for the terminal shell ONLY, resolved from the
+  // dark global palette regardless of the Info section's own light/dark mode. Everything
+  // outside the terminal (section background, shared header, nav) keeps following the
+  // section's normal mode via infoPresentation above.
+  const infoAboutTerminalDarkColors = useMemo(() => {
+    if (settings.info.design !== 'about-terminal' || settings.info.aboutTerminalAlwaysDark !== true) {
+      return null;
+    }
+    const dark = applyHeroPaletteToInfo(pickInfoPresentationSettings(settings.info), darkGlobalPalette);
+    return {
+      accentColor: dark.accentColor,
+      titleColor: dark.titleColor,
+      subtitleColor: dark.subtitleColor,
+      bodyColor: dark.bodyColor,
+      cardBackgroundColor: dark.cardBackgroundColor,
+      cardBorderColor: dark.cardBorderColor,
+    };
+  }, [settings.info, darkGlobalPalette]);
   const infoSectionTitle = useMemo(() => resolveInfoSectionTitle(settings.info), [settings.info]);
   const infoSectionSubtitle = useMemo(
     () => resolveInfoSectionSubtitle(settings.info),
@@ -1339,7 +1526,11 @@ export function PublicCreatorPortfolioPage({
   );
   const toolsPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToTools(pickToolsPresentationSettings(settings.tools), toolsPalette),
+      ...resolveSectionBackgroundIsolation(
+        applyHeroPaletteToTools(pickToolsPresentationSettings(settings.tools), toolsPalette),
+        settings.tools.colorModeOverride,
+        toolsPalette.fond
+      ),
       activeColorMode: resolveSectionActiveMode(
         settings.tools.colorModeOverride,
         (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
@@ -1365,7 +1556,11 @@ export function PublicCreatorPortfolioPage({
       picked.design === 'brand-cards' || picked.design === 'brand-index';
     return {
       ...picked,
-      ...applyHeroPaletteToStack(picked, stackPalette),
+      ...resolveSectionBackgroundIsolation(
+        applyHeroPaletteToStack(picked, stackPalette),
+        settings.stack.colorModeOverride,
+        stackPalette.fond
+      ),
       activeColorMode: resolveSectionActiveMode(
         settings.stack.colorModeOverride,
         (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
@@ -1402,7 +1597,11 @@ export function PublicCreatorPortfolioPage({
   );
   const aboutUsPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToAboutUs(pickAboutUsPresentationSettings(settings.aboutUs), aboutUsPalette),
+      ...resolveSectionBackgroundIsolation(
+        applyHeroPaletteToAboutUs(pickAboutUsPresentationSettings(settings.aboutUs), aboutUsPalette),
+        settings.aboutUs.colorModeOverride,
+        aboutUsPalette.fond
+      ),
       activeColorMode: resolveSectionActiveMode(
         settings.aboutUs.colorModeOverride,
         (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
@@ -1434,7 +1633,11 @@ export function PublicCreatorPortfolioPage({
   );
   const contactPresentation = useMemo(
     () => ({
-      ...applyHeroPaletteToContact(pickContactPresentationSettings(settings.contact), contactPalette),
+      ...resolveSectionBackgroundIsolation(
+        applyHeroPaletteToContact(pickContactPresentationSettings(settings.contact), contactPalette),
+        settings.contact.colorModeOverride,
+        contactPalette.fond
+      ),
       activeColorMode: resolveSectionActiveMode(
         settings.contact.colorModeOverride,
         (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
@@ -1461,8 +1664,20 @@ export function PublicCreatorPortfolioPage({
   );
   const footerPresentation = useMemo(
     () =>
-      applyHeroPaletteToFooter(pickFooterPresentationSettings(settings.footer), footerPalette),
+      resolveSectionBackgroundIsolation(
+        applyHeroPaletteToFooter(pickFooterPresentationSettings(settings.footer), footerPalette),
+        settings.footer.colorModeOverride,
+        footerPalette.fond
+      ),
     [settings.footer, footerPalette]
+  );
+  const footerColorMode = useMemo(
+    () =>
+      resolveSectionActiveMode(
+        settings.footer.colorModeOverride,
+        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+      ),
+    [settings.footer.colorModeOverride, settings.global.colorMode]
   );
   const footerNavClearanceClass = useMemo(
     () =>
@@ -1577,6 +1792,36 @@ export function PublicCreatorPortfolioPage({
   };
 
   const heroContactHref = isPagesMode ? `#${pagesContactTarget}` : '#footer';
+  // One shared, GSAP-animated header design (Header) mounts above the Footer section,
+  // independent of `footerPresentation.design` (which of Footer's own layouts renders
+  // the content below) — same mechanism/placement convention as Team/Work/Info/etc.
+  const footerHeaderProps = {
+    title: profile.fullName,
+    subtitle: undefined as string | undefined,
+    presentation: footerPresentation,
+    itemCount: uniqueContactLinks.length,
+    ctaHref: resolvedContactEmail ? `mailto:${resolvedContactEmail}` : heroContactHref,
+    locationLabel,
+    timezoneId: profile.timezoneId,
+  };
+  const footerHeaderBlock =
+    footerPresentation.headerDesign === 'index' ? (
+      <FooterHeaderIndexHeader {...footerHeaderProps} />
+    ) : footerPresentation.headerDesign === 'serif-lead' ? (
+      <FooterHeaderSerifLeadHeader {...footerHeaderProps} />
+    ) : footerPresentation.headerDesign === 'billboard' ? (
+      <FooterHeaderBillboardHeader {...footerHeaderProps} />
+    ) : footerPresentation.headerDesign === 'masthead' ? (
+      <FooterHeaderMastheadHeader {...footerHeaderProps} />
+    ) : footerPresentation.headerDesign === 'hero' ? (
+      <FooterHeaderHeroHeader {...footerHeaderProps} />
+    ) : footerPresentation.headerDesign === 'name' ? (
+      <FooterHeaderNameHeader {...footerHeaderProps} />
+    ) : footerPresentation.headerDesign === 'timezone' ? (
+      <FooterHeaderTimezoneHeader {...footerHeaderProps} />
+    ) : (
+      <FooterHeaderEditorialHeader {...footerHeaderProps} />
+    );
   const navContactHref = isPagesMode
     ? `#${pagesContactTarget}`
     : sectionVisibility.contact
@@ -1700,39 +1945,6 @@ export function PublicCreatorPortfolioPage({
       ),
     [settings.global, settings.work.headerAlignment, workPresentation.sectionLayout]
   );
-  const servicesHeaderAlign = useMemo(
-    () => resolveSectionHeaderAlign(settings.global, settings.services.headerAlignment),
-    [settings.global, settings.services.headerAlignment]
-  );
-  const distinctServicesHeaderAlign = useMemo(
-    () =>
-      asideAwareHeaderAlign(
-        settings.services.servicesHeader.sectionLayout,
-        resolveSectionHeaderAlign(
-          settings.global,
-          settings.services.servicesHeader.headerAlignment
-        )
-      ),
-    [
-      settings.global,
-      settings.services.servicesHeader.headerAlignment,
-      settings.services.servicesHeader.sectionLayout,
-    ]
-  );
-  const faqHeaderAlign = useMemo(() => {
-    const layout = settings.faq.sectionLayout ?? 'stacked';
-    if (layout === 'aside-left' || layout === 'aside-right') {
-      return { centered: true, alignRight: false, alwaysCentered: true };
-    }
-    if (settings.faq.headerAlignment === 'right') {
-      return { centered: false, alignRight: true, alwaysCentered: true };
-    }
-    // Two-column (and FAQ center) stay centered even if Global titles are left-aligned.
-    if (settings.faq.headerAlignment !== 'left') {
-      return { centered: true, alignRight: false, alwaysCentered: true };
-    }
-    return resolveSectionHeaderAlign(settings.global, 'left');
-  }, [settings.global, settings.faq.headerAlignment, settings.faq.sectionLayout]);
   const experienceHeaderAlign = useMemo(() => {
     const layout = experiencePresentation.sectionLayout;
     if (layout === 'aside-left' || layout === 'aside-right') {
@@ -1748,19 +1960,6 @@ export function PublicCreatorPortfolioPage({
     const sectionAlign = settings.experience.headerAlignment === 'center' ? 'center' : 'left';
     return resolveSectionHeaderAlign(settings.global, sectionAlign);
   }, [experiencePresentation.sectionLayout, settings.global, settings.experience.headerAlignment]);
-  const teamHeaderAlign = useMemo(() => {
-    const layout = teamPresentation.sectionLayout;
-    if (layout === 'aside-left' || layout === 'aside-right') {
-      return { centered: true, alignRight: false, alwaysCentered: true };
-    }
-    if (teamPresentation.headerAlignment === 'right') {
-      return { centered: false, alignRight: true, alwaysCentered: true };
-    }
-    return resolveSectionHeaderAlign(
-      settings.global,
-      teamPresentation.headerAlignment === 'center' ? 'center' : 'left'
-    );
-  }, [settings.global, teamPresentation.headerAlignment, teamPresentation.sectionLayout]);
   const toolsHeaderAlign = useMemo(() => {
     if (toolsPresentation.headerAlignment === 'right') {
       return { centered: false, alignRight: true, alwaysCentered: true };
@@ -1800,25 +1999,6 @@ export function PublicCreatorPortfolioPage({
       aboutUsPresentation.headerAlignment === 'center' ? 'center' : 'left'
     );
   }, [settings.global, aboutUsPresentation.headerAlignment, aboutUsPresentation.sectionLayout]);
-  const galleryHeaderAlign = useMemo(
-    () =>
-      asideAwareHeaderAlign(
-        gallerySectionLayoutIsAside(galleryPresentation.sectionLayout)
-          ? galleryPresentation.sectionLayout
-          : undefined,
-        resolveSectionHeaderAlign(settings.global, galleryPresentation.headerAlignment)
-      ),
-    [galleryPresentation.headerAlignment, galleryPresentation.sectionLayout, settings.global]
-  );
-  const contactHeaderAlign = useMemo(
-    () =>
-      asideAwareHeaderAlign(
-        contactPresentation.sectionLayout,
-        resolveSectionHeaderAlign(settings.global, settings.contact.headerAlignment)
-      ),
-    [contactPresentation.sectionLayout, settings.global, settings.contact.headerAlignment]
-  );
-
   const workHeaderTypography = useMemo(() => {
     const title = resolveGlobalSectionTitleTypography(
       settings.global,
@@ -1840,51 +2020,6 @@ export function PublicCreatorPortfolioPage({
     );
     return { title, subtitle };
   }, [settings.global, workPresentation, globalTypographyContext]);
-
-  const servicesHeaderTypography = useMemo(() => {
-    const title = resolveGlobalSectionTitleTypography(
-      settings.global,
-      {
-      fontClass: servicesHeaderFontClass(servicesPresentation.titleFont, 'title'),
-      fontStyle: servicesHeaderFontStyle(servicesPresentation.titleFont),
-      colorStyle: servicesTitleColorStyle(servicesPresentation.titleColor),
-      },
-      globalTypographyContext
-    );
-    const subtitle = resolveGlobalSectionSubtitleTypography(
-      settings.global,
-      {
-      fontClass: servicesHeaderFontClass(servicesPresentation.subtitleFont, 'subtitle'),
-      fontStyle: servicesHeaderFontStyle(servicesPresentation.subtitleFont),
-      colorStyle: servicesSubtitleColorStyle(servicesPresentation.subtitleColor),
-      },
-      globalTypographyContext
-    );
-    return { title, subtitle };
-  }, [settings.global, servicesPresentation, globalTypographyContext]);
-
-  const distinctServicesHeaderTypography = useMemo(() => {
-    const header = servicesPresentation.servicesHeader;
-    const title = resolveGlobalSectionTitleTypography(
-      settings.global,
-      {
-      fontClass: servicesHeaderFontClass(header.titleFont, 'title'),
-      fontStyle: servicesHeaderFontStyle(header.titleFont),
-      colorStyle: servicesTitleColorStyle(header.titleColor),
-      },
-      globalTypographyContext
-    );
-    const subtitle = resolveGlobalSectionSubtitleTypography(
-      settings.global,
-      {
-      fontClass: servicesHeaderFontClass(header.subtitleFont, 'subtitle'),
-      fontStyle: servicesHeaderFontStyle(header.subtitleFont),
-      colorStyle: servicesSubtitleColorStyle(header.subtitleColor),
-      },
-      globalTypographyContext
-    );
-    return { title, subtitle };
-  }, [settings.global, servicesPresentation.servicesHeader, globalTypographyContext]);
 
   const experienceHeaderTypography = useMemo(() => {
     const titleClass = [
@@ -1924,28 +2059,6 @@ export function PublicCreatorPortfolioPage({
     );
     return { title, subtitle };
   }, [settings.global, experiencePresentation, globalTypographyContext]);
-
-  const teamHeaderTypography = useMemo(() => {
-    const title = resolveGlobalSectionTitleTypography(
-      settings.global,
-      {
-        fontClass: teamHeaderFontClass(teamPresentation.titleFont, 'title'),
-        fontStyle: teamHeaderFontStyle(teamPresentation.titleFont),
-        colorStyle: teamTitleColorStyle(teamPresentation.titleColor),
-      },
-      globalTypographyContext
-    );
-    const subtitle = resolveGlobalSectionSubtitleTypography(
-      settings.global,
-      {
-        fontClass: teamHeaderFontClass(teamPresentation.subtitleFont, 'subtitle'),
-        fontStyle: teamHeaderFontStyle(teamPresentation.subtitleFont),
-        colorStyle: teamSubtitleColorStyle(teamPresentation.subtitleColor),
-      },
-      globalTypographyContext
-    );
-    return { title, subtitle };
-  }, [settings.global, teamPresentation, globalTypographyContext]);
 
   const toolsHeaderTypography = useMemo(() => {
     const title = resolveGlobalSectionTitleTypography(
@@ -2050,94 +2163,6 @@ export function PublicCreatorPortfolioPage({
     );
     return { title, subtitle };
   }, [settings.global, aboutUsPresentation, globalTypographyContext]);
-
-  const galleryHeaderTypography = useMemo(() => {
-    const title = resolveGlobalSectionTitleTypography(
-      settings.global,
-      {
-        fontClass: galleryHeaderFontClass(galleryPresentation.titleFont, 'title'),
-        fontStyle: galleryHeaderFontStyle(galleryPresentation.titleFont),
-        colorStyle: { color: galleryPresentation.titleColor },
-      },
-      globalTypographyContext
-    );
-    const subtitle = resolveGlobalSectionSubtitleTypography(
-      settings.global,
-      {
-        fontClass: galleryHeaderFontClass(galleryPresentation.subtitleFont, 'subtitle'),
-        fontStyle: galleryHeaderFontStyle(galleryPresentation.subtitleFont),
-        colorStyle: { color: galleryPresentation.subtitleColor },
-      },
-      globalTypographyContext
-    );
-    return { title, subtitle };
-  }, [settings.global, galleryPresentation, globalTypographyContext]);
-
-  const faqHeaderTypography = useMemo(() => {
-    const titleClass = [
-      faqHeaderFontClass(faqPresentation.titleFont, 'title'),
-      faqPresentation.titleUppercase && faqPresentation.titleFont !== 'display' ? 'uppercase' : '',
-    ]
-      .filter(Boolean)
-      .join(' ');
-    const subtitleClass = [
-      faqHeaderFontClass(faqPresentation.subtitleFont, 'subtitle'),
-      faqPresentation.subtitleUppercase && faqPresentation.subtitleFont !== 'display'
-        ? 'uppercase'
-        : '',
-    ]
-      .filter(Boolean)
-      .join(' ');
-
-    const title = resolveGlobalSectionTitleTypography(
-      settings.global,
-      {
-      fontClass: titleClass,
-      fontStyle: faqHeaderFontStyle(faqPresentation.titleFont),
-      colorStyle: faqTitleColorStyle(faqPresentation.titleColor),
-      },
-      globalTypographyContext
-    );
-    const subtitle = resolveGlobalSectionSubtitleTypography(
-      settings.global,
-      {
-      fontClass: subtitleClass,
-      fontStyle: faqHeaderFontStyle(faqPresentation.subtitleFont),
-      colorStyle: faqSubtitleColorStyle(faqPresentation.subtitleColor),
-      },
-      globalTypographyContext
-    );
-
-    if (
-      (faqPresentation.design ?? 'two-column') === 'two-column' ||
-      faqPresentation.design === 'panel' ||
-      faqPresentation.design === 'split' ||
-      faqPresentation.design === 'cta-split'
-    ) {
-      const readyTitleClass = [
-        faqPresentation.titleFont === 'serif' ? 'font-serif' : '',
-        faqPresentation.titleFont === 'display' ? 'font-black uppercase tracking-[0.08em]' : FAQ_READY_TITLE_CLASS,
-        faqPresentation.titleUppercase && faqPresentation.titleFont !== 'display' ? 'uppercase' : '',
-      ]
-        .filter(Boolean)
-        .join(' ');
-      return {
-        title: {
-          className: readyTitleClass,
-          style: {
-            ...faqHeaderFontStyle(faqPresentation.titleFont),
-            ...faqTitleColorStyle(faqPresentation.titleColor),
-            fontWeight: faqPresentation.titleFont === 'display' ? undefined : 600,
-          },
-          decorationStyle: title.decorationStyle,
-          customSizing: true,
-        },
-        subtitle,
-      };
-    }
-
-    return { title, subtitle };
-  }, [settings.global, faqPresentation, globalTypographyContext]);
 
   const contactHeaderTypography = useMemo(() => {
     const title = resolveGlobalSectionTitleTypography(
@@ -2266,7 +2291,47 @@ export function PublicCreatorPortfolioPage({
     if (!sectionVisibility[sectionKey]) return null;
 
     switch (sectionKey) {
-      case 'info':
+      case 'info': {
+        // Header — one shared, GSAP-animated header (chosen from 8 editorial layouts, same
+        // mechanism as Portfolio/Work, Stack, Tools, and Contact). Count = visible info
+        // highlights (populated + toggled-on content blocks), used by 3 of the 8 designs.
+        const infoHeaderItemCount = [
+          infoPresentation.showSkills !== false && (profile.aboutSkills?.length ?? 0) > 0,
+          infoPresentation.showStrengths !== false && (profile.aboutStrengths?.length ?? 0) > 0,
+          infoPresentation.showInterests !== false && (profile.aboutInterests?.length ?? 0) > 0,
+          infoPresentation.showLanguages !== false &&
+            ((profile.spokenLanguages?.length ?? 0) > 0 || (profile.languages?.length ?? 0) > 0),
+          infoPresentation.showEducation !== false && (profile.aboutEducation?.length ?? 0) > 0,
+          infoPresentation.showSystemsTools !== false && (profile.aboutSystemsTools?.length ?? 0) > 0,
+        ].filter(Boolean).length;
+        const infoHeaderProps = {
+          title: infoSectionTitle,
+          subtitle: infoSectionSubtitle || undefined,
+          presentation: infoPresentation,
+          itemCount: infoHeaderItemCount,
+        };
+        const infoHeaderBlock =
+          infoPresentation.headerDesign === 'marquee' ? (
+            <InfoHeaderMarqueeHeader {...infoHeaderProps} />
+          ) : infoPresentation.headerDesign === 'index' ? (
+            <InfoHeaderIndexHeader {...infoHeaderProps} />
+          ) : infoPresentation.headerDesign === 'accent-count' ? (
+            <InfoHeaderAccentCountHeader {...infoHeaderProps} />
+          ) : infoPresentation.headerDesign === 'serif-lead' ? (
+            <InfoHeaderSerifLeadHeader {...infoHeaderProps} />
+          ) : infoPresentation.headerDesign === 'billboard' ? (
+            <InfoHeaderBillboardHeader {...infoHeaderProps} />
+          ) : infoPresentation.headerDesign === 'masthead' ? (
+            <InfoHeaderMastheadHeader {...infoHeaderProps} />
+          ) : infoPresentation.headerDesign === 'split-heading' ? (
+            <InfoHeaderSplitHeadingHeader {...infoHeaderProps} />
+          ) : infoPresentation.headerDesign === 'chapter' ? (
+            <InfoHeaderChapterHeader {...infoHeaderProps} />
+          ) : infoPresentation.headerDesign === 'cover' ? (
+            <InfoHeaderCoverHeader {...infoHeaderProps} />
+          ) : (
+            <InfoHeaderEditorialHeader {...infoHeaderProps} />
+          );
         return (
           <PortfolioSectionShell
             id="info"
@@ -2283,6 +2348,7 @@ export function PublicCreatorPortfolioPage({
             topSpacingStyle={isAboutHeroInfo ? undefined : sectionTopSpacingStyle}
             bottomSpacingClass={isAboutHeroInfo ? 'pb-0' : sectionBottomSpacingClass}
             bottomSpacingStyle={isAboutHeroInfo ? undefined : sectionBottomSpacingStyle}
+            header={infoHeaderBlock}
           >
             <EditorialAboutMeSection
               title={infoSectionTitle}
@@ -2300,9 +2366,11 @@ export function PublicCreatorPortfolioPage({
               systemsTools={profile.aboutSystemsTools}
               presentation={infoPresentation}
               heroPalette={infoPalette}
+              terminalDarkColors={infoAboutTerminalDarkColors}
             />
           </PortfolioSectionShell>
         );
+      }
       case 'work': {
         const layout = workPresentation.sectionLayout ?? 'stacked';
         const aside = faqSectionLayoutIsAside(layout);
@@ -2313,13 +2381,13 @@ export function PublicCreatorPortfolioPage({
         const projectsGrid = isProjectsGridDesign(workPresentation);
         const projectsSplit = isProjectsSplitDesign(workPresentation);
         const projectsCarousel = isProjectsCarouselDesign(workPresentation);
-        const projectsSpotlight = isProjectsSpotlightDesign(workPresentation);
         const projectsShowcase = isProjectsShowcaseDesign(workPresentation);
-        const projectsEditorial = isProjectsEditorialDesign(workPresentation);
         const projectsLedger = isProjectsLedgerDesign(workPresentation);
-        const projectsFolio = isProjectsFolioDesign(workPresentation);
         const projectsSpec = isProjectsSpecDesign(workPresentation);
         const projectsCase = isProjectsCaseDesign(workPresentation);
+        const projectsPress = isProjectsPressDesign(workPresentation);
+        const projectsDuotone = isProjectsDuotoneDesign(workPresentation);
+        const projectsCascade = isProjectsCascadeDesign(workPresentation);
         const namedWorkDesign =
           projectsBoard ||
           projectsAccordion ||
@@ -2328,13 +2396,13 @@ export function PublicCreatorPortfolioPage({
           projectsGrid ||
           projectsSplit ||
           projectsCarousel ||
-          projectsSpotlight ||
           projectsShowcase ||
-          projectsEditorial ||
           projectsLedger ||
-          projectsFolio ||
           projectsSpec ||
-          projectsCase;
+          projectsCase ||
+          projectsPress ||
+          projectsDuotone ||
+          projectsCascade;
         const marketplaceTrailing = settings.work.showMarketplaceLink ? (
           <MarketplaceProfileLink creatorId={creatorId} color={workPresentation.titleColor} />
         ) : null;
@@ -2349,12 +2417,10 @@ export function PublicCreatorPortfolioPage({
         const workHeaderCountProps = { ...workHeaderProps, projectCount: workItems.length };
         const headerBlock = (
           <div className={aside ? 'w-full' : undefined}>
-            {workPresentation.headerDesign === 'editorial' ? (
-              <WorkEditorialHeader {...workHeaderProps} />
-            ) : workPresentation.headerDesign === 'marquee' ? (
+            {workPresentation.headerDesign === 'marquee' ? (
               <WorkMarqueeHeader {...workHeaderProps} />
             ) : workPresentation.headerDesign === 'index' ? (
-              <WorkIndexHeader {...workHeaderProps} />
+              <WorkIndexHeader {...workHeaderCountProps} />
             ) : workPresentation.headerDesign === 'accent-count' ? (
               <WorkAccentCountHeader {...workHeaderCountProps} />
             ) : workPresentation.headerDesign === 'serif-lead' ? (
@@ -2363,8 +2429,10 @@ export function PublicCreatorPortfolioPage({
               <WorkBillboardHeader {...workHeaderCountProps} />
             ) : workPresentation.headerDesign === 'masthead' ? (
               <WorkMastheadHeader {...workHeaderProps} />
+            ) : workPresentation.headerDesign === 'split-heading' ? (
+              <WorkSplitHeadingHeader {...workHeaderProps} />
             ) : (
-              <WorkMinimalHeader {...workHeaderProps} />
+              <WorkEditorialHeader {...workHeaderProps} />
             )}
           </div>
         );
@@ -2388,35 +2456,27 @@ export function PublicCreatorPortfolioPage({
             ) : projectsIndex ? (
               <ProjectsIndexGallery items={workItems} presentation={workPresentation} />
             ) : projectsGrid ? (
-              <ProjectsGridSection
-                title={workSectionTitle}
-                subtitle={workSectionSubtitle || undefined}
-                titleColor={workPresentation.titleColor}
-                subtitleColor={workPresentation.subtitleColor}
-                trailing={marketplaceTrailing}
-                items={workItems}
-                presentation={workPresentation}
-              />
+              <ProjectsGridSection items={workItems} presentation={workPresentation} />
             ) : projectsCarousel ? (
               <ProjectsCarouselSection
                 title={workSectionTitle}
                 items={workItems}
                 presentation={workPresentation}
               />
-            ) : projectsSpotlight ? (
-              <ProjectsSpotlightGallery items={workItems} presentation={workPresentation} />
             ) : projectsShowcase ? (
               <ProjectsShowcaseGallery items={workItems} presentation={workPresentation} />
-            ) : projectsEditorial ? (
-              <ProjectsEditorialGallery items={workItems} presentation={workPresentation} />
             ) : projectsLedger ? (
               <ProjectsLedgerGallery items={workItems} presentation={workPresentation} />
-            ) : projectsFolio ? (
-              <ProjectsFolioGallery items={workItems} presentation={workPresentation} />
             ) : projectsSpec ? (
               <ProjectsSpecGallery items={workItems} presentation={workPresentation} />
             ) : projectsCase ? (
               <ProjectsCaseGallery items={workItems} presentation={workPresentation} />
+            ) : projectsPress ? (
+              <ProjectsPressGallery items={workItems} presentation={workPresentation} />
+            ) : projectsDuotone ? (
+              <ProjectsDuotoneGallery items={workItems} presentation={workPresentation} />
+            ) : projectsCascade ? (
+              <ProjectsCascadeGallery items={workItems} presentation={workPresentation} colorMode={workColorMode} />
             ) : projectsSplit ? (
               <ProjectsSplitGallery items={workItems} presentation={workPresentation} />
             ) : (
@@ -2454,116 +2514,92 @@ export function PublicCreatorPortfolioPage({
         const servicesLayout = settings.services.servicesHeader.sectionLayout ?? 'stacked';
         const servicesAside =
           isDistinctServicesOrganization && faqSectionLayoutIsAside(servicesLayout);
-        const servicesHeaderBlock = (
-          <EditorialSectionStickyHeader
-            title={
-              isDistinctServicesOrganization
-                ? resolveDistinctBlockSectionTitle(settings.services, 'services')
-                : servicesSectionTitle
-            }
-            subtitle={
-              (isDistinctServicesOrganization
-                ? resolveDistinctBlockSectionSubtitle(settings.services, 'services')
-                : servicesSectionSubtitle) || undefined
-            }
-            trailing={
-              !isDistinctServicesOrganization &&
-              servicesPresentation.showResponseTime &&
-              profile.responseTimeLabel?.trim() ? (
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-400">
-                  Typically replies {profile.responseTimeLabel.toLowerCase()}
-                </p>
-              ) : undefined
-            }
-            editorialLayout={isEditorialLayout}
-            centered={
-              isDistinctServicesOrganization
-                ? distinctServicesHeaderAlign.centered
-                : servicesHeaderAlign.centered
-            }
-            alignRight={
-              isDistinctServicesOrganization
-                ? distinctServicesHeaderAlign.alignRight
-                : servicesHeaderAlign.alignRight
-            }
-            alwaysCentered={
-              isDistinctServicesOrganization
-                ? distinctServicesHeaderAlign.alwaysCentered
-                : servicesHeaderAlign.alwaysCentered
-            }
-            className={servicesAside ? 'mb-0 w-full' : undefined}
-            titleTypographyClass={
-              (isDistinctServicesOrganization
-                ? distinctServicesHeaderTypography
-                : servicesHeaderTypography
-              ).title.className
-            }
-            titleTypographyStyle={
-              (isDistinctServicesOrganization
-                ? distinctServicesHeaderTypography
-                : servicesHeaderTypography
-              ).title.style
-            }
-            titleDecorationStyle={
-              (isDistinctServicesOrganization
-                ? distinctServicesHeaderTypography
-                : servicesHeaderTypography
-              ).title.decorationStyle
-            }
-            titleChromeClass={titleChrome.className}
-            titleChromeStyle={titleChrome.style}
-            customTitleSizing={
-              (isDistinctServicesOrganization
-                ? distinctServicesHeaderTypography
-                : servicesHeaderTypography
-              ).title.customSizing
-            }
-            subtitleTypographyClass={
-              (isDistinctServicesOrganization
-                ? distinctServicesHeaderTypography
-                : servicesHeaderTypography
-              ).subtitle.className
-            }
-            subtitleTypographyStyle={
-              (isDistinctServicesOrganization
-                ? distinctServicesHeaderTypography
-                : servicesHeaderTypography
-              ).subtitle.style
-            }
-            subtitleDecorationStyle={
-              (isDistinctServicesOrganization
-                ? distinctServicesHeaderTypography
-                : servicesHeaderTypography
-              ).subtitle.decorationStyle
-            }
-            customSubtitleSizing={
-              (isDistinctServicesOrganization
-                ? distinctServicesHeaderTypography
-                : servicesHeaderTypography
-              ).subtitle.customSizing
-            }
-            scrollBehavior={effectiveTitleScroll}
-            orientation={resolveSectionTitleOrientation(settings.global, 'services')}
-          />
-        );
+        const servicesHeaderProps = {
+          title: isDistinctServicesOrganization
+            ? resolveDistinctBlockSectionTitle(settings.services, 'services')
+            : servicesSectionTitle,
+          subtitle:
+            (isDistinctServicesOrganization
+              ? resolveDistinctBlockSectionSubtitle(settings.services, 'services')
+              : servicesSectionSubtitle) || undefined,
+          presentation: servicesPresentation,
+          itemCount: services.length,
+        };
+        // One shared, GSAP-animated header design (Header) mounts above the section.
+        const servicesHeaderBlock =
+          servicesPresentation.headerDesign === 'marquee' ? (
+            <ServicesHeaderMarqueeHeader {...servicesHeaderProps} />
+          ) : servicesPresentation.headerDesign === 'index' ? (
+            <ServicesHeaderIndexHeader {...servicesHeaderProps} />
+          ) : servicesPresentation.headerDesign === 'accent-count' ? (
+            <ServicesHeaderAccentCountHeader {...servicesHeaderProps} />
+          ) : servicesPresentation.headerDesign === 'serif-lead' ? (
+            <ServicesHeaderSerifLeadHeader {...servicesHeaderProps} />
+          ) : servicesPresentation.headerDesign === 'billboard' ? (
+            <ServicesHeaderBillboardHeader {...servicesHeaderProps} />
+          ) : servicesPresentation.headerDesign === 'masthead' ? (
+            <ServicesHeaderMastheadHeader {...servicesHeaderProps} />
+          ) : servicesPresentation.headerDesign === 'split-heading' ? (
+            <ServicesHeaderSplitHeadingHeader {...servicesHeaderProps} />
+          ) : (
+            <ServicesHeaderEditorialHeader {...servicesHeaderProps} />
+          );
+        const servicesShowcaseHero = isServicesShowcaseHeroDesign(servicesPresentation);
+        const servicesPricingGrid = isServicesPricingGridDesign(servicesPresentation);
+        const servicesPricingBento = isServicesPricingBentoDesign(servicesPresentation);
+        const servicesPricingMonolith = isServicesPricingMonolithDesign(servicesPresentation);
+        const servicesPricingAurora = isServicesPricingAuroraDesign(servicesPresentation);
+        const servicesPricingToggle = isServicesPricingToggleDesign(servicesPresentation);
+        const namedServicesDesign =
+          servicesShowcaseHero ||
+          servicesPricingGrid ||
+          servicesPricingBento ||
+          servicesPricingMonolith ||
+          servicesPricingAurora ||
+          servicesPricingToggle;
         const servicesContentBlock = (
           <ServicesOrderCtaHrefProvider
             href={servicesOrderCtaHref}
             onNavigate={onServicesOrderCtaNavigate}
           >
             <SectionIllustratedContent
-              variant={servicesPresentation.servicesIllustrationVariant}
+              variant={namedServicesDesign ? 'none' : servicesPresentation.servicesIllustrationVariant}
               placement={servicesPresentation.servicesIllustrationPlacement}
               accent={servicesPresentation.ctaColor}
               ink={servicesPresentation.titleColor}
               surface={servicesPresentation.cardBackgroundColor}
             >
               <>
-                <EditorialServicesCarousel
-                  services={services}
-                  presentation={resolveServicesBlockPresentation(servicesPresentation, 'services')}
-                  motionProfile={motionProfile}
-                />
+                {servicesShowcaseHero ? (
+                  <ServicesShowcaseHero services={services} presentation={servicesPresentation} />
+                ) : servicesPricingGrid ? (
+                  <ServicesPricingGridSection
+                    services={toPortfolioServiceItems(services)}
+                    presentation={servicesPresentation}
+                  />
+                ) : servicesPricingBento ? (
+                  <ServicesPricingBentoSection
+                    services={toPortfolioServiceItems(services)}
+                    presentation={servicesPresentation}
+                  />
+                ) : servicesPricingMonolith ? (
+                  <ServicesPricingMonolithSection
+                    services={toPortfolioServiceItems(services)}
+                    presentation={servicesPresentation}
+                  />
+                ) : servicesPricingAurora ? (
+                  <ServicesPricingAuroraSection
+                    services={toPortfolioServiceItems(services)}
+                    presentation={servicesPresentation}
+                  />
+                ) : servicesPricingToggle ? (
+                  <ServicesPricingToggleSection
+                    services={toPortfolioServiceItems(services)}
+                    presentation={servicesPresentation}
+                  />
+                ) : (
+                  <ServicesShowcaseHero services={services} presentation={servicesPresentation} />
+                )}
                 {services.length === 0 ? (
                   <p className="mt-8 text-base leading-relaxed text-neutral-500">
                     Contact me to discuss a custom engagement.
@@ -2830,7 +2866,8 @@ export function PublicCreatorPortfolioPage({
               background={experiencePresentation}
               fitContent
               suppressBackground={suppressSectionBackground(experiencePresentation)}
-              topSpacingClass=""
+              topSpacingClass={sectionTopSpacingClass}
+              topSpacingStyle={sectionTopSpacingStyle}
               bottomSpacingClass=""
             >
               {appliedExperienceHeaderZone}
@@ -2852,23 +2889,6 @@ export function PublicCreatorPortfolioPage({
             >
               {appliedExperienceHeaderZone}
               <GalleryExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
-            </PortfolioSectionShell>
-          );
-        }
-        if (experiencePresentation.experienceDesign === 'spotlight') {
-          return wrapExperienceLinks(
-            <PortfolioSectionShell
-              id="experience"
-              background={experiencePresentation}
-              fitContent
-              suppressBackground={suppressSectionBackground(experiencePresentation)}
-              topSpacingClass={sectionTopSpacingClass}
-              topSpacingStyle={sectionTopSpacingStyle}
-              bottomSpacingClass={sectionBottomSpacingClass}
-              bottomSpacingStyle={sectionBottomSpacingStyle}
-            >
-              {appliedExperienceHeaderZone}
-              <SpotlightExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
             </PortfolioSectionShell>
           );
         }
@@ -2920,26 +2940,6 @@ export function PublicCreatorPortfolioPage({
             >
               {appliedExperienceHeaderZone}
               <LegacyExperienceList blocks={experienceBlocks} presentation={experiencePresentation} />
-            </PortfolioSectionShell>
-          );
-        }
-        if (experiencePresentation.experienceDesign === 'asymmetric') {
-          return wrapExperienceLinks(
-            <PortfolioSectionShell
-              id="experience"
-              background={experiencePresentation}
-              fitContent
-              suppressBackground={suppressSectionBackground(experiencePresentation)}
-              topSpacingClass={sectionTopSpacingClass}
-              topSpacingStyle={sectionTopSpacingStyle}
-              bottomSpacingClass={sectionBottomSpacingClass}
-              bottomSpacingStyle={sectionBottomSpacingStyle}
-            >
-              {appliedExperienceHeaderZone}
-              <AsymmetricExperienceList
-                blocks={experienceBlocks}
-                presentation={experiencePresentation}
-              />
             </PortfolioSectionShell>
           );
         }
@@ -3100,29 +3100,31 @@ export function PublicCreatorPortfolioPage({
       case 'team': {
         const layout = teamPresentation.sectionLayout ?? 'stacked';
         const aside = teamSectionLayoutIsAside(layout);
-        const headerBlock = (
-          <EditorialSectionStickyHeader
-            title={teamSectionTitle}
-            subtitle={teamSectionSubtitle || undefined}
-            editorialLayout={isEditorialLayout}
-            centered={teamHeaderAlign.centered}
-            alignRight={teamHeaderAlign.alignRight}
-            alwaysCentered={teamHeaderAlign.alwaysCentered}
-            className={aside ? 'mb-0 w-full' : undefined}
-            titleTypographyClass={teamHeaderTypography.title.className}
-            titleTypographyStyle={teamHeaderTypography.title.style}
-            titleDecorationStyle={teamHeaderTypography.title.decorationStyle}
-            titleChromeClass={titleChrome.className}
-            titleChromeStyle={titleChrome.style}
-            customTitleSizing={teamHeaderTypography.title.customSizing}
-            subtitleTypographyClass={teamHeaderTypography.subtitle.className}
-            subtitleTypographyStyle={teamHeaderTypography.subtitle.style}
-            subtitleDecorationStyle={teamHeaderTypography.subtitle.decorationStyle}
-            customSubtitleSizing={teamHeaderTypography.subtitle.customSizing}
-            scrollBehavior={effectiveTitleScroll}
-            orientation={resolveSectionTitleOrientation(settings.global, 'team')}
-          />
-        );
+        const teamHeaderProps = {
+          title: teamSectionTitle,
+          subtitle: teamSectionSubtitle || undefined,
+          presentation: teamPresentation,
+          itemCount: teamMembers.length,
+        };
+        // One shared, GSAP-animated header design (Header) mounts above the section.
+        const headerBlock =
+          teamPresentation.headerDesign === 'marquee' ? (
+            <TeamHeaderMarqueeHeader {...teamHeaderProps} />
+          ) : teamPresentation.headerDesign === 'index' ? (
+            <TeamHeaderIndexHeader {...teamHeaderProps} />
+          ) : teamPresentation.headerDesign === 'accent-count' ? (
+            <TeamHeaderAccentCountHeader {...teamHeaderProps} />
+          ) : teamPresentation.headerDesign === 'serif-lead' ? (
+            <TeamHeaderSerifLeadHeader {...teamHeaderProps} />
+          ) : teamPresentation.headerDesign === 'billboard' ? (
+            <TeamHeaderBillboardHeader {...teamHeaderProps} />
+          ) : teamPresentation.headerDesign === 'masthead' ? (
+            <TeamHeaderMastheadHeader {...teamHeaderProps} />
+          ) : teamPresentation.headerDesign === 'split-heading' ? (
+            <TeamHeaderSplitHeadingHeader {...teamHeaderProps} />
+          ) : (
+            <TeamHeaderEditorialHeader {...teamHeaderProps} />
+          );
         const contentBlock = (
           <SectionIllustratedContent
             variant={teamPresentation.illustrationVariant}
@@ -3159,31 +3161,33 @@ export function PublicCreatorPortfolioPage({
       case 'gallery': {
         const layout = galleryPresentation.sectionLayout ?? 'stacked';
         const aside = gallerySectionLayoutIsAside(layout);
-        const embedHeader = gallerySectionLayoutEmbedsHeader(layout, galleryPresentation);
+        const galleryHeaderProps = {
+          title: gallerySectionTitle,
+          subtitle: gallerySectionSubtitle || undefined,
+          presentation: galleryPresentation,
+          itemCount: galleryItems.length,
+        };
+        // One shared, GSAP-animated header design (Header) mounts above the section.
         const headerBlock =
           gallerySectionTitle || gallerySectionSubtitle ? (
-          <EditorialSectionStickyHeader
-            title={gallerySectionTitle}
-            subtitle={gallerySectionSubtitle || undefined}
-            editorialLayout={isEditorialLayout}
-            centered={embedHeader ? true : galleryHeaderAlign.centered}
-            alignRight={embedHeader ? false : galleryHeaderAlign.alignRight}
-            alwaysCentered={embedHeader ? true : galleryHeaderAlign.alwaysCentered}
-            className={embedHeader ? 'mb-0' : aside ? 'mb-0 w-full' : undefined}
-            titleTypographyClass={galleryHeaderTypography.title.className}
-            titleTypographyStyle={galleryHeaderTypography.title.style}
-            titleDecorationStyle={galleryHeaderTypography.title.decorationStyle}
-            titleChromeClass={titleChrome.className}
-            titleChromeStyle={titleChrome.style}
-            customTitleSizing={galleryHeaderTypography.title.customSizing}
-            subtitleTypographyClass={galleryHeaderTypography.subtitle.className}
-            subtitleTypographyStyle={galleryHeaderTypography.subtitle.style}
-            subtitleDecorationStyle={galleryHeaderTypography.subtitle.decorationStyle}
-            customSubtitleSizing={galleryHeaderTypography.subtitle.customSizing}
-            scrollBehavior={embedHeader ? 'static' : effectiveTitleScroll}
-            orientation={resolveSectionTitleOrientation(settings.global, 'gallery')}
-          />
-        ) : null;
+            galleryPresentation.headerDesign === 'marquee' ? (
+              <GalleryHeaderMarqueeHeader {...galleryHeaderProps} />
+            ) : galleryPresentation.headerDesign === 'index' ? (
+              <GalleryHeaderIndexHeader {...galleryHeaderProps} />
+            ) : galleryPresentation.headerDesign === 'accent-count' ? (
+              <GalleryHeaderAccentCountHeader {...galleryHeaderProps} />
+            ) : galleryPresentation.headerDesign === 'serif-lead' ? (
+              <GalleryHeaderSerifLeadHeader {...galleryHeaderProps} />
+            ) : galleryPresentation.headerDesign === 'billboard' ? (
+              <GalleryHeaderBillboardHeader {...galleryHeaderProps} />
+            ) : galleryPresentation.headerDesign === 'masthead' ? (
+              <GalleryHeaderMastheadHeader {...galleryHeaderProps} />
+            ) : galleryPresentation.headerDesign === 'split-heading' ? (
+              <GalleryHeaderSplitHeadingHeader {...galleryHeaderProps} />
+            ) : (
+              <GalleryHeaderEditorialHeader {...galleryHeaderProps} />
+            )
+          ) : null;
         const contentBlock = (
           <SectionIllustratedContent
             variant={galleryPresentation.illustrationVariant}
@@ -3195,7 +3199,6 @@ export function PublicCreatorPortfolioPage({
             <EditorialGallerySection
               items={galleryItems}
               presentation={galleryPresentation}
-              embeddedHeader={embedHeader ? headerBlock : undefined}
             />
           </SectionIllustratedContent>
         );
@@ -3209,7 +3212,7 @@ export function PublicCreatorPortfolioPage({
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            header={aside || embedHeader ? undefined : headerBlock}
+            header={aside ? undefined : headerBlock}
           >
             {aside ? (
               <SectionAsideContent layout={layout} header={headerBlock}>
@@ -3222,54 +3225,60 @@ export function PublicCreatorPortfolioPage({
         );
       }
       case 'faq': {
-        const faqSplit = faqDesignIsSplit(faqPresentation.design);
-        const faqCtaSplit = faqDesignIsCtaSplit(faqPresentation.design);
-        const faqAside =
-          !faqSplit &&
-          !faqCtaSplit &&
-          faqSectionLayoutIsAside(faqPresentation.sectionLayout ?? 'stacked');
-        const faqPanel = faqPresentation.design === 'panel';
-        const faqSplitTitleLeft = (faqPresentation.illustrationPlacement ?? 'left') !== 'right';
-        const faqCtaSvgOnLeft = (faqPresentation.illustrationPlacement ?? 'right') === 'left';
-        const faqHeaderBlock = (
-          <EditorialSectionStickyHeader
-            title={faqSectionTitle}
-            subtitle={faqPanel ? undefined : faqSectionSubtitle || undefined}
-            editorialLayout={isEditorialLayout}
-            centered={faqHeaderAlign.centered}
-            alignRight={faqHeaderAlign.alignRight}
-            alwaysCentered={faqHeaderAlign.alwaysCentered || faqSplit || faqCtaSplit}
-            kicker={
-              faqDesignShowsTitleKicker(faqPresentation.design) ? (
-                <span
-                  className="text-base font-bold uppercase tracking-[0.18em] sm:text-lg"
-                  style={{ color: faqPresentation.accentColor }}
-                >
-                  FAQ
-                </span>
-              ) : undefined
-            }
-            className={
-              faqAside || faqPanel || faqSplit ? 'mb-0 w-full' : 'mb-10 lg:mb-12'
-            }
-            titleTypographyClass={faqHeaderTypography.title.className}
-            titleTypographyStyle={faqHeaderTypography.title.style}
-            titleDecorationStyle={faqHeaderTypography.title.decorationStyle}
-            titleChromeClass={titleChrome.className}
-            titleChromeStyle={titleChrome.style}
-            customTitleSizing={faqHeaderTypography.title.customSizing}
-            subtitleTypographyClass={faqHeaderTypography.subtitle.className}
-            subtitleTypographyStyle={faqHeaderTypography.subtitle.style}
-            subtitleDecorationStyle={faqHeaderTypography.subtitle.decorationStyle}
-            customSubtitleSizing={faqHeaderTypography.subtitle.customSizing}
-            scrollBehavior={faqPanel || faqSplit ? 'static' : effectiveTitleScroll}
-            orientation={resolveSectionTitleOrientation(settings.global, 'faq')}
-          />
-        );
+        const faqAside = faqSectionLayoutIsAside(faqPresentation.sectionLayout ?? 'stacked');
+        // Every bespoke FAQ design (see each component's own portfolio-faq-*.tsx file)
+        // embeds the shared Header block inside its own layout, same as the aside layout —
+        // never the shell's own top header slot.
+        const faqKinetic = faqPresentation.design === 'kinetic-split';
+        const faqFloatingGallery = faqPresentation.design === 'floating-gallery';
+        const faqMasonry = faqPresentation.design === 'editorial-masonry';
+        const faqPrismCards = faqPresentation.design === 'prism-cards';
+        const faqStarScroll = faqPresentation.design === 'star-scroll';
+        const faqTriGrid = faqPresentation.design === 'tri-grid';
+        const faqSplitIndex = faqPresentation.design === 'split-index';
+        const faqCenteredFocus = faqPresentation.design === 'centered-focus';
+        const faqBentoDual = faqPresentation.design === 'bento-dual';
+        const faqBespokeDesign =
+          faqKinetic ||
+          faqFloatingGallery ||
+          faqMasonry ||
+          faqPrismCards ||
+          faqStarScroll ||
+          faqTriGrid ||
+          faqSplitIndex ||
+          faqCenteredFocus ||
+          faqBentoDual;
+        // Header — one shared, GSAP-animated header (chosen from 8 editorial layouts, same
+        // mechanism as Portfolio/Work, Stack, Tools, Contact, Team, Gallery, and Info) mounts
+        // above the section, independent of the Design tab's own per-design layout.
+        const faqHeaderProps = {
+          title: faqSectionTitle,
+          subtitle: faqSectionSubtitle || undefined,
+          presentation: faqPresentation,
+          itemCount: faqItems.length,
+        };
+        const faqHeaderBlock =
+          faqPresentation.headerDesign === 'marquee' ? (
+            <FaqHeaderMarqueeHeader {...faqHeaderProps} />
+          ) : faqPresentation.headerDesign === 'index' ? (
+            <FaqHeaderIndexHeader {...faqHeaderProps} />
+          ) : faqPresentation.headerDesign === 'accent-count' ? (
+            <FaqHeaderAccentCountHeader {...faqHeaderProps} />
+          ) : faqPresentation.headerDesign === 'serif-lead' ? (
+            <FaqHeaderSerifLeadHeader {...faqHeaderProps} />
+          ) : faqPresentation.headerDesign === 'billboard' ? (
+            <FaqHeaderBillboardHeader {...faqHeaderProps} />
+          ) : faqPresentation.headerDesign === 'masthead' ? (
+            <FaqHeaderMastheadHeader {...faqHeaderProps} />
+          ) : faqPresentation.headerDesign === 'split-heading' ? (
+            <FaqHeaderSplitHeadingHeader {...faqHeaderProps} />
+          ) : (
+            <FaqHeaderEditorialHeader {...faqHeaderProps} />
+          );
         const faqListBlock = (
           <div
             className={
-              faqAside || faqSplit || faqCtaSplit
+              faqAside
                 ? 'w-full min-w-0'
                 : `${faqListPlacementClass(faqPresentation.listPlacement)} ${faqListMaxWidthClass(
                     faqPresentation.listMaxWidth
@@ -3282,108 +3291,7 @@ export function PublicCreatorPortfolioPage({
               motionProfile={motionProfile}
               askCtaHref="#contact"
               askCtaLabel="Ask a question"
-              embeddedHeader={faqPanel ? faqHeaderBlock : undefined}
             />
-          </div>
-        );
-
-        const faqSplitMedia =
-          faqPresentation.illustrationVariant && faqPresentation.illustrationVariant !== 'none' ? (
-            <div
-              className="mt-8 w-full"
-              style={
-                {
-                  ['--faq-accent' as string]: faqPresentation.accentColor,
-                  ['--faq-ink' as string]: faqPresentation.titleColor || faqPresentation.questionColor,
-                  ['--faq-surface' as string]: faqPresentation.cardBackgroundColor,
-                } as CSSProperties
-              }
-            >
-              <FaqSectionIllustration variant={faqPresentation.illustrationVariant} />
-            </div>
-          ) : null;
-
-        const faqSplitTitleColumn = (
-          <div className="flex min-h-[18rem] w-full flex-col items-center justify-center px-2 text-center lg:min-h-[28rem]">
-            {faqHeaderBlock}
-            {faqSplitMedia}
-          </div>
-        );
-
-        const faqSplitBlock = (
-          <div className="grid w-full items-center gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-20">
-            <div className={faqSplitTitleLeft ? 'max-lg:order-1' : 'max-lg:order-1 lg:order-2'}>
-              {faqSplitTitleColumn}
-            </div>
-            <div className={faqSplitTitleLeft ? 'max-lg:order-2 min-w-0' : 'max-lg:order-2 min-w-0 lg:order-1'}>
-              {faqListBlock}
-            </div>
-          </div>
-        );
-
-        const faqCtaInk = faqPresentation.titleColor || faqPresentation.questionColor || '#0a0a0a';
-        const faqCtaSplitMedia =
-          faqPresentation.illustrationVariant && faqPresentation.illustrationVariant !== 'none' ? (
-            <div
-              className="w-full max-w-md"
-              style={
-                {
-                  ['--faq-accent' as string]: faqPresentation.accentColor,
-                  ['--faq-ink' as string]: faqCtaInk,
-                  ['--faq-surface' as string]: faqPresentation.cardBackgroundColor,
-                } as CSSProperties
-              }
-            >
-              <FaqSectionIllustration variant={faqPresentation.illustrationVariant} />
-            </div>
-          ) : null;
-
-        const faqCtaSplitColumn = (
-          <div className="flex h-full min-h-[18rem] w-full flex-col items-center justify-center px-2 text-center lg:min-h-[28rem]">
-            {faqCtaSplitMedia}
-            <p
-              className="mt-8 text-2xl font-semibold tracking-tight sm:text-[1.75rem] lg:text-[2rem]"
-              style={{ color: faqCtaInk }}
-            >
-              Still have questions?
-            </p>
-            <a
-              href={navContactHref}
-              className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-full border-2 bg-transparent px-6 text-sm font-semibold transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[color:var(--faq-cta-ink)] hover:text-[color:var(--faq-cta-on-ink)] hover:shadow-[0_12px_28px_-12px_rgba(15,23,42,0.45)]"
-              style={
-                {
-                  borderColor: faqCtaInk,
-                  color: faqCtaInk,
-                  ['--faq-cta-ink' as string]: faqCtaInk,
-                  ['--faq-cta-on-ink' as string]:
-                    faqPresentation.cardBackgroundColor?.trim() || '#ffffff',
-                } as CSSProperties
-              }
-            >
-              <svg
-                className="h-4 w-4 shrink-0"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.8}
-                aria-hidden
-              >
-                <rect x="3" y="5" width="18" height="14" rx="2" />
-                <path strokeLinecap="round" d="M4 7l8 6 8-6" />
-              </svg>
-              Contact me
-            </a>
-          </div>
-        );
-
-        const faqCtaSplitBlock = (
-          <div className="grid w-full items-center gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-20">
-            <div className={faqCtaSvgOnLeft ? 'max-lg:order-2 min-w-0 lg:order-2' : 'max-lg:order-1 min-w-0'}>
-              {faqListBlock}
-            </div>
-            <div className={faqCtaSvgOnLeft ? 'max-lg:order-1 lg:order-1' : 'max-lg:order-2'}>
-              {faqCtaSplitColumn}
-            </div>
           </div>
         );
 
@@ -3397,7 +3305,7 @@ export function PublicCreatorPortfolioPage({
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            header={faqAside || faqPanel || faqSplit ? undefined : faqHeaderBlock}
+            header={faqAside || faqBespokeDesign ? undefined : faqHeaderBlock}
           >
             {faqAside ? (
               <SectionAsideContent
@@ -3406,10 +3314,32 @@ export function PublicCreatorPortfolioPage({
               >
                 {faqListBlock}
               </SectionAsideContent>
-            ) : faqSplit ? (
-              faqSplitBlock
-            ) : faqCtaSplit ? (
-              faqCtaSplitBlock
+            ) : faqKinetic ? (
+              <FaqKineticSplitDesign items={faqItems} header={faqHeaderBlock} />
+            ) : faqFloatingGallery ? (
+              <FaqFloatingGalleryDesign items={faqItems} header={faqHeaderBlock} />
+            ) : faqMasonry ? (
+              <FaqEditorialMasonryDesign items={faqItems} header={faqHeaderBlock} />
+            ) : faqPrismCards ? (
+              <FaqPrismCardsDesign items={faqItems} header={faqHeaderBlock} activeColorMode={faqActiveColorMode} />
+            ) : faqStarScroll ? (
+              <FaqStarScrollDesign items={faqItems} header={faqHeaderBlock} activeColorMode={faqActiveColorMode} />
+            ) : faqTriGrid ? (
+              <FaqTriGridDesign items={faqItems} header={faqHeaderBlock} activeColorMode={faqActiveColorMode} />
+            ) : faqSplitIndex ? (
+              <FaqSplitIndexDesign items={faqItems} header={faqHeaderBlock} activeColorMode={faqActiveColorMode} />
+            ) : faqCenteredFocus ? (
+              <FaqCenteredFocusDesign items={faqItems} header={faqHeaderBlock} activeColorMode={faqActiveColorMode} />
+            ) : faqBentoDual ? (
+              <FaqBentoDualDesign
+                items={faqItems}
+                header={faqHeaderBlock}
+                activeColorMode={faqActiveColorMode}
+                cardColor={faqPalette[faqPresentation.bentoDualCardColorToken]}
+                cardRadius={faqPresentation.bentoDualCardRadius}
+                cardBorder={faqPresentation.bentoDualCardBorder}
+                cardOpacity={faqPresentation.bentoDualCardOpacity}
+              />
             ) : (
               faqListBlock
             )}
@@ -3426,6 +3356,10 @@ export function PublicCreatorPortfolioPage({
             links={uniqueContactLinks}
             ctaHref={contactCtaHref}
             responseTimeLabel={profile.responseTimeLabel}
+            heroImageUrl={profile.avatarUrl}
+            heroImageAlt={profile.fullName}
+            contentGutter={settings.global.contentGutter}
+            globalColorMode={settings.global.colorMode ?? 'dark'}
             sectionTitle={contactSectionTitle}
             sectionSubtitle={contactSectionSubtitle || undefined}
             presentation={contactPresentation}
@@ -3436,20 +3370,9 @@ export function PublicCreatorPortfolioPage({
             bottomSpacingStyle={sectionBottomSpacingStyle}
             titleTypographyClass={contactHeaderTypography.title.className}
             titleTypographyStyle={contactHeaderTypography.title.style}
-            titleDecorationStyle={contactHeaderTypography.title.decorationStyle}
-            titleChromeClass={titleChrome.className}
-            titleChromeStyle={titleChrome.style}
-            customTitleSizing={contactHeaderTypography.title.customSizing}
             subtitleTypographyClass={contactHeaderTypography.subtitle.className}
             subtitleTypographyStyle={contactHeaderTypography.subtitle.style}
-            subtitleDecorationStyle={contactHeaderTypography.subtitle.decorationStyle}
-            customSubtitleSizing={contactHeaderTypography.subtitle.customSizing}
-            centered={contactHeaderAlign.centered}
-            alignRight={contactHeaderAlign.alignRight}
-            alwaysCentered={contactHeaderAlign.alwaysCentered}
             suppressBackground={suppressSectionBackground(contactPresentation)}
-            scrollBehavior={effectiveTitleScroll}
-            orientation={resolveSectionTitleOrientation(settings.global, 'contact')}
             renderSocialIcon={(platform, className) => (
               <SocialPlatformIcon platform={platform} className={className} />
             )}
@@ -3458,7 +3381,6 @@ export function PublicCreatorPortfolioPage({
                 ? portfolioMonochromeSocialBrandClass
                 : socialPlatformBrandClass
             }
-            editorialLayout={isEditorialLayout}
             membersOnlyNode={
               !isAuthenticated && profile.membersOnlyContactAvailable ? (
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -3478,40 +3400,35 @@ export function PublicCreatorPortfolioPage({
         const stackAside = stackSectionLayoutIsAside(stackPresentation.sectionLayout);
         const stackAsideTitleCentered =
           (stackPresentation.asideTitlePlacement ?? 'center') === 'center';
-        // Aside uses the sticky header in the title half — never embed tags kicker.
-        const stackUsesEmbeddedHeader =
-          !stackAside && stackPresentation.design === 'stack-tags';
-        const headerBlock = stackUsesEmbeddedHeader ? null : (
-          <EditorialSectionStickyHeader
-            title={stackSectionTitle}
-            subtitle={stackSectionSubtitle || undefined}
-            editorialLayout={isEditorialLayout}
-            centered={stackHeaderAlign.centered}
-            alignRight={stackHeaderAlign.alignRight}
-            alwaysCentered={stackHeaderAlign.alwaysCentered}
-            className={stackAside ? 'mb-0 w-full' : undefined}
-            titleTypographyClass={stackHeaderTypography.title.className}
-            titleTypographyStyle={stackHeaderTypography.title.style}
-            titleDecorationStyle={stackHeaderTypography.title.decorationStyle}
-            titleChromeClass={titleChrome.className}
-            titleChromeStyle={titleChrome.style}
-            customTitleSizing={stackHeaderTypography.title.customSizing}
-            subtitleTypographyClass={stackHeaderTypography.subtitle.className}
-            subtitleTypographyStyle={stackHeaderTypography.subtitle.style}
-            subtitleDecorationStyle={stackHeaderTypography.subtitle.decorationStyle}
-            customSubtitleSizing={stackHeaderTypography.subtitle.customSizing}
-            scrollBehavior={stackAside ? 'static' : effectiveTitleScroll}
-            orientation={resolveSectionTitleOrientation(settings.global, 'stack')}
-          />
+        const stackHeaderProps = {
+          title: stackSectionTitle,
+          subtitle: stackSectionSubtitle || undefined,
+          presentation: stackPresentation,
+          itemCount: stackItems.length,
+        };
+        // One shared, GSAP-animated header design (Header) mounts above the section.
+        const headerBlock = (
+          <div className={stackAside ? 'w-full' : undefined}>
+            {stackPresentation.headerDesign === 'marquee' ? (
+              <StackHeaderMarqueeHeader {...stackHeaderProps} />
+            ) : stackPresentation.headerDesign === 'index' ? (
+              <StackHeaderIndexHeader {...stackHeaderProps} />
+            ) : stackPresentation.headerDesign === 'accent-count' ? (
+              <StackHeaderAccentCountHeader {...stackHeaderProps} />
+            ) : stackPresentation.headerDesign === 'serif-lead' ? (
+              <StackHeaderSerifLeadHeader {...stackHeaderProps} />
+            ) : stackPresentation.headerDesign === 'billboard' ? (
+              <StackHeaderBillboardHeader {...stackHeaderProps} />
+            ) : stackPresentation.headerDesign === 'masthead' ? (
+              <StackHeaderMastheadHeader {...stackHeaderProps} />
+            ) : stackPresentation.headerDesign === 'split-heading' ? (
+              <StackHeaderSplitHeadingHeader {...stackHeaderProps} />
+            ) : (
+              <StackHeaderEditorialHeader {...stackHeaderProps} />
+            )}
+          </div>
         );
-        const stackGallery = (
-          <EditorialStackGallery
-            items={stackItems}
-            presentation={stackPresentation}
-            embeddedTitle={stackUsesEmbeddedHeader ? stackSectionTitle : undefined}
-            embeddedSubtitle={stackUsesEmbeddedHeader ? stackSectionSubtitle : undefined}
-          />
-        );
+        const stackGallery = <EditorialStackGallery items={stackItems} presentation={stackPresentation} />;
         return (
           <PortfolioSectionShell
             id="stack"
@@ -3524,7 +3441,7 @@ export function PublicCreatorPortfolioPage({
             bottomSpacingStyle={sectionBottomSpacingStyle}
             header={stackAside ? undefined : headerBlock}
           >
-            {stackAside && headerBlock ? (
+            {stackAside ? (
               <SectionAsideContent
                 layout={stackPresentation.sectionLayout ?? 'aside-left'}
                 header={headerBlock}
@@ -3540,28 +3457,31 @@ export function PublicCreatorPortfolioPage({
         );
       }
       case 'tools': {
-        const headerBlock = (
-          <EditorialSectionStickyHeader
-            title={toolsSectionTitle}
-            subtitle={toolsSectionSubtitle || undefined}
-            editorialLayout={isEditorialLayout}
-            centered={toolsHeaderAlign.centered}
-            alignRight={toolsHeaderAlign.alignRight}
-            alwaysCentered={toolsHeaderAlign.alwaysCentered}
-            titleTypographyClass={toolsHeaderTypography.title.className}
-            titleTypographyStyle={toolsHeaderTypography.title.style}
-            titleDecorationStyle={toolsHeaderTypography.title.decorationStyle}
-            titleChromeClass={titleChrome.className}
-            titleChromeStyle={titleChrome.style}
-            customTitleSizing={toolsHeaderTypography.title.customSizing}
-            subtitleTypographyClass={toolsHeaderTypography.subtitle.className}
-            subtitleTypographyStyle={toolsHeaderTypography.subtitle.style}
-            subtitleDecorationStyle={toolsHeaderTypography.subtitle.decorationStyle}
-            customSubtitleSizing={toolsHeaderTypography.subtitle.customSizing}
-            scrollBehavior={effectiveTitleScroll}
-            orientation={resolveSectionTitleOrientation(settings.global, 'tools')}
-          />
-        );
+        const toolsHeaderProps = {
+          title: toolsSectionTitle,
+          subtitle: toolsSectionSubtitle || undefined,
+          presentation: toolsPresentation,
+          itemCount: strengths.length,
+        };
+        // One shared, GSAP-animated header design (Header) mounts above the section.
+        const headerBlock =
+          toolsPresentation.headerDesign === 'marquee' ? (
+            <ToolsHeaderMarqueeHeader {...toolsHeaderProps} />
+          ) : toolsPresentation.headerDesign === 'index' ? (
+            <ToolsHeaderIndexHeader {...toolsHeaderProps} />
+          ) : toolsPresentation.headerDesign === 'accent-count' ? (
+            <ToolsHeaderAccentCountHeader {...toolsHeaderProps} />
+          ) : toolsPresentation.headerDesign === 'serif-lead' ? (
+            <ToolsHeaderSerifLeadHeader {...toolsHeaderProps} />
+          ) : toolsPresentation.headerDesign === 'billboard' ? (
+            <ToolsHeaderBillboardHeader {...toolsHeaderProps} />
+          ) : toolsPresentation.headerDesign === 'masthead' ? (
+            <ToolsHeaderMastheadHeader {...toolsHeaderProps} />
+          ) : toolsPresentation.headerDesign === 'split-heading' ? (
+            <ToolsHeaderSplitHeadingHeader {...toolsHeaderProps} />
+          ) : (
+            <ToolsHeaderEditorialHeader {...toolsHeaderProps} />
+          );
         return (
           <PortfolioSectionShell
             id="tools"
@@ -3734,7 +3654,7 @@ export function PublicCreatorPortfolioPage({
                   style={{ minHeight: '100%' }}
                 >
                   <main
-                    className={`mx-auto flex w-full flex-1 grow flex-col ${editorialShellClass} ${globalWidthClass} ${
+                    className={`flex w-full flex-1 grow flex-col ${editorialShellClass} ${
                       showFooter ? 'pb-0' : 'pb-24 sm:pb-28'
                     }`}
                   >
@@ -3742,6 +3662,7 @@ export function PublicCreatorPortfolioPage({
                   </main>
                   {showFooter ? (
                     <div className="mt-auto w-full shrink-0">
+                      <div className={`w-full pf-footer-shell-x ${editorialShellClass}`}>{footerHeaderBlock}</div>
                       <EditorialPortfolioFooter
                         creatorName={profile.fullName}
                         creatorId={creatorId}
@@ -3766,6 +3687,9 @@ export function PublicCreatorPortfolioPage({
                         motionProfile={motionProfile}
                         bottomClearanceClass={footerNavClearanceClass}
                         visibleSectionLinks={footerVisibleSectionLinks}
+                        globalColorMode={footerColorMode}
+                        timezoneId={profile.timezoneId}
+                        contentGutter={settings.global.contentGutter}
                       />
                     </div>
                   ) : null}
@@ -3814,7 +3738,7 @@ export function PublicCreatorPortfolioPage({
           ) : null}
 
           <main
-            className={`mx-auto w-full flex-1 grow space-y-0 ${editorialShellClass} ${globalWidthClass} ${
+            className={`w-full flex-1 grow space-y-0 ${editorialShellClass} ${
               settings.footer.enabled ? 'pb-0' : 'pb-24 sm:pb-28 xl:pb-20'
             }`}
           >
@@ -3825,6 +3749,7 @@ export function PublicCreatorPortfolioPage({
 
           {settings.footer.enabled ? (
             <div className="mt-auto w-full shrink-0">
+              <div className={`w-full pf-footer-shell-x ${editorialShellClass}`}>{footerHeaderBlock}</div>
               <EditorialPortfolioFooter
                 creatorName={profile.fullName}
                 creatorId={creatorId}
@@ -3849,6 +3774,9 @@ export function PublicCreatorPortfolioPage({
                 motionProfile={motionProfile}
                 bottomClearanceClass={footerNavClearanceClass}
                 visibleSectionLinks={footerVisibleSectionLinks}
+                globalColorMode={footerColorMode}
+                timezoneId={profile.timezoneId}
+                contentGutter={settings.global.contentGutter}
               />
             </div>
           ) : null}

@@ -6,7 +6,9 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
   type ReactNode,
+  type RefObject,
 } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -28,11 +30,12 @@ const SHOWCASE_SLIDE_MS = 620;
 const THUMB_GAP = 12;
 const SHOWCASE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const SHOWCASE_DESKTOP_MQ = '(min-width: 1024px)';
+const SWIPE_TRIGGER_PX = 46;
+const SWIPE_AXIS_LOCK_PX = 8;
 const SHOWCASE_HIDDEN: CSSProperties = {
   opacity: 0,
   transform: 'translate3d(0, 28px, 0)',
 };
-
 const SHOWCASE_MOTION_CSS = `
 @media (prefers-reduced-motion: reduce) {
   [data-showcase-enter] {
@@ -41,6 +44,30 @@ const SHOWCASE_MOTION_CSS = `
     filter: none !important;
     transition: none !important;
   }
+}
+[data-showcase-thumb-strip]:hover [data-showcase-thumb]:not(:hover) {
+  opacity: 0.55 !important;
+}
+.pf-showcase-marquee {
+  animation: pf-showcase-marquee-scroll 8.5s linear infinite;
+  animation-play-state: paused;
+}
+[data-showcase-thumb]:hover .pf-showcase-marquee {
+  animation-play-state: running;
+}
+@keyframes pf-showcase-marquee-scroll {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-showcase-marquee { animation: none !important; }
+}
+.pf-showcase-mobile-thumbs {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.pf-showcase-mobile-thumbs::-webkit-scrollbar {
+  display: none;
 }
 `;
 
@@ -148,6 +175,123 @@ function showElementNow(el: HTMLElement): void {
   el.dataset.revealed = 'true';
 }
 
+/** Best-effort average color of an image, sampled off a tiny offscreen canvas. Silently gives
+ * up on cross-origin sources without permissive CORS headers — the ambient wash is a bonus,
+ * never a requirement. */
+function useShowcaseAmbientColor(mediaUrl: string | null): string | null {
+  const [color, setColor] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!mediaUrl) return undefined;
+    let cancelled = false;
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      if (cancelled) return;
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 12;
+        canvas.height = 12;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, 12, 12);
+        const { data } = ctx.getImageData(0, 0, 12, 12);
+        let r = 0;
+        let g = 0;
+        let b = 0;
+        let n = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i]!;
+          g += data[i + 1]!;
+          b += data[i + 2]!;
+          n += 1;
+        }
+        if (n > 0 && !cancelled) {
+          setColor(`rgb(${Math.round(r / n)}, ${Math.round(g / n)}, ${Math.round(b / n)})`);
+        }
+      } catch {
+        // Tainted canvas (no CORS) — leave the ambient wash at its previous/neutral state.
+      }
+    };
+    img.onerror = () => {};
+    img.src = mediaUrl;
+    return () => {
+      cancelled = true;
+    };
+  }, [mediaUrl]);
+
+  return color;
+}
+
+/** Native (non-passive) touch listeners so a confirmed horizontal drag can call
+ * preventDefault and stay a swipe instead of also scrolling the page underneath it —
+ * React's synthetic touch handlers are passive by default and can't do that. Axis is
+ * locked from the first few pixels of movement so a vertical scroll is never hijacked. */
+function useShowcaseSwipe(
+  elRef: RefObject<HTMLElement | null>,
+  onSwipe: (direction: 1 | -1) => void,
+  disabled: boolean
+) {
+  const onSwipeRef = useRef(onSwipe);
+  useLayoutEffect(() => {
+    onSwipeRef.current = onSwipe;
+  }, [onSwipe]);
+
+  useEffect(() => {
+    const el = elRef.current;
+    if (!el || disabled) return undefined;
+
+    let startX = 0;
+    let startY = 0;
+    let axis: 'x' | 'y' | null = null;
+
+    const onStart = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      startX = touch.clientX;
+      startY = touch.clientY;
+      axis = null;
+    };
+
+    const onMove = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      if (!axis) {
+        if (Math.abs(dx) < SWIPE_AXIS_LOCK_PX && Math.abs(dy) < SWIPE_AXIS_LOCK_PX) return;
+        axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      }
+      if (axis === 'x' && event.cancelable) event.preventDefault();
+    };
+
+    const onEnd = (event: TouchEvent) => {
+      const wasHorizontal = axis === 'x';
+      const touch = event.changedTouches[0];
+      axis = null;
+      if (!wasHorizontal || !touch) return;
+      const dx = touch.clientX - startX;
+      if (Math.abs(dx) < SWIPE_TRIGGER_PX) return;
+      onSwipeRef.current(dx < 0 ? 1 : -1);
+    };
+
+    const onCancel = () => {
+      axis = null;
+    };
+
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchmove', onMove, { passive: false });
+    el.addEventListener('touchend', onEnd, { passive: true });
+    el.addEventListener('touchcancel', onCancel, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove', onMove);
+      el.removeEventListener('touchend', onEnd);
+      el.removeEventListener('touchcancel', onCancel);
+    };
+  }, [elRef, disabled]);
+}
+
 function ShowcaseHref({
   href,
   className,
@@ -192,27 +336,101 @@ function ShowcaseHref({
   );
 }
 
+/** Ring that fades in and tracks the pointer within the nav cluster — a local "cursor grows as
+ * it approaches" cue, contained to this control instead of replacing the OS cursor globally. */
+function ShowcaseNavAura({ children, color }: { children: ReactNode; color: string }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [style, setStyle] = useState<CSSProperties>({ opacity: 0, transform: 'translate3d(-50%, -50%, 0) scale(0.4)' });
+
+  const handleMove = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    setStyle({ opacity: 1, transform: `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(1)` });
+  };
+  const handleLeave = () => setStyle((prev) => ({ ...prev, opacity: 0 }));
+
+  return (
+    <div
+      ref={wrapRef}
+      className="relative flex items-center gap-1"
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-0 top-0 h-9 w-9 rounded-full border transition-[opacity,transform] duration-300 ease-out"
+        style={{ borderColor: color, ...style }}
+      />
+      {children}
+    </div>
+  );
+}
+
+/** Magnetic pull strength/reach — button translates toward the cursor while hovered. */
+const MAGNETIC_STRENGTH = 0.35;
+const MAGNETIC_MAX_PX = 10;
+
 function ShowcaseChevron({
   direction,
   onClick,
   label,
   color,
   disabled,
+  touchSize = false,
 }: {
   direction: 'prev' | 'next';
   onClick: () => void;
   label: string;
   color: string;
   disabled?: boolean;
+  /** Widens the hit area to a comfortable thumb target (48px) without enlarging the
+   * glyph itself — the graphic stays as thin/discreet as the desktop version. */
+  touchSize?: boolean;
 }) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const magneticFrame = useRef<number | null>(null);
+
+  const handleMouseMove = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    const el = buttonRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const relX = event.clientX - (rect.left + rect.width / 2);
+    const relY = event.clientY - (rect.top + rect.height / 2);
+    const x = Math.max(-MAGNETIC_MAX_PX, Math.min(MAGNETIC_MAX_PX, relX * MAGNETIC_STRENGTH));
+    const y = Math.max(-MAGNETIC_MAX_PX, Math.min(MAGNETIC_MAX_PX, relY * MAGNETIC_STRENGTH));
+    if (magneticFrame.current) cancelAnimationFrame(magneticFrame.current);
+    magneticFrame.current = requestAnimationFrame(() => {
+      buttonRef.current?.style.setProperty('transform', `translate3d(${x}px, ${y}px, 0)`);
+    });
+  };
+
+  const handleMouseLeave = () => {
+    if (magneticFrame.current) cancelAnimationFrame(magneticFrame.current);
+    buttonRef.current?.style.setProperty('transform', 'translate3d(0, 0, 0)');
+  };
+
+  useEffect(
+    () => () => {
+      if (magneticFrame.current) cancelAnimationFrame(magneticFrame.current);
+    },
+    []
+  );
+
   return (
     <button
+      ref={buttonRef}
       type="button"
       onClick={onClick}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       disabled={disabled}
       aria-label={label}
       data-pf-no-color-transition=""
-      className="inline-flex h-9 w-9 items-center justify-center rounded-sm transition-opacity duration-300 ease-out hover:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-current disabled:pointer-events-none disabled:opacity-25"
+      className={`relative z-[1] inline-flex items-center justify-center rounded-sm transition-[opacity,transform] duration-200 ease-out hover:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-current active:opacity-40 disabled:pointer-events-none disabled:opacity-25 ${
+        touchSize ? 'h-12 w-12' : 'h-9 w-9'
+      }`}
       style={{ color }}
     >
       <svg
@@ -238,11 +456,18 @@ function ShowcasePrimaryMedia({
   presentation,
   settings,
   reduceMotion,
+  direction,
+  variant = 'desktop',
 }: {
   item: MarketplaceContentItem;
   presentation: PortfolioWorkPresentationSettings;
   settings: PortfolioWorkProjectsShowcaseSettings;
   reduceMotion: boolean | null;
+  direction: 1 | -1;
+  /** 'mobile' renders full-bleed edge-to-edge (no card radius/aspect ratio, fills its
+   * parent's own height instead) for the immersive sub-768px layout; the role chip is
+   * skipped since the overlapping title covers that ground on that layout. */
+  variant?: 'desktop' | 'mobile';
 }) {
   const mediaUrl = item.mediaUrl?.trim() || null;
   const muted = presentation.subtitleColor;
@@ -251,7 +476,8 @@ function ShowcasePrimaryMedia({
   const href = item.linkUrl?.trim() || null;
   const title = item.title?.trim() || 'Project';
   const role = workRoleLabel(item);
-  const showRole = settings.showRole !== false && Boolean(role);
+  const showRole = variant === 'desktop' && settings.showRole !== false && Boolean(role);
+  const sizes = variant === 'mobile' ? '100vw' : '(max-width: 1024px) 100vw, 58vw';
 
   const imageClass = `object-cover object-center ${
     reduceMotion
@@ -267,7 +493,7 @@ function ShowcasePrimaryMedia({
             src={mediaUrl}
             alt={title}
             fill
-            sizes="(max-width: 1024px) 100vw, 58vw"
+            sizes={sizes}
             className={imageClass}
             priority={false}
             data-pf-no-color-transition=""
@@ -279,7 +505,7 @@ function ShowcasePrimaryMedia({
         src={mediaUrl}
         alt={title}
         fill
-        sizes="(max-width: 1024px) 100vw, 58vw"
+        sizes={sizes}
         className={imageClass}
         priority={false}
         data-pf-no-color-transition=""
@@ -294,21 +520,29 @@ function ShowcasePrimaryMedia({
     </div>
   );
 
+  // Directional mask wipe: the incoming frame reveals from the side it travels in from while
+  // scaling down to rest; the outgoing frame wipes away toward the same direction of travel.
+  const hiddenClip = direction === 1 ? 'inset(0% 0% 0% 100%)' : 'inset(0% 100% 0% 0%)';
+  const exitClip = direction === 1 ? 'inset(0% 100% 0% 0%)' : 'inset(0% 0% 0% 100%)';
+
   return (
     <figure
-      className={`group/media relative aspect-[4/5] w-full overflow-hidden lg:aspect-auto lg:h-full lg:min-h-[36rem] ${radiusClass}`}
+      className={
+        variant === 'mobile'
+          ? 'group/media relative h-full w-full overflow-hidden'
+          : `group/media relative aspect-[4/5] w-full overflow-hidden lg:aspect-auto lg:h-full lg:min-h-[36rem] ${radiusClass}`
+      }
       style={{ backgroundColor: `${border}28` }}
       data-pf-no-color-transition=""
     >
-      {/* Crossfade only — no dark veil, keeps previous frame underneath. */}
       <AnimatePresence initial={false}>
         <motion.div
           key={item.id}
           className="absolute inset-0"
-          initial={reduceMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={reduceMotion ? undefined : { opacity: 0 }}
-          transition={{ duration: reduceMotion ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
+          initial={reduceMotion ? false : { clipPath: hiddenClip, scale: 1.09 }}
+          animate={{ clipPath: 'inset(0% 0% 0% 0%)', scale: 1 }}
+          exit={reduceMotion ? undefined : { clipPath: exitClip, scale: 1 }}
+          transition={{ duration: reduceMotion ? 0 : 0.72, ease: [0.22, 1, 0.36, 1] }}
         >
           {mediaNode}
         </motion.div>
@@ -332,18 +566,94 @@ function ShowcasePrimaryMedia({
   );
 }
 
+/** Title as a word-level "text-split reveal": on project change, the current words slide up and
+ * out, then the new title's words slide up into place, staggered left to right. */
+function ShowcaseTitleReveal({
+  title,
+  href,
+  activeId,
+  titleColor,
+  reduceMotion,
+}: {
+  title: string;
+  href: string | null;
+  activeId: string;
+  titleColor: string;
+  reduceMotion: boolean | null;
+}) {
+  if (!title) return null;
+
+  if (reduceMotion) {
+    return href ? (
+      <ShowcaseHref
+        href={href}
+        className="rounded-sm outline-none transition-opacity duration-500 hover:opacity-70 focus-visible:opacity-70"
+      >
+        <EditorialTitleText text={title} />
+      </ShowcaseHref>
+    ) : (
+      <EditorialTitleText text={title} />
+    );
+  }
+
+  const words = title.trim().split(/\s+/).filter(Boolean);
+  const parts = splitEditorialTitle(title);
+  const italicLastIndex = parts ? words.length - 1 : -1;
+
+  const track = (
+    <AnimatePresence mode="wait" initial={false}>
+      {words.map((word, i) => (
+        <span key={`${activeId}-${i}`} className="inline-block overflow-hidden pb-[0.14em] align-bottom">
+          <motion.span
+            className={`inline-block ${i === italicLastIndex ? 'font-medium italic tracking-[-0.03em]' : ''}`}
+            initial={{ y: '105%' }}
+            animate={{ y: '0%' }}
+            exit={{ y: '-105%' }}
+            transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1], delay: i * 0.045 }}
+          >
+            {word}
+            {i < words.length - 1 ? ' ' : ''}
+          </motion.span>
+        </span>
+      ))}
+    </AnimatePresence>
+  );
+
+  return href ? (
+    <ShowcaseHref
+      href={href}
+      className="rounded-sm outline-none transition-opacity duration-500 hover:opacity-70 focus-visible:opacity-70"
+      style={{ color: titleColor }}
+    >
+      {track}
+    </ShowcaseHref>
+  ) : (
+    track
+  );
+}
+
 function ShowcaseDetails({
   item,
   index,
   total,
   presentation,
   settings,
+  reduceMotion,
+  hideTitle = false,
+  compact = false,
 }: {
   item: MarketplaceContentItem;
   index: number;
   total: number;
   presentation: PortfolioWorkPresentationSettings;
   settings: PortfolioWorkProjectsShowcaseSettings;
+  reduceMotion: boolean | null;
+  /** Mobile layout renders the massive title separately, overlapping the media — this
+   * skips it here so it isn't duplicated. */
+  hideTitle?: boolean;
+  /** Mobile layout: description and tags shrink further and sit closer together —
+   * "very discreet, very thin" per the immersive full-width redesign. */
+  compact?: boolean;
 }) {
   const titleColor = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
   const muted = presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
@@ -355,12 +665,15 @@ function ShowcaseDetails({
   const showDescription = settings.showDescription !== false && Boolean(description);
   const showCategory = settings.showCategory !== false && Boolean(category);
   const categoryLabel = settings.categoryLabel?.trim() || 'Category';
+  const showTitle = !hideTitle && Boolean(title);
 
   return (
     <div className="min-w-0" aria-live="polite" aria-atomic="true">
       {total > 0 ? (
         <p
-          className="mb-6 flex items-center gap-3 text-[10px] font-medium uppercase tracking-[0.22em] sm:mb-7 sm:text-[11px]"
+          className={`flex items-center gap-3 text-[10px] font-medium uppercase tracking-[0.22em] ${
+            compact ? 'mb-4' : 'mb-6 sm:mb-7 sm:text-[11px]'
+          }`}
           style={{ color: muted }}
           data-pf-no-color-transition=""
         >
@@ -374,31 +687,32 @@ function ShowcaseDetails({
         </p>
       ) : null}
 
-      {title ? (
+      {showTitle ? (
         <h3
-          className="max-w-xl text-[2.15rem] font-semibold tracking-[-0.045em] sm:text-[2.7rem] lg:text-[3.25rem] lg:leading-[1.04]"
+          className="relative max-w-xl text-[2.15rem] font-semibold tracking-[-0.045em] sm:text-[2.7rem] lg:text-[3.25rem] lg:leading-[1.04]"
           style={{ color: titleColor }}
           data-pf-no-color-transition=""
         >
-          {href ? (
-            <ShowcaseHref
-              href={href}
-              className="rounded-sm outline-none transition-opacity duration-500 hover:opacity-70 focus-visible:opacity-70"
-            >
-              <EditorialTitleText text={title} />
-            </ShowcaseHref>
-          ) : (
-            <EditorialTitleText text={title} />
-          )}
+          <ShowcaseTitleReveal
+            title={title}
+            href={href}
+            activeId={item.id}
+            titleColor={titleColor}
+            reduceMotion={reduceMotion}
+          />
         </h3>
       ) : null}
 
       {showDescription ? (
         <p
-          className={`max-w-[26rem] text-[0.9375rem] leading-[1.8] sm:text-[0.98rem] sm:leading-[1.85] ${
-            title ? 'mt-6 sm:mt-7' : ''
-          }`}
-          style={{ color: muted, opacity: 0.88 }}
+          className={
+            compact
+              ? `max-w-[26rem] text-[0.8rem] font-light leading-[1.75] ${title ? 'mt-1' : ''}`
+              : `max-w-[26rem] text-[0.9375rem] leading-[1.8] sm:text-[0.98rem] sm:leading-[1.85] ${
+                  showTitle ? 'mt-6 sm:mt-7' : ''
+                }`
+          }
+          style={{ color: muted, opacity: 0.82 }}
           data-pf-no-color-transition=""
         >
           {description}
@@ -407,17 +721,21 @@ function ShowcaseDetails({
 
       {showCategory ? (
         <div
-          className={`${title || showDescription ? 'mt-9 sm:mt-11' : ''}`}
+          className={
+            compact ? 'mt-5' : `${showTitle || showDescription ? 'mt-9 sm:mt-11' : ''}`
+          }
           data-pf-no-color-transition=""
         >
           <p
-            className="text-[10px] font-medium uppercase tracking-[0.22em] sm:text-[11px]"
-            style={{ color: muted, opacity: 0.62 }}
+            className={`font-medium uppercase tracking-[0.22em] ${
+              compact ? 'text-[9px]' : 'text-[10px] sm:text-[11px]'
+            }`}
+            style={{ color: muted, opacity: 0.55 }}
           >
             {categoryLabel}
           </p>
           <p
-            className="mt-2.5 text-sm tracking-[-0.015em] sm:text-[0.95rem]"
+            className={compact ? 'mt-1.5 text-[0.8rem] tracking-[-0.01em]' : 'mt-2.5 text-sm tracking-[-0.015em] sm:text-[0.95rem]'}
             style={{ color: titleColor }}
           >
             {category}
@@ -589,6 +907,7 @@ export function ProjectsShowcaseGallery({
   );
   const reduceMotion = useReducedMotion();
   const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [mediaDir, setMediaDir] = useState<1 | -1>(1);
   const [itemCount, setItemCount] = useState(items.length);
   const [thumbAnim, setThumbAnim] = useState<{ from: number; dir: 1 | -1 } | null>(null);
   const [thumbStep, setThumbStep] = useState(0);
@@ -601,6 +920,9 @@ export function ProjectsShowcaseGallery({
   const thumbTweenRef = useRef(false);
   const unlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const thumbFrameRef = useRef<number | null>(null);
+  const mobileMediaRef = useRef<HTMLDivElement>(null);
+  const suppressTapRef = useRef(false);
+  const suppressTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const thumbVisible = Math.min(3, Math.max(0, items.length - 1));
   const hGap = THUMB_GAP;
@@ -666,6 +988,7 @@ export function ProjectsShowcaseGallery({
     return () => {
       if (unlockTimer.current) clearTimeout(unlockTimer.current);
       if (thumbFrameRef.current != null) cancelAnimationFrame(thumbFrameRef.current);
+      if (suppressTapTimer.current) clearTimeout(suppressTapTimer.current);
     };
   }, []);
 
@@ -893,16 +1216,11 @@ export function ProjectsShowcaseGallery({
     };
   }, [items.length, mediaOnLeft]);
 
-  if (items.length === 0) return null;
+  const ambientColor = useShowcaseAmbientColor(items[safeIndex]?.mediaUrl?.trim() || null);
 
-  const active = items[safeIndex]!;
-  const ink = presentation.titleColor;
-  const muted = presentation.subtitleColor;
-  const border = presentation.cardBorderColor || muted;
-  const radiusClass = showcaseRadiusClass(settings.mediaRadius ?? 'xl');
-  const busy = Boolean(thumbAnim);
-
-  /** Same cycle as Gallery tall-row: next promotes first thumb into the hero. */
+  /** Same cycle as Gallery tall-row: next promotes first thumb into the hero. Defined
+   * above the empty-state return so the swipe hook below (a hook — must run unconditionally
+   * every render) can close over it. */
   const cycle = (direction: -1 | 1) => {
     if (items.length < 2) return;
     if (thumbAnimRef.current) return;
@@ -913,6 +1231,7 @@ export function ProjectsShowcaseGallery({
       node && thumbVisible > 0 ? measureShowcaseThumbStep(node, thumbVisible, hGap) : thumbStep;
     if (step > 0 && Math.abs(step - thumbStep) > 0.25) setThumbStep(step);
 
+    setMediaDir(direction);
     setFeaturedIndex((current) =>
       clampShowcaseIndex(clampShowcaseIndex(current, items.length) + direction, items.length)
     );
@@ -931,6 +1250,31 @@ export function ProjectsShowcaseGallery({
       finishThumbAnim();
     }, SHOWCASE_SLIDE_MS + 48);
   };
+
+  // Touch swipe on the mobile full-bleed media: a confirmed horizontal drag advances the
+  // gallery the same way the desktop chevrons do, briefly suppressing the image's own tap
+  // link so a swipe release near the start point never also fires a navigation click.
+  useShowcaseSwipe(
+    mobileMediaRef,
+    (direction) => {
+      suppressTapRef.current = true;
+      if (suppressTapTimer.current) clearTimeout(suppressTapTimer.current);
+      suppressTapTimer.current = setTimeout(() => {
+        suppressTapRef.current = false;
+      }, 400);
+      cycle(direction);
+    },
+    items.length < 2 || Boolean(thumbAnim)
+  );
+
+  if (items.length === 0) return null;
+
+  const active = items[safeIndex]!;
+  const ink = presentation.titleColor;
+  const muted = presentation.subtitleColor;
+  const border = presentation.cardBorderColor || muted;
+  const radiusClass = showcaseRadiusClass(settings.mediaRadius ?? 'xl');
+  const busy = Boolean(thumbAnim);
 
   /** Click a visible thumb → advance until that project is featured (same slide feel). */
   const selectThumb = (targetIndex: number) => {
@@ -964,6 +1308,7 @@ export function ProjectsShowcaseGallery({
           presentation={presentation}
           settings={settings}
           reduceMotion={reduceMotion}
+          direction={mediaDir}
         />
       </div>
     </div>
@@ -973,6 +1318,7 @@ export function ProjectsShowcaseGallery({
     thumbTrack.length === 0 ? null : (
       <div
         ref={thumbViewRef}
+        data-showcase-thumb-strip=""
         className="w-full overflow-hidden [container-type:inline-size]"
         aria-label="Project thumbnails"
       >
@@ -1006,7 +1352,8 @@ export function ProjectsShowcaseGallery({
                 aria-label={`Show ${label}`}
                 onClick={() => selectThumb(index)}
                 disabled={busy}
-                className={`relative aspect-[4/5] overflow-hidden opacity-[0.72] transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-100 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-current disabled:pointer-events-none ${radiusClass}`}
+                data-showcase-thumb=""
+                className={`group/thumb relative block aspect-[4/5] overflow-hidden opacity-[0.72] transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-100 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-current disabled:pointer-events-none ${radiusClass}`}
                 style={{
                   backgroundColor: `${border}28`,
                   flex: `0 0 ${
@@ -1023,11 +1370,27 @@ export function ProjectsShowcaseGallery({
                     alt=""
                     fill
                     sizes="(max-width: 1024px) 30vw, 12vw"
-                    className="object-cover object-center"
+                    className="object-cover object-center transition-transform duration-[6000ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/thumb:scale-[1.12]"
                     draggable={false}
                     data-pf-no-color-transition=""
                   />
                 ) : null}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden py-1"
+                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.34), transparent)' }}
+                >
+                  <span className="pf-showcase-marquee flex w-max whitespace-nowrap text-[9px] font-medium uppercase tracking-[0.2em] text-white">
+                    {[0, 1].map((rep) => (
+                      <span key={rep} className="flex shrink-0 items-center gap-3 pr-6">
+                        <span>{label}</span>
+                        <span>•</span>
+                        <span>{label}</span>
+                        <span>•</span>
+                      </span>
+                    ))}
+                  </span>
+                </span>
               </button>
             );
           })}
@@ -1057,6 +1420,7 @@ export function ProjectsShowcaseGallery({
             total={items.length}
             presentation={presentation}
             settings={settings}
+            reduceMotion={reduceMotion}
           />
         </motion.div>
       </div>
@@ -1069,7 +1433,7 @@ export function ProjectsShowcaseGallery({
         style={SHOWCASE_HIDDEN}
       >
         {items.length > 1 ? (
-          <div className="flex items-center gap-1">
+          <ShowcaseNavAura color={ink}>
             <ShowcaseChevron
               direction="prev"
               onClick={() => cycle(-1)}
@@ -1096,9 +1460,187 @@ export function ProjectsShowcaseGallery({
               color={ink}
               disabled={busy}
             />
-          </div>
+          </ShowcaseNavAura>
         ) : null}
         {thumbStrip}
+      </div>
+    </div>
+  );
+
+  // Full-width immersive mobile layout (< 768px): stacked, edge-to-edge, the title pulled
+  // up to overlap the image/background seam, swipe-driven instead of the desktop chevron
+  // rail + windowed thumb track. Kept as an entirely separate tree (toggled with the
+  // desktop grid via `hidden`/`md:hidden`) rather than reshaping the same markup at a
+  // breakpoint — the two layouts are structurally too different to share safely.
+  const mobileGallery = (
+    <div className="md:hidden">
+      <div
+        ref={mobileMediaRef}
+        className="relative mx-[calc(50%-50vw)] h-[50vh] min-h-[20rem] w-screen overflow-hidden"
+        data-pf-no-color-transition=""
+        onClickCapture={(event) => {
+          if (!suppressTapRef.current) return;
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+      >
+        <ShowcasePrimaryMedia
+          item={active}
+          presentation={presentation}
+          settings={settings}
+          reduceMotion={reduceMotion}
+          direction={mediaDir}
+          variant="mobile"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-3/4"
+          style={{
+            background:
+              'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 48%, transparent 100%)',
+          }}
+        />
+      </div>
+
+      <div className="relative z-[1] -mt-16 px-1">
+        {active.title?.trim() ? (
+          <h3
+            className="max-w-[16ch] font-semibold tracking-[-0.045em]"
+            style={{
+              fontSize: 'clamp(2.35rem, 11vw, 3.35rem)',
+              lineHeight: 0.98,
+              color: '#fbfbfb',
+              textShadow: '0 14px 36px rgba(0,0,0,0.55)',
+            }}
+            data-pf-no-color-transition=""
+          >
+            <ShowcaseTitleReveal
+              title={active.title.trim()}
+              href={null}
+              activeId={active.id}
+              titleColor="#fbfbfb"
+              reduceMotion={reduceMotion}
+            />
+          </h3>
+        ) : null}
+
+        <motion.div
+          key={active.id}
+          className="mt-7"
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: reduceMotion ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <ShowcaseDetails
+            item={active}
+            index={safeIndex}
+            total={items.length}
+            presentation={presentation}
+            settings={settings}
+            reduceMotion={reduceMotion}
+            hideTitle
+            compact
+          />
+        </motion.div>
+
+        {items.length > 1 ? (
+          <div className="mt-7 flex items-center justify-between">
+            <ShowcaseChevron
+              direction="prev"
+              onClick={() => cycle(-1)}
+              label="Previous project"
+              color={muted}
+              disabled={busy}
+              touchSize
+            />
+            <p
+              className="px-1 text-[10px] font-medium uppercase tracking-[0.2em]"
+              style={{ color: muted }}
+              aria-hidden
+              data-pf-no-color-transition=""
+            >
+              {formatShowcaseIndex(safeIndex)}
+              <span className="mx-1.5" style={{ opacity: 0.4 }}>
+                /
+              </span>
+              {formatShowcaseIndex(items.length - 1)}
+            </p>
+            <ShowcaseChevron
+              direction="next"
+              onClick={() => cycle(1)}
+              label="Next project"
+              color={muted}
+              disabled={busy}
+              touchSize
+            />
+          </div>
+        ) : null}
+
+        {items.length > 1 ? (
+          <div
+            className="pf-showcase-mobile-thumbs -mx-1 mt-6 flex gap-2 overflow-x-auto px-1 pb-1"
+            style={{ scrollSnapType: 'x proximity' }}
+            role="list"
+            aria-label="Project thumbnails"
+          >
+            {items.map((item, idx) => {
+              const thumbUrl = item.mediaUrl?.trim() || null;
+              const label = item.title?.trim() || `Project ${idx + 1}`;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="listitem"
+                  onClick={() => selectThumb(idx)}
+                  disabled={busy}
+                  aria-label={`Show ${label}`}
+                  aria-current={idx === safeIndex}
+                  className="relative h-11 w-16 shrink-0 overflow-hidden rounded-[3px] transition-opacity duration-300 disabled:pointer-events-none"
+                  style={{
+                    scrollSnapAlign: 'center',
+                    opacity: idx === safeIndex ? 1 : 0.4,
+                    boxShadow: idx === safeIndex ? `0 0 0 1px ${ink}99 inset` : 'none',
+                    backgroundColor: `${border}28`,
+                  }}
+                  data-pf-no-color-transition=""
+                >
+                  {thumbUrl ? (
+                    <Image
+                      src={thumbUrl}
+                      alt=""
+                      fill
+                      sizes="64px"
+                      className="object-cover object-center"
+                      draggable={false}
+                      data-pf-no-color-transition=""
+                    />
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {active.linkUrl?.trim() ? (
+          <ShowcaseHref
+            href={active.linkUrl.trim()}
+            className="mb-1 mt-8 inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.24em]"
+            style={{ color: ink }}
+            ariaLabel={`Open ${active.title?.trim() || 'project'}`}
+          >
+            Tap to Explore
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              className="h-3 w-3"
+              aria-hidden
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H9M17 7V15" />
+            </svg>
+          </ShowcaseHref>
+        ) : null}
       </div>
     </div>
   );
@@ -1106,16 +1648,29 @@ export function ProjectsShowcaseGallery({
   return (
     <section
       ref={rootRef}
-      className="w-full"
+      className="relative w-full"
       aria-label="Project showcase"
       data-pf-no-color-transition=""
     >
       <style dangerouslySetInnerHTML={{ __html: SHOWCASE_MOTION_CSS }} />
+      {/* Ambient wash — a soft, local color echo of the active project's image. Anchored near
+          the image itself and faded out well before the copy column, so it never reads as a
+          tint over the text; scoped to this section, the site's own background is separate. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.16] blur-3xl transition-[background] duration-[1400ms] ease-out"
+        style={{
+          background: ambientColor
+            ? `radial-gradient(ellipse 55% 65% at 20% 45%, ${ambientColor}, transparent 68%)`
+            : 'transparent',
+        }}
+      />
       <p className="sr-only">
         Project {safeIndex + 1} of {items.length}
         {active.title?.trim() ? `: ${active.title.trim()}` : ''}
       </p>
-      <div className="grid grid-cols-1 gap-10 sm:gap-12 lg:grid-cols-[minmax(0,0.56fr)_minmax(0,0.44fr)] lg:items-stretch lg:gap-x-16 xl:gap-x-24">
+      {mobileGallery}
+      <div className="hidden grid-cols-1 gap-10 sm:gap-12 md:grid lg:grid-cols-[minmax(0,0.56fr)_minmax(0,0.44fr)] lg:items-stretch lg:gap-x-16 xl:gap-x-24">
         <div
           className={`min-w-0 lg:self-stretch ${
             mediaOnLeft ? 'lg:col-start-1 lg:row-start-1' : 'lg:col-start-2 lg:row-start-1'

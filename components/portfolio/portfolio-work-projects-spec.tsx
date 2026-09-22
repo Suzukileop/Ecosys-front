@@ -2,12 +2,16 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   type CSSProperties,
   type ReactNode,
+  type RefObject,
 } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
 import type { MarketplaceContentItem } from '@/types/marketplace';
@@ -21,12 +25,23 @@ import {
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsSpecSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { aboutBannerScrollParent } from '@/components/portfolio/portfolio-about-scroll-utils';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 const SPEC_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const SPEC_HIDDEN: CSSProperties = {
   opacity: 0,
   transform: 'translate3d(0, 28px, 0)',
 };
+
+/** Varied, non-repeating rhythm for the asymmetric left-offset (desktop only). */
+const SPEC_SHIFT_PATTERN = [0, 9, 3, 12, 6];
+function specShiftVw(index: number): number {
+  return SPEC_SHIFT_PATTERN[index % SPEC_SHIFT_PATTERN.length];
+}
 
 const SPEC_MOTION_CSS = `
 @media (prefers-reduced-motion: reduce) {
@@ -39,19 +54,23 @@ const SPEC_MOTION_CSS = `
   .pf-work-spec [data-spec-title],
   .pf-work-spec [data-spec-body],
   .pf-work-spec [data-spec-index],
-  .pf-work-spec [data-spec-media] {
+  .pf-work-spec [data-spec-media],
+  .pf-work-spec-title-inner {
     opacity: 1 !important;
-    transform: none !important;
-  }
-  .pf-work-spec-title-shift,
-  .pf-work-spec-rule {
-    transition: none !important;
     transform: none !important;
   }
   .pf-work-spec-rule {
     width: min(44%, 12rem) !important;
+    transition: none !important;
+  }
+  .pf-work-spec-preview {
+    display: none !important;
   }
 }
+/* Everything below this line is a static/idle state only — GSAP (see
+   useSpecChoreography, SpecHoverPreview, SpecBracketConsult) owns every
+   transition: scroll reveal, scrub parallax, hover image, focus/blur, and the
+   consult brackets. No CSS transitions compete with GSAP's per-frame writes. */
 .pf-work-spec-rule {
   width: min(44%, 12rem);
   opacity: 0.22;
@@ -62,21 +81,53 @@ const SPEC_MOTION_CSS = `
   width: min(78%, 20rem);
   opacity: 0.4;
 }
-.pf-work-spec-title-shift {
-  display: inline-block;
-  max-width: 100%;
-  transition: transform 0.7s ${SPEC_EASE};
+/* Title mask — GSAP sets the inner span's initial yPercent and reveals it;
+   this just clips it so the text is invisible until then. */
+.pf-work-spec-title-mask {
+  display: block;
+  overflow: hidden;
 }
-@media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .pf-work-spec:hover .pf-work-spec-sheet[data-revealed='true']:not(:hover):not(:focus-within) {
-    opacity: 0.42 !important;
+.pf-work-spec-title-inner {
+  display: block;
+}
+.pf-work-spec-title-hit {
+  cursor: pointer;
+}
+/* Asymmetric rhythm — desktop only, single-column mode. */
+@media (min-width: 1024px) {
+  .pf-work-spec-sheet[data-spec-shifted='true'] {
+    margin-left: calc(var(--spec-shift, 0) * 1vw);
   }
-  .pf-work-spec-sheet[data-revealed='true'] {
-    transition: opacity 0.6s ${SPEC_EASE};
-  }
-  .pf-work-spec-sheet:hover .pf-work-spec-title-shift,
-  .pf-work-spec-sheet:focus-within .pf-work-spec-title-shift {
-    transform: translate3d(0.4rem, 0, 0);
+}
+/* Hover image reveal — static box model only; GSAP drives position + entrance. */
+.pf-work-spec-preview {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+  z-index: 50;
+}
+.pf-work-spec-preview-inner {
+  position: absolute;
+  top: -5.5rem;
+  left: 1.75rem;
+  width: 15rem;
+  height: 10rem;
+  overflow: hidden;
+  opacity: 0;
+  will-change: transform, opacity, filter;
+}
+.pf-work-spec-preview-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@media (pointer: coarse) {
+  .pf-work-spec-preview {
+    display: none;
   }
 }
 `;
@@ -125,10 +176,6 @@ function specScrollRoot(el: HTMLElement | null): HTMLElement | null {
   return null;
 }
 
-function specScrollTarget(el: HTMLElement | null): HTMLElement | Window {
-  return specScrollRoot(el) ?? window;
-}
-
 function revealElement(el: HTMLElement, delayMs: number): void {
   el.style.transition = `opacity 0.85s ${SPEC_EASE} ${delayMs}ms, transform 0.95s ${SPEC_EASE} ${delayMs}ms`;
   el.style.opacity = '1';
@@ -149,6 +196,8 @@ function SpecConsultAnchor({
   style,
   children,
   noColorTransition = false,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   href: string;
   className: string;
@@ -157,6 +206,8 @@ function SpecConsultAnchor({
   /** True when `className` carries a transition (e.g. opacity) that the global
    * .pf-theme-root color-transition rule would otherwise clobber. */
   noColorTransition?: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }) {
   const external = /^https?:\/\//i.test(href);
   if (external) {
@@ -167,6 +218,8 @@ function SpecConsultAnchor({
         rel="noopener noreferrer"
         className={className}
         style={style}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
         {...(noColorTransition ? { 'data-pf-no-color-transition': '' } : null)}
       >
         {children}
@@ -178,10 +231,75 @@ function SpecConsultAnchor({
       href={href}
       className={className}
       style={style}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       {...(noColorTransition ? { 'data-pf-no-color-transition': '' } : null)}
     >
       {children}
     </Link>
+  );
+}
+
+/**
+ * "[ Consult this project → ]" — a paused GSAP timeline built once per instance:
+ * brackets spread outward, the arrow sweeps right with a spring (back.out) on
+ * mouseenter, and reverses cleanly on mouseleave (GSAP timelines reverse from
+ * wherever they currently are, so a fast in/out never stutters or snaps back).
+ */
+function SpecBracketConsult({
+  href,
+  label,
+  ink,
+  focusClass,
+}: {
+  href: string;
+  label: string;
+  ink: string;
+  focusClass: string;
+}) {
+  const openRef = useRef<HTMLSpanElement>(null);
+  const closeRef = useRef<HTMLSpanElement>(null);
+  const arrowRef = useRef<HTMLSpanElement>(null);
+  const timelineRef = useRef<gsap.core.Timeline | null>(null);
+
+  useLayoutEffect(() => {
+    const open = openRef.current;
+    const close = closeRef.current;
+    const arrow = arrowRef.current;
+    if (!open || !close || !arrow || prefersReducedMotion()) return undefined;
+
+    const tl = gsap.timeline({ paused: true })
+      .to(open, { x: -8, duration: 0.35, ease: 'power2.out' }, 0)
+      .to(close, { x: 8, duration: 0.35, ease: 'power2.out' }, 0)
+      .to(arrow, { x: 10, duration: 0.45, ease: 'back.out(1.7)' }, 0);
+    timelineRef.current = tl;
+
+    return () => {
+      tl.kill();
+      timelineRef.current = null;
+    };
+  }, []);
+
+  return (
+    <SpecConsultAnchor
+      href={href}
+      className={`pf-work-spec-consult group/consult inline-flex items-center gap-1.5 font-mono text-[12px] tracking-[0.02em] ${focusClass}`}
+      style={{ color: ink }}
+      noColorTransition
+      onMouseEnter={() => timelineRef.current?.play()}
+      onMouseLeave={() => timelineRef.current?.reverse()}
+    >
+      <span ref={openRef} aria-hidden className="inline-block opacity-45">
+        [
+      </span>
+      <span className="tracking-[-0.015em]">{label}</span>
+      <span ref={arrowRef} aria-hidden className="inline-block opacity-55" data-pf-no-color-transition="">
+        →
+      </span>
+      <span ref={closeRef} aria-hidden className="inline-block opacity-45">
+        ]
+      </span>
+    </SpecConsultAnchor>
   );
 }
 
@@ -228,29 +346,7 @@ function SpecConsultControl({
   }
 
   if (design === 'bracket') {
-    return (
-      <SpecConsultAnchor
-        href={href}
-        className={`group/consult inline-flex items-center gap-1.5 font-mono text-[12px] tracking-[0.02em] transition-opacity duration-300 hover:opacity-60 ${focusClass}`}
-        style={{ color: ink }}
-        noColorTransition
-      >
-        <span aria-hidden className="opacity-45">
-          [
-        </span>
-        <span className="tracking-[-0.015em]">{label}</span>
-        <span
-          className="opacity-55 transition-transform duration-300 group-hover/consult:translate-x-0.5"
-          aria-hidden
-          data-pf-no-color-transition=""
-        >
-          →
-        </span>
-        <span aria-hidden className="opacity-45">
-          ]
-        </span>
-      </SpecConsultAnchor>
-    );
+    return <SpecBracketConsult href={href} label={label} ink={ink} focusClass={focusClass} />;
   }
 
   if (design === 'footer') {
@@ -364,71 +460,17 @@ function SpecThumbnail({
   );
 }
 
-function SpecDefRow({
-  label,
-  children,
-  rule,
-  muted,
-  ink,
-  last,
-  showLabel = true,
-}: {
-  label: string;
-  children: ReactNode;
-  rule: string;
-  muted: string;
-  ink: string;
-  last?: boolean;
-  showLabel?: boolean;
-}) {
-  return (
-    <div
-      className={`py-4 sm:py-[1.15rem] ${
-        showLabel
-          ? 'grid grid-cols-1 gap-2 sm:grid-cols-[6.25rem_minmax(0,1fr)] sm:items-baseline sm:gap-x-8 sm:gap-y-0 lg:grid-cols-[7rem_minmax(0,1fr)]'
-          : ''
-      }`}
-    >
-      {showLabel ? (
-        <dt
-          className="text-[9px] font-normal uppercase tracking-[0.1em] sm:text-[10px]"
-          style={{ color: muted, opacity: 0.4 }}
-        >
-          {label}
-        </dt>
-      ) : null}
-      <dd className={`min-w-0 ${showLabel ? '' : 'block'}`} style={{ color: ink }}>
-        {children}
-        {!last ? (
-          <span
-            aria-hidden
-            data-pf-no-color-transition=""
-            className="pf-work-spec-rule mt-4 block h-px origin-left sm:mt-5"
-            style={{ backgroundColor: rule }}
-          />
-        ) : null}
-      </dd>
-    </div>
-  );
-}
-
-function SpecStack({
-  tools,
-  ink,
-}: {
-  tools: string[];
-  ink: string;
-}) {
+function SpecStack({ tools, ink }: { tools: string[]; ink: string }) {
   return (
     <ul className="flex flex-wrap items-baseline" aria-label="Stack">
       {tools.map((tool, toolIndex) => (
         <li
           key={tool}
-          className="flex items-baseline text-[0.8125rem] font-normal tracking-[-0.01em] sm:text-[0.875rem]"
-          style={{ color: ink }}
+          className="flex items-baseline text-[11px] font-normal uppercase tracking-[0.08em] sm:text-[11.5px]"
+          style={{ color: ink, opacity: 0.55 }}
         >
           {toolIndex > 0 ? (
-            <span className="mx-2 select-none opacity-35" aria-hidden>
+            <span className="mx-2 select-none opacity-60" aria-hidden>
               /
             </span>
           ) : null}
@@ -439,12 +481,125 @@ function SpecStack({
   );
 }
 
+/**
+ * Floating hover-image preview — a single shared element per gallery that lags
+ * gently behind the cursor (exponential smoothing, not a CSS transition, so its
+ * motion never fights the per-frame position writes). Shown only while hovering
+ * a `[data-spec-hover-src]` title. No-ops on touch / reduced-motion.
+ */
+function SpecHoverPreview({ galleryRef }: { galleryRef: RefObject<HTMLElement | null> }) {
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const root = galleryRef.current;
+    const anchor = anchorRef.current;
+    const inner = innerRef.current;
+    const img = imgRef.current;
+    if (!root || !anchor || !inner || !img) return undefined;
+    if (prefersReducedMotion()) return undefined;
+    if (!window.matchMedia('(pointer: fine)').matches) return undefined;
+
+    // Mouse tracking with inertia — GSAP's cached `quickTo` setters. This is the
+    // cheapest possible way to chase the pointer every frame: it only ever
+    // touches `x`/`y`, so it can never collide with (or slow down) scrolling.
+    const followX = gsap.quickTo(anchor, 'x', { duration: 0.55, ease: 'power3' });
+    const followY = gsap.quickTo(anchor, 'y', { duration: 0.55, ease: 'power3' });
+    const onMove = (event: PointerEvent) => {
+      followX(event.clientX);
+      followY(event.clientY);
+    };
+
+    // Entrance impact — opacity + micro-stretch + shear, settling instantly
+    // to rest with power3.out. Replayed from 0 on every fresh hover.
+    const revealTl = gsap.timeline({ paused: true }).fromTo(
+      inner,
+      { autoAlpha: 0, scale: 1.32, skewX: -8, rotate: -3 },
+      { autoAlpha: 1, scale: 1, skewX: 0, rotate: 0, duration: 0.5, ease: 'power3.out' }
+    );
+
+    const hits = Array.from(root.querySelectorAll<HTMLElement>('[data-spec-title-hit]'));
+    const titleEls = Array.from(root.querySelectorAll<HTMLElement>('[data-spec-title-text]'));
+    const baseColors = new Map<HTMLElement, string>();
+    titleEls.forEach((el) => baseColors.set(el, getComputedStyle(el).color));
+
+    // Focus/blur — the hovered title snaps to pure white; every other title in
+    // the list dims to near-invisible with a light kinetic blur, isolating the
+    // active project. Reverses to each title's own original color on leave.
+    const onEnter = (hit: HTMLElement) => {
+      const src = hit.dataset.specHoverSrc;
+      if (src) {
+        img.src = src;
+        revealTl.play(0);
+      }
+      const hoveredText = hit.querySelector<HTMLElement>('[data-spec-title-text]');
+      titleEls.forEach((el) => {
+        if (el === hoveredText) {
+          gsap.to(el, { color: '#ffffff', duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
+        } else {
+          gsap.to(el, {
+            opacity: 0.1,
+            filter: 'blur(1px)',
+            duration: 0.4,
+            ease: 'power2.out',
+            overwrite: 'auto',
+          });
+        }
+      });
+    };
+
+    const onLeave = () => {
+      revealTl.reverse();
+      titleEls.forEach((el) => {
+        gsap.to(el, {
+          color: baseColors.get(el),
+          opacity: 1,
+          filter: 'blur(0px)',
+          duration: 0.4,
+          ease: 'power2.out',
+          overwrite: 'auto',
+        });
+      });
+    };
+
+    const enterHandlers = hits.map((el) => {
+      const enter = () => onEnter(el);
+      el.addEventListener('pointerenter', enter);
+      el.addEventListener('pointerleave', onLeave);
+      return enter;
+    });
+
+    root.addEventListener('pointermove', onMove, { passive: true });
+
+    return () => {
+      root.removeEventListener('pointermove', onMove);
+      hits.forEach((el, i) => {
+        el.removeEventListener('pointerenter', enterHandlers[i]);
+        el.removeEventListener('pointerleave', onLeave);
+      });
+      revealTl.kill();
+      gsap.killTweensOf(titleEls);
+    };
+  }, [galleryRef]);
+
+  return (
+    <div ref={anchorRef} className="pf-work-spec-preview" aria-hidden>
+      <div ref={innerRef} className="pf-work-spec-preview-inner">
+        {/* eslint-disable-next-line @next/next/no-img-element -- decorative cursor-follower, src swapped imperatively per hover */}
+        <img ref={imgRef} alt="" className="pf-work-spec-preview-img" />
+      </div>
+    </div>
+  );
+}
+
 function SpecSheet({
   item,
   index,
   presentation,
   settings,
   compactTitle = false,
+  applyShift = false,
 }: {
   item: MarketplaceContentItem;
   index: number;
@@ -452,6 +607,8 @@ function SpecSheet({
   settings: PortfolioWorkProjectsSpecSettings;
   /** When 2-up on large screens — smaller project title. */
   compactTitle?: boolean;
+  /** Desktop-only asymmetric left offset — single-column mode only. */
+  applyShift?: boolean;
 }) {
   const accent = presentation.ctaColor || presentation.categoryActiveColor || '#2563eb';
   const ink = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
@@ -481,60 +638,26 @@ function SpecSheet({
   const href = item.linkUrl?.trim() || null;
   const mediaUrl = item.mediaUrl?.trim() || null;
   const showThumb = settings.showThumbnail === true && Boolean(mediaUrl);
+  const showHoverPreview = !showThumb && Boolean(mediaUrl);
 
   const showRole = settings.showRole !== false && Boolean(role);
   const showCategory = settings.showCategory !== false && Boolean(category);
   const showDescription = settings.showDescription !== false && Boolean(description);
   const showStack = settings.showStack !== false && tools.length > 0;
   const showConsult = settings.showConsult !== false && Boolean(href);
-  const showFieldLabels = settings.showFieldLabels !== false;
-  const descriptionLabel = settings.descriptionLabel?.trim() || 'Summary';
-  const stackLabel = settings.stackLabel?.trim() || 'Stack';
-  const linkLabel = settings.linkLabel?.trim() || 'Link';
   const consultLabel = settings.consultLabel?.trim() || 'Consult this project';
   const consultDesign = settings.consultDesign ?? 'bracket';
-  const consultInGrid = showConsult && href && consultDesign !== 'footer';
   const sheetFrame = settings.sheetFrame ?? 'none';
   const framed = sheetFrame !== 'none';
   const frameBorderColor = sheetFrame === 'accent' ? accent : rule;
   const frameBorderWidth =
     sheetFrame === 'solid' ? 2 : sheetFrame === 'thin' || sheetFrame === 'accent' ? 1 : 0;
 
-  const rows: { key: string; label: string; content: ReactNode }[] = [];
-  if (showDescription) {
-    rows.push({
-      key: 'description',
-      label: descriptionLabel,
-      content: (
-        <p className="max-w-[58ch] text-[0.9375rem] font-normal leading-[1.72] sm:text-[1.02rem] sm:leading-[1.76]">
-          {description}
-        </p>
-      ),
-    });
-  }
-  if (showStack) {
-    rows.push({
-      key: 'stack',
-      label: stackLabel,
-      content: <SpecStack tools={tools} ink={stackInk} />,
-    });
-  }
-  if (consultInGrid && href) {
-    rows.push({
-      key: 'consult',
-      label: linkLabel,
-      content: (
-        <SpecConsultControl
-          href={href}
-          label={consultLabel}
-          design={consultDesign}
-          accent={accent}
-          ink={consultDesign === 'solid' ? solidInk : ink}
-          surface={surface}
-        />
-      ),
-    });
-  }
+  const titleFontSize = showThumb
+    ? 'clamp(1.55rem, 2.35vw, 2.2rem)'
+    : compactTitle
+      ? 'clamp(1.4rem, 2vw, 1.9rem)'
+      : 'clamp(2.15rem, 4.6vw, 3.6rem)';
 
   const body = (
     <>
@@ -558,18 +681,18 @@ function SpecSheet({
           <div className="min-w-0 max-w-[62%] text-right">
             {showCategory ? (
               <p
-                className="truncate text-[10px] font-normal tracking-[0.08em] sm:text-[11px]"
-                style={{ color: muted, opacity: 0.55 }}
+                className="truncate text-xs font-normal tracking-[0.06em] sm:text-sm"
+                style={{ color: muted, opacity: 0.6 }}
               >
                 {category}
               </p>
             ) : null}
             {showRole ? (
               <p
-                className={`truncate text-[11px] font-normal tracking-[-0.01em] sm:text-xs ${
+                className={`truncate text-sm font-normal tracking-[-0.01em] sm:text-[0.9375rem] ${
                   showCategory ? 'mt-1' : ''
                 }`}
-                style={{ color: muted, opacity: 0.46 }}
+                style={{ color: muted, opacity: 0.5 }}
               >
                 {role}
               </p>
@@ -582,56 +705,48 @@ function SpecSheet({
         data-spec-title=""
         className="mt-5 font-medium leading-[1.06] tracking-[-0.045em] sm:mt-6"
         data-pf-no-color-transition=""
-        style={{
-          color: ink,
-          fontSize: showThumb
-            ? 'clamp(1.55rem, 2.35vw, 2.2rem)'
-            : compactTitle
-              ? 'clamp(1.4rem, 2vw, 1.9rem)'
-              : 'clamp(2.15rem, 4.2vw, 3.35rem)',
-        }}
+        style={{ color: ink, fontSize: titleFontSize }}
       >
-        <span className="pf-work-spec-title-shift">{title}</span>
+        <span
+          className="pf-work-spec-title-hit inline-block"
+          data-spec-title-hit=""
+          data-spec-hover-src={showHoverPreview && mediaUrl ? mediaUrl : undefined}
+        >
+          <span className="pf-work-spec-title-mask block overflow-hidden">
+            <span className="pf-work-spec-title-inner block" data-spec-title-text="">
+              {title}
+            </span>
+          </span>
+        </span>
       </h3>
 
-      {rows.length > 0 || (showConsult && href && consultDesign === 'footer') ? (
-        <div data-spec-body="" className="mt-7 sm:mt-8" data-pf-no-color-transition="">
-          {rows.length > 0 ? (
-            <dl>
-              {rows.map((row, rowIndex) => (
-                <SpecDefRow
-                  key={row.key}
-                  label={row.label}
-                  rule={rule}
-                  muted={muted}
-                  ink={valueInk}
-                  last={rowIndex === rows.length - 1}
-                  showLabel={showFieldLabels}
-                >
-                  {row.content}
-                </SpecDefRow>
-              ))}
-            </dl>
-          ) : null}
+      {showStack ? (
+        <div data-spec-body="" className="mt-4 sm:mt-5" data-pf-no-color-transition="">
+          <SpecStack tools={tools} ink={stackInk} />
+        </div>
+      ) : null}
 
-          {showConsult && href && consultDesign === 'footer' ? (
-            <div className={rows.length > 0 ? 'mt-6 sm:mt-7' : ''}>
-              <span
-                aria-hidden
-                data-pf-no-color-transition=""
-                className="pf-work-spec-rule mb-5 block h-px origin-left sm:mb-6"
-                style={{ backgroundColor: rule }}
-              />
-              <SpecConsultControl
-                href={href}
-                label={consultLabel}
-                design="footer"
-                accent={accent}
-                ink={ink}
-                surface={surface}
-              />
-            </div>
-          ) : null}
+      {showDescription ? (
+        <p
+          data-spec-body=""
+          className="mt-5 max-w-[58ch] text-[0.9375rem] font-normal leading-[1.72] sm:mt-6 sm:text-[1.02rem] sm:leading-[1.76]"
+          style={{ color: valueInk }}
+          data-pf-no-color-transition=""
+        >
+          {description}
+        </p>
+      ) : null}
+
+      {showConsult && href ? (
+        <div data-spec-body="" className="mt-7 sm:mt-8" data-pf-no-color-transition="">
+          <SpecConsultControl
+            href={href}
+            label={consultLabel}
+            design={consultDesign}
+            accent={accent}
+            ink={consultDesign === 'solid' ? solidInk : ink}
+            surface={surface}
+          />
         </div>
       ) : null}
     </>
@@ -639,11 +754,12 @@ function SpecSheet({
 
   return (
     <div
-      className="pf-work-spec-sheet group/sheet flex flex-col gap-6 sm:flex-row sm:items-stretch sm:gap-8 lg:gap-10"
+      className="pf-work-spec-sheet group/sheet relative flex flex-col gap-6 sm:flex-row sm:items-stretch sm:gap-8 lg:gap-10"
       data-spec-sheet=""
       data-index={String(index)}
+      data-spec-shifted={applyShift ? 'true' : 'false'}
       data-pf-no-color-transition=""
-      style={SPEC_HIDDEN}
+      style={applyShift ? ({ ['--spec-shift' as string]: specShiftVw(index) } as CSSProperties) : undefined}
     >
       {showThumb && mediaUrl ? (
         <div
@@ -823,133 +939,89 @@ function specSheetGridGapClass(gap: PortfolioWorkProjectsSpecSettings['sheetGap'
   return 'gap-y-28 sm:gap-y-32 lg:gap-y-36 gap-x-10 sm:gap-x-12 lg:gap-x-16 xl:gap-x-20';
 }
 
-function useSpecGalleryMotion(itemsKey: number) {
+/**
+ * GSAP choreography for the whole gallery:
+ *  - per sheet, a ScrollTrigger-driven reveal (`once: true`) that fades the sheet
+ *    in and masks the title up from translateY(108%) to 0 with power4.out;
+ *  - a continuous scrub parallax (desktop only) where the index numeral travels
+ *    roughly 3.5x further than the title block, `scrub: 1` tying it straight to
+ *    the scrollbar.
+ * All ScrollTriggers target the nearest real scroller (Live Preview nests its
+ * own overflow-y-auto shell), and everything is skipped for prefers-reduced-motion.
+ */
+function useSpecChoreography(itemsKey: number) {
   const rootRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = rootRef.current;
-    if (!root) return;
-    const sheets = [...root.querySelectorAll<HTMLElement>('[data-spec-sheet]')];
-    if (sheets.length === 0) return;
+    if (!root) return undefined;
+    const sheets = Array.from(root.querySelectorAll<HTMLElement>('[data-spec-sheet]'));
+    if (sheets.length === 0) return undefined;
 
     if (prefersReducedMotion()) {
-      sheets.forEach(showElementNow);
-      return;
+      gsap.set(sheets, { autoAlpha: 1, y: 0 });
+      gsap.set(root.querySelectorAll('.pf-work-spec-title-inner'), { yPercent: 0 });
+      return undefined;
     }
 
-    const ioRoot = specScrollRoot(root);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          const el = entry.target as HTMLElement;
-          const i = Number(el.dataset.index) || 0;
-          revealElement(el, Math.min(i * 70, 280));
-          observer.unobserve(el);
-        });
-      },
-      { threshold: 0.14, root: ioRoot, rootMargin: '0px 0px -6% 0px' }
-    );
-    sheets.forEach((sheet) => observer.observe(sheet));
+    const scroller = aboutBannerScrollParent(root);
+    const stBase = scroller ? { scroller } : {};
 
-    const failSafe = window.setTimeout(() => {
+    const ctx = gsap.context(() => {
       sheets.forEach((sheet) => {
-        if (sheet.dataset.revealed !== 'true') showElementNow(sheet);
+        const titleInner = sheet.querySelector<HTMLElement>('.pf-work-spec-title-inner');
+        const bodies = Array.from(sheet.querySelectorAll<HTMLElement>('[data-spec-body]'));
+
+        gsap.set(sheet, { autoAlpha: 0, y: 28 });
+        if (titleInner) gsap.set(titleInner, { yPercent: 108 });
+        if (bodies.length) gsap.set(bodies, { autoAlpha: 0, y: 16 });
+
+        // 1. Text reveal — masked title slides up out of the shadow (power4.out),
+        // staggered slightly after the sheet itself starts fading in.
+        const revealTl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
+        revealTl.to(sheet, { autoAlpha: 1, y: 0, duration: 0.9 }, 0);
+        if (titleInner) {
+          revealTl.to(titleInner, { yPercent: 0, duration: 1.1, ease: 'power4.out' }, 0.08);
+        }
+        if (bodies.length) {
+          revealTl.to(bodies, { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.08 }, 0.32);
+        }
+
+        ScrollTrigger.create({
+          trigger: sheet,
+          start: 'top 85%',
+          once: true,
+          onEnter: () => revealTl.play(),
+          ...stBase,
+        });
       });
-    }, 1800);
+
+      // 2. Continuous scroll-driven parallax — desktop only. The index numeral
+      // travels ~3.5x further than the title block for a real editorial depth.
+      const mm = gsap.matchMedia();
+      mm.add('(min-width: 1024px)', () => {
+        sheets.forEach((sheet) => {
+          const mark = sheet.querySelector<HTMLElement>('[data-spec-index]');
+          const title = sheet.querySelector<HTMLElement>('[data-spec-title]');
+          const scrub = {
+            trigger: sheet,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: 1,
+            ...stBase,
+          };
+          if (mark) gsap.to(mark, { y: -140, ease: 'none', scrollTrigger: scrub });
+          if (title) gsap.to(title, { y: -40, ease: 'none', scrollTrigger: scrub });
+        });
+        return undefined;
+      });
+    }, root);
+
+    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 120);
 
     return () => {
-      window.clearTimeout(failSafe);
-      observer.disconnect();
-    };
-  }, [itemsKey]);
-
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-
-    const desktop = window.matchMedia('(min-width: 1024px)');
-    let scroller: HTMLElement | Window | null = null;
-    let frame = 0;
-
-    const resetKinetic = () => {
-      root
-        .querySelectorAll<HTMLElement>(
-          '[data-spec-title], [data-spec-body], [data-spec-index], [data-spec-media]'
-        )
-        .forEach((el) => {
-          el.style.transform = '';
-          el.style.opacity = '';
-        });
-    };
-
-    const applyKinetic = () => {
-      const vh = window.innerHeight;
-      const sheets = root.querySelectorAll<HTMLElement>('[data-spec-sheet]');
-      sheets.forEach((sheet) => {
-        if (sheet.dataset.revealed !== 'true') return;
-        const title = sheet.querySelector<HTMLElement>('[data-spec-title]');
-        const bodies = sheet.querySelectorAll<HTMLElement>('[data-spec-body]');
-        const mark = sheet.querySelector<HTMLElement>('[data-spec-index]');
-        const media = sheet.querySelector<HTMLElement>('[data-spec-media]');
-        const rect = sheet.getBoundingClientRect();
-        const centered = (rect.top + rect.height * 0.42 - vh * 0.5) / vh;
-        const t = Math.max(-1, Math.min(1, centered));
-        const exitStart = vh * 0.12;
-        const exitT = Math.max(0, Math.min(1, (exitStart - rect.top) / (vh * 0.28)));
-
-        if (title) {
-          title.style.transform = `translate3d(0, ${(-16 * exitT).toFixed(2)}px, 0)`;
-        }
-        bodies.forEach((body) => {
-          body.style.opacity = String(1 - exitT * 0.52);
-          body.style.transform = `translate3d(${(12 * exitT).toFixed(2)}px, ${(10 * t).toFixed(2)}px, 0)`;
-        });
-        if (mark) {
-          mark.style.transform = `translate3d(0, ${(14 * t).toFixed(2)}px, 0)`;
-        }
-        if (media) {
-          media.style.transform = `translate3d(0, ${(20 * t).toFixed(2)}px, 0)`;
-        }
-      });
-    };
-
-    const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(() => {
-        frame = 0;
-        applyKinetic();
-      });
-    };
-
-    const bind = () => {
-      unbind();
-      if (prefersReducedMotion() || !desktop.matches) {
-        resetKinetic();
-        return;
-      }
-      scroller = specScrollTarget(root);
-      scroller.addEventListener('scroll', onScroll, { passive: true });
-      applyKinetic();
-    };
-
-    const unbind = () => {
-      if (frame) {
-        window.cancelAnimationFrame(frame);
-        frame = 0;
-      }
-      if (scroller) {
-        scroller.removeEventListener('scroll', onScroll);
-        scroller = null;
-      }
-    };
-
-    bind();
-    desktop.addEventListener('change', bind);
-    return () => {
-      desktop.removeEventListener('change', bind);
-      unbind();
-      resetKinetic();
+      window.clearTimeout(refreshId);
+      ctx.revert();
     };
   }, [itemsKey]);
 
@@ -972,7 +1044,7 @@ export function ProjectsSpecGallery({
   const twoColumn = !thumbnailForcesSingle && (settings.columnsPerRow ?? 1) === 2;
   const gapClass = specSheetGapClass(settings.sheetGap ?? 'xl');
   const gridGapClass = specSheetGridGapClass(settings.sheetGap ?? 'xl');
-  const rootRef = useSpecGalleryMotion(items.length);
+  const rootRef = useSpecChoreography(items.length);
 
   if (items.length === 0) return null;
 
@@ -996,6 +1068,7 @@ export function ProjectsSpecGallery({
             />
           </div>
         ))}
+        <SpecHoverPreview galleryRef={rootRef} />
       </section>
     );
   }
@@ -1016,9 +1089,11 @@ export function ProjectsSpecGallery({
             presentation={presentation}
             settings={settings}
             compactTitle={false}
+            applyShift
           />
         </div>
       ))}
+      <SpecHoverPreview galleryRef={rootRef} />
     </section>
   );
 }

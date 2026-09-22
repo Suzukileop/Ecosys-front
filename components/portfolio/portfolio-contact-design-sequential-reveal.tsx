@@ -1,0 +1,614 @@
+'use client';
+
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Image from 'next/image';
+import { useForm, type UseFormRegisterReturn } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { getApiErrorMessage } from '@/lib/api-error';
+import { sendCreatorContactMessage } from '@/lib/marketplace-api';
+import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
+import type { PortfolioContactPresentationSettings } from '@/components/portfolio/portfolio-contact-settings';
+import {
+  DEFAULT_CONTENT_GUTTER,
+  portfolioEditorialGutterX,
+  type PortfolioContentGutter,
+} from '@/components/portfolio/portfolio-editorial-layout';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+const DEFAULT_TAGLINE = "Share your idea, let's build something meaningful together.";
+
+const sequentialMessageSchema = z.object({
+  firstName: z.string().trim().min(1, 'First name is required').max(80, 'First name is too long'),
+  lastName: z.string().trim().min(1, 'Last name is required').max(80, 'Last name is too long'),
+  email: z.string().trim().email('Enter a valid email').max(254, 'Email is too long'),
+  message: z
+    .string()
+    .trim()
+    .min(10, 'Message must be at least 10 characters')
+    .max(4000, 'Message is too long'),
+});
+type SequentialFormValues = z.infer<typeof sequentialMessageSchema>;
+const EMPTY_FORM: SequentialFormValues = { firstName: '', lastName: '', email: '', message: '' };
+
+/**
+ * One borderless field: a micro-caps label that floats above a hairline baseline. No box,
+ * no border, no background fill — the line is the only chrome. Both the label lift and the
+ * line's thicken/tint are GSAP-driven (never a CSS :focus rule), so every animated node here
+ * carries data-pf-no-color-transition per the site-wide global-crossfade gotcha.
+ */
+function FloatingField({
+  id,
+  label,
+  type = 'text',
+  multiline = false,
+  autoComplete,
+  registration,
+  error,
+  active,
+  accent,
+}: {
+  id: string;
+  label: string;
+  type?: string;
+  multiline?: boolean;
+  autoComplete?: string;
+  registration: UseFormRegisterReturn;
+  error?: string;
+  active: boolean;
+  accent: string;
+}) {
+  const labelRef = useRef<HTMLLabelElement>(null);
+  const lineRef = useRef<HTMLSpanElement>(null);
+  const [focused, setFocused] = useState(false);
+
+  useLayoutEffect(() => {
+    const labelEl = labelRef.current;
+    const lineEl = lineRef.current;
+    if (!labelEl || !lineEl) return;
+    if (prefersReducedMotion()) {
+      gsap.set(labelEl, { y: active ? -22 : 0, scale: active ? 0.72 : 1 });
+      gsap.set(lineEl, { scaleX: focused ? 1 : 0 });
+      return;
+    }
+    gsap.to(labelEl, {
+      y: active ? -22 : 0,
+      scale: active ? 0.72 : 1,
+      color: focused ? accent : 'rgba(255,255,255,0.45)',
+      duration: 0.35,
+      ease: 'power2.out',
+      overwrite: 'auto',
+    });
+    gsap.to(lineEl, {
+      scaleX: focused ? 1 : 0,
+      scaleY: focused ? 2.4 : 1,
+      backgroundColor: accent,
+      duration: 0.45,
+      ease: 'power3.out',
+      overwrite: 'auto',
+    });
+  }, [active, focused, accent]);
+
+  const fieldClassName =
+    'peer block w-full resize-none border-0 border-b border-white/15 bg-transparent pb-3 text-lg text-white outline-none ring-0 focus:border-white/15 focus:outline-none focus:ring-0';
+
+  return (
+    <div className="relative pt-7" data-pf-no-color-transition="">
+      <label
+        ref={labelRef}
+        htmlFor={id}
+        className="pointer-events-none absolute left-0 top-7 origin-left text-[13px] font-semibold uppercase tracking-[0.16em] text-white/45"
+        data-pf-no-color-transition=""
+      >
+        {label}
+      </label>
+      {multiline ? (
+        <textarea
+          id={id}
+          rows={3}
+          aria-invalid={Boolean(error)}
+          className={fieldClassName}
+          data-pf-no-color-transition=""
+          {...registration}
+          onFocus={() => setFocused(true)}
+          onBlur={(event) => {
+            setFocused(false);
+            void registration.onBlur(event);
+          }}
+        />
+      ) : (
+        <input
+          id={id}
+          type={type}
+          autoComplete={autoComplete}
+          aria-invalid={Boolean(error)}
+          className={fieldClassName}
+          data-pf-no-color-transition=""
+          {...registration}
+          onFocus={() => setFocused(true)}
+          onBlur={(event) => {
+            setFocused(false);
+            void registration.onBlur(event);
+          }}
+        />
+      )}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-white/15"
+        data-pf-no-color-transition=""
+      />
+      <span
+        ref={lineRef}
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px origin-left scale-x-0"
+        style={{ backgroundColor: accent }}
+        data-pf-no-color-transition=""
+      />
+      {error ? <p className="mt-2 text-xs font-medium text-red-400">{error}</p> : null}
+    </div>
+  );
+}
+
+/**
+ * Concept 4 — "Sequential reveal": a strictly narrative composition — monumental title,
+ * then a cinematic clip-path image reveal, then a radically de-boxed form — read top to
+ * bottom on every breakpoint (no split layout to collapse). The title does a per-letter
+ * entrance + a light scroll parallax; the image unmasks via a scrubbed clip-path inset
+ * with a synced zoom-settle (scale 1.12 → 1); the form drops every box/border in favour of
+ * hairline baselines with GSAP floating labels; the submit control is a magnetic circle
+ * that glides toward the cursor with an elastic snap-back, desktop fine-pointer only.
+ */
+export function ContactDesignSequentialReveal({
+  creatorId,
+  email,
+  heroImageUrl,
+  heroImageAlt,
+  sectionTitle,
+  presentation,
+  contentGutter = DEFAULT_CONTENT_GUTTER,
+}: {
+  creatorId?: string;
+  email: string | null;
+  heroImageUrl: string | null;
+  heroImageAlt: string;
+  sectionTitle?: string;
+  presentation: PortfolioContactPresentationSettings;
+  /** Same site-wide editorial gutter every other section respects — this design is full-bleed
+   *  (bypasses PortfolioSectionShell, which would normally apply this automatically), so the
+   *  title/tagline need it passed in explicitly to line up with the rest of the page. */
+  contentGutter?: PortfolioContentGutter;
+}) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const imageMaskRef = useRef<HTMLDivElement>(null);
+  const imageInnerRef = useRef<HTMLDivElement>(null);
+  const submitRef = useRef<HTMLButtonElement>(null);
+  const submitInnerRef = useRef<HTMLSpanElement>(null);
+
+  const accent = presentation.ctaColor?.trim() || '#f97316';
+  const titleWord = (sectionTitle?.trim() || 'Contact').toUpperCase();
+  const titleChars = useMemo(() => titleWord.split(''), [titleWord]);
+  const tagline = presentation.sequentialRevealTagline?.trim() || DEFAULT_TAGLINE;
+  const trimmedEmail = email?.trim() || '';
+  const displayName = heroImageAlt?.trim() || '';
+  const initials = useMemo(() => {
+    const parts = displayName.split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return '';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
+  }, [displayName]);
+
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<SequentialFormValues>({
+    resolver: zodResolver(sequentialMessageSchema),
+    defaultValues: EMPTY_FORM,
+  });
+  const watched = watch();
+
+  const onSubmit = async (values: SequentialFormValues) => {
+    if (!creatorId?.trim()) {
+      setSubmitError('Unable to send — creator is missing.');
+      return;
+    }
+    setSubmitError(null);
+    try {
+      await sendCreatorContactMessage(creatorId, {
+        name: `${values.firstName.trim()} ${values.lastName.trim()}`.trim(),
+        email: values.email.trim(),
+        message: values.message.trim(),
+      });
+      setSubmitted(true);
+      pushFlashFeedback({
+        variant: 'success',
+        title: 'Message sent',
+        description: 'Your message was delivered to the creator.',
+      });
+      reset(EMPTY_FORM);
+    } catch (submitErr) {
+      const message = getApiErrorMessage(submitErr, 'Unable to send your message. Please try again.');
+      setSubmitError(message);
+      pushFlashFeedback({ variant: 'error', title: 'Message not sent', description: message });
+    }
+  };
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return undefined;
+    if (prefersReducedMotion()) return undefined;
+
+    const observers: IntersectionObserver[] = [];
+    /**
+     * Plays `play()` the moment the element is actually visible, via WHICHEVER mechanism
+     * notices first: GSAP's ScrollTrigger (the polished, precisely-timed path) or a plain
+     * IntersectionObserver running independently alongside it as a guaranteed backstop.
+     * ScrollTrigger alone isn't enough here — on a long, image-heavy page a trigger position
+     * calculated before layout above it fully settles (fonts/images still loading) can end up
+     * stale, and a one-shot "enter" edge that's never crossed at the (wrong) calculated pixel
+     * leaves content stuck permanently hidden with nothing left to re-trigger it — confirmed
+     * live (the word "CONTACT" invisible while its own "©" and the tagline showed fine, since
+     * only the char spans were gated this way that time). The IntersectionObserver doesn't
+     * depend on any of ScrollTrigger's position math, only on the element's real rendered
+     * bounding box vs. the viewport, so it can't drift stale the same way.
+     */
+    function revealOnceVisible(trigger: HTMLElement, startPercent: number, play: () => void) {
+      let fired = false;
+      const fire = () => {
+        if (fired) return;
+        fired = true;
+        play();
+      };
+      ScrollTrigger.create({ trigger, start: `top ${startPercent}%`, once: true, onEnter: fire });
+      // rootMargin mirrors the ScrollTrigger's own "top N%" threshold (shrinks the effective
+      // viewport by the same amount from the bottom) so both mechanisms fire at roughly the
+      // same scroll position, whichever notices first — not the instant any pixel appears.
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) {
+            fire();
+            io.disconnect();
+          }
+        },
+        { threshold: 0, rootMargin: `0px 0px -${100 - startPercent}% 0px` }
+      );
+      io.observe(trigger);
+      observers.push(io);
+    }
+
+    let ctx: gsap.Context | undefined;
+    try {
+      ctx = gsap.context(() => {
+        const charEls = root.querySelectorAll<HTMLElement>('[data-reveal-char-inner]');
+        if (charEls.length) {
+          gsap.set(charEls, { yPercent: 115, autoAlpha: 0 });
+          revealOnceVisible(root, 85, () =>
+            gsap.to(charEls, {
+              yPercent: 0,
+              autoAlpha: 1,
+              duration: 0.9,
+              stagger: 0.028,
+              ease: 'power4.out',
+              overwrite: 'auto',
+            })
+          );
+        }
+
+        const titleBlock = root.querySelector<HTMLElement>('[data-reveal-title]');
+        if (titleBlock) {
+          gsap.fromTo(
+            titleBlock,
+            { y: 0 },
+            {
+              y: -40,
+              ease: 'none',
+              scrollTrigger: { trigger: root, start: 'top bottom', end: 'bottom top', scrub: 0.6 },
+            }
+          );
+        }
+
+        const taglineEl = root.querySelector<HTMLElement>('[data-reveal-tagline]');
+        if (taglineEl) {
+          gsap.set(taglineEl, { autoAlpha: 0, y: 16 });
+          revealOnceVisible(taglineEl, 92, () =>
+            gsap.to(taglineEl, { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out', overwrite: 'auto' })
+          );
+        }
+
+        const mask = imageMaskRef.current;
+        const inner = imageInnerRef.current;
+        if (mask) {
+          gsap.fromTo(
+            mask,
+            { clipPath: 'inset(100% 0% 0% 0%)' },
+            {
+              clipPath: 'inset(0% 0% 0% 0%)',
+              ease: 'none',
+              scrollTrigger: { trigger: mask, start: 'top 90%', end: 'top 20%', scrub: 0.6 },
+            }
+          );
+        }
+        if (inner) {
+          gsap.fromTo(
+            inner,
+            { scale: 1.12 },
+            {
+              scale: 1,
+              ease: 'none',
+              scrollTrigger: { trigger: mask ?? inner, start: 'top 90%', end: 'top 10%', scrub: 0.6 },
+            }
+          );
+        }
+
+        const formFields = root.querySelectorAll<HTMLElement>('[data-reveal-field]');
+        const formNode = root.querySelector<HTMLElement>('[data-reveal-form]');
+        if (formFields.length && formNode) {
+          gsap.set(formFields, { autoAlpha: 0, y: 20 });
+          revealOnceVisible(formNode, 92, () =>
+            gsap.to(formFields, {
+              autoAlpha: 1,
+              y: 0,
+              duration: 0.7,
+              stagger: 0.08,
+              ease: 'power2.out',
+              overwrite: 'auto',
+            })
+          );
+        }
+      }, root);
+    } catch (error) {
+      // Same containment as the shared Editorial-header template fix — see
+      // portfolio-header-mechanism-rollout: an uncaught GSAP/ScrollTrigger init error here
+      // would otherwise crash the whole React tree, not just this section.
+      console.error('[ContactDesignSequentialReveal] GSAP entrance animation failed to initialize', error);
+      ctx?.revert();
+      gsap.set(root.querySelectorAll('[data-reveal-char-inner], [data-reveal-tagline], [data-reveal-field]'), {
+        clearProps: 'all',
+      });
+    }
+
+    const refreshId = window.setTimeout(() => {
+      try {
+        ScrollTrigger.refresh();
+      } catch (error) {
+        console.error('[ContactDesignSequentialReveal] deferred ScrollTrigger.refresh() failed', error);
+      }
+    }, 80);
+    return () => {
+      window.clearTimeout(refreshId);
+      observers.forEach((io) => io.disconnect());
+      ctx?.revert();
+    };
+  }, [titleWord]);
+
+  useLayoutEffect(() => {
+    const btn = submitRef.current;
+    if (!btn) return undefined;
+    if (prefersReducedMotion()) return undefined;
+    const enabled = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 768px)').matches;
+    if (!enabled) return undefined;
+
+    const inner = submitInnerRef.current;
+    const moveX = gsap.quickTo(btn, 'x', { duration: 0.5, ease: 'power3' });
+    const moveY = gsap.quickTo(btn, 'y', { duration: 0.5, ease: 'power3' });
+    const moveInnerX = inner ? gsap.quickTo(inner, 'x', { duration: 0.4, ease: 'power3' }) : undefined;
+    const moveInnerY = inner ? gsap.quickTo(inner, 'y', { duration: 0.4, ease: 'power3' }) : undefined;
+
+    const onMove = (event: PointerEvent) => {
+      const rect = btn.getBoundingClientRect();
+      const relX = event.clientX - (rect.left + rect.width / 2);
+      const relY = event.clientY - (rect.top + rect.height / 2);
+      moveX(relX * 0.4);
+      moveY(relY * 0.5);
+      moveInnerX?.(relX * 0.18);
+      moveInnerY?.(relY * 0.22);
+    };
+    const onLeave = () => {
+      gsap.to(btn, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)', overwrite: 'auto' });
+      if (inner) gsap.to(inner, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)', overwrite: 'auto' });
+    };
+
+    btn.addEventListener('pointermove', onMove);
+    btn.addEventListener('pointerleave', onLeave);
+    return () => {
+      btn.removeEventListener('pointermove', onMove);
+      btn.removeEventListener('pointerleave', onLeave);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={rootRef}
+      className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-black"
+      data-pf-no-color-transition=""
+    >
+      {/* 1 — Monumental hero entrance — uses the SAME site-wide editorial gutter
+          (`portfolioEditorialGutterX`, driven by settings.global.contentGutter) every other
+          section gets automatically from PortfolioSectionShell. This design bypasses that shell
+          (full-bleed), so it must read the real per-account gutter value itself — a hardcoded
+          px-6/10/16 guess drifted from accounts on 'narrow'/'wide' gutters, not just the
+          mx-auto/max-w-[90rem] centering bug fixed earlier. No centering (no mx-auto/max-w) so
+          the inset stays a constant, correct number at any viewport width. */}
+      <div
+        className={`flex w-full flex-col gap-10 pb-24 pt-24 sm:pb-28 sm:pt-32 lg:pb-32 ${portfolioEditorialGutterX(contentGutter)}`}
+      >
+        <h2
+          data-reveal-title
+          aria-label={titleWord}
+          className="m-0 select-none font-sans text-[clamp(3.25rem,13vw,10rem)] font-black uppercase leading-[0.86] tracking-[-0.04em] text-white"
+        >
+          {titleChars.map((char, index) => (
+            <span key={index} className="inline-block overflow-hidden align-top">
+              <span data-reveal-char-inner className="inline-block will-change-transform">
+                {char === ' ' ? ' ' : char}
+              </span>
+            </span>
+          ))}
+          <sup className="ml-1 align-super text-[0.28em] font-medium">©</sup>
+        </h2>
+
+        <p
+          data-reveal-tagline
+          className="max-w-sm font-light leading-relaxed text-white/50 sm:text-lg"
+          style={{ letterSpacing: '0.01em' }}
+        >
+          {tagline}
+        </p>
+      </div>
+
+      {/* 2 — Cinematic clip-path image reveal — matches the form's own width/inset schedule
+          below (sm:px-10, lg:px-0 inside the same 46rem column) so both blocks line up as one
+          narrow reading column; stays edge-to-edge below sm per the mobile spec. */}
+      <div className="relative w-full sm:mx-auto sm:max-w-[46rem] sm:px-10 lg:px-0">
+        <div
+          ref={imageMaskRef}
+          className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[3/2]"
+          data-pf-no-color-transition=""
+        >
+          <div ref={imageInnerRef} className="relative h-full w-full" data-pf-no-color-transition="">
+            {heroImageUrl ? (
+              <Image
+                src={heroImageUrl}
+                alt={displayName ? `Portrait of ${displayName}` : 'Portrait'}
+                fill
+                sizes="100vw"
+                className="object-cover object-center"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-neutral-900">
+                <span className="font-sans text-6xl font-semibold text-white/20" aria-hidden>
+                  {initials || '—'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 3 — Borderless, boxless form */}
+      <div className="mx-auto w-full max-w-[46rem] px-6 py-24 sm:px-10 sm:py-32 lg:px-0">
+        {submitted ? (
+          <p className="mb-8 text-sm font-medium text-white/70" role="status">
+            Thanks — your message was sent.
+          </p>
+        ) : null}
+
+        <form data-reveal-form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-10" noValidate>
+          <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2">
+            <div data-reveal-field>
+              <FloatingField
+                id="pf-sequential-first-name"
+                label="First name"
+                autoComplete="given-name"
+                registration={register('firstName')}
+                error={errors.firstName?.message}
+                active={Boolean(watched.firstName)}
+                accent={accent}
+              />
+            </div>
+            <div data-reveal-field>
+              <FloatingField
+                id="pf-sequential-last-name"
+                label="Last name"
+                autoComplete="family-name"
+                registration={register('lastName')}
+                error={errors.lastName?.message}
+                active={Boolean(watched.lastName)}
+                accent={accent}
+              />
+            </div>
+          </div>
+
+          <div data-reveal-field>
+            <FloatingField
+              id="pf-sequential-email"
+              label="Email"
+              type="email"
+              autoComplete="email"
+              registration={register('email')}
+              error={errors.email?.message}
+              active={Boolean(watched.email)}
+              accent={accent}
+            />
+          </div>
+
+          <div data-reveal-field>
+            <FloatingField
+              id="pf-sequential-message"
+              label="Message"
+              multiline
+              registration={register('message')}
+              error={errors.message?.message}
+              active={Boolean(watched.message)}
+              accent={accent}
+            />
+          </div>
+
+          {submitError ? (
+            <p className="text-sm text-red-400" role="alert">
+              {submitError}
+            </p>
+          ) : null}
+
+          <div data-reveal-field className="flex flex-wrap items-center gap-6 pt-2">
+            <button
+              ref={submitRef}
+              type="submit"
+              disabled={isSubmitting || !creatorId?.trim()}
+              className="relative inline-flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-xs font-bold uppercase tracking-[0.14em] text-black disabled:cursor-not-allowed disabled:opacity-50 sm:h-28 sm:w-28"
+              style={{ backgroundColor: '#ffffff' }}
+              data-pf-no-color-transition=""
+            >
+              <span
+                ref={submitInnerRef}
+                className="inline-flex items-center gap-1.5"
+                data-pf-no-color-transition=""
+              >
+                {isSubmitting ? 'Sending' : 'Send'}
+                <svg
+                  viewBox="0 0 16 16"
+                  className="h-3.5 w-3.5"
+                  fill="none"
+                  aria-hidden
+                  data-pf-no-color-transition=""
+                >
+                  <path
+                    d="M4.5 11.5L11.5 4.5M11.5 4.5H6.5M11.5 4.5V9.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+            </button>
+
+            {trimmedEmail ? (
+              <a
+                href={`mailto:${trimmedEmail}`}
+                className="text-sm font-medium text-white/40 underline decoration-white/20 underline-offset-4"
+                data-pf-no-color-transition=""
+              >
+                or write directly to {trimmedEmail}
+              </a>
+            ) : null}
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

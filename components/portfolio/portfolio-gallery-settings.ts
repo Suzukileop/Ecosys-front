@@ -12,6 +12,23 @@ import {
   mergeSectionColorMode,
   type PortfolioSectionColorMode,
 } from '@/components/portfolio/portfolio-section-color-mode';
+import {
+  GALLERY_HEADER_ACCENT_COUNT_ALIGNMENTS,
+  GALLERY_HEADER_BILLBOARD_WORD_STYLES,
+  GALLERY_HEADER_DESIGNS,
+  GALLERY_HEADER_MARGIN_BOTTOM_STEPS,
+  GALLERY_HEADER_PALETTE_TOKENS,
+  GALLERY_HEADER_TITLE_SIZES,
+  GALLERY_HEADER_TITLE_WEIGHTS,
+  type PortfolioGalleryHeaderAccentCountAlignment,
+  type PortfolioGalleryHeaderBillboardWordStyle,
+  type PortfolioGalleryHeaderDesign,
+  type PortfolioGalleryHeaderDesignAlignment,
+  type PortfolioGalleryHeaderMarginBottom,
+  type PortfolioGalleryHeaderPaletteToken,
+  type PortfolioGalleryHeaderTitleSize,
+  type PortfolioGalleryHeaderTitleWeight,
+} from '@/components/portfolio/portfolio-gallery-header-settings';
 
 export type PortfolioGalleryDesign =
   | 'framed-grid'
@@ -122,6 +139,107 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   featuredHeroWidthPercent: number;
   /** Horizontal placement of the featured hero (or whole bottom layout). */
   featuredHeroPlacement: PortfolioGalleryPlacement;
+  /**
+   * Header — one shared, GSAP-animated header mounted above the Gallery section, copied
+   * from the Portfolio/Work section's Header mechanism (gallery-portfolio-header-designs/*).
+   */
+  headerDesign: PortfolioGalleryHeaderDesign;
+  /** Master switch for the header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
+  headerAnimationEnabled: boolean;
+  headerDesignAlignment: PortfolioGalleryHeaderDesignAlignment;
+  /** Bottom spacing under every header design — shared across all of them. */
+  headerMarginBottom: PortfolioGalleryHeaderMarginBottom;
+  /** Title size/weight — shared across every header design. */
+  headerTitleSize: PortfolioGalleryHeaderTitleSize;
+  headerTitleWeight: PortfolioGalleryHeaderTitleWeight;
+  /** Header accent count — badge text supports a {count} token for the gallery item count. */
+  headerAccentCountBadgeText: string;
+  headerAccentCountLeadText: string;
+  /** Header accent count — badge and lead bound to a palette token, independently. */
+  headerAccentCountBadgeColor: PortfolioGalleryHeaderPaletteToken;
+  headerAccentCountLeadColor: PortfolioGalleryHeaderPaletteToken;
+  /** Header accent count — one size/weight for the whole line (badge + lead flow together). */
+  headerAccentCountSize: PortfolioGalleryHeaderTitleSize;
+  headerAccentCountWeight: PortfolioGalleryHeaderTitleWeight;
+  /** Header accent count — its own 3-way alignment (adds "right", unlike the shared control). */
+  headerAccentCountAlignment: PortfolioGalleryHeaderAccentCountAlignment;
+  /** Header serif lead — small label above the large serif title. */
+  headerSerifLeadLabelText: string;
+  /** Header serif lead — the large serif title itself, independent of the section title. */
+  headerSerifLeadTitleText: string;
+  /** Header serif lead — each element bound to a palette token, independently. */
+  headerSerifLeadLabelColor: PortfolioGalleryHeaderPaletteToken;
+  headerSerifLeadTitleColor: PortfolioGalleryHeaderPaletteToken;
+  headerSerifLeadSubtitleColor: PortfolioGalleryHeaderPaletteToken;
+  /** Header serif lead — each element sized/weighted independently. */
+  headerSerifLeadLabelSize: PortfolioGalleryHeaderTitleSize;
+  headerSerifLeadTitleSize: PortfolioGalleryHeaderTitleSize;
+  headerSerifLeadSubtitleSize: PortfolioGalleryHeaderTitleSize;
+  headerSerifLeadLabelWeight: PortfolioGalleryHeaderTitleWeight;
+  headerSerifLeadTitleWeight: PortfolioGalleryHeaderTitleWeight;
+  headerSerifLeadSubtitleWeight: PortfolioGalleryHeaderTitleWeight;
+  /** Header billboard — big faint background word + a {count}-token line. */
+  headerBillboardBigWord: string;
+  headerBillboardCountText: string;
+  /** Header billboard — the editorial split title beneath the big word, independent of the section title. */
+  headerBillboardTitleText: string;
+  /** Header billboard — outline (stroke only) or fill (solid) big word. */
+  headerBillboardWordStyle: PortfolioGalleryHeaderBillboardWordStyle;
+  /** Header billboard — each element bound to a palette token, independently. */
+  headerBillboardWordColor: PortfolioGalleryHeaderPaletteToken;
+  headerBillboardTitleColor: PortfolioGalleryHeaderPaletteToken;
+  headerBillboardMetaColor: PortfolioGalleryHeaderPaletteToken;
+  /** Header split heading — small label on the side opposite the narrative title. */
+  headerSplitHeadingLabelText: string;
+  /** Header split heading — the narrative title itself, independent of the section title. */
+  headerSplitHeadingTitleText: string;
+  /** Header split heading — each element bound to a palette token, independently. */
+  headerSplitHeadingTitleColor: PortfolioGalleryHeaderPaletteToken;
+  headerSplitHeadingLabelColor: PortfolioGalleryHeaderPaletteToken;
+  /** Header split heading — each element sized/weighted independently. */
+  headerSplitHeadingTitleSize: PortfolioGalleryHeaderTitleSize;
+  headerSplitHeadingTitleWeight: PortfolioGalleryHeaderTitleWeight;
+  headerSplitHeadingLabelSize: PortfolioGalleryHeaderTitleSize;
+  headerSplitHeadingLabelWeight: PortfolioGalleryHeaderTitleWeight;
+  /** Header masthead — up to 3 independent lines, monumental headline text,
+   *  one color/size/weight for the whole headline. */
+  headerMastheadLine1Text: string;
+  headerMastheadLine2Text: string;
+  headerMastheadLine3Text: string;
+  /** Header masthead — one color for the whole headline, across every line. */
+  headerMastheadHeadlineColor: PortfolioGalleryHeaderPaletteToken;
+  /** Header masthead — one size/weight for the whole headline, across every line. */
+  headerMastheadHeadlineSize: PortfolioGalleryHeaderTitleSize;
+  headerMastheadHeadlineWeight: PortfolioGalleryHeaderTitleWeight;
+  /** Header index — small label on the top divider rule (e.g. "Index", "Catalog"). */
+  headerIndexLabelText: string;
+  /** Header index — the title beside the counting numeral, independent of the section title. */
+  headerIndexTitleText: string;
+  /** Header index — caption under the counter (e.g. "Items"). Empty falls back to automatic pluralization. */
+  headerIndexCountLabelText: string;
+  /** Header index — the small subtitle under the title, independent of the section subtitle. */
+  headerIndexSubtitleText: string;
+  /** Header index — each element bound to a palette token, independently. */
+  headerIndexLabelColor: PortfolioGalleryHeaderPaletteToken;
+  headerIndexNumberColor: PortfolioGalleryHeaderPaletteToken;
+  headerIndexTitleColor: PortfolioGalleryHeaderPaletteToken;
+  headerIndexSubtitleColor: PortfolioGalleryHeaderPaletteToken;
+  /** Header index — each element sized/weighted independently. */
+  headerIndexLabelSize: PortfolioGalleryHeaderTitleSize;
+  headerIndexLabelWeight: PortfolioGalleryHeaderTitleWeight;
+  headerIndexTitleSize: PortfolioGalleryHeaderTitleSize;
+  headerIndexTitleWeight: PortfolioGalleryHeaderTitleWeight;
+  headerIndexSubtitleSize: PortfolioGalleryHeaderTitleSize;
+  headerIndexSubtitleWeight: PortfolioGalleryHeaderTitleWeight;
+  /** Header marquee — up to 4 independent words in the repeating band, each its own field (empty slots are dropped). */
+  headerMarqueeWord1Text: string;
+  headerMarqueeWord2Text: string;
+  headerMarqueeWord3Text: string;
+  headerMarqueeWord4Text: string;
+  /** Header marquee — alternating fill/outline words bound to one palette token. */
+  headerMarqueeWordColor: PortfolioGalleryHeaderPaletteToken;
+  /** Header marquee — scales the repeating word band. */
+  headerMarqueeSize: PortfolioGalleryHeaderTitleSize;
 };
 
 export type PortfolioGallerySectionSettings =
@@ -321,6 +439,71 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   featuredHeroWidthScope: 'hero',
   featuredHeroWidthPercent: 100,
   featuredHeroPlacement: 'center',
+  headerDesign: 'editorial',
+  headerAnimationEnabled: true,
+  headerDesignAlignment: 'left',
+  headerMarginBottom: 'md',
+  headerTitleSize: 'md',
+  headerTitleWeight: 'regular',
+  headerAccentCountBadgeText: '',
+  headerAccentCountLeadText: '',
+  headerAccentCountBadgeColor: 'principal',
+  headerAccentCountLeadColor: 'secondaire',
+  headerAccentCountSize: 'md',
+  headerAccentCountWeight: 'regular',
+  headerAccentCountAlignment: 'left',
+  headerSerifLeadLabelText: '',
+  headerSerifLeadTitleText: '',
+  headerSerifLeadLabelColor: 'texteFort',
+  headerSerifLeadTitleColor: 'texteFort',
+  headerSerifLeadSubtitleColor: 'texteFort',
+  headerSerifLeadLabelSize: 'md',
+  headerSerifLeadTitleSize: 'md',
+  headerSerifLeadSubtitleSize: 'md',
+  headerSerifLeadLabelWeight: 'regular',
+  headerSerifLeadTitleWeight: 'regular',
+  headerSerifLeadSubtitleWeight: 'regular',
+  headerBillboardBigWord: '',
+  headerBillboardCountText: '',
+  headerBillboardTitleText: '',
+  headerBillboardWordStyle: 'outline',
+  headerBillboardWordColor: 'principal',
+  headerBillboardTitleColor: 'principal',
+  headerBillboardMetaColor: 'secondaire',
+  headerSplitHeadingLabelText: '',
+  headerSplitHeadingTitleText: '',
+  headerSplitHeadingTitleColor: 'principal',
+  headerSplitHeadingLabelColor: 'secondaire',
+  headerSplitHeadingTitleSize: 'md',
+  headerSplitHeadingTitleWeight: 'regular',
+  headerSplitHeadingLabelSize: 'md',
+  headerSplitHeadingLabelWeight: 'regular',
+  headerMastheadLine1Text: '',
+  headerMastheadLine2Text: '',
+  headerMastheadLine3Text: '',
+  headerMastheadHeadlineColor: 'principal',
+  headerMastheadHeadlineSize: 'md',
+  headerMastheadHeadlineWeight: 'regular',
+  headerIndexLabelText: '',
+  headerIndexTitleText: '',
+  headerIndexCountLabelText: '',
+  headerIndexSubtitleText: '',
+  headerIndexLabelColor: 'texteFort',
+  headerIndexNumberColor: 'principal',
+  headerIndexTitleColor: 'texteFort',
+  headerIndexSubtitleColor: 'texteFort',
+  headerIndexLabelSize: 'md',
+  headerIndexLabelWeight: 'regular',
+  headerIndexTitleSize: 'md',
+  headerIndexTitleWeight: 'regular',
+  headerIndexSubtitleSize: 'md',
+  headerIndexSubtitleWeight: 'regular',
+  headerMarqueeWord1Text: '',
+  headerMarqueeWord2Text: '',
+  headerMarqueeWord3Text: '',
+  headerMarqueeWord4Text: '',
+  headerMarqueeWordColor: 'principal',
+  headerMarqueeSize: 'md',
 };
 
 export const DEFAULT_GALLERY_TITLE_EN = 'Gallery';
@@ -334,6 +517,24 @@ export function migrateLegacyGalleryCopy(title: string, subtitle: string): { tit
     subtitle: LEGACY_GALLERY_SUBTITLES.has(subtitle.trim()) ? DEFAULT_GALLERY_SUBTITLE_EN : subtitle,
   };
 }
+
+export {
+  PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS,
+  GALLERY_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
+  GALLERY_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
+  GALLERY_HEADER_PALETTE_TOKEN_OPTIONS,
+  galleryHeaderDesignFontClass,
+  galleryHeaderDesignFontStyle,
+  galleryHeaderPaletteTokenColor,
+  type PortfolioGalleryHeaderAccentCountAlignment,
+  type PortfolioGalleryHeaderBillboardWordStyle,
+  type PortfolioGalleryHeaderDesign,
+  type PortfolioGalleryHeaderDesignAlignment,
+  type PortfolioGalleryHeaderMarginBottom,
+  type PortfolioGalleryHeaderPaletteToken,
+  type PortfolioGalleryHeaderTitleSize,
+  type PortfolioGalleryHeaderTitleWeight,
+} from '@/components/portfolio/portfolio-gallery-header-settings';
 
 export const PORTFOLIO_GALLERY_FEATURED_RAIL_OPTIONS: {
   value: PortfolioGalleryFeaturedRailPlacement;
@@ -455,6 +656,294 @@ export function mergeGalleryPresentation(
     featuredHeroWidthScope: pickString(record.featuredHeroWidthScope, ['global', 'hero'], base.featuredHeroWidthScope),
     featuredHeroWidthPercent: clamp(record.featuredHeroWidthPercent, 50, 100, base.featuredHeroWidthPercent),
     featuredHeroPlacement: pickString(record.featuredHeroPlacement, ['left', 'center', 'right'], base.featuredHeroPlacement),
+    headerDesign: pickString(record.headerDesign, GALLERY_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
+    headerAnimationEnabled:
+      typeof record.headerAnimationEnabled === 'boolean'
+        ? record.headerAnimationEnabled
+        : (base.headerAnimationEnabled ?? true),
+    headerDesignAlignment: pickString(
+      record.headerDesignAlignment,
+      ['left', 'center', 'right'] as const,
+      base.headerDesignAlignment ?? 'left'
+    ),
+    headerMarginBottom: pickString(
+      record.headerMarginBottom,
+      GALLERY_HEADER_MARGIN_BOTTOM_STEPS,
+      base.headerMarginBottom ?? 'md'
+    ),
+    headerTitleSize: pickString(record.headerTitleSize, GALLERY_HEADER_TITLE_SIZES, base.headerTitleSize ?? 'md'),
+    headerTitleWeight: pickString(
+      record.headerTitleWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerTitleWeight ?? 'regular'
+    ),
+    headerAccentCountBadgeText:
+      typeof record.headerAccentCountBadgeText === 'string'
+        ? record.headerAccentCountBadgeText
+        : (base.headerAccentCountBadgeText ?? ''),
+    headerAccentCountLeadText:
+      typeof record.headerAccentCountLeadText === 'string'
+        ? record.headerAccentCountLeadText
+        : (base.headerAccentCountLeadText ?? ''),
+    headerAccentCountBadgeColor: pickString(
+      record.headerAccentCountBadgeColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerAccentCountBadgeColor ?? 'principal'
+    ),
+    headerAccentCountLeadColor: pickString(
+      record.headerAccentCountLeadColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerAccentCountLeadColor ?? 'secondaire'
+    ),
+    headerAccentCountSize: pickString(
+      record.headerAccentCountSize,
+      GALLERY_HEADER_TITLE_SIZES,
+      base.headerAccentCountSize ?? 'md'
+    ),
+    headerAccentCountWeight: pickString(
+      record.headerAccentCountWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerAccentCountWeight ?? 'regular'
+    ),
+    headerAccentCountAlignment: pickString(
+      record.headerAccentCountAlignment,
+      GALLERY_HEADER_ACCENT_COUNT_ALIGNMENTS,
+      base.headerAccentCountAlignment ?? 'left'
+    ),
+    headerSerifLeadLabelText:
+      typeof record.headerSerifLeadLabelText === 'string'
+        ? record.headerSerifLeadLabelText
+        : (base.headerSerifLeadLabelText ?? ''),
+    headerSerifLeadTitleText:
+      typeof record.headerSerifLeadTitleText === 'string'
+        ? record.headerSerifLeadTitleText
+        : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadLabelColor: pickString(
+      record.headerSerifLeadLabelColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadLabelColor ?? 'texteFort'
+    ),
+    headerSerifLeadTitleColor: pickString(
+      record.headerSerifLeadTitleColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadTitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadSubtitleColor: pickString(
+      record.headerSerifLeadSubtitleColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerSerifLeadSubtitleColor ?? 'texteFort'
+    ),
+    headerSerifLeadLabelSize: pickString(
+      record.headerSerifLeadLabelSize,
+      GALLERY_HEADER_TITLE_SIZES,
+      base.headerSerifLeadLabelSize ?? 'md'
+    ),
+    headerSerifLeadTitleSize: pickString(
+      record.headerSerifLeadTitleSize,
+      GALLERY_HEADER_TITLE_SIZES,
+      base.headerSerifLeadTitleSize ?? 'md'
+    ),
+    headerSerifLeadSubtitleSize: pickString(
+      record.headerSerifLeadSubtitleSize,
+      GALLERY_HEADER_TITLE_SIZES,
+      base.headerSerifLeadSubtitleSize ?? 'md'
+    ),
+    headerSerifLeadLabelWeight: pickString(
+      record.headerSerifLeadLabelWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadLabelWeight ?? 'regular'
+    ),
+    headerSerifLeadTitleWeight: pickString(
+      record.headerSerifLeadTitleWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadTitleWeight ?? 'regular'
+    ),
+    headerSerifLeadSubtitleWeight: pickString(
+      record.headerSerifLeadSubtitleWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerSerifLeadSubtitleWeight ?? 'regular'
+    ),
+    headerBillboardBigWord:
+      typeof record.headerBillboardBigWord === 'string'
+        ? record.headerBillboardBigWord
+        : (base.headerBillboardBigWord ?? ''),
+    headerBillboardCountText:
+      typeof record.headerBillboardCountText === 'string'
+        ? record.headerBillboardCountText
+        : (base.headerBillboardCountText ?? ''),
+    headerBillboardTitleText:
+      typeof record.headerBillboardTitleText === 'string'
+        ? record.headerBillboardTitleText
+        : (base.headerBillboardTitleText ?? ''),
+    headerBillboardWordStyle: pickString(
+      record.headerBillboardWordStyle,
+      GALLERY_HEADER_BILLBOARD_WORD_STYLES,
+      base.headerBillboardWordStyle ?? 'outline'
+    ),
+    headerBillboardWordColor: pickString(
+      record.headerBillboardWordColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerBillboardWordColor ?? 'principal'
+    ),
+    headerBillboardTitleColor: pickString(
+      record.headerBillboardTitleColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerBillboardTitleColor ?? 'principal'
+    ),
+    headerBillboardMetaColor: pickString(
+      record.headerBillboardMetaColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerBillboardMetaColor ?? 'secondaire'
+    ),
+    headerSplitHeadingLabelText:
+      typeof record.headerSplitHeadingLabelText === 'string'
+        ? record.headerSplitHeadingLabelText
+        : (base.headerSplitHeadingLabelText ?? ''),
+    headerSplitHeadingTitleText:
+      typeof record.headerSplitHeadingTitleText === 'string'
+        ? record.headerSplitHeadingTitleText
+        : (base.headerSplitHeadingTitleText ?? ''),
+    headerSplitHeadingTitleColor: pickString(
+      record.headerSplitHeadingTitleColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerSplitHeadingTitleColor ?? 'principal'
+    ),
+    headerSplitHeadingLabelColor: pickString(
+      record.headerSplitHeadingLabelColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerSplitHeadingLabelColor ?? 'secondaire'
+    ),
+    headerSplitHeadingTitleSize: pickString(
+      record.headerSplitHeadingTitleSize,
+      GALLERY_HEADER_TITLE_SIZES,
+      base.headerSplitHeadingTitleSize ?? 'md'
+    ),
+    headerSplitHeadingTitleWeight: pickString(
+      record.headerSplitHeadingTitleWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerSplitHeadingTitleWeight ?? 'regular'
+    ),
+    headerSplitHeadingLabelSize: pickString(
+      record.headerSplitHeadingLabelSize,
+      GALLERY_HEADER_TITLE_SIZES,
+      base.headerSplitHeadingLabelSize ?? 'md'
+    ),
+    headerSplitHeadingLabelWeight: pickString(
+      record.headerSplitHeadingLabelWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerSplitHeadingLabelWeight ?? 'regular'
+    ),
+    headerMastheadLine1Text:
+      typeof record.headerMastheadLine1Text === 'string'
+        ? record.headerMastheadLine1Text
+        : (base.headerMastheadLine1Text ?? ''),
+    headerMastheadLine2Text:
+      typeof record.headerMastheadLine2Text === 'string'
+        ? record.headerMastheadLine2Text
+        : (base.headerMastheadLine2Text ?? ''),
+    headerMastheadLine3Text:
+      typeof record.headerMastheadLine3Text === 'string'
+        ? record.headerMastheadLine3Text
+        : (base.headerMastheadLine3Text ?? ''),
+    headerMastheadHeadlineColor: pickString(
+      record.headerMastheadHeadlineColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerMastheadHeadlineColor ?? 'principal'
+    ),
+    headerMastheadHeadlineSize: pickString(
+      record.headerMastheadHeadlineSize,
+      GALLERY_HEADER_TITLE_SIZES,
+      base.headerMastheadHeadlineSize ?? 'md'
+    ),
+    headerMastheadHeadlineWeight: pickString(
+      record.headerMastheadHeadlineWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerMastheadHeadlineWeight ?? 'regular'
+    ),
+    headerIndexLabelText:
+      typeof record.headerIndexLabelText === 'string' ? record.headerIndexLabelText : (base.headerIndexLabelText ?? ''),
+    headerIndexTitleText:
+      typeof record.headerIndexTitleText === 'string' ? record.headerIndexTitleText : (base.headerIndexTitleText ?? ''),
+    headerIndexCountLabelText:
+      typeof record.headerIndexCountLabelText === 'string'
+        ? record.headerIndexCountLabelText
+        : (base.headerIndexCountLabelText ?? ''),
+    headerIndexSubtitleText:
+      typeof record.headerIndexSubtitleText === 'string'
+        ? record.headerIndexSubtitleText
+        : (base.headerIndexSubtitleText ?? ''),
+    headerIndexLabelColor: pickString(
+      record.headerIndexLabelColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerIndexLabelColor ?? 'texteFort'
+    ),
+    headerIndexNumberColor: pickString(
+      record.headerIndexNumberColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerIndexNumberColor ?? 'principal'
+    ),
+    headerIndexTitleColor: pickString(
+      record.headerIndexTitleColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerIndexTitleColor ?? 'texteFort'
+    ),
+    headerIndexSubtitleColor: pickString(
+      record.headerIndexSubtitleColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerIndexSubtitleColor ?? 'texteFort'
+    ),
+    headerIndexLabelSize: pickString(
+      record.headerIndexLabelSize,
+      GALLERY_HEADER_TITLE_SIZES,
+      base.headerIndexLabelSize ?? 'md'
+    ),
+    headerIndexLabelWeight: pickString(
+      record.headerIndexLabelWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerIndexLabelWeight ?? 'regular'
+    ),
+    headerIndexTitleSize: pickString(
+      record.headerIndexTitleSize,
+      GALLERY_HEADER_TITLE_SIZES,
+      base.headerIndexTitleSize ?? 'md'
+    ),
+    headerIndexTitleWeight: pickString(
+      record.headerIndexTitleWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerIndexTitleWeight ?? 'regular'
+    ),
+    headerIndexSubtitleSize: pickString(
+      record.headerIndexSubtitleSize,
+      GALLERY_HEADER_TITLE_SIZES,
+      base.headerIndexSubtitleSize ?? 'md'
+    ),
+    headerIndexSubtitleWeight: pickString(
+      record.headerIndexSubtitleWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerIndexSubtitleWeight ?? 'regular'
+    ),
+    headerMarqueeWord1Text:
+      typeof record.headerMarqueeWord1Text === 'string'
+        ? record.headerMarqueeWord1Text
+        : (base.headerMarqueeWord1Text ?? ''),
+    headerMarqueeWord2Text:
+      typeof record.headerMarqueeWord2Text === 'string'
+        ? record.headerMarqueeWord2Text
+        : (base.headerMarqueeWord2Text ?? ''),
+    headerMarqueeWord3Text:
+      typeof record.headerMarqueeWord3Text === 'string'
+        ? record.headerMarqueeWord3Text
+        : (base.headerMarqueeWord3Text ?? ''),
+    headerMarqueeWord4Text:
+      typeof record.headerMarqueeWord4Text === 'string'
+        ? record.headerMarqueeWord4Text
+        : (base.headerMarqueeWord4Text ?? ''),
+    headerMarqueeWordColor: pickString(
+      record.headerMarqueeWordColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerMarqueeWordColor ?? 'principal'
+    ),
+    headerMarqueeSize: pickString(record.headerMarqueeSize, GALLERY_HEADER_TITLE_SIZES, base.headerMarqueeSize ?? 'md'),
   };
 }
 
@@ -505,6 +994,14 @@ export function galleryHeaderFontClass(font: PortfolioGalleryHeaderFont, kind: '
 
 export function galleryHeaderFontStyle(_font: PortfolioGalleryHeaderFont): CSSProperties | undefined {
   return undefined;
+}
+
+export function galleryTitleColorStyle(value: string | undefined): CSSProperties {
+  return { color: color(value, '#0a0a0a') };
+}
+
+export function gallerySubtitleColorStyle(value: string | undefined): CSSProperties {
+  return { color: color(value, '#737373') };
 }
 
 export function galleryMaxWidthClass(width: PortfolioGalleryMaxWidth): string {

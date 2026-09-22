@@ -257,7 +257,7 @@ function LinkCards({ href, label, palette, className = '', preview, onClick }: P
   );
 }
 
-/** Reel — hairline underline + SVG corner arrow */
+/** Reel — hairline underline that grows in on hover + SVG corner arrow */
 function LinkReel({ href, label, palette, className = '', preview, onClick }: PortfolioLinkButtonProps) {
   return (
     <LinkShell
@@ -265,16 +265,21 @@ function LinkReel({ href, label, palette, className = '', preview, onClick }: Po
       label={label}
       preview={preview}
       onClick={onClick}
-      className={`group/repo inline-flex w-fit items-center gap-2.5 border-b pb-1 font-semibold ${className}`}
+      className={`pf-reel-repo-link relative inline-flex w-fit items-center gap-2.5 pb-1 font-semibold ${className}`}
       style={{
         color: palette.ink,
-        borderColor: `color-mix(in srgb, ${palette.ink} 35%, transparent)`,
         fontSize: '1.05rem',
         fontFamily: LINK_BUTTON_FONT,
       }}
     >
       {label}
       <LinkExitArrow className="h-4 w-4" />
+      <span
+        aria-hidden
+        data-pf-no-color-transition=""
+        className="pf-reel-repo-link-rule absolute inset-x-0 bottom-0 h-px"
+        style={{ backgroundColor: palette.ink }}
+      />
     </LinkShell>
   );
 }
@@ -332,7 +337,7 @@ function LinkLegacy({ href, label, palette, className = '', preview, onClick }: 
       label={label}
       preview={preview}
       onClick={onClick}
-      className={`pf-legacy-repo-link inline-flex w-fit items-center gap-2 border-b pb-1 font-mono uppercase ${className}`}
+      className={`pf-legacy-repo-link inline-flex w-fit items-center gap-2 font-mono uppercase ${className}`}
       style={{
         fontSize: '0.72rem',
         letterSpacing: '0.18em',
@@ -340,7 +345,12 @@ function LinkLegacy({ href, label, palette, className = '', preview, onClick }: 
         ['--pf-legacy-accent' as string]: palette.accent,
       }}
     >
-      {label}
+      {/* A thin rule that grows from a third-width to full on hover, instead of a static
+          full-width border — a quieter resting state, a more deliberate hover moment. */}
+      <span className="pf-legacy-repo-link-label relative pb-1">
+        {label}
+        <span className="pf-legacy-repo-link-rule absolute inset-x-0 bottom-0 h-px" aria-hidden />
+      </span>
       <LinkExitArrow className="h-[0.85em] w-[0.85em]" />
     </LinkShell>
   );
