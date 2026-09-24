@@ -7,6 +7,7 @@ import {
 } from '@/components/portfolio/portfolio-footer-settings';
 import {
   FOOTER_HEADER_MARGIN_BOTTOM_REM,
+  FOOTER_HEADER_PADDING_REM,
   footerHeaderPaletteTokenColor,
   type PortfolioFooterHeaderTitleSize,
   type PortfolioFooterHeaderTitleWeight,
@@ -53,7 +54,11 @@ export function FooterHeaderEditorialHeader({
   return (
     <header
       className={`pf-footer-header-editorial-header relative w-full ${centered ? 'text-center' : 'text-left'}`}
-      style={{ marginBottom: `${FOOTER_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
+      style={{
+        marginBottom: `${FOOTER_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem`,
+        paddingTop: `${FOOTER_HEADER_PADDING_REM[presentation.headerPaddingTop ?? 'none']}rem`,
+        paddingBottom: `${FOOTER_HEADER_PADDING_REM[presentation.headerPaddingBottom ?? 'none']}rem`,
+      }}
       data-footer-header="editorial"
     >
       <div className={`pf-footer-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${centered ? 'sm:flex-col sm:items-center' : ''}`}>

@@ -7,6 +7,7 @@ import {
 } from '@/components/portfolio/portfolio-footer-settings';
 import {
   FOOTER_HEADER_MARGIN_BOTTOM_REM,
+  FOOTER_HEADER_PADDING_REM,
   footerHeaderPaletteTokenColor,
 } from '@/components/portfolio/portfolio-footer-header-settings';
 
@@ -93,7 +94,11 @@ export function FooterHeaderTimezoneHeader({
   return (
     <header
       className="pf-footer-header-timezone-header relative w-full"
-      style={{ marginBottom: `${FOOTER_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
+      style={{
+        marginBottom: `${FOOTER_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem`,
+        paddingTop: `${FOOTER_HEADER_PADDING_REM[presentation.headerPaddingTop ?? 'none']}rem`,
+        paddingBottom: `${FOOTER_HEADER_PADDING_REM[presentation.headerPaddingBottom ?? 'none']}rem`,
+      }}
       data-footer-header="timezone"
     >
       <div className="pf-footer-header-timezone-stage grid w-full grid-cols-1 gap-10 lg:grid-cols-[1fr_auto] lg:items-start lg:gap-16">

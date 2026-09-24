@@ -6,3 +6,6 @@ export { FaqHeaderSerifLeadHeader } from './FaqHeaderSerifLeadHeader';
 export { FaqHeaderBillboardHeader } from './FaqHeaderBillboardHeader';
 export { FaqHeaderMastheadHeader } from './FaqHeaderMastheadHeader';
 export { FaqHeaderSplitHeadingHeader } from './FaqHeaderSplitHeadingHeader';
+export { FaqHeaderSignalHeader } from './FaqHeaderSignalHeader';
+export { FaqHeaderQueryHeader } from './FaqHeaderQueryHeader';
+export { FaqHeaderDialogueHeader } from './FaqHeaderDialogueHeader';

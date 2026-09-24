@@ -18,6 +18,7 @@ export function PortfolioSectionShell({
   topSpacingStyle,
   bottomSpacingClass = 'pb-12 sm:pb-16 lg:pb-20',
   bottomSpacingStyle,
+  cssVars,
   header,
   children,
 }: {
@@ -35,6 +36,10 @@ export function PortfolioSectionShell({
   bottomSpacingClass?: string;
   /** Optional CSS vars / overrides for bottom spacing. */
   bottomSpacingStyle?: CSSProperties;
+  /** Arbitrary custom properties (e.g. a section-wide `--pf-<section>-font-scale`) set on
+   *  the root `<section>` — merged in first so `topSpacingStyle`/`bottomSpacingStyle` can
+   *  still override an individual property if they ever need to. */
+  cssVars?: CSSProperties;
   /** Section title block — kept outside item motion so sticky title behavior still works. */
   header?: ReactNode;
   children: ReactNode;
@@ -51,7 +56,7 @@ export function PortfolioSectionShell({
   return (
     <section
       id={id}
-      style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+      style={{ ...cssVars, ...topSpacingStyle, ...bottomSpacingStyle }}
       className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${paddingClass} ${className ?? ''}`}
     >
       {bgStyle ? (

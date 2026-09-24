@@ -13,8 +13,9 @@ import {
 import {
   FAQ_HEADER_MARGIN_BOTTOM_REM,
   type PortfolioFaqHeaderTitleSize,
-  type PortfolioFaqHeaderTitleWeight,
+  type PortfolioFaqHeaderEditorialTitleWeight,
 } from '@/components/portfolio/portfolio-faq-header-settings';
+import { createFaqHeaderLayoutResolver } from '@/components/portfolio/portfolio-faq-header-layout';
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -50,11 +51,12 @@ const TITLE_SIZE_CLASS: Record<PortfolioFaqHeaderTitleSize, string> = {
 
 /** Editorial's identity is a light title — "regular" here preserves that prior default,
  *  the other 3 steps adjust from it, rather than the generic light/normal/semibold/bold scale. */
-const TITLE_WEIGHT_CLASS: Record<PortfolioFaqHeaderTitleWeight, string> = {
+const TITLE_WEIGHT_CLASS: Record<PortfolioFaqHeaderEditorialTitleWeight, string> = {
   light: '!font-thin',
   regular: '!font-light',
   semibold: '!font-medium',
   bold: '!font-semibold',
+  extrabold: '!font-bold',
 };
 
 /**
@@ -79,6 +81,7 @@ export function FaqHeaderEditorialHeader({
   const subtitleText = subtitle?.trim() || '';
   const titleInk = faqTitleColorStyle(presentation.titleColor).color as string;
   const kickerInk = `color-mix(in srgb, ${titleInk} 38%, transparent)`;
+  const kickerText = createFaqHeaderLayoutResolver(presentation, 'editorial').text('kicker');
 
   const headerRef = useRef<HTMLElement>(null);
 
@@ -190,14 +193,16 @@ export function FaqHeaderEditorialHeader({
     >
       <div className={`pf-faq-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${centered ? 'sm:flex-col sm:items-center' : ''}`}>
         <div className="min-w-0 max-w-3xl">
-          <p
-            className="pf-faq-header-editorial-kicker mb-0 text-[0.68rem] font-semibold uppercase tracking-[0.24em]"
-            style={{ color: kickerInk }}
-          >
-            FAQ
-          </p>
+          {kickerText ? (
+            <p
+              className="pf-faq-header-editorial-kicker mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.24em]"
+              style={{ color: kickerInk }}
+            >
+              {kickerText}
+            </p>
+          ) : null}
           <h2
-            className={`mb-0 mt-3 ${faqHeaderFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
+            className={`mb-0 ${faqHeaderFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
             style={faqTitleColorStyle(presentation.titleColor)}
           >
             <span className="pf-faq-header-editorial-title-mask block overflow-hidden">

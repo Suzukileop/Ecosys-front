@@ -62,7 +62,7 @@ import {
   resolveAboutPlatformStrengthsSectionTitle,
   resolveAboutPortraitSkillsMetaEnabled,
   resolveAboutPortraitSkillsMetaLead,
-  resolveInfoContentSize,
+  resolveInfoPremiumFontSize,
   resolveInfoAboutValueValuesLayout,
   resolveInfoAboutValueListMarkerStyle,
   resolveInfoAboutManifestoBlocksLayout,
@@ -82,7 +82,7 @@ import {
   resolveInfoPortraitGrayscale,
   resolveInfoShowStrengths,
   resolveInfoShowSystemsTools,
-  type PortfolioInfoContentSize,
+  type PortfolioInfoPremiumFontSize,
   type PortfolioInfoAboutValueValuesLayout,
   type PortfolioInfoAboutValueBlocksLayout,
   type PortfolioInfoAboutManifestoBlocksLayout,
@@ -420,7 +420,7 @@ function TraitHeadingList({
   titleColor: string;
   bodyColor: string;
   accent: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
 }) {
   if (items.length === 0) return null;
   const blockTitleClass = infoContentBlockTitleSizeClass(contentSize);
@@ -457,7 +457,7 @@ function TraitLanguageList({
   titleColor: string;
   bodyColor: string;
   accent: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
 }) {
   if (items.length === 0) return null;
   const blockTitleClass = infoContentBlockTitleSizeClass(contentSize);
@@ -739,7 +739,7 @@ function AboutMeClassicLayout({
   bodyColor: string;
   cardBg: string;
   cardBorder: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
 }) {
   const reduceMotion = useReducedMotion();
   const motionOff = reduceMotion === true;
@@ -930,7 +930,7 @@ function AboutMeTraitHeadline({
   contentSize,
 }: {
   text: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
 }) {
   const lines = text
     .split('\n')
@@ -1021,7 +1021,7 @@ function AboutMeTraitLayout({
   languageLevelStyle: PortfolioInfoLanguageLevelDisplayStyle;
   educationDisplayStyle: PortfolioInfoEducationDisplayStyle;
   cascadeScrollShift?: boolean;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   accent: string;
   titleColor: string;
   bodyColor: string;
@@ -1545,7 +1545,7 @@ function AboutPlatformLayout({
   bodyColor: string;
   cardBg: string;
   cardBorder: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
 }) {
   const reduceMotion = useReducedMotion();
   const motionDisabled = reduceMotion === true;
@@ -2291,7 +2291,7 @@ function AboutPortraitSkillsLayout({
   subtitleColor: string;
   bodyColor: string;
   cardBg: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   portraitGrayscale?: boolean;
 }) {
   const reduceMotion = Boolean(useReducedMotion());
@@ -3211,7 +3211,7 @@ function AboutBannerLayout({
   showInterests: boolean;
   educationLabel: string;
   interestsLabel: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   skillsTitleColor: string;
   subtitleColor: string;
   bodyColor: string;
@@ -3822,7 +3822,7 @@ function AboutSplitLayout({
   bodyColor: string;
   cardBg: string;
   cardBorder: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   portraitSide: PortfolioInfoAboutSplitPortraitSide;
   sectionLabels: AboutSplitSectionLabels;
   portraitGrayscale: boolean;
@@ -4225,7 +4225,7 @@ function ManifestoEducationList({
   subtitleColor: string;
   bodyColor: string;
   cardBorder: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   includeLabel?: boolean;
 }) {
   const visible = entries.filter(
@@ -4293,12 +4293,12 @@ function ManifestoSectionLabel({
   children,
   accent,
   color,
-  contentSize = 'md',
+  contentSize = 'medium',
 }: {
   children: string;
   accent?: string;
   color?: string;
-  contentSize?: PortfolioInfoContentSize;
+  contentSize?: PortfolioInfoPremiumFontSize;
 }) {
   const labelClass = infoContentLabelSizeClass(contentSize);
   return (
@@ -4385,7 +4385,7 @@ function ManifestoIndexGrid({
   labelColor?: string;
   bodyColor: string;
   subtitleColor: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   motionOff?: boolean;
 }) {
   const showSkillsCol = showSkills && skillLabels.length > 0;
@@ -4529,7 +4529,7 @@ function ManifestoDetailsSection({
   subtitleColor: string;
   bodyColor: string;
   cardBorder: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   blocksLayout?: PortfolioInfoAboutManifestoBlocksLayout;
   blocksScrollFocus?: boolean;
   sectionTopClass?: string;
@@ -4619,22 +4619,30 @@ const MANIFESTO_PORTRAIT_RECT_CLASS = 'w-full max-w-[17.5rem]';
 const MANIFESTO_PORTRAIT_COMPACT_CLASS = 'size-[4.25rem] sm:size-[4.75rem]';
 const MANIFESTO_PORTRAIT_COMPACT_RECT_CLASS = 'w-[4.25rem] sm:w-[4.75rem]';
 
-function manifestoStatementSizeClass(size: PortfolioInfoContentSize, isLong: boolean): string {
+function manifestoStatementSizeClass(size: PortfolioInfoPremiumFontSize, isLong: boolean): string {
   if (isLong) {
     switch (size) {
-      case 'sm':
+      case 'small':
         return 'pf-about-manifesto-statement--long text-[clamp(1.55rem,4.2vw,2.9rem)]';
-      case 'lg':
+      case 'large':
         return 'pf-about-manifesto-statement--long text-[clamp(1.95rem,5.1vw,3.6rem)]';
+      case 'xlarge':
+        return 'pf-about-manifesto-statement--long text-[clamp(2.15rem,5.5vw,3.95rem)]';
+      case 'xxlarge':
+        return 'pf-about-manifesto-statement--long text-[clamp(2.35rem,5.9vw,4.3rem)]';
       default:
         return 'pf-about-manifesto-statement--long text-[clamp(1.75rem,4.7vw,3.35rem)]';
     }
   }
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-[clamp(2.2rem,6.5vw,4.2rem)]';
-    case 'lg':
+    case 'large':
       return 'text-[clamp(2.85rem,7.8vw,5.25rem)]';
+    case 'xlarge':
+      return 'text-[clamp(3.2rem,8.4vw,5.85rem)]';
+    case 'xxlarge':
+      return 'text-[clamp(3.55rem,9vw,6.45rem)]';
     default:
       return 'text-[clamp(2.5rem,7.2vw,4.85rem)]';
   }
@@ -5164,7 +5172,7 @@ function AboutManifestoLayout({
   portraitFrame?: PortfolioInfoAboutManifestoPortraitFrame;
   blocksLayout?: PortfolioInfoAboutManifestoBlocksLayout;
   blocksScrollFocus?: boolean;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   accent: string;
   titleColor: string;
   subtitleColor: string;
@@ -5795,7 +5803,7 @@ function AboutValueNumberedGrid({
   titleColor: string;
   subtitleColor: string;
   bodyColor: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   emptyMessage?: string;
 }) {
   const motionOff = useReducedMotion() === true;
@@ -5906,7 +5914,7 @@ function AboutValueIndexedList({
   subtitleColor: string;
   bodyColor: string;
   cardBorder: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   emptyMessage?: string;
 }) {
   const motionOff = useReducedMotion() === true;
@@ -6037,7 +6045,7 @@ function AboutValueRow({
   bodyColor: string;
   trackColor?: string;
   blocksLayout?: PortfolioInfoAboutValueBlocksLayout;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
 }) {
   const stacked = blocksLayout === 'grid-2';
   const blockTitleClass = aboutValueBlockTitleSizeClass(contentSize);
@@ -6228,7 +6236,7 @@ function ValueStepsLanguageDial({
   accent: string;
   titleColor: string;
   bodyColor: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
 }) {
   const rootRef = useRef<HTMLUListElement>(null);
   const motionOff = useReducedMotion() === true;
@@ -6312,7 +6320,7 @@ function ValueStepsMetaBlock({
 }: {
   label: string;
   accent: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   children: ReactNode;
 }) {
   return (
@@ -6343,7 +6351,7 @@ function ValueStepsEducationList({
   accent: string;
   subtitleColor: string;
   bodyColor: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const motionOff = useReducedMotion() === true;
@@ -6557,7 +6565,7 @@ function AboutValueStepsNativeValues({
   titleColor: string;
   subtitleColor: string;
   bodyColor: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
 }) {
   const motionOff = useReducedMotion() === true;
   const sectionTitleClass = infoContentBodySizeClass(contentSize);
@@ -6714,7 +6722,7 @@ function AboutValueStepsLayout({
   subtitleColor: string;
   bodyColor: string;
   cardBorder: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   valuesLayout: PortfolioInfoAboutValueValuesLayout;
   listMarkerStyle: PortfolioInfoAboutValueListMarkerStyle;
   portraitGrayscale: boolean;
@@ -7115,7 +7123,7 @@ export function EditorialAboutMeSection({
   const showInterests = presentation.showInterests !== false;
   const showLanguages = presentation.showLanguages !== false;
   const showSystemsTools = presentation.showSystemsTools !== false && toolItems.length > 0;
-  const contentSize = resolveInfoContentSize(presentation);
+  const contentSize = resolveInfoPremiumFontSize(presentation);
   const infoDesign = resolveInfoDesign(presentation.design);
   const portraitGrayscale = resolveInfoPortraitGrayscale(presentation);
 

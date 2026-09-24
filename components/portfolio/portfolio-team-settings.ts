@@ -256,25 +256,25 @@ export const PORTFOLIO_TEAM_LAYOUT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'portrait-rail', label: 'Rail portraits', description: 'Grands portraits dans un rail horizontal tactile.' },
-  { value: 'spotlight', label: 'Spotlight', description: 'Un membre à la une avec miniatures interactives.' },
-  { value: 'directory', label: 'Annuaire', description: 'Lignes compactes avec avatar et liens à droite.' },
-  { value: 'polaroid', label: 'Polaroid', description: 'Cartes décalées avec rotations CSS discrètes.' },
-  { value: 'profile-cards', label: 'Cartes profil', description: 'Portrait en haut, nom et réseaux centrés en bas.' },
-  { value: 'hover-cards', label: 'Cartes survol', description: 'Portraits seuls ; nom, rôle et liens apparaissent au survol.' },
-  { value: 'cover-cards', label: 'Voile survol', description: 'Portrait seul ; un voile sombre révèle nom, rôle et liens au survol.' },
-  { value: 'avatar-cards', label: 'Cartes avatar', description: 'Avatar circulaire, nom, rôle et réseaux centrés.' },
-  { value: 'float-cards', label: 'Cartes flottantes', description: 'Avatar chevauchant la carte ; nom, rôle et liens toujours visibles.' },
+  { value: 'portrait-rail', label: 'Portrait rail', description: 'Large numbered portraits in a draggable rail with a progress counter.' },
+  { value: 'spotlight', label: 'Spotlight', description: 'One featured member; the portrait wipes in when you pick another.' },
+  { value: 'directory', label: 'Directory', description: 'Numbered rows with an avatar and links on the right.' },
+  { value: 'polaroid', label: 'Polaroid', description: 'Tilted prints that scatter in and straighten on hover.' },
+  { value: 'profile-cards', label: 'Profile cards', description: 'Portrait on top, name and socials centered below.' },
+  { value: 'hover-cards', label: 'Hover cards', description: 'Portraits only — name, role, and links appear on hover.' },
+  { value: 'cover-cards', label: 'Hover veil', description: 'Portrait only — a dark veil reveals name, role, and links on hover.' },
+  { value: 'avatar-cards', label: 'Avatar cards', description: 'Circular avatar with name, role, and socials centered.' },
+  { value: 'float-cards', label: 'Floating cards', description: 'Avatar overlapping the card — name, role, and links always visible.' },
 ];
 
 export const PORTFOLIO_TEAM_GAP_OPTIONS: {
   value: PortfolioTeamGap;
   label: string;
 }[] = [
-  { value: 'sm', label: 'Serré' },
-  { value: 'md', label: 'Moyen' },
+  { value: 'sm', label: 'Tight' },
+  { value: 'md', label: 'Medium' },
   { value: 'lg', label: 'Large' },
-  { value: 'xl', label: 'Très large' },
+  { value: 'xl', label: 'Extra large' },
 ];
 
 export const PORTFOLIO_TEAM_TITLE_PRESET_OPTIONS = [
@@ -337,12 +337,12 @@ export const PORTFOLIO_TEAM_ILLUSTRATION_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Aucun', description: 'Pas de SVG décoratif à côté du contenu.' },
-  { value: 'chat', label: 'Chat', description: 'Bulles de conversation.' },
-  { value: 'question', label: 'Question', description: 'Point d’interrogation graphique.' },
-  { value: 'docs', label: 'Docs', description: 'Documents superposés.' },
-  { value: 'support', label: 'Support', description: 'Illustration support.' },
-  { value: 'hex', label: 'Hex', description: 'Symbole hexagonal.' },
+  { value: 'none', label: 'None', description: 'No decorative SVG beside the content.' },
+  { value: 'chat', label: 'Chat', description: 'Conversation bubbles.' },
+  { value: 'question', label: 'Question', description: 'Graphic question mark.' },
+  { value: 'docs', label: 'Docs', description: 'Stacked documents.' },
+  { value: 'support', label: 'Support', description: 'Support illustration.' },
+  { value: 'hex', label: 'Hex', description: 'Hexagonal symbol.' },
 ];
 
 export const PORTFOLIO_TEAM_ILLUSTRATION_PLACEMENT_OPTIONS: {
@@ -350,8 +350,8 @@ export const PORTFOLIO_TEAM_ILLUSTRATION_PLACEMENT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Gauche', description: 'SVG à gauche du contenu équipe.' },
-  { value: 'right', label: 'Droite', description: 'SVG à droite du contenu équipe.' },
+  { value: 'left', label: 'Left', description: 'SVG on the left of the team content.' },
+  { value: 'right', label: 'Right', description: 'SVG on the right of the team content.' },
 ];
 
 export function isPortfolioTeamSectionLayout(value: unknown): value is PortfolioTeamSectionLayout {
@@ -716,13 +716,6 @@ export function teamSpotlightPhotoSizeClass(avatarSize: PortfolioTeamAvatarSize 
   if (avatarSize === 'lg') return 'w-72 sm:w-80';
   if (avatarSize === 'xl') return 'w-96 sm:w-[28rem]';
   return 'w-52 sm:w-60';
-}
-
-export function teamSpotlightThumbClass(avatarSize: PortfolioTeamAvatarSize | undefined): string {
-  if (avatarSize === 'sm') return 'h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem]';
-  if (avatarSize === 'lg') return 'h-24 w-24 sm:h-28 sm:w-28';
-  if (avatarSize === 'xl') return 'h-28 w-28 sm:h-32 sm:w-32';
-  return 'h-20 w-20 sm:h-24 sm:w-24';
 }
 
 export function teamSpotlightNameClass(width: PortfolioTeamCardMaxWidth | undefined): string {

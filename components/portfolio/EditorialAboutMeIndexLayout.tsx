@@ -8,7 +8,7 @@ import {
   noirBodySizeClass,
   noirHeadingSizeClass,
   noirLanguageAcronymSizeClass,
-  type PortfolioInfoContentSize,
+  type PortfolioInfoPremiumFontSize,
 } from '@/components/portfolio/portfolio-info-settings';
 import { terminalLanguageCode } from '@/components/portfolio/EditorialAboutMeNoirLayouts';
 import { resolveSpokenLanguageLevelLabel } from '@/lib/spoken-languages';
@@ -291,7 +291,7 @@ export function AboutIndexEditorialLayout({
   showInterests,
   showLanguages,
   showSystemsTools,
-  contentSize = 'md',
+  contentSize = 'medium',
   accent,
   subtitleColor,
   bodyColor,
@@ -314,7 +314,7 @@ export function AboutIndexEditorialLayout({
   showInterests: boolean;
   showLanguages: boolean;
   showSystemsTools: boolean;
-  contentSize?: PortfolioInfoContentSize;
+  contentSize?: PortfolioInfoPremiumFontSize;
   accent: string;
   subtitleColor: string;
   bodyColor: string;

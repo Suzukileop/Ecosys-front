@@ -1546,6 +1546,59 @@ export type PortfolioExperienceLayerFrame = PortfolioServicesCardBackgroundSetti
   cardPadding: PortfolioServicesCardPadding;
 };
 
+/**
+ * Global type-size control for every Experience design — same standardized-shared-value
+ * architecture as the FAQ and Footer sections' "Font size" control: ONE unified scale every
+ * design reads via its own `--pf-experience-font-scale` CSS custom property (set on the
+ * section's shared `<section id="experience">` root via `PortfolioSectionShell`'s `cssVars`
+ * prop, from `experiencePremiumFontScale(presentation.premiumFontSize)`), multiplying every
+ * standardized body/label font-size declaration in `globals.css`
+ * (`calc(<base> * var(--pf-experience-font-scale, 1))`). `medium` is each design's own
+ * current baseline size — `small`/`large` scale relative to that, not to some other
+ * absolute reference. Independent of the older per-element `elementStyles` size picker
+ * (title/body/label sm–xl) — this is a section-wide multiplier applied on top of it.
+ */
+export type PortfolioExperiencePremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
+
+export const EXPERIENCE_PREMIUM_FONT_SIZES: PortfolioExperiencePremiumFontSize[] = [
+  'small',
+  'medium',
+  'large',
+  'xlarge',
+  'xxlarge',
+];
+
+export const PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS: {
+  value: PortfolioExperiencePremiumFontSize;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'small', label: 'Small', description: 'Compact type across every Experience design.' },
+  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
+  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
+  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  {
+    value: 'xxlarge',
+    label: 'Super Extra Large',
+    description: 'Maximum type size for the most dramatic, oversized look.',
+  },
+];
+
+/** Multiplier each Experience design's own base font-size (its `medium` value) is scaled by,
+ *  via `calc(<base> * var(--pf-experience-font-scale, 1))` in globals.css. Kept numerically
+ *  in sync with FAQ/Footer's identical scale on purpose. */
+const EXPERIENCE_PREMIUM_FONT_SCALE: Record<PortfolioExperiencePremiumFontSize, number> = {
+  small: 0.85,
+  medium: 1,
+  large: 1.15,
+  xlarge: 1.3,
+  xxlarge: 1.45,
+};
+
+export function experiencePremiumFontScale(size: PortfolioExperiencePremiumFontSize): number {
+  return EXPERIENCE_PREMIUM_FONT_SCALE[size] ?? 1;
+}
+
 export type PortfolioExperiencePresentationSettings = PortfolioSectionBackgroundSettings & {
   titlePreset: PortfolioExperienceTitlePreset;
   titleCustom: string;
@@ -1557,6 +1610,8 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   subtitleColor: string;
   titleUppercase: boolean;
   subtitleUppercase: boolean;
+  /** Type-size scale applied uniformly across every Experience design (General tab). */
+  premiumFontSize: PortfolioExperiencePremiumFontSize;
   headerAlignment: PortfolioExperienceHeaderAlignment;
   /**
    * Applied Experience header design (Header subsection).
@@ -2239,6 +2294,7 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   subtitleColor: DEFAULT_EXPERIENCE_SUBTITLE_COLOR,
   titleUppercase: false,
   subtitleUppercase: false,
+  premiumFontSize: 'medium',
   headerAlignment: 'left',
   headerDesign: 'none',
   accentYearsBadgeText: '',
@@ -6103,6 +6159,7 @@ export function mergeExperiencePresentation(
     titleUppercase: typeof record.titleUppercase === 'boolean' ? record.titleUppercase : base.titleUppercase,
     subtitleUppercase:
       typeof record.subtitleUppercase === 'boolean' ? record.subtitleUppercase : base.subtitleUppercase,
+    premiumFontSize: pick(record.premiumFontSize, EXPERIENCE_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
     headerAlignment: pick(record.headerAlignment, ['left', 'center', 'right'], base.headerAlignment),
     headerDesign: pick(
       record.headerDesign,

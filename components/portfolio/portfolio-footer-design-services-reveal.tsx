@@ -2,7 +2,7 @@
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { formatPhoneDisplay } from '@/lib/phone';
 import {
   FooterSocialLinkIcon,
@@ -13,6 +13,7 @@ import {
   DEFAULT_CONTENT_GUTTER,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -25,19 +26,12 @@ function prefersReducedMotion(): boolean {
 /** Local, dedicated transition rules — same idiom as Footer's Headline Reveal design.
  *  `data-pf-no-color-transition` (already on every item below) opts each element OUT of the
  *  app-wide color-mode crossfade so THIS 0.5s rule is the only one driving its `color`/
- *  `background-color`, both for the light/dark toggle and for the GSAP focus-dim hover (which
- *  writes `color` as a plain, un-tweened style assignment — the CSS transition is what makes
- *  that instant write fade instead of snap). Opacity/filter/transform stay on GSAP `.to()`
- *  tweens, since the global crossfade rule never touches those properties anyway. */
+ *  `background-color` for the light/dark toggle. */
 const SERVICES_REVEAL_CSS = `
-.pf-svcreveal-dim {
-  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s cubic-bezier(0.16, 1, 0.3, 1), color 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-}
 .pf-svcreveal-mode {
   transition: background-color 0.5s cubic-bezier(0.16, 1, 0.3, 1), color 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @media (prefers-reduced-motion: reduce) {
-  .pf-svcreveal-dim,
   .pf-svcreveal-mode {
     transition: none !important;
   }
@@ -54,13 +48,20 @@ interface FooterDesignServicesRevealProps {
   phone?: string | null;
   locationLabel?: string | null;
   navLinks: { id: string; label: string; url: string }[];
+  layout: FooterDesignLayoutResolver;
   links: EditorialContactLink[];
-  copyrightText: string;
   colorMode: 'light' | 'dark';
   /** Site-wide editorial gutter (settings.global.contentGutter) — this design is full-bleed
    *  and bypasses the legacy shell, so this is threaded in to line its own horizontal
    *  padding up with the rest of the page. */
   contentGutter?: PortfolioContentGutter;
+  /** Resolved from the Footer section's own Background tab (`sectionBackgroundStyle`) —
+   *  `undefined` when that tab is off, so this canvas is transparent (the page/global
+   *  wallpaper shows through) by default, same as every other Footer design now. */
+  backgroundStyle?: CSSProperties;
+  /** Multiplies every standardized body/label text size via `--pf-footer-font-scale` —
+   *  see the Footer section's General tab "Font size" control. */
+  fontSizeScale?: number;
 }
 
 /**
@@ -70,10 +71,10 @@ interface FooterDesignServicesRevealProps {
  * — that role is now the shared Header mechanism's job): an asymmetric
  * two-zone grid — free-floating (no chip/border) social
  * icons + the "Services" nav column on the left, "Address" (with a small geo
- * dot) and "Contact" (email/phone) on the right. At rest every link/coordinate
- * sits at a muted opacity; hovering one snaps it to full contrast while every
- * other item in the grid dims to 0.1 opacity + a 2px blur for a theatrical
- * depth-of-field focus. Social icons get a high-inertia magnetic pull toward
+ * dot) and "Contact" (email/phone) on the right. Every link/coordinate reads
+ * at full, normal contrast at all times; hovering one just nudges that single
+ * element and brightens it to full ink, without affecting any other item in
+ * the grid. Social icons get a high-inertia magnetic pull toward
  * the cursor plus a small reactive rotation on direct hover (desktop/
  * pointer-fine only). Fully self-contained "bypass" design — full-bleed, no
  * shared padding/pattern shell, literal Tailwind classes branched on the
@@ -85,6 +86,11 @@ interface FooterDesignServicesRevealProps {
  *   resolved `navLinks` double as the Services column, per the brief.
  * - There is no live geolocation/timezone data field, so the address gets a
  *   plain static dot/pin instead of a fabricated ticking clock.
+ *
+ * No hardcoded closing copyright line either — that bar was extracted into the shared
+ * Mini bar catalog's own "Services reveal" variant (see footer-minibar-catalog-extraction
+ * memory), toggled on separately via Footer > Design > "Mini bar" rather than being
+ * always-on here.
  */
 export function FooterDesignServicesReveal({
   creatorName,
@@ -92,17 +98,16 @@ export function FooterDesignServicesReveal({
   phone,
   locationLabel,
   navLinks,
+  layout,
   links,
-  copyrightText,
   colorMode,
   contentGutter = DEFAULT_CONTENT_GUTTER,
+  backgroundStyle,
+  fontSizeScale = 1,
 }: FooterDesignServicesRevealProps) {
   const rootRef = useRef<HTMLElement>(null);
 
   const isLight = colorMode === 'light';
-  // Pure white/black canvas, matching every other full-bleed Footer design — not a custom
-  // off-white/off-black tint, which visibly seams against the page's real background.
-  const bg = isLight ? '#ffffff' : '#000000';
   const ink = isLight ? '#0a0a0a' : '#fafaf7';
   // Section labels (Connect / Services / Address / Contact) — one harmonized, legible tone.
   const label = isLight ? 'rgba(10,10,10,0.55)' : 'rgba(250,250,247,0.55)';
@@ -113,7 +118,6 @@ export function FooterDesignServicesReveal({
   const navRest = isLight ? 'rgba(10,10,10,0.55)' : 'rgba(250,250,247,0.55)';
   // Social icons — refined, slightly brighter than body text since the glyphs are tiny.
   const iconRest = isLight ? 'rgba(10,10,10,0.72)' : 'rgba(250,250,247,0.72)';
-  const hairline = isLight ? 'rgba(10,10,10,0.08)' : 'rgba(250,250,247,0.1)';
 
   const trimmedLocation = locationLabel?.trim() || null;
   const trimmedEmail = email?.trim() || null;
@@ -121,71 +125,50 @@ export function FooterDesignServicesReveal({
   const phoneDisplay = trimmedPhone ? formatPhoneDisplay(trimmedPhone) : null;
   const hasSocials = links.length > 0;
   const hasContact = Boolean(trimmedEmail || phoneDisplay);
+  const connectHeading = layout.text('connectLabel');
+  const navHeading = layout.text('navLabel');
+  const addressHeading = layout.text('addressLabel');
+  const contactHeading = layout.text('contactLabel');
+  const headingClass = 'pf-svcreveal-color m-0 font-semibold uppercase tracking-[0.15em]';
+  const headingStyle: CSSProperties = {
+    color: label,
+    fontSize: 'calc(var(--pf-footer-label-size) * var(--pf-footer-font-scale, 1))',
+  };
 
-  // Depth-of-field focus — resting items sit muted; hovering any link or
-  // coordinate snaps it to full contrast while every other item dims to 0.1
-  // opacity + a 2px blur, reverting smoothly on leave.
+  // Self-contained hover accent — hovering a link or coordinate nudges that single
+  // element a few px and brightens it to full ink; reverts on leave. No other
+  // element in the grid is ever touched by this.
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return undefined;
     if (prefersReducedMotion()) return undefined;
 
-    const items = Array.from(root.querySelectorAll<HTMLElement>('[data-svcreveal-item]'));
     const hoverTargets = Array.from(root.querySelectorAll<HTMLElement>('[data-svcreveal-hover]'));
-    if (!items.length || !hoverTargets.length) return undefined;
+    if (!hoverTargets.length) return undefined;
 
     const baseColors = new Map<HTMLElement, string>();
-    items.forEach((el) => baseColors.set(el, getComputedStyle(el).color));
-
-    const onEnter = (target: HTMLElement) => {
-      items.forEach((el) => {
-        if (el === target) {
-          gsap.to(el, {
-            opacity: 1,
-            filter: 'blur(0px)',
-            color: ink,
-            x: 5,
-            duration: 0.34,
-            ease: 'power2.out',
-            overwrite: 'auto',
-          });
-        } else {
-          gsap.to(el, {
-            opacity: 0.1,
-            filter: 'blur(1px)',
-            x: 0,
-            duration: 0.34,
-            ease: 'power2.out',
-            overwrite: 'auto',
-          });
-        }
-      });
-    };
-    const onLeaveAll = () => {
-      items.forEach((el) => {
-        gsap.to(el, {
-          opacity: 1,
-          filter: 'blur(0px)',
-          color: baseColors.get(el),
-          x: 0,
-          duration: 0.4,
-          ease: 'power2.out',
-          overwrite: 'auto',
-        });
-      });
-    };
+    hoverTargets.forEach((el) => baseColors.set(el, getComputedStyle(el).color));
 
     const enterHandlers = hoverTargets.map((el) => {
-      const handler = () => onEnter(el);
+      const handler = () => {
+        gsap.to(el, { color: ink, x: 5, duration: 0.34, ease: 'power2.out', overwrite: 'auto' });
+      };
       el.addEventListener('pointerenter', handler);
       return handler;
     });
-    const gridEl = root.querySelector<HTMLElement>('[data-svcreveal-grid]');
-    gridEl?.addEventListener('pointerleave', onLeaveAll);
+    const leaveHandlers = hoverTargets.map((el) => {
+      const handler = () => {
+        gsap.to(el, { color: baseColors.get(el), x: 0, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
+      };
+      el.addEventListener('pointerleave', handler);
+      return handler;
+    });
 
     return () => {
-      hoverTargets.forEach((el, index) => el.removeEventListener('pointerenter', enterHandlers[index]));
-      gridEl?.removeEventListener('pointerleave', onLeaveAll);
+      hoverTargets.forEach((el, index) => {
+        el.removeEventListener('pointerenter', enterHandlers[index]);
+        el.removeEventListener('pointerleave', leaveHandlers[index]);
+      });
     };
   }, [navLinks.length, links.length, trimmedLocation, trimmedEmail, phoneDisplay, ink]);
 
@@ -258,27 +241,23 @@ export function FooterDesignServicesReveal({
       ref={rootRef}
       aria-label={creatorName ? `${creatorName} — site footer` : 'Site footer'}
       className="pf-svcreveal-mode relative left-1/2 isolate w-screen -translate-x-1/2 overflow-hidden"
-      style={{ backgroundColor: bg, color: ink }}
+      style={{ ...backgroundStyle, color: ink, '--pf-footer-font-scale': fontSizeScale } as CSSProperties}
       data-pf-no-color-transition=""
     >
       <ServicesRevealStyles />
 
       <div
-        data-svcreveal-grid
         className={`grid grid-cols-1 gap-16 pb-20 pt-24 sm:pb-28 sm:pt-32 md:grid-cols-[1fr_1.05fr] md:gap-x-14 lg:gap-x-24 lg:pb-32 lg:pt-40 ${portfolioEditorialGutterX(contentGutter)}`}
       >
         {/* Left zone — free-floating social icons above the Services nav column. */}
         <div className="flex min-w-0 flex-col gap-12">
           {hasSocials ? (
             <div className="flex flex-col gap-5">
-              <p
-                data-svcreveal-item
-                data-pf-no-color-transition=""
-                className="pf-svcreveal-dim m-0 text-xs font-semibold uppercase tracking-[0.15em]"
-                style={{ color: label }}
-              >
-                Connect
-              </p>
+              {connectHeading ? (
+                <p data-pf-no-color-transition="" className={headingClass} style={headingStyle}>
+                  {connectHeading}
+                </p>
+              ) : null}
               <div className="flex flex-wrap items-center gap-8 sm:gap-9">
                 {links.map((link) => (
                   <a
@@ -288,10 +267,9 @@ export function FooterDesignServicesReveal({
                     rel="noreferrer"
                     aria-label={link.label}
                     data-svcreveal-icon
-                    data-svcreveal-item
                     data-svcreveal-hover
                     data-pf-no-color-transition=""
-                    className="pf-svcreveal-dim flex h-11 w-11 shrink-0 items-center justify-center"
+                    className="pf-svcreveal-color flex h-11 w-11 shrink-0 items-center justify-center"
                     style={{ color: iconRest }}
                   >
                     <FooterSocialLinkIcon link={link} bare iconClassName="h-5 w-5" />
@@ -301,53 +279,50 @@ export function FooterDesignServicesReveal({
             </div>
           ) : null}
 
+          {navLinks.length > 0 ? (
           <div className="flex flex-col gap-5">
-            <p
-              data-svcreveal-item
-              data-pf-no-color-transition=""
-              className="pf-svcreveal-dim m-0 text-xs font-semibold uppercase tracking-[0.15em]"
-              style={{ color: label }}
-            >
-              Services
-            </p>
+            {navHeading ? (
+              <p data-pf-no-color-transition="" className={headingClass} style={headingStyle}>
+                {navHeading}
+              </p>
+            ) : null}
             <nav aria-label="Footer" className="flex flex-col gap-1">
               {navLinks.map((link) => (
                 <a
                   key={link.id}
                   href={link.url}
-                  data-svcreveal-item
                   data-svcreveal-hover
                   data-pf-no-color-transition=""
-                  className="pf-svcreveal-dim flex min-h-[44px] w-fit items-center text-[clamp(1.05rem,2vw,1.4rem)] font-medium md:min-h-0"
-                  style={{ color: navRest }}
+                  className="pf-svcreveal-color flex min-h-[44px] w-fit items-center font-medium md:min-h-0"
+                  style={{ color: navRest, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {link.label}
                 </a>
               ))}
             </nav>
           </div>
+          ) : null}
         </div>
 
         {/* Right zone — editorial address (with a static geo dot) + contact, offset for asymmetry. */}
         <div className="flex min-w-0 flex-col gap-14 sm:gap-16 md:items-end md:pt-10 md:text-right">
           {trimmedLocation ? (
             <div className="flex flex-col gap-3 md:items-end">
-              <p
-                data-svcreveal-item
-                data-pf-no-color-transition=""
-                className="pf-svcreveal-dim m-0 text-xs font-semibold uppercase tracking-[0.15em]"
-                style={{ color: label }}
-              >
-                Address
-              </p>
+              {addressHeading ? (
+                <p data-pf-no-color-transition="" className={headingClass} style={headingStyle}>
+                  {addressHeading}
+                </p>
+              ) : null}
               <div
-                data-svcreveal-item
                 data-svcreveal-hover
                 data-pf-no-color-transition=""
-                className="pf-svcreveal-dim flex items-center gap-2 md:flex-row-reverse"
+                className="pf-svcreveal-color flex items-center gap-2 md:flex-row-reverse"
               >
                 <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: ink }} />
-                <span className="text-base font-normal tracking-wide sm:text-lg" style={{ color: coordText }}>
+                <span
+                  className="font-normal tracking-wide"
+                  style={{ color: coordText, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
+                >
                   {trimmedLocation}
                 </span>
               </div>
@@ -356,23 +331,19 @@ export function FooterDesignServicesReveal({
 
           {hasContact ? (
             <div className="flex flex-col gap-3 md:items-end">
-              <p
-                data-svcreveal-item
-                data-pf-no-color-transition=""
-                className="pf-svcreveal-dim m-0 text-xs font-semibold uppercase tracking-[0.15em]"
-                style={{ color: label }}
-              >
-                Contact
-              </p>
+              {contactHeading ? (
+                <p data-pf-no-color-transition="" className={headingClass} style={headingStyle}>
+                  {contactHeading}
+                </p>
+              ) : null}
               <div className="flex flex-col gap-2.5 md:items-end">
                 {trimmedEmail ? (
                   <a
                     href={`mailto:${trimmedEmail}`}
-                    data-svcreveal-item
                     data-svcreveal-hover
                     data-pf-no-color-transition=""
-                    className="pf-svcreveal-dim flex min-h-[44px] w-fit items-center break-all text-base sm:text-lg md:min-h-0"
-                    style={{ color: coordText }}
+                    className="pf-svcreveal-color flex min-h-[44px] w-fit items-center break-all md:min-h-0"
+                    style={{ color: coordText, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                   >
                     {trimmedEmail}
                   </a>
@@ -380,11 +351,10 @@ export function FooterDesignServicesReveal({
                 {phoneDisplay ? (
                   <a
                     href={`tel:${trimmedPhone!.replace(/\s+/g, '')}`}
-                    data-svcreveal-item
                     data-svcreveal-hover
                     data-pf-no-color-transition=""
-                    className="pf-svcreveal-dim flex min-h-[44px] w-fit items-center text-base sm:text-lg md:min-h-0"
-                    style={{ color: coordText }}
+                    className="pf-svcreveal-color flex min-h-[44px] w-fit items-center md:min-h-0"
+                    style={{ color: coordText, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                   >
                     {phoneDisplay}
                   </a>
@@ -394,22 +364,13 @@ export function FooterDesignServicesReveal({
           ) : null}
         </div>
       </div>
-
-      <div
-        data-svcreveal-item
-        data-pf-no-color-transition=""
-        className={`pf-svcreveal-dim border-t py-6 text-center text-xs font-medium tracking-wide ${portfolioEditorialGutterX(contentGutter)}`}
-        style={{ borderColor: hairline, color: navRest }}
-      >
-        {copyrightText}
-      </div>
     </footer>
   );
 }
 
 export function FooterServicesRevealWireframe() {
   return (
-    <svg viewBox="0 0 120 72" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
+    <svg viewBox="0 0 120 72" preserveAspectRatio="none" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
       <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
 
       {/* Asymmetric info row — social icons + services nav left, address/contact right. */}

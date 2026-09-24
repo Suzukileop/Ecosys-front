@@ -7,7 +7,7 @@ import type { PortfolioInfoLanguageLevelDisplayStyle } from '@/components/portfo
 import {
   terminalHeadingSizeClass,
   terminalShellSizeClass,
-  type PortfolioInfoContentSize,
+  type PortfolioInfoPremiumFontSize,
 } from '@/components/portfolio/portfolio-info-settings';
 import {
   resolveSpokenLanguageLevelLabel,
@@ -305,7 +305,7 @@ export function AboutTerminalLayout({
   showSystemsTools,
   showLanguageFlags: _showLanguageFlags = true,
   languageLevelStyle: _languageLevelStyle = 'progress-bar',
-  contentSize = 'md',
+  contentSize = 'medium',
   colorMode = 'dark',
   accent,
   subtitleColor,
@@ -332,7 +332,7 @@ export function AboutTerminalLayout({
   showSystemsTools: boolean;
   showLanguageFlags?: boolean;
   languageLevelStyle?: PortfolioInfoLanguageLevelDisplayStyle;
-  contentSize?: PortfolioInfoContentSize;
+  contentSize?: PortfolioInfoPremiumFontSize;
   colorMode?: 'light' | 'dark';
   className?: string;
 } & InfoColors) {

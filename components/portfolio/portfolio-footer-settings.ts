@@ -29,6 +29,7 @@ import {
   FOOTER_HEADER_BILLBOARD_WORD_STYLES,
   FOOTER_HEADER_DESIGNS,
   FOOTER_HEADER_MARGIN_BOTTOM_STEPS,
+  FOOTER_HEADER_PADDING_STEPS,
   FOOTER_HEADER_PALETTE_TOKENS,
   FOOTER_HEADER_TITLE_SIZES,
   FOOTER_HEADER_TITLE_WEIGHTS,
@@ -36,6 +37,7 @@ import {
   type PortfolioFooterHeaderDesign,
   type PortfolioFooterHeaderDesignAlignment,
   type PortfolioFooterHeaderMarginBottom,
+  type PortfolioFooterHeaderPaddingStep,
   type PortfolioFooterHeaderPaletteToken,
   type PortfolioFooterHeaderTitleSize,
   type PortfolioFooterHeaderTitleWeight,
@@ -317,6 +319,71 @@ export type PortfolioFooterDesign =
   | 'editorial-grid'
   | 'headline-reveal';
 
+/**
+ * Global type-size control for every Footer design — same mechanism as the FAQ section's
+ * `PortfolioFaqPremiumFontSize`/`faqPremiumFontScale`. A shared `--pf-footer-font-scale`
+ * CSS custom property (set on the `footer#footer` root by every design, via a
+ * `fontSizeScale` number prop resolved from this field) multiplies TWO standardized base
+ * sizes shared by every design's own body-level text (`--pf-footer-body-size`, for
+ * description/nav-links/contact-info) and small caption text (`--pf-footer-label-size`,
+ * for copyright/column-headings/tiny field labels) — see the shared `footer#footer { ... }`
+ * rule near the top of the Footer CSS block in globals.css. Brand names / giant wordmark
+ * headlines are NOT held to a shared absolute size (too varied by design intent — some are
+ * full-bleed display typography), but still scale proportionally with this same multiplier.
+ */
+export type PortfolioFooterPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
+
+/** Contact card design — which palette token fills the left info card's background.
+ *  Resolved to a concrete hex at render time via `resolveHeroPaletteColor` (the card also
+ *  needs a real color, not a CSS var reference, to compute its own text-ink contrast). */
+export type PortfolioFooterContactCardColorToken = 'principal' | 'secondaire' | 'texteMuted' | 'neutre';
+
+export const FOOTER_CONTACT_CARD_COLOR_TOKENS: PortfolioFooterContactCardColorToken[] = [
+  'principal',
+  'secondaire',
+  'texteMuted',
+  'neutre',
+];
+
+export const FOOTER_CONTACT_CARD_COLOR_TOKEN_OPTIONS: {
+  value: PortfolioFooterContactCardColorToken;
+  label: string;
+}[] = [
+  { value: 'principal', label: 'Principal' },
+  { value: 'secondaire', label: 'Secondary' },
+  { value: 'texteMuted', label: 'Muted' },
+  { value: 'neutre', label: 'Neutral' },
+];
+
+/** Which of the "Mini bottom bar" variants renders below the Footer section (see
+ *  `showMiniBar`) — independent of `PortfolioFooterDesign` above, since the bar layers
+ *  under whichever main Footer design is active rather than replacing it.
+ *  `landing`/`contact-cta`/`hero-columns`/`inverted-wordmark`/`services-reveal` were
+ *  originally hardcoded, always-on sub-footer bars baked into those 5 Footer designs;
+ *  each was extracted verbatim into its own catalog entry here (so it can now be used
+ *  under ANY Footer design, not just its design of origin) and removed from the design
+ *  itself — see footer-minibar-catalog-extraction memory. */
+export type PortfolioFooterMiniBarDesign =
+  | 'minimal'
+  | 'kinetic'
+  | 'split-caps'
+  | 'landing'
+  | 'contact-cta'
+  | 'hero-columns'
+  | 'inverted-wordmark'
+  | 'services-reveal';
+
+export const FOOTER_MINI_BAR_DESIGNS: PortfolioFooterMiniBarDesign[] = [
+  'minimal',
+  'kinetic',
+  'split-caps',
+  'landing',
+  'contact-cta',
+  'hero-columns',
+  'inverted-wordmark',
+  'services-reveal',
+];
+
 export type PortfolioFooterCenteredIdentity = 'avatar' | 'name' | 'custom';
 
 export type PortfolioFooterLinkItem = {
@@ -330,6 +397,26 @@ export type PortfolioFooterLinkColumn = {
   title: string;
   links: PortfolioFooterLinkItem[];
 };
+
+/** One per-design override of a configurable element (see `FOOTER_DESIGN_LAYOUT_SPECS` in
+ *  portfolio-footer-design-layout.ts). Every field is optional: an absent field means "use
+ *  that design's own default", so an empty store renders exactly like before it existed. */
+export type PortfolioFooterLayoutElementOverride = {
+  visible?: boolean;
+  text?: string;
+  source?: PortfolioFooterDescriptionSource;
+  /** Value of an `option` element (e.g. wordmark orientation / color token). */
+  choice?: string;
+};
+
+export type PortfolioFooterDesignLayout = {
+  /** Selected section ids (`hero` + nav section keys). Absent → the design's default set.
+   *  Ids of currently hidden sections are kept so they reappear when the section returns. */
+  sectionLinks?: string[];
+  elements?: Record<string, PortfolioFooterLayoutElementOverride>;
+};
+
+export type PortfolioFooterDesignLayouts = Partial<Record<PortfolioFooterDesign, PortfolioFooterDesignLayout>>;
 
 export type PortfolioFooterAlignment = 'split' | 'center' | 'left';
 
@@ -460,6 +547,12 @@ export type PortfolioFooterPresentationSettings = PortfolioSectionBackgroundSett
   contentDividerColor: string;
   /** 0–100 opacity for the content divider. */
   contentDividerOpacity: number;
+  /** Ultra-minimal, edge-to-edge bottom bar rendered below the Footer section regardless of
+   *  its `design` — copyright, a live local clock + location, and a "Back to top" control.
+   *  Off by default (opt-in), same convention as every other new structural toggle here. */
+  showMiniBar: boolean;
+  /** Which of the 3 Mini bottom bar variants renders when `showMiniBar` is on. */
+  miniBarDesign: PortfolioFooterMiniBarDesign;
   /** Design 3 — CTA band (“Have a project in mind?”). */
   showContactCta: boolean;
   ctaTitle: string;
@@ -496,6 +589,9 @@ export type PortfolioFooterPresentationSettings = PortfolioSectionBackgroundSett
   useHeroPalette: boolean;
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  /** Type-size scale applied uniformly across every Footer design (General tab) — same
+   *  mechanism as the FAQ section's own "Font size" control. */
+  premiumFontSize: PortfolioFooterPremiumFontSize;
   /**
    * When true (and palette is on), keep the snapshotted footer palette colors
    * even if Global switches between dark / light mode.
@@ -521,6 +617,13 @@ export type PortfolioFooterPresentationSettings = PortfolioSectionBackgroundSett
   invertedWordmarkCredit: string;
   /** Editorial grid design — poetic accroche inside the suspended bento card. */
   editorialGridTagline: string;
+  /** Contact card design — background fill for the left info card (see
+   *  PortfolioFooterContactCardColorToken above). */
+  contactCardColorToken: PortfolioFooterContactCardColorToken;
+  /** Design tab → Layout settings, stored per design so each layout keeps its own choices. */
+  designLayouts: PortfolioFooterDesignLayouts;
+  /** General → Photo: replaces the profile photo in every Footer design. Empty → profile photo. */
+  photoUrl: string;
   /**
    * Header — one shared, static (non-animated) header mounted above the Footer section,
    * copied from the same mechanism used by Info/Work/Team/etc. (footer-portfolio-header-designs/*).
@@ -533,6 +636,19 @@ export type PortfolioFooterPresentationSettings = PortfolioSectionBackgroundSett
   /** Title size/weight — shared across every header design. */
   headerTitleSize: PortfolioFooterHeaderTitleSize;
   headerTitleWeight: PortfolioFooterHeaderTitleWeight;
+  /**
+   * When true, the header block above the Footer paints the SAME background configured
+   * in the Footer's own Background tab (`sectionBackground*` fields) instead of staying
+   * transparent over the global page wallpaper. Off by default — the header and the
+   * Footer body keep separate backgrounds, matching current behavior.
+   */
+  headerBackgroundUnified: boolean;
+  /**
+   * Header's own internal top/bottom padding — independent of `headerMarginBottom` (the
+   * gap AFTER the header). `none` by default so existing portfolios render unchanged.
+   */
+  headerPaddingTop: PortfolioFooterHeaderPaddingStep;
+  headerPaddingBottom: PortfolioFooterHeaderPaddingStep;
   /** Header editorial — own dedicated title/subtitle text (Footer has no pre-existing
    *  title/subtitle concept to borrow, unlike sections that had one already). */
   headerEditorialTitleText: string;
@@ -920,6 +1036,60 @@ export function normalizeFooterCenteredLinks(
   return links.length > 0 ? links : cloneFallback();
 }
 
+const FOOTER_LAYOUT_KEY_MAX = 40;
+const FOOTER_LAYOUT_TEXT_MAX = 600;
+const FOOTER_LAYOUT_SECTION_LINKS_MAX = 24;
+
+export function normalizeFooterDesignLayouts(value: unknown): PortfolioFooterDesignLayouts {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const designs = new Set<string>(PORTFOLIO_FOOTER_DESIGN_OPTIONS.map((option) => option.value));
+  const result: PortfolioFooterDesignLayouts = {};
+
+  for (const [design, rawLayout] of Object.entries(value as Record<string, unknown>)) {
+    if (!designs.has(design) || !rawLayout || typeof rawLayout !== 'object') continue;
+    const layoutRecord = rawLayout as Record<string, unknown>;
+    const layout: PortfolioFooterDesignLayout = {};
+
+    if (Array.isArray(layoutRecord.sectionLinks)) {
+      const ids = layoutRecord.sectionLinks.filter(
+        (id): id is string => typeof id === 'string' && id.length > 0 && id.length <= FOOTER_LAYOUT_KEY_MAX
+      );
+      layout.sectionLinks = Array.from(new Set(ids)).slice(0, FOOTER_LAYOUT_SECTION_LINKS_MAX);
+    }
+
+    if (layoutRecord.elements && typeof layoutRecord.elements === 'object') {
+      const elements: Record<string, PortfolioFooterLayoutElementOverride> = {};
+      for (const [key, rawOverride] of Object.entries(layoutRecord.elements as Record<string, unknown>)) {
+        if (key.length > FOOTER_LAYOUT_KEY_MAX || !rawOverride || typeof rawOverride !== 'object') continue;
+        const overrideRecord = rawOverride as Record<string, unknown>;
+        const override: PortfolioFooterLayoutElementOverride = {};
+        if (typeof overrideRecord.visible === 'boolean') override.visible = overrideRecord.visible;
+        if (typeof overrideRecord.text === 'string') {
+          override.text = overrideRecord.text.slice(0, FOOTER_LAYOUT_TEXT_MAX);
+        }
+        if (overrideRecord.source === 'bio' || overrideRecord.source === 'custom') {
+          override.source = overrideRecord.source;
+        }
+        if (
+          typeof overrideRecord.choice === 'string' &&
+          overrideRecord.choice.length > 0 &&
+          overrideRecord.choice.length <= FOOTER_LAYOUT_KEY_MAX
+        ) {
+          override.choice = overrideRecord.choice;
+        }
+        if (Object.keys(override).length > 0) elements[key] = override;
+      }
+      if (Object.keys(elements).length > 0) layout.elements = elements;
+    }
+
+    if (layout.sectionLinks || layout.elements) {
+      result[design as PortfolioFooterDesign] = layout;
+    }
+  }
+
+  return result;
+}
+
 export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = {
   ...DEFAULT_SECTION_BACKGROUND,
   sectionBackgroundEnabled: true,
@@ -974,6 +1144,8 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   showContentDivider: true,
   contentDividerColor: '',
   contentDividerOpacity: 40,
+  showMiniBar: false,
+  miniBarDesign: 'minimal',
   showContactCta: false,
   ctaTitle: DEFAULT_FOOTER_CTA_TITLE,
   ctaSubtitle: DEFAULT_FOOTER_CTA_SUBTITLE,
@@ -997,6 +1169,7 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   patternOpacity: 18,
   useHeroPalette: false,
   colorModeOverride: 'auto',
+  premiumFontSize: 'medium',
   lockPaletteAcrossColorModes: false,
   footerPalette: DEFAULT_FOOTER_PALETTE,
   footerColorBindings: DEFAULT_FOOTER_COLOR_BINDINGS,
@@ -1008,11 +1181,17 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   splitFormQuote: DEFAULT_FOOTER_SPLIT_FORM_QUOTE,
   invertedWordmarkCredit: DEFAULT_FOOTER_INVERTED_WORDMARK_CREDIT,
   editorialGridTagline: DEFAULT_FOOTER_EDITORIAL_GRID_TAGLINE,
+  contactCardColorToken: 'principal',
+  designLayouts: {},
+  photoUrl: '',
   headerDesign: 'editorial',
   headerDesignAlignment: 'left',
   headerMarginBottom: 'md',
   headerTitleSize: 'xl',
   headerTitleWeight: 'bold',
+  headerBackgroundUnified: false,
+  headerPaddingTop: 'none',
+  headerPaddingBottom: 'none',
   headerEditorialTitleText: '',
   headerEditorialSubtitleText: '',
   headerEditorialTitleColor: 'texteFort',
@@ -1071,6 +1250,92 @@ export const PORTFOLIO_FOOTER_PATTERN_OPTIONS: {
   { value: 'diagonal', label: 'Diagonal', description: '45° stripe hatching.' },
   { value: 'crosshatch', label: 'Crosshatch', description: 'Intersecting diagonal weave.' },
 ];
+
+export const PORTFOLIO_FOOTER_MINI_BAR_DESIGN_OPTIONS: {
+  value: PortfolioFooterMiniBarDesign;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'minimal',
+    label: 'Minimal',
+    description: 'Copyright, live clock + location, magnetic "Back to top".',
+  },
+  {
+    value: 'kinetic',
+    label: 'Kinetic line',
+    description: 'Accent scroll-progress hairline, bolder type, continuous looping arrow bounce.',
+  },
+  {
+    value: 'split-caps',
+    label: 'Split caps',
+    description: 'Borderless Swiss caps in the far corners, GSAP letter-spacing hover, no divider line.',
+  },
+  {
+    value: 'landing',
+    label: 'Landing',
+    description: 'A single quiet copyright line, left-aligned, on a thin top hairline.',
+  },
+  {
+    value: 'contact-cta',
+    label: 'Contact CTA',
+    description: 'A single centered copyright line on a thin top hairline.',
+  },
+  {
+    value: 'hero-columns',
+    label: 'Hero columns',
+    description: 'Copyright on the left, availability status + hours on the right.',
+  },
+  {
+    value: 'inverted-wordmark',
+    label: 'Inverted wordmark',
+    description: 'Solid opposite-contrast fill — copyright, a centered credit line, and "Back to top".',
+  },
+  {
+    value: 'services-reveal',
+    label: 'Services reveal',
+    description: 'A single centered copyright line on a thin top hairline.',
+  },
+];
+
+export const FOOTER_PREMIUM_FONT_SIZES: PortfolioFooterPremiumFontSize[] = [
+  'small',
+  'medium',
+  'large',
+  'xlarge',
+  'xxlarge',
+];
+
+export const PORTFOLIO_FOOTER_PREMIUM_FONT_SIZE_OPTIONS: {
+  value: PortfolioFooterPremiumFontSize;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'small', label: 'Small', description: 'Compact type across every Footer design.' },
+  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
+  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
+  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  {
+    value: 'xxlarge',
+    label: 'Super Extra Large',
+    description: 'Maximum type size for the most dramatic, oversized look.',
+  },
+];
+
+/** Multiplier every Footer design's own standardized body/label text sizes are scaled by,
+ *  via `calc(<base> * var(--pf-footer-font-scale, 1))` in globals.css — same values as
+ *  `faqPremiumFontScale` for the FAQ section, kept in sync deliberately. */
+const FOOTER_PREMIUM_FONT_SCALE: Record<PortfolioFooterPremiumFontSize, number> = {
+  small: 0.85,
+  medium: 1,
+  large: 1.15,
+  xlarge: 1.3,
+  xxlarge: 1.45,
+};
+
+export function footerPremiumFontScale(size: PortfolioFooterPremiumFontSize): number {
+  return FOOTER_PREMIUM_FONT_SCALE[size] ?? 1;
+}
 
 export const PORTFOLIO_FOOTER_DESIGN_OPTIONS: {
   value: PortfolioFooterDesign;
@@ -1135,12 +1400,12 @@ export const PORTFOLIO_FOOTER_DESIGN_OPTIONS: {
   {
     value: 'editorial-grid',
     label: 'Editorial grid',
-    description: 'Edge-to-edge monumental name, a suspended bento card with a magnetic arrow button, and a focus-dim hover on every link.',
+    description: 'Edge-to-edge monumental name, a suspended bento card with a magnetic arrow button, and a color-shift hover on every link.',
   },
   {
     value: 'headline-reveal',
     label: 'Headline reveal',
-    description: 'Borderless — no dividers, no icon chips. A monumental CTA masks in on scroll, and hovering any coordinate spotlights it while the rest blurs away.',
+    description: 'Borderless — no dividers, no icon chips. A monumental CTA masks in on scroll, with a simple hover accent on each coordinate.',
   },
 ];
 
@@ -2256,6 +2521,9 @@ export function mergeFooterPresentation(
       if (Number.isFinite(n)) return Math.round(Math.min(100, Math.max(0, n)));
       return base.contentDividerOpacity ?? 40;
     })(),
+    showMiniBar:
+      typeof record.showMiniBar === 'boolean' ? record.showMiniBar : (base.showMiniBar ?? false),
+    miniBarDesign: pick(record.miniBarDesign, FOOTER_MINI_BAR_DESIGNS, base.miniBarDesign ?? 'minimal'),
     showContactCta:
       typeof record.showContactCta === 'boolean' ? record.showContactCta : base.showContactCta,
     ctaTitle: migrateFooterCtaCopy(record.ctaTitle, LEGACY_FR_CTA_TITLES, base.ctaTitle),
@@ -2301,6 +2569,7 @@ export function mergeFooterPresentation(
         : base.patternOpacity,
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    premiumFontSize: pick(record.premiumFontSize, FOOTER_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
     lockPaletteAcrossColorModes:
       typeof record.lockPaletteAcrossColorModes === 'boolean'
         ? record.lockPaletteAcrossColorModes
@@ -2339,6 +2608,16 @@ export function mergeFooterPresentation(
       typeof record.editorialGridTagline === 'string'
         ? record.editorialGridTagline
         : base.editorialGridTagline ?? DEFAULT_FOOTER_EDITORIAL_GRID_TAGLINE,
+    contactCardColorToken: pick(
+      record.contactCardColorToken,
+      FOOTER_CONTACT_CARD_COLOR_TOKENS,
+      base.contactCardColorToken ?? 'principal'
+    ),
+    designLayouts: normalizeFooterDesignLayouts(
+      record.designLayouts !== undefined ? record.designLayouts : base.designLayouts
+    ),
+    photoUrl:
+      typeof record.photoUrl === 'string' ? record.photoUrl.trim().slice(0, 2048) : (base.photoUrl ?? ''),
     headerDesign: pick(record.headerDesign, FOOTER_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
@@ -2355,6 +2634,16 @@ export function mergeFooterPresentation(
       record.headerTitleWeight,
       FOOTER_HEADER_TITLE_WEIGHTS,
       base.headerTitleWeight ?? 'bold'
+    ),
+    headerBackgroundUnified:
+      typeof record.headerBackgroundUnified === 'boolean'
+        ? record.headerBackgroundUnified
+        : (base.headerBackgroundUnified ?? false),
+    headerPaddingTop: pick(record.headerPaddingTop, FOOTER_HEADER_PADDING_STEPS, base.headerPaddingTop ?? 'none'),
+    headerPaddingBottom: pick(
+      record.headerPaddingBottom,
+      FOOTER_HEADER_PADDING_STEPS,
+      base.headerPaddingBottom ?? 'none'
     ),
     headerEditorialTitleText:
       typeof record.headerEditorialTitleText === 'string'

@@ -11,6 +11,7 @@ import { getApiErrorMessage } from '@/lib/api-error';
 import { sendCreatorContactMessage } from '@/lib/marketplace-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import type { PortfolioContactPresentationSettings } from '@/components/portfolio/portfolio-contact-settings';
+import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
 import {
   DEFAULT_CONTENT_GUTTER,
   portfolioEditorialGutterX,
@@ -24,8 +25,6 @@ if (typeof window !== 'undefined') {
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
-
-const DEFAULT_TAGLINE = "Share your idea, let's build something meaningful together.";
 
 const sequentialMessageSchema = z.object({
   firstName: z.string().trim().min(1, 'First name is required').max(80, 'First name is too long'),
@@ -170,18 +169,25 @@ function FloatingField({
 export function ContactDesignSequentialReveal({
   creatorId,
   email,
+  phone = null,
+  locationLabel = null,
   heroImageUrl,
   heroImageAlt,
   sectionTitle,
   presentation,
+  layout,
   contentGutter = DEFAULT_CONTENT_GUTTER,
 }: {
   creatorId?: string;
   email: string | null;
+  /** Shown in the optional "Contact details" block — already gated by General → Visibility. */
+  phone?: string | null;
+  locationLabel?: string | null;
   heroImageUrl: string | null;
   heroImageAlt: string;
   sectionTitle?: string;
   presentation: PortfolioContactPresentationSettings;
+  layout: ContactDesignLayoutResolver;
   /** Same site-wide editorial gutter every other section respects — this design is full-bleed
    *  (bypasses PortfolioSectionShell, which would normally apply this automatically), so the
    *  title/tagline need it passed in explicitly to line up with the rest of the page. */
@@ -194,10 +200,38 @@ export function ContactDesignSequentialReveal({
   const submitInnerRef = useRef<HTMLSpanElement>(null);
 
   const accent = presentation.ctaColor?.trim() || '#f97316';
-  const titleWord = (sectionTitle?.trim() || 'Contact').toUpperCase();
+  const titleWord = (layout.text('title') || sectionTitle?.trim() || 'Contact').toUpperCase();
   const titleChars = useMemo(() => titleWord.split(''), [titleWord]);
-  const tagline = presentation.sequentialRevealTagline?.trim() || DEFAULT_TAGLINE;
+  const tagline = layout.text('tagline');
+  const showPortrait = layout.isVisible('portrait');
+  const showCopyrightMark = layout.isVisible('copyrightMark');
+  const submitLabel = layout.text('submitLabel') ?? 'Send';
+  const directEmailLine = layout.text('directEmail');
   const trimmedEmail = email?.trim() || '';
+  const showForm = layout.isVisible('form');
+  const detailsBelowForm = layout.option('detailsPosition') === 'below';
+  const trimmedPhone = phone?.trim() || '';
+  const trimmedLocation = locationLabel?.trim() || '';
+  const detailItems: SequentialDetailItem[] = [];
+  if (layout.isVisible('details')) {
+    if (trimmedEmail) {
+      detailItems.push({ key: 'email', heading: layout.text('detailEmailLabel'), value: trimmedEmail, href: `mailto:${trimmedEmail}` });
+    }
+    if (trimmedPhone) {
+      detailItems.push({
+        key: 'phone',
+        heading: layout.text('detailPhoneLabel'),
+        value: trimmedPhone,
+        href: `tel:${trimmedPhone.replace(/\s+/g, '')}`,
+      });
+    }
+    if (trimmedLocation) {
+      detailItems.push({ key: 'address', heading: layout.text('detailAddressLabel'), value: trimmedLocation, href: null });
+    }
+  }
+  const detailCount = detailItems.length;
+  // The details already carry the email — don't repeat it in the "or write directly to" line.
+  const detailsShowEmail = detailItems.some((item) => item.key === 'email');
   const displayName = heroImageAlt?.trim() || '';
   const initials = useMemo(() => {
     const parts = displayName.split(/\s+/).filter(Boolean);
@@ -354,6 +388,15 @@ export function ContactDesignSequentialReveal({
           );
         }
 
+        const detailEls = root.querySelectorAll<HTMLElement>('[data-reveal-detail]');
+        const detailsNode = root.querySelector<HTMLElement>('[data-reveal-details]');
+        if (detailEls.length && detailsNode) {
+          gsap.set(detailEls, { autoAlpha: 0, y: 20 });
+          revealOnceVisible(detailsNode, 92, () =>
+            gsap.to(detailEls, { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.08, ease: 'power2.out', overwrite: 'auto' })
+          );
+        }
+
         const formFields = root.querySelectorAll<HTMLElement>('[data-reveal-field]');
         const formNode = root.querySelector<HTMLElement>('[data-reveal-form]');
         if (formFields.length && formNode) {
@@ -376,7 +419,7 @@ export function ContactDesignSequentialReveal({
       // would otherwise crash the whole React tree, not just this section.
       console.error('[ContactDesignSequentialReveal] GSAP entrance animation failed to initialize', error);
       ctx?.revert();
-      gsap.set(root.querySelectorAll('[data-reveal-char-inner], [data-reveal-tagline], [data-reveal-field]'), {
+      gsap.set(root.querySelectorAll('[data-reveal-char-inner], [data-reveal-tagline], [data-reveal-field], [data-reveal-detail]'), {
         clearProps: 'all',
       });
     }
@@ -393,7 +436,7 @@ export function ContactDesignSequentialReveal({
       observers.forEach((io) => io.disconnect());
       ctx?.revert();
     };
-  }, [titleWord]);
+  }, [titleWord, showPortrait, showForm, detailCount, detailsBelowForm]);
 
   useLayoutEffect(() => {
     const btn = submitRef.current;
@@ -428,12 +471,12 @@ export function ContactDesignSequentialReveal({
       btn.removeEventListener('pointermove', onMove);
       btn.removeEventListener('pointerleave', onLeave);
     };
-  }, []);
+  }, [showForm]);
 
   return (
     <div
       ref={rootRef}
-      className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-black"
+      className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden"
       data-pf-no-color-transition=""
     >
       {/* 1 — Monumental hero entrance — uses the SAME site-wide editorial gutter
@@ -458,21 +501,24 @@ export function ContactDesignSequentialReveal({
               </span>
             </span>
           ))}
-          <sup className="ml-1 align-super text-[0.28em] font-medium">©</sup>
+          {showCopyrightMark ? <sup className="ml-1 align-super text-[0.28em] font-medium">©</sup> : null}
         </h2>
 
-        <p
-          data-reveal-tagline
-          className="max-w-sm font-light leading-relaxed text-white/50 sm:text-lg"
-          style={{ letterSpacing: '0.01em' }}
-        >
-          {tagline}
-        </p>
+        {tagline ? (
+          <p
+            data-reveal-tagline
+            className="max-w-sm font-light leading-relaxed text-white/50 sm:text-lg"
+            style={{ letterSpacing: '0.01em' }}
+          >
+            {tagline}
+          </p>
+        ) : null}
       </div>
 
       {/* 2 — Cinematic clip-path image reveal — matches the form's own width/inset schedule
           below (sm:px-10, lg:px-0 inside the same 46rem column) so both blocks line up as one
           narrow reading column; stays edge-to-edge below sm per the mobile spec. */}
+      {showPortrait ? (
       <div className="relative w-full sm:mx-auto sm:max-w-[46rem] sm:px-10 lg:px-0">
         <div
           ref={imageMaskRef}
@@ -498,9 +544,23 @@ export function ContactDesignSequentialReveal({
           </div>
         </div>
       </div>
+      ) : null}
 
-      {/* 3 — Borderless, boxless form */}
+      {/* 3 — Borderless, boxless form, with the optional contact details above/below it — or,
+          when the form is off, the details become the closing block (email set large as the
+          single call to action, phone/address beneath). */}
+      {showForm || detailCount > 0 ? (
       <div className="mx-auto w-full max-w-[46rem] px-6 py-24 sm:px-10 sm:py-32 lg:px-0">
+        {!showForm ? (
+          <SequentialDetailsFinale items={detailItems} />
+        ) : (
+        <>
+        {!detailsBelowForm && detailCount > 0 ? (
+          <>
+            <SequentialDetailsRow items={detailItems} />
+            <div aria-hidden className="my-16 h-px w-full bg-white/10" />
+          </>
+        ) : null}
         {submitted ? (
           <p className="mb-8 text-sm font-medium text-white/70" role="status">
             Thanks — your message was sent.
@@ -512,7 +572,7 @@ export function ContactDesignSequentialReveal({
             <div data-reveal-field>
               <FloatingField
                 id="pf-sequential-first-name"
-                label="First name"
+                label={layout.text('firstNameLabel') ?? 'First name'}
                 autoComplete="given-name"
                 registration={register('firstName')}
                 error={errors.firstName?.message}
@@ -523,7 +583,7 @@ export function ContactDesignSequentialReveal({
             <div data-reveal-field>
               <FloatingField
                 id="pf-sequential-last-name"
-                label="Last name"
+                label={layout.text('lastNameLabel') ?? 'Last name'}
                 autoComplete="family-name"
                 registration={register('lastName')}
                 error={errors.lastName?.message}
@@ -536,7 +596,7 @@ export function ContactDesignSequentialReveal({
           <div data-reveal-field>
             <FloatingField
               id="pf-sequential-email"
-              label="Email"
+              label={layout.text('emailFieldLabel') ?? 'Email'}
               type="email"
               autoComplete="email"
               registration={register('email')}
@@ -549,7 +609,7 @@ export function ContactDesignSequentialReveal({
           <div data-reveal-field>
             <FloatingField
               id="pf-sequential-message"
-              label="Message"
+              label={layout.text('messageLabel') ?? 'Message'}
               multiline
               registration={register('message')}
               error={errors.message?.message}
@@ -578,7 +638,7 @@ export function ContactDesignSequentialReveal({
                 className="inline-flex items-center gap-1.5"
                 data-pf-no-color-transition=""
               >
-                {isSubmitting ? 'Sending' : 'Send'}
+                {isSubmitting ? 'Sending' : submitLabel}
                 <svg
                   viewBox="0 0 16 16"
                   className="h-3.5 w-3.5"
@@ -597,18 +657,90 @@ export function ContactDesignSequentialReveal({
               </span>
             </button>
 
-            {trimmedEmail ? (
+            {trimmedEmail && directEmailLine && !detailsShowEmail ? (
               <a
                 href={`mailto:${trimmedEmail}`}
                 className="text-sm font-medium text-white/40 underline decoration-white/20 underline-offset-4"
                 data-pf-no-color-transition=""
               >
-                or write directly to {trimmedEmail}
+                {directEmailLine} {trimmedEmail}
               </a>
             ) : null}
           </div>
         </form>
+        {detailsBelowForm && detailCount > 0 ? (
+          <>
+            <div aria-hidden className="my-16 h-px w-full bg-white/10" />
+            <SequentialDetailsRow items={detailItems} />
+          </>
+        ) : null}
+        </>
+        )}
       </div>
+      ) : null}
+    </div>
+  );
+}
+
+type SequentialDetailItem = { key: string; heading: string | null; value: string; href: string | null };
+
+const DETAIL_HEADING_CLASS = 'text-[13px] font-semibold uppercase tracking-[0.16em] text-white/45';
+const DETAIL_COLUMNS: Record<number, string> = { 1: '', 2: 'sm:grid-cols-2', 3: 'sm:grid-cols-3' };
+
+function SequentialDetailValue({ item, className }: { item: SequentialDetailItem; className: string }) {
+  const spacing = item.heading ? 'mt-3' : '';
+  return item.href ? (
+    <a
+      href={item.href}
+      data-pf-no-color-transition=""
+      className={`${spacing} block [overflow-wrap:anywhere] text-white transition-opacity duration-300 hover:opacity-70 ${className}`}
+    >
+      {item.value}
+    </a>
+  ) : (
+    <p className={`${spacing} text-white ${className}`}>{item.value}</p>
+  );
+}
+
+/** Next to the form: one quiet row of channels, same micro-caps labels as the form fields. */
+function SequentialDetailsRow({ items }: { items: SequentialDetailItem[] }) {
+  return (
+    <div data-reveal-details className={`grid gap-x-8 gap-y-8 ${DETAIL_COLUMNS[Math.min(items.length, 3)]}`}>
+      {items.map((item) => (
+        <div key={item.key} data-reveal-detail className="min-w-0">
+          {item.heading ? <p className={DETAIL_HEADING_CLASS}>{item.heading}</p> : null}
+          <SequentialDetailValue item={item} className="text-lg font-light leading-snug" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Form off: the details close the section — the email becomes the large call to action. */
+function SequentialDetailsFinale({ items }: { items: SequentialDetailItem[] }) {
+  const emailItem = items.find((item) => item.key === 'email');
+  const others = items.filter((item) => item.key !== 'email');
+  return (
+    <div data-reveal-details className="flex flex-col gap-14">
+      {emailItem ? (
+        <div data-reveal-detail className="min-w-0">
+          {emailItem.heading ? <p className={DETAIL_HEADING_CLASS}>{emailItem.heading}</p> : null}
+          <SequentialDetailValue
+            item={emailItem}
+            className="text-[clamp(1.9rem,5.5vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.02em]"
+          />
+        </div>
+      ) : null}
+      {others.length > 0 ? (
+        <div className={`grid gap-10 ${others.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+          {others.map((item) => (
+            <div key={item.key} data-reveal-detail className="min-w-0">
+              {item.heading ? <p className={DETAIL_HEADING_CLASS}>{item.heading}</p> : null}
+              <SequentialDetailValue item={item} className="text-xl font-light leading-snug sm:text-2xl" />
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

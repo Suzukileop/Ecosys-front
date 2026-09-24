@@ -106,6 +106,7 @@ import {
   type PortfolioExperienceSectionSettings,
   type PortfolioExperienceTasksDisplay,
   type PortfolioExperienceToolsBadgeStyle,
+  PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS,
 } from '@/components/portfolio/portfolio-experience-settings';
 import {
   experienceLinkButtonPalette,
@@ -3221,6 +3222,13 @@ export function ExperienceSettingsPanel({
           <SectionColorModeControl
             value={experience.colorModeOverride}
             onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+          />
+          <ExperienceOptionGrid
+            label="Font size"
+            options={PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS}
+            value={experience.premiumFontSize ?? 'medium'}
+            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
+            columns={3}
           />
           <div>
             <p className="pf-exp-block-label">Content visibility</p>

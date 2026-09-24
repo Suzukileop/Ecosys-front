@@ -1,7 +1,8 @@
 'use client';
 
 import gsap from 'gsap';
-import { useLayoutEffect, useRef, type MouseEvent, type RefObject } from 'react';
+import { useLayoutEffect, useRef, type CSSProperties, type MouseEvent, type RefObject } from 'react';
+import { formatPhoneDisplay } from '@/lib/phone';
 import {
   FooterSocialLinkIcon,
   type EditorialContactLink,
@@ -11,6 +12,11 @@ import {
   DEFAULT_CONTENT_GUTTER,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import {
+  FOOTER_INK_TOKEN_OPTIONS,
+  type FooterDesignLayoutResolver,
+  type FooterInkToken,
+} from '@/components/portfolio/portfolio-footer-design-layout';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -78,70 +84,78 @@ function useFitWidthTextSize(
   }, [text]);
 }
 
-export const DEFAULT_INVERTED_WORDMARK_CREDIT = 'Designed & built with care.';
-
 interface FooterDesignInvertedWordmarkProps {
   creatorName: string;
   navLinks: { id: string; label: string; url: string }[];
+  layout: FooterDesignLayoutResolver;
   links: EditorialContactLink[];
-  copyrightText: string;
+  email?: string | null;
+  phone?: string | null;
   colorMode: 'light' | 'dark';
-  creditLabel?: string;
+  /** Footer's own palette (honors its light/dark override) — wordmark color tokens. */
+  palette?: Partial<Record<FooterInkToken, string>>;
   /** Site-wide editorial gutter (settings.global.contentGutter) — this design is full-bleed
    *  and bypasses the legacy shell, so this is threaded in to line its own horizontal
    *  padding up with the rest of the page. */
   contentGutter?: PortfolioContentGutter;
+  /** Resolved from the Footer section's own Background tab (`sectionBackgroundStyle`) —
+   *  `undefined` when that tab is off, so this canvas is transparent (the page/global
+   *  wallpaper shows through) by default, same as every other Footer design now. */
+  backgroundStyle?: CSSProperties;
+  /** Multiplies every standardized body/label text size via `--pf-footer-font-scale` —
+   *  see the Footer section's General tab "Font size" control. */
+  fontSizeScale?: number;
 }
 
 /**
  * "Inverted Wordmark" — the eighth Footer design: a radically minimal, boxless,
- * frameless editorial grid (three airy columns: internal nav / socials / legal
- * microcopy) sitting above a giant vertically-mirrored (scaleY(-1)) brand
- * wordmark that is planted directly on a thin, opposite-contrast sub-footer
- * bar (copyright / credit / back-to-top). No separators, no cards — pure
- * whitespace + type on a flat, pure white/black canvas (no tint). Fully
- * self-contained "bypass" design, same full-bleed convention as Monumental
- * and the Contact premium designs; branches its literal Tailwind classes on
- * the resolved `colorMode` prop rather than any `.dark` class or
- * `prefers-color-scheme` media query. The wordmark's font-size is
- * measured-and-scaled (see `useFitWidthTextSize`) to exactly fill the same
- * column width as the three nav columns above it, so it can't bleed past the
- * footer's shared global margin regardless of name length.
+ * frameless editorial grid (three airy columns: internal nav / socials / direct
+ * contact) sitting above a giant vertically-mirrored (scaleY(-1)) brand
+ * wordmark. No separators, no cards — pure whitespace + type on a flat, pure
+ * white/black canvas (no tint). Fully self-contained "bypass" design, same
+ * full-bleed convention as Monumental and the Contact premium designs;
+ * branches its literal Tailwind classes on the resolved `colorMode` prop
+ * rather than any `.dark` class or `prefers-color-scheme` media query. The
+ * wordmark's font-size is measured-and-scaled (see `useFitWidthTextSize`) to
+ * exactly fill the same column width as the three nav columns above it, so
+ * it can't bleed past the footer's shared global margin regardless of name
+ * length. No hardcoded closing bar (copyright/credit/back-to-top) either —
+ * that opposite-contrast bar was extracted into the shared Mini bar
+ * catalog's own "Inverted wordmark" variant (see
+ * footer-minibar-catalog-extraction memory), toggled on separately via
+ * Footer > Design > "Mini bar" rather than being always-on here.
  */
 export function FooterDesignInvertedWordmark({
   creatorName,
   navLinks,
+  layout,
   links,
-  copyrightText,
+  email,
+  phone,
   colorMode,
-  creditLabel = DEFAULT_INVERTED_WORDMARK_CREDIT,
+  palette,
   contentGutter = DEFAULT_CONTENT_GUTTER,
+  backgroundStyle,
+  fontSizeScale = 1,
 }: FooterDesignInvertedWordmarkProps) {
   const rootRef = useRef<HTMLElement>(null);
   const wordmarkContainerRef = useRef<HTMLDivElement | null>(null);
   const wordmarkTextRef = useRef<HTMLSpanElement | null>(null);
-  useFitWidthTextSize(wordmarkContainerRef, wordmarkTextRef, creatorName);
+  const wordmarkText = layout.text('wordmark', creatorName);
+  useFitWidthTextSize(wordmarkContainerRef, wordmarkTextRef, wordmarkText ?? '');
 
   const isLight = colorMode === 'light';
-
-  // Pure white/black canvas, matching every other full-bleed Footer design (Hero
-  // Columns, Compact, Headline Reveal, Split Form, Timezone Editorial, Editorial Grid) —
-  // not a custom off-white/off-black tint, which visibly seams against the page's real
-  // background.
-  const pageBg = isLight ? 'bg-[#ffffff]' : 'bg-[#000000]';
   const pageInk = isLight ? 'text-[#0a0a0a]' : 'text-[#fafaf7]';
-
-  // Sub-footer bar is the OPPOSITE contrast of the page: black bar on a light
-  // page, white bar on a dark page — with legible opposite-contrast text on it.
-  const barBg = isLight ? 'bg-[#0a0a0a]' : 'bg-[#fafaf7]';
-  const barInk = isLight ? 'text-[#fafaf7]/85' : 'text-[#0a0a0a]/85';
-  const barInkStrong = isLight ? 'text-[#fafaf7]' : 'text-[#0a0a0a]';
   const wordmarkColor = isLight ? 'text-[#0a0a0a]' : 'text-[#fafaf7]';
-
-  // Resting opacity for every link/label across the three top columns — must match the
-  // literal `opacity-[0.55]` class below (a Tailwind arbitrary-value class can't be built
-  // from a runtime template string, so the numeric twin lives here for the GSAP tweens).
-  const LINK_REST_OPACITY = 0.55;
+  const wordmarkMirrored = layout.option('wordmarkOrientation') !== 'normal';
+  // "Strong text" keeps this design's own pure ink; the quieter tokens come from the Footer
+  // palette so they follow the active theme (and the section's light/dark override).
+  const wordmarkInkToken = layout.option('wordmarkColor') as FooterInkToken;
+  const wordmarkInk =
+    wordmarkInkToken === 'texteFort'
+      ? undefined
+      : palette?.[wordmarkInkToken] ||
+        FOOTER_INK_TOKEN_OPTIONS.find((option) => option.value === wordmarkInkToken)?.swatch;
 
   // Gentle entrance fade for the whole grid — simple, no ScrollTrigger needed
   // since this design is otherwise hover-state driven per the brief.
@@ -170,74 +184,61 @@ export function FooterDesignInvertedWordmark({
     return () => ctx?.revert();
   }, []);
 
-  // Focus + depth-of-field on hover: the hovered link itself snaps to full pure-ink
-  // opacity and glides 5px to the right, while every other link across all three
-  // columns sinks to a near-invisible 0.1 opacity and picks up a 1px blur — an
-  // instant three-dimensional focus pull, reverting smoothly on mouseleave.
+  // Self-contained hover accent: the hovered link glides 5px to the right via its own tween —
+  // never touches any other element on the page.
   const handleLinkEnter = (event: MouseEvent<HTMLElement>) => {
-    const root = rootRef.current;
     const active = event.currentTarget;
-    if (!root) return;
     if (prefersReducedMotion()) {
-      gsap.set(active, { opacity: 1, x: 5 });
+      gsap.set(active, { x: 5 });
       return;
     }
-    gsap.to(active, { opacity: 1, x: 5, duration: 0.4, ease: 'power3.out', overwrite: 'auto' });
-    const others = root.querySelectorAll<HTMLElement>('[data-iwm-focusable]');
-    others.forEach((el) => {
-      if (el === active) return;
-      gsap.to(el, { opacity: 0.1, filter: 'blur(1px)', duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
-    });
+    gsap.to(active, { x: 5, duration: 0.4, ease: 'power3.out', overwrite: 'auto' });
   };
 
   const handleLinkLeave = (event: MouseEvent<HTMLElement>) => {
-    const root = rootRef.current;
     const active = event.currentTarget;
-    if (!root) return;
     if (prefersReducedMotion()) {
-      gsap.set(active, { opacity: LINK_REST_OPACITY, x: 0 });
+      gsap.set(active, { x: 0 });
       return;
     }
-    gsap.to(active, { opacity: LINK_REST_OPACITY, x: 0, duration: 0.4, ease: 'power3.out', overwrite: 'auto' });
-    const others = root.querySelectorAll<HTMLElement>('[data-iwm-focusable]');
-    others.forEach((el) => {
-      if (el === active) return;
-      gsap.to(el, {
-        opacity: LINK_REST_OPACITY,
-        filter: 'blur(0px)',
-        duration: 0.35,
-        ease: 'power2.out',
-        overwrite: 'auto',
-      });
-    });
-  };
-
-  const handleBackToTop = () => {
-    window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    gsap.to(active, { x: 0, duration: 0.4, ease: 'power3.out', overwrite: 'auto' });
   };
 
   const showSocials = links.length > 0;
 
-  // No legal/privacy-policy links exist anywhere in this codebase's data
-  // model — render generic, non-navigational UI microcopy as plain spans
-  // (not real `#`-href anchors) so nothing looks like a broken/fake link.
-  const legalLabels = ['PRIVACY POLICY', 'TERMS OF SERVICES'];
+  // Column 3 used to be hardcoded "PRIVACY POLICY" / "TERMS OF SERVICES" — decorative
+  // microcopy with no backing data field anywhere in this codebase. Direct contact info
+  // (already resolved for every other Footer design) is real, useful data instead.
+  const trimmedEmail = email?.trim() || null;
+  const trimmedPhone = phone?.trim() || null;
+  const phoneDisplay = trimmedPhone ? formatPhoneDisplay(trimmedPhone) : null;
+  const contactItems: { id: string; label: string; href: string }[] = [];
+  if (trimmedEmail) {
+    contactItems.push({ id: 'email', label: trimmedEmail, href: `mailto:${trimmedEmail}` });
+  }
+  if (phoneDisplay) {
+    contactItems.push({ id: 'phone', label: phoneDisplay, href: `tel:${trimmedPhone!.replace(/\s+/g, '')}` });
+  }
+  const showContact = contactItems.length > 0;
 
   // Larger, geometric-sans caps with pronounced tracking (Swiss-brutalist reading) —
   // `transition-colors` compensates for `data-pf-no-color-transition` below (needed so the
   // global site-wide crossfade never fights this file's own GSAP hover tweens): the link's
   // ink color still glides smoothly across a light/dark toggle, just via its own transition.
-  const linkClass =
-    'w-fit text-base sm:text-[1.05rem] uppercase tracking-[0.12em] opacity-[0.55] transition-colors duration-500 ease-out';
+  const linkClass = 'w-fit uppercase tracking-[0.12em] transition-colors duration-500 ease-out';
+  const linkFontSize: CSSProperties = {
+    fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
+  };
 
   return (
     <footer
       id="footer"
       ref={rootRef}
-      className={`relative left-1/2 isolate w-screen -translate-x-1/2 overflow-hidden transition-colors duration-500 ease-out ${pageBg} ${pageInk}`}
+      className={`relative left-1/2 isolate w-screen -translate-x-1/2 overflow-hidden transition-colors duration-500 ease-out ${pageInk}`}
+      style={{ ...backgroundStyle, '--pf-footer-font-scale': fontSizeScale } as CSSProperties}
       data-pf-no-color-transition=""
     >
-      <div className={`relative z-[1] w-full pb-0 pt-20 sm:pt-24 lg:pt-28 ${portfolioEditorialGutterX(contentGutter)}`}>
+      <div className={`relative z-[1] w-full pb-16 pt-20 sm:pb-20 sm:pt-24 lg:pb-24 lg:pt-28 ${portfolioEditorialGutterX(contentGutter)}`}>
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-3 sm:gap-8">
           {/* Column 1 — internal nav, fine-weight geometric caps */}
           <nav aria-label="Footer" data-iwm-fade-in className="flex flex-col gap-5">
@@ -245,11 +246,11 @@ export function FooterDesignInvertedWordmark({
               <a
                 key={link.id}
                 href={link.url}
-                data-iwm-focusable
                 data-pf-no-color-transition=""
                 onMouseEnter={handleLinkEnter}
                 onMouseLeave={handleLinkLeave}
                 className={`group relative ${linkClass} font-normal ${pageInk}`}
+                style={linkFontSize}
               >
                 {link.label}
                 <span
@@ -270,11 +271,11 @@ export function FooterDesignInvertedWordmark({
                     href={link.url}
                     target="_blank"
                     rel="noreferrer"
-                    data-iwm-focusable
                     data-pf-no-color-transition=""
                     onMouseEnter={handleLinkEnter}
                     onMouseLeave={handleLinkLeave}
                     className={`group relative flex w-fit items-center gap-2.5 ${linkClass} font-light ${pageInk}`}
+                    style={linkFontSize}
                   >
                     <FooterSocialLinkIcon link={link} bare iconClassName="h-3.5 w-3.5" />
                     <span>{link.label}</span>
@@ -287,50 +288,55 @@ export function FooterDesignInvertedWordmark({
               : null}
           </div>
 
-          {/* Column 3 — legal microcopy; decorative placeholder-safe text, no
-              backing data field exists for privacy/terms links in this codebase. */}
+          {/* Column 3 — direct contact (email / phone), real data replacing the old
+              hardcoded "PRIVACY POLICY" / "TERMS OF SERVICES" placeholder microcopy. */}
           <div data-iwm-fade-in className="flex flex-col gap-5 sm:items-end">
-            {legalLabels.map((label) => (
-              <span
-                key={label}
-                data-iwm-focusable
-                data-pf-no-color-transition=""
-                onMouseEnter={handleLinkEnter}
-                onMouseLeave={handleLinkLeave}
-                className={`group relative ${linkClass} font-normal ${pageInk} sm:text-right`}
-              >
-                {label}
-                <span
-                  aria-hidden
-                  className={`pointer-events-none absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 ${isLight ? 'bg-[#0a0a0a]' : 'bg-[#fafaf7]'} transition-transform duration-300 ease-out group-hover:scale-x-100 sm:left-auto sm:right-0 sm:origin-right`}
-                />
-              </span>
-            ))}
+            {showContact
+              ? contactItems.map((item) => (
+                  <a
+                    key={item.id}
+                    href={item.href}
+                    data-pf-no-color-transition=""
+                    onMouseEnter={handleLinkEnter}
+                    onMouseLeave={handleLinkLeave}
+                    className={`group relative ${linkClass} font-normal ${pageInk} sm:text-right`}
+                    style={linkFontSize}
+                  >
+                    {item.label}
+                    <span
+                      aria-hidden
+                      className={`pointer-events-none absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 ${isLight ? 'bg-[#0a0a0a]' : 'bg-[#fafaf7]'} transition-transform duration-300 ease-out group-hover:scale-x-100 sm:left-auto sm:right-0 sm:origin-right`}
+                    />
+                  </a>
+                ))
+              : null}
           </div>
         </div>
 
         {/*
-          Giant mirrored wordmark, seated directly on the sub-footer bar.
-          `scaleY(-1)` alone, pivoted around the element's own center (the
-          default transform-origin), mirrors the glyphs WITHIN the element's
-          own unchanged box — the box's top/bottom edges never move, only the
-          ink inside is flipped. That keeps the painted glyphs inside the
-          `overflow-visible` wordmark box, which in turn stays inside the
-          `<footer>`'s own `overflow-hidden` full-bleed clip, and the bar
-          (the very next sibling, no gap) sits flush right below it.
-          A previous version added `translateY(-46%)` and pivoted around
-          `center bottom` to try to "push" the baseline onto the bar — that
+          Giant mirrored wordmark. `scaleY(-1)` alone, pivoted around the
+          element's own center (the default transform-origin), mirrors the
+          glyphs WITHIN the element's own unchanged box — the box's top/bottom
+          edges never move, only the ink inside is flipped. That keeps the
+          painted glyphs inside the `overflow-visible` wordmark box, which in
+          turn stays inside the `<footer>`'s own `overflow-hidden` full-bleed
+          clip. A previous version added `translateY(-46%)` and pivoted around
+          `center bottom` to try to "push" the baseline down — that
           combination actually shifts the painted ink 1.0–1.5x the box's own
           height BELOW the box, past the footer's own clip boundary, making
-          the wordmark (and the bar after it) render completely invisible.
-          Don't reintroduce a translateY/off-center pivot here without
-          re-verifying in a real browser — the math is easy to get backwards.
+          the wordmark render completely invisible. Don't reintroduce a
+          translateY/off-center pivot here without re-verifying in a real
+          browser — the math is easy to get backwards.
         */}
+        {wordmarkText ? (
         <div className="relative mt-16 sm:mt-20 lg:mt-24" ref={wordmarkContainerRef} data-iwm-fade-in>
           <div
             aria-hidden
-            className={`select-none overflow-visible whitespace-nowrap text-center font-black uppercase tracking-tight ${wordmarkColor}`}
+            className={`select-none overflow-visible whitespace-nowrap text-center font-black uppercase tracking-tight ${
+              wordmarkInk ? '' : wordmarkColor
+            }`}
             style={{
+              color: wordmarkInk,
               // 1.05, not 1 — a hair of extra box height so a name with real ascenders
               // (b/d/h/k/l/t) or descenders (g/j/p/q/y) never has its ink pressed flush
               // against the line box's own edge once mirrored; the tiny paddingBottom
@@ -339,7 +345,7 @@ export function FooterDesignInvertedWordmark({
               // still a plain center-pivot scaleY(-1), per the warning above.
               lineHeight: 1.05,
               paddingBottom: '0.08em',
-              transform: 'scaleY(-1)',
+              transform: wordmarkMirrored ? 'scaleY(-1)' : undefined,
             }}
           >
             {/* Measure-then-scale to `wordmarkContainerRef`'s width (the outer div right
@@ -349,26 +355,11 @@ export function FooterDesignInvertedWordmark({
                everything else above (overflow-visible, the scaleY mirror, paddingBottom)
                stays exactly as documented. */}
             <span ref={wordmarkTextRef} style={{ fontSize: 'clamp(2.75rem, 15vw, 11rem)' }}>
-              {creatorName}
+              {wordmarkText}
             </span>
           </div>
-
-          {/* Sub-footer bar — thin, edge-to-edge, opposite-contrast fill. */}
-          <div className={`relative flex flex-col items-center gap-2 py-3.5 sm:flex-row sm:justify-between sm:gap-4 ${portfolioEditorialGutterX(contentGutter)} ${barBg}`}>
-            <p className={`text-[0.65rem] font-medium uppercase tracking-[0.14em] ${barInk}`}>{copyrightText}</p>
-            <p className={`text-[0.65rem] font-medium uppercase tracking-[0.14em] ${barInk} sm:absolute sm:left-1/2 sm:-translate-x-1/2`}>
-              {creditLabel}
-            </p>
-            <button
-              type="button"
-              onClick={handleBackToTop}
-              data-pf-no-color-transition=""
-              className={`w-fit text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${barInkStrong} opacity-85 transition-[color,opacity] duration-500 ease-out hover:opacity-100`}
-            >
-              Back to top ↑
-            </button>
-          </div>
         </div>
+        ) : null}
       </div>
     </footer>
   );
@@ -376,10 +367,10 @@ export function FooterDesignInvertedWordmark({
 
 export function FooterInvertedWordmarkWireframe() {
   return (
-    <svg viewBox="0 0 120 72" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
+    <svg viewBox="0 0 120 72" preserveAspectRatio="none" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
       <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
 
-      {/* Top: three airy columns of short lines (nav / social / legal). */}
+      {/* Top: three airy columns of short lines (nav / social / contact). */}
       <rect className="pf-stack-mini-ink" x="9" y="12" width="20" height="3" rx="1.5" />
       <rect className="pf-stack-mini-mute" x="9" y="19" width="16" height="3" rx="1.5" />
       <rect className="pf-stack-mini-mute" x="9" y="26" width="18" height="3" rx="1.5" />
@@ -404,7 +395,6 @@ export function FooterInvertedWordmarkWireframe() {
       >
         AA
       </text>
-      <rect className="pf-stack-mini-accent" x="1.25" y="62" width="117.5" height="7.5" />
     </svg>
   );
 }

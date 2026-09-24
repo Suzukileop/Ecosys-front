@@ -4343,6 +4343,27 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   }
 }
 
+/* Standardized type scale — the SAME two absolute sizes across every Footer design (all 13
+   render their own root as `<footer id="footer">`), so "Small"/"Medium"/"Large" (General tab)
+   reads identically no matter which design is active — same mechanism as the FAQ section's
+   own standardized `--pf-faq-*-size` vars. `--pf-footer-body-size` is for a design's main
+   readable content (description, nav links, contact info); `--pf-footer-label-size` is for
+   small caption text (copyright, column headings, field labels like "Email"/"Phone"). Brand
+   names / giant wordmark headlines are NOT held to a shared absolute size (too varied by
+   design intent), but every design still multiplies its own inline `fontSize` declarations by
+   `var(--pf-footer-font-scale, 1)` so Large/Small still visibly affects them too. Do not
+   reintroduce a design-local override for body/label text, or the designs drift out of sync
+   again. */
+footer#footer {
+  --pf-footer-body-size: 1.05rem;
+  --pf-footer-label-size: 0.8125rem;
+}
+@media (max-width: 480px) {
+  footer#footer {
+    --pf-footer-body-size: 0.95rem;
+  }
+}
+
 @keyframes pf-featured-veil {
   from {
     opacity: 0.4;
@@ -4388,8 +4409,16 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   animation: pf-media-skeleton-pulse 1.15s ease-in-out infinite;
 }
 
+/* Gallery section — global "Font size" scale (General tab). Same standardized-shared-
+   value architecture as Experience/Footer/FAQ's "Font size" control: every
+   `.pf-gallery-media-title*` variant reads `--pf-gallery-font-scale`, set once on the
+   section's shared `PortfolioSectionShell` root (`id="gallery"`) from
+   `galleryPremiumFontScale(presentation.premiumFontSize)`. The lightbox caption
+   (`.text-sm`/`.sm\:text-base` inside `#gallery`, below) is standardized the same way;
+   the carousel-nav chevron glyphs (`text-2xl`/`text-3xl`) are UI chrome, not content, and
+   are deliberately left out. */
 .pf-gallery-media-title {
-  font-size: 28px !important;
+  font-size: calc(28px * var(--pf-gallery-font-scale, 1)) !important;
   font-weight: 600 !important;
   font-synthesis: none;
   line-height: 1.2 !important;
@@ -4403,21 +4432,21 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 .pf-gallery-media-title--in-frame {
-  font-size: 24px !important;
+  font-size: calc(24px * var(--pf-gallery-font-scale, 1)) !important;
 }
 
 .pf-gallery-media-title--cinema {
-  font-size: 20px !important;
+  font-size: calc(20px * var(--pf-gallery-font-scale, 1)) !important;
   line-height: 1.35 !important;
 }
 
 .pf-gallery-media-title--tall {
-  font-size: 20px !important;
+  font-size: calc(20px * var(--pf-gallery-font-scale, 1)) !important;
   line-height: 1.3 !important;
 }
 
 .pf-gallery-media-title--caption {
-  font-size: 18px !important;
+  font-size: calc(18px * var(--pf-gallery-font-scale, 1)) !important;
   font-weight: 500 !important;
   line-height: 1.35 !important;
   letter-spacing: 0.01em;
@@ -4443,19 +4472,24 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--aeonik {
   font-family: var(--font-aeonik), ui-sans-serif, system-ui, sans-serif !important;
   font-weight: 400 !important;
-  font-size: 2.25rem !important;
+  font-size: calc(2.25rem * var(--pf-gallery-font-scale, 1)) !important;
   line-height: 1.3 !important;
   letter-spacing: 0;
 }
 
 .pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--aeonik.pf-gallery-media-title--cinema,
 .pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--aeonik.pf-gallery-media-title--cinema {
-  font-size: 20px !important;
+  font-size: calc(20px * var(--pf-gallery-font-scale, 1)) !important;
 }
 
 .pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--aeonik.pf-gallery-media-title--tall,
 .pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--aeonik.pf-gallery-media-title--tall {
-  font-size: 20px !important;
+  font-size: calc(20px * var(--pf-gallery-font-scale, 1)) !important;
+}
+
+#gallery .text-sm { font-size: calc(0.875rem * var(--pf-gallery-font-scale, 1)); }
+@media (min-width: 640px) {
+  #gallery .sm\:text-base { font-size: calc(1rem * var(--pf-gallery-font-scale, 1)); }
 }
 
 @keyframes portfolio-nav-underline-in {
@@ -5914,6 +5948,269 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-stack-mini-type {
   fill: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 62%, transparent);
   font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Footer design/mini-bar picker card (FooterPickerCard) — a revised chrome vs. every other
+   section's `.pf-{section}-design-card` (Stack/Work/Experience/…): no visible border on an
+   unselected card, only a barely-tinted background; the selected card's only signal is its
+   label switching to the accent color (plus the same faint accent-tinted background) — no
+   stripe, no border, no floating badge. Hovering an unselected card brightens it and lifts it
+   1px. Reuses the same `.pf-stack-mini-*` SVG token classes as Stack's own thumbnails
+   (unchanged — only the card chrome differs), so currently only Footer opts into this
+   pattern; not yet generalized to other sections' pickers. */
+.pf-footer-design-card {
+  position: relative;
+  border: none;
+  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 2%, transparent);
+  transition: background-color 0.28s ease, transform 0.28s ease;
+}
+
+.pf-footer-design-card:hover {
+  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 4.5%, transparent);
+  transform: translateY(-1px);
+}
+
+.pf-footer-design-card[data-active='true'] {
+  background-color: color-mix(in srgb, var(--pf-palette-principal, #f97316) 6%, transparent);
+}
+
+.pf-footer-design-card .pf-stack-mini {
+  opacity: 0.72;
+  transition: opacity 0.28s ease;
+}
+
+.pf-footer-design-card:hover .pf-stack-mini,
+.pf-footer-design-card[data-active='true'] .pf-stack-mini {
+  opacity: 1;
+}
+
+.pf-footer-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #f5f5f5) 58%, transparent);
+  transition: color 0.28s ease;
+}
+
+.pf-footer-design-card:hover .pf-footer-card-label {
+  color: var(--pf-palette-texte-fort, #f5f5f5);
+}
+
+.pf-footer-design-card[data-active='true'] .pf-footer-card-label {
+  color: var(--pf-palette-principal, #f97316);
+}
+
+.portfolio-studio-dock-surface .pf-footer-design-card:not([data-active='true']) .pf-footer-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort) 58%, transparent) !important;
+}
+
+.portfolio-studio-dock-surface .pf-footer-design-card[data-active='true'] .pf-footer-card-label {
+  color: var(--pf-palette-principal) !important;
+}
+
+/* Contact design picker card (ContactPickerCard) — same chrome as `.pf-footer-design-card`
+   above: no visible border on rest (barely-tinted background instead), a hover brighten +
+   1px lift, and the selected card's only signal is its label switching to the accent color
+   plus a faint accent-tinted background — no stripe, no floating badge. Kept as its own
+   Contact-scoped class (not a rename of `.pf-stack-design-card`) for the same reason as
+   Footer's: this chrome isn't generalized to every section's picker yet. */
+.pf-contact-design-card {
+  position: relative;
+  border: none;
+  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 2%, transparent);
+  transition: background-color 0.28s ease, transform 0.28s ease;
+}
+
+.pf-contact-design-card:hover {
+  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 4.5%, transparent);
+  transform: translateY(-1px);
+}
+
+.pf-contact-design-card[data-active='true'] {
+  background-color: color-mix(in srgb, var(--pf-palette-principal, #f97316) 6%, transparent);
+}
+
+.pf-contact-design-card .pf-stack-mini {
+  opacity: 0.72;
+  transition: opacity 0.28s ease;
+}
+
+.pf-contact-design-card:hover .pf-stack-mini,
+.pf-contact-design-card[data-active='true'] .pf-stack-mini {
+  opacity: 1;
+}
+
+.pf-contact-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #f5f5f5) 58%, transparent);
+  transition: color 0.28s ease;
+}
+
+.pf-contact-design-card:hover .pf-contact-card-label {
+  color: var(--pf-palette-texte-fort, #f5f5f5);
+}
+
+.pf-contact-design-card[data-active='true'] .pf-contact-card-label {
+  color: var(--pf-palette-principal, #f97316);
+}
+
+.portfolio-studio-dock-surface .pf-contact-design-card:not([data-active='true']) .pf-contact-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort) 58%, transparent) !important;
+}
+
+.portfolio-studio-dock-surface .pf-contact-design-card[data-active='true'] .pf-contact-card-label {
+  color: var(--pf-palette-principal) !important;
+}
+
+/* Gallery design / Header design picker card (GalleryPickerCard) — same chrome as
+   `.pf-footer-design-card` above, which the Gallery settings panel mirrors 1:1 (see the
+   "Settings design standard"): no visible border at rest, a hover brighten + 1px lift, and
+   the selected card's only signal is its label switching to the accent color plus a faint
+   accent-tinted background. Gallery-scoped like Footer's and Contact's for the same reason:
+   this chrome isn't generalized to every section's picker yet. */
+.pf-gallery-design-card {
+  position: relative;
+  border: none;
+  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 2%, transparent);
+  transition: background-color 0.28s ease, transform 0.28s ease;
+}
+
+.pf-gallery-design-card:hover {
+  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 4.5%, transparent);
+  transform: translateY(-1px);
+}
+
+.pf-gallery-design-card[data-active='true'] {
+  background-color: color-mix(in srgb, var(--pf-palette-principal, #f97316) 6%, transparent);
+}
+
+.pf-gallery-design-card .pf-stack-mini {
+  opacity: 0.72;
+  transition: opacity 0.28s ease;
+}
+
+.pf-gallery-design-card:hover .pf-stack-mini,
+.pf-gallery-design-card[data-active='true'] .pf-stack-mini {
+  opacity: 1;
+}
+
+.pf-gallery-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #f5f5f5) 58%, transparent);
+  transition: color 0.28s ease;
+}
+
+.pf-gallery-design-card:hover .pf-gallery-card-label {
+  color: var(--pf-palette-texte-fort, #f5f5f5);
+}
+
+.pf-gallery-design-card[data-active='true'] .pf-gallery-card-label {
+  color: var(--pf-palette-principal, #f97316);
+}
+
+.portfolio-studio-dock-surface .pf-gallery-design-card:not([data-active='true']) .pf-gallery-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort) 58%, transparent) !important;
+}
+
+.portfolio-studio-dock-surface .pf-gallery-design-card[data-active='true'] .pf-gallery-card-label {
+  color: var(--pf-palette-principal) !important;
+}
+
+/* Team layout / Header design picker card (TeamPickerCard) — same chrome as
+   `.pf-footer-design-card` above, which the Team settings panel mirrors 1:1 alongside
+   Gallery's. Team-scoped for the same reason: this chrome isn't generalized to every
+   section's picker yet. */
+.pf-team-design-card {
+  position: relative;
+  border: none;
+  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 2%, transparent);
+  transition: background-color 0.28s ease, transform 0.28s ease;
+}
+
+.pf-team-design-card:hover {
+  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 4.5%, transparent);
+  transform: translateY(-1px);
+}
+
+.pf-team-design-card[data-active='true'] {
+  background-color: color-mix(in srgb, var(--pf-palette-principal, #f97316) 6%, transparent);
+}
+
+.pf-team-design-card .pf-stack-mini {
+  opacity: 0.72;
+  transition: opacity 0.28s ease;
+}
+
+.pf-team-design-card:hover .pf-stack-mini,
+.pf-team-design-card[data-active='true'] .pf-stack-mini {
+  opacity: 1;
+}
+
+.pf-team-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #f5f5f5) 58%, transparent);
+  transition: color 0.28s ease;
+}
+
+.pf-team-design-card:hover .pf-team-card-label {
+  color: var(--pf-palette-texte-fort, #f5f5f5);
+}
+
+.pf-team-design-card[data-active='true'] .pf-team-card-label {
+  color: var(--pf-palette-principal, #f97316);
+}
+
+.portfolio-studio-dock-surface .pf-team-design-card:not([data-active='true']) .pf-team-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort) 58%, transparent) !important;
+}
+
+.portfolio-studio-dock-surface .pf-team-design-card[data-active='true'] .pf-team-card-label {
+  color: var(--pf-palette-principal) !important;
+}
+
+/* Services design / Header design picker card (ServicesPickerCard) — same chrome as
+   `.pf-footer-design-card` above, shared with Gallery's and Team's own pickers.
+   `.pf-services-preview-card` is the smaller variant used by secondary thumbnail grids
+   (cards-per-row), where the card holds a 64×34 glyph instead of a full wireframe. */
+.pf-services-design-card {
+  position: relative;
+  border: none;
+  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 2%, transparent);
+  transition: background-color 0.28s ease, transform 0.28s ease;
+}
+
+.pf-services-design-card:hover {
+  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 4.5%, transparent);
+  transform: translateY(-1px);
+}
+
+.pf-services-design-card[data-active='true'] {
+  background-color: color-mix(in srgb, var(--pf-palette-principal, #f97316) 6%, transparent);
+}
+
+.pf-services-design-card .pf-stack-mini {
+  opacity: 0.72;
+  transition: opacity 0.28s ease;
+}
+
+.pf-services-design-card:hover .pf-stack-mini,
+.pf-services-design-card[data-active='true'] .pf-stack-mini {
+  opacity: 1;
+}
+
+.pf-services-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #f5f5f5) 58%, transparent);
+  transition: color 0.28s ease;
+}
+
+.pf-services-design-card:hover .pf-services-card-label {
+  color: var(--pf-palette-texte-fort, #f5f5f5);
+}
+
+.pf-services-design-card[data-active='true'] .pf-services-card-label {
+  color: var(--pf-palette-principal, #f97316);
+}
+
+.portfolio-studio-dock-surface .pf-services-design-card:not([data-active='true']) .pf-services-card-label {
+  color: color-mix(in srgb, var(--pf-palette-texte-fort) 58%, transparent) !important;
+}
+
+.portfolio-studio-dock-surface .pf-services-design-card[data-active='true'] .pf-services-card-label {
+  color: var(--pf-palette-principal) !important;
 }
 
 .pf-stack-block-label {
@@ -15337,10 +15634,28 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   --pfk-glass-fill: color-mix(in srgb, var(--pfk-paper) 10%, var(--pfk-ink));
   --pfk-glass-edge: color-mix(in srgb, var(--pfk-paper) 14%, var(--pfk-ink));
   --pfk-answer-ink: color-mix(in srgb, var(--pfk-paper) 72%, var(--pfk-ink));
-  background: var(--pfk-ink);
   color: var(--pfk-mist);
-  border-radius: 28px;
   isolation: isolate;
+}
+/* No FAQ design draws its own stage any more (no fill, no radius, no inner padding): each one
+   sits straight on the section, aligned with every other section's content edge, and a section
+   Background shows through. An outer frame is opt-in and shared by all 9 designs instead —
+   FAQ → General → Frame (`.pf-faq-frame`, see portfolio-faq-frame.tsx). */
+.pf-faq-frame {
+  position: relative;
+  isolation: isolate;
+}
+/* Glass blur sits on a layer *behind* the content, not on the frame: a backdrop-filter on the
+   frame itself would become the containing block of Floating Gallery's mobile fixed sheet. */
+.pf-faq-frame[data-pf-faq-frame-blur='true']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  backdrop-filter: blur(16px) saturate(1.15);
 }
 .pf-faq-kinetic *,
 .pf-faq-gallery * {
@@ -15356,6 +15671,39 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
 }
 
+/* Standardized type scale — the SAME three absolute sizes across all 9 designs, so
+   "Small"/"Medium"/"Large" (General tab) reads identically no matter which design is
+   active. Each design's own -q/-text/-a/-answer/-index/-badge/-label rules below read
+   these via `calc(var(--pf-faq-*-size) * var(--pf-faq-font-scale, 1))` instead of a
+   private per-design clamp/vw value — do not reintroduce a design-local override for
+   these three roles, or the designs drift out of sync again. */
+.pf-faq-kinetic,
+.pf-faq-gallery,
+.pf-faq-masonry,
+.pf-faq-prism,
+.pf-faq-star,
+.pf-faq-tri,
+.pf-faq-split,
+.pf-faq-focus,
+.pf-faq-bento {
+  --pf-faq-q-size: 1.4rem;
+  --pf-faq-a-size: 1.15rem;
+  --pf-faq-label-size: 0.75rem;
+}
+@media (max-width: 480px) {
+  .pf-faq-kinetic,
+  .pf-faq-gallery,
+  .pf-faq-masonry,
+  .pf-faq-prism,
+  .pf-faq-star,
+  .pf-faq-tri,
+  .pf-faq-split,
+  .pf-faq-focus,
+  .pf-faq-bento {
+    --pf-faq-q-size: 1.2rem;
+  }
+}
+
 /* ---------- Kinetic Split (Concept 01) ---------- */
 .pf-faq-kinetic-grid {
   display: grid;
@@ -15365,7 +15713,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 .pf-faq-kinetic-left { position: sticky; top: clamp(16px, 4vw, 40px); }
 .pf-faq-kinetic-eyebrow {
-  font-size: 11px;
+  font-size: calc(var(--pf-faq-label-size) * var(--pf-faq-font-scale, 1));
   letter-spacing: 0.32em;
   text-transform: uppercase;
   color: var(--pfk-ghost);
@@ -15391,7 +15739,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-kinetic-index {
   flex: none;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: 12px;
+  font-size: calc(var(--pf-faq-label-size) * var(--pf-faq-font-scale, 1));
   letter-spacing: 0.08em;
   color: var(--pfk-ghost);
   font-variant-numeric: tabular-nums;
@@ -15400,13 +15748,12 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-kinetic-text {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 300;
-  font-size: 1.05rem;
+  font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   letter-spacing: 0.01em;
   color: var(--pfk-mist);
-  will-change: transform, font-size, color;
+  will-change: font-size, color;
 }
-.pf-faq-kinetic-item.is-open .pf-faq-kinetic-text,
-.pf-faq-kinetic-trigger:hover .pf-faq-kinetic-text {
+.pf-faq-kinetic-item.is-open .pf-faq-kinetic-text {
   font-family: 'Fraunces', Georgia, serif;
   font-weight: 500;
   color: var(--pfk-paper);
@@ -15415,7 +15762,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-kinetic-panel-inner { padding: 2px 0 34px 44px; max-width: 62ch; }
 .pf-faq-kinetic-answer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: 1rem;
+  font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.65;
   color: var(--pfk-answer-ink);
   font-weight: 300;
@@ -15423,16 +15770,36 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-kinetic-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
 .pf-faq-kinetic-line-inner { display: inline-block; will-change: transform; }
 
-@media (max-width: 768px) {
-  .pf-faq-kinetic-grid { grid-template-columns: 1fr; gap: 36px; }
+/* Tablet (and anything narrower): the header moves above the list, full width. Beside the
+   list, a tablet's ~290-360px left column broke the title into 3-4 lines and let its longest
+   word spill into the gap. Keyed to the design's own width, not the viewport, so page gutters
+   and the Studio preview pane are accounted for too. 1024px = a landscape iPad even with the
+   "none" content gutter (the design has no inner padding); desktop widths stay side by side.
+   No row gap once stacked: the header's own margin-bottom (Header tab → "Space below") sets
+   the title-to-list spacing, as in the other designs, instead of stacking a second gap on it. */
+.pf-faq-kinetic { container: pf-faq-kinetic / inline-size; }
+@container pf-faq-kinetic (max-width: 1024px) {
+  .pf-faq-kinetic-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .pf-faq-kinetic-left { position: static; }
+}
+@media (max-width: 768px) {
   .pf-faq-kinetic-panel-inner { padding-left: 0; max-width: none; }
+}
+
+/* ---------- FAQ Header "Signal" — Subtitle position: Side ----------
+   Side by side only when the header itself has room for title + subtitle (keyed to the
+   header's own width, not the viewport). A full-width header at a 1024px+ viewport still
+   goes side by side as before; a narrow column (Kinetic Split's left rail) stacks. */
+.pf-faq-header-signal-header { container: pf-faq-header-signal / inline-size; }
+@container pf-faq-header-signal (min-width: 900px) {
+  .pf-faq-header-signal-row--side { flex-direction: row; align-items: flex-end; justify-content: space-between; }
+  .pf-faq-header-signal-sub--side { text-align: right; }
 }
 
 /* ---------- Floating Gallery (Concept 02) ---------- */
 .pf-faq-gallery-head { margin-bottom: clamp(28px, 6vw, 48px); }
 .pf-faq-gallery-eyebrow {
-  font-size: 11px;
+  font-size: calc(var(--pf-faq-label-size) * var(--pf-faq-font-scale, 1));
   letter-spacing: 0.32em;
   text-transform: uppercase;
   color: var(--pfk-ghost);
@@ -15460,7 +15827,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-gallery-q {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 300;
-  font-size: clamp(1.15rem, 2.6vw, 1.7rem);
+  font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   color: var(--pfk-mist);
   transition: color 0.4s ease;
 }
@@ -15517,7 +15884,10 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-gallery-glass h3 {
   font-family: 'Fraunces', Georgia, serif;
   font-weight: 500;
-  font-size: clamp(1.4rem, 3vw, 2.1rem);
+  /* Deliberately larger than --pf-faq-q-size — this is a big modal-only display
+     repeat of the question, not the inline list question itself (no other design
+     has an equivalent element), so it isn't held to the cross-design "q" match. */
+  font-size: calc(var(--pf-faq-q-size) * 1.5 * var(--pf-faq-font-scale, 1));
   color: var(--pfk-paper);
   max-width: 26ch;
   margin: 0 0 18px;
@@ -15525,7 +15895,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 .pf-faq-gallery-glass p {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: 1.02rem;
+  font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.7;
   color: var(--pfk-answer-ink);
   font-weight: 300;
@@ -15558,9 +15928,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   --pfm-muted: color-mix(in srgb, var(--pfm-ink) 72%, var(--pfm-paper));
   --pfm-index: color-mix(in srgb, var(--pfm-ink) 34%, var(--pfm-paper));
   --pfm-line: color-mix(in srgb, var(--pfm-ink) 8%, var(--pfm-paper));
-  background: var(--pfm-paper);
   color: var(--pfm-ink);
-  border-radius: 28px;
   isolation: isolate;
 }
 .pf-faq-masonry * { box-sizing: border-box; }
@@ -15596,7 +15964,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-masonry-index {
   flex: none;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: 11px;
+  font-size: calc(var(--pf-faq-label-size) * var(--pf-faq-font-scale, 1));
   letter-spacing: 0.08em;
   color: var(--pfm-index);
   font-variant-numeric: tabular-nums;
@@ -15606,7 +15974,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   min-width: 0;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 400;
-  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.35;
   color: var(--pfm-muted);
   will-change: transform, color;
@@ -15625,7 +15993,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-masonry-panel-inner { padding: 2px 40px 30px 34px; max-width: 58ch; }
 .pf-faq-masonry-answer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.98rem;
+  font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.65;
   color: var(--pfm-slate);
   font-weight: 400;
@@ -15660,8 +16028,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   --pfp-active-to: #4338ca;
   --pfp-active-ink: #ffffff;
   --pfp-active-muted: rgba(255, 255, 255, 0.82);
-  background: var(--pfp-stage);
-  border-radius: 28px;
   isolation: isolate;
 }
 .pf-faq-prism[data-pf-faq-mode='dark'] {
@@ -15719,7 +16085,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   font-weight: 800;
   letter-spacing: -0.01em;
   line-height: 1.25;
-  font-size: clamp(1.05rem, 0.85rem + 0.9vw, 1.45rem);
+  font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   color: var(--pfp-ink);
   transition: color 0.6s cubic-bezier(0.65, 0, 0.35, 1);
 }
@@ -15744,7 +16110,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-prism-panel-inner { padding: 2px clamp(22px, 4vw, 34px) clamp(24px, 3vw, 32px); max-width: 62ch; }
 .pf-faq-prism-answer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: 1rem;
+  font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.65;
   font-weight: 400;
   color: var(--pfp-muted);
@@ -15758,7 +16124,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   .pf-faq-prism-card { border-radius: 20px; }
   .pf-faq-prism-trigger { padding: 20px 20px; gap: 14px; }
   .pf-faq-prism-panel-inner { padding-left: 20px; padding-right: 20px; max-width: none; }
-  .pf-faq-prism-q { font-size: clamp(1rem, 4.4vw, 1.2rem); }
 }
 
 /* ---------- Star Scroll (Concept 05) ----------
@@ -15778,9 +16143,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   --pfs-card-hover: color-mix(in srgb, var(--pfs-ink) 9%, var(--pfs-fond));
   --pfs-border: color-mix(in srgb, var(--pfs-ink) 11%, var(--pfs-fond));
   --pfs-muted: color-mix(in srgb, var(--pfs-ink) 62%, var(--pfs-fond));
-  background: var(--pfs-fond);
   color: var(--pfs-ink);
-  border-radius: 28px;
   isolation: isolate;
   transition: background-color 0.5s ease, color 0.5s ease;
 }
@@ -15832,7 +16195,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-star-q {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 500;
-  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   color: var(--pfs-ink);
   transition: color 0.5s ease;
 }
@@ -15850,7 +16213,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-star-panel-inner { padding: 0 clamp(22px, 3vw, 32px) clamp(22px, 2.8vw, 30px); max-width: 62ch; }
 .pf-faq-star-answer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: 1rem;
+  font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.65;
   font-weight: 400;
   color: var(--pfs-muted);
@@ -15862,7 +16225,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 @media (max-width: 768px) {
   .pf-faq-star-head { margin-bottom: 32px; }
   .pf-faq-star-trigger { padding: 20px; gap: 14px; }
-  .pf-faq-star-q { font-size: 1.05rem; }
   .pf-faq-star-panel-inner { max-width: none; }
 }
 
@@ -15874,9 +16236,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   --pft-fond: #ffffff;
   --pft-ink: #000000;
   --pft-muted: color-mix(in srgb, var(--pft-ink) 70%, var(--pft-fond));
-  background: var(--pft-fond);
   color: var(--pft-ink);
-  border-radius: 28px;
   isolation: isolate;
   transition: background-color 0.5s ease, color 0.5s ease;
 }
@@ -15900,14 +16260,14 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-tri-q {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 600;
-  font-size: clamp(1.02rem, 1.6vw, 1.22rem);
+  font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   color: var(--pft-muted);
   margin: 0 0 10px;
   transition: color 0.4s ease;
 }
 .pf-faq-tri-a {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.94rem;
+  font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.62;
   color: color-mix(in srgb, var(--pft-ink) 55%, var(--pft-fond));
   margin: 0;
@@ -15929,9 +16289,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   --pfsi-ink: #0a0a0a;
   --pfsi-muted: color-mix(in srgb, var(--pfsi-ink) 70%, var(--pfsi-fond));
   --pfsi-line: color-mix(in srgb, var(--pfsi-ink) 9%, var(--pfsi-fond));
-  background: var(--pfsi-fond);
   color: var(--pfsi-ink);
-  border-radius: 28px;
   isolation: isolate;
   transition: background-color 0.5s ease, color 0.5s ease;
 }
@@ -15946,7 +16304,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 .pf-faq-split-rail-label {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: 12px;
+  font-size: calc(var(--pf-faq-label-size) * var(--pf-faq-font-scale, 1));
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -15979,7 +16337,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   background: var(--pfsi-ink);
   color: var(--pfsi-fond);
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: 10px;
+  font-size: calc(var(--pf-faq-label-size) * var(--pf-faq-font-scale, 1));
   font-weight: 700;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
@@ -15990,7 +16348,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   min-width: 0;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 500;
-  font-size: clamp(1.02rem, 1.6vw, 1.2rem);
+  font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   color: var(--pfsi-muted);
   transition: color 0.5s ease;
 }
@@ -16008,7 +16366,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-split-panel-inner { padding: 0 30px 26px 48px; max-width: 60ch; }
 .pf-faq-split-answer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: 1rem;
+  font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.65;
   color: color-mix(in srgb, var(--pfsi-ink) 60%, var(--pfsi-fond));
   transition: color 0.5s ease;
@@ -16030,9 +16388,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   --pff-fond: #ffffff;
   --pff-ink: #000000;
   --pff-muted: color-mix(in srgb, var(--pff-ink) 55%, var(--pff-fond));
-  background: var(--pff-fond);
   color: var(--pff-ink);
-  border-radius: 28px;
   isolation: isolate;
   text-align: center;
   transition: background-color 0.5s ease, color 0.5s ease;
@@ -16067,7 +16423,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-focus-q {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 600;
-  font-size: clamp(1.3rem, 3vw, 2rem);
+  font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   color: var(--pff-muted);
   transition: color 0.35s ease;
 }
@@ -16075,7 +16431,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-focus-panel-inner { padding: 10px 0 clamp(24px, 4vw, 40px); max-width: 56ch; margin: 0 auto; }
 .pf-faq-focus-answer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: 1.02rem;
+  font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.7;
   color: color-mix(in srgb, var(--pff-ink) 62%, var(--pff-fond));
 }
@@ -16103,9 +16459,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   --pfbd-answer-bg: #14110d;
   --pfbd-answer-ink: #fbfaf7;
   --pfbd-border: color-mix(in srgb, var(--pfbd-card-ink) 14%, var(--pfbd-card));
-  background: var(--pfbd-fond);
   color: var(--pfbd-ink);
-  border-radius: 28px;
   isolation: isolate;
   transition: background-color 0.5s ease, color 0.5s ease;
 }
@@ -16153,14 +16507,14 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-faq-bento-q {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 600;
-  font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+  font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   color: var(--pfbd-card-ink);
   margin: 0;
   transition: color 0.5s ease;
 }
 .pf-faq-bento-a {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.98rem;
+  font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.6;
   color: var(--pfbd-answer-ink);
   margin: 0;
@@ -16194,4 +16548,153 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   .pf-faq-bento-card {
     transition: none !important;
   }
+}
+
+/* Experience section — global "Font size" scale (General tab). Same standardized-shared-
+   value architecture as FAQ/Footer's "Font size" control: every body/label text element
+   across all 11 Experience designs reads `--pf-experience-font-scale`, set once on the
+   section's shared `<section id="experience">` root (`PortfolioSectionShell`'s `cssVars`
+   prop in `PublicCreatorPortfolioPage.tsx`, from
+   `experiencePremiumFontScale(presentation.premiumFontSize)`). Unlike FAQ/Footer — which
+   multiply each element's own inline/CSS declaration via `calc()` — Experience's type is
+   almost entirely bespoke Tailwind arbitrary-value classes (`text-[0.85rem]`,
+   `text-[1.05rem]`, ...) scattered across ~10,000 lines with no shared selector to bolt a
+   `calc()` onto per element, so instead these rules override each such utility class's OWN
+   font-size specifically inside `#experience` (ID selector beats Tailwind's own `.text-*`
+   utility on specificity, regardless of source order), multiplying its literal value by the
+   scale. Values >= 1.5rem (≈ text-2xl) are treated as intentionally oversized "display" text
+   (accent years, giant stat numbers, entry titles) and deliberately left OUT of this list —
+   do not add them here without first checking they aren't a display element. `text-[0.5em]`
+   is relative to its own parent and already inherits the scale automatically when that
+   parent is itself scaled by one of these rules — no override needed for `em`-based values.
+   If a NEW arbitrary `text-[...]` value is introduced in an Experience design in future work,
+   add a matching override line here (body/label range only, i.e. < 1.5rem) — otherwise that
+   new text silently breaks the "same everywhere" promise this control makes. */
+#experience .text-\[0\.62rem\] { font-size: calc(0.62rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.65rem\] { font-size: calc(0.65rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.66rem\] { font-size: calc(0.66rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.68rem\] { font-size: calc(0.68rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.7rem\] { font-size: calc(0.7rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.72rem\] { font-size: calc(0.72rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.75rem\] { font-size: calc(0.75rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.78rem\] { font-size: calc(0.78rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.8125rem\] { font-size: calc(0.8125rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.82rem\] { font-size: calc(0.82rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.85rem\] { font-size: calc(0.85rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.86rem\] { font-size: calc(0.86rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.88rem\] { font-size: calc(0.88rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.9rem\] { font-size: calc(0.9rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.9375rem\] { font-size: calc(0.9375rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.92rem\] { font-size: calc(0.92rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.95rem\] { font-size: calc(0.95rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[0\.98rem\] { font-size: calc(0.98rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[1rem\] { font-size: calc(1rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[1\.02rem\] { font-size: calc(1.02rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[1\.05rem\] { font-size: calc(1.05rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[1\.08rem\] { font-size: calc(1.08rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[1\.1rem\] { font-size: calc(1.1rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[1\.15rem\] { font-size: calc(1.15rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[1\.2rem\] { font-size: calc(1.2rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[1\.3rem\] { font-size: calc(1.3rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[1\.35rem\] { font-size: calc(1.35rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[1\.4rem\] { font-size: calc(1.4rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[1\.45rem\] { font-size: calc(1.45rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-\[11px\] { font-size: calc(11px * var(--pf-experience-font-scale, 1)); }
+
+@media (min-width: 640px) {
+  #experience .sm\:text-\[1\.05rem\] { font-size: calc(1.05rem * var(--pf-experience-font-scale, 1)); }
+  #experience .sm\:text-\[0\.78rem\] { font-size: calc(0.78rem * var(--pf-experience-font-scale, 1)); }
+  #experience .sm\:text-\[1\.08rem\] { font-size: calc(1.08rem * var(--pf-experience-font-scale, 1)); }
+  #experience .sm\:text-\[1\.02rem\] { font-size: calc(1.02rem * var(--pf-experience-font-scale, 1)); }
+  #experience .sm\:text-\[1rem\] { font-size: calc(1rem * var(--pf-experience-font-scale, 1)); }
+  #experience .sm\:text-\[1\.4rem\] { font-size: calc(1.4rem * var(--pf-experience-font-scale, 1)); }
+  #experience .sm\:text-\[1\.3rem\] { font-size: calc(1.3rem * var(--pf-experience-font-scale, 1)); }
+  #experience .sm\:text-\[0\.98rem\] { font-size: calc(0.98rem * var(--pf-experience-font-scale, 1)); }
+  #experience .sm\:text-\[0\.95rem\] { font-size: calc(0.95rem * var(--pf-experience-font-scale, 1)); }
+  #experience .sm\:text-\[0\.9375rem\] { font-size: calc(0.9375rem * var(--pf-experience-font-scale, 1)); }
+  #experience .sm\:text-\[0\.86rem\] { font-size: calc(0.86rem * var(--pf-experience-font-scale, 1)); }
+  #experience .sm\:text-\[0\.66rem\] { font-size: calc(0.66rem * var(--pf-experience-font-scale, 1)); }
+}
+
+#experience .text-xs { font-size: calc(0.75rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-sm { font-size: calc(0.875rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-base { font-size: calc(1rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-lg { font-size: calc(1.125rem * var(--pf-experience-font-scale, 1)); }
+#experience .text-xl { font-size: calc(1.25rem * var(--pf-experience-font-scale, 1)); }
+@media (min-width: 640px) {
+  #experience .sm\:text-xs { font-size: calc(0.75rem * var(--pf-experience-font-scale, 1)); }
+  #experience .sm\:text-sm { font-size: calc(0.875rem * var(--pf-experience-font-scale, 1)); }
+  #experience .sm\:text-xl { font-size: calc(1.25rem * var(--pf-experience-font-scale, 1)); }
+}
+
+/* Services section — global "Font size" scale (General tab). Same standardized-shared-value
+   architecture as Experience/Footer/FAQ's "Font size" control: every body/label text element
+   across the Services pricing designs (Grid/Bento/Monolith/Aurora/Toggle) and the showcase
+   hero reads `--pf-services-font-scale`, set once on the section's shared
+   `<section id="services">` root (`PortfolioSectionShell`'s `cssVars` prop in
+   `PublicCreatorPortfolioPage.tsx`, from `servicesPremiumFontScale(presentation.premiumFontSize)`).
+   Like Experience, Services' type is scattered bespoke Tailwind classes (standard + arbitrary
+   `text-[...]`) with no shared selector to bolt a `calc()` onto per element, so instead these
+   rules override each such utility class's OWN font-size specifically inside `#services` (ID
+   selector beats Tailwind's own `.text-*` utility on specificity). Giant hero prices
+   (`text-[2.75rem]`/`text-[3.1rem]`/`text-[2.6rem]`/`text-[1.7rem]` and their `sm:` companions)
+   are intentionally oversized "display" text and deliberately left OUT — do not add them here.
+   `text-[0.32em]` is relative to its own parent and already inherits the scale automatically. */
+#services .text-xs { font-size: calc(0.75rem * var(--pf-services-font-scale, 1)); }
+#services .text-sm { font-size: calc(0.875rem * var(--pf-services-font-scale, 1)); }
+#services .text-lg { font-size: calc(1.125rem * var(--pf-services-font-scale, 1)); }
+#services .text-xl { font-size: calc(1.25rem * var(--pf-services-font-scale, 1)); }
+#services .text-\[10px\] { font-size: calc(10px * var(--pf-services-font-scale, 1)); }
+#services .text-\[11px\] { font-size: calc(11px * var(--pf-services-font-scale, 1)); }
+#services .text-\[13px\] { font-size: calc(13px * var(--pf-services-font-scale, 1)); }
+#services .text-\[0\.65rem\] { font-size: calc(0.65rem * var(--pf-services-font-scale, 1)); }
+#services .text-\[0\.68rem\] { font-size: calc(0.68rem * var(--pf-services-font-scale, 1)); }
+#services .text-\[0\.7rem\] { font-size: calc(0.7rem * var(--pf-services-font-scale, 1)); }
+#services .text-\[0\.8rem\] { font-size: calc(0.8rem * var(--pf-services-font-scale, 1)); }
+#services .text-\[0\.85rem\] { font-size: calc(0.85rem * var(--pf-services-font-scale, 1)); }
+#services .text-\[0\.86rem\] { font-size: calc(0.86rem * var(--pf-services-font-scale, 1)); }
+#services .text-\[0\.92rem\] { font-size: calc(0.92rem * var(--pf-services-font-scale, 1)); }
+#services .text-\[0\.95rem\] { font-size: calc(0.95rem * var(--pf-services-font-scale, 1)); }
+#services .text-\[1\.05rem\] { font-size: calc(1.05rem * var(--pf-services-font-scale, 1)); }
+
+
+/* Contact section — global "Font size" scale (General tab). Same standardized-shared-value
+   architecture as Experience/Footer/FAQ/Services/Gallery's "Font size" control: every
+   body/label text element across every Contact design (10 dedicated premium designs plus
+   the classic default card) reads `--pf-contact-font-scale`, set once on the section's
+   shared `<section id="contact">` root (`EditorialContactSection`'s own `contactSectionStyle`
+   in portfolio-section-primitives.tsx, from
+   `contactPremiumFontScale(presentation.premiumFontSize)`). Contact's markup is scattered
+   bespoke Tailwind utility classes (standard + arbitrary `text-[...]` values) with no shared
+   selector to bolt a `calc()` onto per element — same shape as Experience — so instead these
+   rules override each such utility class's OWN font-size specifically inside `#contact` (ID
+   selector beats Tailwind's own `.text-*` utility on specificity), multiplying its literal
+   value by the scale. Values >= 1.5rem (≈ text-2xl) and any `clamp()`/`vw`-scaled value are
+   intentionally oversized "display" text (giant focal headlines, huge email/phone hero
+   numbers, brand-scale wordmarks) and deliberately left OUT of this list — do not add them
+   here without first checking they aren't a display element. If a NEW arbitrary `text-[...]`
+   value under 1.5rem is introduced in a Contact design in future work, add a matching
+   override line here — otherwise that new text silently breaks the "same everywhere"
+   promise this control makes. */
+#contact .text-xs { font-size: calc(0.75rem * var(--pf-contact-font-scale, 1)); }
+#contact .text-sm { font-size: calc(0.875rem * var(--pf-contact-font-scale, 1)); }
+#contact .text-base { font-size: calc(1rem * var(--pf-contact-font-scale, 1)); }
+#contact .text-lg { font-size: calc(1.125rem * var(--pf-contact-font-scale, 1)); }
+#contact .text-xl { font-size: calc(1.25rem * var(--pf-contact-font-scale, 1)); }
+#contact .text-\[10px\] { font-size: calc(10px * var(--pf-contact-font-scale, 1)); }
+#contact .text-\[11px\] { font-size: calc(11px * var(--pf-contact-font-scale, 1)); }
+#contact .text-\[13px\] { font-size: calc(13px * var(--pf-contact-font-scale, 1)); }
+#contact .text-\[14px\] { font-size: calc(14px * var(--pf-contact-font-scale, 1)); }
+#contact .text-\[18px\] { font-size: calc(18px * var(--pf-contact-font-scale, 1)); }
+#contact .text-\[19px\] { font-size: calc(19px * var(--pf-contact-font-scale, 1)); }
+#contact .text-\[0\.95rem\] { font-size: calc(0.95rem * var(--pf-contact-font-scale, 1)); }
+
+@media (min-width: 640px) {
+  #contact .sm\:text-sm { font-size: calc(0.875rem * var(--pf-contact-font-scale, 1)); }
+  #contact .sm\:text-base { font-size: calc(1rem * var(--pf-contact-font-scale, 1)); }
+  #contact .sm\:text-lg { font-size: calc(1.125rem * var(--pf-contact-font-scale, 1)); }
+  #contact .sm\:text-xl { font-size: calc(1.25rem * var(--pf-contact-font-scale, 1)); }
+  #contact .sm\:text-\[1\.05rem\] { font-size: calc(1.05rem * var(--pf-contact-font-scale, 1)); }
+  #contact .sm\:text-\[0\.95rem\] { font-size: calc(0.95rem * var(--pf-contact-font-scale, 1)); }
+  #contact .sm\:text-\[0\.9375rem\] { font-size: calc(0.9375rem * var(--pf-contact-font-scale, 1)); }
 }

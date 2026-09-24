@@ -48,20 +48,20 @@ export const PORTFOLIO_TEAM_COLOR_SLOT_OPTIONS: {
   value: TeamColorSlot;
   label: string;
 }[] = [
-  { value: 'sectionBackground', label: 'Fond de section' },
-  { value: 'sectionGradientFrom', label: 'Début du dégradé' },
-  { value: 'sectionGradientTo', label: 'Fin du dégradé' },
-  { value: 'sectionSplitA', label: 'Zone A' },
-  { value: 'sectionSplitB', label: 'Zone B' },
-  { value: 'sectionDivider', label: 'Séparateur' },
-  { value: 'title', label: 'Titre' },
-  { value: 'subtitle', label: 'Sous-titre' },
-  { value: 'cardBackground', label: 'Fond des cartes' },
-  { value: 'cardBorder', label: 'Bordure des cartes' },
-  { value: 'name', label: 'Nom' },
-  { value: 'responsibility', label: 'Responsabilité' },
-  { value: 'socialIcon', label: 'Icônes sociales' },
-  { value: 'socialBackground', label: 'Fond des icônes' },
+  { value: 'sectionBackground', label: 'Section background' },
+  { value: 'sectionGradientFrom', label: 'Gradient start' },
+  { value: 'sectionGradientTo', label: 'Gradient end' },
+  { value: 'sectionSplitA', label: 'Color A' },
+  { value: 'sectionSplitB', label: 'Color B' },
+  { value: 'sectionDivider', label: 'Divider' },
+  { value: 'title', label: 'Title' },
+  { value: 'subtitle', label: 'Subtitle' },
+  { value: 'cardBackground', label: 'Card background' },
+  { value: 'cardBorder', label: 'Card border' },
+  { value: 'name', label: 'Name' },
+  { value: 'responsibility', label: 'Role' },
+  { value: 'socialIcon', label: 'Social icons' },
+  { value: 'socialBackground', label: 'Icon background' },
 ];
 
 export const DEFAULT_TEAM_PALETTE: PortfolioTeamPalette = { ...DEFAULT_HERO_PALETTE };

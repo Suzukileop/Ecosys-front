@@ -11,6 +11,9 @@
  * every other design already uses.
  */
 export type PortfolioFooterHeaderDesign =
+  /** No header mounted above the Footer section at all — the section's own layout
+   *  (design below) starts right away. */
+  | 'none'
   | 'editorial'
   | 'index'
   | 'serif-lead'
@@ -31,13 +34,30 @@ export type PortfolioFooterHeaderDesign =
 
 export type PortfolioFooterHeaderDesignAlignment = 'left' | 'center' | 'right';
 
-/** Bottom spacing under every Header design — one shared scale, same 4 steps everywhere. */
-export type PortfolioFooterHeaderMarginBottom = 'sm' | 'md' | 'lg' | 'xl';
+/**
+ * Bottom spacing under every Header design — one shared scale. `none` collapses the gap
+ * entirely, useful with `headerBackgroundUnified` for a seamless header-into-footer canvas.
+ */
+export type PortfolioFooterHeaderMarginBottom = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 export const FOOTER_HEADER_MARGIN_BOTTOM_REM: Record<PortfolioFooterHeaderMarginBottom, number> = {
-  sm: 1.5,
-  md: 2.5,
-  lg: 4,
-  xl: 6,
+  none: 0,
+  sm: 3,
+  md: 5,
+  lg: 8,
+  xl: 12,
+};
+
+/**
+ * Header's own internal top/bottom padding — independent of `headerMarginBottom` (the gap
+ * AFTER the header, before the Footer body). Same shared step scale, reused for both edges.
+ */
+export type PortfolioFooterHeaderPaddingStep = 'none' | 'sm' | 'md' | 'lg' | 'xl';
+export const FOOTER_HEADER_PADDING_REM: Record<PortfolioFooterHeaderPaddingStep, number> = {
+  none: 0,
+  sm: 3,
+  md: 5,
+  lg: 8,
+  xl: 12,
 };
 
 /** Title size/weight — one shared scale applied proportionally by every Header design. */
@@ -52,10 +72,11 @@ export type PortfolioFooterHeaderPaletteToken = 'principal' | 'secondaire' | 'te
 export type PortfolioFooterHeaderBillboardWordStyle = 'outline' | 'fill' | 'simple';
 
 export const FOOTER_HEADER_DESIGNS: PortfolioFooterHeaderDesign[] = [
-  'editorial', 'index', 'serif-lead', 'billboard', 'masthead', 'hero', 'name', 'timezone',
+  'none', 'editorial', 'index', 'serif-lead', 'billboard', 'masthead', 'hero', 'name', 'timezone',
 ];
 
-export const FOOTER_HEADER_MARGIN_BOTTOM_STEPS: PortfolioFooterHeaderMarginBottom[] = ['sm', 'md', 'lg', 'xl'];
+export const FOOTER_HEADER_MARGIN_BOTTOM_STEPS: PortfolioFooterHeaderMarginBottom[] = ['none', 'sm', 'md', 'lg', 'xl'];
+export const FOOTER_HEADER_PADDING_STEPS: PortfolioFooterHeaderPaddingStep[] = ['none', 'sm', 'md', 'lg', 'xl'];
 export const FOOTER_HEADER_TITLE_SIZES: PortfolioFooterHeaderTitleSize[] = ['sm', 'md', 'lg', 'xl'];
 export const FOOTER_HEADER_TITLE_WEIGHTS: PortfolioFooterHeaderTitleWeight[] = ['light', 'regular', 'semibold', 'bold'];
 export const FOOTER_HEADER_PALETTE_TOKENS: PortfolioFooterHeaderPaletteToken[] = ['principal', 'secondaire', 'texteFort'];
@@ -65,6 +86,7 @@ export const FOOTER_HEADER_BILLBOARD_WORD_STYLES: PortfolioFooterHeaderBillboard
 export const PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS: {
   value: PortfolioFooterHeaderDesign; label: string; description: string;
 }[] = [
+  { value: 'none', label: 'None', description: 'No header — the footer section starts right away.' },
   { value: 'editorial', label: 'Editorial', description: 'Monumental masked-reveal headline — premium GSAP entrance.' },
   { value: 'index', label: 'Index', description: 'Ledger-style divider rule, a counting numeral, and the title split by a vertical rule.' },
   { value: 'serif-lead', label: 'Serif lead', description: 'Small label above a large serif title.' },

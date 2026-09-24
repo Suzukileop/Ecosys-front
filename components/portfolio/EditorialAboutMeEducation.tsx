@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ProfileEducationEntry } from '@/types/ecosystem';
 import type {
-  PortfolioInfoContentSize,
+  PortfolioInfoPremiumFontSize,
   PortfolioInfoEducationDisplayStyle,
 } from '@/components/portfolio/portfolio-info-settings';
 import {
@@ -42,13 +42,17 @@ function formatYearInline(schoolYear: string): string {
   return `${parsed.start} — ${parsed.end}`;
 }
 
-function traitEducationYearStackedClass(contentSize: PortfolioInfoContentSize): string {
+function traitEducationYearStackedClass(contentSize: PortfolioInfoPremiumFontSize): string {
   switch (contentSize) {
-    case 'sm':
+    case 'small':
       return 'text-2xl font-semibold tracking-tight sm:text-3xl lg:leading-none';
-    case 'lg':
+    case 'large':
       return 'text-4xl font-semibold tracking-tight sm:text-5xl lg:text-[3.25rem] lg:leading-none';
-    case 'md':
+    case 'xlarge':
+      return 'text-5xl font-semibold tracking-tight sm:text-6xl lg:text-[3.75rem] lg:leading-none';
+    case 'xxlarge':
+      return 'text-6xl font-semibold tracking-tight sm:text-7xl lg:text-[4.25rem] lg:leading-none';
+    case 'medium':
     default:
       return 'text-3xl font-semibold tracking-tight sm:text-4xl lg:text-[2.75rem] lg:leading-none';
   }
@@ -63,7 +67,7 @@ function TraitEducationYearStacked({
   schoolYear: string;
   titleColor: string;
   bodyColor: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
 }) {
   const parsed = parseSchoolYearRange(schoolYear);
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
@@ -109,7 +113,7 @@ function EducationSectionHeader({
   titleColor: string;
   bodyColor: string;
   cardBorder: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
 }) {
   const sectionTitleClass = infoContentBlockTitleSizeClass(contentSize);
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
@@ -147,7 +151,7 @@ function EducationTimeline({
   sectionClassName = TRAIT_EDUCATION_SECTION_TOP,
 }: {
   items: ProfileEducationEntry[];
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   sectionClassName?: string;
 } & Omit<TraitEducationColors, 'cardBg'>) {
   const entryTitleClass = infoContentEducationTitleSizeClass(contentSize);
@@ -257,7 +261,7 @@ function EducationEditorial({
   sectionClassName = TRAIT_EDUCATION_SECTION_TOP,
 }: {
   items: ProfileEducationEntry[];
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   sectionClassName?: string;
 } & Omit<TraitEducationColors, 'cardBg'>) {
   const entryTitleClass = infoContentEducationTitleSizeClass(contentSize);
@@ -350,7 +354,7 @@ function EducationPanels({
   sectionClassName = TRAIT_EDUCATION_SECTION_TOP,
 }: {
   items: ProfileEducationEntry[];
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   sectionClassName?: string;
 } & TraitEducationColors) {
   const entryTitleClass = infoContentBlockTitleSizeClass(contentSize);
@@ -459,7 +463,7 @@ function EducationCascadeItem({
   titleColor: string;
   bodyColor: string;
   accent: string;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   itemRef: (el: HTMLLIElement | null) => void;
 }) {
   const year = entry.schoolYear?.trim() || '';
@@ -493,11 +497,15 @@ function EducationCascadeItem({
   const bodyClass = infoContentBodySizeClass(contentSize);
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
   const indexNumClass =
-    contentSize === 'sm'
+    contentSize === 'small'
       ? 'text-4xl sm:text-5xl'
-      : contentSize === 'lg'
+      : contentSize === 'large'
         ? 'text-6xl sm:text-7xl'
-        : 'text-5xl sm:text-6xl';
+        : contentSize === 'xlarge'
+          ? 'text-7xl sm:text-8xl'
+          : contentSize === 'xxlarge'
+            ? 'text-8xl sm:text-9xl'
+            : 'text-5xl sm:text-6xl';
 
   return (
     <li
@@ -565,7 +573,7 @@ function EducationCascade({
 }: {
   items: ProfileEducationEntry[];
   scrollShiftEnabled?: boolean;
-  contentSize: PortfolioInfoContentSize;
+  contentSize: PortfolioInfoPremiumFontSize;
   sectionClassName?: string;
 } & TraitEducationColors) {
   const sectionRef = useRef<HTMLElement>(null);
@@ -676,13 +684,13 @@ export function TraitEducationBlock({
   cardBg,
   cardBorder,
   cascadeScrollShift = false,
-  contentSize = 'md',
+  contentSize = 'medium',
   sectionClassName = TRAIT_EDUCATION_SECTION_TOP,
 }: {
   items: ProfileEducationEntry[];
   style: PortfolioInfoEducationDisplayStyle;
   cascadeScrollShift?: boolean;
-  contentSize?: PortfolioInfoContentSize;
+  contentSize?: PortfolioInfoPremiumFontSize;
   sectionClassName?: string;
 } & TraitEducationColors) {
   if (items.length === 0) return null;

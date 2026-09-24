@@ -204,6 +204,7 @@ import {
   ProjectsCascadeGallery,
 } from '@/components/portfolio/portfolio-work-projects-cascade';
 import {
+  galleryPremiumFontScale,
   gallerySectionLayoutIsAside,
   pickGalleryPresentationSettings,
   resolveGallerySectionSubtitle,
@@ -253,6 +254,7 @@ import {
   resolveServicesSectionSubtitle,
   resolveServicesSectionTitle,
   resolveServicesOrderCtaHref,
+  servicesPremiumFontScale,
 } from '@/components/portfolio/portfolio-services-settings';
 import {
   resolveDistinctBlockSectionSubtitle,
@@ -267,6 +269,7 @@ import {
   faqListPlacementClass,
   faqListMaxWidthClass,
   faqSectionLayoutIsAside,
+  faqPremiumFontScale,
 } from '@/components/portfolio/portfolio-faq-settings';
 import {
   FaqHeaderEditorialHeader,
@@ -277,8 +280,12 @@ import {
   FaqHeaderBillboardHeader,
   FaqHeaderMastheadHeader,
   FaqHeaderSplitHeadingHeader,
+  FaqHeaderSignalHeader,
+  FaqHeaderQueryHeader,
+  FaqHeaderDialogueHeader,
 } from '@/components/portfolio/faq-portfolio-header-designs';
 import { FaqKineticSplitDesign } from '@/components/portfolio/portfolio-faq-kinetic-split';
+import { FaqDesignFrame } from '@/components/portfolio/portfolio-faq-frame';
 import { FaqFloatingGalleryDesign } from '@/components/portfolio/portfolio-faq-floating-gallery';
 import { FaqEditorialMasonryDesign } from '@/components/portfolio/portfolio-faq-editorial-masonry';
 import { FaqPrismCardsDesign } from '@/components/portfolio/portfolio-faq-prism-cards';
@@ -405,6 +412,7 @@ import {
   experienceHeaderFontStyle,
   experienceSubtitleColorStyle,
   experienceTitleColorStyle,
+  experiencePremiumFontScale,
 } from '@/components/portfolio/portfolio-experience-settings';
 import { PortfolioLinkArrowProvider } from '@/components/portfolio/portfolio-link-buttons';
 import {
@@ -417,7 +425,13 @@ import {
   contactTitleColorStyle,
   isContactPremiumDesign,
 } from '@/components/portfolio/portfolio-contact-settings';
-import { pickFooterPresentationSettings, portfolioFooterNavClearanceClass } from '@/components/portfolio/portfolio-footer-settings';
+import {
+  pickFooterPresentationSettings,
+  portfolioFooterNavClearanceClass,
+  resolveFooterCopyrightLabel,
+} from '@/components/portfolio/portfolio-footer-settings';
+import type { PortfolioFooterSectionLinkOption } from '@/components/portfolio/portfolio-footer-design-layout';
+import { PortfolioFooterMiniBar } from '@/components/portfolio/portfolio-footer-mini-bar';
 import {
   applyHeroPaletteToAbout,
   applyHeroPaletteToAboutUs,
@@ -460,7 +474,10 @@ import {
   resolveSectionHeaderAlign,
   resolveSectionTitleOrientation,
 } from '@/components/portfolio/portfolio-global-settings';
-import type { PortfolioSectionBackgroundSettings } from '@/components/portfolio/portfolio-section-background-settings';
+import {
+  sectionBackgroundStyle,
+  type PortfolioSectionBackgroundSettings,
+} from '@/components/portfolio/portfolio-section-background-settings';
 import {
   buildPortfolioNavChromeLinks,
   buildPortfolioNavSocialLinkOptions,
@@ -1031,21 +1048,6 @@ export function PublicCreatorPortfolioPage({
     return () => window.removeEventListener('message', onMessage);
   }, [hideOwnerChrome, applyExternalSettings]);
 
-  useEffect(() => {
-    if (!hideOwnerChrome || typeof window === 'undefined' || window.parent === window) return;
-
-    const meta = {
-      availableTools: strengthNames,
-      availableWorks: availableHeroWorks.map(({ id, title, imageUrl }) => ({ id, title, imageUrl })),
-      availableServices,
-      navSocialLinkOptions,
-    };
-    window.parent.postMessage(
-      { source: PORTFOLIO_STUDIO_PREVIEW_SOURCE, type: 'ready', meta },
-      window.location.origin
-    );
-  }, [hideOwnerChrome, strengthNames, availableHeroWorks, availableServices, navSocialLinkOptions]);
-
   const navChromeLinks = useMemo(() => {
     const structuredBar =
       settings.navigation.navLayoutDesign === 'editorial-bar' ||
@@ -1089,13 +1091,6 @@ export function PublicCreatorPortfolioPage({
     hasContactSection && settings.contact.enabled && isContactPremiumDesign(settings.contact.cardDesign);
   const showToolsSection = strengths.length > 0 && settings.tools.enabled;
   const showStackSection = stackItems.length > 0 && settings.stack.enabled;
-  const footerVisibleSectionLinks = {
-    gallery: showGallerySection,
-    aboutUs: showAboutUsSection,
-    team: showTeamSection,
-    services: showServicesSection,
-    work: showWorkSection,
-  };
 
   const heroTools = useMemo(
     () => resolveHeroTools(strengthNames, settings.hero.selectedTools),
@@ -1439,6 +1434,9 @@ export function PublicCreatorPortfolioPage({
       ),
     [settings.faq.colorModeOverride, settings.global.colorMode]
   );
+  // Multiplies every premium FAQ design's own font-size declarations via a shared
+  // `--pf-faq-font-scale` CSS custom property — see General tab's "Font size" control.
+  const faqFontSizeScale = faqPremiumFontScale(faqPresentation.premiumFontSize);
   const faqSectionTitle = useMemo(() => resolveFaqSectionTitle(settings.faq), [settings.faq]);
   const faqSectionSubtitle = useMemo(() => resolveFaqSectionSubtitle(settings.faq), [settings.faq]);
   const teamPalette = useMemo(
@@ -1679,6 +1677,22 @@ export function PublicCreatorPortfolioPage({
       ),
     [settings.footer.colorModeOverride, settings.global.colorMode]
   );
+  // Same resolved Background-tab style the main Footer section's own designs now paint
+  // with (see `EditorialPortfolioFooter`'s `footerBackgroundStyle`) — the Mini bar is a
+  // separate sibling element below it, so it needs its own copy of this computation to
+  // stay in sync rather than owning any hardcoded canvas fill of its own.
+  const footerMiniBarBackgroundStyle = useMemo(
+    () => sectionBackgroundStyle(footerPresentation),
+    [footerPresentation]
+  );
+  // The header block above the Footer (`footerHeaderBlock`) has its own root, separate from
+  // the Footer body — it stays transparent over the global page wallpaper by default. Only
+  // when the Background tab's "Unify header background" toggle is on does it also paint the
+  // Footer's own `sectionBackground*` fill, matching `footerMiniBarBackgroundStyle` above.
+  const footerHeaderBackgroundStyle = useMemo(
+    () => (footerPresentation.headerBackgroundUnified ? sectionBackgroundStyle(footerPresentation) : undefined),
+    [footerPresentation]
+  );
   const footerNavClearanceClass = useMemo(
     () =>
       portfolioFooterNavClearanceClass(settings.navigation.placement, {
@@ -1720,6 +1734,43 @@ export function PublicCreatorPortfolioPage({
     pages.push(...navItems);
     return pages;
   }, [navItems, settings.hero.enabled]);
+
+  // Keyed on content, not identity: every settings apply from the studio dock rebuilds
+  // `navItems`, and a new identity here would re-post `ready` → the dock re-sends settings →
+  // another apply, looping forever.
+  const footerSectionLinkOptionsKey = JSON.stringify([
+    ...(settings.hero.enabled ? [{ id: 'hero', label: 'Home', href: '#hero' }] : []),
+    ...navItems.map((item) => ({ id: item.id, label: item.label, href: `#${item.id}` })),
+  ]);
+  const footerSectionLinkOptions = useMemo(
+    () => JSON.parse(footerSectionLinkOptionsKey) as PortfolioFooterSectionLinkOption[],
+    [footerSectionLinkOptionsKey]
+  );
+
+  useEffect(() => {
+    if (!hideOwnerChrome || typeof window === 'undefined' || window.parent === window) return;
+
+    const meta = {
+      availableTools: strengthNames,
+      availableWorks: availableHeroWorks.map(({ id, title, imageUrl }) => ({ id, title, imageUrl })),
+      availableServices,
+      navSocialLinkOptions,
+      sectionLinkOptions: footerSectionLinkOptions,
+      profileAvatarUrl: profile.avatarUrl?.trim() || null,
+    };
+    window.parent.postMessage(
+      { source: PORTFOLIO_STUDIO_PREVIEW_SOURCE, type: 'ready', meta },
+      window.location.origin
+    );
+  }, [
+    hideOwnerChrome,
+    strengthNames,
+    availableHeroWorks,
+    availableServices,
+    navSocialLinkOptions,
+    footerSectionLinkOptions,
+    profile.avatarUrl,
+  ]);
 
   const navMode = settings.navigation.navMode ?? 'default';
   const isPagesMode = navMode === 'pages';
@@ -1804,8 +1855,11 @@ export function PublicCreatorPortfolioPage({
     locationLabel,
     timezoneId: profile.timezoneId,
   };
+  // Feeds only the Mini bar catalog's 5 "design-origin" variants (Landing/Contact CTA/Hero
+  // columns/Inverted wordmark/Services reveal) — see footer-minibar-catalog-extraction memory.
+  const footerMiniBarCopyrightText = resolveFooterCopyrightLabel(footerPresentation.copyrightLabel, profile.fullName);
   const footerHeaderBlock =
-    footerPresentation.headerDesign === 'index' ? (
+    footerPresentation.headerDesign === 'none' ? null : footerPresentation.headerDesign === 'index' ? (
       <FooterHeaderIndexHeader {...footerHeaderProps} />
     ) : footerPresentation.headerDesign === 'serif-lead' ? (
       <FooterHeaderSerifLeadHeader {...footerHeaderProps} />
@@ -2610,9 +2664,16 @@ export function PublicCreatorPortfolioPage({
           </ServicesOrderCtaHrefProvider>
         );
 
+        // General tab "Font size" — one scale read by every Services design via
+        // `--pf-services-font-scale` (see the standardized override block in globals.css).
+        const servicesFontScaleVars: CSSProperties = {
+          '--pf-services-font-scale': servicesPremiumFontScale(servicesPresentation.premiumFontSize),
+        } as CSSProperties;
+
         return (
           <PortfolioSectionShell
             id="services"
+            cssVars={servicesFontScaleVars}
             background={servicesPresentation}
             fitContent
             suppressBackground={suppressSectionBackground(servicesPresentation)}
@@ -2844,10 +2905,17 @@ export function PublicCreatorPortfolioPage({
           </PortfolioLinkArrowProvider>
         );
 
+        // General tab "Font size" — one scale read by every Experience design via
+        // `--pf-experience-font-scale` (see the standardized override block in globals.css).
+        const experienceFontScaleVars: CSSProperties = {
+          '--pf-experience-font-scale': experiencePremiumFontScale(experiencePresentation.premiumFontSize),
+        } as CSSProperties;
+
         if (experiencePresentation.experienceDesign === 'reel') {
           return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
+              cssVars={experienceFontScaleVars}
               background={experiencePresentation}
               fitContent
               suppressBackground={suppressSectionBackground(experiencePresentation)}
@@ -2863,6 +2931,7 @@ export function PublicCreatorPortfolioPage({
           return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
+              cssVars={experienceFontScaleVars}
               background={experiencePresentation}
               fitContent
               suppressBackground={suppressSectionBackground(experiencePresentation)}
@@ -2879,6 +2948,7 @@ export function PublicCreatorPortfolioPage({
           return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
+              cssVars={experienceFontScaleVars}
               background={experiencePresentation}
               fitContent
               suppressBackground={suppressSectionBackground(experiencePresentation)}
@@ -2896,6 +2966,7 @@ export function PublicCreatorPortfolioPage({
           return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
+              cssVars={experienceFontScaleVars}
               background={experiencePresentation}
               fitContent
               suppressBackground={suppressSectionBackground(experiencePresentation)}
@@ -2913,6 +2984,7 @@ export function PublicCreatorPortfolioPage({
           return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
+              cssVars={experienceFontScaleVars}
               background={experiencePresentation}
               fitContent
               suppressBackground={suppressSectionBackground(experiencePresentation)}
@@ -2930,6 +3002,7 @@ export function PublicCreatorPortfolioPage({
           return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
+              cssVars={experienceFontScaleVars}
               background={experiencePresentation}
               fitContent
               suppressBackground={suppressSectionBackground(experiencePresentation)}
@@ -2947,6 +3020,7 @@ export function PublicCreatorPortfolioPage({
           return wrapExperienceLinks(
             <PortfolioSectionShell
               id="experience"
+              cssVars={experienceFontScaleVars}
               background={experiencePresentation}
               fitContent
               suppressBackground={suppressSectionBackground(experiencePresentation)}
@@ -3019,6 +3093,7 @@ export function PublicCreatorPortfolioPage({
         return wrapExperienceLinks(
           <PortfolioSectionShell
             id="experience"
+            cssVars={experienceFontScaleVars}
             background={experiencePresentation}
             fitContent
             suppressBackground={suppressSectionBackground(experiencePresentation)}
@@ -3202,9 +3277,15 @@ export function PublicCreatorPortfolioPage({
             />
           </SectionIllustratedContent>
         );
+        // General tab "Font size" — one scale read by `.pf-gallery-media-title*` and the
+        // lightbox caption via `--pf-gallery-font-scale` (see globals.css).
+        const galleryFontScaleVars: CSSProperties = {
+          '--pf-gallery-font-scale': galleryPremiumFontScale(galleryPresentation.premiumFontSize),
+        } as CSSProperties;
         return (
           <PortfolioSectionShell
             id="gallery"
+            cssVars={galleryFontScaleVars}
             background={galleryPresentation}
             fitContent
             suppressBackground={suppressSectionBackground(galleryPresentation)}
@@ -3248,9 +3329,14 @@ export function PublicCreatorPortfolioPage({
           faqSplitIndex ||
           faqCenteredFocus ||
           faqBentoDual;
-        // Header — one shared, GSAP-animated header (chosen from 8 editorial layouts, same
-        // mechanism as Portfolio/Work, Stack, Tools, Contact, Team, Gallery, and Info) mounts
-        // above the section, independent of the Design tab's own per-design layout.
+        // Header — mounts above the section, independent of the Design tab's own per-design
+        // layout. 7 of the original 8 editorial layouts (same mechanism as Portfolio/Work,
+        // Stack, Tools, Contact, Team, Gallery, and Info) are frozen — still rendered for any
+        // account that already has one saved, but no longer selectable from FAQ's own settings
+        // UI (see faq-settings-header-removed-pill-tabs memory). FAQ's Header tab now offers 4
+        // designs: 'editorial' (the original classic layout, re-exposed) plus 3 newer,
+        // purpose-built ones — 'signal' | 'query' | 'dialogue' (see
+        // faq-header-tab-3-new-designs memory).
         const faqHeaderProps = {
           title: faqSectionTitle,
           subtitle: faqSectionSubtitle || undefined,
@@ -3272,6 +3358,12 @@ export function PublicCreatorPortfolioPage({
             <FaqHeaderMastheadHeader {...faqHeaderProps} />
           ) : faqPresentation.headerDesign === 'split-heading' ? (
             <FaqHeaderSplitHeadingHeader {...faqHeaderProps} />
+          ) : faqPresentation.headerDesign === 'signal' ? (
+            <FaqHeaderSignalHeader {...faqHeaderProps} />
+          ) : faqPresentation.headerDesign === 'query' ? (
+            <FaqHeaderQueryHeader {...faqHeaderProps} />
+          ) : faqPresentation.headerDesign === 'dialogue' ? (
+            <FaqHeaderDialogueHeader {...faqHeaderProps} />
           ) : (
             <FaqHeaderEditorialHeader {...faqHeaderProps} />
           );
@@ -3307,6 +3399,7 @@ export function PublicCreatorPortfolioPage({
             bottomSpacingStyle={sectionBottomSpacingStyle}
             header={faqAside || faqBespokeDesign ? undefined : faqHeaderBlock}
           >
+            <FaqDesignFrame frame={faqPresentation.designFrame}>
             {faqAside ? (
               <SectionAsideContent
                 layout={faqPresentation.sectionLayout ?? 'aside-left'}
@@ -3315,26 +3408,52 @@ export function PublicCreatorPortfolioPage({
                 {faqListBlock}
               </SectionAsideContent>
             ) : faqKinetic ? (
-              <FaqKineticSplitDesign items={faqItems} header={faqHeaderBlock} />
+              <FaqKineticSplitDesign items={faqItems} header={faqHeaderBlock} fontSizeScale={faqFontSizeScale} />
             ) : faqFloatingGallery ? (
-              <FaqFloatingGalleryDesign items={faqItems} header={faqHeaderBlock} />
+              <FaqFloatingGalleryDesign items={faqItems} header={faqHeaderBlock} fontSizeScale={faqFontSizeScale} />
             ) : faqMasonry ? (
-              <FaqEditorialMasonryDesign items={faqItems} header={faqHeaderBlock} />
+              <FaqEditorialMasonryDesign items={faqItems} header={faqHeaderBlock} fontSizeScale={faqFontSizeScale} />
             ) : faqPrismCards ? (
-              <FaqPrismCardsDesign items={faqItems} header={faqHeaderBlock} activeColorMode={faqActiveColorMode} />
+              <FaqPrismCardsDesign
+                items={faqItems}
+                header={faqHeaderBlock}
+                activeColorMode={faqActiveColorMode}
+                fontSizeScale={faqFontSizeScale}
+              />
             ) : faqStarScroll ? (
-              <FaqStarScrollDesign items={faqItems} header={faqHeaderBlock} activeColorMode={faqActiveColorMode} />
+              <FaqStarScrollDesign
+                items={faqItems}
+                header={faqHeaderBlock}
+                activeColorMode={faqActiveColorMode}
+                fontSizeScale={faqFontSizeScale}
+              />
             ) : faqTriGrid ? (
-              <FaqTriGridDesign items={faqItems} header={faqHeaderBlock} activeColorMode={faqActiveColorMode} />
+              <FaqTriGridDesign
+                items={faqItems}
+                header={faqHeaderBlock}
+                activeColorMode={faqActiveColorMode}
+                fontSizeScale={faqFontSizeScale}
+              />
             ) : faqSplitIndex ? (
-              <FaqSplitIndexDesign items={faqItems} header={faqHeaderBlock} activeColorMode={faqActiveColorMode} />
+              <FaqSplitIndexDesign
+                items={faqItems}
+                header={faqHeaderBlock}
+                activeColorMode={faqActiveColorMode}
+                fontSizeScale={faqFontSizeScale}
+              />
             ) : faqCenteredFocus ? (
-              <FaqCenteredFocusDesign items={faqItems} header={faqHeaderBlock} activeColorMode={faqActiveColorMode} />
+              <FaqCenteredFocusDesign
+                items={faqItems}
+                header={faqHeaderBlock}
+                activeColorMode={faqActiveColorMode}
+                fontSizeScale={faqFontSizeScale}
+              />
             ) : faqBentoDual ? (
               <FaqBentoDualDesign
                 items={faqItems}
                 header={faqHeaderBlock}
                 activeColorMode={faqActiveColorMode}
+                fontSizeScale={faqFontSizeScale}
                 cardColor={faqPalette[faqPresentation.bentoDualCardColorToken]}
                 cardRadius={faqPresentation.bentoDualCardRadius}
                 cardBorder={faqPresentation.bentoDualCardBorder}
@@ -3343,6 +3462,7 @@ export function PublicCreatorPortfolioPage({
             ) : (
               faqListBlock
             )}
+            </FaqDesignFrame>
           </PortfolioSectionShell>
         );
       }
@@ -3662,7 +3782,12 @@ export function PublicCreatorPortfolioPage({
                   </main>
                   {showFooter ? (
                     <div className="mt-auto w-full shrink-0">
-                      <div className={`w-full pf-footer-shell-x ${editorialShellClass}`}>{footerHeaderBlock}</div>
+                      <div
+                        className={`w-full pf-footer-shell-x ${editorialShellClass}`}
+                        style={footerHeaderBackgroundStyle}
+                      >
+                        {footerHeaderBlock}
+                      </div>
                       <EditorialPortfolioFooter
                         creatorName={profile.fullName}
                         creatorId={creatorId}
@@ -3686,11 +3811,28 @@ export function PublicCreatorPortfolioPage({
                         }
                         motionProfile={motionProfile}
                         bottomClearanceClass={footerNavClearanceClass}
-                        visibleSectionLinks={footerVisibleSectionLinks}
+                        sectionLinkOptions={footerSectionLinkOptions}
+                        sectionPalette={footerPalette}
                         globalColorMode={footerColorMode}
                         timezoneId={profile.timezoneId}
                         contentGutter={settings.global.contentGutter}
                       />
+                      {footerPresentation.showMiniBar ? (
+                        <PortfolioFooterMiniBar
+                          design={footerPresentation.miniBarDesign}
+                          creatorName={profile.fullName}
+                          locationLabel={locationLabel}
+                          timezoneId={profile.timezoneId}
+                          colorMode={footerColorMode}
+                          accentColor={footerPresentation.accentColor}
+                          contentGutter={settings.global.contentGutter}
+                          copyrightText={footerMiniBarCopyrightText}
+                          isAvailable={profile.isAvailable}
+                          hoursLabel={availabilityDisplay}
+                          creditLabel={footerPresentation.invertedWordmarkCredit}
+                          backgroundStyle={footerMiniBarBackgroundStyle}
+                        />
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
@@ -3749,7 +3891,12 @@ export function PublicCreatorPortfolioPage({
 
           {settings.footer.enabled ? (
             <div className="mt-auto w-full shrink-0">
-              <div className={`w-full pf-footer-shell-x ${editorialShellClass}`}>{footerHeaderBlock}</div>
+              <div
+                className={`w-full pf-footer-shell-x ${editorialShellClass}`}
+                style={footerHeaderBackgroundStyle}
+              >
+                {footerHeaderBlock}
+              </div>
               <EditorialPortfolioFooter
                 creatorName={profile.fullName}
                 creatorId={creatorId}
@@ -3773,11 +3920,28 @@ export function PublicCreatorPortfolioPage({
                 }
                 motionProfile={motionProfile}
                 bottomClearanceClass={footerNavClearanceClass}
-                visibleSectionLinks={footerVisibleSectionLinks}
+                sectionLinkOptions={footerSectionLinkOptions}
+                        sectionPalette={footerPalette}
                 globalColorMode={footerColorMode}
                 timezoneId={profile.timezoneId}
                 contentGutter={settings.global.contentGutter}
               />
+              {footerPresentation.showMiniBar ? (
+                <PortfolioFooterMiniBar
+                  design={footerPresentation.miniBarDesign}
+                  creatorName={profile.fullName}
+                  locationLabel={locationLabel}
+                  timezoneId={profile.timezoneId}
+                  colorMode={footerColorMode}
+                  accentColor={footerPresentation.accentColor}
+                  contentGutter={settings.global.contentGutter}
+                  copyrightText={footerMiniBarCopyrightText}
+                  isAvailable={profile.isAvailable}
+                  hoursLabel={availabilityDisplay}
+                  creditLabel={footerPresentation.invertedWordmarkCredit}
+                  backgroundStyle={footerMiniBarBackgroundStyle}
+                />
+              ) : null}
             </div>
           ) : null}
         </div>

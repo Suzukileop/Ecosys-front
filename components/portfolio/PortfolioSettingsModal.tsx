@@ -22,6 +22,7 @@ import { SectionColorModeControl } from '@/components/portfolio/portfolio-sectio
 import { PortfolioNavContactCtaGlyph } from '@/components/portfolio/portfolio-nav-contact-cta-icons';
 import type { PortfolioNavMenuGroup } from '@/components/portfolio/portfolio-nav-menu-groups';
 import { type PortfolioNavChromeLink } from '@/components/portfolio/portfolio-nav-extras';
+import type { PortfolioFooterSectionLinkOption } from '@/components/portfolio/portfolio-footer-design-layout';
 import {
   PORTFOLIO_FLOATING_CHROME,
 } from '@/components/portfolio/portfolio-section-primitives';
@@ -163,6 +164,7 @@ import {
 } from '@/components/portfolio/portfolio-work-settings-panel';
 import {
   GallerySettingsPanel,
+  normalizeGallerySubSection,
   type GallerySettingsSubSection,
 } from '@/components/portfolio/portfolio-gallery-settings-panel';
 import {
@@ -190,6 +192,7 @@ import {
 } from '@/components/portfolio/portfolio-faq-settings-panel';
 import {
   TeamSettingsPanel,
+  normalizeTeamSubSection,
   type TeamSubSection,
 } from '@/components/portfolio/portfolio-team-settings-panel';
 import {
@@ -5911,6 +5914,8 @@ function SectionPanel({
   availableWorks,
   availableServices = [],
   navSocialLinkOptions = [],
+  sectionLinkOptions = [],
+  profileAvatarUrl = null,
   panelSubSections,
   onPanelSubSectionChange,
 }: {
@@ -5939,6 +5944,8 @@ function SectionPanel({
   availableWorks: { id: string; title: string; imageUrl: string }[];
   availableServices?: { id: string; title: string }[];
   navSocialLinkOptions?: PortfolioNavChromeLink[];
+  sectionLinkOptions?: PortfolioFooterSectionLinkOption[];
+  profileAvatarUrl?: string | null;
   panelSubSections: PanelSubSections;
   onPanelSubSectionChange: <K extends keyof PanelSubSections>(
     sectionId: K,
@@ -5990,6 +5997,9 @@ function SectionPanel({
         onChange={(patch) => onChange('footer', patch)}
         subSection={panelSubSections.footer ?? 'general'}
         onSubSectionChange={(value) => onPanelSubSectionChange('footer', value)}
+        sectionLinkOptions={sectionLinkOptions}
+        profileAvatarUrl={profileAvatarUrl}
+        contactLinkOptions={navSocialLinkOptions}
       />
     );
   }
@@ -6094,7 +6104,7 @@ function SectionPanel({
       <GallerySettingsPanel
         gallery={settings.gallery}
         onChange={(patch) => onChange('gallery', patch)}
-        subSection={panelSubSections.gallery ?? 'general'}
+        subSection={normalizeGallerySubSection(panelSubSections.gallery)}
         onSubSectionChange={(value) => onPanelSubSectionChange('gallery', value)}
       />
     );
@@ -6116,7 +6126,7 @@ function SectionPanel({
       <TeamSettingsPanel
         team={settings.team}
         onChange={(patch) => onChange('team', patch)}
-        subSection={panelSubSections.team ?? 'general'}
+        subSection={normalizeTeamSubSection(panelSubSections.team)}
         onSubSectionChange={(value) => onPanelSubSectionChange('team', value)}
       />
     );
@@ -6130,6 +6140,7 @@ function SectionPanel({
         subSection={panelSubSections.contact ?? 'general'}
         onSubSectionChange={(value) => onPanelSubSectionChange('contact', value)}
         heroPalette={settings.hero.palette}
+        profileAvatarUrl={profileAvatarUrl}
       />
     );
   }
@@ -6205,6 +6216,10 @@ type PortfolioSettingsModalProps = {
   availableWorks?: { id: string; title: string; imageUrl: string }[];
   availableServices?: { id: string; title: string }[];
   navSocialLinkOptions?: PortfolioNavChromeLink[];
+  /** Sections currently visible in the live preview (Footer → Layout settings link picker). */
+  sectionLinkOptions?: PortfolioFooterSectionLinkOption[];
+  /** Account profile photo (Footer → General → Photo reference). */
+  profileAvatarUrl?: string | null;
   /** Live Preview: scroll the iframe to the matching portfolio section. */
   onPreviewSectionFocus?: (sectionId: PortfolioSettingsSectionId) => void;
 };
@@ -6236,6 +6251,8 @@ export function PortfolioSettingsModal({
   availableWorks = [],
   availableServices = [],
   navSocialLinkOptions = [],
+  sectionLinkOptions = [],
+  profileAvatarUrl = null,
   onPreviewSectionFocus,
 }: PortfolioSettingsModalProps) {
   const router = useRouter();
@@ -6453,6 +6470,8 @@ export function PortfolioSettingsModal({
         availableWorks={availableWorks}
         availableServices={availableServices}
         navSocialLinkOptions={navSocialLinkOptions}
+        sectionLinkOptions={sectionLinkOptions}
+        profileAvatarUrl={profileAvatarUrl}
         panelSubSections={panelSubSections}
         onPanelSubSectionChange={setPanelSubSection}
       />

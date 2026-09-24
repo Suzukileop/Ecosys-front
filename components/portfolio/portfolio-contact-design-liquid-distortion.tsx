@@ -6,13 +6,19 @@ import {
   FooterSocialLinkIcon,
   type EditorialContactLink,
 } from '@/components/portfolio/portfolio-section-primitives';
-import type { PortfolioContactPresentationSettings } from '@/components/portfolio/portfolio-contact-settings';
+import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
+import {
+  DEFAULT_CONTENT_GUTTER,
+  portfolioEditorialGutterX,
+  type PortfolioContentGutter,
+} from '@/components/portfolio/portfolio-editorial-layout';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-const DEFAULT_WATERMARK = 'CONNECT';
+/** Layout settings → "Watermark intensity" (Subtle is the original 3%). */
+const WATERMARK_OPACITY: Record<string, number> = { subtle: 0.03, medium: 0.07, bold: 0.14 };
 
 /**
  * Concept 3 — "Liquid distortion": a minimalist, liquid-feeling composition on deep
@@ -21,8 +27,7 @@ const DEFAULT_WATERMARK = 'CONNECT';
  * invisibly (3% opacity), across the whole background, stretching and skewing with
  * the cursor's own speed — the faster the mouse moves, the more it distorts, then
  * eases back to rest. Hovering any coordinate gives it a brief organic stretch
- * (scale + skew settling on `power4.out`) and instantly dims every other item to
- * near-nothing, so 100% of the attention lands on the active link. All mouse-driven
+ * (scale + skew settling on `power4.out`), self-contained to that one item. All mouse-driven
  * motion is dropped on touch / `prefers-reduced-motion`; under 768px the watermark
  * shrinks and the corners collapse into one clean centered vertical stack.
  */
@@ -31,18 +36,28 @@ export function ContactDesignLiquidDistortion({
   phone,
   locationLabel,
   links,
-  presentation,
+  layout,
+  contentGutter = DEFAULT_CONTENT_GUTTER,
 }: {
   email: string | null;
   phone: string | null;
   locationLabel: string | null;
   links: EditorialContactLink[];
-  presentation: PortfolioContactPresentationSettings;
+  layout: ContactDesignLayoutResolver;
+  /** Same site-wide editorial gutter every other section respects — used to keep the
+   *  watermark word from bleeding past the page's own right/left margin. */
+  contentGutter?: PortfolioContentGutter;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const watermarkRef = useRef<HTMLDivElement>(null);
 
-  const watermark = presentation.liquidDistortionWatermark?.trim() || DEFAULT_WATERMARK;
+  const watermark = layout.text('watermark');
+  const hasWatermark = Boolean(watermark);
+  const watermarkOpacity = WATERMARK_OPACITY[layout.option('watermarkIntensity')] ?? WATERMARK_OPACITY.subtle;
+  const emailHeading = layout.text('emailLabel');
+  const phoneHeading = layout.text('phoneLabel');
+  const addressHeading = layout.text('addressLabel');
+  const socialHeading = layout.text('socialLabel');
   const hasEmail = Boolean(email?.trim());
   const hasPhone = Boolean(phone?.trim());
   const hasLocation = Boolean(locationLabel?.trim());
@@ -87,41 +102,28 @@ export function ContactDesignLiquidDistortion({
     root.addEventListener('pointermove', onMove, { passive: true });
     rafId = window.requestAnimationFrame(tick);
 
-    // Organic hover stretch + radical dim-to-focus.
+    // Organic hover stretch — self-contained to the hovered item only, never touches
+    // any sibling's opacity or color.
     const items = Array.from(root.querySelectorAll<HTMLElement>('[data-liquid-item]'));
-    const onEnter = (target: HTMLElement) => {
-      items.forEach((el) => {
-        if (el === target) {
-          gsap.fromTo(
-            el,
-            { scaleX: 1.18, skewX: -7 },
-            { scaleX: 1, skewX: 0, color: '#ffffff', duration: 0.6, ease: 'power4.out', overwrite: 'auto' }
-          );
-        } else {
-          gsap.to(el, { opacity: 0.1, duration: 0.12, ease: 'power1.out', overwrite: 'auto' });
-        }
-      });
-    };
-    const onLeaveAll = () => {
-      items.forEach((el) => {
-        gsap.to(el, { opacity: 1, color: '', duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
-      });
-    };
     const enterHandlers = items.map((el) => {
-      const enter = () => onEnter(el);
+      const enter = () => {
+        gsap.fromTo(
+          el,
+          { scaleX: 1.18, skewX: -7 },
+          { scaleX: 1, skewX: 0, duration: 0.6, ease: 'power4.out', overwrite: 'auto' }
+        );
+      };
       el.addEventListener('pointerenter', enter);
       return enter;
     });
-    root.addEventListener('pointerleave', onLeaveAll);
 
     return () => {
       root.removeEventListener('pointermove', onMove);
-      root.removeEventListener('pointerleave', onLeaveAll);
       items.forEach((el, i) => el.removeEventListener('pointerenter', enterHandlers[i]));
       if (decayTimer) window.clearTimeout(decayTimer);
       window.cancelAnimationFrame(rafId);
     };
-  }, []);
+  }, [hasWatermark]);
 
   const itemClass =
     'block text-xl font-light text-neutral-300 transition-colors hover:text-white sm:text-2xl';
@@ -129,24 +131,41 @@ export function ContactDesignLiquidDistortion({
   return (
     <div
       ref={rootRef}
-      className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-black"
+      className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden"
       data-pf-no-color-transition=""
     >
-      <div
-        ref={watermarkRef}
-        aria-hidden
-        className="pointer-events-none absolute inset-0 flex select-none items-center justify-center"
-      >
-        <span className="text-[26vw] font-black uppercase leading-none tracking-tight text-white opacity-[0.03] sm:text-[20vw]">
-          {watermark}
-        </span>
-      </div>
+      {/* Two nested wrappers, not one — `overflow: hidden` clips at an element's own
+          border-box edge and ignores that same element's `padding` once the child is
+          centered (flex/absolute) and wider than the box: it bleeds straight through the
+          padding to the outer edge, no matter how much gutter padding is set. Confirmed by
+          isolated repro, not a guess. So the gutter padding lives on this OUTER, non-clipping
+          layer (sets the real, narrower width the inner box inherits); `overflow: hidden`
+          then lives on the INNER layer, whose width comes from that inherited box model, not
+          its own padding — so it clips exactly at the gutter edge. GSAP only ever moves/skews
+          the innermost `watermarkRef` div, never either clipping/padding layer. */}
+      {watermark ? (
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-y-0 left-0 right-0 select-none ${portfolioEditorialGutterX(contentGutter)}`}
+        >
+          <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+            <div ref={watermarkRef}>
+              <span
+                className="text-[26vw] font-black uppercase leading-none tracking-tight text-white sm:text-[20vw]"
+                style={{ opacity: watermarkOpacity }}
+              >
+                {watermark}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="relative mx-auto grid min-h-[85vh] w-full max-w-[90rem] grid-cols-1 gap-14 px-6 py-24 sm:px-10 lg:min-h-[90vh] lg:grid-cols-2 lg:gap-0 lg:px-0">
         {hasEmail ? (
           <div className="flex justify-center text-center lg:absolute lg:left-[6vw] lg:top-[10vh] lg:block lg:text-left">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-neutral-600">Email</p>
+              {emailHeading ? <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-neutral-600">{emailHeading}</p> : null}
               <a href={`mailto:${email}`} className={`${itemClass} mt-2 break-all`} data-liquid-item>
                 {email}
               </a>
@@ -157,7 +176,7 @@ export function ContactDesignLiquidDistortion({
         {hasPhone ? (
           <div className="flex justify-center text-center lg:absolute lg:right-[7vw] lg:top-[16vh] lg:block lg:text-right">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-neutral-600">Phone</p>
+              {phoneHeading ? <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-neutral-600">{phoneHeading}</p> : null}
               <a href={`tel:${phone}`} className={`${itemClass} mt-2`} data-liquid-item>
                 {phone}
               </a>
@@ -168,7 +187,7 @@ export function ContactDesignLiquidDistortion({
         {hasLocation ? (
           <div className="flex justify-center text-center lg:absolute lg:bottom-[14vh] lg:left-[8vw] lg:block lg:text-left">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-neutral-600">Address</p>
+              {addressHeading ? <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-neutral-600">{addressHeading}</p> : null}
               <span className={`${itemClass} mt-2`} data-liquid-item>
                 {locationLabel}
               </span>
@@ -179,7 +198,7 @@ export function ContactDesignLiquidDistortion({
         {hasLinks ? (
           <div className="flex justify-center text-center lg:absolute lg:bottom-[10vh] lg:right-[6vw] lg:block lg:text-right">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-neutral-600">Social</p>
+              {socialHeading ? <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-neutral-600">{socialHeading}</p> : null}
               <nav className="mt-3 flex flex-wrap items-center justify-center gap-5 lg:justify-end" aria-label="Social">
                 {links.map((link) => (
                   <a

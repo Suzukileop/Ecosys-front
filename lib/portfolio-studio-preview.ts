@@ -1,4 +1,5 @@
 import type { PortfolioNavChromeLink } from '@/components/portfolio/portfolio-nav-extras';
+import type { PortfolioFooterSectionLinkOption } from '@/components/portfolio/portfolio-footer-design-layout';
 
 export const PORTFOLIO_STUDIO_PREVIEW_SOURCE = 'noprobleme-portfolio-studio';
 export const PORTFOLIO_STUDIO_EMBED_QUERY = 'embed';
@@ -8,6 +9,10 @@ export type PortfolioStudioPreviewMeta = {
   availableWorks: { id: string; title: string; imageUrl: string }[];
   availableServices: { id: string; title: string }[];
   navSocialLinkOptions: PortfolioNavChromeLink[];
+  /** Sections currently visible on the page (nav order + labels) — Footer's link picker. */
+  sectionLinkOptions: PortfolioFooterSectionLinkOption[];
+  /** Account profile photo — reference shown next to Footer → General → Photo. */
+  profileAvatarUrl: string | null;
 };
 
 export type PortfolioStudioPreviewMessage =
@@ -77,4 +82,6 @@ export const EMPTY_PORTFOLIO_STUDIO_PREVIEW_META: PortfolioStudioPreviewMeta = {
   availableWorks: [],
   availableServices: [],
   navSocialLinkOptions: [],
+  sectionLinkOptions: [],
+  profileAvatarUrl: null,
 };

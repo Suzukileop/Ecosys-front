@@ -7,7 +7,7 @@ import {
   FooterSocialLinkIcon,
   type EditorialContactLink,
 } from '@/components/portfolio/portfolio-section-primitives';
-import type { PortfolioContactPresentationSettings } from '@/components/portfolio/portfolio-contact-settings';
+import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
 import {
   DEFAULT_CONTENT_GUTTER,
   portfolioEditorialGutterX,
@@ -20,7 +20,6 @@ import {
   runContactDesignMotion,
 } from '@/components/portfolio/portfolio-contact-design-motion';
 
-const DEFAULT_EYEBROW = 'Say hey';
 const DEFAULT_TITLE = "Let's do something interesting";
 
 function PhoneBadgeIcon() {
@@ -42,9 +41,9 @@ function PhoneBadgeIcon() {
  * straight into a giant email, tight line-height, a magnetic circular arrow button riding
  * beside it. A wide horizontal image slides in from the right, slipping asymmetrically
  * behind the tail end of the text for depth. Below, borderless pill badges (phone + up to
- * two social links) sit in a row — hovering one highlights it while its siblings fade to
- * 0.3. The email/arrow pull magnetically toward the cursor and the arrow spins 45° on
- * hover; the image parallaxes at its own, slightly different scroll speed from the text.
+ * two social links) sit in a row. The email/arrow pull magnetically toward the cursor and
+ * the arrow spins 45° on hover; the image parallaxes at its own, slightly different scroll
+ * speed from the text.
  */
 export function ContactDesignMagneticOverlap({
   email,
@@ -53,7 +52,7 @@ export function ContactDesignMagneticOverlap({
   heroImageUrl,
   heroImageAlt,
   sectionTitle,
-  presentation,
+  layout,
   contentGutter = DEFAULT_CONTENT_GUTTER,
   colorMode,
 }: {
@@ -63,7 +62,7 @@ export function ContactDesignMagneticOverlap({
   heroImageUrl: string | null;
   heroImageAlt: string;
   sectionTitle?: string;
-  presentation: PortfolioContactPresentationSettings;
+  layout: ContactDesignLayoutResolver;
   contentGutter?: PortfolioContentGutter;
   colorMode: 'light' | 'dark';
 }) {
@@ -74,13 +73,15 @@ export function ContactDesignMagneticOverlap({
   const imageRef = useRef<HTMLDivElement>(null);
   const tokens = contactLightDarkTokens(colorMode);
 
-  const eyebrow = presentation.magneticOverlapEyebrow?.trim() || DEFAULT_EYEBROW;
-  const title = sectionTitle?.trim() || DEFAULT_TITLE;
+  const eyebrow = layout.text('eyebrow');
+  const showImage = layout.isVisible('portrait');
+  const badgeSetting = layout.option('socialBadges');
+  const title = layout.text('title') || sectionTitle?.trim() || DEFAULT_TITLE;
   const trimmedEmail = email?.trim() || '';
   const trimmedPhone = phone?.trim() || '';
   const displayName = heroImageAlt?.trim() || '';
   const initials = useMemo(() => initialsFromName(displayName), [displayName]);
-  const socialBadges = links.slice(0, 2);
+  const socialBadges = badgeSetting === 'all' ? links : links.slice(0, Number(badgeSetting) || 0);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -88,24 +89,6 @@ export function ContactDesignMagneticOverlap({
     if (prefersReducedMotion()) return undefined;
 
     return runContactDesignMotion(root, 'ContactDesignMagneticOverlap', () => {
-      // Badge hover — highlight one, dim its siblings.
-      const badges = Array.from(root.querySelectorAll<HTMLElement>('[data-badge]'));
-      const onBadgeEnter = (target: HTMLElement) => {
-        badges.forEach((badge) => {
-          gsap.to(badge, { opacity: badge === target ? 1 : 0.3, duration: 0.3, ease: 'power2.out', overwrite: 'auto' });
-        });
-      };
-      const onBadgeLeaveAll = () => {
-        badges.forEach((badge) => gsap.to(badge, { opacity: 1, duration: 0.3, ease: 'power2.out', overwrite: 'auto' }));
-      };
-      const badgeHandlers = badges.map((badge) => {
-        const handler = () => onBadgeEnter(badge);
-        badge.addEventListener('pointerenter', handler);
-        return handler;
-      });
-      const badgeRow = root.querySelector<HTMLElement>('[data-badge-row]');
-      badgeRow?.addEventListener('pointerleave', onBadgeLeaveAll);
-
       // Magnetic arrow button + 45deg spin on hover.
       const arrow = arrowRef.current;
       const glyph = arrowGlyphRef.current;
@@ -154,31 +137,34 @@ export function ContactDesignMagneticOverlap({
       }
 
       return () => {
-        badgeHandlers.forEach((handler, i) => badges[i].removeEventListener('pointerenter', handler));
-        badgeRow?.removeEventListener('pointerleave', onBadgeLeaveAll);
         detach.forEach((off) => off());
       };
     });
-  }, [colorMode]);
+  }, [colorMode, showImage]);
 
   return (
     <div
       ref={rootRef}
       className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden"
-      style={{ backgroundColor: tokens.bg }}
       data-pf-no-color-transition=""
     >
       <div className={`relative w-full py-20 sm:py-24 md:py-28 ${portfolioEditorialGutterX(contentGutter)}`}>
-        <div className="relative grid grid-cols-1 items-end gap-10 md:grid-cols-[minmax(0,1fr)_minmax(14rem,0.5fr)]">
+        <div
+          className={`relative grid grid-cols-1 items-end gap-10 ${
+            showImage ? 'md:grid-cols-[minmax(0,1fr)_minmax(14rem,0.5fr)]' : ''
+          }`}
+        >
           <div ref={textColRef} className="relative z-[1] order-2 md:order-1 md:pb-10">
-            <p
-              className="m-0 font-serif text-xl italic"
-              style={{ color: tokens.muted }}
-            >
-              {eyebrow}
-            </p>
+            {eyebrow ? (
+              <p
+                className="m-0 mb-4 font-serif text-xl italic"
+                style={{ color: tokens.muted }}
+              >
+                {eyebrow}
+              </p>
+            ) : null}
             <h2
-              className="m-0 mt-4 select-none font-sans text-[clamp(2.25rem,6.5vw,4.5rem)] font-black leading-[0.9] tracking-[-0.02em]"
+              className="m-0 select-none font-sans text-[clamp(2.25rem,6.5vw,4.5rem)] font-black leading-[0.9] tracking-[-0.02em]"
               style={{ color: tokens.ink }}
             >
               {title}
@@ -208,6 +194,7 @@ export function ContactDesignMagneticOverlap({
             ) : null}
           </div>
 
+          {showImage ? (
           <div
             ref={imageRef}
             className="relative order-1 aspect-[4/3] w-full overflow-hidden will-change-transform md:order-2 md:-mb-16 md:translate-y-6"
@@ -229,14 +216,14 @@ export function ContactDesignMagneticOverlap({
               </div>
             )}
           </div>
+          ) : null}
         </div>
 
         {trimmedPhone || socialBadges.length > 0 ? (
-          <div data-badge-row className="relative z-[1] mt-16 flex flex-wrap gap-4 md:mt-24">
+          <div className="relative z-[1] mt-16 flex flex-wrap gap-4 md:mt-24">
             {trimmedPhone ? (
               <a
                 href={`tel:${trimmedPhone.replace(/\s+/g, '')}`}
-                data-badge
                 data-pf-no-color-transition=""
                 className="inline-flex items-center gap-3 rounded-full border px-6 py-3.5 text-sm font-medium"
                 style={{ borderColor: tokens.border, color: tokens.ink }}
@@ -251,7 +238,6 @@ export function ContactDesignMagneticOverlap({
                 href={link.url}
                 target="_blank"
                 rel="noreferrer"
-                data-badge
                 data-pf-no-color-transition=""
                 className="inline-flex items-center gap-3 rounded-full border px-6 py-3.5 text-sm font-medium"
                 style={{ borderColor: tokens.border, color: tokens.ink }}

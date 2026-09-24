@@ -1,7 +1,6 @@
 'use client';
 
-import gsap from 'gsap';
-import { useLayoutEffect, useRef } from 'react';
+import type { CSSProperties } from 'react';
 import { formatPhoneDisplay } from '@/lib/phone';
 import {
   FooterSocialLinkIcon,
@@ -9,42 +8,14 @@ import {
 } from '@/components/portfolio/portfolio-section-primitives';
 import {
   resolveFooterCopyrightLabel,
-  resolveFooterDescription,
   type PortfolioFooterPresentationSettings,
 } from '@/components/portfolio/portfolio-footer-settings';
+import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
 import {
   portfolioEditorialGutterX,
   DEFAULT_CONTENT_GUTTER,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
-
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
-// Readable "resting" grey for every secondary element (brand/description, phone, location,
-// social icons, copyright) — the email is the sole exception, permanently at full ink (see
-// EMAIL_REST_OPACITY below), never dimmed to this baseline even at rest.
-const SECONDARY_REST_OPACITY = 0.5;
-const EMAIL_REST_OPACITY = 1;
-const UNFOCUSED_OPACITY = 0.08;
-const UNFOCUSED_BLUR = 'blur(1.5px)';
-const FOCUS_LIFT_PX = -4;
-
-const COMPACT_CSS = `
-.pf-footercompact-dim {
-  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s ease;
-}
-@media (prefers-reduced-motion: reduce) {
-  .pf-footercompact-dim {
-    transition: none !important;
-  }
-}
-`;
-
-function CompactStyles() {
-  return <style dangerouslySetInnerHTML={{ __html: COMPACT_CSS }} />;
-}
 
 function Dot({ muted }: { muted: string }) {
   return (
@@ -62,12 +33,20 @@ export interface FooterDesignCompactProps {
   phone?: string | null;
   locationLabel?: string | null;
   links: EditorialContactLink[];
+  layout: FooterDesignLayoutResolver;
   presentation: PortfolioFooterPresentationSettings;
   colorMode: 'light' | 'dark';
   /** Site-wide editorial gutter (settings.global.contentGutter) — this design is full-bleed
    *  and bypasses the legacy shell, so this is threaded in to line its own horizontal
    *  padding up with the rest of the page. */
   contentGutter?: PortfolioContentGutter;
+  /** Resolved from the Footer section's own Background tab (`sectionBackgroundStyle`) —
+   *  `undefined` when that tab is off, so this canvas is transparent (the page/global
+   *  wallpaper shows through) by default, same as every other Footer design now. */
+  backgroundStyle?: CSSProperties;
+  /** Multiplies every standardized body/label text size via `--pf-footer-font-scale` —
+   *  see the Footer section's General tab "Font size" control. */
+  fontSizeScale?: number;
 }
 
 /**
@@ -76,16 +55,13 @@ export interface FooterDesignCompactProps {
  * brand + bare (unboxed) social logos share a row with no dividing rule, and coordinates
  * settle onto one airy, dot-separated line (phone • email • address) instead of the old
  * icon-labeled stack.
- * Every secondary element (brand/description, phone, location, social icons, copyright)
- * rests at a readable 0.5 opacity — the email is the sole exception, permanently at full
- * ink with a thin permanent underline so it reads as the primary contact point even before
- * any hover. Hovering the email, phone, location, or a social logo lifts that one element
- * 4px with a snap to full ink, while everything else in the footer (including the email,
- * whenever it isn't the hovered element) sinks to 0.08 opacity with a 1.5px blur — a
- * theatrical, instant depth-of-field focus. Reads the resolved `colorMode` prop and
- * branches pure black / pure white literals, same full-bleed "bypass" convention as this
- * design family's other members (Monumental, Headline reveal, …); the canvas itself isn't
- * opted out of the site's global light/dark crossfade, so it inverts smoothly on toggle.
+ * Every element reads at full, normal opacity — the email carries a thin permanent underline
+ * so it reads as the primary contact point. Hovering a link is a self-contained accent (color/
+ * underline as already present) and never affects any other element in the footer. Reads the
+ * resolved `colorMode` prop and branches pure black / pure white literals, same full-bleed
+ * "bypass" convention as this design family's other members (Monumental, Headline reveal, …);
+ * the canvas itself isn't opted out of the site's global light/dark crossfade, so it inverts
+ * smoothly on toggle.
  */
 export function FooterDesignCompact({
   creatorName,
@@ -95,24 +71,19 @@ export function FooterDesignCompact({
   phone,
   locationLabel,
   links,
+  layout,
   presentation,
   colorMode,
   contentGutter = DEFAULT_CONTENT_GUTTER,
+  backgroundStyle,
+  fontSizeScale = 1,
 }: FooterDesignCompactProps) {
-  const emailRef = useRef<HTMLAnchorElement>(null);
-  const focusGroupRef = useRef<HTMLDivElement>(null);
-
   const isLight = colorMode === 'light';
-  const bg = isLight ? '#ffffff' : '#000000';
   const ink = isLight ? '#000000' : '#ffffff';
   const muted = isLight ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.55)';
 
-  const description = resolveFooterDescription({
-    source: presentation.descriptionSource,
-    custom: presentation.descriptionCustom,
-    bio,
-    maxLength: 160,
-  });
+  const showName = layout.isVisible('name');
+  const description = layout.bio('bio', bio, 160);
   const phoneTrimmed = presentation.showPhone ? phone?.trim() || null : null;
   const phoneDisplay = phoneTrimmed ? formatPhoneDisplay(phoneTrimmed) : null;
   const emailTrimmed = email?.trim() || null;
@@ -121,96 +92,35 @@ export function FooterDesignCompact({
     ? resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName)
     : null;
 
-  // Theatrical focus/blur: at rest every [data-footercompact-dim] sits at its own readable
-  // rest opacity (0.5 for everything, 1 for the email — see restOpacityFor below). Hovering
-  // a [data-footercompact-focus-item] (email / phone / a social logo) lifts it 4px and snaps
-  // it to full ink while every other dim target — including brand/description/address/
-  // copyright, not just sibling links — sinks to 0.08 opacity + a 1.5px blur.
-  useLayoutEffect(() => {
-    const group = focusGroupRef.current;
-    if (!group) return undefined;
-    if (prefersReducedMotion()) return undefined;
-
-    const dimTargets = Array.from(group.querySelectorAll<HTMLElement>('[data-footercompact-dim]'));
-    const focusItems = Array.from(group.querySelectorAll<HTMLElement>('[data-footercompact-focus-item]'));
-    if (dimTargets.length === 0 || focusItems.length === 0) return undefined;
-
-    const restOpacityFor = (el: HTMLElement) => (el === emailRef.current ? EMAIL_REST_OPACITY : SECONDARY_REST_OPACITY);
-
-    let ctx: gsap.Context | undefined;
-    try {
-      ctx = gsap.context(() => {
-        const onEnter = (event: Event) => {
-          const target = event.currentTarget as HTMLElement;
-          dimTargets.forEach((el) => {
-            const isTarget = el === target;
-            gsap.to(el, {
-              opacity: isTarget ? 1 : UNFOCUSED_OPACITY,
-              y: isTarget ? FOCUS_LIFT_PX : 0,
-              filter: isTarget ? 'blur(0px)' : UNFOCUSED_BLUR,
-              duration: 0.4,
-              ease: 'power2.out',
-              overwrite: 'auto',
-            });
-            if (el.hasAttribute('data-footercompact-focus-item')) {
-              el.style.color = isTarget ? ink : '';
-            }
-          });
-        };
-        const onLeave = () => {
-          dimTargets.forEach((el) => {
-            gsap.to(el, {
-              opacity: restOpacityFor(el),
-              y: 0,
-              filter: 'blur(0px)',
-              duration: 0.4,
-              ease: 'power2.out',
-              overwrite: 'auto',
-            });
-            if (el.hasAttribute('data-footercompact-focus-item')) {
-              el.style.color = '';
-            }
-          });
-        };
-
-        focusItems.forEach((item) => {
-          item.addEventListener('mouseenter', onEnter);
-          item.addEventListener('mouseleave', onLeave);
-        });
-
-        return () => {
-          focusItems.forEach((item) => {
-            item.removeEventListener('mouseenter', onEnter);
-            item.removeEventListener('mouseleave', onLeave);
-          });
-        };
-      }, group);
-    } catch (error) {
-      console.error('[FooterDesignCompact] focus-dim animation failed to initialize', error);
-      ctx?.revert();
-      gsap.set(dimTargets, { clearProps: 'all' });
-    }
-
-    return () => ctx?.revert();
-  }, [links, phoneDisplay, emailTrimmed, locationTrimmed, ink]);
-
   return (
     <footer
       id="footer"
       data-creator-id={creatorId}
       className="relative isolate left-1/2 w-screen -translate-x-1/2 overflow-hidden"
-      style={{ backgroundColor: bg, color: ink }}
+      style={{ ...backgroundStyle, color: ink, '--pf-footer-font-scale': fontSizeScale } as CSSProperties}
     >
-      <CompactStyles />
-
       <div className={`relative z-[1] w-full pb-12 pt-20 sm:pt-24 lg:pb-16 lg:pt-28 ${portfolioEditorialGutterX(contentGutter)}`}>
-        <div ref={focusGroupRef} className="flex flex-col items-center gap-10 text-center sm:items-stretch sm:gap-8 sm:text-left">
+        <div className="flex flex-col items-center gap-10 text-center sm:items-stretch sm:gap-8 sm:text-left">
           {/* 2. Brand + bare socials — no boxes, no divider. */}
           <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
-            {presentation.showBrand || description ? (
-              <div data-footercompact-dim="" className="pf-footercompact-dim max-w-xl space-y-2" style={{ opacity: SECONDARY_REST_OPACITY }}>
-                {presentation.showBrand ? <p className="text-base font-semibold">{creatorName}</p> : null}
-                {description ? <p className="text-base leading-[1.6]">{description}</p> : null}
+            {showName || description ? (
+              <div className="max-w-xl space-y-2">
+                {showName ? (
+                  <p
+                    className="font-semibold"
+                    style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
+                  >
+                    {creatorName}
+                  </p>
+                ) : null}
+                {description ? (
+                  <p
+                    className="leading-[1.6]"
+                    style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
+                  >
+                    {description}
+                  </p>
+                ) : null}
               </div>
             ) : null}
 
@@ -224,11 +134,8 @@ export function FooterDesignCompact({
                     rel="noreferrer"
                     aria-label={link.label}
                     title={link.label}
-                    data-footercompact-dim=""
-                    data-footercompact-focus-item=""
                     data-pf-no-color-transition=""
-                    className="pf-footercompact-dim inline-flex items-center justify-center p-2"
-                    style={{ opacity: SECONDARY_REST_OPACITY }}
+                    className="inline-flex items-center justify-center p-2 transition-opacity duration-300 hover:opacity-70"
                   >
                     <FooterSocialLinkIcon link={link} bare iconClassName="h-7 w-7" />
                   </a>
@@ -243,11 +150,9 @@ export function FooterDesignCompact({
               {phoneDisplay ? (
                 <a
                   href={`tel:${phoneTrimmed!.replace(/\s+/g, '')}`}
-                  data-footercompact-dim=""
-                  data-footercompact-focus-item=""
                   data-pf-no-color-transition=""
-                  className="pf-footercompact-dim w-fit text-base"
-                  style={{ opacity: SECONDARY_REST_OPACITY }}
+                  className="w-fit transition-opacity duration-300 hover:opacity-70"
+                  style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {phoneDisplay}
                 </a>
@@ -255,13 +160,10 @@ export function FooterDesignCompact({
               {phoneDisplay && emailTrimmed ? <Dot muted={muted} /> : null}
               {emailTrimmed ? (
                 <a
-                  ref={emailRef}
                   href={`mailto:${emailTrimmed}`}
-                  data-footercompact-dim=""
-                  data-footercompact-focus-item=""
                   data-pf-no-color-transition=""
-                  className="pf-footercompact-dim w-fit break-all border-b pb-0.5 text-base"
-                  style={{ opacity: EMAIL_REST_OPACITY, color: ink, borderColor: ink }}
+                  className="w-fit break-all border-b pb-0.5 transition-opacity duration-300 hover:opacity-70"
+                  style={{ color: ink, borderColor: ink, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {emailTrimmed}
                 </a>
@@ -269,9 +171,8 @@ export function FooterDesignCompact({
               {(phoneDisplay || emailTrimmed) && locationTrimmed ? <Dot muted={muted} /> : null}
               {locationTrimmed ? (
                 <p
-                  data-footercompact-dim=""
-                  className="pf-footercompact-dim w-fit max-w-xs text-base"
-                  style={{ opacity: SECONDARY_REST_OPACITY }}
+                  className="w-fit max-w-xs"
+                  style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {locationTrimmed}
                 </p>
@@ -281,7 +182,7 @@ export function FooterDesignCompact({
 
           {/* 4. Copyright — no rule above it, pure whitespace close. */}
           {copyrightText ? (
-            <p data-footercompact-dim="" className="pf-footercompact-dim text-[0.8rem]" style={{ opacity: SECONDARY_REST_OPACITY }}>
+            <p style={{ fontSize: 'calc(var(--pf-footer-label-size) * var(--pf-footer-font-scale, 1))' }}>
               {copyrightText}
             </p>
           ) : null}
@@ -293,7 +194,7 @@ export function FooterDesignCompact({
 
 export function FooterCompactWireframe() {
   return (
-    <svg viewBox="0 0 120 72" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
+    <svg viewBox="0 0 120 72" preserveAspectRatio="none" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
       <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
 
       {/* brand + bare social logos */}

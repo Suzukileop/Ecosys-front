@@ -1,7 +1,7 @@
 'use client';
 
 import gsap from 'gsap';
-import { useLayoutEffect, useRef, useState, type FormEvent, type RefObject } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties, type FormEvent, type RefObject } from 'react';
 import { formatPhoneDisplay } from '@/lib/phone';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { sendCreatorContactMessage } from '@/lib/marketplace-api';
@@ -12,10 +12,9 @@ import {
 } from '@/components/portfolio/portfolio-section-primitives';
 import {
   resolveFooterCopyrightLabel,
-  resolveFooterInternalLinksColumn,
-  type PortfolioFooterAutoSectionKey,
   type PortfolioFooterPresentationSettings,
 } from '@/components/portfolio/portfolio-footer-settings';
+import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
 import {
   portfolioEditorialGutterX,
   DEFAULT_CONTENT_GUTTER,
@@ -40,6 +39,9 @@ function prefersReducedMotion(): boolean {
  * private to that file, so every full-bleed design that needs it keeps its own copy
  * rather than importing across the "bypass" full-bleed boundary.
  */
+/** Same ceiling as this watermark's own static fallback (`clamp(4.5rem, 17vw, 15rem)`). */
+const MAX_FONT_SIZE_PX = 240;
+
 function useFitWidthTextSize(
   containerRef: RefObject<HTMLElement | null>,
   textRef: RefObject<HTMLElement | null>,
@@ -53,14 +55,25 @@ function useFitWidthTextSize(
     const REFERENCE_PX = 100;
 
     const fit = () => {
-      const targetWidth = container.getBoundingClientRect().width;
+      // `getBoundingClientRect()` reports the border-box width, which still includes this
+      // container's own left/right padding (the global content gutter) — fitting the text to
+      // that full width ignores the gutter entirely, so the text bleeds straight past the
+      // margin. Subtract the padding to get the actual available content width instead.
+      const style = window.getComputedStyle(container);
+      const horizontalPadding = parseFloat(style.paddingLeft || '0') + parseFloat(style.paddingRight || '0');
+      const targetWidth = container.getBoundingClientRect().width - horizontalPadding;
       if (targetWidth <= 0) return;
 
       textEl.style.fontSize = `${REFERENCE_PX}px`;
       const measuredWidth = textEl.getBoundingClientRect().width;
       if (measuredWidth <= 0) return;
 
-      textEl.style.fontSize = `${REFERENCE_PX * (targetWidth / measuredWidth)}px`;
+      // A short custom watermark (a handful of letters instead of a full name) needs a much
+      // bigger font to fill the same width — capped at the old static clamp's own ceiling
+      // (15rem) so it stays a background watermark instead of ballooning tall enough to
+      // overlap the content above it.
+      const fitted = REFERENCE_PX * (targetWidth / measuredWidth);
+      textEl.style.fontSize = `${Math.min(fitted, MAX_FONT_SIZE_PX)}px`;
     };
 
     fit();
@@ -190,7 +203,7 @@ function MonumentalField({
 }
 
 /** Bracketed text-link submit — magnetically pulled toward the cursor within a proximity radius. */
-function MonumentalSubmit({ pending, sent }: { pending: boolean; sent: boolean }) {
+function MonumentalSubmit({ pending, sent, label }: { pending: boolean; sent: boolean; label: string }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const arrowRef = useRef<HTMLSpanElement>(null);
@@ -255,7 +268,7 @@ function MonumentalSubmit({ pending, sent }: { pending: boolean; sent: boolean }
         data-pf-no-color-transition=""
       >
         <span className="text-neutral-600">[</span>
-        <span>{sent ? 'Message sent' : pending ? 'Sending…' : 'Send Message'}</span>
+        <span>{sent ? 'Message sent' : pending ? 'Sending…' : label}</span>
         <span ref={arrowRef} aria-hidden>
           →
         </span>
@@ -264,8 +277,6 @@ function MonumentalSubmit({ pending, sent }: { pending: boolean; sent: boolean }
     </div>
   );
 }
-
-const DEFAULT_HEADLINE = "Let's build\nsomething remarkable";
 
 /**
  * "Monumental" — the third Footer design: an asymmetric, monumental three-column
@@ -282,9 +293,12 @@ export function FooterDesignMonumental({
   phone,
   locationLabel,
   links,
+  navLinks,
+  layout,
   presentation,
-  visibleSectionLinks,
   contentGutter = DEFAULT_CONTENT_GUTTER,
+  backgroundStyle,
+  fontSizeScale = 1,
 }: {
   creatorName: string;
   creatorId: string;
@@ -292,17 +306,27 @@ export function FooterDesignMonumental({
   phone: string | null;
   locationLabel: string | null;
   links: EditorialContactLink[];
+  /** Section links picked in Layout settings — already filtered to visible sections. */
+  navLinks: { id: string; label: string; url: string }[];
+  layout: FooterDesignLayoutResolver;
   presentation: PortfolioFooterPresentationSettings;
-  visibleSectionLinks?: Partial<Record<PortfolioFooterAutoSectionKey, boolean>>;
   /** Site-wide editorial gutter (settings.global.contentGutter) — this design is full-bleed
    *  and bypasses the legacy shell, so this is threaded in to line its own horizontal
    *  padding up with the rest of the page. */
   contentGutter?: PortfolioContentGutter;
+  /** Resolved from the Footer section's own Background tab (`sectionBackgroundStyle`) —
+   *  `undefined` when that tab is off, so this canvas is transparent (the page/global
+   *  wallpaper shows through) by default, same as every other Footer design now. */
+  backgroundStyle?: CSSProperties;
+  /** Multiplies every standardized body/label text size via `--pf-footer-font-scale` —
+   *  see the Footer section's General tab "Font size" control. */
+  fontSizeScale?: number;
 }) {
   const rootRef = useRef<HTMLElement>(null);
   const watermarkRef = useRef<HTMLDivElement>(null);
   const watermarkContainerRef = useRef<HTMLDivElement>(null);
-  useFitWidthTextSize(watermarkContainerRef, watermarkRef, creatorName);
+  const watermarkText = layout.text('watermark', creatorName);
+  useFitWidthTextSize(watermarkContainerRef, watermarkRef, watermarkText ?? '');
 
   const [values, setValues] = useState({ email: '', subject: '', message: '' });
   const [pending, setPending] = useState(false);
@@ -373,15 +397,11 @@ export function FooterDesignMonumental({
     }
   };
 
-  const headlineLines = (presentation.monumentalHeadline?.trim() || DEFAULT_HEADLINE).split('\n');
+  const headlineLines = layout.text('headline')?.split('\n') ?? [];
+  const submitLabel = layout.text('submitLabel') ?? 'Send Message';
   const copyrightLabel = presentation.showCopyright
     ? resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName)
     : null;
-
-  const navLinks = [
-    { id: 'monument-home', label: 'Home', href: '#hero' },
-    ...resolveFooterInternalLinksColumn(presentation, visibleSectionLinks).links,
-  ];
 
   const phoneDisplay = presentation.showPhone && phone?.trim() ? formatPhoneDisplay(phone.trim()) : null;
   const locationValue = presentation.showLocation ? locationLabel?.trim() || null : null;
@@ -391,37 +411,42 @@ export function FooterDesignMonumental({
     <footer
       id="footer"
       ref={rootRef}
-      className="relative left-1/2 isolate w-screen -translate-x-1/2 overflow-hidden bg-black"
+      className="relative left-1/2 isolate w-screen -translate-x-1/2 overflow-hidden"
+      style={{ ...backgroundStyle, '--pf-footer-font-scale': fontSizeScale } as CSSProperties}
       data-pf-no-color-transition=""
     >
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-[2vh]">
-        {/* Same max-width + side padding as the content grid below, so the watermark's fit
-            width matches the global margins exactly. `watermarkRef` is already `inline-block`
-            (shrink-wraps to its own text, unlike a plain block element) so it doubles as the
-            fit hook's measurement target with no extra wrapper span needed. */}
-        <div ref={watermarkContainerRef} className={`w-full overflow-hidden text-center ${portfolioEditorialGutterX(contentGutter)}`}>
-          <div
-            ref={watermarkRef}
-            className="inline-block select-none whitespace-nowrap font-serif font-bold uppercase tracking-tight text-white/[0.05]"
-            style={{ fontSize: 'clamp(4.5rem, 17vw, 15rem)', lineHeight: 1.1, paddingBottom: '0.08em' }}
-          >
-            {creatorName}
+      {watermarkText ? (
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-[2vh]">
+          {/* Same max-width + side padding as the content grid below, so the watermark's fit
+              width matches the global margins exactly. `watermarkRef` is already `inline-block`
+              (shrink-wraps to its own text, unlike a plain block element) so it doubles as the
+              fit hook's measurement target with no extra wrapper span needed. */}
+          <div ref={watermarkContainerRef} className={`w-full overflow-hidden text-center ${portfolioEditorialGutterX(contentGutter)}`}>
+            <div
+              ref={watermarkRef}
+              className="inline-block select-none whitespace-nowrap font-serif font-bold uppercase tracking-tight text-white/[0.05]"
+              style={{ fontSize: 'clamp(4.5rem, 17vw, 15rem)', lineHeight: 1.1, paddingBottom: '0.08em' }}
+            >
+              {watermarkText}
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       <div className={`relative z-[1] grid w-full grid-cols-1 gap-16 py-20 sm:py-28 lg:grid-cols-[1.5fr_0.85fr_0.85fr] lg:gap-10 lg:py-32 ${portfolioEditorialGutterX(contentGutter)}`}>
         <div className="flex min-w-0 flex-col justify-between gap-14">
           <div>
-            <p className="font-serif text-[clamp(2.25rem,5.4vw,4.5rem)] font-medium leading-[0.98] tracking-[-0.02em] text-white">
-              {headlineLines.map((line, index) => (
-                <span key={index} className="block">
-                  {line}
-                </span>
-              ))}
-            </p>
+            {headlineLines.length > 0 ? (
+              <p className="mb-12 font-serif text-[clamp(2.25rem,5.4vw,4.5rem)] font-medium leading-[0.98] tracking-[-0.02em] text-white">
+                {headlineLines.map((line, index) => (
+                  <span key={index} className="block">
+                    {line}
+                  </span>
+                ))}
+              </p>
+            ) : null}
 
-            <form onSubmit={onSubmit} className="mt-12 flex max-w-md flex-col gap-8" noValidate>
+            <form onSubmit={onSubmit} className="flex max-w-md flex-col gap-8" noValidate>
               <MonumentalField
                 id="footer-monument-email"
                 label="Email"
@@ -451,17 +476,31 @@ export function FooterDesignMonumental({
                 </p>
               ) : null}
 
-              <MonumentalSubmit pending={pending} sent={sent} />
+              <MonumentalSubmit pending={pending} sent={sent} label={submitLabel} />
             </form>
           </div>
 
-          {copyrightLabel ? <p className="text-xs font-medium tracking-wide text-neutral-600">{copyrightLabel}</p> : null}
+          {copyrightLabel ? (
+            <p
+              className="font-medium tracking-wide text-neutral-600"
+              style={{ fontSize: 'calc(var(--pf-footer-label-size) * var(--pf-footer-font-scale, 1))' }}
+            >
+              {copyrightLabel}
+            </p>
+          ) : null}
         </div>
 
         {/* Center column is deliberately left mostly empty — negative space between the
             form and the social/nav axis on the right, per the editorial "breathing room" spec. */}
         <div className="flex min-w-0 flex-col justify-end gap-14">
-          {locationValue ? <p className="max-w-[16rem] text-sm text-neutral-500">{locationValue}</p> : null}
+          {locationValue ? (
+            <p
+              className="max-w-[16rem] text-neutral-500"
+              style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
+            >
+              {locationValue}
+            </p>
+          ) : null}
         </div>
 
         <div className="flex min-w-0 flex-col justify-between gap-14 lg:items-end">
@@ -487,8 +526,9 @@ export function FooterDesignMonumental({
               {navLinks.map((link) => (
                 <a
                   key={link.id}
-                  href={link.href}
-                  className="w-fit text-sm font-medium uppercase tracking-[0.14em] text-neutral-400 transition hover:text-white lg:text-right"
+                  href={link.url}
+                  className="w-fit font-medium uppercase tracking-[0.14em] text-neutral-400 transition hover:text-white lg:text-right"
+                  style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {link.label}
                 </a>
@@ -497,7 +537,11 @@ export function FooterDesignMonumental({
           </div>
 
           {phoneDisplay ? (
-            <a href={`tel:${phone!.replace(/\s+/g, '')}`} className="text-sm text-neutral-500 transition hover:text-white">
+            <a
+              href={`tel:${phone!.replace(/\s+/g, '')}`}
+              className="text-neutral-500 transition hover:text-white"
+              style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
+            >
               {phoneDisplay}
             </a>
           ) : null}

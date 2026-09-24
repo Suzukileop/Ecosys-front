@@ -7,6 +7,7 @@ import {
 } from '@/components/portfolio/portfolio-footer-settings';
 import {
   FOOTER_HEADER_MARGIN_BOTTOM_REM,
+  FOOTER_HEADER_PADDING_REM,
   footerHeaderPaletteTokenColor,
 } from '@/components/portfolio/portfolio-footer-header-settings';
 
@@ -42,7 +43,11 @@ export function FooterHeaderHeroHeader({
   return (
     <header
       className="pf-footer-header-hero-header relative w-full text-center"
-      style={{ marginBottom: `${FOOTER_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
+      style={{
+        marginBottom: `${FOOTER_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem`,
+        paddingTop: `${FOOTER_HEADER_PADDING_REM[presentation.headerPaddingTop ?? 'none']}rem`,
+        paddingBottom: `${FOOTER_HEADER_PADDING_REM[presentation.headerPaddingBottom ?? 'none']}rem`,
+      }}
       data-footer-header="hero"
     >
       <div className="pf-footer-header-hero-stage flex flex-col items-center">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { FaqItem } from '@/types/ecosystem';
@@ -26,11 +26,15 @@ export function FaqTriGridDesign({
   items,
   header,
   activeColorMode = 'light',
+  fontSizeScale = 1,
 }: {
   items: FaqItem[];
   header?: ReactNode;
   /** Section's resolved light/dark mode (Global → Theme, or this section's own override). */
   activeColorMode?: 'light' | 'dark';
+  /** Multiplies every font-size in this design via `--pf-faq-font-scale` — see the FAQ
+   *  General tab's "Font size" control (`faqPremiumFontScale` in portfolio-faq-settings.ts). */
+  fontSizeScale?: number;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const colRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -143,9 +147,10 @@ export function FaqTriGridDesign({
   return (
     <div
       ref={rootRef}
-      className="pf-faq-tri w-full px-5 py-10 sm:px-10 sm:py-14 lg:px-14 lg:py-16"
+      className="pf-faq-tri w-full"
       data-pf-faq-mode={activeColorMode === 'dark' ? 'dark' : 'light'}
       onMouseLeave={handleLeave}
+      style={{ '--pf-faq-font-scale': fontSizeScale } as CSSProperties}
     >
       <div className="pf-faq-tri-head">{header}</div>
       <div className="pf-faq-tri-grid">

@@ -18,8 +18,16 @@ import {
   revealOnceVisible,
   runContactDesignMotion,
 } from '@/components/portfolio/portfolio-contact-design-motion';
+import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
 
 const DEFAULT_TITLE = 'Contact';
+
+/** Layout settings → "Portrait shape". */
+const PORTRAIT_SHAPE_CLASS: Record<string, string> = {
+  circle: 'rounded-full',
+  rounded: 'rounded-[2rem]',
+  square: 'rounded-none',
+};
 
 /**
  * Concept 7 — "Broken grid": a deliberately shattered composition — "CONTACT" pinned top
@@ -27,8 +35,7 @@ const DEFAULT_TITLE = 'Contact';
  * right, and a monumental email owning the whole bottom right. A perfectly circular
  * portrait floats centered between the social list and the email, drifting with slow,
  * damped mouse-tracking parallax. The title and email slide up out of an invisible mask on
- * scroll-entry; hovering the email or a social link snaps it to full ink while every other
- * text node and the circle collapse to 0.15 opacity.
+ * scroll-entry.
  */
 export function ContactDesignBrokenGrid({
   email,
@@ -40,6 +47,7 @@ export function ContactDesignBrokenGrid({
   sectionTitle,
   contentGutter = DEFAULT_CONTENT_GUTTER,
   colorMode,
+  layout,
 }: {
   email: string | null;
   phone: string | null;
@@ -50,17 +58,20 @@ export function ContactDesignBrokenGrid({
   sectionTitle?: string;
   contentGutter?: PortfolioContentGutter;
   colorMode: 'light' | 'dark';
+  layout: ContactDesignLayoutResolver;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const circleRef = useRef<HTMLDivElement>(null);
   const tokens = contactLightDarkTokens(colorMode);
 
-  const title = sectionTitle?.trim() || DEFAULT_TITLE;
+  const title = layout.text('title') || sectionTitle?.trim() || DEFAULT_TITLE;
   const trimmedEmail = email?.trim() || '';
   const trimmedPhone = phone?.trim() || '';
   const trimmedLocation = locationLabel?.trim() || '';
   const displayName = heroImageAlt?.trim() || '';
   const initials = useMemo(() => initialsFromName(displayName), [displayName]);
+  const showPortrait = layout.isVisible('portrait');
+  const portraitShapeClass = PORTRAIT_SHAPE_CLASS[layout.option('portraitShape')] ?? PORTRAIT_SHAPE_CLASS.circle;
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -80,30 +91,7 @@ export function ContactDesignBrokenGrid({
           );
         });
 
-        // Hover focus — target snaps to full ink, every other text node + the circle dim.
-        const dimItems = Array.from(root.querySelectorAll<HTMLElement>('[data-dim]'));
         const circle = circleRef.current;
-        const setFocus = (target: HTMLElement | null) => {
-          dimItems.forEach((el) => {
-            gsap.to(el, {
-              opacity: target ? (el === target ? 1 : 0.15) : 1,
-              duration: 0.35,
-              ease: 'power2.out',
-              overwrite: 'auto',
-            });
-          });
-          if (circle) {
-            gsap.to(circle, { opacity: target ? 0.15 : 1, duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
-          }
-        };
-        const focusTargets = Array.from(root.querySelectorAll<HTMLElement>('[data-focus-link]'));
-        const enterHandlers = focusTargets.map((el) => {
-          const handler = () => setFocus(el);
-          el.addEventListener('pointerenter', handler);
-          return handler;
-        });
-        const onLeave = () => setFocus(null);
-        root.addEventListener('pointerleave', onLeave);
 
         // Mouse-tracking parallax on the circular portrait — slow, heavily damped.
         let onMove: ((event: PointerEvent) => void) | undefined;
@@ -121,20 +109,17 @@ export function ContactDesignBrokenGrid({
         }
 
         return () => {
-          focusTargets.forEach((el, i) => el.removeEventListener('pointerenter', enterHandlers[i]));
-          root.removeEventListener('pointerleave', onLeave);
           if (onMove) root.removeEventListener('pointermove', onMove);
         };
       },
-      '[data-mask-line], [data-dim]'
+      '[data-mask-line]'
     );
-  }, [colorMode, title]);
+  }, [colorMode, title, showPortrait]);
 
   return (
     <div
       ref={rootRef}
       className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden"
-      style={{ backgroundColor: tokens.bg }}
       data-pf-no-color-transition=""
     >
       <div
@@ -147,7 +132,7 @@ export function ContactDesignBrokenGrid({
             className="m-0 block overflow-hidden select-none font-sans text-[clamp(2.75rem,8vw,5.5rem)] font-black uppercase leading-[0.9] tracking-[-0.03em]"
             style={{ color: tokens.ink }}
           >
-            <span data-mask-line data-dim className="block will-change-transform">
+            <span data-mask-line className="block will-change-transform">
               {title}
             </span>
           </h2>
@@ -160,8 +145,6 @@ export function ContactDesignBrokenGrid({
                   href={link.url}
                   target="_blank"
                   rel="noreferrer"
-                  data-dim
-                  data-focus-link
                   data-pf-no-color-transition=""
                   className="text-[11px] font-semibold uppercase tracking-[0.3em]"
                   style={{ color: tokens.ink }}
@@ -173,9 +156,10 @@ export function ContactDesignBrokenGrid({
           ) : null}
         </div>
 
+        {showPortrait ? (
         <div
           ref={circleRef}
-          className="order-2 relative mx-auto aspect-square w-56 shrink-0 overflow-hidden rounded-full will-change-transform sm:w-64 md:absolute md:left-1/2 md:top-1/2 md:mx-0 md:w-72 md:-translate-x-1/2 md:-translate-y-1/2 lg:w-80"
+          className={`order-2 relative mx-auto aspect-square w-56 shrink-0 overflow-hidden ${portraitShapeClass} will-change-transform sm:w-64 md:absolute md:left-1/2 md:top-1/2 md:mx-0 md:w-72 md:-translate-x-1/2 md:-translate-y-1/2 lg:w-80`}
           data-pf-no-color-transition=""
         >
           {heroImageUrl ? (
@@ -197,6 +181,7 @@ export function ContactDesignBrokenGrid({
             </div>
           )}
         </div>
+        ) : null}
 
         {links.length > 0 ? (
           <nav className="order-3 flex flex-wrap justify-center gap-x-6 gap-y-3 md:hidden" aria-label="Social">
@@ -206,8 +191,6 @@ export function ContactDesignBrokenGrid({
                 href={link.url}
                 target="_blank"
                 rel="noreferrer"
-                data-dim
-                data-focus-link
                 data-pf-no-color-transition=""
                 className="text-[11px] font-semibold uppercase tracking-[0.3em]"
                 style={{ color: tokens.ink }}
@@ -224,7 +207,6 @@ export function ContactDesignBrokenGrid({
           >
             {trimmedLocation ? (
               <span
-                data-dim
                 data-pf-no-color-transition=""
                 className="block max-w-[16rem] text-sm font-medium leading-relaxed"
                 style={{ color: tokens.muted }}
@@ -235,7 +217,6 @@ export function ContactDesignBrokenGrid({
             {trimmedPhone ? (
               <a
                 href={`tel:${trimmedPhone.replace(/\s+/g, '')}`}
-                data-dim
                 data-pf-no-color-transition=""
                 className="block border-t pt-2 text-base font-medium"
                 style={{ color: tokens.ink, borderColor: tokens.border }}
@@ -252,12 +233,11 @@ export function ContactDesignBrokenGrid({
           >
             <a
               href={`mailto:${trimmedEmail}`}
-              data-focus-link
               data-pf-no-color-transition=""
               className="m-0 block w-full min-w-0 overflow-hidden break-all text-center font-sans text-[clamp(2.25rem,8vw,5.5rem)] font-black leading-[0.92] tracking-[-0.03em] md:text-right"
               style={{ color: tokens.ink }}
             >
-              <span data-mask-line data-dim className="block will-change-transform">
+              <span data-mask-line className="block will-change-transform">
                 {trimmedEmail}
               </span>
             </a>

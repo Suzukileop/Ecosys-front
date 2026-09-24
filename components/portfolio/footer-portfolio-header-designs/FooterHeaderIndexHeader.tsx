@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { DEFAULT_FOOTER_PRESENTATION, type PortfolioFooterPresentationSettings } from '@/components/portfolio/portfolio-footer-settings';
 import {
   FOOTER_HEADER_MARGIN_BOTTOM_REM,
+  FOOTER_HEADER_PADDING_REM,
   footerHeaderPaletteTokenColor,
   type PortfolioFooterHeaderTitleSize,
   type PortfolioFooterHeaderTitleWeight,
@@ -90,7 +91,11 @@ export function FooterHeaderIndexHeader({
   return (
     <header
       className="pf-footer-header-index-header relative w-full text-left"
-      style={{ marginBottom: `${FOOTER_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
+      style={{
+        marginBottom: `${FOOTER_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem`,
+        paddingTop: `${FOOTER_HEADER_PADDING_REM[presentation.headerPaddingTop ?? 'none']}rem`,
+        paddingBottom: `${FOOTER_HEADER_PADDING_REM[presentation.headerPaddingBottom ?? 'none']}rem`,
+      }}
       data-footer-header="index"
     >
       <div className="mb-6 flex items-center gap-4 sm:mb-8">

@@ -678,6 +678,8 @@ export function PortfolioLivePreview({
               availableWorks={previewMeta.availableWorks}
               availableServices={previewMeta.availableServices}
               navSocialLinkOptions={previewMeta.navSocialLinkOptions}
+              sectionLinkOptions={previewMeta.sectionLinkOptions}
+              profileAvatarUrl={previewMeta.profileAvatarUrl}
               onPreviewSectionFocus={focusPreviewSection}
             />
           </div>

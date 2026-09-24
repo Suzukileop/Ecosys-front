@@ -1,7 +1,7 @@
 'use client';
 
 import gsap from 'gsap';
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, type CSSProperties, type MouseEvent } from 'react';
 import { formatPhoneDisplay } from '@/lib/phone';
 import type { EditorialContactLink } from '@/components/portfolio/portfolio-section-primitives';
 import {
@@ -9,28 +9,21 @@ import {
   portfolioEditorialGutterX,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-/** Resting opacity for every secondary text/coordinate; how far the non-hovered rest of the
- *  footer sinks once one focus item is hovered; and the blur that goes with it. Raised from an
- *  earlier 0.3/0.08 pass that read as illegible body copy on a pure-black stage — 0.6 keeps the
- *  "whisper at rest, shout on hover" language while every line stays comfortably readable. */
-const RESTING_OPACITY = 0.6;
-const UNFOCUSED_OPACITY = 0.12;
-const UNFOCUSED_BLUR = 'blur(1px)';
-
 const HEADLINE_REVEAL_CSS = `
-.pf-hlreveal-dim {
-  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s cubic-bezier(0.16, 1, 0.3, 1), color 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+.pf-hlreveal-link {
+  transition: color 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .pf-hlreveal-mode {
   transition: background-color 0.5s cubic-bezier(0.16, 1, 0.3, 1), color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @media (prefers-reduced-motion: reduce) {
-  .pf-hlreveal-dim,
+  .pf-hlreveal-link,
   .pf-hlreveal-mode {
     transition: none !important;
   }
@@ -45,7 +38,17 @@ function HeadlineRevealStyles() {
  *  inside sweeps in on direct hover. Same gsap.quickTo idiom as every other Footer design's
  *  magnetic control (Monumental's submit, Swiss Magnetic's circular CTA, Editorial Grid's arrow
  *  square), sized here as a labeled pill instead. */
-function HeadlineRevealContactButton({ href, ink, inkContrast }: { href: string; ink: string; inkContrast: string }) {
+function HeadlineRevealContactButton({
+  href,
+  ink,
+  inkContrast,
+  label,
+}: {
+  href: string;
+  ink: string;
+  inkContrast: string;
+  label: string;
+}) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLAnchorElement>(null);
   const arrowRef = useRef<HTMLSpanElement>(null);
@@ -108,13 +111,14 @@ function HeadlineRevealContactButton({ href, ink, inkContrast }: { href: string;
       <a
         ref={btnRef}
         href={href}
+        {...(/^https?:\/\//i.test(href) ? { target: '_blank', rel: 'noreferrer' } : {})}
         onMouseEnter={handleEnter}
         onMouseLeave={handleLeave}
         data-pf-no-color-transition=""
         className="pf-hlreveal-mode inline-flex items-center gap-3 rounded-full px-7 py-3.5 text-sm font-semibold uppercase tracking-[0.14em] sm:px-8 sm:py-4"
         style={{ backgroundColor: ink, color: inkContrast }}
       >
-        Contact me
+        {label}
         <span ref={arrowRef} aria-hidden className="inline-block">
           →
         </span>
@@ -132,6 +136,7 @@ export interface FooterDesignHeadlineRevealProps {
   locationLabel?: string | null;
   links: EditorialContactLink[];
   navLinks: { id: string; label: string; url: string }[];
+  layout: FooterDesignLayoutResolver;
   copyrightText: string;
   contactHref: string;
   colorMode: 'light' | 'dark';
@@ -139,17 +144,22 @@ export interface FooterDesignHeadlineRevealProps {
    *  (bypasses the legacy footer shell), so it needs the same gutter every other section
    *  respects passed in explicitly to keep its content column aligned with the rest of the page. */
   contentGutter?: PortfolioContentGutter;
+  /** Resolved from the Footer section's own Background tab (`sectionBackgroundStyle`) —
+   *  `undefined` when that tab is off, so this canvas is transparent (the page/global
+   *  wallpaper shows through) by default, same as every other Footer design now. */
+  backgroundStyle?: CSSProperties;
+  /** Multiplies every standardized body/label text size via `--pf-footer-font-scale` —
+   *  see the Footer section's General tab "Font size" control. */
+  fontSizeScale?: number;
 }
 
 /**
  * "Headline Reveal" — the borderless, high-contrast rework of the classic columns-with-
  * separators Footer (no default headline — that role is now the shared Header mechanism's
  * job): a divider-free grid (identity + bio, navigation, coordinates & social links — every
- * one a bare floating label, no icon chips, no vertical rule) sits at a quiet 0.6 resting
- * opacity — legible on its own, not just decorative. Hovering any single coordinate snaps it
- * to full ink with a
- * 4px kinetic nudge while every other text block and column in the footer sinks to 0.12 opacity
- * with a 1px blur — a theatrical spotlight, not just a sibling dim. A
+ * one a bare floating label, no icon chips, no vertical rule) reads at full ink, no resting
+ * dim. Hovering any single coordinate nudges it 4px with its own color/transform transition —
+ * a self-contained accent that never touches any other element on the page. A
  * magnetic "Contact me" pill closes the section next to the copyright line. Reads the resolved
  * `colorMode` prop and branches pure black / pure white literals — same full-bleed "bypass"
  * convention as this design family's other members. Its own horizontal padding is the
@@ -166,95 +176,51 @@ export function FooterDesignHeadlineReveal({
   locationLabel,
   links,
   navLinks,
-  copyrightText,
+  layout,
   contactHref,
   colorMode,
   contentGutter = DEFAULT_CONTENT_GUTTER,
+  backgroundStyle,
+  fontSizeScale = 1,
 }: FooterDesignHeadlineRevealProps) {
   const rootRef = useRef<HTMLElement>(null);
-  const focusGroupRef = useRef<HTMLDivElement>(null);
 
   const isLight = colorMode === 'light';
-  const bg = isLight ? '#ffffff' : '#000000';
   const ink = isLight ? '#000000' : '#ffffff';
   const inkContrast = isLight ? '#ffffff' : '#000000';
-  const muted = isLight ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.55)';
 
-  const bioTrimmed = bio?.trim() || null;
+  const showName = layout.isVisible('name');
+  const bioTrimmed = layout.bio('bio', bio);
+  const ctaLabel = layout.text('ctaLabel');
   const phoneTrimmed = phone?.trim() || null;
   const phoneDisplay = phoneTrimmed ? formatPhoneDisplay(phoneTrimmed) : null;
   const emailTrimmed = email?.trim() || null;
   const locationTrimmed = locationLabel?.trim() || null;
+  // Layout settings → "Button link". A channel the profile doesn't have (no phone, no link picked)
+  // falls back to the page's default contact target instead of a dead button.
+  const ctaTarget = layout.target('ctaTarget');
+  const ctaHref =
+    ctaTarget.mode === 'phone' && phoneTrimmed
+      ? `tel:${phoneTrimmed.replace(/\s+/g, '')}`
+      : ctaTarget.mode === 'link' && ctaTarget.url
+        ? ctaTarget.url
+        : ctaTarget.mode === 'email' && emailTrimmed
+          ? `mailto:${emailTrimmed}`
+          : contactHref;
 
-  // Theatrical focus/blur: at rest every [data-hlreveal-dim] sits at RESTING_OPACITY (0.3).
-  // Hovering a [data-hlreveal-focus-item] snaps that one element to full ink while every other
-  // dim target — including the headline and the identity/bio block, not just sibling links —
-  // sinks to UNFOCUSED_OPACITY with a blur.
-  useLayoutEffect(() => {
-    const group = focusGroupRef.current;
-    if (!group) return undefined;
-    if (prefersReducedMotion()) return undefined;
-
-    const dimTargets = Array.from(group.querySelectorAll<HTMLElement>('[data-hlreveal-dim]'));
-    const focusItems = Array.from(group.querySelectorAll<HTMLElement>('[data-hlreveal-focus-item]'));
-    if (dimTargets.length === 0 || focusItems.length === 0) return undefined;
-
-    let ctx: gsap.Context | undefined;
-    try {
-      ctx = gsap.context(() => {
-        const onEnter = (event: Event) => {
-          const target = event.currentTarget as HTMLElement;
-          dimTargets.forEach((el) => {
-            const isTarget = el === target;
-            gsap.to(el, {
-              opacity: isTarget ? 1 : UNFOCUSED_OPACITY,
-              filter: isTarget ? 'blur(0px)' : UNFOCUSED_BLUR,
-              x: isTarget ? 4 : 0,
-              duration: 0.45,
-              ease: 'power2.out',
-              overwrite: 'auto',
-            });
-            if (el.hasAttribute('data-hlreveal-focus-item')) {
-              el.style.color = isTarget ? ink : '';
-            }
-          });
-        };
-        const onLeave = () => {
-          dimTargets.forEach((el) => {
-            gsap.to(el, {
-              opacity: RESTING_OPACITY,
-              filter: 'blur(0px)',
-              x: 0,
-              duration: 0.45,
-              ease: 'power2.out',
-              overwrite: 'auto',
-            });
-            if (el.hasAttribute('data-hlreveal-focus-item')) {
-              el.style.color = '';
-            }
-          });
-        };
-
-        focusItems.forEach((item) => {
-          item.addEventListener('mouseenter', onEnter);
-          item.addEventListener('mouseleave', onLeave);
-        });
-
-        return () => {
-          focusItems.forEach((item) => {
-            item.removeEventListener('mouseenter', onEnter);
-            item.removeEventListener('mouseleave', onLeave);
-          });
-        };
-      }, group);
-    } catch (error) {
-      console.error('[FooterDesignHeadlineReveal] focus-dim animation failed to initialize', error);
-      ctx?.revert();
-      gsap.set(dimTargets, { clearProps: 'all' });
-    }
-
-    return () => ctx?.revert();
-  }, [navLinks, links, phoneDisplay, emailTrimmed, locationTrimmed, ink]);
+  // Self-contained hover accent: the hovered link nudges 4px and takes the full ink color via
+  // its own onMouseEnter/onMouseLeave, without touching any other element (see
+  // handleLinkEnter/handleLinkLeave below).
+  const handleLinkEnter = (event: MouseEvent<HTMLElement>) => {
+    const el = event.currentTarget;
+    el.style.color = ink;
+    el.style.transform = 'translateX(4px)';
+  };
+  const handleLinkLeave = (event: MouseEvent<HTMLElement>) => {
+    const el = event.currentTarget;
+    el.style.color = '';
+    el.style.transform = '';
+  };
 
   return (
     <footer
@@ -262,24 +228,31 @@ export function FooterDesignHeadlineReveal({
       ref={rootRef}
       data-creator-id={creatorId}
       className="pf-hlreveal-mode relative isolate left-1/2 w-screen -translate-x-1/2 overflow-hidden"
-      style={{ backgroundColor: bg, color: ink }}
+      style={{ ...backgroundStyle, color: ink, '--pf-footer-font-scale': fontSizeScale } as CSSProperties}
       data-pf-no-color-transition=""
     >
       <HeadlineRevealStyles />
 
       <div className={`relative z-[1] w-full pb-12 pt-20 sm:pt-24 lg:pb-16 lg:pt-28 ${portfolioEditorialGutterX(contentGutter)}`}>
         {/* Borderless grid — whitespace is the only separator. */}
-        <div ref={focusGroupRef} className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-16 lg:gap-24">
-          <div data-hlreveal-dim="" className="pf-hlreveal-dim flex flex-col gap-4" style={{ opacity: RESTING_OPACITY }}>
-            <p
-              data-pf-no-color-transition=""
-              className="pf-hlreveal-mode text-base font-semibold"
-              style={{ color: ink }}
-            >
-              {creatorName}
-            </p>
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-16 lg:gap-24">
+          <div className="flex flex-col gap-4">
+            {showName ? (
+              <p
+                data-pf-no-color-transition=""
+                className="pf-hlreveal-mode font-semibold"
+                style={{ color: ink, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
+              >
+                {creatorName}
+              </p>
+            ) : null}
             {bioTrimmed ? (
-              <p className="max-w-[24rem] text-[0.95rem] leading-[1.6]">{bioTrimmed}</p>
+              <p
+                className="max-w-[24rem] leading-[1.6]"
+                style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
+              >
+                {bioTrimmed}
+              </p>
             ) : null}
           </div>
 
@@ -288,11 +261,11 @@ export function FooterDesignHeadlineReveal({
               <a
                 key={link.id}
                 href={link.url}
-                data-hlreveal-dim=""
-                data-hlreveal-focus-item=""
                 data-pf-no-color-transition=""
-                className="pf-hlreveal-dim w-fit text-base font-normal uppercase tracking-[0.12em]"
-                style={{ opacity: RESTING_OPACITY }}
+                onMouseEnter={handleLinkEnter}
+                onMouseLeave={handleLinkLeave}
+                className="pf-hlreveal-link w-fit font-normal uppercase tracking-[0.12em]"
+                style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
               >
                 {link.label}
               </a>
@@ -303,11 +276,11 @@ export function FooterDesignHeadlineReveal({
             {phoneDisplay ? (
               <a
                 href={`tel:${phoneTrimmed!.replace(/\s+/g, '')}`}
-                data-hlreveal-dim=""
-                data-hlreveal-focus-item=""
                 data-pf-no-color-transition=""
-                className="pf-hlreveal-dim w-fit text-base"
-                style={{ opacity: RESTING_OPACITY }}
+                onMouseEnter={handleLinkEnter}
+                onMouseLeave={handleLinkLeave}
+                className="pf-hlreveal-link w-fit"
+                style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
               >
                 {phoneDisplay}
               </a>
@@ -315,17 +288,20 @@ export function FooterDesignHeadlineReveal({
             {emailTrimmed ? (
               <a
                 href={`mailto:${emailTrimmed}`}
-                data-hlreveal-dim=""
-                data-hlreveal-focus-item=""
                 data-pf-no-color-transition=""
-                className="pf-hlreveal-dim w-fit text-base"
-                style={{ opacity: RESTING_OPACITY }}
+                onMouseEnter={handleLinkEnter}
+                onMouseLeave={handleLinkLeave}
+                className="pf-hlreveal-link w-fit"
+                style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
               >
                 {emailTrimmed}
               </a>
             ) : null}
             {locationTrimmed ? (
-              <p data-hlreveal-dim="" className="pf-hlreveal-dim w-fit max-w-[16rem] text-base" style={{ opacity: RESTING_OPACITY }}>
+              <p
+                className="w-fit max-w-[16rem]"
+                style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
+              >
                 {locationTrimmed}
               </p>
             ) : null}
@@ -342,11 +318,11 @@ export function FooterDesignHeadlineReveal({
                       href={link.url}
                       target="_blank"
                       rel="noreferrer"
-                      data-hlreveal-dim=""
-                      data-hlreveal-focus-item=""
                       data-pf-no-color-transition=""
-                      className="pf-hlreveal-dim w-fit text-base"
-                      style={{ opacity: RESTING_OPACITY }}
+                      onMouseEnter={handleLinkEnter}
+                      onMouseLeave={handleLinkLeave}
+                      className="pf-hlreveal-link w-fit"
+                      style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                     >
                       {link.label}
                     </a>
@@ -359,13 +335,13 @@ export function FooterDesignHeadlineReveal({
 
         <div className="h-16 sm:h-20 lg:h-24" />
 
-        {/* 3. Magnetic contact pill + copyright — no rule above it, pure whitespace close. */}
-        <div className="flex flex-col items-start gap-8 sm:flex-row sm:items-center sm:justify-between">
-          <HeadlineRevealContactButton href={contactHref} ink={ink} inkContrast={inkContrast} />
-          <p data-pf-no-color-transition="" className="pf-hlreveal-mode text-xs" style={{ color: muted }}>
-            {copyrightText}
-          </p>
-        </div>
+        {/* 3. Magnetic contact pill — no rule above it, pure whitespace close. Copyright removed
+            from this design at the user's request (2026-09-24). */}
+        {ctaLabel ? (
+          <div className="flex flex-col items-start gap-8 sm:flex-row sm:items-center">
+            <HeadlineRevealContactButton href={ctaHref} ink={ink} inkContrast={inkContrast} label={ctaLabel} />
+          </div>
+        ) : null}
       </div>
     </footer>
   );
@@ -373,7 +349,7 @@ export function FooterDesignHeadlineReveal({
 
 export function FooterHeadlineRevealWireframe() {
   return (
-    <svg viewBox="0 0 120 72" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
+    <svg viewBox="0 0 120 72" preserveAspectRatio="none" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
       <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
 
       {/* borderless 3-column grid, no dividers */}

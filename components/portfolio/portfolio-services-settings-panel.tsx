@@ -24,6 +24,8 @@ import {
   DEFAULT_SERVICES_PRICING_GRID_SETTINGS,
   DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS,
   PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS,
+  PORTFOLIO_SERVICES_DISTINCT_SERVICES_SUBTITLE_PRESET_OPTIONS,
+  PORTFOLIO_SERVICES_DISTINCT_SERVICES_TITLE_PRESET_OPTIONS,
   PORTFOLIO_SERVICES_PRICING_AURORA_COLUMNS_OPTIONS,
   PORTFOLIO_SERVICES_PRICING_MONOLITH_COLUMNS_OPTIONS,
   PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS,
@@ -44,6 +46,7 @@ import {
   type PortfolioServicesPricingMonolithColumns,
   type PortfolioServicesSectionDesign,
   type PortfolioServicesSectionSettings,
+  PORTFOLIO_SERVICES_PREMIUM_FONT_SIZE_OPTIONS,
 } from '@/components/portfolio/portfolio-services-settings';
 
 /** Top-level settings entry: kept for API compatibility with callers, though only
@@ -79,6 +82,15 @@ const PRICING_AURORA_POPULAR_COLOR_OPTIONS: {
   { value: 'neutre', label: 'Neutral' },
 ];
 
+/** The only section designs with their own options band in the Design tab — every other one
+ *  renders straight from the services themselves (same hint pattern as Gallery's). */
+const SERVICES_DESIGNS_WITH_OPTIONS = new Set<PortfolioServicesSectionDesign>([
+  'services-pricing-grid',
+  'services-pricing-bento',
+  'services-pricing-monolith',
+  'services-pricing-aurora',
+]);
+
 /** Map legacy subsection ids (saved UI state / search) onto the current Services menu. */
 export function normalizeServicesSubSection(value: string | undefined): ServicesSubSection {
   if (value === 'general' || value === 'design' || value === 'background' || value === 'header') {
@@ -98,7 +110,7 @@ function asServicesPatch(
 function ServicesSwitchTrack({ checked }: { checked: boolean }) {
   return (
     <span
-      className="relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      className="relative inline-block h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
       style={{
         backgroundColor: checked
           ? 'var(--pf-palette-texte-fort, #171717)'
@@ -186,12 +198,145 @@ function ServicesToggleRow({
   );
 }
 
+/** One-per-line visibility row (hairline divider) — the same pattern as the Footer's,
+ *  Gallery's and Team's General tabs. */
+function ServicesVisibilityRow({
+  label,
+  info,
+  checked,
+  onChange,
+}: {
+  label: string;
+  info?: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-neutral-200/80 py-3.5 last:border-b-0">
+      <span className="flex min-w-0 flex-1 items-center gap-1.5">
+        <span
+          className="min-w-0 cursor-pointer truncate text-sm font-medium text-neutral-950"
+          onClick={() => onChange(!checked)}
+        >
+          {label}
+        </span>
+        {info ? <ServicesInfoTooltip text={info} /> : null}
+      </span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className="shrink-0"
+      >
+        <ServicesSwitchTrack checked={checked} />
+      </button>
+    </div>
+  );
+}
+
 function ServicesSectionLabel({ children }: { children: string }) {
   return <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{children}</p>;
 }
 
 function ServicesGroupLabel({ children }: { children: string }) {
   return <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">{children}</p>;
+}
+
+const SERVICES_INPUT_CLASS =
+  'w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400';
+
+/** Label + input — replaces the old "block heading, then a nested Text sub-label" shape
+ *  the Header tab used, so a text field reads the same here as in Gallery/Team. */
+function ServicesTextField({
+  label,
+  value,
+  placeholder,
+  onChange,
+  multiline = false,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  onChange: (value: string) => void;
+  multiline?: boolean;
+}) {
+  return (
+    <div>
+      <ServicesSectionLabel>{label}</ServicesSectionLabel>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          rows={2}
+          aria-label={label}
+          className={`mt-2 ${SERVICES_INPUT_CLASS} resize-y`}
+        />
+      ) : (
+        <input
+          type="text"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          aria-label={label}
+          className={`mt-2 ${SERVICES_INPUT_CLASS}`}
+        />
+      )}
+    </div>
+  );
+}
+
+function ServicesBandGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="space-y-4">
+      <ServicesGroupLabel>{title}</ServicesGroupLabel>
+      {children}
+    </div>
+  );
+}
+
+/** Compact palette-token pills with the resolved color as a dot — replaces the old
+ *  glyph preview cards, matching Gallery/Team/Footer's own palette pickers. */
+function ServicesPaletteSwatches({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: PortfolioServicesHeaderPaletteToken;
+  onChange: (value: PortfolioServicesHeaderPaletteToken) => void;
+}) {
+  return (
+    <div>
+      <ServicesGroupLabel>{label}</ServicesGroupLabel>
+      <div role="radiogroup" aria-label={label} className="mt-2 grid grid-cols-3 gap-1.5">
+        {SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onChange(option.value)}
+              className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
+                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+              }`}
+            >
+              <span
+                aria-hidden
+                className="h-3 w-3 shrink-0 rounded-full border border-black/10"
+                style={{ backgroundColor: servicesHeaderPaletteTokenColor(option.value) }}
+              />
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 /** Mini wireframes for the "Section design" picker cards (`.pf-stack-mini-*` classes are
@@ -269,11 +414,15 @@ function ServicesDesignWireframe({ design }: { design: PortfolioServicesSectionD
 function ServicesDesignChoiceGrid({
   value,
   onChange,
+  showGrid,
+  setShowGrid,
 }: {
   value: PortfolioServicesSectionDesign;
   onChange: (value: PortfolioServicesSectionDesign) => void;
+  /** Owned by the panel so the selected design's options hide while the catalogue is open. */
+  showGrid: boolean;
+  setShowGrid: (open: boolean) => void;
 }) {
-  const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS[0];
@@ -282,7 +431,7 @@ function ServicesDesignChoiceGrid({
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <ServicesGroupLabel>Section design</ServicesGroupLabel>
+          <ServicesSectionLabel>Section design</ServicesSectionLabel>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
@@ -314,7 +463,7 @@ function ServicesDesignChoiceGrid({
   }
 
   return (
-    <ServicesDesignSummaryRow label="Section design" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <ServicesDesignSummaryRow label="Design" name={selected.label} onOpen={() => setShowGrid(true)}>
       <ServicesDesignWireframe design={value} />
     </ServicesDesignSummaryRow>
   );
@@ -461,7 +610,9 @@ function ServicesMiniType({
   );
 }
 
-/** Expandable picker card — same mechanism as Stack/Contact's own design picker grid. */
+/** Expandable picker card — the Footer/Gallery/Team chrome: no visible border at rest, a
+ *  hover brighten + 1px lift, and the selected card signalled only by its label turning the
+ *  accent color (see `.pf-services-design-card` in globals.css). */
 function ServicesPickerCard({
   active,
   label,
@@ -473,7 +624,7 @@ function ServicesPickerCard({
   label: string;
   onClick: () => void;
   children: ReactNode;
-  /** Smaller padding/type for secondary preview-card grids (colors, styles, …). */
+  /** Smaller padding/type for secondary thumbnail grids (cards per row, …). */
   compact?: boolean;
 }) {
   return (
@@ -484,72 +635,51 @@ function ServicesPickerCard({
       title={label}
       data-active={active ? 'true' : 'false'}
       onClick={onClick}
-      className={`pf-stack-design-card rounded-2xl text-left ${compact ? 'pf-stack-preview-card' : 'px-3 pb-3 pt-2.5'}`}
+      className={`pf-services-design-card relative rounded-2xl text-left ${compact ? 'p-2' : 'p-2.5'}`}
     >
-      {active ? (
-        <span
-          aria-hidden
-          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
-          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
-        >
-          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
-            <path
-              d="M4 10.5l3.5 3.5L16 6"
-              stroke="white"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-      ) : null}
       {children}
-      <span className={compact ? 'mt-1.5 block' : 'mt-2.5 block'}>
-        <span
-          className={`pf-stack-card-label min-w-0 font-semibold leading-none tracking-tight ${compact ? 'text-xs' : 'text-sm'}`}
-        >
-          {label}
-        </span>
+      <span
+        className={`pf-services-card-label mt-2 block font-semibold leading-none tracking-tight ${
+          compact ? 'text-xs' : 'text-sm'
+        }`}
+      >
+        {label}
       </span>
     </button>
   );
 }
 
-/** Compact segmented pill picker — for simple choices (alignment, weight) where a big
- *  descriptive card is overkill. Same mechanism as Stack/Contact's own OptionGrid. */
+/** Compact pill picker — for simple choices (alignment, weight, presets) where a big
+ *  descriptive card is overkill. Same markup as Gallery's and Team's own OptionGrid. */
 function ServicesOptionGrid<T extends string | number>({
   label,
   options,
   value,
   onChange,
   columns,
-  icons,
+  hideLabel = false,
 }: {
   label: string;
-  options: { value: T; label: string; description?: string }[];
+  options: readonly { value: T; label: string; description?: string }[];
   value: T;
   onChange: (value: T) => void;
   columns?: number;
-  icons?: Partial<Record<string, ReactNode>>;
+  /** Keeps `label` as the accessible name only — for a pill that sits under its own heading. */
+  hideLabel?: boolean;
 }) {
   const count = options.length;
   const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
-  const compact = cols === count && count >= 2 && count <= 5;
   return (
     <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      {hideLabel ? null : <ServicesGroupLabel>{label}</ServicesGroupLabel>}
       <div
         role="radiogroup"
         aria-label={label}
-        className="pf-stack-segment grid gap-[3px] p-[3px]"
-        data-compact={compact ? 'true' : 'false'}
-        style={{
-          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-        }}
+        className={`${hideLabel ? '' : 'mt-2'} grid gap-1.5`}
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
       >
         {options.map((option) => {
           const active = option.value === value;
-          const icon = icons?.[String(option.value)];
           return (
             <button
               key={String(option.value)}
@@ -558,16 +688,11 @@ function ServicesOptionGrid<T extends string | number>({
               aria-checked={active}
               title={option.description}
               onClick={() => onChange(option.value)}
-              data-active={active ? 'true' : 'false'}
-              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
-              style={
-                active
-                  ? undefined
-                  : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }
-              }
+              className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition ${
+                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+              }`}
             >
-              {icon ? <span className="pf-stack-segment-icon">{icon}</span> : null}
-              <span>{option.label}</span>
+              {option.label}
             </button>
           );
         })}
@@ -576,54 +701,8 @@ function ServicesOptionGrid<T extends string | number>({
   );
 }
 
-/** Ordered-scale slider — for size/spacing progressions (bottom spacing). Same
- *  mechanism as Stack/Contact's own Slider: one drag surface snapping between steps. */
-function ServicesSlider<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: T;
-  options: { value: T; label: string }[];
-  onChange: (value: T) => void;
-}) {
-  const index = Math.max(
-    0,
-    options.findIndex((option) => option.value === value)
-  );
-  const lastIndex = options.length - 1;
-  const percent = lastIndex > 0 ? (index / lastIndex) * 100 : 0;
-  const current = options[index] ?? options[0];
-  return (
-    <div>
-      <div className="pf-stack-slider-row">
-        <span className="pf-stack-slider-label">{label}</span>
-        <span className="pf-stack-slider-value">{current?.label}</span>
-      </div>
-      <input
-        type="range"
-        min={0}
-        max={Math.max(lastIndex, 0)}
-        step={1}
-        value={index}
-        onChange={(event) => {
-          const next = options[Number(event.target.value)];
-          if (next) onChange(next.value);
-        }}
-        aria-label={label}
-        className="pf-stack-slider-input"
-        style={{
-          background: `linear-gradient(to right, var(--pf-palette-texte-fort, #f5f5f5) ${percent}%, color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a)) ${percent}%)`,
-        }}
-      />
-    </div>
-  );
-}
-
-/** Visual-difference choice (color tokens, styles) — a compact preview card per option,
- *  same mechanism as Stack/Contact's own preview card grid. */
+/** Visual-difference choice (cards per row) — a compact thumbnail card per option. Palette
+ *  tokens and word styles use pills instead (see ServicesPaletteSwatches / ServicesOptionGrid). */
 function ServicesPreviewCardGrid<T extends string>({
   label,
   value,
@@ -640,11 +719,11 @@ function ServicesPreviewCardGrid<T extends string>({
   const cols = columns ?? Math.min(options.length, 4);
   return (
     <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      <ServicesGroupLabel>{label}</ServicesGroupLabel>
       <div
         role="radiogroup"
         aria-label={label}
-        className="grid gap-2"
+        className="mt-2 grid gap-2"
         style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
       >
         {options.map((option) => (
@@ -706,12 +785,12 @@ function ServicesDesignSummaryRow({
 }) {
   return (
     <div>
-      <p className="pf-stack-block-label">{label}</p>
+      <ServicesSectionLabel>{label}</ServicesSectionLabel>
       <button
         type="button"
         onClick={onOpen}
         aria-label={`Change ${label.toLowerCase()}`}
-        className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
+        className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
       >
         <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
           <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
@@ -753,13 +832,8 @@ function ServicesSizePill({
 }) {
   return (
     <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="pf-stack-segment grid grid-cols-4 gap-[3px] p-[3px]"
-        data-compact="true"
-      >
+      <ServicesGroupLabel>{label}</ServicesGroupLabel>
+      <div role="radiogroup" aria-label={label} className="mt-2 grid grid-cols-4 gap-1.5">
         {SERVICES_SIZE_PILL_OPTIONS.map((option) => {
           const active = option.value === value;
           return (
@@ -768,10 +842,10 @@ function ServicesSizePill({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.label}
               onClick={() => onChange(option.value)}
-              data-active={active ? 'true' : 'false'}
-              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-2 font-semibold leading-none"
+              className={`rounded-lg px-2.5 py-2 text-center font-semibold leading-none transition ${
+                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+              }`}
               style={{ fontSize: `${option.fontPx}px` }}
             >
               {option.label}
@@ -781,74 +855,6 @@ function ServicesSizePill({
       </div>
     </div>
   );
-}
-
-/** Mini swatch for a palette-token color picker — the actual resolved color,
- *  not just a text label. */
-function servicesHeaderPaletteTokenGlyph(token: PortfolioServicesHeaderPaletteToken): ReactNode {
-  return (
-    <circle
-      cx="32"
-      cy="17"
-      r="8"
-      fill={servicesHeaderPaletteTokenColor(token)}
-      style={{
-        stroke: 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, transparent)',
-        strokeWidth: 1,
-      }}
-    />
-  );
-}
-
-function servicesHeaderBillboardWordStyleGlyph(style: PortfolioServicesHeaderBillboardWordStyle): ReactNode {
-  switch (style) {
-    case 'outline':
-      return (
-        <text
-          x="32"
-          y="23"
-          textAnchor="middle"
-          fontSize="19"
-          fontWeight={900}
-          stroke="currentColor"
-          strokeWidth="1"
-          className="pf-stack-mini-ink"
-          style={{ fill: 'none' }}
-        >
-          Aa
-        </text>
-      );
-    case 'fill':
-      return (
-        <>
-          <text
-            x="32"
-            y="23"
-            textAnchor="middle"
-            fontSize="19"
-            fontWeight={900}
-            className="pf-stack-mini-ink"
-            opacity={0.4}
-            style={{ filter: 'blur(2px)' }}
-          >
-            Aa
-          </text>
-          <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-stack-mini-ink">
-            Aa
-          </text>
-        </>
-      );
-    case 'simple':
-      return (
-        <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-stack-mini-ink">
-          Aa
-        </text>
-      );
-    default: {
-      const _exhaustive: never = style;
-      return _exhaustive;
-    }
-  }
 }
 
 /** Mini wireframes for the 8 Header design picker cards — same ServicesMiniSlide mechanism
@@ -964,7 +970,7 @@ function ServicesHeaderChoiceGrid({
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">Header design</p>
+          <ServicesSectionLabel>Header design</ServicesSectionLabel>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
@@ -1016,11 +1022,10 @@ const SERVICES_HEADER_TITLE_WEIGHT_OPTIONS = [
   { value: 'bold' as const, label: 'Bold', description: 'The boldest step.' },
 ];
 
-/** Shared across every Header design — bottom spacing, title size, and title weight.
- *  Appended to each design's own advanced-settings branch in the Header tab.
- *  `hideAlignment`/`hideTitleControls` drop controls a given design doesn't
- *  actually consume (e.g. Billboard has no adjustable title size/weight and
- *  ignores header alignment) — dead controls left visible are confusing. */
+/** Bottom spacing and header motion — plus alignment and the shared title size/weight, but
+ *  only where the chosen design actually reads them (dead controls left visible are
+ *  confusing, so each branch passes `hideAlignment`/`hideTitleControls` to match). Same
+ *  shape as Gallery's and Team's own shared header controls. */
 function ServicesHeaderSharedAdvancedControls({
   services,
   onChange,
@@ -1033,25 +1038,26 @@ function ServicesHeaderSharedAdvancedControls({
   hideTitleControls?: boolean;
 }) {
   return (
-    <>
+    <div className="space-y-5 border-t border-neutral-200/70 pt-6">
       {hideAlignment ? null : (
         <ServicesOptionGrid
           label="Header alignment"
           options={[
-            { value: 'left' as const, label: 'Left', description: 'Default editorial alignment.' },
-            { value: 'center' as const, label: 'Center', description: 'Centered title and subtitle.' },
-            { value: 'right' as const, label: 'Right', description: 'Right-aligned title and subtitle.' },
+            { value: 'left' as const, label: 'Left' },
+            { value: 'center' as const, label: 'Center' },
+            { value: 'right' as const, label: 'Right' },
           ]}
           value={services.headerDesignAlignment}
           onChange={(headerDesignAlignment: PortfolioServicesHeaderDesignAlignment) => onChange({ headerDesignAlignment })}
           columns={3}
         />
       )}
-      <ServicesSlider
+      <ServicesOptionGrid
         label="Bottom spacing"
         options={SERVICES_HEADER_MARGIN_BOTTOM_OPTIONS}
         value={services.headerMarginBottom ?? 'md'}
         onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
+        columns={4}
       />
       {hideTitleControls ? null : (
         <>
@@ -1069,30 +1075,539 @@ function ServicesHeaderSharedAdvancedControls({
           />
         </>
       )}
-    </>
+      <div className="space-y-1.5">
+        <ServicesToggleRow
+          label="Header motion"
+          checked={services.headerAnimationEnabled !== false}
+          onChange={(headerAnimationEnabled) => onChange({ headerAnimationEnabled })}
+        />
+        <p className="text-xs text-neutral-400">Reduced-motion preferences are always respected.</p>
+      </div>
+    </div>
   );
 }
 
-/** Titled bordered band grouping the active Header design's settings — remounts (via
- *  `motionKey`) when the design changes so per-design fields don't carry stale focus/state. */
+/** Titled band grouping a picker's settings — remounts (via `motionKey`) when the selection
+ *  changes so per-design fields don't carry stale focus/state. Same `pf-exp-layout-settings`
+ *  band as Footer/Gallery/Team. */
 function ServicesLayoutSettingsBand({
   children,
   motionKey,
-  title = 'Header design settings',
+  id = 'services-layout-settings-title',
+  title = 'Header settings',
 }: {
   children: ReactNode;
   motionKey: string;
+  id?: string;
   title?: string;
 }) {
   return (
-    <section className="pf-stack-layout-settings" aria-labelledby="services-layout-settings-title">
-      <h3 id="services-layout-settings-title" className="pf-stack-layout-settings-title">
+    <section className="pf-exp-layout-settings" aria-labelledby={id}>
+      <h3 id={id} className="pf-exp-layout-settings-title">
         {title}
       </h3>
-      <div key={motionKey} className="pf-stack-layout-settings-body space-y-6">
+      <div key={motionKey} className="pf-exp-layout-settings-body space-y-7">
         {children}
       </div>
     </section>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/* Header tab — per-design fields, then the controls every design shares.   */
+/* Same shape as Gallery's and Team's own Header tabs.                      */
+/* ---------------------------------------------------------------------- */
+
+function ServicesHeaderDesignFields({
+  services,
+  onChange,
+}: {
+  services: PortfolioServicesSectionSettings;
+  onChange: (patch: Partial<PortfolioServicesSectionSettings>) => void;
+}) {
+  const design = services.headerDesign ?? 'editorial';
+
+  if (design === 'index') {
+    return (
+      <>
+        <ServicesTextField
+          label="Rule label"
+          value={services.headerIndexLabelText}
+          placeholder="Index"
+          onChange={(headerIndexLabelText) => onChange({ headerIndexLabelText })}
+        />
+        <ServicesTextField
+          label="Title"
+          value={services.headerIndexTitleText}
+          placeholder="Core services"
+          onChange={(headerIndexTitleText) => onChange({ headerIndexTitleText })}
+        />
+        <ServicesTextField
+          label="Subtitle"
+          value={services.headerIndexSubtitleText}
+          placeholder="A clear breakdown of what you can hire me for."
+          onChange={(headerIndexSubtitleText) => onChange({ headerIndexSubtitleText })}
+          multiline
+        />
+        <ServicesTextField
+          label="Count label"
+          value={services.headerIndexCountLabelText}
+          placeholder="Services"
+          onChange={(headerIndexCountLabelText) => onChange({ headerIndexCountLabelText })}
+        />
+        <ServicesBandGroup title="Label">
+          <ServicesPaletteSwatches
+            label="Color"
+            value={services.headerIndexLabelColor ?? 'texteFort'}
+            onChange={(headerIndexLabelColor) => onChange({ headerIndexLabelColor })}
+          />
+          <ServicesSizePill
+            label="Size"
+            value={services.headerIndexLabelSize ?? 'md'}
+            onChange={(headerIndexLabelSize) => onChange({ headerIndexLabelSize })}
+          />
+          <ServicesOptionGrid
+            label="Weight"
+            options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+            value={services.headerIndexLabelWeight ?? 'regular'}
+            onChange={(headerIndexLabelWeight: PortfolioServicesHeaderTitleWeight) =>
+              onChange({ headerIndexLabelWeight })
+            }
+            columns={4}
+          />
+        </ServicesBandGroup>
+        <ServicesBandGroup title="Title">
+          <ServicesPaletteSwatches
+            label="Color"
+            value={services.headerIndexTitleColor ?? 'texteFort'}
+            onChange={(headerIndexTitleColor) => onChange({ headerIndexTitleColor })}
+          />
+          <ServicesSizePill
+            label="Size"
+            value={services.headerIndexTitleSize ?? 'md'}
+            onChange={(headerIndexTitleSize) => onChange({ headerIndexTitleSize })}
+          />
+          <ServicesOptionGrid
+            label="Weight"
+            options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+            value={services.headerIndexTitleWeight ?? 'regular'}
+            onChange={(headerIndexTitleWeight: PortfolioServicesHeaderTitleWeight) =>
+              onChange({ headerIndexTitleWeight })
+            }
+            columns={4}
+          />
+        </ServicesBandGroup>
+        <ServicesBandGroup title="Subtitle">
+          <ServicesPaletteSwatches
+            label="Color"
+            value={services.headerIndexSubtitleColor ?? 'texteFort'}
+            onChange={(headerIndexSubtitleColor) => onChange({ headerIndexSubtitleColor })}
+          />
+          <ServicesSizePill
+            label="Size"
+            value={services.headerIndexSubtitleSize ?? 'md'}
+            onChange={(headerIndexSubtitleSize) => onChange({ headerIndexSubtitleSize })}
+          />
+          <ServicesOptionGrid
+            label="Weight"
+            options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+            value={services.headerIndexSubtitleWeight ?? 'regular'}
+            onChange={(headerIndexSubtitleWeight: PortfolioServicesHeaderTitleWeight) =>
+              onChange({ headerIndexSubtitleWeight })
+            }
+            columns={4}
+          />
+        </ServicesBandGroup>
+        <ServicesBandGroup title="Counter">
+          <ServicesPaletteSwatches
+            label="Numeral color"
+            value={services.headerIndexNumberColor ?? 'principal'}
+            onChange={(headerIndexNumberColor) => onChange({ headerIndexNumberColor })}
+          />
+        </ServicesBandGroup>
+        <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideTitleControls />
+      </>
+    );
+  }
+
+  if (design === 'marquee') {
+    return (
+      <>
+        <ServicesBandGroup title="Words">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <ServicesTextField
+              label="Word 1"
+              value={services.headerMarqueeWord1Text}
+              placeholder="Core"
+              onChange={(headerMarqueeWord1Text) => onChange({ headerMarqueeWord1Text })}
+            />
+            <ServicesTextField
+              label="Word 2"
+              value={services.headerMarqueeWord2Text}
+              placeholder="Services"
+              onChange={(headerMarqueeWord2Text) => onChange({ headerMarqueeWord2Text })}
+            />
+            <ServicesTextField
+              label="Word 3"
+              value={services.headerMarqueeWord3Text}
+              placeholder="Optional"
+              onChange={(headerMarqueeWord3Text) => onChange({ headerMarqueeWord3Text })}
+            />
+            <ServicesTextField
+              label="Word 4"
+              value={services.headerMarqueeWord4Text}
+              placeholder="Optional"
+              onChange={(headerMarqueeWord4Text) => onChange({ headerMarqueeWord4Text })}
+            />
+          </div>
+        </ServicesBandGroup>
+        <ServicesBandGroup title="Style">
+          <ServicesPaletteSwatches
+            label="Word color"
+            value={services.headerMarqueeWordColor ?? 'principal'}
+            onChange={(headerMarqueeWordColor) => onChange({ headerMarqueeWordColor })}
+          />
+          <ServicesSizePill
+            label="Size"
+            value={services.headerMarqueeSize ?? 'md'}
+            onChange={(headerMarqueeSize) => onChange({ headerMarqueeSize })}
+          />
+        </ServicesBandGroup>
+        <ServicesHeaderSharedAdvancedControls
+          services={services}
+          onChange={onChange}
+          hideAlignment
+          hideTitleControls
+        />
+      </>
+    );
+  }
+
+  if (design === 'accent-count') {
+    return (
+      <>
+        <ServicesTextField
+          label="Badge text"
+          value={services.headerAccentCountBadgeText}
+          placeholder="{count}+ services"
+          onChange={(headerAccentCountBadgeText) => onChange({ headerAccentCountBadgeText })}
+        />
+        <ServicesTextField
+          label="Lead text"
+          value={services.headerAccentCountLeadText}
+          placeholder="A curated set of services, ready when you need them."
+          onChange={(headerAccentCountLeadText) => onChange({ headerAccentCountLeadText })}
+          multiline
+        />
+        <ServicesBandGroup title="Style">
+          <ServicesPaletteSwatches
+            label="Badge color"
+            value={services.headerAccentCountBadgeColor ?? 'principal'}
+            onChange={(headerAccentCountBadgeColor) => onChange({ headerAccentCountBadgeColor })}
+          />
+          <ServicesPaletteSwatches
+            label="Lead color"
+            value={services.headerAccentCountLeadColor ?? 'secondaire'}
+            onChange={(headerAccentCountLeadColor) => onChange({ headerAccentCountLeadColor })}
+          />
+          <ServicesSizePill
+            label="Size"
+            value={services.headerAccentCountSize ?? 'md'}
+            onChange={(headerAccentCountSize) => onChange({ headerAccentCountSize })}
+          />
+          <ServicesOptionGrid
+            label="Lead weight"
+            options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+            value={services.headerAccentCountWeight ?? 'regular'}
+            onChange={(headerAccentCountWeight: PortfolioServicesHeaderTitleWeight) =>
+              onChange({ headerAccentCountWeight })
+            }
+            columns={4}
+          />
+          <ServicesOptionGrid
+            label="Alignment"
+            options={SERVICES_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
+            value={services.headerAccentCountAlignment ?? 'left'}
+            onChange={(headerAccentCountAlignment: PortfolioServicesHeaderAccentCountAlignment) =>
+              onChange({ headerAccentCountAlignment })
+            }
+            columns={3}
+          />
+        </ServicesBandGroup>
+        <ServicesHeaderSharedAdvancedControls
+          services={services}
+          onChange={onChange}
+          hideAlignment
+          hideTitleControls
+        />
+      </>
+    );
+  }
+
+  if (design === 'serif-lead') {
+    return (
+      <>
+        <ServicesTextField
+          label="Label"
+          value={services.headerSerifLeadLabelText}
+          placeholder="Services"
+          onChange={(headerSerifLeadLabelText) => onChange({ headerSerifLeadLabelText })}
+        />
+        <ServicesTextField
+          label="Title"
+          value={services.headerSerifLeadTitleText}
+          placeholder="A focused set of services, built around what you need."
+          onChange={(headerSerifLeadTitleText) => onChange({ headerSerifLeadTitleText })}
+          multiline
+        />
+        <ServicesBandGroup title="Label">
+          <ServicesPaletteSwatches
+            label="Color"
+            value={services.headerSerifLeadLabelColor ?? 'texteFort'}
+            onChange={(headerSerifLeadLabelColor) => onChange({ headerSerifLeadLabelColor })}
+          />
+          <ServicesSizePill
+            label="Size"
+            value={services.headerSerifLeadLabelSize ?? 'md'}
+            onChange={(headerSerifLeadLabelSize) => onChange({ headerSerifLeadLabelSize })}
+          />
+          <ServicesOptionGrid
+            label="Weight"
+            options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+            value={services.headerSerifLeadLabelWeight ?? 'regular'}
+            onChange={(headerSerifLeadLabelWeight: PortfolioServicesHeaderTitleWeight) =>
+              onChange({ headerSerifLeadLabelWeight })
+            }
+            columns={4}
+          />
+        </ServicesBandGroup>
+        <ServicesBandGroup title="Title">
+          <ServicesPaletteSwatches
+            label="Color"
+            value={services.headerSerifLeadTitleColor ?? 'texteFort'}
+            onChange={(headerSerifLeadTitleColor) => onChange({ headerSerifLeadTitleColor })}
+          />
+          <ServicesSizePill
+            label="Size"
+            value={services.headerSerifLeadTitleSize ?? 'md'}
+            onChange={(headerSerifLeadTitleSize) => onChange({ headerSerifLeadTitleSize })}
+          />
+          <ServicesOptionGrid
+            label="Weight"
+            options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+            value={services.headerSerifLeadTitleWeight ?? 'regular'}
+            onChange={(headerSerifLeadTitleWeight: PortfolioServicesHeaderTitleWeight) =>
+              onChange({ headerSerifLeadTitleWeight })
+            }
+            columns={4}
+          />
+        </ServicesBandGroup>
+        <ServicesBandGroup title="Subtitle">
+          <ServicesPaletteSwatches
+            label="Color"
+            value={services.headerSerifLeadSubtitleColor ?? 'texteFort'}
+            onChange={(headerSerifLeadSubtitleColor) => onChange({ headerSerifLeadSubtitleColor })}
+          />
+          <ServicesSizePill
+            label="Size"
+            value={services.headerSerifLeadSubtitleSize ?? 'md'}
+            onChange={(headerSerifLeadSubtitleSize) => onChange({ headerSerifLeadSubtitleSize })}
+          />
+          <ServicesOptionGrid
+            label="Weight"
+            options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+            value={services.headerSerifLeadSubtitleWeight ?? 'regular'}
+            onChange={(headerSerifLeadSubtitleWeight: PortfolioServicesHeaderTitleWeight) =>
+              onChange({ headerSerifLeadSubtitleWeight })
+            }
+            columns={4}
+          />
+        </ServicesBandGroup>
+        <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideTitleControls />
+      </>
+    );
+  }
+
+  if (design === 'billboard') {
+    return (
+      <>
+        <ServicesTextField
+          label="Big background word"
+          value={services.headerBillboardBigWord}
+          placeholder="SERVICES"
+          onChange={(headerBillboardBigWord) => onChange({ headerBillboardBigWord })}
+        />
+        <ServicesTextField
+          label="Title"
+          value={services.headerBillboardTitleText}
+          placeholder="Core services"
+          onChange={(headerBillboardTitleText) => onChange({ headerBillboardTitleText })}
+        />
+        <ServicesTextField
+          label="Count line"
+          value={services.headerBillboardCountText}
+          placeholder="{count} services"
+          onChange={(headerBillboardCountText) => onChange({ headerBillboardCountText })}
+        />
+        <ServicesBandGroup title="Style">
+          <ServicesOptionGrid
+            label="Big word style"
+            options={SERVICES_HEADER_BILLBOARD_WORD_STYLE_OPTIONS}
+            value={services.headerBillboardWordStyle ?? 'outline'}
+            onChange={(headerBillboardWordStyle: PortfolioServicesHeaderBillboardWordStyle) =>
+              onChange({ headerBillboardWordStyle })
+            }
+            columns={3}
+          />
+          <ServicesPaletteSwatches
+            label="Big word color"
+            value={services.headerBillboardWordColor ?? 'principal'}
+            onChange={(headerBillboardWordColor) => onChange({ headerBillboardWordColor })}
+          />
+          <ServicesPaletteSwatches
+            label="Title color"
+            value={services.headerBillboardTitleColor ?? 'principal'}
+            onChange={(headerBillboardTitleColor) => onChange({ headerBillboardTitleColor })}
+          />
+          <ServicesPaletteSwatches
+            label="Count line color"
+            value={services.headerBillboardMetaColor ?? 'secondaire'}
+            onChange={(headerBillboardMetaColor) => onChange({ headerBillboardMetaColor })}
+          />
+        </ServicesBandGroup>
+        <ServicesHeaderSharedAdvancedControls
+          services={services}
+          onChange={onChange}
+          hideAlignment
+          hideTitleControls
+        />
+      </>
+    );
+  }
+
+  if (design === 'masthead') {
+    return (
+      <>
+        <ServicesTextField
+          label="Line 1"
+          value={services.headerMastheadLine1Text}
+          placeholder="Core services."
+          onChange={(headerMastheadLine1Text) => onChange({ headerMastheadLine1Text })}
+        />
+        <ServicesTextField
+          label="Line 2"
+          value={services.headerMastheadLine2Text}
+          placeholder="Chosen with intent."
+          onChange={(headerMastheadLine2Text) => onChange({ headerMastheadLine2Text })}
+        />
+        <ServicesTextField
+          label="Line 3"
+          value={services.headerMastheadLine3Text}
+          placeholder="Kept up to date."
+          onChange={(headerMastheadLine3Text) => onChange({ headerMastheadLine3Text })}
+        />
+        <ServicesBandGroup title="Headline">
+          <ServicesPaletteSwatches
+            label="Color"
+            value={services.headerMastheadHeadlineColor ?? 'principal'}
+            onChange={(headerMastheadHeadlineColor) => onChange({ headerMastheadHeadlineColor })}
+          />
+          <ServicesSizePill
+            label="Size"
+            value={services.headerMastheadHeadlineSize ?? 'md'}
+            onChange={(headerMastheadHeadlineSize) => onChange({ headerMastheadHeadlineSize })}
+          />
+          <ServicesOptionGrid
+            label="Weight"
+            options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+            value={services.headerMastheadHeadlineWeight ?? 'regular'}
+            onChange={(headerMastheadHeadlineWeight: PortfolioServicesHeaderTitleWeight) =>
+              onChange({ headerMastheadHeadlineWeight })
+            }
+            columns={4}
+          />
+        </ServicesBandGroup>
+        <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideTitleControls />
+      </>
+    );
+  }
+
+  if (design === 'split-heading') {
+    return (
+      <>
+        <ServicesTextField
+          label="Title"
+          value={services.headerSplitHeadingTitleText}
+          placeholder="Core services"
+          onChange={(headerSplitHeadingTitleText) => onChange({ headerSplitHeadingTitleText })}
+        />
+        <ServicesTextField
+          label="Label"
+          value={services.headerSplitHeadingLabelText}
+          placeholder="Services"
+          onChange={(headerSplitHeadingLabelText) => onChange({ headerSplitHeadingLabelText })}
+        />
+        <ServicesBandGroup title="Title">
+          <ServicesPaletteSwatches
+            label="Color"
+            value={services.headerSplitHeadingTitleColor ?? 'principal'}
+            onChange={(headerSplitHeadingTitleColor) => onChange({ headerSplitHeadingTitleColor })}
+          />
+          <ServicesSizePill
+            label="Size"
+            value={services.headerSplitHeadingTitleSize ?? 'md'}
+            onChange={(headerSplitHeadingTitleSize) => onChange({ headerSplitHeadingTitleSize })}
+          />
+          <ServicesOptionGrid
+            label="Weight"
+            options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+            value={services.headerSplitHeadingTitleWeight ?? 'regular'}
+            onChange={(headerSplitHeadingTitleWeight: PortfolioServicesHeaderTitleWeight) =>
+              onChange({ headerSplitHeadingTitleWeight })
+            }
+            columns={4}
+          />
+        </ServicesBandGroup>
+        <ServicesBandGroup title="Label">
+          <ServicesPaletteSwatches
+            label="Color"
+            value={services.headerSplitHeadingLabelColor ?? 'secondaire'}
+            onChange={(headerSplitHeadingLabelColor) => onChange({ headerSplitHeadingLabelColor })}
+          />
+          <ServicesSizePill
+            label="Size"
+            value={services.headerSplitHeadingLabelSize ?? 'md'}
+            onChange={(headerSplitHeadingLabelSize) => onChange({ headerSplitHeadingLabelSize })}
+          />
+          <ServicesOptionGrid
+            label="Weight"
+            options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
+            value={services.headerSplitHeadingLabelWeight ?? 'regular'}
+            onChange={(headerSplitHeadingLabelWeight: PortfolioServicesHeaderTitleWeight) =>
+              onChange({ headerSplitHeadingLabelWeight })
+            }
+            columns={4}
+          />
+        </ServicesBandGroup>
+        <ServicesHeaderSharedAdvancedControls
+          services={services}
+          onChange={onChange}
+          hideAlignment
+          hideTitleControls
+        />
+      </>
+    );
+  }
+
+  // Editorial — the one design with no text of its own: it renders the section title and
+  // subtitle set above, so it only exposes the shared controls.
+  return (
+    <>
+      <p className="text-sm text-neutral-500">
+        Editorial renders the section title and subtitle — set them in Section title and Subtitle above.
+      </p>
+      <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} />
+    </>
   );
 }
 
@@ -1112,6 +1627,7 @@ export function ServicesSettingsPanel({
    *  picker below so the creator picks by actual title instead of a bare index. */
   availableServices?: { id: string; title: string }[];
 }) {
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<ServicesSubSection>('general');
   const subSection = normalizeServicesSubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: ServicesSubSection) => {
@@ -1139,91 +1655,102 @@ export function ServicesSettingsPanel({
       </div>
 
       {subSection === 'general' ? (
-        <div className="space-y-6">
-          <ServicesToggleRow
-            label="Show Services section"
-            checked={services.showServices !== false}
-            onChange={(showServices) =>
-              onChange({
-                showServices,
-                enabled: showServices || services.showSkills !== false,
-                sectionOrganization: 'distinct',
-                layoutMode: 'separated',
-              })
-            }
-          />
-
-          <SectionColorModeControl
-            value={services.colorModeOverride}
-            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-          />
-
-          <div className="space-y-5">
-            <ServicesSectionLabel>Content visibility</ServicesSectionLabel>
-
-            <div className="space-y-3">
-              <ServicesGroupLabel>Section</ServicesGroupLabel>
-              <ServicesToggleRow
+        <div className="space-y-8">
+          <div>
+            <ServicesSectionLabel>Visibility</ServicesSectionLabel>
+            <div className="mt-4">
+              <ServicesVisibilityRow
+                label="Show Services section"
+                checked={services.showServices !== false}
+                onChange={(showServices) =>
+                  onChange({
+                    showServices,
+                    enabled: showServices || services.showSkills !== false,
+                    sectionOrganization: 'distinct',
+                    layoutMode: 'separated',
+                  })
+                }
+              />
+              <ServicesVisibilityRow
                 label="Subheading"
                 checked={services.showServicesSubheading !== false}
                 onChange={(showServicesSubheading) => onChange({ showServicesSubheading })}
               />
-              <ServicesToggleRow
+              <ServicesVisibilityRow
                 label="Response time"
                 info="Typically replies label in the section header."
                 checked={services.showResponseTime}
                 onChange={(showResponseTime) => onChange({ showResponseTime })}
               />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <ServicesGroupLabel>Card elements</ServicesGroupLabel>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                <ServicesToggleRow
-                  label="Title"
-                  checked={services.showServiceTitle !== false}
-                  onChange={(showServiceTitle) => onChange({ showServiceTitle })}
-                />
-                <ServicesToggleRow
-                  label="Description"
-                  checked={services.showServiceDescription !== false}
-                  onChange={(showServiceDescription) => onChange({ showServiceDescription })}
-                />
-                <ServicesToggleRow
-                  label="Price"
-                  checked={services.showServicePrice !== false}
-                  onChange={(showServicePrice) => onChange({ showServicePrice })}
-                />
-                <ServicesToggleRow
-                  label="Delivery time"
-                  checked={services.showServiceDelivery !== false}
-                  onChange={(showServiceDelivery) => onChange({ showServiceDelivery })}
-                />
-                <ServicesToggleRow
-                  label="Tasks checklist"
-                  checked={services.showServiceTasks !== false}
-                  onChange={(showServiceTasks) => onChange({ showServiceTasks })}
-                />
-                <ServicesToggleRow
-                  label="Order / contact button"
-                  checked={services.showServiceCta !== false}
-                  onChange={(showServiceCta) => onChange({ showServiceCta })}
-                />
-              </div>
+          <div>
+            <ServicesGroupLabel>Card elements</ServicesGroupLabel>
+            <div className="mt-3">
+              <ServicesVisibilityRow
+                label="Title"
+                checked={services.showServiceTitle !== false}
+                onChange={(showServiceTitle) => onChange({ showServiceTitle })}
+              />
+              <ServicesVisibilityRow
+                label="Description"
+                checked={services.showServiceDescription !== false}
+                onChange={(showServiceDescription) => onChange({ showServiceDescription })}
+              />
+              <ServicesVisibilityRow
+                label="Price"
+                checked={services.showServicePrice !== false}
+                onChange={(showServicePrice) => onChange({ showServicePrice })}
+              />
+              <ServicesVisibilityRow
+                label="Delivery time"
+                checked={services.showServiceDelivery !== false}
+                onChange={(showServiceDelivery) => onChange({ showServiceDelivery })}
+              />
+              <ServicesVisibilityRow
+                label="Tasks checklist"
+                checked={services.showServiceTasks !== false}
+                onChange={(showServiceTasks) => onChange({ showServiceTasks })}
+              />
+              <ServicesVisibilityRow
+                label="Order / contact button"
+                checked={services.showServiceCta !== false}
+                onChange={(showServiceCta) => onChange({ showServiceCta })}
+              />
             </div>
           </div>
+
+          <SectionColorModeControl
+            value={services.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+          />
+
+          <ServicesOptionGrid
+            label="Font size"
+            options={PORTFOLIO_SERVICES_PREMIUM_FONT_SIZE_OPTIONS}
+            value={services.premiumFontSize ?? 'medium'}
+            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
+            columns={3}
+          />
         </div>
       ) : null}
 
       {subSection === 'design' ? (
         <div className="space-y-6">
           <ServicesDesignChoiceGrid
+            showGrid={designCatalogOpen}
+            setShowGrid={setDesignCatalogOpen}
             value={services.sectionDesign ?? 'showcase-hero'}
             onChange={(sectionDesign) => onChange({ sectionDesign })}
           />
 
-          {services.sectionDesign === 'services-pricing-grid' ? (
-            <ServicesLayoutSettingsBand motionKey="services-pricing-grid" title="Pricing Grid options">
+          {designCatalogOpen ? null : services.sectionDesign === 'services-pricing-grid' ? (
+            <ServicesLayoutSettingsBand
+              motionKey="services-pricing-grid"
+              id="services-design-options-title"
+              title="Pricing Grid options"
+            >
               <div>
                 <span className="flex items-center gap-1.5">
                   <ServicesGroupLabel>Featured card color</ServicesGroupLabel>
@@ -1268,9 +1795,10 @@ export function ServicesSettingsPanel({
             </ServicesLayoutSettingsBand>
           ) : null}
 
-          {services.sectionDesign === 'services-pricing-bento' ? (
+          {designCatalogOpen ? null : services.sectionDesign === 'services-pricing-bento' ? (
             <ServicesLayoutSettingsBand
               motionKey="services-pricing-bento"
+              id="services-design-options-title"
               title="Pricing Bento options"
             >
               <div>
@@ -1279,34 +1807,31 @@ export function ServicesSettingsPanel({
                   <ServicesInfoTooltip text="The featured card gets the textured graphic header that sets it apart from the others." />
                 </span>
                 {availableServices.length > 0 ? (
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {availableServices.map((service, index) => {
-                      const currentIndex = Math.min(
+                  <ServicesOptionGrid
+                    label="Featured card"
+                    hideLabel
+                    options={availableServices.map((service, index) => ({
+                      value: String(index),
+                      label: service.title.trim() || `Service ${index + 1}`,
+                    }))}
+                    value={String(
+                      Math.min(
                         (services.pricingBento ?? DEFAULT_SERVICES_PRICING_BENTO_SETTINGS).graphicHeaderIndex,
                         availableServices.length - 1
-                      );
-                      return (
-                        <ServicesPickerCard
-                          key={service.id}
-                          active={currentIndex === index}
-                          label={service.title.trim() || `Service ${index + 1}`}
-                          onClick={() =>
-                            onChange({
-                              pricingBento: {
-                                ...(services.pricingBento ?? DEFAULT_SERVICES_PRICING_BENTO_SETTINGS),
-                                graphicHeaderIndex: index,
-                              },
-                            })
-                          }
-                          compact
-                        >
-                          <></>
-                        </ServicesPickerCard>
-                      );
-                    })}
-                  </div>
+                      )
+                    )}
+                    onChange={(next) =>
+                      onChange({
+                        pricingBento: {
+                          ...(services.pricingBento ?? DEFAULT_SERVICES_PRICING_BENTO_SETTINGS),
+                          graphicHeaderIndex: Number(next),
+                        },
+                      })
+                    }
+                    columns={2}
+                  />
                 ) : (
-                  <p className="mt-3 text-xs text-neutral-500">
+                  <p className="mt-3 text-xs text-neutral-400">
                     Add a service to choose which card is featured.
                   </p>
                 )}
@@ -1314,9 +1839,10 @@ export function ServicesSettingsPanel({
             </ServicesLayoutSettingsBand>
           ) : null}
 
-          {services.sectionDesign === 'services-pricing-monolith' ? (
+          {designCatalogOpen ? null : services.sectionDesign === 'services-pricing-monolith' ? (
             <ServicesLayoutSettingsBand
               motionKey="services-pricing-monolith"
+              id="services-design-options-title"
               title="Pricing Monolith options"
             >
               <ServicesPreviewCardGrid
@@ -1342,9 +1868,10 @@ export function ServicesSettingsPanel({
             </ServicesLayoutSettingsBand>
           ) : null}
 
-          {services.sectionDesign === 'services-pricing-aurora' ? (
+          {designCatalogOpen ? null : services.sectionDesign === 'services-pricing-aurora' ? (
             <ServicesLayoutSettingsBand
               motionKey="services-pricing-aurora"
+              id="services-design-options-title"
               title="Pricing Aurora options"
             >
               <ServicesPreviewCardGrid
@@ -1374,34 +1901,31 @@ export function ServicesSettingsPanel({
                   <ServicesInfoTooltip text="The featured card gets the accent gradient border and glass tint that sets it apart from the others." />
                 </span>
                 {availableServices.length > 0 ? (
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {availableServices.map((service, index) => {
-                      const currentIndex = Math.min(
+                  <ServicesOptionGrid
+                    label="Featured card"
+                    hideLabel
+                    options={availableServices.map((service, index) => ({
+                      value: String(index),
+                      label: service.title.trim() || `Service ${index + 1}`,
+                    }))}
+                    value={String(
+                      Math.min(
                         (services.servicesPricingAurora ?? DEFAULT_SERVICES_PRICING_AURORA_SETTINGS).popularIndex,
                         availableServices.length - 1
-                      );
-                      return (
-                        <ServicesPickerCard
-                          key={service.id}
-                          active={currentIndex === index}
-                          label={service.title.trim() || `Service ${index + 1}`}
-                          onClick={() =>
-                            onChange({
-                              servicesPricingAurora: {
-                                ...(services.servicesPricingAurora ?? DEFAULT_SERVICES_PRICING_AURORA_SETTINGS),
-                                popularIndex: index,
-                              },
-                            })
-                          }
-                          compact
-                        >
-                          <></>
-                        </ServicesPickerCard>
-                      );
-                    })}
-                  </div>
+                      )
+                    )}
+                    onChange={(next) =>
+                      onChange({
+                        servicesPricingAurora: {
+                          ...(services.servicesPricingAurora ?? DEFAULT_SERVICES_PRICING_AURORA_SETTINGS),
+                          popularIndex: Number(next),
+                        },
+                      })
+                    }
+                    columns={2}
+                  />
                 ) : (
-                  <p className="mt-3 text-xs text-neutral-500">
+                  <p className="mt-3 text-xs text-neutral-400">
                     Add a service to choose which card is featured.
                   </p>
                 )}
@@ -1450,6 +1974,12 @@ export function ServicesSettingsPanel({
               </div>
             </ServicesLayoutSettingsBand>
           ) : null}
+
+          {designCatalogOpen || SERVICES_DESIGNS_WITH_OPTIONS.has(services.sectionDesign) ? null : (
+            <p className="text-xs text-neutral-400">
+              This design has no options of its own — what shows on a card is set in General → Card elements.
+            </p>
+          )}
         </div>
       ) : null}
 
@@ -1473,620 +2003,60 @@ export function ServicesSettingsPanel({
 
       {subSection === 'header' ? (
         <div className="space-y-6">
-          <div>
-            <ServicesHeaderChoiceGrid
-              value={services.headerDesign ?? 'editorial'}
-              onChange={(headerDesign) => onChange({ headerDesign })}
-            />
+          <ServicesHeaderChoiceGrid
+            value={services.headerDesign ?? 'editorial'}
+            onChange={(headerDesign) => onChange({ headerDesign })}
+          />
 
-            <ServicesLayoutSettingsBand motionKey={services.headerDesign ?? 'editorial'}>
-              {services.headerDesign === 'index' ? (
-                <>
-                  <div>
-                    <ServicesSectionLabel>Rule label</ServicesSectionLabel>
-                    <div className="mt-3 space-y-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
-                        <input
-                          type="text"
-                          value={services.headerIndexLabelText}
-                          onChange={(event) => onChange({ headerIndexLabelText: event.target.value })}
-                          placeholder="Index"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <ServicesPreviewCardGrid
-                        label="Color"
-                        options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={services.headerIndexLabelColor ?? 'texteFort'}
-                        onChange={(headerIndexLabelColor) => onChange({ headerIndexLabelColor })}
-                        columns={3}
-                      />
-                      <ServicesSizePill
-                        label="Size"
-                        value={services.headerIndexLabelSize ?? 'md'}
-                        onChange={(headerIndexLabelSize) => onChange({ headerIndexLabelSize })}
-                      />
-                      <ServicesOptionGrid
-                        label="Weight"
-                        options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
-                        value={services.headerIndexLabelWeight ?? 'regular'}
-                        onChange={(headerIndexLabelWeight: PortfolioServicesHeaderTitleWeight) =>
-                          onChange({ headerIndexLabelWeight })
-                        }
-                        columns={4}
-                      />
-                    </div>
-                  </div>
+          <ServicesLayoutSettingsBand
+            motionKey={services.headerDesign ?? 'editorial'}
+            id="services-header-settings-title"
+            title="Header settings"
+          >
+            <ServicesBandGroup title="Section title">
+              <ServicesOptionGrid
+                label="Title preset"
+                hideLabel
+                options={PORTFOLIO_SERVICES_DISTINCT_SERVICES_TITLE_PRESET_OPTIONS}
+                value={services.titlePreset}
+                onChange={(titlePreset) => onChange({ titlePreset })}
+                columns={2}
+              />
+              {services.titlePreset === 'custom' ? (
+                <input
+                  type="text"
+                  value={services.titleCustom}
+                  placeholder="Services"
+                  aria-label="Custom section title"
+                  onChange={(event) => onChange({ titleCustom: event.target.value })}
+                  className={SERVICES_INPUT_CLASS}
+                />
+              ) : null}
+            </ServicesBandGroup>
 
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <ServicesSectionLabel>Counter</ServicesSectionLabel>
-                    <div className="mt-3 space-y-4">
-                      <ServicesPreviewCardGrid
-                        label="Numeral color"
-                        options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={services.headerIndexNumberColor ?? 'principal'}
-                        onChange={(headerIndexNumberColor) => onChange({ headerIndexNumberColor })}
-                        columns={3}
-                      />
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Count label</p>
-                        <input
-                          type="text"
-                          value={services.headerIndexCountLabelText}
-                          onChange={(event) => onChange({ headerIndexCountLabelText: event.target.value })}
-                          placeholder="Services"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                    </div>
-                  </div>
+            <ServicesBandGroup title="Subtitle">
+              <ServicesOptionGrid
+                label="Subtitle preset"
+                hideLabel
+                options={PORTFOLIO_SERVICES_DISTINCT_SERVICES_SUBTITLE_PRESET_OPTIONS}
+                value={services.subtitlePreset}
+                onChange={(subtitlePreset) => onChange({ subtitlePreset })}
+                columns={2}
+              />
+              {services.subtitlePreset === 'custom' ? (
+                <textarea
+                  value={services.subtitleCustom}
+                  rows={2}
+                  placeholder="What I can help you with."
+                  aria-label="Custom subtitle"
+                  onChange={(event) => onChange({ subtitleCustom: event.target.value })}
+                  className={`${SERVICES_INPUT_CLASS} resize-y`}
+                />
+              ) : null}
+            </ServicesBandGroup>
 
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <ServicesSectionLabel>Title</ServicesSectionLabel>
-                    <div className="mt-3 space-y-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
-                        <input
-                          type="text"
-                          value={services.headerIndexTitleText}
-                          onChange={(event) => onChange({ headerIndexTitleText: event.target.value })}
-                          placeholder="Core services"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <ServicesPreviewCardGrid
-                        label="Color"
-                        options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={services.headerIndexTitleColor ?? 'texteFort'}
-                        onChange={(headerIndexTitleColor) => onChange({ headerIndexTitleColor })}
-                        columns={3}
-                      />
-                      <ServicesSizePill
-                        label="Size"
-                        value={services.headerIndexTitleSize ?? 'md'}
-                        onChange={(headerIndexTitleSize) => onChange({ headerIndexTitleSize })}
-                      />
-                      <ServicesOptionGrid
-                        label="Weight"
-                        options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
-                        value={services.headerIndexTitleWeight ?? 'regular'}
-                        onChange={(headerIndexTitleWeight: PortfolioServicesHeaderTitleWeight) =>
-                          onChange({ headerIndexTitleWeight })
-                        }
-                        columns={4}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <ServicesSectionLabel>Subtitle</ServicesSectionLabel>
-                    <div className="mt-3 space-y-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
-                        <input
-                          type="text"
-                          value={services.headerIndexSubtitleText}
-                          onChange={(event) => onChange({ headerIndexSubtitleText: event.target.value })}
-                          placeholder="A clear breakdown of what you can hire me for."
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <ServicesPreviewCardGrid
-                        label="Color"
-                        options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={services.headerIndexSubtitleColor ?? 'texteFort'}
-                        onChange={(headerIndexSubtitleColor) => onChange({ headerIndexSubtitleColor })}
-                        columns={3}
-                      />
-                      <ServicesSizePill
-                        label="Size"
-                        value={services.headerIndexSubtitleSize ?? 'md'}
-                        onChange={(headerIndexSubtitleSize) => onChange({ headerIndexSubtitleSize })}
-                      />
-                      <ServicesOptionGrid
-                        label="Weight"
-                        options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
-                        value={services.headerIndexSubtitleWeight ?? 'regular'}
-                        onChange={(headerIndexSubtitleWeight: PortfolioServicesHeaderTitleWeight) =>
-                          onChange({ headerIndexSubtitleWeight })
-                        }
-                        columns={4}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideTitleControls />
-                  </div>
-                </>
-              ) : services.headerDesign === 'marquee' ? (
-                <>
-                  <div>
-                    <ServicesSectionLabel>Words</ServicesSectionLabel>
-                    <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 1</p>
-                        <input
-                          type="text"
-                          value={services.headerMarqueeWord1Text}
-                          onChange={(event) => onChange({ headerMarqueeWord1Text: event.target.value })}
-                          placeholder="Core"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 2</p>
-                        <input
-                          type="text"
-                          value={services.headerMarqueeWord2Text}
-                          onChange={(event) => onChange({ headerMarqueeWord2Text: event.target.value })}
-                          placeholder="Services"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 3</p>
-                        <input
-                          type="text"
-                          value={services.headerMarqueeWord3Text}
-                          onChange={(event) => onChange({ headerMarqueeWord3Text: event.target.value })}
-                          placeholder="Optional"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 4</p>
-                        <input
-                          type="text"
-                          value={services.headerMarqueeWord4Text}
-                          onChange={(event) => onChange({ headerMarqueeWord4Text: event.target.value })}
-                          placeholder="Optional"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <ServicesSectionLabel>Style</ServicesSectionLabel>
-                    <div className="mt-3 space-y-4">
-                      <ServicesPreviewCardGrid
-                        label="Word color"
-                        options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={services.headerMarqueeWordColor ?? 'principal'}
-                        onChange={(headerMarqueeWordColor) => onChange({ headerMarqueeWordColor })}
-                        columns={3}
-                      />
-                      <ServicesSizePill
-                        label="Size"
-                        value={services.headerMarqueeSize ?? 'md'}
-                        onChange={(headerMarqueeSize) => onChange({ headerMarqueeSize })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideAlignment hideTitleControls />
-                  </div>
-                </>
-              ) : services.headerDesign === 'accent-count' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Badge text</p>
-                    <input
-                      type="text"
-                      value={services.headerAccentCountBadgeText}
-                      onChange={(event) => onChange({ headerAccentCountBadgeText: event.target.value })}
-                      placeholder="{count}+ services"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Lead text</p>
-                    <input
-                      type="text"
-                      value={services.headerAccentCountLeadText}
-                      onChange={(event) => onChange({ headerAccentCountLeadText: event.target.value })}
-                      placeholder="A curated set of services, ready when you need them."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <ServicesPreviewCardGrid
-                    label="Badge color"
-                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={services.headerAccentCountBadgeColor ?? 'principal'}
-                    onChange={(headerAccentCountBadgeColor) => onChange({ headerAccentCountBadgeColor })}
-                    columns={3}
-                  />
-                  <ServicesPreviewCardGrid
-                    label="Lead color"
-                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={services.headerAccentCountLeadColor ?? 'secondaire'}
-                    onChange={(headerAccentCountLeadColor) => onChange({ headerAccentCountLeadColor })}
-                    columns={3}
-                  />
-                  <ServicesSizePill
-                    label="Size"
-                    value={services.headerAccentCountSize ?? 'md'}
-                    onChange={(headerAccentCountSize) => onChange({ headerAccentCountSize })}
-                  />
-                  <ServicesOptionGrid
-                    label="Lead weight"
-                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={services.headerAccentCountWeight ?? 'regular'}
-                    onChange={(headerAccentCountWeight: PortfolioServicesHeaderTitleWeight) =>
-                      onChange({ headerAccentCountWeight })
-                    }
-                    columns={4}
-                  />
-                  <ServicesOptionGrid
-                    label="Alignment"
-                    options={SERVICES_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
-                    value={services.headerAccentCountAlignment ?? 'left'}
-                    onChange={(headerAccentCountAlignment: PortfolioServicesHeaderAccentCountAlignment) =>
-                      onChange({ headerAccentCountAlignment })
-                    }
-                    columns={3}
-                  />
-                  <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideAlignment hideTitleControls />
-                </>
-              ) : services.headerDesign === 'serif-lead' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
-                    <input
-                      type="text"
-                      value={services.headerSerifLeadLabelText}
-                      onChange={(event) => onChange({ headerSerifLeadLabelText: event.target.value })}
-                      placeholder="Services"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <ServicesPreviewCardGrid
-                    label="Label color"
-                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={services.headerSerifLeadLabelColor ?? 'texteFort'}
-                    onChange={(headerSerifLeadLabelColor) => onChange({ headerSerifLeadLabelColor })}
-                    columns={3}
-                  />
-                  <ServicesSizePill
-                    label="Label size"
-                    value={services.headerSerifLeadLabelSize ?? 'md'}
-                    onChange={(headerSerifLeadLabelSize) => onChange({ headerSerifLeadLabelSize })}
-                  />
-                  <ServicesOptionGrid
-                    label="Label weight"
-                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={services.headerSerifLeadLabelWeight ?? 'regular'}
-                    onChange={(headerSerifLeadLabelWeight: PortfolioServicesHeaderTitleWeight) =>
-                      onChange({ headerSerifLeadLabelWeight })
-                    }
-                    columns={4}
-                  />
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
-                    <input
-                      type="text"
-                      value={services.headerSerifLeadTitleText}
-                      onChange={(event) => onChange({ headerSerifLeadTitleText: event.target.value })}
-                      placeholder="A focused set of services, built around what you need."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <ServicesPreviewCardGrid
-                    label="Title color"
-                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={services.headerSerifLeadTitleColor ?? 'texteFort'}
-                    onChange={(headerSerifLeadTitleColor) => onChange({ headerSerifLeadTitleColor })}
-                    columns={3}
-                  />
-                  <ServicesSizePill
-                    label="Title size"
-                    value={services.headerSerifLeadTitleSize ?? 'md'}
-                    onChange={(headerSerifLeadTitleSize) => onChange({ headerSerifLeadTitleSize })}
-                  />
-                  <ServicesOptionGrid
-                    label="Title weight"
-                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={services.headerSerifLeadTitleWeight ?? 'regular'}
-                    onChange={(headerSerifLeadTitleWeight: PortfolioServicesHeaderTitleWeight) =>
-                      onChange({ headerSerifLeadTitleWeight })
-                    }
-                    columns={4}
-                  />
-                  <ServicesPreviewCardGrid
-                    label="Subtitle color"
-                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={services.headerSerifLeadSubtitleColor ?? 'texteFort'}
-                    onChange={(headerSerifLeadSubtitleColor) => onChange({ headerSerifLeadSubtitleColor })}
-                    columns={3}
-                  />
-                  <ServicesSizePill
-                    label="Subtitle size"
-                    value={services.headerSerifLeadSubtitleSize ?? 'md'}
-                    onChange={(headerSerifLeadSubtitleSize) => onChange({ headerSerifLeadSubtitleSize })}
-                  />
-                  <ServicesOptionGrid
-                    label="Subtitle weight"
-                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={services.headerSerifLeadSubtitleWeight ?? 'regular'}
-                    onChange={(headerSerifLeadSubtitleWeight: PortfolioServicesHeaderTitleWeight) =>
-                      onChange({ headerSerifLeadSubtitleWeight })
-                    }
-                    columns={4}
-                  />
-                  <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideTitleControls />
-                </>
-              ) : services.headerDesign === 'billboard' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Big background word</p>
-                    <input
-                      type="text"
-                      value={services.headerBillboardBigWord}
-                      onChange={(event) => onChange({ headerBillboardBigWord: event.target.value })}
-                      placeholder="SERVICES"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Count line</p>
-                    <input
-                      type="text"
-                      value={services.headerBillboardCountText}
-                      onChange={(event) => onChange({ headerBillboardCountText: event.target.value })}
-                      placeholder="{count} services"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
-                    <input
-                      type="text"
-                      value={services.headerBillboardTitleText}
-                      onChange={(event) => onChange({ headerBillboardTitleText: event.target.value })}
-                      placeholder="Core services"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <ServicesPreviewCardGrid
-                    label="Big word style"
-                    options={SERVICES_HEADER_BILLBOARD_WORD_STYLE_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: servicesHeaderBillboardWordStyleGlyph(option.value),
-                    }))}
-                    value={services.headerBillboardWordStyle ?? 'outline'}
-                    onChange={(headerBillboardWordStyle: PortfolioServicesHeaderBillboardWordStyle) =>
-                      onChange({ headerBillboardWordStyle })
-                    }
-                    columns={3}
-                  />
-                  <ServicesPreviewCardGrid
-                    label="Big word color"
-                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={services.headerBillboardWordColor ?? 'principal'}
-                    onChange={(headerBillboardWordColor) => onChange({ headerBillboardWordColor })}
-                    columns={3}
-                  />
-                  <ServicesPreviewCardGrid
-                    label="Title color"
-                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={services.headerBillboardTitleColor ?? 'principal'}
-                    onChange={(headerBillboardTitleColor) => onChange({ headerBillboardTitleColor })}
-                    columns={3}
-                  />
-                  <ServicesPreviewCardGrid
-                    label="Count line color"
-                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={services.headerBillboardMetaColor ?? 'secondaire'}
-                    onChange={(headerBillboardMetaColor) => onChange({ headerBillboardMetaColor })}
-                    columns={3}
-                  />
-                  <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideAlignment hideTitleControls />
-                </>
-              ) : services.headerDesign === 'masthead' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 1</p>
-                    <input
-                      type="text"
-                      value={services.headerMastheadLine1Text}
-                      onChange={(event) => onChange({ headerMastheadLine1Text: event.target.value })}
-                      placeholder="Core services."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 2</p>
-                    <input
-                      type="text"
-                      value={services.headerMastheadLine2Text}
-                      onChange={(event) => onChange({ headerMastheadLine2Text: event.target.value })}
-                      placeholder="Chosen with intent."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 3</p>
-                    <input
-                      type="text"
-                      value={services.headerMastheadLine3Text}
-                      onChange={(event) => onChange({ headerMastheadLine3Text: event.target.value })}
-                      placeholder="Kept up to date."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <ServicesPreviewCardGrid
-                    label="Headline color"
-                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={services.headerMastheadHeadlineColor ?? 'principal'}
-                    onChange={(headerMastheadHeadlineColor) => onChange({ headerMastheadHeadlineColor })}
-                    columns={3}
-                  />
-                  <ServicesSizePill
-                    label="Headline size"
-                    value={services.headerMastheadHeadlineSize ?? 'md'}
-                    onChange={(headerMastheadHeadlineSize) => onChange({ headerMastheadHeadlineSize })}
-                  />
-                  <ServicesOptionGrid
-                    label="Headline weight"
-                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={services.headerMastheadHeadlineWeight ?? 'regular'}
-                    onChange={(headerMastheadHeadlineWeight: PortfolioServicesHeaderTitleWeight) =>
-                      onChange({ headerMastheadHeadlineWeight })
-                    }
-                    columns={4}
-                  />
-                  <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideTitleControls />
-                </>
-              ) : services.headerDesign === 'split-heading' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
-                    <input
-                      type="text"
-                      value={services.headerSplitHeadingTitleText}
-                      onChange={(event) => onChange({ headerSplitHeadingTitleText: event.target.value })}
-                      placeholder="Core services"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
-                    <input
-                      type="text"
-                      value={services.headerSplitHeadingLabelText}
-                      onChange={(event) => onChange({ headerSplitHeadingLabelText: event.target.value })}
-                      placeholder="Services"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <ServicesPreviewCardGrid
-                    label="Title color"
-                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={services.headerSplitHeadingTitleColor ?? 'principal'}
-                    onChange={(headerSplitHeadingTitleColor) => onChange({ headerSplitHeadingTitleColor })}
-                    columns={3}
-                  />
-                  <ServicesSizePill
-                    label="Title size"
-                    value={services.headerSplitHeadingTitleSize ?? 'md'}
-                    onChange={(headerSplitHeadingTitleSize) => onChange({ headerSplitHeadingTitleSize })}
-                  />
-                  <ServicesOptionGrid
-                    label="Title weight"
-                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={services.headerSplitHeadingTitleWeight ?? 'regular'}
-                    onChange={(headerSplitHeadingTitleWeight: PortfolioServicesHeaderTitleWeight) =>
-                      onChange({ headerSplitHeadingTitleWeight })
-                    }
-                    columns={4}
-                  />
-                  <ServicesPreviewCardGrid
-                    label="Label color"
-                    options={SERVICES_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: servicesHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={services.headerSplitHeadingLabelColor ?? 'secondaire'}
-                    onChange={(headerSplitHeadingLabelColor) => onChange({ headerSplitHeadingLabelColor })}
-                    columns={3}
-                  />
-                  <ServicesSizePill
-                    label="Label size"
-                    value={services.headerSplitHeadingLabelSize ?? 'md'}
-                    onChange={(headerSplitHeadingLabelSize) => onChange({ headerSplitHeadingLabelSize })}
-                  />
-                  <ServicesOptionGrid
-                    label="Label weight"
-                    options={SERVICES_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={services.headerSplitHeadingLabelWeight ?? 'regular'}
-                    onChange={(headerSplitHeadingLabelWeight: PortfolioServicesHeaderTitleWeight) =>
-                      onChange({ headerSplitHeadingLabelWeight })
-                    }
-                    columns={4}
-                  />
-                  <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} hideAlignment hideTitleControls />
-                </>
-              ) : (
-                <>
-                  <ServicesToggleRow
-                    label="Header motion"
-                    info="Respects reduced-motion preference"
-                    checked={services.headerAnimationEnabled !== false}
-                    onChange={(headerAnimationEnabled) => onChange({ headerAnimationEnabled })}
-                  />
-                  <ServicesHeaderSharedAdvancedControls services={services} onChange={onChange} />
-                </>
-              )}
-            </ServicesLayoutSettingsBand>
-          </div>
+            <ServicesHeaderDesignFields services={services} onChange={onChange} />
+          </ServicesLayoutSettingsBand>
         </div>
       ) : null}
     </div>

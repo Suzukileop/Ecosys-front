@@ -14,6 +14,7 @@ import {
   type EditorialContactLink,
 } from '@/components/portfolio/portfolio-section-primitives';
 import type { PortfolioContactPresentationSettings } from '@/components/portfolio/portfolio-contact-settings';
+import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
 import {
   DEFAULT_CONTENT_GUTTER,
   portfolioEditorialGutterX,
@@ -35,10 +36,11 @@ const narrativeMessageSchema = z.object({
 type NarrativeFormValues = z.infer<typeof narrativeMessageSchema>;
 const EMPTY_FORM: NarrativeFormValues = { name: '', email: '', message: '' };
 
-const FIELDS: { name: keyof NarrativeFormValues; question: string; type: string; multiline?: boolean }[] = [
-  { name: 'name', question: "What's your name?", type: 'text' },
-  { name: 'email', question: "What's your email?", type: 'email' },
-  { name: 'message', question: 'Tell me about the project', type: 'text', multiline: true },
+/** `questionKey` → the Layout settings text element holding that row's (editable) question. */
+const FIELDS: { name: keyof NarrativeFormValues; questionKey: string; type: string; multiline?: boolean }[] = [
+  { name: 'name', questionKey: 'question1', type: 'text' },
+  { name: 'email', questionKey: 'question2', type: 'email' },
+  { name: 'message', questionKey: 'question3', type: 'text', multiline: true },
 ];
 
 function NumberedRow({
@@ -94,7 +96,7 @@ function NumberedRow({
     'w-full border-0 bg-transparent pb-4 pt-2 text-[clamp(1.25rem,2vw,1.75rem)] outline-none ring-0 focus:outline-none focus:ring-0';
 
   return (
-    <div data-form-row data-dim className="relative py-10 sm:py-12" data-pf-no-color-transition="">
+    <div className="relative py-10 sm:py-12" data-pf-no-color-transition="">
       <div className="mb-4 flex items-baseline gap-3">
         <span ref={numberRef} className="text-sm font-semibold tabular-nums" style={{ color: muted }} data-pf-no-color-transition="">
           {index}
@@ -154,9 +156,8 @@ function NumberedRow({
  * text inside the field itself. Focus lights the number + question and thickens the line.
  * Right, a narrow metadata rail: circular avatar + arrow drifting together as one magnetic
  * block with a heavy, damped pull, then micro-caps labeled groups (contact / business /
- * socials). Hovering a form row is a theatrical spotlight across the *whole* composition —
- * every other row and every right-column block sinks to a near-invisible dim + blur; hovering
- * the avatar or a social link pulls that block magnetically toward the cursor.
+ * socials). Hovering the avatar or a social link pulls that block magnetically toward the
+ * cursor; nothing else in the composition dims or blurs.
  */
 export function ContactDesignNumberedNarrative({
   creatorId,
@@ -168,6 +169,7 @@ export function ContactDesignNumberedNarrative({
   heroImageAlt,
   sectionTitle,
   presentation,
+  layout,
   contentGutter = DEFAULT_CONTENT_GUTTER,
   colorMode,
 }: {
@@ -180,6 +182,7 @@ export function ContactDesignNumberedNarrative({
   heroImageAlt: string;
   sectionTitle?: string;
   presentation: PortfolioContactPresentationSettings;
+  layout: ContactDesignLayoutResolver;
   contentGutter?: PortfolioContentGutter;
   colorMode: 'light' | 'dark';
 }) {
@@ -188,11 +191,16 @@ export function ContactDesignNumberedNarrative({
   const tokens = contactLightDarkTokens(colorMode);
   const accent = presentation.ctaColor?.trim() || '#dc2626';
 
-  const title = sectionTitle?.trim() || DEFAULT_TITLE;
+  const title = layout.text('title') || sectionTitle?.trim() || DEFAULT_TITLE;
   const trimmedEmail = email?.trim() || '';
   const trimmedPhone = phone?.trim() || '';
   const trimmedLocation = locationLabel?.trim() || '';
   const displayName = heroImageAlt?.trim() || '';
+  const portraitUrl = layout.isVisible('portrait') ? heroImageUrl : null;
+  const submitLabel = layout.text('submitLabel') ?? 'Send message';
+  const contactHeading = layout.text('contactLabel');
+  const businessHeading = layout.text('businessLabel');
+  const socialsHeading = layout.text('socialsLabel');
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -231,37 +239,6 @@ export function ContactDesignNumberedNarrative({
     if (prefersReducedMotion()) return undefined;
 
     return runContactDesignMotion(root, 'ContactDesignNumberedNarrative', () => {
-      // Row hover — theatrical spotlight across the WHOLE composition (every form row +
-      // every right-column block shares one `[data-dim]` group), not just its own column:
-      // the hovered row snaps to full opacity while everything else — sibling rows, the
-      // avatar block, contact/business details, socials — sinks to a near-invisible 0.12
-      // opacity with a 1px blur.
-      const rows = Array.from(root.querySelectorAll<HTMLElement>('[data-form-row]'));
-      const dimTargets = Array.from(root.querySelectorAll<HTMLElement>('[data-dim]'));
-      const onRowEnter = (target: HTMLElement) => {
-        dimTargets.forEach((el) => {
-          const isTarget = el === target;
-          gsap.to(el, {
-            opacity: isTarget ? 1 : 0.12,
-            filter: isTarget ? 'blur(0px)' : 'blur(1px)',
-            duration: 0.35,
-            ease: 'power2.out',
-            overwrite: 'auto',
-          });
-        });
-      };
-      const onRowLeaveAll = () => {
-        dimTargets.forEach((el) => {
-          gsap.to(el, { opacity: 1, filter: 'blur(0px)', duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
-        });
-      };
-      const rowHandlers = rows.map((row) => {
-        const handler = () => onRowEnter(row);
-        row.addEventListener('pointerenter', handler);
-        return handler;
-      });
-      root.addEventListener('pointerleave', onRowLeaveAll);
-
       // Magnetic hover — avatar+arrow (as one block) + social links. Heavier inertia
       // (longer quickTo duration) than a typical magnetic button so the pull reads as a
       // slow, damped lag rather than a snappy follow.
@@ -287,8 +264,6 @@ export function ContactDesignNumberedNarrative({
       }
 
       return () => {
-        rowHandlers.forEach((handler, i) => rows[i].removeEventListener('pointerenter', handler));
-        root.removeEventListener('pointerleave', onRowLeaveAll);
         detach.forEach((off) => off());
       };
     });
@@ -298,7 +273,6 @@ export function ContactDesignNumberedNarrative({
     <div
       ref={rootRef}
       className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden"
-      style={{ backgroundColor: tokens.bg }}
       data-pf-no-color-transition=""
     >
       <div
@@ -323,7 +297,7 @@ export function ContactDesignNumberedNarrative({
               <NumberedRow
                 key={field.name}
                 index={String(index + 1).padStart(2, '0')}
-                question={field.question}
+                question={layout.text(field.questionKey) ?? ''}
                 type={field.type}
                 multiline={field.multiline}
                 registration={register(field.name)}
@@ -348,18 +322,17 @@ export function ContactDesignNumberedNarrative({
               style={{ color: tokens.ink }}
               data-pf-no-color-transition=""
             >
-              {isSubmitting ? 'Sending…' : 'Send message'}
+              {isSubmitting ? 'Sending…' : submitLabel}
               <span aria-hidden>→</span>
             </button>
           </form>
         </div>
 
         <div className="order-1 flex flex-col gap-10 md:order-2">
-          {heroImageUrl ? (
+          {portraitUrl ? (
             <div
               ref={avatarRef}
               data-magnetic
-              data-dim
               className="flex flex-col items-start gap-4 will-change-transform"
             >
               <div
@@ -367,7 +340,7 @@ export function ContactDesignNumberedNarrative({
                 data-pf-no-color-transition=""
               >
                 <Image
-                  src={heroImageUrl}
+                  src={portraitUrl}
                   alt={displayName ? `Portrait of ${displayName}` : 'Portrait'}
                   fill
                   sizes="8rem"
@@ -385,10 +358,12 @@ export function ContactDesignNumberedNarrative({
           ) : null}
 
           {trimmedEmail || trimmedPhone ? (
-            <div className={`flex flex-col gap-3 ${heroImageUrl ? 'md:mt-24 lg:mt-32' : ''}`} data-dim>
-              <p className="m-0 text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: tokens.muted }}>
-                Contact details
-              </p>
+            <div className={`flex flex-col gap-3 ${portraitUrl ? 'md:mt-24 lg:mt-32' : ''}`}>
+              {contactHeading ? (
+                <p className="m-0 text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: tokens.muted }}>
+                  {contactHeading}
+                </p>
+              ) : null}
               {trimmedEmail ? (
                 <a
                   href={`mailto:${trimmedEmail}`}
@@ -411,10 +386,12 @@ export function ContactDesignNumberedNarrative({
           ) : null}
 
           {trimmedLocation ? (
-            <div className="flex flex-col gap-3" data-dim>
-              <p className="m-0 text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: tokens.muted }}>
-                Business details
-              </p>
+            <div className="flex flex-col gap-3">
+              {businessHeading ? (
+                <p className="m-0 text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: tokens.muted }}>
+                  {businessHeading}
+                </p>
+              ) : null}
               <span className="max-w-[16rem] text-lg font-medium leading-relaxed sm:text-xl" style={{ color: tokens.ink }}>
                 {trimmedLocation}
               </span>
@@ -422,10 +399,12 @@ export function ContactDesignNumberedNarrative({
           ) : null}
 
           {links.length > 0 ? (
-            <div className="flex flex-col gap-3 md:mt-auto md:items-end md:text-right" data-dim>
-              <p className="m-0 text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: tokens.muted }}>
-                Socials
-              </p>
+            <div className="flex flex-col gap-3 md:mt-auto md:items-end md:text-right">
+              {socialsHeading ? (
+                <p className="m-0 text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: tokens.muted }}>
+                  {socialsHeading}
+                </p>
+              ) : null}
               <nav className="flex flex-wrap gap-x-8 gap-y-3 md:justify-end" aria-label="Social">
                 {links.map((link) => (
                   <a

@@ -53,6 +53,7 @@ export function FaqBentoDualDesign({
   cardRadius = 'md',
   cardBorder = 'soft',
   cardOpacity = 100,
+  fontSizeScale = 1,
 }: {
   items: FaqItem[];
   header?: ReactNode;
@@ -67,6 +68,9 @@ export function FaqBentoDualDesign({
   /** 0–100 — blended via `color-mix` against the section background, not raw CSS
    *  `opacity`, so the question/answer text layers stay fully legible at any value. */
   cardOpacity?: number;
+  /** Multiplies every font-size in this design via `--pf-faq-font-scale` — see the FAQ
+   *  General tab's "Font size" control (`faqPremiumFontScale` in portfolio-faq-settings.ts). */
+  fontSizeScale?: number;
 }) {
   const gridRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -192,6 +196,7 @@ export function FaqBentoDualDesign({
     '--pfbd-radius': CARD_RADIUS_PX[cardRadius],
     '--pfbd-border-width': CARD_BORDER_WIDTH_PX[cardBorder],
     '--pfbd-card-opacity': `${Math.min(100, Math.max(0, cardOpacity))}%`,
+    '--pf-faq-font-scale': fontSizeScale,
     ...(cardColor ? { '--pfbd-card': cardColor } : null),
     ...(cardBorder === 'solid'
       ? { '--pfbd-border': 'color-mix(in srgb, var(--pfbd-card-ink) 35%, var(--pfbd-card))' }
@@ -200,7 +205,7 @@ export function FaqBentoDualDesign({
 
   return (
     <div
-      className="pf-faq-bento w-full px-5 py-10 sm:px-10 sm:py-14 lg:px-14 lg:py-16"
+      className="pf-faq-bento w-full"
       data-pf-faq-mode={activeColorMode === 'dark' ? 'dark' : 'light'}
       style={cardStyle}
     >

@@ -611,8 +611,9 @@ export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ),
 
   // FAQ
-  entry('faq', 'General', ['visibility', 'design', 'defaults'], 'general'),
+  entry('faq', 'General', ['visibility', 'design', 'defaults', 'frame', 'border', 'cadre', 'padding', 'shadow', 'corners', 'radius'], 'general'),
   entry('faq', 'Design', ['layout', 'style', 'design'], 'design'),
+  entry('faq', 'Header', ['title', 'subtitle', 'signal', 'query', 'dialogue'], 'header'),
   entry('faq', 'Background', ['fill', 'gradient', 'fond'], 'background'),
 
   // Contact

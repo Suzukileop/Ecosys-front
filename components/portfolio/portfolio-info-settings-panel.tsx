@@ -13,7 +13,7 @@ import {
   PORTFOLIO_INFO_ABOUT_SPLIT_PORTRAIT_SIDE_OPTIONS,
   PORTFOLIO_INFO_ABOUT_VALUE_STEPS_VALUES_LAYOUT_OPTIONS,
   PORTFOLIO_INFO_ABOUT_VALUE_LIST_MARKER_STYLE_OPTIONS,
-  PORTFOLIO_INFO_CONTENT_SIZE_OPTIONS,
+  PORTFOLIO_INFO_PREMIUM_FONT_SIZE_OPTIONS,
   PORTFOLIO_INFO_DESIGN_OPTIONS,
   PORTFOLIO_INFO_EDUCATION_DISPLAY_OPTIONS,
   PORTFOLIO_INFO_HEADER_DESIGN_OPTIONS,
@@ -1204,10 +1204,11 @@ export function InfoSettingsPanel({
           />
 
           <InfoOptionGrid
-            label="Element size"
-            value={info.contentSize ?? info.aboutManifestoContentSize ?? info.aboutMeTraitContentSize ?? 'md'}
-            options={PORTFOLIO_INFO_CONTENT_SIZE_OPTIONS}
-            onChange={(contentSize) => onChange({ contentSize })}
+            label="Font size"
+            value={info.premiumFontSize ?? 'medium'}
+            options={PORTFOLIO_INFO_PREMIUM_FONT_SIZE_OPTIONS}
+            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
+            columns={3}
           />
 
           <div className="space-y-5">

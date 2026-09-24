@@ -31,12 +31,12 @@ export const PORTFOLIO_GALLERY_COLOR_SLOT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sectionBackground', label: 'Fond de section', description: 'Remplissage principal de la galerie.' },
-  { value: 'cardSurface', label: 'Surface carte', description: 'Fond et bordure des cartes galerie (mode sombre).' },
+  { value: 'sectionBackground', label: 'Section background', description: 'Main gallery fill.' },
+  { value: 'cardSurface', label: 'Card surface', description: 'Gallery card background and border (dark mode).' },
   { value: 'title', label: 'Section title', description: 'Gallery heading color.' },
-  { value: 'subtitle', label: 'Sous-titre', description: 'Texte introductif sous le titre.' },
-  { value: 'itemTitle', label: 'Titre des médias', description: 'Légendes sous les images.' },
-  { value: 'overlay', label: 'Overlay', description: 'Voile derrière les légendes superposées.' },
+  { value: 'subtitle', label: 'Subtitle', description: 'Intro text under the title.' },
+  { value: 'itemTitle', label: 'Media titles', description: 'Captions under the images.' },
+  { value: 'overlay', label: 'Overlay', description: 'Veil behind overlaid captions.' },
 ];
 
 export type PortfolioGalleryPaletteHost = Partial<PortfolioGalleryPresentationSettings> & {

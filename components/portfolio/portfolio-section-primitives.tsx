@@ -158,39 +158,9 @@ import {
 import { PortfolioNavMenuGroupDropdown } from '@/components/portfolio/portfolio-nav-menu-group-dropdown';
 import { resolveNavMenuEntries } from '@/components/portfolio/portfolio-nav-menu-groups';
 import type { PortfolioNavIconVariant } from '@/components/portfolio/portfolio-nav-items';
-import {
-  teamAvatarSizeClass,
-  teamCardClass,
-  teamCardFooterPaddingClass,
-  teamCardFrameClass,
-  teamCardMaxWidthClass,
-  teamCardStyle,
-  teamCircleAvatarClass,
-  teamContentAlignClass,
-  teamDirectoryMaxWidthClass,
-  teamDirectoryStackGapClass,
-  teamFlexAlignClass,
-  teamFloatCardBodyPadClass,
-  teamFloatCardMinHeightClass,
-  teamFloatAvatarAnchorClass,
-  teamFloatGridOffsetClass,
-  teamGridClass,
-  teamHoverOverlayPaddingClass,
-  teamHoverPhotoClass,
-  teamListAlignClass,
-  teamProfilePhotoHeightClass,
-  teamReadableCardText,
-  teamSocialAlignClass,
-  teamSocialIconButtonClass,
-  teamSocialIconGlyphClass,
-  teamSpotlightGridClass,
-  teamSpotlightMaxWidthClass,
-  teamSpotlightNameClass,
-  teamSpotlightPhotoSizeClass,
-  teamSpotlightRoleClass,
-  teamSpotlightThumbClass,
-  type PortfolioTeamPresentationSettings,
-} from '@/components/portfolio/portfolio-team-settings';
+// The Team section's member layouts now live in their own module (premium rework + shared GSAP
+// entrance); re-exported here so existing `portfolio-section-primitives` importers keep working.
+export { EditorialTeamGallery } from '@/components/portfolio/portfolio-team-designs';
 import {
   PortfolioNavAdjacentExtras,
   PortfolioNavCenterBrand,
@@ -627,6 +597,7 @@ import {
   contactItemRowShellClass,
   contactItemsLayoutClass,
   normalizeContactElementStyles,
+  contactPremiumFontScale,
   type PortfolioContactElementStyles,
   type PortfolioContactIconBorder,
   type PortfolioContactIconPlacement,
@@ -652,9 +623,8 @@ import { ContactDesignStudioOverlap } from '@/components/portfolio/portfolio-con
 import { ContactDesignBorderlessGrid } from '@/components/portfolio/portfolio-contact-design-borderless-grid';
 import { ContactDesignBrokenGrid } from '@/components/portfolio/portfolio-contact-design-broken-grid';
 import { ContactDesignNumberedNarrative } from '@/components/portfolio/portfolio-contact-design-numbered-narrative';
-import { ContactDesignBrutalistOverlap } from '@/components/portfolio/portfolio-contact-design-brutalist-overlap';
-import { ContactDesignSplitManifesto } from '@/components/portfolio/portfolio-contact-design-split-manifesto';
 import { ContactDesignMagneticOverlap } from '@/components/portfolio/portfolio-contact-design-magnetic-overlap';
+import { createContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
 import { FaqSectionIllustration } from '@/components/portfolio/FaqSectionIllustration';
 import {
   DEFAULT_FOOTER_PRESENTATION,
@@ -685,15 +655,19 @@ import {
   isFooterBackgroundLight,
   normalizeFooterElementStyles,
   resolveFooterCtaSubtitle,
-  resolveFooterDescription,
   resolveFooterLinkHref,
-  resolveFooterInternalLinksColumn,
   DEFAULT_FOOTER_CONNECT_LABEL,
   DEFAULT_FOOTER_ACCENT_COLOR,
-  type PortfolioFooterAutoSectionKey,
   resolveFooterMarketplaceCtaHref,
+  footerPremiumFontScale,
   type PortfolioFooterPresentationSettings,
 } from '@/components/portfolio/portfolio-footer-settings';
+import {
+  createFooterDesignLayoutResolver,
+  resolveFooterSectionNavLinks,
+  type FooterInkToken,
+  type PortfolioFooterSectionLinkOption,
+} from '@/components/portfolio/portfolio-footer-design-layout';
 import { FooterDesignMonumental } from '@/components/portfolio/portfolio-footer-design-monumental';
 import { FooterDesignContactCard } from '@/components/portfolio/portfolio-footer-design-contact-card';
 import { FooterDesignCompact } from '@/components/portfolio/portfolio-footer-design-compact';
@@ -1330,9 +1304,9 @@ export function EditorialGallerySection({
         tabIndex={isInteractive ? 0 : undefined}
         aria-label={
           options?.onActivate
-            ? `Afficher ${galleryItemDisplayTitle(item.title) || 'ce média'}`
+            ? `Show ${galleryItemDisplayTitle(item.title) || 'this media'}`
             : presentation.lightboxEnabled
-              ? `Ouvrir ${item.title}`
+              ? `Open ${item.title}`
               : undefined
         }
         onClick={activate}
@@ -1888,7 +1862,7 @@ export function EditorialGallerySection({
                   type="button"
                   onClick={() => setActiveItem(null)}
                   className="absolute -right-2 -top-12 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
-                  aria-label="Fermer la galerie"
+                  aria-label="Close the gallery"
                   autoFocus
                 >
                   ×
@@ -24071,701 +24045,6 @@ export function EditorialFaqList({
   );
 }
 
-function teamImageAspectClass(aspect: PortfolioTeamPresentationSettings['imageAspect']): string {
-  if (aspect === 'square') return 'aspect-square w-full';
-  if (aspect === 'landscape') return 'aspect-[4/3] w-full';
-  if (aspect === 'auto') return 'min-h-48 w-full';
-  return 'aspect-[4/5] w-full';
-}
-
-function TeamMemberImage({
-  member,
-  presentation,
-  className = '',
-  fill = false,
-}: {
-  member: ProfileTeamMember;
-  presentation: PortfolioTeamPresentationSettings;
-  className?: string;
-  fill?: boolean;
-}) {
-  if (!presentation.showImage) return null;
-  const fit = presentation.imageFit === 'contain' ? 'object-contain' : 'object-cover';
-  const position = {
-    center: 'object-center',
-    top: 'object-top',
-    bottom: 'object-bottom',
-    left: 'object-left',
-    right: 'object-right',
-  }[presentation.imagePosition];
-  return (
-    <div
-      className={`relative overflow-hidden bg-neutral-100 ${
-        fill ? 'h-full w-full' : teamImageAspectClass(presentation.imageAspect)
-      } ${className}`}
-    >
-      {member.imageUrl?.trim() ? (
-        <PortfolioDeferredMedia
-          src={member.imageUrl}
-          alt={`Portrait de ${member.name}`}
-          className={`h-full w-full ${fit} ${position}`}
-          sizes="(max-width: 768px) 50vw, 280px"
-          objectFit={presentation.imageFit === 'contain' ? 'contain' : 'cover'}
-          objectPosition={presentation.imagePosition}
-        />
-      ) : (
-        <div className="flex h-full min-h-0 items-center justify-center text-4xl font-bold text-neutral-400" aria-hidden>
-          {member.name.trim().charAt(0).toUpperCase() || '—'}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TeamSocialIcon({ platform, className }: { platform: string; className: string }) {
-  if (platform === 'EMAIL') {
-    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden><path d="M3.5 6.5h17v11h-17z" /><path d="m4 7 8 6 8-6" /></svg>;
-  }
-  if (platform === 'FACEBOOK') {
-    return <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M13.7 21v-8h2.7l.4-3h-3.1V8.1c0-.9.3-1.5 1.6-1.5H17V3.9a22 22 0 0 0-2.5-.1c-2.5 0-4.2 1.5-4.2 4.2v2H7.5v3h2.8v8h3.4Z" /></svg>;
-  }
-  if (platform === 'WEBSITE') {
-    return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.2 2.5 3.3 5.5 3.3 9S14.2 18.5 12 21c-2.2-2.5-3.3-5.5-3.3-9S9.8 5.5 12 3Z" /></svg>;
-  }
-  return <SocialPlatformIcon platform={platform} className={className} />;
-}
-
-function TeamSocialLinks({
-  member,
-  presentation,
-  align = 'justify-center',
-  hoverLight = false,
-}: {
-  member: ProfileTeamMember;
-  presentation: PortfolioTeamPresentationSettings;
-  align?: string;
-  hoverLight?: boolean;
-}) {
-  const links = (member.socialLinks ?? []).filter((link) => link.url.trim());
-  if (!presentation.showSocials) return null;
-  const size = teamSocialIconButtonClass(presentation.socialIconSize);
-  const slotHeight = size.split(' ')[0] ?? 'h-9';
-  if (links.length === 0) {
-    return <div className={`${slotHeight} ${align}`} aria-hidden />;
-  }
-  const glyph = teamSocialIconGlyphClass(presentation.socialIconSize);
-  const chrome =
-    presentation.socialIconStyle === 'minimal'
-      ? 'border-transparent bg-transparent'
-      : presentation.socialIconStyle === 'outline'
-        ? 'border-current bg-transparent'
-        : presentation.socialIconStyle === 'soft'
-          ? 'border-transparent rounded-xl'
-          : 'border-transparent rounded-full';
-  const hoverTone = hoverLight
-    ? 'group-hover:![border-color:color-mix(in_srgb,var(--team-float-hover-ink)_30%,transparent)] group-hover:![background-color:var(--team-float-hover-icon-bg)] group-hover:![color:var(--team-float-hover-ink)]'
-    : '';
-  return (
-    <div className={`flex flex-wrap gap-2 ${align}`} aria-label={`Liens sociaux de ${member.name}`}>
-      {links.map((link) => {
-        const href =
-          link.platform === 'EMAIL' && !/^mailto:/i.test(link.url)
-            ? `mailto:${link.url}`
-            : link.url;
-        return (
-          <a
-            key={link.id}
-            href={href}
-            target={link.platform === 'EMAIL' ? undefined : '_blank'}
-            rel={link.platform === 'EMAIL' ? undefined : 'noopener noreferrer'}
-            aria-label={link.label?.trim() || `${link.platform} — ${member.name}`}
-            className={`inline-flex shrink-0 items-center justify-center border transition hover:-translate-y-0.5 hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${size} ${chrome} ${hoverTone}`}
-            data-pf-no-color-transition=""
-            style={{
-              color: presentation.socialIconColor,
-              backgroundColor:
-                presentation.socialIconStyle === 'minimal' || presentation.socialIconStyle === 'outline'
-                  ? 'transparent'
-                  : presentation.socialBackgroundColor,
-            }}
-          >
-            <TeamSocialIcon platform={link.platform} className={glyph} />
-          </a>
-        );
-      })}
-    </div>
-  );
-}
-
-function TeamMemberCopy({
-  member,
-  presentation,
-  align = 'text-center',
-  size = 'md',
-}: {
-  member: ProfileTeamMember;
-  presentation: PortfolioTeamPresentationSettings;
-  align?: string;
-  size?: 'md' | 'lg';
-}) {
-  const readable = teamReadableCardText(presentation);
-  const nameClass = size === 'lg' ? 'text-2xl font-semibold leading-tight tracking-tight sm:text-[1.7rem]' : 'text-lg font-bold leading-tight';
-  const roleClass =
-    size === 'lg'
-      ? 'mt-1.5 min-h-[1.5rem] text-base leading-relaxed'
-      : 'mt-1 min-h-[1.25rem] text-sm leading-relaxed';
-  return (
-    <div className={align}>
-      {presentation.showName ? (
-        <h3 className={nameClass} style={{ color: readable.strong }}>
-          {member.name}
-        </h3>
-      ) : null}
-      {presentation.showResponsibility ? (
-        <p className={roleClass} style={{ color: readable.muted }}>
-          {member.responsibility.trim() || '\u00a0'}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function TeamStandardCard({
-  member,
-  presentation,
-  polaroidIndex,
-  copySize = 'md',
-}: {
-  member: ProfileTeamMember;
-  presentation: PortfolioTeamPresentationSettings;
-  polaroidIndex?: number;
-  copySize?: 'md' | 'lg';
-}) {
-  const rotation = polaroidIndex == null ? '' : ['-rotate-1', 'rotate-[0.8deg]', '-rotate-[0.4deg]', 'rotate-[1.2deg]'][polaroidIndex % 4];
-  return (
-    <article
-      className={`flex h-full w-full flex-col ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardClass(presentation)} ${rotation} transition-transform hover:rotate-0 hover:-translate-y-1`}
-      data-pf-no-color-transition=""
-      style={teamCardStyle(presentation)}
-    >
-      <TeamMemberImage member={member} presentation={presentation} className="rounded-[calc(2rem-0.75rem)]" />
-      <div className={`flex min-h-0 flex-1 flex-col ${presentation.showImage ? 'mt-5' : ''}`}>
-        <TeamMemberCopy member={member} presentation={presentation} size={copySize} />
-        {presentation.showSocials ? (
-          <div className="mt-auto pt-4">
-            <TeamSocialLinks member={member} presentation={presentation} />
-          </div>
-        ) : null}
-      </div>
-    </article>
-  );
-}
-
-function TeamProfileCard({
-  member,
-  presentation,
-}: {
-  member: ProfileTeamMember;
-  presentation: PortfolioTeamPresentationSettings;
-}) {
-  const readable = teamReadableCardText(presentation);
-  const align = presentation.listAlign ?? 'center';
-  return (
-    <article
-      className={`flex h-full w-full flex-col ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} transition hover:-translate-y-0.5`}
-      data-pf-no-color-transition=""
-      style={teamCardStyle(presentation)}
-    >
-      {presentation.showImage ? (
-        <div className={`w-full overflow-hidden ${teamProfilePhotoHeightClass(presentation.avatarSize)}`}>
-          <TeamMemberImage member={member} presentation={presentation} fill />
-        </div>
-      ) : null}
-      <div className={`${teamCardFooterPaddingClass(presentation.cardPadding)} ${teamContentAlignClass(align)} flex min-h-0 flex-1 flex-col`}>
-        {presentation.showName ? (
-          <h3 className="text-xl font-bold tracking-tight" style={{ color: readable.strong }}>
-            {member.name}
-          </h3>
-        ) : null}
-        {presentation.showResponsibility ? (
-          <p className="mt-1 min-h-[1.25rem] text-sm" style={{ color: readable.muted }}>
-            {member.responsibility.trim() || '\u00a0'}
-          </p>
-        ) : null}
-        {presentation.showSocials ? (
-          <div className={`mt-auto ${presentation.showName || presentation.showResponsibility ? 'pt-4' : ''}`}>
-            <TeamSocialLinks member={member} presentation={presentation} align={teamSocialAlignClass(align)} />
-          </div>
-        ) : null}
-      </div>
-    </article>
-  );
-}
-
-function TeamAvatarCard({
-  member,
-  presentation,
-}: {
-  member: ProfileTeamMember;
-  presentation: PortfolioTeamPresentationSettings;
-}) {
-  const readable = teamReadableCardText(presentation);
-  const align = presentation.listAlign ?? 'center';
-  return (
-    <article
-      className={`flex h-full w-full flex-col ${teamFlexAlignClass(align)} ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} ${teamCardFooterPaddingClass(presentation.cardPadding)} ${teamContentAlignClass(align)} transition hover:-translate-y-0.5`}
-      data-pf-no-color-transition=""
-      style={teamCardStyle(presentation)}
-    >
-      {presentation.showImage ? (
-        <div className={`shrink-0 overflow-hidden rounded-full ${teamCircleAvatarClass(presentation.avatarSize)}`}>
-          <TeamMemberImage
-            member={member}
-            presentation={{ ...presentation, imageAspect: 'square' }}
-            fill
-          />
-        </div>
-      ) : null}
-      {presentation.showName ? (
-        <h3
-          className={`text-lg font-bold tracking-tight ${presentation.showImage ? 'mt-5' : ''}`}
-          style={{ color: readable.strong }}
-        >
-          {member.name}
-        </h3>
-      ) : null}
-      {presentation.showResponsibility ? (
-        <p className={`min-h-[1.25rem] text-sm ${presentation.showName ? 'mt-1' : presentation.showImage ? 'mt-5' : ''}`} style={{ color: readable.muted }}>
-          {member.responsibility.trim() || '\u00a0'}
-        </p>
-      ) : null}
-      {presentation.showSocials ? (
-        <div
-          className={`mt-auto ${
-            presentation.showImage || presentation.showName || presentation.showResponsibility ? 'pt-5' : ''
-          }`}
-        >
-          <TeamSocialLinks member={member} presentation={presentation} align={teamSocialAlignClass(align)} />
-        </div>
-      ) : null}
-    </article>
-  );
-}
-
-function TeamFloatCard({
-  member,
-  presentation,
-}: {
-  member: ProfileTeamMember;
-  presentation: PortfolioTeamPresentationSettings;
-}) {
-  const readable = teamReadableCardText(presentation);
-  const align = presentation.listAlign ?? 'center';
-  const cardStyle = teamCardStyle(presentation);
-  const hoverFill =
-    presentation.teamPalette?.principal?.trim() || presentation.socialIconColor;
-  const hoverInk = servicesColorLuminance(hoverFill) > 0.55 ? '#111827' : '#ffffff';
-  const hoverIconBg =
-    servicesColorLuminance(hoverFill) > 0.55
-      ? 'color-mix(in srgb, #111827 12%, transparent)'
-      : 'color-mix(in srgb, #ffffff 22%, transparent)';
-  return (
-    <article className={`group relative flex h-full w-full flex-col overflow-visible ${presentation.showImage ? teamFloatGridOffsetClass(presentation.avatarSize) : ''} ${teamCardMaxWidthClass(presentation.cardMaxWidth)}`}>
-      {presentation.showImage ? (
-        <div
-          className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border-4 ${teamFloatAvatarAnchorClass(presentation.avatarSize)} ${teamCircleAvatarClass(presentation.avatarSize)}`}
-          style={{
-            borderColor: presentation.cardBackgroundColor,
-            boxShadow: `0 0 0 1px ${presentation.cardBorderColor}`,
-          }}
-        >
-          <TeamMemberImage
-            member={member}
-            presentation={{ ...presentation, imageAspect: 'square' }}
-            fill
-          />
-        </div>
-      ) : null}
-      <div
-        className={`flex h-full w-full flex-col ${teamCardFrameClass(presentation)} ${teamFlexAlignClass(align)} ${teamFloatCardBodyPadClass(presentation.avatarSize)} ${teamFloatCardMinHeightClass(presentation.avatarSize)} ${teamContentAlignClass(align)} transition-colors duration-200 group-hover:border-transparent group-hover:shadow-lg group-hover:![background-color:var(--team-float-hover)]`}
-        style={
-          {
-            ...cardStyle,
-            '--team-float-hover': hoverFill,
-            '--team-float-hover-ink': hoverInk,
-            '--team-float-hover-icon-bg': hoverIconBg,
-          } as CSSProperties
-        }
-      >
-        {presentation.showName ? (
-          <h3
-            className="text-lg font-bold tracking-tight transition-colors group-hover:![color:var(--team-float-hover-ink)]"
-            style={{ color: readable.strong }}
-          >
-            {member.name}
-          </h3>
-        ) : null}
-        {presentation.showResponsibility ? (
-          <p
-            className={`min-h-[1.25rem] text-sm transition-colors group-hover:![color:color-mix(in_srgb,var(--team-float-hover-ink)_85%,transparent)] ${presentation.showName ? 'mt-1' : ''}`}
-            style={{ color: readable.muted }}
-          >
-            {member.responsibility.trim() || '\u00a0'}
-          </p>
-        ) : null}
-        {presentation.showSocials ? (
-          <div className={`mt-auto ${presentation.showName || presentation.showResponsibility ? 'pt-4' : ''}`}>
-            <TeamSocialLinks
-              member={member}
-              presentation={presentation}
-              align={teamSocialAlignClass(align)}
-              hoverLight
-            />
-          </div>
-        ) : null}
-      </div>
-    </article>
-  );
-}
-
-function TeamHoverCard({
-  member,
-  presentation,
-}: {
-  member: ProfileTeamMember;
-  presentation: PortfolioTeamPresentationSettings;
-}) {
-  const readable = teamReadableCardText(presentation);
-  const align = presentation.listAlign ?? 'left';
-  const overlayRadius =
-    presentation.cardRadius === 'none'
-      ? 'rounded-none'
-      : presentation.cardRadius === 'sm'
-        ? 'rounded-lg'
-        : presentation.cardRadius === 'xl'
-          ? 'rounded-2xl'
-          : 'rounded-xl';
-  return (
-    <article
-      className={`group relative h-full w-full ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} ${teamHoverPhotoClass(presentation.avatarSize)}`}
-      style={teamCardStyle(presentation)}
-    >
-      {presentation.showImage ? (
-        <TeamMemberImage
-          member={member}
-          presentation={{ ...presentation, imageAspect: 'portrait' }}
-          fill
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-neutral-400" aria-hidden>
-          {member.name.trim().charAt(0).toUpperCase() || '—'}
-        </div>
-      )}
-      <div
-        className={`absolute inset-x-3 bottom-3 z-10 ${overlayRadius} shadow-lg ${teamHoverOverlayPaddingClass(presentation.avatarSize)} ${teamContentAlignClass(align)} pointer-events-none opacity-0 translate-y-2 transition duration-200 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100`}
-        data-pf-no-color-transition=""
-        style={{ backgroundColor: presentation.cardBackgroundColor }}
-      >
-        {presentation.showName ? (
-          <h3 className="text-base font-bold leading-tight tracking-tight sm:text-lg" style={{ color: readable.strong }}>
-            {member.name}
-          </h3>
-        ) : null}
-        {presentation.showResponsibility ? (
-          <p className="mt-0.5 min-h-[1.25rem] text-sm" style={{ color: readable.muted }}>
-            {member.responsibility.trim() || '\u00a0'}
-          </p>
-        ) : null}
-        {presentation.showSocials ? (
-          <div className={presentation.showName || presentation.showResponsibility ? 'mt-3' : ''}>
-            <TeamSocialLinks member={member} presentation={presentation} align={teamSocialAlignClass(align)} />
-          </div>
-        ) : null}
-      </div>
-    </article>
-  );
-}
-
-function TeamCoverCard({
-  member,
-  presentation,
-}: {
-  member: ProfileTeamMember;
-  presentation: PortfolioTeamPresentationSettings;
-}) {
-  const align = presentation.listAlign ?? 'center';
-  const overlayAlign =
-    align === 'left' ? 'items-start text-left' : align === 'right' ? 'items-end text-right' : 'items-center text-center';
-  return (
-    <article
-      className={`group relative h-full w-full ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} ${teamHoverPhotoClass(presentation.avatarSize)}`}
-      style={teamCardStyle(presentation)}
-    >
-      {presentation.showImage ? (
-        <TeamMemberImage
-          member={member}
-          presentation={{ ...presentation, imageAspect: 'portrait' }}
-          fill
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-neutral-400" aria-hidden>
-          {member.name.trim().charAt(0).toUpperCase() || '—'}
-        </div>
-      )}
-      <div
-        className={`absolute inset-0 z-10 flex flex-col justify-center px-5 py-6 ${overlayAlign} pointer-events-none bg-black/55 opacity-0 transition duration-200 ease-out group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100`}
-        data-pf-no-color-transition=""
-      >
-        {presentation.showName ? (
-          <h3 className="text-xl font-bold leading-tight tracking-tight text-white sm:text-2xl">
-            {member.name}
-          </h3>
-        ) : null}
-        {presentation.showResponsibility ? (
-          <p className="mt-1 min-h-[1.25rem] text-sm text-white/80 sm:text-base">
-            {member.responsibility.trim() || '\u00a0'}
-          </p>
-        ) : null}
-        {presentation.showSocials ? (
-          <div className={presentation.showName || presentation.showResponsibility ? 'mt-4' : ''}>
-            <TeamSocialLinks
-              member={member}
-              presentation={{
-                ...presentation,
-                socialIconColor: '#171717',
-                socialBackgroundColor: '#ffffff',
-                socialIconStyle: 'circle',
-              }}
-              align={teamSocialAlignClass(align)}
-            />
-          </div>
-        ) : null}
-      </div>
-    </article>
-  );
-}
-
-function TeamSpotlight({
-  members,
-  presentation,
-}: {
-  members: ProfileTeamMember[];
-  presentation: PortfolioTeamPresentationSettings;
-}) {
-  const spotlightMembers = members.slice(0, 4);
-  const [activeId, setActiveId] = useState(spotlightMembers[0]?.id ?? '');
-  const active =
-    spotlightMembers.find((member) => member.id === activeId) ?? spotlightMembers[0];
-  if (!active) return null;
-  const readable = teamReadableCardText(presentation);
-  const portraitSize = presentation.avatarSize ?? 'sm';
-  return (
-    <article
-      className={`${teamCardClass(presentation)} grid w-full gap-4 ${teamSpotlightMaxWidthClass(presentation.cardMaxWidth)} ${teamListAlignClass(presentation.listAlign)} ${teamSpotlightGridClass()}`}
-      style={teamCardStyle(presentation)}
-    >
-      <div className={`self-start shrink-0 overflow-hidden rounded-2xl aspect-[4/5] ${teamSpotlightPhotoSizeClass(portraitSize)}`}>
-        <TeamMemberImage
-          member={active}
-          presentation={{ ...presentation, imageAspect: 'portrait' }}
-          fill
-          className="rounded-2xl"
-        />
-      </div>
-      <div className="flex min-h-0 min-w-0 flex-col md:h-full">
-        <div className="text-left">
-          {presentation.showName ? (
-            <h3
-              className={teamSpotlightNameClass(presentation.cardMaxWidth)}
-              style={{ color: readable.strong }}
-            >
-              {active.name}
-            </h3>
-          ) : null}
-          {presentation.showResponsibility ? (
-            <p className={teamSpotlightRoleClass(presentation.cardMaxWidth)} style={{ color: readable.muted }}>
-              {active.responsibility}
-            </p>
-          ) : null}
-          <div
-            className="mt-5 h-px w-full max-w-[12rem]"
-            style={{ backgroundColor: presentation.cardBorderColor }}
-            aria-hidden
-          />
-          <div className="mt-5">
-            <TeamSocialLinks member={active} presentation={presentation} align="justify-start" />
-          </div>
-        </div>
-        <div
-          className="mt-6 grid grid-cols-4 gap-3 pb-1 md:mt-auto md:pt-6"
-          role="tablist"
-          aria-label="Choose a team member"
-        >
-          {spotlightMembers.map((member) => (
-            <button
-              key={member.id}
-              type="button"
-              role="tab"
-              aria-selected={member.id === active.id}
-              onClick={() => setActiveId(member.id)}
-              className={`aspect-square w-full overflow-hidden rounded-xl border-2 transition ${
-                member.id === active.id ? 'opacity-100' : 'opacity-70 hover:opacity-100'
-              }`}
-              data-pf-no-color-transition=""
-              style={{
-                borderColor:
-                  member.id === active.id ? presentation.socialIconColor : presentation.cardBorderColor,
-              }}
-            >
-              <TeamMemberImage
-                member={member}
-                presentation={{ ...presentation, imageAspect: 'square', showImage: true }}
-                fill
-              />
-              <span className="sr-only">{member.name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function TeamDirectoryRow({
-  member,
-  presentation,
-  detached,
-}: {
-  member: ProfileTeamMember;
-  presentation: PortfolioTeamPresentationSettings;
-  detached: boolean;
-}) {
-  const readable = teamReadableCardText(presentation);
-  const pad = teamCardFooterPaddingClass(presentation.cardPadding);
-  return (
-    <article
-      className={`flex h-full flex-col gap-4 sm:flex-row sm:items-center ${
-        detached
-          ? `${teamCardFrameClass(presentation)} ${pad}`
-          : `border-b last:border-b-0 ${pad}`
-      }`}
-      style={detached ? teamCardStyle(presentation) : { borderColor: presentation.cardBorderColor }}
-    >
-      <div className="flex min-w-0 flex-1 items-center gap-4">
-        {presentation.showImage ? (
-          <div className={`shrink-0 overflow-hidden rounded-full ${teamAvatarSizeClass(presentation.avatarSize)}`}>
-            <TeamMemberImage
-              member={member}
-              presentation={{ ...presentation, imageAspect: 'square' }}
-              className="h-full min-h-0"
-            />
-          </div>
-        ) : null}
-        <div className="min-w-0 text-left">
-          {presentation.showName ? (
-            <h3 className="truncate text-xl font-semibold leading-tight tracking-tight sm:text-2xl" style={{ color: readable.strong }}>
-              {member.name}
-            </h3>
-          ) : null}
-          {presentation.showResponsibility ? (
-            <p
-              className={`min-h-[1.5rem] truncate text-base font-semibold sm:text-lg ${presentation.showName ? 'mt-1' : ''}`}
-              style={{ color: readable.muted }}
-            >
-              {member.responsibility.trim() || '\u00a0'}
-            </p>
-          ) : null}
-        </div>
-      </div>
-      <div className="sm:min-w-[5.5rem]">
-        <TeamSocialLinks member={member} presentation={presentation} align="justify-start sm:justify-end" />
-      </div>
-    </article>
-  );
-}
-
-export function EditorialTeamGallery({
-  members,
-  presentation,
-}: {
-  members: ProfileTeamMember[];
-  presentation: PortfolioTeamPresentationSettings;
-}) {
-  if (members.length === 0) return null;
-  if (presentation.layout === 'spotlight') {
-    return <TeamSpotlight members={members} presentation={presentation} />;
-  }
-  if (presentation.layout === 'portrait-rail') {
-    const railAlign =
-      presentation.listAlign === 'left'
-        ? 'justify-start'
-        : presentation.listAlign === 'right'
-          ? 'justify-end'
-          : 'justify-center';
-    return (
-      <div className={`flex snap-x snap-mandatory items-stretch gap-5 overflow-x-auto pb-5 ${railAlign}`}>
-        {members.map((member) => (
-          <div key={member.id} className={`flex w-[72vw] shrink-0 snap-center self-stretch ${teamCardMaxWidthClass(presentation.cardMaxWidth)}`}>
-            <TeamStandardCard
-              member={member}
-              presentation={{ ...presentation, imageAspect: 'portrait' }}
-              copySize="lg"
-            />
-          </div>
-        ))}
-      </div>
-    );
-  }
-  if (presentation.layout === 'directory') {
-    const detached = presentation.directoryDetachedCards !== false;
-    return (
-      <div
-        className={`w-full ${teamDirectoryMaxWidthClass(presentation.cardMaxWidth)} ${teamListAlignClass(presentation.listAlign)}`}
-      >
-        {detached ? (
-          <div className={`flex w-full flex-col ${teamDirectoryStackGapClass(presentation.gap)}`}>
-            {members.map((member) => (
-              <TeamDirectoryRow key={member.id} member={member} presentation={presentation} detached />
-            ))}
-          </div>
-        ) : (
-          <div className={`overflow-hidden ${teamCardFrameClass(presentation)}`} style={teamCardStyle(presentation)}>
-            {members.map((member) => (
-              <TeamDirectoryRow key={member.id} member={member} presentation={presentation} detached={false} />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-  return (
-    <div
-      className={`w-full overflow-visible ${teamGridClass(presentation.columns, presentation.gap, presentation.listAlign, presentation.layout)}`}
-    >
-      {members.map((member, index) =>
-        presentation.layout === 'profile-cards' ? (
-          <TeamProfileCard key={member.id} member={member} presentation={presentation} />
-        ) : presentation.layout === 'hover-cards' ? (
-          <TeamHoverCard key={member.id} member={member} presentation={presentation} />
-        ) : presentation.layout === 'cover-cards' ? (
-          <TeamCoverCard key={member.id} member={member} presentation={presentation} />
-        ) : presentation.layout === 'avatar-cards' ? (
-          <TeamAvatarCard key={member.id} member={member} presentation={presentation} />
-        ) : presentation.layout === 'float-cards' ? (
-          <TeamFloatCard key={member.id} member={member} presentation={presentation} />
-        ) : (
-          <TeamStandardCard
-            key={member.id}
-            member={member}
-            presentation={presentation}
-            polaroidIndex={presentation.layout === 'polaroid' ? index : undefined}
-          />
-        )
-      )}
-    </div>
-  );
-}
-
 export function SkillPill({ label }: { label: string }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100">
@@ -26274,6 +25553,12 @@ export function EditorialContactSection({
   bottomSpacingClass?: string;
   bottomSpacingStyle?: React.CSSProperties;
 }) {
+  const contactFontScale = contactPremiumFontScale(presentation.premiumFontSize);
+  const contactSectionStyle = {
+    ...topSpacingStyle,
+    ...bottomSpacingStyle,
+    '--pf-contact-font-scale': contactFontScale,
+  } as CSSProperties;
   const visibleEmail = presentation.showEmail ? (email ?? null) : null;
   const visiblePhone = presentation.showPhone ? (phone ?? null) : null;
   const visibleLocation = presentation.showLocation ? (locationLabel ?? null) : null;
@@ -26419,193 +25704,242 @@ export function EditorialContactSection({
     );
   };
 
-  // Premium, full-bleed designs — each owns its whole composition (no card, no form,
-  // no standard section spacing); the black canvas and padding live inside the design
-  // component itself, keyed by presentation.cardDesign.
+  // Premium, full-bleed designs — each owns its whole composition (no card, no form);
+  // the black canvas and internal padding live inside the design component itself, but
+  // the global Section spacing setting still applies as extra padding on the wrapping
+  // <section>, same as every other section on the page, keyed by presentation.cardDesign.
+  // The Background tab's fill paints on this wrapping <section> itself (full-bleed, behind
+  // everything, `position:relative` + `inset-0`) rather than on the design's own inner root —
+  // that inner root only spans the space *between* the section's top/bottom spacing padding,
+  // so painting there left that padding showing the page wallpaper instead of this section's
+  // own background. Same fix shape as `PortfolioSectionShell`'s bgStyle layer.
+  // General → Photo replaces the profile photo in every premium design that shows one.
+  const contactPhotoUrl = presentation.photoUrl?.trim() || heroImageUrl || null;
+
+  const contactBackgroundLayer = bgStyle ? (
+    <div
+      aria-hidden
+      className="pf-theme-layer pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2"
+      style={bgStyle}
+    />
+  ) : null;
+
   if (presentation.cardDesign === 'editorial-focus') {
     return (
-      <section id="contact">
-        <ContactDesignEditorialFocus
-          email={visibleEmail}
-          phone={visiblePhone}
-          locationLabel={visibleLocation}
-          links={visibleLinks}
-          ctaHref={ctaHref}
-          presentation={presentation}
-        />
+      <section
+        id="contact"
+        style={contactSectionStyle}
+        className={`relative ${topSpacingClass} ${bottomSpacingClass}`}
+      >
+        {contactBackgroundLayer}
+        <div className="relative z-[1]">
+          <ContactDesignEditorialFocus
+            layout={createContactDesignLayoutResolver(presentation, 'editorial-focus')}
+            email={visibleEmail}
+            phone={visiblePhone}
+            locationLabel={visibleLocation}
+            links={visibleLinks}
+            ctaHref={ctaHref}
+            contentGutter={contentGutter}
+          />
+        </div>
       </section>
     );
   }
 
   if (presentation.cardDesign === 'split-grid') {
     return (
-      <section id="contact">
-        <ContactDesignSplitGrid
-          email={visibleEmail}
-          phone={visiblePhone}
-          locationLabel={visibleLocation}
-          links={visibleLinks}
-          presentation={presentation}
-        />
+      <section
+        id="contact"
+        style={contactSectionStyle}
+        className={`relative ${topSpacingClass} ${bottomSpacingClass}`}
+      >
+        {contactBackgroundLayer}
+        <div className="relative z-[1]">
+          <ContactDesignSplitGrid
+            layout={createContactDesignLayoutResolver(presentation, 'split-grid')}
+            email={visibleEmail}
+            phone={visiblePhone}
+            locationLabel={visibleLocation}
+            links={visibleLinks}
+          />
+        </div>
       </section>
     );
   }
 
   if (presentation.cardDesign === 'liquid-distortion') {
     return (
-      <section id="contact">
-        <ContactDesignLiquidDistortion
-          email={visibleEmail}
-          phone={visiblePhone}
-          locationLabel={visibleLocation}
-          links={visibleLinks}
-          presentation={presentation}
-        />
+      <section
+        id="contact"
+        style={contactSectionStyle}
+        className={`relative ${topSpacingClass} ${bottomSpacingClass}`}
+      >
+        {contactBackgroundLayer}
+        <div className="relative z-[1]">
+          <ContactDesignLiquidDistortion
+            layout={createContactDesignLayoutResolver(presentation, 'liquid-distortion')}
+            email={visibleEmail}
+            phone={visiblePhone}
+            locationLabel={visibleLocation}
+            links={visibleLinks}
+            contentGutter={contentGutter}
+          />
+        </div>
       </section>
     );
   }
 
   if (presentation.cardDesign === 'sequential-reveal') {
     return (
-      <section id="contact">
-        <ContactDesignSequentialReveal
-          creatorId={creatorId}
-          email={visibleEmail}
-          heroImageUrl={heroImageUrl ?? null}
-          heroImageAlt={heroImageAlt ?? ''}
-          sectionTitle={sectionTitle}
-          presentation={presentation}
-          contentGutter={contentGutter}
-        />
+      <section
+        id="contact"
+        style={contactSectionStyle}
+        className={`relative ${topSpacingClass} ${bottomSpacingClass}`}
+      >
+        {contactBackgroundLayer}
+        <div className="relative z-[1]">
+          <ContactDesignSequentialReveal
+            layout={createContactDesignLayoutResolver(presentation, 'sequential-reveal')}
+            creatorId={creatorId}
+            email={visibleEmail}
+            phone={visiblePhone}
+            locationLabel={visibleLocation}
+            heroImageUrl={contactPhotoUrl}
+            heroImageAlt={heroImageAlt ?? ''}
+            sectionTitle={sectionTitle}
+            presentation={presentation}
+            contentGutter={contentGutter}
+          />
+        </div>
       </section>
     );
   }
 
   if (presentation.cardDesign === 'studio-overlap') {
     return (
-      <section id="contact">
-        <ContactDesignStudioOverlap
-          email={visibleEmail}
-          phone={visiblePhone}
-          locationLabel={visibleLocation}
-          heroImageUrl={heroImageUrl ?? null}
-          heroImageAlt={heroImageAlt ?? ''}
-          sectionTitle={sectionTitle}
-          presentation={presentation}
-          contentGutter={contentGutter}
-          colorMode={globalColorMode}
-        />
+      <section
+        id="contact"
+        style={contactSectionStyle}
+        className={`relative ${topSpacingClass} ${bottomSpacingClass}`}
+      >
+        {contactBackgroundLayer}
+        <div className="relative z-[1]">
+          <ContactDesignStudioOverlap
+            layout={createContactDesignLayoutResolver(presentation, 'studio-overlap')}
+            email={visibleEmail}
+            phone={visiblePhone}
+            locationLabel={visibleLocation}
+            heroImageUrl={contactPhotoUrl}
+            heroImageAlt={heroImageAlt ?? ''}
+            sectionTitle={sectionTitle}
+            contentGutter={contentGutter}
+            colorMode={globalColorMode}
+          />
+        </div>
       </section>
     );
   }
 
   if (presentation.cardDesign === 'borderless-grid') {
     return (
-      <section id="contact">
-        <ContactDesignBorderlessGrid
-          email={visibleEmail}
-          phone={visiblePhone}
-          locationLabel={visibleLocation}
-          links={visibleLinks}
-          sectionTitle={sectionTitle}
-          presentation={presentation}
-          contentGutter={contentGutter}
-          colorMode={globalColorMode}
-        />
+      <section
+        id="contact"
+        style={contactSectionStyle}
+        className={`relative ${topSpacingClass} ${bottomSpacingClass}`}
+      >
+        {contactBackgroundLayer}
+        <div className="relative z-[1]">
+          <ContactDesignBorderlessGrid
+            layout={createContactDesignLayoutResolver(presentation, 'borderless-grid')}
+            email={visibleEmail}
+            phone={visiblePhone}
+            locationLabel={visibleLocation}
+            links={visibleLinks}
+            sectionTitle={sectionTitle}
+            contentGutter={contentGutter}
+            colorMode={globalColorMode}
+          />
+        </div>
       </section>
     );
   }
 
   if (presentation.cardDesign === 'broken-grid') {
     return (
-      <section id="contact">
-        <ContactDesignBrokenGrid
-          email={visibleEmail}
-          phone={visiblePhone}
-          locationLabel={visibleLocation}
-          links={visibleLinks}
-          heroImageUrl={heroImageUrl ?? null}
-          heroImageAlt={heroImageAlt ?? ''}
-          sectionTitle={sectionTitle}
-          contentGutter={contentGutter}
-          colorMode={globalColorMode}
-        />
+      <section
+        id="contact"
+        style={contactSectionStyle}
+        className={`relative ${topSpacingClass} ${bottomSpacingClass}`}
+      >
+        {contactBackgroundLayer}
+        <div className="relative z-[1]">
+          <ContactDesignBrokenGrid
+            layout={createContactDesignLayoutResolver(presentation, 'broken-grid')}
+            email={visibleEmail}
+            phone={visiblePhone}
+            locationLabel={visibleLocation}
+            links={visibleLinks}
+            heroImageUrl={contactPhotoUrl}
+            heroImageAlt={heroImageAlt ?? ''}
+            sectionTitle={sectionTitle}
+            contentGutter={contentGutter}
+            colorMode={globalColorMode}
+          />
+        </div>
       </section>
     );
   }
 
   if (presentation.cardDesign === 'numbered-narrative') {
     return (
-      <section id="contact">
-        <ContactDesignNumberedNarrative
-          creatorId={creatorId}
-          email={visibleEmail}
-          phone={visiblePhone}
-          locationLabel={visibleLocation}
-          links={visibleLinks}
-          heroImageUrl={heroImageUrl ?? null}
-          heroImageAlt={heroImageAlt ?? ''}
-          sectionTitle={sectionTitle}
-          presentation={presentation}
-          contentGutter={contentGutter}
-          colorMode={globalColorMode}
-        />
-      </section>
-    );
-  }
-
-  if (presentation.cardDesign === 'brutalist-overlap') {
-    return (
-      <section id="contact">
-        <ContactDesignBrutalistOverlap
-          email={visibleEmail}
-          locationLabel={visibleLocation}
-          links={visibleLinks}
-          heroImageUrl={heroImageUrl ?? null}
-          heroImageAlt={heroImageAlt ?? ''}
-          sectionTitle={sectionTitle}
-          contentGutter={contentGutter}
-          colorMode={globalColorMode}
-        />
-      </section>
-    );
-  }
-
-  if (presentation.cardDesign === 'split-manifesto') {
-    return (
-      <section id="contact">
-        <ContactDesignSplitManifesto
-          email={visibleEmail}
-          phone={visiblePhone}
-          locationLabel={visibleLocation}
-          links={visibleLinks}
-          heroImageUrl={heroImageUrl ?? null}
-          heroImageAlt={heroImageAlt ?? ''}
-          ctaHref={ctaHref}
-          ctaLabel={resolvedCtaLabel}
-          sectionTitle={sectionTitle}
-          presentation={presentation}
-          contentGutter={contentGutter}
-          colorMode={globalColorMode}
-        />
+      <section
+        id="contact"
+        style={contactSectionStyle}
+        className={`relative ${topSpacingClass} ${bottomSpacingClass}`}
+      >
+        {contactBackgroundLayer}
+        <div className="relative z-[1]">
+          <ContactDesignNumberedNarrative
+            layout={createContactDesignLayoutResolver(presentation, 'numbered-narrative')}
+            creatorId={creatorId}
+            email={visibleEmail}
+            phone={visiblePhone}
+            locationLabel={visibleLocation}
+            links={visibleLinks}
+            heroImageUrl={contactPhotoUrl}
+            heroImageAlt={heroImageAlt ?? ''}
+            sectionTitle={sectionTitle}
+            presentation={presentation}
+            contentGutter={contentGutter}
+            colorMode={globalColorMode}
+          />
+        </div>
       </section>
     );
   }
 
   if (presentation.cardDesign === 'magnetic-overlap') {
     return (
-      <section id="contact">
-        <ContactDesignMagneticOverlap
-          email={visibleEmail}
-          phone={visiblePhone}
-          links={visibleLinks}
-          heroImageUrl={heroImageUrl ?? null}
-          heroImageAlt={heroImageAlt ?? ''}
-          sectionTitle={sectionTitle}
-          presentation={presentation}
-          contentGutter={contentGutter}
-          colorMode={globalColorMode}
-        />
+      <section
+        id="contact"
+        style={contactSectionStyle}
+        className={`relative ${topSpacingClass} ${bottomSpacingClass}`}
+      >
+        {contactBackgroundLayer}
+        <div className="relative z-[1]">
+          <ContactDesignMagneticOverlap
+            layout={createContactDesignLayoutResolver(presentation, 'magnetic-overlap')}
+            email={visibleEmail}
+            phone={visiblePhone}
+            links={visibleLinks}
+            heroImageUrl={contactPhotoUrl}
+            heroImageAlt={heroImageAlt ?? ''}
+            sectionTitle={sectionTitle}
+            contentGutter={contentGutter}
+            colorMode={globalColorMode}
+          />
+        </div>
       </section>
     );
   }
@@ -26672,7 +26006,7 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        style={contactSectionStyle}
         className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
@@ -26866,7 +26200,7 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        style={contactSectionStyle}
         className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
@@ -27008,7 +26342,7 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        style={contactSectionStyle}
         className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
@@ -27156,7 +26490,7 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        style={contactSectionStyle}
         className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
@@ -27312,7 +26646,7 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        style={contactSectionStyle}
         className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
@@ -27546,7 +26880,7 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        style={contactSectionStyle}
         className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
@@ -27641,7 +26975,7 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        style={contactSectionStyle}
         className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
@@ -27730,7 +27064,7 @@ export function EditorialContactSection({
     return (
       <section
         id="contact"
-        style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+        style={contactSectionStyle}
         className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
       >
         {bgStyle ? (
@@ -27845,7 +27179,7 @@ export function EditorialContactSection({
   return (
     <section
       id="contact"
-      style={{ ...topSpacingStyle, ...bottomSpacingStyle }}
+      style={contactSectionStyle}
       className={`relative isolate ${portfolioNavTopScrollMarginClass()} ${topSpacingClass} ${bottomSpacingClass}`}
     >
       {bgStyle ? (
@@ -27893,11 +27227,12 @@ export function EditorialContactSection({
 
 /**
  * "Contact CTA" (design `minimal`) interactive body — borderless two-column layout (no central
- * rule, no icon chips). At rest every secondary line (bio, location/phone/email, social icons)
- * sits at a soft readable opacity; hovering the email, the CTA button or a social icon snaps
- * that one element to full-contrast pure white/black with a small directional nudge while every
- * other line in both columns recedes to near-invisible + a light blur — a theatrical depth-of-
- * field focus, same `gsap.context` + mouseenter/mouseleave idiom as Editorial Grid's dim group.
+ * rule, no icon chips). Bio, location/phone/email, and social icons render at full, plain
+ * opacity at all times; hovering a link or social icon only brightens that element itself
+ * (`hover:opacity-70`), never any other line in the composition. No hardcoded closing
+ * copyright line either — that bar was extracted into the shared Mini bar catalog's own
+ * "Contact CTA" variant (see footer-minibar-catalog-extraction memory), toggled on
+ * separately via Footer > Design > "Mini bar" rather than being always-on here.
  */
 function FooterContactCtaBody({
   creatorName,
@@ -27913,8 +27248,6 @@ function FooterContactCtaBody({
   contactLineStyle,
   socialLinks,
   iconStyle,
-  lightBackground,
-  copyright,
   avatarUrl,
   showAvatar,
 }: {
@@ -27931,8 +27264,6 @@ function FooterContactCtaBody({
   contactLineStyle: CSSProperties;
   socialLinks: EditorialContactLink[];
   iconStyle: CSSProperties;
-  lightBackground: boolean;
-  copyright: ReactNode;
   /** Optional portrait filling the wide empty gap on the right at desktop widths —
    *  opt-in via the existing site-wide "Avatar" content-visibility toggle, same one
    *  the other Footer designs (e.g. Centered minimal) already read. */
@@ -27940,96 +27271,6 @@ function FooterContactCtaBody({
   showAvatar?: boolean;
 }) {
   const showPortrait = Boolean(showAvatar && avatarUrl);
-  const groupRef = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    const group = groupRef.current;
-    if (!group) return undefined;
-    if (typeof window === 'undefined') return undefined;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
-
-    const dimTargets = Array.from(group.querySelectorAll<HTMLElement>('[data-fcta-dim]'));
-    const triggers = Array.from(group.querySelectorAll<HTMLElement>('[data-fcta-trigger]'));
-    if (dimTargets.length === 0 || triggers.length === 0) return undefined;
-
-    const focusColor = lightBackground ? '#0a0a0a' : '#fafafa';
-
-    let ctx: gsap.Context | undefined;
-    try {
-      ctx = gsap.context(() => {
-        const restColor = new Map<HTMLElement, string>();
-        const restOpacity = new Map<HTMLElement, number>();
-        dimTargets.forEach((el) => {
-          restColor.set(el, getComputedStyle(el).color);
-          restOpacity.set(el, Number(el.dataset.fctaRestOpacity || 1));
-        });
-
-        const onEnter = (event: Event) => {
-          const target = event.currentTarget as HTMLElement;
-          const offsetX = Number(target.dataset.fctaOffsetX || 0);
-          const offsetY = Number(target.dataset.fctaOffsetY || 0);
-          const scale = Number(target.dataset.fctaScale || 1);
-          dimTargets.forEach((el) => {
-            if (el === target) {
-              gsap.to(el, {
-                opacity: 1,
-                filter: 'blur(0px)',
-                color: focusColor,
-                x: offsetX,
-                y: offsetY,
-                scale,
-                duration: 0.45,
-                ease: 'power2.out',
-                overwrite: 'auto',
-              });
-            } else {
-              gsap.to(el, {
-                opacity: 0.08,
-                filter: 'blur(1.5px)',
-                duration: 0.45,
-                ease: 'power2.out',
-                overwrite: 'auto',
-              });
-            }
-          });
-        };
-
-        const onLeave = () => {
-          dimTargets.forEach((el) => {
-            gsap.to(el, {
-              opacity: restOpacity.get(el) ?? 1,
-              filter: 'blur(0px)',
-              color: restColor.get(el) || '',
-              x: 0,
-              y: 0,
-              scale: 1,
-              duration: 0.45,
-              ease: 'power2.out',
-              overwrite: 'auto',
-            });
-          });
-        };
-
-        triggers.forEach((item) => {
-          item.addEventListener('mouseenter', onEnter);
-          item.addEventListener('mouseleave', onLeave);
-        });
-
-        return () => {
-          triggers.forEach((item) => {
-            item.removeEventListener('mouseenter', onEnter);
-            item.removeEventListener('mouseleave', onLeave);
-          });
-        };
-      }, group);
-    } catch (error) {
-      console.error('[FooterContactCtaBody] hover focus failed to initialize', error);
-      ctx?.revert();
-      gsap.set(dimTargets, { clearProps: 'all' });
-    }
-
-    return () => ctx?.revert();
-  }, [contactItems, socialLinks, lightBackground]);
 
   const cleanBrandClass = brandClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim();
   const cleanDescriptionClass = descriptionClass.replace(/\bfont-(?:bold|medium)\b/g, '').trim();
@@ -28038,7 +27279,7 @@ function FooterContactCtaBody({
     .trim();
 
   return (
-    <div ref={groupRef} className="flex min-w-0 flex-col gap-10 sm:gap-12">
+    <div className="flex min-w-0 flex-col gap-10 sm:gap-12">
       <div
         className={`grid w-full grid-cols-1 gap-10 lg:items-start lg:gap-16 xl:gap-24 ${
           showPortrait ? 'lg:grid-cols-[1.1fr_1fr_auto]' : 'lg:grid-cols-2'
@@ -28052,25 +27293,19 @@ function FooterContactCtaBody({
           ) : null}
           {bio ? (
             <p
-              data-fcta-dim=""
-              data-fcta-rest-opacity="0.6"
               data-pf-no-color-transition=""
-              className={`text-pretty sm:text-base ${cleanDescriptionClass}`}
-              style={{ ...descriptionStyle, fontSize: '1rem', lineHeight: 1.6, opacity: 0.6 }}
+              className={`text-pretty ${cleanDescriptionClass}`}
+              style={{
+                ...descriptionStyle,
+                fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
+                lineHeight: 1.6,
+              }}
             >
               {bio}
             </p>
           ) : null}
           {ctaRow ? (
-            <div
-              data-fcta-dim=""
-              data-fcta-trigger=""
-              data-fcta-rest-opacity="1"
-              data-fcta-offset-y="-5"
-              data-fcta-scale="1.04"
-              data-pf-no-color-transition=""
-              className="inline-flex w-fit [&_a]:!font-semibold"
-            >
+            <div data-pf-no-color-transition="" className="inline-flex w-fit [&_a]:!font-semibold">
               {ctaRow}
             </div>
           ) : null}
@@ -28085,13 +27320,12 @@ function FooterContactCtaBody({
                     <li key={item.id} className="w-full">
                       <a
                         href={item.href}
-                        data-fcta-dim=""
-                        data-fcta-trigger=""
-                        data-fcta-rest-opacity="0.5"
-                        data-fcta-offset-x="5"
                         data-pf-no-color-transition=""
-                        className={`inline-block text-pretty ${cleanContactLineClass} font-semibold`}
-                        style={{ ...contactLineStyle, opacity: 0.5, fontSize: '1.125rem' }}
+                        className={`inline-block text-pretty transition-opacity duration-300 hover:opacity-70 ${cleanContactLineClass} font-semibold`}
+                        style={{
+                          ...contactLineStyle,
+                          fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
+                        }}
                       >
                         {item.label}
                       </a>
@@ -28099,11 +27333,12 @@ function FooterContactCtaBody({
                   ) : (
                     <li key={item.id} className="w-full">
                       <span
-                        data-fcta-dim=""
-                        data-fcta-rest-opacity="0.5"
                         data-pf-no-color-transition=""
                         className={`inline-block text-pretty ${cleanContactLineClass} font-semibold`}
-                        style={{ ...contactLineStyle, opacity: 0.5, fontSize: '1.125rem' }}
+                        style={{
+                          ...contactLineStyle,
+                          fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
+                        }}
                       >
                         {item.label}
                       </span>
@@ -28123,13 +27358,9 @@ function FooterContactCtaBody({
                     rel="noreferrer"
                     aria-label={link.label}
                     title={link.label}
-                    data-fcta-dim=""
-                    data-fcta-trigger=""
-                    data-fcta-rest-opacity="0.5"
-                    data-fcta-offset-x="5"
                     data-pf-no-color-transition=""
-                    className="inline-flex items-center justify-center"
-                    style={{ ...iconStyle, opacity: 0.5 }}
+                    className="inline-flex items-center justify-center transition-opacity duration-300 hover:opacity-70"
+                    style={iconStyle}
                   >
                     <FooterSocialLinkIcon link={link} bare iconClassName="h-5 w-5" />
                   </a>
@@ -28148,8 +27379,6 @@ function FooterContactCtaBody({
           />
         ) : null}
       </div>
-
-      {copyright}
     </div>
   );
 }
@@ -28157,7 +27386,7 @@ function FooterContactCtaBody({
 export function EditorialPortfolioFooter({
   creatorName,
   creatorId,
-  avatarUrl,
+  avatarUrl: profileAvatarUrl,
   bio,
   email,
   phone,
@@ -28173,7 +27402,8 @@ export function EditorialPortfolioFooter({
   contactHref = '#footer',
   motionProfile = DEFAULT_MOTION_PROFILE,
   bottomClearanceClass,
-  visibleSectionLinks,
+  sectionLinkOptions,
+  sectionPalette,
   globalColorMode = 'dark',
   timezoneId,
   contentGutter = DEFAULT_CONTENT_GUTTER,
@@ -28200,8 +27430,12 @@ export function EditorialPortfolioFooter({
   motionProfile?: PortfolioGlobalMotionProfile;
   /** Nav safe-area padding on the footer so its background reaches the viewport bottom. */
   bottomClearanceClass?: string;
-  /** Landing Links — show Gallery / About us / Team / Services / Work only when the section is on. */
-  visibleSectionLinks?: Partial<Record<PortfolioFooterAutoSectionKey, boolean>>;
+  /** Sections currently visible on the page (nav order + labels) — each design's Layout
+   *  settings pick which of these its links column shows. */
+  sectionLinkOptions?: PortfolioFooterSectionLinkOption[];
+  /** Footer's own resolved palette (honors its light/dark override) — for designs that let the
+   *  creator pick a palette token (e.g. Inverted wordmark's wordmark color). */
+  sectionPalette?: Partial<Record<FooterInkToken, string>>;
   /** Resolved active color mode (Global → Theme, honoring the section's own override) — the
    *  premium full-bleed designs (Monumental's siblings) branch their literal colors on this
    *  instead of reading the shared CSS palette tokens. */
@@ -28213,6 +27447,25 @@ export function EditorialPortfolioFooter({
    *  needs to line its own horizontal padding up with the rest of the page. */
   contentGutter?: PortfolioContentGutter;
 }) {
+  // Every design below used to hardcode its own solid black/white canvas, silently ignoring
+  // this section's own Background tab. None of them own a background by default anymore —
+  // `sectionBackgroundStyle` already returns `undefined` (transparent) when the Background
+  // tab is off, so the page/global wallpaper shows through until the user explicitly turns
+  // this section's background on.
+  const footerBackgroundStyle = sectionBackgroundStyle(presentation);
+  // Multiplies every Footer design's own standardized body/label text sizes via a shared
+  // `--pf-footer-font-scale` CSS custom property — see General tab's "Font size" control.
+  const footerFontSizeScale = footerPremiumFontScale(presentation.premiumFontSize);
+  // General → Photo replaces the profile photo in every design that shows one.
+  const avatarUrl = presentation.photoUrl?.trim() || profileAvatarUrl;
+  const footerLayout = createFooterDesignLayoutResolver(presentation, presentation.design);
+  const footerNavLinks = resolveFooterSectionNavLinks(presentation, presentation.design, sectionLinkOptions);
+  const footerNavLinkItems = footerNavLinks.map((link) => ({
+    id: link.id,
+    label: link.label,
+    url: resolveFooterLinkHref(link.href, creatorId),
+  }));
+
   if (presentation.design === 'monumental') {
     return (
       <FooterDesignMonumental
@@ -28222,9 +27475,12 @@ export function EditorialPortfolioFooter({
         phone={phone ?? null}
         locationLabel={locationLabel ?? null}
         links={links}
+        navLinks={footerNavLinkItems}
+        layout={footerLayout}
         presentation={presentation}
-        visibleSectionLinks={visibleSectionLinks}
         contentGutter={contentGutter}
+        backgroundStyle={footerBackgroundStyle}
+        fontSizeScale={footerFontSizeScale}
       />
     );
   }
@@ -28239,9 +27495,12 @@ export function EditorialPortfolioFooter({
         phone={phone ?? null}
         locationLabel={locationLabel ?? null}
         links={links}
+        layout={footerLayout}
         presentation={presentation}
         colorMode={globalColorMode}
         contentGutter={contentGutter}
+        backgroundStyle={footerBackgroundStyle}
+        fontSizeScale={footerFontSizeScale}
       />
     );
   }
@@ -28257,9 +27516,13 @@ export function EditorialPortfolioFooter({
         locationLabel={locationLabel}
         hoursLabel={hoursLabel}
         links={links}
+        navLinks={footerNavLinkItems}
+        layout={footerLayout}
         presentation={presentation}
         colorMode={globalColorMode}
         contentGutter={contentGutter}
+        backgroundStyle={footerBackgroundStyle}
+        fontSizeScale={footerFontSizeScale}
       />
     );
   }
@@ -28276,10 +27539,13 @@ export function EditorialPortfolioFooter({
         locationLabel={locationLabel}
         hoursLabel={hoursLabel}
         links={links}
+        navLinks={footerNavLinkItems}
+        layout={footerLayout}
         presentation={presentation}
-        visibleSectionLinks={visibleSectionLinks}
         colorMode={globalColorMode}
         contentGutter={contentGutter}
+        backgroundStyle={footerBackgroundStyle}
+        fontSizeScale={footerFontSizeScale}
       />
     );
   }
@@ -28293,10 +27559,13 @@ export function EditorialPortfolioFooter({
         phone={phone ?? null}
         locationLabel={locationLabel ?? null}
         links={links}
+        navLinks={footerNavLinkItems}
+        layout={footerLayout}
         presentation={presentation}
-        visibleSectionLinks={visibleSectionLinks}
         colorMode={globalColorMode}
         contentGutter={contentGutter}
+        backgroundStyle={footerBackgroundStyle}
+        fontSizeScale={footerFontSizeScale}
       />
     );
   }
@@ -28310,11 +27579,10 @@ export function EditorialPortfolioFooter({
     presentation.design === 'editorial-grid' ||
     presentation.design === 'headline-reveal'
   ) {
-    const premiumCopyrightText = resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName);
+    const premiumCopyrightText = presentation.showCopyright
+      ? resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName)
+      : '';
     const premiumContactHref = contactHref ?? '#footer';
-    const premiumNavLinks = resolveFooterInternalLinksColumn(presentation, visibleSectionLinks).links.map(
-      (link) => ({ id: link.id, label: link.label, url: link.href })
-    );
 
     if (presentation.design === 'hero-columns') {
       return (
@@ -28326,14 +27594,13 @@ export function EditorialPortfolioFooter({
           email={email}
           phone={phone}
           locationLabel={locationLabel}
-          hoursLabel={hoursLabel}
-          isAvailable={isAvailable}
           links={links}
-          navLinks={premiumNavLinks}
-          copyrightText={premiumCopyrightText}
+          navLinks={footerNavLinkItems}
+          layout={footerLayout}
           colorMode={globalColorMode}
-          manifesto={presentation.heroColumnsManifesto}
           contentGutter={contentGutter}
+          backgroundStyle={footerBackgroundStyle}
+          fontSizeScale={footerFontSizeScale}
         />
       );
     }
@@ -28350,11 +27617,12 @@ export function EditorialPortfolioFooter({
           locationLabel={locationLabel}
           hoursLabel={hoursLabel}
           links={links}
-          navLinks={premiumNavLinks}
+          navLinks={footerNavLinkItems}
+          layout={footerLayout}
           colorMode={globalColorMode}
-          headline={presentation.splitFormHeadline}
-          description={presentation.splitFormDescription}
           contentGutter={contentGutter}
+          backgroundStyle={footerBackgroundStyle}
+          fontSizeScale={footerFontSizeScale}
         />
       );
     }
@@ -28368,9 +27636,12 @@ export function EditorialPortfolioFooter({
           email={email}
           phone={phone}
           links={links}
+          layout={footerLayout}
           copyrightText={premiumCopyrightText}
           colorMode={globalColorMode}
           contentGutter={contentGutter}
+          backgroundStyle={footerBackgroundStyle}
+          fontSizeScale={footerFontSizeScale}
         />
       );
     }
@@ -28379,12 +27650,16 @@ export function EditorialPortfolioFooter({
       return (
         <FooterDesignInvertedWordmark
           creatorName={creatorName}
-          navLinks={premiumNavLinks}
+          navLinks={footerNavLinkItems}
+          layout={footerLayout}
           links={links}
-          copyrightText={premiumCopyrightText}
+          email={email}
+          phone={phone}
           colorMode={globalColorMode}
-          creditLabel={presentation.invertedWordmarkCredit}
+          palette={sectionPalette}
           contentGutter={contentGutter}
+          backgroundStyle={footerBackgroundStyle}
+          fontSizeScale={footerFontSizeScale}
         />
       );
     }
@@ -28399,11 +27674,13 @@ export function EditorialPortfolioFooter({
           phone={phone}
           locationLabel={locationLabel}
           links={links}
-          navLinks={premiumNavLinks}
+          navLinks={footerNavLinkItems}
+          layout={footerLayout}
           contactHref={premiumContactHref}
           colorMode={globalColorMode}
-          tagline={presentation.editorialGridTagline}
           contentGutter={contentGutter}
+          backgroundStyle={footerBackgroundStyle}
+          fontSizeScale={footerFontSizeScale}
         />
       );
     }
@@ -28418,11 +27695,14 @@ export function EditorialPortfolioFooter({
           phone={phone}
           locationLabel={locationLabel}
           links={links}
-          navLinks={premiumNavLinks}
+          navLinks={footerNavLinkItems}
+          layout={footerLayout}
           copyrightText={premiumCopyrightText}
           contactHref={premiumContactHref}
           colorMode={globalColorMode}
           contentGutter={contentGutter}
+          backgroundStyle={footerBackgroundStyle}
+          fontSizeScale={footerFontSizeScale}
         />
       );
     }
@@ -28433,11 +27713,13 @@ export function EditorialPortfolioFooter({
         email={email}
         phone={phone}
         locationLabel={locationLabel}
-        navLinks={premiumNavLinks}
+        navLinks={footerNavLinkItems}
+        layout={footerLayout}
         links={links}
-        copyrightText={premiumCopyrightText}
         colorMode={globalColorMode}
         contentGutter={contentGutter}
+        backgroundStyle={footerBackgroundStyle}
+        fontSizeScale={footerFontSizeScale}
       />
     );
   }
@@ -28487,15 +27769,6 @@ export function EditorialPortfolioFooter({
   const iconStyleBase = footerIconStyle(presentation.iconColor);
   const iconStyle = iconStyleBase;
   const patternStyle = footerPatternStyle(presentation);
-
-  const description = presentation.showDescription
-    ? resolveFooterDescription({
-        source: presentation.descriptionSource,
-        custom: presentation.descriptionCustom,
-        bio,
-        maxLength: 220,
-      })
-    : null;
 
   const phoneDisplay = phone?.trim() ? formatPhoneDisplay(phone.trim()) : null;
   const emailValue = email?.trim() || null;
@@ -28806,8 +28079,12 @@ export function EditorialPortfolioFooter({
           ),
         }
       : null;
+  const contactCtaLabel =
+    presentation.design === 'minimal'
+      ? footerLayout.text('ctaLabel')
+      : presentation.ctaButtonLabel?.trim() || 'Contact me';
   const contactCtaButton =
-    presentation.showContactCta || presentation.design === 'minimal' ? (
+    (presentation.showContactCta || presentation.design === 'minimal') && contactCtaLabel ? (
     <a
       href={ctaHref}
       className={`${contactCtaChromeClass} ${ctaButtonTextClass} text-center`}
@@ -28819,7 +28096,7 @@ export function EditorialPortfolioFooter({
       {presentation.showCtaIcon !== false ? (
         <FooterCtaMailIcon className="h-4 w-4 shrink-0" />
       ) : null}
-      {presentation.ctaButtonLabel?.trim() || 'Contact me'}
+      {contactCtaLabel}
     </a>
   ) : null;
   const ctaButtonsAlignClass = footerCtaButtonsAlignClass(presentation.ctaButtonsAlign ?? 'center');
@@ -28857,22 +28134,7 @@ export function EditorialPortfolioFooter({
 
   if (presentation.design === 'minimal') {
     // Design 3 — Contact CTA: name + bio + CTA | location + contact + socials
-    const minimalCopyright = presentation.showCopyright ? (
-      <div className={`border-t pt-5 ${dividerClass}`}>
-        <p className={`text-center ${copyrightClass}`} style={copyrightStyle}>
-          {resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName)}
-        </p>
-      </div>
-    ) : null;
-
-    const ctaBio =
-      description ||
-      resolveFooterDescription({
-        source: presentation.descriptionSource,
-        custom: presentation.descriptionCustom,
-        bio,
-        maxLength: 220,
-      });
+    const ctaBio = footerLayout.bio('bio', bio, 220);
     const ctaLocationItem = locationValue
       ? contactItems.find((item) => item.id === 'location') ?? {
           id: 'location',
@@ -28887,7 +28149,7 @@ export function EditorialPortfolioFooter({
     body = (
       <FooterContactCtaBody
         creatorName={creatorName}
-        showBrand={Boolean(presentation.showBrand)}
+        showBrand={footerLayout.isVisible('name')}
         brandClass={brandClass}
         brandStyle={brandStyle}
         bio={ctaBio}
@@ -28899,10 +28161,8 @@ export function EditorialPortfolioFooter({
         contactLineStyle={contactLineStyle}
         socialLinks={visibleLinks}
         iconStyle={iconStyle}
-        lightBackground={lightBackground}
-        copyright={minimalCopyright}
         avatarUrl={avatarUrl}
-        showAvatar={presentation.showAvatar}
+        showAvatar={footerLayout.isVisible('avatar')}
       />
     );
   } else {
@@ -28919,7 +28179,7 @@ export function EditorialPortfolioFooter({
       glyphStyle: cardGlyph,
     });
     const cardLocation = locationValue;
-    const internalLinks = resolveFooterInternalLinksColumn(presentation, visibleSectionLinks);
+    const internalLinks = { title: 'Links', links: footerNavLinks };
     const cardSocials =
       visibleLinks.length > 0 ? (
         <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -29043,7 +28303,7 @@ export function EditorialPortfolioFooter({
     <footer
       id="footer"
       className={`relative isolate max-w-full overflow-x-clip ${topMarginClass} ${shellClass} ${clearanceClass} ${fallbackBg}`}
-      style={Object.keys(topMarginStyle).length ? topMarginStyle : undefined}
+      style={{ ...topMarginStyle, '--pf-footer-font-scale': footerFontSizeScale } as CSSProperties}
     >
       {bgStyle ? (
         <>

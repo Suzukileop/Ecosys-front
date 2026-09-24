@@ -53,11 +53,20 @@ import {
   patchElementStylesRecord,
   type PortfolioElementTextStyle,
 } from '@/components/portfolio/portfolio-element-text-style';
+import { normalizeDesignLayouts, type DesignLayout } from '@/components/portfolio/portfolio-design-layout-core';
+import {
+  DEFAULT_FAQ_FRAME,
+  normalizeFaqFrame,
+  type PortfolioFaqFrameSettings,
+} from '@/components/portfolio/portfolio-faq-frame';
 import {
   FAQ_HEADER_DESIGNS,
+  FAQ_HEADER_DESIGNS_SELECTABLE,
+  type PortfolioFaqHeaderDesignSelectable,
   FAQ_HEADER_MARGIN_BOTTOM_STEPS,
   FAQ_HEADER_TITLE_SIZES,
   FAQ_HEADER_TITLE_WEIGHTS,
+  FAQ_HEADER_EDITORIAL_TITLE_WEIGHTS,
   FAQ_HEADER_PALETTE_TOKENS,
   FAQ_HEADER_ACCENT_COUNT_ALIGNMENTS,
   FAQ_HEADER_BILLBOARD_WORD_STYLES,
@@ -66,6 +75,7 @@ import {
   type PortfolioFaqHeaderMarginBottom,
   type PortfolioFaqHeaderTitleSize,
   type PortfolioFaqHeaderTitleWeight,
+  type PortfolioFaqHeaderEditorialTitleWeight,
   type PortfolioFaqHeaderPaletteToken,
   type PortfolioFaqHeaderAccentCountAlignment,
   type PortfolioFaqHeaderBillboardWordStyle,
@@ -184,6 +194,20 @@ export type PortfolioFaqListPlacement = 'left' | 'center' | 'right';
 
 export type PortfolioFaqTextSize = 'sm' | 'md' | 'lg';
 
+/**
+ * Global type-size control for all 9 "fixed-identity" premium FAQ designs (Kinetic Split,
+ * Floating Gallery, Editorial Masonry, Prism Cards, Star Scroll, Tri Grid, Split Index,
+ * Centered Focus, Bento Dual) — unlike `questionSize`/`answerSize` above (a legacy
+ * per-element pair from the old non-premium item-style system, currently unused by any
+ * renderer), this is ONE unified scale every premium design reads together, via a single
+ * `--pf-faq-font-scale` CSS custom property each design sets on its own root from
+ * `faqPremiumFontScale(presentation.premiumFontSize)`, multiplying every one of its own
+ * font-size declarations in `globals.css` (`calc(<base> * var(--pf-faq-font-scale, 1))`).
+ * `medium` is each design's own current baseline size — `small`/`large` scale relative to
+ * that, not to some other absolute reference.
+ */
+export type PortfolioFaqPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
+
 export type PortfolioFaqExpandIconStyle = 'plus' | 'chevron';
 
 export type PortfolioFaqContentAlign = 'left' | 'center' | 'right';
@@ -283,6 +307,11 @@ export type PortfolioFaqPresentationSettings = PortfolioSectionBackgroundSetting
   useHeroPalette: boolean;
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  /** Type-size scale applied uniformly across every premium FAQ design (General tab). */
+  premiumFontSize: PortfolioFaqPremiumFontSize;
+  /** General tab → Frame: opt-in outer frame around whichever design is active
+   *  (see portfolio-faq-frame.ts — the designs themselves draw no stage). */
+  designFrame: PortfolioFaqFrameSettings;
   /** FAQ-owned palette copy (same 8 tokens as Hero). */
   faqPalette?: PortfolioFaqPalette;
   /** Which token each FAQ color slot uses. */
@@ -299,7 +328,11 @@ export type PortfolioFaqPresentationSettings = PortfolioSectionBackgroundSetting
   headerDesignAlignment: PortfolioFaqHeaderDesignAlignment;
   headerMarginBottom: PortfolioFaqHeaderMarginBottom;
   headerTitleSize: PortfolioFaqHeaderTitleSize;
-  headerTitleWeight: PortfolioFaqHeaderTitleWeight;
+  /** Only Editorial reads this — hence its 5-step scale (see FAQ_HEADER_EDITORIAL_TITLE_WEIGHTS). */
+  headerTitleWeight: PortfolioFaqHeaderEditorialTitleWeight;
+  /** Header tab → Layout settings, stored per selectable header design
+   *  (see portfolio-faq-header-layout.ts). */
+  headerLayouts: Partial<Record<PortfolioFaqHeaderDesignSelectable, DesignLayout>>;
 
   headerAccentCountBadgeText: string;
   headerAccentCountLeadText: string;
@@ -502,6 +535,8 @@ export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   answerFlushWithQuestion: true,
   useHeroPalette: true,
   colorModeOverride: 'auto',
+  premiumFontSize: 'medium',
+  designFrame: { ...DEFAULT_FAQ_FRAME },
   faqPalette: { ...DEFAULT_FAQ_PALETTE },
   faqColorBindings: { ...DEFAULT_FAQ_COLOR_BINDINGS },
   elementStyles: DEFAULT_FAQ_ELEMENT_STYLES,
@@ -512,6 +547,7 @@ export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   headerMarginBottom: 'md',
   headerTitleSize: 'md',
   headerTitleWeight: 'regular',
+  headerLayouts: {},
 
   headerAccentCountBadgeText: '',
   headerAccentCountLeadText: '',
@@ -657,6 +693,44 @@ export const PORTFOLIO_FAQ_SECTION_LAYOUT_OPTIONS: {
 
 export function isPortfolioFaqSectionLayout(value: unknown): value is PortfolioFaqSectionLayout {
   return value === 'stacked' || value === 'aside-left' || value === 'aside-right';
+}
+
+export const FAQ_PREMIUM_FONT_SIZES: PortfolioFaqPremiumFontSize[] = [
+  'small',
+  'medium',
+  'large',
+  'xlarge',
+  'xxlarge',
+];
+
+export const PORTFOLIO_FAQ_PREMIUM_FONT_SIZE_OPTIONS: {
+  value: PortfolioFaqPremiumFontSize;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'small', label: 'Small', description: 'Compact type across every FAQ design.' },
+  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
+  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
+  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  {
+    value: 'xxlarge',
+    label: 'Super Extra Large',
+    description: 'Maximum type size for the most dramatic, oversized look.',
+  },
+];
+
+/** Multiplier each premium FAQ design's own base font-size (its `medium` value) is scaled
+ *  by, via `calc(<base> * var(--pf-faq-font-scale, 1))` in globals.css. */
+const FAQ_PREMIUM_FONT_SCALE: Record<PortfolioFaqPremiumFontSize, number> = {
+  small: 0.85,
+  medium: 1,
+  large: 1.15,
+  xlarge: 1.3,
+  xxlarge: 1.45,
+};
+
+export function faqPremiumFontScale(size: PortfolioFaqPremiumFontSize): number {
+  return FAQ_PREMIUM_FONT_SCALE[size] ?? 1;
 }
 
 export const PORTFOLIO_FAQ_DESIGN_OPTIONS: {
@@ -1571,6 +1645,8 @@ export function mergeFaqPresentation(
         : base.answerFlushWithQuestion ?? false,
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    premiumFontSize: pick(record.premiumFontSize, FAQ_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
+    designFrame: normalizeFaqFrame(record.designFrame, normalizeFaqFrame(base.designFrame)),
     faqPalette: mergeFaqPalette(
       mergeFaqPalette(DEFAULT_FAQ_PALETTE, base.faqPalette),
       record.faqPalette
@@ -1599,8 +1675,12 @@ export function mergeFaqPresentation(
     headerTitleSize: pick(record.headerTitleSize, FAQ_HEADER_TITLE_SIZES, base.headerTitleSize ?? 'md'),
     headerTitleWeight: pick(
       record.headerTitleWeight,
-      FAQ_HEADER_TITLE_WEIGHTS,
+      FAQ_HEADER_EDITORIAL_TITLE_WEIGHTS,
       base.headerTitleWeight ?? 'regular'
+    ),
+    headerLayouts: normalizeDesignLayouts(
+      record.headerLayouts !== undefined ? record.headerLayouts : base.headerLayouts,
+      FAQ_HEADER_DESIGNS_SELECTABLE
     ),
     headerAccentCountBadgeText:
       typeof record.headerAccentCountBadgeText === 'string'

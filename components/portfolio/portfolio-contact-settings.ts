@@ -30,6 +30,7 @@ import {
   type PortfolioSectionBackgroundSettings,
 } from '@/components/portfolio/portfolio-section-background-settings';
 import type { PortfolioSectionCopy } from '@/components/portfolio/portfolio-settings-types';
+import { normalizeDesignLayouts, type DesignLayout } from '@/components/portfolio/portfolio-design-layout-core';
 import {
   createElementTextStyle,
   normalizeElementStylesRecord,
@@ -53,6 +54,60 @@ import {
   type PortfolioContactHeaderTitleSize,
   type PortfolioContactHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-contact-header-settings';
+
+/**
+ * Global type-size control for every Contact design — same standardized-shared-value
+ * architecture as the Experience/Footer/FAQ sections' "Font size" control: ONE unified
+ * scale every design reads via a shared `--pf-contact-font-scale` CSS custom property (set
+ * on the section's shared `<section id="contact">` root), multiplying every standardized
+ * body/label font-size utility class used across every Contact design
+ * (`calc(<base> * var(--pf-contact-font-scale, 1))` — see the `#contact` rules near the
+ * Experience font-scale block in globals.css). `medium` is each design's own current
+ * baseline size — `small`/`large`/`xlarge`/`xxlarge` scale relative to that, not to some
+ * other absolute reference. Brand-scale/hero display type (`clamp()`/`vw`-scaled headlines,
+ * giant focal numbers) is NOT held to this control — only body copy and small labels are.
+ */
+export type PortfolioContactPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
+
+export const CONTACT_PREMIUM_FONT_SIZES: PortfolioContactPremiumFontSize[] = [
+  'small',
+  'medium',
+  'large',
+  'xlarge',
+  'xxlarge',
+];
+
+export const PORTFOLIO_CONTACT_PREMIUM_FONT_SIZE_OPTIONS: {
+  value: PortfolioContactPremiumFontSize;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'small', label: 'Small', description: 'Compact type across every Contact design.' },
+  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
+  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
+  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  {
+    value: 'xxlarge',
+    label: 'Super Extra Large',
+    description: 'Maximum type size for the most dramatic, oversized look.',
+  },
+];
+
+/** Multiplier every Contact design's own standardized body/label text sizes are scaled by,
+ *  via `calc(<base> * var(--pf-contact-font-scale, 1))` in globals.css — same values as
+ *  `experiencePremiumFontScale`/`footerPremiumFontScale`/`faqPremiumFontScale`, kept in sync
+ *  deliberately. */
+const CONTACT_PREMIUM_FONT_SCALE: Record<PortfolioContactPremiumFontSize, number> = {
+  small: 0.85,
+  medium: 1,
+  large: 1.15,
+  xlarge: 1.3,
+  xxlarge: 1.45,
+};
+
+export function contactPremiumFontScale(size: PortfolioContactPremiumFontSize): number {
+  return CONTACT_PREMIUM_FONT_SCALE[size] ?? 1;
+}
 
 export type PortfolioContactStyleTarget =
   | 'channelValue'
@@ -214,16 +269,30 @@ export type PortfolioContactCardDesign =
   | 'borderless-grid'
   | 'broken-grid'
   | 'numbered-narrative'
-  | 'brutalist-overlap'
-  | 'split-manifesto'
   | 'magnetic-overlap';
 
-/** The 11 premium, full-bleed awwwards-style designs — no boxed card. "sequential-reveal" and
+/** The 9 premium, full-bleed awwwards-style designs — no boxed card. "sequential-reveal" and
  *  "numbered-narrative" are the only two with a real message form; the rest own the entire
  *  section composition with no form at all. Every design from "studio-overlap" onward is
  *  genuinely light/dark aware (mirrors the portfolio's own active color mode via
  *  settings.global.colorMode); the first 4 (editorial-focus/split-grid/liquid-distortion/
  *  sequential-reveal) still own a fixed black canvas regardless of the site's mode. */
+export const CONTACT_PREMIUM_DESIGNS = [
+  'editorial-focus',
+  'split-grid',
+  'liquid-distortion',
+  'sequential-reveal',
+  'studio-overlap',
+  'borderless-grid',
+  'broken-grid',
+  'numbered-narrative',
+  'magnetic-overlap',
+] as const satisfies readonly PortfolioContactCardDesign[];
+
+export type PortfolioContactPremiumDesign = (typeof CONTACT_PREMIUM_DESIGNS)[number];
+
+export type PortfolioContactDesignLayouts = Partial<Record<PortfolioContactPremiumDesign, DesignLayout>>;
+
 export function isContactPremiumDesign(design: PortfolioContactCardDesign | undefined): boolean {
   return (
     design === 'editorial-focus' ||
@@ -234,8 +303,6 @@ export function isContactPremiumDesign(design: PortfolioContactCardDesign | unde
     design === 'borderless-grid' ||
     design === 'broken-grid' ||
     design === 'numbered-narrative' ||
-    design === 'brutalist-overlap' ||
-    design === 'split-manifesto' ||
     design === 'magnetic-overlap'
   );
 }
@@ -529,14 +596,14 @@ export type PortfolioContactPresentationSettings = PortfolioSectionBackgroundSet
   premiumMarqueeText: string;
   /** Premium designs only — the airy slogan line for "Sequential reveal"'s hero entrance. */
   sequentialRevealTagline: string;
-  /** Premium designs only — the small graphic badge label for "Studio overlap"'s image corner. */
-  studioOverlapBadgeLabel: string;
   /** Premium designs only — "Borderless grid"'s second stacked headline line. */
   borderlessGridSubline: string;
-  /** Premium designs only — "Split manifesto"'s short manifesto paragraph. */
-  splitManifestoTagline: string;
   /** Premium designs only — "Magnetic overlap"'s small italic eyebrow above the headline. */
   magneticOverlapEyebrow: string;
+  /** General → Photo: replaces the profile photo in every premium design that shows one. */
+  photoUrl: string;
+  /** Design tab → Layout settings, stored per premium design (see portfolio-contact-design-layout.ts). */
+  designLayouts: PortfolioContactDesignLayouts;
   ctaDesign: PortfolioContactCtaDesign;
   ctaLabel: string;
   ctaColor: string;
@@ -588,6 +655,8 @@ export type PortfolioContactPresentationSettings = PortfolioSectionBackgroundSet
   activeColorMode?: 'light' | 'dark';
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  /** Section-wide "Font size" control — see `PortfolioContactPremiumFontSize` doc comment. */
+  premiumFontSize: PortfolioContactPremiumFontSize;
   contactFormTitle: string;
   contactFormSubmitLabel: string;
   contactFormPlacement: PortfolioContactFormPlacement;
@@ -733,10 +802,10 @@ export const DEFAULT_CONTACT_PRESENTATION: PortfolioContactPresentationSettings 
   liquidDistortionWatermark: 'CONNECT',
   premiumMarqueeText: "Let's talk — Say hello — Reach out — ",
   sequentialRevealTagline: "Share your idea, let's build something meaningful together.",
-  studioOverlapBadgeLabel: 'The Studio',
   borderlessGridSubline: 'Start a conversation.',
-  splitManifestoTagline: "We craft digital work that moves people — let's start something worth talking about.",
   magneticOverlapEyebrow: 'Say hey',
+  photoUrl: '',
+  designLayouts: {},
   ctaDesign: 'pill-dark',
   ctaLabel: 'Start a project',
   ctaColor: DEFAULT_CONTACT_CTA_COLOR,
@@ -790,6 +859,7 @@ export const DEFAULT_CONTACT_PRESENTATION: PortfolioContactPresentationSettings 
   channelCardsBorderColor: DEFAULT_CONTACT_CARD_BORDER_COLOR,
   useHeroPalette: false,
   colorModeOverride: 'auto',
+  premiumFontSize: 'medium',
   contactColorBindings: { ...DEFAULT_CONTACT_COLOR_BINDINGS },
   elementStyles: DEFAULT_CONTACT_ELEMENT_STYLES,
 };
@@ -1049,7 +1119,7 @@ export const PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS: {
     value: 'editorial-focus',
     label: 'Editorial focus',
     description:
-      'Monumental headline left, offset info right — hover dims everything but the target, ambient glow follows the cursor.',
+      'Monumental headline left, offset info right — headline reveals on scroll, each link brightens on its own hover.',
   },
   {
     value: 'split-grid',
@@ -1092,18 +1162,6 @@ export const PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS: {
     label: 'Numbered narrative',
     description:
       'Narrative numbered form left, circular avatar and labeled contact/social metadata right — magnetic hover throughout.',
-  },
-  {
-    value: 'brutalist-overlap',
-    label: 'Brutalist overlap',
-    description:
-      'Monumental outline-to-solid headline overlapping a hard-edged thumbnail, massive underlined email, metadata right.',
-  },
-  {
-    value: 'split-manifesto',
-    label: 'Split manifesto',
-    description:
-      'Full-bleed 50/50 split — immersive portrait left, categorized contact grid and manifesto copy right.',
   },
   {
     value: 'magnetic-overlap',
@@ -2290,12 +2348,11 @@ function migrateContactCardDesign(value: unknown): PortfolioContactCardDesign | 
     value === 'borderless-grid' ||
     value === 'broken-grid' ||
     value === 'numbered-narrative' ||
-    value === 'brutalist-overlap' ||
-    value === 'split-manifesto' ||
     value === 'magnetic-overlap'
   ) {
     return value;
   }
+  if (value === 'split-manifesto') return 'magnetic-overlap';
   return null;
 }
 
@@ -2340,22 +2397,20 @@ export function mergeContactPresentation(
       typeof record.sequentialRevealTagline === 'string'
         ? record.sequentialRevealTagline
         : base.sequentialRevealTagline,
-    studioOverlapBadgeLabel:
-      typeof record.studioOverlapBadgeLabel === 'string'
-        ? record.studioOverlapBadgeLabel
-        : base.studioOverlapBadgeLabel,
     borderlessGridSubline:
       typeof record.borderlessGridSubline === 'string'
         ? record.borderlessGridSubline
         : base.borderlessGridSubline,
-    splitManifestoTagline:
-      typeof record.splitManifestoTagline === 'string'
-        ? record.splitManifestoTagline
-        : base.splitManifestoTagline,
     magneticOverlapEyebrow:
       typeof record.magneticOverlapEyebrow === 'string'
         ? record.magneticOverlapEyebrow
         : base.magneticOverlapEyebrow,
+    photoUrl:
+      typeof record.photoUrl === 'string' ? record.photoUrl.trim().slice(0, 2048) : (base.photoUrl ?? ''),
+    designLayouts: normalizeDesignLayouts(
+      record.designLayouts !== undefined ? record.designLayouts : base.designLayouts,
+      CONTACT_PREMIUM_DESIGNS
+    ),
     titlePreset: pick(
       record.titlePreset,
       ['contact', 'get-in-touch', 'lets-talk', 'start-a-project', 'custom'],
@@ -2856,6 +2911,7 @@ export function mergeContactPresentation(
     ),
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    premiumFontSize: pick(record.premiumFontSize, CONTACT_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
     contactColorBindings: mergeContactColorBindings(
       mergeContactColorBindings(DEFAULT_CONTACT_COLOR_BINDINGS, base.contactColorBindings),
       record.contactColorBindings

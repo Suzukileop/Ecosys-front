@@ -1,7 +1,7 @@
 'use client';
 
 import gsap from 'gsap';
-import { useLayoutEffect, useRef, type RefObject } from 'react';
+import { useLayoutEffect, useRef, type CSSProperties, type RefObject } from 'react';
 import { formatPhoneDisplay } from '@/lib/phone';
 import type { EditorialContactLink } from '@/components/portfolio/portfolio-section-primitives';
 import {
@@ -9,6 +9,7 @@ import {
   portfolioEditorialGutterX,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -77,20 +78,6 @@ function useFitWidthTextSize(
   }, [text]);
 }
 
-/** Resting opacity per role — the whole footer sits "feutré" (subdued) by default;
- *  hovering the contact pill or a social link snaps that one element to full ink
- *  while every other item recedes to DIM_OPACITY (see the GSAP effect below). */
-const REST_OPACITY = {
-  pill: 0.82,
-  link: 0.85,
-  copyright: 0.4,
-} as const;
-
-const FOCUS_OPACITY = 1;
-const DIM_OPACITY = 0.1;
-const DIM_BLUR = 'blur(1.5px)';
-const NO_BLUR = 'blur(0px)';
-
 /** Explicit per-element color transition — this design opts every node out of the global
  *  `[data-pf-color-transitions='true']` color-transition rule (`data-pf-no-color-transition`,
  *  needed so that rule's blanket `transition-property` override can't strip the GSAP-managed
@@ -105,12 +92,20 @@ interface FooterDesignTimezoneEditorialProps {
   email?: string | null;
   phone?: string | null;
   links: EditorialContactLink[];
+  layout: FooterDesignLayoutResolver;
   copyrightText: string;
   colorMode: 'light' | 'dark';
   /** Site-wide editorial gutter (settings.global.contentGutter) — this design is full-bleed
    *  (bypasses the legacy footer shell), so it needs the same gutter every other section
    *  respects passed in explicitly to keep its content column aligned with the rest of the page. */
   contentGutter?: PortfolioContentGutter;
+  /** Resolved from the Footer section's own Background tab (`sectionBackgroundStyle`) —
+   *  `undefined` when that tab is off, so this canvas is transparent (the page/global
+   *  wallpaper shows through) by default, same as every other Footer design now. */
+  backgroundStyle?: CSSProperties;
+  /** Multiplies every standardized body/label text size via `--pf-footer-font-scale` —
+   *  see the Footer section's General tab "Font size" control. */
+  fontSizeScale?: number;
 }
 
 /**
@@ -120,11 +115,10 @@ interface FooterDesignTimezoneEditorialProps {
  * job, e.g. its own "Timezone" design). A wide left column carries a contact pill
  * (square avatar crop + email/phone); a narrow right column, pinned to the far edge,
  * carries an arrow-led ("↳") list of social links, leaving the center column empty
- * for breathing room. At rest every element sits at a subdued opacity; hovering
- * the contact pill or a social link snaps that element to full ink while everything
- * else in the footer (including the giant background watermark) recedes to 0.1 opacity
- * with a soft blur, and a hovered link's "↳" glyph slides right and springs back
- * (elastic ease). The creator's name repeats gigantic and
+ * for breathing room. Every element reads at full, normal contrast at all times;
+ * hovering a social link only slides its own "↳" glyph right and springs it back
+ * (elastic ease) — a self-contained accent that never touches any other element.
+ * The creator's name repeats gigantic and
  * near-invisible across the very bottom as a watermark. Bypasses the legacy
  * padding/pattern/shell system entirely — same full-bleed convention as Monumental
  * and Contact's premium designs — and mirrors the portfolio's real active
@@ -141,17 +135,21 @@ export function FooterDesignTimezoneEditorial({
   email,
   phone,
   links,
+  layout,
   copyrightText,
   colorMode,
   contentGutter = DEFAULT_CONTENT_GUTTER,
+  backgroundStyle,
+  fontSizeScale = 1,
 }: FooterDesignTimezoneEditorialProps) {
   const rootRef = useRef<HTMLElement>(null);
   const watermarkContainerRef = useRef<HTMLDivElement>(null);
   const watermarkTextRef = useRef<HTMLDivElement>(null);
-  useFitWidthTextSize(watermarkContainerRef, watermarkTextRef, creatorName);
+  const watermarkText = layout.text('watermark', creatorName);
+  const showAvatar = layout.isVisible('avatar');
+  useFitWidthTextSize(watermarkContainerRef, watermarkTextRef, watermarkText ?? '');
 
   const isLight = colorMode === 'light';
-  const bg = isLight ? '#ffffff' : '#000000';
   const ink = isLight ? '#050505' : '#fafafa';
   const watermarkInk = isLight ? 'rgba(5,5,5,0.045)' : 'rgba(250,250,250,0.05)';
   const placeholderBg = isLight ? '#ededed' : '#141414';
@@ -164,53 +162,14 @@ export function FooterDesignTimezoneEditorial({
     let ctx: gsap.Context | undefined;
     try {
       ctx = gsap.context(() => {
-        const items = Array.from(root.querySelectorAll<HTMLElement>('[data-tze-item]'));
-        const baseOpacity = new Map<HTMLElement, number>();
-        items.forEach((el) => {
-          const attr = el.getAttribute('data-tze-base');
-          baseOpacity.set(el, attr ? Number(attr) : 0.85);
-        });
-
+        // Self-contained per-link accent: hovering a social link slides its own "↳"
+        // glyph right and springs it back (elastic ease). Scoped to that one link's
+        // own arrow only — no other element on the page is touched by this.
         const linkTargets = Array.from(root.querySelectorAll<HTMLElement>('[data-tze-link]'));
-
-        const onEnter = (target: HTMLElement) => {
-          items.forEach((el) => {
-            if (el === target) {
-              gsap.to(el, {
-                opacity: FOCUS_OPACITY,
-                filter: NO_BLUR,
-                duration: 0.32,
-                ease: 'power2.out',
-                overwrite: 'auto',
-              });
-            } else {
-              gsap.to(el, {
-                opacity: DIM_OPACITY,
-                filter: DIM_BLUR,
-                duration: 0.32,
-                ease: 'power2.out',
-                overwrite: 'auto',
-              });
-            }
-          });
-        };
-
-        const onLeaveAll = () => {
-          items.forEach((el) => {
-            gsap.to(el, {
-              opacity: baseOpacity.get(el) ?? 0.85,
-              filter: NO_BLUR,
-              duration: 0.4,
-              ease: 'power2.out',
-              overwrite: 'auto',
-            });
-          });
-        };
 
         const enterHandlers = linkTargets.map((el) => {
           const arrow = el.querySelector<HTMLElement>('[data-tze-arrow]');
           const handler = () => {
-            onEnter(el);
             if (!arrow) return;
             gsap.fromTo(
               arrow,
@@ -230,17 +189,13 @@ export function FooterDesignTimezoneEditorial({
           return handler;
         });
 
-        root.addEventListener('pointerleave', onLeaveAll);
-
         return () => {
           linkTargets.forEach((el, index) => el.removeEventListener('pointerenter', enterHandlers[index]));
-          root.removeEventListener('pointerleave', onLeaveAll);
         };
       }, root);
     } catch (error) {
       console.error('[FooterDesignTimezoneEditorial] GSAP animation failed to initialize', error);
       ctx?.revert();
-      gsap.set(root.querySelectorAll('[data-tze-item]'), { clearProps: 'all' });
     }
 
     return () => {
@@ -267,7 +222,7 @@ export function FooterDesignTimezoneEditorial({
       ref={rootRef}
       data-creator-id={creatorId}
       className="relative left-1/2 isolate w-screen -translate-x-1/2 overflow-hidden"
-      style={{ backgroundColor: bg, transition: COLOR_TRANSITION }}
+      style={{ ...backgroundStyle, transition: COLOR_TRANSITION, '--pf-footer-font-scale': fontSizeScale } as CSSProperties}
       data-pf-no-color-transition=""
     >
       {/* Giant, near-invisible watermark — anchored to the very bottom. The outer wrapper's
@@ -278,34 +233,41 @@ export function FooterDesignTimezoneEditorial({
           height:auto so it never clips the text vertically. The text node itself keeps
           `overflow: visible` plus a generous line-height + bottom padding so descenders
           (g/j/p/y, ©) never touch the edge. */}
+      {watermarkText ? (
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-[4vh]">
-        {/* overflow-x-hidden only (not overflow-hidden) — the wrapper must never clip
-            vertically, or a tight line-height's descenders (g/j/p/y) risk getting cropped
-            against this box's own edge regardless of how much paddingBottom the text below
-            reserves for them. Now purely a safety net: the fit hook keeps the watermark
-            within this same width by construction. */}
-        <div
-          ref={watermarkContainerRef}
-          className={`w-full overflow-x-hidden text-center ${portfolioEditorialGutterX(contentGutter)}`}
-        >
-          <div
-            ref={watermarkTextRef}
-            data-tze-item
-            data-tze-base="1"
-            data-pf-no-color-transition=""
-            className="inline-block select-none overflow-visible whitespace-nowrap font-sans font-black uppercase tracking-tight"
-            style={{
-              fontSize: 'clamp(4rem, 16vw, 14rem)',
-              lineHeight: 1,
-              paddingBottom: '0.22em',
-              color: watermarkInk,
-              transition: COLOR_TRANSITION,
-            }}
-          >
-            {creatorName}
+        {/* The gutter padding lives on THIS outer wrapper, not on the measured container
+            below — the fit hook sizes the text to exactly match its container's own
+            bounding-box width, and that container's box already includes its own padding.
+            Padding the measured element itself would make the hook fit the text to the
+            *padded* (outer) width while the text sits *inside* the left padding, pushing
+            its right edge past the right padding by the padding amount (this was the bug:
+            the name overflowed past the global margin on the right, e.g. "CESAI" clipped
+            instead of "CESAR"). Same separation the Billboard header uses. */}
+        <div className={`w-full ${portfolioEditorialGutterX(contentGutter)}`}>
+          {/* overflow-x-hidden only (not overflow-hidden) — the wrapper must never clip
+              vertically, or a tight line-height's descenders (g/j/p/y) risk getting cropped
+              against this box's own edge regardless of how much paddingBottom the text below
+              reserves for them. Now purely a safety net: the fit hook keeps the watermark
+              within this same width by construction. */}
+          <div ref={watermarkContainerRef} className="w-full overflow-x-hidden text-center">
+            <div
+              ref={watermarkTextRef}
+              data-pf-no-color-transition=""
+              className="inline-block select-none overflow-visible whitespace-nowrap font-sans font-black uppercase tracking-tight"
+              style={{
+                fontSize: 'clamp(4rem, 16vw, 14rem)',
+                lineHeight: 1,
+                paddingBottom: '0.22em',
+                color: watermarkInk,
+                transition: COLOR_TRANSITION,
+              }}
+            >
+              {watermarkText}
+            </div>
           </div>
         </div>
       </div>
+      ) : null}
 
       <div
         className={`relative z-[1] grid w-full grid-cols-1 gap-16 py-20 sm:py-28 lg:grid-cols-[1fr_auto] lg:gap-24 lg:py-32 ${portfolioEditorialGutterX(contentGutter)}`}
@@ -316,39 +278,49 @@ export function FooterDesignTimezoneEditorial({
         <div className="flex min-w-0 flex-col gap-10">
           {hasContact ? (
             <div
-              data-tze-item
-              data-tze-link
-              data-tze-base={REST_OPACITY.pill}
               data-pf-no-color-transition=""
               className="mt-2 flex w-fit items-center gap-6"
-              style={{ opacity: REST_OPACITY.pill }}
             >
-              <div
-                className="h-14 w-14 shrink-0 overflow-hidden rounded-lg"
-                style={{ backgroundColor: placeholderBg, transition: COLOR_TRANSITION }}
-                aria-hidden
-              >
-                {hasAvatar ? (
-                  // Plain <img>, not next/image — matches this design family's convention
-                  // (see FooterDesignMonumental / FooterDesignHeroColumns).
-                  <img
-                    src={avatarUrl!}
-                    alt={creatorName ? `Portrait of ${creatorName}` : 'Portrait'}
-                    className="h-full w-full object-cover object-center"
-                  />
-                ) : (
-                  <div
-                    className="flex h-full w-full items-center justify-center text-xs font-semibold uppercase"
-                    style={{ color: ink, opacity: 0.4, transition: COLOR_TRANSITION }}
-                  >
-                    {initials}
-                  </div>
-                )}
-              </div>
+              {showAvatar ? (
+                <div
+                  className="h-14 w-14 shrink-0 overflow-hidden rounded-lg"
+                  style={{ backgroundColor: placeholderBg, transition: COLOR_TRANSITION }}
+                  aria-hidden
+                >
+                  {hasAvatar ? (
+                    // Plain <img>, not next/image — matches this design family's convention
+                    // (see FooterDesignMonumental / FooterDesignHeroColumns).
+                    <img
+                      src={avatarUrl!}
+                      alt={creatorName ? `Portrait of ${creatorName}` : 'Portrait'}
+                      className="h-full w-full object-cover object-center"
+                    />
+                  ) : (
+                    <div
+                      className="flex h-full w-full items-center justify-center text-xs font-semibold uppercase"
+                      style={{ color: ink, opacity: 0.4, transition: COLOR_TRANSITION }}
+                    >
+                      {initials}
+                    </div>
+                  )}
+                </div>
+              ) : null}
               <div className="flex flex-col gap-0.5" style={{ color: ink, transition: COLOR_TRANSITION }}>
-                {trimmedEmail ? <span className="text-sm font-medium sm:text-base">{trimmedEmail}</span> : null}
+                {trimmedEmail ? (
+                  <span
+                    className="font-medium"
+                    style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
+                  >
+                    {trimmedEmail}
+                  </span>
+                ) : null}
                 {phoneDisplay ? (
-                  <span className="text-xs sm:text-sm" style={{ opacity: 0.72 }}>
+                  <span
+                    style={{
+                      opacity: 0.72,
+                      fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
+                    }}
+                  >
                     {phoneDisplay}
                   </span>
                 ) : null}
@@ -358,11 +330,13 @@ export function FooterDesignTimezoneEditorial({
 
           {trimmedCopyright ? (
             <p
-              data-tze-item
-              data-tze-base={REST_OPACITY.copyright}
               data-pf-no-color-transition=""
-              className="mt-20 text-xs font-medium tracking-wide"
-              style={{ color: ink, opacity: REST_OPACITY.copyright, transition: COLOR_TRANSITION }}
+              className="mt-20 font-medium tracking-wide"
+              style={{
+                color: ink,
+                transition: COLOR_TRANSITION,
+                fontSize: 'calc(var(--pf-footer-label-size) * var(--pf-footer-font-scale, 1))',
+              }}
             >
               {trimmedCopyright}
             </p>
@@ -383,12 +357,14 @@ export function FooterDesignTimezoneEditorial({
                     href={link.url}
                     target="_blank"
                     rel="noreferrer"
-                    data-tze-item
                     data-tze-link
-                    data-tze-base={REST_OPACITY.link}
                     data-pf-no-color-transition=""
-                    className="inline-flex items-center gap-2 text-base font-medium uppercase tracking-[0.1em] sm:text-lg lg:text-xl"
-                    style={{ color: ink, opacity: REST_OPACITY.link, transition: COLOR_TRANSITION }}
+                    className="inline-flex items-center gap-2 font-medium uppercase tracking-[0.1em]"
+                    style={{
+                      color: ink,
+                      transition: COLOR_TRANSITION,
+                      fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
+                    }}
                   >
                     <span data-tze-arrow aria-hidden className="inline-block">
                       ↳
@@ -408,7 +384,7 @@ export function FooterDesignTimezoneEditorial({
 /** Tiny abstract wireframe for the settings-panel design picker thumbnail. */
 export function FooterTimezoneEditorialWireframe() {
   return (
-    <svg viewBox="0 0 120 72" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
+    <svg viewBox="0 0 120 72" preserveAspectRatio="none" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
       <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
 
       {/* left: contact pill */}

@@ -860,6 +860,55 @@ export const DEFAULT_SERVICES_ELEMENT_CHROMES: PortfolioServicesElementChromes =
  */
 export type PortfolioServicesCardTextContrast = 'auto' | 'pair-ab';
 
+/**
+ * Global type-size control for every Services design (pricing cards + showcase hero) — same
+ * standardized-shared-value architecture as Experience/Footer/FAQ's "Font size" control: ONE
+ * unified scale every design reads via its own `--pf-services-font-scale` CSS custom property
+ * (set on the section's shared `<section id="services">` root), multiplying standardized
+ * body/label font-size declarations. `medium` is each design's own current baseline size —
+ * the other tiers scale relative to that, not to some other absolute reference.
+ */
+export type PortfolioServicesPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
+
+export const SERVICES_PREMIUM_FONT_SIZES: PortfolioServicesPremiumFontSize[] = [
+  'small',
+  'medium',
+  'large',
+  'xlarge',
+  'xxlarge',
+];
+
+export const PORTFOLIO_SERVICES_PREMIUM_FONT_SIZE_OPTIONS: {
+  value: PortfolioServicesPremiumFontSize;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'small', label: 'Small', description: 'Compact type across every Services design.' },
+  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
+  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
+  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  {
+    value: 'xxlarge',
+    label: 'Super Extra Large',
+    description: 'Maximum type size for the most dramatic, oversized look.',
+  },
+];
+
+/** Multiplier every Services design's own standardized body/label text sizes are scaled by,
+ *  via `calc(<base> * var(--pf-services-font-scale, 1))` in globals.css — same values as
+ *  Experience/Footer/FAQ's identical scale, kept in sync deliberately. */
+const SERVICES_PREMIUM_FONT_SCALE: Record<PortfolioServicesPremiumFontSize, number> = {
+  small: 0.85,
+  medium: 1,
+  large: 1.15,
+  xlarge: 1.3,
+  xxlarge: 1.45,
+};
+
+export function servicesPremiumFontScale(size: PortfolioServicesPremiumFontSize): number {
+  return SERVICES_PREMIUM_FONT_SCALE[size] ?? 1;
+}
+
 export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSettings &
   PortfolioServicesCardBackgroundSettings &
   PortfolioServicesCardDecorSettings & {
@@ -1210,6 +1259,8 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
   activeColorMode?: 'light' | 'dark';
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  /** Global type-size control — see `PortfolioServicesPremiumFontSize` doc comment. */
+  premiumFontSize: PortfolioServicesPremiumFontSize;
   /** Services-owned palette copy (same 8 tokens as Hero). */
   servicesPalette?: PortfolioServicesPalette;
   /** Which token each services color slot uses. */
@@ -2118,6 +2169,7 @@ export const DEFAULT_SERVICES_PRESENTATION: PortfolioServicesPresentationSetting
   servicesHeader: createDefaultDistinctHeaderSettings('services'),
   useHeroPalette: true,
   colorModeOverride: 'auto',
+  premiumFontSize: 'medium',
   servicesPalette: { ...DEFAULT_SERVICES_PALETTE },
   servicesColorBindings: { ...DEFAULT_SERVICES_COLOR_BINDINGS },
   elementStyles: DEFAULT_SERVICES_ELEMENT_STYLES,
@@ -2173,10 +2225,10 @@ export const PORTFOLIO_SERVICES_DISTINCT_SERVICES_TITLE_PRESET_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'services-skills', label: 'Services', description: 'Titre affiché : SERVICES' },
-  { value: 'what-i-offer', label: 'What I offer', description: 'Titre affiché : WHAT I OFFER' },
-  { value: 'expertise', label: 'Expertise', description: 'Titre affiché : EXPERTISE' },
-  { value: 'custom', label: 'Personnalisé', description: 'Écrivez le titre principal vous-même.' },
+  { value: 'services-skills', label: 'Services', description: 'Displayed title: SERVICES' },
+  { value: 'what-i-offer', label: 'What I offer', description: 'Displayed title: WHAT I OFFER' },
+  { value: 'expertise', label: 'Expertise', description: 'Displayed title: EXPERTISE' },
+  { value: 'custom', label: 'Custom', description: 'Write the main title yourself.' },
 ];
 
 export const PORTFOLIO_SERVICES_DISTINCT_SKILLS_SUBTITLE_PRESET_OPTIONS: {
@@ -2195,10 +2247,10 @@ export const PORTFOLIO_SERVICES_DISTINCT_SERVICES_SUBTITLE_PRESET_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'collaboration', label: 'Collaboration', description: 'Sous-titre orienté accompagnement client.' },
-  { value: 'short', label: 'Court', description: 'Une ligne courte sous le titre.' },
-  { value: 'minimal', label: 'Aucun sous-titre', description: 'Masquer le sous-titre de section.' },
-  { value: 'custom', label: 'Personnalisé', description: 'Écrivez le sous-titre vous-même.' },
+  { value: 'collaboration', label: 'Collaboration', description: 'A client-focused subtitle.' },
+  { value: 'short', label: 'Short', description: 'One short line under the title.' },
+  { value: 'minimal', label: 'None', description: 'Hide the section subtitle.' },
+  { value: 'custom', label: 'Custom', description: 'Write the subtitle yourself.' },
 ];
 
 export const PORTFOLIO_SERVICES_HEADER_FONT_OPTIONS: {
@@ -6875,6 +6927,7 @@ export function mergeServicesPresentation(
     skillsIconSize: pick(record.skillsIconSize, ['sm', 'md', 'lg', 'xl'], base.skillsIconSize),
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    premiumFontSize: pick(record.premiumFontSize, SERVICES_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
     servicesPalette: mergeServicesPalette(
       mergeServicesPalette(DEFAULT_SERVICES_PALETTE, base.servicesPalette),
       record.servicesPalette

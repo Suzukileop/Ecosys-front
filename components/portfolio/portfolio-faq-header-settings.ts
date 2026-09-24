@@ -15,7 +15,26 @@ export type PortfolioFaqHeaderDesign =
   | 'serif-lead'
   | 'billboard'
   | 'masthead'
-  | 'split-heading';
+  | 'split-heading'
+  | 'signal'
+  | 'query'
+  | 'dialogue';
+
+/** The 4 designs surfaced in FAQ's own Header tab (see portfolio-faq-settings-panel.tsx) —
+ *  'editorial' is the original classic layout (kicker + masked-reveal title + subtitle),
+ *  re-exposed here by request after being removed from the UI along with the other 7 (see
+ *  faq-settings-header-removed-pill-tabs memory); the other 7 of the original 8 stay frozen
+ *  — still fully rendered for any account that already has one saved, but not selectable from
+ *  this UI. 'signal'/'query'/'dialogue' are 3 newer, purpose-built designs (see
+ *  faq-header-tab-3-new-designs memory), not a restoration of the old set. */
+export type PortfolioFaqHeaderDesignSelectable = 'editorial' | 'signal' | 'query' | 'dialogue';
+
+export const FAQ_HEADER_DESIGNS_SELECTABLE: PortfolioFaqHeaderDesignSelectable[] = [
+  'editorial',
+  'signal',
+  'query',
+  'dialogue',
+];
 
 export type PortfolioFaqHeaderDesignAlignment = 'left' | 'center' | 'right';
 
@@ -51,6 +70,9 @@ export const FAQ_HEADER_DESIGNS: PortfolioFaqHeaderDesign[] = [
   'billboard',
   'masthead',
   'split-heading',
+  'signal',
+  'query',
+  'dialogue',
 ];
 
 export const FAQ_HEADER_MARGIN_BOTTOM_STEPS: PortfolioFaqHeaderMarginBottom[] = ['sm', 'md', 'lg', 'xl'];
@@ -60,6 +82,14 @@ export const FAQ_HEADER_TITLE_WEIGHTS: PortfolioFaqHeaderTitleWeight[] = [
   'regular',
   'semibold',
   'bold',
+];
+/** Editorial's own `headerTitleWeight` scale: the shared 4 steps plus a heavier top step
+ *  (Editorial reads every step one notch lighter, so 'extrabold' renders as plain Bold).
+ *  Kept separate so the legacy designs' weight Records don't have to grow a 5th key. */
+export type PortfolioFaqHeaderEditorialTitleWeight = PortfolioFaqHeaderTitleWeight | 'extrabold';
+export const FAQ_HEADER_EDITORIAL_TITLE_WEIGHTS: PortfolioFaqHeaderEditorialTitleWeight[] = [
+  ...FAQ_HEADER_TITLE_WEIGHTS,
+  'extrabold',
 ];
 export const FAQ_HEADER_PALETTE_TOKENS: PortfolioFaqHeaderPaletteToken[] = [
   'principal',
@@ -123,6 +153,53 @@ export const PORTFOLIO_FAQ_HEADER_DESIGN_OPTIONS: {
     value: 'split-heading',
     label: 'Split heading',
     description: 'Title left with an editorial italic word, small label top-right.',
+  },
+  {
+    value: 'signal',
+    label: 'Signal',
+    description: 'Pulsing "live" status pill with a question count, asymmetric title + side-note subtitle.',
+  },
+  {
+    value: 'query',
+    label: 'Query',
+    description: 'Vertical rotated label, giant faint "?" watermark drifting behind the title on scroll.',
+  },
+  {
+    value: 'dialogue',
+    label: 'Dialogue',
+    description: 'Title words alternate bold/light for a conversational rhythm, floating question-count badge.',
+  },
+];
+
+/** What FAQ's own Header tab picker actually renders (see portfolio-faq-settings-panel.tsx),
+ *  narrowed to `PortfolioFaqHeaderDesignSelectable`. Kept as its own literal array rather than
+ *  filtering the big list above so its `value` type narrows correctly for the picker/wireframe
+ *  components. 'editorial' reuses the exact same `FaqHeaderEditorialHeader` component/entry as
+ *  the frozen legacy one above — same design, just re-exposed in this picker. */
+export const PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS: {
+  value: PortfolioFaqHeaderDesignSelectable;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'editorial',
+    label: 'Editorial',
+    description: 'Kicker + masked line-reveal title + subtitle — premium GSAP entrance.',
+  },
+  {
+    value: 'signal',
+    label: 'Signal',
+    description: 'Pulsing "live" status pill with a question count, asymmetric title + side-note subtitle.',
+  },
+  {
+    value: 'query',
+    label: 'Query',
+    description: 'Vertical rotated label, giant faint "?" watermark drifting behind the title on scroll.',
+  },
+  {
+    value: 'dialogue',
+    label: 'Dialogue',
+    description: 'Title words alternate bold/light for a conversational rhythm, floating question-count badge.',
   },
 ];
 

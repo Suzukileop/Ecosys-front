@@ -65,6 +65,57 @@ export type PortfolioGallerySubtitlePreset = 'default' | 'selection' | 'journal'
  * Distinct from per-item `titlePlacement` and block `placement`.
  */
 export type PortfolioGallerySectionLayout = 'stacked' | 'aside-left' | 'aside-right' | 'over-thumbs';
+/**
+ * Global type-size control for the Gallery section — same standardized-shared-value
+ * architecture as the Experience/Footer/FAQ sections' "Font size" control: a single
+ * `--pf-gallery-font-scale` CSS custom property, set once on the section's shared
+ * `PortfolioSectionShell` root (`id="gallery"`, via `cssVars` in `PublicCreatorPortfolioPage.tsx`,
+ * from `galleryPremiumFontScale(presentation.premiumFontSize)`), multiplies every one of the
+ * Gallery's body/caption font-size declarations (`.pf-gallery-media-title*` in globals.css, and
+ * the lightbox caption text). `medium` is the current baseline size — the other tiers scale
+ * relative to that, not to some other absolute reference.
+ */
+export type PortfolioGalleryPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
+
+export const GALLERY_PREMIUM_FONT_SIZES: PortfolioGalleryPremiumFontSize[] = [
+  'small',
+  'medium',
+  'large',
+  'xlarge',
+  'xxlarge',
+];
+
+export const PORTFOLIO_GALLERY_PREMIUM_FONT_SIZE_OPTIONS: {
+  value: PortfolioGalleryPremiumFontSize;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'small', label: 'Small', description: 'Compact type across the Gallery.' },
+  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
+  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
+  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  {
+    value: 'xxlarge',
+    label: 'Super Extra Large',
+    description: 'Maximum type size for the most dramatic, oversized look.',
+  },
+];
+
+/** Multiplier the Gallery's own standardized body/caption text sizes are scaled by, via
+ *  `calc(<base> * var(--pf-gallery-font-scale, 1))` in globals.css — same values as the
+ *  Experience/Footer/FAQ sections' scale, kept in sync deliberately. */
+const GALLERY_PREMIUM_FONT_SCALE: Record<PortfolioGalleryPremiumFontSize, number> = {
+  small: 0.85,
+  medium: 1,
+  large: 1.15,
+  xlarge: 1.3,
+  xxlarge: 1.45,
+};
+
+export function galleryPremiumFontScale(size: PortfolioGalleryPremiumFontSize): number {
+  return GALLERY_PREMIUM_FONT_SCALE[size] ?? 1;
+}
+
 /** Decorative SVG beside the gallery grid (`none` hides it). */
 export type PortfolioGalleryIllustrationVariant =
   | 'none'
@@ -102,7 +153,7 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   headerAlignment: PortfolioGalleryHeaderAlignment;
   /**
    * Section title vs gallery grid composition.
-   * Not the same as item `titlePlacement` (Médias) or block `placement` (Disposition).
+   * Not the same as item `titlePlacement` or block `placement` (Design tab).
    */
   sectionLayout: PortfolioGallerySectionLayout;
   /** Decorative SVG beside the gallery grid (`none` hides it). */
@@ -240,6 +291,8 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   headerMarqueeWordColor: PortfolioGalleryHeaderPaletteToken;
   /** Header marquee — scales the repeating word band. */
   headerMarqueeSize: PortfolioGalleryHeaderTitleSize;
+  /** General tab "Font size" — section-wide body/caption type scale. */
+  premiumFontSize: PortfolioGalleryPremiumFontSize;
 };
 
 export type PortfolioGallerySectionSettings =
@@ -250,13 +303,13 @@ export const PORTFOLIO_GALLERY_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'framed-grid', label: 'Grille encadrée', description: 'Grille responsive classique avec légendes.' },
-  { value: 'caption-carousel', label: 'Cartes légendées', description: 'Cartes avec image et titre, défilement horizontal et flèches.' },
-  { value: 'cinema-strip', label: 'Bande cinéma', description: 'Grand défilement horizontal avec flèches de navigation.' },
-  { value: 'hero-mosaic', label: 'Mosaïque héros', description: 'Image vedette et mosaïque adaptative selon le nombre de médias.' },
-  { value: 'featured-strip', label: 'À la une + rail', description: 'Grande image à gauche et vignettes empilées à droite.' },
-  { value: 'tall-row', label: 'Image haute + rangée', description: 'Première image plus haute à gauche, trois plus basses alignées à droite.' },
-  { value: 'editorial-split', label: 'Editorial split', description: 'Alternance de compositions larges et compactes.' },
+  { value: 'framed-grid', label: 'Framed grid', description: 'Classic responsive grid with captions.' },
+  { value: 'caption-carousel', label: 'Caption cards', description: 'Image-and-title cards, horizontal scroll with arrows.' },
+  { value: 'cinema-strip', label: 'Cinema strip', description: 'Wide horizontal scroll with navigation arrows.' },
+  { value: 'hero-mosaic', label: 'Hero mosaic', description: 'Featured image with a mosaic that adapts to the media count.' },
+  { value: 'featured-strip', label: 'Featured + rail', description: 'Large image on the left, thumbnails stacked on the right.' },
+  { value: 'tall-row', label: 'Tall + row', description: 'A taller first image on the left, three shorter ones on the right.' },
+  { value: 'editorial-split', label: 'Editorial split', description: 'Alternating wide and compact compositions.' },
 ];
 
 export const PORTFOLIO_GALLERY_DESIGNS = PORTFOLIO_GALLERY_DESIGN_OPTIONS.map((option) => option.value);
@@ -284,23 +337,23 @@ export const PORTFOLIO_GALLERY_SECTION_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'stacked',
-    label: 'Empilé',
-    description: 'Titre de section au-dessus de la grille.',
+    label: 'Stacked',
+    description: 'Section title above the grid.',
   },
   {
     value: 'aside-left',
-    label: 'Titre à gauche',
-    description: 'Titre de section à gauche, grille à droite (côte à côte).',
+    label: 'Title left',
+    description: 'Section title on the left, grid on the right (side by side).',
   },
   {
     value: 'aside-right',
-    label: 'Titre à droite',
-    description: 'Grille à gauche, titre de section à droite (côte à côte).',
+    label: 'Title right',
+    description: 'Grid on the left, section title on the right (side by side).',
   },
   {
     value: 'over-thumbs',
-    label: 'Au-dessus des miniatures',
-    description: 'Titre et sous-titre centrés au-dessus des miniatures (image haute) ou dans le vide à côté de l’image à la une.',
+    label: 'Above thumbnails',
+    description: 'Title and subtitle centered above the thumbnails (Tall + row), or in the empty space beside the featured image.',
   },
 ];
 
@@ -309,12 +362,12 @@ export const PORTFOLIO_GALLERY_ILLUSTRATION_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Aucun', description: 'Pas de SVG décoratif à côté de la grille.' },
-  { value: 'chat', label: 'Chat', description: 'Bulles de conversation.' },
-  { value: 'question', label: 'Question', description: 'Point d’interrogation graphique.' },
-  { value: 'docs', label: 'Docs', description: 'Documents superposés.' },
-  { value: 'support', label: 'Support', description: 'Illustration support.' },
-  { value: 'hex', label: 'Hex', description: 'Symbole hexagonal.' },
+  { value: 'none', label: 'None', description: 'No decorative SVG beside the grid.' },
+  { value: 'chat', label: 'Chat', description: 'Conversation bubbles.' },
+  { value: 'question', label: 'Question', description: 'Graphic question mark.' },
+  { value: 'docs', label: 'Docs', description: 'Stacked documents.' },
+  { value: 'support', label: 'Support', description: 'Support illustration.' },
+  { value: 'hex', label: 'Hex', description: 'Hexagonal symbol.' },
 ];
 
 export const PORTFOLIO_GALLERY_ILLUSTRATION_PLACEMENT_OPTIONS: {
@@ -322,8 +375,8 @@ export const PORTFOLIO_GALLERY_ILLUSTRATION_PLACEMENT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Gauche', description: 'SVG à gauche de la grille.' },
-  { value: 'right', label: 'Droite', description: 'SVG à droite de la grille.' },
+  { value: 'left', label: 'Left', description: 'SVG on the left of the grid.' },
+  { value: 'right', label: 'Right', description: 'SVG on the right of the grid.' },
 ];
 
 export const GALLERY_SECTION_LAYOUTS = ['stacked', 'aside-left', 'aside-right', 'over-thumbs'] as const;
@@ -504,6 +557,7 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   headerMarqueeWord4Text: '',
   headerMarqueeWordColor: 'principal',
   headerMarqueeSize: 'md',
+  premiumFontSize: 'medium',
 };
 
 export const DEFAULT_GALLERY_TITLE_EN = 'Gallery';
@@ -541,8 +595,8 @@ export const PORTFOLIO_GALLERY_FEATURED_RAIL_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'right', label: 'Verticales à droite', description: 'Miniatures empilées à droite de l’image principale.' },
-  { value: 'bottom', label: 'Horizontales en bas', description: 'Miniatures en rangée sous l’image principale.' },
+  { value: 'right', label: 'Stacked right', description: 'Thumbnails stacked to the right of the main image.' },
+  { value: 'bottom', label: 'Row below', description: 'Thumbnails in a row under the main image.' },
 ];
 
 export const PORTFOLIO_GALLERY_FEATURED_WIDTH_SCOPE_OPTIONS: {
@@ -550,8 +604,8 @@ export const PORTFOLIO_GALLERY_FEATURED_WIDTH_SCOPE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'hero', label: 'Image du haut seulement', description: 'Largeur et placement sur l’image principale uniquement.' },
-  { value: 'global', label: 'Globalement', description: 'Largeur et placement sur l’image et les miniatures ensemble.' },
+  { value: 'hero', label: 'Top image only', description: 'Width and placement applied to the main image only.' },
+  { value: 'global', label: 'Whole block', description: 'Width and placement applied to the image and thumbnails together.' },
 ];
 
 export function galleryDesignUsesCarouselNav(design: PortfolioGalleryDesign): boolean {
@@ -944,6 +998,7 @@ export function mergeGalleryPresentation(
       base.headerMarqueeWordColor ?? 'principal'
     ),
     headerMarqueeSize: pickString(record.headerMarqueeSize, GALLERY_HEADER_TITLE_SIZES, base.headerMarqueeSize ?? 'md'),
+    premiumFontSize: pickString(record.premiumFontSize, GALLERY_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
   };
 }
 

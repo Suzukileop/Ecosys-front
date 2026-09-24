@@ -3,9 +3,25 @@
 import { useState, type ReactNode } from 'react';
 import type {
   PortfolioContactCardDesign,
+  PortfolioContactPremiumDesign,
   PortfolioContactSectionSettings,
 } from '@/components/portfolio/portfolio-contact-settings';
-import { PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS } from '@/components/portfolio/portfolio-contact-settings';
+import {
+  PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS,
+  PORTFOLIO_CONTACT_PREMIUM_FONT_SIZE_OPTIONS,
+  isContactPremiumDesign,
+} from '@/components/portfolio/portfolio-contact-settings';
+import {
+  CONTACT_DESIGN_LAYOUT_SPECS,
+  CONTACT_LAYOUT_GROUP_TITLES,
+  contactLayoutOverride,
+  patchContactLayoutElement,
+  resolveContactLayoutOption,
+  resolveContactLayoutVisible,
+  type ContactLayoutElementSpec,
+  type ContactLayoutGroup,
+} from '@/components/portfolio/portfolio-contact-design-layout';
+import { PortfolioSettingsPhotoField } from '@/components/portfolio/portfolio-settings-photo-field';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import {
@@ -15,30 +31,20 @@ import {
   type PortfolioHeroPalette,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 
-export type ContactSubSection = 'general' | 'design' | 'background' | 'header';
+export type ContactSubSection = 'general' | 'design' | 'background';
 
 const CONTACT_SUB_SECTIONS: { id: ContactSubSection; label: string; description: string }[] = [
   { id: 'general', label: 'General', description: 'Section visibility and defaults.' },
   { id: 'design', label: 'Design', description: 'Layout and visual style.' },
   { id: 'background', label: 'Background', description: 'Fill behind this section.' },
-  { id: 'header', label: 'Header', description: 'Title, subtitle, fonts, and colors.' },
 ];
 
 /** Map legacy subsection ids (saved UI state / search) onto the current Contact menu. */
 export function normalizeContactSubSection(value: string | undefined): ContactSubSection {
-  if (value === 'general' || value === 'design' || value === 'background' || value === 'header') {
+  if (value === 'general' || value === 'design' || value === 'background') {
     return value;
   }
   return 'general';
-}
-
-function ContactSubSectionPlaceholder({ description }: { description: string }) {
-  return (
-    <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/60 px-4 py-10 text-center">
-      <p className="text-sm font-semibold text-neutral-700">Coming soon</p>
-      <p className="mt-1 text-sm text-neutral-500">{description}</p>
-    </div>
-  );
 }
 
 /* ---------------------------------------------------------------------- */
@@ -71,13 +77,20 @@ function ContactToggleRow({
   label,
   checked,
   onChange,
+  divider = true,
 }: {
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  /** false when the row heads its own input (a text field's show/hide switch). */
+  divider?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-neutral-200/80 py-3.5 last:border-b-0">
+    <div
+      className={`flex items-center justify-between gap-4 ${
+        divider ? 'border-b border-neutral-200/80 py-3.5 last:border-b-0' : 'pt-1'
+      }`}
+    >
       <span
         className="min-w-0 flex-1 cursor-pointer truncate text-sm font-medium text-neutral-950"
         onClick={() => onChange(!checked)}
@@ -87,6 +100,51 @@ function ContactToggleRow({
       <button type="button" role="switch" aria-checked={checked} aria-label={label} onClick={() => onChange(!checked)} className="shrink-0">
         <ContactSwitchTrack checked={checked} />
       </button>
+    </div>
+  );
+}
+
+function ContactOptionGrid<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  columns = 2,
+}: {
+  label: string;
+  options: { value: T; label: string; description?: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  columns?: 1 | 2 | 3 | 4 | 5;
+}) {
+  return (
+    <div>
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="mt-2 grid gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+      >
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.description}
+              onClick={() => onChange(option.value)}
+              className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition ${
+                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -145,7 +203,7 @@ function ContactPaletteSwatchPicker({
   );
 }
 
-/** The 11 new premium, full-bleed designs — shown first in the Design tab. The other 9
+/** The 9 new premium, full-bleed designs — shown first in the Design tab. The other 9
  *  legacy card designs still exist in the data model (old accounts keep rendering
  *  correctly) but aren't surfaced in this picker yet — same "clean slate" convention
  *  as every other section's Design tab in this rollout. */
@@ -158,8 +216,6 @@ const PREMIUM_CONTACT_DESIGNS: PortfolioContactCardDesign[] = [
   'borderless-grid',
   'broken-grid',
   'numbered-narrative',
-  'brutalist-overlap',
-  'split-manifesto',
   'magnetic-overlap',
 ];
 
@@ -167,23 +223,26 @@ const PREMIUM_CONTACT_DESIGNS: PortfolioContactCardDesign[] = [
  *  not Stack-specific — reused across every section panel with this picker mechanism). */
 function ContactMiniSlide({ children }: { children: ReactNode }) {
   return (
-    <svg viewBox="0 0 120 72" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
+    <svg viewBox="0 0 120 72" preserveAspectRatio="none" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
       <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
       {children}
     </svg>
   );
 }
 
+/** Wireframe + name only — no description paragraph (see the "Settings design standard"
+ *  text-reduction rule). Tinted background (no visible border on rest); the selected card's
+ *  only signal is its label switching to the accent color (plus a faint accent-tinted card
+ *  background) — no stripe, no floating badge. Hover lift/brighten — see
+ *  `.pf-contact-design-card` in globals.css (same recipe as Footer's own picker card). */
 function ContactPickerCard({
   active,
   label,
-  description,
   onClick,
   children,
 }: {
   active: boolean;
   label: string;
-  description: string;
   onClick: () => void;
   children: ReactNode;
 }) {
@@ -191,24 +250,15 @@ function ContactPickerCard({
     <button
       type="button"
       aria-pressed={active}
+      aria-label={label}
+      title={label}
+      data-active={active ? 'true' : 'false'}
       onClick={onClick}
-      className="pf-stack-design-card rounded-2xl px-3 pb-3 pt-2.5 text-left"
+      className="pf-contact-design-card relative rounded-2xl p-2.5 text-left"
     >
-      {active ? (
-        <span
-          aria-hidden
-          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
-          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
-        >
-          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
-            <path d="M4 10.5l3.5 3.5L16 6" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-      ) : null}
       {children}
-      <span className="mt-2.5 block">
-        <span className="pf-stack-card-label block text-sm font-semibold leading-none tracking-tight">{label}</span>
-        <span className="mt-1.5 block text-xs leading-relaxed text-neutral-500">{description}</span>
+      <span className="pf-contact-card-label mt-2 block text-sm font-semibold leading-none tracking-tight">
+        {label}
       </span>
     </button>
   );
@@ -304,28 +354,6 @@ function ContactDesignWireframe({ design }: { design: PortfolioContactCardDesign
           <rect className="pf-stack-mini-mute" x="88" y="50" width="20" height="2" rx="1" opacity={0.6} />
         </ContactMiniSlide>
       );
-    case 'brutalist-overlap':
-      return (
-        <ContactMiniSlide>
-          <rect className="pf-stack-mini-mute" x="10" y="8" width="36" height="8" rx="2" opacity={0.35} />
-          <rect className="pf-stack-mini-ink" x="10" y="20" width="30" height="8" rx="2" />
-          <rect className="pf-stack-mini-mute" x="44" y="18" width="10" height="12" rx="1" />
-          <rect className="pf-stack-mini-ink" x="10" y="42" width="44" height="6" rx="1" />
-          <rect className="pf-stack-mini-mute" x="10" y="50" width="44" height="1.5" />
-          <rect className="pf-stack-mini-mute" x="86" y="46" width="24" height="2" rx="1" opacity={0.6} />
-        </ContactMiniSlide>
-      );
-    case 'split-manifesto':
-      return (
-        <ContactMiniSlide>
-          <rect className="pf-stack-mini-mute" x="1.25" y="1.25" width="52" height="69.5" rx="1" />
-          <rect className="pf-stack-mini-ink" x="64" y="10" width="46" height="8" rx="2" />
-          <rect className="pf-stack-mini-mute" x="64" y="30" width="18" height="14" rx="1" opacity={0.5} />
-          <rect className="pf-stack-mini-mute" x="88" y="30" width="18" height="14" rx="1" opacity={0.5} />
-          <rect className="pf-stack-mini-mute" x="64" y="50" width="18" height="14" rx="1" opacity={0.5} />
-          <rect className="pf-stack-mini-mute" x="88" y="50" width="18" height="14" rx="1" opacity={0.5} />
-        </ContactMiniSlide>
-      );
     case 'magnetic-overlap':
       return (
         <ContactMiniSlide>
@@ -347,40 +375,239 @@ function ContactDesignWireframe({ design }: { design: PortfolioContactCardDesign
   }
 }
 
-function ContactTextField({
-  label,
-  value,
-  onChange,
-  placeholder,
-  multiline = false,
+/** Collapsed-state row: thumbnail + selected design name + chevron; the whole row opens the
+ *  catalogue. Same pattern as Footer's design picker. */
+function ContactDesignSummaryRow({
+  design,
+  name,
+  onOpen,
 }: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  multiline?: boolean;
+  design: PortfolioContactCardDesign;
+  name: string;
+  onOpen: () => void;
 }) {
   return (
-    <label className="block">
-      <span className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</span>
-      {multiline ? (
-        <textarea
-          rows={2}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={placeholder}
-          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+    <div>
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Design</p>
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label="Change section design"
+        className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
+      >
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+          <span className="flex w-[116px] shrink-0 items-center justify-center">
+            <ContactDesignWireframe design={design} />
+          </span>
+        </span>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{name}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+          <path d="M7.5 4.5l5 5.5-5 5.5" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/* Design tab → Layout settings — one band per selected premium design,    */
+/* generated from CONTACT_DESIGN_LAYOUT_SPECS (same pattern as Footer).    */
+/* ---------------------------------------------------------------------- */
+
+type ContactLayoutPatch = (patch: Partial<PortfolioContactSectionSettings>) => void;
+
+const CONTACT_LAYOUT_INPUT_CLASS =
+  'w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400';
+
+const CONTACT_LAYOUT_GROUP_ORDER: ContactLayoutGroup[] = ['image', 'text', 'details', 'form', 'labels', 'effects'];
+
+/** Groups longer than this start collapsed (Settings design standard, rule 5). */
+const CONTACT_LAYOUT_COLLAPSE_AFTER = 5;
+
+function ContactLayoutControl({
+  contact,
+  design,
+  spec,
+  onChange,
+}: {
+  contact: PortfolioContactSectionSettings;
+  design: PortfolioContactPremiumDesign;
+  spec: ContactLayoutElementSpec;
+  onChange: ContactLayoutPatch;
+}) {
+  const setOverride = (patch: { visible?: boolean; text?: string; choice?: string }) =>
+    onChange(patchContactLayoutElement(contact, design, spec.key, patch));
+
+  if (spec.kind === 'toggle') {
+    return (
+      <ContactToggleRow
+        label={spec.label}
+        checked={resolveContactLayoutVisible(contact, design, spec.key)}
+        onChange={(visible) => setOverride({ visible })}
+      />
+    );
+  }
+
+  if (spec.kind === 'option') {
+    return (
+      <ContactOptionGrid
+        label={spec.label}
+        options={spec.options}
+        value={resolveContactLayoutOption(contact, design, spec.key)}
+        onChange={(choice) => setOverride({ choice })}
+        columns={Math.min(spec.options.length, 4) as 2 | 3 | 4}
+      />
+    );
+  }
+
+  const hideable = spec.hideable !== false;
+  const visible = resolveContactLayoutVisible(contact, design, spec.key);
+  const value = contactLayoutOverride(contact, design, spec.key)?.text ?? '';
+  const placeholder = spec.placeholder?.(contact) || spec.defaultText(contact);
+  return (
+    <div className="space-y-2">
+      {hideable ? (
+        <ContactToggleRow
+          label={spec.label}
+          checked={visible}
+          divider={false}
+          onChange={(next) => setOverride({ visible: next })}
         />
       ) : (
-        <input
-          type="text"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={placeholder}
-          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-        />
+        <p className="pt-1 text-sm font-medium text-neutral-950">{spec.label}</p>
       )}
-    </label>
+      {visible ? (
+        spec.multiline ? (
+          <textarea
+            rows={2}
+            value={value}
+            placeholder={placeholder}
+            aria-label={spec.label}
+            onChange={(event) => setOverride({ text: event.target.value })}
+            className={`${CONTACT_LAYOUT_INPUT_CLASS} resize-y`}
+          />
+        ) : (
+          <input
+            type="text"
+            value={value}
+            placeholder={placeholder}
+            aria-label={spec.label}
+            onChange={(event) => setOverride({ text: event.target.value })}
+            className={CONTACT_LAYOUT_INPUT_CLASS}
+          />
+        )
+      ) : null}
+    </div>
+  );
+}
+
+function ContactLayoutGroupBlock({
+  group,
+  specs,
+  contact,
+  design,
+  onChange,
+}: {
+  group: ContactLayoutGroup;
+  specs: ContactLayoutElementSpec[];
+  contact: PortfolioContactSectionSettings;
+  design: PortfolioContactPremiumDesign;
+  onChange: ContactLayoutPatch;
+}) {
+  // Switches (e.g. "Contact form") always stay visible; only the secondary fields collapse.
+  const toggles = specs.filter((spec) => spec.kind === 'toggle');
+  const fields = specs.filter((spec) => spec.kind !== 'toggle');
+  const collapsible = fields.length > CONTACT_LAYOUT_COLLAPSE_AFTER;
+  const [open, setOpen] = useState(!collapsible);
+  const title = CONTACT_LAYOUT_GROUP_TITLES[group];
+
+  return (
+    <div className="space-y-3">
+      {collapsible ? (
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+          className="flex w-full items-center justify-between gap-3 text-left"
+        >
+          <span className="flex items-baseline gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">{title}</span>
+            <span className="text-[11px] font-semibold tabular-nums text-neutral-400">{fields.length}</span>
+          </span>
+          <svg
+            viewBox="0 0 20 20"
+            fill="none"
+            aria-hidden
+            className={`h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          >
+            <path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      ) : (
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">{title}</p>
+      )}
+      {!collapsible ? (
+        <div className="space-y-4">
+          {specs.map((spec) => (
+            <ContactLayoutControl key={spec.key} contact={contact} design={design} spec={spec} onChange={onChange} />
+          ))}
+        </div>
+      ) : (
+        <>
+          {toggles.length > 0 ? (
+            <div>
+              {toggles.map((spec) => (
+                <ContactLayoutControl key={spec.key} contact={contact} design={design} spec={spec} onChange={onChange} />
+              ))}
+            </div>
+          ) : null}
+          {open ? (
+            <div className="space-y-4">
+              {fields.map((spec) => (
+                <ContactLayoutControl key={spec.key} contact={contact} design={design} spec={spec} onChange={onChange} />
+              ))}
+            </div>
+          ) : null}
+        </>
+      )}
+    </div>
+  );
+}
+
+function ContactLayoutSettingsBand({
+  contact,
+  onChange,
+}: {
+  contact: PortfolioContactSectionSettings;
+  onChange: ContactLayoutPatch;
+}) {
+  if (!isContactPremiumDesign(contact.cardDesign)) return null;
+  const design = contact.cardDesign as PortfolioContactPremiumDesign;
+  const specs = (CONTACT_DESIGN_LAYOUT_SPECS[design] ?? []).filter((spec) => !spec.showWhen || spec.showWhen(contact));
+  if (specs.length === 0) return null;
+
+  return (
+    <section className="pf-exp-layout-settings" aria-labelledby="contact-layout-settings-title">
+      <h3 id="contact-layout-settings-title" className="pf-exp-layout-settings-title">
+        Layout settings
+      </h3>
+      <div key={design} className="pf-exp-layout-settings-body space-y-7">
+        {CONTACT_LAYOUT_GROUP_ORDER.map((group) => {
+          const groupSpecs = specs.filter((spec) => spec.group === group);
+          if (groupSpecs.length === 0) return null;
+          return (
+            <ContactLayoutGroupBlock
+              key={group}
+              group={group}
+              specs={groupSpecs}
+              contact={contact}
+              design={design}
+              onChange={onChange}
+            />
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -390,13 +617,17 @@ export function ContactSettingsPanel({
   subSection: controlledSubSection,
   onSubSectionChange,
   heroPalette,
+  profileAvatarUrl = null,
 }: {
   contact: PortfolioContactSectionSettings;
   onChange: (patch: Partial<PortfolioContactSectionSettings>) => void;
   subSection?: ContactSubSection;
   onSubSectionChange?: (value: ContactSubSection) => void;
   heroPalette?: PortfolioHeroPalette;
+  /** Account profile photo — shown in General → Photo until a custom one replaces it. */
+  profileAvatarUrl?: string | null;
 }) {
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<ContactSubSection>('general');
   const subSection = normalizeContactSubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: ContactSubSection) => {
@@ -404,8 +635,6 @@ export function ContactSettingsPanel({
     onSubSectionChange?.(next);
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
-  const activeMeta = CONTACT_SUB_SECTIONS.find((section) => section.id === subSection) ?? CONTACT_SUB_SECTIONS[0];
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
@@ -453,107 +682,71 @@ export function ContactSettingsPanel({
             </div>
           </div>
 
+          <PortfolioSettingsPhotoField
+            photoUrl={contact.photoUrl ?? ''}
+            profileAvatarUrl={profileAvatarUrl}
+            onChange={(photoUrl) => onChange({ photoUrl })}
+          />
+
           <SectionColorModeControl value={contact.colorModeOverride} onChange={(colorModeOverride) => onChange({ colorModeOverride })} />
+
+          <ContactOptionGrid
+            label="Font size"
+            options={PORTFOLIO_CONTACT_PREMIUM_FONT_SIZE_OPTIONS}
+            value={contact.premiumFontSize ?? 'medium'}
+            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
+            columns={3}
+          />
         </div>
       ) : null}
 
       {subSection === 'design' ? (
         <div className="space-y-6">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Design</p>
-            <div className="relative mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {PREMIUM_CONTACT_DESIGNS.map((design) => {
-                const option = PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS.find((item) => item.value === design);
-                if (!option) return null;
-                return (
-                  <ContactPickerCard
-                    key={design}
-                    active={contact.cardDesign === design}
-                    label={option.label}
-                    description={option.description}
-                    onClick={() => onChange({ cardDesign: design })}
-                  >
-                    <ContactDesignWireframe design={design} />
-                  </ContactPickerCard>
-                );
-              })}
+          {designCatalogOpen ? (
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Section design</p>
+                <button
+                  type="button"
+                  onClick={() => setDesignCatalogOpen(false)}
+                  className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+                >
+                  ← Back
+                </button>
+              </div>
+              <div className="relative mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {PREMIUM_CONTACT_DESIGNS.map((design) => {
+                  const option = PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS.find((item) => item.value === design);
+                  if (!option) return null;
+                  return (
+                    <ContactPickerCard
+                      key={design}
+                      active={contact.cardDesign === design}
+                      label={option.label}
+                      onClick={() => {
+                        onChange({ cardDesign: design });
+                        setDesignCatalogOpen(false);
+                      }}
+                    >
+                      <ContactDesignWireframe design={design} />
+                    </ContactPickerCard>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-
-          {contact.cardDesign === 'editorial-focus' ? (
-            <ContactTextField
-              label="Headline"
-              value={contact.editorialFocusHeadline}
-              onChange={(editorialFocusHeadline) => onChange({ editorialFocusHeadline })}
-              placeholder={"Let's build /\nSomething"}
-              multiline
-            />
-          ) : null}
-
-          {contact.cardDesign === 'liquid-distortion' ? (
-            <ContactTextField
-              label="Background watermark word"
-              value={contact.liquidDistortionWatermark}
-              onChange={(liquidDistortionWatermark) => onChange({ liquidDistortionWatermark })}
-              placeholder="CONNECT"
-            />
-          ) : null}
-
-          {contact.cardDesign === 'split-grid' ? (
-            <ContactTextField
-              label="Marquee phrase"
-              value={contact.premiumMarqueeText}
-              onChange={(premiumMarqueeText) => onChange({ premiumMarqueeText })}
-              placeholder="Let's talk — Say hello — Reach out — "
-            />
-          ) : null}
-
-          {contact.cardDesign === 'sequential-reveal' ? (
-            <ContactTextField
-              label="Slogan"
-              value={contact.sequentialRevealTagline}
-              onChange={(sequentialRevealTagline) => onChange({ sequentialRevealTagline })}
-              placeholder="Share your idea, let's build something meaningful together."
-              multiline
-            />
-          ) : null}
-
-          {contact.cardDesign === 'studio-overlap' ? (
-            <ContactTextField
-              label="Image badge label"
-              value={contact.studioOverlapBadgeLabel}
-              onChange={(studioOverlapBadgeLabel) => onChange({ studioOverlapBadgeLabel })}
-              placeholder="The Studio"
-            />
-          ) : null}
-
-          {contact.cardDesign === 'borderless-grid' ? (
-            <ContactTextField
-              label="Second headline line"
-              value={contact.borderlessGridSubline}
-              onChange={(borderlessGridSubline) => onChange({ borderlessGridSubline })}
-              placeholder="Start a conversation."
-            />
-          ) : null}
-
-          {contact.cardDesign === 'split-manifesto' ? (
-            <ContactTextField
-              label="Manifesto line"
-              value={contact.splitManifestoTagline}
-              onChange={(splitManifestoTagline) => onChange({ splitManifestoTagline })}
-              placeholder="We craft digital work that moves people…"
-              multiline
-            />
-          ) : null}
-
-          {contact.cardDesign === 'magnetic-overlap' ? (
-            <ContactTextField
-              label="Eyebrow"
-              value={contact.magneticOverlapEyebrow}
-              onChange={(magneticOverlapEyebrow) => onChange({ magneticOverlapEyebrow })}
-              placeholder="Say hey"
-            />
-          ) : null}
+          ) : (
+            <>
+              <ContactDesignSummaryRow
+                design={contact.cardDesign}
+                name={
+                  PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS.find((item) => item.value === contact.cardDesign)?.label ??
+                  'Choose a design'
+                }
+                onOpen={() => setDesignCatalogOpen(true)}
+              />
+              <ContactLayoutSettingsBand contact={contact} onChange={onChange} />
+            </>
+          )}
         </div>
       ) : null}
 
@@ -573,8 +766,6 @@ export function ContactSettingsPanel({
           />
         </div>
       ) : null}
-
-      {subSection === 'header' ? <ContactSubSectionPlaceholder description={activeMeta.description} /> : null}
     </div>
   );
 }

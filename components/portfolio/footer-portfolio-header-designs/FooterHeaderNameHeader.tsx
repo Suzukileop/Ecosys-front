@@ -7,6 +7,7 @@ import {
 } from '@/components/portfolio/portfolio-footer-settings';
 import {
   FOOTER_HEADER_MARGIN_BOTTOM_REM,
+  FOOTER_HEADER_PADDING_REM,
   footerHeaderPaletteTokenColor,
 } from '@/components/portfolio/portfolio-footer-header-settings';
 
@@ -90,7 +91,11 @@ export function FooterHeaderNameHeader({
   return (
     <header
       className={`pf-footer-header-name-header relative w-full ${centered ? 'text-center' : 'text-left'}`}
-      style={{ marginBottom: `${FOOTER_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
+      style={{
+        marginBottom: `${FOOTER_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem`,
+        paddingTop: `${FOOTER_HEADER_PADDING_REM[presentation.headerPaddingTop ?? 'none']}rem`,
+        paddingBottom: `${FOOTER_HEADER_PADDING_REM[presentation.headerPaddingBottom ?? 'none']}rem`,
+      }}
       data-footer-header="name"
     >
       <div className="pf-footer-header-name-stage relative">

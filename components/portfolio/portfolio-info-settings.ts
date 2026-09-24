@@ -108,8 +108,12 @@ export type PortfolioInfoAboutValueListMarkerStyle =
 
 export type PortfolioInfoAboutValueBioSize = 'sm' | 'md' | 'lg' | 'xl';
 
-/** Shared compact / standard / large scale for manifesto & trait body copy. */
-export type PortfolioInfoContentSize = 'sm' | 'md' | 'lg';
+/**
+ * Global type-size control for every Info design — same standardized-shared-value
+ * architecture as the Experience/Footer/FAQ sections' "Font size" control (same 5 tiers,
+ * same labels). `medium` is each design's own current baseline size.
+ */
+export type PortfolioInfoPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
 
 export type PortfolioInfoAboutValueBioWidth = 'full' | 'half';
 
@@ -170,11 +174,7 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   /** Empty = profile bio from Creator Studio. Use line breaks for multi-line headlines. */
   aboutMeTraitHeadlineCustomText: string;
   /** All Info designs — labels, lists, block titles, education, etc. */
-  contentSize: PortfolioInfoContentSize;
-  /** @deprecated Use contentSize — kept for saved settings migration. */
-  aboutManifestoContentSize: PortfolioInfoContentSize;
-  /** @deprecated Use contentSize — kept for saved settings migration. */
-  aboutMeTraitContentSize: PortfolioInfoContentSize;
+  premiumFontSize: PortfolioInfoPremiumFontSize;
   /**
    * @deprecated About · value removed — kept for saved settings migration.
    * Split (title left / list right) or grid-2 for secondary blocks.
@@ -552,9 +552,7 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   educationCascadeScrollShift: false,
   aboutMeTraitHeadlineEnabled: true,
   aboutMeTraitHeadlineCustomText: DEFAULT_ABOUT_ME_TRAIT_HEADLINE,
-  contentSize: 'md',
-  aboutManifestoContentSize: 'md',
-  aboutMeTraitContentSize: 'md',
+  premiumFontSize: 'medium',
   aboutValueBlocksLayout: 'split',
   aboutValueValuesLayout: 'editorial',
   aboutValueListMarkerStyle: 'dot',
@@ -1433,199 +1431,251 @@ export function resolveInfoEducationCascadeScrollShift(
   return presentation.educationCascadeScrollShift === true;
 }
 
-export const PORTFOLIO_INFO_CONTENT_SIZE_OPTIONS: {
-  value: PortfolioInfoContentSize;
+export const INFO_PREMIUM_FONT_SIZES: PortfolioInfoPremiumFontSize[] = [
+  'small',
+  'medium',
+  'large',
+  'xlarge',
+  'xxlarge',
+];
+
+export const PORTFOLIO_INFO_PREMIUM_FONT_SIZE_OPTIONS: {
+  value: PortfolioInfoPremiumFontSize;
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'S', description: 'Compact — smaller labels and lists.' },
-  { value: 'md', label: 'M', description: 'Standard — balance of readability and density.' },
-  { value: 'lg', label: 'L', description: 'Large — more comfortable to read.' },
+  { value: 'small', label: 'Small', description: 'Compact type across every Info design.' },
+  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
+  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
+  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  {
+    value: 'xxlarge',
+    label: 'Super Extra Large',
+    description: 'Maximum type size for the most dramatic, oversized look.',
+  },
 ];
 
-export function isPortfolioInfoContentSize(value: unknown): value is PortfolioInfoContentSize {
-  return value === 'sm' || value === 'md' || value === 'lg';
+export function isPortfolioInfoPremiumFontSize(value: unknown): value is PortfolioInfoPremiumFontSize {
+  return (
+    value === 'small' ||
+    value === 'medium' ||
+    value === 'large' ||
+    value === 'xlarge' ||
+    value === 'xxlarge'
+  );
 }
 
-export function resolveInfoContentSize(
-  presentation: Pick<
-    PortfolioInfoPresentationSettings,
-    'contentSize' | 'aboutManifestoContentSize' | 'aboutMeTraitContentSize'
-  >
-): PortfolioInfoContentSize {
-  if (isPortfolioInfoContentSize(presentation.contentSize)) return presentation.contentSize;
-  if (isPortfolioInfoContentSize(presentation.aboutManifestoContentSize)) {
-    return presentation.aboutManifestoContentSize;
-  }
-  if (isPortfolioInfoContentSize(presentation.aboutMeTraitContentSize)) {
-    return presentation.aboutMeTraitContentSize;
-  }
-  return 'md';
+/** Maps a legacy `'sm'|'md'|'lg'` value (from the old `contentSize`/`aboutManifestoContentSize`/
+ *  `aboutMeTraitContentSize` fields, retired in favor of `premiumFontSize`) onto its new
+ *  equivalent, for one-time migration of already-saved settings records. */
+function migrateLegacyInfoContentSize(value: unknown): PortfolioInfoPremiumFontSize | undefined {
+  if (value === 'sm') return 'small';
+  if (value === 'md') return 'medium';
+  if (value === 'lg') return 'large';
+  return undefined;
 }
 
-export function resolveInfoAboutManifestoContentSize(
-  presentation: Pick<
-    PortfolioInfoPresentationSettings,
-    'contentSize' | 'aboutManifestoContentSize' | 'aboutMeTraitContentSize'
-  >
-): PortfolioInfoContentSize {
-  return resolveInfoContentSize(presentation);
+export function resolveInfoPremiumFontSize(
+  presentation: Pick<PortfolioInfoPresentationSettings, 'premiumFontSize'>
+): PortfolioInfoPremiumFontSize {
+  return isPortfolioInfoPremiumFontSize(presentation.premiumFontSize)
+    ? presentation.premiumFontSize
+    : 'medium';
 }
 
-export function resolveInfoAboutMeTraitContentSize(
-  presentation: Pick<
-    PortfolioInfoPresentationSettings,
-    'contentSize' | 'aboutManifestoContentSize' | 'aboutMeTraitContentSize'
-  >
-): PortfolioInfoContentSize {
-  return resolveInfoContentSize(presentation);
-}
-
-export function infoContentLabelSizeClass(size: PortfolioInfoContentSize): string {
+export function infoContentLabelSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-[10px] sm:text-xs';
-    case 'lg':
+    case 'large':
       return 'text-sm sm:text-base';
-    case 'md':
+    case 'xlarge':
+      return 'text-base sm:text-lg';
+    case 'xxlarge':
+      return 'text-lg sm:text-xl';
+    case 'medium':
     default:
       return 'text-xs sm:text-sm';
   }
 }
 
-export function infoContentBodySizeClass(size: PortfolioInfoContentSize): string {
+export function infoContentBodySizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-sm sm:text-base';
-    case 'lg':
+    case 'large':
       return 'text-lg sm:text-xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-xl sm:text-2xl';
+    case 'xxlarge':
+      return 'text-2xl sm:text-3xl';
+    case 'medium':
     default:
       return 'text-base sm:text-lg';
   }
 }
 
-export function infoContentBlockTitleSizeClass(size: PortfolioInfoContentSize): string {
+export function infoContentBlockTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-base sm:text-lg';
-    case 'lg':
+    case 'large':
       return 'text-xl sm:text-2xl';
-    case 'md':
-    default:
-      return 'text-lg sm:text-xl';
-  }
-}
-
-export function infoContentEducationTitleSizeClass(size: PortfolioInfoContentSize): string {
-  switch (size) {
-    case 'sm':
-      return 'text-xl sm:text-2xl';
-    case 'lg':
+    case 'xlarge':
+      return 'text-2xl sm:text-3xl';
+    case 'xxlarge':
       return 'text-3xl sm:text-4xl';
-    case 'md':
+    case 'medium':
+    default:
+      return 'text-lg sm:text-xl';
+  }
+}
+
+export function infoContentEducationTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
+  switch (size) {
+    case 'small':
+      return 'text-xl sm:text-2xl';
+    case 'large':
+      return 'text-3xl sm:text-4xl';
+    case 'xlarge':
+      return 'text-4xl sm:text-5xl';
+    case 'xxlarge':
+      return 'text-5xl sm:text-6xl';
+    case 'medium':
     default:
       return 'text-2xl sm:text-3xl';
   }
 }
 
-export function infoContentEducationMetaSizeClass(size: PortfolioInfoContentSize): string {
+export function infoContentEducationMetaSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-xs sm:text-sm';
-    case 'lg':
+    case 'large':
       return 'text-base sm:text-lg';
-    case 'md':
+    case 'xlarge':
+      return 'text-lg sm:text-xl';
+    case 'xxlarge':
+      return 'text-xl sm:text-2xl';
+    case 'medium':
     default:
       return 'text-sm sm:text-base';
   }
 }
 
-export function aboutMeTraitSectionTitleSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutMeTraitSectionTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-xl sm:text-2xl lg:text-[1.75rem]';
-    case 'lg':
+    case 'large':
       return 'text-3xl sm:text-4xl lg:text-[2.25rem]';
-    case 'md':
+    case 'xlarge':
+      return 'text-4xl sm:text-5xl lg:text-[2.5rem]';
+    case 'xxlarge':
+      return 'text-5xl sm:text-6xl lg:text-[2.75rem]';
+    case 'medium':
     default:
       return 'text-2xl sm:text-3xl lg:text-[2rem]';
   }
 }
 
 /** About · banner — centered XXL headline scale. */
-export function aboutBannerHeadlineSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutBannerHeadlineSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-[clamp(2.75rem,9vw,5.5rem)]';
-    case 'lg':
+    case 'large':
       return 'text-[clamp(3.75rem,12vw,8.5rem)]';
-    case 'md':
+    case 'xlarge':
+      return 'text-[clamp(4.25rem,13.5vw,10rem)]';
+    case 'xxlarge':
+      return 'text-[clamp(4.75rem,15vw,11.5rem)]';
+    case 'medium':
     default:
       return 'text-[clamp(3.25rem,10.5vw,7rem)]';
   }
 }
 
 /** About · portrait skills — large skill rail (title only). */
-export function aboutPortraitSkillsListSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutPortraitSkillsListSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-xl leading-[1.16] sm:text-2xl lg:text-3xl';
-    case 'lg':
+    case 'large':
       return 'text-3xl leading-[1.12] sm:text-4xl lg:text-5xl xl:text-[3.25rem]';
-    case 'md':
+    case 'xlarge':
+      return 'text-4xl leading-[1.10] sm:text-5xl lg:text-6xl xl:text-[3.75rem]';
+    case 'xxlarge':
+      return 'text-5xl leading-[1.08] sm:text-6xl lg:text-7xl xl:text-[4.25rem]';
+    case 'medium':
     default:
       return 'text-2xl leading-[1.14] sm:text-3xl lg:text-4xl xl:text-[2.75rem]';
   }
 }
 
 /** About · portrait skills — bio lede at bottom-left. */
-export function aboutPortraitSkillsBioSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutPortraitSkillsBioSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-base sm:text-lg leading-[1.65]';
-    case 'lg':
+    case 'large':
       return 'text-xl sm:text-2xl leading-[1.62]';
-    case 'md':
+    case 'xlarge':
+      return 'text-2xl sm:text-3xl leading-[1.6]';
+    case 'xxlarge':
+      return 'text-3xl sm:text-4xl leading-[1.58]';
+    case 'medium':
     default:
       return 'text-lg sm:text-xl leading-[1.65]';
   }
 }
 
 /** About · portrait skills — centered strengths section title. */
-export function aboutPortraitSkillsStrengthsTitleSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutPortraitSkillsStrengthsTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-3xl sm:text-4xl';
-    case 'lg':
+    case 'large':
       return 'text-5xl sm:text-6xl lg:text-[4rem]';
-    case 'md':
+    case 'xlarge':
+      return 'text-6xl sm:text-7xl lg:text-[4.5rem]';
+    case 'xxlarge':
+      return 'text-7xl sm:text-8xl lg:text-[5rem]';
+    case 'medium':
     default:
       return 'text-4xl sm:text-5xl lg:text-[3.5rem]';
   }
 }
 
 /** About · portrait skills — centered strengths list items. */
-export function aboutPortraitSkillsStrengthsItemSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutPortraitSkillsStrengthsItemSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-lg sm:text-xl';
-    case 'lg':
+    case 'large':
       return 'text-2xl sm:text-[1.75rem]';
-    case 'md':
+    case 'xlarge':
+      return 'text-3xl sm:text-[2rem]';
+    case 'xxlarge':
+      return 'text-4xl sm:text-[2.25rem]';
+    case 'medium':
     default:
       return 'text-xl sm:text-2xl';
   }
 }
 
 /** About · portrait skills — interests + languages paragraph. */
-export function aboutPortraitSkillsMetaSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutPortraitSkillsMetaSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-lg sm:text-xl leading-[1.55]';
-    case 'lg':
+    case 'large':
       return 'text-2xl sm:text-[1.7rem] leading-[1.5]';
-    case 'md':
+    case 'xlarge':
+      return 'text-3xl sm:text-[1.95rem] leading-[1.48]';
+    case 'xxlarge':
+      return 'text-4xl sm:text-[2.2rem] leading-[1.46]';
+    case 'medium':
     default:
       return 'text-xl sm:text-2xl leading-[1.55]';
   }
@@ -1648,271 +1698,355 @@ export function resolveAboutPortraitSkillsMetaEnabled(
 }
 
 /** About · banner — bio copy beside portrait (smaller than headline). */
-export function aboutBannerBioSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutBannerBioSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-xl sm:text-2xl';
-    case 'lg':
+    case 'large':
       return 'text-3xl sm:text-4xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-4xl sm:text-5xl';
+    case 'xxlarge':
+      return 'text-5xl sm:text-6xl';
+    case 'medium':
     default:
       return 'text-2xl sm:text-3xl';
   }
 }
 
 /** About · banner — skills/strengths folio copy, bigger than the shared editorial scale. */
-export function aboutBannerContentSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutBannerContentSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-base sm:text-lg';
-    case 'lg':
+    case 'large':
       return 'text-xl sm:text-2xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-2xl sm:text-3xl';
+    case 'xxlarge':
+      return 'text-3xl sm:text-4xl';
+    case 'medium':
     default:
       return 'text-lg sm:text-xl';
   }
 }
 
 /** About · banner — education/interests meta copy, bigger than the shared editorial scale. */
-export function aboutBannerMetaSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutBannerMetaSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-sm sm:text-base';
-    case 'lg':
+    case 'large':
       return 'text-lg sm:text-xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-xl sm:text-2xl';
+    case 'xxlarge':
+      return 'text-2xl sm:text-3xl';
+    case 'medium':
     default:
       return 'text-base sm:text-lg';
   }
 }
 
 /** About · platform — hero headline beside bio. */
-export function aboutPlatformHeadlineSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutPlatformHeadlineSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-3xl sm:text-4xl lg:text-[2.75rem]';
-    case 'lg':
+    case 'large':
       return 'text-5xl sm:text-6xl lg:text-[3.75rem]';
-    case 'md':
+    case 'xlarge':
+      return 'text-6xl sm:text-7xl lg:text-[4.25rem]';
+    case 'xxlarge':
+      return 'text-7xl sm:text-8xl lg:text-[4.75rem]';
+    case 'medium':
     default:
       return 'text-4xl sm:text-5xl lg:text-[3.25rem]';
   }
 }
 
 /** About · platform — bio + strength lines (below hero headline scale). */
-export function aboutPlatformLeadSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutPlatformLeadSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-[1.5rem] sm:text-[1.75rem]';
-    case 'lg':
+    case 'large':
       return 'text-[1.875rem] sm:text-[2.25rem] lg:text-[2.5rem]';
-    case 'md':
+    case 'xlarge':
+      return 'text-[2.125rem] sm:text-[2.5rem] lg:text-[2.75rem]';
+    case 'xxlarge':
+      return 'text-[2.375rem] sm:text-[2.75rem] lg:text-[3rem]';
+    case 'medium':
     default:
       return 'text-[1.75rem] sm:text-[1.875rem] lg:text-[2.25rem]';
   }
 }
 
 /** About · platform — full-width skills section title. */
-export function aboutPlatformSkillsTitleSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutPlatformSkillsTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-4xl sm:text-5xl';
-    case 'lg':
+    case 'large':
       return 'text-6xl sm:text-7xl lg:text-[5rem]';
-    case 'md':
+    case 'xlarge':
+      return 'text-7xl sm:text-8xl lg:text-[5.75rem]';
+    case 'xxlarge':
+      return 'text-8xl sm:text-9xl lg:text-[6.5rem]';
+    case 'medium':
     default:
       return 'text-5xl sm:text-6xl lg:text-[4.25rem]';
   }
 }
 
-export function aboutMeTraitHeadlineSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutMeTraitHeadlineSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-[clamp(2.25rem,6.5vw,5.5rem)]';
-    case 'lg':
+    case 'large':
       return 'text-[clamp(3.25rem,8.8vw,7.25rem)]';
-    case 'md':
+    case 'xlarge':
+      return 'text-[clamp(3.5rem,9.4vw,7.6rem)]';
+    case 'xxlarge':
+      return 'text-[clamp(3.75rem,10vw,8rem)]';
+    case 'medium':
     default:
       return 'text-[clamp(3rem,8vw,6.75rem)]';
   }
 }
 
-export function manifestoStatementSecondarySizeClass(size: PortfolioInfoContentSize): string {
+export function manifestoStatementSecondarySizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-base sm:text-lg';
-    case 'lg':
+    case 'large':
       return 'text-xl sm:text-2xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-2xl sm:text-3xl';
+    case 'xxlarge':
+      return 'text-3xl sm:text-4xl';
+    case 'medium':
     default:
       return 'text-lg sm:text-xl';
   }
 }
 
 /** Classic about-me — section subtitle (h2). */
-export function infoContentSectionTitleSizeClass(size: PortfolioInfoContentSize): string {
+export function infoContentSectionTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-2xl sm:text-3xl lg:text-[2.25rem] lg:leading-[1.15]';
-    case 'lg':
+    case 'large':
       return 'text-4xl sm:text-5xl lg:text-[3.25rem] lg:leading-[1.12]';
-    case 'md':
+    case 'xlarge':
+      return 'text-5xl sm:text-6xl lg:text-[3.75rem] lg:leading-[1.1]';
+    case 'xxlarge':
+      return 'text-6xl sm:text-7xl lg:text-[4.25rem] lg:leading-[1.08]';
+    case 'medium':
     default:
       return 'text-3xl sm:text-4xl lg:text-[2.75rem] lg:leading-[1.15]';
   }
 }
 
 /** About · split — large uppercase title. */
-export function aboutSplitTitleSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutSplitTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-3xl sm:text-4xl lg:text-[2.75rem] xl:text-5xl';
-    case 'lg':
+    case 'large':
       return 'text-5xl sm:text-6xl lg:text-[3.75rem] xl:text-7xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-6xl sm:text-7xl lg:text-[4.25rem] xl:text-8xl';
+    case 'xxlarge':
+      return 'text-7xl sm:text-8xl lg:text-[4.75rem] xl:text-9xl';
+    case 'medium':
     default:
       return 'text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-6xl';
   }
 }
 
 /** About · value steps — skill row title (right column). */
-export function aboutValueStepsItemTitleSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutValueStepsItemTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-lg sm:text-xl lg:text-2xl';
-    case 'lg':
+    case 'large':
       return 'text-2xl sm:text-3xl lg:text-4xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-3xl sm:text-4xl lg:text-5xl';
+    case 'xxlarge':
+      return 'text-4xl sm:text-5xl lg:text-6xl';
+    case 'medium':
     default:
       return 'text-xl sm:text-2xl lg:text-3xl';
   }
 }
 
 /** About · value steps — skill description under each title. */
-export function aboutValueStepsDescriptionSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutValueStepsDescriptionSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-base sm:text-lg';
-    case 'lg':
+    case 'large':
       return 'text-xl sm:text-2xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-2xl sm:text-3xl';
+    case 'xxlarge':
+      return 'text-3xl sm:text-4xl';
+    case 'medium':
     default:
       return 'text-lg sm:text-xl';
   }
 }
 
 /** About · value steps — "I speak" language acronym (EN, ES, FR…), Display scale. */
-export function aboutValueStepsLanguageCodeSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutValueStepsLanguageCodeSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-4xl sm:text-5xl';
-    case 'lg':
+    case 'large':
       return 'text-6xl sm:text-7xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-7xl sm:text-8xl';
+    case 'xxlarge':
+      return 'text-8xl sm:text-9xl';
+    case 'medium':
     default:
       return 'text-5xl sm:text-6xl';
   }
 }
 
 /** About · value steps — proficiency label (Beginner/Advanced/Expert) under the acronym. */
-export function aboutValueStepsLanguageLevelSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutValueStepsLanguageLevelSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-xs sm:text-sm';
-    case 'lg':
+    case 'large':
       return 'text-sm sm:text-base';
-    case 'md':
+    case 'xlarge':
+      return 'text-base sm:text-lg';
+    case 'xxlarge':
+      return 'text-lg sm:text-xl';
+    case 'medium':
     default:
       return 'text-xs sm:text-sm';
   }
 }
 
 /** About · value — large index in numbered values grid (01, 02…). */
-export function aboutValueNumberedGridIndexSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutValueNumberedGridIndexSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-3xl sm:text-4xl';
-    case 'lg':
+    case 'large':
       return 'text-5xl sm:text-6xl lg:text-7xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-6xl sm:text-7xl lg:text-8xl';
+    case 'xxlarge':
+      return 'text-7xl sm:text-8xl lg:text-9xl';
+    case 'medium':
     default:
       return 'text-4xl sm:text-5xl lg:text-6xl';
   }
 }
 
 /** About · value — block headings (My Values, Strengths, …). */
-export function aboutValueBlockTitleSizeClass(size: PortfolioInfoContentSize): string {
+export function aboutValueBlockTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-3xl sm:text-4xl lg:text-5xl';
-    case 'lg':
+    case 'large':
       return 'text-5xl sm:text-6xl lg:text-7xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-6xl sm:text-7xl lg:text-8xl';
+    case 'xxlarge':
+      return 'text-7xl sm:text-8xl lg:text-9xl';
+    case 'medium':
     default:
       return 'text-4xl sm:text-5xl lg:text-6xl';
   }
 }
 
 /** About · terminal — shell base monospace scale. */
-export function terminalShellSizeClass(size: PortfolioInfoContentSize): string {
+export function terminalShellSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-sm leading-relaxed sm:text-[15px]';
-    case 'lg':
+    case 'large':
       return 'text-base leading-relaxed sm:text-lg';
-    case 'md':
+    case 'xlarge':
+      return 'text-lg leading-relaxed sm:text-xl';
+    case 'xxlarge':
+      return 'text-xl leading-relaxed sm:text-2xl';
+    case 'medium':
     default:
       return 'text-[15px] leading-relaxed sm:text-base';
   }
 }
 
 /** About · terminal — main heading inside the shell. */
-export function terminalHeadingSizeClass(size: PortfolioInfoContentSize): string {
+export function terminalHeadingSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-2xl font-bold tracking-tight sm:text-3xl';
-    case 'lg':
+    case 'large':
       return 'text-4xl font-bold tracking-tight sm:text-[2.75rem]';
-    case 'md':
+    case 'xlarge':
+      return 'text-5xl font-bold tracking-tight sm:text-[3.25rem]';
+    case 'xxlarge':
+      return 'text-6xl font-bold tracking-tight sm:text-[3.75rem]';
+    case 'medium':
     default:
       return 'text-3xl font-bold tracking-tight sm:text-4xl';
   }
 }
 
 /** About · noir — header name / bio heading size. */
-export function noirHeadingSizeClass(size: PortfolioInfoContentSize): string {
+export function noirHeadingSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-xl leading-snug sm:text-2xl md:text-3xl';
-    case 'lg':
+    case 'large':
       return 'text-2xl leading-snug sm:text-3xl md:text-5xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-2xl leading-snug sm:text-3xl md:text-6xl';
+    case 'xxlarge':
+      return 'text-3xl leading-snug sm:text-4xl md:text-7xl';
+    case 'medium':
     default:
       return 'text-2xl leading-snug sm:text-3xl md:text-4xl';
   }
 }
 
 /** About · noir — bio paragraph size. */
-export function noirBodySizeClass(size: PortfolioInfoContentSize): string {
+export function noirBodySizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-lg leading-relaxed sm:text-xl md:text-2xl';
-    case 'lg':
+    case 'large':
       return 'text-xl leading-relaxed sm:text-2xl md:text-4xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-xl leading-relaxed sm:text-2xl md:text-5xl';
+    case 'xxlarge':
+      return 'text-2xl leading-relaxed sm:text-3xl md:text-6xl';
+    case 'medium':
     default:
       return 'text-xl leading-relaxed sm:text-2xl md:text-3xl';
   }
 }
 
 /** About · noir — massive language acronym size. */
-export function noirLanguageAcronymSizeClass(size: PortfolioInfoContentSize): string {
+export function noirLanguageAcronymSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
-    case 'sm':
+    case 'small':
       return 'text-4xl sm:text-5xl';
-    case 'lg':
+    case 'large':
       return 'text-5xl sm:text-6xl md:text-7xl';
-    case 'md':
+    case 'xlarge':
+      return 'text-5xl sm:text-6xl md:text-8xl';
+    case 'xxlarge':
+      return 'text-6xl sm:text-7xl md:text-9xl';
+    case 'medium':
     default:
       return 'text-5xl sm:text-6xl';
   }
@@ -2051,8 +2185,7 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         educationCascadeScrollShift: false,
         aboutMeTraitHeadlineEnabled: true,
         aboutMeTraitHeadlineCustomText: DEFAULT_ABOUT_ME_TRAIT_HEADLINE,
-        contentSize: 'md',
-        aboutMeTraitContentSize: 'md',
+        premiumFontSize: 'medium',
       };
     case 'about-split':
       return {
@@ -2081,7 +2214,7 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         aboutBannerHeadlineEnabled: true,
         aboutBannerHeadlineCustomText: DEFAULT_ABOUT_BANNER_HEADLINE,
         aboutBannerSectionLabelsStyle: 'conversational',
-        contentSize: 'md',
+        premiumFontSize: 'medium',
       };
     case 'about-platform':
       return {
@@ -2097,7 +2230,7 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         aboutPlatformHeadlineCustomText: DEFAULT_ABOUT_PLATFORM_HEADLINE,
         aboutPlatformSkillsSectionTitle: DEFAULT_ABOUT_PLATFORM_SKILLS_TITLE,
         aboutPlatformStrengthsSectionTitle: DEFAULT_ABOUT_PLATFORM_STRENGTHS_TITLE,
-        contentSize: 'md',
+        premiumFontSize: 'medium',
       };
     case 'about-portrait-skills':
       return {
@@ -2112,7 +2245,7 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         showSystemsTools: false,
         aboutPortraitSkillsMetaLead: DEFAULT_ABOUT_PORTRAIT_SKILLS_META_LEAD,
         aboutPortraitSkillsMetaEnabled: true,
-        contentSize: 'md',
+        premiumFontSize: 'medium',
       };
     case 'about-manifesto':
       return {
@@ -2130,8 +2263,7 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         aboutManifestoBlocksLayout: 'grid',
         aboutManifestoBlocksScrollFocus: false,
         aboutManifestoStatementStyleEnabled: false,
-        contentSize: 'md',
-        aboutManifestoContentSize: 'md',
+        premiumFontSize: 'medium',
       };
     case 'about-terminal':
       return {
@@ -2157,7 +2289,7 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         showInterests: true,
         showLanguages: true,
         showSystemsTools: true,
-        contentSize: 'md',
+        premiumFontSize: 'medium',
       };
     case 'about-value-steps':
       return {
@@ -2175,7 +2307,7 @@ export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<Port
         aboutValueStepsIntroParagraph1: DEFAULT_ABOUT_VALUE_STEPS_INTRO_PARAGRAPH_1,
         aboutValueStepsIntroParagraph2: DEFAULT_ABOUT_VALUE_STEPS_INTRO_PARAGRAPH_2,
         aboutValueStepsSettingsRevision: ABOUT_VALUE_STEPS_VISIBILITY_REVISION,
-        contentSize: 'md',
+        premiumFontSize: 'medium',
       };
     case 'about-me':
     default:
@@ -2489,19 +2621,15 @@ export function mergeInfoPresentation(
       typeof record.aboutMeTraitHeadlineCustomText === 'string'
         ? record.aboutMeTraitHeadlineCustomText
         : base.aboutMeTraitHeadlineCustomText,
-    contentSize: isPortfolioInfoContentSize(record.contentSize)
-      ? record.contentSize
-      : isPortfolioInfoContentSize(record.aboutManifestoContentSize)
-        ? record.aboutManifestoContentSize
-        : isPortfolioInfoContentSize(record.aboutMeTraitContentSize)
-          ? record.aboutMeTraitContentSize
-          : base.contentSize,
-    aboutManifestoContentSize: isPortfolioInfoContentSize(record.aboutManifestoContentSize)
-      ? record.aboutManifestoContentSize
-      : base.aboutManifestoContentSize,
-    aboutMeTraitContentSize: isPortfolioInfoContentSize(record.aboutMeTraitContentSize)
-      ? record.aboutMeTraitContentSize
-      : base.aboutMeTraitContentSize,
+    premiumFontSize: pick(
+      record.premiumFontSize,
+      INFO_PREMIUM_FONT_SIZES,
+      migrateLegacyInfoContentSize(record.contentSize) ??
+        migrateLegacyInfoContentSize(record.aboutManifestoContentSize) ??
+        migrateLegacyInfoContentSize(record.aboutMeTraitContentSize) ??
+        base.premiumFontSize ??
+        'medium'
+    ),
     aboutValueBlocksLayout: isPortfolioInfoAboutValueBlocksLayout(record.aboutValueBlocksLayout)
       ? record.aboutValueBlocksLayout
       : base.aboutValueBlocksLayout,

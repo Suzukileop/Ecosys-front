@@ -6,13 +6,40 @@ import {
   FooterSocialLinkIcon,
   type EditorialContactLink,
 } from '@/components/portfolio/portfolio-section-primitives';
-import type { PortfolioContactPresentationSettings } from '@/components/portfolio/portfolio-contact-settings';
+import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-const DEFAULT_MARQUEE_TEXT = "Let's talk — Say hello — Reach out — ";
+/**
+ * Smart email wrapping — plain `break-all` chops anywhere, including mid-character inside
+ * the TLD (e.g. "…noprobleme.co" / "m"). Instead, only offer real break opportunities
+ * (`<wbr>`) right after "@" and right before each "." in the domain, with the dot kept
+ * attached to the segment that follows it — so ".com" always wraps as one intact unit.
+ * `break-words` stays on the wrapping `<a>` purely as a last-resort fallback for a domain
+ * segment that's still too long to fit even between those points.
+ */
+function EmailSmartWrap({ email }: { email: string }) {
+  const atIndex = email.indexOf('@');
+  if (atIndex === -1) return <>{email}</>;
+  const local = email.slice(0, atIndex + 1);
+  const domainParts = email.slice(atIndex + 1).split('.');
+  return (
+    <>
+      {local}
+      <wbr />
+      {domainParts.map((part, index) => (
+        <span key={index}>
+          {index > 0 ? <wbr /> : null}
+          {index > 0 ? '.' : ''}
+          {part}
+        </span>
+      ))}
+    </>
+  );
+}
+
 const MARQUEE_REPEATS = 6;
 
 /** Curtain-reveal wrapper: masks its child in an overflow-hidden band, sliding it
@@ -131,37 +158,46 @@ export function ContactDesignSplitGrid({
   phone,
   locationLabel,
   links,
-  presentation,
+  layout,
 }: {
   email: string | null;
   phone: string | null;
   locationLabel: string | null;
   links: EditorialContactLink[];
-  presentation: PortfolioContactPresentationSettings;
+  layout: ContactDesignLayoutResolver;
 }) {
   const emailRef = useMagnetic(0.25, 26);
   const hoverRef = useRef<HTMLDivElement>(null);
   const [marqueeActive, setMarqueeActive] = useState(false);
 
-  const marqueeText = presentation.premiumMarqueeText?.trim() || DEFAULT_MARQUEE_TEXT;
+  const marqueeText = layout.text('marquee');
+  const locationHeading = layout.text('locationLabel');
+  const phoneHeading = layout.text('phoneLabel');
   const hasPhone = Boolean(phone?.trim());
   const hasLocation = Boolean(locationLabel?.trim());
   const hasLinks = links.length > 0;
 
   return (
-    <div className="relative left-1/2 w-screen -translate-x-1/2 bg-black" data-pf-no-color-transition="">
+    <div
+      className="relative left-1/2 w-screen -translate-x-1/2"
+      data-pf-no-color-transition=""
+    >
       <div className="mx-auto grid w-full max-w-[90rem] grid-cols-1 gap-16 px-6 py-24 sm:px-10 sm:py-28 lg:min-h-[80vh] lg:grid-cols-[minmax(0,0.3fr)_minmax(0,0.7fr)] lg:items-center lg:gap-0 lg:px-16">
         <div className="flex flex-col gap-12 lg:pr-12">
           {hasLocation ? (
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-600">Location</p>
-              <p className="mt-3 text-base font-light text-neutral-300">{locationLabel}</p>
+              {locationHeading ? (
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-600">{locationHeading}</p>
+              ) : null}
+              <p className="text-base font-light text-neutral-300">{locationLabel}</p>
             </div>
           ) : null}
           {hasPhone ? (
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-600">Call</p>
-              <a href={`tel:${phone}`} className="mt-3 block text-base font-light text-neutral-300 hover:text-white">
+              {phoneHeading ? (
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-600">{phoneHeading}</p>
+              ) : null}
+              <a href={`tel:${phone}`} className="block text-base font-light text-neutral-300 hover:text-white">
                 {phone}
               </a>
             </div>
@@ -174,15 +210,17 @@ export function ContactDesignSplitGrid({
         >
           {email ? (
             <div className="relative w-full">
-              <SplitGridMarquee text={marqueeText} active={marqueeActive} />
+              {marqueeText ? <SplitGridMarquee text={marqueeText} active={marqueeActive} /> : null}
               <a
                 ref={emailRef as RefObject<HTMLAnchorElement>}
                 href={`mailto:${email}`}
-                className="relative inline-block break-all text-[clamp(1.75rem,6vw,4.5rem)] font-medium leading-[0.95] tracking-tight text-white"
+                className="relative inline-block break-words text-[clamp(1.75rem,6vw,4.5rem)] font-medium leading-[0.95] tracking-tight text-white"
                 onPointerEnter={() => setMarqueeActive(true)}
                 onPointerLeave={() => setMarqueeActive(false)}
               >
-                <CurtainLine>{email}</CurtainLine>
+                <CurtainLine>
+                  <EmailSmartWrap email={email} />
+                </CurtainLine>
               </a>
             </div>
           ) : null}
