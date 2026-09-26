@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type CSSProperties, type ReactNode } from 'react';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -18,11 +18,56 @@ import {
   type TeamColorSlot,
 } from '@/components/portfolio/portfolio-team-palette-settings';
 import {
+  PORTFOLIO_TEAM_AVATAR_COLUMN_GAP_OPTIONS,
+  PORTFOLIO_TEAM_AVATAR_COLUMN_OPTIONS,
+  PORTFOLIO_TEAM_AVATAR_GRID_WIDTH_OPTIONS,
+  PORTFOLIO_TEAM_AVATAR_SHAPE_OPTIONS,
+  PORTFOLIO_TEAM_AVATAR_VIEW_OPTIONS,
   PORTFOLIO_TEAM_LAYOUT_OPTIONS,
+  PORTFOLIO_TEAM_POLAROID_PHOTO_TONE_OPTIONS,
+  PORTFOLIO_TEAM_PROFILE_GUTTER_OPTIONS,
+  PORTFOLIO_TEAM_PROFILE_PANEL_OPTIONS,
+  PORTFOLIO_TEAM_PROFILE_RATIO_OPTIONS,
+  PORTFOLIO_TEAM_FLOAT_ALIGN_OPTIONS,
+  PORTFOLIO_TEAM_PROFILE_VIEW_OPTIONS,
+  PORTFOLIO_TEAM_PROFILE_VISIBLE_OPTIONS,
+  PORTFOLIO_TEAM_PREMIUM_FONT_SIZE_OPTIONS,
+  PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS,
+  PORTFOLIO_TEAM_IMAGE_HEIGHT_OPTIONS,
+  PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS,
+  PORTFOLIO_TEAM_DIRECTORY_PORTRAIT_OPTIONS,
+  PORTFOLIO_TEAM_AVATAR_RADIUS_OPTIONS,
+  TEAM_DIRECTORY_CARD_GAP,
+  TEAM_FLOAT_COLUMN_GAP,
+  teamDirectoryDefaultCardGap,
+  teamFloatDefaultColumnGap,
+  PORTFOLIO_TEAM_RAIL_NAVIGATION_OPTIONS,
+  PORTFOLIO_TEAM_SPOTLIGHT_NAVIGATION_OPTIONS,
+  PORTFOLIO_TEAM_SPOTLIGHT_SIDE_OPTIONS,
   PORTFOLIO_TEAM_SUBTITLE_PRESET_OPTIONS,
   PORTFOLIO_TEAM_TITLE_PRESET_OPTIONS,
+  type PortfolioTeamAvatarColumnGap,
+  type PortfolioTeamAvatarColumns,
+  type PortfolioTeamAvatarGridWidth,
+  type PortfolioTeamAvatarShape,
+  type PortfolioTeamAvatarView,
   type PortfolioTeamLayout,
+  type PortfolioTeamPolaroidPhotoTone,
+  type PortfolioTeamProfileGutter,
+  type PortfolioTeamProfilePanel,
+  type PortfolioTeamProfileRatio,
+  type PortfolioTeamProfileView,
+  type PortfolioTeamProfileVisible,
+  type PortfolioTeamRailColumns,
+  type PortfolioTeamImageHeight,
+  type PortfolioTeamCornerRadius,
+  type PortfolioTeamDirectoryPortrait,
+  type PortfolioTeamFloatAlign,
+  type PortfolioTeamAvatarRadius,
+  type PortfolioTeamRailNavigation,
   type PortfolioTeamSectionSettings,
+  type PortfolioTeamSpotlightNavigation,
+  type PortfolioTeamSpotlightSide,
 } from '@/components/portfolio/portfolio-team-settings';
 import {
   PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS,
@@ -183,10 +228,14 @@ function TeamOptionGrid<T extends string>({
   return (
     <div>
       {hideLabel ? null : <TeamGroupLabel>{label}</TeamGroupLabel>}
+      {/* The app-wide segmented control (globals.css), not a local re-skin of it: one component
+          everywhere is rule 4 of the settings design standard, and the hardcoded black/neutral
+          pills this used to draw were the only ones in the panel that ignored the palette. */}
       <div
         role="radiogroup"
         aria-label={label}
-        className={`${hideLabel ? '' : 'mt-2'} grid gap-1.5`}
+        data-compact="true"
+        className={`${hideLabel ? '' : 'mt-2'} pf-exp-segment grid gap-1 p-1`}
         style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
       >
         {options.map((option) => {
@@ -197,10 +246,9 @@ function TeamOptionGrid<T extends string>({
               type="button"
               role="radio"
               aria-checked={active}
+              data-active={active ? 'true' : 'false'}
               onClick={() => onChange(option.value)}
-              className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition ${
-                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-              }`}
+              className="pf-exp-segment-btn px-2.5 py-2 text-center text-[13px] font-semibold"
             >
               {option.label}
             </button>
@@ -525,6 +573,30 @@ function TeamLayoutWireframe({ layout }: { layout: PortfolioTeamLayout }) {
           <rect className="pf-stack-mini-ink" x="102" y="44" width="10" height="18" rx="2.5" opacity={0.2} />
         </TeamMiniStage>
       );
+    case 'split-screen':
+      return (
+        <TeamMiniStage>
+          <rect className="pf-stack-mini-ink" x="8" y="12" width="44" height="7" rx="2" opacity={0.9} />
+          <rect className="pf-stack-mini-ink" x="8" y="23" width="36" height="7" rx="2" opacity={0.22} />
+          <rect className="pf-stack-mini-ink" x="8" y="34" width="40" height="7" rx="2" opacity={0.22} />
+          <rect className="pf-stack-mini-mute" x="8" y="52" width="30" height="1" opacity={0.6} />
+          <rect className="pf-stack-mini-mute" x="8" y="58" width="20" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="66" y="8" width="46" height="56" rx="2" opacity={0.75} />
+        </TeamMiniStage>
+      );
+    case 'editorial-rhythm':
+      return (
+        <TeamMiniStage>
+          {/* Unequal plates on a broken baseline; the first one carries its own name. */}
+          <rect className="pf-stack-mini-ink" x="8" y="8" width="42" height="52" rx="2" opacity={0.75} />
+          <rect className="pf-stack-mini-mute" x="13" y="13" width="30" height="5" rx="1" opacity={0.95} />
+          <rect className="pf-stack-mini-mute" x="13" y="21" width="20" height="5" rx="1" opacity={0.95} />
+          <rect className="pf-stack-mini-mute" x="58" y="22" width="22" height="2.5" rx="1.25" />
+          <rect className="pf-stack-mini-ink" x="58" y="29" width="26" height="26" rx="2" opacity={0.5} />
+          <rect className="pf-stack-mini-mute" x="90" y="10" width="18" height="2.5" rx="1.25" />
+          <rect className="pf-stack-mini-ink" x="90" y="17" width="22" height="32" rx="2" opacity={0.32} />
+        </TeamMiniStage>
+      );
     case 'directory':
       return (
         <TeamMiniStage>
@@ -543,18 +615,25 @@ function TeamLayoutWireframe({ layout }: { layout: PortfolioTeamLayout }) {
     case 'polaroid':
       return (
         <TeamMiniStage>
-          <g transform="rotate(-5 30 34)">
-            <rect className="pf-stack-mini-ink" x="12" y="14" width="34" height="42" rx="2" opacity={0.7} />
-            <rect className="pf-stack-mini-mute" x="16" y="48" width="20" height="3" rx="1.5" />
+          <g transform="rotate(-7 20 36)">
+            <rect className="pf-stack-mini-ink" x="6" y="16" width="28" height="34" rx="1.5" opacity={0.75} />
+            <rect className="pf-stack-mini-mute" x="9" y="52" width="16" height="2.5" rx="1.25" />
           </g>
-          <g transform="rotate(4 84 34)">
-            <rect className="pf-stack-mini-ink" x="66" y="14" width="34" height="42" rx="2" opacity={0.5} />
-            <rect className="pf-stack-mini-mute" x="70" y="48" width="20" height="3" rx="1.5" />
+          <g transform="rotate(3 62 30)">
+            <rect className="pf-stack-mini-ink" x="48" y="10" width="28" height="34" rx="1.5" opacity={0.6} />
+            <rect className="pf-stack-mini-mute" x="51" y="46" width="16" height="2.5" rx="1.25" />
+          </g>
+          <g transform="rotate(-3 100 40)">
+            <rect className="pf-stack-mini-ink" x="86" y="20" width="28" height="34" rx="1.5" opacity={0.4} />
+            <rect className="pf-stack-mini-mute" x="89" y="56" width="16" height="2.5" rx="1.25" />
           </g>
         </TeamMiniStage>
       );
+    // `meet-cards` and `hover-cards` are retired values that can still arrive from storage; they
+    // never appear in the picker, and the merge remaps them, so any wireframe here will do.
     case 'profile-cards':
     case 'meet-cards':
+    case 'hover-cards':
       return (
         <TeamMiniStage>
           <rect className="pf-stack-mini-ink" x="10" y="10" width="46" height="30" rx="3" opacity={0.7} />
@@ -563,13 +642,6 @@ function TeamLayoutWireframe({ layout }: { layout: PortfolioTeamLayout }) {
           <rect className="pf-stack-mini-ink" x="64" y="10" width="46" height="30" rx="3" opacity={0.45} />
           <rect className="pf-stack-mini-mute" x="76" y="46" width="22" height="3" rx="1.5" />
           <rect className="pf-stack-mini-mute" x="80" y="54" width="14" height="2.5" rx="1.25" />
-        </TeamMiniStage>
-      );
-    case 'hover-cards':
-      return (
-        <TeamMiniStage>
-          <rect className="pf-stack-mini-ink" x="10" y="10" width="46" height="52" rx="3" opacity={0.7} />
-          <rect className="pf-stack-mini-ink" x="64" y="10" width="46" height="52" rx="3" opacity={0.45} />
         </TeamMiniStage>
       );
     case 'cover-cards':
@@ -604,6 +676,21 @@ function TeamLayoutWireframe({ layout }: { layout: PortfolioTeamLayout }) {
           <circle className="pf-stack-mini-ink" cx="87" cy="24" r="11" opacity={0.5} />
           <rect className="pf-stack-mini-mute" x="76" y="42" width="22" height="3" rx="1.5" />
           <rect className="pf-stack-mini-mute" x="80" y="50" width="14" height="2.5" rx="1.25" />
+        </TeamMiniStage>
+      );
+    case 'floating-canvas':
+      return (
+        <TeamMiniStage>
+          {/* Three plates at three different heights, captions flipped above/below, a text-only
+              slot standing in for a face in the middle — the irregular canvas at a glance. */}
+          <rect className="pf-stack-mini-mute" x="8" y="8" width="22" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-ink" x="8" y="15" width="22" height="24" rx="1.5" opacity={0.75} />
+          <rect className="pf-stack-mini-ink" x="44" y="24" width="22" height="24" rx="1.5" opacity={0.4} />
+          <rect className="pf-stack-mini-mute" x="44" y="50" width="18" height="3" rx="1.5" />
+          <rect className="pf-stack-mini-mute" x="80" y="14" width="26" height="2.5" rx="1.25" opacity={0.9} />
+          <rect className="pf-stack-mini-mute" x="80" y="20" width="30" height="2.5" rx="1.25" opacity={0.6} />
+          <rect className="pf-stack-mini-mute" x="80" y="26" width="20" height="2.5" rx="1.25" opacity={0.6} />
+          <rect className="pf-stack-mini-ink" x="80" y="38" width="30" height="20" rx="1.5" opacity={0.3} />
         </TeamMiniStage>
       );
     default: {
@@ -664,6 +751,1526 @@ function TeamLayoutChoiceGrid({
     <TeamDesignSummaryRow label="Design" name={selected.label} onOpen={() => setShowGrid(true)}>
       <TeamLayoutWireframe layout={value} />
     </TeamDesignSummaryRow>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/* Design tab → Layout settings — the selected design's own options, using  */
+/* the shared `pf-exp-layout-settings` band the Contact/Experience panels   */
+/* already use. Hidden while the design catalogue is open.                  */
+/* ---------------------------------------------------------------------- */
+
+/** Each navigation option drawn as what it actually does (mini-schema rule), never as plain text. */
+function TeamRailNavigationWireframe({ value }: { value: PortfolioTeamRailNavigation }) {
+  if (value === 'show-all') {
+    return (
+      <TeamMiniStage>
+        {[0, 1, 2].map((column) =>
+          [0, 1].map((row) => (
+            <rect
+              key={`${column}-${row}`}
+              className="pf-stack-mini-ink"
+              x={12 + column * 34}
+              y={12 + row * 28}
+              width={28}
+              height={22}
+              rx={3}
+              opacity={0.85}
+            />
+          ))
+        )}
+      </TeamMiniStage>
+    );
+  }
+  return (
+    <TeamMiniStage>
+      {/* The rail itself: three portraits, the last one running off the frame. */}
+      <rect className="pf-stack-mini-ink" x={10} y={12} width={30} height={38} rx={4} />
+      <rect className="pf-stack-mini-ink" x={46} y={12} width={30} height={38} rx={4} opacity={0.8} />
+      <rect className="pf-stack-mini-ink" x={82} y={12} width={30} height={38} rx={4} opacity={0.45} />
+      {value === 'chevrons' ? (
+        <>
+          <circle className="pf-stack-mini-mute" cx={76} cy={61} r={7} />
+          <circle className="pf-stack-mini-accent" cx={96} cy={61} r={7} />
+        </>
+      ) : (
+        <>
+          <rect className="pf-stack-mini-mute" x={10} y={60} width={100} height={2} rx={1} />
+          <rect className="pf-stack-mini-accent" x={10} y={59} width={34} height={4} rx={2} />
+        </>
+      )}
+    </TeamMiniStage>
+  );
+}
+
+/** N evenly spaced bars — the shared "per row" glyph (same idea as the Experience/Work panels). */
+function TeamRailColumnsWireframe({ columns }: { columns: number }) {
+  const gap = 6;
+  const totalWidth = 96;
+  const startX = 12;
+  const barWidth = (totalWidth - gap * (columns - 1)) / columns;
+  return (
+    <TeamMiniStage>
+      {Array.from({ length: columns }, (_, index) => (
+        <rect
+          key={index}
+          className="pf-stack-mini-ink"
+          x={startX + index * (barWidth + gap)}
+          y={16}
+          width={barWidth}
+          height={40}
+          rx={3}
+        />
+      ))}
+    </TeamMiniStage>
+  );
+}
+
+/** A single portrait drawn with the real corner radius (rule 1b: show the look, don't name it). */
+function TeamRailRadiusWireframe({ value }: { value: PortfolioTeamCornerRadius }) {
+  const radius = value === 'none' ? 0 : value === 'sm' ? 4 : value === 'lg' ? 16 : 10;
+  return (
+    <TeamMiniStage>
+      <rect className="pf-stack-mini-ink" x={38} y={10} width={44} height={52} rx={radius} opacity={0.9} />
+    </TeamMiniStage>
+  );
+}
+
+/** Three portraits of decreasing height, sharing one baseline — the axis IS the preview. */
+function TeamRailHeightWireframe({ value }: { value: PortfolioTeamImageHeight }) {
+  const height = value === 'short' ? 26 : value === 'medium' ? 38 : 52;
+  return (
+    <TeamMiniStage>
+      <rect
+        className="pf-stack-mini-ink"
+        x={38}
+        y={62 - height}
+        width={44}
+        height={height}
+        rx={6}
+        opacity={0.9}
+      />
+    </TeamMiniStage>
+  );
+}
+
+/** The portrait on one side of the panel, copy on the other — the whole point of the setting. */
+function TeamSpotlightSideWireframe({ value }: { value: PortfolioTeamSpotlightSide }) {
+  const imageX = value === 'right' ? 62 : 10;
+  const copyX = value === 'right' ? 14 : 66;
+  return (
+    <TeamMiniStage>
+      <rect className="pf-stack-mini-ink" x={imageX} y={10} width={48} height={52} rx={5} opacity={0.9} />
+      <rect className="pf-stack-mini-mute" x={copyX} y={24} width={16} height={3} rx={1.5} />
+      <rect className="pf-stack-mini-ink" x={copyX} y={32} width={40} height={8} rx={2} opacity={0.75} />
+      <rect className="pf-stack-mini-mute" x={copyX} y={45} width={26} height={3} rx={1.5} />
+    </TeamMiniStage>
+  );
+}
+
+/** Left half of the print in the muted tone, right half in the accent — `monochrome` shows only
+ *  the mute half, `color` only the accent half, `hover` shows the split (rule 1b: show the look). */
+function TeamPolaroidToneWireframe({ value }: { value: PortfolioTeamPolaroidPhotoTone }) {
+  const accentWidth = value === 'color' ? 44 : value === 'hover' ? 22 : 0;
+  return (
+    <TeamMiniStage>
+      <g transform="rotate(-3 60 30)">
+        <rect className="pf-stack-mini-mute" x="38" y="8" width="44" height="34" rx="2" opacity={0.55} />
+        {accentWidth > 0 ? (
+          <rect className="pf-stack-mini-accent" x="38" y="8" width={accentWidth} height="34" rx="2" />
+        ) : null}
+        <rect className="pf-stack-mini-mute" x="44" y="46" width="30" height="3" rx="1.5" />
+      </g>
+    </TeamMiniStage>
+  );
+}
+
+function TeamPolaroidLayoutFields({
+  team,
+  onChange,
+}: {
+  team: PortfolioTeamSectionSettings;
+  onChange: TeamPatch;
+}) {
+  return (
+    <>
+      <div>
+        <TeamSectionLabel>Print color</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Print color" className="mt-3 grid grid-cols-3 gap-3">
+          {PORTFOLIO_TEAM_POLAROID_PHOTO_TONE_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.polaroidPhotoTone ?? 'hover')}
+              label={option.label}
+              onClick={() => onChange({ polaroidPhotoTone: option.value })}
+            >
+              <TeamPolaroidToneWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Prints per row</TeamSectionLabel>
+        <p className="mt-2 text-xs text-neutral-500">
+          Only applies to the “View all” grid — visitors toggle it from the button above the rail.
+        </p>
+        <div role="radiogroup" aria-label="Prints per row" className="mt-3 grid grid-cols-3 gap-3">
+          {PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.polaroidColumns ?? 3)}
+              label={option.label}
+              onClick={() => onChange({ polaroidColumns: option.value as PortfolioTeamRailColumns })}
+            >
+              <TeamRailColumnsWireframe columns={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function TeamRailLayoutFields({
+  team,
+  onChange,
+}: {
+  team: PortfolioTeamSectionSettings;
+  onChange: TeamPatch;
+}) {
+  const navigation = team.railNavigation ?? 'drag';
+  return (
+    <>
+      <div>
+          <TeamSectionLabel>Navigation</TeamSectionLabel>
+          <div role="radiogroup" aria-label="Navigation" className="mt-3 grid grid-cols-3 gap-3">
+            {PORTFOLIO_TEAM_RAIL_NAVIGATION_OPTIONS.map((option) => (
+              <TeamPickerCard
+                key={option.value}
+                active={option.value === navigation}
+                label={option.label}
+                onClick={() => onChange({ railNavigation: option.value })}
+              >
+                <TeamRailNavigationWireframe value={option.value} />
+              </TeamPickerCard>
+            ))}
+          </div>
+        </div>
+        <div>
+          <TeamSectionLabel>Image height</TeamSectionLabel>
+          <div role="radiogroup" aria-label="Image height" className="mt-3 grid grid-cols-3 gap-3">
+            {PORTFOLIO_TEAM_IMAGE_HEIGHT_OPTIONS.map((option) => (
+              <TeamPickerCard
+                key={option.value}
+                active={option.value === (team.railImageHeight ?? 'tall')}
+                label={option.label}
+                onClick={() => onChange({ railImageHeight: option.value })}
+              >
+                <TeamRailHeightWireframe value={option.value} />
+              </TeamPickerCard>
+            ))}
+          </div>
+        </div>
+        <div>
+          <TeamSectionLabel>Image corners</TeamSectionLabel>
+          <div role="radiogroup" aria-label="Image corners" className="mt-3 grid grid-cols-4 gap-2">
+            {PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS.map((option) => (
+              <TeamPickerCard
+                key={option.value}
+                active={option.value === (team.railImageRadius ?? 'md')}
+                label={option.label}
+                onClick={() => onChange({ railImageRadius: option.value })}
+              >
+                <TeamRailRadiusWireframe value={option.value} />
+              </TeamPickerCard>
+            ))}
+          </div>
+        </div>
+        {navigation === 'show-all' ? (
+          <div>
+            <TeamSectionLabel>Portraits per row</TeamSectionLabel>
+            <div role="radiogroup" aria-label="Portraits per row" className="mt-3 grid grid-cols-3 gap-3">
+              {PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS.map((option) => (
+                <TeamPickerCard
+                  key={option.value}
+                  active={option.value === (team.railColumns ?? 3)}
+                  label={option.label}
+                  onClick={() => onChange({ railColumns: option.value as PortfolioTeamRailColumns })}
+                >
+                  <TeamRailColumnsWireframe columns={option.value} />
+                </TeamPickerCard>
+              ))}
+            </div>
+          </div>
+        ) : null}
+    </>
+  );
+}
+
+/** Rail versus grid — the glyph shows what the visitor gets, not what the mode is called. */
+function TeamHoverViewWireframe({ value }: { value: PortfolioTeamProfileView }) {
+  if (value === 'grid') {
+    return (
+      <TeamMiniStage>
+        {[0, 1, 2].map((column) => (
+          <g key={column}>
+            <rect
+              className="pf-stack-mini-ink"
+              x={12 + column * 34}
+              y={column % 2 === 1 ? 18 : 10}
+              width={28}
+              height={26}
+              rx={3}
+              opacity={0.85}
+            />
+            <rect
+              className="pf-stack-mini-ink"
+              x={12 + column * 34}
+              y={column % 2 === 1 ? 48 : 40}
+              width={28}
+              height={22}
+              rx={3}
+              opacity={0.45}
+            />
+          </g>
+        ))}
+      </TeamMiniStage>
+    );
+  }
+  return (
+    <TeamMiniStage>
+      {/* Three portraits, the last running off the frame, and the pair of chevrons below. */}
+      <rect className="pf-stack-mini-ink" x={10} y={12} width={30} height={38} rx={4} />
+      <rect className="pf-stack-mini-ink" x={46} y={12} width={30} height={38} rx={4} opacity={0.8} />
+      <rect className="pf-stack-mini-ink" x={82} y={12} width={30} height={38} rx={4} opacity={0.45} />
+      <circle className="pf-stack-mini-mute" cx={76} cy={61} r={7} />
+      <circle className="pf-stack-mini-accent" cx={96} cy={61} r={7} />
+    </TeamMiniStage>
+  );
+}
+
+/** The asymmetry itself: one column dropped against its neighbours, or a flat baseline. */
+function TeamHoverStaggerWireframe({ staggered }: { staggered: boolean }) {
+  return (
+    <TeamMiniStage>
+      {[0, 1, 2].map((column) => (
+        <rect
+          key={column}
+          className="pf-stack-mini-ink"
+          x={12 + column * 34}
+          y={staggered && column % 2 === 1 ? 22 : 12}
+          width={28}
+          height={38}
+          rx={3}
+          opacity={column === 1 ? 0.85 : 0.6}
+        />
+      ))}
+    </TeamMiniStage>
+  );
+}
+
+/** The 3D tilt, drawn as what it does: a card caught mid-rotation, with its portrait ahead of it. */
+function TeamFloatTiltWireframe({ tilted }: { tilted: boolean }) {
+  return (
+    <TeamMiniStage>
+      <g transform={tilted ? 'matrix(1,0.085,-0.16,1,22,-4)' : ''}>
+        <rect className="pf-stack-mini-ink" x={34} y={22} width={52} height={40} rx={5} opacity={0.75} />
+        <circle className="pf-stack-mini-accent" cx={60} cy={22} r={11} />
+      </g>
+    </TeamMiniStage>
+  );
+}
+
+/**
+ * Where the block of cards lands in the section — drawn as the block itself against the frame, so
+ * the difference between the three placements and `full` is the picture rather than the label.
+ */
+function TeamFloatAlignWireframe({ value }: { value: PortfolioTeamFloatAlign }) {
+  const full = value === 'full';
+  const cards = full ? 3 : 2;
+  const cardWidth = full ? 32 : 24;
+  const gutter = 5;
+  const blockWidth = cards * cardWidth + (cards - 1) * gutter;
+  const x = value === 'center' ? (120 - blockWidth) / 2 : value === 'right' ? 120 - blockWidth - 8 : 8;
+  return (
+    <TeamMiniStage>
+      {Array.from({ length: cards }, (_, index) => {
+        const left = x + index * (cardWidth + gutter);
+        const top = index % 2 === 1 ? 26 : 20;
+        return (
+          <g key={index}>
+            <rect
+              className="pf-stack-mini-ink"
+              x={left}
+              y={top}
+              width={cardWidth}
+              height={30}
+              rx={4}
+              opacity={0.85}
+            />
+            {/* The overhanging portrait — what makes this design recognisable at thumbnail size. */}
+            <circle className="pf-stack-mini-accent" cx={left + cardWidth / 2} cy={top} r={7} />
+          </g>
+        );
+      })}
+    </TeamMiniStage>
+  );
+}
+
+function TeamFloatCardsLayoutFields({
+  team,
+  onChange,
+}: {
+  team: PortfolioTeamSectionSettings;
+  onChange: TeamPatch;
+}) {
+  const view = team.floatCardsView ?? 'grid';
+  return (
+    <>
+      <div>
+        <TeamSectionLabel>Opening view</TeamSectionLabel>
+        <p className="mt-2 text-xs text-neutral-500">
+          Visitors can switch between both from the toolbar under the cards.
+        </p>
+        <div role="radiogroup" aria-label="Opening view" className="mt-3 grid grid-cols-2 gap-3">
+          {PORTFOLIO_TEAM_PROFILE_VIEW_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === view}
+              label={option.label}
+              onClick={() => onChange({ floatCardsView: option.value })}
+            >
+              <TeamHoverViewWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Card alignment</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Card alignment" className="mt-3 grid grid-cols-2 gap-3">
+          {PORTFOLIO_TEAM_FLOAT_ALIGN_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.floatCardsAlign ?? 'center')}
+              label={option.label}
+              onClick={() => onChange({ floatCardsAlign: option.value })}
+            >
+              <TeamFloatAlignWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <TeamPxSlider
+        label="Horizontal spacing"
+        value={team.floatCardsColumnGap ?? teamFloatDefaultColumnGap(team.gap)}
+        min={TEAM_FLOAT_COLUMN_GAP.min}
+        max={TEAM_FLOAT_COLUMN_GAP.max}
+        step={TEAM_FLOAT_COLUMN_GAP.step}
+        onChange={(floatCardsColumnGap) => onChange({ floatCardsColumnGap })}
+      />
+      <div>
+        <TeamSectionLabel>Cards per row</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Cards per row" className="mt-3 grid grid-cols-3 gap-3">
+          {PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.floatCardsColumns ?? 3)}
+              label={option.label}
+              onClick={() => onChange({ floatCardsColumns: option.value as PortfolioTeamRailColumns })}
+            >
+              <TeamRailColumnsWireframe columns={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Grid baseline</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Grid baseline" className="mt-3 grid grid-cols-2 gap-3">
+          {[
+            { value: true, label: 'Staggered' },
+            { value: false, label: 'Aligned' },
+          ].map((option) => (
+            <TeamPickerCard
+              key={String(option.value)}
+              active={option.value === (team.floatCardsStagger !== false)}
+              label={option.label}
+              onClick={() => onChange({ floatCardsStagger: option.value })}
+            >
+              <TeamHoverStaggerWireframe staggered={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Card motion</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Card motion" className="mt-3 grid grid-cols-2 gap-3">
+          {[
+            { value: true, label: '3D tilt' },
+            { value: false, label: 'Flat' },
+          ].map((option) => (
+            <TeamPickerCard
+              key={String(option.value)}
+              active={option.value === (team.floatCardsTilt !== false)}
+              label={option.label}
+              onClick={() => onChange({ floatCardsTilt: option.value })}
+            >
+              <TeamFloatTiltWireframe tilted={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/** The three ways out of the spotlight, drawn as the panel's own bottom-left corner. */
+function TeamSpotlightNavigationWireframe({ value }: { value: PortfolioTeamSpotlightNavigation }) {
+  return (
+    <TeamMiniStage>
+      <rect className="pf-stack-mini-ink" x={10} y={10} width={40} height={52} rx={5} opacity={0.75} />
+      <rect className="pf-stack-mini-mute" x={58} y={18} width={40} height={4} rx={2} />
+      <rect className="pf-stack-mini-mute" x={58} y={28} width={26} height={4} rx={2} />
+      {value === 'thumbnails' ? (
+        <>
+          <rect className="pf-stack-mini-accent" x={58} y={44} width={13} height={18} rx={2.5} />
+          <rect className="pf-stack-mini-ink" x={75} y={44} width={13} height={18} rx={2.5} opacity={0.5} />
+          <rect className="pf-stack-mini-ink" x={92} y={44} width={13} height={18} rx={2.5} opacity={0.5} />
+        </>
+      ) : value === 'arrows' ? (
+        <>
+          <circle className="pf-stack-mini-mute" cx={66} cy={53} r={8} />
+          <circle className="pf-stack-mini-accent" cx={88} cy={53} r={8} />
+        </>
+      ) : (
+        // Both: the pair above the strip, pushed to the right edge.
+        <>
+          <circle className="pf-stack-mini-mute" cx={87} cy={40} r={5.5} />
+          <circle className="pf-stack-mini-accent" cx={100} cy={40} r={5.5} />
+          <rect className="pf-stack-mini-accent" x={58} y={50} width={11} height={14} rx={2} />
+          <rect className="pf-stack-mini-ink" x={72} y={50} width={11} height={14} rx={2} opacity={0.5} />
+          <rect className="pf-stack-mini-ink" x={86} y={50} width={11} height={14} rx={2} opacity={0.5} />
+          <rect className="pf-stack-mini-ink" x={100} y={50} width={11} height={14} rx={2} opacity={0.5} />
+        </>
+      )}
+    </TeamMiniStage>
+  );
+}
+
+function TeamSpotlightLayoutFields({
+  team,
+  onChange,
+}: {
+  team: PortfolioTeamSectionSettings;
+  onChange: TeamPatch;
+}) {
+  return (
+    <>
+      <div>
+        <TeamSectionLabel>Navigation</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Navigation" className="mt-3 grid grid-cols-3 gap-3">
+          {PORTFOLIO_TEAM_SPOTLIGHT_NAVIGATION_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.spotlightNavigation ?? 'thumbnails')}
+              label={option.label}
+              onClick={() => onChange({ spotlightNavigation: option.value })}
+            >
+              <TeamSpotlightNavigationWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Portrait side</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Portrait side" className="mt-3 grid grid-cols-2 gap-3">
+          {PORTFOLIO_TEAM_SPOTLIGHT_SIDE_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.spotlightPortraitSide ?? 'left')}
+              label={option.label}
+              onClick={() => onChange({ spotlightPortraitSide: option.value })}
+            >
+              <TeamSpotlightSideWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Panel corners</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Panel corners" className="mt-3 grid grid-cols-4 gap-2">
+          {PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.spotlightPanelRadius ?? 'md')}
+              label={option.label}
+              onClick={() => onChange({ spotlightPanelRadius: option.value })}
+            >
+              <TeamRailRadiusWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamVisibilityRow
+          label="Switch on hover"
+          checked={team.spotlightHoverSwitch !== false}
+          onChange={(spotlightHoverSwitch) => onChange({ spotlightHoverSwitch })}
+        />
+      </div>
+    </>
+  );
+}
+
+/**
+ * Three index rows drawn as the design produces them: a plate hovering off the addressed row
+ * (`cursor`), or a print pinned at the start / end of every row.
+ */
+function TeamDirectoryPortraitWireframe({ value }: { value: PortfolioTeamDirectoryPortrait }) {
+  const rows = [
+    { y: 16, width: 50 },
+    { y: 36, width: 64 },
+    { y: 56, width: 42 },
+  ];
+  if (value === 'cursor') {
+    return (
+      <TeamMiniStage>
+        {rows.map((row, index) => (
+          <rect
+            key={row.y}
+            className={index === 1 ? 'pf-stack-mini-ink' : 'pf-stack-mini-mute'}
+            x={12}
+            y={row.y - 3}
+            width={row.width + 8}
+            height={6}
+            rx={2}
+          />
+        ))}
+        <rect className="pf-stack-mini-accent" x={66} y={18} width={34} height={30} rx={4} />
+        <circle className="pf-stack-mini-ink" cx={103} cy={51} r={2.5} />
+      </TeamMiniStage>
+    );
+  }
+  // The stage stretches to the card (preserveAspectRatio="none") and a three-up card is narrow,
+  // so plates are drawn wider than tall in viewBox units to still read as 4:5 prints on screen.
+  const plateX = value === 'left' ? 10 : 92;
+  const barX = value === 'left' ? 34 : 12;
+  return (
+    <TeamMiniStage>
+      {rows.map((row) => (
+        <g key={row.y}>
+          <rect className="pf-stack-mini-ink" x={plateX} y={row.y - 7} width={18} height={14} rx={2} />
+          <rect
+            className="pf-stack-mini-ink"
+            x={barX}
+            y={row.y - 3}
+            width={row.width}
+            height={6}
+            rx={2}
+            opacity={0.55}
+          />
+        </g>
+      ))}
+    </TeamMiniStage>
+  );
+}
+
+/**
+ * One portrait with its real corner. The shape sits on its own `meet` SVG over the stage: the stage
+ * stretches (preserveAspectRatio="none"), which would squash `Full` into an oval and every print
+ * into a sliver. Corner radii are scaled from the real ~6rem print so each step reads true.
+ */
+function TeamDirectoryRadiusWireframe({ value }: { value: PortfolioTeamAvatarRadius }) {
+  const round = value === 'full';
+  const width = round ? 30 : 26;
+  const height = round ? 30 : 32.5;
+  const rx = round ? 15 : value === 'none' ? 0 : value === 'sm' ? 1.8 : value === 'lg' ? 6.8 : 3.4;
+  return (
+    <div className="relative">
+      <TeamMiniStage>{null}</TeamMiniStage>
+      <svg
+        viewBox="0 0 48 48"
+        className="pf-stack-mini pointer-events-none absolute inset-0 h-full w-full"
+        aria-hidden
+      >
+        <rect
+          className="pf-stack-mini-ink"
+          x={(48 - width) / 2}
+          y={(48 - height) / 2}
+          width={width}
+          height={height}
+          rx={rx}
+          opacity={0.9}
+        />
+      </svg>
+    </div>
+  );
+}
+
+function TeamDirectoryLayoutFields({
+  team,
+  onChange,
+}: {
+  team: PortfolioTeamSectionSettings;
+  onChange: TeamPatch;
+}) {
+  return (
+    <>
+      <div>
+        <TeamSectionLabel>Portrait</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Portrait" className="mt-3 grid grid-cols-3 gap-3">
+          {PORTFOLIO_TEAM_DIRECTORY_PORTRAIT_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.directoryPortrait ?? 'cursor')}
+              label={option.label}
+              onClick={() => onChange({ directoryPortrait: option.value })}
+            >
+              <TeamDirectoryPortraitWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Portrait corners</TeamSectionLabel>
+        {/* Three per row like the Portrait group above: five across would squeeze the labels below
+            the 13px minimum, and matching widths keep the band on one grid. */}
+        <div role="radiogroup" aria-label="Portrait corners" className="mt-3 grid grid-cols-3 gap-3">
+          {PORTFOLIO_TEAM_AVATAR_RADIUS_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.directoryPortraitRadius ?? 'md')}
+              label={option.label}
+              onClick={() => onChange({ directoryPortraitRadius: option.value })}
+            >
+              <TeamDirectoryRadiusWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <TeamPxSlider
+        label="Card spacing"
+        value={team.directoryCardGap ?? teamDirectoryDefaultCardGap(team.gap)}
+        min={TEAM_DIRECTORY_CARD_GAP.min}
+        max={TEAM_DIRECTORY_CARD_GAP.max}
+        step={TEAM_DIRECTORY_CARD_GAP.step}
+        onChange={(directoryCardGap) => onChange({ directoryCardGap })}
+      />
+    </>
+  );
+}
+
+/**
+ * Ordered axis → slider (settings standard, rule 1a): title with the live value on its right, and
+ * every drag step patched straight through so the preview follows the thumb. Track and thumb are the
+ * shared `.pf-stack-slider-input` used by the other panels' sliders.
+ */
+function TeamPxSlider({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (value: number) => void;
+}) {
+  const percent = max > min ? ((value - min) / (max - min)) * 100 : 0;
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <TeamSectionLabel>{label}</TeamSectionLabel>
+        <span className="text-[13px] font-semibold tabular-nums text-neutral-700">{`${value}px`}</span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        aria-label={label}
+        aria-valuetext={`${value}px`}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="pf-stack-slider-input mt-4"
+        style={{
+          background: `linear-gradient(to right, var(--pf-palette-texte-fort, #f5f5f5) ${percent}%, color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a)) ${percent}%)`,
+        }}
+      />
+    </div>
+  );
+}
+
+/** The two navigations, drawn: a rail running off the frame with its chevrons, or staggered rows. */
+function TeamProfileViewWireframe({ value }: { value: PortfolioTeamProfileView }) {
+  if (value === 'grid') {
+    return (
+      <TeamMiniStage>
+        <rect className="pf-stack-mini-ink" x={14} y={10} width={30} height={26} rx={4} />
+        <rect className="pf-stack-mini-ink" x={50} y={18} width={30} height={26} rx={4} opacity={0.75} />
+        <rect className="pf-stack-mini-ink" x={86} y={10} width={26} height={26} rx={4} opacity={0.55} />
+        <rect className="pf-stack-mini-mute" x={14} y={42} width={30} height={12} rx={3} />
+        <rect className="pf-stack-mini-mute" x={50} y={50} width={30} height={12} rx={3} opacity={0.75} />
+        <rect className="pf-stack-mini-mute" x={86} y={42} width={26} height={12} rx={3} opacity={0.55} />
+      </TeamMiniStage>
+    );
+  }
+  return (
+    <TeamMiniStage>
+      <rect className="pf-stack-mini-ink" x={10} y={10} width={32} height={30} rx={4} />
+      <rect className="pf-stack-mini-mute" x={10} y={44} width={32} height={10} rx={3} />
+      <rect className="pf-stack-mini-ink" x={48} y={10} width={32} height={30} rx={4} opacity={0.7} />
+      <rect className="pf-stack-mini-mute" x={48} y={44} width={32} height={10} rx={3} opacity={0.7} />
+      <rect className="pf-stack-mini-ink" x={86} y={10} width={26} height={30} rx={4} opacity={0.35} />
+      <circle className="pf-stack-mini-mute" cx={96} cy={60} r={6} />
+      <circle className="pf-stack-mini-accent" cx={110} cy={60} r={6} />
+    </TeamMiniStage>
+  );
+}
+
+/** The standard "i" affordance: a hint that is needed but does not deserve a permanent line. */
+function TeamInfoTooltip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const tooltipId = useId();
+  return (
+    <span className="relative inline-flex shrink-0">
+      <span
+        role="button"
+        tabIndex={0}
+        aria-describedby={open ? tooltipId : undefined}
+        aria-label={`More info: ${text}`}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+      >
+        <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
+          <circle cx="7" cy="4.35" r="0.95" fill="currentColor" />
+          <rect x="6.3" y="6.05" width="1.4" height="4.4" rx="0.7" fill="currentColor" />
+        </svg>
+      </span>
+      {open ? (
+        <span
+          id={tooltipId}
+          role="tooltip"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+        >
+          {text}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+/**
+ * An ordered axis is a slider, not a row of pills (rule 1a of the settings design standard) —
+ * same control, same shared `.pf-exp-centered-slider` styling, as the Experience panel's.
+ */
+function TeamOptionSlider<T extends string>({
+  label,
+  hint,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  options: readonly { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  const index = Math.max(
+    0,
+    options.findIndex((option) => option.value === value)
+  );
+  const current = options[index];
+  return (
+    <div>
+      <div className="pf-exp-centered-slider-head">
+        <span className="inline-flex items-center gap-1.5">
+          <TeamSectionLabel>{label}</TeamSectionLabel>
+          {hint ? <TeamInfoTooltip text={hint} /> : null}
+        </span>
+        <span className="pf-exp-centered-slider-value">{current?.label}</span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={Math.max(options.length - 1, 0)}
+        step={1}
+        value={index}
+        aria-label={label}
+        aria-valuetext={current?.label}
+        onChange={(event) => {
+          const next = options[Number(event.target.value)];
+          if (next) onChange(next.value);
+        }}
+        className="pf-exp-centered-slider"
+        style={
+          {
+            '--pf-exp-slider-fill': `${(index / Math.max(options.length - 1, 1)) * 100}%`,
+          } as CSSProperties
+        }
+      />
+      <div
+        className="pf-exp-centered-slider-ticks"
+        style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+      >
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            data-active={option.value === value ? 'true' : 'false'}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** The panel at rest on the portrait, or only arriving under the cursor. */
+function TeamProfilePanelWireframe({ value }: { value: PortfolioTeamProfilePanel }) {
+  return (
+    <TeamMiniStage>
+      <rect className="pf-stack-mini-ink" x={34} y={8} width={52} height={56} rx={6} opacity={0.9} />
+      {value === 'always' ? (
+        <>
+          <rect className="pf-stack-mini-mute" x={39} y={44} width={42} height={15} rx={4} />
+          <rect className="pf-stack-mini-accent" x={44} y={49} width={20} height={2.5} rx={1.25} />
+        </>
+      ) : (
+        <>
+          <rect className="pf-stack-mini-mute" x={39} y={50} width={42} height={9} rx={3} opacity={0.45} />
+          {/* The cursor is the whole point of the option — it is why the panel is there at all. */}
+          <path className="pf-stack-mini-accent" d="M62 30 L62 45 L66 41 L69 47 L72 45 L69 39 L74 39 Z" />
+        </>
+      )}
+    </TeamMiniStage>
+  );
+}
+
+/**
+ * The ratio preview is an HTML box with a real `aspect-ratio`, not a rect in the shared mini
+ * stage: that stage is an SVG with `preserveAspectRatio="none"`, so it squashes its own user
+ * units horizontally and a 1:1 rect drawn there renders as a portrait — measured, and it made
+ * every step of this control look the same. The frame repeats the stage's own tokens so the card
+ * still matches every other picker in the panel.
+ */
+function TeamProfileRatioWireframe({ value }: { value: PortfolioTeamProfileRatio }) {
+  const aspect =
+    value === 'square'
+      ? '1 / 1'
+      : value === 'soft'
+        ? '4 / 5'
+        : value === 'tall'
+          ? '2 / 3'
+          : value === 'xtall'
+            ? '9 / 16'
+            : '3 / 4';
+  return (
+    <span className="pf-stack-mini block h-[4.35rem] w-full">
+      <span
+        className="flex h-full w-full items-center justify-center rounded-[9px] border"
+        style={{
+          backgroundColor:
+            'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 5.5%, var(--pf-palette-fond, #0a0a0a))',
+          borderColor: 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 10%, transparent)',
+        }}
+      >
+        <span
+          className="relative block h-[3.1rem] max-w-[85%] rounded-[4px]"
+          style={{
+            aspectRatio: aspect,
+            backgroundColor: 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 20%, transparent)',
+          }}
+        >
+          {/* The caption pane, so the miniature reads as this design's card and not a blank tile. */}
+          <span
+            className="absolute inset-x-[12%] bottom-[8%] block h-[20%] rounded-[2px]"
+            style={{
+              backgroundColor: 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, transparent)',
+            }}
+          />
+        </span>
+      </span>
+    </span>
+  );
+}
+
+function TeamProfileCardsLayoutFields({
+  team,
+  onChange,
+}: {
+  team: PortfolioTeamSectionSettings;
+  onChange: TeamPatch;
+}) {
+  return (
+    <>
+      <div>
+        <TeamSectionLabel>Opens on</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Opens on" className="mt-3 grid grid-cols-2 gap-3">
+          {PORTFOLIO_TEAM_PROFILE_VIEW_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.profileCardsView ?? 'grid')}
+              label={option.label}
+              onClick={() => onChange({ profileCardsView: option.value })}
+            >
+              <TeamProfileViewWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Cards per row</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Cards per row" className="mt-3 grid grid-cols-3 gap-3">
+          {PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.profileCardsColumns ?? 3)}
+              label={option.label}
+              onClick={() => onChange({ profileCardsColumns: option.value })}
+            >
+              <TeamRailColumnsWireframe columns={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Card ratio</TeamSectionLabel>
+        {/* Five steps, widest → tallest: three per row keeps every card the same size (rule 3). */}
+        <div role="radiogroup" aria-label="Card ratio" className="mt-3 grid grid-cols-3 gap-3">
+          {PORTFOLIO_TEAM_PROFILE_RATIO_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.profileCardsRatio ?? 'portrait')}
+              label={option.label}
+              onClick={() => onChange({ profileCardsRatio: option.value })}
+            >
+              <TeamProfileRatioWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamOptionSlider
+          label="Column spacing"
+          hint="Applies on desktop only — phones and tablets keep one comfortable gap."
+          options={PORTFOLIO_TEAM_PROFILE_GUTTER_OPTIONS}
+          value={(team.profileCardsGutter ?? 'md') as PortfolioTeamProfileGutter}
+          onChange={(profileCardsGutter) => onChange({ profileCardsGutter })}
+        />
+      </div>
+      <div>
+        <TeamSectionLabel>Info panel</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Info panel" className="mt-3 grid grid-cols-2 gap-3">
+          {PORTFOLIO_TEAM_PROFILE_PANEL_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.profileCardsPanel ?? 'always')}
+              label={option.label}
+              onClick={() => onChange({ profileCardsPanel: option.value })}
+            >
+              <TeamProfilePanelWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Visible at first</TeamSectionLabel>
+        <div className="mt-3">
+          <TeamOptionGrid
+            label="Visible at first"
+            hideLabel
+            columns={4}
+            options={PORTFOLIO_TEAM_PROFILE_VISIBLE_OPTIONS}
+            value={(team.profileCardsVisible ?? 'all') as PortfolioTeamProfileVisible}
+            onChange={(profileCardsVisible) => onChange({ profileCardsVisible })}
+          />
+        </div>
+      </div>
+      <div>
+        <TeamVisibilityRow
+          label="Staggered columns"
+          checked={team.profileCardsStagger !== false}
+          onChange={(profileCardsStagger) => onChange({ profileCardsStagger })}
+        />
+      </div>
+    </>
+  );
+}
+
+/** The two navigations, drawn with this design's own object — the avatar, not a portrait card. */
+function TeamAvatarViewWireframe({ value }: { value: PortfolioTeamAvatarView }) {
+  if (value === 'grid') {
+    return (
+      <TeamMiniStage>
+        {[0, 1, 2].map((column) => (
+          <g key={column} opacity={1 - column * 0.22}>
+            <circle className="pf-stack-mini-ink" cx={26 + column * 34} cy={22 + (column % 2) * 8} r={11} />
+            <rect
+              className="pf-stack-mini-mute"
+              x={14 + column * 34}
+              y={38 + (column % 2) * 8}
+              width={24}
+              height={3}
+              rx={1.5}
+            />
+          </g>
+        ))}
+        <circle className="pf-stack-mini-ink" cx={26} cy={58} r={6} opacity={0.35} />
+        <circle className="pf-stack-mini-ink" cx={60} cy={66} r={6} opacity={0.25} />
+      </TeamMiniStage>
+    );
+  }
+  return (
+    <TeamMiniStage>
+      <circle className="pf-stack-mini-ink" cx={26} cy={26} r={13} />
+      <rect className="pf-stack-mini-mute" x={12} y={44} width={28} height={3} rx={1.5} />
+      <circle className="pf-stack-mini-ink" cx={64} cy={26} r={13} opacity={0.7} />
+      <rect className="pf-stack-mini-mute" x={50} y={44} width={28} height={3} rx={1.5} opacity={0.7} />
+      <circle className="pf-stack-mini-ink" cx={102} cy={26} r={13} opacity={0.35} />
+      <circle className="pf-stack-mini-mute" cx={96} cy={60} r={6} />
+      <circle className="pf-stack-mini-accent" cx={110} cy={60} r={6} />
+    </TeamMiniStage>
+  );
+}
+
+/** The block against the section's own edges — capped and centred, or filling the width. */
+function TeamAvatarGridWidthWireframe({ value }: { value: PortfolioTeamAvatarGridWidth }) {
+  const full = value === 'full';
+  const startX = full ? 8 : 26;
+  const span = full ? 104 : 68;
+  const card = (span - 2 * 5) / 3;
+  return (
+    <TeamMiniStage>
+      {[0, 1, 2].map((column) => (
+        <g key={column} opacity={0.85 - column * 0.16}>
+          <rect
+            className="pf-stack-mini-ink"
+            x={startX + column * (card + 5)}
+            y={14}
+            width={card}
+            height={44}
+            rx={4}
+          />
+          <circle
+            className="pf-stack-mini-stage"
+            cx={startX + column * (card + 5) + card / 2}
+            cy={30}
+            r={Math.min(10, card / 2.6)}
+          />
+        </g>
+      ))}
+    </TeamMiniStage>
+  );
+}
+
+/** Two cards at the real gutter — the whole point of the setting is the space between them. */
+function TeamAvatarColumnGapWireframe({ value }: { value: PortfolioTeamAvatarColumnGap }) {
+  const gutter = value === 'sm' ? 4 : value === 'md' ? 9 : value === 'lg' ? 16 : 26;
+  const card = (96 - gutter) / 2;
+  return (
+    <TeamMiniStage>
+      {[0, 1].map((column) => (
+        <g key={column} opacity={column === 0 ? 0.85 : 0.6}>
+          <rect
+            className="pf-stack-mini-ink"
+            x={12 + column * (card + gutter)}
+            y={12}
+            width={card}
+            height={48}
+            rx={5}
+          />
+          <circle
+            className="pf-stack-mini-stage"
+            cx={12 + column * (card + gutter) + card / 2}
+            cy={30}
+            r={Math.min(13, card / 2.6)}
+          />
+        </g>
+      ))}
+    </TeamMiniStage>
+  );
+}
+
+/** The shape itself, at the radius it actually morphs to — the look is the label. */
+function TeamAvatarShapeWireframe({ value }: { value: PortfolioTeamAvatarShape }) {
+  if (value === 'arch') {
+    return (
+      <TeamMiniStage>
+        <path
+          className="pf-stack-mini-ink"
+          d="M40 36 A20 20 0 0 1 80 36 L80 49 A7 7 0 0 1 73 56 L47 56 A7 7 0 0 1 40 49 Z"
+        />
+      </TeamMiniStage>
+    );
+  }
+  if (value === 'squircle') {
+    return (
+      <TeamMiniStage>
+        <rect className="pf-stack-mini-ink" x={40} y={16} width={40} height={40} rx={13.5} />
+      </TeamMiniStage>
+    );
+  }
+  return (
+    <TeamMiniStage>
+      <circle className="pf-stack-mini-ink" cx={60} cy={36} r={20} />
+    </TeamMiniStage>
+  );
+}
+
+function TeamAvatarCardsLayoutFields({
+  team,
+  onChange,
+}: {
+  team: PortfolioTeamSectionSettings;
+  onChange: TeamPatch;
+}) {
+  return (
+    <>
+      <div>
+        <TeamSectionLabel>Opens on</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Opens on" className="mt-3 grid grid-cols-2 gap-3">
+          {PORTFOLIO_TEAM_AVATAR_VIEW_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.avatarCardsView ?? 'grid')}
+              label={option.label}
+              onClick={() => onChange({ avatarCardsView: option.value })}
+            >
+              <TeamAvatarViewWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Members per row</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Members per row" className="mt-3 grid grid-cols-4 gap-2">
+          {PORTFOLIO_TEAM_AVATAR_COLUMN_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.avatarCardsColumns ?? (team.columns as PortfolioTeamAvatarColumns) ?? 3)}
+              label={option.label}
+              onClick={() => onChange({ avatarCardsColumns: option.value })}
+            >
+              <TeamRailColumnsWireframe columns={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Horizontal spacing</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Horizontal spacing" className="mt-3 grid grid-cols-4 gap-2">
+          {PORTFOLIO_TEAM_AVATAR_COLUMN_GAP_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.avatarCardsColumnGap ?? 'md')}
+              label={option.label}
+              onClick={() => onChange({ avatarCardsColumnGap: option.value })}
+            >
+              <TeamAvatarColumnGapWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Grid width</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Grid width" className="mt-3 grid grid-cols-2 gap-3">
+          {PORTFOLIO_TEAM_AVATAR_GRID_WIDTH_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.avatarCardsGridWidth ?? 'centered')}
+              label={option.label}
+              onClick={() => onChange({ avatarCardsGridWidth: option.value })}
+            >
+              <TeamAvatarGridWidthWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Hover shape</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Hover shape" className="mt-3 grid grid-cols-3 gap-3">
+          {PORTFOLIO_TEAM_AVATAR_SHAPE_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.avatarCardsShape ?? 'squircle')}
+              label={option.label}
+              onClick={() => onChange({ avatarCardsShape: option.value })}
+            >
+              <TeamAvatarShapeWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamVisibilityRow
+          label="Staggered rows"
+          checked={team.avatarCardsStagger !== false}
+          onChange={(avatarCardsStagger) => onChange({ avatarCardsStagger })}
+        />
+        <TeamVisibilityRow
+          label="Avatar glow"
+          checked={team.avatarCardsGlow !== false}
+          onChange={(avatarCardsGlow) => onChange({ avatarCardsGlow })}
+        />
+      </div>
+    </>
+  );
+}
+
+/**
+ * The portrait plate with its real corner. The shape rides its own `meet` SVG over the stage: the
+ * stage stretches (`preserveAspectRatio="none"`) and a four-up card is narrow, which would squash
+ * a stage-drawn plate into a sliver and `Large` into an oval. Radii are scaled from the plate's
+ * real proportion, so each step reads true.
+ */
+function TeamSplitRadiusWireframe({ value }: { value: PortfolioTeamCornerRadius }) {
+  const rx = value === 'none' ? 0 : value === 'sm' ? 2 : value === 'lg' ? 8 : 4.5;
+  return (
+    <div className="relative">
+      <TeamMiniStage>{null}</TeamMiniStage>
+      <svg
+        viewBox="0 0 48 48"
+        className="pf-stack-mini pointer-events-none absolute inset-0 h-full w-full"
+        aria-hidden
+      >
+        <rect className="pf-stack-mini-ink" x={14} y={6} width={20} height={36} rx={rx} opacity={0.9} />
+      </svg>
+    </div>
+  );
+}
+
+/** Stacked names on one side, the full-height plate on the other — the setting IS the composition. */
+function TeamSplitSideWireframe({ value }: { value: PortfolioTeamSpotlightSide }) {
+  const plateX = value === 'right' ? 70 : 6;
+  const namesX = value === 'right' ? 8 : 52;
+  return (
+    <TeamMiniStage>
+      <rect className="pf-stack-mini-ink" x={plateX} y={8} width={44} height={56} rx={3} opacity={0.75} />
+      <rect className="pf-stack-mini-ink" x={namesX} y={14} width={40} height={6} rx={2} opacity={0.9} />
+      <rect className="pf-stack-mini-ink" x={namesX} y={24} width={32} height={6} rx={2} opacity={0.22} />
+      <rect className="pf-stack-mini-ink" x={namesX} y={34} width={36} height={6} rx={2} opacity={0.22} />
+      <rect className="pf-stack-mini-mute" x={namesX} y={52} width={28} height={1} opacity={0.6} />
+      <rect className="pf-stack-mini-mute" x={namesX} y={58} width={18} height={3} rx={1.5} />
+    </TeamMiniStage>
+  );
+}
+
+/** The plate itself, half muted and half accent: `Black & white` shows no accent at all, `Full
+ *  color` the whole plate, `Hover to reveal` the split between the two (rule 1b: show the look). */
+function TeamSplitToneWireframe({ value }: { value: PortfolioTeamPolaroidPhotoTone }) {
+  const accentWidth = value === 'color' ? 44 : value === 'hover' ? 22 : 0;
+  return (
+    <TeamMiniStage>
+      <rect className="pf-stack-mini-mute" x="38" y="8" width="44" height="56" rx="2" opacity={0.55} />
+      {accentWidth > 0 ? (
+        <rect className="pf-stack-mini-accent" x="38" y="8" width={accentWidth} height="56" rx="2" />
+      ) : null}
+    </TeamMiniStage>
+  );
+}
+
+function TeamSplitScreenLayoutFields({
+  team,
+  onChange,
+}: {
+  team: PortfolioTeamSectionSettings;
+  onChange: TeamPatch;
+}) {
+  return (
+    <>
+      <div>
+        <TeamSectionLabel>Portrait side</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Portrait side" className="mt-3 grid grid-cols-2 gap-3">
+          {PORTFOLIO_TEAM_SPOTLIGHT_SIDE_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.splitPortraitSide ?? 'right')}
+              label={option.label}
+              onClick={() => onChange({ splitPortraitSide: option.value })}
+            >
+              <TeamSplitSideWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Portrait tone</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Portrait tone" className="mt-3 grid grid-cols-3 gap-3">
+          {PORTFOLIO_TEAM_POLAROID_PHOTO_TONE_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.splitPhotoTone ?? 'monochrome')}
+              label={option.label}
+              onClick={() => onChange({ splitPhotoTone: option.value })}
+            >
+              <TeamSplitToneWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Portrait corners</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Portrait corners" className="mt-3 grid grid-cols-4 gap-2">
+          {PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.splitPanelRadius ?? 'none')}
+              label={option.label}
+              onClick={() => onChange({ splitPanelRadius: option.value })}
+            >
+              <TeamSplitRadiusWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamVisibilityRow
+          label="Social links behind a button"
+          checked={team.splitSocialsReveal !== false}
+          onChange={(splitSocialsReveal) => onChange({ splitSocialsReveal })}
+        />
+      </div>
+    </>
+  );
+}
+
+/** Three plates at three different heights (or the same one, `Off`) — the parallax setting shown
+ *  as the effect it actually produces (rule 1b: show the look, don't name it). */
+function TeamCanvasParallaxWireframe({ active }: { active: boolean }) {
+  const drop = active ? 10 : 0;
+  return (
+    <TeamMiniStage>
+      <rect className="pf-stack-mini-ink" x="14" y="10" width="26" height="30" rx="3" opacity={0.85} />
+      <rect className="pf-stack-mini-ink" x="47" y={10 + drop} width="26" height="30" rx="3" opacity={0.55} />
+      <rect className="pf-stack-mini-ink" x="80" y={10 + drop * 2} width="26" height="30" rx="3" opacity={0.3} />
+    </TeamMiniStage>
+  );
+}
+
+function TeamFloatingCanvasLayoutFields({
+  team,
+  onChange,
+}: {
+  team: PortfolioTeamSectionSettings;
+  onChange: TeamPatch;
+}) {
+  return (
+    <>
+      <div>
+        <TeamSectionLabel>Cards per row</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Cards per row" className="mt-3 grid grid-cols-3 gap-3">
+          {PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.canvasColumns ?? 3)}
+              label={option.label}
+              onClick={() => onChange({ canvasColumns: option.value as PortfolioTeamRailColumns })}
+            >
+              <TeamRailColumnsWireframe columns={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Composition width</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Composition width" className="mt-3 grid grid-cols-2 gap-3">
+          {PORTFOLIO_TEAM_FLOAT_ALIGN_OPTIONS.map((option) => (
+            <TeamPickerCard
+              key={option.value}
+              active={option.value === (team.canvasAlign ?? 'center')}
+              label={option.label}
+              onClick={() => onChange({ canvasAlign: option.value })}
+            >
+              <TeamFloatAlignWireframe value={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <div>
+        <TeamSectionLabel>Scroll parallax</TeamSectionLabel>
+        <div role="radiogroup" aria-label="Scroll parallax" className="mt-3 grid grid-cols-2 gap-3">
+          {[
+            { value: true, label: 'On' },
+            { value: false, label: 'Off' },
+          ].map((option) => (
+            <TeamPickerCard
+              key={String(option.value)}
+              active={option.value === (team.canvasParallax !== false)}
+              label={option.label}
+              onClick={() => onChange({ canvasParallax: option.value })}
+            >
+              <TeamCanvasParallaxWireframe active={option.value} />
+            </TeamPickerCard>
+          ))}
+        </div>
+      </div>
+      <TeamTextField
+        label="Editorial label"
+        value={team.canvasEditorialLabel}
+        placeholder="Studio note"
+        onChange={(canvasEditorialLabel) => onChange({ canvasEditorialLabel })}
+      />
+      <TeamTextField
+        label="Editorial text"
+        value={team.canvasEditorialText}
+        placeholder="A small collective of specialists who each choose their own tools…"
+        onChange={(canvasEditorialText) => onChange({ canvasEditorialText })}
+        multiline
+      />
+    </>
+  );
+}
+
+/**
+ * One band, one fields component per design. A design with no fields renders nothing at all —
+ * add a new `Team<Design>LayoutFields` and a branch here rather than growing this switch inline.
+ */
+function TeamLayoutSettingsBand({
+  team,
+  onChange,
+}: {
+  team: PortfolioTeamSectionSettings;
+  onChange: TeamPatch;
+}) {
+  const fields =
+    team.layout === 'portrait-rail' ? (
+      <TeamRailLayoutFields team={team} onChange={onChange} />
+    ) : team.layout === 'polaroid' ? (
+      <TeamPolaroidLayoutFields team={team} onChange={onChange} />
+    ) : team.layout === 'float-cards' ? (
+      <TeamFloatCardsLayoutFields team={team} onChange={onChange} />
+    ) : team.layout === 'spotlight' ? (
+      <TeamSpotlightLayoutFields team={team} onChange={onChange} />
+    ) : team.layout === 'split-screen' ? (
+      <TeamSplitScreenLayoutFields team={team} onChange={onChange} />
+    ) : team.layout === 'directory' ? (
+      <TeamDirectoryLayoutFields team={team} onChange={onChange} />
+    ) : team.layout === 'profile-cards' ? (
+      <TeamProfileCardsLayoutFields team={team} onChange={onChange} />
+    ) : team.layout === 'avatar-cards' ? (
+      <TeamAvatarCardsLayoutFields team={team} onChange={onChange} />
+    ) : team.layout === 'floating-canvas' ? (
+      <TeamFloatingCanvasLayoutFields team={team} onChange={onChange} />
+    ) : null;
+  if (!fields) return null;
+  return (
+    <section className="pf-exp-layout-settings" aria-labelledby="team-layout-settings-title">
+      <h3 id="team-layout-settings-title" className="pf-exp-layout-settings-title">
+        Layout settings
+      </h3>
+      <div className="pf-exp-layout-settings-body space-y-7">{fields}</div>
+    </section>
   );
 }
 
@@ -1465,6 +3072,14 @@ export function TeamSettingsPanel({
             value={team.colorModeOverride}
             onChange={(colorModeOverride) => onChange({ colorModeOverride })}
           />
+
+          <TeamOptionGrid
+            label="Font size"
+            options={PORTFOLIO_TEAM_PREMIUM_FONT_SIZE_OPTIONS}
+            value={team.premiumFontSize ?? 'medium'}
+            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
+            columns={3}
+          />
         </div>
       ) : null}
 
@@ -1477,9 +3092,12 @@ export function TeamSettingsPanel({
             onChange={(layout) => onChange({ layout })}
           />
           {designCatalogOpen ? null : (
-            <p className="text-xs text-neutral-400">
-              Each design renders straight from your members — what shows on a card is set in General → Visibility.
-            </p>
+            <>
+              <p className="text-xs text-neutral-400">
+                Each design renders straight from your members — what shows on a card is set in General → Visibility.
+              </p>
+              <TeamLayoutSettingsBand team={team} onChange={onChange} />
+            </>
           )}
         </div>
       ) : null}

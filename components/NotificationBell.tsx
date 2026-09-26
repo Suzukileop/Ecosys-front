@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ACCENT_ORANGE } from '@/components/landing/landingBrand';
 import { useAuth } from '@/context/AuthContext';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { dispatchAgentContentSync } from '@/lib/agent-content-sync';
@@ -151,34 +152,46 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
       <button
         type="button"
         onClick={handleToggle}
-        className={`relative text-neutral-600 transition hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50 dark:text-neutral-400 dark:hover:text-white ${
+        /* `compact` is the bar's form: a bare 36px disc that brightens and lifts, with no plate at
+           rest or on hover — it stands in a row of identical controls and a background would make
+           it the only one that looked pressed. */
+        className={`relative transition-[color,transform] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 ${
           compact
-            ? 'flex h-9 w-9 items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            : 'rounded-lg p-2 hover:bg-gray-100 focus-visible:ring-neutral-400/50'
+            ? 'flex h-9 w-9 items-center justify-center rounded-full hover:scale-105 text-neutral-700 hover:text-neutral-950 dark:text-neutral-200 dark:hover:text-white'
+            : 'rounded-lg p-2 text-neutral-600 hover:bg-gray-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
         }`}
         aria-expanded={open}
         aria-haspopup="true"
         aria-label={`Notifications${badgeCount > 0 ? `, ${badgeCount} new` : ''}`}
       >
+        {/* In the bar (`compact`): same 24-unit box and `stroke-width: 1.5` as the magnifier and
+            the chat glyph beside it. */}
         <svg
-          className={compact ? 'h-[1.375rem] w-[1.375rem]' : 'h-6 w-6'}
+          className={compact ? 'h-[1.3rem] w-[1.3rem]' : 'h-6 w-6'}
+          viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          viewBox="0 0 24 24"
+          strokeWidth={compact ? 1.5 : 2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
           aria-hidden="true"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-          />
+          <path d="M18.4 15.4a1.9 1.9 0 0 1-.55-1.33V10.9a5.9 5.9 0 0 0-4.1-5.6v-.4a1.75 1.75 0 1 0-3.5 0v.4a5.9 5.9 0 0 0-4.1 5.6v3.17c0 .5-.2.98-.55 1.33L4.5 16.7h15l-1.1-1.3Z" />
+          <path d="M14.1 19.2a2.35 2.35 0 0 1-4.2 0" />
         </svg>
-        {badgeCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
-            {badgeCount > 99 ? '99+' : badgeCount}
-          </span>
-        )}
+        {badgeCount > 0 ? (
+          /*
+           * A 5px signal, not a counted pill. The exact number was never actionable from the bar —
+           * you open the panel to read it — and a filled red capsule is the loudest object in a
+           * composition whose whole language is hairlines. The count still reaches assistive tech
+           * through `aria-label`, so nothing is actually lost.
+           */
+          <span
+            aria-hidden
+            style={{ backgroundColor: ACCENT_ORANGE }}
+            className="absolute right-2 top-1.5 block h-[5px] w-[5px] rounded-full"
+          />
+        ) : null}
       </button>
 
       {open && (

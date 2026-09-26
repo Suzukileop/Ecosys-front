@@ -317,7 +317,8 @@ export type PortfolioFooterDesign =
   | 'inverted-wordmark'
   | 'services-reveal'
   | 'editorial-grid'
-  | 'headline-reveal';
+  | 'headline-reveal'
+  | 'dispatch';
 
 /**
  * Global type-size control for every Footer design — same mechanism as the FAQ section's
@@ -1407,6 +1408,11 @@ export const PORTFOLIO_FOOTER_DESIGN_OPTIONS: {
     label: 'Headline reveal',
     description: 'Borderless — no dividers, no icon chips. A monumental CTA masks in on scroll, with a simple hover accent on each coordinate.',
   },
+  {
+    value: 'dispatch',
+    label: 'Dispatch',
+    description: 'Agency band: a one-field email capture with a magnetic accent button beside a hairline-ruled link directory, closed by an edge-to-edge wordmark that masks in from below.',
+  },
 ];
 
 export const PORTFOLIO_FOOTER_CTA_BUTTON_BORDER_OPTIONS: {
@@ -2368,6 +2374,7 @@ export function mergeFooterPresentation(
         'services-reveal',
         'editorial-grid',
         'headline-reveal',
+        'dispatch',
       ],
       base.design
     ),

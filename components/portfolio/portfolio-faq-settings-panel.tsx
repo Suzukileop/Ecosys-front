@@ -18,10 +18,12 @@ import {
   PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADIUS_OPTIONS,
   PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDER_OPTIONS,
   PORTFOLIO_FAQ_PREMIUM_FONT_SIZE_OPTIONS,
+  FAQ_TEXT_COLOR_TOKENS,
   defaultsForFaqDesign,
   type PortfolioFaqSectionSettings,
   type PortfolioFaqDesign,
   type PortfolioFaqBentoDualCardColorToken,
+  type PortfolioFaqTextColorToken,
 } from '@/components/portfolio/portfolio-faq-settings';
 import {
   FAQ_HEADER_DESIGNS_SELECTABLE,
@@ -815,6 +817,54 @@ const FAQ_FRAME_SHADOW_PREVIEW: Record<PortfolioFaqFrameShadow, string> = {
   deep: '0 3px 6px rgba(0, 0, 0, 0.55)',
 };
 
+/* ---------------------------------------------------------------------- */
+/* GENERAL tab → Text colors — one palette token for the questions and one */
+/* for the answers, read by all 9 designs (faqTextColorVars + globals.css). */
+/* ---------------------------------------------------------------------- */
+
+/** Same short names as the Frame's color pills, so one panel speaks one vocabulary. */
+const FAQ_TEXT_COLOR_LABELS: Record<PortfolioFaqTextColorToken, string> = {
+  auto: 'Auto',
+  principal: 'Principal',
+  secondaire: 'Secondary',
+  texteFort: 'Text',
+};
+
+function FaqTextColorsGroup({
+  faq,
+  onChange,
+  palette,
+}: {
+  faq: PortfolioFaqSectionSettings;
+  onChange: FaqPatch;
+  palette: Record<HeroPaletteTokenId, string>;
+}) {
+  const options = FAQ_TEXT_COLOR_TOKENS.map((token) => ({
+    value: token,
+    label: FAQ_TEXT_COLOR_LABELS[token],
+    // "Auto" has no swatch of its own: it is whatever the active design already draws.
+    swatch: token === 'auto' ? undefined : resolveHeroPaletteColor(palette, token),
+  }));
+  return (
+    <div className="space-y-5 pt-4">
+      <FaqLayoutPills
+        label="Question color"
+        columns={2}
+        value={faq.questionColorToken ?? 'auto'}
+        onChange={(value) => onChange({ questionColorToken: value as PortfolioFaqTextColorToken })}
+        options={options}
+      />
+      <FaqLayoutPills
+        label="Answer color"
+        columns={2}
+        value={faq.answerColorToken ?? 'auto'}
+        onChange={(value) => onChange({ answerColorToken: value as PortfolioFaqTextColorToken })}
+        options={options}
+      />
+    </div>
+  );
+}
+
 function FaqFrameGroup({
   faq,
   onChange,
@@ -1165,6 +1215,7 @@ export function FaqSettingsPanel({
             onChange={(premiumFontSize) => onChange({ premiumFontSize })}
             columns={3}
           />
+          <FaqTextColorsGroup faq={faq} onChange={onChange} palette={faqPalette} />
           <FaqFrameGroup faq={faq} onChange={onChange} palette={faqPalette} />
         </div>
       ) : null}

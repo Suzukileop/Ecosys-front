@@ -40,7 +40,98 @@ import {
   type PortfolioTeamHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-team-header-settings';
 
-export type PortfolioTeamLayout = 'meet-cards' | 'portrait-rail' | 'spotlight' | 'directory' | 'polaroid' | 'profile-cards' | 'hover-cards' | 'avatar-cards' | 'cover-cards' | 'float-cards';
+/** `meet-cards` and `hover-cards` are retired: still accepted from storage, remapped on merge. */
+export type PortfolioTeamLayout = 'meet-cards' | 'portrait-rail' | 'spotlight' | 'split-screen' | 'editorial-rhythm' | 'directory' | 'polaroid' | 'profile-cards' | 'hover-cards' | 'avatar-cards' | 'cover-cards' | 'float-cards' | 'floating-canvas';
+/**
+ * Portrait rail navigation:
+ * `drag` — the immersive rail, dragged or scrubbed from its own indicator (default);
+ * `chevrons` — the same rail, stepped one portrait at a time from a pair of buttons;
+ * `show-all` — no traversal at all, every portrait laid out in rows.
+ */
+export type PortfolioTeamRailNavigation = 'drag' | 'chevrons' | 'show-all';
+export type PortfolioTeamRailColumns = 2 | 3 | 4;
+/**
+ * Profile cards — which of the design's two navigations the section opens on. Both are always
+ * available to the visitor from the toolbar; this only picks the one shown first.
+ * `rail` — a horizontal, trackpad-scrollable rail stepped by a pair of chevrons;
+ * `grid` — every card laid out in staggered rows.
+ */
+export type PortfolioTeamProfileView = 'rail' | 'grid';
+/**
+ * Floating cards: where the block of cards sits in the section. `full` drops the block's own cap
+ * and lets the cards spread across the whole content width instead of being grouped.
+ */
+export type PortfolioTeamFloatAlign = 'left' | 'center' | 'right' | 'full';
+/** Profile cards — the card's own proportion; `Photo size` still sets its minimum height. */
+export type PortfolioTeamProfileRatio = 'square' | 'soft' | 'portrait' | 'tall' | 'xtall';
+/**
+ * Profile cards — horizontal air between cards, desktop only: below `lg` the columns keep one
+ * comfortable gap whatever this says, because there is no room to spend there.
+ */
+export type PortfolioTeamProfileGutter = 'sm' | 'md' | 'lg' | 'xl';
+/** Profile cards — the info panel rests on the portrait, or only arrives on hover. */
+export type PortfolioTeamProfilePanel = 'always' | 'hover';
+/**
+ * Profile cards — how many cards the grid shows before the `View all` pill releases the rest.
+ * Stored as a label because `all` (hold none back) shares the axis with the counts.
+ */
+export type PortfolioTeamProfileVisible = '4' | '6' | '8' | 'all';
+/**
+ * Avatar cards — which of the design's two navigations the section opens on. Both stay available
+ * to the visitor from the card toolbar; this only picks the one shown first.
+ * `rail` — a horizontal, trackpad-scrollable rail stepped by a pair of chevrons;
+ * `grid` — every card laid out in rows, optionally on a staggered rhythm.
+ */
+export type PortfolioTeamAvatarView = 'rail' | 'grid';
+/**
+ * Avatar cards — the shape the circular avatar morphs into while its card is hovered.
+ * `circle` keeps the circle (the avatar only grows); the other two open it up.
+ */
+export type PortfolioTeamAvatarShape = 'circle' | 'squircle' | 'arch';
+/** Avatar cards: members per row on a large screen — the grid still steps down below it. */
+export type PortfolioTeamAvatarColumns = 1 | 2 | 3 | 4;
+/**
+ * Avatar cards: the gutter *between columns*, applied from `lg` up only. Below that the design
+ * keeps the gutter its own scale derives from `Gap`, because at one or two columns a desktop
+ * spacing choice has nothing to space.
+ */
+export type PortfolioTeamAvatarColumnGap = 'sm' | 'md' | 'lg' | 'xl';
+/**
+ * Avatar cards: how the grid occupies the section.
+ * `centered` - the block is capped at the cards' own width and centred, so the cards read as one
+ * composition (the design's original behaviour);
+ * `full` - the plain arrangement the Portrait rail's "Show all" uses: the grid takes the whole
+ * content width and every card stretches to fill its column.
+ */
+export type PortfolioTeamAvatarGridWidth = 'centered' | 'full';
+/** Shared by the rail (each portrait) and the spotlight (the panel): four corner-radius steps. */
+export type PortfolioTeamCornerRadius = 'none' | 'sm' | 'md' | 'lg';
+/** Shared portrait-height axis. `tall` is always the original, largest setting. */
+export type PortfolioTeamImageHeight = 'short' | 'medium' | 'tall';
+/**
+ * Polaroid and Split screen — how the portrait's color renders:
+ * `hover` — black & white at rest, full color on hover (the original behavior);
+ * `monochrome` — always black & white, even on hover;
+ * `color` — always full color, no filter at all.
+ */
+export type PortfolioTeamPolaroidPhotoTone = 'hover' | 'monochrome' | 'color';
+/** Spotlight and Split screen — which side the monumental portrait sits on (large screens). */
+export type PortfolioTeamSpotlightSide = 'left' | 'right';
+/**
+ * Spotlight navigation:
+ * `thumbnails` — the strip of portraits under the copy (default);
+ * `arrows` — a prev/next pair, nothing else competing with the portrait;
+ * `both` — the strip with the prev/next pair sitting above it, aligned right.
+ */
+export type PortfolioTeamSpotlightNavigation = 'thumbnails' | 'arrows' | 'both';
+/**
+ * Directory — where each member's portrait lives:
+ * `cursor` — a plate that trails the pointer while a row is hovered (the original behavior);
+ * `left` / `right` — always visible, fixed in every row on that side.
+ */
+export type PortfolioTeamDirectoryPortrait = 'cursor' | 'left' | 'right';
+/** The shared corner steps plus `full` — a true circle, for portraits that can become one. */
+export type PortfolioTeamAvatarRadius = PortfolioTeamCornerRadius | 'full';
 export type PortfolioTeamGap = 'sm' | 'md' | 'lg' | 'xl';
 export type PortfolioTeamCardRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 export type PortfolioTeamCardPadding = 'none' | 'sm' | 'md' | 'lg';
@@ -109,6 +200,90 @@ export type PortfolioTeamPresentationSettings = PortfolioSectionBackgroundSettin
   cardBorderColor: string;
   /** Directory: separate member cards instead of one list frame. */
   directoryDetachedCards: boolean;
+  /** Portrait rail: how the viewer moves through the members (Design → Layout settings). */
+  railNavigation: PortfolioTeamRailNavigation;
+  /** Portrait rail, `show-all` navigation only: portraits per row on large screens. */
+  railColumns: PortfolioTeamRailColumns;
+  /** Portrait rail: corner radius of each portrait. */
+  railImageRadius: PortfolioTeamCornerRadius;
+  /** Portrait rail: portrait height — viewport-based in the rail, ratio-based in `show-all`. */
+  railImageHeight: PortfolioTeamImageHeight;
+  /** Polaroid: how the print's color renders — black & white on hover, always mono, or always color. */
+  polaroidPhotoTone: PortfolioTeamPolaroidPhotoTone;
+  /** Polaroid, "View all" grid only: prints per row on large screens (never more than four). */
+  polaroidColumns: PortfolioTeamRailColumns;
+  /** Profile cards: the navigation the section opens on (the visitor can still switch). */
+  profileCardsView: PortfolioTeamProfileView;
+  /** Profile cards: offset every other card so the columns break their rigid baseline. */
+  profileCardsStagger: boolean;
+  /** Profile cards: cards per row in the grid view (never more than four at any breakpoint). */
+  profileCardsColumns: PortfolioTeamRailColumns;
+  /** Profile cards: the card's proportion, from square to 9:16. */
+  profileCardsRatio: PortfolioTeamProfileRatio;
+  /** Profile cards: horizontal spacing between cards, applied from `lg` up. */
+  profileCardsGutter: PortfolioTeamProfileGutter;
+  /** Profile cards: info panel always on the portrait, or revealed on hover. */
+  profileCardsPanel: PortfolioTeamProfilePanel;
+  /** Profile cards: how many the grid shows before `View all`. */
+  profileCardsVisible: PortfolioTeamProfileVisible;
+  /** Floating cards: the navigation the section opens on (the visitor can still switch). */
+  floatCardsView: PortfolioTeamProfileView;
+  /** Floating cards, grid view only: cards per row on large screens (never more than four). */
+  floatCardsColumns: PortfolioTeamRailColumns;
+  /** Floating cards, grid view only: drop every other column so the rows break their baseline. */
+  floatCardsStagger: boolean;
+  /** Floating cards: the pointer-driven 3D tilt and its parallax (hover pointers only). */
+  floatCardsTilt: boolean;
+  /** Floating cards: where the block of cards sits — it is not forced to the centre. */
+  floatCardsAlign: PortfolioTeamFloatAlign;
+  /** Floating cards: horizontal space between the cards, in px (`TEAM_FLOAT_COLUMN_GAP` bounds). */
+  floatCardsColumnGap: number;
+  /** Avatar cards: the navigation the section opens on (the visitor can still switch). */
+  avatarCardsView: PortfolioTeamAvatarView;
+  /** Avatar cards, grid view only: offset every other card so the rows break their rigid baseline. */
+  avatarCardsStagger: boolean;
+  /** Avatar cards: the colored halo behind the avatar, lit from the palette's principal color. */
+  avatarCardsGlow: boolean;
+  /** Avatar cards: the shape the avatar morphs into on hover. */
+  avatarCardsShape: PortfolioTeamAvatarShape;
+  /** Avatar cards: members per row on a large screen (the grid still steps down on smaller ones). */
+  avatarCardsColumns: PortfolioTeamAvatarColumns;
+  /** Avatar cards: horizontal gutter between the columns, desktop only. */
+  avatarCardsColumnGap: PortfolioTeamAvatarColumnGap;
+  /** Avatar cards: the grid capped and centred, or spread across the whole content width. */
+  avatarCardsGridWidth: PortfolioTeamAvatarGridWidth;
+  /** Spotlight: side the portrait sits on (large screens); the copy takes the other side. */
+  spotlightPortraitSide: PortfolioTeamSpotlightSide;
+  /** Spotlight: how the viewer moves between members. */
+  spotlightNavigation: PortfolioTeamSpotlightNavigation;
+  /** Spotlight: corner radius of the panel (the portrait bleeds to its edge). */
+  spotlightPanelRadius: PortfolioTeamCornerRadius;
+  /** Spotlight: hovering a thumbnail switches the portrait (off = click only). */
+  spotlightHoverSwitch: boolean;
+  /** Split screen: side the full-height portrait sits on (large screens); the names take the other. */
+  splitPortraitSide: PortfolioTeamSpotlightSide;
+  /** Split screen: corner radius of the portrait plate (nothing else is framed). */
+  splitPanelRadius: PortfolioTeamCornerRadius;
+  /** Split screen: how the portrait's color renders — mono, full color, or color on hover. */
+  splitPhotoTone: PortfolioTeamPolaroidPhotoTone;
+  /** Split screen: social links behind a `Social links +` control instead of always shown. */
+  splitSocialsReveal: boolean;
+  /** Floating canvas: cards per row on large screens (the irregular grid stacks to one column below `lg`). */
+  canvasColumns: PortfolioTeamRailColumns;
+  /** Floating canvas: where the block of cards sits — it is not forced to the centre. */
+  canvasAlign: PortfolioTeamFloatAlign;
+  /** Floating canvas: the scroll-driven drift that separates the top and bottom of the canvas. */
+  canvasParallax: boolean;
+  /** Floating canvas: the editorial paragraph placed mid-canvas in place of a portrait. Empty uses a built-in line. */
+  canvasEditorialText: string;
+  /** Floating canvas: the kicker above that paragraph (the design prints the em rule). Empty uses "Studio note". */
+  canvasEditorialLabel: string;
+  /** Directory: portrait trailing the cursor on hover, or fixed on the left/right of every row. */
+  directoryPortrait: PortfolioTeamDirectoryPortrait;
+  /** Directory: corner radius of every portrait (fixed print, cursor plate, touch avatar); `full` = circle. */
+  directoryPortraitRadius: PortfolioTeamAvatarRadius;
+  /** Directory: vertical space between the cards, in px (`TEAM_DIRECTORY_CARD_GAP` bounds). */
+  directoryCardGap: number;
   imageAspect: PortfolioTeamImageAspect;
   imageFit: PortfolioTeamImageFit;
   imagePosition: PortfolioTeamImagePosition;
@@ -118,6 +293,8 @@ export type PortfolioTeamPresentationSettings = PortfolioSectionBackgroundSettin
   showImage: boolean;
   socialIconSize: PortfolioTeamSocialIconSize;
   socialIconStyle: PortfolioTeamSocialIconStyle;
+  /** General tab "Font size" — one scale for every member-facing text size in the section. */
+  premiumFontSize: PortfolioTeamPremiumFontSize;
   socialIconColor: string;
   socialBackgroundColor: string;
   nameColor: string;
@@ -256,15 +433,328 @@ export const PORTFOLIO_TEAM_LAYOUT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'portrait-rail', label: 'Portrait rail', description: 'Large numbered portraits in a draggable rail with a progress counter.' },
-  { value: 'spotlight', label: 'Spotlight', description: 'One featured member; the portrait wipes in when you pick another.' },
-  { value: 'directory', label: 'Directory', description: 'Numbered rows with an avatar and links on the right.' },
-  { value: 'polaroid', label: 'Polaroid', description: 'Tilted prints that scatter in and straighten on hover.' },
+  { value: 'portrait-rail', label: 'Portrait rail', description: 'Immersive portraits in a draggable rail with a scrub indicator.' },
+  { value: 'spotlight', label: 'Spotlight', description: 'A monumental portrait panel; thumbnails swap it with a directional wipe.' },
+  { value: 'split-screen', label: 'Split screen', description: 'Monumental names stacked on one side; the addressed one fills a full-height portrait on the other.' },
+  { value: 'editorial-rhythm', label: 'Editorial rhythm', description: 'A broken grid of unequal plates; the first name is printed across its own portrait.' },
+  { value: 'directory', label: 'Directory', description: 'A monumental numbered index; the portrait follows the cursor or sits in every row.' },
+  { value: 'polaroid', label: 'Polaroid', description: 'Grained instant prints on a dark table — drag/chevron rail, monochrome-to-color hover, a grid toggle.' },
   { value: 'profile-cards', label: 'Profile cards', description: 'Portrait on top, name and socials centered below.' },
-  { value: 'hover-cards', label: 'Hover cards', description: 'Portraits only — name, role, and links appear on hover.' },
   { value: 'cover-cards', label: 'Hover veil', description: 'Portrait only — a dark veil reveals name, role, and links on hover.' },
-  { value: 'avatar-cards', label: 'Avatar cards', description: 'Circular avatar with name, role, and socials centered.' },
-  { value: 'float-cards', label: 'Floating cards', description: 'Avatar overlapping the card — name, role, and links always visible.' },
+  { value: 'avatar-cards', label: 'Avatar cards', description: 'Haloed avatars that morph out of their circle on hover — rail or staggered grid.' },
+  { value: 'float-cards', label: 'Floating cards', description: 'A portrait floating over a card that tilts in 3D; the accent washes in from the cursor.' },
+  { value: 'floating-canvas', label: 'Floating canvas', description: 'An irregular, ultra-airy canvas — names float above or below their portrait, broken by an editorial passage.' },
+];
+
+export const PORTFOLIO_TEAM_RAIL_NAVIGATIONS = [
+  'drag',
+  'chevrons',
+  'show-all',
+] as const satisfies readonly PortfolioTeamRailNavigation[];
+
+export const PORTFOLIO_TEAM_RAIL_NAVIGATION_OPTIONS: {
+  value: PortfolioTeamRailNavigation;
+  label: string;
+}[] = [
+  { value: 'drag', label: 'Drag' },
+  { value: 'chevrons', label: 'Arrows' },
+  { value: 'show-all', label: 'Show all' },
+];
+
+export const PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS: {
+  value: PortfolioTeamRailColumns;
+  label: string;
+}[] = [
+  { value: 2, label: '2' },
+  { value: 3, label: '3' },
+  { value: 4, label: '4' },
+];
+
+export const PORTFOLIO_TEAM_POLAROID_PHOTO_TONES = [
+  'hover',
+  'monochrome',
+  'color',
+] as const satisfies readonly PortfolioTeamPolaroidPhotoTone[];
+
+export const PORTFOLIO_TEAM_POLAROID_PHOTO_TONE_OPTIONS: {
+  value: PortfolioTeamPolaroidPhotoTone;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'hover', label: 'Hover to reveal', description: 'Black & white at rest, full color on hover.' },
+  { value: 'monochrome', label: 'Black & white', description: 'Always black & white, even on hover.' },
+  { value: 'color', label: 'Full color', description: 'Always in color — no monochrome filter.' },
+];
+
+export const PORTFOLIO_TEAM_PROFILE_VIEWS = [
+  'rail',
+  'grid',
+] as const satisfies readonly PortfolioTeamProfileView[];
+
+export const PORTFOLIO_TEAM_FLOAT_ALIGNS = [
+  'left',
+  'center',
+  'right',
+  'full',
+] as const satisfies readonly PortfolioTeamFloatAlign[];
+
+export const PORTFOLIO_TEAM_FLOAT_ALIGN_OPTIONS: {
+  value: PortfolioTeamFloatAlign;
+  label: string;
+}[] = [
+  { value: 'left', label: 'Left' },
+  { value: 'center', label: 'Center' },
+  { value: 'right', label: 'Right' },
+  { value: 'full', label: 'Full width' },
+];
+
+export const TEAM_FLOAT_COLUMN_GAP = { min: 0, max: 96, step: 4 } as const;
+
+/**
+ * Before the slider existed the horizontal gutter came from the shared `gap` step. It stays the
+ * fallback, so a site that never touched the slider renders exactly as before — these are the
+ * same four values `FLOAT_CARDS_SCALE.gap` gives, in px.
+ */
+export function teamFloatDefaultColumnGap(gap: PortfolioTeamGap | undefined): number {
+  if (gap === 'sm') return 12;
+  if (gap === 'md') return 18;
+  if (gap === 'xl') return 36;
+  return 24;
+}
+
+function clampTeamFloatColumnGap(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.min(TEAM_FLOAT_COLUMN_GAP.max, Math.max(TEAM_FLOAT_COLUMN_GAP.min, Math.round(value)));
+}
+
+export const PORTFOLIO_TEAM_PROFILE_VIEW_OPTIONS: {
+  value: PortfolioTeamProfileView;
+  label: string;
+}[] = [
+  { value: 'rail', label: 'Rail' },
+  { value: 'grid', label: 'Grid' },
+];
+
+export const PORTFOLIO_TEAM_PROFILE_RATIOS = [
+  'square',
+  'soft',
+  'portrait',
+  'tall',
+  'xtall',
+] as const satisfies readonly PortfolioTeamProfileRatio[];
+
+/** Labelled by the ratio itself — the card beside it already shows the shape. Ordered
+ *  widest → tallest, so the row reads as the axis it is. */
+export const PORTFOLIO_TEAM_PROFILE_RATIO_OPTIONS: {
+  value: PortfolioTeamProfileRatio;
+  label: string;
+}[] = [
+  { value: 'square', label: '1:1' },
+  { value: 'soft', label: '4:5' },
+  { value: 'portrait', label: '3:4' },
+  { value: 'tall', label: '2:3' },
+  { value: 'xtall', label: '9:16' },
+];
+
+export const PORTFOLIO_TEAM_PROFILE_GUTTERS = [
+  'sm',
+  'md',
+  'lg',
+  'xl',
+] as const satisfies readonly PortfolioTeamProfileGutter[];
+
+export const PORTFOLIO_TEAM_PROFILE_GUTTER_OPTIONS: {
+  value: PortfolioTeamProfileGutter;
+  label: string;
+}[] = [
+  { value: 'sm', label: 'Tight' },
+  { value: 'md', label: 'Medium' },
+  { value: 'lg', label: 'Wide' },
+  { value: 'xl', label: 'Extra wide' },
+];
+
+export const PORTFOLIO_TEAM_PROFILE_PANELS = [
+  'always',
+  'hover',
+] as const satisfies readonly PortfolioTeamProfilePanel[];
+
+export const PORTFOLIO_TEAM_PROFILE_PANEL_OPTIONS: {
+  value: PortfolioTeamProfilePanel;
+  label: string;
+}[] = [
+  { value: 'always', label: 'Always' },
+  { value: 'hover', label: 'On hover' },
+];
+
+export const PORTFOLIO_TEAM_PROFILE_VISIBLES = [
+  '4',
+  '6',
+  '8',
+  'all',
+] as const satisfies readonly PortfolioTeamProfileVisible[];
+
+export const PORTFOLIO_TEAM_PROFILE_VISIBLE_OPTIONS: {
+  value: PortfolioTeamProfileVisible;
+  label: string;
+}[] = [
+  { value: '4', label: '4' },
+  { value: '6', label: '6' },
+  { value: '8', label: '8' },
+  { value: 'all', label: 'All' },
+];
+
+export const PORTFOLIO_TEAM_AVATAR_VIEWS = [
+  'rail',
+  'grid',
+] as const satisfies readonly PortfolioTeamAvatarView[];
+
+export const PORTFOLIO_TEAM_AVATAR_VIEW_OPTIONS: {
+  value: PortfolioTeamAvatarView;
+  label: string;
+}[] = [
+  { value: 'rail', label: 'Rail' },
+  { value: 'grid', label: 'Grid' },
+];
+
+export const PORTFOLIO_TEAM_AVATAR_SHAPES = [
+  'circle',
+  'squircle',
+  'arch',
+] as const satisfies readonly PortfolioTeamAvatarShape[];
+
+export const PORTFOLIO_TEAM_AVATAR_SHAPE_OPTIONS: {
+  value: PortfolioTeamAvatarShape;
+  label: string;
+}[] = [
+  { value: 'circle', label: 'Circle' },
+  { value: 'squircle', label: 'Squircle' },
+  { value: 'arch', label: 'Arch' },
+];
+
+export const PORTFOLIO_TEAM_AVATAR_COLUMN_OPTIONS: {
+  value: PortfolioTeamAvatarColumns;
+  label: string;
+}[] = [
+  { value: 1, label: '1' },
+  { value: 2, label: '2' },
+  { value: 3, label: '3' },
+  { value: 4, label: '4' },
+];
+
+export const PORTFOLIO_TEAM_AVATAR_COLUMN_GAPS = [
+  'sm',
+  'md',
+  'lg',
+  'xl',
+] as const satisfies readonly PortfolioTeamAvatarColumnGap[];
+
+export const PORTFOLIO_TEAM_AVATAR_COLUMN_GAP_OPTIONS: {
+  value: PortfolioTeamAvatarColumnGap;
+  label: string;
+}[] = [
+  { value: 'sm', label: 'Tight' },
+  { value: 'md', label: 'Snug' },
+  { value: 'lg', label: 'Roomy' },
+  { value: 'xl', label: 'Wide' },
+];
+
+export const PORTFOLIO_TEAM_AVATAR_GRID_WIDTHS = [
+  'centered',
+  'full',
+] as const satisfies readonly PortfolioTeamAvatarGridWidth[];
+
+export const PORTFOLIO_TEAM_AVATAR_GRID_WIDTH_OPTIONS: {
+  value: PortfolioTeamAvatarGridWidth;
+  label: string;
+}[] = [
+  { value: 'centered', label: 'Centered' },
+  { value: 'full', label: 'Full width' },
+];
+
+export const PORTFOLIO_TEAM_CORNER_RADII = [
+  'none',
+  'sm',
+  'md',
+  'lg',
+] as const satisfies readonly PortfolioTeamCornerRadius[];
+
+export const PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS: {
+  value: PortfolioTeamCornerRadius;
+  label: string;
+}[] = [
+  { value: 'none', label: 'Square' },
+  { value: 'sm', label: 'Small' },
+  { value: 'md', label: 'Medium' },
+  { value: 'lg', label: 'Large' },
+];
+
+export const PORTFOLIO_TEAM_AVATAR_RADII = [
+  ...PORTFOLIO_TEAM_CORNER_RADII,
+  'full',
+] as const satisfies readonly PortfolioTeamAvatarRadius[];
+
+export const PORTFOLIO_TEAM_AVATAR_RADIUS_OPTIONS: {
+  value: PortfolioTeamAvatarRadius;
+  label: string;
+}[] = [...PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS, { value: 'full', label: 'Full' }];
+
+export const PORTFOLIO_TEAM_IMAGE_HEIGHTS = [
+  'short',
+  'medium',
+  'tall',
+] as const satisfies readonly PortfolioTeamImageHeight[];
+
+export const PORTFOLIO_TEAM_IMAGE_HEIGHT_OPTIONS: {
+  value: PortfolioTeamImageHeight;
+  label: string;
+}[] = [
+  { value: 'short', label: 'Short' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'tall', label: 'Tall' },
+];
+
+export const PORTFOLIO_TEAM_SPOTLIGHT_SIDES = [
+  'left',
+  'right',
+] as const satisfies readonly PortfolioTeamSpotlightSide[];
+
+export const PORTFOLIO_TEAM_SPOTLIGHT_NAVIGATIONS = [
+  'thumbnails',
+  'arrows',
+  'both',
+] as const satisfies readonly PortfolioTeamSpotlightNavigation[];
+
+export const PORTFOLIO_TEAM_SPOTLIGHT_NAVIGATION_OPTIONS: {
+  value: PortfolioTeamSpotlightNavigation;
+  label: string;
+}[] = [
+  { value: 'thumbnails', label: 'Thumbnails' },
+  { value: 'arrows', label: 'Arrows' },
+  { value: 'both', label: 'Both' },
+];
+
+export const PORTFOLIO_TEAM_SPOTLIGHT_SIDE_OPTIONS: {
+  value: PortfolioTeamSpotlightSide;
+  label: string;
+}[] = [
+  { value: 'left', label: 'Left' },
+  { value: 'right', label: 'Right' },
+];
+
+
+export const PORTFOLIO_TEAM_DIRECTORY_PORTRAITS = [
+  'cursor',
+  'left',
+  'right',
+] as const satisfies readonly PortfolioTeamDirectoryPortrait[];
+
+export const PORTFOLIO_TEAM_DIRECTORY_PORTRAIT_OPTIONS: {
+  value: PortfolioTeamDirectoryPortrait;
+  label: string;
+}[] = [
+  { value: 'cursor', label: 'On hover' },
+  { value: 'left', label: 'Left' },
+  { value: 'right', label: 'Right' },
 ];
 
 export const PORTFOLIO_TEAM_GAP_OPTIONS: {
@@ -407,6 +897,48 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
   cardBackgroundColor: '#ffffff',
   cardBorderColor: '#e5e5e5',
   directoryDetachedCards: true,
+  railNavigation: 'drag',
+  railColumns: 3,
+  railImageRadius: 'md',
+  railImageHeight: 'tall',
+  polaroidPhotoTone: 'hover',
+  polaroidColumns: 3,
+  profileCardsView: 'grid',
+  profileCardsStagger: true,
+  profileCardsColumns: 3,
+  profileCardsRatio: 'portrait',
+  profileCardsGutter: 'md',
+  profileCardsPanel: 'always',
+  profileCardsVisible: 'all',
+  floatCardsView: 'grid',
+  floatCardsColumns: 3,
+  floatCardsStagger: true,
+  floatCardsTilt: true,
+  floatCardsAlign: 'center',
+  floatCardsColumnGap: 24,
+  avatarCardsView: 'grid',
+  avatarCardsStagger: true,
+  avatarCardsGlow: true,
+  avatarCardsShape: 'squircle',
+  avatarCardsColumns: 3,
+  avatarCardsColumnGap: 'md',
+  avatarCardsGridWidth: 'centered',
+  spotlightPortraitSide: 'left',
+  spotlightNavigation: 'thumbnails',
+  spotlightPanelRadius: 'md',
+  spotlightHoverSwitch: true,
+  splitPortraitSide: 'right',
+  splitPanelRadius: 'none',
+  splitPhotoTone: 'monochrome',
+  splitSocialsReveal: true,
+  canvasColumns: 3,
+  canvasAlign: 'center',
+  canvasParallax: true,
+  canvasEditorialText: '',
+  canvasEditorialLabel: '',
+  directoryPortrait: 'cursor',
+  directoryPortraitRadius: 'md',
+  directoryCardGap: 20,
   imageAspect: 'portrait',
   imageFit: 'cover',
   imagePosition: 'center',
@@ -416,6 +948,7 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
   showImage: true,
   socialIconSize: 'md',
   socialIconStyle: 'circle',
+  premiumFontSize: 'medium',
   socialIconColor: '#171717',
   socialBackgroundColor: '#f5f5f5',
   nameColor: '#171717',
@@ -570,8 +1103,7 @@ export function teamSubtitleColorStyle(color: string): CSSProperties {
 export function teamGridClass(
   columns: number,
   gap: PortfolioTeamGap,
-  align: PortfolioTeamListAlign = 'center',
-  layout?: PortfolioTeamLayout
+  align: PortfolioTeamListAlign = 'center'
 ): string {
   const cols =
     columns === 1
@@ -582,21 +1114,7 @@ export function teamGridClass(
           ? 'sm:grid-cols-2 xl:grid-cols-4'
           : 'sm:grid-cols-2 lg:grid-cols-3';
   const gaps =
-    layout === 'float-cards'
-      ? gap === 'sm'
-        ? 'gap-x-5 gap-y-10'
-        : gap === 'md'
-          ? 'gap-x-10 gap-y-20'
-          : gap === 'xl'
-            ? 'gap-x-24 gap-y-48'
-            : 'gap-x-16 gap-y-32'
-      : gap === 'sm'
-        ? 'gap-4'
-        : gap === 'md'
-          ? 'gap-10'
-          : gap === 'xl'
-            ? 'gap-28'
-            : 'gap-16';
+    gap === 'sm' ? 'gap-4' : gap === 'md' ? 'gap-10' : gap === 'xl' ? 'gap-28' : 'gap-16';
   const justify =
     align === 'left' ? 'justify-items-start' : align === 'right' ? 'justify-items-end' : 'justify-items-center';
   return `grid items-stretch ${justify} ${cols} ${gaps}`;
@@ -622,39 +1140,65 @@ export function teamCircleAvatarClass(size: PortfolioTeamAvatarSize | undefined)
   return 'h-28 w-28';
 }
 
-export function teamFloatGridOffsetClass(size: PortfolioTeamAvatarSize | undefined): string {
-  if (size === 'sm') return 'pt-10';
-  if (size === 'lg') return 'pt-[4.5rem]';
-  if (size === 'xl') return 'pt-24';
-  return 'pt-14';
-}
-
-/** Pins the overlapping avatar to the white card’s top edge, inside the article padding. */
-export function teamFloatAvatarAnchorClass(size: PortfolioTeamAvatarSize | undefined): string {
-  if (size === 'sm') return 'top-10';
-  if (size === 'lg') return 'top-[4.5rem]';
-  if (size === 'xl') return 'top-24';
-  return 'top-14';
-}
-
-export function teamFloatCardBodyPadClass(size: PortfolioTeamAvatarSize | undefined): string {
-  if (size === 'sm') return 'px-4 pb-5 pt-12';
-  if (size === 'lg') return 'px-6 pb-8 pt-20';
-  if (size === 'xl') return 'px-6 pb-9 pt-24';
-  return 'px-5 pb-6 pt-16';
-}
-
-export function teamFloatCardMinHeightClass(size: PortfolioTeamAvatarSize | undefined): string {
-  if (size === 'sm') return 'min-h-[10.5rem]';
-  if (size === 'lg') return 'min-h-[13.5rem]';
-  if (size === 'xl') return 'min-h-[15rem]';
-  return 'min-h-[11.5rem]';
-}
-
 export function teamFlexAlignClass(align: PortfolioTeamListAlign | undefined): string {
   if (align === 'left') return 'items-start';
   if (align === 'right') return 'items-end';
   return 'items-center';
+}
+
+/**
+ * Global type-size control for the Team section — same standardized-shared-value architecture as
+ * the Experience/Footer/FAQ/Gallery sections' "Font size" control: one `--pf-team-font-scale`
+ * custom property, set once on the section's `PortfolioSectionShell` root (`id="team"`, via
+ * `cssVars` in `PublicCreatorPortfolioPage.tsx`) from `teamPremiumFontScale(premiumFontSize)`, and
+ * multiplied into every member-facing font size across the ten designs with
+ * `text-[calc(<base>*var(--pf-team-font-scale,1))]`.
+ *
+ * Unlike the other sections, Team scales its *display* type too — the member name is the content
+ * here, not decoration, so a control that moved only the role labels would read as broken. What
+ * stays out: the avatar-fallback initials (a glyph sized to a fixed box), anything already in `em`
+ * (it inherits the scale from its scaled parent), and the section title / shared Header designs,
+ * which have their own size control in Global.
+ *
+ * `medium` is the current baseline — the other tiers scale relative to that.
+ */
+export type PortfolioTeamPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
+
+export const TEAM_PREMIUM_FONT_SIZES: PortfolioTeamPremiumFontSize[] = [
+  'small',
+  'medium',
+  'large',
+  'xlarge',
+  'xxlarge',
+];
+
+export const PORTFOLIO_TEAM_PREMIUM_FONT_SIZE_OPTIONS: {
+  value: PortfolioTeamPremiumFontSize;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'small', label: 'Small', description: 'Compact type across the Team section.' },
+  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
+  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
+  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  {
+    value: 'xxlarge',
+    label: 'Super Extra Large',
+    description: 'Maximum type size for the most dramatic, oversized look.',
+  },
+];
+
+/** Same multipliers as the Experience/Footer/FAQ/Gallery scales — kept in sync deliberately. */
+const TEAM_PREMIUM_FONT_SCALE: Record<PortfolioTeamPremiumFontSize, number> = {
+  small: 0.85,
+  medium: 1,
+  large: 1.15,
+  xlarge: 1.3,
+  xxlarge: 1.45,
+};
+
+export function teamPremiumFontScale(size: PortfolioTeamPremiumFontSize | undefined): number {
+  return (size && TEAM_PREMIUM_FONT_SCALE[size]) ?? 1;
 }
 
 export function teamSocialIconButtonClass(size: PortfolioTeamSocialIconSize | undefined): string {
@@ -671,21 +1215,37 @@ export function teamSocialIconGlyphClass(size: PortfolioTeamSocialIconSize | und
   return 'h-4 w-4';
 }
 
-/** Wider max-widths for the directory list (avatar + name + icons in one row). */
+/**
+ * Directory list width. The index sets names at display size with the role on the far side of the
+ * row, so it needs real measure — at the old `max-w-xl` every single name wrapped onto two lines.
+ */
 export function teamDirectoryMaxWidthClass(width: PortfolioTeamCardMaxWidth | undefined): string {
-  if (width === 'xs') return 'max-w-sm';
-  if (width === 'sm' || width == null) return 'max-w-xl';
-  if (width === 'md') return 'max-w-2xl';
-  if (width === 'lg') return 'max-w-4xl';
-  if (width === 'xl') return 'max-w-5xl';
+  if (width === 'xs') return 'max-w-2xl';
+  if (width === 'sm' || width == null) return 'max-w-5xl';
+  if (width === 'md') return 'max-w-6xl';
+  if (width === 'lg') return 'max-w-7xl';
+  if (width === 'xl') return 'max-w-[88rem]';
   return 'max-w-none';
 }
 
-export function teamDirectoryStackGapClass(gap: PortfolioTeamGap | undefined): string {
-  if (gap === 'sm') return 'gap-3';
-  if (gap === 'md') return 'gap-4';
-  if (gap === 'xl') return 'gap-8';
-  return 'gap-5';
+/** Directory → Layout settings → Card spacing slider bounds, in px. */
+export const TEAM_DIRECTORY_CARD_GAP = { min: 0, max: 80, step: 4 } as const;
+
+/**
+ * Before the slider existed, the space between Directory cards came from the shared `gap` step
+ * (12/16/20/32px). It stays the fallback, so a site that never touched the slider renders exactly
+ * as before.
+ */
+export function teamDirectoryDefaultCardGap(gap: PortfolioTeamGap | undefined): number {
+  if (gap === 'sm') return 12;
+  if (gap === 'md') return 16;
+  if (gap === 'xl') return 32;
+  return 20;
+}
+
+function clampTeamDirectoryCardGap(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.min(TEAM_DIRECTORY_CARD_GAP.max, Math.max(TEAM_DIRECTORY_CARD_GAP.min, Math.round(value)));
 }
 
 export function teamCardMaxWidthClass(width: PortfolioTeamCardMaxWidth | undefined): string {
@@ -697,40 +1257,17 @@ export function teamCardMaxWidthClass(width: PortfolioTeamCardMaxWidth | undefin
   return 'max-w-none';
 }
 
-/** Spotlight frame: default `sm` keeps the previous max-w-3xl look. */
+/**
+ * Spotlight panel width. Immersive scale — every step is wider than the old card-sized frame
+ * (`sm` was `max-w-3xl`), because the design's whole premise is one monumental portrait.
+ */
 export function teamSpotlightMaxWidthClass(width: PortfolioTeamCardMaxWidth | undefined): string {
-  if (width === 'xs') return 'max-w-xl';
-  if (width === 'sm' || width == null) return 'max-w-3xl';
-  if (width === 'md') return 'max-w-4xl';
-  if (width === 'lg') return 'max-w-5xl';
-  if (width === 'xl') return 'max-w-6xl';
+  if (width === 'xs') return 'max-w-4xl';
+  if (width === 'sm' || width == null) return 'max-w-6xl';
+  if (width === 'md') return 'max-w-7xl';
+  if (width === 'lg') return 'max-w-[88rem]';
+  if (width === 'xl') return 'max-w-[96rem]';
   return 'max-w-none';
-}
-
-export function teamSpotlightGridClass(): string {
-  return 'md:grid-cols-[auto_minmax(0,1fr)] md:items-stretch md:gap-6';
-}
-
-export function teamSpotlightPhotoSizeClass(avatarSize: PortfolioTeamAvatarSize | undefined): string {
-  if (avatarSize === 'sm') return 'w-36 sm:w-40';
-  if (avatarSize === 'lg') return 'w-72 sm:w-80';
-  if (avatarSize === 'xl') return 'w-96 sm:w-[28rem]';
-  return 'w-52 sm:w-60';
-}
-
-export function teamSpotlightNameClass(width: PortfolioTeamCardMaxWidth | undefined): string {
-  if (width === 'xs' || width === 'sm' || width == null) {
-    return 'font-serif text-3xl font-semibold leading-tight tracking-tight sm:text-4xl';
-  }
-  if (width === 'md') return 'font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-5xl';
-  if (width === 'lg') return 'font-serif text-5xl font-semibold leading-tight tracking-tight';
-  return 'font-serif text-5xl font-semibold leading-tight tracking-tight sm:text-6xl';
-}
-
-export function teamSpotlightRoleClass(width: PortfolioTeamCardMaxWidth | undefined): string {
-  if (width === 'xs' || width === 'sm' || width == null) return 'mt-2 text-sm sm:text-base';
-  if (width === 'md' || width === 'lg') return 'mt-3 text-base sm:text-lg';
-  return 'mt-3 text-lg sm:text-xl';
 }
 
 export function teamContentAlignClass(align: PortfolioTeamListAlign | undefined): string {
@@ -843,12 +1380,14 @@ export function mergeTeamPresentation(
   const record = patch as Record<string, unknown>;
   const layout = pick(
     record.layout,
-    ['meet-cards', 'portrait-rail', 'spotlight', 'directory', 'polaroid', 'profile-cards', 'hover-cards', 'avatar-cards', 'cover-cards', 'float-cards'],
+    ['meet-cards', 'portrait-rail', 'spotlight', 'split-screen', 'editorial-rhythm', 'directory', 'polaroid', 'profile-cards', 'hover-cards', 'avatar-cards', 'cover-cards', 'float-cards', 'floating-canvas'],
     base.layout
   );
   const merged: PortfolioTeamPresentationSettings = {
     ...mergeSectionBackground(base, patch),
-    layout: layout === 'meet-cards' ? 'portrait-rail' : layout,
+    // Two retired designs, kept accepted so a saved section never falls back to the default:
+    // `meet-cards` became the rail, `hover-cards` was removed in favour of Hover veil.
+    layout: layout === 'meet-cards' ? 'portrait-rail' : layout === 'hover-cards' ? 'cover-cards' : layout,
     columns: clampColumns(record.columns, base.columns),
     gap: pick(record.gap, ['sm', 'md', 'lg', 'xl'], base.gap),
     cardRadius: pick(record.cardRadius, ['none', 'sm', 'md', 'lg', 'xl'], base.cardRadius),
@@ -868,6 +1407,198 @@ export function mergeTeamPresentation(
       typeof record.directoryDetachedCards === 'boolean'
         ? record.directoryDetachedCards
         : (base.directoryDetachedCards ?? true),
+    railNavigation: pick(
+      record.railNavigation,
+      PORTFOLIO_TEAM_RAIL_NAVIGATIONS,
+      base.railNavigation ?? 'drag'
+    ),
+    railColumns:
+      record.railColumns === 2 || record.railColumns === 3 || record.railColumns === 4
+        ? record.railColumns
+        : (base.railColumns ?? 3),
+    railImageRadius: pick(
+      record.railImageRadius,
+      PORTFOLIO_TEAM_CORNER_RADII,
+      base.railImageRadius ?? 'md'
+    ),
+    railImageHeight: pick(
+      record.railImageHeight,
+      PORTFOLIO_TEAM_IMAGE_HEIGHTS,
+      base.railImageHeight ?? 'tall'
+    ),
+    polaroidPhotoTone: pick(
+      record.polaroidPhotoTone,
+      PORTFOLIO_TEAM_POLAROID_PHOTO_TONES,
+      base.polaroidPhotoTone ?? 'hover'
+    ),
+    polaroidColumns:
+      record.polaroidColumns === 2 || record.polaroidColumns === 3 || record.polaroidColumns === 4
+        ? record.polaroidColumns
+        : (base.polaroidColumns ?? 3),
+    profileCardsView: pick(
+      record.profileCardsView,
+      PORTFOLIO_TEAM_PROFILE_VIEWS,
+      base.profileCardsView ?? 'grid'
+    ),
+    profileCardsStagger:
+      typeof record.profileCardsStagger === 'boolean'
+        ? record.profileCardsStagger
+        : (base.profileCardsStagger ?? true),
+    profileCardsColumns:
+      record.profileCardsColumns === 2 || record.profileCardsColumns === 3 || record.profileCardsColumns === 4
+        ? record.profileCardsColumns
+        : (base.profileCardsColumns ?? 3),
+    profileCardsRatio: pick(
+      record.profileCardsRatio,
+      PORTFOLIO_TEAM_PROFILE_RATIOS,
+      base.profileCardsRatio ?? 'portrait'
+    ),
+    profileCardsGutter: pick(
+      record.profileCardsGutter,
+      PORTFOLIO_TEAM_PROFILE_GUTTERS,
+      base.profileCardsGutter ?? 'md'
+    ),
+    profileCardsPanel: pick(
+      record.profileCardsPanel,
+      PORTFOLIO_TEAM_PROFILE_PANELS,
+      base.profileCardsPanel ?? 'always'
+    ),
+    profileCardsVisible: pick(
+      record.profileCardsVisible,
+      PORTFOLIO_TEAM_PROFILE_VISIBLES,
+      base.profileCardsVisible ?? 'all'
+    ),
+    floatCardsView: pick(
+      record.floatCardsView,
+      PORTFOLIO_TEAM_PROFILE_VIEWS,
+      base.floatCardsView ?? 'grid'
+    ),
+    floatCardsColumns:
+      record.floatCardsColumns === 2 || record.floatCardsColumns === 3 || record.floatCardsColumns === 4
+        ? record.floatCardsColumns
+        : (base.floatCardsColumns ?? 3),
+    floatCardsStagger:
+      typeof record.floatCardsStagger === 'boolean'
+        ? record.floatCardsStagger
+        : (base.floatCardsStagger ?? true),
+    floatCardsTilt:
+      typeof record.floatCardsTilt === 'boolean' ? record.floatCardsTilt : (base.floatCardsTilt ?? true),
+    floatCardsAlign: pick(
+      record.floatCardsAlign,
+      PORTFOLIO_TEAM_FLOAT_ALIGNS,
+      base.floatCardsAlign ?? 'center'
+    ),
+    // Unset → whatever the shared `gap` step used to give the gutter, so nothing moves.
+    floatCardsColumnGap: clampTeamFloatColumnGap(
+      record.floatCardsColumnGap,
+      record.gap !== undefined
+        ? teamFloatDefaultColumnGap(pick(record.gap, ['sm', 'md', 'lg', 'xl'] as const, base.gap))
+        : (base.floatCardsColumnGap ?? teamFloatDefaultColumnGap(base.gap))
+    ),
+    avatarCardsView: pick(
+      record.avatarCardsView,
+      PORTFOLIO_TEAM_AVATAR_VIEWS,
+      base.avatarCardsView ?? 'grid'
+    ),
+    avatarCardsStagger:
+      typeof record.avatarCardsStagger === 'boolean'
+        ? record.avatarCardsStagger
+        : (base.avatarCardsStagger ?? true),
+    avatarCardsGlow:
+      typeof record.avatarCardsGlow === 'boolean'
+        ? record.avatarCardsGlow
+        : (base.avatarCardsGlow ?? true),
+    avatarCardsShape: pick(
+      record.avatarCardsShape,
+      PORTFOLIO_TEAM_AVATAR_SHAPES,
+      base.avatarCardsShape ?? 'squircle'
+    ),
+    // Unset falls back to the section-wide `columns`, so a portfolio saved before this control
+    // existed keeps the row it already had.
+    avatarCardsColumns: clampColumns(
+      record.avatarCardsColumns,
+      base.avatarCardsColumns ?? clampColumns(base.columns, 3)
+    ),
+    avatarCardsColumnGap: pick(
+      record.avatarCardsColumnGap,
+      PORTFOLIO_TEAM_AVATAR_COLUMN_GAPS,
+      base.avatarCardsColumnGap ?? 'md'
+    ),
+    avatarCardsGridWidth: pick(
+      record.avatarCardsGridWidth,
+      PORTFOLIO_TEAM_AVATAR_GRID_WIDTHS,
+      base.avatarCardsGridWidth ?? 'centered'
+    ),
+    spotlightPortraitSide: pick(
+      record.spotlightPortraitSide,
+      PORTFOLIO_TEAM_SPOTLIGHT_SIDES,
+      base.spotlightPortraitSide ?? 'left'
+    ),
+    spotlightNavigation: pick(
+      record.spotlightNavigation,
+      PORTFOLIO_TEAM_SPOTLIGHT_NAVIGATIONS,
+      base.spotlightNavigation ?? 'thumbnails'
+    ),
+    spotlightPanelRadius: pick(
+      record.spotlightPanelRadius,
+      PORTFOLIO_TEAM_CORNER_RADII,
+      base.spotlightPanelRadius ?? 'md'
+    ),
+    spotlightHoverSwitch:
+      typeof record.spotlightHoverSwitch === 'boolean'
+        ? record.spotlightHoverSwitch
+        : (base.spotlightHoverSwitch ?? true),
+    splitPortraitSide: pick(
+      record.splitPortraitSide,
+      PORTFOLIO_TEAM_SPOTLIGHT_SIDES,
+      base.splitPortraitSide ?? 'right'
+    ),
+    splitPanelRadius: pick(
+      record.splitPanelRadius,
+      PORTFOLIO_TEAM_CORNER_RADII,
+      base.splitPanelRadius ?? 'none'
+    ),
+    splitPhotoTone: pick(
+      record.splitPhotoTone,
+      PORTFOLIO_TEAM_POLAROID_PHOTO_TONES,
+      base.splitPhotoTone ?? 'monochrome'
+    ),
+    splitSocialsReveal:
+      typeof record.splitSocialsReveal === 'boolean'
+        ? record.splitSocialsReveal
+        : (base.splitSocialsReveal ?? true),
+    canvasColumns:
+      record.canvasColumns === 2 || record.canvasColumns === 3 || record.canvasColumns === 4
+        ? record.canvasColumns
+        : (base.canvasColumns ?? 3),
+    canvasAlign: pick(record.canvasAlign, PORTFOLIO_TEAM_FLOAT_ALIGNS, base.canvasAlign ?? 'center'),
+    canvasParallax:
+      typeof record.canvasParallax === 'boolean' ? record.canvasParallax : (base.canvasParallax ?? true),
+    canvasEditorialText:
+      typeof record.canvasEditorialText === 'string'
+        ? record.canvasEditorialText
+        : (base.canvasEditorialText ?? ''),
+    canvasEditorialLabel:
+      typeof record.canvasEditorialLabel === 'string'
+        ? record.canvasEditorialLabel
+        : (base.canvasEditorialLabel ?? ''),
+    directoryPortrait: pick(
+      record.directoryPortrait,
+      PORTFOLIO_TEAM_DIRECTORY_PORTRAITS,
+      base.directoryPortrait ?? 'cursor'
+    ),
+    directoryPortraitRadius: pick(
+      record.directoryPortraitRadius,
+      PORTFOLIO_TEAM_AVATAR_RADII,
+      base.directoryPortraitRadius ?? 'md'
+    ),
+    // Unset → whatever the shared `gap` step used to give the Directory, so nothing moves.
+    directoryCardGap: clampTeamDirectoryCardGap(
+      record.directoryCardGap,
+      record.gap !== undefined
+        ? teamDirectoryDefaultCardGap(pick(record.gap, ['sm', 'md', 'lg', 'xl'] as const, base.gap))
+        : (base.directoryCardGap ?? teamDirectoryDefaultCardGap(base.gap))
+    ),
     imageAspect: pick(record.imageAspect, ['square', 'portrait', 'landscape', 'auto'], base.imageAspect),
     imageFit: pick(record.imageFit, ['cover', 'contain'], base.imageFit),
     imagePosition: pick(record.imagePosition, ['center', 'top', 'bottom', 'left', 'right'], base.imagePosition),
@@ -877,6 +1608,7 @@ export function mergeTeamPresentation(
     showImage: typeof record.showImage === 'boolean' ? record.showImage : base.showImage,
     socialIconSize: pick(record.socialIconSize, ['sm', 'md', 'lg', 'xl'], base.socialIconSize),
     socialIconStyle: pick(record.socialIconStyle, ['circle', 'soft', 'outline', 'minimal'], base.socialIconStyle),
+    premiumFontSize: pick(record.premiumFontSize, TEAM_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
     socialIconColor: sanitizeHex(record.socialIconColor, base.socialIconColor),
     socialBackgroundColor: sanitizeHex(record.socialBackgroundColor, base.socialBackgroundColor),
     nameColor: sanitizeHex(record.nameColor, base.nameColor),

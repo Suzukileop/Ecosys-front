@@ -21,7 +21,7 @@ import {
 } from '@/components/portfolio/portfolio-motion-settings';
 import type { PortfolioNavSectionKey } from '@/components/portfolio/portfolio-nav-items';
 import {
-  isPortfolioPresenceKind,
+  normalizePortfolioPresenceKind,
   type PortfolioPresenceKind,
 } from '@/components/portfolio/portfolio-presence';
 import {
@@ -65,7 +65,6 @@ export type PortfolioGlobalSectionTitleTopSpacing = 'compact' | 'standard' | 'co
 export type PortfolioGlobalTypographyScope = 'section' | 'global';
 
 export type PortfolioGlobalHeaderFont =
-  | 'aeonik'
   | 'geist'
   | 'sans'
   | 'serif'
@@ -779,9 +778,6 @@ export const PORTFOLIO_GLOBAL_TYPOGRAPHY_SCOPE_OPTIONS: {
   { value: 'global', label: 'Global', description: 'Apply one shared style to every section.' },
 ];
 
-export const AEONIK_FONT_FAMILY =
-  'var(--font-aeonik), ui-sans-serif, system-ui, sans-serif';
-
 export const GEIST_FONT_FAMILY =
   'var(--font-geist), ui-sans-serif, system-ui, sans-serif';
 
@@ -789,18 +785,11 @@ export const PORTFOLIO_GLOBAL_HEADER_FONT_OPTIONS: {
   value: PortfolioGlobalHeaderFont;
   label: string;
   description: string;
-  /** Google Font stack already loaded in globals.css / local Aeonik */
+  /** Google Font stack already loaded in globals.css, or the locally bundled Geist. */
   fontFamily: string;
   /** Short sample shown on the settings mockup card. */
   previewText: string;
 }[] = [
-  {
-    value: 'aeonik',
-    label: 'Aeonik',
-    description: 'Grotesk trial — option portfolio, plus seulement Light / Regular / Bold.',
-    fontFamily: AEONIK_FONT_FAMILY,
-    previewText: 'Projects',
-  },
   {
     value: 'geist',
     label: 'Geist',
@@ -851,6 +840,26 @@ const GLOBAL_HEADER_FONT_VALUES = new Set<PortfolioGlobalHeaderFont>(
 
 export function isPortfolioGlobalHeaderFont(value: unknown): value is PortfolioGlobalHeaderFont {
   return typeof value === 'string' && GLOBAL_HEADER_FONT_VALUES.has(value as PortfolioGlobalHeaderFont);
+}
+
+/**
+ * Fonts that were offered once and are not any more. Translated on read rather than rejected: a
+ * creator who had picked one would otherwise be silently reset to whatever the base happens to be,
+ * and their published page would change typeface without anyone touching it.
+ *
+ * `aeonik` was removed because the only files we ever shipped were the TRIAL cut, which is not
+ * licensed for production — and it went out on public portfolios. Geist is the nearest survivor:
+ * same grotesk register, and it is already the app's own face.
+ */
+const RETIRED_HEADER_FONTS: Record<string, PortfolioGlobalHeaderFont> = { aeonik: 'geist' };
+
+/** Normalises a stored value, translating any retired font. Returns null when unrecognised. */
+export function normalizePortfolioGlobalHeaderFont(
+  value: unknown
+): PortfolioGlobalHeaderFont | null {
+  if (isPortfolioGlobalHeaderFont(value)) return value;
+  if (typeof value === 'string' && value in RETIRED_HEADER_FONTS) return RETIRED_HEADER_FONTS[value];
+  return null;
 }
 
 export const PORTFOLIO_GLOBAL_TITLE_SIZE_OPTIONS: {
@@ -1658,7 +1667,6 @@ function globalHeaderFontClass(font: PortfolioGlobalHeaderFont, kind: 'title' | 
   if (kind === 'title') {
     // Weight is applied separately via {@link globalTitleFontWeightClass}.
     switch (font) {
-      case 'aeonik':
       case 'geist':
         return 'tracking-[-0.03em]';
       case 'serif':
@@ -1674,7 +1682,6 @@ function globalHeaderFontClass(font: PortfolioGlobalHeaderFont, kind: 'title' | 
     }
   }
   switch (font) {
-    case 'aeonik':
     case 'geist':
       return 'leading-relaxed';
     case 'serif':
@@ -1920,7 +1927,7 @@ function mergeTitleTypography(
 
   return {
     scope: scope === 'section' || scope === 'global' ? scope : base.scope,
-    font: isPortfolioGlobalHeaderFont(font) ? font : base.font,
+    font: normalizePortfolioGlobalHeaderFont(font) ?? base.font,
     size: size === 'sm' || size === 'md' || size === 'lg' || size === 'xl' ? size : base.size,
     weight:
       weight === 'simple' || weight === 'semibold' || weight === 'bold'
@@ -1954,7 +1961,7 @@ function mergeSubtitleTypography(
 
   return {
     scope: scope === 'section' || scope === 'global' ? scope : base.scope,
-    font: isPortfolioGlobalHeaderFont(font) ? font : base.font,
+    font: normalizePortfolioGlobalHeaderFont(font) ?? base.font,
     size: size === 'sm' || size === 'md' || size === 'lg' ? size : base.size,
     color: sanitizeHex(record.color, base.color),
     colorSource: isPortfolioGlobalColorSource(record.colorSource)
@@ -2347,11 +2354,12 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
       base.sectionTitleBottomExtraPx ?? 0
     ),
     sectionOrder: mergeSectionOrder(base.sectionOrder, record.sectionOrder),
-    presenceKind: isPortfolioPresenceKind(record.presenceKind)
-      ? record.presenceKind
-      : record.presenceKind === null
+    // Normalised, not merely validated: a retired kind still on record is translated to its
+    // survivor instead of falling through to the base and sending the creator back to the picker.
+    presenceKind:
+      record.presenceKind === null
         ? null
-        : (base.presenceKind ?? null),
+        : (normalizePortfolioPresenceKind(record.presenceKind) ?? base.presenceKind ?? null),
     titleTypography: mergeTitleTypography(base.titleTypography, record.titleTypography),
     subtitleTypography: mergeSubtitleTypography(base.subtitleTypography, record.subtitleTypography),
     titleChrome: mergeTitleChrome(base.titleChrome, record.titleChrome),

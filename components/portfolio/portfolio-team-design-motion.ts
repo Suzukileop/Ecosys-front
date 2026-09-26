@@ -1,16 +1,114 @@
 'use client';
 
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 import gsap from 'gsap';
+import { CustomEase } from 'gsap/CustomEase';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger);
+  gsap.registerPlugin(ScrollTrigger, CustomEase);
 }
 
 /** Every Team design's motion respects the OS setting, regardless of any local toggle. */
 export function teamPrefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+let premiumEaseName: string | undefined;
+
+/**
+ * The family's single curve, `cubic-bezier(0.16, 1, 0.3, 1)`, registered with GSAP so the
+ * JS-driven motion and the CSS transitions decelerate on exactly the same easing instead of two
+ * lookalike curves. Resolved lazily: `CustomEase.create` needs the browser, and a module-scope
+ * call would run during SSR. Falls back to the nearest built-in if registration ever fails.
+ */
+export function teamPremiumEase(): string {
+  if (typeof window === 'undefined') return 'power3.out';
+  if (!premiumEaseName) {
+    try {
+      CustomEase.create('teamPremium', 'M0,0 C0.16,1 0.3,1 1,1');
+      premiumEaseName = 'teamPremium';
+    } catch (error) {
+      console.error('[Team motion] CustomEase registration failed', error);
+      premiumEaseName = 'power3.out';
+    }
+  }
+  return premiumEaseName;
+}
+
+const SWIPE_TRIGGER_PX = 46;
+const SWIPE_AXIS_LOCK_PX = 8;
+
+/**
+ * Native (non-passive) touch listeners so a confirmed horizontal drag can call `preventDefault`
+ * and stay a swipe instead of also scrolling the page underneath it — React's synthetic touch
+ * handlers are passive and cannot. The axis locks within the first few pixels, so a vertical
+ * scroll started inside the element is never hijacked. Same recipe as the Work showcase's own
+ * mobile swipe (portfolio-work-projects-showcase-mobile-redesign).
+ */
+export function useTeamSwipe(
+  elRef: RefObject<HTMLElement | null>,
+  onSwipe: (direction: 1 | -1) => void,
+  disabled: boolean
+): void {
+  const onSwipeRef = useRef(onSwipe);
+  useLayoutEffect(() => {
+    onSwipeRef.current = onSwipe;
+  }, [onSwipe]);
+
+  useEffect(() => {
+    const el = elRef.current;
+    if (!el || disabled) return undefined;
+
+    let startX = 0;
+    let startY = 0;
+    let axis: 'x' | 'y' | null = null;
+
+    const onStart = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      startX = touch.clientX;
+      startY = touch.clientY;
+      axis = null;
+    };
+
+    const onMove = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      if (!axis) {
+        if (Math.abs(dx) < SWIPE_AXIS_LOCK_PX && Math.abs(dy) < SWIPE_AXIS_LOCK_PX) return;
+        axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      }
+      if (axis === 'x' && event.cancelable) event.preventDefault();
+    };
+
+    const onEnd = (event: TouchEvent) => {
+      const wasHorizontal = axis === 'x';
+      const touch = event.changedTouches[0];
+      axis = null;
+      if (!wasHorizontal || !touch) return;
+      const dx = touch.clientX - startX;
+      if (Math.abs(dx) < SWIPE_TRIGGER_PX) return;
+      onSwipeRef.current(dx < 0 ? 1 : -1);
+    };
+
+    const onCancel = () => {
+      axis = null;
+    };
+
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchmove', onMove, { passive: false });
+    el.addEventListener('touchend', onEnd, { passive: true });
+    el.addEventListener('touchcancel', onCancel, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove', onMove);
+      el.removeEventListener('touchend', onEnd);
+      el.removeEventListener('touchcancel', onCancel);
+    };
+  }, [elRef, disabled]);
 }
 
 /**

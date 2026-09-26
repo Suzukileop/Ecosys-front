@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Fragment, createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type FocusEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode, type RefObject } from 'react';
+import { Fragment, createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type FocusEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -20,6 +20,9 @@ import {
 } from '@/components/marketplace/creator-profile-social-icons';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
 import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferredMedia';
+import { GalleryTallRow } from '@/components/portfolio/portfolio-gallery-design-tall-row';
+import { GalleryFramedGrid } from '@/components/portfolio/portfolio-gallery-design-framed-grid';
+import { GalleryFloatingCanvas } from '@/components/portfolio/portfolio-gallery-design-floating-canvas';
 import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
 import { ContentMediaPreview } from '@/components/creator/creator-content-media';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
@@ -55,7 +58,6 @@ import {
   galleryItemDisplayTitle,
   galleryMaxWidthClass,
   galleryPlacementClass,
-  galleryFeaturedHeroHasTitleVoid,
   type PortfolioGalleryPresentationSettings,
 } from '@/components/portfolio/portfolio-gallery-settings';
 import { PortfolioMotionItem } from '@/components/portfolio/PortfolioMotionItem';
@@ -161,6 +163,11 @@ import type { PortfolioNavIconVariant } from '@/components/portfolio/portfolio-n
 // The Team section's member layouts now live in their own module (premium rework + shared GSAP
 // entrance); re-exported here so existing `portfolio-section-primitives` importers keep working.
 export { EditorialTeamGallery } from '@/components/portfolio/portfolio-team-designs';
+import {
+  galleryIndexLabel,
+  useGalleryMosaicParallax,
+  useGalleryReveal,
+} from '@/components/portfolio/portfolio-gallery-design-motion';
 import {
   PortfolioNavAdjacentExtras,
   PortfolioNavCenterBrand,
@@ -680,6 +687,7 @@ import { FooterDesignInvertedWordmark } from '@/components/portfolio/portfolio-f
 import { FooterDesignServicesReveal } from '@/components/portfolio/portfolio-footer-design-services-reveal';
 import { FooterDesignEditorialGrid } from '@/components/portfolio/portfolio-footer-design-editorial-grid';
 import { FooterDesignHeadlineReveal } from '@/components/portfolio/portfolio-footer-design-headline-reveal';
+import { FooterDesignDispatch } from '@/components/portfolio/portfolio-footer-design-dispatch';
 import {
   sectionBackgroundStyle,
   DEFAULT_SECTION_BACKGROUND_COLOR,
@@ -798,16 +806,6 @@ function heroMosaicPlan(count: number): {
   };
 }
 
-function featuredStripPlan(total: number): {
-  layout: 'solo' | 'split';
-  scrollable: boolean;
-} {
-  const tiles = Math.max(0, total - 1);
-  if (tiles === 0) return { layout: 'solo', scrollable: false };
-  return { layout: 'split', scrollable: tiles > 3 };
-}
-
-const TALL_ROW_SLIDE_MS = 620;
 const CINEMA_SLIDE_MS = 540;
 
 export function EditorialGallerySection({
@@ -821,17 +819,6 @@ export function EditorialGallerySection({
 }) {
   const [activeItem, setActiveItem] = useState<ProfileGalleryItem | null>(null);
   const [carouselPage, setCarouselPage] = useState(0);
-  const [featuredIndex, setFeaturedIndex] = useState(0);
-  const [gallerySlideDir, setGallerySlideDir] = useState<1 | -1>(1);
-  const [tallThumbAnim, setTallThumbAnim] = useState<{ from: number; dir: 1 | -1 } | null>(null);
-  const [tallThumbStep, setTallThumbStep] = useState(0);
-  const [tallThumbX, setTallThumbX] = useState(0);
-  const [tallThumbTween, setTallThumbTween] = useState(false);
-  const tallThumbViewRef = useRef<HTMLDivElement>(null);
-  const tallThumbAnimRef = useRef<{ from: number; dir: 1 | -1 } | null>(null);
-  const tallThumbTweenRef = useRef(false);
-  const tallThumbUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const tallThumbPrevFrame = useRef<number | null>(null);
   const [cinemaX, setCinemaX] = useState(0);
   const [cinemaStep, setCinemaStep] = useState(0);
   const [cinemaSliding, setCinemaSliding] = useState(false);
@@ -839,7 +826,16 @@ export function EditorialGallerySection({
   const cinemaLockRef = useRef(false);
   const cinemaUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reduceMotion = useReducedMotion();
+  // Shared scroll entrance for every design's tiles (portfolio-gallery-design-motion).
+  const revealRef = useGalleryReveal<HTMLDivElement>(`${presentation.design}:${items.length}`);
+  // Hero mosaic only: the cursor-depth layer. Mounted unconditionally (hooks cannot be
+  // conditional) and inert for every other design, since its ref is never attached.
+  const mosaicParallaxRef = useGalleryMosaicParallax<HTMLDivElement>(
+    `${presentation.design}:${items.length}`,
+    presentation.design === 'hero-mosaic'
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
+  const captionDrag = useRef<{ pointerId: number; startX: number; startLeft: number; moved: boolean } | null>(null);
   const scrollCarouselLock = useRef(false);
   const scrollCarouselRestore = useRef<(() => void) | null>(null);
   const sortedItems = useMemo(
@@ -850,7 +846,19 @@ export function EditorialGallerySection({
   useEffect(() => {
     if (!activeItem) return;
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') setActiveItem(null);
+      if (event.key === 'Escape') {
+        setActiveItem(null);
+        return;
+      }
+      // Arrow keys walk the gallery from inside the lightbox — without them the only way to see
+      // the next image was to close and re-open it.
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      if (sortedItems.length < 2) return;
+      event.preventDefault();
+      const current = sortedItems.findIndex((item) => item.id === activeItem.id);
+      if (current < 0) return;
+      const step = event.key === 'ArrowRight' ? 1 : -1;
+      setActiveItem(sortedItems[(current + step + sortedItems.length) % sortedItems.length]);
     };
     document.addEventListener('keydown', onKeyDown);
     const previousOverflow = document.body.style.overflow;
@@ -859,24 +867,10 @@ export function EditorialGallerySection({
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [activeItem]);
+  }, [activeItem, sortedItems]);
 
   useEffect(() => {
     setCarouselPage(0);
-    setFeaturedIndex(0);
-    tallThumbAnimRef.current = null;
-    tallThumbTweenRef.current = false;
-    if (tallThumbUnlockTimer.current) {
-      clearTimeout(tallThumbUnlockTimer.current);
-      tallThumbUnlockTimer.current = null;
-    }
-    if (tallThumbPrevFrame.current != null) {
-      cancelAnimationFrame(tallThumbPrevFrame.current);
-      tallThumbPrevFrame.current = null;
-    }
-    setTallThumbAnim(null);
-    setTallThumbX(0);
-    setTallThumbTween(false);
     cinemaLockRef.current = false;
     if (cinemaUnlockTimer.current) {
       clearTimeout(cinemaUnlockTimer.current);
@@ -888,8 +882,6 @@ export function EditorialGallerySection({
 
   useEffect(() => {
     return () => {
-      if (tallThumbUnlockTimer.current) clearTimeout(tallThumbUnlockTimer.current);
-      if (tallThumbPrevFrame.current != null) cancelAnimationFrame(tallThumbPrevFrame.current);
       if (cinemaUnlockTimer.current) clearTimeout(cinemaUnlockTimer.current);
       scrollCarouselRestore.current?.();
     };
@@ -921,138 +913,17 @@ export function EditorialGallerySection({
     rowGap: `${vGap}px`,
     ['--hero-mosaic-aspect' as string]: mosaicAspect,
   };
-  const stripPlan = useMemo(
-    () => featuredStripPlan(presentation.design === 'featured-strip' ? sortedItems.length : 0),
-    [presentation.design, sortedItems.length]
-  );
-  const stripGap = `${hGap}px`;
-  const stripClipStyle: CSSProperties = {
-    borderRadius: 'var(--gallery-frame-radius, 16px)',
-    overflow: 'hidden',
-  };
-  const featuredItem = sortedItems[Math.min(Math.max(0, featuredIndex), Math.max(0, sortedItems.length - 1))] ?? null;
-  const featuredThumbs = sortedItems
-    .map((item, index) => ({ item, index }))
-    .filter(({ index }) => index !== featuredIndex);
-  const tallRowVisibleCount = Math.min(4, sortedItems.length);
-  const tallThumbVisible = Math.min(3, Math.max(0, sortedItems.length - 1));
-  const tallRowItems = sortedItems.length
-    ? Array.from({ length: tallRowVisibleCount }, (_, offset) => {
-        const index = (featuredIndex + offset) % sortedItems.length;
-        return { item: sortedItems[index], index };
-      })
-    : [];
-  const tallHero = tallRowItems[0] ?? null;
-  const tallThumbsAt = (start: number) =>
-    Array.from({ length: tallThumbVisible }, (_, offset) => {
-      const index = (start + 1 + offset) % sortedItems.length;
-      return { item: sortedItems[index], index };
-    });
-  const tallThumbBaseIndex = tallThumbAnim?.from ?? featuredIndex;
-  const tallThumbs = tallThumbsAt(tallThumbBaseIndex);
-  const tallThumbExtra = (start: number) => {
-    const index = (start + 1 + tallThumbVisible) % sortedItems.length;
-    return { item: sortedItems[index], index };
-  };
-  const tallThumbTrack =
-    tallThumbVisible === 0
-      ? []
-      : tallThumbAnim?.dir === -1
-        ? [{ item: sortedItems[tallThumbBaseIndex], index: tallThumbBaseIndex }, ...tallThumbs]
-        : [...tallThumbs, tallThumbExtra(tallThumbBaseIndex)];
-  const finishTallThumbAnim = () => {
-    if (!tallThumbAnimRef.current) return;
-    if (tallThumbUnlockTimer.current) {
-      clearTimeout(tallThumbUnlockTimer.current);
-      tallThumbUnlockTimer.current = null;
-    }
-    if (tallThumbPrevFrame.current != null) {
-      cancelAnimationFrame(tallThumbPrevFrame.current);
-      tallThumbPrevFrame.current = null;
-    }
-    tallThumbAnimRef.current = null;
-    tallThumbTweenRef.current = false;
-    setTallThumbTween(false);
-    setTallThumbX(0);
-    setTallThumbAnim(null);
-  };
-  const measureTallThumbStep = (node: HTMLDivElement) => {
-    if (tallThumbVisible <= 0) return 0;
-    const itemWidth = (node.clientWidth - (tallThumbVisible - 1) * hGap) / tallThumbVisible;
-    return itemWidth + hGap;
-  };
-  const cycleFeatured = (direction: -1 | 1) => {
-    if (sortedItems.length < 2) return;
-    if (presentation.design === 'tall-row') {
-      if (tallThumbAnimRef.current) return;
-      const from = featuredIndex;
-      const node = tallThumbViewRef.current;
-      const step = node && tallThumbVisible > 0 ? measureTallThumbStep(node) : tallThumbStep;
-      if (step > 0 && Math.abs(step - tallThumbStep) > 0.25) setTallThumbStep(step);
-      setGallerySlideDir(direction);
-      setFeaturedIndex((current) => (current + direction + sortedItems.length) % sortedItems.length);
-      if (reduceMotion || tallThumbVisible === 0 || step <= 0) return;
-      const nextAnim = { from, dir: direction };
-      tallThumbAnimRef.current = nextAnim;
-      setTallThumbAnim(nextAnim);
-      if (direction === 1) {
-        tallThumbTweenRef.current = true;
-        setTallThumbTween(true);
-        setTallThumbX(-step);
-      } else {
-        tallThumbTweenRef.current = false;
-        setTallThumbTween(false);
-        setTallThumbX(-step);
-      }
-      if (tallThumbUnlockTimer.current) clearTimeout(tallThumbUnlockTimer.current);
-      tallThumbUnlockTimer.current = setTimeout(() => {
-        finishTallThumbAnim();
-      }, TALL_ROW_SLIDE_MS + 48);
-      return;
-    }
-    setGallerySlideDir(direction);
-    setFeaturedIndex((current) => (current + direction + sortedItems.length) % sortedItems.length);
-  };
   const baseWidth = `${galleryMaxWidthClass(presentation.maxWidth)} ${galleryPlacementClass(presentation.placement)} w-full`;
   const useOverlayTitles = presentation.titlePlacement === 'overlay';
-  const isClipCoverDesign = presentation.design === 'featured-strip' || presentation.design === 'tall-row';
-
-  useLayoutEffect(() => {
-    if (presentation.design !== 'tall-row' || tallThumbVisible === 0) return;
-    const node = tallThumbViewRef.current;
-    if (!node) return;
-    const update = () => {
-      if (tallThumbAnimRef.current) return;
-      const itemWidth = (node.clientWidth - (tallThumbVisible - 1) * hGap) / tallThumbVisible;
-      const step = itemWidth + hGap;
-      if (step > 0) {
-        setTallThumbStep((current) => (Math.abs(current - step) > 0.25 ? step : current));
-      }
-    };
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [presentation.design, tallThumbVisible, hGap, embeddedHeader, sortedItems.length]);
-
-  useLayoutEffect(() => {
-    if (!tallThumbAnim || tallThumbAnim.dir !== -1 || reduceMotion) return;
-    let cancelled = false;
-    const frame = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (cancelled || !tallThumbAnimRef.current || tallThumbAnimRef.current.dir !== -1) return;
-        tallThumbTweenRef.current = true;
-        setTallThumbTween(true);
-        setTallThumbX(0);
-      });
-    });
-    tallThumbPrevFrame.current = frame;
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(frame);
-      tallThumbPrevFrame.current = null;
-    };
-  }, [tallThumbAnim, reduceMotion]);
+  /**
+   * Hero mosaic focus. `mosaicFocusEnabled` is the user's switch; when it is off the tiles carry
+   * no opacity/filter rules at all rather than a disabled version of them.
+   */
+  const mosaicFocus = presentation.design === 'hero-mosaic' && presentation.mosaicFocusEnabled !== false;
+  const mosaicFocusClass = mosaicFocus
+    ? 'transition-[opacity,filter] duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/mosaic:opacity-[0.55] hover:!opacity-100 hover:brightness-[1.06] hover:contrast-[1.04]'
+    : '';
+  const isClipCoverDesign = presentation.design === 'tall-row';
 
   useLayoutEffect(() => {
     if (presentation.design !== 'cinema-strip') return;
@@ -1077,14 +948,14 @@ export function EditorialGallerySection({
   useEffect(() => {
     if (presentation.design !== 'tall-row' || sortedItems.length < 2) return;
     const preload = (offset: number) => {
-      const item = sortedItems[(featuredIndex + offset + sortedItems.length) % sortedItems.length];
+      const item = sortedItems[(offset + sortedItems.length) % sortedItems.length];
       if (!item?.mediaUrl || item.mediaType === 'VIDEO') return;
       const image = new window.Image();
       image.src = item.mediaUrl;
     };
     preload(1);
     preload(-1);
-  }, [featuredIndex, presentation.design, sortedItems]);
+  }, [presentation.design, sortedItems]);
 
   const openLightbox = (item: ProfileGalleryItem) => {
     if (presentation.lightboxEnabled) setActiveItem(item);
@@ -1172,8 +1043,10 @@ export function EditorialGallerySection({
   const media = (item: ProfileGalleryItem, lightbox = false, eager = false, highPriority = false) => {
     const zoomHover =
       presentation.hoverZoom && !lightbox && !isClipCoverDesign && presentation.design !== 'cinema-strip';
+    // Long expo push-in rather than the old snappy 500ms/scale-105: at this size a fast zoom
+    // reads as a UI reaction, a slow one reads as the image breathing.
     const zoomClass = zoomHover
-      ? 'h-full w-full transition-transform duration-500 group-hover:scale-105'
+      ? 'h-full w-full transition-transform duration-[1100ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]'
       : 'h-full w-full';
     const objectFit = lightbox
       ? 'contain'
@@ -1212,20 +1085,45 @@ export function EditorialGallerySection({
     return <div className="relative h-[min(82vh,900px)] w-[min(92vw,1200px)] max-w-[92vw]">{deferred}</div>;
   };
 
-  const persistentOverlayTitle = (itemTitle: string, revealOnHover = false) => (
-    <span
-      className={`pf-gallery-media-title pf-gallery-media-title--in-frame pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 py-5 text-center text-white sm:px-5 sm:py-6${
-        presentation.design === 'tall-row' ? ' pf-gallery-media-title--aeonik pf-gallery-media-title--tall' : ''
-      }${
-        revealOnHover
-          ? ' opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100'
-          : ''
-      }`}
-      data-pf-no-color-transition=""
-    >
-      {itemTitle}
-    </span>
-  );
+  const persistentOverlayTitle = (itemTitle: string, revealOnHover = false, roomy = false) => {
+    const reveal = revealOnHover
+      ? ' opacity-0 transition-[opacity,transform] duration-[620ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100 group-focus-within:opacity-100'
+      : '';
+    // `roomy`: the mosaic sets its titles inside a much wider margin and reads them off the
+    // bottom-left corner rather than centred. At mosaic scale a centred caption tight against
+    // the frame looks cropped by it; a corner with real air around it looks placed.
+    const framing = roomy
+      ? ' px-7 py-7 text-left sm:px-9 sm:py-8 lg:px-10 lg:py-9'
+      : ' px-4 py-5 text-center sm:px-5 sm:py-6';
+    return (
+      <>
+        {/* Scrim: `.pf-gallery-media-title` force-disables text-shadow, so white caption text over
+            a light photograph has nothing to sit on. The gradient is the only way to keep it
+            readable, and it doubles as the classic editorial foot of the frame. */}
+        <span
+          aria-hidden
+          className={`pf-gallery-scrim pointer-events-none absolute inset-x-0 bottom-0 z-[9] block h-[42%]${
+            revealOnHover
+              ? ' opacity-0 transition-opacity duration-[620ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100 group-focus-within:opacity-100'
+              : ''
+          }`}
+          data-pf-no-color-transition=""
+          style={{
+            backgroundImage:
+              'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.34) 45%, rgba(0,0,0,0) 100%)',
+          }}
+        />
+        <span
+          className={`pf-gallery-media-title pf-gallery-media-title--in-frame pointer-events-none absolute inset-x-0 bottom-0 z-10 text-white${framing}${
+            presentation.design === 'tall-row' ? ' pf-gallery-media-title--plain pf-gallery-media-title--tall' : ''
+          }${reveal}${revealOnHover ? ' translate-y-2 group-hover:translate-y-0 group-focus-within:translate-y-0' : ''}`}
+          data-pf-no-color-transition=""
+        >
+          {itemTitle}
+        </span>
+      </>
+    );
+  };
 
   const card = (
     item: ProfileGalleryItem,
@@ -1239,6 +1137,10 @@ export function EditorialGallerySection({
       hideTitle?: boolean;
       onActivate?: () => void;
       eager?: boolean;
+      /** Hero mosaic: roomy corner-set titles, and no black veil under them. */
+      overlayVariant?: 'mosaic';
+      /** Hero mosaic: wraps the media in its own transform layer, at this depth factor. */
+      parallaxDepth?: number;
     }
   ) => {
     const isCinemaStrip = presentation.design === 'cinema-strip';
@@ -1281,14 +1183,13 @@ export function EditorialGallerySection({
     };
     const isInteractive = Boolean(options?.onActivate || presentation.lightboxEnabled);
     const deferLayoutPaint =
-      presentation.design !== 'cinema-strip' &&
-      presentation.design !== 'featured-strip' &&
-      presentation.design !== 'tall-row';
+      presentation.design !== 'cinema-strip' && presentation.design !== 'tall-row';
     return (
       <article
         key={item.id}
+        data-gallery-reveal=""
         className={`group relative break-inside-avoid ${
-          isCinemaStrip ? 'flex flex-col overflow-visible' : 'overflow-hidden'
+          isCinemaStrip ? 'flex flex-col overflow-visible' : 'flex flex-col overflow-hidden'
         } ${editorialClass} ${
           options?.fill ? 'flex h-full w-full flex-col' : ''
         } ${deferLayoutPaint ? 'pf-gallery-tile' : ''} ${
@@ -1319,10 +1220,19 @@ export function EditorialGallerySection({
       >
         <div
           className={`relative w-full overflow-hidden ${
-            options?.fill ? 'flex-1 min-h-[12rem] bg-neutral-100 dark:bg-neutral-900' : isCinemaStrip ? 'z-10 w-full bg-transparent' : 'h-full min-h-[12rem] bg-neutral-100 dark:bg-neutral-900'
+            options?.fill
+              ? 'flex-1 min-h-[12rem] bg-neutral-100 dark:bg-neutral-900'
+              : isCinemaStrip
+                ? 'z-10 w-full bg-transparent'
+                : // The tile is a flex column and the media grows inside it. `h-full` used to make
+                  // the media fill the tile outright, which pushed an under-caption past the
+                  // tile's own `overflow:hidden` edge — the caption was in the DOM, styled
+                  // correctly, and clipped out of existence. Growing instead keeps the caption
+                  // inside while images still fill a stretched grid row.
+                  'min-h-[12rem] flex-1 bg-neutral-100 dark:bg-neutral-900'
           } ${
             isCinemaStrip
-              ? 'transition-transform duration-300 ease-out will-change-transform group-hover:-translate-y-16'
+              ? 'transition-transform duration-[760ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:-translate-y-16'
               : ''
           }`}
           data-pf-no-color-transition=""
@@ -1339,20 +1249,34 @@ export function EditorialGallerySection({
                 }
           }
         >
-          {media(item, false, loadMediaEager, options?.emphasis === 'hero')}
-          {overlayOnHover ? (
+          {options?.parallaxDepth ? (
+            // Its own layer, inside the tile's `overflow-hidden`: the hover push-in is a CSS
+            // `scale` on the media node itself, so GSAP must not write `transform` there too.
+            <div
+              className="h-full w-full will-change-transform"
+              data-gallery-parallax={String(options.parallaxDepth)}
+              data-pf-no-color-transition=""
+            >
+              {media(item, false, loadMediaEager, options?.emphasis === 'hero')}
+            </div>
+          ) : (
+            media(item, false, loadMediaEager, options?.emphasis === 'hero')
+          )}
+          {overlayOnHover && options?.overlayVariant !== 'mosaic' ? (
             <span
               className="pointer-events-none absolute inset-0 z-[9] bg-black/0 transition-colors duration-300 group-hover:bg-black/40"
               aria-hidden
             />
           ) : null}
-          {overlayActive && itemTitle ? persistentOverlayTitle(itemTitle, overlayOnHover) : null}
+          {overlayActive && itemTitle
+            ? persistentOverlayTitle(itemTitle, overlayOnHover, options?.overlayVariant === 'mosaic')
+            : null}
         </div>
         {showUnderTitle ? (
           <h3
             className={
               isCinemaStrip
-                ? 'pf-gallery-media-title pf-gallery-media-title--cinema pf-gallery-media-title--aeonik pointer-events-none absolute inset-x-0 bottom-0 z-0 px-3 pb-1 text-center opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100'
+                ? 'pf-gallery-media-title pf-gallery-media-title--cinema pf-gallery-media-title--plain pointer-events-none absolute inset-x-0 bottom-0 z-0 translate-y-2 px-3 pb-1 text-center opacity-0 transition-[opacity,transform] duration-[760ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-0 group-hover:opacity-100'
                 : 'pf-gallery-media-title px-1 pb-1 pt-3 text-center'
             }
             data-pf-no-color-transition=""
@@ -1365,31 +1289,66 @@ export function EditorialGallerySection({
     );
   };
 
+  /**
+   * Caption cards — a frameless editorial rail. The card is no longer a bordered box holding a
+   * small picture: the image floats on the section's own ground, and the rail is sized by HEIGHT
+   * so every plate lines up on one baseline whatever its ratio, exactly like a printed contact
+   * sheet. `Image size` therefore drives that height (320 → 62vh, the design's reference scale);
+   * the width follows from each image's own aspect.
+   */
+  const captionRailHeight = `clamp(15rem, ${((presentation.captionCardWidthPx || 320) / 320) * 62}vh, 44rem)`;
+
+  /** Mouse drag on the caption rail. Touch and trackpad keep the native, momentum-preserving scroll. */
+  const onCaptionPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const scroller = scrollRef.current;
+    if (!scroller || event.pointerType !== 'mouse' || event.button !== 0) return;
+    captionDrag.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startLeft: scroller.scrollLeft,
+      moved: false,
+    };
+  };
+
+  const onCaptionPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const scroller = scrollRef.current;
+    const drag = captionDrag.current;
+    if (!scroller || !drag || drag.pointerId !== event.pointerId) return;
+    const delta = event.clientX - drag.startX;
+    if (!drag.moved && Math.abs(delta) > 4) {
+      drag.moved = true;
+      scroller.setPointerCapture?.(event.pointerId);
+    }
+    if (!drag.moved) return;
+    scroller.scrollLeft = drag.startLeft - delta;
+  };
+
+  const endCaptionDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = captionDrag.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    scrollRef.current?.releasePointerCapture?.(event.pointerId);
+    // Keep the flag one frame longer so the click that ends a drag never opens the lightbox.
+    if (drag.moved) window.setTimeout(() => { captionDrag.current = null; }, 0);
+    else captionDrag.current = null;
+  };
+
   const captionCard = (item: ProfileGalleryItem, index = 0) => {
     const itemTitle = galleryItemDisplayTitle(item.title);
-    const cardSizePx = presentation.captionCardWidthPx;
-    const cardPadding = Math.max(12, Math.min(presentation.padding || 16, 18));
-    const cardBorderColor =
-      presentation.galleryPalette?.bordure ??
-      `color-mix(in srgb, ${presentation.cardSurfaceColor} 38%, transparent)`;
     const isOriginalRatio = presentation.imageAspect === 'auto';
     const mediaAspect = galleryAspectStyle(presentation.imageAspect);
     return (
       <article
         key={item.id}
         data-gallery-carousel-item
-        className={`group shrink-0 snap-start ${
+        data-gallery-reveal=""
+        data-pf-no-color-transition=""
+        /* Cinema-strip mechanism: the card box stays put and only the plate rises, uncovering a
+           caption that was parked behind it at the foot. So no card-level lift here — two stacked
+           translations would just double the travel — and `overflow-visible` so the plate can
+           leave the box. */
+        className={`group relative shrink-0 snap-start overflow-visible ${
           presentation.lightboxEnabled ? 'cursor-zoom-in' : ''
-        } flex flex-col gap-3 border bg-transparent px-[var(--gallery-card-padding-x)] py-[var(--gallery-card-padding-y)] transition-all duration-300`}
-        style={
-          {
-            width: `min(88vw, ${cardSizePx}px)`,
-            borderRadius: `${presentation.radius}px`,
-            borderColor: cardBorderColor,
-            '--gallery-card-padding-x': `${cardPadding}px`,
-            '--gallery-card-padding-y': `${cardPadding}px`,
-          } as CSSProperties
-        }
+        } flex flex-col bg-transparent`}
         role={presentation.lightboxEnabled ? 'button' : undefined}
         tabIndex={presentation.lightboxEnabled ? 0 : undefined}
         onClick={() => openLightbox(item)}
@@ -1401,17 +1360,35 @@ export function EditorialGallerySection({
         }}
       >
         <div
-          className="relative w-full shrink-0 overflow-hidden bg-transparent"
+          /* `z-10` over the caption's `z-0`: the plate covers it at rest and slides off it on
+             hover, rather than the caption fading in on top of the image. */
+          className={`relative z-10 shrink-0 overflow-hidden bg-transparent${
+            showItemTitle && itemTitle
+              ? ' transition-transform duration-[760ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:-translate-y-12 group-focus-within:-translate-y-12'
+              : ''
+          }`}
+          data-pf-no-color-transition=""
+          /* With a ratio set, the plate is height-driven and its width follows — one baseline for
+             the whole rail. `Original ratio` stays width-driven on purpose: sizing an unknown
+             ratio from its height would make the plate's width depend on the image and the image's
+             width depend on the plate, which browsers resolve to a collapsed box. */
           style={{
-            ...mediaAspect,
+            ...(isOriginalRatio
+              ? { width: `min(86vw, ${Math.round((presentation.captionCardWidthPx || 320) * 1.9)}px)` }
+              : { height: captionRailHeight, ...mediaAspect }),
             borderRadius: `${presentation.radius}px`,
           }}
         >
           <PortfolioDeferredMedia
             src={item.mediaUrl}
             alt={galleryItemDisplayTitle(item.title) || 'Gallery media'}
-            className="h-full w-full"
-            sizes="(max-width: 768px) 88vw, 420px"
+            className={`h-full w-full ${
+              presentation.hoverZoom
+                ? 'transition-transform duration-[1400ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.07]'
+                : ''
+            }`}
+            noColorTransition={presentation.hoverZoom}
+            sizes="(max-width: 768px) 80vw, 46vh"
             eager={index < 2}
             kind={item.mediaType === 'VIDEO' ? 'video' : 'image'}
             objectFit={isOriginalRatio ? 'contain' : presentation.objectFit}
@@ -1420,12 +1397,26 @@ export function EditorialGallerySection({
             showPlayBadge={item.mediaType === 'VIDEO'}
             fillParent={!isOriginalRatio}
           />
+          {/* The plate lifts out of the section's ground on hover: a hairline edge catches the
+              light and the image warms very slightly. Both are barely-there by design. */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-[2] block opacity-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)] transition-opacity duration-[760ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100"
+            data-pf-no-color-transition=""
+            style={{ borderRadius: `${presentation.radius}px` }}
+          />
         </div>
         {showItemTitle && itemTitle ? (
+          // Not `.pf-gallery-media-title--caption`: that class is locked to a centred 18px with
+          // `!important`. This reads the same `--pf-gallery-font-scale` the Font size control sets,
+          // so the setting still works, but the caption can be a real editorial line — monospaced,
+          // tracked, sitting under the left edge of its own plate.
           <h3
-            className="pf-gallery-media-title pf-gallery-media-title--caption w-full shrink-0 pb-1 pt-1 text-center"
-            style={{ color: presentation.subtitleColor }}
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-0 max-w-[26rem] translate-y-2 pb-1 font-mono text-[calc(0.82rem*var(--pf-gallery-font-scale,1))] font-medium uppercase leading-[1.5] tracking-[0.16em] opacity-0 transition-[opacity,transform] duration-[760ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
+            data-pf-no-color-transition=""
+            style={{ color: presentation.itemTitleColor }}
           >
+            <span className="mr-3 opacity-45">{String(index + 1).padStart(2, '0')}</span>
             {itemTitle}
           </h3>
         ) : null}
@@ -1440,14 +1431,21 @@ export function EditorialGallerySection({
     forceVisible = false
   ) =>
     (forceVisible || (presentation.showCarouselNav && galleryDesignUsesCarouselNav(presentation.design))) ? (
-      <div className={`flex items-center justify-center gap-4 ${className ?? ''}`}>
+      <div
+        /* The caller's own `justify-*` has to replace the default, not compete with it: two
+           justify utilities on one element resolve by CSS source order, so `justify-end` passed
+           by tall-row silently lost to the hardcoded `justify-center`. */
+        className={`flex items-center gap-3 ${className?.includes('justify-') ? '' : 'justify-center'} ${className ?? ''}`}
+      >
         {([-1, 1] as const).map((direction) => (
           <button
             key={direction}
             type="button"
             onClick={() => (onNavigate ?? scrollCarousel)(direction)}
-            className={`flex items-center justify-center rounded-full border transition duration-200 ease-out hover:scale-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-current active:scale-95 ${
-              size === 'lg' ? 'h-16 w-16 text-3xl' : 'h-14 w-14 text-2xl'
+            /* Hairline circle + a drawn arrow that steps in its own direction on hover — the
+               glyph chevrons in a filled button were the most generic thing in the section. */
+            className={`group/nav relative flex items-center justify-center overflow-hidden rounded-full border transition-transform duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-current active:scale-95 ${
+              size === 'lg' ? 'h-14 w-14' : 'h-12 w-12'
             }`}
             data-pf-no-color-transition=""
             style={{
@@ -1460,7 +1458,24 @@ export function EditorialGallerySection({
             }}
             aria-label={direction === -1 ? 'Previous' : 'Next'}
           >
-            {direction === -1 ? '‹' : '›'}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+              className={`relative h-[38%] w-[38%] transition-transform duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                direction === -1
+                  ? 'group-hover/nav:-translate-x-1 rotate-180'
+                  : 'group-hover/nav:translate-x-1'
+              }`}
+              data-pf-no-color-transition=""
+            >
+              <path d="M4 12h15" />
+              <path d="m13 6 6 6-6 6" />
+            </svg>
           </button>
         ))}
       </div>
@@ -1468,15 +1483,20 @@ export function EditorialGallerySection({
 
   const paginationDots =
     presentation.design === 'caption-carousel' && presentation.showPagination && captionPageCount > 1 ? (
-      <div className="mt-6 flex items-center justify-center gap-3">
+      <div className="mt-8 flex items-center justify-center gap-2">
         {Array.from({ length: captionPageCount }, (_, index) => (
           <button
             key={index}
             type="button"
             onClick={() => scrollToCarouselPage(index)}
-            className={`h-4 w-4 rounded-full transition ${
-              carouselPage === index ? 'bg-neutral-900 dark:bg-white' : 'bg-neutral-300 dark:bg-neutral-600'
+            /* Palette-bound pills, not hardcoded neutral dots: the old ones ignored the gallery
+               palette entirely and went invisible on a dark section. The active page stretches
+               instead of just darkening. */
+            className={`h-1.5 rounded-full transition-[width,opacity] duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              carouselPage === index ? 'w-8 opacity-100' : 'w-1.5 opacity-40 hover:opacity-70'
             }`}
+            data-pf-no-color-transition=""
+            style={{ backgroundColor: presentation.itemTitleColor }}
             aria-label={`Page ${index + 1}`}
             aria-current={carouselPage === index ? 'true' : undefined}
           />
@@ -1487,16 +1507,38 @@ export function EditorialGallerySection({
   const content =
     presentation.design === 'caption-carousel' ? (
       <div className={baseWidth} style={{ padding: `${presentation.padding}px` }}>
+        {/* Chevrons above the rail, aligned right: at this scale a pair of buttons centred under
+            the images reads as a footer for them; up here it reads as the rail's own control. */}
+        {presentation.captionPager === 'dots'
+          ? null
+          : carouselNavButtons('mb-8 justify-end', undefined, 'lg', presentation.showPagination)}
         <div
           ref={scrollRef}
-          className="flex items-start snap-x snap-mandatory overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{ gap: `${presentation.gap}px` }}
+          onPointerDown={onCaptionPointerDown}
+          onPointerMove={onCaptionPointerMove}
+          onPointerUp={endCaptionDrag}
+          onPointerCancel={endCaptionDrag}
+          // Without this the browser starts its own image drag as soon as the pointer moves over a
+          // plate, which swallows the pointermove stream and the rail never scrolls.
+          onDragStart={(event) => event.preventDefault()}
+          onClickCapture={(event) => {
+            // A drag that ends on a plate must not also open the lightbox.
+            if (captionDrag.current?.moved) {
+              event.preventDefault();
+              event.stopPropagation();
+            }
+          }}
+          /* `overflow-x-auto` computes `overflow-y` to `auto` too, so the plate's hover lift would
+             be clipped (or spawn a vertical scrollbar) without room reserved for it up top —
+             exactly the `pt-16` the cinema strip keeps above its own track. */
+          className={`flex snap-x snap-mandatory items-start overflow-x-auto overscroll-x-contain pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:cursor-grab sm:active:cursor-grabbing${
+            showItemTitle ? ' pt-12' : ''
+          }`}
+          style={{ gap: `${Math.max(presentation.gap, 28)}px` }}
         >
           {sortedItems.map(captionCard)}
         </div>
-        {presentation.captionPager === 'dots'
-          ? paginationDots
-          : carouselNavButtons('mt-6', undefined, 'lg', presentation.showPagination)}
+        {presentation.captionPager === 'dots' ? paginationDots : null}
       </div>
     ) : presentation.design === 'cinema-strip' ? (
       <div className={baseWidth} style={{ padding: `${presentation.padding}px` }}>
@@ -1530,8 +1572,12 @@ export function EditorialGallerySection({
         </div>
       </div>
     ) : presentation.design === 'hero-mosaic' ? (
+      // `group/mosaic` is what lets one tile pull focus: every tile dims while the mosaic is
+      // hovered, and the one under the pointer overrides that back to full. Both rules land on
+      // the same specificity, so the winner carries `!` rather than relying on source order.
       <div
-        className={`${baseWidth} flex flex-col`}
+        ref={mosaicParallaxRef}
+        className={`${baseWidth} flex flex-col${mosaicFocus ? ' group/mosaic' : ''}`}
         style={{
           rowGap: `${Math.max(vGap, 24)}px`,
           padding: presentation.padding > 0 ? `${presentation.padding}px` : undefined,
@@ -1548,191 +1594,51 @@ export function EditorialGallerySection({
               className={`grid ${plan.containerClass}`}
               style={mosaicGridStyle}
             >
-              <div className={`min-w-0 ${plan.heroClass}`}>
-                {card(heroItem, offset, { fill: true, emphasis: 'hero', hideTitle: true, eager: chunkIndex === 0 })}
+              <div className={`min-w-0 ${plan.heroClass} ${mosaicFocusClass}`} data-pf-no-color-transition="">
+                {card(heroItem, offset, {
+                  fill: true,
+                  emphasis: 'hero',
+                  hideTitle: !showItemTitle,
+                  overlayOnHover: showItemTitle,
+                  overlayVariant: 'mosaic',
+                  // The hero is the far plane: it drifts least, which is what reads as depth
+                  // against the small tiles rather than as the whole mosaic sliding.
+                  parallaxDepth: 0.55,
+                  eager: chunkIndex === 0,
+                })}
               </div>
               {tiles.map((item, index) => (
-                <div key={item.id} className={`min-w-0 ${plan.tileClass(index)}`}>
-                  {card(item, offset + index + 1, { fill: true, hideTitle: true })}
+                <div
+                  key={item.id}
+                  className={`min-w-0 ${plan.tileClass(index)} ${mosaicFocusClass}`}
+                  data-pf-no-color-transition=""
+                >
+                  {card(item, offset + index + 1, {
+                    fill: true,
+                    hideTitle: !showItemTitle,
+                    overlayOnHover: showItemTitle,
+                    overlayVariant: 'mosaic',
+                    parallaxDepth: 1,
+                  })}
                 </div>
               ))}
             </div>
           );
         })}
       </div>
-    ) : presentation.design === 'featured-strip' ? (
+    ) : presentation.design === 'floating-canvas' ? (
+      /* `overflow-visible`: this design's title pills hang half-way past their card's bottom
+         edge and its float shadows bleed past their frames — a clipping wrapper would cut both. */
       <div
-        className={baseWidth}
-        style={{
-          padding: presentation.padding > 0 ? `${presentation.padding}px` : undefined,
-          ['--gallery-frame-radius' as string]: `${presentation.radius}px`,
-        }}
+        className={`${baseWidth} overflow-visible`}
+        style={{ padding: presentation.padding > 0 ? `${presentation.padding}px` : undefined }}
       >
-        {stripPlan.layout === 'solo' || !featuredItem ? (
-          <div
-            className="h-[min(62vh,580px)] w-full overflow-hidden"
-            style={stripClipStyle}
-          >
-            {featuredItem
-              ? (
-                <div key={featuredItem.id} className="pf-featured-in">
-                  {card(featuredItem, featuredIndex, { fill: true, emphasis: 'hero', hideTitle: true, eager: true })}
-                </div>
-              )
-              : null}
-          </div>
-        ) : presentation.featuredRailPlacement === 'bottom' ? (
-          <div
-            className={`flex w-full max-w-full flex-col ${
-              (presentation.featuredHeroWidthScope ?? 'hero') === 'global'
-                ? galleryPlacementClass(presentation.featuredHeroPlacement)
-                : ''
-            }`}
-            style={{
-              gap: stripGap,
-              ...((presentation.featuredHeroWidthScope ?? 'hero') === 'global'
-                ? { width: `${presentation.featuredHeroWidthPercent ?? 100}%` }
-                : {}),
-            }}
-          >
-            {embeddedHeader && galleryFeaturedHeroHasTitleVoid(presentation) ? (
-              <div className="lg:hidden">{embeddedHeader}</div>
-            ) : null}
-            {(() => {
-              const heroPercent = presentation.featuredHeroWidthPercent ?? 100;
-              const heroPlace = presentation.featuredHeroPlacement ?? 'center';
-              const titleBeside =
-                Boolean(embeddedHeader) && galleryFeaturedHeroHasTitleVoid(presentation);
-              const titleCell = titleBeside ? (
-                <div className="hidden min-h-0 min-w-0 px-4 lg:flex lg:items-center lg:justify-center">
-                  <div className="max-w-lg text-center">{embeddedHeader}</div>
-                </div>
-              ) : null;
-              const heroCell = (
-                <div
-                  className={`h-[min(58vh,540px)] max-w-full overflow-hidden ${
-                    titleBeside
-                      ? 'w-full'
-                      : (presentation.featuredHeroWidthScope ?? 'hero') === 'hero'
-                        ? galleryPlacementClass(heroPlace)
-                        : 'w-full'
-                  }`}
-                  style={{
-                    ...stripClipStyle,
-                    ...(!titleBeside && (presentation.featuredHeroWidthScope ?? 'hero') === 'hero'
-                      ? { width: `${heroPercent}%` }
-                      : {}),
-                  }}
-                >
-                  <div key={featuredItem.id} className="pf-featured-in">
-                    {card(featuredItem, featuredIndex, { fill: true, emphasis: 'hero', hideTitle: true, eager: true })}
-                  </div>
-                </div>
-              );
-              const heroTrackClass =
-                titleBeside && heroPlace === 'right'
-                  ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,var(--featured-hero-w))]'
-                  : titleBeside && heroPlace === 'center'
-                    ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,var(--featured-hero-w))_minmax(0,1fr)]'
-                    : titleBeside
-                      ? 'lg:grid-cols-[minmax(0,var(--featured-hero-w))_minmax(0,1fr)]'
-                      : '';
-              return (
-                <div
-                  className={`grid w-full max-w-full grid-cols-1 items-stretch ${heroTrackClass}`}
-                  style={
-                    {
-                      gap: stripGap,
-                      ['--featured-hero-w' as string]: `${heroPercent}%`,
-                    } as CSSProperties
-                  }
-                >
-                  {titleBeside && heroPlace === 'right' ? titleCell : null}
-                  {titleBeside && heroPlace === 'center' ? <div className="hidden lg:block" aria-hidden /> : null}
-                  {heroCell}
-                  {titleBeside && heroPlace !== 'right' ? titleCell : null}
-                </div>
-              );
-            })()}
-            <div
-              ref={scrollRef}
-              className={
-                featuredThumbs.length > 4
-                  ? 'flex snap-x snap-proximity overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
-                  : 'grid'
-              }
-              style={
-                featuredThumbs.length > 4
-                  ? { gap: stripGap }
-                  : {
-                      gap: stripGap,
-                      gridTemplateColumns: `repeat(${Math.max(1, featuredThumbs.length)}, minmax(0, 1fr))`,
-                    }
-              }
-            >
-              {featuredThumbs.map(({ item, index }, slot) => (
-                <div
-                  key={item.id}
-                  data-gallery-carousel-item
-                  className={
-                    featuredThumbs.length > 4
-                      ? 'aspect-[4/3] h-[min(22vh,210px)] w-auto shrink-0 snap-start overflow-hidden'
-                      : 'aspect-[4/3] min-h-[160px] min-w-0 overflow-hidden'
-                  }
-                  style={stripClipStyle}
-                >
-                  {card(item, index, {
-                    fill: true,
-                    hideTitle: true,
-                    onActivate: () => setFeaturedIndex(index),
-                    eager: slot < 4,
-                  })}
-                </div>
-              ))}
-            </div>
-            {sortedItems.length > 1 ? carouselNavButtons('mt-4 lg:justify-end', cycleFeatured) : null}
-          </div>
-        ) : (
-          <div className="flex w-full flex-col" style={{ gap: stripGap }}>
-            <div
-              className="grid grid-cols-1 items-stretch lg:h-[min(64vh,600px)] lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
-              style={{ gap: stripGap }}
-            >
-              <div
-                className="min-h-[260px] min-w-0 overflow-hidden lg:h-full lg:min-h-0"
-                style={stripClipStyle}
-              >
-                <div key={featuredItem.id} className="pf-featured-in">
-                  {card(featuredItem, featuredIndex, { fill: true, emphasis: 'hero', hideTitle: true, eager: true })}
-                </div>
-              </div>
-              <div
-                ref={scrollRef}
-                className={`grid h-full min-h-0 min-w-0 auto-rows-[minmax(140px,auto)] lg:auto-rows-[minmax(0,1fr)] lg:overflow-hidden ${
-                  featuredThumbs.length > 1 ? 'lg:grid-cols-2' : 'grid-cols-1'
-                } ${featuredThumbs.length > 4 ? 'lg:overflow-y-auto' : ''}`}
-                style={{ gap: `min(${stripGap}, 14px)` }}
-              >
-                {featuredThumbs.map(({ item, index }, slot) => (
-                  <div
-                    key={item.id}
-                    data-gallery-carousel-item
-                    className="min-h-[140px] min-w-0 overflow-hidden lg:min-h-0"
-                    style={stripClipStyle}
-                  >
-                    {card(item, index, {
-                      fill: true,
-                      hideTitle: true,
-                      onActivate: () => setFeaturedIndex(index),
-                      eager: slot < 4,
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
-            {sortedItems.length > 1 ? carouselNavButtons('justify-end', cycleFeatured) : null}
-          </div>
-        )}
+        <GalleryFloatingCanvas
+          items={sortedItems}
+          presentation={presentation}
+          onOpen={presentation.lightboxEnabled ? openLightbox : undefined}
+          showTitle={showItemTitle}
+        />
       </div>
     ) : presentation.design === 'tall-row' ? (
       <div
@@ -1742,97 +1648,15 @@ export function EditorialGallerySection({
           ['--gallery-frame-radius' as string]: `${presentation.radius}px`,
         }}
       >
-        <div className="flex w-full flex-col" style={{ gap: stripGap }}>
-          <div className="flex flex-col lg:flex-row lg:items-stretch" style={{ gap: stripGap }}>
-            {tallHero ? (
-              <div
-                className="relative min-w-0 overflow-hidden lg:w-[min(100%,32%)] lg:flex-none"
-                style={{
-                  ...stripClipStyle,
-                  aspectRatio: '3 / 4',
-                }}
-              >
-                <AnimatePresence initial={false}>
-                  <motion.div key={tallHero.item.id} className="absolute inset-0" initial={false}>
-                    {card(tallHero.item, tallHero.index, {
-                      fill: true,
-                      emphasis: 'hero',
-                      hideTitle: true,
-                      forceOverlay: showItemTitle && (presentation.tallRowTitleReveal ?? 'always') !== 'hover',
-                      overlayOnHover: showItemTitle && (presentation.tallRowTitleReveal ?? 'always') === 'hover',
-                      eager: true,
-                    })}
-                    {reduceMotion ? null : (
-                      <motion.div
-                        className="pointer-events-none absolute inset-0 z-20 bg-neutral-950/15"
-                        initial={{ opacity: 0.55 }}
-                        animate={{ opacity: 0 }}
-                        transition={{
-                          duration: TALL_ROW_SLIDE_MS / 1000,
-                          ease: [0.22, 1, 0.36, 1],
-                        }}
-                      />
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            ) : null}
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-              {embeddedHeader ? (
-                <div className="px-2 text-center">{embeddedHeader}</div>
-              ) : null}
-              {tallThumbTrack.length ? (
-                <div
-                  ref={tallThumbViewRef}
-                  className="mt-8 w-full overflow-hidden [container-type:inline-size] lg:mt-auto lg:h-[74%] lg:flex-none"
-                >
-                  <motion.div
-                    className="flex h-full transform-gpu"
-                    style={{
-                      gap: stripGap,
-                      willChange: tallThumbTween ? 'transform' : 'auto',
-                    }}
-                    initial={false}
-                    animate={{ x: tallThumbX }}
-                    transition={
-                      reduceMotion || !tallThumbTween
-                        ? { type: false }
-                        : { type: 'tween', duration: TALL_ROW_SLIDE_MS / 1000, ease: [0.33, 1, 0.68, 1] }
-                    }
-                    onAnimationComplete={() => {
-                      if (!tallThumbAnimRef.current || !tallThumbTweenRef.current) return;
-                      finishTallThumbAnim();
-                    }}
-                  >
-                    {tallThumbTrack.map(({ item, index }, slot) => (
-                      <div
-                        key={item.id}
-                        className="aspect-square min-h-[140px] overflow-hidden lg:aspect-auto lg:h-full lg:min-h-0"
-                        style={{
-                          ...stripClipStyle,
-                          flex: `0 0 ${
-                            tallThumbStep > 0
-                              ? `${Math.max(0, tallThumbStep - hGap)}px`
-                              : `calc((100cqi - ${(tallThumbVisible - 1) * hGap}px) / ${Math.max(1, tallThumbVisible)})`
-                          }`,
-                        }}
-                      >
-                        {card(item, index, {
-                          fill: true,
-                          hideTitle: true,
-                          forceOverlay: showItemTitle && (presentation.tallRowTitleReveal ?? 'always') !== 'hover',
-                          overlayOnHover: showItemTitle && (presentation.tallRowTitleReveal ?? 'always') === 'hover',
-                          eager: slot < tallThumbVisible,
-                        })}
-                      </div>
-                    ))}
-                  </motion.div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-          {sortedItems.length > 1 ? carouselNavButtons('justify-end', cycleFeatured) : null}
-        </div>
+        <GalleryTallRow
+          items={sortedItems}
+          presentation={presentation}
+          header={embeddedHeader}
+          renderMedia={(item, index, eager) => media(item, false, eager, index === 0)}
+          onOpen={presentation.lightboxEnabled ? openLightbox : undefined}
+          reduceMotion={Boolean(reduceMotion)}
+          showTitle={showItemTitle}
+        />
       </div>
     ) : (
       <div
@@ -1843,38 +1667,99 @@ export function EditorialGallerySection({
       </div>
     );
 
+  const lightboxIndex = activeItem ? sortedItems.findIndex((item) => item.id === activeItem.id) : -1;
+  const stepLightbox = (direction: -1 | 1) => {
+    if (sortedItems.length < 2 || lightboxIndex < 0) return;
+    setActiveItem(sortedItems[(lightboxIndex + direction + sortedItems.length) % sortedItems.length]);
+  };
+  const lightboxArrow = (direction: -1 | 1) => (
+    <button
+      type="button"
+      onClick={() => stepLightbox(direction)}
+      className={`group/lb pointer-events-auto absolute top-1/2 z-[2] flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 text-white transition-[background-color,transform] duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white sm:h-14 sm:w-14 ${
+        direction === -1 ? 'left-3 sm:left-6' : 'right-3 sm:right-6'
+      }`}
+      data-pf-no-color-transition=""
+      aria-label={direction === -1 ? 'Previous image' : 'Next image'}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+        className={`h-[38%] w-[38%] transition-transform duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          direction === -1 ? 'rotate-180 group-hover/lb:-translate-x-1' : 'group-hover/lb:translate-x-1'
+        }`}
+        data-pf-no-color-transition=""
+      >
+        <path d="M4 12h15" />
+        <path d="m13 6 6 6-6 6" />
+      </svg>
+    </button>
+  );
+
   return (
     <>
-      {content}
+      <div ref={revealRef} className="w-full">
+        {content}
+      </div>
       {activeItem && presentation.lightboxEnabled
         ? createPortal(
-            <div
-              className="fixed inset-0 z-[220] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
+            <motion.div
+              className="fixed inset-0 z-[220] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md"
               role="dialog"
               aria-modal="true"
               aria-label={activeItem.title}
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
               onMouseDown={(event) => {
                 if (event.target === event.currentTarget) setActiveItem(null);
               }}
             >
-              <div className="relative flex max-h-[92vh] max-w-[96vw] flex-col items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => setActiveItem(null)}
-                  className="absolute -right-2 -top-12 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
-                  aria-label="Close the gallery"
-                  autoFocus
+              {/* Counter, close and the two arrows are pinned to the viewport, not to the image:
+                  an image-relative close button drifts off-screen on a tall portrait. */}
+              {sortedItems.length > 1 ? (
+                <span
+                  className="pointer-events-none absolute left-5 top-5 z-[2] text-[0.68rem] font-medium uppercase tracking-[0.2em] tabular-nums text-white/70 sm:left-8 sm:top-8"
+                  data-pf-no-color-transition=""
                 >
-                  ×
-                </button>
+                  {galleryIndexLabel(Math.max(0, lightboxIndex))}
+                  <span className="text-white/35"> / {galleryIndexLabel(sortedItems.length - 1)}</span>
+                </span>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setActiveItem(null)}
+                className="absolute right-4 top-4 z-[2] flex h-11 w-11 items-center justify-center rounded-full border border-white/25 text-white transition-[background-color,transform] duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:rotate-90 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white sm:right-8 sm:top-8"
+                data-pf-no-color-transition=""
+                aria-label="Close the gallery"
+                autoFocus
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" aria-hidden className="h-[38%] w-[38%]">
+                  <path d="M5 5 19 19M19 5 5 19" />
+                </svg>
+              </button>
+              {sortedItems.length > 1 ? lightboxArrow(-1) : null}
+              {sortedItems.length > 1 ? lightboxArrow(1) : null}
+              <motion.div
+                key={activeItem.id}
+                className="relative flex max-h-[92vh] max-w-[96vw] flex-col items-center gap-5"
+                initial={reduceMotion ? false : { opacity: 0, scale: 0.985, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              >
                 {media(activeItem, true)}
                 {presentation.showTitle && galleryItemDisplayTitle(activeItem.title) ? (
                   <p className="text-center text-sm font-medium text-white sm:text-base">
                     {galleryItemDisplayTitle(activeItem.title)}
                   </p>
                 ) : null}
-              </div>
-            </div>,
+              </motion.div>
+            </motion.div>,
             document.body
           )
         : null}
@@ -25529,8 +25414,8 @@ export function EditorialContactSection({
    *  don't go through `PortfolioSectionShell` (which applies this automatically), so they need
    *  it passed in explicitly to line their own content up with the rest of the page. */
   contentGutter?: PortfolioContentGutter;
-  /** The portfolio's real active appearance (settings.global.colorMode) — only "Studio overlap"
-   *  reads this; every other premium design owns a fixed black canvas regardless of it. */
+  /** The portfolio's real active appearance (settings.global.colorMode) — every premium
+   *  Contact design mirrors it now (pure white / pure black canvas, synced text). */
   globalColorMode?: 'light' | 'dark';
   membersOnlyNode?: React.ReactNode;
   renderSocialIcon?: (platform: string, className: string) => React.ReactNode;
@@ -25741,6 +25626,7 @@ export function EditorialContactSection({
             links={visibleLinks}
             ctaHref={ctaHref}
             contentGutter={contentGutter}
+            colorMode={globalColorMode}
           />
         </div>
       </section>
@@ -25762,6 +25648,7 @@ export function EditorialContactSection({
             phone={visiblePhone}
             locationLabel={visibleLocation}
             links={visibleLinks}
+            colorMode={globalColorMode}
           />
         </div>
       </section>
@@ -25784,6 +25671,7 @@ export function EditorialContactSection({
             locationLabel={visibleLocation}
             links={visibleLinks}
             contentGutter={contentGutter}
+            colorMode={globalColorMode}
           />
         </div>
       </section>
@@ -25810,6 +25698,7 @@ export function EditorialContactSection({
             sectionTitle={sectionTitle}
             presentation={presentation}
             contentGutter={contentGutter}
+            colorMode={globalColorMode}
           />
         </div>
       </section>
@@ -27577,7 +27466,8 @@ export function EditorialPortfolioFooter({
     presentation.design === 'inverted-wordmark' ||
     presentation.design === 'services-reveal' ||
     presentation.design === 'editorial-grid' ||
-    presentation.design === 'headline-reveal'
+    presentation.design === 'headline-reveal' ||
+    presentation.design === 'dispatch'
   ) {
     const premiumCopyrightText = presentation.showCopyright
       ? resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName)
@@ -27699,6 +27589,25 @@ export function EditorialPortfolioFooter({
           layout={footerLayout}
           copyrightText={premiumCopyrightText}
           contactHref={premiumContactHref}
+          colorMode={globalColorMode}
+          contentGutter={contentGutter}
+          backgroundStyle={footerBackgroundStyle}
+          fontSizeScale={footerFontSizeScale}
+        />
+      );
+    }
+
+    if (presentation.design === 'dispatch') {
+      return (
+        <FooterDesignDispatch
+          creatorName={creatorName}
+          creatorId={creatorId}
+          email={email}
+          phone={phone}
+          locationLabel={locationLabel}
+          links={links}
+          navLinks={footerNavLinkItems}
+          layout={footerLayout}
           colorMode={globalColorMode}
           contentGutter={contentGutter}
           backgroundStyle={footerBackgroundStyle}

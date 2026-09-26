@@ -177,7 +177,7 @@ export function GlobalSearchModal({ open, onClose }: GlobalSearchModalProps) {
     <div className="fixed inset-0 z-[220] flex items-start justify-center overflow-y-auto overscroll-contain p-4 pt-[12vh] sm:pt-[14vh]">
       <button
         type="button"
-        className="absolute inset-0 h-[100dvh] w-full bg-neutral-950/60 backdrop-blur-sm"
+        className="absolute inset-0 h-[100dvh] w-full bg-black/60 backdrop-blur-md"
         aria-label="Close search"
         onClick={onClose}
       />
@@ -185,24 +185,27 @@ export function GlobalSearchModal({ open, onClose }: GlobalSearchModalProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Global search"
-        className="relative z-10 w-full max-w-2xl overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-950"
+        className="relative z-10 w-full max-w-2xl overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-[0_32px_80px_-24px_rgb(0_0_0_/_0.45)] dark:border-white/[0.08] dark:bg-[#121212]"
       >
         <form
-          className="flex items-center gap-2 border-b border-neutral-200 px-4 dark:border-neutral-800"
+          className="flex items-center gap-4 border-b border-black/[0.06] px-6 dark:border-white/[0.06]"
           onSubmit={(event) => {
             event.preventDefault();
             goToSearchPage('all');
           }}
         >
-          <SearchIcon className="h-5 w-5 shrink-0 text-neutral-400" />
+          {/* Spotlight proportions: the field is the object, so it carries the scale. The
+              placeholder is short enough to survive at this size — the old sentence-long one
+              wrapped or clipped the moment the type grew. */}
+          <SearchIcon className="h-[1.35rem] w-[1.35rem] shrink-0 text-neutral-400" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={onInputKeyDown}
-            placeholder="Search profiles, service providers, products, content…"
-            className="h-14 min-w-0 flex-1 bg-transparent text-base text-neutral-900 outline-none placeholder:text-neutral-400 dark:text-white"
+            placeholder="Search anything…"
+            className="h-[4.75rem] min-w-0 flex-1 bg-transparent text-xl font-light tracking-[-0.01em] text-neutral-900 outline-none placeholder:font-light placeholder:text-neutral-400 dark:text-white sm:text-2xl"
             autoComplete="off"
             spellCheck={false}
           />

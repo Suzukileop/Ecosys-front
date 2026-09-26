@@ -27,7 +27,6 @@ const config: Config = {
         "dm-sans": ["var(--font-dm-sans)", "sans-serif"],
         "geist-mono": ["var(--font-geist-mono)", "monospace"],
         geist: ["var(--font-geist)", "ui-sans-serif", "system-ui", "sans-serif"],
-        aeonik: ["var(--font-aeonik)", "sans-serif"],
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

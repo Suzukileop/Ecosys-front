@@ -1,25 +1,19 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { Suspense, useCallback, useEffect, useSyncExternalStore } from 'react';
+import { Suspense, useCallback, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { FlashToastHost } from '@/components/ui/FlashToastHost';
-import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { DashboardTopHeader } from '@/components/layout/DashboardTopHeader';
 import { MarketplacePatternBackground } from '@/components/marketplace/ProductDetailHalftoneBackground';
 import { isContentCreatorsPath, isMarketplaceCreatorProfilePath, isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
 import { DASHBOARD_MAIN_BG } from '@/components/landing/landingBrand';
 import {
-  getSidebarCollapsedServerSnapshot,
-  getSidebarCollapsedSnapshot,
   MESSAGING_DETAILS_OPEN_EVENT,
-  notifyDashboardSidebarExpand,
   PORTFOLIO_SETTINGS_OPEN_EVENT,
   setSidebarCollapsed,
-  subscribeSidebarCollapsed,
-  toggleSidebarCollapsedStore,
 } from '@/lib/dashboard-chrome';
 import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
 import { usePresenceHeartbeat } from '@/hooks/usePresenceHeartbeat';
@@ -102,21 +96,7 @@ export function DashboardShell({
   const router = useRouter();
   const { isLoading, user, sessionStatus, restoreSession } = useAuth();
   const { appRole, ready: appRoleReady } = useCreatorAppRole();
-  const sidebarCollapsed = useSyncExternalStore(
-    subscribeSidebarCollapsed,
-    getSidebarCollapsedSnapshot,
-    getSidebarCollapsedServerSnapshot
-  );
-
   usePresenceHeartbeat(Boolean(user) && sessionStatus === 'authenticated');
-
-  const toggleSidebarCollapsed = useCallback(() => {
-    const wasCollapsed = getSidebarCollapsedSnapshot();
-    toggleSidebarCollapsedStore();
-    if (wasCollapsed) {
-      notifyDashboardSidebarExpand();
-    }
-  }, []);
 
   useEffect(() => {
     const onDetailsOpen = () => {
@@ -138,7 +118,9 @@ export function DashboardShell({
   const contentCreatorsPattern =
     isContentCreatorsPath(pathname) && !isServiceProvidersCatalogPath(pathname);
   const serviceProvidersCatalog = isServiceProvidersCatalogPath(pathname);
+  const portfolioWorkspace = pathname.startsWith('/dashboard/portfolio');
   const usePatternBackground =
+    portfolioWorkspace ||
     transparentContent ||
     creatorStudioPattern ||
     creatorProductsPattern ||
@@ -152,7 +134,6 @@ export function DashboardShell({
     contentCreatorsPattern;
   const compactContentTop = isMarketplaceCreatorProfilePath(pathname);
   const discussionsLayout = pathname.startsWith('/dashboard/discussions');
-  const portfolioWorkspace = pathname.startsWith('/dashboard/portfolio');
   const fillMainLayout = discussionsLayout || myProductPattern || myServicePattern;
 
   // Only redirect to /login when the session is definitively gone.
@@ -232,19 +213,18 @@ export function DashboardShell({
         contentCreatorsPattern) && (
         <MarketplacePatternBackground variant="hub" />
       )}
+      {/* Same masthead motif as News and the studio. It carries its own base tone, so the
+          workspace has to hand it the one its cards were calibrated against. */}
+      {portfolioWorkspace ? (
+        <MarketplacePatternBackground variant="hub" baseClassName="bg-neutral-100 dark:bg-neutral-950" />
+      ) : null}
       <div
-        className={`flex transition-[--dash-sidebar-w] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-          fillMainLayout ? 'h-screen overflow-hidden' : 'min-h-screen'
-        } ${shellBg}`}
-        style={{ '--dash-sidebar-w': sidebarCollapsed ? '4.5rem' : '18rem' } as CSSProperties}
-        data-sidebar-collapsed={sidebarCollapsed ? 'true' : 'false'}
+        className={`flex ${fillMainLayout ? 'h-screen overflow-hidden' : 'min-h-screen'} ${shellBg}`}
+        /* Navigation lives entirely in the top bar now. The variable is kept, pinned at 0, because
+           a number of pages still offset themselves against it; removing it is a separate sweep. */
+        style={{ '--dash-sidebar-w': '0rem' } as CSSProperties}
+        data-sidebar-collapsed="true"
       >
-      <Suspense fallback={null}>
-        <DashboardSidebar
-          collapsed={sidebarCollapsed}
-          onToggle={toggleSidebarCollapsed}
-        />
-      </Suspense>
       <div
         data-dashboard-main
         className={`flex min-w-0 flex-1 flex-col ${fillMainLayout ? 'h-screen max-h-screen overflow-hidden' : ''} ${shellBg}`}

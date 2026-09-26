@@ -1,5 +1,15 @@
 /** Palette landing — orange hero + blanc / gris / noir */
 export const BRAND_ORANGE = '#F97316';
+
+/**
+ * Accent for the dashboard chrome: a deeper, more coral orange than the landing hero's.
+ *
+ * Deliberately one token rather than a scattering of literals — it drives the active nav underline,
+ * the activation dots and the presence picker's icons and ambient glow, which is the whole point of
+ * a signature colour. Kept separate from `BRAND_ORANGE` because the landing gradient is built on
+ * that lighter hue; the two are not interchangeable.
+ */
+export const ACCENT_ORANGE = '#FF5722';
 export const BRAND_ORANGE_DARK = '#EA580C';
 export const BRAND_ORANGE_LIGHT = '#FB923C';
 

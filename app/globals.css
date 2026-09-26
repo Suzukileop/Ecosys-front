@@ -2449,18 +2449,18 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   --pf-cta-hover: #262626;
 }
 
+/* The palette custom properties are registered with `@property … inherits: true`, so animating
+   them here would re-resolve the inherited value on *every* descendant on *every* frame. Combined
+   with the universal descendant rule below — which then has to re-evaluate a transition per node
+   per frame — that is a multiplicative blow-up, and it was the whole cost of a mode switch:
+   measured on a 930-node tree, median frame 359ms / p95 626ms (~4fps) with the properties animated,
+   against 17ms / 221ms once they step. Stepping them costs nothing visually: the descendant rule
+   already fades the resulting `background-color` / `color` / `border-color` change, so the eye sees
+   the same crossfade either way. Only the root's own paint is transitioned here. */
 .pf-theme-root[data-pf-color-transitions='true'] {
   transition:
     background-color var(--pf-color-mode-duration) var(--pf-color-mode-ease),
-    color var(--pf-color-mode-duration) var(--pf-color-mode-ease),
-    --pf-palette-fond var(--pf-color-mode-duration) var(--pf-color-mode-ease),
-    --pf-palette-texte-fort var(--pf-color-mode-duration) var(--pf-color-mode-ease),
-    --pf-palette-texte-muted var(--pf-color-mode-duration) var(--pf-color-mode-ease),
-    --pf-palette-neutre var(--pf-color-mode-duration) var(--pf-color-mode-ease),
-    --pf-palette-principal var(--pf-color-mode-duration) var(--pf-color-mode-ease),
-    --pf-accent var(--pf-color-mode-duration) var(--pf-color-mode-ease),
-    --pf-surface var(--pf-color-mode-duration) var(--pf-color-mode-ease),
-    --pf-cta var(--pf-color-mode-duration) var(--pf-color-mode-ease);
+    color var(--pf-color-mode-duration) var(--pf-color-mode-ease);
 }
 
 .pf-theme-root[data-portfolio-color-mode='dark'] {
@@ -2509,13 +2509,16 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   }
 }
 
-/* Always armed after mount — color only on descendants (opacity handled by crossfade pass). */
+/* Always armed after mount — color only on descendants (opacity handled by crossfade pass).
+
+   Deliberately NOT extended to ::before / ::after. Every generated box is a second and a third
+   transition target on top of its element, and on a page of this size that tripled the per-frame
+   transition bookkeeping for decoration that is almost always a hairline or an overlay: measured
+   29.9fps with elements only against 18.5fps once the pseudo-elements were included. Themed
+   pseudo-elements now step instead of fading; if one ever needs the fade, give it an explicit
+   `transition` in its own rule rather than bringing the wildcard back. */
 .pf-theme-root[data-pf-color-transitions='true']
-  *:not([data-pf-no-color-transition]):not([class*='animate-']):not([class*='motion']),
-.pf-theme-root[data-pf-color-transitions='true']
-  *:not([data-pf-no-color-transition])::before,
-.pf-theme-root[data-pf-color-transitions='true']
-  *:not([data-pf-no-color-transition])::after {
+  *:not([data-pf-no-color-transition]):not([class*='animate-']):not([class*='motion']) {
   transition-property: background-color, border-color, color, fill, stroke, box-shadow,
     outline-color, text-decoration-color, -webkit-text-fill-color;
   transition-duration: var(--pf-color-mode-duration);
@@ -4364,15 +4367,6 @@ footer#footer {
   }
 }
 
-@keyframes pf-featured-veil {
-  from {
-    opacity: 0.4;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
 @keyframes pf-media-skeleton-pulse {
   0%,
   100% {
@@ -4383,22 +4377,6 @@ footer#footer {
   }
 }
 
-.pf-featured-in {
-  position: relative;
-  height: 100%;
-  width: 100%;
-}
-
-.pf-featured-in::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  background: rgb(24 24 24 / 0.14);
-  animation: pf-featured-veil 420ms ease forwards;
-}
-
 .pf-media-skeleton {
   background-color: rgb(82 82 82 / 0.55);
   animation: pf-media-skeleton-pulse 1.15s ease-in-out infinite;
@@ -4407,6 +4385,36 @@ footer#footer {
 .pf-media-skeleton {
   background-color: rgb(82 82 82 / 0.55);
   animation: pf-media-skeleton-pulse 1.15s ease-in-out infinite;
+}
+
+/* Gallery — "Floating canvas" design. The whole scatter is declared per card, from the
+   component's own CANVAS_RHYTHM table, as custom properties: a lane head start, a per-card
+   width and a per-card drop. It lives here rather than inline so the composition can be
+   flattened at one breakpoint — below md the canvas becomes a single fluid column with its
+   own, much more even widths (`--pf-canvas-w-sm`) and no vertical offsets at all, which is
+   what keeps the cards from overlapping illegibly on a phone.
+
+   Offsets are padding/margin, never `transform`: GSAP owns `transform` on both of these
+   nodes (the shared gallery entrance writes `y` on the card, the parallax writes `y` on the
+   tile wrapper) and a transform declared here would be overwritten without a trace. */
+.pf-canvas-lane {
+  padding-top: var(--pf-canvas-lane-lift, 0px);
+}
+
+.pf-canvas-tile {
+  width: var(--pf-canvas-w, 100%);
+  margin-top: var(--pf-canvas-lift, 0px);
+}
+
+@media (max-width: 767px) {
+  .pf-canvas-lane {
+    padding-top: 0;
+  }
+
+  .pf-canvas-tile {
+    width: var(--pf-canvas-w-sm, 100%);
+    margin-top: 0;
+  }
 }
 
 /* Gallery section — global "Font size" scale (General tab). Same standardized-shared-
@@ -4453,8 +4461,7 @@ footer#footer {
 }
 
 /*
- * Aeonik only ships Light / Regular / Bold. Weight 600 snaps to Bold (700),
- * which is why gallery captions always looked bold. Plus Jakarta has a real 600.
+ * Plus Jakarta has a real 600, which is why gallery captions use it rather than inheriting.
  * Selector must beat `[data-portfolio-force-font='true'] *`.
  */
 .pf-theme-root .pf-gallery-media-title,
@@ -4468,22 +4475,22 @@ footer#footer {
   font-weight: 500 !important;
 }
 
-.pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--aeonik,
-.pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--aeonik {
-  font-family: var(--font-aeonik), ui-sans-serif, system-ui, sans-serif !important;
+.pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--plain,
+.pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--plain {
+  font-family: var(--font-geist), ui-sans-serif, system-ui, sans-serif !important;
   font-weight: 400 !important;
   font-size: calc(2.25rem * var(--pf-gallery-font-scale, 1)) !important;
   line-height: 1.3 !important;
   letter-spacing: 0;
 }
 
-.pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--aeonik.pf-gallery-media-title--cinema,
-.pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--aeonik.pf-gallery-media-title--cinema {
+.pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--plain.pf-gallery-media-title--cinema,
+.pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--plain.pf-gallery-media-title--cinema {
   font-size: calc(20px * var(--pf-gallery-font-scale, 1)) !important;
 }
 
-.pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--aeonik.pf-gallery-media-title--tall,
-.pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--aeonik.pf-gallery-media-title--tall {
+.pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--plain.pf-gallery-media-title--tall,
+.pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--plain.pf-gallery-media-title--tall {
   font-size: calc(20px * var(--pf-gallery-font-scale, 1)) !important;
 }
 
@@ -15634,6 +15641,9 @@ footer#footer {
   --pfk-glass-fill: color-mix(in srgb, var(--pfk-paper) 10%, var(--pfk-ink));
   --pfk-glass-edge: color-mix(in srgb, var(--pfk-paper) 14%, var(--pfk-ink));
   --pfk-answer-ink: color-mix(in srgb, var(--pfk-paper) 72%, var(--pfk-ink));
+  /* Small-caps labels that must stay readable ("Answer / 01" on the glass panel): ~6:1 on the
+     glass fill in both modes, where the 16% ghost gave ~1.2:1. */
+  --pfk-label: color-mix(in srgb, var(--pfk-paper) 62%, var(--pfk-ink));
   color: var(--pfk-mist);
   isolation: isolate;
 }
@@ -15690,6 +15700,12 @@ footer#footer {
   --pf-faq-a-size: 1.15rem;
   --pf-faq-label-size: 0.75rem;
 }
+/* General → Text colors: `--pf-faq-q-color` / `--pf-faq-a-color` (palette tokens) are set on the
+   wrapper around the active design only when a creator picks one (faqTextColorVars). Every
+   design's question/answer rule below reads `var(--pf-faq-q-color, <its own ink>)`, in every
+   state, so "Auto" leaves each design exactly as it was. Designs that tween the question color
+   from GSAP read a pre-resolved `--pf…-q` / `--pf…-q-rest` pair instead: GSAP resolves a
+   `var(--x)` end value by name and cannot follow a nested fallback. */
 @media (max-width: 480px) {
   .pf-faq-kinetic,
   .pf-faq-gallery,
@@ -15750,13 +15766,13 @@ footer#footer {
   font-weight: 300;
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   letter-spacing: 0.01em;
-  color: var(--pfk-mist);
+  color: var(--pf-faq-q-color, var(--pfk-mist));
   will-change: font-size, color;
 }
 .pf-faq-kinetic-item.is-open .pf-faq-kinetic-text {
   font-family: 'Fraunces', Georgia, serif;
   font-weight: 500;
-  color: var(--pfk-paper);
+  color: var(--pf-faq-q-color, var(--pfk-paper));
 }
 .pf-faq-kinetic-panel { height: 0; overflow: hidden; }
 .pf-faq-kinetic-panel-inner { padding: 2px 0 34px 44px; max-width: 62ch; }
@@ -15764,7 +15780,7 @@ footer#footer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.65;
-  color: var(--pfk-answer-ink);
+  color: var(--pf-faq-a-color, var(--pfk-answer-ink));
   font-weight: 300;
 }
 .pf-faq-kinetic-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
@@ -15800,9 +15816,10 @@ footer#footer {
 .pf-faq-gallery-head { margin-bottom: clamp(28px, 6vw, 48px); }
 .pf-faq-gallery-eyebrow {
   font-size: calc(var(--pf-faq-label-size) * var(--pf-faq-font-scale, 1));
+  font-weight: 500;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--pfk-ghost);
+  color: var(--pfk-label);
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 .pf-faq-gallery-row {
@@ -15828,11 +15845,11 @@ footer#footer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 300;
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
-  color: var(--pfk-mist);
+  color: var(--pf-faq-q-color, var(--pfk-mist));
   transition: color 0.4s ease;
 }
 .pf-faq-gallery-row.is-open .pf-faq-gallery-q {
-  color: var(--pfk-paper);
+  color: var(--pf-faq-q-color, var(--pfk-paper));
   font-family: 'Fraunces', Georgia, serif;
   font-weight: 500;
 }
@@ -15888,7 +15905,7 @@ footer#footer {
      repeat of the question, not the inline list question itself (no other design
      has an equivalent element), so it isn't held to the cross-design "q" match. */
   font-size: calc(var(--pf-faq-q-size) * 1.5 * var(--pf-faq-font-scale, 1));
-  color: var(--pfk-paper);
+  color: var(--pf-faq-q-color, var(--pfk-paper));
   max-width: 26ch;
   margin: 0 0 18px;
   text-wrap: balance;
@@ -15897,7 +15914,7 @@ footer#footer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.7;
-  color: var(--pfk-answer-ink);
+  color: var(--pf-faq-a-color, var(--pfk-answer-ink));
   font-weight: 300;
   max-width: 58ch;
   margin: 0;
@@ -15928,6 +15945,9 @@ footer#footer {
   --pfm-muted: color-mix(in srgb, var(--pfm-ink) 72%, var(--pfm-paper));
   --pfm-index: color-mix(in srgb, var(--pfm-ink) 34%, var(--pfm-paper));
   --pfm-line: color-mix(in srgb, var(--pfm-ink) 8%, var(--pfm-paper));
+  /* Question ink, resolved once for the hover tweens (see Text colors above). */
+  --pfm-q: var(--pf-faq-q-color, var(--pfm-ink));
+  --pfm-q-rest: var(--pf-faq-q-color, var(--pfm-muted));
   color: var(--pfm-ink);
   isolation: isolate;
 }
@@ -15976,10 +15996,10 @@ footer#footer {
   font-weight: 400;
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.35;
-  color: var(--pfm-muted);
+  color: var(--pfm-q-rest);
   will-change: transform, color;
 }
-.pf-faq-masonry-row.is-open .pf-faq-masonry-q { color: var(--pfm-ink); }
+.pf-faq-masonry-row.is-open .pf-faq-masonry-q { color: var(--pfm-q); }
 .pf-faq-masonry-icon {
   flex: none;
   width: 26px;
@@ -15995,7 +16015,7 @@ footer#footer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.65;
-  color: var(--pfm-slate);
+  color: var(--pf-faq-a-color, var(--pfm-slate));
   font-weight: 400;
 }
 .pf-faq-masonry-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
@@ -16086,10 +16106,10 @@ footer#footer {
   letter-spacing: -0.01em;
   line-height: 1.25;
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
-  color: var(--pfp-ink);
+  color: var(--pf-faq-q-color, var(--pfp-ink));
   transition: color 0.6s cubic-bezier(0.65, 0, 0.35, 1);
 }
-.pf-faq-prism-card.is-open .pf-faq-prism-q { color: var(--pfp-active-ink); }
+.pf-faq-prism-card.is-open .pf-faq-prism-q { color: var(--pf-faq-q-color, var(--pfp-active-ink)); }
 .pf-faq-prism-icon {
   flex: none;
   width: 40px;
@@ -16113,10 +16133,21 @@ footer#footer {
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.65;
   font-weight: 400;
-  color: var(--pfp-muted);
+  color: var(--pf-faq-a-color, var(--pfp-muted));
   transition: color 0.6s cubic-bezier(0.65, 0, 0.35, 1);
 }
-.pf-faq-prism-card.is-open .pf-faq-prism-answer { color: var(--pfp-active-muted); }
+.pf-faq-prism-card.is-open .pf-faq-prism-answer { color: var(--pf-faq-a-color, var(--pfp-active-muted)); }
+/* General → Text colors picked: the open card no longer floods violet. A palette color only
+   reads on the palette's surfaces (orange or near-black on violet measured ~2.2-2.4:1), so the
+   open card keeps its resting surface and inks; the liquid reveal still plays, in that color. */
+[data-pf-faq-text-custom] .pf-faq-prism-fill { background: var(--pfp-card); }
+[data-pf-faq-text-custom] .pf-faq-prism-card.is-open .pf-faq-prism-q { color: var(--pf-faq-q-color, var(--pfp-ink)); }
+[data-pf-faq-text-custom] .pf-faq-prism-card.is-open .pf-faq-prism-answer { color: var(--pf-faq-a-color, var(--pfp-muted)); }
+[data-pf-faq-text-custom] .pf-faq-prism-card.is-open .pf-faq-prism-icon {
+  background: transparent;
+  border-color: var(--pfp-icon-border);
+  color: var(--pfp-ink);
+}
 .pf-faq-prism-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
 .pf-faq-prism-line-inner { display: inline-block; will-change: transform; }
 
@@ -16196,7 +16227,7 @@ footer#footer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 500;
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
-  color: var(--pfs-ink);
+  color: var(--pf-faq-q-color, var(--pfs-ink));
   transition: color 0.5s ease;
 }
 .pf-faq-star-icon {
@@ -16216,7 +16247,7 @@ footer#footer {
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.65;
   font-weight: 400;
-  color: var(--pfs-muted);
+  color: var(--pf-faq-a-color, var(--pfs-muted));
   transition: color 0.5s ease;
 }
 .pf-faq-star-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
@@ -16236,6 +16267,8 @@ footer#footer {
   --pft-fond: #ffffff;
   --pft-ink: #000000;
   --pft-muted: color-mix(in srgb, var(--pft-ink) 70%, var(--pft-fond));
+  --pft-q: var(--pf-faq-q-color, var(--pft-ink));
+  --pft-q-rest: var(--pf-faq-q-color, var(--pft-muted));
   color: var(--pft-ink);
   isolation: isolate;
   transition: background-color 0.5s ease, color 0.5s ease;
@@ -16261,7 +16294,7 @@ footer#footer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 600;
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
-  color: var(--pft-muted);
+  color: var(--pft-q-rest);
   margin: 0 0 10px;
   transition: color 0.4s ease;
 }
@@ -16269,7 +16302,7 @@ footer#footer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.62;
-  color: color-mix(in srgb, var(--pft-ink) 55%, var(--pft-fond));
+  color: var(--pf-faq-a-color, color-mix(in srgb, var(--pft-ink) 55%, var(--pft-fond)));
   margin: 0;
   transition: color 0.5s ease;
 }
@@ -16289,6 +16322,8 @@ footer#footer {
   --pfsi-ink: #0a0a0a;
   --pfsi-muted: color-mix(in srgb, var(--pfsi-ink) 70%, var(--pfsi-fond));
   --pfsi-line: color-mix(in srgb, var(--pfsi-ink) 9%, var(--pfsi-fond));
+  --pfsi-q: var(--pf-faq-q-color, var(--pfsi-ink));
+  --pfsi-q-rest: var(--pf-faq-q-color, var(--pfsi-muted));
   color: var(--pfsi-ink);
   isolation: isolate;
   transition: background-color 0.5s ease, color 0.5s ease;
@@ -16349,7 +16384,7 @@ footer#footer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 500;
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
-  color: var(--pfsi-muted);
+  color: var(--pfsi-q-rest);
   transition: color 0.5s ease;
 }
 .pf-faq-split-icon {
@@ -16368,7 +16403,7 @@ footer#footer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.65;
-  color: color-mix(in srgb, var(--pfsi-ink) 60%, var(--pfsi-fond));
+  color: var(--pf-faq-a-color, color-mix(in srgb, var(--pfsi-ink) 60%, var(--pfsi-fond)));
   transition: color 0.5s ease;
 }
 .pf-faq-split-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
@@ -16388,6 +16423,8 @@ footer#footer {
   --pff-fond: #ffffff;
   --pff-ink: #000000;
   --pff-muted: color-mix(in srgb, var(--pff-ink) 55%, var(--pff-fond));
+  --pff-q: var(--pf-faq-q-color, var(--pff-ink));
+  --pff-q-rest: var(--pf-faq-q-color, var(--pff-muted));
   color: var(--pff-ink);
   isolation: isolate;
   text-align: center;
@@ -16424,7 +16461,7 @@ footer#footer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 600;
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
-  color: var(--pff-muted);
+  color: var(--pff-q-rest);
   transition: color 0.35s ease;
 }
 .pf-faq-focus-panel { height: 0; overflow: hidden; width: 100%; }
@@ -16433,7 +16470,7 @@ footer#footer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.7;
-  color: color-mix(in srgb, var(--pff-ink) 62%, var(--pff-fond));
+  color: var(--pf-faq-a-color, color-mix(in srgb, var(--pff-ink) 62%, var(--pff-fond)));
 }
 .pf-faq-focus-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
 .pf-faq-focus-line-inner { display: inline-block; will-change: transform; }
@@ -16500,7 +16537,9 @@ footer#footer {
 .pf-faq-bento-layer-a { transform: translateY(0%); }
 .pf-faq-bento-layer-b {
   transform: translateY(100%);
-  background: var(--pfbd-answer-bg);
+  /* An answer color from the palette only reads on the palette's own background, so the
+     inverted answer face follows it (`--pf-faq-a-surface`, set with `--pf-faq-a-color`). */
+  background: var(--pf-faq-a-surface, var(--pfbd-answer-bg));
   align-items: flex-start;
   transition: background-color 0.5s ease;
 }
@@ -16508,7 +16547,7 @@ footer#footer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 600;
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
-  color: var(--pfbd-card-ink);
+  color: var(--pf-faq-q-color, var(--pfbd-card-ink));
   margin: 0;
   transition: color 0.5s ease;
 }
@@ -16516,7 +16555,7 @@ footer#footer {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.6;
-  color: var(--pfbd-answer-ink);
+  color: var(--pf-faq-a-color, var(--pfbd-answer-ink));
   margin: 0;
   transition: color 0.5s ease;
 }

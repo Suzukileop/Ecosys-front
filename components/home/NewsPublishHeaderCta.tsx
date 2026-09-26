@@ -15,6 +15,25 @@ export function dispatchNewsOpenPublish() {
 const publishClassName =
   'inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-orange-500 px-3.5 text-sm font-semibold text-white transition hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
 
+/**
+ * The short form below `sm` buys back ~55px in a single-row bar where the navigation rail is the
+ * thing paying for every pixel this CTA takes.
+ */
+function PublishLabel() {
+  return (
+    <>
+      <span className="sm:hidden">+ Publish</span>
+      <span className="hidden sm:inline">+ Publish content</span>
+    </>
+  );
+}
+
+/*
+ * The strapline is decoration, so it only appears once the row can spare ~140px for it (`2xl`).
+ * At `xl` it collided by 3px with the shortcuts pinned to the viewport midpoint — the tagline was
+ * switching on at the same breakpoint as the pin, which is the width where the right block is
+ * widest and the centre block has just stopped being kept clear by flex.
+ */
 type NewsPublishHeaderCtaProps = {
   className?: string;
   /** When true, marks the in-feed instance for scroll handoff to the sticky header. */
@@ -28,11 +47,11 @@ export function NewsPublishHeaderCta({ className = '', inline = false }: NewsPub
 
   const action = canPublish ? (
     <button type="button" onClick={dispatchNewsOpenPublish} className={publishClassName}>
-      + Publish content
+      <PublishLabel />
     </button>
   ) : (
     <Link href="/dashboard/creator" className={publishClassName}>
-      + Publish content
+      <PublishLabel />
     </Link>
   );
 
@@ -47,7 +66,7 @@ export function NewsPublishHeaderCta({ className = '', inline = false }: NewsPub
     >
       <p
         className={`min-w-0 truncate font-semibold tracking-tight text-neutral-800 dark:text-neutral-100 ${
-          inline ? 'text-sm sm:text-base' : 'hidden text-sm md:block'
+          inline ? 'text-sm sm:text-base' : 'hidden text-sm 2xl:block'
         }`}
       >
         Don&apos;t stay a spectator.

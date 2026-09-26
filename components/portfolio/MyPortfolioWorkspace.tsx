@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { ACCENT_ORANGE } from '@/components/landing/landingBrand';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faArrowRight, faGear } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
@@ -196,6 +197,14 @@ export function MyPortfolioWorkspace() {
 
   return (
     <div className="space-y-6">
+      {/*
+       * The workspace chrome only exists once there is a workspace. Until a presence is picked
+       * there is nothing to be on the Information tab *of*, no template to explore and nothing to
+       * preview — so the strip stays out and "Build your vision" is the whole screen. It also
+       * keeps the state machine honest: these tabs are the only way to leave the Information
+       * panel, so they cannot be reachable in a state where leaving it leads nowhere.
+       */}
+      {selectedPresence ? (
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5">
         <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Portfolio workspace">
           {TABS.map((item) => {
@@ -207,55 +216,71 @@ export function MyPortfolioWorkspace() {
                 role="tab"
                 aria-selected={active}
                 onClick={() => setTab(item.id)}
-                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                /* Pills rather than slabs: thin, fully rounded, translucent, with a hairline that
+                   firms up on the selected one. No filled white plate and no shadow — this strip
+                   sits directly under a glass navbar and a second solid surface right beneath it
+                   read as a second navbar. */
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.8rem] font-medium transition-[color,background-color,border-color] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 ${
                   active
-                    ? 'bg-white text-slate-900 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:text-white dark:ring-neutral-700'
-                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200/80 dark:bg-neutral-800/80 dark:text-neutral-300 dark:hover:bg-neutral-800'
+                    ? 'border-neutral-900/15 bg-neutral-900/[0.06] text-neutral-950 dark:border-white/15 dark:bg-white/10 dark:text-white'
+                    : 'border-transparent bg-neutral-900/[0.03] text-neutral-500 hover:text-neutral-900 dark:bg-white/5 dark:text-neutral-400 dark:hover:text-white'
                 }`}
               >
-                {item.live ? <EyeIcon className="h-4 w-4" /> : null}
+                {item.live ? <EyeIcon className="h-3.5 w-3.5 shrink-0" /> : null}
                 <span>{item.label}</span>
+                {/* A 4px dot, and no ping. The pulse was the loudest thing on the page for a
+                    status that never changes. */}
                 {item.live ? (
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#F97316] opacity-60" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-[#F97316]" />
-                  </span>
+                  <span
+                    aria-hidden
+                    style={{ backgroundColor: ACCENT_ORANGE }}
+                    className={`block h-1 w-1 shrink-0 rounded-full transition-opacity duration-[420ms] ${
+                      active ? 'opacity-100' : 'opacity-60'
+                    }`}
+                  />
                 ) : null}
               </button>
             );
           })}
-          {tab === 'information' && selectedPresence ? (
+          {tab === 'information' ? (
             <>
               <button
                 type="button"
-                onClick={() => setPresenceKind(null)}
-                className="inline-flex items-center rounded-xl bg-neutral-100 px-3 py-2.5 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-200/80 dark:bg-neutral-800/80 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                onClick={() => {
+                  setPresenceKind(null);
+                  setTab('information');
+                }}
+                className="inline-flex items-center rounded-full border border-transparent bg-neutral-900/[0.03] px-4 py-1.5 text-[0.8rem] font-medium text-neutral-500 transition-colors duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:text-neutral-900 dark:bg-white/5 dark:text-neutral-400 dark:hover:text-white"
               >
                 Change presence
               </button>
               <PortfolioInformationSettings
                 navSide={portfolioNavSide}
                 onToggleNavSide={togglePortfolioNavSide}
-                onChangePresence={() => setPresenceKind(null)}
+                onChangePresence={() => {
+                  setPresenceKind(null);
+                  setTab('information');
+                }}
               />
             </>
           ) : null}
         </div>
       </div>
+      ) : null}
 
       {/* Tab panels — Live Preview bleeds to the main-column edges; other tabs keep inset. */}
-      {tab === 'information' ? (
+      {!selectedPresence ? (
         <div className="px-4 pb-10 sm:px-5">
-          {selectedPresence ? (
-            <CreatorStudioProfileTab
-              variant="portfolio"
-              portfolioNavSide={portfolioNavSide}
-              allowedSections={selectedPresence.sections}
-              sectionsNavTitle={selectedPresence.title}
-            />
-          ) : (
-            <PortfolioPresencePicker onSelect={(kind) => void persistPresenceKind(kind)} />
-          )}
+          <PortfolioPresencePicker onSelect={(kind) => void persistPresenceKind(kind)} />
+        </div>
+      ) : tab === 'information' ? (
+        <div className="px-4 pb-10 sm:px-5">
+          <CreatorStudioProfileTab
+            variant="portfolio"
+            portfolioNavSide={portfolioNavSide}
+            allowedSections={selectedPresence.sections}
+            sectionsNavTitle={selectedPresence.title}
+          />
         </div>
       ) : tab === 'preview' ? (
         <PortfolioLivePreview creatorId={user.id} username={user.username} />

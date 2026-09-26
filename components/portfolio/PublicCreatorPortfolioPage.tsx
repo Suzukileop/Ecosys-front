@@ -270,6 +270,7 @@ import {
   faqListMaxWidthClass,
   faqSectionLayoutIsAside,
   faqPremiumFontScale,
+  faqTextColorVars,
 } from '@/components/portfolio/portfolio-faq-settings';
 import {
   FaqHeaderEditorialHeader,
@@ -296,6 +297,7 @@ import { FaqCenteredFocusDesign } from '@/components/portfolio/portfolio-faq-cen
 import { FaqBentoDualDesign } from '@/components/portfolio/portfolio-faq-bento-dual';
 import {
   pickTeamPresentationSettings,
+  teamPremiumFontScale,
   resolveTeamSectionSubtitle,
   resolveTeamSectionTitle,
   teamSectionLayoutIsAside,
@@ -854,9 +856,31 @@ export function PublicCreatorPortfolioPage({
     });
   const previewSectionFocusRef = useRef<(sectionId: string) => void>(() => {});
 
+  /**
+   * Inside the studio preview the iframe does two contradictory things at once: it applies the
+   * colour-mode change optimistically *and* it treats the parent's `apply-settings` stream as the
+   * source of truth. Any settings frame the parent had already queued still carries the previous
+   * mode, so it lands a few hundred ms later and rolls the change back — the visitor sees
+   * light → dark → light. Measured on 2026-09-25: local flip at 130ms, stale echo reverted it at
+   * 554ms, the parent's real update only arrived at 1627ms.
+   *
+   * This ref remembers where we just moved to. While it is set, an `apply-settings` still carrying
+   * the old mode is a stale echo and is dropped; the first frame that agrees clears it.
+   */
+  const pendingColorModeRef = useRef<'light' | 'dark' | null>(null);
+  const pendingColorModeTimerRef = useRef<number | null>(null);
+
   const cyclePortfolioColorMode = useCallback(() => {
     const next = (settings.global.colorMode ?? 'dark') === 'light' ? 'dark' : 'light';
     if (hideOwnerChrome && typeof window !== 'undefined' && window.parent !== window) {
+      pendingColorModeRef.current = next;
+      // Safety valve: if the parent never acknowledges (message dropped, save failed), the guard
+      // must not wedge the preview into ignoring every future settings frame.
+      if (pendingColorModeTimerRef.current) window.clearTimeout(pendingColorModeTimerRef.current);
+      pendingColorModeTimerRef.current = window.setTimeout(() => {
+        pendingColorModeRef.current = null;
+        pendingColorModeTimerRef.current = null;
+      }, 4000);
       window.parent.postMessage(
         {
           source: PORTFOLIO_STUDIO_PREVIEW_SOURCE,
@@ -1035,6 +1059,19 @@ export function PublicCreatorPortfolioPage({
       if (event.origin !== window.location.origin) return;
       if (!isPortfolioStudioPreviewMessage(event.data)) return;
       if (event.data.type === 'apply-settings') {
+        const pending = pendingColorModeRef.current;
+        if (pending) {
+          const incoming = (event.data.settings as { global?: { colorMode?: string } } | undefined)
+            ?.global?.colorMode;
+          // Still the mode we just left: a frame the parent queued before it processed our
+          // `color-mode-change`. Applying it is what produced the visible back-and-forth.
+          if (incoming !== pending) return;
+          pendingColorModeRef.current = null;
+          if (pendingColorModeTimerRef.current) {
+            window.clearTimeout(pendingColorModeTimerRef.current);
+            pendingColorModeTimerRef.current = null;
+          }
+        }
         applyExternalSettings(event.data.settings);
         return;
       }
@@ -3208,12 +3245,22 @@ export function PublicCreatorPortfolioPage({
             ink={teamPresentation.titleColor}
             surface={teamPresentation.cardBackgroundColor}
           >
-            <EditorialTeamGallery members={teamMembers} presentation={teamPresentation} />
+            <EditorialTeamGallery
+              members={teamMembers}
+              presentation={teamPresentation}
+              contentGutter={settings.global.contentGutter}
+            />
           </SectionIllustratedContent>
         );
+        // General tab "Font size" — one scale read by every member-facing text size across the
+        // ten Team designs via `--pf-team-font-scale`.
+        const teamFontScaleVars: CSSProperties = {
+          '--pf-team-font-scale': teamPremiumFontScale(teamPresentation.premiumFontSize),
+        } as CSSProperties;
         return (
           <PortfolioSectionShell
             id="team"
+            cssVars={teamFontScaleVars}
             background={teamPresentation}
             fitContent
             suppressBackground={suppressSectionBackground(teamPresentation)}
@@ -3399,7 +3446,7 @@ export function PublicCreatorPortfolioPage({
             bottomSpacingStyle={sectionBottomSpacingStyle}
             header={faqAside || faqBespokeDesign ? undefined : faqHeaderBlock}
           >
-            <FaqDesignFrame frame={faqPresentation.designFrame}>
+            <FaqDesignFrame frame={faqPresentation.designFrame} textColors={faqTextColorVars(faqPresentation)}>
             {faqAside ? (
               <SectionAsideContent
                 layout={faqPresentation.sectionLayout ?? 'aside-left'}

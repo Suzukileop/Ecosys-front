@@ -81,7 +81,8 @@ export function FaqSplitIndexDesign({
     const hovered = rows[index];
     if (!hovered) return;
     const q = hovered.querySelector<HTMLElement>('.pf-faq-split-q');
-    if (q) gsap.to(q, { x: 8, color: 'var(--pfsi-ink)', duration: 0.45, ease: 'power3.out' });
+    // `--pfsi-q` / `--pfsi-q-rest` already fold in General → Text colors (see globals.css).
+    if (q) gsap.to(q, { x: 8, color: 'var(--pfsi-q)', duration: 0.45, ease: 'power3.out' });
     rows.forEach((row, i) => {
       if (i === index) return;
       gsap.to(row, { opacity: 0.15, filter: 'blur(1px)', duration: 0.45, ease: 'power3.out' });
@@ -93,7 +94,7 @@ export function FaqSplitIndexDesign({
     const rows = rowRefs.current;
     const hovered = rows[index];
     const q = hovered?.querySelector<HTMLElement>('.pf-faq-split-q');
-    if (q) gsap.to(q, { x: 0, color: 'var(--pfsi-muted)', duration: 0.5, ease: 'power3.out' });
+    if (q) gsap.to(q, { x: 0, color: 'var(--pfsi-q-rest)', duration: 0.5, ease: 'power3.out' });
     rows.forEach((row) => {
       gsap.to(row, { opacity: 1, filter: 'blur(0px)', duration: 0.5, ease: 'power3.out' });
     });

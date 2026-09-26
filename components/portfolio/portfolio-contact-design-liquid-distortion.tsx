@@ -1,7 +1,7 @@
 'use client';
 
 import gsap from 'gsap';
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import {
   FooterSocialLinkIcon,
   type EditorialContactLink,
@@ -12,6 +12,7 @@ import {
   portfolioEditorialGutterX,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import { contactLightDarkTokens } from '@/components/portfolio/portfolio-contact-design-motion';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -21,15 +22,17 @@ function prefersReducedMotion(): boolean {
 const WATERMARK_OPACITY: Record<string, number> = { subtle: 0.03, medium: 0.07, bold: 0.14 };
 
 /**
- * Concept 3 — "Liquid distortion": a minimalist, liquid-feeling composition on deep
- * black. Contact items sit unboxed at the four corners of the viewport (vw/vh
- * coordinates, deliberately non-linear); a monumental watermark word drifts, almost
- * invisibly (3% opacity), across the whole background, stretching and skewing with
- * the cursor's own speed — the faster the mouse moves, the more it distorts, then
- * eases back to rest. Hovering any coordinate gives it a brief organic stretch
- * (scale + skew settling on `power4.out`), self-contained to that one item. All mouse-driven
- * motion is dropped on touch / `prefers-reduced-motion`; under 768px the watermark
- * shrinks and the corners collapse into one clean centered vertical stack.
+ * Concept 3 — "Liquid distortion": a minimalist, liquid-feeling composition. Text and the
+ * watermark mirror the portfolio's own active color mode (settings.global.colorMode) via the
+ * shared contactLightDarkTokens() recipe — pure white / pure black canvas, synced ink; the
+ * canvas fill itself comes from the Contact section's own Background tab. Contact items sit
+ * unboxed at the four corners of the viewport (vw/vh coordinates, deliberately non-linear); a
+ * monumental watermark word drifts, almost invisibly (3% opacity), across the whole
+ * background, stretching and skewing with the cursor's own speed — the faster the mouse
+ * moves, the more it distorts, then eases back to rest. Hovering any coordinate gives it a
+ * brief organic stretch (scale + skew settling on `power4.out`), self-contained to that one
+ * item. All mouse-driven motion is dropped on touch / `prefers-reduced-motion`; under 768px
+ * the watermark shrinks and the corners collapse into one clean centered vertical stack.
  */
 export function ContactDesignLiquidDistortion({
   email,
@@ -38,6 +41,7 @@ export function ContactDesignLiquidDistortion({
   links,
   layout,
   contentGutter = DEFAULT_CONTENT_GUTTER,
+  colorMode,
 }: {
   email: string | null;
   phone: string | null;
@@ -47,9 +51,14 @@ export function ContactDesignLiquidDistortion({
   /** Same site-wide editorial gutter every other section respects — used to keep the
    *  watermark word from bleeding past the page's own right/left margin. */
   contentGutter?: PortfolioContentGutter;
+  /** The portfolio's real active appearance (settings.global.colorMode) — mirrors the
+   *  portfolio's own mode (pure white / pure black canvas, synced text), same recipe as
+   *  every other genuinely light/dark-aware premium Contact design. */
+  colorMode: 'light' | 'dark';
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const watermarkRef = useRef<HTMLDivElement>(null);
+  const tokens = contactLightDarkTokens(colorMode);
 
   const watermark = layout.text('watermark');
   const hasWatermark = Boolean(watermark);
@@ -125,8 +134,9 @@ export function ContactDesignLiquidDistortion({
     };
   }, [hasWatermark]);
 
-  const itemClass =
-    'block text-xl font-light text-neutral-300 transition-colors hover:text-white sm:text-2xl';
+  const itemClass = 'block text-xl font-light transition-colors hover:![color:var(--pf-hover-ink)] sm:text-2xl';
+  const itemStyle = { color: tokens.muted, '--pf-hover-ink': tokens.ink } as CSSProperties;
+  const labelClass = 'text-[10px] font-bold uppercase tracking-[0.32em]';
 
   return (
     <div
@@ -151,8 +161,8 @@ export function ContactDesignLiquidDistortion({
           <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
             <div ref={watermarkRef}>
               <span
-                className="text-[26vw] font-black uppercase leading-none tracking-tight text-white sm:text-[20vw]"
-                style={{ opacity: watermarkOpacity }}
+                className="text-[26vw] font-black uppercase leading-none tracking-tight sm:text-[20vw]"
+                style={{ opacity: watermarkOpacity, color: tokens.ink }}
               >
                 {watermark}
               </span>
@@ -165,8 +175,18 @@ export function ContactDesignLiquidDistortion({
         {hasEmail ? (
           <div className="flex justify-center text-center lg:absolute lg:left-[6vw] lg:top-[10vh] lg:block lg:text-left">
             <div>
-              {emailHeading ? <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-neutral-600">{emailHeading}</p> : null}
-              <a href={`mailto:${email}`} className={`${itemClass} mt-2 break-all`} data-liquid-item>
+              {emailHeading ? (
+                <p className={labelClass} style={{ color: tokens.faint }} data-pf-no-color-transition="">
+                  {emailHeading}
+                </p>
+              ) : null}
+              <a
+                href={`mailto:${email}`}
+                className={`${itemClass} mt-2 break-all`}
+                style={itemStyle}
+                data-pf-no-color-transition=""
+                data-liquid-item
+              >
                 {email}
               </a>
             </div>
@@ -176,8 +196,18 @@ export function ContactDesignLiquidDistortion({
         {hasPhone ? (
           <div className="flex justify-center text-center lg:absolute lg:right-[7vw] lg:top-[16vh] lg:block lg:text-right">
             <div>
-              {phoneHeading ? <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-neutral-600">{phoneHeading}</p> : null}
-              <a href={`tel:${phone}`} className={`${itemClass} mt-2`} data-liquid-item>
+              {phoneHeading ? (
+                <p className={labelClass} style={{ color: tokens.faint }} data-pf-no-color-transition="">
+                  {phoneHeading}
+                </p>
+              ) : null}
+              <a
+                href={`tel:${phone}`}
+                className={`${itemClass} mt-2`}
+                style={itemStyle}
+                data-pf-no-color-transition=""
+                data-liquid-item
+              >
                 {phone}
               </a>
             </div>
@@ -187,8 +217,17 @@ export function ContactDesignLiquidDistortion({
         {hasLocation ? (
           <div className="flex justify-center text-center lg:absolute lg:bottom-[14vh] lg:left-[8vw] lg:block lg:text-left">
             <div>
-              {addressHeading ? <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-neutral-600">{addressHeading}</p> : null}
-              <span className={`${itemClass} mt-2`} data-liquid-item>
+              {addressHeading ? (
+                <p className={labelClass} style={{ color: tokens.faint }} data-pf-no-color-transition="">
+                  {addressHeading}
+                </p>
+              ) : null}
+              <span
+                className={`${itemClass} mt-2`}
+                style={itemStyle}
+                data-pf-no-color-transition=""
+                data-liquid-item
+              >
                 {locationLabel}
               </span>
             </div>
@@ -198,7 +237,11 @@ export function ContactDesignLiquidDistortion({
         {hasLinks ? (
           <div className="flex justify-center text-center lg:absolute lg:bottom-[10vh] lg:right-[6vw] lg:block lg:text-right">
             <div>
-              {socialHeading ? <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-neutral-600">{socialHeading}</p> : null}
+              {socialHeading ? (
+                <p className={labelClass} style={{ color: tokens.faint }} data-pf-no-color-transition="">
+                  {socialHeading}
+                </p>
+              ) : null}
               <nav className="mt-3 flex flex-wrap items-center justify-center gap-5 lg:justify-end" aria-label="Social">
                 {links.map((link) => (
                   <a
@@ -207,6 +250,8 @@ export function ContactDesignLiquidDistortion({
                     target="_blank"
                     rel="noreferrer"
                     className={`${itemClass} mt-0 flex items-center gap-2 text-base sm:text-lg`}
+                    style={itemStyle}
+                    data-pf-no-color-transition=""
                     data-liquid-item
                   >
                     <FooterSocialLinkIcon link={link} bare iconClassName="h-4 w-4" />

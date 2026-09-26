@@ -2,12 +2,28 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { ACCENT_ORANGE } from '@/components/landing/landingBrand';
 import { GlobalSearchModal } from '@/components/layout/GlobalSearchModal';
 
+/**
+ * Magnifier drawn to the same construction as the bar's chat and bell: one 24-unit box,
+ * `stroke-width: 1.5`, round caps. The three sit side by side, so any difference in weight
+ * between them reads as one of them being broken.
+ */
 function SearchIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="10.75" cy="10.75" r="6.75" />
+      <path d="m15.6 15.6 4.4 4.4" />
     </svg>
   );
 }
@@ -17,12 +33,41 @@ function HeaderSearchButton({
   hasQuery,
   onClick,
   compact = false,
+  iconOnly = false,
 }: {
   label: string;
   hasQuery: boolean;
   onClick: () => void;
   compact?: boolean;
+  iconOnly?: boolean;
 }) {
+  /*
+   * `iconOnly` is the bar's form: a bare 36px disc with no plate at rest, so search sits in the
+   * right-hand cluster as one control among equals instead of a wide filled pill that outweighs
+   * the three buttons beside it. The dot marks a live query, which is the only state the pill's
+   * text was carrying.
+   */
+  if (iconOnly) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={hasQuery ? `Search: ${label}` : 'Open search'}
+        title={hasQuery ? label : 'Search'}
+        className="group/search relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-700 hover:text-neutral-950 dark:text-neutral-200 dark:hover:text-white transition-[color,transform] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400"
+      >
+        <SearchIcon className="h-[1.3rem] w-[1.3rem]" />
+        {hasQuery ? (
+          <span
+            aria-hidden
+            style={{ backgroundColor: ACCENT_ORANGE }}
+            className="absolute right-1.5 top-1.5 block h-1.5 w-1.5 rounded-full"
+          />
+        ) : null}
+      </button>
+    );
+  }
+
   return (
     <div className="relative min-w-0">
       <button
@@ -80,21 +125,28 @@ function SidebarSearchButton({
       type="button"
       onClick={onClick}
       aria-label={hasQuery ? `Search: ${label}` : 'Open search'}
-      className="flex h-10 w-full items-center gap-2.5 rounded-xl bg-neutral-100 px-3 text-left text-sm transition hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:bg-neutral-800/70 dark:hover:bg-neutral-800 dark:focus:ring-orange-500/30"
+      /* A rule, not a box. The old filled slab was the heaviest object in the rail and it sat
+         directly above a nav that has just lost every one of its rectangles. */
+      className="group/search relative flex w-full items-center gap-2.5 border-b border-neutral-200/80 pb-2.5 text-left text-sm transition-colors duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-neutral-400 focus:outline-none focus-visible:border-neutral-900 dark:border-white/10 dark:hover:border-white/30 dark:focus-visible:border-white"
     >
-      <SearchIcon className="h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500" />
+      <SearchIcon className="h-[0.9rem] w-[0.9rem] shrink-0 text-neutral-400 transition-colors duration-[520ms] group-hover/search:text-neutral-700 dark:text-neutral-500 dark:group-hover/search:text-neutral-200" />
       <span
-        className={`min-w-0 flex-1 truncate ${
+        className={`min-w-0 flex-1 truncate text-[0.72rem] uppercase tracking-[0.14em] ${
           hasQuery
             ? 'font-medium text-neutral-900 dark:text-white'
-            : 'text-neutral-500 dark:text-neutral-400'
+            : 'font-light text-neutral-500 dark:text-neutral-400'
         }`}
       >
         {label}
       </span>
-      <kbd className="hidden shrink-0 rounded-md border border-neutral-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-neutral-400 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-500 sm:inline">
+      <kbd className="shrink-0 font-mono text-[0.6rem] font-light tracking-[0.1em] text-neutral-400 dark:text-neutral-600">
         ⌘K
       </kbd>
+      {/* Focus/hover accent drawn from the left, matching the nav's sliding marker. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -bottom-px left-0 block h-px w-full origin-left scale-x-0 bg-neutral-900 transition-transform duration-[620ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/search:scale-x-100 group-focus-visible/search:scale-x-100 dark:bg-white"
+      />
     </button>
   );
 }
@@ -124,10 +176,12 @@ function DashboardHeaderSearchContent({
   compact = false,
   variant = 'header',
   collapsed = false,
+  iconOnly = false,
 }: {
   compact?: boolean;
   variant?: 'header' | 'sidebar';
   collapsed?: boolean;
+  iconOnly?: boolean;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -156,6 +210,7 @@ function DashboardHeaderSearchContent({
           hasQuery={hasQuery}
           onClick={() => setOpen(true)}
           compact={compact}
+          iconOnly={iconOnly}
         />
       )}
       <GlobalSearchModal open={open} onClose={() => setOpen(false)} />
@@ -167,21 +222,23 @@ export function DashboardHeaderSearch({
   compact = false,
   variant = 'header',
   collapsed = false,
+  iconOnly = false,
 }: {
   compact?: boolean;
   variant?: 'header' | 'sidebar';
   collapsed?: boolean;
+  iconOnly?: boolean;
 }) {
   const fallback =
     variant === 'sidebar' ? (
       <SidebarSearchButton label="Search anything..." hasQuery={false} onClick={() => {}} collapsed={collapsed} />
     ) : (
-      <HeaderSearchButton label="Search anything..." hasQuery={false} onClick={() => {}} compact={compact} />
+      <HeaderSearchButton label="Search anything..." hasQuery={false} onClick={() => {}} compact={compact} iconOnly={iconOnly} />
     );
 
   return (
     <Suspense fallback={fallback}>
-      <DashboardHeaderSearchContent compact={compact} variant={variant} collapsed={collapsed} />
+      <DashboardHeaderSearchContent compact={compact} variant={variant} collapsed={collapsed} iconOnly={iconOnly} />
     </Suspense>
   );
 }

@@ -37,8 +37,13 @@ export type DashboardNavItem = {
 };
 
 /**
- * Sidebar nav order. "Dashboard" is intentionally omitted for now
- * (route still exists; re-add when the hub is ready).
+ * Top-bar nav order. Kept short on purpose — the centre of the bar is the one place that has to
+ * stay uncrowded — but My Portfolio belongs here: it is where the work gets done, not an account
+ * setting, and burying the main workspace behind an avatar hover made it hard to find.
+ *
+ * "Dashboard" is omitted for now (route still exists; re-add when the hub is ready). **My Profile**
+ * is omitted on purpose — it is an account destination rather than a section of the product, so it
+ * lives in the avatar's dropdown. Its route and `getPageTitle` entry are untouched.
  */
 export const dashboardNavItems: DashboardNavItem[] = [
   {
@@ -52,23 +57,6 @@ export const dashboardNavItems: DashboardNavItem[] = [
           strokeLinejoin="round"
           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
         />
-      </svg>
-    ),
-  },
-  {
-    href: '/dashboard/creator',
-    label: 'My Profile',
-    roles: ['ROLE_CREATOR'],
-    activeWhen: (pathname, search = '') => {
-      if (pathname.startsWith('/dashboard/creator/products')) {
-        return new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('from') ===
-          'profile';
-      }
-      return pathname === '/dashboard/creator' || pathname.startsWith('/dashboard/creator/');
-    },
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
       </svg>
     ),
   },
@@ -88,7 +76,7 @@ export const dashboardNavItems: DashboardNavItem[] = [
   },
   {
     href: '/marketplace/creators',
-    label: 'Service Provider',
+    label: 'Providers',
     hiddenForAppRoles: [...APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU],
     activeWhen: (pathname, search = '') =>
       isServiceProvidersCatalogPath(pathname) || isMyServiceNavPath(pathname, search),

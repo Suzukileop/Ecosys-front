@@ -47,6 +47,7 @@ import { FooterInvertedWordmarkWireframe } from '@/components/portfolio/portfoli
 import { FooterServicesRevealWireframe } from '@/components/portfolio/portfolio-footer-design-services-reveal';
 import { FooterEditorialGridWireframe } from '@/components/portfolio/portfolio-footer-design-editorial-grid';
 import { FooterHeadlineRevealWireframe } from '@/components/portfolio/portfolio-footer-design-headline-reveal';
+import { FooterDispatchWireframe } from '@/components/portfolio/portfolio-footer-design-dispatch';
 import { FooterCompactWireframe } from '@/components/portfolio/portfolio-footer-design-compact';
 import { FooterCenteredMinimalWireframe } from '@/components/portfolio/portfolio-footer-design-centered-minimal';
 import { FooterLandingWireframe } from '@/components/portfolio/portfolio-footer-design-landing';
@@ -139,6 +140,8 @@ function FooterDesignWireframe({ design }: { design: PortfolioFooterDesign }) {
       return <FooterEditorialGridWireframe />;
     case 'headline-reveal':
       return <FooterHeadlineRevealWireframe />;
+    case 'dispatch':
+      return <FooterDispatchWireframe />;
     case 'compact':
       return <FooterCompactWireframe />;
     default:

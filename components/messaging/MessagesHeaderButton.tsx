@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useMessagingBadge } from '@/hooks/useMessagingBadge';
+import { ACCENT_ORANGE } from '@/components/landing/landingBrand';
 import { listConversations } from '@/lib/messaging';
 
 const POLL_MS = 20_000;
@@ -48,30 +49,41 @@ export function MessagesHeaderButton() {
       aria-label={`Messages${badgeCount > 0 ? `, ${badgeCount} new` : ''}`}
       aria-current={onMessagesPage ? 'page' : undefined}
       onClick={() => dismissBadge(unreadRef.current)}
-      className={`relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 ${
+      /* No filled plate at rest or on hover: this sits in a row of bare 36px controls, and a
+         background here made it the only one of the four that looked pressed. */
+      className={`relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-[color,transform] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 ${
         onMessagesPage
-          ? 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white'
-          : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white'
+          ? 'text-neutral-950 dark:text-white'
+          : 'text-neutral-700 hover:text-neutral-950 dark:text-neutral-200 dark:hover:text-white'
       }`}
     >
+      {/* Same 24-unit box and `stroke-width: 1.5` as the bar's magnifier and bell. The three sit
+          side by side; a different weight on any one of them reads as a fault. */}
       <svg
-        className="h-[1.375rem] w-[1.375rem]"
-        fill="none"
+        className="h-[1.3rem] w-[1.3rem]"
         viewBox="0 0 24 24"
+        fill="none"
         stroke="currentColor"
-        strokeWidth={2}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
         aria-hidden
       >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-        />
+        <path d="M20.5 11.6c0 4.2-3.8 7.6-8.5 7.6a9.6 9.6 0 0 1-3.6-.7L3.5 20l1.4-3.6a7.1 7.1 0 0 1-1.4-4.8C3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.6Z" />
+        <path d="M8.6 11.7h.01M12 11.7h.01M15.4 11.7h.01" />
       </svg>
       {badgeCount > 0 ? (
-        <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
-          {badgeCount > 99 ? '99+' : badgeCount}
-        </span>
+        /*
+         * A 5px signal, not a counted pill. The exact number was never actionable from the bar —
+         * you open the panel to read it — and a filled red capsule is the loudest object in a
+         * composition whose whole language is hairlines. The count still reaches assistive tech
+         * through `aria-label`, so nothing is actually lost.
+         */
+        <span
+          aria-hidden
+          style={{ backgroundColor: ACCENT_ORANGE }}
+          className="absolute right-2 top-1.5 block h-[5px] w-[5px] rounded-full"
+        />
       ) : null}
     </Link>
   );

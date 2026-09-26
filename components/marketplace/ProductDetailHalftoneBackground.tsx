@@ -14,6 +14,16 @@ const PATTERN_MASKS: Record<MarketplacePatternVariant, string> = {
 
 type MarketplacePatternBackgroundProps = {
   variant?: MarketplacePatternVariant;
+  /**
+   * The page tone painted under the pattern. Defaults to the marketplace/news value.
+   *
+   * It is a prop because the tone is not universal: this layer replaces the shell background
+   * wherever it is used, so a page whose surfaces were calibrated against a different base has to
+   * say so. The portfolio workspace is the case in point — its cards are `#121212`, which is
+   * *darker* than the `neutral-900` default, so keeping that default would have flipped the cards
+   * from lifted to sunken.
+   */
+  baseClassName?: string;
 };
 
 /**
@@ -22,6 +32,7 @@ type MarketplacePatternBackgroundProps = {
  */
 export function MarketplacePatternBackground({
   variant = 'product',
+  baseClassName = 'bg-neutral-100 dark:bg-neutral-900',
 }: MarketplacePatternBackgroundProps) {
   const layerRef = useMouseParallax({ x: 36, y: 26, rotate: 0.5 });
   const mask = PATTERN_MASKS[variant];
@@ -29,7 +40,7 @@ export function MarketplacePatternBackground({
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-neutral-100 dark:bg-neutral-900"
+      className={`pointer-events-none fixed inset-0 z-0 overflow-hidden ${baseClassName}`}
       style={{ perspective: '1400px' }}
     >
       <div

@@ -17,6 +17,10 @@ import {
   portfolioEditorialGutterX,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import {
+  contactLightDarkTokens,
+  type ContactLightDarkTokens,
+} from '@/components/portfolio/portfolio-contact-design-motion';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -55,6 +59,7 @@ function FloatingField({
   error,
   active,
   accent,
+  tokens,
 }: {
   id: string;
   label: string;
@@ -65,6 +70,7 @@ function FloatingField({
   error?: string;
   active: boolean;
   accent: string;
+  tokens: ContactLightDarkTokens;
 }) {
   const labelRef = useRef<HTMLLabelElement>(null);
   const lineRef = useRef<HTMLSpanElement>(null);
@@ -82,7 +88,7 @@ function FloatingField({
     gsap.to(labelEl, {
       y: active ? -22 : 0,
       scale: active ? 0.72 : 1,
-      color: focused ? accent : 'rgba(255,255,255,0.45)',
+      color: focused ? accent : tokens.faint,
       duration: 0.35,
       ease: 'power2.out',
       overwrite: 'auto',
@@ -95,17 +101,19 @@ function FloatingField({
       ease: 'power3.out',
       overwrite: 'auto',
     });
-  }, [active, focused, accent]);
+  }, [active, focused, accent, tokens]);
 
   const fieldClassName =
-    'peer block w-full resize-none border-0 border-b border-white/15 bg-transparent pb-3 text-lg text-white outline-none ring-0 focus:border-white/15 focus:outline-none focus:ring-0';
+    'peer block w-full resize-none border-0 border-b bg-transparent pb-3 text-lg outline-none ring-0 focus:outline-none focus:ring-0';
+  const fieldStyle = { color: tokens.ink, borderColor: tokens.border };
 
   return (
     <div className="relative pt-7" data-pf-no-color-transition="">
       <label
         ref={labelRef}
         htmlFor={id}
-        className="pointer-events-none absolute left-0 top-7 origin-left text-[13px] font-semibold uppercase tracking-[0.16em] text-white/45"
+        className="pointer-events-none absolute left-0 top-7 origin-left text-[13px] font-semibold uppercase tracking-[0.16em]"
+        style={{ color: tokens.faint }}
         data-pf-no-color-transition=""
       >
         {label}
@@ -116,6 +124,7 @@ function FloatingField({
           rows={3}
           aria-invalid={Boolean(error)}
           className={fieldClassName}
+          style={fieldStyle}
           data-pf-no-color-transition=""
           {...registration}
           onFocus={() => setFocused(true)}
@@ -131,6 +140,7 @@ function FloatingField({
           autoComplete={autoComplete}
           aria-invalid={Boolean(error)}
           className={fieldClassName}
+          style={fieldStyle}
           data-pf-no-color-transition=""
           {...registration}
           onFocus={() => setFocused(true)}
@@ -142,7 +152,8 @@ function FloatingField({
       )}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-white/15"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px"
+        style={{ backgroundColor: tokens.border }}
         data-pf-no-color-transition=""
       />
       <span
@@ -165,6 +176,9 @@ function FloatingField({
  * with a synced zoom-settle (scale 1.12 → 1); the form drops every box/border in favour of
  * hairline baselines with GSAP floating labels; the submit control is a magnetic circle
  * that glides toward the cursor with an elastic snap-back, desktop fine-pointer only.
+ * Text, the image placeholder, the hairlines and the submit circle all mirror the
+ * portfolio's own active color mode (settings.global.colorMode) via the shared
+ * contactLightDarkTokens() recipe in portfolio-contact-design-motion.ts.
  */
 export function ContactDesignSequentialReveal({
   creatorId,
@@ -177,6 +191,7 @@ export function ContactDesignSequentialReveal({
   presentation,
   layout,
   contentGutter = DEFAULT_CONTENT_GUTTER,
+  colorMode,
 }: {
   creatorId?: string;
   email: string | null;
@@ -192,6 +207,10 @@ export function ContactDesignSequentialReveal({
    *  (bypasses PortfolioSectionShell, which would normally apply this automatically), so the
    *  title/tagline need it passed in explicitly to line up with the rest of the page. */
   contentGutter?: PortfolioContentGutter;
+  /** The portfolio's real active appearance (settings.global.colorMode) — mirrors the
+   *  portfolio's own mode (pure white / pure black canvas, synced text), same recipe as
+   *  every other genuinely light/dark-aware premium Contact design. */
+  colorMode: 'light' | 'dark';
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const imageMaskRef = useRef<HTMLDivElement>(null);
@@ -199,6 +218,7 @@ export function ContactDesignSequentialReveal({
   const submitRef = useRef<HTMLButtonElement>(null);
   const submitInnerRef = useRef<HTMLSpanElement>(null);
 
+  const tokens = contactLightDarkTokens(colorMode);
   const accent = presentation.ctaColor?.trim() || '#f97316';
   const titleWord = (layout.text('title') || sectionTitle?.trim() || 'Contact').toUpperCase();
   const titleChars = useMemo(() => titleWord.split(''), [titleWord]);
@@ -492,7 +512,9 @@ export function ContactDesignSequentialReveal({
         <h2
           data-reveal-title
           aria-label={titleWord}
-          className="m-0 select-none font-sans text-[clamp(3.25rem,13vw,10rem)] font-black uppercase leading-[0.86] tracking-[-0.04em] text-white"
+          className="m-0 select-none font-sans text-[clamp(3.25rem,13vw,10rem)] font-black uppercase leading-[0.86] tracking-[-0.04em]"
+          style={{ color: tokens.ink }}
+          data-pf-no-color-transition=""
         >
           {titleChars.map((char, index) => (
             <span key={index} className="inline-block overflow-hidden align-top">
@@ -507,8 +529,9 @@ export function ContactDesignSequentialReveal({
         {tagline ? (
           <p
             data-reveal-tagline
-            className="max-w-sm font-light leading-relaxed text-white/50 sm:text-lg"
-            style={{ letterSpacing: '0.01em' }}
+            className="max-w-sm font-light leading-relaxed sm:text-lg"
+            style={{ letterSpacing: '0.01em', color: tokens.muted }}
+            data-pf-no-color-transition=""
           >
             {tagline}
           </p>
@@ -535,8 +558,16 @@ export function ContactDesignSequentialReveal({
                 className="object-cover object-center"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-neutral-900">
-                <span className="font-sans text-6xl font-semibold text-white/20" aria-hidden>
+              <div
+                className="flex h-full w-full items-center justify-center"
+                style={{ backgroundColor: tokens.placeholderBg }}
+              >
+                <span
+                  className="font-sans text-6xl font-semibold"
+                  style={{ color: tokens.muted }}
+                  data-pf-no-color-transition=""
+                  aria-hidden
+                >
                   {initials || '—'}
                 </span>
               </div>
@@ -552,17 +583,17 @@ export function ContactDesignSequentialReveal({
       {showForm || detailCount > 0 ? (
       <div className="mx-auto w-full max-w-[46rem] px-6 py-24 sm:px-10 sm:py-32 lg:px-0">
         {!showForm ? (
-          <SequentialDetailsFinale items={detailItems} />
+          <SequentialDetailsFinale items={detailItems} tokens={tokens} />
         ) : (
         <>
         {!detailsBelowForm && detailCount > 0 ? (
           <>
-            <SequentialDetailsRow items={detailItems} />
-            <div aria-hidden className="my-16 h-px w-full bg-white/10" />
+            <SequentialDetailsRow items={detailItems} tokens={tokens} />
+            <div aria-hidden className="my-16 h-px w-full" style={{ backgroundColor: tokens.border }} />
           </>
         ) : null}
         {submitted ? (
-          <p className="mb-8 text-sm font-medium text-white/70" role="status">
+          <p className="mb-8 text-sm font-medium" style={{ color: tokens.muted }} data-pf-no-color-transition="" role="status">
             Thanks — your message was sent.
           </p>
         ) : null}
@@ -578,6 +609,7 @@ export function ContactDesignSequentialReveal({
                 error={errors.firstName?.message}
                 active={Boolean(watched.firstName)}
                 accent={accent}
+                tokens={tokens}
               />
             </div>
             <div data-reveal-field>
@@ -589,6 +621,7 @@ export function ContactDesignSequentialReveal({
                 error={errors.lastName?.message}
                 active={Boolean(watched.lastName)}
                 accent={accent}
+                tokens={tokens}
               />
             </div>
           </div>
@@ -603,6 +636,7 @@ export function ContactDesignSequentialReveal({
               error={errors.email?.message}
               active={Boolean(watched.email)}
               accent={accent}
+              tokens={tokens}
             />
           </div>
 
@@ -615,6 +649,7 @@ export function ContactDesignSequentialReveal({
               error={errors.message?.message}
               active={Boolean(watched.message)}
               accent={accent}
+              tokens={tokens}
             />
           </div>
 
@@ -629,8 +664,8 @@ export function ContactDesignSequentialReveal({
               ref={submitRef}
               type="submit"
               disabled={isSubmitting || !creatorId?.trim()}
-              className="relative inline-flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-xs font-bold uppercase tracking-[0.14em] text-black disabled:cursor-not-allowed disabled:opacity-50 sm:h-28 sm:w-28"
-              style={{ backgroundColor: '#ffffff' }}
+              className="relative inline-flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-xs font-bold uppercase tracking-[0.14em] disabled:cursor-not-allowed disabled:opacity-50 sm:h-28 sm:w-28"
+              style={{ backgroundColor: tokens.ink, color: tokens.bg }}
               data-pf-no-color-transition=""
             >
               <span
@@ -660,7 +695,8 @@ export function ContactDesignSequentialReveal({
             {trimmedEmail && directEmailLine && !detailsShowEmail ? (
               <a
                 href={`mailto:${trimmedEmail}`}
-                className="text-sm font-medium text-white/40 underline decoration-white/20 underline-offset-4"
+                className="text-sm font-medium underline underline-offset-4"
+                style={{ color: tokens.faint, textDecorationColor: tokens.border }}
                 data-pf-no-color-transition=""
               >
                 {directEmailLine} {trimmedEmail}
@@ -670,8 +706,8 @@ export function ContactDesignSequentialReveal({
         </form>
         {detailsBelowForm && detailCount > 0 ? (
           <>
-            <div aria-hidden className="my-16 h-px w-full bg-white/10" />
-            <SequentialDetailsRow items={detailItems} />
+            <div aria-hidden className="my-16 h-px w-full" style={{ backgroundColor: tokens.border }} />
+            <SequentialDetailsRow items={detailItems} tokens={tokens} />
           </>
         ) : null}
         </>
@@ -684,32 +720,45 @@ export function ContactDesignSequentialReveal({
 
 type SequentialDetailItem = { key: string; heading: string | null; value: string; href: string | null };
 
-const DETAIL_HEADING_CLASS = 'text-[13px] font-semibold uppercase tracking-[0.16em] text-white/45';
+const DETAIL_HEADING_CLASS = 'text-[13px] font-semibold uppercase tracking-[0.16em]';
 const DETAIL_COLUMNS: Record<number, string> = { 1: '', 2: 'sm:grid-cols-2', 3: 'sm:grid-cols-3' };
 
-function SequentialDetailValue({ item, className }: { item: SequentialDetailItem; className: string }) {
+function SequentialDetailValue({
+  item,
+  className,
+  tokens,
+}: {
+  item: SequentialDetailItem;
+  className: string;
+  tokens: ContactLightDarkTokens;
+}) {
   const spacing = item.heading ? 'mt-3' : '';
   return item.href ? (
     <a
       href={item.href}
       data-pf-no-color-transition=""
-      className={`${spacing} block [overflow-wrap:anywhere] text-white transition-opacity duration-300 hover:opacity-70 ${className}`}
+      style={{ color: tokens.ink }}
+      className={`${spacing} block [overflow-wrap:anywhere] transition-opacity duration-300 hover:opacity-70 ${className}`}
     >
       {item.value}
     </a>
   ) : (
-    <p className={`${spacing} text-white ${className}`}>{item.value}</p>
+    <p className={`${spacing} ${className}`} style={{ color: tokens.ink }}>{item.value}</p>
   );
 }
 
 /** Next to the form: one quiet row of channels, same micro-caps labels as the form fields. */
-function SequentialDetailsRow({ items }: { items: SequentialDetailItem[] }) {
+function SequentialDetailsRow({ items, tokens }: { items: SequentialDetailItem[]; tokens: ContactLightDarkTokens }) {
   return (
     <div data-reveal-details className={`grid gap-x-8 gap-y-8 ${DETAIL_COLUMNS[Math.min(items.length, 3)]}`}>
       {items.map((item) => (
         <div key={item.key} data-reveal-detail className="min-w-0">
-          {item.heading ? <p className={DETAIL_HEADING_CLASS}>{item.heading}</p> : null}
-          <SequentialDetailValue item={item} className="text-lg font-light leading-snug" />
+          {item.heading ? (
+            <p className={DETAIL_HEADING_CLASS} style={{ color: tokens.faint }} data-pf-no-color-transition="">
+              {item.heading}
+            </p>
+          ) : null}
+          <SequentialDetailValue item={item} className="text-lg font-light leading-snug" tokens={tokens} />
         </div>
       ))}
     </div>
@@ -717,17 +766,22 @@ function SequentialDetailsRow({ items }: { items: SequentialDetailItem[] }) {
 }
 
 /** Form off: the details close the section — the email becomes the large call to action. */
-function SequentialDetailsFinale({ items }: { items: SequentialDetailItem[] }) {
+function SequentialDetailsFinale({ items, tokens }: { items: SequentialDetailItem[]; tokens: ContactLightDarkTokens }) {
   const emailItem = items.find((item) => item.key === 'email');
   const others = items.filter((item) => item.key !== 'email');
   return (
     <div data-reveal-details className="flex flex-col gap-14">
       {emailItem ? (
         <div data-reveal-detail className="min-w-0">
-          {emailItem.heading ? <p className={DETAIL_HEADING_CLASS}>{emailItem.heading}</p> : null}
+          {emailItem.heading ? (
+            <p className={DETAIL_HEADING_CLASS} style={{ color: tokens.faint }} data-pf-no-color-transition="">
+              {emailItem.heading}
+            </p>
+          ) : null}
           <SequentialDetailValue
             item={emailItem}
             className="text-[clamp(1.9rem,5.5vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.02em]"
+            tokens={tokens}
           />
         </div>
       ) : null}
@@ -735,8 +789,12 @@ function SequentialDetailsFinale({ items }: { items: SequentialDetailItem[] }) {
         <div className={`grid gap-10 ${others.length > 1 ? 'sm:grid-cols-2' : ''}`}>
           {others.map((item) => (
             <div key={item.key} data-reveal-detail className="min-w-0">
-              {item.heading ? <p className={DETAIL_HEADING_CLASS}>{item.heading}</p> : null}
-              <SequentialDetailValue item={item} className="text-xl font-light leading-snug sm:text-2xl" />
+              {item.heading ? (
+                <p className={DETAIL_HEADING_CLASS} style={{ color: tokens.faint }} data-pf-no-color-transition="">
+                  {item.heading}
+                </p>
+              ) : null}
+              <SequentialDetailValue item={item} className="text-xl font-light leading-snug sm:text-2xl" tokens={tokens} />
             </div>
           ))}
         </div>

@@ -310,10 +310,15 @@ export function usePortfolioSettings(
       const current = latestSettingsRef.current;
       const next = updater(current);
       if (settingsContentEqual(current, next)) return;
-      pushHistory(current);
+      // Undo history is an editor feature, so it must not cost a visitor anything. Without this
+      // gate a public visitor toggling dark mode paid for a deep clone of the whole settings
+      // object *and* a second state update (`setHistoryTick`) on top of the repaint — for a
+      // history stack they have no UI to reach. `writeLocalCache` and `persistToBackend` were
+      // already gated on `canEdit`; this was the one path that was not.
+      if (canEdit) pushHistory(current);
       commitSettings(next);
     },
-    [commitSettings, pushHistory]
+    [canEdit, commitSettings, pushHistory]
   );
 
   /** Live Preview iframe: apply parent settings without persisting or touching undo history. */

@@ -92,7 +92,8 @@ export function FaqCenteredFocusDesign({
       ease: 'back.out(1.6)',
     });
     const q = hovered.querySelector<HTMLElement>('.pf-faq-focus-q');
-    if (q) gsap.to(q, { color: 'var(--pff-ink)', duration: 0.3, ease: 'power2.out' });
+    // `--pff-q` / `--pff-q-rest` already fold in General → Text colors (see globals.css).
+    if (q) gsap.to(q, { color: 'var(--pff-q)', duration: 0.3, ease: 'power2.out' });
     rows.forEach((row, i) => {
       if (i === index || !row || row.classList.contains('is-open')) return;
       gsap.to(row, { opacity: 0.08, scale: 1, filter: 'blur(1.5px)', duration: 0.45, ease: 'power2.out' });
@@ -114,7 +115,7 @@ export function FaqCenteredFocusDesign({
       });
       if (i === index) {
         const q = row.querySelector<HTMLElement>('.pf-faq-focus-q');
-        if (q && !isOpen) gsap.to(q, { color: 'var(--pff-muted)', duration: 0.4, ease: 'power2.out' });
+        if (q && !isOpen) gsap.to(q, { color: 'var(--pff-q-rest)', duration: 0.4, ease: 'power2.out' });
       }
     });
   };
@@ -139,7 +140,7 @@ export function FaqCenteredFocusDesign({
     row.querySelector('.pf-faq-focus-trigger')?.setAttribute('aria-expanded', 'true');
     gsap.to(row, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.4, ease: 'power2.out' });
     const q = row.querySelector<HTMLElement>('.pf-faq-focus-q');
-    if (q) gsap.to(q, { color: 'var(--pff-ink)', duration: 0.3, ease: 'power2.out' });
+    if (q) gsap.to(q, { color: 'var(--pff-q)', duration: 0.3, ease: 'power2.out' });
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reducedMotion) {
@@ -165,7 +166,7 @@ export function FaqCenteredFocusDesign({
     if (panel) gsap.to(panel, { height: 0, duration: 0.45, ease: 'power3.inOut' });
     gsap.to(row, { opacity: 0.2, duration: 0.45, ease: 'power2.out' });
     const q = row.querySelector<HTMLElement>('.pf-faq-focus-q');
-    if (q) gsap.to(q, { color: 'var(--pff-muted)', duration: 0.4, ease: 'power2.out' });
+    if (q) gsap.to(q, { color: 'var(--pff-q-rest)', duration: 0.4, ease: 'power2.out' });
   }
 
   if (items.length === 0) return null;

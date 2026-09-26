@@ -32,11 +32,11 @@ import {
 
 export type PortfolioGalleryDesign =
   | 'framed-grid'
+  | 'floating-canvas'
   | 'cinema-strip'
   | 'editorial-split'
   | 'caption-carousel'
   | 'hero-mosaic'
-  | 'featured-strip'
   | 'tall-row';
 export type PortfolioGalleryCaptionPager = 'chevrons' | 'dots';
 export type PortfolioGalleryTitlePlacement = 'under' | 'overlay' | 'hidden';
@@ -49,13 +49,25 @@ export type PortfolioGalleryObjectPosition =
   | 'bottom'
   | 'left'
   | 'right';
+/** Framed grid: how strongly the masonry columns drift at different speeds on scroll —
+ *  the "profondeur 3D organique" the redesign asked for. `off` disables the GSAP
+ *  ScrollTrigger scrub entirely (also always off under `prefers-reduced-motion`). */
+export type PortfolioGalleryFramedGridParallax = 'off' | 'subtle' | 'medium' | 'strong';
+/** Framed grid: the hover-reveal title's typography — a massive luxe serif, or a smaller
+ *  tracked-out technical monospace. Replaces the old always-on under-caption. */
+export type PortfolioGalleryFramedGridTitleStyle = 'serif' | 'mono';
+/** Floating canvas: how many vertical lanes the dispersed cards are spread across (desktop). */
+export type PortfolioGalleryFloatingCanvasLanes = '2' | '3';
+/** Floating canvas: how far the cards break out of alignment — `aligned` zeroes every offset. */
+export type PortfolioGalleryFloatingCanvasDispersion = 'aligned' | 'subtle' | 'medium' | 'wild';
+/** Floating canvas: per-card scroll drift, the depth of the float. */
+export type PortfolioGalleryFloatingCanvasParallax = 'off' | 'subtle' | 'medium' | 'strong';
+/** Floating canvas: the skin of the title pill straddling each card's bottom edge. */
+export type PortfolioGalleryFloatingCanvasBadge = 'dark' | 'frost';
 export type PortfolioGalleryHeaderFont = 'sans' | 'serif' | 'display';
 export type PortfolioGalleryHeaderAlignment = 'left' | 'center';
 export type PortfolioGalleryMaxWidth = 'md' | 'lg' | 'xl' | 'full';
 export type PortfolioGalleryPlacement = 'left' | 'center' | 'right';
-export type PortfolioGalleryFeaturedRailPlacement = 'right' | 'bottom';
-/** Where featured width/placement apply when thumbnails sit below the hero. */
-export type PortfolioGalleryFeaturedWidthScope = 'global' | 'hero';
 export type PortfolioGalleryTitlePreset = 'gallery' | 'selected-work' | 'visual-journal' | 'custom' | 'none';
 export type PortfolioGallerySubtitlePreset = 'default' | 'selection' | 'journal' | 'minimal' | 'custom';
 /**
@@ -138,10 +150,29 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   titlePlacement: PortfolioGalleryTitlePlacement;
   /** Tall-row: item titles always on the photo, or only on hover with a dim veil. */
   tallRowTitleReveal: PortfolioGalleryTallRowTitleReveal;
+  /** Framed grid: per-column scroll parallax intensity. */
+  framedGridParallax: PortfolioGalleryFramedGridParallax;
+  /** Framed grid: hover-reveal title typography (serif or mono). */
+  framedGridTitleStyle: PortfolioGalleryFramedGridTitleStyle;
+  /** Framed grid: image cools to a muted monochrome at rest, blooms to full color on hover. */
+  framedGridColorReveal: boolean;
+  /** Floating canvas: lane count on the multi-lane canvas. */
+  floatingCanvasLanes: PortfolioGalleryFloatingCanvasLanes;
+  /** Floating canvas: strength of the vertical/horizontal scatter. */
+  floatingCanvasDispersion: PortfolioGalleryFloatingCanvasDispersion;
+  /** Floating canvas: per-card scroll drift. */
+  floatingCanvasParallax: PortfolioGalleryFloatingCanvasParallax;
+  /** Floating canvas: title pill skin. */
+  floatingCanvasBadge: PortfolioGalleryFloatingCanvasBadge;
   imageAspect: PortfolioGalleryAspect;
   objectFit: PortfolioGalleryObjectFit;
   objectPosition: PortfolioGalleryObjectPosition;
   hoverZoom: boolean;
+  /**
+   * Hero mosaic: hovering one tile pulls focus — it brightens while the rest of the mosaic
+   * settles back. Off leaves every tile at full strength, with only the zoom and the title.
+   */
+  mosaicFocusEnabled: boolean;
   showTitle: boolean;
   lightboxEnabled: boolean;
   titlePreset: PortfolioGalleryTitlePreset;
@@ -182,14 +213,6 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   cardSurfaceColor: string;
   /** Card width for the caption-carousel design. */
   captionCardWidthPx: number;
-  /** Featured-strip thumbnails: stacked on the right, or in a row under the hero. */
-  featuredRailPlacement: PortfolioGalleryFeaturedRailPlacement;
-  /** Apply width/placement to the whole block, or only the top image. */
-  featuredHeroWidthScope: PortfolioGalleryFeaturedWidthScope;
-  /** Width of the featured hero (or whole bottom layout) as a percent of the gallery. */
-  featuredHeroWidthPercent: number;
-  /** Horizontal placement of the featured hero (or whole bottom layout). */
-  featuredHeroPlacement: PortfolioGalleryPlacement;
   /**
    * Header — one shared, GSAP-animated header mounted above the Gallery section, copied
    * from the Portfolio/Work section's Header mechanism (gallery-portfolio-header-designs/*).
@@ -303,16 +326,36 @@ export const PORTFOLIO_GALLERY_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'framed-grid', label: 'Framed grid', description: 'Classic responsive grid with captions.' },
+  { value: 'framed-grid', label: 'Framed grid', description: 'Irregular masonry columns with scroll parallax and a hover-only title.' },
+  { value: 'floating-canvas', label: 'Floating canvas', description: 'Dispersed cards at irregular sizes, floating at their own speeds, each titled on its bottom edge.' },
   { value: 'caption-carousel', label: 'Caption cards', description: 'Image-and-title cards, horizontal scroll with arrows.' },
   { value: 'cinema-strip', label: 'Cinema strip', description: 'Wide horizontal scroll with navigation arrows.' },
-  { value: 'hero-mosaic', label: 'Hero mosaic', description: 'Featured image with a mosaic that adapts to the media count.' },
-  { value: 'featured-strip', label: 'Featured + rail', description: 'Large image on the left, thumbnails stacked on the right.' },
+  { value: 'hero-mosaic', label: 'Hero mosaic', description: 'Featured image with a mosaic that adapts to the media count; cursor depth and focus on hover.' },
   { value: 'tall-row', label: 'Tall + row', description: 'A taller first image on the left, three shorter ones on the right.' },
   { value: 'editorial-split', label: 'Editorial split', description: 'Alternating wide and compact compositions.' },
 ];
 
 export const PORTFOLIO_GALLERY_DESIGNS = PORTFOLIO_GALLERY_DESIGN_OPTIONS.map((option) => option.value);
+
+export const PORTFOLIO_GALLERY_FRAMED_GRID_PARALLAX_OPTIONS: {
+  value: PortfolioGalleryFramedGridParallax;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'off', label: 'Off', description: 'Columns scroll together, no depth effect.' },
+  { value: 'subtle', label: 'Subtle', description: 'A light drift between columns.' },
+  { value: 'medium', label: 'Medium', description: 'A clear, organic sense of depth.' },
+  { value: 'strong', label: 'Strong', description: 'A dramatic, cinematic drift.' },
+];
+
+export const PORTFOLIO_GALLERY_FRAMED_GRID_TITLE_STYLE_OPTIONS: {
+  value: PortfolioGalleryFramedGridTitleStyle;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'serif', label: 'Luxe serif', description: 'A massive, elegant serif on hover.' },
+  { value: 'mono', label: 'Technical mono', description: 'A tracked-out monospace on hover.' },
+];
 
 export const PORTFOLIO_GALLERY_TITLE_PRESET_OPTIONS = [
   { value: 'none', label: 'None', description: 'Hide the gallery section title.' },
@@ -409,43 +452,12 @@ export function gallerySectionLayoutEmbedsInTallRow(
   return design === 'tall-row' && layout === 'over-thumbs';
 }
 
-/** Leftover width beside the featured hero is enough for the section title. */
-export function galleryFeaturedHeroHasTitleVoid(
-  presentation: Pick<
-    PortfolioGalleryPresentationSettings,
-    | 'design'
-    | 'featuredRailPlacement'
-    | 'featuredHeroWidthScope'
-    | 'featuredHeroWidthPercent'
-    | 'featuredHeroPlacement'
-  >
-): boolean {
-  if (presentation.design !== 'featured-strip') return false;
-  if ((presentation.featuredRailPlacement ?? 'right') !== 'bottom') return false;
-  if ((presentation.featuredHeroWidthScope ?? 'hero') === 'global') return false;
-  const percent = presentation.featuredHeroWidthPercent ?? 100;
-  const leftover = 100 - percent;
-  if (leftover < 22) return false;
-  if ((presentation.featuredHeroPlacement ?? 'center') === 'center') {
-    return leftover / 2 >= 16;
-  }
-  return true;
-}
-
 export function gallerySectionLayoutEmbedsHeader(
   layout: PortfolioGallerySectionLayout | undefined,
-  presentation: Pick<
-    PortfolioGalleryPresentationSettings,
-    | 'design'
-    | 'featuredRailPlacement'
-    | 'featuredHeroWidthScope'
-    | 'featuredHeroWidthPercent'
-    | 'featuredHeroPlacement'
-  >
+  presentation: Pick<PortfolioGalleryPresentationSettings, 'design'>
 ): boolean {
   if (gallerySectionLayoutIsAside(layout)) return false;
-  if (gallerySectionLayoutEmbedsInTallRow(layout, presentation.design)) return true;
-  return galleryFeaturedHeroHasTitleVoid(presentation);
+  return gallerySectionLayoutEmbedsInTallRow(layout, presentation.design);
 }
 
 export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings = {
@@ -457,11 +469,21 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   radius: 16,
   padding: 0,
   titlePlacement: 'under',
-  tallRowTitleReveal: 'always',
+  // The design puts the title at the top of the card and reveals it on hover; `always` is the
+  // opt-out for an owner who wants the names readable without a pointer.
+  tallRowTitleReveal: 'hover',
+  framedGridParallax: 'medium',
+  framedGridTitleStyle: 'serif',
+  framedGridColorReveal: true,
+  floatingCanvasLanes: '3',
+  floatingCanvasDispersion: 'medium',
+  floatingCanvasParallax: 'medium',
+  floatingCanvasBadge: 'dark',
   imageAspect: 'landscape',
   objectFit: 'cover',
   objectPosition: 'center',
   hoverZoom: true,
+  mosaicFocusEnabled: true,
   showTitle: true,
   lightboxEnabled: true,
   titlePreset: 'gallery',
@@ -488,10 +510,6 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   captionPager: 'chevrons',
   cardSurfaceColor: '#ffffff',
   captionCardWidthPx: 320,
-  featuredRailPlacement: 'right',
-  featuredHeroWidthScope: 'hero',
-  featuredHeroWidthPercent: 100,
-  featuredHeroPlacement: 'center',
   headerDesign: 'editorial',
   headerAnimationEnabled: true,
   headerDesignAlignment: 'left',
@@ -590,30 +608,54 @@ export {
   type PortfolioGalleryHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-gallery-header-settings';
 
-export const PORTFOLIO_GALLERY_FEATURED_RAIL_OPTIONS: {
-  value: PortfolioGalleryFeaturedRailPlacement;
+export const PORTFOLIO_GALLERY_FLOATING_CANVAS_LANE_OPTIONS: {
+  value: PortfolioGalleryFloatingCanvasLanes;
   label: string;
-  description: string;
 }[] = [
-  { value: 'right', label: 'Stacked right', description: 'Thumbnails stacked to the right of the main image.' },
-  { value: 'bottom', label: 'Row below', description: 'Thumbnails in a row under the main image.' },
+  { value: '2', label: '2 lanes' },
+  { value: '3', label: '3 lanes' },
 ];
 
-export const PORTFOLIO_GALLERY_FEATURED_WIDTH_SCOPE_OPTIONS: {
-  value: PortfolioGalleryFeaturedWidthScope;
+export const PORTFOLIO_GALLERY_FLOATING_CANVAS_DISPERSION_OPTIONS: {
+  value: PortfolioGalleryFloatingCanvasDispersion;
   label: string;
-  description: string;
 }[] = [
-  { value: 'hero', label: 'Top image only', description: 'Width and placement applied to the main image only.' },
-  { value: 'global', label: 'Whole block', description: 'Width and placement applied to the image and thumbnails together.' },
+  { value: 'aligned', label: 'Aligned' },
+  { value: 'subtle', label: 'Subtle' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'wild', label: 'Wild' },
+];
+
+export const PORTFOLIO_GALLERY_FLOATING_CANVAS_PARALLAX_OPTIONS: {
+  value: PortfolioGalleryFloatingCanvasParallax;
+  label: string;
+}[] = [
+  { value: 'off', label: 'Off' },
+  { value: 'subtle', label: 'Subtle' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'strong', label: 'Strong' },
+];
+
+export const PORTFOLIO_GALLERY_FLOATING_CANVAS_BADGE_OPTIONS: {
+  value: PortfolioGalleryFloatingCanvasBadge;
+  label: string;
+}[] = [
+  { value: 'dark', label: 'Smoked' },
+  { value: 'frost', label: 'Frosted' },
 ];
 
 export function galleryDesignUsesCarouselNav(design: PortfolioGalleryDesign): boolean {
-  return design === 'cinema-strip' || design === 'caption-carousel' || design === 'featured-strip' || design === 'tall-row';
+  return design === 'cinema-strip' || design === 'caption-carousel' || design === 'tall-row';
 }
 
 export function galleryDesignUsesColumns(design: PortfolioGalleryDesign): boolean {
-  return design !== 'cinema-strip' && design !== 'caption-carousel' && design !== 'featured-strip' && design !== 'hero-mosaic' && design !== 'tall-row';
+  return (
+    design !== 'cinema-strip' &&
+    design !== 'caption-carousel' &&
+    design !== 'hero-mosaic' &&
+    design !== 'tall-row' &&
+    design !== 'floating-canvas'
+  );
 }
 
 export function galleryDesignUsesCaptionCardWidth(design: PortfolioGalleryDesign): boolean {
@@ -656,10 +698,44 @@ export function mergeGalleryPresentation(
     padding: clamp(record.padding, 0, 96, base.padding),
     titlePlacement: pickString(record.titlePlacement, ['under', 'overlay', 'hidden'], base.titlePlacement),
     tallRowTitleReveal: pickString(record.tallRowTitleReveal, ['always', 'hover'], base.tallRowTitleReveal),
+    framedGridParallax: pickString(
+      record.framedGridParallax,
+      ['off', 'subtle', 'medium', 'strong'],
+      base.framedGridParallax ?? 'medium'
+    ),
+    framedGridTitleStyle: pickString(
+      record.framedGridTitleStyle,
+      ['serif', 'mono'],
+      base.framedGridTitleStyle ?? 'serif'
+    ),
+    framedGridColorReveal:
+      typeof record.framedGridColorReveal === 'boolean'
+        ? record.framedGridColorReveal
+        : (base.framedGridColorReveal ?? true),
+    floatingCanvasLanes: pickString(record.floatingCanvasLanes, ['2', '3'], base.floatingCanvasLanes ?? '3'),
+    floatingCanvasDispersion: pickString(
+      record.floatingCanvasDispersion,
+      ['aligned', 'subtle', 'medium', 'wild'],
+      base.floatingCanvasDispersion ?? 'medium'
+    ),
+    floatingCanvasParallax: pickString(
+      record.floatingCanvasParallax,
+      ['off', 'subtle', 'medium', 'strong'],
+      base.floatingCanvasParallax ?? 'medium'
+    ),
+    floatingCanvasBadge: pickString(
+      record.floatingCanvasBadge,
+      ['dark', 'frost'],
+      base.floatingCanvasBadge ?? 'dark'
+    ),
     imageAspect: pickString(record.imageAspect, ['auto', 'square', 'portrait', 'landscape', 'cinema'], base.imageAspect),
     objectFit: pickString(record.objectFit, ['cover', 'contain'], base.objectFit),
     objectPosition: pickString(record.objectPosition, ['center', 'top', 'bottom', 'left', 'right'], base.objectPosition),
     hoverZoom: typeof record.hoverZoom === 'boolean' ? record.hoverZoom : base.hoverZoom,
+    mosaicFocusEnabled:
+      typeof record.mosaicFocusEnabled === 'boolean'
+        ? record.mosaicFocusEnabled
+        : (base.mosaicFocusEnabled ?? true),
     showTitle: typeof record.showTitle === 'boolean' ? record.showTitle : base.showTitle,
     lightboxEnabled: typeof record.lightboxEnabled === 'boolean' ? record.lightboxEnabled : base.lightboxEnabled,
     titlePreset: pickString(record.titlePreset, ['none', 'gallery', 'selected-work', 'visual-journal', 'custom'], base.titlePreset),
@@ -706,10 +782,6 @@ export function mergeGalleryPresentation(
     captionPager: pickString(record.captionPager, ['chevrons', 'dots'], base.captionPager),
     cardSurfaceColor: color(record.cardSurfaceColor, base.cardSurfaceColor),
     captionCardWidthPx: clamp(record.captionCardWidthPx, 180, 420, base.captionCardWidthPx),
-    featuredRailPlacement: pickString(record.featuredRailPlacement, ['right', 'bottom'], base.featuredRailPlacement),
-    featuredHeroWidthScope: pickString(record.featuredHeroWidthScope, ['global', 'hero'], base.featuredHeroWidthScope),
-    featuredHeroWidthPercent: clamp(record.featuredHeroWidthPercent, 50, 100, base.featuredHeroWidthPercent),
-    featuredHeroPlacement: pickString(record.featuredHeroPlacement, ['left', 'center', 'right'], base.featuredHeroPlacement),
     headerDesign: pickString(record.headerDesign, GALLERY_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
     headerAnimationEnabled:
       typeof record.headerAnimationEnabled === 'boolean'

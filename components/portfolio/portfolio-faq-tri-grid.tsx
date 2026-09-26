@@ -122,7 +122,8 @@ export function FaqTriGridDesign({
     if (!hovered) return;
     gsap.to(hovered, { opacity: 1, filter: 'blur(0px)', duration: 0.4, ease: 'power2.out' });
     const q = hovered.querySelector<HTMLElement>('.pf-faq-tri-q');
-    if (q) gsap.to(q, { color: 'var(--pft-ink)', duration: 0.35, ease: 'power2.out' });
+    // `--pft-q` / `--pft-q-rest` already fold in General → Text colors (see globals.css).
+    if (q) gsap.to(q, { color: 'var(--pft-q)', duration: 0.35, ease: 'power2.out' });
     blocks.forEach((block, i) => {
       if (i === index || !block) return;
       gsap.to(block, { opacity: 0.1, filter: 'blur(2px)', duration: 0.4, ease: 'power2.out' });
@@ -135,7 +136,7 @@ export function FaqTriGridDesign({
       if (!block) return;
       gsap.to(block, { opacity: 0.78, filter: 'blur(0px)', duration: 0.45, ease: 'power2.out' });
       const q = block.querySelector<HTMLElement>('.pf-faq-tri-q');
-      if (q) gsap.to(q, { color: 'var(--pft-muted)', duration: 0.4, ease: 'power2.out' });
+      if (q) gsap.to(q, { color: 'var(--pft-q-rest)', duration: 0.4, ease: 'power2.out' });
     });
   };
 

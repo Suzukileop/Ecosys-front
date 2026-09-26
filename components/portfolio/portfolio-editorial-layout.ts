@@ -26,6 +26,19 @@ const GUTTER_LAYER_INSET: Record<PortfolioContentGutter, string> = {
     'left-5 right-5 sm:left-8 sm:right-8 md:left-12 md:right-12 lg:left-16 lg:right-16 xl:left-24 xl:right-24 2xl:left-32 2xl:right-32',
 };
 
+/**
+ * Exact mirror of GUTTER_PADDING_X as negative horizontal margins — lets a single full-bleed
+ * design inside `<main>` cancel the site gutter and run edge to edge. Preferred over
+ * `w-screen`/`100vw` tricks: those overshoot by the scrollbar width, which clips the right
+ * side asymmetrically under the page's `overflow-x-clip`.
+ */
+const GUTTER_NEGATIVE_X: Record<PortfolioContentGutter, string> = {
+  none: 'mx-0',
+  wide: '-mx-4 sm:-mx-5 lg:-mx-8 xl:-mx-10 2xl:-mx-12',
+  medium: '-mx-4 sm:-mx-6 md:-mx-8 lg:-mx-10 xl:-mx-12 2xl:-mx-16',
+  narrow: '-mx-5 sm:-mx-8 md:-mx-12 lg:-mx-16 xl:-mx-24 2xl:-mx-32',
+};
+
 const GUTTER_INSET_LEFT: Record<PortfolioContentGutter, string> = {
   none: 'left-0',
   wide: 'left-4 sm:left-5 lg:left-8 xl:left-10 2xl:left-12',
@@ -56,6 +69,12 @@ export function portfolioEditorialShellClass(
   gutter: PortfolioContentGutter = DEFAULT_CONTENT_GUTTER
 ): string {
   return `w-full ${portfolioEditorialGutterX(gutter)}`;
+}
+
+export function portfolioEditorialGutterNegativeX(
+  gutter: PortfolioContentGutter = DEFAULT_CONTENT_GUTTER
+): string {
+  return GUTTER_NEGATIVE_X[gutter] ?? GUTTER_NEGATIVE_X.medium;
 }
 
 export function portfolioEditorialGutterInsetLeft(

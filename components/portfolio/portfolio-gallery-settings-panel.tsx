@@ -19,8 +19,12 @@ import {
   galleryDesignUsesCarouselNav,
   galleryDesignUsesCaptionCardWidth,
   PORTFOLIO_GALLERY_DESIGN_OPTIONS,
-  PORTFOLIO_GALLERY_FEATURED_RAIL_OPTIONS,
-  PORTFOLIO_GALLERY_FEATURED_WIDTH_SCOPE_OPTIONS,
+  PORTFOLIO_GALLERY_FLOATING_CANVAS_BADGE_OPTIONS,
+  PORTFOLIO_GALLERY_FLOATING_CANVAS_DISPERSION_OPTIONS,
+  PORTFOLIO_GALLERY_FLOATING_CANVAS_LANE_OPTIONS,
+  PORTFOLIO_GALLERY_FLOATING_CANVAS_PARALLAX_OPTIONS,
+  PORTFOLIO_GALLERY_FRAMED_GRID_PARALLAX_OPTIONS,
+  PORTFOLIO_GALLERY_FRAMED_GRID_TITLE_STYLE_OPTIONS,
   PORTFOLIO_GALLERY_PREMIUM_FONT_SIZE_OPTIONS,
   PORTFOLIO_GALLERY_SUBTITLE_PRESET_OPTIONS,
   PORTFOLIO_GALLERY_TITLE_PRESET_OPTIONS,
@@ -543,15 +547,27 @@ function GalleryDesignWireframe({ design }: { design: PortfolioGalleryDesign }) 
     case 'framed-grid':
       return (
         <GalleryMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="10" width="32" height="22" rx="2.5" opacity={0.75} />
-          <rect className="pf-stack-mini-ink" x="44" y="10" width="32" height="22" rx="2.5" opacity={0.6} />
-          <rect className="pf-stack-mini-ink" x="80" y="10" width="32" height="22" rx="2.5" opacity={0.45} />
-          <rect className="pf-stack-mini-mute" x="8" y="35" width="20" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-mute" x="44" y="35" width="20" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-mute" x="80" y="35" width="20" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-ink" x="8" y="42" width="32" height="22" rx="2.5" opacity={0.55} />
-          <rect className="pf-stack-mini-ink" x="44" y="42" width="32" height="22" rx="2.5" opacity={0.4} />
-          <rect className="pf-stack-mini-ink" x="80" y="42" width="32" height="22" rx="2.5" opacity={0.28} />
+          {/* Irregular masonry columns, deliberately unequal heights — the redesign's whole
+              point (rule 1b: show the look, not a uniform grid that no longer exists). */}
+          <rect className="pf-stack-mini-ink" x="8" y="8" width="32" height="34" rx="2.5" opacity={0.75} />
+          <rect className="pf-stack-mini-ink" x="8" y="46" width="32" height="18" rx="2.5" opacity={0.5} />
+          <rect className="pf-stack-mini-ink" x="44" y="8" width="32" height="20" rx="2.5" opacity={0.6} />
+          <rect className="pf-stack-mini-ink" x="44" y="32" width="32" height="32" rx="2.5" opacity={0.4} />
+          <rect className="pf-stack-mini-ink" x="80" y="8" width="32" height="26" rx="2.5" opacity={0.45} />
+          <rect className="pf-stack-mini-ink" x="80" y="38" width="32" height="26" rx="2.5" opacity={0.28} />
+        </GalleryMiniStage>
+      );
+    case 'floating-canvas':
+      return (
+        <GalleryMiniStage>
+          {/* Dispersed lanes, unequal formats, nothing sharing a baseline — plus the accent pill
+              sunk into the big card's bottom edge, which is the design's signature. */}
+          <rect className="pf-stack-mini-ink" x="8" y="6" width="34" height="38" rx="3" opacity={0.75} />
+          <rect className="pf-stack-mini-accent" x="15" y="41" width="20" height="6" rx="3" />
+          <rect className="pf-stack-mini-ink" x="50" y="20" width="34" height="30" rx="3" opacity={0.5} />
+          <rect className="pf-stack-mini-ink" x="58" y="56" width="26" height="10" rx="2.5" opacity={0.3} />
+          <rect className="pf-stack-mini-ink" x="90" y="10" width="22" height="26" rx="2.5" opacity={0.42} />
+          <rect className="pf-stack-mini-ink" x="94" y="44" width="18" height="20" rx="2.5" opacity={0.26} />
         </GalleryMiniStage>
       );
     case 'caption-carousel':
@@ -582,15 +598,6 @@ function GalleryDesignWireframe({ design }: { design: PortfolioGalleryDesign }) 
           <rect className="pf-stack-mini-ink" x="8" y="44" width="32" height="20" rx="2.5" opacity={0.5} />
           <rect className="pf-stack-mini-ink" x="44" y="44" width="32" height="20" rx="2.5" opacity={0.38} />
           <rect className="pf-stack-mini-ink" x="80" y="44" width="32" height="20" rx="2.5" opacity={0.26} />
-        </GalleryMiniStage>
-      );
-    case 'featured-strip':
-      return (
-        <GalleryMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="10" width="72" height="54" rx="3" opacity={0.75} />
-          <rect className="pf-stack-mini-ink" x="86" y="10" width="26" height="16" rx="2.5" opacity={0.5} />
-          <rect className="pf-stack-mini-ink" x="86" y="29" width="26" height="16" rx="2.5" opacity={0.38} />
-          <rect className="pf-stack-mini-ink" x="86" y="48" width="26" height="16" rx="2.5" opacity={0.26} />
         </GalleryMiniStage>
       );
     case 'tall-row':
@@ -1389,12 +1396,6 @@ function GalleryHeaderDesignFields({
 /* only the options that design actually renders.                          */
 /* ---------------------------------------------------------------------- */
 
-const GALLERY_PLACEMENT_OPTIONS = [
-  { value: 'left' as const, label: 'Left' },
-  { value: 'center' as const, label: 'Center' },
-  { value: 'right' as const, label: 'Right' },
-];
-
 const GALLERY_CAPTION_PAGER_OPTIONS = [
   { value: 'chevrons' as const, label: 'Chevrons' },
   { value: 'dots' as const, label: 'Dots' },
@@ -1409,14 +1410,14 @@ function GalleryLayoutSettingsBand({
 }) {
   const usesCarouselNav = galleryDesignUsesCarouselNav(gallery.design);
   const usesCardWidth = galleryDesignUsesCaptionCardWidth(gallery.design);
-  const isFeaturedStrip = gallery.design === 'featured-strip';
   const isCaptionCarousel = gallery.design === 'caption-carousel';
-  const featuredBottom = isFeaturedStrip && gallery.featuredRailPlacement === 'bottom';
-  const featuredScopeIsGlobal = (gallery.featuredHeroWidthScope ?? 'hero') === 'global';
-  const hasComposition = isFeaturedStrip || usesCardWidth;
+  const hasComposition = usesCardWidth;
   const hasNavigation = usesCarouselNav || isCaptionCarousel;
+  const isHeroMosaic = gallery.design === 'hero-mosaic';
+  const isFramedGrid = gallery.design === 'framed-grid';
+  const isFloatingCanvas = gallery.design === 'floating-canvas';
 
-  if (!hasComposition && !hasNavigation) {
+  if (!hasComposition && !hasNavigation && !isHeroMosaic && !isFramedGrid && !isFloatingCanvas) {
     return (
       <p className="text-xs text-neutral-400">
         This design has no options of its own — it renders straight from your media.
@@ -1426,56 +1427,94 @@ function GalleryLayoutSettingsBand({
 
   return (
     <GallerySettingsBand id="gallery-layout-settings-title" title="Layout settings" motionKey={gallery.design}>
+      {isHeroMosaic ? (
+        <GalleryBandGroup title="Hover">
+          <GalleryToggleRow
+            label="Focus on hover"
+            checked={gallery.mosaicFocusEnabled !== false}
+            onChange={(mosaicFocusEnabled) => onChange({ mosaicFocusEnabled })}
+          />
+        </GalleryBandGroup>
+      ) : null}
+      {isFloatingCanvas ? (
+        <>
+          <GalleryBandGroup title="Canvas">
+            <GalleryOptionGrid
+              label="Lanes"
+              options={PORTFOLIO_GALLERY_FLOATING_CANVAS_LANE_OPTIONS}
+              value={gallery.floatingCanvasLanes ?? '3'}
+              onChange={(floatingCanvasLanes) => onChange({ floatingCanvasLanes })}
+              columns={2}
+            />
+            <GalleryOptionGrid
+              label="Dispersion"
+              options={PORTFOLIO_GALLERY_FLOATING_CANVAS_DISPERSION_OPTIONS}
+              value={gallery.floatingCanvasDispersion ?? 'medium'}
+              onChange={(floatingCanvasDispersion) => onChange({ floatingCanvasDispersion })}
+              columns={4}
+            />
+            <GalleryOptionGrid
+              label="Scroll parallax"
+              options={PORTFOLIO_GALLERY_FLOATING_CANVAS_PARALLAX_OPTIONS}
+              value={gallery.floatingCanvasParallax ?? 'medium'}
+              onChange={(floatingCanvasParallax) => onChange({ floatingCanvasParallax })}
+              columns={4}
+            />
+          </GalleryBandGroup>
+          <GalleryBandGroup title="Title badge">
+            <GalleryOptionGrid
+              label="Badge style"
+              hideLabel
+              options={PORTFOLIO_GALLERY_FLOATING_CANVAS_BADGE_OPTIONS}
+              value={gallery.floatingCanvasBadge ?? 'dark'}
+              onChange={(floatingCanvasBadge) => onChange({ floatingCanvasBadge })}
+              columns={2}
+            />
+          </GalleryBandGroup>
+        </>
+      ) : null}
+      {isFramedGrid ? (
+        <GalleryBandGroup title="Motion & title">
+          <GalleryOptionGrid
+            label="Scroll parallax"
+            options={PORTFOLIO_GALLERY_FRAMED_GRID_PARALLAX_OPTIONS}
+            value={gallery.framedGridParallax ?? 'medium'}
+            onChange={(framedGridParallax) => onChange({ framedGridParallax })}
+            columns={4}
+          />
+          <GalleryOptionGrid
+            label="Hover title style"
+            options={PORTFOLIO_GALLERY_FRAMED_GRID_TITLE_STYLE_OPTIONS}
+            value={gallery.framedGridTitleStyle ?? 'serif'}
+            onChange={(framedGridTitleStyle) => onChange({ framedGridTitleStyle })}
+            columns={2}
+          />
+          <div className="space-y-1.5">
+            <GalleryToggleRow
+              label="Monochrome-to-color hover"
+              checked={gallery.framedGridColorReveal !== false}
+              onChange={(framedGridColorReveal) => onChange({ framedGridColorReveal })}
+            />
+            <p className="text-xs text-neutral-400">
+              Images cool to a muted monochrome at rest, then bloom to full color on hover.
+            </p>
+          </div>
+        </GalleryBandGroup>
+      ) : null}
       {hasComposition ? (
         <GalleryBandGroup title="Composition">
-          {isFeaturedStrip ? (
-            <>
-              <GalleryOptionGrid
-                label="Thumbnail placement"
-                options={PORTFOLIO_GALLERY_FEATURED_RAIL_OPTIONS}
-                value={gallery.featuredRailPlacement}
-                onChange={(featuredRailPlacement) => onChange({ featuredRailPlacement })}
-                columns={2}
-              />
-              {featuredBottom ? (
-                <>
-                  <GalleryOptionGrid
-                    label="Apply width and placement to"
-                    options={PORTFOLIO_GALLERY_FEATURED_WIDTH_SCOPE_OPTIONS}
-                    value={gallery.featuredHeroWidthScope ?? 'hero'}
-                    onChange={(featuredHeroWidthScope) => onChange({ featuredHeroWidthScope })}
-                    columns={2}
-                  />
-                  <GalleryRange
-                    label={featuredScopeIsGlobal ? 'Block width' : 'Main image width'}
-                    value={gallery.featuredHeroWidthPercent}
-                    min={50}
-                    max={100}
-                    suffix="%"
-                    onChange={(featuredHeroWidthPercent) => onChange({ featuredHeroWidthPercent })}
-                  />
-                  <GalleryOptionGrid
-                    label={featuredScopeIsGlobal ? 'Block placement' : 'Main image placement'}
-                    options={GALLERY_PLACEMENT_OPTIONS}
-                    value={gallery.featuredHeroPlacement}
-                    onChange={(featuredHeroPlacement) => onChange({ featuredHeroPlacement })}
-                    columns={3}
-                  />
-                </>
-              ) : null}
-            </>
-          ) : null}
           {usesCardWidth ? (
             <div className="space-y-1.5">
               <GalleryRange
-                label="Card width"
+                label="Image size"
                 value={gallery.captionCardWidthPx}
                 min={180}
                 max={420}
                 onChange={(captionCardWidthPx) => onChange({ captionCardWidthPx })}
               />
               <p className="text-xs text-neutral-400">
-                Card width only — each image keeps its own ratio: portraits get taller, cinema flatter.
+                Scales the plates. With a ratio set they share one height and their widths vary; with
+                Original ratio each keeps its own proportions.
               </p>
             </div>
           ) : null}
@@ -1511,13 +1550,6 @@ function GalleryLayoutSettingsBand({
                   value={gallery.captionPager ?? 'chevrons'}
                   onChange={(captionPager) => onChange({ captionPager })}
                   columns={2}
-                />
-              ) : null}
-              {gallery.useHeroPalette === false ? (
-                <GalleryManualColorField
-                  label="Card background"
-                  value={gallery.cardSurfaceColor}
-                  onChange={(cardSurfaceColor) => onChange({ cardSurfaceColor })}
                 />
               ) : null}
             </>

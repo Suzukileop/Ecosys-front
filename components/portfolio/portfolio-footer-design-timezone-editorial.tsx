@@ -15,6 +15,36 @@ function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+let glyphCanvas: HTMLCanvasElement | null = null;
+
+/** How far the lowest drawn glyph dips below the baseline, in px (the overshoot of O, Q's tail). */
+function glyphDescentBelowBaseline(textEl: HTMLElement): number {
+  glyphCanvas ??= document.createElement('canvas');
+  const ctx = glyphCanvas.getContext('2d');
+  if (!ctx) return 0;
+  const style = getComputedStyle(textEl);
+  ctx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  // The node is set `uppercase` in CSS; canvas ignores text-transform, so mirror it here.
+  const descent = ctx.measureText((textEl.textContent ?? '').toUpperCase()).actualBoundingBoxDescent;
+  return Number.isFinite(descent) ? Math.max(0, descent) : 0;
+}
+
+/**
+ * Seats the watermark's lowest drawn pixel exactly on the footer's bottom edge, whatever the font,
+ * name or fitted size. A line box always keeps empty space under the letters (the font's descent
+ * plus half-leading), so a plain `bottom: 0` would still float the word above the edge. The
+ * baseline is read from a zero-height inline-block probe (its bottom edge IS the baseline), the
+ * glyph overshoot from canvas metrics, and the anchor is pulled down by the difference — the
+ * footer's own `overflow-hidden` crops only the empty part, never ink.
+ */
+function flushWatermarkToBottom(anchor: HTMLElement, textEl: HTMLElement, baseline: HTMLElement) {
+  const glyphBottom = baseline.getBoundingClientRect().bottom + glyphDescentBelowBaseline(textEl);
+  // Relative to the anchor's own bottom, so the result doesn't depend on the offset already applied.
+  const emptyBelowGlyphs = anchor.getBoundingClientRect().bottom - glyphBottom;
+  // 1px of air: an antialiased edge sitting exactly on a clipping boundary can lose its last row.
+  anchor.style.bottom = `${-Math.max(0, emptyBelowGlyphs - 1)}px`;
+}
+
 /**
  * Sizes `textRef`'s font so its rendered box exactly fills `containerRef`'s width — on
  * mount, on any container-width change, and once web fonts finish loading. Not vw-based:
@@ -32,8 +62,16 @@ function prefersReducedMotion(): boolean {
 function useFitWidthTextSize(
   containerRef: RefObject<HTMLElement | null>,
   textRef: RefObject<HTMLElement | null>,
-  text: string
+  text: string,
+  /** Re-anchors the watermark after every fit (see `flushWatermarkToBottom`). */
+  bottomFlush?: {
+    anchorRef: RefObject<HTMLElement | null>;
+    baselineRef: RefObject<HTMLElement | null>;
+  }
 ) {
+  // Pulled out of the options object: it is a fresh literal every render, the refs inside are not.
+  const anchorRef = bottomFlush?.anchorRef;
+  const baselineRef = bottomFlush?.baselineRef;
   useLayoutEffect(() => {
     const container = containerRef.current;
     const textEl = textRef.current;
@@ -50,6 +88,10 @@ function useFitWidthTextSize(
       if (measuredWidth <= 0) return;
 
       textEl.style.fontSize = `${REFERENCE_PX * (targetWidth / measuredWidth)}px`;
+
+      const anchor = anchorRef?.current;
+      const baseline = baselineRef?.current;
+      if (anchor && baseline) flushWatermarkToBottom(anchor, textEl, baseline);
     };
 
     fit();
@@ -75,7 +117,8 @@ function useFitWidthTextSize(
       observer.disconnect();
       if (resizeTimer) clearTimeout(resizeTimer);
     };
-  }, [text]);
+    // Ref objects are stable, so listing them never re-runs the effect; `text` is what does.
+  }, [text, containerRef, textRef, anchorRef, baselineRef]);
 }
 
 /** Explicit per-element color transition — this design opts every node out of the global
@@ -143,11 +186,16 @@ export function FooterDesignTimezoneEditorial({
   fontSizeScale = 1,
 }: FooterDesignTimezoneEditorialProps) {
   const rootRef = useRef<HTMLElement>(null);
+  const watermarkAnchorRef = useRef<HTMLDivElement>(null);
   const watermarkContainerRef = useRef<HTMLDivElement>(null);
   const watermarkTextRef = useRef<HTMLDivElement>(null);
+  const watermarkBaselineRef = useRef<HTMLSpanElement>(null);
   const watermarkText = layout.text('watermark', creatorName);
   const showAvatar = layout.isVisible('avatar');
-  useFitWidthTextSize(watermarkContainerRef, watermarkTextRef, watermarkText ?? '');
+  useFitWidthTextSize(watermarkContainerRef, watermarkTextRef, watermarkText ?? '', {
+    anchorRef: watermarkAnchorRef,
+    baselineRef: watermarkBaselineRef,
+  });
 
   const isLight = colorMode === 'light';
   const ink = isLight ? '#050505' : '#fafafa';
@@ -225,16 +273,16 @@ export function FooterDesignTimezoneEditorial({
       style={{ ...backgroundStyle, transition: COLOR_TRANSITION, '--pf-footer-font-scale': fontSizeScale } as CSSProperties}
       data-pf-no-color-transition=""
     >
-      {/* Giant, near-invisible watermark — anchored to the very bottom. The outer wrapper's
-          width is also the fit hook's measurement target (see useFitWidthTextSize): the
-          watermark's font-size is scaled so it always fills exactly this column's width,
-          matching the global margin, instead of the old vw-based clamp bleeding past it (or
-          `overflow-x-hidden` below silently truncating it mid-glyph as a fallback). It's
-          height:auto so it never clips the text vertically. The text node itself keeps
-          `overflow: visible` plus a generous line-height + bottom padding so descenders
-          (g/j/p/y, ©) never touch the edge. */}
+      {/* Giant, near-invisible watermark — seated ON the footer's bottom edge: its lowest drawn
+          pixel lands on that edge at every size (see flushWatermarkToBottom, which rewrites this
+          anchor's `bottom` after each fit). `bottom-0` is only the pre-measure fallback. The
+          outer wrapper's width is also the fit hook's measurement target (see
+          useFitWidthTextSize): the watermark's font-size is scaled so it always fills exactly
+          this column's width, matching the global margin, instead of the old vw-based clamp
+          bleeding past it (or `overflow-x-hidden` below silently truncating it mid-glyph as a
+          fallback). */}
       {watermarkText ? (
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-[4vh]">
+      <div ref={watermarkAnchorRef} aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0">
         {/* The gutter padding lives on THIS outer wrapper, not on the measured container
             below — the fit hook sizes the text to exactly match its container's own
             bounding-box width, and that container's box already includes its own padding.
@@ -244,11 +292,10 @@ export function FooterDesignTimezoneEditorial({
             the name overflowed past the global margin on the right, e.g. "CESAI" clipped
             instead of "CESAR"). Same separation the Billboard header uses. */}
         <div className={`w-full ${portfolioEditorialGutterX(contentGutter)}`}>
-          {/* overflow-x-hidden only (not overflow-hidden) — the wrapper must never clip
-              vertically, or a tight line-height's descenders (g/j/p/y) risk getting cropped
-              against this box's own edge regardless of how much paddingBottom the text below
-              reserves for them. Now purely a safety net: the fit hook keeps the watermark
-              within this same width by construction. */}
+          {/* overflow-x-hidden only (not overflow-hidden) — the wrapper must never clip the
+              glyphs vertically. Now purely a safety net: the fit hook keeps the watermark
+              within this same width by construction, and the bottom flush moves the whole
+              anchor rather than the text inside this box. */}
           <div ref={watermarkContainerRef} className="w-full overflow-x-hidden text-center">
             <div
               ref={watermarkTextRef}
@@ -257,12 +304,14 @@ export function FooterDesignTimezoneEditorial({
               style={{
                 fontSize: 'clamp(4rem, 16vw, 14rem)',
                 lineHeight: 1,
-                paddingBottom: '0.22em',
                 color: watermarkInk,
                 transition: COLOR_TRANSITION,
               }}
             >
               {watermarkText}
+              {/* Baseline probe: an empty inline-block's bottom edge sits exactly on the line's
+                  baseline, which is what the bottom flush measures against. */}
+              <span ref={watermarkBaselineRef} className="inline-block h-0 w-0 align-baseline" />
             </div>
           </div>
         </div>

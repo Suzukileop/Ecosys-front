@@ -142,12 +142,40 @@ export function faqFrameWrapperStyle(frame: PortfolioFaqFrameSettings): CSSPrope
   };
 }
 
-/** Wraps the active FAQ design (header included) in the creator's frame — a no-op when off. */
-export function FaqDesignFrame({ frame, children }: { frame: PortfolioFaqFrameSettings; children: ReactNode }) {
+/**
+ * Wraps the active FAQ design (header included) in the creator's frame — a no-op when off.
+ * `textColors` (General → Text colors, see `faqTextColorVars`) are custom properties every
+ * design inherits; with the frame off they ride a `display: contents` box, which passes
+ * inherited values down without adding a layout box.
+ */
+export function FaqDesignFrame({
+  frame,
+  textColors,
+  children,
+}: {
+  frame: PortfolioFaqFrameSettings;
+  textColors?: CSSProperties;
+  children: ReactNode;
+}) {
   const style = faqFrameWrapperStyle(frame);
-  if (!style) return <>{children}</>;
+  // Lets a design with its own vivid surface behind the text (Prism Cards' open card) step
+  // back to a neutral one once the creator has picked palette text colors.
+  const customText = textColors ? '' : undefined;
+  if (!style) {
+    if (!textColors) return <>{children}</>;
+    return (
+      <div data-pf-faq-text-custom={customText} style={{ display: 'contents', ...textColors }}>
+        {children}
+      </div>
+    );
+  }
   return (
-    <div className="pf-faq-frame" data-pf-faq-frame-blur={frame.blur ? 'true' : undefined} style={style}>
+    <div
+      className="pf-faq-frame"
+      data-pf-faq-frame-blur={frame.blur ? 'true' : undefined}
+      data-pf-faq-text-custom={customText}
+      style={{ ...style, ...textColors }}
+    >
       {children}
     </div>
   );

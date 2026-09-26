@@ -273,10 +273,10 @@ export type PortfolioContactCardDesign =
 
 /** The 9 premium, full-bleed awwwards-style designs — no boxed card. "sequential-reveal" and
  *  "numbered-narrative" are the only two with a real message form; the rest own the entire
- *  section composition with no form at all. Every design from "studio-overlap" onward is
- *  genuinely light/dark aware (mirrors the portfolio's own active color mode via
- *  settings.global.colorMode); the first 4 (editorial-focus/split-grid/liquid-distortion/
- *  sequential-reveal) still own a fixed black canvas regardless of the site's mode. */
+ *  section composition with no form at all. Every one of the 9 is now genuinely light/dark
+ *  aware — each mirrors the portfolio's own active color mode via settings.global.colorMode
+ *  (pure white / pure black canvas, synced text), via the shared contactLightDarkTokens()
+ *  recipe in portfolio-contact-design-motion.ts. */
 export const CONTACT_PREMIUM_DESIGNS = [
   'editorial-focus',
   'split-grid',

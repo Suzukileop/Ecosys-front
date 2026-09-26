@@ -1,12 +1,13 @@
 'use client';
 
 import gsap from 'gsap';
-import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import {
   FooterSocialLinkIcon,
   type EditorialContactLink,
 } from '@/components/portfolio/portfolio-section-primitives';
 import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
+import { contactLightDarkTokens } from '@/components/portfolio/portfolio-contact-design-motion';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -103,7 +104,7 @@ function useMagnetic(strength = 0.4, maxPx = 22) {
   return ref;
 }
 
-function SplitGridMarquee({ text, active }: { text: string; active: boolean }) {
+function SplitGridMarquee({ text, active, ink }: { text: string; active: boolean; ink: string }) {
   const rowRef = useRef<HTMLDivElement>(null);
   const loopRef = useRef<gsap.core.Tween | null>(null);
   const sequence = Array.from({ length: MARQUEE_REPEATS }, () => text).join('');
@@ -134,7 +135,7 @@ function SplitGridMarquee({ text, active }: { text: string; active: boolean }) {
       <div
         ref={rowRef}
         className="flex shrink-0 whitespace-nowrap text-[10vw] font-black uppercase leading-none tracking-tight transition-opacity duration-500"
-        style={{ opacity: active ? 0.06 : 0, color: '#ffffff' }}
+        style={{ opacity: active ? 0.06 : 0, color: ink }}
       >
         <span>{sequence}</span>
         <span>{sequence}</span>
@@ -151,7 +152,9 @@ function SplitGridMarquee({ text, active }: { text: string; active: boolean }) {
  * mask and, on desktop, magnetically drawn toward the cursor. Hovering the email
  * fades in a faint, oversized looping marquee of a short call-to-action phrase behind
  * it. Collapses to a single-column, thumb-friendly stack under 768px with the email
- * as the central element and socials aligned in a row beneath it.
+ * as the central element and socials aligned in a row beneath it. Text and the marquee
+ * mirror the portfolio's own active color mode (settings.global.colorMode) via the shared
+ * contactLightDarkTokens() recipe in portfolio-contact-design-motion.ts.
  */
 export function ContactDesignSplitGrid({
   email,
@@ -159,16 +162,22 @@ export function ContactDesignSplitGrid({
   locationLabel,
   links,
   layout,
+  colorMode,
 }: {
   email: string | null;
   phone: string | null;
   locationLabel: string | null;
   links: EditorialContactLink[];
   layout: ContactDesignLayoutResolver;
+  /** The portfolio's real active appearance (settings.global.colorMode) — mirrors the
+   *  portfolio's own mode (pure white / pure black canvas, synced text), same recipe as
+   *  every other genuinely light/dark-aware premium Contact design. */
+  colorMode: 'light' | 'dark';
 }) {
   const emailRef = useMagnetic(0.25, 26);
   const hoverRef = useRef<HTMLDivElement>(null);
   const [marqueeActive, setMarqueeActive] = useState(false);
+  const tokens = contactLightDarkTokens(colorMode);
 
   const marqueeText = layout.text('marquee');
   const locationHeading = layout.text('locationLabel');
@@ -187,17 +196,28 @@ export function ContactDesignSplitGrid({
           {hasLocation ? (
             <div>
               {locationHeading ? (
-                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-600">{locationHeading}</p>
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.3em]" style={{ color: tokens.faint }} data-pf-no-color-transition="">
+                  {locationHeading}
+                </p>
               ) : null}
-              <p className="text-base font-light text-neutral-300">{locationLabel}</p>
+              <p className="text-base font-light" style={{ color: tokens.muted }} data-pf-no-color-transition="">
+                {locationLabel}
+              </p>
             </div>
           ) : null}
           {hasPhone ? (
             <div>
               {phoneHeading ? (
-                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-600">{phoneHeading}</p>
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.3em]" style={{ color: tokens.faint }} data-pf-no-color-transition="">
+                  {phoneHeading}
+                </p>
               ) : null}
-              <a href={`tel:${phone}`} className="block text-base font-light text-neutral-300 hover:text-white">
+              <a
+                href={`tel:${phone}`}
+                className="block text-base font-light transition-colors hover:![color:var(--pf-hover-ink)]"
+                style={{ color: tokens.muted, '--pf-hover-ink': tokens.ink } as CSSProperties}
+                data-pf-no-color-transition=""
+              >
                 {phone}
               </a>
             </div>
@@ -210,11 +230,13 @@ export function ContactDesignSplitGrid({
         >
           {email ? (
             <div className="relative w-full">
-              {marqueeText ? <SplitGridMarquee text={marqueeText} active={marqueeActive} /> : null}
+              {marqueeText ? <SplitGridMarquee text={marqueeText} active={marqueeActive} ink={tokens.ink} /> : null}
               <a
                 ref={emailRef as RefObject<HTMLAnchorElement>}
                 href={`mailto:${email}`}
-                className="relative inline-block break-words text-[clamp(1.75rem,6vw,4.5rem)] font-medium leading-[0.95] tracking-tight text-white"
+                className="relative inline-block break-words text-[clamp(1.75rem,6vw,4.5rem)] font-medium leading-[0.95] tracking-tight"
+                style={{ color: tokens.ink }}
+                data-pf-no-color-transition=""
                 onPointerEnter={() => setMarqueeActive(true)}
                 onPointerLeave={() => setMarqueeActive(false)}
               >
@@ -236,7 +258,9 @@ export function ContactDesignSplitGrid({
                   href={link.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.08em] text-neutral-400 transition hover:text-white"
+                  className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.08em] transition hover:![color:var(--pf-hover-ink)]"
+                  style={{ color: tokens.muted, '--pf-hover-ink': tokens.ink } as CSSProperties}
+                  data-pf-no-color-transition=""
                 >
                   <CurtainLine delay={0.05 * index} className="flex items-center gap-2">
                     <FooterSocialLinkIcon link={link} bare iconClassName="h-3.5 w-3.5" />

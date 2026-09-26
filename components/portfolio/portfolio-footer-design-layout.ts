@@ -404,6 +404,27 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
       },
     ],
   },
+  dispatch: {
+    sectionLinks: legacySectionLinks,
+    elements: [
+      nameWatermark('wordmark', 'Wordmark'),
+      copy('signupHeading', 'Capture heading', 'Stay in touch'),
+      copy('signupNote', 'Capture note', "Leave your email and I'll get back to you."),
+      {
+        kind: 'option',
+        key: 'accent',
+        label: 'Accent',
+        group: 'text',
+        options: [
+          { value: 'mint', label: 'Mint', swatch: '#9ce8c2' },
+          { value: 'amber', label: 'Amber', swatch: '#f2c65c' },
+          { value: 'violet', label: 'Violet', swatch: '#c3b5fd' },
+          { value: 'contrast', label: 'Contrast', swatch: 'var(--pf-palette-texte-fort, #f5f5f5)' },
+        ],
+        defaultValue: 'mint',
+      },
+    ],
+  },
 };
 
 function findElementSpec(design: PortfolioFooterDesign, key: string): FooterLayoutElementSpec | undefined {

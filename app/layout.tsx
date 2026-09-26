@@ -3,7 +3,6 @@ import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/components/landing/ThemeProvider';
 import { ChunkLoadRecovery } from '@/components/ChunkLoadRecovery';
-import { aeonik } from '@/lib/fonts/aeonik';
 import { geist } from '@/lib/fonts/geist';
 
 const initThemeScript = `
@@ -32,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="fr"
       suppressHydrationWarning
-      className={`${geist.variable} ${aeonik.variable}`}
+      className={geist.variable}
       style={{ ['--font-geist' as string]: 'var(--font-geist-sans)' }}
     >
       <head>

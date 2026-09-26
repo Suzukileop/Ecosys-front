@@ -85,7 +85,8 @@ export function FaqEditorialMasonryDesign({
     const hovered = rows[index];
     if (!hovered) return;
     const text = hovered.querySelector<HTMLElement>('.pf-faq-masonry-q');
-    if (text) gsap.to(text, { x: 8, color: 'var(--pfm-ink)', duration: 0.45, ease: 'power3.out' });
+    // `--pfm-q` / `--pfm-q-rest` already fold in General → Text colors (see globals.css).
+    if (text) gsap.to(text, { x: 8, color: 'var(--pfm-q)', duration: 0.45, ease: 'power3.out' });
     rows.forEach((row, i) => {
       if (i === index) return;
       gsap.to(row, { opacity: 0.12, filter: 'blur(1px)', duration: 0.45, ease: 'power3.out' });
@@ -97,7 +98,17 @@ export function FaqEditorialMasonryDesign({
     const rows = rowRefs.current;
     const hovered = rows[index];
     const text = hovered?.querySelector<HTMLElement>('.pf-faq-masonry-q');
-    if (text) gsap.to(text, { x: 0, color: 'var(--pfm-slate)', duration: 0.5, ease: 'power3.out' });
+    // Back to the row's own state color (an open row keeps its full ink), then hand color back
+    // to the stylesheet so a later open/close is not pinned by this inline value.
+    if (text) {
+      gsap.to(text, {
+        x: 0,
+        color: hovered?.classList.contains('is-open') ? 'var(--pfm-q)' : 'var(--pfm-q-rest)',
+        duration: 0.5,
+        ease: 'power3.out',
+        clearProps: 'color',
+      });
+    }
     rows.forEach((row) => {
       gsap.to(row, { opacity: 1, filter: 'blur(0px)', duration: 0.5, ease: 'power3.out' });
     });

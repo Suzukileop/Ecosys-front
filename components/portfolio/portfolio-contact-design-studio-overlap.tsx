@@ -26,9 +26,9 @@ const DEFAULT_TITLE = "Let's talk";
  * monumental headline and stacked contact blocks on the left, a full-bleed vertical
  * portrait on the right. Hovering a contact link snaps it to full ink on its own, without
  * affecting any other element; the portrait drifts on a slow horizontal scroll parallax; a massive down
- * arrow idles with a gentle infinite bob. This is the only one of the
- * premium Contact designs that's genuinely light/dark aware — every other one owns a
- * fixed black canvas regardless of the site's mode; this one mirrors the portfolio's own
+ * arrow idles with a gentle infinite bob. This was the first of the premium Contact designs
+ * to be genuinely light/dark aware — every other one now follows the same recipe (see
+ * contactLightDarkTokens() in portfolio-contact-design-motion.ts) — mirroring the portfolio's own
  * active `settings.global.colorMode` (pure white / pure black, synced text). Below 768px
  * the two-column grid collapses to a single edge-to-edge flow, reordered via CSS grid
  * `order` (no separate mobile tree) so the image sits right under the title.

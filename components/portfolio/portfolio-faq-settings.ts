@@ -70,6 +70,7 @@ import {
   FAQ_HEADER_PALETTE_TOKENS,
   FAQ_HEADER_ACCENT_COUNT_ALIGNMENTS,
   FAQ_HEADER_BILLBOARD_WORD_STYLES,
+  faqHeaderPaletteTokenColor,
   type PortfolioFaqHeaderDesign,
   type PortfolioFaqHeaderDesignAlignment,
   type PortfolioFaqHeaderMarginBottom,
@@ -208,6 +209,14 @@ export type PortfolioFaqTextSize = 'sm' | 'md' | 'lg';
  */
 export type PortfolioFaqPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
 
+/**
+ * General → Text colors: one palette token for the questions and one for the answers of every
+ * FAQ design. `auto` (default) keeps each design's own tuned colors, so nothing changes until a
+ * creator picks one; the three tokens are FAQ's palette-token set (Principal / Secondary /
+ * Strong text), resolved live through `--pf-palette-*` like the Header and Frame colors.
+ */
+export type PortfolioFaqTextColorToken = 'auto' | PortfolioFaqHeaderPaletteToken;
+
 export type PortfolioFaqExpandIconStyle = 'plus' | 'chevron';
 
 export type PortfolioFaqContentAlign = 'left' | 'center' | 'right';
@@ -309,6 +318,10 @@ export type PortfolioFaqPresentationSettings = PortfolioSectionBackgroundSetting
   colorModeOverride: PortfolioSectionColorMode;
   /** Type-size scale applied uniformly across every premium FAQ design (General tab). */
   premiumFontSize: PortfolioFaqPremiumFontSize;
+  /** General tab → Text colors: question ink for every design (`auto` = the design's own). */
+  questionColorToken: PortfolioFaqTextColorToken;
+  /** General tab → Text colors: answer ink for every design (`auto` = the design's own). */
+  answerColorToken: PortfolioFaqTextColorToken;
   /** General tab → Frame: opt-in outer frame around whichever design is active
    *  (see portfolio-faq-frame.ts — the designs themselves draw no stage). */
   designFrame: PortfolioFaqFrameSettings;
@@ -536,6 +549,8 @@ export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   useHeroPalette: true,
   colorModeOverride: 'auto',
   premiumFontSize: 'medium',
+  questionColorToken: 'auto',
+  answerColorToken: 'auto',
   designFrame: { ...DEFAULT_FAQ_FRAME },
   faqPalette: { ...DEFAULT_FAQ_PALETTE },
   faqColorBindings: { ...DEFAULT_FAQ_COLOR_BINDINGS },
@@ -731,6 +746,30 @@ const FAQ_PREMIUM_FONT_SCALE: Record<PortfolioFaqPremiumFontSize, number> = {
 
 export function faqPremiumFontScale(size: PortfolioFaqPremiumFontSize): number {
   return FAQ_PREMIUM_FONT_SCALE[size] ?? 1;
+}
+
+export const FAQ_TEXT_COLOR_TOKENS: PortfolioFaqTextColorToken[] = ['auto', ...FAQ_HEADER_PALETTE_TOKENS];
+
+/**
+ * CSS custom properties for General → Text colors, set once on the wrapper around whichever
+ * design is active. Every design's question/answer rule reads `var(--pf-faq-q-color, <its own>)`
+ * / `var(--pf-faq-a-color, <its own>)`, so `auto` (nothing set) leaves each design untouched.
+ */
+export function faqTextColorVars(
+  presentation: Pick<PortfolioFaqPresentationSettings, 'questionColorToken' | 'answerColorToken'>
+): CSSProperties | undefined {
+  const question = presentation.questionColorToken ?? 'auto';
+  const answer = presentation.answerColorToken ?? 'auto';
+  if (question === 'auto' && answer === 'auto') return undefined;
+  const vars: Record<string, string> = {};
+  if (question !== 'auto') vars['--pf-faq-q-color'] = faqHeaderPaletteTokenColor(question);
+  if (answer !== 'auto') {
+    vars['--pf-faq-a-color'] = faqHeaderPaletteTokenColor(answer);
+    // Bento Dual prints its answers on an inverted face. A palette text color is only
+    // guaranteed to read on the palette's own background, so that face follows it.
+    vars['--pf-faq-a-surface'] = 'var(--pf-palette-fond, #0a0a0a)';
+  }
+  return vars as CSSProperties;
 }
 
 export const PORTFOLIO_FAQ_DESIGN_OPTIONS: {
@@ -1646,6 +1685,8 @@ export function mergeFaqPresentation(
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
     premiumFontSize: pick(record.premiumFontSize, FAQ_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
+    questionColorToken: pick(record.questionColorToken, FAQ_TEXT_COLOR_TOKENS, base.questionColorToken ?? 'auto'),
+    answerColorToken: pick(record.answerColorToken, FAQ_TEXT_COLOR_TOKENS, base.answerColorToken ?? 'auto'),
     designFrame: normalizeFaqFrame(record.designFrame, normalizeFaqFrame(base.designFrame)),
     faqPalette: mergeFaqPalette(
       mergeFaqPalette(DEFAULT_FAQ_PALETTE, base.faqPalette),
