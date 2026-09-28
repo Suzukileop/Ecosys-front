@@ -504,14 +504,14 @@ export function ProfileStrengthsField({
   }
   if (mode === 'tools') {
     return (
-      <div className="space-y-6">{renderEditor('Tools', 'Ajouter un outil', true)}</div>
+      <div className="space-y-6">{renderEditor('Tools', 'Ajouter un outil', false)}</div>
     );
   }
 
   return (
     <div className="space-y-6">
       {renderEditor('Stack', 'Ajouter un élément de stack', false)}
-      {renderEditor('Tools', 'Ajouter un outil', true)}
+      {renderEditor('Tools', 'Ajouter un outil', false)}
     </div>
   );
 }

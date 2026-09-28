@@ -157,7 +157,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
            it the only one that looked pressed. */
         className={`relative transition-[color,transform] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 ${
           compact
-            ? 'flex h-9 w-9 items-center justify-center rounded-full hover:scale-105 text-neutral-700 hover:text-neutral-950 dark:text-neutral-200 dark:hover:text-white'
+            ? 'flex h-9 w-9 items-center justify-center rounded-full hover:scale-105 text-[#222222] dark:text-neutral-300'
             : 'rounded-lg p-2 text-neutral-600 hover:bg-gray-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
         }`}
         aria-expanded={open}
@@ -167,7 +167,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
         {/* In the bar (`compact`): same 24-unit box and `stroke-width: 1.5` as the magnifier and
             the chat glyph beside it. */}
         <svg
-          className={compact ? 'h-[1.3rem] w-[1.3rem]' : 'h-6 w-6'}
+          className={compact ? 'h-[1.6rem] w-[1.6rem]' : 'h-6 w-6'}
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -196,47 +196,51 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
 
       {open && (
         <div
-          className="absolute right-0 z-50 mt-2 w-[22rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+          className="absolute right-0 z-50 mt-3 w-[26rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-black/[0.06] bg-white shadow-[0_24px_60px_-24px_rgba(0,0,0,0.35)] dark:border-white/[0.08] dark:bg-[#111111]"
+          style={{ animation: 'pf-float-in 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
           role="dialog"
           aria-label="Notification list"
         >
-          <div className="border-b border-neutral-100 px-4 py-3 dark:border-neutral-800">
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-neutral-900 dark:text-white">Notifications</span>
+          <div className="px-5 pt-5">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-[17px] font-bold tracking-[-0.01em] text-[#111111] dark:text-white">
+                Notifications
+                {unreadCount > 0 ? (
+                  <span className="text-[#FF5722]"> · {String(unreadCount).padStart(2, '0')}</span>
+                ) : null}
+              </span>
               {unreadCount > 0 && (
                 <button
                   type="button"
                   onClick={() => void markAllRead()}
-                  className="text-xs font-medium text-neutral-500 transition hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
+                  className="text-[13.5px] font-medium text-neutral-500 transition-colors hover:text-[#FF5722] dark:text-neutral-400"
                 >
                   Mark all as read
                 </button>
               )}
             </div>
-            <NotificationFilterTabs value={filter} onChange={setFilter} compact />
+            <NotificationFilterTabs value={filter} onChange={setFilter} unreadCount={unreadCount} underline compact />
           </div>
 
-          {error && <p className="px-4 py-2 text-xs text-red-600">{error}</p>}
+          {error && <p className="px-5 pt-3 text-[13px] text-red-600">{error}</p>}
 
-          <div className="notification-panel-scroll max-h-[min(24rem,70vh)] overflow-y-auto">
+          <div className="max-h-[min(26rem,70vh)] overflow-y-auto [scrollbar-color:rgba(0,0,0,0.18)_transparent] [scrollbar-width:thin] dark:[scrollbar-color:rgba(255,255,255,0.16)_transparent]">
             <NotificationGroupedList
               items={filteredItems}
               isAgent={isAgent}
               onItemClick={(n) => void handleNotificationClick(n)}
-              emptyMessage={filter === 'unread' ? 'No unread notifications' : 'No notifications'}
+              emptyMessage={filter === 'unread' ? 'You’re all caught up.' : 'No notifications yet.'}
               variant="panel"
             />
           </div>
 
-          <div className="border-t border-neutral-100 px-4 py-2.5 dark:border-neutral-800">
-            <Link
-              href="/dashboard/notifications"
-              className="block text-center text-sm font-semibold text-neutral-600 transition hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white"
-              onClick={openAllPage}
-            >
-              View all
-            </Link>
-          </div>
+          <Link
+            href="/dashboard/notifications"
+            className="flex items-center justify-center gap-1.5 border-t border-black/[0.06] px-5 py-3.5 text-[14px] font-medium text-neutral-600 transition-colors hover:text-[#FF5722] dark:border-white/[0.08] dark:text-neutral-300"
+            onClick={openAllPage}
+          >
+            View all notifications <span aria-hidden>→</span>
+          </Link>
         </div>
       )}
     </div>

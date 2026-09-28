@@ -20,7 +20,7 @@ function MyProductsPageInner() {
 
   if (isLoading || !user) {
     return (
-      <div className="flex justify-center py-16">
+      <div className="flex justify-center py-20">
         <LoadingSpinner />
       </div>
     );
@@ -34,8 +34,14 @@ function MyProductsPageInner() {
 export default function MarketplaceMyProductsPage() {
   return (
     <DashboardHomeShell fullWidth fillViewport>
-      <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col overflow-hidden px-4 sm:px-6">
-        <Suspense fallback={<CreatorStudioProductsTabSkeleton />}>
+      <div className="mx-auto flex min-h-0 w-full max-w-[1280px] flex-1 flex-col overflow-hidden px-4 sm:px-6 lg:px-8 xl:px-0">
+        <Suspense
+          fallback={
+            <div className="pt-8 sm:pt-10">
+              <CreatorStudioProductsTabSkeleton />
+            </div>
+          }
+        >
           <MyProductsPageInner />
         </Suspense>
       </div>

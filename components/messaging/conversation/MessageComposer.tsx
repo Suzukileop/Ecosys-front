@@ -1,8 +1,6 @@
 'use client';
 
-import { useRef, useState, type DragEvent } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
+import { useRef, useState, type DragEvent, type ReactNode } from 'react';
 
 export type ComposerPendingFile = {
   id: string;
@@ -32,6 +30,36 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/**
+ * Every glyph in the composer is drawn at `stroke-width: 1` on a 24 grid and carried at 20px.
+ * One weight for the whole row is what makes a set of icons read as a set; the moment one of
+ * them is heavier it becomes a button and the rest become decoration.
+ */
+function ComposerIconButton({
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className="inline-flex h-9 w-9 items-center justify-center text-[var(--msg-ink-faint)] transition-colors duration-300 hover:text-[var(--msg-ink)] focus-visible:text-[var(--msg-ink)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-30"
+    >
+      {children}
+    </button>
+  );
+}
+
 export function MessageComposer({
   value,
   onChange,
@@ -52,8 +80,8 @@ export function MessageComposer({
 
   if (readOnlyLabel) {
     return (
-      <div className="shrink-0 border-t border-[var(--cw-border)] bg-[var(--cw-surface)] px-4 py-3">
-        <p className="text-[13px] text-[var(--cw-text-secondary)]">{readOnlyLabel}</p>
+      <div className="shrink-0 border-t border-[var(--msg-hairline)] px-5 py-5 sm:px-6">
+        <p className="msg-micro text-[var(--msg-ink-faint)]">{readOnlyLabel}</p>
       </div>
     );
   }
@@ -92,8 +120,19 @@ export function MessageComposer({
   };
 
   return (
+    /*
+     * No card, no field, no frame. The composer is the bottom of the conversation panel and is
+     * bounded by exactly one thing: the hairline it hangs from. The white rectangle that used
+     * to be here was a surface drawn on top of a surface of the same colour — it separated
+     * nothing and cost the panel its bottom edge.
+     *
+     * While a file is over the drop zone the hairline is the thing that answers, going to coral
+     * for the length of the drag. That is the one moment the composer is allowed an accent.
+     */
     <div
-      className="relative shrink-0 border-t border-[var(--cw-border)] bg-[var(--cw-surface)] px-3 py-3 sm:px-4"
+      className={`relative shrink-0 border-t px-5 pb-4 pt-3 transition-colors duration-300 sm:px-6 ${
+        dragging ? 'border-[var(--msg-coral)]' : 'border-[var(--msg-hairline)]'
+      }`}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -101,145 +140,162 @@ export function MessageComposer({
     >
       {dragging ? (
         <div
-          className="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-[10px] border-2 border-dashed border-[var(--cw-accent)] bg-[var(--cw-accent-soft)]/95"
+          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-[var(--msg-panel)]/85"
           aria-hidden
         >
-          <p className="text-sm font-semibold text-[var(--cw-accent)]">Drop files to attach</p>
+          <p className="msg-micro text-[var(--msg-coral)]">Drop files to attach</p>
         </div>
       ) : null}
 
-      <div
-        className={`rounded-[8px] border bg-[var(--cw-surface)] transition ${
-          dragging
-            ? 'border-neutral-500 dark:border-neutral-400'
-            : 'border-neutral-300 focus-within:border-neutral-500 focus-within:ring-1 focus-within:ring-neutral-400/40 dark:border-neutral-700 dark:focus-within:border-neutral-400 dark:focus-within:ring-neutral-500/40'
-        }`}
-      >
-        {pendingFiles.length > 0 ? (
-          <div className="flex flex-wrap gap-2 border-b border-[var(--cw-border)] px-3 py-2.5">
-            {pendingFiles.map((item) => {
-              const isImage = item.file.type.startsWith('image/');
-              const isVideo = item.file.type.startsWith('video/');
-              return (
-                <div
-                  key={item.id}
-                  className="relative flex max-w-[11rem] items-center gap-2 rounded-[8px] border border-[var(--cw-border)] bg-[var(--cw-surface-soft)] p-1.5"
-                >
-                  {isImage && item.previewUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={item.previewUrl}
-                      alt=""
-                      className="h-12 w-12 shrink-0 rounded-[6px] object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[6px] bg-[var(--cw-border)] text-[10px] font-semibold text-[var(--cw-text-secondary)]">
-                      {isVideo ? 'VID' : 'FILE'}
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1 pr-5">
-                    <p className="truncate text-[13px] font-medium text-[var(--cw-text-primary)]">
-                      {item.file.name}
-                    </p>
-                    <p className="text-[12px] text-[var(--cw-text-secondary)]">{formatSize(item.file.size)}</p>
+      {pendingFiles.length > 0 ? (
+        <div className="mb-3 flex flex-wrap gap-2">
+          {pendingFiles.map((item) => {
+            const isImage = item.file.type.startsWith('image/');
+            const isVideo = item.file.type.startsWith('video/');
+            return (
+              <div
+                key={item.id}
+                className="relative flex max-w-[12rem] items-center gap-2.5 border border-[var(--msg-hairline)] p-1.5"
+              >
+                {isImage && item.previewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={item.previewUrl} alt="" className="h-11 w-11 shrink-0 object-cover" />
+                ) : (
+                  <div className="msg-micro flex h-11 w-11 shrink-0 items-center justify-center border border-[var(--msg-hairline)] text-[var(--msg-ink-faint)]">
+                    {isVideo ? 'VID' : 'FILE'}
                   </div>
-                  {onRemovePendingFile ? (
-                    <button
-                      type="button"
-                      onClick={() => onRemovePendingFile(item.id)}
-                      disabled={sending || uploading}
-                      className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-[11px] text-white transition hover:bg-black/75 disabled:opacity-40"
-                      aria-label={`Remove ${item.file.name}`}
-                      title="Remove"
-                    >
-                      ✕
-                    </button>
-                  ) : null}
+                )}
+                <div className="min-w-0 flex-1 pr-5">
+                  <p className="truncate text-[13px] font-light text-[var(--msg-ink)]">
+                    {item.file.name}
+                  </p>
+                  <p className="msg-micro mt-1 text-[var(--msg-ink-faint)]">
+                    {formatSize(item.file.size)}
+                  </p>
                 </div>
-              );
-            })}
-          </div>
-        ) : null}
-
-        <label htmlFor="conversation-composer-input" className="sr-only">
-          Your message
-        </label>
-        <textarea
-          id="conversation-composer-input"
-          rows={3}
-          value={value}
-          disabled={disabled || sending || uploading}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              if (canSend) onSend();
-            }
-          }}
-          placeholder={placeholder}
-          className="min-h-[72px] w-full resize-none border-0 bg-transparent px-3 py-2.5 text-sm text-[var(--cw-text-primary)] outline-none ring-0 focus:outline-none focus:ring-0 placeholder:text-[var(--cw-text-secondary)] disabled:opacity-60"
-        />
-
-        <div className="flex items-center justify-between gap-2 px-2 pb-2">
-          <div className="flex items-center gap-0.5">
-            {onAttach ? (
-              <button
-                type="button"
-                onClick={onAttach}
-                disabled={sending || disabled}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] text-[var(--cw-text-secondary)] transition hover:bg-neutral-100 hover:text-[var(--cw-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cw-accent)]/40 disabled:opacity-40 dark:hover:bg-neutral-800"
-                title="Attach media"
-                aria-label="Attach media"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                  />
-                </svg>
-              </button>
-            ) : null}
-
-            {onInviteGuest ? (
-              <button
-                type="button"
-                onClick={onInviteGuest}
-                disabled={disabled || sending || uploading}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] text-[var(--cw-text-secondary)] transition hover:bg-neutral-100 hover:text-[var(--cw-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cw-accent)]/40 disabled:opacity-40 dark:hover:bg-neutral-800"
-                title="Invite guest"
-                aria-label="Invite guest"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                  />
-                </svg>
-              </button>
-            ) : null}
-          </div>
-
-          <button
-            type="button"
-            onClick={onSend}
-            disabled={!canSend}
-            className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cw-accent)]/40 ${
-              canSend
-                ? 'bg-[var(--cw-accent)] text-white hover:bg-[var(--msg-brand-hover,#E06E18)] active:scale-[0.97]'
-                : 'cursor-not-allowed bg-neutral-200 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500'
-            }`}
-            title={canSend ? 'Send' : 'Write a message to send'}
-            aria-label={canSend ? 'Send' : 'Send (disabled — empty message)'}
-          >
-            {sending || uploading ? (
-              <span className="text-xs">…</span>
-            ) : (
-              <FontAwesomeIcon icon={faArrowUp} className="h-4 w-4" />
-            )}
-          </button>
+                {onRemovePendingFile ? (
+                  <button
+                    type="button"
+                    onClick={() => onRemovePendingFile(item.id)}
+                    disabled={sending || uploading}
+                    className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center text-[var(--msg-ink-faint)] transition-colors duration-300 hover:text-[var(--msg-ink)] disabled:opacity-30"
+                    aria-label={`Remove ${item.file.name}`}
+                    title="Remove"
+                  >
+                    <svg
+                      className="h-3 w-3"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      strokeLinecap="round"
+                      aria-hidden
+                    >
+                      <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </button>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
+      ) : null}
+
+      <label htmlFor="conversation-composer-input" className="sr-only">
+        Your message
+      </label>
+      <textarea
+        id="conversation-composer-input"
+        rows={2}
+        value={value}
+        disabled={disabled || sending || uploading}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (canSend) onSend();
+          }
+        }}
+        placeholder={placeholder}
+        className="msg-scroll min-h-[3.25rem] w-full resize-none border-0 bg-transparent p-0 text-[0.9375rem] font-light leading-[1.65] text-[var(--msg-ink)] outline-none ring-0 placeholder:text-[var(--msg-ink-faint)] focus:outline-none focus:ring-0 disabled:opacity-50"
+      />
+
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <div className="-ml-2 flex items-center gap-1">
+          {onAttach ? (
+            <ComposerIconButton label="Attach media" onClick={onAttach} disabled={sending || disabled}>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M15.2 7 8.6 13.6a2 2 0 1 0 2.8 2.8l6.4-6.6a4 4 0 1 0-5.6-5.6l-6.5 6.6a6 6 0 1 0 8.5 8.5L20.5 13" />
+              </svg>
+            </ComposerIconButton>
+          ) : null}
+
+          {onInviteGuest ? (
+            <ComposerIconButton
+              label="Invite guest"
+              onClick={onInviteGuest}
+              disabled={disabled || sending || uploading}
+            >
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M18 9v6M21 12h-6M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM3 20a6 6 0 0 1 12 0v1H3v-1Z" />
+              </svg>
+            </ComposerIconButton>
+          ) : null}
+        </div>
+
+        {/*
+         * Send is a drawn arrow, not a disc. A filled circle here would be the only solid shape
+         * in the whole section and would sit at the very bottom of the reading order — the last
+         * place that should be shouting. Availability is carried by ink: faint when there is
+         * nothing to send, full black the instant there is.
+         */}
+        <button
+          type="button"
+          onClick={onSend}
+          disabled={!canSend}
+          className={`-mr-1 inline-flex h-9 w-9 items-center justify-center transition-colors duration-300 focus-visible:outline-none ${
+            canSend
+              ? 'text-[var(--msg-ink)] hover:text-[var(--msg-coral)]'
+              : 'cursor-not-allowed text-[var(--msg-ink-faint)] opacity-40'
+          }`}
+          title={canSend ? 'Send' : 'Write a message to send'}
+          aria-label={canSend ? 'Send' : 'Send (disabled — empty message)'}
+        >
+          {sending || uploading ? (
+            <span className="msg-micro">…</span>
+          ) : (
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
+          )}
+        </button>
       </div>
     </div>
   );

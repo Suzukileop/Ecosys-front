@@ -20,6 +20,7 @@ import { NotificationFilterTabs } from '@/components/notifications/NotificationF
 import { NotificationGroupedList } from '@/components/notifications/NotificationGroupedList';
 import { dispatchAgentContentSync } from '@/lib/agent-content-sync';
 import { DashboardHomeShell } from '@/components/DashboardHomeShell';
+import { BackToTopButton } from '@/components/ui/BackToTopButton';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
@@ -111,6 +112,14 @@ export function NotificationsPageClient() {
     }
   };
 
+  const goBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push('/dashboard/home');
+  };
+
   const markAll = async () => {
     try {
       await markAllNotificationsRead();
@@ -124,39 +133,66 @@ export function NotificationsPageClient() {
 
   return (
     <DashboardHomeShell>
-      <div className="mx-auto max-w-2xl space-y-6">
-        {unreadCount > 0 ? (
-          <div className="flex justify-end">
+      <div className="mx-auto w-full max-w-3xl px-4 pb-16 pt-4 sm:px-0">
+        <div className="flex items-center justify-between gap-4">
+          <div className="relative flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={goBack}
+              aria-label="Go back"
+              title="Go back"
+              className="-ml-2 inline-flex h-9 w-9 sm:absolute sm:-left-14 sm:top-1/2 sm:ml-0 sm:-translate-y-1/2 shrink-0 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.06] dark:hover:text-white"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h1 className="truncate text-2xl font-bold tracking-[-0.02em] text-[#111111] dark:text-white">
+              Notifications
+              {unreadCount > 0 ? (
+                <span className="text-[#FF5722]"> · {String(unreadCount).padStart(2, '0')}</span>
+              ) : null}
+            </h1>
+          </div>
+          {unreadCount > 0 ? (
             <button
               type="button"
               onClick={() => void markAll()}
-              className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
+              className="inline-flex items-center gap-2 text-[15px] font-medium text-neutral-500 transition-colors hover:text-[#FF5722] dark:text-neutral-400"
             >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="m5 12.5 4.5 4.5L19 7.5" />
+              </svg>
               Mark all as read
             </button>
+          ) : null}
+        </div>
+
+        <NotificationFilterTabs value={filter} onChange={setFilter} unreadCount={unreadCount} underline />
+
+        {error ? (
+          <div className="mt-6">
+            <ErrorAlert message={error} onDismiss={() => setError(null)} />
           </div>
         ) : null}
 
-        <NotificationFilterTabs value={filter} onChange={setFilter} />
-
-        {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
-
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <LoadingSpinner size="lg" />
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="mt-10">
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <LoadingSpinner size="lg" />
+            </div>
+          ) : (
             <NotificationGroupedList
               items={filteredItems}
               isAgent={isAgent}
               onItemClick={(n) => void openNotification(n)}
-              emptyMessage={filter === 'unread' ? 'No unread notifications' : 'No notifications.'}
+              emptyMessage={filter === 'unread' ? 'You’re all caught up.' : 'No notifications yet.'}
               variant="page"
             />
-          </div>
-        )}
+          )}
+        </div>
       </div>
+      <BackToTopButton />
     </DashboardHomeShell>
   );
 }

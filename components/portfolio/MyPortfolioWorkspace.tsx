@@ -1,10 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ACCENT_ORANGE } from '@/components/landing/landingBrand';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faArrowRight, faGear } from '@fortawesome/free-solid-svg-icons';
+import { ACCENT_ORANGE, brandCtaClass } from '@/components/landing/landingBrand';
 import { useAuth } from '@/context/AuthContext';
 import { CreatorStudioProfileTab } from '@/components/creator/studio/CreatorStudioProfileTab';
 import { PortfolioPresencePicker } from '@/components/portfolio/PortfolioPresencePicker';
@@ -17,113 +15,213 @@ import {
   getCreatorPortfolioSettings,
   updateCreatorPortfolioSettings,
 } from '@/lib/portfolio-settings-api';
-import { brandCtaClass } from '@/components/landing/landingBrand';
 import { PortfolioLivePreview } from '@/components/portfolio/PortfolioLivePreview';
+import { buildCreatorPortfolioUrl } from '@/lib/portfolio-url';
+import { PORTFOLIO_FRAME_CLASS } from '@/components/portfolio/portfolioFrame';
 
 type PortfolioTabId = 'information' | 'templates' | 'preview';
 type PortfolioNavSide = 'left' | 'right';
 
-const TABS: { id: PortfolioTabId; label: string; live?: boolean }[] = [
-  { id: 'information', label: 'Information' },
-  { id: 'templates', label: 'Explore Templates' },
-  { id: 'preview', label: 'Live Preview', live: true },
-];
+const PORTFOLIO_NAV_SIDE: PortfolioNavSide = 'left';
 
-function EyeIcon({ className }: { className?: string }) {
+const PRESENCE_SPACE_TITLES: Record<PortfolioPresenceKind, string> = {
+  portfolio: 'Portfolio space',
+  storefront: 'Storefront space',
+  business: 'Business space',
+};
+
+/** Same ink as DashboardNavbarLinks — one glyph colour across the product chrome. */
+const NAV_IDLE = 'text-[#222222] dark:text-neutral-300';
+const NAV_ACTIVE = 'text-[#0A0A0A] dark:text-white';
+
+/**
+ * Hero copy action — sits outside the Live Preview toolbar, up on the secondary nav row.
+ * Black slab in light mode so it reads as a deliberate share control, not a muted text link.
+ */
+function CopyLiveLinkHero({ shareUrl }: { shareUrl: string }) {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current != null) window.clearTimeout(timerRef.current);
+    },
+    []
+  );
+
+  const onCopy = useCallback(async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      if (timerRef.current != null) window.clearTimeout(timerRef.current);
+      timerRef.current = window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      /* ignore */
+    }
+  }, [shareUrl]);
+
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-      />
-    </svg>
+    <>
+      <button
+        type="button"
+        onClick={() => void onCopy()}
+        aria-label={copied ? 'Link copied' : 'Copy live link'}
+        className="group relative inline-flex shrink-0 items-center gap-2 rounded-lg bg-neutral-950 px-3.5 py-2 text-[0.9rem] font-medium normal-case tracking-normal text-white transition-opacity duration-300 hover:opacity-90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 dark:bg-white dark:text-neutral-950"
+      >
+        <span className="whitespace-nowrap">
+          <span className="sm:hidden">{copied ? 'Copied' : 'Copy link'}</span>
+          <span className="hidden sm:inline">{copied ? 'Link copied' : 'Copy live link'}</span>
+        </span>
+        <span
+          aria-hidden
+          className="inline-block text-sm transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+        >
+          ↗
+        </span>
+      </button>
+      <div
+        role="status"
+        aria-live="polite"
+        className={`pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transition-[opacity,transform] duration-300 ease-out ${
+          copied ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'
+        }`}
+      >
+        <p
+          className="whitespace-nowrap rounded-lg border border-black/10 bg-white/95 px-4 py-2 text-[0.9rem] font-medium normal-case tracking-normal shadow-[0_8px_24px_rgba(0,0,0,0.08)] backdrop-blur-md"
+          style={{ color: ACCENT_ORANGE }}
+        >
+          Link copied to clipboard
+        </p>
+      </div>
+    </>
   );
 }
 
-function PortfolioInformationSettings({
-  navSide,
-  onToggleNavSide,
+const TABS: { id: PortfolioTabId; label: string; live?: boolean }[] = [
+  { id: 'information', label: 'Information' },
+  { id: 'templates', label: 'Explore templates' },
+  { id: 'preview', label: 'Live preview', live: true },
+];
+
+const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
+const EASE_CLS = 'ease-[cubic-bezier(0.16,1,0.3,1)]';
+
+/** Soft one-shot enter when the workspace panel key changes — no fade-out, no pulse. */
+const PANEL_IN_STYLE = {
+  animation: `pf-workspace-panel-in 360ms ${EASE} backwards`,
+} as const;
+
+/**
+ * Centred secondary navbar — a single mineral pill with a sliding white/black plate.
+ *
+ * Measured from the active button's offset so the plate morphs across unequal label widths
+ * without hard-coding four equal columns (which would leave "Explore Templates" cramped and
+ * "Information" swimming in empty space).
+ */
+function PortfolioWorkspaceSegmentedNav({
+  tab,
+  onTabChange,
   onChangePresence,
 }: {
-  navSide: PortfolioNavSide;
-  onToggleNavSide: () => void;
+  tab: PortfolioTabId;
+  onTabChange: (id: PortfolioTabId) => void;
   onChangePresence: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const moveSideLabel =
-    navSide === 'left' ? 'Move sidebar to the right' : 'Move sidebar to the left';
+  const railRef = useRef<HTMLDivElement>(null);
+  const btnRefs = useRef<Record<PortfolioTabId, HTMLButtonElement | null>>({
+    information: null,
+    templates: null,
+    preview: null,
+  });
+  const [plate, setPlate] = useState({ left: 0, width: 0, ready: false });
+
+  const measure = useCallback(() => {
+    const rail = railRef.current;
+    const btn = btnRefs.current[tab];
+    if (!rail || !btn) return;
+    const railBox = rail.getBoundingClientRect();
+    const btnBox = btn.getBoundingClientRect();
+    setPlate({
+      left: btnBox.left - railBox.left + rail.scrollLeft,
+      width: btnBox.width,
+      ready: true,
+    });
+  }, [tab]);
+
+  useLayoutEffect(() => {
+    measure();
+  }, [measure]);
 
   useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    const rail = railRef.current;
+    if (!rail) return;
+    const onResize = () => measure();
+    window.addEventListener('resize', onResize);
+    rail.addEventListener('scroll', onResize, { passive: true });
+    return () => {
+      window.removeEventListener('resize', onResize);
+      rail.removeEventListener('scroll', onResize);
     };
-    document.addEventListener('mousedown', onPointerDown);
-    return () => document.removeEventListener('mousedown', onPointerDown);
-  }, [open]);
+  }, [measure]);
 
   return (
-    <div ref={rootRef} className="relative inline-flex shrink-0">
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        title="Information settings"
-        aria-label="Information settings"
-        aria-expanded={open}
-        aria-haspopup="menu"
-        className={`inline-flex h-10 w-10 items-center justify-center rounded-xl transition ${
-          open
-            ? 'bg-white text-slate-900 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:text-white dark:ring-neutral-700'
-            : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200/80 dark:bg-neutral-800/80 dark:text-neutral-300 dark:hover:bg-neutral-800'
-        }`}
+    <div className="flex min-w-0 justify-start">
+      <div
+        ref={railRef}
+        role="tablist"
+        aria-label="Portfolio workspace"
+        /* `rounded-lg` matches DashboardHeaderSearch fluid field — not a full pill. */
+        className="pf-scrollbar-hide relative inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-lg border border-black/[0.1] bg-transparent p-1 dark:border-white/[0.12]"
       >
-        <FontAwesomeIcon icon={faGear} className="h-4 w-4" fixedWidth />
-      </button>
-      {open ? (
-        <div
-          role="menu"
-          aria-label="Information settings"
-          className="absolute right-0 top-full z-40 mt-1.5 min-w-[12.5rem] overflow-hidden rounded-xl border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
+        {/* Sliding plate — compositor-only transform/size via left+width transitions. */}
+        <span
+          aria-hidden
+          style={{
+            left: plate.left,
+            width: plate.width,
+            transitionTimingFunction: EASE,
+            opacity: plate.ready ? 1 : 0,
+          }}
+          className="pointer-events-none absolute top-1 bottom-1 rounded-md bg-black/[0.06] transition-[left,width,opacity] duration-[420ms] dark:bg-white/[0.08]"
+        />
+
+        {TABS.map((item) => {
+          const active = tab === item.id;
+          return (
+            <button
+              key={item.id}
+              ref={(node) => {
+                btnRefs.current[item.id] = node;
+              }}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onTabChange(item.id)}
+              className={`relative z-[1] inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3.5 py-2 text-[0.9rem] font-medium normal-case tracking-normal transition-colors duration-[320ms] ${EASE_CLS} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 sm:px-4 ${
+                active ? NAV_ACTIVE : NAV_IDLE
+              }`}
+            >
+              <span>{item.label}</span>
+              {item.live ? (
+                <span
+                  aria-hidden
+                  style={{ backgroundColor: ACCENT_ORANGE }}
+                  className="block h-1.5 w-1.5 shrink-0 rounded-full"
+                />
+              ) : null}
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={onChangePresence}
+          className={`relative z-[1] inline-flex shrink-0 items-center whitespace-nowrap rounded-md px-3.5 py-2 text-[0.9rem] font-medium normal-case tracking-normal transition-colors duration-[320ms] ${EASE_CLS} ${NAV_IDLE} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 sm:px-4`}
         >
-          <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-400 dark:text-neutral-500">
-            Settings
-          </p>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              onChangePresence();
-              setOpen(false);
-            }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-neutral-700 transition hover:bg-neutral-50 dark:text-neutral-200 dark:hover:bg-neutral-800"
-          >
-            <span className="min-w-0 flex-1">Choose another presence</span>
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              onToggleNavSide();
-              setOpen(false);
-            }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-neutral-700 transition hover:bg-neutral-50 dark:text-neutral-200 dark:hover:bg-neutral-800"
-          >
-            <FontAwesomeIcon
-              icon={navSide === 'left' ? faArrowRight : faArrowLeft}
-              className="h-3.5 w-3.5 shrink-0 text-neutral-400"
-              fixedWidth
-            />
-            <span className="min-w-0 flex-1">{moveSideLabel}</span>
-          </button>
-        </div>
-      ) : null}
+          Switch format
+        </button>
+      </div>
     </div>
   );
 }
@@ -131,22 +229,30 @@ function PortfolioInformationSettings({
 export function MyPortfolioWorkspace() {
   const { user, hasRole, isLoading } = useAuth();
   const [tab, setTab] = useState<PortfolioTabId>('information');
-  const [portfolioNavSide, setPortfolioNavSide] = useState<PortfolioNavSide>('left');
   const [presenceKind, setPresenceKind] = useState<PortfolioPresenceKind | null>(null);
   const selectedPresence = getPortfolioPresenceOption(presenceKind);
 
   const isCreator = hasRole('ROLE_CREATOR');
+  const workspaceNavRef = useRef<HTMLDivElement>(null);
+  const isPreview = tab === 'preview';
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      setPortfolioNavSide(
-        window.localStorage.getItem('portfolio-sections-nav-side') === 'right' ? 'right' : 'left'
+    const node = workspaceNavRef.current;
+    if (!node) return;
+    const publish = () => {
+      document.documentElement.style.setProperty(
+        '--portfolio-workspace-nav-h',
+        `${Math.round(node.getBoundingClientRect().height)}px`
       );
-    } catch {
-      /* ignore */
-    }
-  }, []);
+    };
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty('--portfolio-workspace-nav-h');
+    };
+  }, [presenceKind, tab]);
 
   const persistPresenceKind = useCallback(async (kind: PortfolioPresenceKind) => {
     setPresenceKind(kind);
@@ -162,145 +268,112 @@ export function MyPortfolioWorkspace() {
     }
   }, []);
 
-  const togglePortfolioNavSide = useCallback(() => {
-    setPortfolioNavSide((prev) => {
-      const next = prev === 'left' ? 'right' : 'left';
-      try {
-        window.localStorage.setItem('portfolio-sections-nav-side', next);
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
+  const resetPresence = useCallback(() => {
+    setPresenceKind(null);
+    setTab('information');
   }, []);
 
   if (isLoading) {
     return (
-      <div className="mx-4 rounded-2xl border border-neutral-200 bg-white px-6 py-16 text-center text-sm text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950 sm:mx-5">
-        Loading…
+      <div className={PORTFOLIO_FRAME_CLASS}>
+        <div className="rounded-lg border border-black/[0.08] bg-[#F8F8F8] px-6 py-16 text-center text-sm text-[#666666] dark:border-white/[0.06] dark:bg-[#0F0F0F] dark:text-neutral-400">
+          Loading…
+        </div>
       </div>
     );
   }
 
   if (!isCreator || !user) {
     return (
-      <div className="mx-4 rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/80 px-6 py-16 text-center dark:border-neutral-800 dark:bg-neutral-900/40 sm:mx-5">
-        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+      <div className="mx-4 rounded-2xl border border-dashed border-black/[0.08] bg-[#EBEAE8]/80 px-6 py-16 text-center dark:border-white/[0.08] dark:bg-[#0D0D0D]/80 sm:mx-5">
+        <p className="text-sm text-[#666666] dark:text-neutral-400">
           A creator account is required to manage your portfolio.
         </p>
-        <Link href="/dashboard/home" className="mt-4 inline-flex text-sm font-medium text-[#EA580C] hover:text-[#F97316]">
+        <Link
+          href="/dashboard/home"
+          className="mt-4 inline-flex text-sm font-medium text-[#EA580C] hover:text-[#F97316]"
+        >
           Back to Dashboard
         </Link>
       </div>
     );
   }
 
+  if (!selectedPresence) {
+    return (
+      <div className={PORTFOLIO_FRAME_CLASS}>
+        <PortfolioPresencePicker onSelect={(kind) => void persistPresenceKind(kind)} />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      {/*
-       * The workspace chrome only exists once there is a workspace. Until a presence is picked
-       * there is nothing to be on the Information tab *of*, no template to explore and nothing to
-       * preview — so the strip stays out and "Build your vision" is the whole screen. It also
-       * keeps the state machine honest: these tabs are the only way to leave the Information
-       * panel, so they cannot be reachable in a state where leaving it leads nowhere.
-       */}
-      {selectedPresence ? (
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5">
-        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Portfolio workspace">
-          {TABS.map((item) => {
-            const active = tab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setTab(item.id)}
-                /* Pills rather than slabs: thin, fully rounded, translucent, with a hairline that
-                   firms up on the selected one. No filled white plate and no shadow — this strip
-                   sits directly under a glass navbar and a second solid surface right beneath it
-                   read as a second navbar. */
-                className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[0.8rem] font-medium transition-[color,background-color,border-color] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 ${
-                  active
-                    ? 'border-neutral-900/15 bg-neutral-900/[0.06] text-neutral-950 dark:border-white/15 dark:bg-white/10 dark:text-white'
-                    : 'border-transparent bg-neutral-900/[0.03] text-neutral-500 hover:text-neutral-900 dark:bg-white/5 dark:text-neutral-400 dark:hover:text-white'
-                }`}
-              >
-                {item.live ? <EyeIcon className="h-3.5 w-3.5 shrink-0" /> : null}
-                <span>{item.label}</span>
-                {/* A 4px dot, and no ping. The pulse was the loudest thing on the page for a
-                    status that never changes. */}
-                {item.live ? (
-                  <span
-                    aria-hidden
-                    style={{ backgroundColor: ACCENT_ORANGE }}
-                    className={`block h-1 w-1 shrink-0 rounded-full transition-opacity duration-[420ms] ${
-                      active ? 'opacity-100' : 'opacity-60'
-                    }`}
-                  />
-                ) : null}
-              </button>
-            );
-          })}
-          {tab === 'information' ? (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  setPresenceKind(null);
-                  setTab('information');
-                }}
-                className="inline-flex items-center rounded-full border border-transparent bg-neutral-900/[0.03] px-4 py-1.5 text-[0.8rem] font-medium text-neutral-500 transition-colors duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:text-neutral-900 dark:bg-white/5 dark:text-neutral-400 dark:hover:text-white"
-              >
-                Change presence
-              </button>
-              <PortfolioInformationSettings
-                navSide={portfolioNavSide}
-                onToggleNavSide={togglePortfolioNavSide}
-                onChangePresence={() => {
-                  setPresenceKind(null);
-                  setTab('information');
-                }}
-              />
-            </>
-          ) : null}
+    <div
+      className={`flex max-w-full min-w-0 flex-col transition-colors duration-500 ${EASE_CLS} ${
+        isPreview
+          ? 'gap-1 bg-transparent pb-0 pt-2'
+          : 'min-h-[calc(100dvh-5rem)] gap-8 bg-transparent pb-10 pt-3 sm:gap-10 sm:pt-4'
+      }`}
+    >
+      <div
+        ref={workspaceNavRef}
+        data-portfolio-workspace-nav
+        className="relative z-30 max-w-full overflow-x-clip bg-transparent py-3 sm:py-4"
+      >
+        <div className={`${PORTFOLIO_FRAME_CLASS} flex min-w-0 items-center justify-between gap-4`}>
+          <PortfolioWorkspaceSegmentedNav
+            tab={tab}
+            onTabChange={setTab}
+            onChangePresence={resetPresence}
+          />
+          <div className="flex shrink-0 items-center gap-4">
+            {isPreview ? <CopyLiveLinkHero shareUrl={buildCreatorPortfolioUrl(user.id, user.username)} /> : null}
+            <h1 className="hidden whitespace-nowrap text-lg font-semibold tracking-[-0.01em] text-[#0A0A0A] md:block dark:text-white">
+              {PRESENCE_SPACE_TITLES[selectedPresence.id]}
+            </h1>
+          </div>
         </div>
       </div>
-      ) : null}
 
-      {/* Tab panels — Live Preview bleeds to the main-column edges; other tabs keep inset. */}
-      {!selectedPresence ? (
-        <div className="px-4 pb-10 sm:px-5">
-          <PortfolioPresencePicker onSelect={(kind) => void persistPresenceKind(kind)} />
+      <div
+        className={`min-w-0 flex-1 ${
+          isPreview ? 'min-h-0 max-w-full overflow-x-clip' : PORTFOLIO_FRAME_CLASS
+        }`}
+      >
+        {/*
+          One enter animation only — no fade-out first (that read as a pulse).
+          `key` remounts the panel so the soft rise runs once per navigation.
+        */}
+        <div key={tab} className="pf-workspace-panel-in" style={PANEL_IN_STYLE}>
+          {tab === 'information' ? (
+            <CreatorStudioProfileTab
+              variant="portfolio"
+              portfolioNavSide={PORTFOLIO_NAV_SIDE}
+              allowedSections={selectedPresence.sections}
+              sectionsNavTitle={selectedPresence.title}
+              onPortfolioPreview={() => setTab('preview')}
+            />
+          ) : tab === 'preview' ? (
+            <PortfolioLivePreview creatorId={user.id} username={user.username} />
+          ) : (
+            <div className="rounded-2xl border border-black/[0.04] bg-[#EBEAE8] px-6 py-20 text-center dark:border-white/[0.04] dark:bg-[#0D0D0D]">
+              <p className="text-base font-semibold text-[#111111] dark:text-white">
+                {TABS.find((t) => t.id === tab)?.label}
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm text-[#666666] dark:text-neutral-400">
+                This tab will be available soon. For now, edit your profile content in Information.
+              </p>
+              <button
+                type="button"
+                onClick={() => setTab('information')}
+                className={`mt-6 inline-flex rounded-full px-5 py-2.5 text-sm font-semibold text-white ${brandCtaClass}`}
+              >
+                Go to Information
+              </button>
+            </div>
+          )}
         </div>
-      ) : tab === 'information' ? (
-        <div className="px-4 pb-10 sm:px-5">
-          <CreatorStudioProfileTab
-            variant="portfolio"
-            portfolioNavSide={portfolioNavSide}
-            allowedSections={selectedPresence.sections}
-            sectionsNavTitle={selectedPresence.title}
-          />
-        </div>
-      ) : tab === 'preview' ? (
-        <PortfolioLivePreview creatorId={user.id} username={user.username} />
-      ) : (
-        <div className="mx-4 mb-10 rounded-2xl border border-neutral-200 bg-white px-6 py-20 text-center dark:border-neutral-800 dark:bg-neutral-950 sm:mx-5">
-          <p className="text-base font-semibold text-slate-900 dark:text-white">
-            {TABS.find((t) => t.id === tab)?.label}
-          </p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500 dark:text-neutral-400">
-            This tab will be available soon. For now, edit your profile content in Information.
-          </p>
-          <button
-            type="button"
-            onClick={() => setTab('information')}
-            className={`mt-6 inline-flex rounded-full px-5 py-2.5 text-sm font-semibold text-white ${brandCtaClass}`}
-          >
-            Go to Information
-          </button>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -26,7 +26,7 @@ export function MarketplaceCatalogSection({ favoritesOnly = false }: Marketplace
   } = useMarketplaceCatalogParams();
 
   return (
-    <div className="min-w-0 max-w-full space-y-6">
+    <div className="min-w-0 max-w-full space-y-10">
       <MarketplaceCatalogToolbar
         q={q}
         genre={genre}

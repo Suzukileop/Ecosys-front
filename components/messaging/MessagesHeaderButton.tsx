@@ -54,13 +54,13 @@ export function MessagesHeaderButton() {
       className={`relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-[color,transform] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 ${
         onMessagesPage
           ? 'text-neutral-950 dark:text-white'
-          : 'text-neutral-700 hover:text-neutral-950 dark:text-neutral-200 dark:hover:text-white'
+          : 'text-[#222222] dark:text-neutral-300'
       }`}
     >
       {/* Same 24-unit box and `stroke-width: 1.5` as the bar's magnifier and bell. The three sit
           side by side; a different weight on any one of them reads as a fault. */}
       <svg
-        className="h-[1.3rem] w-[1.3rem]"
+        className="h-[1.6rem] w-[1.6rem]"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

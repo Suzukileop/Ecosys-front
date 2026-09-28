@@ -6,6 +6,8 @@ import { PRODUCT_TYPE_LABELS } from '@/lib/marketplace-api';
 import type { MarketplaceProductFormat, MarketplaceSort } from '@/components/marketplace/useMarketplaceCatalogParams';
 import type { ProductType } from '@/types/marketplace';
 import { useOutOfViewSticky } from '@/hooks/useOutOfViewSticky';
+import { MarketplaceFilterDropdown } from '@/components/marketplace/MarketplaceFilterDropdown';
+import { STUDIO_FLOAT_IN_STYLE } from '@/components/portfolio/PortfolioStudioKit';
 
 const GENRES = ['', 'Tech', 'Lifestyle', 'Business', 'Art', 'Sport', 'Music'];
 
@@ -50,6 +52,8 @@ const BUDGET_SELECT_OPTIONS = PRICE_PRESETS.map((preset) => ({
   label: preset.label,
 }));
 
+const HAIRLINE = 'border-black/[0.06] dark:border-white/[0.06]';
+
 function detectPricePreset(minPrice: string, maxPrice: string): PricePresetId {
   const match = PRICE_PRESETS.find(
     (preset) => preset.id !== 'custom' && preset.min === minPrice && preset.max === maxPrice
@@ -58,144 +62,32 @@ function detectPricePreset(minPrice: string, maxPrice: string): PricePresetId {
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="mb-2.5 text-xs font-semibold text-gray-700 dark:text-gray-300">{children}</p>;
+  return <p className="mb-3 text-[15px] font-medium text-[#111111] dark:text-white">{children}</p>;
 }
 
 function pillClass(active: boolean) {
-  return `rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+  return `rounded-full border px-3.5 py-1.5 text-[14px] transition-colors duration-200 ${
     active
-      ? 'border-orange-500 bg-orange-500 text-white shadow-sm'
-      : 'border-gray-200 bg-white text-gray-600 hover:border-orange-200 hover:text-gray-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-300 dark:hover:border-orange-500/50 dark:hover:text-white'
+      ? 'border-[#111111] bg-[#111111] font-medium text-white dark:border-white dark:bg-white dark:text-[#111111]'
+      : 'border-black/[0.08] text-neutral-600 hover:border-black/20 hover:text-[#111111] dark:border-white/[0.1] dark:text-neutral-300 dark:hover:border-white/25 dark:hover:text-white'
   }`;
 }
 
-function budgetPillClass(active: boolean) {
-  return `rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
-    active
-      ? 'border-gray-900 bg-gray-900 text-white dark:border-white dark:bg-white dark:text-gray-900'
-      : 'border-gray-200 bg-stone-50 text-gray-700 hover:border-gray-300 hover:bg-white dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700'
-  }`;
-}
-
-function FlameIcon({ className = 'h-3.5 w-3.5' }: { className?: string }) {
+function SearchIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
     </svg>
   );
-}
-
-function ClockIcon({ className = 'h-3.5 w-3.5' }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  );
-}
-
-function EyeIcon({ className = 'h-3.5 w-3.5' }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-      />
-    </svg>
-  );
-}
-
-function SortAscIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h6" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M18 8v12M15 17l3 3 3-3" />
-    </svg>
-  );
-}
-
-function SortDescIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h6" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M18 16V4M15 7l3-3 3 3" />
-    </svg>
-  );
-}
-
-function SortOptionIcon({ sort }: { sort: MarketplaceSort }) {
-  if (sort === 'popular') return <FlameIcon />;
-  if (sort === 'newest') return <ClockIcon />;
-  if (sort === 'views') return <EyeIcon />;
-  return null;
 }
 
 function SlidersIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8v-2m0 2a2 2 0 100-4m0 4a2 2 0 110-4m12 4v-2m0 2a2 2 0 100-4m0 4a2 2 0 110-4M6 12h.01M12 12h.01M18 12h.01"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+      <circle cx="16" cy="7" r="2" />
+      <circle cx="10" cy="17" r="2" />
     </svg>
-  );
-}
-
-type FilterSelectProps = {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
-  compact?: boolean;
-  activeOverride?: boolean;
-};
-
-function FilterSelect({ id, label, value, onChange, options, compact = false, activeOverride }: FilterSelectProps) {
-  const active = activeOverride ?? Boolean(value);
-
-  return (
-    <div className={compact ? 'w-auto shrink-0' : 'w-full sm:w-auto sm:min-w-[10rem]'}>
-      <label htmlFor={id} className="mb-1.5 block text-xs font-semibold text-gray-700 sm:sr-only">
-        {label}
-      </label>
-      <div className="relative">
-        <select
-          id={id}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={`w-full cursor-pointer appearance-none rounded-xl border font-medium transition focus:outline-none focus:ring-2 focus:ring-orange-200 ${
-            compact ? 'py-2 pl-3 pr-8 text-xs' : 'py-2.5 pl-3.5 pr-9 text-sm'
-          } ${
-            active
-              ? 'border-orange-200 bg-orange-50 text-orange-900 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-200'
-              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-200 dark:hover:border-neutral-600'
-          }`}
-        >
-          {options.map((option) => (
-            <option key={option.value || 'all'} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <svg
-          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-          aria-hidden
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </div>
-    </div>
   );
 }
 
@@ -219,12 +111,12 @@ function CustomPriceField({
   onApply: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[14px] font-medium text-neutral-500 dark:text-neutral-400">
         {label}
       </label>
-      <div className="flex w-[7.5rem] items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-2 shadow-sm focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100 dark:border-neutral-600 dark:bg-neutral-800 dark:focus-within:border-orange-500/50 dark:focus-within:ring-orange-500/20">
-        <span className="shrink-0 text-sm text-gray-400">€</span>
+      <div className="flex w-[8rem] items-center gap-1.5 rounded-lg bg-black/[0.04] px-3 py-2.5 ring-1 ring-transparent transition focus-within:bg-white focus-within:ring-black/15 dark:bg-white/[0.06] dark:focus-within:bg-[#111111] dark:focus-within:ring-white/20">
+        <span className="shrink-0 text-[15px] text-neutral-400">€</span>
         <input
           id={id}
           type="number"
@@ -235,7 +127,7 @@ function CustomPriceField({
           onBlur={onApply}
           onKeyDown={(e) => e.key === 'Enter' && onApply()}
           placeholder="0"
-          className="w-full min-w-0 border-0 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder:text-gray-500"
+          className="w-full min-w-0 border-0 bg-transparent text-[15px] text-[#111111] placeholder:text-neutral-400 focus:outline-none dark:text-white"
         />
       </div>
     </div>
@@ -277,20 +169,22 @@ function BudgetFilter({ minPrice, maxPrice, onApply }: BudgetFilterProps) {
   };
 
   return (
-    <div className="flex flex-wrap items-end gap-2">
-      {PRICE_PRESETS.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          onClick={() => selectPreset(item.id)}
-          className={budgetPillClass(preset === item.id)}
-        >
-          {item.label}
-        </button>
-      ))}
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {PRICE_PRESETS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => selectPreset(item.id)}
+            className={pillClass(preset === item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
 
       {preset === 'custom' && (
-        <>
+        <div className="flex flex-wrap items-end gap-3" style={STUDIO_FLOAT_IN_STYLE}>
           <CustomPriceField
             id="budget-min"
             label="Min"
@@ -298,7 +192,7 @@ function BudgetFilter({ minPrice, maxPrice, onApply }: BudgetFilterProps) {
             onChange={setLocalMin}
             onApply={applyCustom}
           />
-          <span className="pb-2.5 text-sm text-gray-400" aria-hidden>–</span>
+          <span className="pb-3 text-[15px] text-neutral-400" aria-hidden>–</span>
           <CustomPriceField
             id="budget-max"
             label="Max"
@@ -309,74 +203,12 @@ function BudgetFilter({ minPrice, maxPrice, onApply }: BudgetFilterProps) {
           <button
             type="button"
             onClick={applyCustom}
-            className="rounded-lg bg-gray-900 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+            className="rounded-lg bg-[#111111] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#111111]"
           >
             Apply
           </button>
-        </>
+        </div>
       )}
-    </div>
-  );
-}
-
-function segmentBtnClass(active: boolean, position: 'first' | 'middle' | 'last' | 'solo') {
-  const radius =
-    position === 'first'
-      ? 'rounded-l-lg'
-      : position === 'last'
-        ? 'rounded-r-lg'
-        : position === 'solo'
-          ? 'rounded-lg'
-          : '';
-
-  return `inline-flex items-center gap-1.5 border-y border-r border-gray-200 px-3 py-2 text-xs font-medium transition first:border-l dark:border-neutral-600 ${radius} ${
-    active
-      ? 'border-orange-400 bg-orange-500 text-white dark:border-orange-500'
-      : 'bg-white text-gray-700 hover:bg-stone-50 dark:bg-neutral-800 dark:text-gray-200 dark:hover:bg-neutral-700'
-  }`;
-}
-
-type SortByControlProps = {
-  sort: MarketplaceSort;
-  onSortChange: (sort: MarketplaceSort) => void;
-};
-
-function SortByControl({ sort, onSortChange }: SortByControlProps) {
-  const mainOptions = SORT_SELECT_OPTIONS.filter(
-    (o) => o.value !== 'price_asc' && o.value !== 'price_desc'
-  ) as { value: Exclude<MarketplaceSort, 'price_asc' | 'price_desc'>; label: string }[];
-
-  return (
-    <div className="inline-flex max-w-full flex-wrap overflow-hidden rounded-lg">
-      {mainOptions.map((option, index) => (
-        <button
-          key={option.value}
-          type="button"
-          onClick={() => onSortChange(option.value)}
-          className={segmentBtnClass(sort === option.value, index === 0 ? 'first' : 'middle')}
-        >
-          <SortOptionIcon sort={option.value} />
-          {option.label}
-        </button>
-      ))}
-      <button
-        type="button"
-        onClick={() => onSortChange('price_asc')}
-        title="Price low to high"
-        aria-label="Price low to high"
-        className={segmentBtnClass(sort === 'price_asc', 'middle')}
-      >
-        <SortAscIcon />
-      </button>
-      <button
-        type="button"
-        onClick={() => onSortChange('price_desc')}
-        title="Price high to low"
-        aria-label="Price high to low"
-        className={segmentBtnClass(sort === 'price_desc', 'last')}
-      >
-        <SortDescIcon />
-      </button>
     </div>
   );
 }
@@ -426,86 +258,83 @@ function MarketplaceCatalogStickyBar({
 }: MarketplaceCatalogStickyBarProps) {
   return (
     <div
-      className={`fixed right-0 z-30 border-b border-white/50 shadow-[0_8px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl backdrop-saturate-150 transition-all duration-200 dark:border-white/10 dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${
-        visible
-          ? 'translate-y-0 bg-white/70 opacity-100 dark:bg-neutral-950/75'
-          : 'pointer-events-none -translate-y-full bg-white/70 opacity-0 dark:bg-neutral-950/75'
+      className={`fixed right-0 z-30 border-b bg-[#F8F8F8]/80 backdrop-blur-xl backdrop-saturate-150 transition-all duration-200 dark:bg-black/75 ${HAIRLINE} ${
+        visible ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-full opacity-0'
       }`}
       style={{ top: stickyTop, left: 'var(--dash-sidebar-w, 0)' }}
       aria-hidden={!visible}
     >
-      <div className="flex w-full flex-wrap items-center gap-2 px-4 py-2.5 sm:gap-3 sm:px-6 xl:flex-nowrap">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-3 px-4 py-3 sm:px-6 xl:flex-nowrap xl:px-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             onSearch(localQ.trim());
           }}
-          className="w-full min-w-[12rem] flex-1 sm:min-w-[18rem] xl:max-w-2xl"
+          className="w-full min-w-[12rem] flex-1 sm:min-w-[18rem] xl:max-w-md"
         >
           <label htmlFor="marketplace-search-sticky" className="sr-only">Search products</label>
-          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 dark:border-neutral-700 dark:bg-neutral-800">
-            <svg className="h-3.5 w-3.5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+          <div className="flex h-10 items-center gap-2.5 rounded-lg bg-black/[0.04] px-3.5 ring-1 ring-transparent transition focus-within:bg-white focus-within:ring-black/15 dark:bg-white/[0.06] dark:focus-within:bg-[#111111] dark:focus-within:ring-white/20">
+            <SearchIcon className="h-4 w-4 shrink-0 text-neutral-400" />
             <input
               id="marketplace-search-sticky"
               value={localQ}
               onChange={(e) => onLocalQChange(e.target.value)}
-              placeholder="Search by title, shop name, or author…"
-              className="min-w-0 flex-1 border-0 bg-transparent text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder:text-gray-500"
+              placeholder="Search products"
+              className="min-w-0 flex-1 border-0 bg-transparent text-[14px] text-[#111111] placeholder:text-neutral-400 focus:outline-none dark:text-white"
             />
           </div>
         </form>
 
         <div className="flex flex-wrap items-center gap-2 xl:ml-auto xl:shrink-0">
-        {format !== 'physical' ? (
-          <FilterSelect
-            id="sticky-filter-type"
-            label="Type"
-            value={type}
-            onChange={(value) => onTypeChange(value)}
-            options={typeOptions}
-            compact
+          {format !== 'physical' ? (
+            <MarketplaceFilterDropdown
+              id="sticky-filter-type"
+              label="Type"
+              value={type}
+              onChange={onTypeChange}
+              options={typeOptions}
+              size="sm"
+            />
+          ) : null}
+          {format !== 'physical' ? (
+            <MarketplaceFilterDropdown
+              id="sticky-filter-genre"
+              label="Genre"
+              value={genre}
+              onChange={onGenreChange}
+              options={genreOptions}
+              size="sm"
+            />
+          ) : null}
+          <MarketplaceFilterDropdown
+            id="sticky-filter-budget"
+            label="Budget"
+            value={budgetPreset}
+            onChange={(value) => onBudgetPresetChange(value as PricePresetId)}
+            options={BUDGET_SELECT_OPTIONS}
+            defaultValue="all"
+            size="sm"
           />
-        ) : null}
-        <FilterSelect
-          id="sticky-filter-sort"
-          label="Sort by"
-          value={sort}
-          onChange={(value) => onSortChange(value as MarketplaceSort)}
-          options={SORT_SELECT_OPTIONS}
-          compact
-          activeOverride={sort !== 'popular'}
-        />
-        {format !== 'physical' ? (
-          <FilterSelect
-            id="sticky-filter-genre"
-            label="Genre"
-            value={genre}
-            onChange={(value) => onGenreChange(value)}
-            options={genreOptions}
-            compact
+          <MarketplaceFilterDropdown
+            id="sticky-filter-sort"
+            label="Sort"
+            value={sort}
+            onChange={(value) => onSortChange(value as MarketplaceSort)}
+            options={SORT_SELECT_OPTIONS}
+            defaultValue="popular"
+            size="sm"
+            align="right"
           />
-        ) : null}
-        <FilterSelect
-          id="sticky-filter-budget"
-          label="Budget"
-          value={budgetPreset}
-          onChange={(value) => onBudgetPresetChange(value as PricePresetId)}
-          options={BUDGET_SELECT_OPTIONS}
-          compact
-          activeOverride={budgetPreset !== 'all'}
-        />
 
-        {hasActiveFilters && (
-          <button
-            type="button"
-            onClick={onReset}
-            className="shrink-0 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/20"
-          >
-            Reset
-          </button>
-        )}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={onReset}
+              className="shrink-0 px-2 text-[14px] font-medium text-neutral-600 transition-colors hover:text-[#FF5722] dark:text-neutral-300"
+            >
+              Reset
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -637,145 +466,112 @@ export function MarketplaceCatalogToolbar({
         onReset={handleReset}
       />
 
-      <div ref={toolbarRef} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-      <div className="flex flex-col gap-3 border-b border-gray-100 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5 dark:border-neutral-800">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSearch(localQ.trim());
-          }}
-          className="w-full sm:max-w-lg sm:shrink-0"
-        >
-          <label htmlFor="marketplace-search" className="sr-only">
-            Search products
-          </label>
-          <div className="flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 transition focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-800 dark:focus-within:border-orange-500/50 dark:focus-within:ring-orange-500/20">
-            <svg
-              className="h-4 w-4 shrink-0 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-              aria-hidden
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      <div
+        ref={toolbarRef}
+        className="rounded-lg border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]"
+      >
+        <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              onSearch(localQ.trim());
+            }}
+            className="w-full lg:max-w-md lg:flex-1"
+          >
+            <label htmlFor="marketplace-search" className="sr-only">
+              Search products
+            </label>
+            <div className="flex items-center gap-3 rounded-lg bg-black/[0.04] px-4 py-3 ring-1 ring-transparent transition focus-within:bg-white focus-within:ring-black/15 dark:bg-white/[0.06] dark:focus-within:bg-[#111111] dark:focus-within:ring-white/20">
+              <SearchIcon className="h-[18px] w-[18px] shrink-0 text-neutral-400" />
+              <input
+                id="marketplace-search"
+                value={localQ}
+                onChange={(e) => handleSearchInputChange(e.target.value)}
+                placeholder="Search by title, shop name, or author"
+                className="min-w-0 flex-1 border-0 bg-transparent text-[15px] text-[#111111] placeholder:text-neutral-400 focus:outline-none focus:ring-0 dark:text-white"
               />
-            </svg>
-            <input
-              id="marketplace-search"
-              value={localQ}
-              onChange={(e) => handleSearchInputChange(e.target.value)}
-              placeholder="Search by title, shop name, or author…"
-              className="min-w-0 flex-1 border-0 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0 dark:text-gray-100 dark:placeholder:text-gray-500"
-            />
-          </div>
-        </form>
+            </div>
+          </form>
 
-        <div className="flex flex-wrap items-center justify-end gap-3 sm:ml-auto">
-          {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
+            {format !== 'physical' ? (
+              <MarketplaceFilterDropdown
+                id="filter-genre"
+                label="Genre"
+                value={genre}
+                onChange={onGenreChange}
+                options={genreOptions}
+              />
+            ) : null}
+
+            <MarketplaceFilterDropdown
+              id="filter-sort"
+              label="Sort"
+              value={sort}
+              onChange={(value) => onSortChange(value as MarketplaceSort)}
+              options={SORT_SELECT_OPTIONS}
+              defaultValue="popular"
+              align="right"
+            />
+
             <button
               type="button"
-              onClick={handleReset}
-              className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 transition hover:bg-orange-100 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/20"
+              onClick={() => setAdvancedOpen((open) => !open)}
+              aria-expanded={advancedOpen}
+              className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-lg border px-4 text-[14px] font-medium transition-colors duration-200 ${
+                advancedOpen
+                  ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
+                  : 'border-black/[0.12] text-[#111111] hover:border-black/25 dark:border-white/[0.12] dark:text-white dark:hover:border-white/25'
+              }`}
             >
-              Reset all
+              <SlidersIcon />
+              Filters
             </button>
-          )}
 
-          {format !== 'physical' ? (
-            <FilterSelect
-              id="filter-genre"
-              label="Genre"
-              value={genre}
-              onChange={(value) => onGenreChange(value)}
-              options={genreOptions}
-            />
-          ) : null}
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleReset}
+                className="px-1 text-[15px] font-medium text-neutral-600 transition-colors hover:text-[#FF5722] dark:text-neutral-300"
+              >
+                Reset all
+              </button>
+            )}
+          </div>
+        </div>
 
-          <button
-            type="button"
-            onClick={() => setAdvancedOpen((open) => !open)}
-            aria-expanded={advancedOpen}
-            className={`inline-flex shrink-0 items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-orange-200 ${
-              advancedOpen
-                ? 'border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-200'
-                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-stone-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-200 dark:hover:bg-neutral-700'
-            }`}
+        {advancedOpen && (
+          <div
+            className={`space-y-8 border-t px-4 py-6 sm:px-5 ${HAIRLINE}`}
+            style={STUDIO_FLOAT_IN_STYLE}
           >
-            <SlidersIcon />
-            Advanced filters
-            <svg
-              className={`h-4 w-4 text-gray-500 transition-transform ${advancedOpen ? 'rotate-180' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-              aria-hidden
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {advancedOpen && (
-      <div className="bg-stone-50/60 p-4 sm:p-5 dark:bg-neutral-950/50">
-        <div className="space-y-4">
-          <section className="p-3.5 sm:p-4">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              {format !== 'physical' ? (
-                <div className="min-w-0 flex-1">
-                  <SectionLabel>Product type</SectionLabel>
-                  <div className="flex flex-wrap gap-1.5">
-                    <button type="button" onClick={() => onTypeChange('')} className={pillClass(!type)}>
-                      All
+            {format !== 'physical' ? (
+              <section>
+                <SectionLabel>Product type</SectionLabel>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => onTypeChange('')} className={pillClass(!type)}>
+                    All
+                  </button>
+                  {PRODUCT_TYPES.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => onTypeChange(type === item ? '' : item)}
+                      className={pillClass(type === item)}
+                    >
+                      {PRODUCT_TYPE_LABELS[item] ?? item}
                     </button>
-                    {PRODUCT_TYPES.map((item) => (
-                      <button
-                        key={item}
-                        type="button"
-                        onClick={() => onTypeChange(type === item ? '' : item)}
-                        className={pillClass(type === item)}
-                      >
-                        {PRODUCT_TYPE_LABELS[item] ?? item}
-                      </button>
-                    ))}
-                  </div>
+                  ))}
                 </div>
-              ) : (
-                <div className="min-w-0 flex-1">
-                  <SectionLabel>Budget</SectionLabel>
-                  <BudgetFilter
-                    minPrice={minPrice}
-                    maxPrice={maxPrice}
-                    onApply={onPriceRangeApply}
-                  />
-                </div>
-              )}
+              </section>
+            ) : null}
 
-              <div className="shrink-0 lg:ml-auto lg:pl-6">
-                <SectionLabel>Sort by</SectionLabel>
-                <SortByControl sort={sort} onSortChange={onSortChange} />
-              </div>
-            </div>
-          </section>
-
-          {format !== 'physical' ? (
-            <section className="p-3.5 sm:p-4">
+            <section>
               <SectionLabel>Budget</SectionLabel>
-              <BudgetFilter
-                minPrice={minPrice}
-                maxPrice={maxPrice}
-                onApply={onPriceRangeApply}
-              />
+              <BudgetFilter minPrice={minPrice} maxPrice={maxPrice} onApply={onPriceRangeApply} />
             </section>
-          ) : null}
-        </div>
-      </div>
-      )}
+          </div>
+        )}
       </div>
     </>
   );

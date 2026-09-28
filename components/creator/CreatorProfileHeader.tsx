@@ -5,7 +5,6 @@ import {
   CREATOR_PROFILE_PRODUCTS_LABEL,
   CREATOR_PROFILE_SERVICES_LABEL,
   CREATOR_PROFILE_SUBSCRIBERS_LABEL,
-  CREATOR_PROFILE_VISITS_LABEL,
   resolveShowProductCount,
   resolveShowSubscriberCount,
   type CreatorProfileHeaderProps,
@@ -37,20 +36,18 @@ export function ProfileHeaderSpecialtyBlock(
   if (specialties.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] font-medium text-[#111111] dark:text-neutral-100">
       {specialties.map((label, index) => (
-        <span
-          key={label}
-          className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${
-            index === 0
-              ? 'bg-orange-500/15 text-orange-700 dark:bg-orange-500/12 dark:text-orange-300'
-              : 'border border-neutral-300/90 bg-transparent text-neutral-600 dark:border-neutral-600/80 dark:text-neutral-300'
-          }`}
-        >
+        <span key={label} className="inline-flex items-center gap-2">
+          {index > 0 ? (
+            <span aria-hidden className="text-neutral-300 dark:text-neutral-600">
+              /
+            </span>
+          ) : null}
           {label}
         </span>
       ))}
-    </div>
+    </p>
   );
 }
 
@@ -106,8 +103,8 @@ function ProfileAvatar({
     .replace('ring-gray-400', 'ring-gray-400/85');
   const ringShellClass = [
     'aspect-square w-full rounded-full',
-    'ring-4 ring-offset-4 sm:ring-[5px] sm:ring-offset-[5px]',
-    'ring-offset-white dark:ring-offset-[#171717]',
+    'ring-2 ring-offset-4 sm:ring-offset-[6px]',
+    'ring-offset-white dark:ring-offset-[#111111]',
     'transition-all duration-200',
     ringColorClass,
   ].join(' ');
@@ -162,14 +159,15 @@ function HorizontalProfileHeader(props: CreatorProfileHeaderProps) {
   const serviceCount = props.serviceCount ?? 0;
   const middleValue = showProductCount ? props.productCount : serviceCount;
   const middleLabel = showProductCount ? CREATOR_PROFILE_PRODUCTS_LABEL : CREATOR_PROFILE_SERVICES_LABEL;
-  const statValueClass = 'text-2xl font-bold tracking-tight text-neutral-950 dark:text-white sm:text-[1.65rem]';
-  const statLabelClass =
-    'mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400';
+  const rating = props.averageRating != null && props.averageRating > 0 ? props.averageRating : null;
+  const statValueClass = 'text-[1.75rem] font-bold leading-none tracking-[-0.02em] text-[#111111] dark:text-white';
+  const statLabelClass = 'mt-2 text-[14px] font-normal text-neutral-500 dark:text-neutral-400';
+  const statCellClass = 'flex flex-1 flex-col items-center justify-center px-2 py-4 text-center';
 
   const stats = (
-    <div className="flex h-full min-h-[10rem] w-full flex-col items-center justify-center divide-y divide-neutral-200/80 dark:divide-neutral-700/50">
+    <div className="flex h-full w-full flex-row divide-x divide-black/[0.06] dark:divide-white/[0.08] sm:flex-col sm:divide-x-0 sm:divide-y">
       {showSubscribers ? (
-        <div className="flex w-full flex-1 flex-col items-center justify-center px-3 py-3.5 text-center">
+        <div className={statCellClass}>
           <ProfileVisitStat
             value={props.followerCount}
             label={CREATOR_PROFILE_SUBSCRIBERS_LABEL}
@@ -180,31 +178,30 @@ function HorizontalProfileHeader(props: CreatorProfileHeaderProps) {
           />
         </div>
       ) : null}
-      <div className="flex w-full flex-1 flex-col items-center justify-center px-3 py-3.5 text-center">
+      <div className={statCellClass}>
         <p className={statValueClass}>{middleValue.toLocaleString()}</p>
         <p className={statLabelClass}>{middleLabel}</p>
       </div>
-      <div className="flex w-full flex-1 flex-col items-center justify-center px-3 py-3.5 text-center">
-        <ProfileVisitStat
-          value={props.profileVisits}
-          label={CREATOR_PROFILE_VISITS_LABEL}
-          href={props.profileVisitsHref}
-          className="flex flex-col items-center"
-          valueClassName={statValueClass}
-          labelClassName={statLabelClass}
-        />
+      <div className={statCellClass}>
+        <p className={`${statValueClass} inline-flex items-center gap-1.5`}>
+          <svg aria-hidden viewBox="0 0 20 20" className="h-5 w-5 text-[#FF5722]" fill="currentColor">
+            <path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L10 14.9l-5.2 2.7 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
+          </svg>
+          {rating != null ? rating.toFixed(1) : '—'}
+        </p>
+        <p className={statLabelClass}>Rating</p>
       </div>
     </div>
   );
 
   return (
     <div
-      className={`border border-neutral-200 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.04)] dark:border-neutral-700/55 dark:bg-[#171717] dark:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_10px_28px_rgba(0,0,0,0.22)] sm:p-8 ${
-        props.flushBottom ? 'rounded-t-2xl rounded-b-none' : 'rounded-2xl'
+      className={`border border-black/[0.06] bg-white p-6 dark:border-white/[0.08] dark:bg-[#111111] sm:p-10 ${
+        props.flushBottom ? 'rounded-t-lg rounded-b-none' : 'rounded-lg'
       }`}
     >
-      <div className="flex min-h-[15rem] flex-row items-stretch gap-6 sm:min-h-[17rem] sm:gap-8 md:min-h-[19rem] md:gap-10">
-        <div className="flex w-48 shrink-0 items-center sm:w-56 md:w-64 lg:w-72">
+      <div className="flex flex-col items-stretch gap-8 sm:flex-row sm:gap-10 md:gap-12">
+        <div className="flex w-36 shrink-0 items-center self-center sm:w-44 md:w-52 lg:w-56">
           <ProfileAvatar
             fullName={props.fullName}
             avatarUrl={props.avatarUrl}
@@ -215,10 +212,10 @@ function HorizontalProfileHeader(props: CreatorProfileHeaderProps) {
           />
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col justify-center gap-5 sm:gap-6">
-          <div className="space-y-2.5">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-[1.75rem]">
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-5">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-[1.75rem] font-bold leading-tight tracking-[-0.02em] text-[#111111] dark:text-white sm:text-[2rem]">
                 {props.fullName}
               </h1>
               {(() => {
@@ -248,39 +245,43 @@ function HorizontalProfileHeader(props: CreatorProfileHeaderProps) {
                 />
               ) : null}
               {props.isVerified && (
-                <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-500/15 dark:text-green-300">
+                <span className="rounded-full border border-emerald-500/30 px-2.5 py-0.5 text-[13px] font-medium text-emerald-600 dark:text-emerald-400">
                   Verified
                 </span>
               )}
             </div>
             {props.handle ? (
-              <p className="text-sm text-neutral-500 dark:text-neutral-300">
-                {props.handle}
-              </p>
+              <p className="text-[15px] text-neutral-500 dark:text-neutral-400">{props.handle}</p>
             ) : null}
-            {(() => {
-              const status = resolveAvailabilityStatusLabel(props.isAvailable, props.availabilityLabel);
-              if (!status) return null;
-              return (
-                <p
-                  className={`pt-0.5 text-sm font-medium ${
-                    props.isAvailable
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-neutral-500 dark:text-neutral-300'
-                  }`}
-                >
-                  {status}
-                </p>
-              );
-            })()}
           </div>
 
-          {props.locationLabel ? (
-            <p className="flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-300">
-              <PinIcon className="h-4 w-4 shrink-0 opacity-80" />
-              {props.locationLabel}
-            </p>
-          ) : null}
+          {(() => {
+            const status = resolveAvailabilityStatusLabel(props.isAvailable, props.availabilityLabel);
+            if (!status && !props.locationLabel) return null;
+            return (
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[15px] text-neutral-500 dark:text-neutral-400">
+                {status ? (
+                  <span
+                    className={`inline-flex items-center gap-2 font-medium ${
+                      props.isAvailable ? 'text-emerald-600 dark:text-emerald-400' : ''
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`h-2 w-2 rounded-full ${props.isAvailable ? 'bg-emerald-500' : 'bg-neutral-400'}`}
+                    />
+                    {status}
+                  </span>
+                ) : null}
+                {props.locationLabel ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <PinIcon className="h-4 w-4 shrink-0 opacity-70" />
+                    {props.locationLabel}
+                  </span>
+                ) : null}
+              </div>
+            );
+          })()}
 
           <ProfileHeaderSpecialtyBlock
             specialties={props.specialties}
@@ -288,7 +289,7 @@ function HorizontalProfileHeader(props: CreatorProfileHeaderProps) {
           />
 
           {bioPreview ? (
-            <p className="max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-neutral-300">
+            <p className="max-w-2xl text-[15px] leading-relaxed text-neutral-600 dark:text-neutral-400">
               {bioPreview}
             </p>
           ) : null}
@@ -299,15 +300,11 @@ function HorizontalProfileHeader(props: CreatorProfileHeaderProps) {
         </div>
 
         <aside
-          className="hidden w-[8rem] shrink-0 self-stretch border-l border-neutral-200/80 pl-5 sm:block sm:w-32 md:w-36 md:pl-6 dark:border-neutral-700/40"
+          className="shrink-0 border-t border-black/[0.06] pt-4 dark:border-white/[0.08] sm:w-36 sm:self-stretch sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0 md:w-40"
           aria-label="Profile stats"
         >
-          <div className="flex h-full flex-col justify-center px-0.5">{stats}</div>
+          {stats}
         </aside>
-      </div>
-
-      <div className="mt-6 border-t border-neutral-200 pt-4 dark:border-neutral-700/50 sm:hidden">
-        {stats}
       </div>
     </div>
   );

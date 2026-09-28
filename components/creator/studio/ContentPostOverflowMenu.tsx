@@ -297,7 +297,7 @@ export function ContentPostOverflowMenu({
             return true;
           });
         }}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
         aria-label="Content actions"
         aria-expanded={open}
         aria-haspopup="menu"

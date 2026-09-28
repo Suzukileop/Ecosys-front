@@ -21,8 +21,8 @@ function isMarketplaceHubPath(pathname: string): boolean {
 
 function getPatternVariant(pathname: string): 'hub' | 'product' | null {
   if (isProductDetailPath(pathname)) return 'product';
-  if (isServiceProvidersCatalogPath(pathname)) return null;
-  if (isMarketplaceHubPath(pathname) || isContentCreatorsPath(pathname)) return 'hub';
+  if (isServiceProvidersCatalogPath(pathname) || isMarketplaceHubPath(pathname)) return null;
+  if (isContentCreatorsPath(pathname)) return 'hub';
   return null;
 }
 

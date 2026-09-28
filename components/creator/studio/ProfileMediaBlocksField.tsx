@@ -310,7 +310,7 @@ function ProfileMediaBlockRow({
             <CreatorToolsPicker
               value={selectedTools}
               readOnly={readOnly}
-              max={8}
+              max={20}
               emptyLabel="No tools yet."
               onChange={(next) =>
                 setValue(

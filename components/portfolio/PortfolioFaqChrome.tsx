@@ -11,19 +11,26 @@ import {
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 import { MAX_FAQ } from '@/components/creator/studio/ProfileFaqField';
+import {
+  STUDIO_BARE_INPUT_CLASS,
+  STUDIO_EMPTY_CLASS,
+  STUDIO_ICON_BUTTON_TONES,
+  STUDIO_ROW_RULE,
+  STUDIO_SECONDARY_CLASS,
+  STUDIO_VALUE_CLASS,
+  StudioUnderline,
+} from '@/components/portfolio/PortfolioStudioKit';
 
-const inlineInputClass =
-  'w-full bg-transparent px-0 py-0 text-[15px] font-semibold leading-snug text-neutral-900 outline-none placeholder:italic placeholder:font-normal placeholder:text-neutral-400 dark:text-white sm:text-base';
+const inlineInputClass = `${STUDIO_BARE_INPUT_CLASS} pb-2 leading-snug ${STUDIO_VALUE_CLASS} !font-medium`;
 
-const inlineTextareaClass =
-  'w-full resize-y bg-transparent px-0 py-0 text-sm font-medium leading-relaxed text-neutral-600 outline-none placeholder:italic placeholder:font-normal placeholder:text-neutral-400 dark:text-neutral-300 sm:text-[15px]';
+const inlineTextareaClass = `${STUDIO_BARE_INPUT_CLASS} pb-2 resize-none leading-relaxed [field-sizing:content] ${STUDIO_SECONDARY_CLASS}`;
 
 /** Visible on touch devices; hover/focus only on fine-pointer desktops. */
 const itemActionVisibilityClass =
   'opacity-100 transition-opacity ' +
   '[@media(hover:hover)_and_(pointer:fine)]:opacity-0 ' +
-  '[@media(hover:hover)_and_(pointer:fine)]:group-hover:opacity-100 ' +
-  '[@media(hover:hover)_and_(pointer:fine)]:group-focus-within:opacity-100';
+  '[@media(hover:hover)_and_(pointer:fine)]:group-hover/faq:opacity-100 ' +
+  '[@media(hover:hover)_and_(pointer:fine)]:group-focus-within/faq:opacity-100';
 
 export type PortfolioFaqItem = {
   id: string;
@@ -81,16 +88,7 @@ function IconButton({
   disabled?: boolean;
   tone?: 'neutral' | 'confirm' | 'cancel' | 'danger';
 }) {
-  const toneClass =
-    tone === 'confirm'
-      ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300'
-      : tone === 'cancel'
-        ? 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400'
-        : tone === 'danger'
-          ? 'border-neutral-200 bg-white text-neutral-500 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-red-500/40 dark:hover:bg-red-500/10 dark:hover:text-red-400'
-          : active
-            ? 'border-[#F97316]/40 bg-[#FFF7ED] text-[#EA580C] dark:border-[#F97316]/30 dark:bg-[#F97316]/10 dark:text-[#FB923C]'
-            : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400';
+  const toneClass = STUDIO_ICON_BUTTON_TONES[active && tone === 'neutral' ? 'active' : tone];
 
   return (
     <button
@@ -99,7 +97,7 @@ function IconButton({
       title={label}
       aria-label={label}
       disabled={disabled}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-900 ${toneClass}`}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${toneClass}`}
     >
       {children}
     </button>
@@ -291,15 +289,13 @@ export function PortfolioFaqReadOnly({
           limit={MAX_FAQ}
           unit="FAQ items"
         />
-        <p className="py-6 text-center text-sm italic text-neutral-500 dark:text-neutral-400">
-          No FAQ items yet. Click Add FAQ to create one.
-        </p>
+        <p className={`py-6 ${STUDIO_EMPTY_CLASS}`}>No FAQ items yet. Click Add FAQ to create one.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="py-4">
       <ProfileSectionItemCount
         count={items.filter((item) => item.question.trim() && item.answer.trim()).length}
         limit={MAX_FAQ}
@@ -317,45 +313,45 @@ export function PortfolioFaqReadOnly({
           <div
             key={item.id}
             ref={editing ? editingCardRef : undefined}
-            className="group relative rounded-[1.15rem] border border-transparent bg-white p-5 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.08)] transition-[border-color,box-shadow] duration-200 [@media(hover:hover)_and_(pointer:fine)]:hover:border-[#F97316]/30 [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-[0_6px_20px_-10px_rgba(15,23,42,0.1)] sm:rounded-[1.35rem] sm:p-6 dark:bg-[#0a0a0a] dark:shadow-[0_4px_16px_-8px_rgba(0,0,0,0.35)] dark:[@media(hover:hover)_and_(pointer:fine)]:hover:border-[#F97316]/30"
+            className={`group/faq relative py-6 first:pt-4 ${STUDIO_ROW_RULE}`}
           >
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 shrink-0 text-[15px] font-bold leading-snug text-[#F97316] sm:text-base">
-                Q.
+            <div className="flex items-start gap-4">
+              <span className="shrink-0 text-base font-semibold leading-snug text-[#FF5722] tabular-nums">
+                {String(index + 1).padStart(2, '0')}
               </span>
-              <div className={`min-w-0 flex-1 space-y-3 ${showItemChrome ? 'pr-16' : ''}`}>
+              <div className={`min-w-0 flex-1 space-y-2 ${showItemChrome ? 'pr-20' : ''}`}>
                 {editing ? (
-                  <input
-                    type="text"
-                    value={draft.question}
-                    onChange={(event) => updateDraft(index, { question: event.target.value })}
-                    placeholder="Question"
-                    className={inlineInputClass}
-                    autoFocus={editingIndex === index}
-                    disabled={fieldSaving}
-                  />
+                  <StudioUnderline>
+                    <input
+                      type="text"
+                      value={draft.question}
+                      onChange={(event) => updateDraft(index, { question: event.target.value })}
+                      placeholder="Question"
+                      className={inlineInputClass}
+                      autoFocus={editingIndex === index}
+                      disabled={fieldSaving}
+                    />
+                  </StudioUnderline>
                 ) : (
-                  <p className="text-[15px] font-semibold leading-snug text-neutral-900 dark:text-white sm:text-base">
-                    {item.question.trim() || (
-                      <span className="italic text-neutral-400">Untitled question</span>
-                    )}
+                  <p className={`leading-snug ${STUDIO_VALUE_CLASS} !font-medium`}>
+                    {item.question.trim() || <span className="text-neutral-400">Untitled question</span>}
                   </p>
                 )}
 
                 {editing ? (
-                  <textarea
-                    value={draft.answer}
-                    onChange={(event) => updateDraft(index, { answer: event.target.value })}
-                    rows={3}
-                    placeholder="Answer"
-                    className={inlineTextareaClass}
-                    disabled={fieldSaving}
-                  />
+                  <StudioUnderline>
+                    <textarea
+                      value={draft.answer}
+                      onChange={(event) => updateDraft(index, { answer: event.target.value })}
+                      rows={2}
+                      placeholder="Answer"
+                      className={inlineTextareaClass}
+                      disabled={fieldSaving}
+                    />
+                  </StudioUnderline>
                 ) : (
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-neutral-500 dark:text-neutral-400 sm:text-[15px]">
-                    {item.answer.trim() || (
-                      <span className="italic text-neutral-400">No answer yet</span>
-                    )}
+                  <p className={`whitespace-pre-line leading-relaxed ${STUDIO_SECONDARY_CLASS}`}>
+                    {item.answer.trim() || <span className="text-neutral-400">No answer yet</span>}
                   </p>
                 )}
               </div>
@@ -391,13 +387,13 @@ export function PortfolioFaqReadOnly({
                 </div>
               ) : showItemChrome ? (
                 <div
-                  className={`absolute right-3 top-3 z-10 inline-flex h-8 items-center gap-1.5 ${
+                  className={`absolute right-0 top-5 z-10 inline-flex h-8 items-center gap-1.5 ${
                     pendingDeleteIndex === index ? 'opacity-100' : itemActionVisibilityClass
                   }`}
                 >
                   {pendingDeleteIndex === index ? (
                     <>
-                      <span className="hidden text-[11px] font-medium text-red-600 sm:inline dark:text-red-400">
+                      <span className="hidden text-[13px] font-medium text-red-600 sm:inline dark:text-red-400">
                         Delete?
                       </span>
                       <IconButton

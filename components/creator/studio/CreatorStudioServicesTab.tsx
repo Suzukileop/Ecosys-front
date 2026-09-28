@@ -19,6 +19,8 @@ import {
 import { ServiceFormDrawer } from '@/components/creator/studio/ServiceFormDrawer';
 import { CreatorServicesEmptyGuide } from '@/components/creator/studio/CreatorServicesEmptyGuide';
 import { ProfileReadinessWarning } from '@/components/creator/studio/ProfileReadinessWarning';
+import { MarketplaceFilterDropdown } from '@/components/marketplace/MarketplaceFilterDropdown';
+import { STUDIO_FLOAT_IN_STYLE } from '@/components/portfolio/PortfolioStudioKit';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { getApiErrorMessage } from '@/lib/api-error';
@@ -53,8 +55,10 @@ const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: 'ARCHIVED', label: 'Archived' },
 ];
 
-const toolbarSelectClass =
-  'h-9 w-full rounded-lg border border-neutral-300 bg-transparent px-2.5 text-xs font-medium text-neutral-600 outline-none transition hover:bg-neutral-50 focus:border-orange-400 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-900';
+const primaryButtonClass =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-[#111111] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-[#111111]';
+
+const padCount = (count: number) => String(count).padStart(2, '0');
 
 function duplicateTitle(title: string): string {
   const base = title.trim() || 'Service';
@@ -63,14 +67,14 @@ function duplicateTitle(title: string): string {
   return next.length > 100 ? `${base.slice(0, 93)} (copy)` : next;
 }
 
-function statusTone(status: ServiceStatus) {
+function statusDotClass(status: ServiceStatus) {
   switch (status) {
     case 'ACTIVE':
-      return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300';
+      return 'bg-emerald-500';
     case 'PAUSED':
-      return 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300';
+      return 'bg-amber-500';
     default:
-      return 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300';
+      return 'bg-neutral-400 dark:bg-neutral-500';
   }
 }
 
@@ -108,7 +112,10 @@ function ServiceCover({
 type Draft = ProfileServiceForm;
 
 const menuItemClass =
-  'block w-full px-3 py-2 text-left text-sm text-neutral-800 hover:bg-neutral-50 dark:text-neutral-100 dark:hover:bg-neutral-800';
+  'block w-full rounded-md px-3 py-2 text-left text-[14px] text-neutral-700 transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:text-neutral-300 dark:hover:bg-white/[0.07] dark:hover:text-white';
+
+const menuDangerItemClass =
+  'block w-full rounded-md px-3 py-2 text-left text-[14px] text-red-600 transition-colors hover:bg-red-500/[0.08] dark:text-red-400';
 
 function ServiceContextMenu({
   service,
@@ -159,22 +166,27 @@ function ServiceContextMenu({
         type="button"
         disabled={disabled}
         onClick={() => setMenuOpen(!open)}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200 text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-black/[0.05] hover:text-[#111111] disabled:opacity-40 dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white ${
+          open ? 'bg-black/[0.05] text-[#111111] dark:bg-white/[0.08] dark:text-white' : ''
+        }`}
         aria-label="More actions"
         aria-expanded={open}
       >
         <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
       </button>
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+        <div
+          className="absolute right-0 top-full z-50 mt-2 w-52 rounded-lg border border-black/[0.06] bg-white/95 p-1.5 shadow-2xl backdrop-blur-xl dark:border-white/[0.08] dark:bg-[#141414]/95"
+          style={STUDIO_FLOAT_IN_STYLE}
+        >
           {confirmRemove ? (
             <>
-              <p className="px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="px-3 py-2 text-[14px] text-neutral-500 dark:text-neutral-400">
                 Delete this service permanently?
               </p>
               <button
                 type="button"
-                className="block w-full px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                className={`${menuDangerItemClass} font-medium`}
                 onClick={() => {
                   setMenuOpen(false);
                   setConfirmRemove(false);
@@ -248,9 +260,10 @@ function ServiceContextMenu({
                   Archive
                 </button>
               ) : null}
+              <div className="mx-2 my-1 h-px bg-black/[0.06] dark:bg-white/[0.06]" aria-hidden />
               <button
                 type="button"
-                className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                className={menuDangerItemClass}
                 onClick={() => setConfirmRemove(true)}
               >
                 Remove
@@ -263,7 +276,7 @@ function ServiceContextMenu({
   );
 }
 
-export function CreatorStudioServicesTab() {
+export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageHeader?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -534,8 +547,40 @@ export function CreatorStudioServicesTab() {
     );
   }
 
+  const publishDisabled =
+    saving || services.length >= MAX_PROFILE_SERVICES || missingProfileFields.length > 0;
+  const showPublish = specialties.length > 0 && hasAnyServices;
+  const publishButton = (
+    <button type="button" onClick={openCreate} disabled={publishDisabled} className={primaryButtonClass}>
+      <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
+      New service
+    </button>
+  );
+  const specialtyOptions = [
+    { value: 'ALL', label: 'All specialties' },
+    ...usedSpecialties.map((item) => ({ value: item, label: item })),
+  ];
+
   return (
-    <div className="relative min-h-0 w-full flex-1 space-y-4 overflow-y-auto overscroll-contain pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    <div
+      className={`relative flex min-h-0 w-full flex-1 flex-col space-y-10 overflow-y-auto overscroll-contain pb-24 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
+        showPageHeader ? 'pt-8 sm:pt-10' : ''
+      }`}
+    >
+      {showPageHeader ? (
+        <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold tracking-tight text-[#111111] dark:text-white sm:text-4xl">
+              My services
+            </h1>
+            <p className="mt-2 text-base text-neutral-500 dark:text-neutral-400">
+              The offers clients can book or request a quote for.
+            </p>
+          </div>
+          {showPublish ? publishButton : null}
+        </header>
+      ) : null}
+
       {missingProfileFields.length > 0 ? (
         <ProfileReadinessWarning
           missingFields={missingProfileFields}
@@ -571,22 +616,93 @@ export function CreatorStudioServicesTab() {
           }
         />
       ) : (
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        <div className="order-2 min-w-0 flex-1 space-y-4 lg:order-1">
+        <section className="space-y-6" aria-label="Your services">
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-black/[0.06] dark:border-white/[0.06]">
+            <div
+              className="-mb-px flex min-w-0 gap-6 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              role="group"
+              aria-label="Filter by status"
+            >
+              {STATUS_FILTER_OPTIONS.map((option) => {
+                const selected = statusFilter === option.value;
+                const count =
+                  option.value === 'ALL'
+                    ? statusSummary.total
+                    : option.value === 'ACTIVE'
+                      ? statusSummary.active
+                      : option.value === 'PAUSED'
+                        ? statusSummary.paused
+                        : statusSummary.archived;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setStatusFilter(option.value)}
+                    aria-pressed={selected}
+                    className={`relative inline-flex shrink-0 items-center gap-1.5 py-3.5 text-base transition-colors ${
+                      selected
+                        ? 'font-medium text-[#111111] dark:text-white'
+                        : 'text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
+                    }`}
+                  >
+                    {option.label}
+                    {count > 0 ? (
+                      <span className="text-[14px] tabular-nums text-neutral-400 dark:text-neutral-500">
+                        {padCount(count)}
+                      </span>
+                    ) : null}
+                    {selected ? (
+                      <span
+                        className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#FF5722]"
+                        aria-hidden
+                      />
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-3 py-2">
+              {usedSpecialties.length > 0 ? (
+                <MarketplaceFilterDropdown
+                  id="my-services-specialty"
+                  label="Specialty"
+                  value={specialtyFilter}
+                  onChange={setSpecialtyFilter}
+                  options={specialtyOptions}
+                  defaultValue="ALL"
+                  size="sm"
+                  align="right"
+                />
+              ) : null}
+              {!showPageHeader && showPublish ? publishButton : null}
+            </div>
+          </div>
+
           {visibleServices.length === 0 && !draft ? (
-            <div className="rounded-2xl border border-dashed border-neutral-300 px-5 py-12 text-center dark:border-neutral-700">
-              <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+            <div className="rounded-lg border border-dashed border-black/[0.12] px-6 py-16 text-center dark:border-white/[0.12]">
+              <p className="text-lg font-semibold text-[#111111] dark:text-white">
                 No services match these filters
               </p>
-              <p className="mt-2 text-sm text-neutral-500">
+              <p className="mt-2 text-[15px] text-neutral-500 dark:text-neutral-400">
                 Change the status or specialty filter to see other offers.
               </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusFilter('ALL');
+                  setSpecialtyFilter('ALL');
+                }}
+                className="mt-6 inline-flex items-center rounded-lg border border-black/[0.12] px-4 py-2 text-[14px] font-medium text-[#111111] transition-colors hover:bg-black/[0.04] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.06]"
+              >
+                Reset filters
+              </button>
             </div>
           ) : (
-            <div className="relative z-10 space-y-4 overflow-visible">
+            <div className="relative z-10 flex flex-col gap-4 overflow-visible">
               {visibleServices.map((service) => {
                 const status = normalizeServiceStatus(service.status);
                 const deliveryLabel = formatServiceDelivery(service);
+                const priceLabel = formatServicePrice(service);
                 const tags = (service.tags ?? []).filter((tag) => tag.trim());
                 const isDragging = dragId === service.id;
                 return (
@@ -626,19 +742,19 @@ export function CreatorStudioServicesTab() {
                       setDragId(null);
                       if (fromId) void reorderServices(fromId, service.id);
                     }}
-                    className={`group relative overflow-visible rounded-2xl border border-neutral-200 bg-white shadow-sm transition dark:border-neutral-800 dark:bg-neutral-950 ${
+                    className={`group relative overflow-visible rounded-lg border border-black/[0.06] bg-white p-4 transition-colors duration-200 hover:border-black/[0.14] dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.16] sm:p-5 ${
                       isDragging ? 'opacity-60' : ''
                     } ${canReorder ? 'cursor-grab active:cursor-grabbing' : ''} ${
                       openMenuId === service.id ? 'z-30' : 'z-0'
                     }`}
                   >
-                    <div className="flex min-h-[13.5rem] flex-col rounded-2xl md:min-h-[15rem] md:flex-row">
+                    <div className="flex flex-col gap-5 md:flex-row md:gap-6">
                       {!draft && hasAnyServices ? (
                         <button
                           type="button"
                           tabIndex={-1}
                           aria-label="Reorder"
-                          className="absolute left-2 top-1/2 z-10 hidden -translate-y-1/2 items-center justify-center rounded-lg border border-neutral-200 bg-white/95 px-1.5 py-2 text-neutral-400 shadow-sm group-hover:flex dark:border-neutral-700 dark:bg-neutral-900/95 dark:text-neutral-500 md:flex md:opacity-0 md:transition md:group-hover:opacity-100"
+                          className="absolute left-7 top-1/2 z-10 hidden -translate-y-1/2 items-center justify-center rounded-md border border-black/[0.06] bg-white/95 px-1.5 py-2 text-neutral-400 backdrop-blur group-hover:flex dark:border-white/[0.08] dark:bg-[#111111]/90 dark:text-neutral-500 md:flex md:opacity-0 md:transition-opacity md:group-hover:opacity-100"
                           onMouseDown={(event) => {
                             event.preventDefault();
                             if (reorderBlockedByFilters) setDropHint(true);
@@ -650,35 +766,46 @@ export function CreatorStudioServicesTab() {
                           <FontAwesomeIcon icon={faGripVertical} className="h-4 w-4" />
                         </button>
                       ) : null}
-                      <div className="overflow-hidden md:rounded-l-2xl">
+                      <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden rounded-md bg-neutral-100 dark:bg-neutral-900 md:aspect-[4/3] md:w-[240px] lg:w-[280px]">
                         <ServiceCover
                           title={service.title}
                           coverImageUrl={service.coverImageUrl}
-                          className="aspect-[16/9] w-full shrink-0 md:aspect-auto md:h-full md:min-h-[15rem] md:w-[220px] md:self-stretch lg:w-[260px]"
+                          className="h-full w-full"
                         />
                       </div>
-                      <div className="flex min-h-0 min-w-0 flex-1 flex-col p-4 sm:p-5">
-                        <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                        <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0 flex-1">
-                            <h3 className="text-xl font-bold tracking-tight text-neutral-950 dark:text-white sm:text-2xl">
+                            <h3 className="text-lg font-semibold leading-snug tracking-tight text-[#111111] transition-colors duration-200 group-hover:text-[#FF5722] dark:text-white dark:group-hover:text-[#FF5722]">
                               {service.title}
                             </h3>
-                            <div className="mt-2 flex flex-wrap gap-1.5">
+                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[14px] text-neutral-500 dark:text-neutral-400">
                               {service.specialty ? (
-                                <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-orange-800 dark:bg-orange-500/10 dark:text-orange-300">
-                                  {service.specialty}
-                                </span>
+                                <>
+                                  <span className="truncate">{service.specialty}</span>
+                                  <span className="text-neutral-300 dark:text-neutral-600" aria-hidden>
+                                    ·
+                                  </span>
+                                </>
                               ) : null}
-                              <span
-                                className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusTone(status)}`}
-                              >
+                              <span className="inline-flex items-center gap-1.5">
+                                <span
+                                  className={`h-1.5 w-1.5 rounded-full ${statusDotClass(status)}`}
+                                  aria-hidden
+                                />
                                 {serviceStatusLabel(status)}
                               </span>
                             </div>
                           </div>
-                          <div className="flex shrink-0 items-center gap-2.5">
-                            <p className="inline-flex h-9 items-center rounded-xl bg-orange-500 px-3 text-sm font-bold text-white shadow-sm sm:text-base">
-                              {formatServicePrice(service)}
+                          <div className="flex shrink-0 items-center gap-2">
+                            <p
+                              className={`whitespace-nowrap tabular-nums ${
+                                priceLabel === 'On request'
+                                  ? 'text-[15px] font-medium text-neutral-500 dark:text-neutral-400'
+                                  : 'text-lg font-semibold text-[#111111] dark:text-white'
+                              }`}
+                            >
+                              {priceLabel}
                             </p>
                             <ServiceContextMenu
                               service={service}
@@ -697,37 +824,36 @@ export function CreatorStudioServicesTab() {
                         </div>
 
                         {service.description ? (
-                          <p className="mt-3 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+                          <p className="mt-3 line-clamp-2 text-[15px] leading-relaxed text-neutral-600 dark:text-neutral-400">
                             {service.description}
                           </p>
                         ) : null}
 
-                        {tags.length > 0 ? (
-                          <div className="mt-3 flex flex-wrap gap-1.5">
-                            {tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="inline-flex rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[11px] font-medium text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                              >
-                                {tag}
-                              </span>
-                            ))}
+                        {deliveryLabel || tags.length > 0 ? (
+                          <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-4 text-[14px]">
+                            {deliveryLabel ? (
+                              <p className="inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-300">
+                                <FontAwesomeIcon
+                                  icon={faClock}
+                                  className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500"
+                                />
+                                {deliveryLabel}
+                              </p>
+                            ) : null}
+                            {tags.length > 0 ? (
+                              <div className="flex flex-wrap gap-1.5">
+                                {tags.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="inline-flex rounded-md border border-black/[0.08] px-2 py-0.5 text-[13px] text-neutral-600 dark:border-white/[0.1] dark:text-neutral-300"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : null}
                           </div>
                         ) : null}
-
-                        {deliveryLabel ? (
-                          <div className="mt-auto border-t border-neutral-200 pt-3 dark:border-neutral-800">
-                            <p className="inline-flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                              <FontAwesomeIcon
-                                icon={faClock}
-                                className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500"
-                              />
-                              {deliveryLabel}
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="mt-auto" aria-hidden />
-                        )}
                       </div>
                     </div>
                   </article>
@@ -739,79 +865,13 @@ export function CreatorStudioServicesTab() {
           {dropHint && reorderBlockedByFilters ? (
             <p
               role="status"
-              className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-black/[0.06] bg-white px-4 py-2.5 text-[14px] text-neutral-600 dark:border-white/[0.08] dark:bg-[#111111] dark:text-neutral-300"
             >
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
               Reset filters to reorder your services
             </p>
           ) : null}
-        </div>
-
-        {specialties.length > 0 ? (
-          <aside className="order-1 w-full shrink-0 lg:sticky lg:top-4 lg:order-2 lg:w-48">
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={openCreate}
-                disabled={saving || services.length >= MAX_PROFILE_SERVICES || missingProfileFields.length > 0}
-                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40"
-              >
-                <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
-                Publish
-              </button>
-
-              {hasAnyServices ? (
-                <div className="flex flex-col gap-2 rounded-xl border border-neutral-200 bg-white p-2 dark:border-neutral-800 dark:bg-neutral-950">
-                  <div className="flex flex-col gap-1" role="group" aria-label="Filter by status">
-                    {STATUS_FILTER_OPTIONS.map((option) => {
-                      const selected = statusFilter === option.value;
-                      const count =
-                        option.value === 'ALL'
-                          ? statusSummary.total
-                          : option.value === 'ACTIVE'
-                            ? statusSummary.active
-                            : option.value === 'PAUSED'
-                              ? statusSummary.paused
-                              : statusSummary.archived;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => setStatusFilter(option.value)}
-                          className={`inline-flex h-9 w-full items-center justify-between rounded-lg px-3 text-left text-xs font-medium transition ${
-                            selected
-                              ? 'bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-white'
-                              : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-900'
-                          }`}
-                        >
-                          <span>{option.label}</span>
-                          <span className={`tabular-nums ${selected ? 'opacity-80' : 'opacity-55'}`}>
-                            ({count})
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="border-t border-neutral-200 pt-2 dark:border-neutral-800">
-                    <select
-                      value={specialtyFilter}
-                      onChange={(event) => setSpecialtyFilter(event.target.value)}
-                      className={toolbarSelectClass}
-                      aria-label="Filter by specialty"
-                    >
-                      <option value="ALL">All specialties</option>
-                      {usedSpecialties.map((item) => (
-                        <option key={specialtyKey(item)} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </aside>
-        ) : null}
-      </div>
+        </section>
       )}
     </div>
   );

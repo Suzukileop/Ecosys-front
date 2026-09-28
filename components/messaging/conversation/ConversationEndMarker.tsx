@@ -19,16 +19,18 @@ function formatEndActivityLabel(iso: string): string {
   return formatConversationDateTime(iso);
 }
 
+/**
+ * The close of a thread: a full-width hairline with the label sitting on it. The bordered
+ * chip that used to hold the timestamp is gone — the rule already says "this is the end",
+ * and a second enclosure only restated it.
+ */
 export function ConversationEndMarker({ lastActivityAt }: ConversationEndMarkerProps) {
   if (!lastActivityAt) return null;
   return (
-    <div className="flex flex-col items-center gap-2 py-6" role="status">
-      <p className="text-[13px] font-semibold tracking-[0.08em] text-[var(--cw-text-secondary,#4B5563)]">
-        END OF DISCUSSION
-      </p>
-      <span className="rounded-full border border-[var(--cw-border,#E2E5E9)] bg-[var(--cw-surface,#fff)] px-2.5 py-1 text-[13px] font-medium text-[var(--cw-text-secondary,#4B5563)]">
-        {formatEndActivityLabel(lastActivityAt)}
-      </span>
+    <div className="flex flex-col items-center gap-2 py-10" role="status">
+      <span className="h-px w-full max-w-[18rem] bg-[var(--msg-hairline-strong)]" aria-hidden />
+      <p className="msg-micro pt-2 text-[var(--msg-ink-soft)]">End of discussion</p>
+      <p className="msg-micro text-[var(--msg-ink-faint)]">{formatEndActivityLabel(lastActivityAt)}</p>
     </div>
   );
 }

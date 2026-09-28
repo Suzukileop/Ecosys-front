@@ -19,7 +19,43 @@ type SpecialtyMultiSelectProps = {
   disabled?: boolean;
   /** Keyword tags live under Skills & Tools — hide them from Specialty when false. */
   showTags?: boolean;
+  /** `studio`: hairline input, quiet chips and a glass list for the portfolio inline editor. */
+  variant?: 'default' | 'studio';
 };
+
+const VARIANT_CLASSES = {
+  default: {
+    hint: 'text-xs text-neutral-500 dark:text-neutral-400',
+    chip: 'inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold sm:text-sm',
+    chipPrimary: 'border-orange-500 bg-orange-500 text-white',
+    chipIdle: 'border-neutral-300 bg-transparent text-neutral-700 dark:border-neutral-700 dark:text-neutral-200',
+    chipRemovePrimary: 'text-white/80 hover:text-white',
+    chipRemoveIdle: 'text-neutral-400 hover:text-neutral-700 dark:hover:text-white',
+    input:
+      'h-10 min-w-0 flex-1 rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none focus:border-orange-400 dark:border-neutral-600 dark:bg-neutral-950 dark:text-white',
+    addButton:
+      'rounded-xl bg-neutral-900 px-3 text-sm font-semibold text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900',
+    list: 'absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900',
+    optionActive: 'bg-orange-50 text-orange-800 dark:bg-orange-500/15 dark:text-orange-100',
+    optionIdle: 'text-neutral-800 hover:bg-neutral-50 dark:text-neutral-100 dark:hover:bg-neutral-800',
+  },
+  studio: {
+    hint: 'text-[14px] text-neutral-500 dark:text-neutral-400',
+    chip: 'inline-flex h-9 items-center gap-2 rounded-full border px-3.5 text-[14px] transition-colors duration-200',
+    chipPrimary: 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black',
+    chipIdle:
+      'border-black/[0.08] text-neutral-700 hover:border-black/30 dark:border-white/[0.1] dark:text-neutral-200 dark:hover:border-white/30',
+    chipRemovePrimary: 'text-white/60 hover:text-[#FF5722] dark:text-black/50',
+    chipRemoveIdle: 'text-neutral-400 hover:text-[#FF5722]',
+    input:
+      'min-w-0 flex-1 border-b border-black/[0.08] bg-transparent pb-2 text-base text-black caret-[#FF5722] outline-none placeholder:text-neutral-400 focus:border-[#FF5722] disabled:opacity-50 dark:border-white/[0.08] dark:text-white dark:placeholder:text-neutral-600 dark:focus:border-[#FF5722]',
+    addButton:
+      'inline-flex shrink-0 items-center self-end rounded-full border border-neutral-300 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-700 transition-colors duration-200 hover:border-[#FF5722] hover:text-[#FF5722] disabled:pointer-events-none disabled:opacity-40 dark:border-white/20 dark:text-white/75',
+    list: 'absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-black/[0.06] bg-white/90 py-1.5 shadow-2xl backdrop-blur-xl dark:border-white/[0.06] dark:bg-[#0D0D0D]/80',
+    optionActive: 'bg-black/[0.04] text-black dark:bg-white/[0.06] dark:text-white',
+    optionIdle: 'text-neutral-600 dark:text-neutral-300',
+  },
+} as const;
 
 export function SpecialtyMultiSelect({
   specialties,
@@ -28,7 +64,9 @@ export function SpecialtyMultiSelect({
   onTagsChange,
   disabled = false,
   showTags = true,
+  variant = 'default',
 }: SpecialtyMultiSelectProps) {
+  const ui = VARIANT_CLASSES[variant];
   const [specialtyDraft, setSpecialtyDraft] = useState('');
   const [tagDraft, setTagDraft] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -126,21 +164,14 @@ export function SpecialtyMultiSelect({
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+      <p className={ui.hint}>
         Add 1 to {MAX_PROFILE_SPECIALTIES} specialties. Click a chip to place it first.
       </p>
       <div className="flex flex-wrap gap-2">
         {specialties.map((label) => {
           const isPrimary = primary === label;
           return (
-            <span
-              key={label}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold sm:text-sm ${
-                isPrimary
-                  ? 'border-orange-500 bg-orange-500 text-white'
-                  : 'border-neutral-300 bg-transparent text-neutral-700 dark:border-neutral-700 dark:text-neutral-200'
-              }`}
-            >
+            <span key={label} className={`${ui.chip} ${isPrimary ? ui.chipPrimary : ui.chipIdle}`}>
               <button
                 type="button"
                 disabled={disabled}
@@ -156,11 +187,7 @@ export function SpecialtyMultiSelect({
                   event.stopPropagation();
                   removeSpecialty(label);
                 }}
-                className={
-                  isPrimary
-                    ? 'text-white/80 hover:text-white'
-                    : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-white'
-                }
+                className={isPrimary ? ui.chipRemovePrimary : ui.chipRemoveIdle}
                 aria-label={`Remove ${label}`}
               >
                 ×
@@ -217,13 +244,14 @@ export function SpecialtyMultiSelect({
                 addSpecialty(specialtyDraft);
               }
             }}
-            className="h-10 min-w-0 flex-1 rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none focus:border-orange-400 dark:border-neutral-600 dark:bg-neutral-950 dark:text-white"
+            className={ui.input}
+            data-studio-underline={variant === 'studio' ? '' : undefined}
           />
           <button
             type="button"
             disabled={disabled || !specialtyDraft.trim() || atSpecialtyCap}
             onClick={() => addSpecialty(specialtyDraft)}
-            className="rounded-xl bg-neutral-900 px-3 text-sm font-semibold text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900"
+            className={ui.addButton}
           >
             Add
           </button>
@@ -232,16 +260,14 @@ export function SpecialtyMultiSelect({
           <ul
             id={listId}
             role="listbox"
-            className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
+            className={ui.list}
           >
             {suggestions.map((item, index) => (
               <li key={item} role="option" aria-selected={index === activeIndex} id={`${listId}-${index}`}>
                 <button
                   type="button"
                   className={`block w-full px-3 py-2 text-left text-sm ${
-                    index === activeIndex
-                      ? 'bg-orange-50 text-orange-800 dark:bg-orange-500/15 dark:text-orange-100'
-                      : 'text-neutral-800 hover:bg-neutral-50 dark:text-neutral-100 dark:hover:bg-neutral-800'
+                    index === activeIndex ? ui.optionActive : ui.optionIdle
                   }`}
                   onMouseEnter={() => setActiveIndex(index)}
                   onClick={() => addSpecialty(item)}

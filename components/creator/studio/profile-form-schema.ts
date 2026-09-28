@@ -13,6 +13,7 @@ import {
   parseSpecialtyList,
 } from '@/lib/specialties';
 import { isRepeatedBioContent } from '@/lib/profile-bio';
+import { MAX_CUSTOM_EMPLOYMENT_LENGTH, parseEmploymentType } from '@/lib/experience-employment';
 import { parseAboutSkills, serializeAboutSkills } from '@/lib/about-skills';
 
 export const platformEnum = z.enum([
@@ -412,14 +413,6 @@ export type StrengthFormItem = z.infer<typeof strengthItemSchema>;
 
 export const experienceStatusEnum = z.enum(['ONGOING', 'FINISHED']);
 
-export const experienceEmploymentTypeEnum = z.enum([
-  'FULL_TIME',
-  'PART_TIME',
-  'CONTRACT',
-  'FREELANCE',
-  'INTERNSHIP',
-]);
-
 export const experienceProofPlatformEnum = z.enum([
   'GITHUB',
   'FACEBOOK',
@@ -464,10 +457,10 @@ export const profileMediaBlockSchema = z
     period: z.string().max(80).optional().or(z.literal('')),
     status: experienceStatusEnum.nullable().optional(),
     tasks: z.array(taskItemSchema).max(12),
-    tools: z.array(strengthItemSchema).max(8),
+    tools: z.array(strengthItemSchema).max(20),
     links: z.array(experienceProofLinkSchema).max(5),
     location: z.string().max(120).optional().or(z.literal('')),
-    employmentType: experienceEmploymentTypeEnum.nullable().optional(),
+    employmentType: z.string().trim().max(MAX_CUSTOM_EMPLOYMENT_LENGTH).nullable().optional(),
   })
   .superRefine((data, ctx) => {
     const text = data.text.trim();
@@ -1332,16 +1325,7 @@ export function parseProfileBlocks(raw: unknown): ProfileMediaBlockForm[] {
     const statusRaw = block.status != null ? String(block.status).toUpperCase() : null;
     const status =
       statusRaw === 'ONGOING' || statusRaw === 'FINISHED' ? statusRaw : null;
-    const employmentRaw =
-      block.employmentType != null ? String(block.employmentType).toUpperCase() : null;
-    const employmentType =
-      employmentRaw === 'FULL_TIME' ||
-      employmentRaw === 'PART_TIME' ||
-      employmentRaw === 'CONTRACT' ||
-      employmentRaw === 'FREELANCE' ||
-      employmentRaw === 'INTERNSHIP'
-        ? employmentRaw
-        : null;
+    const employmentType = parseEmploymentType(block.employmentType);
     // Legacy: first subtitle was sometimes used as the period when period was empty.
     const periodRaw = block.period != null ? String(block.period) : '';
     const legacySubtitles = parseSubtitleItems(block.subtitles);
@@ -1360,7 +1344,7 @@ export function parseProfileBlocks(raw: unknown): ProfileMediaBlockForm[] {
       tasks: parseSubtitleItems(block.tasks).map((item) => ({
         value: item.value.slice(0, 300),
       })),
-      tools: parseStrengthsTools(block.tools).slice(0, 8),
+      tools: parseStrengthsTools(block.tools).slice(0, 20),
       links: parseExperienceProofLinks(block.links),
       location: block.location != null ? String(block.location) : '',
       employmentType,
@@ -1731,9 +1715,9 @@ function normalizeProfileComparable(values: ProfileFormValues, availabilityHours
       .map((item) => ({
         value: trimOptional(item.value),
         description: trimOptional(item.description ?? ''),
-        category: '',
+        category: trimOptional(item.category ?? ''),
         level: item.level ?? null,
-        useCases: (item.useCases ?? []).map((entry) => entry.trim()).filter(Boolean).slice(0, 8),
+        useCases: [] as string[],
         experienceYears: null,
         experienceLabel: null,
         currentlyUsed: null,

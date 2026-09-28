@@ -273,12 +273,15 @@ export interface ExperienceProofLink {
 
 export type ExperienceBlockStatus = 'ONGOING' | 'FINISHED';
 
-export type ExperienceEmploymentType =
+export type KnownExperienceEmploymentType =
   | 'FULL_TIME'
   | 'PART_TIME'
   | 'CONTRACT'
   | 'FREELANCE'
   | 'INTERNSHIP';
+
+/** One of the known types, or the creator's own wording ("Custom"). */
+export type ExperienceEmploymentType = KnownExperienceEmploymentType | (string & {});
 
 export type ExperienceProofPlatform =
   | 'GITHUB'

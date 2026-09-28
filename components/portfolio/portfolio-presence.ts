@@ -14,6 +14,11 @@ export type PortfolioPresenceOption = {
   id: PortfolioPresenceKind;
   title: string;
   teaser: string;
+  /** The longer line, revealed on hover — what the kind actually gives you, not a slogan. */
+  description: string;
+  /** Landing-hero still used as the card's full-bleed background. */
+  image: string;
+  imageAlt: string;
   /* No icon here any more: the panel's mark is a drawn SVG keyed by `id` in
      `portfolio-presence-icons`, which keeps this module free of any icon library. */
   sections: readonly ProfileSectionId[];
@@ -24,6 +29,10 @@ export const PORTFOLIO_PRESENCE_OPTIONS: readonly PortfolioPresenceOption[] = [
     id: 'portfolio',
     title: 'Portfolio',
     teaser: 'Launch a custom page in minutes',
+    description:
+      'Your work, experience, tools and contact details on one page you can send anywhere.',
+    image: '/landing/hero/presence-portfolio-v11.jpg',
+    imageAlt: 'Professional in a navy blazer with arms crossed and a wristwatch, face out of frame',
     sections: [
       'about',
       'aboutPage',
@@ -42,12 +51,20 @@ export const PORTFOLIO_PRESENCE_OPTIONS: readonly PortfolioPresenceOption[] = [
     id: 'storefront',
     title: 'Storefront',
     teaser: 'Sell products and services simply',
+    description:
+      'Products and services with pricing, plus the pages a buyer reads before they commit.',
+    image: '/landing/hero/presence-storefront-v8.jpg',
+    imageAlt: 'Refined boutique with tailored suits, a watch vitrine and perfume shelves',
     sections: ['about', 'aboutPage', 'aboutUs', 'services', 'products', 'faq', 'links', 'contact', 'reputation'],
   },
   {
     id: 'business',
     title: 'Business presence',
     teaser: 'A clear brand for your company',
+    description:
+      'Team, about and gallery sections, for a brand that speaks for more than one person.',
+    image: '/landing/hero/presence-business-v11.jpg',
+    imageAlt: 'Hands working on a laptop spreadsheet at a bright desk, seen from above',
     sections: [
       'about',
       'aboutPage',

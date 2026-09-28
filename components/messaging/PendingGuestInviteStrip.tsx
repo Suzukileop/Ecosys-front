@@ -28,7 +28,7 @@ export function PendingGuestInviteStrip({ invites, acting, onCancel }: PendingGu
       {invites.map((invite) => (
         <div
           key={invite.id}
-          className="flex flex-wrap items-center gap-3 rounded-2xl border border-dashed border-neutral-300/90 bg-neutral-50/90 px-3 py-2.5 dark:border-neutral-600 dark:bg-neutral-900/70"
+          className="flex flex-wrap items-center gap-3 border-t border-[var(--msg-hairline)] px-3 py-2.5"
         >
           <Avatar avatarUrl={invite.inviteeAvatarUrl} name={invite.inviteeName} size="sm" tone="muted" />
           <div className="min-w-0 flex-1">
@@ -40,14 +40,14 @@ export function PendingGuestInviteStrip({ invites, acting, onCancel }: PendingGu
             </p>
           </div>
           <span
-            className="inline-flex h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber-500"
+            className="inline-flex h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[var(--msg-coral)]"
             aria-hidden
           />
           <button
             type="button"
             onClick={() => onCancel(invite.id)}
             disabled={acting}
-            className="shrink-0 rounded-full border border-neutral-300 px-3 py-1.5 text-[11px] font-semibold text-neutral-700 transition hover:bg-white disabled:opacity-60 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
+            className="msg-micro shrink-0 border border-[var(--msg-hairline-strong)] px-3 py-1.5 text-[var(--msg-ink-faint)] transition-colors duration-300 hover:border-[var(--msg-ink-soft)] hover:text-[var(--msg-ink)] disabled:opacity-40"
           >
             {acting ? '…' : 'Cancel'}
           </button>

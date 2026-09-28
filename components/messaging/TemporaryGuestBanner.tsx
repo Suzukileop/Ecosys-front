@@ -40,7 +40,7 @@ export function TemporaryGuestBanner({
         return (
           <div
             key={guest.inviteId}
-            className="flex flex-wrap items-center gap-3 rounded-2xl border border-neutral-200/80 bg-neutral-50 px-3 py-2.5 dark:border-neutral-700 dark:bg-neutral-900/80"
+            className="flex flex-wrap items-center gap-3 border-l-2 border-[var(--msg-coral)] px-3 py-2.5"
           >
             <Avatar avatarUrl={guest.guestAvatarUrl} name={guest.guestName} size="sm" tone="muted" />
             <div className="min-w-0 flex-1">
@@ -56,7 +56,7 @@ export function TemporaryGuestBanner({
                 type="button"
                 onClick={() => onRevoke(guest.guestUserId)}
                 disabled={acting}
-                className="shrink-0 rounded-full border border-neutral-300 px-3 py-1.5 text-[11px] font-semibold text-neutral-700 transition hover:bg-white disabled:opacity-60 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                className="msg-micro shrink-0 border border-[var(--msg-hairline-strong)] px-3 py-1.5 text-[var(--msg-ink-faint)] transition-colors duration-300 hover:border-[var(--msg-ink-soft)] hover:text-[var(--msg-ink)] disabled:opacity-40"
               >
                 {acting ? '…' : 'End guest access'}
               </button>
@@ -66,7 +66,7 @@ export function TemporaryGuestBanner({
                 type="button"
                 onClick={onLeave}
                 disabled={acting}
-                className="shrink-0 rounded-full border border-neutral-300 px-3 py-1.5 text-[11px] font-semibold text-neutral-700 transition hover:bg-white disabled:opacity-60 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                className="msg-micro shrink-0 border border-[var(--msg-hairline-strong)] px-3 py-1.5 text-[var(--msg-ink-faint)] transition-colors duration-300 hover:border-[var(--msg-ink-soft)] hover:text-[var(--msg-ink)] disabled:opacity-40"
               >
                 {acting ? '…' : 'Leave chat'}
               </button>

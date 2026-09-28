@@ -1,11 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDesktop, faGear, faMobileScreen } from '@fortawesome/free-solid-svg-icons';
 import { PortfolioSettingsModal } from '@/components/portfolio/PortfolioSettingsModal';
 import { usePortfolioSettings } from '@/components/portfolio/use-portfolio-settings';
-import { buildCreatorPortfolioPath, buildCreatorPortfolioUrl } from '@/lib/portfolio-url';
+import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
 import { enterBrowserFullscreen, exitBrowserFullscreen, getBrowserFullscreenElement } from '@/lib/browser-fullscreen';
 import {
   DASHBOARD_SIDEBAR_EXPAND_EVENT,
@@ -20,42 +18,106 @@ import {
   type PortfolioStudioPreviewMeta,
 } from '@/lib/portfolio-studio-preview';
 
+type PreviewDevice = 'mobile' | 'tablet' | 'desktop';
+
+const STROKE = 1.25;
+const MOBILE_PREVIEW_WIDTH = 390;
+const TABLET_PREVIEW_WIDTH = 768;
+const PREVIEW_MIN_WIDTH = 320;
+const PREVIEW_WIDTH_SNAPS = [320, 360, 375, 390, 400, 414, 430, 768, 834, 1024, 1280, 1440];
+
 function ExternalLinkIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-      />
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={STROKE} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
     </svg>
   );
 }
 
 function CloseIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={STROKE} aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
     </svg>
   );
 }
 
-function CopyLinkIcon({ className }: { className?: string }) {
+function RefreshIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={STROKE} aria-hidden>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        d="M13.5 6.5H17a3.5 3.5 0 010 7h-1.5M10.5 17.5H7a3.5 3.5 0 010-7h1.5"
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
       />
     </svg>
   );
 }
 
-const toolbarIconClass =
-  'inline-flex items-center justify-center bg-black/[0.04] text-neutral-500 transition duration-200 hover:bg-neutral-950 hover:text-white dark:bg-white/[0.03] dark:text-neutral-400 dark:hover:bg-white dark:hover:text-neutral-950';
+function FocusEnterIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={STROKE} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4" />
+    </svg>
+  );
+}
 
-function ToolbarIcon({
+function FocusExitIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={STROKE} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H5v4M15 5h4v4M9 19H5v-4M15 19h4v-4" />
+    </svg>
+  );
+}
+
+function GearIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={STROKE} aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+
+function MobileDeviceIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={STROKE} aria-hidden>
+      <rect x="8" y="3.5" width="8" height="17" rx="1.5" />
+      <path strokeLinecap="round" d="M11 17.5h2" />
+    </svg>
+  );
+}
+
+function TabletDeviceIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={STROKE} aria-hidden>
+      <rect x="5" y="3.5" width="14" height="17" rx="1.5" />
+      <path strokeLinecap="round" d="M11 17.5h2" />
+    </svg>
+  );
+}
+
+function DesktopDeviceIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={STROKE} aria-hidden>
+      <rect x="3" y="4" width="18" height="12" rx="1.5" />
+      <path strokeLinecap="round" d="M8 20h8M12 16v4" />
+    </svg>
+  );
+}
+
+const chromeFocusRing =
+  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-black/20 dark:focus-visible:ring-white/30';
+const chromeIconClass = `group relative inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors duration-200 ${chromeFocusRing}`;
+const chromeIconIdle =
+  'text-[#222222]/70 hover:text-[#0A0A0A] dark:text-white/55 dark:hover:text-white';
+const chromeIconPressed = 'text-[#0A0A0A] dark:text-white';
+
+function ChromeIcon({
   label,
   children,
   href,
@@ -63,7 +125,6 @@ function ToolbarIcon({
   pressed,
   expanded,
   controls,
-  matchHistory,
 }: {
   label: string;
   children: ReactNode;
@@ -72,9 +133,8 @@ function ToolbarIcon({
   pressed?: boolean;
   expanded?: boolean;
   controls?: string;
-  matchHistory?: boolean;
 }) {
-  const tooltip = (
+  const tip = (
     <span
       role="tooltip"
       className="pointer-events-none absolute left-1/2 top-full z-40 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-neutral-950 px-2 py-1 text-[10px] font-medium tracking-wide text-white opacity-0 shadow-[0_8px_20px_rgba(0,0,0,0.28)] transition duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
@@ -82,16 +142,13 @@ function ToolbarIcon({
       {label}
     </span>
   );
-
-  const className = `group relative ${toolbarIconClass} ${
-    matchHistory ? 'h-9 w-9 rounded-full' : 'h-8 w-8 rounded-md'
-  } ${pressed ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950' : ''}`;
+  const className = `${chromeIconClass} ${pressed ? chromeIconPressed : chromeIconIdle}`;
 
   if (href) {
     return (
       <a href={href} target="_blank" rel="noreferrer" aria-label={label} className={className}>
         {children}
-        {tooltip}
+        {tip}
       </a>
     );
   }
@@ -107,52 +164,68 @@ function ToolbarIcon({
       className={className}
     >
       {children}
-      {tooltip}
+      {tip}
     </button>
   );
 }
 
-function RefreshIcon({ className }: { className?: string }) {
+const DEVICE_CYCLE: readonly PreviewDevice[] = ['desktop', 'tablet', 'mobile'];
+
+const DEVICE_META: Record<
+  PreviewDevice,
+  { label: string; Icon: (props: { className?: string }) => ReactNode }
+> = {
+  desktop: { label: 'Desktop', Icon: DesktopDeviceIcon },
+  tablet: { label: 'Tablet', Icon: TabletDeviceIcon },
+  mobile: { label: 'Mobile', Icon: MobileDeviceIcon },
+};
+
+function DeviceCycleButton({
+  device,
+  onSelect,
+}: {
+  device: PreviewDevice;
+  onSelect: (device: PreviewDevice) => void;
+}) {
+  const next = DEVICE_CYCLE[(DEVICE_CYCLE.indexOf(device) + 1) % DEVICE_CYCLE.length];
+  const current = DEVICE_META[device];
+
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-      />
-    </svg>
+    <button
+      type="button"
+      onClick={() => onSelect(next)}
+      aria-label={`${current.label} preview — switch to ${DEVICE_META[next].label}`}
+      title={`Switch to ${DEVICE_META[next].label}`}
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-md text-[#222222] transition-transform duration-200 active:scale-90 dark:text-white ${chromeFocusRing}`}
+    >
+      <span className="relative block h-5 w-5">
+        {DEVICE_CYCLE.map((key) => {
+          const { Icon } = DEVICE_META[key];
+          const shown = key === device;
+          return (
+            <span
+              key={key}
+              aria-hidden
+              className={`absolute inset-0 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                shown ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
+              }`}
+            >
+              <Icon className="h-5 w-5" />
+            </span>
+          );
+        })}
+      </span>
+    </button>
   );
 }
 
-function FocusEnterIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4" />
-    </svg>
-  );
+/** Derive device preset from the current preview width. */
+function resolvePreviewDevice(width: number | null): PreviewDevice {
+  if (width == null) return 'desktop';
+  if (width <= 480) return 'mobile';
+  if (width <= 900) return 'tablet';
+  return 'desktop';
 }
-
-function FocusExitIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H5v4M15 5h4v4M9 19H5v-4M15 19h4v-4" />
-    </svg>
-  );
-}
-
-function DevicePreviewIcon({ mobile, className }: { mobile: boolean; className?: string }) {
-  return (
-    <FontAwesomeIcon
-      icon={mobile ? faDesktop : faMobileScreen}
-      className={className}
-      fixedWidth
-    />
-  );
-}
-
-const MOBILE_PREVIEW_WIDTH = 400;
-const PREVIEW_MIN_WIDTH = 320;
-const PREVIEW_WIDTH_SNAPS = [320, 360, 375, 400, 414, 430, 768, 834, 1024, 1280, 1440];
 
 function snapPreviewWidth(width: number, container: number): number | null {
   if (!Number.isFinite(container) || container <= PREVIEW_MIN_WIDTH) return null;
@@ -203,8 +276,8 @@ function PreviewResizeHandle({
         <span
           className={`h-11 w-1 rounded-full transition-[background-color,opacity] duration-150 ${
             active
-              ? 'bg-neutral-700 opacity-100 dark:bg-white'
-              : 'bg-neutral-400/80 opacity-70 hover:opacity-100 dark:bg-neutral-500'
+              ? 'bg-neutral-900 opacity-100 dark:bg-white'
+              : 'bg-neutral-900/25 opacity-70 hover:opacity-100 dark:bg-white/25'
           }`}
         />
       </button>
@@ -221,7 +294,6 @@ export function PortfolioLivePreview({
 }) {
   const [frameKey, setFrameKey] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [focusActive, setFocusActive] = useState(false);
   const [previewMeta, setPreviewMeta] = useState<PortfolioStudioPreviewMeta>(
     EMPTY_PORTFOLIO_STUDIO_PREVIEW_META
@@ -247,7 +319,6 @@ export function PortfolioLivePreview({
 
   const path = buildCreatorPortfolioPath(creatorId, username);
   const embedPath = withPortfolioStudioEmbed(path);
-  const shareUrl = buildCreatorPortfolioUrl(creatorId, username);
 
   const {
     settings,
@@ -423,17 +494,6 @@ export function PortfolioLivePreview({
     }
   }, []);
 
-  const copyShareUrl = useCallback(async () => {
-    if (!shareUrl) return;
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* ignore */
-    }
-  }, [shareUrl]);
-
   useEffect(() => {
     const column = previewColumnRef.current;
     if (!column) return;
@@ -458,14 +518,18 @@ export function PortfolioLivePreview({
     setPreviewWidth(null);
   }, []);
 
-  const toggleDevicePreview = useCallback(() => {
+  const setPreviewDevice = useCallback((device: PreviewDevice) => {
     const container = containerWidthRef.current;
-    setPreviewWidth((current) => {
-      const isMobile = current != null && current <= 480;
-      if (isMobile) return null;
-      if (!container) return MOBILE_PREVIEW_WIDTH;
-      return Math.min(MOBILE_PREVIEW_WIDTH, Math.max(PREVIEW_MIN_WIDTH, Math.floor(container)));
-    });
+    if (device === 'desktop') {
+      setPreviewWidth(null);
+      return;
+    }
+    const target = device === 'mobile' ? MOBILE_PREVIEW_WIDTH : TABLET_PREVIEW_WIDTH;
+    if (!container) {
+      setPreviewWidth(target);
+      return;
+    }
+    setPreviewWidth(Math.min(target, Math.max(PREVIEW_MIN_WIDTH, Math.floor(container))));
   }, []);
 
   const onPreviewResizePointerDown = useCallback(
@@ -517,174 +581,170 @@ export function PortfolioLivePreview({
     []
   );
 
-  const mobilePreviewActive = previewWidth != null && previewWidth <= 480;
+  const activeDevice = resolvePreviewDevice(previewWidth);
   const previewFrameWidth = previewWidth == null ? '100%' : `${previewWidth}px`;
 
-  const previewEdgeGutter = 'px-4 sm:px-5';
-  const frameBorder = 'border-neutral-200 dark:border-neutral-800';
+  const dockTop = 'calc(var(--dash-header-h, 3.85rem) + var(--portfolio-workspace-nav-h, 0px))';
+  const dockHeight =
+    'calc(100dvh - var(--dash-header-h, 3.85rem) - var(--portfolio-workspace-nav-h, 0px) - 0.5rem)';
 
   return (
     <div
       ref={previewRootRef}
-      className={`portfolio-live-preview ${
-        focusActive ? 'flex h-full flex-col bg-neutral-950' : `${previewEdgeGutter} pb-4 sm:pb-5`
+      className={`portfolio-live-preview relative max-w-full min-w-0 ${
+        focusActive
+          ? 'flex h-full flex-col overflow-x-clip bg-[#F8F8F8] dark:bg-black'
+          : 'sticky z-20 flex flex-col gap-2 overflow-x-clip bg-[#F8F8F8] px-3 pb-2 dark:bg-black sm:px-4'
       }`}
+      style={focusActive ? undefined : { top: dockTop, height: dockHeight }}
     >
-      <div
-        className={`portfolio-live-preview-chrome rounded-t-xl border border-b-0 bg-white dark:bg-neutral-950 ${frameBorder} ${
-          focusActive ? 'rounded-none border-x-0 border-t-0' : ''
-        }`}
-      >
-        <div
-          className={`grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-neutral-200 bg-neutral-50 py-2 dark:border-neutral-800 dark:bg-neutral-900 ${previewEdgeGutter}`}
-        >
-        <p className="text-sm font-semibold leading-none text-slate-900 dark:text-white">Live Preview</p>
-        <ToolbarIcon
-          label={mobilePreviewActive ? 'Desktop preview' : 'Mobile preview'}
-          pressed={mobilePreviewActive}
-          onClick={toggleDevicePreview}
-        >
-          <DevicePreviewIcon mobile={mobilePreviewActive} className="h-4 w-4" />
-        </ToolbarIcon>
-        <div className="flex shrink-0 items-center justify-end gap-1">
-          <ToolbarIcon label="Refresh" onClick={refreshPreview}>
-            <RefreshIcon className="h-3.5 w-3.5" />
-          </ToolbarIcon>
-          <ToolbarIcon
+      {/* Floating chrome — above the canvas, never part of the previewed page. */}
+      <div className="portfolio-live-preview-chrome grid min-w-0 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-0.5 py-0">
+        <p className="min-w-0 truncate text-[0.9rem] font-medium normal-case tracking-normal text-[#222222]/70 dark:text-white/55">
+          Live preview
+        </p>
+
+        <DeviceCycleButton device={activeDevice} onSelect={setPreviewDevice} />
+
+        <div className="flex min-w-0 shrink-0 items-center justify-end gap-0.5">
+          <ChromeIcon label="Refresh" onClick={refreshPreview}>
+            <RefreshIcon className="h-5 w-5" />
+          </ChromeIcon>
+          <ChromeIcon
             label={focusActive ? 'Exit focus' : 'Focus'}
             pressed={focusActive}
             onClick={() => void toggleFocus()}
           >
             {focusActive ? (
-              <FocusExitIcon className="h-3.5 w-3.5" />
+              <FocusExitIcon className="h-5 w-5" />
             ) : (
-              <FocusEnterIcon className="h-3.5 w-3.5" />
+              <FocusEnterIcon className="h-5 w-5" />
             )}
-          </ToolbarIcon>
-          <ToolbarIcon label={copied ? 'Copied' : 'Copy URL'} onClick={() => void copyShareUrl()}>
-            <CopyLinkIcon className="h-3.5 w-3.5" />
-          </ToolbarIcon>
-          <ToolbarIcon label="Open" href={path}>
-            <ExternalLinkIcon className="h-3.5 w-3.5" />
-          </ToolbarIcon>
-          <ToolbarIcon
+          </ChromeIcon>
+          <span className="hidden sm:contents">
+            <ChromeIcon label="Open" href={path}>
+              <ExternalLinkIcon className="h-5 w-5" />
+            </ChromeIcon>
+          </span>
+          <ChromeIcon
             label={settingsOpen ? 'Close' : 'Settings'}
             pressed={settingsOpen}
             expanded={settingsOpen}
             controls="portfolio-studio-settings"
-            matchHistory={settingsOpen}
             onClick={() => setSettingsOpen((open) => !open)}
           >
             {settingsOpen ? (
-              <CloseIcon className="h-4 w-4" />
+              <CloseIcon className="h-5 w-5" />
             ) : (
-              <FontAwesomeIcon icon={faGear} className="h-3.5 w-3.5" fixedWidth />
+              <GearIcon className="h-5 w-5" />
             )}
-          </ToolbarIcon>
-        </div>
+          </ChromeIcon>
         </div>
       </div>
 
+      {/* Physical screen — rounded device frame on mineral ground. */}
       <div
-        className={`portfolio-live-preview-frame relative border-x border-b ${frameBorder} ${
-          settingsOpen || focusActive ? '' : 'overflow-hidden rounded-b-xl'
-        } ${focusActive ? 'min-h-0 flex-1 border-x-0 border-b-0' : ''}`}
-      >
-      <div
-        className={`portfolio-live-preview-stage flex w-full bg-transparent max-lg:overflow-hidden transition-[gap] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          focusActive ? 'h-full min-h-0' : 'h-[calc(100dvh-10rem)] min-h-[32rem]'
-        } ${settingsOpen ? 'max-lg:gap-0 lg:gap-3' : 'gap-0'}`}
+        className={`portfolio-live-preview-frame relative min-h-0 flex-1 border border-black/[0.06] bg-[#F8F8F8] dark:border-white/[0.08] dark:bg-black ${
+          settingsOpen || focusActive
+            ? ''
+            : 'overflow-hidden rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.10)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.45)]'
+        } ${focusActive ? 'rounded-none border-0' : ''}`}
       >
         <div
-          ref={previewColumnRef}
-          className={`relative min-w-0 flex-1 overflow-hidden transition-[flex-grow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            previewWidth != null ? 'bg-neutral-100 dark:bg-neutral-900' : ''
-          }`}
-        >
-          <div className="flex h-full w-full items-stretch justify-center">
-            <div
-              className="relative h-full max-w-full"
-              style={{
-                width: previewFrameWidth,
-                transition: resizingPreview ? 'none' : 'width 180ms cubic-bezier(0.22, 1, 0.36, 1)',
-              }}
-            >
-              <iframe
-                key={frameKey}
-                ref={iframeRef}
-                title="Portfolio live preview"
-                src={embedPath}
-                className={`absolute inset-0 h-full w-full border-0 bg-white ${
-                  resizingPreview ? 'pointer-events-none' : ''
-                }`}
-              />
-              <PreviewResizeHandle
-                side="left"
-                active={resizingPreview}
-                onPointerDown={onPreviewResizePointerDown}
-                onReset={resetPreviewWidth}
-              />
-              <PreviewResizeHandle
-                side="right"
-                active={resizingPreview}
-                onPointerDown={onPreviewResizePointerDown}
-                onReset={resetPreviewWidth}
-              />
-            </div>
-          </div>
-        </div>
-
-        <aside
-          id="portfolio-studio-settings"
-          role="complementary"
-          aria-label="Portfolio settings"
-          aria-hidden={!settingsOpen}
-          data-open={settingsOpen ? 'true' : 'false'}
-          className={`portfolio-studio-settings-pane flex h-full shrink-0 flex-col bg-transparent transition-[width,min-width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-lg:absolute max-lg:inset-y-0 max-lg:right-0 max-lg:z-20 ${
-            settingsOpen
-              ? 'w-full overflow-hidden max-lg:shadow-[-24px_0_48px_rgba(0,0,0,0.35)] lg:w-[28%] lg:min-w-[22rem] lg:max-w-none'
-              : 'pointer-events-none w-0 min-w-0 overflow-hidden'
+          className={`portfolio-live-preview-stage flex h-full min-h-0 min-w-0 w-full max-w-full bg-transparent max-lg:overflow-hidden transition-[gap] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            settingsOpen ? 'max-lg:gap-0 lg:gap-3' : 'gap-0'
           }`}
         >
           <div
-            className={`h-full w-full min-w-0 overflow-visible transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-              settingsOpen ? 'opacity-100 delay-75' : 'invisible opacity-0'
+            ref={previewColumnRef}
+            className={`relative min-w-0 max-w-full flex-1 overflow-hidden transition-[flex-grow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              previewWidth != null ? 'bg-[#F8F8F8] dark:bg-black' : ''
             }`}
           >
-            <PortfolioSettingsModal
-              variant="dock"
-              open={settingsOpen}
-              onClose={closeSettings}
-              settings={settings}
-              persistStatus={persistStatus}
-              onChange={updateSection}
-              onThemeChange={setThemeId}
-              onNavigationChange={updateNavigation}
-              onGlobalChange={updateGlobal}
-              onColorModeChange={setColorMode}
-              onGlobalPaletteChange={patchGlobalPalette}
-              onGlobalPalettePairChange={setGlobalPalettePair}
-              onSaveCustomTheme={saveCustomTheme}
-              onRenameCustomTheme={renameCustomTheme}
-              onDuplicateTheme={duplicateTheme}
-              onResetBuiltinTheme={resetBuiltinTheme}
-              onDeleteCustomTheme={deleteCustomTheme}
-              onReset={resetSettings}
-              onUndo={undoSettings}
-              onRedo={redoSettings}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              availableTools={previewMeta.availableTools}
-              availableWorks={previewMeta.availableWorks}
-              availableServices={previewMeta.availableServices}
-              navSocialLinkOptions={previewMeta.navSocialLinkOptions}
-              sectionLinkOptions={previewMeta.sectionLinkOptions}
-              profileAvatarUrl={previewMeta.profileAvatarUrl}
-              onPreviewSectionFocus={focusPreviewSection}
-            />
+            <div className="flex h-full w-full items-stretch justify-center">
+              <div
+                className="relative h-full max-w-full will-change-[width]"
+                style={{
+                  width: previewFrameWidth,
+                  transition: resizingPreview ? 'none' : 'width 180ms cubic-bezier(0.22, 1, 0.36, 1)',
+                }}
+              >
+                <iframe
+                  key={frameKey}
+                  ref={iframeRef}
+                  title="Portfolio live preview"
+                  src={embedPath}
+                  className={`absolute inset-0 h-full w-full border-0 bg-white ${
+                    resizingPreview ? 'pointer-events-none' : ''
+                  }`}
+                />
+                <PreviewResizeHandle
+                  side="left"
+                  active={resizingPreview}
+                  onPointerDown={onPreviewResizePointerDown}
+                  onReset={resetPreviewWidth}
+                />
+                <PreviewResizeHandle
+                  side="right"
+                  active={resizingPreview}
+                  onPointerDown={onPreviewResizePointerDown}
+                  onReset={resetPreviewWidth}
+                />
+              </div>
+            </div>
           </div>
-        </aside>
-      </div>
+
+          <aside
+            id="portfolio-studio-settings"
+            role="complementary"
+            aria-label="Portfolio settings"
+            aria-hidden={!settingsOpen}
+            data-open={settingsOpen ? 'true' : 'false'}
+            className={`portfolio-studio-settings-pane flex h-full min-w-0 shrink-0 flex-col bg-transparent transition-[width,min-width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-lg:absolute max-lg:inset-y-0 max-lg:right-0 max-lg:z-20 ${
+              settingsOpen
+                ? 'w-full overflow-hidden max-lg:shadow-[-24px_0_48px_rgba(0,0,0,0.35)] lg:w-[min(28%,22rem)] lg:max-w-[22rem]'
+                : 'pointer-events-none w-0 overflow-hidden'
+            }`}
+          >
+            <div
+              className={`h-full w-full min-w-0 overflow-visible transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                settingsOpen ? 'opacity-100 delay-75' : 'invisible opacity-0'
+              }`}
+            >
+              <PortfolioSettingsModal
+                variant="dock"
+                open={settingsOpen}
+                onClose={closeSettings}
+                settings={settings}
+                persistStatus={persistStatus}
+                onChange={updateSection}
+                onThemeChange={setThemeId}
+                onNavigationChange={updateNavigation}
+                onGlobalChange={updateGlobal}
+                onColorModeChange={setColorMode}
+                onGlobalPaletteChange={patchGlobalPalette}
+                onGlobalPalettePairChange={setGlobalPalettePair}
+                onSaveCustomTheme={saveCustomTheme}
+                onRenameCustomTheme={renameCustomTheme}
+                onDuplicateTheme={duplicateTheme}
+                onResetBuiltinTheme={resetBuiltinTheme}
+                onDeleteCustomTheme={deleteCustomTheme}
+                onReset={resetSettings}
+                onUndo={undoSettings}
+                onRedo={redoSettings}
+                canUndo={canUndo}
+                canRedo={canRedo}
+                availableTools={previewMeta.availableTools}
+                availableWorks={previewMeta.availableWorks}
+                availableServices={previewMeta.availableServices}
+                navSocialLinkOptions={previewMeta.navSocialLinkOptions}
+                sectionLinkOptions={previewMeta.sectionLinkOptions}
+                profileAvatarUrl={previewMeta.profileAvatarUrl}
+                onPreviewSectionFocus={focusPreviewSection}
+              />
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   );

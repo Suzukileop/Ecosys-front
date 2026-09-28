@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import type { GlobalSearchCategory } from '@/lib/global-search';
 import type { GlobalSearchFilters } from '@/lib/global-search-filters';
@@ -23,11 +23,7 @@ type GlobalSearchFilterModalProps = {
 
 type FilterPanel = 'show' | 'date' | 'sort';
 
-const PANELS: { id: FilterPanel; label: string }[] = [
-  { id: 'show', label: 'Show' },
-  { id: 'date', label: 'Publication date' },
-  { id: 'sort', label: 'Sort by' },
-];
+const subscribeNoop = () => () => {};
 
 const SCROLLBAR =
   '[scrollbar-width:thin] [scrollbar-color:#a3a3a3_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-400 dark:[scrollbar-color:#525252_transparent] [&::-webkit-scrollbar-thumb]:dark:bg-neutral-600';
@@ -51,64 +47,110 @@ function CloseIcon({ className }: { className?: string }) {
   );
 }
 
-function PanelTitle({ children }: { children: string }) {
+function CheckIcon({ className }: { className?: string }) {
   return (
-    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">{children}</p>
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="m5 12.5 4.5 4.5L19 7.5" />
+    </svg>
   );
 }
 
-function PillButton({
-  active,
-  onClick,
+function FilterSection({
+  title,
+  hint,
+  changed,
   children,
 }: {
-  active: boolean;
-  onClick: () => void;
+  title: string;
+  hint?: string;
+  changed: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full border px-4 py-2.5 text-sm font-medium transition ${
-        active
-          ? 'border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900'
-          : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-600'
-      }`}
-    >
+    <section>
+      <div className="mb-3 flex items-baseline justify-between gap-4">
+        <h3 className="flex items-center gap-2 text-[15px] font-bold text-[#111111] dark:text-neutral-100">
+          {title}
+          {changed ? <span aria-label="Changed" className="h-1.5 w-1.5 rounded-full bg-[#FF5722]" /> : null}
+        </h3>
+        {hint ? <p className="text-[14px] text-neutral-500 dark:text-neutral-400">{hint}</p> : null}
+      </div>
       {children}
-    </button>
+    </section>
   );
 }
 
-function CategoryCard({
-  active,
+/** Hairline list row with a coral check — same vocabulary as the search dropdown menus. */
+function OptionRow({
+  role,
+  selected,
   onClick,
   label,
 }: {
-  active: boolean;
+  role: 'checkbox' | 'radio';
+  selected: boolean;
   onClick: () => void;
   label: string;
 }) {
   return (
     <button
       type="button"
+      role={role}
+      aria-checked={selected}
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
-        active
-          ? 'border-orange-500 bg-orange-50/50 dark:border-orange-500/60 dark:bg-orange-500/10'
-          : 'border-neutral-200 bg-white hover:border-neutral-300 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-neutral-600'
+      className={`group/opt flex w-full items-center justify-between gap-4 border-b border-black/[0.06] py-3.5 text-left text-[15px] transition-colors duration-200 last:border-b-0 dark:border-white/[0.06] ${
+        selected
+          ? 'font-semibold text-[#111111] dark:text-white'
+          : 'text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
       }`}
     >
-      <span
-        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
-          active ? 'border-orange-500' : 'border-neutral-300 dark:border-neutral-600'
+      {label}
+      <CheckIcon
+        className={`h-4 w-4 shrink-0 transition-opacity duration-200 ${
+          selected
+            ? 'text-[#FF5722] opacity-100'
+            : 'text-neutral-400 opacity-0 group-hover/opt:opacity-40 dark:text-neutral-500'
         }`}
-      >
-        {active ? <span className="h-2 w-2 rounded-full bg-orange-500" /> : null}
-      </span>
-      <span className="text-sm font-medium text-neutral-900 dark:text-white">{label}</span>
+      />
     </button>
+  );
+}
+
+/** Underlined text tabs, matching the results tab bar above. */
+function UnderlineChoice<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: readonly { value: T; label: string }[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-x-6 border-b border-black/[0.06] dark:border-white/[0.06]">
+      {options.map((option) => {
+        const active = option.value === value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(option.value)}
+            className={`relative py-3 text-[15px] transition-colors duration-200 ${
+              active
+                ? 'font-semibold text-[#111111] dark:text-white'
+                : 'text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
+            }`}
+          >
+            {option.label}
+            {active ? <span aria-hidden className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-[#FF5722]" /> : null}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -129,24 +171,21 @@ export function GlobalSearchFilterModal({
   open,
   filters,
   isAuthenticated,
-  resultCount,
   onClose,
   onApply,
 }: GlobalSearchFilterModalProps) {
   const [draft, setDraft] = useState(filters);
-  const [activePanel, setActivePanel] = useState<FilterPanel>('show');
-  const [mounted, setMounted] = useState(false);
+  const [syncedFrom, setSyncedFrom] = useState<{ open: boolean; filters: GlobalSearchFilters }>({ open, filters });
+  const mounted = useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false
+  );
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (open) {
-      setDraft(filters);
-      setActivePanel('show');
-    }
-  }, [open, filters]);
+  if (syncedFrom.open !== open || syncedFrom.filters !== filters) {
+    setSyncedFrom({ open, filters });
+    if (open) setDraft(filters);
+  }
 
   useEffect(() => {
     if (!open || !mounted) return;
@@ -197,154 +236,108 @@ export function GlobalSearchFilterModal({
     }
   };
 
+  const apply = () => {
+    onApply(draft);
+    onClose();
+  };
+
   return createPortal(
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-[300] flex items-end justify-center sm:items-center sm:p-4"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') onClose();
+      }}
+    >
       <button
         type="button"
-        className="absolute inset-0 h-[100dvh] w-full bg-neutral-950/60 backdrop-blur-sm"
+        className="absolute inset-0 h-[100dvh] w-full bg-black/50 backdrop-blur-[2px]"
         aria-label="Close filters"
         onClick={onClose}
       />
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Filter search"
-        className="relative flex h-[min(90vh,640px)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-950"
+        aria-labelledby="search-filters-title"
+        style={{ animation: 'pf-float-in 260ms cubic-bezier(0.16, 1, 0.3, 1)' }}
+        className="relative flex max-h-[88dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl border border-black/[0.06] bg-[#F8F8F8] shadow-2xl dark:border-white/[0.08] dark:bg-[#0F0F0F] sm:rounded-2xl"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-neutral-200 px-6 py-5 dark:border-neutral-800">
-          <div>
-            <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Filter Search</h2>
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              Refine categories, date, and sort
-            </p>
-          </div>
+        <div className="flex items-center justify-between gap-4 px-8 pt-7">
+          <h2 id="search-filters-title" className="text-xl font-bold tracking-[-0.01em] text-[#111111] dark:text-white">
+            Filters
+            {activeFilterCount > 0 ? (
+              <span className="font-bold text-[#FF5722]"> · {String(activeFilterCount).padStart(2, '0')}</span>
+            ) : null}
+          </h2>
           <button
             type="button"
+            autoFocus
             onClick={onClose}
-            className="rounded-lg p-1.5 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-black/[0.06] hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
             aria-label="Close"
           >
-            <CloseIcon className="h-5 w-5" />
+            <CloseIcon className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="flex min-h-0 flex-1">
-          <aside className="flex w-52 shrink-0 flex-col border-r border-neutral-200 bg-neutral-50/80 dark:border-neutral-800 dark:bg-neutral-900/50">
-            <nav className="flex-1 space-y-1 p-3">
-              {PANELS.map((panel) => {
-                const isActive = activePanel === panel.id;
-                const hasChange = panelHasDraftChange(panel.id);
-                return (
-                  <button
-                    key={panel.id}
-                    type="button"
-                    onClick={() => setActivePanel(panel.id)}
-                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium transition ${
-                      isActive
-                        ? 'border border-orange-500/40 bg-white text-neutral-900 shadow-sm dark:bg-neutral-900 dark:text-white'
-                        : 'border border-transparent text-neutral-600 hover:bg-white/80 dark:text-neutral-400 dark:hover:bg-neutral-800/60'
-                    }`}
-                  >
-                    <span>{panel.label}</span>
-                    {hasChange ? <span className="h-2 w-2 shrink-0 rounded-full bg-orange-500" /> : null}
-                  </button>
-                );
-              })}
-            </nav>
+        <div className={`min-h-0 flex-1 space-y-10 overflow-y-auto px-8 pb-8 pt-6 ${SCROLLBAR}`}>
+          <FilterSection
+            title="Show"
+            hint={`${draft.categories.length} of ${categoryOptions.length}`}
+            changed={panelHasDraftChange('show')}
+          >
+            <div>
+              {categoryOptions.map((option) => (
+                <OptionRow
+                  key={option.value}
+                  role="checkbox"
+                  label={option.label}
+                  selected={draft.categories.includes(option.value)}
+                  onClick={() => toggleCategory(option.value)}
+                />
+              ))}
+            </div>
+          </FilterSection>
 
-            {activeFilterCount > 0 ? (
-              <div className="m-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-3 dark:border-orange-500/30 dark:bg-orange-500/10">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
-                  Active filters
-                </p>
-                <p className="mt-1 text-sm font-medium text-neutral-800 dark:text-neutral-200">
-                  {activeFilterCount} {activeFilterCount === 1 ? 'item' : 'items'} selected
-                </p>
-              </div>
-            ) : null}
-          </aside>
+          <FilterSection title="Publication date" changed={panelHasDraftChange('date')}>
+            <UnderlineChoice
+              label="Publication date"
+              value={draft.dateRange}
+              options={GLOBAL_SEARCH_DATE_OPTIONS}
+              onChange={(dateRange) => setDraft((prev) => ({ ...prev, dateRange }))}
+            />
+          </FilterSection>
 
-          <div className={`min-h-0 flex-1 overflow-y-auto px-6 py-6 ${SCROLLBAR}`}>
-            {activePanel === 'show' ? (
-              <div className="space-y-4">
-                <PanelTitle>Show</PanelTitle>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {categoryOptions.map((option) => (
-                    <CategoryCard
-                      key={option.value}
-                      label={option.label}
-                      active={draft.categories.includes(option.value)}
-                      onClick={() => toggleCategory(option.value)}
-                    />
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {activePanel === 'date' ? (
-              <div className="space-y-4">
-                <PanelTitle>Publication date</PanelTitle>
-                <div className="flex flex-wrap gap-2">
-                  {GLOBAL_SEARCH_DATE_OPTIONS.map((option) => (
-                    <PillButton
-                      key={option.value}
-                      active={draft.dateRange === option.value}
-                      onClick={() => setDraft((prev) => ({ ...prev, dateRange: option.value }))}
-                    >
-                      {option.label}
-                    </PillButton>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {activePanel === 'sort' ? (
-              <div className="space-y-4">
-                <PanelTitle>Sort by</PanelTitle>
-                <select
-                  value={draft.sort}
-                  onChange={(event) =>
-                    setDraft((prev) => ({
-                      ...prev,
-                      sort: event.target.value as GlobalSearchFilters['sort'],
-                    }))
-                  }
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                >
-                  {GLOBAL_SEARCH_SORT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
-          </div>
+          <FilterSection title="Sort by" changed={panelHasDraftChange('sort')}>
+            <div role="radiogroup" aria-label="Sort by">
+              {GLOBAL_SEARCH_SORT_OPTIONS.map((option) => (
+                <OptionRow
+                  key={option.value}
+                  role="radio"
+                  label={option.label}
+                  selected={draft.sort === option.value}
+                  onClick={() => setDraft((prev) => ({ ...prev, sort: option.value }))}
+                />
+              ))}
+            </div>
+          </FilterSection>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-neutral-200 px-6 py-4 dark:border-neutral-800">
+        <div className="flex items-center justify-between gap-4 px-8 pb-7 pt-4">
           <button
             type="button"
             onClick={reset}
-            className="text-xs font-bold uppercase tracking-wider text-neutral-500 transition hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
+            disabled={activeFilterCount === 0}
+            className="text-[15px] font-medium text-neutral-500 transition-colors hover:text-[#FF5722] disabled:pointer-events-none disabled:opacity-40 dark:text-neutral-400"
           >
-            Clear all filters
+            Reset all
           </button>
-          <div className="flex items-center gap-4">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              Showing {resultCount.toLocaleString()} {resultCount === 1 ? 'result' : 'results'}
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                onApply(draft);
-                onClose();
-              }}
-              className="rounded-xl bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
-            >
-              Apply Filters
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={apply}
+            className="inline-flex items-center rounded-lg bg-[#111111] px-6 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#111111]"
+          >
+            Apply filters
+          </button>
         </div>
       </div>
     </div>,

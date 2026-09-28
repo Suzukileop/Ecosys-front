@@ -1,5 +1,6 @@
 import api from '@/lib/api';
 import { parseAboutSkills } from '@/lib/about-skills';
+import { parseEmploymentType } from '@/lib/experience-employment';
 import { normalizeSpringPage } from '@/lib/ecosystem';
 import { parseSpokenLanguageEntries } from '@/lib/spoken-languages';
 import { normalizeCreatorGender } from '@/lib/creator-gender';
@@ -763,16 +764,7 @@ function mapProfileMediaBlock(raw: RawRecord, index: number): import('@/types/ec
   const statusRaw = raw.status != null ? String(raw.status).toUpperCase() : null;
   const status: import('@/types/ecosystem').ExperienceBlockStatus | null =
     statusRaw === 'ONGOING' || statusRaw === 'FINISHED' ? statusRaw : null;
-  const employmentRaw =
-    raw.employmentType != null ? String(raw.employmentType).toUpperCase() : null;
-  const employmentType: import('@/types/ecosystem').ExperienceEmploymentType | null =
-    employmentRaw === 'FULL_TIME' ||
-    employmentRaw === 'PART_TIME' ||
-    employmentRaw === 'CONTRACT' ||
-    employmentRaw === 'FREELANCE' ||
-    employmentRaw === 'INTERNSHIP'
-      ? employmentRaw
-      : null;
+  const employmentType = parseEmploymentType(raw.employmentType);
   const links = Array.isArray(raw.links)
     ? raw.links
         .map((item, linkIndex) =>
@@ -930,6 +922,20 @@ export async function uploadContentMedia(file: File): Promise<string> {
   const form = new FormData();
   form.append('file', file);
   const res = await api.post<{ url: string }>('/api/creator/content/uploads/media', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data.url;
+}
+
+export const MAX_EXPERIENCE_MEDIA_BYTES = 100 * 1024 * 1024;
+
+export async function uploadExperienceMedia(file: File): Promise<string> {
+  if (file.size > MAX_EXPERIENCE_MEDIA_BYTES) {
+    throw new Error('Experience media must be 100 MB or less.');
+  }
+  const form = new FormData();
+  form.append('file', file);
+  const res = await api.post<{ url: string }>('/api/creator/content/uploads/experience-media', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return res.data.url;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { getReactionCounts, listComments, removeReaction, setReaction } from '@/lib/marketplace-api';
 import { useAuth } from '@/context/AuthContext';
 import type { ReactionType } from '@/types/marketplace';
@@ -13,6 +13,10 @@ type ContentPostSocialBarProps = {
   commentsOpen?: boolean;
   commentCount?: number;
   hideCommentsButton?: boolean;
+  /** Timeline: bare icon actions (like, comment) without the date chip. */
+  variant?: 'default' | 'timeline';
+  commentsDisabled?: boolean;
+  trailing?: ReactNode;
 };
 
 function formatCount(value: number) {
@@ -64,6 +68,9 @@ export function ContentPostSocialBar({
   commentsOpen = false,
   commentCount: commentCountProp,
   hideCommentsButton = false,
+  variant = 'default',
+  commentsDisabled = false,
+  trailing,
 }: ContentPostSocialBarProps) {
   const { user, isLoading } = useAuth();
   const [likes, setLikes] = useState(initialLikes);
@@ -128,6 +135,73 @@ export function ContentPostSocialBar({
   }, [busy, canInteract, postId, userReaction]);
 
   const displayCommentCount = commentCountProp ?? commentCount;
+
+  if (variant === 'timeline') {
+    const liked = userReaction === 'LIKE';
+    const actionClass =
+      'group/action -ml-2 inline-flex items-center gap-1.5 rounded-full py-1.5 pl-2 pr-3 text-[14px] tabular-nums transition-colors disabled:opacity-60';
+    return (
+      <div className="flex items-center gap-7" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          disabled={!canInteract || busy}
+          onClick={() => void toggleLike()}
+          aria-pressed={liked}
+          aria-label={liked ? 'Unlike' : 'Like'}
+          className={`${actionClass} ${
+            liked ? 'text-[#FF5722]' : 'text-neutral-500 hover:text-[#FF5722] dark:text-neutral-400'
+          }`}
+        >
+          <svg
+            className="h-[18px] w-[18px] transition-transform duration-200 group-active/action:scale-90"
+            fill={liked ? 'currentColor' : 'none'}
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.6}
+            aria-hidden
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            />
+          </svg>
+          <span>
+            {likes > 0 ? `${formatCount(likes)} ` : ''}
+            {likes === 1 ? 'Like' : 'Likes'}
+          </span>
+        </button>
+        {!hideCommentsButton ? (
+          <button
+            type="button"
+            disabled={commentsDisabled}
+            onClick={() => onCommentsToggle?.(!commentsOpen)}
+            aria-expanded={commentsOpen}
+            aria-label={commentsDisabled ? 'Comments disabled' : commentsOpen ? 'Hide comments' : 'Show comments'}
+            title={commentsDisabled ? 'Comments are disabled' : undefined}
+            className={`${actionClass} ${
+              commentsOpen
+                ? 'text-[#111111] dark:text-white'
+                : 'text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
+            } disabled:cursor-not-allowed disabled:hover:text-neutral-500`}
+          >
+            <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6} aria-hidden>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z"
+              />
+            </svg>
+            <span>
+              {displayCommentCount > 0 ? `${formatCount(displayCommentCount)} ` : ''}
+              {displayCommentCount === 1 ? 'Comment' : 'Comments'}
+            </span>
+          </button>
+        ) : null}
+        {trailing ? <div className="ml-auto flex items-center">{trailing}</div> : null}
+      </div>
+    );
+  }
 
   const pillClass = (active: boolean) =>
     `inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1.5 text-sm font-medium transition disabled:opacity-60 dark:bg-neutral-800 ${

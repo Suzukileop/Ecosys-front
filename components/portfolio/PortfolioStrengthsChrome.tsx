@@ -23,10 +23,10 @@ import { uploadContentMedia } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
-const MAX_DESCRIPTION = 280;
-const MAX_USE_CASES = 8;
+export const MAX_DESCRIPTION = 280;
+export const MAX_USE_CASES = 8;
 
-const LEVEL_OPTIONS: { value: StrengthToolLevel; label: string }[] = [
+export const LEVEL_OPTIONS: { value: StrengthToolLevel; label: string }[] = [
   { value: 'beginner', label: 'Beginner' },
   { value: 'intermediate', label: 'Intermediate' },
   { value: 'advanced', label: 'Advanced' },
@@ -83,7 +83,7 @@ function normalizeUseCases(useCases: string[]): string[] {
   return useCases.map((entry) => entry.trim()).filter(Boolean).slice(0, MAX_USE_CASES);
 }
 
-function cleanDraft(
+export function cleanDraft(
   draft: PortfolioStrengthDraft,
   options?: { stripUseCases?: boolean }
 ): PortfolioStrengthDraft {

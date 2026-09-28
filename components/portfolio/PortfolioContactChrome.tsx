@@ -11,6 +11,15 @@ import {
   PortfolioSectionIconButton,
   PortfolioSectionVisibilityMenu,
 } from '@/components/portfolio/portfolio-section-shared';
+import {
+  STUDIO_BARE_INPUT_CLASS,
+  STUDIO_EMPTY_CLASS,
+  STUDIO_ICON_BUTTON_TONES,
+  STUDIO_ROW_RULE,
+  STUDIO_SECONDARY_CLASS,
+  STUDIO_VALUE_CLASS,
+  StudioUnderline,
+} from '@/components/portfolio/PortfolioStudioKit';
 
 export type PortfolioContactKind = 'address' | 'phone' | 'email';
 
@@ -36,11 +45,7 @@ export type PortfolioContactFieldValue = {
 
 type EditingTarget = { kind: PortfolioContactKind; index: number };
 
-const inlineInputClass =
-  'w-full bg-transparent px-0 py-0 text-[15px] font-semibold leading-snug text-neutral-900 outline-none placeholder:italic placeholder:font-normal placeholder:text-neutral-400 dark:text-white sm:text-base';
-
-const softCardClass =
-  'relative rounded-[1.15rem] border border-transparent bg-white p-5 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.08)] transition-[background-color,box-shadow] duration-200 hover:bg-neutral-50 hover:shadow-[0_6px_20px_-10px_rgba(15,23,42,0.1)] sm:rounded-[1.35rem] sm:p-5 dark:bg-[#0a0a0a] dark:shadow-[0_4px_16px_-8px_rgba(0,0,0,0.35)] dark:hover:bg-neutral-900/80';
+const rowClass = `relative py-5 ${STUDIO_ROW_RULE}`;
 
 function toDraft(entry: PortfolioContactEntry): string {
   return entry.value;
@@ -376,8 +381,8 @@ export function PortfolioContactReadOnly({
     const itemActionVisibilityClass =
       'opacity-100 transition-opacity ' +
       '[@media(hover:hover)_and_(pointer:fine)]:opacity-0 ' +
-      '[@media(hover:hover)_and_(pointer:fine)]:group-hover:opacity-100 ' +
-      '[@media(hover:hover)_and_(pointer:fine)]:group-focus-within:opacity-100';
+      '[@media(hover:hover)_and_(pointer:fine)]:group-hover/item:opacity-100 ' +
+      '[@media(hover:hover)_and_(pointer:fine)]:group-focus-within/item:opacity-100';
 
     const visibleEntries = items
       .map((item, index) => ({ item, index }))
@@ -389,12 +394,12 @@ export function PortfolioContactReadOnly({
       );
 
     return (
-      <section key={kind} className="space-y-3">
-        <div className="flex items-center gap-2">
-          <h3 className="flex min-w-0 flex-1 items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-500">
+      <section key={kind}>
+        <div className="flex min-h-8 items-center gap-2">
+          <h3 className="flex min-w-0 flex-1 items-center gap-2.5 text-[15px] font-bold text-[#111111] dark:text-neutral-200">
             <FontAwesomeIcon
               icon={groupIcon(kind)}
-              className="h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500"
+              className="h-3.5 w-3.5 shrink-0 text-neutral-500 dark:text-neutral-400"
               fixedWidth
             />
             {groupTitle(kind)}
@@ -412,7 +417,7 @@ export function PortfolioContactReadOnly({
               onClick={() => onAddEntry?.(kind)}
               title={`Add ${kind}`}
               aria-label={`Add ${kind}`}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition hover:border-[#F97316]/40 hover:text-[#EA580C] disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:text-[#FB923C]"
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${STUDIO_ICON_BUTTON_TONES.neutral}`}
             >
               <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" fixedWidth />
             </button>
@@ -420,11 +425,9 @@ export function PortfolioContactReadOnly({
         </div>
 
         {visibleEntries.length === 0 ? (
-          <p className="py-6 text-center text-sm italic text-neutral-500 dark:text-neutral-400">
-            {emptyLabelFor(kind)}
-          </p>
+          <p className={`py-5 ${STUDIO_EMPTY_CLASS} ${STUDIO_ROW_RULE}`}>{emptyLabelFor(kind)}</p>
         ) : (
-          <div className={useTwoCol ? 'grid gap-3 sm:grid-cols-2' : 'space-y-3'}>
+          <div className={useTwoCol ? 'grid gap-x-10 sm:grid-cols-2' : ''}>
             {visibleEntries.map(({ item, index }) => {
               const draft = drafts[index] ?? toDraft(item);
               const isPrimaryEmailLocked =
@@ -448,10 +451,10 @@ export function PortfolioContactReadOnly({
                 <div
                   key={item.id}
                   ref={isEditingRow ? editingCardRef : undefined}
-                  className={`${softCardClass} group`}
+                  className={`${rowClass} group/item`}
                 >
                   {showConfirmActions ? (
-                    <div className="absolute right-3 top-3 z-10 inline-flex h-8 items-center gap-1.5">
+                    <div className="absolute right-0 top-4 z-10 inline-flex h-8 items-center gap-1.5">
                       <PortfolioSectionIconButton
                         label={
                           isEmptyValue(kind, draft)
@@ -481,7 +484,7 @@ export function PortfolioContactReadOnly({
                     </div>
                   ) : showItemChrome ? (
                     <div
-                      className={`absolute right-3 top-3 z-10 inline-flex h-8 items-center gap-1.5 ${
+                      className={`absolute right-0 top-4 z-10 inline-flex h-8 items-center gap-1.5 ${
                         isPendingDelete ? 'opacity-100' : itemActionVisibilityClass
                       }`}
                     >
@@ -528,8 +531,9 @@ export function PortfolioContactReadOnly({
                           ) : null}
                           {canDelete ? (
                             <PortfolioSectionIconButton
-                              label={`Delete ${kind}`}
-                              disabled={fieldSaving}
+                            label={`Delete ${kind}`}
+                            tone="danger"
+                            disabled={fieldSaving}
                               onClick={() => {
                                 setEditing(null);
                                 setPendingDelete({ kind, index });
@@ -554,25 +558,23 @@ export function PortfolioContactReadOnly({
                             disabled={fieldSaving}
                           />
                         ) : (
-                          <input
-                            type={kind === 'email' ? 'email' : 'text'}
-                            value={draft}
-                            onChange={(event) => updateDraft(kind, index, event.target.value)}
-                            placeholder={placeholderFor(kind)}
-                            className={inlineInputClass}
-                            autoFocus={isEditingRow}
-                            disabled={fieldSaving}
-                          />
+                          <StudioUnderline>
+                            <input
+                              type={kind === 'email' ? 'email' : 'text'}
+                              value={draft}
+                              onChange={(event) => updateDraft(kind, index, event.target.value)}
+                              placeholder={placeholderFor(kind)}
+                              className={`${STUDIO_BARE_INPUT_CLASS} ${STUDIO_VALUE_CLASS}`}
+                              autoFocus={isEditingRow}
+                              disabled={fieldSaving}
+                            />
+                          </StudioUnderline>
                         )
                       ) : (
-                        <p className="text-[15px] font-semibold leading-snug text-neutral-900 dark:text-white sm:text-base">
-                          {displayValue(kind, item.value) || (
-                            <span className="italic text-neutral-400">Empty</span>
-                          )}
+                        <p className={`break-words ${STUDIO_VALUE_CLASS}`}>
+                          {displayValue(kind, item.value) || <span className={STUDIO_EMPTY_CLASS}>Empty</span>}
                           {isPrimaryEmailLocked ? (
-                            <span className="mt-1 block text-[11px] font-medium normal-case tracking-normal text-neutral-400 dark:text-neutral-500">
-                              Primary email
-                            </span>
+                            <span className={`mt-1 block ${STUDIO_SECONDARY_CLASS}`}>Primary email</span>
                           ) : null}
                         </p>
                       )}
@@ -588,7 +590,7 @@ export function PortfolioContactReadOnly({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12 pt-3">
       {renderGroup('address')}
       {renderGroup('phone')}
       {renderGroup('email')}

@@ -11,8 +11,13 @@ import {
 } from '@/components/marketplace/useMarketplaceCatalogParams';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { MarketplaceProductGridSkeleton } from '@/components/marketplace/MarketplaceSkeleton';
+import { MarketplaceFilterDropdown } from '@/components/marketplace/MarketplaceFilterDropdown';
+import { STUDIO_FLOAT_IN_STYLE } from '@/components/portfolio/PortfolioStudioKit';
 import { useAuth } from '@/context/AuthContext';
 import type { MarketplaceProductSummary } from '@/types/marketplace';
+
+const PAGER_BUTTON_CLASS =
+  'inline-flex h-11 items-center rounded-lg border border-black/[0.12] px-4 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/25 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/[0.12] dark:text-white dark:hover:border-white/25';
 
 type ProductsCatalogProps = {
   basePath?: string;
@@ -175,11 +180,15 @@ export function ProductsCatalog({
 
   const emptyState = useMemo(
     () => (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+      <div
+        className="flex flex-col items-center justify-center rounded-lg border border-black/[0.06] bg-white px-6 py-20 text-center dark:border-white/[0.08] dark:bg-[#111111]"
+        style={STUDIO_FLOAT_IN_STYLE}
+      >
+        <span aria-hidden className="mb-5 h-1.5 w-1.5 rounded-full bg-[#FF5722]" />
+        <h2 className="text-xl font-bold tracking-tight text-[#111111] dark:text-white">
           {favoritesOnly ? 'No favorite products found' : 'No products found'}
         </h2>
-        <p className="mt-2 max-w-md text-sm text-gray-600 dark:text-gray-400">
+        <p className="mt-2 max-w-md text-[15px] leading-relaxed text-neutral-500 dark:text-neutral-400">
           {favoritesOnly ? (
             hasActiveFilters ? (
               'Try adjusting your search or filters, or save products from the catalog.'
@@ -188,7 +197,7 @@ export function ProductsCatalog({
                 You have not saved any products yet. Browse the{' '}
                 <Link
                   href="/marketplace"
-                  className="font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+                  className="font-medium text-[#111111] underline-offset-4 transition-colors hover:text-[#FF5722] dark:text-white"
                 >
                   product catalog
                 </Link>{' '}
@@ -200,7 +209,7 @@ export function ProductsCatalog({
               Only published products appear here. Creators publish from{' '}
               <Link
                 href="/marketplace/my-products"
-                className="font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+                className="font-medium text-[#111111] transition-colors hover:text-[#FF5722] dark:text-white"
               >
                 Creator studio → Products
               </Link>
@@ -213,9 +222,16 @@ export function ProductsCatalog({
     [favoritesOnly, hasActiveFilters]
   );
 
+  const sectionTitle = favoritesOnly ? 'Favorites' : 'Products';
+
   const catalogBody = (
     <>
       {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
+
+      <h2 className="flex min-h-8 items-center text-lg font-bold tracking-[-0.01em] text-[#111111] dark:text-neutral-100">
+        {sectionTitle}
+        {!loading ? ` · ${String(totalElements).padStart(2, '0')}` : ''}
+      </h2>
 
       {loading ? (
         <MarketplaceProductGridSkeleton />
@@ -223,7 +239,7 @@ export function ProductsCatalog({
         emptyState
       ) : (
         <>
-          <div className={marketplaceProductGridClassName}>
+          <div className={marketplaceProductGridClassName} style={STUDIO_FLOAT_IN_STYLE}>
             {products.map((product) => (
               <ProductCard
                 key={product.id}
@@ -236,47 +252,44 @@ export function ProductsCatalog({
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 pt-6 dark:border-neutral-700">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-black/[0.06] pt-8 dark:border-white/[0.06]">
+            <p className="text-[15px] text-neutral-500 dark:text-neutral-400">
               Page {page + 1}
-              {totalPages > 0 ? ` / ${totalPages}` : ''}
+              {totalPages > 0 ? ` of ${totalPages}` : ''}
               {totalElements > 0
                 ? ` · ${totalElements} ${favoritesOnly ? 'favorites' : 'products'}`
                 : ''}
             </p>
-            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <span>Per page</span>
-              <select
-                value={size}
-                onChange={(e) =>
-                  pushParams({ size: e.target.value, page: '0' })
-                }
-                className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm font-medium text-gray-700 dark:border-neutral-600 dark:bg-neutral-900 dark:text-gray-200"
-                aria-label="Products per page"
-              >
-                {MARKETPLACE_PAGE_SIZE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <MarketplaceFilterDropdown
+                id="catalog-page-size"
+                label="Per page"
+                value={String(size)}
+                onChange={(value) => pushParams({ size: value, page: '0' })}
+                options={MARKETPLACE_PAGE_SIZE_OPTIONS.map((option) => ({
+                  value: String(option),
+                  label: String(option),
+                }))}
+                defaultValue=""
+                clearable={false}
+                placement="top"
+                align="right"
+              />
               <button
                 type="button"
                 disabled={page <= 0}
                 onClick={() => pushParams({ page: String(page - 1) })}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-40 dark:border-neutral-600 dark:text-gray-200"
+                className={PAGER_BUTTON_CLASS}
               >
-                Previous
+                ← Previous
               </button>
               <button
                 type="button"
                 disabled={totalPages > 0 && page >= totalPages - 1}
                 onClick={() => pushParams({ page: String(page + 1) })}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-40 dark:border-neutral-600 dark:text-gray-200"
+                className={PAGER_BUTTON_CLASS}
               >
-                Next
+                Next →
               </button>
             </div>
           </div>
@@ -290,10 +303,10 @@ export function ProductsCatalog({
   }
 
   return (
-    <main className="w-full space-y-8 py-2">
+    <main className="mx-auto w-full max-w-[1280px] space-y-8 px-4 py-2 sm:px-0">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Marketplace</h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        <h1 className="text-4xl font-bold tracking-tight text-[#111111] dark:text-white">Marketplace</h1>
+        <p className="mt-3 text-base text-neutral-500 dark:text-neutral-400">
           Browse published digital products from creators — templates, courses, presets, and more.
         </p>
       </div>

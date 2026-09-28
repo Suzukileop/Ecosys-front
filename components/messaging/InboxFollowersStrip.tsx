@@ -41,18 +41,16 @@ export function InboxFollowersStrip({
   if (!loading && followers.length === 0) return null;
 
   return (
-    <div className="shrink-0 border-t border-neutral-200 px-3 py-3 dark:border-neutral-800 sm:px-4">
-      <div className="mb-2.5 flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">Audience</h3>
+    <div className="shrink-0 border-t border-[var(--msg-hairline)] px-6 py-5">
+      <div className="mb-4 flex items-baseline justify-between gap-2">
+        <h3 className="text-[15px] font-bold text-[var(--msg-ink)]">Audience</h3>
         <button
           type="button"
           onClick={onSeeAll}
-          className="inline-flex items-center gap-0.5 text-xs font-semibold text-[var(--msg-brand,#F47B20)] transition hover:text-[var(--msg-brand-hover,#E06E18)]"
+          className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[var(--msg-ink-faint)] transition-colors duration-200 hover:text-[var(--msg-coral)]"
         >
           See all
-          <span aria-hidden className="text-[10px]">
-            ›
-          </span>
+          <span aria-hidden>&#8594;</span>
         </button>
       </div>
 
@@ -61,13 +59,13 @@ export function InboxFollowersStrip({
           {Array.from({ length: Math.min(4, maxVisible) }).map((_, index) => (
             <span
               key={`follower-skeleton-${index}`}
-              className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-800"
+              className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-[var(--msg-wash)] ring-1 ring-[var(--msg-hairline)]"
             />
           ))}
         </div>
       ) : (
         <div
-          className="flex gap-3 overflow-x-auto pb-0.5 [scrollbar-width:thin] [scrollbar-color:#a3a3a3_transparent] dark:[scrollbar-color:#525252_transparent] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-400 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-600"
+          className="msg-scroll flex gap-3.5 overflow-x-auto pb-1"
           role="list"
           aria-label="Audience"
         >
@@ -85,9 +83,9 @@ export function InboxFollowersStrip({
                 onClick={() => onOpenFollower(follower)}
                 title={`Message ${name} (${statusLabel})`}
                 aria-label={`Message ${name}, ${statusLabel}`}
-                className="group relative shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-brand)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-60 dark:focus-visible:ring-offset-neutral-950"
+                className="group relative shrink-0 rounded-full focus-visible:outline-none disabled:opacity-50"
               >
-                <span className="inline-flex transition duration-150 group-hover:scale-[1.06]">
+                <span className="msg-portrait inline-flex overflow-hidden rounded-full ring-1 ring-[var(--msg-hairline)] group-hover:-translate-y-0.5 group-hover:ring-[var(--msg-hairline-strong)] group-focus-visible:ring-[var(--msg-ink)]">
                   <Avatar
                     avatarUrl={follower.followerAvatarUrl}
                     name={name}
@@ -95,14 +93,12 @@ export function InboxFollowersStrip({
                     tone="muted"
                   />
                 </span>
-                <span
-                  className={
-                    online
-                      ? 'absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-neutral-950'
-                      : 'absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-white bg-neutral-400 dark:border-neutral-950 dark:bg-neutral-500'
-                  }
-                  aria-hidden
-                />
+                {online ? (
+                  <span
+                    className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-[var(--msg-panel)] bg-[var(--msg-online)]"
+                    aria-hidden
+                  />
+                ) : null}
               </button>
             );
           })}

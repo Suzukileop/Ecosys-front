@@ -151,7 +151,7 @@ function bucketBadge(bucket?: ContentPostBucket) {
 }
 
 const editInputClass =
-  'w-full rounded-none border-0 border-b border-neutral-200 bg-transparent px-0 py-1 outline-none transition placeholder:text-neutral-400 focus:border-orange-500 dark:border-neutral-700 dark:placeholder:text-neutral-600 dark:focus:border-orange-400';
+  'w-full rounded-none border-0 border-b border-black/[0.08] bg-transparent px-0 py-1.5 caret-[#FF5722] outline-none transition placeholder:text-neutral-400 focus:border-[#FF5722] dark:border-white/[0.1] dark:placeholder:text-neutral-600 dark:focus:border-[#FF5722]';
 
 export function ContentPostTitle({
   post,
@@ -302,8 +302,8 @@ export function ContentPostDetailsBlock({
             value={draft.genre}
             onChange={(next) => onDraftChange({ ...draft, genre: next })}
             disabled={disabled}
-            labelClass="text-[11px] font-semibold uppercase tracking-wide text-orange-500 dark:text-orange-400"
-            fieldClass={`${editInputClass} mt-0 text-sm font-medium text-neutral-700 dark:text-neutral-200`}
+            labelClass="text-[14px] font-semibold text-neutral-500 dark:text-neutral-400"
+            fieldClass={`${editInputClass} mt-0 text-[15px] font-medium text-neutral-700 dark:text-neutral-200`}
             placeholder="Branding, Motion, Tech…"
           />
         ) : null}
@@ -351,7 +351,7 @@ export function ContentPostDetailsBlock({
 
         {isSidebar && (
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
+            <p className="text-[14px] font-semibold text-neutral-500 dark:text-neutral-400">
               Estimated amount to recreate this piece
             </p>
             <input
@@ -375,7 +375,7 @@ export function ContentPostDetailsBlock({
         >
           <div className="min-w-0">
             {isSidebar ? (
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
+              <p className="mb-3 text-[14px] font-semibold text-neutral-500 dark:text-neutral-400">
                 Tags
               </p>
             ) : null}
@@ -390,7 +390,7 @@ export function ContentPostDetailsBlock({
           </div>
           <div className="min-w-0">
             {isSidebar ? (
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
+              <p className="mb-3 text-[14px] font-semibold text-neutral-500 dark:text-neutral-400">
                 Deliverables
               </p>
             ) : null}
@@ -492,7 +492,7 @@ export function ContentPostDetailsBlock({
           {tags.length > 0 && (
             <div className="min-w-0">
               {isSidebar ? (
-                <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
+                <p className="mb-3 text-[14px] font-semibold text-neutral-500 dark:text-neutral-400">
                   Tags
                 </p>
               ) : null}
@@ -513,7 +513,7 @@ export function ContentPostDetailsBlock({
           {tools.length > 0 && (
             <div className={`min-w-0 ${tags.length === 0 ? 'col-span-2' : ''}`}>
               {isSidebar ? (
-                <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400 dark:text-neutral-500">
+                <p className="mb-3 text-[14px] font-semibold text-neutral-500 dark:text-neutral-400">
                   Deliverables
                 </p>
               ) : null}

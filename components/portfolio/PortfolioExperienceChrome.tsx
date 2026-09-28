@@ -7,6 +7,7 @@ import {
   ContentMediaPreview,
   useContentMediaUpload,
 } from '@/components/creator/creator-content-media';
+import { uploadExperienceMedia } from '@/lib/marketplace-api';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import { CreatorToolsPicker } from '@/components/creator/studio/CreatorToolsPicker';
 import {
@@ -25,9 +26,10 @@ import {
 } from '@/components/portfolio/portfolio-section-shared';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { ContactVisibilityLevel } from '@/lib/contact-visibility';
+import type { ExperienceEmploymentType } from '@/types/ecosystem';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 
-export const MAX_EXPERIENCE_ENTRIES = 3;
+export const MAX_EXPERIENCE_ENTRIES = 7;
 
 function ExperienceIconButton({
   label,
@@ -65,12 +67,7 @@ function ExperienceIconButton({
 
 export type PortfolioExperienceStatus = 'ONGOING' | 'FINISHED';
 
-export type PortfolioExperienceEmploymentType =
-  | 'FULL_TIME'
-  | 'PART_TIME'
-  | 'CONTRACT'
-  | 'FREELANCE'
-  | 'INTERNSHIP';
+export type PortfolioExperienceEmploymentType = ExperienceEmploymentType;
 
 export type PortfolioExperienceProofPlatform =
   | 'GITHUB'
@@ -133,10 +130,10 @@ type ExperienceFieldKey =
   | 'links'
   | 'media';
 
-const EXPERIENCE_MEDIA_ACCEPT =
-  'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,.jpg,.jpeg,.png,.webp,.gif,.mp4,.webm';
+export const EXPERIENCE_MEDIA_ACCEPT =
+  'image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,.jpg,.jpeg,.png,.webp,.mp4,.webm,.mov';
 
-function ExperienceMediaEditor({
+export function ExperienceMediaEditor({
   mediaUrl,
   onChange,
   disabled,
@@ -147,6 +144,7 @@ function ExperienceMediaEditor({
 }) {
   const { inputRef, uploading, uploadError, pickFile, onFileChange } = useContentMediaUpload({
     locale: 'en',
+    upload: uploadExperienceMedia,
     onUrlChange: (url) => {
       const trimmed = url.trim();
       onChange({
@@ -207,7 +205,7 @@ type EditingTarget =
   | { kind: 'years' }
   | { kind: 'field'; index: number; field: ExperienceFieldKey };
 
-const EMPLOYMENT_OPTIONS: { value: PortfolioExperienceEmploymentType; label: string }[] = [
+export const EMPLOYMENT_OPTIONS: { value: PortfolioExperienceEmploymentType; label: string }[] = [
   { value: 'FREELANCE', label: 'Freelance' },
   { value: 'CONTRACT', label: 'Contract' },
   { value: 'FULL_TIME', label: 'Full-time' },
@@ -226,7 +224,7 @@ function employmentLabel(value: PortfolioExperienceEmploymentType | null): strin
   return EMPLOYMENT_OPTIONS.find((option) => option.value === value)?.label ?? value;
 }
 
-function toDraft(block: PortfolioExperienceBlock): PortfolioExperienceBlockDraft {
+export function toDraft(block: PortfolioExperienceBlock): PortfolioExperienceBlockDraft {
   return {
     title: block.title,
     organization: block.organization,
@@ -308,7 +306,7 @@ function normalizeLinks(links: PortfolioExperienceProofLink[]): PortfolioExperie
     .filter((link) => link.label.length > 0 || link.url.length > 0);
 }
 
-function collectProofLinkUrlErrors(
+export function collectProofLinkUrlErrors(
   links: PortfolioExperienceProofLink[]
 ): Record<string, string> {
   const errors: Record<string, string> = {};
@@ -326,7 +324,7 @@ function collectProofLinkUrlErrors(
   return errors;
 }
 
-function cleanDraft(draft: PortfolioExperienceBlockDraft): PortfolioExperienceBlockDraft {
+export function cleanDraft(draft: PortfolioExperienceBlockDraft): PortfolioExperienceBlockDraft {
   return {
     title: draft.title.trim(),
     organization: draft.organization.trim(),
@@ -365,7 +363,7 @@ function draftsEqual(
   );
 }
 
-function blockHasContent(block: {
+export function blockHasContent(block: {
   title: string;
   organization: string;
   period: string;
@@ -728,7 +726,7 @@ function ExperienceEntryFields({
                 type="text"
                 value={display.location}
                 onChange={(event) => patch({ location: event.target.value })}
-                placeholder="Paris, Remote…"
+                placeholder="City, country or remote"
                 className={portfolioInlineInputClass}
                 autoFocus={editingField === 'location'}
                 disabled={fieldSaving}
@@ -752,6 +750,10 @@ function ExperienceEntryFields({
                 disabled={fieldSaving}
               >
                 <option value="">Not set</option>
+                {display.employmentType &&
+                !EMPLOYMENT_OPTIONS.some((option) => option.value === display.employmentType) ? (
+                  <option value={display.employmentType}>{display.employmentType}</option>
+                ) : null}
                 {EMPLOYMENT_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -847,7 +849,7 @@ function ExperienceEntryFields({
                 value: item.value,
                 iconUrl: item.iconUrl ?? null,
               }))}
-            max={8}
+            max={20}
             emptyLabel="No tools yet."
             onChange={(next) =>
               patch({

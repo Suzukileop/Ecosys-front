@@ -2,12 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faCircleCheck,
-  faPenToSquare,
-  faTrash,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import { faImage, faPenToSquare, faTrashCan } from '@fortawesome/free-regular-svg-icons';
+import { faArrowUpRightFromSquare, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -18,8 +14,18 @@ import { uploadContentMedia } from '@/lib/marketplace-api';
 import { parseSpecialtyTags } from '@/lib/specialties';
 import api from '@/lib/api';
 import type { CreatorProfileDto, ProfilePortfolioWork } from '@/types/ecosystem';
-import { portfolioInlineInputClass } from '@/components/portfolio/portfolio-section-shared';
-import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import {
+  STUDIO_BARE_INPUT_CLASS,
+  STUDIO_EMPTY_CLASS,
+  STUDIO_FLOAT_IN_STYLE,
+  STUDIO_LABEL_CLASS,
+  STUDIO_SECONDARY_CLASS,
+  STUDIO_VALUE_CLASS,
+  StudioIconAction,
+  StudioSectionHeader,
+  StudioSlashLine,
+  StudioUnderline,
+} from '@/components/portfolio/PortfolioStudioKit';
 import { toAbsoluteHttpUrl } from '@/components/creator/studio/profile-form-schema';
 
 /** Max manual portfolio works (matches backend MAX_PORTFOLIO_WORKS). */
@@ -52,8 +58,8 @@ const EMPTY_DRAFT: WorkDraft = {
 const cardActionVisibilityClass =
   'opacity-100 transition-opacity ' +
   '[@media(hover:hover)_and_(pointer:fine)]:opacity-0 ' +
-  '[@media(hover:hover)_and_(pointer:fine)]:group-hover:opacity-100 ' +
-  '[@media(hover:hover)_and_(pointer:fine)]:group-focus-within:opacity-100';
+  '[@media(hover:hover)_and_(pointer:fine)]:group-hover/item:opacity-100 ' +
+  '[@media(hover:hover)_and_(pointer:fine)]:group-focus-within/item:opacity-100';
 
 function normalizeWork(item: ProfilePortfolioWork, index: number): ProfilePortfolioWork {
   return {
@@ -111,28 +117,20 @@ function isDraftComplete(draft: WorkDraft): boolean {
   return Boolean(draft.title.trim() && draft.imageUrl.trim());
 }
 
-function IconButton({
+/** Solid chip that stays legible on top of any cover image. */
+function MediaAction({
   label,
   onClick,
   children,
   disabled = false,
-  tone = 'neutral',
+  danger = false,
 }: {
   label: string;
   onClick: () => void;
   children: ReactNode;
   disabled?: boolean;
-  tone?: 'neutral' | 'confirm' | 'cancel' | 'danger';
+  danger?: boolean;
 }) {
-  const toneClass =
-    tone === 'confirm'
-      ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300'
-      : tone === 'cancel'
-        ? 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400'
-        : tone === 'danger'
-          ? 'border-neutral-200 bg-white text-neutral-500 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-red-500/40 dark:hover:bg-red-500/10 dark:hover:text-red-400'
-          : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400';
-
   return (
     <button
       type="button"
@@ -140,12 +138,50 @@ function IconButton({
       title={label}
       aria-label={label}
       disabled={disabled}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-900 ${toneClass}`}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-sm backdrop-blur transition-colors duration-200 disabled:pointer-events-none disabled:opacity-30 ${
+        danger ? 'hover:bg-red-500 hover:text-white' : 'hover:bg-neutral-900 hover:text-white'
+      }`}
     >
       {children}
     </button>
   );
 }
+
+function linkLabel(url: string): string {
+  try {
+    return new URL(toAbsoluteHttpUrl(url) ?? url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
+
+const GHOST_BUTTON_CLASS =
+  'inline-flex h-9 items-center rounded-full px-4 text-[14px] font-medium text-neutral-600 transition-colors duration-200 hover:bg-black/[0.04] hover:text-black disabled:pointer-events-none disabled:opacity-40 dark:text-neutral-300 dark:hover:bg-white/[0.06] dark:hover:text-white';
+const PRIMARY_BUTTON_CLASS =
+  'inline-flex h-9 items-center gap-2 rounded-full bg-[#FF5722] px-5 text-[14px] font-semibold text-white transition-colors duration-200 hover:bg-[#E64A19] disabled:pointer-events-none disabled:opacity-40';
+
+function WorkField({
+  label,
+  children,
+  control = true,
+}: {
+  label: string;
+  children: ReactNode;
+  /** Wrapping multiple buttons in a <label> would forward clicks to the first one. */
+  control?: boolean;
+}) {
+  const Wrapper = control ? 'label' : 'div';
+  return (
+    <StudioUnderline>
+      <Wrapper className={STUDIO_LABEL_CLASS}>
+        {label}
+        <span className="mt-3 block">{children}</span>
+      </Wrapper>
+    </StudioUnderline>
+  );
+}
+
+const workInputClass = `${STUDIO_BARE_INPUT_CLASS} ${STUDIO_VALUE_CLASS}`;
 
 function StackPicker({
   options,
@@ -163,14 +199,12 @@ function StackPicker({
 
   if (available.length === 0) {
     return (
-      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-        Add tags in Information → Stack first, then select them here.
-      </p>
+      <p className={`pb-3 ${STUDIO_SECONDARY_CLASS}`}>Add tags in Information → Stack first, then pick them here.</p>
     );
   }
 
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-2 pb-3">
       {available.map((tag) => {
         const active = chosen.some((item) => item.toLowerCase() === tag.toLowerCase());
         return (
@@ -185,11 +219,11 @@ function StackPicker({
                 onChange([...chosen, tag]);
               }
             }}
-            className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+            className={`rounded-full border px-3 py-1 text-[14px] transition-colors duration-200 ${
               active
-                ? 'bg-[#EA580C] text-white'
-                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700'
-            } disabled:opacity-50`}
+                ? 'border-black bg-black font-medium text-white dark:border-white dark:bg-white dark:text-black'
+                : 'border-neutral-300 font-normal text-neutral-700 hover:border-neutral-900 hover:text-black dark:border-white/20 dark:text-neutral-300 dark:hover:border-white dark:hover:text-white'
+            } disabled:opacity-40`}
           >
             {tag}
           </button>
@@ -468,160 +502,178 @@ export function PortfolioShowcaseChrome({
     );
   }
 
-  return (
-    <div className="space-y-4 pb-2">
-      {error ? <ErrorAlert message={error} onDismiss={() => setError(null)} /> : null}
+  const atLimit = filledWorks.length >= MAX_PORTFOLIO_WORKS;
+  const requestAdd = () => {
+    if (busy || editingId) return;
+    if (atLimit) {
+      pushInsertionLimitFeedback({ limit: MAX_PORTFOLIO_WORKS, unit: 'portfolio works' });
+      return;
+    }
+    onComposeOpenChange?.(true);
+  };
 
-      <ProfileSectionItemCount
-        count={filledWorks.length}
-        limit={MAX_PORTFOLIO_WORKS}
-        unit="portfolio works"
-      />
+  return (
+    <div className="pb-10 pt-3">
+      <StudioSectionHeader label={`Works · ${String(filledWorks.length).padStart(2, '0')}`}>
+        <span className={STUDIO_SECONDARY_CLASS}>
+          {filledWorks.length} of {MAX_PORTFOLIO_WORKS}
+        </span>
+        <StudioIconAction icon="add" label="Add work" onClick={requestAdd} disabled={busy || Boolean(editingId) || atLimit} />
+      </StudioSectionHeader>
+
+      {error ? (
+        <div className="mb-6">
+          <ErrorAlert message={error} onDismiss={() => setError(null)} />
+        </div>
+      ) : null}
 
       {displayWorks.length === 0 && !composing ? (
-        <p className="py-10 text-center text-sm italic text-neutral-500 dark:text-neutral-400">
-          No portfolio works yet. Click + to create one manually.
-        </p>
+        <button
+          type="button"
+          onClick={requestAdd}
+          className={`py-8 ${STUDIO_EMPTY_CLASS} transition-colors hover:text-[#FF5722]`}
+        >
+          No work yet — add your first project.
+        </button>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-x-10 gap-y-14 pt-2 sm:grid-cols-2">
           {displayWorks.map((work, index) => {
             const editing = editingId === work.id && draft != null;
             const confirmingDelete = pendingDeleteId === work.id;
-            const showChrome = !composing || editing;
+            const showChrome = !editingId && !composing;
+            const coverUrl = editing ? draft?.imageUrl : work.imageUrl;
 
             return (
               <article
                 key={work.id}
                 ref={editing ? composeCardRef : undefined}
-                className="group relative flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950"
+                style={editing ? STUDIO_FLOAT_IN_STYLE : undefined}
+                className={`group/item relative ${
+                  editing ? 'grid gap-x-10 gap-y-8 sm:col-span-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]' : 'flex flex-col'
+                }`}
               >
-                <div className="relative aspect-[16/10] w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800">
-                  {(editing ? draft?.imageUrl : work.imageUrl) ? (
-                    <ProductThumbnailMedia
-                      url={(editing ? draft?.imageUrl : work.imageUrl) || ''}
-                      alt=""
-                      fit="cover"
-                      className="h-full w-full"
-                    />
-                  ) : (
-                    <span className="flex h-full items-center justify-center text-xs text-neutral-400">
-                      Preview
-                    </span>
-                  )}
+                <div className={editing ? 'md:sticky md:top-6 md:self-start' : ''}>
+                  <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-black/[0.03] dark:bg-white/[0.04]">
+                    {coverUrl ? (
+                      <ProductThumbnailMedia
+                        url={coverUrl}
+                        alt=""
+                        fit="cover"
+                        className={`h-full w-full transition-transform duration-700 ${
+                          editing ? '' : 'group-hover/item:scale-[1.02]'
+                        }`}
+                      />
+                    ) : null}
 
-                  {editing ? (
-                    <div className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5">
-                      <IconButton
-                        label="Save"
-                        tone="confirm"
-                        disabled={busy || !draft || !isDraftComplete(draft)}
-                        onClick={() => void confirmEdit()}
-                      >
-                        {saving ? (
-                          <LoadingSpinner size="sm" />
-                        ) : (
-                          <FontAwesomeIcon icon={faCircleCheck} className="h-4 w-4" fixedWidth />
-                        )}
-                      </IconButton>
-                      <IconButton label="Cancel" tone="cancel" disabled={busy} onClick={cancelEdit}>
-                        <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" fixedWidth />
-                      </IconButton>
-                    </div>
-                  ) : showChrome ? (
-                    <div
-                      className={`absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 ${
-                        confirmingDelete ? 'opacity-100' : cardActionVisibilityClass
-                      }`}
-                    >
-                      {confirmingDelete ? (
-                        <>
-                          <IconButton
-                            label="Confirm delete"
-                            tone="confirm"
-                            disabled={busy}
-                            onClick={() => void removeWork(work.id)}
+                    {editing ? (
+                      <>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept={IMAGE_ACCEPT}
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] ?? null;
+                            e.target.value = '';
+                            void onImageFile(file);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => fileInputRef.current?.click()}
+                          aria-label={coverUrl ? 'Replace cover image' : 'Upload cover image'}
+                          className={`absolute inset-0 flex flex-col items-center justify-center gap-2 transition-colors duration-200 ${
+                            coverUrl
+                              ? 'bg-black/0 text-transparent hover:bg-black/45 hover:text-white focus-visible:bg-black/45 focus-visible:text-white'
+                              : 'm-0 rounded-xl border border-dashed border-neutral-300 text-neutral-500 hover:border-[#FF5722] hover:text-[#FF5722] dark:border-white/15 dark:text-neutral-400'
+                          }`}
+                        >
+                          {uploading ? (
+                            <LoadingSpinner size="md" />
+                          ) : (
+                            <>
+                              <FontAwesomeIcon icon={faImage} className="h-5 w-5" />
+                              <span className="text-[14px] font-medium">
+                                {coverUrl ? 'Replace cover' : 'Upload a cover image'}
+                              </span>
+                              {coverUrl ? null : (
+                                <span className="text-[13px] opacity-70">JPG, PNG or WebP</span>
+                              )}
+                            </>
+                          )}
+                        </button>
+                      </>
+                    ) : null}
+
+                    {showChrome && !confirmingDelete ? (
+                      <>
+                        <div className={`absolute left-3 top-3 z-10 inline-flex gap-1.5 ${cardActionVisibilityClass}`}>
+                          <MediaAction
+                            label="Move earlier"
+                            disabled={busy || index === 0}
+                            onClick={() => void moveWork(index, -1)}
                           >
-                            {saving ? (
-                              <LoadingSpinner size="sm" />
-                            ) : (
-                              <FontAwesomeIcon icon={faCircleCheck} className="h-4 w-4" fixedWidth />
-                            )}
-                          </IconButton>
-                          <IconButton
-                            label="Cancel"
-                            tone="cancel"
+                            <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3" fixedWidth />
+                          </MediaAction>
+                          <MediaAction
+                            label="Move later"
+                            disabled={busy || index >= displayWorks.length - 1}
+                            onClick={() => void moveWork(index, 1)}
+                          >
+                            <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3" fixedWidth />
+                          </MediaAction>
+                        </div>
+                        <div className={`absolute right-3 top-3 z-10 inline-flex gap-1.5 ${cardActionVisibilityClass}`}>
+                          <MediaAction label="Edit work" disabled={busy} onClick={() => startEdit(work)}>
+                            <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" fixedWidth />
+                          </MediaAction>
+                          <MediaAction
+                            label="Delete work"
+                            danger
+                            disabled={busy}
+                            onClick={() => setPendingDeleteId(work.id)}
+                          >
+                            <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" fixedWidth />
+                          </MediaAction>
+                        </div>
+                      </>
+                    ) : null}
+
+                    {confirmingDelete ? (
+                      <div
+                        style={STUDIO_FLOAT_IN_STYLE}
+                        className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-black/70 p-6 text-center backdrop-blur-sm"
+                      >
+                        <p className="text-[15px] font-semibold text-white">Delete this work?</p>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
                             disabled={busy}
                             onClick={() => setPendingDeleteId(null)}
+                            className="inline-flex h-9 items-center rounded-full px-4 text-[14px] font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
                           >
-                            <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" fixedWidth />
-                          </IconButton>
-                        </>
-                      ) : (
-                        <>
-                          <IconButton
-                            label="Edit work"
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
                             disabled={busy}
-                            onClick={() => startEdit(work)}
+                            onClick={() => void removeWork(work.id)}
+                            className="inline-flex h-9 items-center gap-2 rounded-full bg-red-500 px-5 text-[14px] font-semibold text-white transition-colors hover:bg-red-600 disabled:opacity-40"
                           >
-                            <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" fixedWidth />
-                          </IconButton>
-                          <IconButton
-                            label="Delete work"
-                            tone="danger"
-                            disabled={busy}
-                            onClick={() => {
-                              setEditingId(null);
-                              setDraft(null);
-                              setPendingDeleteId(work.id);
-                            }}
-                          >
-                            <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" fixedWidth />
-                          </IconButton>
-                        </>
-                      )}
-                    </div>
-                  ) : null}
+                            {saving ? <LoadingSpinner size="sm" /> : null}
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
 
-                <div className="flex flex-1 flex-col gap-3 p-5">
+                <div className={editing ? 'min-w-0' : 'flex flex-1 flex-col gap-2.5 pt-5'}>
                   {editing && draft ? (
-                    <div className="space-y-3">
-                      <div>
-                        <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                          Role
-                        </label>
-                        <input
-                          type="text"
-                          value={draft.role}
-                          onChange={(e) =>
-                            setDraft((c) => (c ? { ...c, role: e.target.value } : c))
-                          }
-                          placeholder="e.g. Lead designer"
-                          className={`${portfolioInlineInputClass} w-full`}
-                          disabled={busy}
-                          maxLength={80}
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                          Category
-                        </label>
-                        <input
-                          type="text"
-                          value={draft.category}
-                          onChange={(e) =>
-                            setDraft((c) => (c ? { ...c, category: e.target.value } : c))
-                          }
-                          placeholder="e.g. Business, Lifestyle"
-                          className={`${portfolioInlineInputClass} w-full`}
-                          disabled={busy}
-                          maxLength={80}
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                          Title
-                        </label>
+                    <div className="grid gap-y-8">
+                      <WorkField label="Title">
                         <input
                           type="text"
                           value={draft.title}
@@ -629,74 +681,62 @@ export function PortfolioShowcaseChrome({
                             setDraft((c) => (c ? { ...c, title: e.target.value } : c))
                           }
                           placeholder="Project title"
-                          className={`${portfolioInlineInputClass} w-full text-base font-bold`}
+                          className={workInputClass}
                           autoFocus
                           disabled={busy}
                           maxLength={120}
                         />
+                      </WorkField>
+                      <div className="grid gap-x-8 gap-y-8 sm:grid-cols-2">
+                        <WorkField label="Role">
+                          <input
+                            type="text"
+                            value={draft.role}
+                            onChange={(e) =>
+                              setDraft((c) => (c ? { ...c, role: e.target.value } : c))
+                            }
+                            placeholder="e.g. Lead designer"
+                            className={workInputClass}
+                            disabled={busy}
+                            maxLength={80}
+                          />
+                        </WorkField>
+                        <WorkField label="Category">
+                          <input
+                            type="text"
+                            value={draft.category}
+                            onChange={(e) =>
+                              setDraft((c) => (c ? { ...c, category: e.target.value } : c))
+                            }
+                            placeholder="e.g. Business, Lifestyle"
+                            className={workInputClass}
+                            disabled={busy}
+                            maxLength={80}
+                          />
+                        </WorkField>
                       </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                          Description
-                        </label>
+                      <WorkField label="Description">
                         <textarea
                           value={draft.description}
                           onChange={(e) =>
                             setDraft((c) => (c ? { ...c, description: e.target.value } : c))
                           }
                           placeholder="Short description"
-                          rows={3}
-                          className={`${portfolioInlineInputClass} w-full resize-y`}
+                          rows={2}
+                          className={`${workInputClass} resize-none`}
                           disabled={busy}
                           maxLength={2000}
                         />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                          Stack
-                        </label>
+                      </WorkField>
+                      <WorkField label="Stack" control={false}>
                         <StackPicker
                           options={stackChoices}
                           selected={draft.stack}
                           onChange={(stack) => setDraft((c) => (c ? { ...c, stack } : c))}
                           disabled={busy}
                         />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                          Image / thumbnail
-                        </label>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept={IMAGE_ACCEPT}
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0] ?? null;
-                              e.target.value = '';
-                              void onImageFile(file);
-                            }}
-                          />
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => fileInputRef.current?.click()}
-                            className="rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-50 dark:bg-white dark:text-neutral-900"
-                          >
-                            {uploading ? 'Uploading…' : draft.imageUrl ? 'Replace image' : 'Upload image'}
-                          </button>
-                          {draft.imageUrl ? (
-                            <span className="truncate text-xs text-emerald-600 dark:text-emerald-400">
-                              Image ready
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                          Link
-                        </label>
+                      </WorkField>
+                      <WorkField label="Link">
                         <input
                           type="url"
                           value={draft.link}
@@ -704,77 +744,82 @@ export function PortfolioShowcaseChrome({
                             setDraft((c) => (c ? { ...c, link: e.target.value } : c))
                           }
                           placeholder="https://…"
-                          className={`${portfolioInlineInputClass} w-full`}
+                          className={workInputClass}
                           disabled={busy}
                           maxLength={500}
                         />
+                      </WorkField>
+
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <p className={STUDIO_SECONDARY_CLASS}>
+                          {isDraftComplete(draft) ? '' : 'A title and a cover image are required.'}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <button type="button" disabled={busy} onClick={cancelEdit} className={GHOST_BUTTON_CLASS}>
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy || !isDraftComplete(draft)}
+                            onClick={() => void confirmEdit()}
+                            className={PRIMARY_BUTTON_CLASS}
+                          >
+                            {saving ? <LoadingSpinner size="sm" /> : null}
+                            {composing ? 'Add work' : 'Save work'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ) : (
                     <>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <h3 className="truncate text-base font-bold text-neutral-900 dark:text-white">
-                            {work.title || 'Untitled'}
-                          </h3>
-                          {work.category ? (
-                            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                              {work.category}
-                            </p>
-                          ) : null}
-                          {work.role ? (
-                            <p className="text-xs text-neutral-600 dark:text-neutral-400">{work.role}</p>
-                          ) : null}
-                        </div>
-                        {!editingId ? (
-                          <div className="flex shrink-0 flex-col gap-1">
-                            <button
-                              type="button"
-                              disabled={busy || index === 0}
-                              onClick={() => void moveWork(index, -1)}
-                              className="rounded border border-neutral-200 px-1.5 text-xs disabled:opacity-30 dark:border-neutral-700"
-                              aria-label="Move up"
-                            >
-                              ↑
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busy || index >= displayWorks.length - 1}
-                              onClick={() => void moveWork(index, 1)}
-                              className="rounded border border-neutral-200 px-1.5 text-xs disabled:opacity-30 dark:border-neutral-700"
-                              aria-label="Move down"
-                            >
-                              ↓
-                            </button>
-                          </div>
+                      <div className="min-w-0">
+                        <h3 className="truncate text-[17px] font-semibold text-black dark:text-neutral-100">
+                          {work.title || 'Untitled'}
+                        </h3>
+                        {work.category || work.role ? (
+                          <StudioSlashLine
+                            className="mt-1"
+                            items={[work.category, work.role]
+                              .filter((part): part is string => Boolean(part))
+                              .map((part) => (
+                                <span key={part} className={STUDIO_SECONDARY_CLASS}>
+                                  {part}
+                                </span>
+                              ))}
+                          />
                         ) : null}
                       </div>
                       {work.description ? (
-                        <p className="line-clamp-3 text-sm text-neutral-600 dark:text-neutral-400">
+                        <p className="line-clamp-2 text-[15px] leading-relaxed text-neutral-600 dark:text-neutral-300">
                           {work.description}
                         </p>
                       ) : null}
-                      {work.stack?.length ? (
-                        <div className="flex flex-wrap gap-1">
-                          {work.stack.map((tag) => (
-                            <span
-                              key={tag}
-                              className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                      {work.stack?.length || work.link ? (
+                        <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+                          {work.stack?.length ? (
+                            <StudioSlashLine
+                              className=""
+                              items={work.stack.map((tag) => (
+                                <span key={tag} className="text-[14px] text-neutral-800 dark:text-neutral-200">
+                                  {tag}
+                                </span>
+                              ))}
+                            />
+                          ) : (
+                            <span />
+                          )}
+                          {work.link ? (
+                            <a
+                              href={work.link}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex shrink-0 items-center gap-1.5 text-[14px] font-medium text-neutral-800 transition-colors duration-200 hover:text-[#FF5722] dark:text-neutral-200"
                             >
-                              {tag}
-                            </span>
-                          ))}
+                              {linkLabel(work.link)}
+                              <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="h-2.5 w-2.5 opacity-60" />
+                            </a>
+                          ) : null}
                         </div>
-                      ) : null}
-                      {work.link ? (
-                        <a
-                          href={work.link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="truncate text-xs font-medium text-[#EA580C] hover:underline"
-                        >
-                          {work.link}
-                        </a>
                       ) : null}
                     </>
                   )}

@@ -1114,7 +1114,7 @@ function DiscussionsPageContent() {
         </div>
       ) : inboxFilter === 'temporary' ? (
         filteredTemporaryInboxWithoutIncoming.length === 0 && pendingIncomingInvites.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-[var(--msg-muted)]">
+          <p className="px-5 py-12 text-center text-sm font-light text-[var(--msg-ink-faint)] sm:px-6">
             {inboxSearch.trim()
               ? 'No temporary access matches your search.'
               : 'No temporary guest access or pending invites.'}
@@ -1136,7 +1136,7 @@ function DiscussionsPageContent() {
         )
       ) : filteredConversations.length === 0 ? (
         activeTemporaryEntries.length > 0 && inboxFilter === 'all' ? null : (
-          <p className="px-4 py-8 text-center text-sm text-[var(--msg-muted)]">
+          <p className="px-5 py-12 text-center text-sm font-light text-[var(--msg-ink-faint)] sm:px-6">
             {inboxSearch.trim()
               ? 'No conversations match your search.'
               : inboxFilter === 'archived'
@@ -1147,7 +1147,7 @@ function DiscussionsPageContent() {
           </p>
         )
       ) : (
-        <ul role="listbox" aria-label="Conversations" className="flex flex-col gap-0.5 py-1">
+        <ul role="listbox" aria-label="Conversations" className="flex flex-col">
           {filteredConversations.map((conversation) => (
             <InboxConversationRow
               key={conversation.id}

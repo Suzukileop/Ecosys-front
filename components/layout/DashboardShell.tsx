@@ -27,6 +27,7 @@ import { isMyProductNavPath, isMyServiceNavPath } from '@/components/layout/dash
 
 function isCreatorStudioPath(pathname: string): boolean {
   if (!pathname.startsWith('/dashboard/creator')) return false;
+  if (pathname.startsWith('/dashboard/creator/products')) return false;
   // Sub-pages (new/edit) keep the default dashboard shell
   if (pathname.includes('/new') || pathname.includes('/edit')) return false;
   return true;
@@ -119,16 +120,16 @@ export function DashboardShell({
     isContentCreatorsPath(pathname) && !isServiceProvidersCatalogPath(pathname);
   const serviceProvidersCatalog = isServiceProvidersCatalogPath(pathname);
   const portfolioWorkspace = pathname.startsWith('/dashboard/portfolio');
+  const searchResults =
+    pathname.startsWith('/dashboard/search') || pathname.startsWith('/dashboard/notifications');
+  const marketplaceDirectory = serviceProvidersCatalog || pathname === '/marketplace';
   const usePatternBackground =
-    portfolioWorkspace ||
     transparentContent ||
-    creatorStudioPattern ||
     creatorProductsPattern ||
     newsFeedPattern ||
     contentCreatorsPattern;
   const useTransparentHeader =
     transparentHeader ||
-    creatorStudioPattern ||
     creatorProductsPattern ||
     newsFeedPattern ||
     contentCreatorsPattern;
@@ -203,21 +204,37 @@ export function DashboardShell({
     );
   }
 
-  const shellBg = usePatternBackground ? 'bg-transparent' : DASHBOARD_MAIN_BG;
+  /*
+   * Per-route page ground. Three of these are deliberate departures from `neutral-100`:
+   *
+   * - My Portfolio sits on mineral sand `#E6E5E3` in light (and absolute black in dark), so the
+   *   workspace chrome and the content plates share one quiet ground. Messages keeps `#F8F8F8`.
+   * - The providers directory sits one step lower, on the mineral ground `#E6E5E3` of the SKKY
+   *   charter, so its cards lift off the page without a shadow.
+   *
+   * These pages paint their own surfaces, so what this really covers is the strip of page around
+   * them — an error row, the moment before the panels mount — which would otherwise flash
+   * `neutral-100` in the middle of the charter.
+   */
+  const shellBg = usePatternBackground
+    ? 'bg-transparent'
+    : portfolioWorkspace ||
+        searchResults ||
+        discussionsLayout ||
+        marketplaceDirectory ||
+        myProductPattern ||
+        myServicePattern ||
+        creatorStudioPattern
+      ? 'bg-[#F8F8F8] dark:bg-black'
+      : DASHBOARD_MAIN_BG;
 
   return (
     <>
-      {(creatorStudioPattern ||
-        creatorProductsPattern ||
+      {(creatorProductsPattern ||
         newsFeedPattern ||
         contentCreatorsPattern) && (
         <MarketplacePatternBackground variant="hub" />
       )}
-      {/* Same masthead motif as News and the studio. It carries its own base tone, so the
-          workspace has to hand it the one its cards were calibrated against. */}
-      {portfolioWorkspace ? (
-        <MarketplacePatternBackground variant="hub" baseClassName="bg-neutral-100 dark:bg-neutral-950" />
-      ) : null}
       <div
         className={`flex ${fillMainLayout ? 'h-screen overflow-hidden' : 'min-h-screen'} ${shellBg}`}
         /* Navigation lives entirely in the top bar now. The variable is kept, pinned at 0, because
@@ -236,12 +253,14 @@ export function DashboardShell({
             discussionsLayout
               ? 'flex min-h-0 flex-col overflow-hidden p-0'
               : portfolioWorkspace
-              ? 'overflow-x-clip px-0 pb-0 pt-4'
+              /* Clip X without `overflow-x-clip` on this node (that forced a scroll
+                 container and broke sticky). Children use max-w-full / overflow-x-clip. */
+              ? 'max-w-full min-w-0 px-0 pb-0 pt-0'
               : fillMainLayout
-              ? 'flex min-h-0 flex-col overflow-hidden px-6 pb-4 pt-4'
+              ? 'flex min-h-0 flex-col overflow-hidden px-0 pb-4 pt-4'
               : `overflow-x-clip pb-6 ${compactContentTop ? 'pt-2' : 'pt-6'} ${
-                  serviceProvidersCatalog
-                    ? 'px-8 sm:px-10 lg:px-12 xl:px-14'
+                  marketplaceDirectory || creatorStudioPattern
+                    ? 'px-0'
                     : newsFeedPattern
                       ? 'px-4 sm:px-5'
                       : 'px-6'

@@ -31,9 +31,15 @@ export function contentMediaKind(
 type UseContentMediaUploadOptions = {
   locale?: 'fr' | 'en';
   onUrlChange: (url: string) => void;
+  /** Endpoint override (e.g. experience media with its own size cap). */
+  upload?: (file: File) => Promise<string>;
 };
 
-export function useContentMediaUpload({ locale = 'en', onUrlChange }: UseContentMediaUploadOptions) {
+export function useContentMediaUpload({
+  locale = 'en',
+  onUrlChange,
+  upload = uploadContentMedia,
+}: UseContentMediaUploadOptions) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -41,28 +47,38 @@ export function useContentMediaUpload({ locale = 'en', onUrlChange }: UseContent
 
   const pickFile = () => inputRef.current?.click();
 
-  const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const uploadFile = async (file: File) => {
     setUploadError(null);
     setUploading(true);
     try {
-      const url = await uploadContentMedia(file);
+      const url = await upload(file);
       onUrlChange(url);
       setFileName(file.name);
     } catch (e) {
+      const isClientCheck = e instanceof Error && !('isAxiosError' in e);
       setUploadError(
-        getApiErrorMessage(e, locale === 'fr' ? 'Échec du téléversement.' : 'Upload failed.')
+        isClientCheck
+          ? e.message
+          : getApiErrorMessage(e, locale === 'fr' ? 'Échec du téléversement.' : 'Upload failed.')
       );
       onUrlChange('');
       setFileName(null);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      await uploadFile(file);
+    } finally {
       event.target.value = '';
     }
   };
 
-  return { inputRef, uploading, fileName, uploadError, pickFile, onFileChange, setFileName };
+  return { inputRef, uploading, fileName, uploadError, pickFile, onFileChange, uploadFile, setFileName };
 }
 
 type ContentMediaPreviewProps = {

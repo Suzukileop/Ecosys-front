@@ -13,13 +13,13 @@ import {
   faGem,
   faIdBadge,
   faImages,
+  faKeyboard,
   faPenToSquare,
   faRectangleList,
   faShareFromSquare,
   faThumbsUp,
   faUser,
 } from '@fortawesome/free-regular-svg-icons';
-import { faScrewdriverWrench } from '@fortawesome/free-solid-svg-icons';
 
 export type ProfileSectionId =
   | 'about'
@@ -193,7 +193,7 @@ const PROFILE_SECTION_ICONS: Record<ProfileSectionId, IconDefinition> = {
   myRole: faUser,
   experience: faIdBadge,
   strengths: faPenToSquare,
-  tools: faScrewdriverWrench,
+  tools: faKeyboard,
   services: faRectangleList,
   products: faGem,
   portfolio: faFolder,
@@ -213,10 +213,12 @@ export function getProfileSection(id: ProfileSectionId): ProfileSection {
 function NavIcon({
   variant = 'nav',
   active = false,
+  inheritColor = false,
   children,
 }: {
   variant?: 'nav' | 'header';
   active?: boolean;
+  inheritColor?: boolean;
   children: ReactNode;
 }) {
   const isHighlighted = variant === 'header' || active;
@@ -236,8 +238,10 @@ function NavIcon({
     <span
       className={`flex h-8 w-8 shrink-0 items-center justify-center transition-colors ${
         isHighlighted
-          ? 'text-orange-600 dark:text-orange-400'
-          : 'text-neutral-600 dark:text-neutral-400'
+          ? 'text-[#FF5722]'
+          : inheritColor
+            ? 'text-current'
+            : 'text-neutral-600 dark:text-neutral-400'
       }`}
       aria-hidden
     >
@@ -250,17 +254,45 @@ export function ProfileSectionNavIcon({
   sectionId,
   variant = 'nav',
   active = false,
+  inheritColor = false,
 }: {
   sectionId: ProfileSectionId;
   variant?: 'nav' | 'header';
   active?: boolean;
+  /** Idle icon takes the label's colour instead of its own neutral tone. */
+  inheritColor?: boolean;
 }) {
   const icon = PROFILE_SECTION_ICONS[sectionId] ?? faFileLines;
   const iconClass = variant === 'header' ? 'h-5 w-5' : 'h-[15px] w-[15px]';
 
   return (
-    <NavIcon variant={variant} active={active}>
-      <FontAwesomeIcon icon={icon} className={iconClass} fixedWidth aria-hidden />
+    <NavIcon variant={variant} active={active} inheritColor={inheritColor}>
+      {sectionId === 'tools' ? (
+        <ScrewdriverWrenchOutlineIcon className={iconClass} />
+      ) : (
+        <FontAwesomeIcon icon={icon} className={iconClass} fixedWidth aria-hidden />
+      )}
     </NavIcon>
+  );
+}
+
+/** Font Awesome only ships screwdriver-wrench as solid; this stroke version matches the regular set. */
+function ScrewdriverWrenchOutlineIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.1}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+      <path d="M2.8 2.8 5.6 4 4 5.6z" />
+      <path d="m5 5 5.2 5.2" />
+      <path d="M13.5 16.3l2.8-2.8 5 5a2 2 0 0 1 0 2.8 2 2 0 0 1-2.8 0z" />
+    </svg>
   );
 }

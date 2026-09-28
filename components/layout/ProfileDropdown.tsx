@@ -49,24 +49,17 @@ function MoonIcon({ className }: { className?: string }) {
 }
 
 /**
- * Rows carry no background at any state. On a translucent card a filled hover plate is the one
- * thing that breaks the glass — it paints over the blur instead of sitting in it. The row travels
- * a couple of pixels, resolves to full contrast, and draws a hairline under its label.
+ * Every row is full-strength ink, not the half-tone a menu usually uses. The hover still travels
+ * and draws its underline, so the state is still legible without spending contrast on it.
+ *
+ * Hover is a flat surface swap and nothing else: no travel, no icon scale, and no hairline
+ * drawing itself in under the label. The card is small and its rows are short — three animated
+ * properties on each was a lot of motion to say "this one", and the rule in particular read as a
+ * progress bar. `transition-none` so the tone lands with the pointer.
  */
 const menuItemClass =
-  'group/mi relative flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium text-neutral-500 transition-[color,transform] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-x-1 hover:text-neutral-900 focus-visible:outline-none focus-visible:translate-x-1 focus-visible:text-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:focus-visible:text-white';
-const menuIconClass =
-  'h-[1.05rem] w-[1.05rem] shrink-0 transition-transform duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/mi:scale-110';
-
-/** The underline that gives each row its micro-interaction. Grows from the left, under the label only. */
-function RowUnderline() {
-  return (
-    <span
-      aria-hidden
-      className={`pointer-events-none absolute bottom-[0.55rem] left-[2.6rem] right-3 block h-px origin-left scale-x-0 bg-current opacity-60 transition-transform duration-[560ms] ${EASE_CLS} group-hover/mi:scale-x-100 group-focus-visible/mi:scale-x-100`}
-    />
-  );
-}
+  'group/mi relative flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium text-[#222222] transition-none hover:bg-black/[0.05] focus-visible:bg-black/[0.05] focus-visible:outline-none dark:text-neutral-200 dark:hover:bg-white/[0.07] dark:focus-visible:bg-white/[0.07]';
+const menuIconClass = 'h-[1.05rem] w-[1.05rem] shrink-0';
 
 export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -119,8 +112,8 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
         <div className="flex items-center gap-3">
           <Avatar name={user.fullName} avatarUrl={user.avatarUrl} size="md" />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-neutral-900 dark:text-white">{user.fullName}</p>
-            <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">{user.email}</p>
+            <p className="truncate text-sm font-semibold text-[#222222] dark:text-white">{user.fullName}</p>
+            <p className="truncate text-xs text-[#222222] dark:text-neutral-300">{user.email}</p>
           </div>
         </div>
       </div>
@@ -134,7 +127,6 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
           My Profile
-          <RowUnderline />
         </Link>
         {/* Inherited from the bar's old three-dot menu, which is gone. */}
         <button type="button" onClick={onClose} tabIndex={tab} className={menuItemClass} role="menuitem">
@@ -144,14 +136,13 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
             <path strokeLinecap="round" d="M12 16.25h.01" />
           </svg>
           Help
-          <RowUnderline />
         </button>
       </div>
 
       <span aria-hidden className="mx-4 block h-px bg-neutral-900/[0.07] dark:bg-white/[0.08]" />
 
       <div className="px-4 py-3.5">
-        <p className="mb-2.5 text-[0.6rem] font-medium uppercase tracking-[0.24em] text-neutral-400 dark:text-neutral-500">
+        <p className="mb-2.5 text-[0.6rem] font-medium uppercase tracking-[0.24em] text-[#222222] dark:text-neutral-300">
           Appearance
         </p>
         {/* A hairline segmented control rather than a filled toggle: the selected half is marked by
@@ -164,8 +155,8 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
             aria-pressed={!isDark}
             className={`flex h-full flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-[color,background-color] duration-[420ms] ${EASE_CLS} ${
               !isDark
-                ? 'bg-neutral-900/[0.06] text-neutral-900 dark:bg-white/10 dark:text-white'
-                : 'text-neutral-400 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-200'
+                ? 'bg-neutral-900/[0.06] text-[#222222] dark:bg-white/10 dark:text-white'
+                : 'text-[#222222] dark:text-neutral-300 dark:hover:text-neutral-100'
             }`}
           >
             <SunIcon className="h-3.5 w-3.5 shrink-0" />
@@ -178,8 +169,8 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
             aria-pressed={isDark}
             className={`flex h-full flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-[color,background-color] duration-[420ms] ${EASE_CLS} ${
               isDark
-                ? 'bg-neutral-900/[0.06] text-neutral-900 dark:bg-white/10 dark:text-white'
-                : 'text-neutral-400 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-200'
+                ? 'bg-neutral-900/[0.06] text-[#222222] dark:bg-white/10 dark:text-white'
+                : 'text-[#222222] dark:text-neutral-300 dark:hover:text-neutral-100'
             }`}
           >
             <MoonIcon className="h-3.5 w-3.5 shrink-0" />
@@ -190,19 +181,18 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
 
       <span aria-hidden className="mx-4 block h-px bg-neutral-900/[0.07] dark:bg-white/[0.08]" />
 
-      <div className="px-4 py-3.5">
+      <div className="p-1.5">
+        {/* Log out is a row like the others now: same box, same flat hover. Its centre-out
+            underline was the last of the drawing-rule interactions in the card, and keeping one
+            of them for one row made it read as a different kind of control. */}
         <button
           type="button"
           onClick={() => void handleLogout()}
           tabIndex={tab}
-          className={`group/out relative inline-flex items-center text-[0.7rem] font-medium uppercase tracking-[0.2em] text-neutral-500 transition-colors duration-[420ms] ${EASE_CLS} hover:text-neutral-900 focus-visible:outline-none focus-visible:text-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:focus-visible:text-white`}
+          className={`${menuItemClass} justify-start`}
           role="menuitem"
         >
           Log out
-          <span
-            aria-hidden
-            className={`pointer-events-none absolute -bottom-1 left-0 block h-px w-full origin-center scale-x-0 bg-current transition-transform duration-[560ms] ${EASE_CLS} group-hover/out:scale-x-100 group-focus-visible/out:scale-x-100`}
-          />
         </button>
       </div>
     </div>

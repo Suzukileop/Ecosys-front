@@ -44,17 +44,22 @@ export function MessageTimeline({
 
   if (messages.length === 0) {
     return (
-      <p className="py-16 text-center text-sm text-[var(--cw-text-secondary,#68707A)]">{emptyLabel}</p>
+      <p className="py-20 text-center text-sm font-light text-[var(--msg-ink-faint)]">{emptyLabel}</p>
     );
   }
 
   return (
-    <div className="relative px-1 py-2 sm:px-2">
+    <div className="relative px-1 py-4 sm:px-2">
+      {/*
+        * The thread spine. It used to be the accent at 35%, which made a coloured line run the
+        * full height of the conversation and compete with the words next to it. At hairline
+        * weight it still organises the column and is never the thing you look at.
+        */}
       <div
-        className="pointer-events-none absolute bottom-8 left-[calc(2.5rem+0.5rem)] top-8 hidden w-px bg-[var(--cw-accent,#F47B20)]/35 sm:left-[calc(2.75rem+0.5rem)] sm:block"
+        className="pointer-events-none absolute bottom-10 left-[calc(2.5rem+0.5rem)] top-10 hidden w-px bg-[var(--msg-hairline)] sm:left-[calc(2.75rem+0.5rem)] sm:block"
         aria-hidden
       />
-      <div className="space-y-1">
+      <div className="space-y-0">
         {timeline.map((item) => {
           if (item.kind === 'date') {
             return <DateSeparator key={item.key} label={item.label} />;
@@ -65,17 +70,16 @@ export function MessageTimeline({
           if (isSystem) {
             const guestTrace = isGuestSessionTrace(m.content);
             return (
-              <p
-                key={m.id}
-                className="py-2 text-center text-xs text-[var(--cw-text-muted,#9AA1AA)]"
-              >
-                {guestTrace ? (
-                  <span className="inline-flex max-w-[92%] flex-col items-center gap-0.5 rounded-[8px] border border-[var(--cw-border)] bg-[var(--cw-surface-soft)] px-3 py-1.5 text-[11px] leading-snug text-[var(--cw-text-secondary)]">
-                    <span>{m.content}</span>
-                  </span>
-                ) : (
-                  m.content
-                )}
+              /*
+               * A system line is the room speaking, not a participant. It is set in the same
+               * micro-caps as the date rules so it reads as part of the thread's scaffolding,
+               * and the pill the guest trace used to sit in is gone — it was a box drawn
+               * around one sentence.
+               */
+              <p key={m.id} className="msg-micro py-4 text-center text-[var(--msg-ink-faint)]">
+                <span className={guestTrace ? 'inline-block max-w-[80%] leading-[1.8]' : undefined}>
+                  {m.content}
+                </span>
               </p>
             );
           }
@@ -90,7 +94,7 @@ export function MessageTimeline({
             <div
               key={m.id}
               data-message-id={m.id}
-              className={`relative flex items-start gap-2 py-2.5 sm:gap-2.5 ${
+              className={`relative flex items-start gap-3 py-3.5 sm:gap-3.5 ${
                 m.clientPending ? 'opacity-90' : m.clientFailed ? 'opacity-60' : 'opacity-100'
               }`}
             >

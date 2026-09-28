@@ -191,7 +191,7 @@ function MediaViewerPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center bg-neutral-100 px-3 py-4 dark:bg-neutral-950">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center bg-[var(--msg-ground)] px-3 py-4">
         {loading ? (
           <div className="h-48 w-full max-w-sm animate-pulse rounded-[10px] bg-neutral-200 dark:bg-neutral-800" />
         ) : error && !url ? (
@@ -215,7 +215,7 @@ function MediaViewerPanel({
         ) : null}
       </div>
 
-      <div className="shrink-0 border-t border-neutral-200 px-4 py-3 dark:border-neutral-800">
+      <div className="shrink-0 border-t border-[var(--msg-hairline)] px-5 py-4">
         <p className="truncate text-sm font-semibold text-[var(--cw-text-primary)]">
           {item.attachment.fileName}
         </p>
@@ -229,7 +229,7 @@ function MediaViewerPanel({
             <button
               type="button"
               onClick={() => onJumpToMessage(item.messageId)}
-              className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-neutral-300 bg-white px-3 text-[13px] font-medium text-[var(--cw-text-primary)] transition hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50 dark:border-neutral-700 dark:bg-transparent dark:hover:bg-neutral-900"
+              className="msg-micro inline-flex min-h-10 w-full items-center justify-center gap-2 border border-[var(--msg-hairline-strong)] px-3 text-[var(--msg-ink-soft)] transition-colors duration-300 hover:border-[var(--msg-ink-soft)] hover:text-[var(--msg-ink)] focus-visible:outline-none"
             >
               <svg className="h-4 w-4 shrink-0 text-[var(--cw-text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
                 <path
@@ -245,7 +245,7 @@ function MediaViewerPanel({
             type="button"
             onClick={() => void handleDownload()}
             disabled={downloading || loading}
-            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-neutral-900 px-3 text-[13px] font-semibold text-white transition hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+            className="msg-micro inline-flex min-h-10 w-full items-center justify-center gap-2 border border-[var(--msg-ink)] px-3 text-[var(--msg-ink)] transition-colors duration-300 hover:bg-[var(--msg-ink)] hover:text-[var(--msg-panel)] focus-visible:outline-none disabled:opacity-40"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
               <path
@@ -482,7 +482,7 @@ export function ConversationContextPanel({
         />
       )}
 
-      <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-neutral-200 px-4 dark:border-neutral-800">
+      <div className="flex h-[4.25rem] shrink-0 items-center justify-between gap-2 border-b border-[var(--msg-hairline)] px-5">
         <div className="min-w-0">
           {view !== 'overview' ? (
             <button

@@ -17,7 +17,7 @@ export const PROFILE_SPECIALTIES = [
 
 export type ProfileSpecialty = (typeof PROFILE_SPECIALTIES)[number];
 
-export const MAX_PROFILE_SPECIALTIES = 3;
+export const MAX_PROFILE_SPECIALTIES = 20;
 export const MAX_SPECIALTY_LENGTH = 80;
 export const MAX_SPECIALTY_TAGS = 8;
 export const MAX_SPECIALTY_TAG_LENGTH = 40;

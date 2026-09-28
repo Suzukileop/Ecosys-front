@@ -190,7 +190,7 @@ export function InboxConversationMenu({
           event.stopPropagation();
           setOpen((value) => !value);
         }}
-        className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-neutral-200/90 text-neutral-600 transition hover:bg-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50 disabled:opacity-50 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 ${
+        className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--msg-ink-faint)] transition-[color,opacity] duration-300 hover:text-[var(--msg-ink)] focus-visible:outline-none disabled:opacity-40 ${
           open ? 'opacity-100' : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100'
         }`}
       >
@@ -204,17 +204,22 @@ export function InboxConversationMenu({
               id={menuId}
               role="menu"
               aria-label="Conversation options"
-              className="fixed z-[230]"
+              /*
+               * `msg-mineral` is repeated here because this menu is portalled to <body> and so
+               * escapes the scope the rest of the section lives in. Without it the charter's
+               * custom properties resolve to nothing out here and the card renders unpainted.
+               */
+              className="msg-mineral fixed z-[230]"
               style={{ top: coords.top, left: coords.left, minWidth: MENU_MIN_WIDTH }}
             >
               <div
-                className={`absolute left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900 ${
+                className={`absolute left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border border-[var(--msg-hairline-strong)] bg-[var(--msg-panel)] ${
                   coords.openUp ? 'bottom-[-5px] border-t-0 border-l-0' : 'top-[-5px] border-b-0 border-r-0'
                 }`}
                 style={{ left: 'calc(100% - 22px)' }}
                 aria-hidden
               />
-              <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white py-1.5 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+              <div className="overflow-hidden rounded-[var(--cw-radius)] border border-[var(--msg-hairline-strong)] bg-[var(--msg-panel)] py-1.5 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.45)]">
                 {items.map((item, index) => {
                   const showDivider = item.id === 'archive' || item.id === 'unarchive' || item.id === 'delete';
                   const prev = items[index - 1];
@@ -224,7 +229,7 @@ export function InboxConversationMenu({
                   const className = `flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-[13px] transition ${
                     item.tone === 'danger'
                       ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40'
-                      : 'text-neutral-800 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800'
+                      : 'text-[var(--msg-ink-soft)] hover:bg-[var(--msg-wash)] hover:text-[var(--msg-ink)]'
                   }`;
 
                   const content = (
@@ -241,7 +246,7 @@ export function InboxConversationMenu({
                   return (
                     <div key={item.id}>
                       {afterProfile ? (
-                        <div className="my-1 border-t border-neutral-200 dark:border-neutral-700" />
+                        <div className="my-1 border-t border-[var(--msg-hairline)]" />
                       ) : null}
                       {item.href ? (
                         <Link

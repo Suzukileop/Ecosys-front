@@ -20,7 +20,7 @@ export function ProfileSectionItemCount({
   const safeCount = Math.max(0, count);
   return (
     <p className={`${profileSectionMutedTextClass}${className ? ` ${className}` : ''}`}>
-      <strong className="text-neutral-800 dark:text-neutral-200">
+      <strong className="font-semibold text-black dark:text-neutral-100">
         {safeCount}/{limit}
       </strong>{' '}
       {unit}

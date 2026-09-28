@@ -27,7 +27,7 @@ export function TemporaryGuestAvatarStrip({
   if (entries.length === 0) return null;
 
   return (
-    <div className="shrink-0 border-b border-neutral-200 px-3 py-3 dark:border-neutral-800">
+    <div className="shrink-0 border-b border-[var(--msg-hairline)] px-5 py-4 sm:px-6">
       <p className="mb-2.5 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
         Temporary
       </p>
@@ -47,8 +47,8 @@ export function TemporaryGuestAvatarStrip({
               aria-pressed={selected}
               className={`group flex w-full items-center justify-center rounded-[12px] border px-4 py-3 transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/50 disabled:opacity-50 ${
                 selected
-                  ? 'border-neutral-300 bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-800'
-                  : 'border-neutral-200 bg-neutral-50 hover:border-neutral-300 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900/60 dark:hover:border-neutral-600 dark:hover:bg-neutral-800'
+                  ? 'border-[var(--msg-ink)] text-[var(--msg-ink)]'
+                  : 'border-[var(--msg-hairline-strong)] text-[var(--msg-ink-faint)] hover:border-[var(--msg-ink-soft)] hover:text-[var(--msg-ink)]'
               }`}
             >
               <div className="flex items-center justify-center gap-4">

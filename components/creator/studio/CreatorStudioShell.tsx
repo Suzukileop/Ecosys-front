@@ -9,6 +9,7 @@ import { CREATOR_STUDIO_TABS, type CreatorStudioTab } from './types';
 import type { CreatorStudioHeaderLayout } from './creator-studio-header';
 import type { CreatorStudioHeaderContentStyle } from './creator-studio-header-content';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
+import { PORTFOLIO_FRAME_CLASS } from '@/components/portfolio/portfolioFrame';
 import {
   creatorCanAccessProfileProducts,
   creatorCanAccessProfileServices,
@@ -102,7 +103,7 @@ export function CreatorStudioShell({
   });
 
   return (
-    <div className="mx-auto w-full max-w-[1280px]">
+    <div className={`${PORTFOLIO_FRAME_CLASS} pb-16 pt-4`}>
       <input
         ref={avatarInputRef}
         type="file"
@@ -115,7 +116,7 @@ export function CreatorStudioShell({
         }}
       />
 
-      <div className="px-4 sm:px-6">
+      <div>
         <CreatorProfileHeader
           layout={header.headerLayout}
           fullName={header.fullName}
@@ -144,11 +145,11 @@ export function CreatorStudioShell({
         />
       </div>
 
-      <div className="px-4 sm:px-6">
-        <div className="mt-8 border-b border-neutral-200/80 dark:border-neutral-700/50">
-          <div className="flex items-end gap-2">
+      <div>
+        <div className="mt-12 border-b border-black/[0.06] dark:border-white/[0.08]">
+          <div className="flex items-center gap-4">
             <nav
-              className={`flex min-w-0 flex-1 gap-0.5 overflow-x-auto pb-px ${creatorStudioTabNavAlignClass(header.tabNavAlign)}`}
+              className={`flex min-w-0 flex-1 gap-8 overflow-x-auto ${creatorStudioTabNavAlignClass(header.tabNavAlign)}`}
               aria-label="Creator studio sections"
             >
               {visibleTabs.map((item) => {
@@ -161,15 +162,15 @@ export function CreatorStudioShell({
                       setLayoutPanelOpen(false);
                       onTabChange(item.id);
                     }}
-                    className={`relative min-h-12 shrink-0 px-5 py-4 text-sm font-semibold tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 ${
+                    className={`relative shrink-0 py-4 text-[15px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
                       active && !layoutPanelOpen
-                        ? 'text-neutral-900 dark:text-white'
-                        : 'text-neutral-500 hover:bg-neutral-100/70 hover:text-neutral-800 dark:text-neutral-400 dark:hover:bg-white/[0.04] dark:hover:text-neutral-200'
+                        ? 'text-[#111111] dark:text-white'
+                        : 'text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
                     }`}
                   >
                     {item.label}
                     {active && !layoutPanelOpen && (
-                      <span className="absolute inset-x-4 bottom-0 h-[2.5px] rounded-full bg-orange-500" />
+                      <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-[#FF5722]" />
                     )}
                   </button>
                 );
@@ -182,10 +183,10 @@ export function CreatorStudioShell({
               aria-controls="creator-studio-layout-settings"
               aria-label={layoutPanelOpen ? 'Close layout settings' : 'Layout settings'}
               title={layoutPanelOpen ? 'Close layout' : 'Layout'}
-              className={`mb-2.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 ${
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
                 layoutPanelOpen
-                  ? 'bg-neutral-100 text-neutral-900 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-white dark:ring-neutral-600'
-                  : 'border border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:bg-neutral-900'
+                  ? 'bg-[#111111] text-white dark:bg-white dark:text-[#111111]'
+                  : 'text-neutral-500 hover:bg-black/[0.05] hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white'
               }`}
             >
               <LayoutSettingsIcon />
@@ -194,8 +195,8 @@ export function CreatorStudioShell({
         </div>
 
         {layoutPanelOpen ? (
-          <div id="creator-studio-layout-settings" className="py-6">
-            <div className="rounded-2xl border border-neutral-200/80 bg-white p-4 shadow-sm dark:border-neutral-700/50 dark:bg-[#171717]">
+          <div id="creator-studio-layout-settings" className="py-10">
+            <div className="rounded-lg border border-black/[0.06] bg-white p-6 dark:border-white/[0.08] dark:bg-[#111111] sm:p-8">
               {layoutError ? (
                 <div className="mb-4">
                   <ErrorAlert message={layoutError} onDismiss={onDismissLayoutError} />
@@ -218,7 +219,7 @@ export function CreatorStudioShell({
             </div>
           </div>
         ) : (
-          <div className="py-8 sm:py-10">{children}</div>
+          <div className="py-10 sm:py-12">{children}</div>
         )}
       </div>
     </div>

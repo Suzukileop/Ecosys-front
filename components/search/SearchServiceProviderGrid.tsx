@@ -10,7 +10,7 @@ export function SearchServiceProviderGrid({
   creators: MarketplaceCreatorSummary[];
 }) {
   return (
-    <div className="grid grid-cols-1 items-stretch gap-5">
+    <div className="provider-spotlight-grid grid grid-cols-1 items-stretch gap-6">
       {creators.map((c) => (
         <CreatorCard
           key={c.id ?? c.userId ?? c.fullName}
@@ -32,6 +32,7 @@ export function SearchServiceProviderGrid({
           distanceKm={c.distanceKm}
           locationCity={c.locationCity}
           locationCountry={c.locationCountry}
+          comfortable
         />
       ))}
     </div>

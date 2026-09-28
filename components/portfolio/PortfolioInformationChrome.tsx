@@ -35,7 +35,6 @@ import {
   type SpokenLanguageEntry,
 } from '@/lib/spoken-languages';
 import { fetchLanguageProficiencyLevels } from '@/lib/reference-api';
-import { TYPICAL_RESPONSE_TIME_OPTIONS } from '@/lib/typical-response-time';
 import {
   AVAILABILITY_STATUS_OTHER_VALUE,
   availabilityStatusSelectOptions,
@@ -53,10 +52,18 @@ import {
 } from '@/lib/about-skills';
 import { PortfolioLocationReadOnly } from '@/components/portfolio/PortfolioLocationChrome';
 import { PORTFOLIO_UPGRADE_PATH } from '@/components/portfolio/portfolio-pricing-upgrade-panel';
-import { brandCtaClass } from '@/components/landing/landingBrand';
+import { STUDIO_EMPTY_CLASS, STUDIO_SECONDARY_CLASS } from '@/components/portfolio/PortfolioStudioKit';
 
 const inlineInputClass =
   'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-[15px] font-semibold text-neutral-900 outline-none transition focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white';
+
+/* Editorial form (General info): matte hairline inputs, only the border turns coral on focus. */
+const editorialInputClass =
+  'w-full rounded-lg border border-black/[0.08] bg-black/[0.015] p-3 text-[0.9rem] text-neutral-900 outline-none transition-colors duration-300 placeholder:text-neutral-400 focus:border-[#FF5722] disabled:opacity-60 dark:border-white/[0.04] dark:bg-white/[0.01] dark:text-white dark:placeholder:text-neutral-600 dark:[color-scheme:dark]';
+const editorialLabelClass = 'mb-2 block text-[15px] font-bold text-[#111111] dark:text-neutral-300';
+const editorialBlockClass =
+  'grid grid-cols-1 gap-x-8 gap-y-7 border-b border-black/[0.05] py-8 last:border-b-0 dark:border-white/[0.04]';
+const editorialRowClass = 'grid grid-cols-1 items-start gap-x-8 gap-y-7';
 
 export function PortfolioFieldIconButton({
   label,
@@ -96,7 +103,7 @@ export function PortfolioFieldIconButton({
   );
 }
 
-function PortfolioFieldVisibilityMenu({
+export function PortfolioFieldVisibilityMenu({
   value,
   onChange,
   menuPlacement = 'up',
@@ -134,7 +141,7 @@ function PortfolioFieldVisibilityMenu({
         className={`inline-flex shrink-0 items-center justify-center rounded-full border transition ${buttonSizeClass} ${
           open || hidden
             ? 'border-[#F97316]/40 bg-[#FFF7ED] text-[#EA580C] dark:border-[#F97316]/30 dark:bg-[#F97316]/10 dark:text-[#FB923C]'
-            : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-200'
+            : 'border-neutral-300 bg-white text-neutral-700 hover:border-neutral-900 hover:bg-neutral-900 hover:text-white dark:border-white/25 dark:bg-transparent dark:text-white/80 dark:hover:border-white dark:hover:bg-white dark:hover:text-black'
         }`}
       >
         <FontAwesomeIcon icon={hidden ? faEyeSlash : faEye} className="h-3.5 w-3.5" fixedWidth />
@@ -188,11 +195,14 @@ export function PortfolioFlatField({
   showVisibility = false,
   visibility,
   onVisibilityChange,
+  variant = 'default',
 }: {
   label: string;
   value?: string | null;
   emptyLabel?: string;
   muted?: boolean;
+  /** `editorial`: mono micro-label, no row padding — spacing comes from the parent block. */
+  variant?: 'default' | 'editorial';
   children?: ReactNode;
   className?: string;
   valueSuffix?: string | null;
@@ -214,78 +224,86 @@ export function PortfolioFlatField({
   );
   const showEditActions = Boolean(editing ? onConfirm : onEdit);
   const showActions = showVisibilityAction || showEditActions;
-
+  const editorial = variant === 'editorial';
   const valueContent = editing ? (
     editControl
   ) : children ? (
     children
   ) : display ? (
     <p
-      className={`text-[15px] font-semibold leading-relaxed whitespace-pre-wrap ${
-        muted
-          ? 'italic text-neutral-500 dark:text-neutral-400'
-          : 'text-neutral-900 dark:text-white'
+      className={`text-base font-normal leading-relaxed whitespace-pre-wrap ${
+        muted ? 'text-neutral-500 dark:text-neutral-400' : 'text-black dark:text-neutral-100'
       }`}
     >
       {display}
-      {valueSuffix ? (
-        <span className="font-medium text-neutral-500 dark:text-neutral-400"> {valueSuffix}</span>
-      ) : null}
+      {valueSuffix ? <span className={STUDIO_SECONDARY_CLASS}> {valueSuffix}</span> : null}
     </p>
   ) : (
-    <p className="text-[15px] italic text-neutral-500 dark:text-neutral-400">{emptyLabel}</p>
+    <p className={STUDIO_EMPTY_CLASS}>{emptyLabel}</p>
   );
 
+  const actions = showActions ? (
+    <div className={`inline-flex h-8 shrink-0 items-center gap-1.5 ${editorial ? '-mt-1.5' : ''}`}>
+      {showVisibilityAction ? (
+        <PortfolioFieldVisibilityMenu value={visibility!} onChange={onVisibilityChange!} />
+      ) : null}
+      {editing && onConfirm ? (
+        <>
+          <PortfolioFieldIconButton
+            label={canConfirm ? `Confirm ${label}` : `No changes to ${label}`}
+            tone={canConfirm ? 'confirm' : 'neutral'}
+            disabled={!canConfirm || confirming}
+            onClick={() => onConfirm()}
+          >
+            {confirming ? (
+              <LoadingSpinner size="sm" />
+            ) : (
+              <FontAwesomeIcon icon={faCircleCheck} className="h-4 w-4" fixedWidth />
+            )}
+          </PortfolioFieldIconButton>
+          <PortfolioFieldIconButton
+            label={`Cancel ${label}`}
+            tone="cancel"
+            disabled={confirming}
+            onClick={() => onCancelEdit?.()}
+          >
+            <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" fixedWidth />
+          </PortfolioFieldIconButton>
+        </>
+      ) : onEdit ? (
+        <PortfolioFieldIconButton label={`Edit ${label}`} onClick={onEdit}>
+          <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" fixedWidth />
+        </PortfolioFieldIconButton>
+      ) : null}
+    </div>
+  ) : null;
+
+  if (editorial) {
+    return (
+      <div className={`flex min-w-0 items-start gap-3 ${className}`}>
+        <div className="min-w-0 flex-1">
+          <span className={editorialLabelClass}>{label}</span>
+          {valueContent}
+        </div>
+        {actions}
+      </div>
+    );
+  }
+
   return (
-    <div className={`flex items-center gap-4 py-6 ${className}`}>
+    <div className={`flex items-start gap-4 py-6 ${className}`}>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2.5">
           {icon ? (
-            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
+            <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-400">
               {icon}
             </span>
           ) : null}
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-500">
-            {label}
-          </p>
+          <p className="text-[15px] font-bold text-[#111111] dark:text-neutral-300">{label}</p>
         </div>
-        <div className="mt-2.5">{valueContent}</div>
+        <div className="mt-3">{valueContent}</div>
       </div>
-      {showActions ? (
-        <div className="inline-flex h-8 shrink-0 items-center gap-1.5">
-          {showVisibilityAction ? (
-            <PortfolioFieldVisibilityMenu value={visibility!} onChange={onVisibilityChange!} />
-          ) : null}
-          {editing && onConfirm ? (
-            <>
-              <PortfolioFieldIconButton
-                label={canConfirm ? `Confirm ${label}` : `No changes to ${label}`}
-                tone={canConfirm ? 'confirm' : 'neutral'}
-                disabled={!canConfirm || confirming}
-                onClick={() => onConfirm()}
-              >
-                {confirming ? (
-                  <LoadingSpinner size="sm" />
-                ) : (
-                  <FontAwesomeIcon icon={faCircleCheck} className="h-4 w-4" fixedWidth />
-                )}
-              </PortfolioFieldIconButton>
-              <PortfolioFieldIconButton
-                label={`Cancel ${label}`}
-                tone="cancel"
-                disabled={confirming}
-                onClick={() => onCancelEdit?.()}
-              >
-                <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" fixedWidth />
-              </PortfolioFieldIconButton>
-            </>
-          ) : onEdit ? (
-            <PortfolioFieldIconButton label={`Edit ${label}`} onClick={onEdit}>
-              <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" fixedWidth />
-            </PortfolioFieldIconButton>
-          ) : null}
-        </div>
-      ) : null}
+      {actions}
     </div>
   );
 }
@@ -324,7 +342,7 @@ export function PortfolioLanguageChips({
   );
 }
 
-function PortfolioInlineLanguagesEditor({
+export function PortfolioInlineLanguagesEditor({
   value,
   onChange,
 }: {
@@ -546,6 +564,7 @@ export function PortfolioProfileHero({
   saving = false,
   hideBottomBorder: _hideBottomBorder = false,
   showIdentity = true,
+  onPreview,
 }: {
   name: string;
   avatarUrl?: string | null;
@@ -579,6 +598,8 @@ export function PortfolioProfileHero({
   hideBottomBorder?: boolean;
   /** When false, only the action toolbar is shown (no avatar / name / plan). */
   showIdentity?: boolean;
+  /** Outline "Preview" action next to Upgrade in the identity header. */
+  onPreview?: () => void;
 }) {
   const displayName = name.trim() || 'Your name';
   const showEditSessionActions = Boolean(
@@ -600,7 +621,7 @@ export function PortfolioProfileHero({
   }
 
   const actions = showAboutControls ? (
-    <div className="relative z-30 flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
+    <div className="relative z-30 flex shrink-0 flex-wrap items-center gap-2">
       {showEditModeToggle ? (
         <div className="inline-flex rounded-lg border border-neutral-200 p-0.5 dark:border-neutral-700">
           {(['individual', 'global'] as const).map((mode) => {
@@ -726,78 +747,136 @@ export function PortfolioProfileHero({
 
   if (!showIdentity) {
     return (
-      <div className="flex items-center justify-end px-5 py-1.5 sm:px-6 sm:py-2">
+      <div className="flex items-center justify-end px-5 py-1.5 sm:px-7 sm:py-2">
         {actions}
       </div>
     );
   }
 
-  return (
-    <div className="flex items-center gap-4 px-5 py-5 sm:gap-5 sm:px-6 sm:py-6">
-      <div
-        className={`shrink-0 rounded-full p-[3px] ring-2 ring-offset-[5px] ring-offset-white dark:ring-offset-neutral-900 ${
-          isAvailable
-            ? 'ring-emerald-500 dark:ring-emerald-500/50'
-            : 'ring-neutral-400 dark:ring-neutral-500'
-        }`}
-        title={resolveAvailabilityStatusLabel(isAvailable, availabilityLabel) ?? 'Unavailable'}
-        aria-label={resolveAvailabilityStatusLabel(isAvailable, availabilityLabel) ?? 'Unavailable'}
-      >
-        {avatarUrl?.trim() ? (
-          <div className="h-20 w-20 overflow-hidden rounded-full [&_img]:!h-20 [&_img]:!w-20">
-            <Avatar name={displayName} avatarUrl={avatarUrl} size="xl" tone="muted" />
-          </div>
-        ) : (
-          <div
-            className="flex h-20 w-20 items-center justify-center rounded-full bg-[#0a0a0a] text-xl font-bold tracking-wide text-[#F97316]"
-            aria-hidden
-          >
-            {displayName
-              .split(' ')
-              .filter(Boolean)
-              .map((n) => n[0])
-              .join('')
-              .toUpperCase()
-              .slice(0, 2) || '?'}
-          </div>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <h2 className="truncate text-xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-2xl">
-          {displayName}
-        </h2>
-        <div className="mt-1.5 flex items-center gap-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-            Page status
-          </span>
-          <span className="h-3 w-px shrink-0 bg-neutral-300 dark:bg-neutral-600" aria-hidden />
-          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-            Published
-          </span>
-        </div>
-        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">Free plan</span>
-          <Link
-            href={PORTFOLIO_UPGRADE_PATH}
-            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm transition hover:brightness-105 ${brandCtaClass}`}
-          >
-            <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-              <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
-            </svg>
-            Upgrade
-          </Link>
-        </div>
-      </div>
+  const statusLabel = resolveAvailabilityStatusLabel(isAvailable, availabilityLabel) ?? 'Unavailable';
+  const showHeaderCtas = !aboutChromeOpen && !hideHeroActions;
 
-      {actions}
+  return (
+    <div className="relative">
+      {/* No banner: the avatar floats half outside the card's top edge. */}
+      <div className="px-5 pb-5 sm:px-7 sm:pb-6">
+        <div className="-mt-12 flex flex-col gap-4 sm:-mt-14 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+          <div className="flex min-w-0 items-end gap-4">
+            <div
+              className="relative shrink-0 rounded-full bg-white p-1 dark:bg-[#0F0F0F]"
+              title={statusLabel}
+            >
+              {avatarUrl?.trim() ? (
+                <div className="h-24 w-24 overflow-hidden rounded-full sm:h-28 sm:w-28 [&_img]:!h-full [&_img]:!w-full">
+                  <Avatar name={displayName} avatarUrl={avatarUrl} size="xl" tone="muted" />
+                </div>
+              ) : (
+                <div
+                  className="flex h-24 w-24 items-center justify-center rounded-full bg-[#0a0a0a] text-2xl font-bold tracking-wide text-[#F97316] sm:h-28 sm:w-28"
+                  aria-hidden
+                >
+                  {displayName
+                    .split(' ')
+                    .filter(Boolean)
+                    .map((n) => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2) || '?'}
+                </div>
+              )}
+            </div>
+
+            <div className="min-w-0 pb-1.5">
+              <h2 className="truncate text-xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-2xl">
+                {displayName}
+              </h2>
+              <p className="mt-2 flex items-center gap-2.5 text-[12px] font-medium uppercase tracking-[0.14em] text-neutral-600 dark:text-neutral-400">
+                <span
+                  className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500 [animation-duration:3s]"
+                  aria-hidden
+                />
+                <span>Published</span>
+                <span className="text-neutral-400 dark:text-neutral-600" aria-hidden>
+                  /
+                </span>
+                <span>Free plan</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:flex-nowrap sm:pb-1.5">
+            {showHeaderCtas && onPreview ? (
+              <button
+                type="button"
+                onClick={onPreview}
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-black/15 px-3.5 text-[0.9rem] font-medium text-[#222222] transition-colors duration-200 hover:border-black/30 hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:border-white/15 dark:text-neutral-200 dark:hover:border-white/35 dark:hover:text-white"
+              >
+                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5S21.75 12 21.75 12 18 19.5 12 19.5 2.25 12 2.25 12z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                Preview
+              </button>
+            ) : null}
+            {showHeaderCtas ? (
+              <Link
+                href={PORTFOLIO_UPGRADE_PATH}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-neutral-950 px-3.5 text-[0.9rem] font-medium text-white shadow-sm transition hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200"
+              >
+                <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
+                </svg>
+                Upgrade
+              </Link>
+            ) : null}
+            {actions}
+          </div>
+        </div>
+      </div>
     </div>
+  );
+}
+
+export type PortfolioFooterMetaItem = { label: string; value: ReactNode };
+
+/** Footer meta value that reads as plain text but opens a native picker. */
+export function PortfolioFooterSelect({
+  value,
+  options,
+  onChange,
+  disabled = false,
+  ariaLabel,
+  emptyLabel = 'Not set',
+}: {
+  value: string;
+  options: ReadonlyArray<{ value: string; label: string }>;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  ariaLabel: string;
+  emptyLabel?: string;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className="cursor-pointer appearance-none bg-transparent p-0 text-[11.5px] font-medium uppercase tracking-[0.14em] text-inherit outline-none transition-colors duration-300 [field-sizing:content] hover:text-[#FF5722] focus-visible:text-[#FF5722] disabled:cursor-wait disabled:opacity-60 dark:[color-scheme:dark]"
+    >
+      <option value="">{emptyLabel}</option>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
 export function PortfolioEditorFooter({
   lastUpdatedLabel,
   leadingMetaLabel,
+  metaItems,
   isEditing,
   saving,
   hasUnsavedChanges,
@@ -809,6 +888,8 @@ export function PortfolioEditorFooter({
   lastUpdatedLabel: string;
   /** Optional meta shown to the left of “Last updated …”, e.g. “5 questions”. */
   leadingMetaLabel?: string | null;
+  /** Editorial meta row (mono micro-caps) placed after “Last updated”; replaces the ✦ layout. */
+  metaItems?: ReadonlyArray<PortfolioFooterMetaItem>;
   isEditing: boolean;
   saving: boolean;
   hasUnsavedChanges: boolean;
@@ -819,26 +900,37 @@ export function PortfolioEditorFooter({
 }) {
   return (
     <div
-      className={`flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 ${
-        hideTopBorder ? '' : 'border-t border-neutral-200/60 dark:border-white/[0.06]'
+      className={`flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7 ${
+        hideTopBorder ? '' : 'border-t border-black/[0.08] dark:border-white/[0.08]'
       }`}
     >
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500">
-        {leadingMetaLabel ? (
+      {metaItems ? (
+        <dl className="flex flex-wrap items-center gap-x-10 gap-y-2 text-[11.5px] uppercase tracking-[0.14em]">
+          {[{ label: 'Last updated', value: lastUpdatedLabel }, ...metaItems].map((item) => (
+            <div key={item.label} className="flex items-center gap-2.5">
+              <dt className="text-neutral-500">{item.label}</dt>
+              <dd className="font-medium text-neutral-800 dark:text-neutral-200">{item.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500">
+          {leadingMetaLabel ? (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="text-[#F97316]" aria-hidden>
+                ✦
+              </span>
+              {leadingMetaLabel}
+            </span>
+          ) : null}
           <span className="inline-flex items-center gap-1.5">
             <span className="text-[#F97316]" aria-hidden>
               ✦
             </span>
-            {leadingMetaLabel}
+            Last updated {lastUpdatedLabel}
           </span>
-        ) : null}
-        <span className="inline-flex items-center gap-1.5">
-          <span className="text-[#F97316]" aria-hidden>
-            ✦
-          </span>
-          Last updated {lastUpdatedLabel}
-        </span>
-      </div>
+        </div>
+      )}
 
       {hidePrimaryActions ? null : (
         <div className="flex justify-end gap-3">
@@ -1588,8 +1680,6 @@ export function PortfolioAboutReadOnly({
   availabilityHours,
   availabilityTimezone,
   rawAvailabilityHours,
-  memberSince,
-  responseTimeLabel,
   typicalResponseTime = '',
   locationCity = '',
   locationCountry = '',
@@ -1629,8 +1719,6 @@ export function PortfolioAboutReadOnly({
   availabilityHours: string | null;
   availabilityTimezone?: string | null;
   rawAvailabilityHours?: string | null;
-  memberSince: string | null;
-  responseTimeLabel: string | null;
   typicalResponseTime?: string;
   /** Hide specialty, years, status, availability hours, typical response (RH / Recruiter). */
   hideProviderFields?: boolean;
@@ -2059,7 +2147,7 @@ export function PortfolioAboutReadOnly({
   const fieldOnCancel = isGlobal ? undefined : cancelEdit;
 
   return (
-    <div className="divide-y divide-neutral-200/50 dark:divide-white/[0.06]">
+    <div className={isAboutDetails ? 'divide-y divide-neutral-200/50 dark:divide-white/[0.06]' : undefined}>
       {isAboutDetails ? (
         <>
           {!hideProviderFields ? (
@@ -2282,10 +2370,13 @@ export function PortfolioAboutReadOnly({
         </>
       ) : (
         <>
+      {/* Block 1 — Identity */}
+      <section className={`${editorialBlockClass} !pt-3`} aria-label="Identity">
+      <div className={`${editorialRowClass} sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]`}>
       <PortfolioFlatField
+        variant="editorial"
         label="Name"
         value={fullName}
-        className="!pt-3 !pb-5"
         editing={fieldEditing('fullName')}
         onEdit={fieldOnEdit('fullName')}
         onConfirm={fieldOnConfirm}
@@ -2297,17 +2388,17 @@ export function PortfolioAboutReadOnly({
             type="text"
             value={draftName}
             onChange={(event) => setDraftName(event.target.value)}
-            className={inlineInputClass}
+            className={editorialInputClass}
             autoFocus={editingField === 'fullName'}
             disabled={confirming}
           />
         }
       />
       <PortfolioFlatField
+        variant="editorial"
         label="Username"
         value={username || null}
         emptyLabel="Not set"
-        className="!py-5"
         editing={fieldEditing('username')}
         onEdit={fieldOnEdit('username')}
         onConfirm={fieldOnConfirm}
@@ -2320,7 +2411,7 @@ export function PortfolioAboutReadOnly({
               type="text"
               value={draftUsername}
               onChange={(event) => setDraftUsername(event.target.value)}
-              className={inlineInputClass}
+              className={editorialInputClass}
               autoFocus={editingField === 'username'}
               disabled={confirming}
               spellCheck={false}
@@ -2333,10 +2424,11 @@ export function PortfolioAboutReadOnly({
           </div>
         }
       />
+      </div>
       <PortfolioFlatField
+        variant="editorial"
         label="Bio"
         value={bio}
-        className="!py-5"
         editing={fieldEditing('bio')}
         onEdit={fieldOnEdit('bio')}
         onConfirm={fieldOnConfirm}
@@ -2347,15 +2439,22 @@ export function PortfolioAboutReadOnly({
           <textarea
             value={draftBio}
             onChange={(event) => setDraftBio(event.target.value)}
-            rows={3}
-            className={`${inlineInputClass} resize-y font-medium leading-relaxed`}
+            rows={5}
+            className={`${editorialInputClass} min-h-[8.5rem] resize-y leading-relaxed`}
             autoFocus={editingField === 'bio'}
             disabled={confirming}
           />
         }
       />
-      <div className="grid items-start gap-x-8 sm:grid-cols-2">
+      </section>
+
+      {/* Block 2 — Status · Gender · Nationality */}
+      <section
+        className={`${editorialBlockClass} sm:grid-cols-2 ${hideProviderFields ? '' : 'lg:grid-cols-3'}`}
+        aria-label="Status and metrics"
+      >
         <PortfolioFlatField
+          variant="editorial"
           label="Gender"
           value={gender}
           emptyLabel="Not set"
@@ -2374,7 +2473,7 @@ export function PortfolioAboutReadOnly({
             <select
               value={draftGender}
               onChange={(event) => setDraftGender(event.target.value)}
-              className={inlineInputClass}
+              className={editorialInputClass}
               autoFocus={editingField === 'gender'}
               disabled={confirming}
             >
@@ -2388,6 +2487,7 @@ export function PortfolioAboutReadOnly({
           }
         />
         <PortfolioFlatField
+          variant="editorial"
           label="Nationality"
           value={
             nationality
@@ -2405,7 +2505,7 @@ export function PortfolioAboutReadOnly({
             <select
               value={draftNationality}
               onChange={(event) => setDraftNationality(event.target.value)}
-              className={`${inlineInputClass} dark:[color-scheme:dark]`}
+              className={editorialInputClass}
               autoFocus={editingField === 'nationality'}
               disabled={confirming}
             >
@@ -2427,6 +2527,8 @@ export function PortfolioAboutReadOnly({
         {!hideProviderFields ? (
           <>
             <PortfolioFlatField
+              variant="editorial"
+              className="order-first"
               label="Status"
               value={resolveAvailabilityStatusLabel(isAvailable, availabilityLabel)}
               emptyLabel="Available"
@@ -2437,7 +2539,7 @@ export function PortfolioAboutReadOnly({
               confirming={confirming && editingField === 'availabilityLabel'}
               canConfirm={fieldHasChanges}
               editControl={
-                <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="flex w-full min-w-0 flex-col gap-2">
                   <select
                     value={
                       draftAvailabilityCustomMode
@@ -2456,7 +2558,7 @@ export function PortfolioAboutReadOnly({
                       setDraftAvailabilityCustomMode(false);
                       setDraftAvailabilityLabel(next);
                     }}
-                    className={`${inlineInputClass} sm:max-w-[14rem]`}
+                    className={editorialInputClass}
                     autoFocus={editingField === 'availabilityLabel' && !draftAvailabilityCustomMode}
                     disabled={confirming}
                     aria-label="Availability status label"
@@ -2472,7 +2574,7 @@ export function PortfolioAboutReadOnly({
                       type="text"
                       value={draftAvailabilityLabel}
                       onChange={(event) => setDraftAvailabilityLabel(event.target.value)}
-                      className={inlineInputClass}
+                      className={editorialInputClass}
                       autoFocus={editingField === 'availabilityLabel'}
                       disabled={confirming}
                       maxLength={80}
@@ -2505,7 +2607,7 @@ export function PortfolioAboutReadOnly({
                   />
                 </button>
                 <span
-                  className={`text-sm font-semibold ${
+                  className={`text-[0.9rem] font-medium ${
                     isAvailable
                       ? 'text-emerald-700 dark:text-emerald-300'
                       : 'text-neutral-500 dark:text-neutral-400'
@@ -2517,12 +2619,16 @@ export function PortfolioAboutReadOnly({
             </PortfolioFlatField>
           </>
         ) : null}
-      </div>
+      </section>
+
+      {/* Block 3 — Time */}
       {!hideProviderFields ? (
+      <section className={`${editorialBlockClass} sm:grid-cols-2`} aria-label="Time">
       <PortfolioFlatField
+        variant="editorial"
+        className={fieldEditing('availabilityHours') ? 'sm:col-span-2' : ''}
         label="Availability Hours"
         value={availabilityHours}
-        valueSuffix={availabilityTimezone ? `(${availabilityTimezone})` : null}
         emptyLabel="Not set"
         editing={fieldEditing('availabilityHours')}
         onEdit={fieldOnEdit('availabilityHours')}
@@ -2544,49 +2650,22 @@ export function PortfolioAboutReadOnly({
           />
         }
       />
-      ) : null}
-      <div className="grid items-start gap-x-8 sm:grid-cols-2">
-        <PortfolioFlatField label="Member Since" value={memberSince} emptyLabel="Not available yet" />
-        {!hideProviderFields ? (
+      {!fieldEditing('availabilityHours') ? (
         <PortfolioFlatField
-          label="Typical Response Time"
-          value={responseTimeLabel}
-          emptyLabel="Choose a response time"
-          muted={!responseTimeLabel}
-          editing={fieldEditing('typicalResponseTime')}
-          onEdit={fieldOnEdit('typicalResponseTime')}
-          onConfirm={fieldOnConfirm}
-          onCancelEdit={fieldOnCancel}
-          confirming={confirming && editingField === 'typicalResponseTime'}
-          canConfirm={fieldHasChanges}
-          showVisibility={visibilityEnabled}
-          visibility={visibility?.responseTime}
-          onVisibilityChange={
-            onVisibilityChange ? (value) => onVisibilityChange('responseTime', value) : undefined
-          }
-          editControl={
-            <select
-              value={draftTypicalResponseTime}
-              onChange={(event) => setDraftTypicalResponseTime(event.target.value)}
-              className={inlineInputClass}
-              disabled={confirming}
-            >
-              <option value="">Not set</option>
-              {TYPICAL_RESPONSE_TIME_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          }
+          variant="editorial"
+          label="Timezone"
+          value={availabilityTimezone}
+          emptyLabel="Not set"
         />
-        ) : null}
-      </div>
-      <div className="py-6">
-        <div className="mb-2.5 flex items-center justify-between gap-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-500">
-            Location
-          </p>
+      ) : null}
+      </section>
+      ) : null}
+
+      {/* Block 4 — Location */}
+      <section className={editorialBlockClass} aria-label="Location">
+      <div className="min-w-0">
+        <div className="flex items-start justify-between gap-4">
+          <span className={editorialLabelClass}>Location</span>
           {visibilityEnabled && visibility?.location && onVisibilityChange ? (
             <PortfolioFieldVisibilityMenu
               value={visibility.location}
@@ -2603,6 +2682,7 @@ export function PortfolioAboutReadOnly({
           onDetectLocation={onDetectLocation}
         />
       </div>
+      </section>
         </>
       )}
     </div>

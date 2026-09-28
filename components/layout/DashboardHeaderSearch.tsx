@@ -34,12 +34,14 @@ function HeaderSearchButton({
   onClick,
   compact = false,
   iconOnly = false,
+  fluid = false,
 }: {
   label: string;
   hasQuery: boolean;
   onClick: () => void;
   compact?: boolean;
   iconOnly?: boolean;
+  fluid?: boolean;
 }) {
   /*
    * `iconOnly` is the bar's form: a bare 36px disc with no plate at rest, so search sits in the
@@ -54,7 +56,7 @@ function HeaderSearchButton({
         onClick={onClick}
         aria-label={hasQuery ? `Search: ${label}` : 'Open search'}
         title={hasQuery ? label : 'Search'}
-        className="group/search relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-700 hover:text-neutral-950 dark:text-neutral-200 dark:hover:text-white transition-[color,transform] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400"
+        className="group/search relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#222222] dark:text-neutral-300 transition-[color,transform] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400"
       >
         <SearchIcon className="h-[1.3rem] w-[1.3rem]" />
         {hasQuery ? (
@@ -69,24 +71,40 @@ function HeaderSearchButton({
   }
 
   return (
-    <div className="relative min-w-0">
+    <div className={`relative min-w-0 ${fluid ? 'w-full' : ''}`}>
       <button
         type="button"
         onClick={onClick}
-        className={`flex h-9 items-center gap-2 rounded-full bg-gray-100 py-0 pl-9 pr-4 text-left text-sm transition hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-[#F97316]/15 dark:bg-neutral-800 dark:hover:bg-neutral-700 ${
-          compact ? 'w-9 justify-center p-0 sm:w-36 sm:justify-start sm:pl-9 sm:pr-4' : 'w-36 sm:w-48 md:w-56 lg:w-64'
+        /*
+         * `fluid` is the bar's form: a `rounded-lg` grey slab rather than a pill. It is bounded
+         * and pushed to the right by its wrapper rather than filling the row — the links need the
+         * left of the bar to themselves, and a field stretched across half the width was taking
+         * attention the navigation should hold.
+         */
+        className={`flex h-10 items-center gap-2 bg-[#EDEDED] py-0 pl-10 pr-4 text-left text-sm transition hover:bg-[#E4E4E4] focus:outline-none focus:ring-2 focus:ring-[#FF5722]/20 dark:bg-white/[0.06] dark:hover:bg-white/[0.09] ${
+          fluid
+            ? 'w-full rounded-lg'
+            : compact
+              ? 'h-9 w-9 justify-center rounded-full p-0 sm:w-36 sm:justify-start sm:pl-9 sm:pr-4'
+              : 'h-9 w-36 rounded-full sm:w-48 md:w-56 lg:w-64'
         }`}
         aria-label={hasQuery ? `Search: ${label}` : 'Open search'}
       >
-        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+        <SearchIcon
+          className={`pointer-events-none absolute top-1/2 h-[1.1rem] w-[1.1rem] -translate-y-1/2 text-[#222222] dark:text-neutral-300 ${
+            fluid ? 'left-3.5' : 'left-3'
+          }`}
+        />
+        {/*
+         * The resting label is the same ink as everything else, not a faded placeholder. A
+         * placeholder greyed to 50% is the convention, but the convention exists to say "this is
+         * not your text yet" — here the field is a button, there is no text to be yet, and all the
+         * grey did was make the largest control in the bar the hardest thing in it to read.
+         */}
         <span
           className={`min-w-0 flex-1 truncate ${
-            compact ? 'hidden sm:inline' : ''
-          } ${
-            hasQuery
-              ? 'font-medium text-neutral-900 dark:text-white'
-              : 'text-neutral-500 dark:text-neutral-400'
-          }`}
+            compact && !fluid ? 'hidden sm:inline' : ''
+          } ${hasQuery ? 'font-medium' : ''} text-[#222222] dark:text-neutral-300`}
         >
           {label}
         </span>
@@ -129,17 +147,17 @@ function SidebarSearchButton({
          directly above a nav that has just lost every one of its rectangles. */
       className="group/search relative flex w-full items-center gap-2.5 border-b border-neutral-200/80 pb-2.5 text-left text-sm transition-colors duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-neutral-400 focus:outline-none focus-visible:border-neutral-900 dark:border-white/10 dark:hover:border-white/30 dark:focus-visible:border-white"
     >
-      <SearchIcon className="h-[0.9rem] w-[0.9rem] shrink-0 text-neutral-400 transition-colors duration-[520ms] group-hover/search:text-neutral-700 dark:text-neutral-500 dark:group-hover/search:text-neutral-200" />
+      <SearchIcon className="h-[0.9rem] w-[0.9rem] shrink-0 text-[#222222] transition-colors duration-[520ms] dark:text-neutral-200" />
       <span
         className={`min-w-0 flex-1 truncate text-[0.72rem] uppercase tracking-[0.14em] ${
           hasQuery
             ? 'font-medium text-neutral-900 dark:text-white'
-            : 'font-light text-neutral-500 dark:text-neutral-400'
+            : 'font-light text-[#222222] dark:text-neutral-200'
         }`}
       >
         {label}
       </span>
-      <kbd className="shrink-0 font-mono text-[0.6rem] font-light tracking-[0.1em] text-neutral-400 dark:text-neutral-600">
+      <kbd className="shrink-0 font-mono text-[0.6rem] font-light tracking-[0.1em] text-[#222222] dark:text-neutral-300">
         ⌘K
       </kbd>
       {/* Focus/hover accent drawn from the left, matching the nav's sliding marker. */}
@@ -177,11 +195,13 @@ function DashboardHeaderSearchContent({
   variant = 'header',
   collapsed = false,
   iconOnly = false,
+  fluid = false,
 }: {
   compact?: boolean;
   variant?: 'header' | 'sidebar';
   collapsed?: boolean;
   iconOnly?: boolean;
+  fluid?: boolean;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -211,6 +231,7 @@ function DashboardHeaderSearchContent({
           onClick={() => setOpen(true)}
           compact={compact}
           iconOnly={iconOnly}
+          fluid={fluid}
         />
       )}
       <GlobalSearchModal open={open} onClose={() => setOpen(false)} />
@@ -223,22 +244,24 @@ export function DashboardHeaderSearch({
   variant = 'header',
   collapsed = false,
   iconOnly = false,
+  fluid = false,
 }: {
   compact?: boolean;
   variant?: 'header' | 'sidebar';
   collapsed?: boolean;
   iconOnly?: boolean;
+  fluid?: boolean;
 }) {
   const fallback =
     variant === 'sidebar' ? (
       <SidebarSearchButton label="Search anything..." hasQuery={false} onClick={() => {}} collapsed={collapsed} />
     ) : (
-      <HeaderSearchButton label="Search anything..." hasQuery={false} onClick={() => {}} compact={compact} iconOnly={iconOnly} />
+      <HeaderSearchButton label="Search anything..." hasQuery={false} onClick={() => {}} compact={compact} iconOnly={iconOnly} fluid={fluid} />
     );
 
   return (
     <Suspense fallback={fallback}>
-      <DashboardHeaderSearchContent compact={compact} variant={variant} collapsed={collapsed} iconOnly={iconOnly} />
+      <DashboardHeaderSearchContent compact={compact} variant={variant} collapsed={collapsed} iconOnly={iconOnly} fluid={fluid} />
     </Suspense>
   );
 }

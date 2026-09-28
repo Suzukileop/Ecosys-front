@@ -4,7 +4,6 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faBars,
   faChevronDown,
   faGraduationCap,
   faHouse,
@@ -12,6 +11,11 @@ import {
   faWrench,
 } from '@fortawesome/free-solid-svg-icons';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import {
+  PROVIDER_FRAME_CLASS,
+  PROVIDER_INK_CLASS,
+  providerPillClass,
+} from '@/components/marketplace/ProviderDirectoryPrimitives';
 import {
   countServiceProviderSubcategories,
   SERVICE_PROVIDER_CATEGORY_GROUPS,
@@ -88,21 +92,16 @@ export function ServiceProviderCategoriesButton({
       aria-expanded={open}
       aria-controls={menuId}
       aria-haspopup="true"
+      title={`${subcategoryCount} more categories`}
       onClick={() => onOpenChange(!open)}
-      className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-xl border px-3.5 text-xs font-semibold transition sm:text-sm ${
-        open || hasActiveCategory
-          ? 'border-sky-500 bg-sky-500/10 text-sky-600 dark:border-sky-400 dark:text-sky-300'
-          : 'border-sky-500/80 text-sky-600 hover:bg-sky-500/10 dark:border-sky-400/80 dark:text-sky-300 dark:hover:bg-sky-400/10'
-      }`}
+      className={providerPillClass(hasActiveCategory)}
     >
-      <FontAwesomeIcon icon={faBars} className="h-3.5 w-3.5" aria-hidden />
-      <span>
-        Categories
-        <span className="ml-1 tabular-nums opacity-80">+{subcategoryCount}</span>
-      </span>
+      More
       <FontAwesomeIcon
         icon={faChevronDown}
-        className={`h-3 w-3 transition-transform duration-300 ease-out ${open ? 'rotate-180' : ''}`}
+        className={`h-3 w-3 transition-transform duration-300 ease-out ${open ? 'rotate-180' : ''} ${
+          hasActiveCategory ? '' : 'text-neutral-400'
+        }`}
         aria-hidden
       />
     </button>
@@ -146,21 +145,19 @@ export function ServiceProviderCategoriesPanel({
           } ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
           style={{ transitionDuration: `${durationMs}ms` }}
         >
-          <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-lg dark:border-neutral-700 dark:bg-neutral-950 sm:p-5">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className={`${PROVIDER_FRAME_CLASS} p-6 sm:p-8`}>
+            <div className="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
               {SERVICE_PROVIDER_CATEGORY_GROUPS.map((group) => (
                 <div key={group.id} className="min-w-0">
-                  <div className="mb-3 flex items-center gap-2">
+                  <div className="flex items-center gap-2.5 border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
                     <FontAwesomeIcon
                       icon={ICON_MAP[group.icon]}
-                      className="h-4 w-4 shrink-0 text-neutral-500 dark:text-neutral-400"
+                      className="h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500"
                       aria-hidden
                     />
-                    <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
-                      {group.title}
-                    </h3>
+                    <h3 className={`text-[15px] font-semibold ${PROVIDER_INK_CLASS}`}>{group.title}</h3>
                   </div>
-                  <ul className="space-y-2">
+                  <ul className="mt-4 space-y-3">
                     {group.items.map((item) => {
                       const active = selectedLabel === item;
                       return (
@@ -173,13 +170,16 @@ export function ServiceProviderCategoriesPanel({
                               onSelect(item);
                               onClose();
                             }}
-                            className={`w-full rounded-lg px-3 py-2 text-left text-xs font-medium transition sm:text-sm ${
+                            className={`inline-flex items-center gap-2 text-left text-[15px] transition-colors duration-200 hover:text-[#FF5722] focus-visible:text-[#FF5722] focus-visible:outline-none ${
                               active
-                                ? 'bg-orange-500 text-white'
-                                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800/80 dark:text-neutral-200 dark:hover:bg-neutral-700'
+                                ? `font-medium ${PROVIDER_INK_CLASS}`
+                                : 'text-neutral-500 dark:text-neutral-400'
                             }`}
                           >
                             {item}
+                            {active ? (
+                              <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF5722]" />
+                            ) : null}
                           </button>
                         </li>
                       );

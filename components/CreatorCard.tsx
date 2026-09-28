@@ -2,24 +2,23 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faComment } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
 import { CountryFlag } from '@/components/ui/CountryFlag';
 import { usePresence } from '@/hooks/usePresence';
+import {
+  PROVIDER_FRAME_CLASS,
+  PROVIDER_INK_CLASS,
+  PROVIDER_LABEL_CLASS,
+  ProviderSlashList,
+  ProviderTextAction,
+} from '@/components/marketplace/ProviderDirectoryPrimitives';
 import { formatDistanceAwayKm, nationalityLabel, normalizeNationalityCode } from '@/lib/countries';
 import { formatPlaceLabel } from '@/lib/geolocation';
 import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
 import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
 
-function initialsFromName(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-function hueFromId(id: string) {
+/** Stable 0-359 seed from the provider id - only ever drives geometry, never a fill colour. */
+function seedFromId(id: string) {
   const s = id ?? '';
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h + s.charCodeAt(i) * 17) % 360;
@@ -36,15 +35,19 @@ function StarIcon({ className }: { className?: string }) {
 
 function FolderIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
-      <path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 7.5A1.5 1.5 0 014.5 6h4l2 2.25h7A1.5 1.5 0 0119 9.75v7.5a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 013 17.25V7.5z"
+      />
     </svg>
   );
 }
 
 function PinIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -55,37 +58,36 @@ function PinIcon({ className }: { className?: string }) {
   );
 }
 
-function VerifiedBadge() {
+function ArrowIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+function ChatIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 5.5A1.5 1.5 0 015.5 4h13A1.5 1.5 0 0120 5.5v9a1.5 1.5 0 01-1.5 1.5H9l-5 4V5.5z"
+      />
+    </svg>
+  );
+}
+
+function VerifiedMark() {
   return (
     <span
-      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sky-500 text-white shadow-sm"
-      title="Verified creator"
-      aria-label="Verified creator"
+      className="inline-flex shrink-0 items-center text-[#FF5722]"
+      title="Verified provider"
+      aria-label="Verified provider"
     >
-      <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
-        <path
-          fillRule="evenodd"
-          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-          clipRule="evenodd"
-        />
+      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12.5l4.5 4.5L19 7.5" />
       </svg>
-    </span>
-  );
-}
-
-function RatingBadge({ rating }: { rating: number }) {
-  return (
-    <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-orange-500 px-2 py-1 text-xs font-bold text-white shadow-sm">
-      <StarIcon className="h-3 w-3" />
-      {rating.toFixed(1)}
-    </span>
-  );
-}
-
-function NewBadge() {
-  return (
-    <span className="shrink-0 rounded-lg border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gray-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-gray-400">
-      New
     </span>
   );
 }
@@ -95,80 +97,114 @@ function NationalityFlag({ code }: { code: string }) {
   if (!iso2) return null;
   const label = nationalityLabel(iso2) || iso2;
   return (
-    <span
-      className="inline-flex shrink-0 items-center"
-      title={label}
-      aria-label={`Nationality: ${label}`}
-    >
+    <span className="inline-flex shrink-0 items-center" title={label} aria-label={`Nationality: ${label}`}>
       <CountryFlag iso2={iso2} size="sm" />
     </span>
   );
 }
 
-function YearsExperienceBadge({ years }: { years: number }) {
-  const label = years === 1 ? '1 year' : `${years} years`;
-  return (
-    <span
-      className="inline-flex shrink-0 items-center rounded-lg border border-neutral-200 bg-white px-2.5 py-1 text-xs font-semibold tabular-nums text-neutral-700 shadow-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
-      title={label}
-      aria-label={label}
-    >
-      {label}
-    </span>
-  );
-}
-
-function CreatorCardAvatar({
-  avatarUrl,
-  fullName,
-  hue,
-}: {
-  avatarUrl?: string | null;
-  fullName?: string;
-  hue: number;
-}) {
-  const resolved = resolveStorageMediaUrl(avatarUrl);
-  const [failed, setFailed] = useState(false);
-  const showImage = Boolean(resolved) && !failed;
-
-  if (showImage) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={resolved}
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover object-[center_18%]"
-        onError={() => setFailed(true)}
-      />
-    );
-  }
+/**
+ * The mineral wash every avatar slot sits on — a barely-there grey with a soft top light and a few
+ * wireframe rules. `seed` only nudges the geometry, so two slots side by side are never identical.
+ *
+ * `bust` draws the abstract figure used when there is no usable photo at all. With it off, the
+ * rings act as a quiet backdrop behind a medallion.
+ */
+function MineralGround({ seed, bust }: { seed: number; bust: boolean }) {
+  const ringOffset = (seed % 14) - 7;
+  const horizon = 104 + (seed % 9);
 
   return (
-    <div
-      className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-white"
-      style={{ backgroundColor: `hsl(${hue} 55% 42%)` }}
-      aria-hidden
-    >
-      {initialsFromName(fullName ?? '')}
+    <div className="absolute inset-0 bg-[#E3E2DF] dark:bg-neutral-800" aria-hidden>
+      <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_0%,rgba(255,255,255,0.65),transparent_70%)] dark:bg-[radial-gradient(120%_90%_at_50%_0%,rgba(255,255,255,0.06),transparent_70%)]" />
+      <svg
+        viewBox="0 0 120 170"
+        preserveAspectRatio="xMidYMid slice"
+        className="absolute inset-0 h-full w-full text-black/[0.16] dark:text-white/20"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1}
+      >
+        <line x1="0" y1={horizon} x2="120" y2={horizon} strokeOpacity="0.5" />
+        <circle cx={60 + ringOffset} cy="66" r="42" strokeOpacity="0.4" />
+        {bust ? (
+          <>
+            <circle cx="60" cy="62" r="21" />
+            <path d="M22 168c0-23.2 17-40 38-40s38 16.8 38 40" strokeLinecap="round" />
+            <path d="M60 83v45" strokeOpacity="0.45" strokeLinecap="round" />
+          </>
+        ) : null}
+      </svg>
     </div>
   );
 }
 
-const tertiaryActionClass =
-  'inline-flex items-center rounded-lg px-1 py-1 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/40 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100';
+/** Below this, a source is too small to fill the slot without going soft — see `CreatorCardAvatar`. */
+const AVATAR_COVER_MIN_WIDTH = 200;
 
-/** Portfolio CTA in the Service Provider footer. */
-const portfolioSideFrameClass =
-  'inline-flex items-center justify-center gap-1.5 rounded-lg bg-orange-500 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
+/**
+ * Avatar slot.
+ *
+ * Three presentations, picked from the source itself rather than from a URL pattern:
+ *
+ * - `cover` — a real photo, large enough to fill the slot.
+ * - `medallion` — a source under {@link AVATAR_COVER_MIN_WIDTH}px. Provider accounts signed in
+ *   through Google arrive with a 96px monogram tile; stretched across the slot that became a flat
+ *   block of raw colour with a blurred letter in it — the single loudest thing on the page. Shown
+ *   at its own size on the mineral ground, it reads as an identity mark instead, and any genuine
+ *   low-res photo stops being upscaled into mush.
+ * - `wireframe` — nothing usable: the abstract bust.
+ */
+function CreatorCardAvatar({ avatarUrl, seed }: { avatarUrl?: string | null; seed: number }) {
+  const resolved = resolveStorageMediaUrl(avatarUrl);
+  const [fit, setFit] = useState<'pending' | 'cover' | 'medallion' | 'none'>(
+    resolved ? 'pending' : 'none'
+  );
 
-const primaryActionClass =
-  'inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
+  const onLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth, naturalHeight } = event.currentTarget;
+    const smallest = Math.min(naturalWidth || 0, naturalHeight || 0);
+    setFit(smallest >= AVATAR_COVER_MIN_WIDTH ? 'cover' : 'medallion');
+  };
+
+  return (
+    <div className="absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/card:scale-105">
+      <MineralGround seed={seed} bust={fit === 'none'} />
+
+      {resolved && fit !== 'none' ? (
+        fit === 'medallion' ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={resolved}
+              alt=""
+              onLoad={onLoad}
+              onError={() => setFit('none')}
+              className="h-[104px] w-[104px] rounded-full object-cover ring-1 ring-black/[0.06] dark:ring-white/10"
+            />
+          </div>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={resolved}
+            alt=""
+            onLoad={onLoad}
+            onError={() => setFit('none')}
+            className={`absolute inset-0 h-full w-full object-cover object-[center_18%] transition-opacity duration-500 ${
+              fit === 'pending' ? 'opacity-0' : 'opacity-100'
+            }`}
+          />
+        )
+      ) : null}
+    </div>
+  );
+}
 
 type CreatorCardProps = {
-  /** Identifiant créateur pour l’URL ; `userId` sert de repli si l’API ne renvoie que celui-ci. */
+  /** Identifiant createur pour l'URL ; `userId` sert de repli si l'API ne renvoie que celui-ci. */
   id?: string;
   userId?: string;
-  /** Unique public handle — used in portfolio URLs when present. */
+  /** Unique public handle - used in portfolio URLs when present. */
   username?: string | null;
   fullName?: string;
   avatarUrl?: string | null;
@@ -185,6 +221,8 @@ type CreatorCardProps = {
   distanceKm?: number | null;
   locationCity?: string | null;
   locationCountry?: string | null;
+  /** Larger type for reading-first surfaces such as search results. */
+  comfortable?: boolean;
 };
 
 export function CreatorCard({
@@ -206,20 +244,23 @@ export function CreatorCard({
   distanceKm,
   locationCity,
   locationCountry,
+  comfortable = false,
 }: CreatorCardProps) {
   const { user } = useAuth();
+  const labelClass = comfortable ? 'text-[15px] font-medium' : PROVIDER_LABEL_CLASS;
+  const nameSizeClass = comfortable ? 'text-[1.6rem]' : 'text-[1.4rem]';
+  const metaSizeClass = comfortable ? 'text-[15px]' : 'text-[14px]';
+  const bioSizeClass = comfortable ? 'text-base' : 'text-[15px]';
+  const tagSizeClass = 'text-[14px]';
   const resolvedId = (id ?? userId ?? '').trim();
-  /** Presence API keys off auth user id — prefer `userId` like Profiles search rows. */
+  /** Presence API keys off auth user id - prefer `userId` like Profiles search rows. */
   const presenceUserId = (userId ?? id ?? '').trim();
   const isOwnCard = Boolean(user?.id && resolvedId && user.id === resolvedId);
-  const presenceIds = useMemo(
-    () => (presenceUserId ? [presenceUserId] : []),
-    [presenceUserId]
-  );
+  const presenceIds = useMemo(() => (presenceUserId ? [presenceUserId] : []), [presenceUserId]);
   const { isOnline } = usePresence(presenceIds);
   const online = Boolean(presenceUserId) && isOnline(presenceUserId);
   const statusLabel = online ? 'Online' : 'Offline';
-  const hue = hueFromId(resolvedId || 'unknown');
+  const seed = seedFromId(resolvedId || 'unknown');
   const services = serviceCount ?? 0;
   const hasRating = averageRating !== null && averageRating !== undefined;
   const isNew = !hasRating && !isVerified && services === 0;
@@ -236,8 +277,7 @@ export function CreatorCard({
       : null;
   const discussLabel = fullName?.trim() ? `Discuss with ${fullName.trim()}` : 'Discuss';
   const portfolioHref = resolvedId ? buildCreatorPortfolioPath(resolvedId, username) : null;
-  const servicesLabel =
-    services === 1 ? '1 service disponible' : `${services} services disponibles`;
+  const servicesLabel = services === 1 ? '1 service' : `${services} services`;
   const specialtyChips =
     specialties.filter((item) => item.trim()).length > 0
       ? specialties.filter((item) => item.trim())
@@ -246,165 +286,176 @@ export function CreatorCard({
         : [];
   const tagChips = specialtyTags.filter((item) => item.trim());
 
+  /* One marker only, top-right, strongest signal first - experience beats novelty. Verification is
+     not in this slot: it sits inline with the name, where it qualifies the person rather than the
+     listing. */
+  const marker =
+    yearsOfExperience != null && yearsOfExperience >= 0
+      ? yearsOfExperience === 1
+        ? '1 year'
+        : `${yearsOfExperience} years`
+      : isNew
+        ? 'New'
+        : null;
+
   return (
-    <div className="flex h-full flex-col gap-2">
+    <div className="flex h-full flex-col gap-2.5">
       <article
-        className={`flex min-h-[280px] flex-1 flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:shadow-md dark:bg-neutral-900 md:min-h-[220px] md:flex-row md:items-stretch ${
-          isAvailable
-            ? 'border-white hover:border-orange-200 dark:border-neutral-800 dark:hover:border-orange-500/30'
-            : 'border-white opacity-90 hover:border-gray-200 dark:border-neutral-800'
-        }`}
+        className={`group/card flex h-full min-h-[300px] flex-1 flex-col overflow-hidden ${PROVIDER_FRAME_CLASS} transition-colors duration-200 hover:border-black/[0.12] md:min-h-[280px] md:flex-row md:items-stretch dark:hover:border-white/[0.16]`}
       >
-        <div className="relative h-[180px] w-full shrink-0 overflow-hidden rounded-t-2xl md:h-auto md:w-[220px] md:self-stretch md:rounded-t-none md:rounded-l-2xl">
-          <CreatorCardAvatar avatarUrl={avatarUrl} fullName={fullName} hue={hue} />
+        <div
+          className={`relative w-full shrink-0 overflow-hidden md:h-auto md:self-stretch ${
+            comfortable ? 'h-[260px] md:w-[290px]' : 'h-[240px] md:w-[220px]'
+          }`}
+        >
+          <CreatorCardAvatar avatarUrl={avatarUrl} seed={seed} />
         </div>
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col p-4 pb-6 pl-5 md:p-5 md:pb-7 md:pl-6">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex min-w-0 items-center gap-2">
-                {profileHref ? (
-                  <Link href={profileHref} className="min-w-0 truncate">
-                    <h3 className="truncate text-lg font-bold text-gray-900 transition hover:text-orange-600 dark:text-white dark:hover:text-orange-300">
-                      {fullName ?? 'Creator'}
-                    </h3>
-                  </Link>
-                ) : (
-                  <h3 className="min-w-0 truncate text-lg font-bold text-gray-900 dark:text-white">
-                    {fullName ?? 'Creator'}
+        <div
+          className={`flex min-h-0 min-w-0 flex-1 flex-col ${
+            comfortable ? 'p-7 sm:p-8 md:p-9 lg:p-10' : 'p-6 sm:p-7 lg:p-8'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-5">
+            <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+              {profileHref ? (
+                <Link href={profileHref} className="min-w-0 focus-visible:outline-none">
+                  <h3
+                    className={`${nameSizeClass} font-bold leading-tight tracking-tight ${PROVIDER_INK_CLASS} transition-colors duration-200 hover:text-[#FF5722]`}
+                  >
+                    {fullName ?? 'Provider'}
                   </h3>
-                )}
-                {nationality ? <NationalityFlag code={nationality} /> : null}
-                {presenceUserId ? (
-                  <span
-                    className={
-                      online
-                        ? 'ml-2.5 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500'
-                        : 'ml-2.5 h-2.5 w-2.5 shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500'
-                    }
-                    title={statusLabel}
-                    aria-label={statusLabel}
-                    role="status"
-                  />
-                ) : null}
-              </div>
+                </Link>
+              ) : (
+                <h3
+                  className={`min-w-0 ${nameSizeClass} font-bold leading-tight tracking-tight ${PROVIDER_INK_CLASS}`}
+                >
+                  {fullName ?? 'Provider'}
+                </h3>
+              )}
+              {nationality ? <NationalityFlag code={nationality} /> : null}
+              {isVerified ? <VerifiedMark /> : null}
+              {presenceUserId && !comfortable ? (
+                <span
+                  className={`h-2 w-2 shrink-0 rounded-full ${
+                    online ? 'bg-emerald-500' : 'bg-black/15 dark:bg-white/20'
+                  }`}
+                  title={statusLabel}
+                  aria-label={statusLabel}
+                  role="status"
+                />
+              ) : null}
             </div>
-            {yearsOfExperience != null && yearsOfExperience >= 0 ? (
-              <YearsExperienceBadge years={yearsOfExperience} />
-            ) : hasRating ? (
-              <RatingBadge rating={averageRating} />
-            ) : isVerified ? (
-              <VerifiedBadge />
-            ) : isNew ? (
-              <NewBadge />
+
+            {hasRating ? (
+              <span
+                className={`inline-flex shrink-0 items-center gap-1.5 text-lg font-semibold tabular-nums ${PROVIDER_INK_CLASS}`}
+              >
+                <StarIcon className="h-[18px] w-[18px] text-[#FF5722]" />
+                {averageRating.toFixed(1)}
+              </span>
+            ) : marker ? (
+              <span className={`shrink-0 ${labelClass} tabular-nums text-neutral-500 dark:text-neutral-400`}>
+                {marker}
+              </span>
             ) : null}
           </div>
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <div className={`mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 ${metaSizeClass} text-neutral-500 dark:text-neutral-400`}>
             {servicesHref ? (
               <Link
                 href={servicesHref}
-                className="inline-flex items-center gap-1.5 text-sm text-neutral-500 transition hover:text-orange-600 dark:text-neutral-400 dark:hover:text-orange-300"
+                className="inline-flex items-center gap-1.5 transition-colors duration-200 hover:text-[#FF5722]"
               >
                 <FolderIcon className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
                 <span>{servicesLabel}</span>
               </Link>
             ) : (
-              <p className="inline-flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+              <span className="inline-flex items-center gap-1.5">
                 <FolderIcon className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
                 <span>{servicesLabel}</span>
-              </p>
+              </span>
             )}
             {placeLabel ? (
-              <p className="inline-flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+              <span className="inline-flex min-w-0 items-center gap-1.5">
                 <PinIcon className="h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500" />
                 <span className="truncate">{placeLabel}</span>
-              </p>
+              </span>
             ) : null}
+            {isAvailable ? null : (
+              <span className={`${labelClass} text-neutral-400 dark:text-neutral-500`}>Unavailable</span>
+            )}
           </div>
 
-          <div className="mt-3 min-h-[4.5rem]">
-            {bioText ? (
-              <p className="line-clamp-3 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                {bioText}
-              </p>
-            ) : null}
-          </div>
+          {bioText ? (
+            <p className={`mt-5 max-w-[52ch] ${bioSizeClass} leading-[1.75] text-neutral-600 dark:text-neutral-400`}>
+              {bioText}
+            </p>
+          ) : null}
 
-          {(specialtyChips.length > 0 || tagChips.length > 0) ? (
-            <div className="mt-auto space-y-1.5 pt-4">
+          {specialtyChips.length > 0 || tagChips.length > 0 ? (
+            <div className="mt-auto space-y-1.5 pt-6">
               {specialtyChips.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {specialtyChips.map((label) => (
-                    <span
-                      key={label}
-                      className="inline-flex rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-300"
-                    >
-                      {label}
-                    </span>
-                  ))}
-                </div>
+                <ProviderSlashList
+                  items={specialtyChips}
+                  className={`${labelClass} leading-relaxed text-[#111111]/85 dark:text-white/85`}
+                />
               ) : null}
               {tagChips.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {tagChips.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[11px] font-medium text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                <ProviderSlashList
+                  items={tagChips}
+                  className={`${tagSizeClass} leading-relaxed text-neutral-500 dark:text-neutral-400`}
+                />
               ) : null}
             </div>
           ) : (
             <div className="mt-auto" />
           )}
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
-            <div className="flex flex-wrap items-center gap-3">
-              {servicesHref ? (
-                <Link href={servicesHref} className={tertiaryActionClass}>
-                  View service
-                </Link>
-              ) : (
-                <span className={`${tertiaryActionClass} pointer-events-none opacity-50`}>
-                  View service
-                </span>
-              )}
-              {portfolioHref ? (
-                <Link href={portfolioHref} className={portfolioSideFrameClass}>
-                  Portfolio
-                </Link>
-              ) : (
-                <span className={`${portfolioSideFrameClass} pointer-events-none opacity-50`}>
-                  Portfolio
-                </span>
-              )}
-            </div>
-            {isOwnCard ? null : discussHref ? (
-              <Link
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-black/[0.06] pt-5 mt-6 dark:border-white/[0.06]">
+            <ProviderTextAction
+              href={servicesHref}
+              disabled={!servicesHref}
+              icon={<ArrowIcon className="h-4 w-4" />}
+            >
+              View service
+            </ProviderTextAction>
+            <ProviderTextAction href={portfolioHref} disabled={!portfolioHref}>
+              Portfolio
+            </ProviderTextAction>
+            {isOwnCard ? null : (
+              <ProviderTextAction
                 href={discussHref}
+                disabled={!discussHref}
                 title={discussLabel}
                 aria-label={discussLabel}
-                className={primaryActionClass}
+                icon={<ChatIcon className="h-4 w-4" />}
+                iconPlacement="leading"
+                className={comfortable ? undefined : 'sm:ml-auto'}
               >
-                <FontAwesomeIcon icon={faComment} className="h-3.5 w-3.5" />
                 Discuss
-              </Link>
-            ) : (
-              <span className={`${primaryActionClass} pointer-events-none opacity-50`}>
-                <FontAwesomeIcon icon={faComment} className="h-3.5 w-3.5" />
-                Discuss
-              </span>
+              </ProviderTextAction>
             )}
+            {presenceUserId && comfortable ? (
+              <span
+                role="status"
+                className={`ml-auto inline-flex items-center gap-2 ${labelClass} ${
+                  online ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400 dark:text-neutral-500'
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className={`h-2 w-2 rounded-full ${online ? 'bg-emerald-500' : 'bg-black/20 dark:bg-white/25'}`}
+                />
+                {statusLabel}
+              </span>
+            ) : null}
           </div>
         </div>
       </article>
 
       {distanceLabel ? (
-        <p className="shrink-0 pl-1 text-sm font-medium leading-none text-neutral-500 dark:text-neutral-400">
+        <p className={`shrink-0 pl-1 ${labelClass} leading-none text-neutral-500 dark:text-neutral-400`}>
           {distanceLabel}
         </p>
       ) : null}

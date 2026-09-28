@@ -61,19 +61,19 @@ export function SearchCreatorRow({ creator }: SearchCreatorRowProps) {
   }, [profileId, followerCount]);
 
   return (
-    <article className="flex flex-wrap items-center gap-5 rounded-2xl border border-neutral-200 bg-neutral-100 px-5 py-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:flex-nowrap sm:gap-8 sm:px-6">
-      <div className="flex min-w-0 flex-1 items-center gap-4">
+    <article className="flex flex-wrap items-center gap-5 border-b border-black/[0.06] py-6 last:border-b-0 dark:border-white/[0.06] sm:flex-nowrap sm:gap-10">
+      <div className="flex min-w-0 flex-1 items-center gap-5">
         <Link href={profileHref} className="relative shrink-0" title={statusLabel} aria-label={`${creator.fullName}, ${statusLabel}`}>
           <span
-            className={`inline-flex shrink-0 rounded-full ring-[3px] ring-offset-2 ring-offset-neutral-100 dark:ring-offset-neutral-900 ${ringClass}`}
+            className={`inline-flex shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#111111] ${ringClass}`}
           >
             <Avatar name={creator.fullName} avatarUrl={creator.avatarUrl} size="lg" tone="muted" />
           </span>
           <span
             className={
               online
-                ? 'absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-neutral-100 bg-emerald-500 dark:border-neutral-900'
-                : 'absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-neutral-100 bg-neutral-400 dark:border-neutral-900 dark:bg-neutral-500'
+                ? 'absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-[#111111]'
+                : 'absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-white bg-neutral-400 dark:border-[#111111] dark:bg-neutral-500'
             }
             aria-hidden
           />
@@ -83,14 +83,14 @@ export function SearchCreatorRow({ creator }: SearchCreatorRowProps) {
           <div className="flex min-w-0 items-center gap-2">
             <Link
               href={profileHref}
-              className="truncate text-lg font-bold text-neutral-800 dark:text-white"
+              className="truncate text-lg font-semibold tracking-[-0.01em] text-black transition-colors hover:text-[#FF5722] dark:text-neutral-100"
             >
               {creator.fullName}
             </Link>
             {creator.isVerified ? <VerifiedIcon /> : null}
           </div>
           {subtitle ? (
-            <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300">
+            <p className="mt-1.5 line-clamp-2 max-w-2xl text-[15px] leading-relaxed text-neutral-600 dark:text-neutral-300">
               {subtitle}
             </p>
           ) : null}
@@ -108,7 +108,7 @@ export function SearchCreatorRow({ creator }: SearchCreatorRowProps) {
             return (
               <div
                 key={follower.id || follower.followerUserId || `${index}`}
-                className="relative rounded-full ring-2 ring-white dark:ring-neutral-900"
+                className="relative rounded-full ring-2 ring-white dark:ring-[#111111]"
                 style={{ zIndex: followers.length - index }}
               >
                 <Avatar name={name} avatarUrl={follower.followerAvatarUrl} size="md" tone="muted" />
@@ -118,20 +118,20 @@ export function SearchCreatorRow({ creator }: SearchCreatorRowProps) {
         </div>
       ) : null}
 
-      <div className="ml-auto flex w-full shrink-0 flex-col gap-2 sm:w-auto">
-        <Link
-          href={profileHref}
-          className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
-        >
-          View profile
-        </Link>
+      <div className="ml-auto flex w-full shrink-0 items-center gap-2 sm:w-auto">
         <button
           type="button"
-          className="inline-flex items-center justify-center rounded-xl border border-neutral-300 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:border-neutral-500 dark:hover:bg-neutral-800"
+          className="inline-flex flex-1 items-center justify-center rounded-lg border border-black/[0.12] px-5 py-2.5 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:border-black/30 dark:border-white/[0.12] dark:text-neutral-100 dark:hover:border-white/30 sm:flex-none"
           title="Coming soon"
         >
           Portfolio
         </button>
+        <Link
+          href={profileHref}
+          className="inline-flex flex-1 items-center justify-center rounded-lg bg-[#0A0A0A] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#0A0A0A] sm:flex-none"
+        >
+          View profile
+        </Link>
       </div>
     </article>
   );

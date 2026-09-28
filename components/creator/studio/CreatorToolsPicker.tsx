@@ -6,6 +6,18 @@ import { resolveCreatorToolSimpleIcon } from '@/components/creator/studio/creato
 import { uploadContentMedia } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faImage } from '@fortawesome/free-regular-svg-icons';
+import {
+  STUDIO_BARE_INPUT_CLASS,
+  STUDIO_ROW_RULE,
+  STUDIO_SECONDARY_CLASS,
+  STUDIO_VALUE_CLASS,
+  StudioIconAction,
+  StudioInfoTip,
+  StudioRemoveButton,
+  StudioUnderline,
+} from '@/components/portfolio/PortfolioStudioKit';
 
 export type CreatorToolPick = {
   value: string;
@@ -63,6 +75,8 @@ type CreatorToolsPickerProps = {
   readOnly?: boolean;
   allowCustom?: boolean;
   emptyLabel?: string;
+  /** `studio`: portfolio studio rows + underlined input, help moved into an info tip. */
+  variant?: 'default' | 'studio';
 };
 
 export function CreatorToolsPicker({
@@ -72,6 +86,7 @@ export function CreatorToolsPicker({
   readOnly = false,
   allowCustom = true,
   emptyLabel = 'No tools selected yet.',
+  variant = 'default',
 }: CreatorToolsPickerProps) {
   const [customDraft, setCustomDraft] = useState('');
   const [customIconUrl, setCustomIconUrl] = useState<string | null>(null);
@@ -119,6 +134,117 @@ export function CreatorToolsPicker({
       setUploadingIcon(false);
     }
   };
+
+  if (variant === 'studio' && !readOnly) {
+    const atCap = selectedValues.length >= max;
+    return (
+      <div className="space-y-6">
+        {selectedValues.length > 0 ? (
+          <ul>
+            {selectedValues.map((item) => (
+              <li
+                key={item.value}
+                className={`group/row flex items-center gap-3 py-3 first:pt-0 ${STUDIO_ROW_RULE}`}
+              >
+                <CreatorToolLogo label={item.value} iconUrl={item.iconUrl} size={22} />
+                <span className={`min-w-0 flex-1 truncate ${STUDIO_VALUE_CLASS}`}>{item.value}</span>
+                <StudioRemoveButton
+                  label={`Remove ${item.value}`}
+                  onClick={() =>
+                    syncSelectedValues(selectedValues.filter((entry) => entry.value !== item.value))
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {allowCustom ? (
+          <div>
+            <div className="flex items-center gap-3">
+              <input
+                ref={iconInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                className="sr-only"
+                onChange={(event) => void onIconFileChange(event)}
+              />
+              <button
+                type="button"
+                disabled={uploadingIcon || atCap}
+                onClick={() => iconInputRef.current?.click()}
+                title={customIconUrl ? 'Replace logo' : 'Upload logo'}
+                aria-label={customIconUrl ? 'Replace logo' : 'Upload logo'}
+                className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-dashed border-neutral-300 transition-colors duration-200 hover:border-neutral-900 disabled:opacity-40 dark:border-white/25 dark:hover:border-white"
+              >
+                {uploadingIcon ? (
+                  <LoadingSpinner size="sm" />
+                ) : customIconUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={customIconUrl} alt="" className="h-full w-full object-cover" />
+                ) : customDraft.trim() ? (
+                  <CreatorToolLogo label={customDraft} size={20} />
+                ) : (
+                  <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5 text-neutral-400" fixedWidth />
+                )}
+              </button>
+              <StudioUnderline className="flex-1">
+                <input
+                  type="text"
+                  value={customDraft}
+                  disabled={atCap}
+                  aria-label="Tool name"
+                  onChange={(event) => setCustomDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      addCustomTool();
+                    }
+                  }}
+                  placeholder={atCap ? `Limit reached (${max})` : 'Tool name — press Enter'}
+                  className={`${STUDIO_BARE_INPUT_CLASS} ${STUDIO_VALUE_CLASS}`}
+                />
+              </StudioUnderline>
+              <span className={`shrink-0 tabular-nums ${STUDIO_SECONDARY_CLASS}`}>
+                {selectedValues.length}/{max}
+              </span>
+              <StudioInfoTip label="About tools">
+                Add up to {max} tools. Type a name and press Enter. A logo is detected automatically from
+                the name; otherwise the first letter is shown. Click the circle to upload your own logo
+                (JPG, PNG or WebP).
+              </StudioInfoTip>
+              <StudioIconAction
+                icon="add"
+                label="Add tool"
+                onClick={addCustomTool}
+                disabled={!customDraft.trim() || atCap}
+              />
+            </div>
+            {customIconUrl || draftAutoIcon || uploadError ? (
+              <p className={`mt-2 pl-11 text-[13px] ${uploadError ? 'text-red-600 dark:text-red-400' : 'text-neutral-500 dark:text-neutral-400'}`}>
+                {uploadError ? (
+                  uploadError
+                ) : customIconUrl ? (
+                  <>
+                    Custom logo ·{' '}
+                    <button
+                      type="button"
+                      onClick={() => setCustomIconUrl(null)}
+                      className="underline-offset-4 transition-colors hover:text-[#FF5722] hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </>
+                ) : (
+                  `Logo detected: ${draftAutoIcon?.matchedName}`
+                )}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   if (readOnly) {
     if (selectedValues.length === 0) {

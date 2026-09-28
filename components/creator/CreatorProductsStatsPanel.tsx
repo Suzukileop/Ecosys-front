@@ -37,16 +37,14 @@ export function CreatorProductsStatsPanel({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2 px-0.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Catalogues
-          </p>
+      <div className="overflow-hidden rounded-lg border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]">
+        <div className="flex items-center justify-between gap-2 border-b border-black/[0.06] px-5 py-4 dark:border-white/[0.06]">
+          <h2 className="text-[15px] font-bold text-[#111111] dark:text-white">Catalogues</h2>
           {!readOnly && onCreateGroup ? (
             <button
               type="button"
               onClick={onCreateGroup}
-              className="text-xs font-semibold text-orange-600 transition hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+              className="text-[14px] font-medium text-neutral-500 transition-colors hover:text-[#FF5722] dark:text-neutral-400 dark:hover:text-[#FF5722]"
             >
               + New
             </button>
@@ -54,27 +52,45 @@ export function CreatorProductsStatsPanel({
         </div>
 
         {groups.length === 0 ? (
-          <p className="px-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="px-5 py-4 text-[14px] leading-relaxed text-neutral-500 dark:text-neutral-400">
             {readOnly ? 'No catalogues yet.' : 'No catalogues yet. Create one to organize products.'}
           </p>
         ) : (
-          <div className="rounded-2xl border border-neutral-200 bg-white p-2 dark:border-neutral-800 dark:bg-[#0F0F0F]">
-            <div className="flex flex-col gap-1" role="list" aria-label="Product catalogues">
+          <>
+            <div
+              className="divide-y divide-black/[0.06] dark:divide-white/[0.06]"
+              role="list"
+              aria-label="Product catalogues"
+            >
               {visibleGroups.map((group) => {
                 const selected = selectedGroupId === group.id && !exploring;
                 return (
                   <button
                     key={group.id}
                     type="button"
+                    aria-pressed={selected}
                     onClick={() => onSelectGroup?.(selected ? null : group.id)}
-                    className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition ${
+                    className={`flex w-full items-center justify-between gap-3 px-5 py-3.5 text-left transition-colors ${
                       selected
-                        ? 'bg-neutral-100 text-neutral-900 dark:bg-neutral-900 dark:text-white'
-                        : 'bg-transparent text-neutral-900 hover:bg-neutral-100 dark:text-white dark:hover:bg-neutral-900'
+                        ? 'bg-black/[0.03] dark:bg-white/[0.04]'
+                        : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'
                     }`}
                   >
-                    <span className="truncate text-sm font-semibold">{group.name}</span>
-                    <span className="ml-2 shrink-0 text-xs font-medium tabular-nums text-neutral-500 dark:text-neutral-400">
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      {selected ? (
+                        <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF5722]" />
+                      ) : null}
+                      <span
+                        className={`truncate text-[15px] ${
+                          selected
+                            ? 'font-semibold text-[#111111] dark:text-white'
+                            : 'font-medium text-neutral-700 dark:text-neutral-200'
+                        }`}
+                      >
+                        {group.name}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-[14px] tabular-nums text-neutral-400 dark:text-neutral-500">
                       {group.productCount}
                     </span>
                   </button>
@@ -87,44 +103,44 @@ export function CreatorProductsStatsPanel({
                 type="button"
                 onClick={onExplore}
                 aria-pressed={exploring}
-                className={`mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                className={`group/explore flex w-full items-center justify-between gap-2 border-t border-black/[0.06] px-5 py-3.5 text-[15px] font-medium transition-colors dark:border-white/[0.06] ${
                   exploring
-                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
-                    : 'bg-neutral-200 text-neutral-900 hover:bg-neutral-300 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700'
+                    ? 'text-[#FF5722]'
+                    : 'text-[#111111] hover:text-[#FF5722] dark:text-white dark:hover:text-[#FF5722]'
                 }`}
               >
-                <span>Explore</span>
-                {hasMoreGroups ? (
-                  <span className="text-xs font-medium tabular-nums text-neutral-500 dark:text-neutral-400">
-                    ({groups.length})
-                  </span>
-                ) : null}
+                <span>
+                  Explore all
+                  {hasMoreGroups ? (
+                    <span className="ml-1.5 text-[14px] font-normal tabular-nums text-neutral-400 dark:text-neutral-500">
+                      ({groups.length})
+                    </span>
+                  ) : null}
+                </span>
                 <svg
-                  className={`h-4 w-4 shrink-0 ${exploring ? 'text-white/70 dark:text-neutral-500' : 'text-neutral-500 dark:text-neutral-400'}`}
+                  className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover/explore:translate-x-0.5"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
-                  strokeWidth={2}
+                  strokeWidth={1.75}
                   aria-hidden
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
             ) : null}
-          </div>
+          </>
         )}
       </div>
 
       {!readOnly ? (
         <>
-          <hr className="border-neutral-200 dark:border-neutral-700" />
-
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:border-neutral-500 dark:hover:bg-neutral-800"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-black/[0.12] px-5 py-2.5 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/25 dark:border-white/[0.12] dark:text-white dark:hover:border-white/25"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -132,7 +148,7 @@ export function CreatorProductsStatsPanel({
               />
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            Settings
+            Store settings
           </button>
 
           <CreatorStoreSettingsModal

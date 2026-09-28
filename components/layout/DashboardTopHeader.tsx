@@ -5,27 +5,18 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { NotificationBell } from '@/components/NotificationBell';
 import { MessagesHeaderButton } from '@/components/messaging/MessagesHeaderButton';
 import {
-  isProductsHeaderTogglePath,
-  isServiceProviderHeaderTogglePath,
-} from '@/components/layout/dashboard/navConfig';
-import { ProductsHeaderToggle } from '@/components/layout/ProductsHeaderToggle';
-import { ServiceProviderHeaderToggle } from '@/components/layout/ServiceProviderHeaderToggle';
-import {
   isMarketplaceCreatorProfilePath,
+  isServiceProvidersCatalogPath,
   sanitizeMarketplaceReturnTo,
 } from '@/lib/marketplace-nav';
 import Link from 'next/link';
 import { DashboardHeaderSearch } from '@/components/layout/DashboardHeaderSearch';
 import { DashboardMobileNav } from '@/components/layout/DashboardMobileNav';
 import { DashboardNavbarLinks } from '@/components/layout/DashboardNavbarLinks';
+import { PORTFOLIO_FRAME_CLASS } from '@/components/portfolio/portfolioFrame';
 import { ProfileDropdown } from '@/components/layout/ProfileDropdown';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/context/AuthContext';
-import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
-import {
-  creatorCanAccessProductsMenu,
-  creatorCanAccessServiceProviderMenu,
-} from '@/lib/creator-app-role';
 import {
   NEWS_INLINE_PUBLISH_CTA_ID,
   NewsPublishHeaderCta,
@@ -49,7 +40,7 @@ function MobileNavTrigger({ open, onToggle }: { open: boolean; onToggle: () => v
       onClick={onToggle}
       aria-label={open ? 'Close navigation' : 'Open navigation'}
       aria-expanded={open}
-      className={`group/burger inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-700 transition-[color,transform] duration-[420ms] ${EASE} hover:scale-105 hover:text-neutral-950 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 dark:text-neutral-200 dark:hover:text-white lg:hidden`}
+      className={`group/burger inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#222222] transition-[color,transform] duration-[420ms] ${EASE} hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 dark:text-neutral-300 lg:hidden`}
     >
       <span className="relative flex h-[0.7rem] w-[1.1rem] flex-col justify-between" aria-hidden>
         <span
@@ -70,52 +61,23 @@ function MobileNavTrigger({ open, onToggle }: { open: boolean; onToggle: () => v
 /**
  * Avatar + account menu at the far right.
  *
- * Opens on hover *and* on click. The hover path needs a grace period on the way out, otherwise a
- * straight diagonal from the avatar to the last row leaves the trigger and closes the card under
- * the cursor; the card itself is a sibling inside the same hover root, so crossing the gap between
- * them never counts as leaving.
+ * **Click only.** It used to open on hover as well, and that is now gone entirely — the card
+ * carries Log out, so a pointer merely crossing the corner of the bar on its way somewhere else
+ * should not put it on screen. With one gesture instead of two there is also no grace period to
+ * tune, no pinned-vs-hovered distinction, and no way for the two paths to cancel each other the
+ * way they once did.
  */
 function HeaderAccountMenu() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  const closeTimer = useRef<number | null>(null);
-  /*
-   * Whether the card is up because the pointer is merely resting on the avatar, as opposed to
-   * pinned by a click.
-   *
-   * Without this the two opening gestures cancelled each other: on any device with a pointer,
-   * hovering opened the card and the click that followed hit a plain toggle and shut it again —
-   * so "click the avatar" appeared to do nothing at all. A click now *pins* a hover-opened card
-   * instead of toggling it, and only a second click (or Escape, or a click outside) closes it.
-   * While pinned, moving the pointer away no longer dismisses it either.
-   */
-  const hoverOpened = useRef(false);
 
-  const cancelClose = () => {
-    if (closeTimer.current) {
-      window.clearTimeout(closeTimer.current);
-      closeTimer.current = null;
-    }
-  };
-  const close = () => {
-    cancelClose();
-    hoverOpened.current = false;
-    setOpen(false);
-  };
-  const scheduleClose = () => {
-    cancelClose();
-    closeTimer.current = window.setTimeout(close, 220);
-  };
-
-  useEffect(() => () => cancelClose(), []);
+  const close = () => setOpen(false);
 
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: MouseEvent) => {
       if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
-        cancelClose();
-        hoverOpened.current = false;
         setOpen(false);
       }
     };
@@ -126,43 +88,15 @@ function HeaderAccountMenu() {
   if (!user) return null;
 
   return (
-    <div
-      className="relative"
-      ref={rootRef}
-      onPointerEnter={(event) => {
-        // Touch taps fire pointerenter too; letting them through would open the card before the
-        // tap is even resolved.
-        if (event.pointerType === 'touch') return;
-        cancelClose();
-        if (!open) hoverOpened.current = true;
-        setOpen(true);
-      }}
-      onPointerLeave={(event) => {
-        if (event.pointerType === 'touch') return;
-        // A pinned card stays until it is dismissed deliberately.
-        if (hoverOpened.current) scheduleClose();
-      }}
-    >
+    <div className="relative" ref={rootRef}>
       <button
         type="button"
-        onClick={() => {
-          if (open && hoverOpened.current) {
-            // Hover put it there; this click pins it rather than undoing it.
-            hoverOpened.current = false;
-            return;
-          }
-          if (open) {
-            close();
-            return;
-          }
-          hoverOpened.current = false;
-          setOpen(true);
-        }}
+        onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="Account"
         title={user.fullName}
-        className={`group/avatar relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-transform duration-[420ms] ${EASE} hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400`}
+        className={`group/avatar relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform duration-[420ms] ${EASE} hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400`}
       >
         {/* A hairline ring that draws itself in rather than a filled plate — the same restraint
             the rest of the bar's controls keep. */}
@@ -172,7 +106,7 @@ function HeaderAccountMenu() {
             open ? 'opacity-100' : 'opacity-0 group-hover/avatar:opacity-100'
           }`}
         />
-        <Avatar name={user.fullName} avatarUrl={user.avatarUrl} size="sm" tone="muted" />
+        <Avatar name={user.fullName} avatarUrl={user.avatarUrl} size="md" tone="muted" />
       </button>
       <ProfileDropdown open={open} onClose={close} />
     </div>
@@ -193,30 +127,54 @@ export function DashboardTopHeader({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { hasRole } = useAuth();
-  const { appRole, ready: appRoleReady } = useCreatorAppRole();
   const [scrolled, setScrolled] = useState(false);
   const [newsCtaVisible, setNewsCtaVisible] = useState(false);
-  const search = searchParams.toString();
   const showCreatorsBack = isMarketplaceCreatorProfilePath(pathname);
-  const showNotificationsBack = pathname.startsWith('/dashboard/notifications');
   const profileReturnTo = sanitizeMarketplaceReturnTo(searchParams.get('from'));
   const isDiscussionsPage = pathname.startsWith('/dashboard/discussions');
   const isNewsPage = isNewsFeedPath(pathname);
-  const showProductsToggle =
-    hasRole('ROLE_CREATOR') &&
-    isProductsHeaderTogglePath(pathname, search) &&
-    (!appRoleReady || creatorCanAccessProductsMenu(appRole));
-  const showServiceProviderToggle =
-    hasRole('ROLE_CREATOR') &&
-    isServiceProviderHeaderTogglePath(pathname, search) &&
-    (!appRoleReady || creatorCanAccessServiceProviderMenu(appRole));
+  const isPortfolioPage =
+    pathname.startsWith('/dashboard/portfolio') ||
+    pathname.startsWith('/dashboard/search') ||
+    pathname.startsWith('/dashboard/notifications') ||
+    pathname === '/marketplace' ||
+    pathname.startsWith('/marketplace/my-products') ||
+    pathname.startsWith('/marketplace/my-services') ||
+    isServiceProvidersCatalogPath(pathname) ||
+    (pathname.startsWith('/dashboard/creator') &&
+      !pathname.startsWith('/dashboard/creator/products') &&
+      !pathname.includes('/new') &&
+      !pathname.includes('/edit')) ||
+    isDiscussionsPage;
 
   const showSolidBg = !transparent || scrolled;
   const showNewsPublishCta = isNewsPage && newsCtaVisible;
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [navPath, setNavPath] = useState(pathname);
+
+  /*
+   * The bar publishes its own height as `--dash-header-h`, which is what lets the navigation
+   * sheet open flush under it instead of over it. Measured rather than hardcoded because the bar
+   * grows on routes that add a page action, and written straight to the document through the ref
+   * — never `setState`, which would re-render the whole bar on every resize for one number and
+   * trips this repo's `set-state-in-effect` rule.
+   */
+  const headerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const node = headerRef.current;
+    if (!node) return;
+    const publish = () => {
+      document.documentElement.style.setProperty(
+        '--dash-header-h',
+        `${Math.round(node.getBoundingClientRect().height)}px`
+      );
+    };
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   // A route change must close the menu, otherwise it survives the navigation it triggered.
   // Adjusted during render rather than from an effect: an effect would paint the menu over the
@@ -227,7 +185,12 @@ export function DashboardTopHeader({
   }
 
   /* Groups the route-specific controls ahead of the utility cluster on the right. */
-  const hasRouteActions = showProductsToggle || showServiceProviderToggle || showNewsPublishCta;
+  /*
+  * The Explore / My Services and Explore / My Product pills used to live here too. They are now
+  * children of their own nav entries (see `navConfig`), so the only thing left that can claim
+  * space in the bar is the News publish CTA.
+  */
+  const hasRouteActions = showNewsPublishCta;
 
   const handleCreatorProfileBack = () => {
     if (profileReturnTo) {
@@ -308,89 +271,105 @@ export function DashboardTopHeader({
   return (
     <>
     <header
+      ref={headerRef}
       /*
-       * Flush glass. The bar spans the viewport and sits on the top edge — no inset, no radius,
-       * no cast shadow: a floating card reads as an object *over* the page, and this one is meant
-       * to be the page's own top edge. It stays translucent, because the blur is what keeps the
-       * content visibly passing underneath.
+       * Flush. The bar spans the viewport, sits on the top edge, and carries no rule underneath —
+       * it shares the page's own tone in light, so a hairline would only draw a line across one
+       * continuous sheet.
        *
-       * `border-b` only, for the same reason the floating version needed a full border: a flush
-       * bar has no corners to resolve, and a left/right hairline would draw two stray verticals
-       * down the viewport edges.
-       *
-       * The blur lives on the child layer below, NOT here, and that is load-bearing: an element
-       * with `backdrop-filter` becomes a *backdrop root*, so every descendant's own
+       * Any surface treatment lives on the child layer below, NOT here, and that is load-bearing:
+       * an element with `backdrop-filter` becomes a *backdrop root*, so every descendant's own
        * `backdrop-filter` has nothing left to sample and silently does nothing. With the filter
-       * here, the account card and the More menu rendered as flat tinted panels with the page
-       * showing through them razor-sharp. As a sibling layer it blurs the page, and the popovers
-       * — siblings of it, not descendants — keep a working backdrop of their own.
+       * here, the account card and the menus rendered as flat tinted panels with the page showing
+       * through them razor-sharp. As a sibling layer it blurs the page, and the popovers — siblings
+       * of it, not descendants — keep a working backdrop of their own.
        */
-      className={`sticky top-0 z-40 border-b px-4 transition-[border-color] duration-[520ms] ${EASE} sm:px-6 lg:px-8 ${
-        /* One hairline, `black/[0.04]` light and `white/[0.04]` dark. It firms up a single step
-           once content is actually passing underneath — on a page that opens on a full-bleed hero,
-           a rule drawn across it at scroll-top reads as a seam in the artwork. */
-        showSolidBg
-          ? 'border-black/[0.07] dark:border-white/[0.08]'
-          : 'border-black/[0.04] dark:border-white/[0.04]'
-      }`}
+      className="sticky top-0 z-40"
     >
-      {/* The glass itself. Separate from <header> so the bar is not a backdrop root — see above. */}
+      {/*
+       * The bar's surface. Separate from <header> so the bar is not a backdrop root — see above.
+       *
+       * Light is flat and matches the page ground (`#F8F8F8`), so the chrome and the page read as one
+       * sheet. No translucency there on purpose: glass over a surface of its own colour is
+       * invisible work, and the blur would still cost a compositor layer on every scroll for
+       * nothing.
+       *
+       * Dark elsewhere keeps the real glass. On My Portfolio it must not: the glass tint
+       * (`black/85` + blur) paints a grey strip against the page's absolute black. That route
+       * uses the same opaque `#000` as the page ground, so the bar and the canvas are one sheet.
+       */}
       <span
         aria-hidden
-        className={`pointer-events-none absolute inset-0 -z-10 block transition-colors duration-[520ms] ${EASE}
-          bg-white/85 supports-[backdrop-filter]:bg-white/55 supports-[backdrop-filter]:backdrop-blur-xl
-          dark:bg-black/85 dark:supports-[backdrop-filter]:bg-black/30`}
+        className={`pointer-events-none absolute inset-0 -z-10 block transition-colors duration-[520ms] ${EASE} ${
+          isPortfolioPage
+            ? 'bg-[#F8F8F8] dark:bg-black'
+            : 'bg-[#F8F8F8] dark:bg-black/85 dark:supports-[backdrop-filter]:bg-black/30 dark:supports-[backdrop-filter]:backdrop-blur-xl'
+        }`}
       />
       {/*
-        * One row, three blocks: the wordmark anchored hard left, the public shortcuts centred on
-        * the *viewport*, the account cluster hard right.
+        * One row, left to right: wordmark, links, the search field, the account cluster.
         *
-        * `justify-between` alone cannot centre the middle block — it distributes free space, so
-        * the centre only lands on the midpoint when both sides happen to be the same width, and
-        * here they never are (a 72px wordmark against a ~160px control cluster). So from `lg` up
-        * the nav leaves the flow entirely and is pinned to the row's midpoint. That also sidesteps
-        * the trap this layout hit before: as a flex child with `flex-basis: 0` it was sized to its
-        * share of the row rather than its contents and overflowed onto its neighbours.
+        * Nothing is centred any more and nothing is pinned out of the flow. The links sit directly
+        * beside the wordmark and the search field takes whatever is left between them and the
+        * controls — which is what makes the field the only elastic thing in the row and every
+        * other block `shrink-0`.
         *
-        * Below `lg` there is no midpoint worth pinning to, so it returns to the flow as a
-        * horizontally scrollable rail between the two anchors.
+        * `items-center` puts every *box* on the centre line exactly — measured, all six at a delta
+        * of 0. What it cannot do is centre the *glyphs*: a line box reserves descender space that
+        * words like "logo" and "News" barely use, so the type lands about a pixel high inside its
+        * own box. The `pt-px` on the text-bearing blocks below pays that back.
         */}
-      <div className="relative flex items-center justify-between gap-3 py-3 sm:gap-4">
-        {/* LEFT — the wordmark, and nothing else. */}
-        <div className="flex min-w-0 shrink-0 items-center gap-2">
-          {showCreatorsBack || showNotificationsBack ? (
+      <div
+        className={`flex items-center gap-3 py-3 sm:gap-5 ${PORTFOLIO_FRAME_CLASS}`}
+      >
+        {/* LEFT — wordmark, then the links right beside it, as in the reference. */}
+        {/*
+          * `gap-4 lg:gap-16` is two different jobs on one class. Below `lg` this group is the
+          * burger and the wordmark, which belong tight together; from `lg` the burger is gone and
+          * the group is the wordmark and the links, which need real air between the brand and the
+          * menu — 64px against the 40px that separates the links from each other, so the wordmark
+          * reads as its own block rather than as a fifth entry.
+          */}
+        <div className="flex shrink-0 items-center gap-4 pt-px lg:gap-16">
+          <MobileNavTrigger open={mobileNavOpen} onToggle={() => setMobileNavOpen((v) => !v)} />
+          {showCreatorsBack ? (
             <button
               type="button"
-              onClick={
-                showCreatorsBack
-                  ? handleCreatorProfileBack
-                  : () => {
-                      if (typeof window !== 'undefined' && window.history.length > 1) {
-                        router.back();
-                        return;
-                      }
-                      router.push('/dashboard/home');
-                    }
-              }
+              onClick={handleCreatorProfileBack}
               aria-label="Go back"
               title="Go back"
-              className={`-ml-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 transition-[color,transform] duration-[420ms] ${EASE} hover:scale-105 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white`}
+              className={`-ml-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#222222] transition-[color,transform] duration-[420ms] ${EASE} hover:scale-105 dark:text-neutral-300`}
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25} aria-hidden>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
           ) : null}
           <Link
             href="/dashboard/home"
-            className={`shrink-0 text-[0.95rem] font-semibold tracking-[-0.01em] text-neutral-900 transition-opacity duration-[420ms] ${EASE} hover:opacity-60 dark:text-white`}
+            className={`shrink-0 text-[0.95rem] font-semibold tracking-[-0.01em] text-[#222222] transition-opacity duration-[420ms] ${EASE} hover:opacity-60 dark:text-white`}
           >
-            Noproble
+            {/* Placeholder until the real mark ships as an image. */}
+            logo
           </Link>
+          <DashboardNavbarLinks />
         </div>
 
-        {/* CENTRE — the three public shortcuts, pinned to the viewport midpoint from `lg`. */}
-        <DashboardNavbarLinks pinLate={hasRouteActions} />
+        {/*
+          * The search field. Below `lg` it gives way to the disc in the account cluster — a field
+          * on a phone would leave room for nothing else.
+          */}
+        {/*
+          * Below `lg` the field is the row: the links are in the menu, so it takes everything
+          * between the wordmark and the avatar. From `lg` it stops growing, is bounded, and is
+          * pushed right by `ml-auto` so the links own the left of the bar.
+          *
+          * `lg:grow-0 lg:basis-[30rem]` rather than `lg:w-[30rem]`: it keeps `shrink`, so a
+          * narrowing window takes width out of the field and never out of the navigation.
+          */}
+        <div className="min-w-0 flex-1 lg:ml-auto lg:grow-0 lg:basis-[30rem] xl:basis-[42rem]">
+          <DashboardHeaderSearch fluid />
+        </div>
 
         {/*
           * RIGHT — search, chat, bell, avatar, in that order and on one repeated gap.
@@ -400,13 +379,14 @@ export function DashboardTopHeader({
           * very symmetry it was meant to organise. Grouping now comes from spacing alone — one
           * `gap-1` throughout, and a wider margin ahead of any route action.
           */}
-        <div className="flex min-w-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           {hasRouteActions ? (
             /*
              * The only block in the row allowed to shrink. Priority when the row is
              * over-subscribed runs: account controls and wordmark never clip, the nav keeps a
-             * floor, and the page action gives way and scrolls inside itself. Without this the
-             * Explore/My Product toggle pushed the avatar clean off the right edge at 430px.
+             * floor, and the page action gives way and scrolls inside itself. Kept from when the
+             * Explore/My Product toggle lived here and pushed the avatar off the right edge at
+             * 430px — the News CTA is shorter, but it is still the block that has to give.
              *
              * This only works because the cluster around it is `min-w-0` rather than `shrink-0`:
              * a `shrink-0` parent is sized to its contents, so there is no shrink pressure inside
@@ -414,23 +394,19 @@ export function DashboardTopHeader({
              * individually, so they are still the things that never give.
              */
             <div className="pf-scrollbar-hide mr-2 flex min-w-0 shrink items-center gap-2 overflow-x-auto sm:mr-3">
-              {showProductsToggle ? <ProductsHeaderToggle /> : null}
-              {showServiceProviderToggle ? <ServiceProviderHeaderToggle /> : null}
               {showNewsPublishCta ? <NewsPublishHeaderCta /> : null}
             </div>
           ) : null}
-          <DashboardHeaderSearch iconOnly />
           {/*
            * Chat and bell are `lg` and up only. They stay mounted rather than unmounted — each owns
            * a poll and a dismiss baseline, and tearing those down on every resize past the
            * breakpoint would restart both. Below `lg` the same two destinations are in the menu.
            */}
           <span className="hidden lg:contents">
-            {isDiscussionsPage ? null : <MessagesHeaderButton />}
+            <MessagesHeaderButton />
             <NotificationBell compact />
           </span>
           <HeaderAccountMenu />
-          <MobileNavTrigger open={mobileNavOpen} onToggle={() => setMobileNavOpen((v) => !v)} />
         </div>
       </div>
 

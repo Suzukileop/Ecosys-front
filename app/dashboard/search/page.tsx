@@ -4,7 +4,7 @@ import { GlobalSearchResultsView } from '@/components/search/GlobalSearchResults
 export default function DashboardSearchPage() {
   return (
     <DashboardHomeShell fullWidth>
-      <div className="mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-0">
         <GlobalSearchResultsView />
       </div>
     </DashboardHomeShell>

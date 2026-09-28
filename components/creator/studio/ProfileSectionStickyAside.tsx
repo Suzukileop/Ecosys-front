@@ -6,15 +6,21 @@ const GAP_PX = 12;
 
 function getHeaderBottom(): number {
   const header = document.querySelector('[data-dashboard-main] > header');
-  if (header instanceof HTMLElement) {
-    return Math.round(header.getBoundingClientRect().bottom) + GAP_PX;
+  const headerBottom =
+    header instanceof HTMLElement ? Math.round(header.getBoundingClientRect().bottom) + GAP_PX : 80;
+  // Stay below the workspace sub-nav while it is still on screen; its own padding is the gap.
+  const subNav = document.querySelector('[data-portfolio-workspace-nav]');
+  if (subNav instanceof HTMLElement) {
+    return Math.max(headerBottom, Math.round(subNav.getBoundingClientRect().bottom));
   }
-  return 80;
+  return headerBottom;
 }
 
 type ProfileSectionStickyAsideProps = {
   children: ReactNode;
   className?: string;
+  /** Overrides the rail's own surface (border / fill / shadow). */
+  surfaceClassName?: string;
 };
 
 /**
@@ -22,7 +28,11 @@ type ProfileSectionStickyAsideProps = {
  * reaches the top. Height stays content-sized; only width animates on collapse.
  * maxHeight caps the rail when sticky.
  */
-export function ProfileSectionStickyAside({ children, className = '' }: ProfileSectionStickyAsideProps) {
+export function ProfileSectionStickyAside({
+  children,
+  className = '',
+  surfaceClassName,
+}: ProfileSectionStickyAsideProps) {
   const placeholderRef = useRef<HTMLDivElement>(null);
   const asideRef = useRef<HTMLElement>(null);
   const fixedRef = useRef(false);
@@ -136,6 +146,8 @@ export function ProfileSectionStickyAside({ children, className = '' }: ProfileS
     const header = document.querySelector('[data-dashboard-main] > header');
     const headerRo = header instanceof HTMLElement ? new ResizeObserver(onResize) : null;
     if (header instanceof HTMLElement) headerRo?.observe(header);
+    const subNav = document.querySelector('[data-portfolio-workspace-nav]');
+    if (subNav instanceof HTMLElement) headerRo?.observe(subNav);
 
     return () => {
       document.removeEventListener('scroll', onScroll, { capture: true });
@@ -155,7 +167,10 @@ export function ProfileSectionStickyAside({ children, className = '' }: ProfileS
     >
       <aside
         ref={asideRef}
-        className="flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-100 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:border-neutral-700/50 dark:bg-[#151515] dark:shadow-[0_6px_20px_rgba(0,0,0,0.2)]"
+        className={
+          surfaceClassName ||
+          'flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-100 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:border-neutral-700/50 dark:bg-[#151515] dark:shadow-[0_6px_20px_rgba(0,0,0,0.2)]'
+        }
       >
         {children}
       </aside>

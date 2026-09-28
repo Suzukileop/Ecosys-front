@@ -27,13 +27,13 @@ function MyServicesPageInner() {
 
   if (!hasRole('ROLE_CREATOR')) return null;
 
-  return <CreatorStudioServicesTab />;
+  return <CreatorStudioServicesTab showPageHeader />;
 }
 
 export default function MarketplaceMyServicesPage() {
   return (
     <DashboardHomeShell fullWidth fillViewport>
-      <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col overflow-hidden px-4 sm:px-6">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1328px] flex-1 flex-col overflow-hidden px-4 sm:px-6">
         <Suspense
           fallback={
             <div className="flex justify-center py-16">

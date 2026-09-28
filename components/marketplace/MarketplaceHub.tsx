@@ -5,12 +5,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { usePendingNavigation } from '@/hooks/usePendingNavigation';
 import { MarketplaceCatalogSection } from '@/components/marketplace/MarketplaceCatalogSection';
-import { ProductFormatToggle } from '@/components/marketplace/ProductFormatToggle';
 import {
   MarketplaceCatalogSkeleton,
   MarketplaceHubSkeleton,
 } from '@/components/marketplace/MarketplaceSkeleton';
 import { useMarketplaceCatalogParams } from '@/components/marketplace/useMarketplaceCatalogParams';
+import type { ProductFormat } from '@/components/marketplace/product-editor-steps';
+import { STUDIO_FLOAT_IN_STYLE } from '@/components/portfolio/PortfolioStudioKit';
 
 export type MarketplaceTab = 'products' | 'favorites';
 
@@ -35,22 +36,73 @@ function MarketplaceTabNav({ tabs, tab, onSelect }: MarketplaceTabNavProps) {
   if (tabs.length <= 1) return null;
 
   return (
-    <nav className="flex flex-wrap items-center gap-2 sm:gap-4" aria-label="Marketplace sections">
-      {tabs.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          onClick={() => onSelect(item.id)}
-          className={`whitespace-nowrap rounded-full px-5 py-2 text-sm font-semibold transition ${
-            tab === item.id
-              ? 'bg-orange-500 text-white shadow-sm'
-              : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-800 dark:hover:text-white'
-          }`}
-        >
-          {item.label}
-        </button>
-      ))}
+    <nav className="flex min-w-0 items-stretch gap-6" aria-label="Marketplace sections">
+      {tabs.map((item) => {
+        const isActive = tab === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onSelect(item.id)}
+            aria-current={isActive ? 'page' : undefined}
+            className={`relative shrink-0 whitespace-nowrap py-3.5 text-base transition-colors duration-200 ${
+              isActive
+                ? 'font-semibold text-[#111111] dark:text-white'
+                : 'font-medium text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
+            }`}
+          >
+            {item.label}
+            {isActive ? (
+              <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-[#FF5722]" />
+            ) : null}
+          </button>
+        );
+      })}
     </nav>
+  );
+}
+
+const FORMAT_OPTIONS: { id: ProductFormat; label: string; hint: string }[] = [
+  { id: 'virtual', label: 'Virtual', hint: 'Delivered online' },
+  { id: 'physical', label: 'Physical', hint: 'Shipped to buyer' },
+];
+
+function MarketplaceFormatSwitch({
+  value,
+  onChange,
+}: {
+  value: ProductFormat;
+  onChange: (format: ProductFormat) => void;
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Product format"
+      className="inline-flex items-center gap-1 rounded-full border border-black/[0.08] bg-white p-1 dark:border-white/[0.1] dark:bg-[#111111]"
+    >
+      {FORMAT_OPTIONS.map((option) => {
+        const selected = value === option.id;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            title={option.hint}
+            onClick={() => {
+              if (!selected) onChange(option.id);
+            }}
+            className={`rounded-full px-4 py-1.5 text-[14px] font-medium transition-colors duration-200 ${
+              selected
+                ? 'bg-[#111111] text-white dark:bg-white dark:text-[#111111]'
+                : 'text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
+            }`}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -63,11 +115,18 @@ function MarketplaceTabContent({
 }) {
   if (needsAuth) {
     return (
-      <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
-        <p className="text-gray-700 dark:text-gray-300">Sign in to view this section.</p>
+      <div
+        className="flex flex-col items-center rounded-lg border border-black/[0.06] bg-white px-6 py-20 text-center dark:border-white/[0.08] dark:bg-[#111111]"
+        style={STUDIO_FLOAT_IN_STYLE}
+      >
+        <span aria-hidden className="mb-5 h-1.5 w-1.5 rounded-full bg-[#FF5722]" />
+        <p className="text-lg font-semibold text-[#111111] dark:text-white">Sign in to view this section.</p>
+        <p className="mt-2 text-[15px] text-neutral-500 dark:text-neutral-400">
+          Your saved products are kept with your account.
+        </p>
         <a
           href={`/login?redirect=${encodeURIComponent(`/marketplace?tab=${tab}`)}`}
-          className="mt-6 inline-flex rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
+          className="mt-8 inline-flex rounded-lg bg-[#111111] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#111111]"
         >
           Sign in
         </a>
@@ -130,32 +189,39 @@ function MarketplaceHubContent() {
   };
 
   return (
-    <main className="w-full min-w-0 max-w-full space-y-6 overflow-hidden">
-      {authLoading ? (
-        <div className="h-4 w-80 max-w-full animate-pulse rounded bg-gray-200 dark:bg-neutral-700" />
-      ) : (
-        <p className="text-sm text-gray-600 dark:text-gray-400">{copy.description}</p>
-      )}
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <main className="mx-auto w-full min-w-0 max-w-[1280px] space-y-10 px-4 pb-16 pt-4 sm:px-0 sm:pt-8">
+      <header style={STUDIO_FLOAT_IN_STYLE}>
+        <h1 className="text-4xl font-bold tracking-tight text-[#111111] dark:text-white sm:text-5xl">
+          {copy.title}
+        </h1>
         {authLoading ? (
-          <div className="flex flex-wrap gap-2" aria-hidden>
-            <div className="h-9 w-24 animate-pulse rounded-full bg-gray-200 dark:bg-neutral-700" />
-            <div className="h-9 w-24 animate-pulse rounded-full bg-gray-200 dark:bg-neutral-700" />
-          </div>
+          <div className="mt-4 h-5 w-80 max-w-full animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]" />
         ) : (
-          <MarketplaceTabNav tabs={tabs} tab={isTabTransitioning ? previewTab : tab} onSelect={setTab} />
+          <p className="mt-3 text-base text-neutral-500 dark:text-neutral-400 sm:text-lg">{copy.description}</p>
         )}
-        <div className="ml-auto shrink-0">
-          <ProductFormatToggle value={format} onChange={setFormat} />
-        </div>
-      </div>
+      </header>
 
-      {authLoading || showTabSkeleton ? (
-        <MarketplaceCatalogSkeleton />
-      ) : (
-        <MarketplaceTabContent tab={tab} needsAuth={needsAuth} />
-      )}
+      <div className="space-y-8">
+        <div className="flex min-h-[3.25rem] flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-black/[0.06] dark:border-white/[0.06]">
+          {authLoading ? (
+            <div className="flex gap-6 py-3.5" aria-hidden>
+              <div className="h-6 w-20 animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]" />
+              <div className="h-6 w-20 animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]" />
+            </div>
+          ) : (
+            <MarketplaceTabNav tabs={tabs} tab={isTabTransitioning ? previewTab : tab} onSelect={setTab} />
+          )}
+          <div className="ml-auto shrink-0 py-2">
+            <MarketplaceFormatSwitch value={format} onChange={setFormat} />
+          </div>
+        </div>
+
+        {authLoading || showTabSkeleton ? (
+          <MarketplaceCatalogSkeleton />
+        ) : (
+          <MarketplaceTabContent tab={tab} needsAuth={needsAuth} />
+        )}
+      </div>
     </main>
   );
 }
@@ -163,11 +229,7 @@ function MarketplaceHubContent() {
 export function MarketplaceHub() {
   return (
     <Suspense
-      fallback={
-        <div className="min-w-0 max-w-full overflow-x-hidden">
-          <MarketplaceHubSkeleton />
-        </div>
-      }
+      fallback={<MarketplaceHubSkeleton />}
     >
       <MarketplaceHubContent />
     </Suspense>

@@ -41,7 +41,7 @@ export function InboxPendingGuestInvites({
           return (
             <li
               key={invite.id}
-              className="rounded-2xl bg-white p-3 dark:bg-neutral-900"
+              className="border border-[var(--msg-hairline)] p-3.5"
             >
               <div className="flex items-start gap-3">
                 <Avatar avatarUrl={invite.inviterAvatarUrl} name={invite.inviterName} size="sm" />
@@ -66,7 +66,7 @@ export function InboxPendingGuestInvites({
                   type="button"
                   onClick={() => onAccept(invite.id)}
                   disabled={busy}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-neutral-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-60 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+                  className="msg-micro inline-flex flex-1 items-center justify-center gap-2 border border-[var(--msg-ink)] px-3 py-2.5 text-[var(--msg-ink)] transition-colors duration-300 hover:bg-[var(--msg-ink)] hover:text-[var(--msg-panel)] disabled:opacity-40"
                 >
                   {busy ? <LoadingSpinner size="sm" /> : 'Accept'}
                 </button>
@@ -74,7 +74,7 @@ export function InboxPendingGuestInvites({
                   type="button"
                   onClick={() => onDecline(invite.id)}
                   disabled={busy}
-                  className="flex-1 rounded-xl bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-200 disabled:opacity-60 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                  className="msg-micro flex-1 border border-[var(--msg-hairline-strong)] px-3 py-2.5 text-[var(--msg-ink-faint)] transition-colors duration-300 hover:border-[var(--msg-ink-soft)] hover:text-[var(--msg-ink)] disabled:opacity-40"
                 >
                   Decline
                 </button>

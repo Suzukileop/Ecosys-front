@@ -3,10 +3,18 @@
 import type { CreatorReputationDto, CreatorReviewItem } from '@/types/ecosystem';
 import type { ContactVisibilityLevel } from '@/lib/contact-visibility';
 import { PortfolioFlatField } from '@/components/portfolio/PortfolioInformationChrome';
+import {
+  STUDIO_EMPTY_CLASS,
+  STUDIO_ROW_RULE,
+  STUDIO_SECONDARY_CLASS,
+  STUDIO_VALUE_CLASS,
+  StudioSectionHeader,
+  StudioSlashLine,
+} from '@/components/portfolio/PortfolioStudioKit';
 
 function Stars({ rating }: { rating: number }) {
   return (
-    <span className="inline-flex items-center gap-0.5 text-amber-500" aria-hidden>
+    <span className="inline-flex items-center gap-0.5 text-[#FF5722]" aria-hidden>
       {Array.from({ length: 5 }, (_, i) => (
         <svg
           key={i}
@@ -20,39 +28,27 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-function RecentReviewBlock({ review }: { review: CreatorReviewItem }) {
+function RecentReviewRow({ review }: { review: CreatorReviewItem }) {
+  const comment = review.comment?.trim();
   return (
-    <article className="divide-y divide-neutral-200/50 dark:divide-white/[0.06]">
-      <PortfolioFlatField label="Reviewer" value={review.reviewerName} className="!py-4" />
-      <div className="grid items-start gap-x-8 sm:grid-cols-2">
-        <PortfolioFlatField label="Rating" className="!py-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Stars rating={review.rating} />
-            <span className="text-[15px] font-semibold text-neutral-900 dark:text-white">
-              {review.rating.toFixed(1)}/5
-            </span>
-          </div>
-        </PortfolioFlatField>
-        <PortfolioFlatField
-          label="Date"
-          value={new Date(review.createdAt).toLocaleDateString()}
-          className="!py-4"
-        />
+    <li className={`grid gap-y-2 py-6 first:pt-2 ${STUDIO_ROW_RULE}`}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <p className={`!font-medium ${STUDIO_VALUE_CLASS}`}>{review.reviewerName}</p>
+        <p className={STUDIO_SECONDARY_CLASS}>{new Date(review.createdAt).toLocaleDateString()}</p>
       </div>
-      <PortfolioFlatField
-        label="Comment"
-        value={review.comment}
-        emptyLabel="No comment"
-        muted={!review.comment?.trim()}
-        className="!py-4"
-      />
-      <PortfolioFlatField
-        label="Would recommend"
-        value={review.wouldRecommend ? 'Recommends this creator' : 'Does not recommend'}
-        muted={!review.wouldRecommend}
-        className="!py-4"
-      />
-    </article>
+      <div className="flex flex-wrap items-center gap-2">
+        <Stars rating={review.rating} />
+        <span className={STUDIO_SECONDARY_CLASS}>{review.rating.toFixed(1)}/5</span>
+      </div>
+      {comment ? (
+        <p className={`whitespace-pre-wrap leading-relaxed ${STUDIO_VALUE_CLASS}`}>{comment}</p>
+      ) : (
+        <p className={STUDIO_EMPTY_CLASS}>No comment</p>
+      )}
+      <p className={STUDIO_SECONDARY_CLASS}>
+        {review.wouldRecommend ? 'Recommends this creator' : 'Does not recommend'}
+      </p>
+    </li>
   );
 }
 
@@ -81,18 +77,17 @@ export function PortfolioReputationChrome({
     return (
       <div>
         {showVisibility ? (
-          <div className="divide-y divide-neutral-200/50 dark:divide-white/[0.06]">
-            <PortfolioFlatField
-              label="Overall rating"
-              emptyLabel="No reviews yet"
-              muted
-              showVisibility
-              visibility={visibility}
-              onVisibilityChange={onVisibilityChange}
-            />
-          </div>
+          <PortfolioFlatField
+            label="Overall rating"
+            emptyLabel="No reviews yet"
+            muted
+            showVisibility
+            visibility={visibility}
+            onVisibilityChange={onVisibilityChange}
+            className="!pt-3"
+          />
         ) : null}
-        <p className="py-10 text-center text-sm italic text-neutral-500 dark:text-neutral-400">
+        <p className={`py-10 ${STUDIO_EMPTY_CLASS}`}>
           No reviews yet. Once clients rate your profile, your score and feedback will appear here.
         </p>
       </div>
@@ -100,79 +95,60 @@ export function PortfolioReputationChrome({
   }
 
   return (
-    <div className="space-y-8">
-      <div className="divide-y divide-neutral-200/50 dark:divide-white/[0.06]">
+    <div className="space-y-10">
+      <div>
         <div className="grid items-start gap-x-8 sm:grid-cols-3">
           <PortfolioFlatField
             label="Overall rating"
             showVisibility={showVisibility}
             visibility={visibility}
             onVisibilityChange={onVisibilityChange}
+            className="!pt-3"
           >
             <div className="flex flex-wrap items-center gap-2">
               <Stars rating={averageRating ?? 0} />
-              <span className="text-xl font-bold text-neutral-900 dark:text-white">
-                {averageRating?.toFixed(1) ?? '—'}/5
-              </span>
+              <span className={STUDIO_VALUE_CLASS}>{averageRating?.toFixed(1) ?? '—'}/5</span>
             </div>
           </PortfolioFlatField>
-          <PortfolioFlatField label="Reviews">
-            <div>
-              <p className="text-xl font-bold text-neutral-900 dark:text-white">{reviewCount}</p>
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                based on {reviewCount} review{reviewCount !== 1 ? 's' : ''}
-              </p>
-            </div>
+          <PortfolioFlatField label="Reviews" className="!pt-3">
+            <p className={STUDIO_VALUE_CLASS}>{reviewCount}</p>
+            <p className={`mt-1 ${STUDIO_SECONDARY_CLASS}`}>
+              based on {reviewCount} review{reviewCount !== 1 ? 's' : ''}
+            </p>
           </PortfolioFlatField>
-          <PortfolioFlatField label="Recommendation">
-            <div>
-              <p className="text-xl font-bold text-neutral-900 dark:text-white">
-                {recommendPercent}%
-              </p>
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                would recommend this creator
-              </p>
-            </div>
+          <PortfolioFlatField label="Recommendation" className="!pt-3">
+            <p className={STUDIO_VALUE_CLASS}>{recommendPercent}%</p>
+            <p className={`mt-1 ${STUDIO_SECONDARY_CLASS}`}>would recommend this creator</p>
           </PortfolioFlatField>
         </div>
 
         <PortfolioFlatField
           label="Trust badges"
-          value={trustBadges.length > 0 ? trustBadges.join(' · ') : null}
           emptyLabel="No trust badges yet"
-          muted={trustBadges.length === 0}
+          value={null}
         >
           {trustBadges.length > 0 ? (
-            <ul className="flex flex-wrap gap-x-4 gap-y-1">
-              {trustBadges.map((badge) => (
-                <li
-                  key={badge}
-                  className="text-[15px] font-semibold leading-relaxed text-neutral-900 dark:text-white"
-                >
+            <StudioSlashLine
+              className=""
+              items={trustBadges.map((badge) => (
+                <span key={badge} className={STUDIO_VALUE_CLASS}>
                   {badge}
-                </li>
+                </span>
               ))}
-            </ul>
+            />
           ) : undefined}
         </PortfolioFlatField>
       </div>
 
       {recentReviews.length > 0 ? (
-        <div className="space-y-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-            Recent reviews
-          </p>
-          <div className="space-y-6">
+        <section>
+          <StudioSectionHeader label="Recent reviews" />
+          <ul>
             {recentReviews.map((review) => (
-              <div
-                key={review.id}
-                className="border-t border-neutral-200/50 pt-2 first:border-t-0 first:pt-0 dark:border-white/[0.06]"
-              >
-                <RecentReviewBlock review={review} />
-              </div>
+              <RecentReviewRow key={review.id} review={review} />
             ))}
-          </div>
-        </div>
+          </ul>
+        </section>
       ) : null}
     </div>
   );

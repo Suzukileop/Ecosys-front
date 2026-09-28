@@ -38,7 +38,6 @@ export function CreatorStudioContentTab({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [publishOpen, setPublishOpen] = useState(false);
-
   const load = useCallback(async (selectedBucket: ContentPostBucket, silent = false) => {
     try {
       setError(null);
@@ -67,7 +66,7 @@ export function CreatorStudioContentTab({
   }, [router, searchParams]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <CreatorContentPublishModal
         open={publishOpen}
         onClose={() => setPublishOpen(false)}
@@ -76,32 +75,34 @@ export function CreatorStudioContentTab({
 
       {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
 
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-          <h1 className="max-w-3xl text-center text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h2 className="min-w-0 text-[1.5rem] font-bold tracking-[-0.02em] text-[#111111] dark:text-white sm:text-[1.75rem]">
             {resolveStudioContentHeadline(contentHeadline)}
-          </h1>
+          </h2>
           <button
             type="button"
             onClick={() => setPublishOpen(true)}
-            className="inline-flex shrink-0 items-center justify-center rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600"
+            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#111111] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#111111]"
           >
             + Publish content
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-2 border-b border-neutral-200 dark:border-neutral-800">
+        <div role="tablist" aria-label="Content status" className="flex flex-wrap gap-2 lg:hidden">
           {BUCKETS.map((entry) => {
             const active = bucket === entry.id;
             return (
               <button
                 key={entry.id}
                 type="button"
+                role="tab"
+                aria-selected={active}
                 onClick={() => setBucket(entry.id)}
-                className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+                className={`rounded-full border px-4 py-2 text-[14px] font-medium transition-colors duration-200 ${
                   active
-                    ? 'border-neutral-900 text-neutral-900 dark:border-white dark:text-white'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+                    ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
+                    : 'border-black/[0.1] text-neutral-600 hover:border-black/30 hover:text-[#111111] dark:border-white/[0.12] dark:text-neutral-300 dark:hover:border-white/30 dark:hover:text-white'
                 }`}
               >
                 {entry.label}
@@ -111,44 +112,70 @@ export function CreatorStudioContentTab({
         </div>
       </div>
 
+      <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,640px)_300px] lg:justify-center xl:gap-14">
+      <div className="min-w-0">
       {loading ? (
         <CreatorStudioContentTabSkeleton />
       ) : items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-12 text-center dark:border-neutral-700 dark:bg-neutral-900">
-          <p className="text-neutral-600 dark:text-neutral-400">
+        <div className="rounded-lg border border-black/[0.06] bg-white px-6 py-16 text-center dark:border-white/[0.08] dark:bg-[#111111]">
+          <p className="text-base text-neutral-500 dark:text-neutral-400">
             {BUCKETS.find((b) => b.id === bucket)?.empty}
           </p>
           {bucket === 'active' && (
             <button
               type="button"
               onClick={() => setPublishOpen(true)}
-              className="mt-6 inline-flex rounded-full bg-orange-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-orange-600"
+              className="mt-6 inline-flex rounded-lg bg-[#111111] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#111111]"
             >
               Publish your first content
             </button>
           )}
         </div>
       ) : (
-        <div className="snap-y snap-proximity">
+        <div className="space-y-8">
           {items.map((post) => (
-            <section
+            <CreatorContentPostCard
               key={post.id}
-              className="flex min-h-0 snap-center snap-always scroll-mt-6 items-center justify-center pb-10 pt-2"
-            >
-              <CreatorContentPostCard
-                post={post}
-                bucket={bucket}
-                creatorName={user?.fullName ?? 'You'}
-                specialite={specialite}
-                specialties={specialties}
-                onChanged={() => void load(bucket, true)}
-                onError={setError}
-                className="w-full"
-              />
-            </section>
+              post={post}
+              bucket={bucket}
+              creatorName={user?.fullName ?? 'You'}
+              specialite={specialite}
+              specialties={specialties}
+              onChanged={() => void load(bucket, true)}
+              onError={setError}
+            />
           ))}
         </div>
       )}
+      </div>
+
+      <aside className="sticky top-24 hidden lg:block" aria-label="Content status">
+        <nav role="tablist" aria-label="Content status" className="flex flex-col gap-1">
+          {BUCKETS.map((entry) => {
+            const active = bucket === entry.id;
+            return (
+              <button
+                key={entry.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setBucket(entry.id)}
+                className={`flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-[15px] transition-colors duration-200 ${
+                  active
+                    ? 'bg-white font-semibold text-[#111111] shadow-[0_0_0_1px_rgba(0,0,0,0.06)] dark:bg-[#111111] dark:text-white dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)]'
+                    : 'font-medium text-neutral-500 hover:bg-black/[0.03] hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.04] dark:hover:text-white'
+                }`}
+              >
+                {entry.label}
+                {active && !loading ? (
+                  <span className="text-[13px] font-normal tabular-nums text-neutral-400">{items.length}</span>
+                ) : null}
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+      </div>
     </div>
   );
 }

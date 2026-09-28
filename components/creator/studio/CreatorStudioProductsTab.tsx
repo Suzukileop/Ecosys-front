@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   createProductGroup,
@@ -21,6 +21,7 @@ import { showCreatorProductFeedback } from '@/lib/creator-product-feedback';
 import { CreatorBundleCard } from '@/components/creator/CreatorBundleCard';
 import {
   CreatorProductCard,
+  creatorProductGridClassName,
 } from '@/components/creator/CreatorProductCard';
 import { CreatorProductGroupModal } from '@/components/creator/CreatorProductGroupModal';
 import { CreatorProductsToolbar } from '@/components/creator/CreatorProductsToolbar';
@@ -51,8 +52,50 @@ import type {
 type ProductsView = 'list' | 'create';
 type FormatSectionOrder = 'physical-first' | 'virtual-first';
 
-const PRODUCT_GRID_CLASS =
-  'grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3';
+const PRIMARY_BUTTON_CLASS =
+  'inline-flex items-center justify-center gap-2 rounded-lg bg-[#111111] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-[#111111]';
+const SECONDARY_BUTTON_CLASS =
+  'inline-flex items-center justify-center gap-2 rounded-lg border border-black/[0.12] px-5 py-2.5 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/25 dark:border-white/[0.12] dark:text-white dark:hover:border-white/25';
+const EMPTY_FRAME_CLASS =
+  'rounded-lg border border-dashed border-black/[0.12] px-6 py-14 text-center dark:border-white/[0.12]';
+
+function PlusIcon() {
+  return (
+    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    </svg>
+  );
+}
+
+function BackLink({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 text-[15px] font-medium text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
+    >
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+      </svg>
+      {label}
+    </button>
+  );
+}
+
+function SectionHeading({ label, count, children }: { label: string; count: number; children?: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <h2 className="text-lg font-bold text-[#111111] dark:text-white">
+        {label}
+        <span className="font-medium tabular-nums text-neutral-400 dark:text-neutral-500">
+          {' · '}
+          {String(count).padStart(2, '0')}
+        </span>
+      </h2>
+      {children}
+    </div>
+  );
+}
 
 function formatSectionOrderKey(userId: string) {
   return `creator-product-format-section-order:${userId}`;
@@ -367,12 +410,25 @@ export function CreatorStudioProductsTab() {
   const showStatsColumn = !isCreateView && items.length > 0;
   const isEmptyGuide = !isCreateView && !loading && items.length === 0 && bundles.length === 0;
 
+  const renderProductCard = (product: MarketplaceProductSummary) => (
+    <CreatorProductCard
+      key={product.id}
+      product={product}
+      from="products"
+      publishingId={publishingId}
+      flagBusyId={flagBusyId}
+      onTogglePublish={(p) => void togglePublish(p)}
+      onTogglePin={(p) => void togglePin(p)}
+      onToggleBestseller={(p) => void toggleBestseller(p)}
+    />
+  );
+
   return (
     <div
       className={
         isEmptyGuide
           ? 'relative flex min-h-0 flex-1 flex-col overflow-hidden'
-          : 'relative min-h-0 flex-1 space-y-6 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+          : 'relative min-h-0 flex-1 space-y-10 overflow-y-auto pb-20 pt-8 [scrollbar-width:none] [-ms-overflow-style:none] sm:pt-10 [&::-webkit-scrollbar]:hidden'
       }
     >
       {!isCreateView && missingProfileFields.length > 0 ? (
@@ -384,23 +440,21 @@ export function CreatorStudioProductsTab() {
       ) : null}
 
       {isCreateView ? (
-        <div className="space-y-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 flex-1">
-              <button
-                type="button"
-                onClick={() => setProductsView('list')}
-                className="mb-3 inline-flex items-center text-sm font-medium text-neutral-500 transition hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
-              >
-                {'< back'}
-              </button>
-              <h2 className="text-lg font-bold text-neutral-900 dark:text-white">New product</h2>
-              <p className="mt-1 text-sm text-neutral-500">
-                Build a listing buyers trust — clear offer, sharp price, ready to sell.
-              </p>
-            </div>
-            <div className="shrink-0 sm:pt-1">
-              <ProductFormatToggle value={productFormat} onChange={setProductFormat} />
+        <div className="space-y-8">
+          <div className="space-y-5">
+            <BackLink label="Back to products" onClick={() => setProductsView('list')} />
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-3xl font-bold tracking-tight text-[#111111] dark:text-white sm:text-4xl">
+                  New product
+                </h1>
+                <p className="mt-2 text-base text-neutral-500 dark:text-neutral-400">
+                  Build a listing buyers trust — clear offer, sharp price, ready to sell.
+                </p>
+              </div>
+              <div className="shrink-0">
+                <ProductFormatToggle value={productFormat} onChange={setProductFormat} />
+              </div>
             </div>
           </div>
 
@@ -414,49 +468,6 @@ export function CreatorStudioProductsTab() {
         </div>
       ) : (
         <>
-          {!isEmptyGuide && (exploringGroups || !showStatsColumn) ? (
-            <div
-              className={`flex w-full shrink-0 items-center gap-4 ${
-                exploringGroups ? 'justify-between' : 'justify-end'
-              }`}
-            >
-              {exploringGroups ? (
-                <button
-                  type="button"
-                  onClick={() => setExploringGroups(false)}
-                  className="inline-flex items-center gap-1 text-lg font-medium leading-none text-neutral-500 transition hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
-                >
-                  <span aria-hidden className="text-xl leading-none">
-                    {'<'}
-                  </span>
-                  <span>back</span>
-                </button>
-              ) : null}
-              {!showStatsColumn ? (
-                <div className="shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setProductsView('create')}
-                    disabled={missingProfileFields.length > 0}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <svg
-                      className="h-4 w-4 shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={1.5}
-                      aria-hidden
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Publish new item
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
           {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
 
           {loading && items.length === 0 && bundles.length === 0 ? (
@@ -469,316 +480,266 @@ export function CreatorStudioProductsTab() {
               />
             </div>
           ) : (
-        <>
-          {!loading && draftCount > 0 && (
-            <p className="inline-flex items-center gap-2 rounded-lg border border-amber-200/70 bg-amber-50/60 px-3 py-1.5 text-xs text-amber-950 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-100">
-              <span className="font-semibold">
-                {draftCount} draft{draftCount > 1 ? 's' : ''}
-              </span>
-              <span className="text-amber-800/75 dark:text-amber-200/75">· hidden until published</span>
-            </p>
-          )}
-
-          {bundles.length > 0 && (
-            <section className="space-y-4">
-              <h3 className="text-base font-bold text-neutral-900 dark:text-white">Bundles</h3>
-              <div className="grid gap-5 md:grid-cols-2">
-                {bundles.map((bundle) => (
-                  <CreatorBundleCard
-                    key={bundle.id}
-                    bundle={bundle}
-                    isAuthenticated={Boolean(user)}
-                    loginRedirect="/marketplace/my-products"
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:gap-14">
-            <section className="min-w-0 flex-1 space-y-5">
-              {exploringGroups ? (
-                <CreatorProductGroupsExplorePanel
-                  groups={groups}
-                  products={items}
-                  selectedGroupId={selectedGroupId}
-                  onSelectGroup={(groupId) => {
-                    setSelectedGroupId(groupId);
-                    setExploringGroups(false);
-                  }}
-                  onEditGroup={openEditGroupModal}
-                  onCreateCatalogue={openCreateGroupModal}
-                />
-              ) : (
-                <>
-              {items.length > 0 && (
-                <div ref={toolbarRef}>
-                  <CreatorProductsToolbar
-                    query={query}
-                    status={status}
-                    type={type}
-                    sort={sort}
-                    format={format}
-                    formatCounts={formatCounts}
-                    groupActive={Boolean(selectedGroupId)}
-                    resultCount={displayProducts.length}
-                    totalCount={items.length}
-                    hasActiveFilters={hasActiveFilters}
-                    onSearch={setQuery}
-                    onStatusChange={setStatus}
-                    onTypeChange={setType}
-                    onSortChange={setSort}
-                    onFormatChange={(next) => {
-                      setSelectedGroupId(null);
-                      setFormat(next);
-                      if (next === 'physical') setType('');
-                    }}
-                  />
-                </div>
-              )}
-
-              {items.length === 0 ? (
-                <p className="text-sm text-neutral-500">No products yet.</p>
-              ) : filtered.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-10 text-center dark:border-neutral-700 dark:bg-neutral-900">
-                  <p className="text-neutral-600 dark:text-neutral-400">No products match your filters.</p>
-                  <div className="mt-4 flex flex-col items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={resetFilters}
-                      className="text-sm font-semibold text-orange-600 transition hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
-                    >
-                      Clear filters
-                    </button>
-                    <button
-                      type="button"
-                      onClick={resetFilters}
-                      aria-label="Reset filters"
-                      title="Reset filters"
-                      className="inline-flex h-12 w-12 items-center justify-center rounded-full text-orange-600 transition hover:bg-orange-50 hover:text-orange-700 dark:text-orange-400 dark:hover:bg-orange-500/10 dark:hover:text-orange-300"
-                    >
-                      <svg
-                        className="h-7 w-7"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        aria-hidden
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ) : displayProducts.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-10 text-center dark:border-neutral-700 dark:bg-neutral-900">
-                  <p className="text-neutral-600 dark:text-neutral-400">
-                    {selectedGroup
-                      ? `No products in “${selectedGroup.name}” match the current filters.`
-                      : 'No products match your filters.'}
+            <>
+              <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                <div className="min-w-0">
+                  <h1 className="text-3xl font-bold tracking-tight text-[#111111] dark:text-white sm:text-4xl">
+                    My products
+                  </h1>
+                  <p className="mt-2 text-base text-neutral-500 dark:text-neutral-400">
+                    Manage your listings, drafts and catalogues in one place.
                   </p>
-                  {selectedGroup ? (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedGroupId(null)}
-                      className="mt-4 text-sm font-semibold text-orange-600 transition hover:text-orange-700 dark:text-orange-400"
-                    >
-                      Clear catalogue filter
-                    </button>
-                  ) : null}
-                </div>
-              ) : format === 'all' && !selectedGroup ? (
-                <div className="space-y-10">
-                  {formatSections.map((section, index) => {
-                    if (section.products.length === 0) return null;
-                    const previousVisible = formatSections
-                      .slice(0, index)
-                      .some((entry) => entry.products.length > 0);
-
-                    return (
-                      <div key={section.key} className="space-y-10">
-                        {previousVisible ? (
-                          <hr className="border-neutral-200 dark:border-neutral-700" />
-                        ) : null}
-                        <section className="space-y-4" aria-label={`${section.label} products`}>
-                          <div className="flex items-center gap-3">
-                            <h3 className="text-sm font-bold uppercase tracking-wide text-neutral-900 dark:text-white">
-                              {section.label}
-                            </h3>
-                            <span className="text-xs font-medium tabular-nums text-neutral-500 dark:text-neutral-400">
-                              {section.products.length}
-                            </span>
-                            {displayPhysicalProducts.length > 0 &&
-                            displayVirtualProducts.length > 0 &&
-                            !previousVisible ? (
-                              <button
-                                type="button"
-                                onClick={swapFormatSections}
-                                aria-label="Swap Physical and Virtual sections"
-                                title="Swap Physical / Virtual order"
-                                className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition hover:border-orange-300 hover:text-orange-600 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-orange-500/50 dark:hover:text-orange-300"
-                              >
-                                <svg
-                                  className="h-4 w-4"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
-                                  aria-hidden
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"
-                                  />
-                                </svg>
-                              </button>
-                            ) : null}
-                          </div>
-                          <div className={PRODUCT_GRID_CLASS}>
-                            {section.products.map((product) => (
-                              <CreatorProductCard
-                                key={product.id}
-                                product={product}
-                                from="products"
-                                publishingId={publishingId}
-                                flagBusyId={flagBusyId}
-                                onTogglePublish={(p) => void togglePublish(p)}
-                                onTogglePin={(p) => void togglePin(p)}
-                                onToggleBestseller={(p) => void toggleBestseller(p)}
-                              />
-                            ))}
-                          </div>
-                        </section>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {selectedGroup ? (
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-sm font-bold uppercase tracking-wide text-neutral-900 dark:text-white">
-                        {selectedGroup.name}
-                      </h3>
-                      <span className="text-xs font-medium tabular-nums text-neutral-500 dark:text-neutral-400">
-                        {displayProducts.length}
+                  {!loading && draftCount > 0 ? (
+                    <p className="mt-4 inline-flex items-center gap-2 text-[14px] text-neutral-500 dark:text-neutral-400">
+                      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                      <span className="font-medium text-[#111111] dark:text-white">
+                        {draftCount} draft{draftCount > 1 ? 's' : ''}
                       </span>
-                    </div>
+                      <span>· hidden until published</span>
+                    </p>
                   ) : null}
-                  <div className={PRODUCT_GRID_CLASS}>
-                    {displayProducts.map((product) => (
-                      <CreatorProductCard
-                        key={product.id}
-                        product={product}
-                        from="products"
-                        publishingId={publishingId}
-                        flagBusyId={flagBusyId}
-                        onTogglePublish={(p) => void togglePublish(p)}
-                        onTogglePin={(p) => void togglePin(p)}
-                        onToggleBestseller={(p) => void toggleBestseller(p)}
+                </div>
+                {!showStatsColumn ? (
+                  <button
+                    type="button"
+                    onClick={() => setProductsView('create')}
+                    disabled={missingProfileFields.length > 0}
+                    className={`${PRIMARY_BUTTON_CLASS} shrink-0`}
+                  >
+                    <PlusIcon />
+                    Publish new item
+                  </button>
+                ) : null}
+              </header>
+
+              {bundles.length > 0 && (
+                <section className="space-y-5" aria-label="Bundles">
+                  <SectionHeading label="Bundles" count={bundles.length} />
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {bundles.map((bundle) => (
+                      <CreatorBundleCard
+                        key={bundle.id}
+                        bundle={bundle}
+                        isAuthenticated={Boolean(user)}
+                        loginRedirect="/marketplace/my-products"
                       />
                     ))}
                   </div>
-                </div>
+                </section>
               )}
-                </>
-              )}
-            </section>
 
-            {items.length > 0 && (
-              <div className="w-full shrink-0 space-y-4 xl:sticky xl:top-24 xl:ml-4 xl:w-[16rem] xl:pl-6">
-                <div
-                  className={`grid transition-[grid-template-rows,opacity,margin] duration-200 ease-out ${
-                    showStickySearch
-                      ? 'mb-0 grid-rows-[1fr] opacity-100'
-                      : 'pointer-events-none mb-0 grid-rows-[0fr] opacity-0'
-                  }`}
-                  aria-hidden={!showStickySearch}
-                >
-                  <div className="min-h-0 overflow-hidden">
-                    <label htmlFor="creator-products-search-sticky" className="sr-only">
-                      Search products
-                    </label>
-                    <div className="mb-4 flex items-center gap-2 rounded-xl bg-neutral-100 px-3 py-2.5 dark:bg-neutral-800">
-                      <svg
-                        className="h-4 w-4 shrink-0 text-neutral-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        aria-hidden
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                      </svg>
-                      <input
-                        id="creator-products-search-sticky"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Search…"
-                        tabIndex={showStickySearch ? 0 : -1}
-                        className="min-w-0 flex-1 border-0 bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0 dark:text-neutral-100 dark:placeholder:text-neutral-500"
+              <div className="flex flex-col gap-10 xl:flex-row xl:items-start xl:gap-12">
+                <section className="min-w-0 flex-1 space-y-10">
+                  {exploringGroups ? (
+                    <>
+                      <BackLink label="Back to products" onClick={() => setExploringGroups(false)} />
+                      <CreatorProductGroupsExplorePanel
+                        groups={groups}
+                        products={items}
+                        selectedGroupId={selectedGroupId}
+                        onSelectGroup={(groupId) => {
+                          setSelectedGroupId(groupId);
+                          setExploringGroups(false);
+                        }}
+                        onEditGroup={openEditGroupModal}
+                        onCreateCatalogue={openCreateGroupModal}
                       />
-                      {query ? (
-                        <button
-                          type="button"
-                          onClick={() => setQuery('')}
-                          tabIndex={showStickySearch ? 0 : -1}
-                          className="rounded-full p-0.5 text-neutral-400 transition hover:text-neutral-600 dark:hover:text-neutral-300"
-                          aria-label="Clear search"
-                        >
-                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </>
+                  ) : (
+                    <>
+                      {items.length > 0 && (
+                        <div ref={toolbarRef}>
+                          <CreatorProductsToolbar
+                            query={query}
+                            status={status}
+                            type={type}
+                            sort={sort}
+                            format={format}
+                            formatCounts={formatCounts}
+                            groupActive={Boolean(selectedGroupId)}
+                            resultCount={displayProducts.length}
+                            totalCount={items.length}
+                            hasActiveFilters={hasActiveFilters}
+                            onSearch={setQuery}
+                            onStatusChange={setStatus}
+                            onTypeChange={setType}
+                            onSortChange={setSort}
+                            onFormatChange={(next) => {
+                              setSelectedGroupId(null);
+                              setFormat(next);
+                              if (next === 'physical') setType('');
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {items.length === 0 ? (
+                        <p className="text-[15px] text-neutral-500 dark:text-neutral-400">No products yet.</p>
+                      ) : filtered.length === 0 ? (
+                        <div className={EMPTY_FRAME_CLASS}>
+                          <p className="text-base text-neutral-500 dark:text-neutral-400">No products match your filters.</p>
+                          <button type="button" onClick={resetFilters} className={`${SECONDARY_BUTTON_CLASS} mt-5`}>
+                            Clear filters
+                          </button>
+                        </div>
+                      ) : displayProducts.length === 0 ? (
+                        <div className={EMPTY_FRAME_CLASS}>
+                          <p className="text-base text-neutral-500 dark:text-neutral-400">
+                            {selectedGroup
+                              ? `No products in “${selectedGroup.name}” match the current filters.`
+                              : 'No products match your filters.'}
+                          </p>
+                          {selectedGroup ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedGroupId(null)}
+                              className={`${SECONDARY_BUTTON_CLASS} mt-5`}
+                            >
+                              Clear catalogue filter
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : format === 'all' && !selectedGroup ? (
+                        <div className="space-y-12">
+                          {formatSections.map((section, index) => {
+                            if (section.products.length === 0) return null;
+                            const previousVisible = formatSections
+                              .slice(0, index)
+                              .some((entry) => entry.products.length > 0);
+
+                            return (
+                              <section
+                                key={section.key}
+                                className="space-y-5"
+                                aria-label={`${section.label} products`}
+                              >
+                                <SectionHeading label={section.label} count={section.products.length}>
+                                  {displayPhysicalProducts.length > 0 &&
+                                  displayVirtualProducts.length > 0 &&
+                                  !previousVisible ? (
+                                    <button
+                                      type="button"
+                                      onClick={swapFormatSections}
+                                      aria-label="Swap Physical and Virtual sections"
+                                      title="Swap Physical / Virtual order"
+                                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-black/[0.08] text-neutral-500 transition-colors hover:border-black/20 hover:text-[#FF5722] dark:border-white/[0.1] dark:text-neutral-400 dark:hover:border-white/25 dark:hover:text-[#FF5722]"
+                                    >
+                                      <svg
+                                        className="h-4 w-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        strokeWidth={1.75}
+                                        aria-hidden
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"
+                                        />
+                                      </svg>
+                                    </button>
+                                  ) : null}
+                                </SectionHeading>
+                                <div className={creatorProductGridClassName}>
+                                  {section.products.map(renderProductCard)}
+                                </div>
+                              </section>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <section className="space-y-5">
+                          {selectedGroup ? (
+                            <SectionHeading label={selectedGroup.name} count={displayProducts.length} />
+                          ) : null}
+                          <div className={creatorProductGridClassName}>{displayProducts.map(renderProductCard)}</div>
+                        </section>
+                      )}
+                    </>
+                  )}
+                </section>
+
+                {items.length > 0 && (
+                  <aside className="w-full shrink-0 xl:sticky xl:top-8 xl:w-72">
+                    <div
+                      className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+                        showStickySearch
+                          ? 'grid-rows-[1fr] opacity-100'
+                          : 'pointer-events-none grid-rows-[0fr] opacity-0'
+                      }`}
+                      aria-hidden={!showStickySearch}
+                    >
+                      <div className="min-h-0 overflow-hidden pb-4">
+                        <label htmlFor="creator-products-search-sticky" className="sr-only">
+                          Search products
+                        </label>
+                        <div className="flex h-11 items-center gap-3 rounded-lg bg-black/[0.04] px-4 dark:bg-white/[0.06]">
+                          <svg
+                            className="h-4 w-4 shrink-0 text-neutral-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            aria-hidden
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                            />
                           </svg>
-                        </button>
-                      ) : null}
+                          <input
+                            id="creator-products-search-sticky"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search…"
+                            tabIndex={showStickySearch ? 0 : -1}
+                            className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[15px] text-[#111111] placeholder:text-neutral-400 focus:outline-none focus:ring-0 dark:text-white dark:placeholder:text-neutral-500"
+                          />
+                          {query ? (
+                            <button
+                              type="button"
+                              onClick={() => setQuery('')}
+                              tabIndex={showStickySearch ? 0 : -1}
+                              className="rounded-full p-1 text-neutral-400 transition hover:text-[#111111] dark:hover:text-white"
+                              aria-label="Clear search"
+                            >
+                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setProductsView('create')}
-                  disabled={missingProfileFields.length > 0}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <svg
-                    className="h-4 w-4 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    aria-hidden
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                  Publish new item
-                </button>
-                <CreatorProductsStatsPanel
-                  groups={groups}
-                  selectedGroupId={selectedGroupId}
-                  exploring={exploringGroups}
-                  onSelectGroup={(groupId) => {
-                    setExploringGroups(false);
-                    setSelectedGroupId(groupId);
-                  }}
-                  onCreateGroup={openCreateGroupModal}
-                  onExplore={() => {
-                    setSelectedGroupId(null);
-                    setExploringGroups(true);
-                  }}
-                />
+                    <button
+                      type="button"
+                      onClick={() => setProductsView('create')}
+                      disabled={missingProfileFields.length > 0}
+                      className={`${PRIMARY_BUTTON_CLASS} mb-4 w-full`}
+                    >
+                      <PlusIcon />
+                      Publish new item
+                    </button>
+                    <CreatorProductsStatsPanel
+                      groups={groups}
+                      selectedGroupId={selectedGroupId}
+                      exploring={exploringGroups}
+                      onSelectGroup={(groupId) => {
+                        setExploringGroups(false);
+                        setSelectedGroupId(groupId);
+                      }}
+                      onCreateGroup={openCreateGroupModal}
+                      onExplore={() => {
+                        setSelectedGroupId(null);
+                        setExploringGroups(true);
+                      }}
+                    />
+                  </aside>
+                )}
               </div>
-            )}
-          </div>
-        </>
+            </>
           )}
         </>
       )}

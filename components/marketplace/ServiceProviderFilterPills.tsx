@@ -1,6 +1,18 @@
 'use client';
 
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { NATIONALITY_SELECT_OPTIONS } from '@/lib/countries';
+import {
+  PROVIDER_HAIRLINE_CLASS,
+  PROVIDER_INK_CLASS,
+  PROVIDER_SURFACE_CLASS,
+  ProviderSwitch,
+} from '@/components/marketplace/ProviderDirectoryPrimitives';
+
+const nationalityOptions = [
+  { value: '', label: 'All nationalities' },
+  ...NATIONALITY_SELECT_OPTIONS.map((option) => ({ value: option.code, label: option.label })),
+];
 
 export const SERVICE_PROVIDER_MIN_YEARS_OPTIONS = [
   { value: '', label: 'Any experience' },
@@ -11,112 +23,223 @@ export const SERVICE_PROVIDER_MIN_YEARS_OPTIONS = [
   { value: '15', label: '15+ years' },
 ] as const;
 
-function PersonIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
-      />
-    </svg>
-  );
-}
-
-function GlobeIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z" />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 014 9 15.3 15.3 0 01-4 9 15.3 15.3 0 01-4-9 15.3 15.3 0 014-9z"
-      />
-    </svg>
-  );
-}
-
 function ChevronDownIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 9.5l6 6 6-6" />
     </svg>
   );
 }
 
-function ClosestFirstToggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (next: boolean) => void;
-}) {
+function CheckIcon({ className }: { className?: string }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap">
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-          checked ? 'bg-orange-500' : 'bg-gray-200 dark:bg-neutral-700'
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-            checked ? 'translate-x-5' : 'translate-x-0'
-          }`}
-        />
-      </button>
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Closest first</span>
-    </label>
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="m5 12.5 4.5 4.5L19 7.5" />
+    </svg>
   );
 }
 
-function IconFilterSelect({
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7l10 10M17 7 7 17" />
+    </svg>
+  );
+}
+
+function normalizeForSearch(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+/**
+ * Hairline trigger + glass listbox. Shows "Label · Value" once a value is set, with a quick clear;
+ * long lists get a search field and full keyboard support (arrows, Enter, Escape).
+ */
+function FilterDropdown({
   id,
   label,
   value,
-  active,
   onChange,
   options,
-  icon,
-  className = '',
+  searchable = false,
 }: {
   id: string;
   label: string;
   value: string;
-  active: boolean;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
-  icon: React.ReactNode;
-  className?: string;
+  searchable?: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [cursor, setCursor] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  const selected = options.find((option) => option.value === value && option.value !== '');
+  const visible = useMemo(() => {
+    const needle = normalizeForSearch(query.trim());
+    if (!needle) return options;
+    return options.filter((option) => option.value && normalizeForSearch(option.label).includes(needle));
+  }, [options, query]);
+
+  const close = () => {
+    setOpen(false);
+    setQuery('');
+  };
+
+  const openMenu = () => {
+    const index = Math.max(0, options.findIndex((option) => option.value === value));
+    setCursor(index);
+    setOpen(true);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+        setQuery('');
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    listRef.current?.querySelector<HTMLElement>(`[data-index="${cursor}"]`)?.scrollIntoView({ block: 'nearest' });
+  }, [cursor, open]);
+
+  const pick = (next: string) => {
+    onChange(next);
+    close();
+  };
+
+  const onKeyDown = (event: React.KeyboardEvent) => {
+    if (!open) {
+      if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openMenu();
+      }
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      close();
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setCursor((prev) => Math.min(prev + 1, visible.length - 1));
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setCursor((prev) => Math.max(prev - 1, 0));
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const option = visible[cursor];
+      if (option) pick(option.value);
+    }
+  };
+
   return (
-    <div className={`relative min-w-0 ${className}`}>
-      <label htmlFor={id} className="sr-only">
-        {label}
-      </label>
-      <span className="pointer-events-none absolute left-3 top-1/2 z-[1] -translate-y-1/2 text-neutral-500 dark:text-neutral-400">
-        {icon}
-      </span>
-      <select
-        id={id}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className={`h-10 min-w-[11rem] max-w-full cursor-pointer appearance-none rounded-2xl border bg-white py-2 pl-10 pr-9 text-sm font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-orange-500/30 dark:bg-neutral-950 dark:[color-scheme:dark] ${
-          active
-            ? 'border-orange-500 text-neutral-900 dark:border-orange-400 dark:text-white'
-            : 'border-neutral-200 text-neutral-700 hover:border-neutral-300 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-neutral-500'
+    <div ref={rootRef} className="relative min-w-0" onKeyDown={onKeyDown}>
+      <div
+        className={`group/sel inline-flex h-10 items-center rounded-lg border transition-colors duration-200 ${PROVIDER_SURFACE_CLASS} ${
+          selected
+            ? 'border-[#111111]/25 dark:border-white/25'
+            : `${PROVIDER_HAIRLINE_CLASS} hover:border-black/15 dark:hover:border-white/20`
         }`}
       >
-        {options.map((option) => (
-          <option key={option.value || 'all'} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+        <button
+          id={id}
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          onClick={() => (open ? close() : openMenu())}
+          className="inline-flex h-full items-center gap-2 pl-4 pr-3 text-[14px] outline-none"
+        >
+          <span className="text-neutral-500 dark:text-neutral-400">{label}</span>
+          {selected ? (
+            <span className={`max-w-[11rem] truncate font-medium ${PROVIDER_INK_CLASS}`}>{selected.label}</span>
+          ) : null}
+          <ChevronDownIcon
+            className={`h-3.5 w-3.5 transition-transform duration-300 ${open ? 'rotate-180' : ''} ${
+              selected ? 'text-[#FF5722]' : 'text-neutral-400 group-hover/sel:text-[#FF5722]'
+            }`}
+          />
+        </button>
+        {selected ? (
+          <button
+            type="button"
+            aria-label={`Clear ${label.toLowerCase()}`}
+            title="Clear"
+            onClick={() => onChange('')}
+            className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-black/[0.06] hover:text-[#111111] dark:hover:bg-white/10 dark:hover:text-white"
+          >
+            <XIcon className="h-3 w-3" />
+          </button>
+        ) : null}
+      </div>
+
+      {open ? (
+        <div
+          className="absolute left-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-xl border border-black/[0.06] bg-white/90 shadow-2xl backdrop-blur-xl dark:border-white/[0.08] dark:bg-[#141414]/95"
+          style={{ animation: 'pf-float-in 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
+        >
+          {searchable ? (
+            <div className="border-b border-black/[0.06] px-3 py-2.5 dark:border-white/[0.06]">
+              <input
+                autoFocus
+                type="text"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setCursor(0);
+                }}
+                placeholder={`Search ${label.toLowerCase()}…`}
+                aria-label={`Search ${label.toLowerCase()}`}
+                className="w-full bg-transparent text-[14px] text-[#111111] caret-[#FF5722] outline-none placeholder:text-neutral-400 dark:text-white"
+              />
+            </div>
+          ) : null}
+          <ul
+            ref={listRef}
+            role="listbox"
+            aria-labelledby={id}
+            className="max-h-72 overflow-y-auto p-1.5 [scrollbar-color:rgba(0,0,0,0.18)_transparent] [scrollbar-width:thin] dark:[scrollbar-color:rgba(255,255,255,0.16)_transparent] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/20 dark:[&::-webkit-scrollbar-thumb]:bg-white/15"
+          >
+            {visible.length === 0 ? (
+              <li className="px-3 py-6 text-center text-[14px] text-neutral-400">No match</li>
+            ) : (
+              visible.map((option, index) => {
+                const isSelected = option.value === value;
+                return (
+                  <li key={option.value || 'any'} role="option" aria-selected={isSelected}>
+                    <button
+                      type="button"
+                      data-index={index}
+                      onMouseEnter={() => setCursor(index)}
+                      onClick={() => pick(option.value)}
+                      className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-[14px] transition-colors duration-150 ${
+                        index === cursor ? 'bg-black/[0.05] dark:bg-white/[0.07]' : ''
+                      } ${
+                        isSelected
+                          ? 'font-semibold text-[#111111] dark:text-white'
+                          : 'text-neutral-600 dark:text-neutral-300'
+                      }`}
+                    >
+                      <span className="truncate">{option.label}</span>
+                      {isSelected ? <CheckIcon className="h-4 w-4 shrink-0 text-[#FF5722]" /> : null}
+                    </button>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -132,7 +255,7 @@ type ServiceProviderFilterPillsProps = {
   className?: string;
 };
 
-/** Experience · nationality dropdowns + Closest first toggle (Service Provider search). */
+/** Experience / nationality selects + Closest first switch (Service Provider directory). */
 export function ServiceProviderFilterPills({
   minYearsExperience,
   nationality,
@@ -146,12 +269,14 @@ export function ServiceProviderFilterPills({
   const yearsValue = minYearsExperience != null ? String(minYearsExperience) : '';
 
   return (
-    <div className={`flex flex-wrap items-center gap-2.5 ${className}`} aria-label="Provider filters">
-      <IconFilterSelect
+    <div
+      className={`flex flex-wrap items-center gap-3 ${className}`}
+      aria-label="Provider filters"
+    >
+      <FilterDropdown
         id={`${idPrefix}-years`}
-        label="Years of experience"
+        label="Experience"
         value={yearsValue}
-        active={Boolean(yearsValue)}
         onChange={(raw) => {
           const parsed = raw ? Number.parseInt(raw, 10) : null;
           onYearsChange(parsed != null && Number.isFinite(parsed) ? parsed : null);
@@ -160,27 +285,18 @@ export function ServiceProviderFilterPills({
           value: option.value,
           label: option.label,
         }))}
-        icon={<PersonIcon className="h-4 w-4" />}
       />
 
-      <IconFilterSelect
+      <FilterDropdown
         id={`${idPrefix}-nationality`}
         label="Nationality"
         value={nationality}
-        active={Boolean(nationality.trim())}
         onChange={onNationalityChange}
-        options={[
-          { value: '', label: 'All nationalities' },
-          ...NATIONALITY_SELECT_OPTIONS.map((option) => ({
-            value: option.code,
-            label: option.label,
-          })),
-        ]}
-        icon={<GlobeIcon className="h-4 w-4" />}
-        className="min-w-[12rem]"
+        searchable
+        options={nationalityOptions}
       />
 
-      <ClosestFirstToggle checked={closestFirst} onChange={onClosestFirstChange} />
+      <ProviderSwitch checked={closestFirst} onChange={onClosestFirstChange} label="Closest first" />
     </div>
   );
 }

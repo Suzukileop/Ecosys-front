@@ -11,9 +11,9 @@ import { ProductFavoriteButton } from '@/components/marketplace/ProductFavoriteB
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
 import type { MarketplaceProductSummary } from '@/types/marketplace';
 
-/** Responsive product grid — max 4 columns on large screens so titles stay readable. */
+/** Responsive product grid — max 3 columns so cards stay airy and titles readable. */
 export const marketplaceProductGridClassName =
-  'grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
+  'grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3';
 
 type ProductCardProps = {
   product: MarketplaceProductSummary;
@@ -24,6 +24,8 @@ type ProductCardProps = {
   initialLiked?: boolean;
   onLikedChange?: (productId: string, liked: boolean) => void;
 };
+
+const OVERLAY_CHIP = 'rounded-md bg-black/60 px-2 py-1 text-[13px] font-medium text-white backdrop-blur-sm';
 
 export function ProductCard({
   product,
@@ -39,7 +41,7 @@ export function ProductCard({
   const isVideo = product.type === 'VIDEO';
   const hasVideoThumbnail = isVideoThumbnailUrl(product.thumbnailUrl);
   const { genre, tags } = collectProductLabels(product);
-  const hasLabels = Boolean(genre) || tags.length > 0;
+  const labels = [...(genre ? [genre] : []), ...tags];
   const shopName = product.shopName?.trim() || null;
   const authorName = product.creatorName?.trim() || null;
 
@@ -59,150 +61,141 @@ export function ProductCard({
     product.videoDurationSeconds > 0;
 
   return (
-    <article className="group flex w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-lg dark:border-neutral-800 dark:bg-[#1F1F1F] dark:hover:shadow-neutral-900/50">
-      <Link href={targetHref} className="relative block h-52 w-full shrink-0 overflow-hidden bg-gray-100 dark:bg-neutral-800">
-          {product.thumbnailUrl ? (
+    <article className="group flex w-full flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white transition-colors duration-300 hover:border-black/[0.12] dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.16]">
+      <Link
+        href={targetHref}
+        className="relative block aspect-[4/3] w-full shrink-0 overflow-hidden bg-black/[0.04] dark:bg-white/[0.04]"
+      >
+        {product.thumbnailUrl ? (
+          <div className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105">
             <ProductThumbnailMedia
               url={product.thumbnailUrl}
               autoPlay={hasVideoThumbnail}
               fit="cover"
-              zoomOnHover
               className="h-full w-full"
             />
-          ) : (
-            <div className="flex h-full items-center justify-center bg-gray-100 dark:bg-neutral-800">
-              <span className="text-sm text-gray-400 dark:text-gray-500">Preview unavailable</span>
-            </div>
-          )}
-
-          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-            {product.videoResolution && (
-              <span className="rounded-md bg-gray-900/80 px-2.5 py-1 text-xs font-semibold text-white">
-                {product.videoResolution}
-              </span>
-            )}
           </div>
-
-          <div className="absolute right-3 top-3 flex items-start gap-1.5" onClick={(e) => e.preventDefault()}>
-            {(product.isPinned || product.isBestseller) && (
-              <div className="flex flex-row items-center gap-1.5">
-                {product.isPinned ? (
-                  <span
-                    title="Pinned"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 text-white shadow-sm"
-                  >
-                    <FontAwesomeIcon icon={faThumbtack} className="h-3 w-3" />
-                  </span>
-                ) : null}
-                {product.isBestseller ? (
-                  <span
-                    title="Bestseller"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm"
-                  >
-                    <FontAwesomeIcon icon={faCrown} className="h-3 w-3" />
-                  </span>
-                ) : null}
-              </div>
-            )}
-            <ProductFavoriteButton
-              productId={product.id}
-              initialFavorited={initialFavorited}
-              onFavoritedChange={(favorited) => onFavoritedChange?.(product.id, favorited)}
-              variant="bookmark"
-              size="sm"
-            />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <span className="text-[14px] text-neutral-400 dark:text-neutral-500">Preview unavailable</span>
           </div>
+        )}
 
-          <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5">
-            {showDuration && (
-              <span className="flex items-center gap-1 rounded-md bg-gray-900/80 px-2.5 py-1 text-xs font-medium text-white">
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {formatVideoDuration(product.videoDurationSeconds!)}
-              </span>
-            )}
+        {product.videoResolution ? (
+          <div className="absolute left-3 top-3">
+            <span className={OVERLAY_CHIP}>{product.videoResolution}</span>
           </div>
-      </Link>
+        ) : null}
 
-      <div className="flex justify-end px-4 py-2">
-        <ProductCardEngagementStrip
-          productId={product.id}
-          initialLikes={product.likes ?? 0}
-          initialLiked={initialLiked}
-          onLikedChange={(liked) => onLikedChange?.(product.id, liked)}
-          views={product.views ?? 0}
-        />
-      </div>
-
-      <div className="flex flex-1 flex-col gap-4 p-5 pt-2">
-        <div className="space-y-3">
-          <Link
-            href={targetHref}
-            className="mt-1 line-clamp-2 text-base font-bold leading-snug text-gray-900 group-hover:text-orange-600 dark:text-white dark:group-hover:text-orange-400 xl:line-clamp-1 xl:text-lg"
-            title={product.title}
-          >
-            {product.title}
-          </Link>
-
-          {showCreator && (authorName || shopName) ? (
-            <div className="space-y-1">
-              {authorName ? (
-                <Link
-                  href={`/marketplace/${product.creatorId}`}
-                  className="block truncate text-sm font-medium text-gray-800 hover:text-orange-600 dark:text-gray-200 dark:hover:text-orange-400"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {authorName}
-                </Link>
-              ) : null}
-              {shopName ? (
-                <p className="truncate text-xs text-neutral-500 dark:text-neutral-400" title={shopName}>
-                  {shopName}
-                </p>
-              ) : null}
-            </div>
+        <div className="absolute right-3 top-3 flex items-start gap-1.5" onClick={(e) => e.preventDefault()}>
+          {product.isPinned ? (
+            <span
+              title="Pinned"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-[#FF5722] shadow-sm dark:bg-[#111111]/95"
+            >
+              <FontAwesomeIcon icon={faThumbtack} className="h-3 w-3" />
+            </span>
           ) : null}
-
-          {hasLabels && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {genre && (
-                <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-medium lowercase text-orange-800 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-200">
-                  {genre}
-                </span>
-              )}
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs lowercase text-gray-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-400"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
+          {product.isBestseller ? (
+            <span
+              title="Bestseller"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-amber-500 shadow-sm dark:bg-[#111111]/95"
+            >
+              <FontAwesomeIcon icon={faCrown} className="h-3 w-3" />
+            </span>
+          ) : null}
+          <ProductFavoriteButton
+            productId={product.id}
+            initialFavorited={initialFavorited}
+            onFavoritedChange={(favorited) => onFavoritedChange?.(product.id, favorited)}
+            variant="bookmark"
+            size="sm"
+          />
         </div>
 
-        <div className="mt-auto flex items-end justify-between gap-4 border-t border-gray-200 pt-4 dark:border-neutral-700">
+        {showDuration ? (
+          <div className="absolute bottom-3 left-3">
+            <span className={`${OVERLAY_CHIP} inline-flex items-center gap-1`}>
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {formatVideoDuration(product.videoDurationSeconds!)}
+            </span>
+          </div>
+        ) : null}
+      </Link>
+
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <Link
+          href={targetHref}
+          className="line-clamp-2 text-[17px] font-semibold leading-snug tracking-[-0.01em] text-[#111111] transition-colors duration-200 group-hover:text-[#FF5722] dark:text-white"
+          title={product.title}
+        >
+          {product.title}
+        </Link>
+
+        {showCreator && (authorName || shopName) ? (
+          <p className="flex min-w-0 items-center gap-1.5 text-[14px] text-neutral-500 dark:text-neutral-400">
+            {authorName ? (
+              <Link
+                href={`/marketplace/${product.creatorId}`}
+                className="truncate font-medium text-neutral-700 transition-colors hover:text-[#FF5722] dark:text-neutral-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {authorName}
+              </Link>
+            ) : null}
+            {authorName && shopName ? <span aria-hidden>·</span> : null}
+            {shopName ? (
+              <span className="truncate" title={shopName}>
+                {shopName}
+              </span>
+            ) : null}
+          </p>
+        ) : null}
+
+        {labels.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {labels.map((label, index) => (
+              <span
+                key={`${label}-${index}`}
+                className="rounded-full border border-black/[0.08] px-2.5 py-0.5 text-[13px] text-neutral-600 dark:border-white/[0.1] dark:text-neutral-300"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="mt-auto flex items-center justify-between gap-4 border-t border-black/[0.06] pt-4 dark:border-white/[0.06]">
           <div className="min-w-0">
             {hasDiscount && (
-              <p className="text-sm text-gray-400 line-through dark:text-gray-500">
+              <p className="text-[14px] text-neutral-400 line-through dark:text-neutral-500">
                 {formatPrice(product.compareAtPriceCents!, product.currency)}
               </p>
             )}
-            <p className="text-xl font-bold text-gray-900 dark:text-white">
+            <p className="text-base font-semibold text-[#111111] dark:text-white">
               {formatPrice(product.priceCents, product.currency)}
             </p>
           </div>
-          <Link
-            href={messageHref}
-            onClick={(e) => e.stopPropagation()}
-            title={messageLabel}
-            aria-label={messageLabel}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-900 text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-          >
-            <FontAwesomeIcon icon={faComment} className="h-4 w-4" />
-          </Link>
+          <div className="flex shrink-0 items-center gap-3">
+            <ProductCardEngagementStrip
+              productId={product.id}
+              initialLikes={product.likes ?? 0}
+              initialLiked={initialLiked}
+              onLikedChange={(liked) => onLikedChange?.(product.id, liked)}
+              views={product.views ?? 0}
+            />
+            <Link
+              href={messageHref}
+              onClick={(e) => e.stopPropagation()}
+              title={messageLabel}
+              aria-label={messageLabel}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-black/[0.12] text-[#111111] transition-colors hover:border-[#111111] hover:bg-[#111111] hover:text-white dark:border-white/[0.12] dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-[#111111]"
+            >
+              <FontAwesomeIcon icon={faComment} className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </div>
       </div>
     </article>

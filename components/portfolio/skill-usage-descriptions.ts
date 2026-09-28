@@ -147,9 +147,9 @@ export function resolveSkillCategoryDisplay(skill: PortfolioSkillRef): string {
   return labeled ? labeled.toUpperCase() : '';
 }
 
-export function resolveSkillUseCases(skill: PortfolioSkillRef): string[] {
-  if (typeof skill === 'string') return [];
-  return (skill.useCases ?? []).map((entry) => entry.trim()).filter(Boolean).slice(0, 8);
+/** Use cases are retired: legacy stored values are never displayed. */
+export function resolveSkillUseCases(_skill: PortfolioSkillRef): string[] {
+  return [];
 }
 
 export function resolveSkillExperienceLabel(skill: PortfolioSkillRef): string {

@@ -1,7 +1,7 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { PRODUCT_TYPE_LABELS } from '@/lib/marketplace-api';
+import { MarketplaceFilterDropdown } from '@/components/marketplace/MarketplaceFilterDropdown';
 import type { ProductType } from '@/types/marketplace';
 import type {
   CreatorProductFormatFilter,
@@ -23,6 +23,14 @@ const PRODUCT_TYPES: ProductType[] = [
   'OTHER',
 ];
 
+const TYPE_OPTIONS = [
+  { value: '', label: 'All types' },
+  ...PRODUCT_TYPES.map((productType) => ({
+    value: productType,
+    label: PRODUCT_TYPE_LABELS[productType] ?? productType,
+  })),
+];
+
 const SORT_OPTIONS: { value: CreatorProductSort; label: string }[] = [
   { value: 'newest', label: 'Most recent' },
   { value: 'oldest', label: 'Oldest' },
@@ -37,6 +45,11 @@ const FORMAT_OPTIONS: { id: CreatorProductFormatFilter; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'physical', label: 'Physical' },
   { id: 'virtual', label: 'Virtual' },
+];
+
+const STATUS_OPTIONS: { id: Exclude<CreatorProductStatusFilter, 'all'>; label: string }[] = [
+  { id: 'published', label: 'Published' },
+  { id: 'draft', label: 'Draft' },
 ];
 
 type CreatorProductsToolbarProps = {
@@ -59,45 +72,7 @@ type CreatorProductsToolbarProps = {
   onFormatChange: (format: CreatorProductFormatFilter) => void;
 };
 
-function FilterSelect({
-  id,
-  value,
-  onChange,
-  'aria-label': ariaLabel,
-  children,
-}: {
-  id?: string;
-  value: string;
-  onChange: (value: string) => void;
-  'aria-label': string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="relative shrink-0">
-      <select
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-label={ariaLabel}
-        className="min-w-[8.5rem] cursor-pointer appearance-none rounded-xl border-0 bg-neutral-100 py-2.5 pl-4 pr-10 text-sm font-medium text-neutral-800 transition focus:outline-none focus:ring-2 focus:ring-orange-200 dark:bg-neutral-800 dark:text-neutral-100 dark:focus:ring-orange-500/30"
-      >
-        {children}
-      </select>
-      <svg
-        className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500 dark:text-neutral-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-        aria-hidden
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-      </svg>
-    </div>
-  );
-}
-
-function StatusToggle({
+function StatusTabs({
   status,
   onStatusChange,
 }: {
@@ -105,30 +80,25 @@ function StatusToggle({
   onStatusChange: (status: CreatorProductStatusFilter) => void;
 }) {
   return (
-    <div
-      className="inline-flex shrink-0 items-center rounded-full bg-neutral-100 p-1 dark:bg-neutral-800"
-      role="group"
-      aria-label="Draft or published"
-    >
-      {(
-        [
-          { id: 'draft' as const, label: 'Draft' },
-          { id: 'published' as const, label: 'Published' },
-        ] as const
-      ).map((option) => {
+    <div className="flex items-center gap-7" role="group" aria-label="Draft or published">
+      {STATUS_OPTIONS.map((option) => {
         const active = status === option.id;
         return (
           <button
             key={option.id}
             type="button"
+            aria-pressed={active}
             onClick={() => onStatusChange(option.id)}
-            className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
+            className={`relative pb-3.5 text-[15px] font-medium transition-colors duration-200 ${
               active
-                ? 'bg-orange-500 text-white shadow-sm'
-                : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white'
+                ? 'text-[#111111] dark:text-white'
+                : 'text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
             }`}
           >
             {option.label}
+            {active ? (
+              <span aria-hidden className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-[#FF5722]" />
+            ) : null}
           </button>
         );
       })}
@@ -155,15 +125,35 @@ export function CreatorProductsToolbar({
   onFormatChange,
 }: CreatorProductsToolbarProps) {
   return (
-    <div className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-[#0F0F0F] sm:p-5">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+    <div className="space-y-5">
+      <div className="flex items-end justify-between gap-4 border-b border-black/[0.06] dark:border-white/[0.06]">
+        {!hideStatusToggle ? (
+          <StatusTabs status={status} onStatusChange={onStatusChange} />
+        ) : (
+          <span />
+        )}
+        <p className="pb-3.5 text-[14px] text-neutral-500 dark:text-neutral-400">
+          {hasActiveFilters ? (
+            <>
+              <span className="font-medium text-[#111111] dark:text-white">{resultCount}</span> of {totalCount}{' '}
+              product{totalCount !== 1 ? 's' : ''}
+            </>
+          ) : (
+            <>
+              {resultCount} product{resultCount !== 1 ? 's' : ''}
+            </>
+          )}
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="min-w-0 flex-1">
           <label htmlFor="creator-products-search" className="sr-only">
             Search products
           </label>
-          <div className="flex items-center gap-3 rounded-full bg-neutral-100 px-5 py-3 transition focus-within:ring-2 focus-within:ring-orange-200 dark:bg-neutral-800 dark:focus-within:ring-orange-500/30">
+          <div className="flex h-11 items-center gap-3 rounded-lg bg-black/[0.04] px-4 transition focus-within:bg-black/[0.06] dark:bg-white/[0.06] dark:focus-within:bg-white/[0.08]">
             <svg
-              className="h-5 w-5 shrink-0 text-neutral-400"
+              className="h-4 w-4 shrink-0 text-neutral-400"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -181,49 +171,41 @@ export function CreatorProductsToolbar({
               value={query}
               onChange={(e) => onSearch(e.target.value)}
               placeholder="Search by title or tag…"
-              className="min-w-0 flex-1 border-0 bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0 dark:text-neutral-100 dark:placeholder:text-neutral-500"
+              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[15px] text-[#111111] placeholder:text-neutral-400 focus:outline-none focus:ring-0 dark:text-white dark:placeholder:text-neutral-500"
             />
             {query ? (
               <button
                 type="button"
                 onClick={() => onSearch('')}
-                className="rounded-full p-1 text-neutral-400 transition hover:bg-neutral-200/80 hover:text-neutral-600 dark:hover:bg-neutral-700 dark:hover:text-neutral-300"
+                className="rounded-full p-1 text-neutral-400 transition hover:bg-black/[0.06] hover:text-[#111111] dark:hover:bg-white/10 dark:hover:text-white"
                 aria-label="Clear search"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             ) : null}
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 lg:gap-3">
-          <FilterSelect
+        <div className="flex flex-wrap items-center gap-2">
+          <MarketplaceFilterDropdown
+            id="creator-products-type"
+            label="Type"
             value={type}
             onChange={(v) => onTypeChange((v || '') as ProductType | '')}
-            aria-label="Filter by type"
-          >
-            <option value="">All types</option>
-            {PRODUCT_TYPES.map((productType) => (
-              <option key={productType} value={productType}>
-                {PRODUCT_TYPE_LABELS[productType] ?? productType}
-              </option>
-            ))}
-          </FilterSelect>
-          <FilterSelect
+            options={TYPE_OPTIONS}
+            defaultValue=""
+          />
+          <MarketplaceFilterDropdown
+            id="creator-products-sort"
+            label="Sort"
             value={sort}
             onChange={(v) => onSortChange(v as CreatorProductSort)}
-            aria-label="Sort products"
-          >
-            {SORT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </FilterSelect>
-          {!hideStatusToggle ? (
-            <StatusToggle status={status} onStatusChange={onStatusChange} />
-          ) : null}
+            options={SORT_OPTIONS}
+            defaultValue="newest"
+            clearable={false}
+            align="right"
+          />
         </div>
       </div>
 
@@ -238,31 +220,24 @@ export function CreatorProductsToolbar({
               role="radio"
               aria-checked={selected}
               onClick={() => onFormatChange(option.id)}
-              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm transition ${
+              className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[14px] font-medium transition-colors duration-200 ${
                 selected
-                  ? 'bg-neutral-200 font-semibold text-neutral-900 dark:bg-neutral-700 dark:text-white'
-                  : 'bg-neutral-100 font-medium text-neutral-700 hover:bg-neutral-200/80 dark:bg-neutral-800/60 dark:text-neutral-200 dark:hover:bg-neutral-700/70'
+                  ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
+                  : 'border-black/[0.08] text-neutral-600 hover:border-black/20 hover:text-[#111111] dark:border-white/[0.1] dark:text-neutral-300 dark:hover:border-white/25 dark:hover:text-white'
               }`}
             >
               <span>{option.label}</span>
-              <span className="text-xs tabular-nums text-neutral-500 dark:text-neutral-400">{count}</span>
+              <span
+                className={`tabular-nums ${
+                  selected ? 'text-white/60 dark:text-[#111111]/50' : 'text-neutral-400 dark:text-neutral-500'
+                }`}
+              >
+                {count}
+              </span>
             </button>
           );
         })}
       </div>
-
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        {hasActiveFilters ? (
-          <>
-            <span className="font-semibold text-gray-900 dark:text-white">{resultCount}</span> of{' '}
-            {totalCount} product{totalCount !== 1 ? 's' : ''}
-          </>
-        ) : (
-          <>
-            {resultCount} product{resultCount !== 1 ? 's' : ''}
-          </>
-        )}
-      </p>
     </div>
   );
 }

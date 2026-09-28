@@ -95,16 +95,25 @@ export function CreatorStudioContentTabSkeleton() {
   );
 }
 
+const softBlock = 'animate-pulse rounded-md bg-black/[0.06] dark:bg-white/[0.06]';
+const hairlineFrame =
+  'overflow-hidden rounded-lg border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]';
+
+function SoftLine({ className = '' }: { className?: string }) {
+  return <div className={`${softBlock} ${className}`} aria-hidden />;
+}
+
 function CreatorProductCardSkeleton() {
   return (
-    <article className="flex w-full flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-      <div className={`h-52 w-full ${block} rounded-none`} />
-      <div className="space-y-3 p-4">
-        <SkeletonLine className="h-4 w-4/5" />
-        <SkeletonLine className="h-3 w-24" />
-        <div className="flex items-center justify-between pt-1">
-          <SkeletonLine className="h-6 w-16" />
-          <SkeletonLine className="h-8 w-24 rounded-full" />
+    <article className={`flex w-full flex-col ${hairlineFrame}`}>
+      <div className={`aspect-[4/3] w-full ${softBlock} rounded-none`} />
+      <div className="space-y-3 p-5">
+        <SoftLine className="h-4 w-28" />
+        <SoftLine className="h-5 w-4/5" />
+        <SoftLine className="h-6 w-16 rounded-full" />
+        <div className="flex items-center justify-between border-t border-black/[0.06] pt-4 dark:border-white/[0.06]">
+          <SoftLine className="h-5 w-16" />
+          <SoftLine className="h-9 w-24 rounded-lg" />
         </div>
       </div>
     </article>
@@ -113,27 +122,63 @@ function CreatorProductCardSkeleton() {
 
 export function CreatorStudioProductsTabSkeleton() {
   return (
-    <div className="space-y-6" aria-busy="true" aria-label="Loading products">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-2">
-          <SkeletonLine className="h-6 w-28" />
-          <SkeletonLine className="h-4 w-72 max-w-full" />
-        </div>
-        <SkeletonLine className="h-11 w-full rounded-xl sm:w-72" />
+    <div className="space-y-10" aria-busy="true" aria-label="Loading products">
+      <div className="space-y-3">
+        <SoftLine className="h-9 w-56 sm:h-10" />
+        <SoftLine className="h-5 w-80 max-w-full" />
       </div>
 
-      <div className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="flex flex-wrap gap-3">
-          <SkeletonLine className="h-10 min-w-[10rem] flex-1 rounded-xl" />
-          <SkeletonLine className="h-10 w-28 rounded-xl" />
-          <SkeletonLine className="h-10 w-32 rounded-xl" />
-        </div>
-      </div>
+      <div className="flex flex-col gap-10 xl:flex-row xl:items-start xl:gap-12">
+        <div className="min-w-0 flex-1 space-y-10">
+          <div className="space-y-5">
+            <div className="flex items-end justify-between gap-4 border-b border-black/[0.06] pb-3.5 dark:border-white/[0.06]">
+              <div className="flex gap-7">
+                <SoftLine className="h-5 w-20" />
+                <SoftLine className="h-5 w-14" />
+              </div>
+              <SoftLine className="h-4 w-20" />
+            </div>
+            <div className="flex flex-col gap-3 md:flex-row">
+              <SoftLine className="h-11 min-w-0 flex-1 rounded-lg" />
+              <div className="flex gap-2">
+                <SoftLine className="h-11 w-28 rounded-lg" />
+                <SoftLine className="h-11 w-24 rounded-lg" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <SoftLine className="h-8 w-16 rounded-full" />
+              <SoftLine className="h-8 w-24 rounded-full" />
+              <SoftLine className="h-8 w-20 rounded-full" />
+            </div>
+          </div>
 
-      <div className={creatorProductGridClassName}>
-        {Array.from({ length: 10 }, (_, i) => (
-          <CreatorProductCardSkeleton key={i} />
-        ))}
+          <div className="space-y-5">
+            <SoftLine className="h-6 w-32" />
+            <div className={creatorProductGridClassName}>
+              {Array.from({ length: 6 }, (_, i) => (
+                <CreatorProductCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="hidden w-72 shrink-0 space-y-4 xl:block">
+          <SoftLine className="h-11 w-full rounded-lg" />
+          <div className={hairlineFrame}>
+            <div className="border-b border-black/[0.06] px-5 py-4 dark:border-white/[0.06]">
+              <SoftLine className="h-5 w-24" />
+            </div>
+            <div className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
+              {Array.from({ length: 3 }, (_, i) => (
+                <div key={i} className="flex items-center justify-between px-5 py-4">
+                  <SoftLine className="h-4 w-28" />
+                  <SoftLine className="h-4 w-5" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <SoftLine className="h-11 w-full rounded-lg" />
+        </div>
       </div>
     </div>
   );

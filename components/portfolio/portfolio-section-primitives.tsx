@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Fragment, createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type FocusEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
+import { employmentTypeLabel } from '@/lib/experience-employment';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
@@ -12827,7 +12828,7 @@ function resolveExperienceContent(block: ProfileMediaBlock): {
     if (tools.some((existing) => existing.toLowerCase() === key)) continue;
     tools.push(name);
     if (iconUrl) toolIcons[name] = iconUrl;
-    if (tools.length >= 8) break;
+    if (tools.length >= 20) break;
   }
   const links = (block.links ?? [])
     .filter((link) => link.url?.trim() && link.label?.trim())
@@ -12874,14 +12875,6 @@ function resolveExperienceContent(block: ProfileMediaBlock): {
     employmentType,
   };
 }
-
-const EMPLOYMENT_TYPE_LABELS: Record<ExperienceEmploymentType, string> = {
-  FULL_TIME: 'Full-time',
-  PART_TIME: 'Part-time',
-  CONTRACT: 'Contract',
-  FREELANCE: 'Freelance',
-  INTERNSHIP: 'Internship',
-};
 
 type ExperienceBodyProps = {
   title: string | null;
@@ -13113,7 +13106,7 @@ function renderExperienceElement(
                 ...(styles.meta ? experienceTextInlineStyle(styles.meta) : undefined),
               }}
             >
-              {EMPLOYMENT_TYPE_LABELS[ctx.employmentType]}
+              {employmentTypeLabel(ctx.employmentType)}
             </span>
           ) : null}
           {showBylineStatus ? <span className="inline-flex shrink-0">{statusBadge}</span> : null}
@@ -13469,7 +13462,7 @@ function ExperienceEntryMeta({
   const chips: { key: string; label: string; strong?: boolean }[] = [];
   if (status === 'ONGOING') chips.push({ key: 'status', label: 'Ongoing', strong: true });
   if (status === 'FINISHED') chips.push({ key: 'status', label: 'Finished' });
-  if (employmentType) chips.push({ key: 'employment', label: EMPLOYMENT_TYPE_LABELS[employmentType] });
+  if (employmentType) chips.push({ key: 'employment', label: employmentTypeLabel(employmentType) });
   if (location) chips.push({ key: 'location', label: location });
   if (chips.length === 0) return null;
 
@@ -15892,7 +15885,7 @@ function ExperienceEditorialEntry({
   const metaParts = [
     organization?.trim() || '',
     location?.trim() || '',
-    employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : '',
+    employmentTypeLabel(employmentType),
   ].filter(Boolean);
   const hasDetails =
     Boolean(description?.trim()) ||
@@ -16582,7 +16575,7 @@ function MilestoneExperienceEntry({
   const metaParts = [
     organization?.trim() || '',
     location?.trim() || '',
-    employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : '',
+    employmentTypeLabel(employmentType),
   ].filter(Boolean);
   const cardStyle: CSSProperties = isDark
     ? {
@@ -16988,7 +16981,7 @@ function TableExperienceRow({
   const motionDisabled = reduceMotion === true;
   const orgMeta = [
     location?.trim() || '',
-    employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : '',
+    employmentTypeLabel(employmentType),
   ]
     .filter(Boolean)
     .join(' · ');
@@ -17741,7 +17734,7 @@ function CardsExperienceEntry({
   const metaParts = [
     organization?.trim() || '',
     location?.trim() || '',
-    employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : '',
+    employmentTypeLabel(employmentType),
   ].filter(Boolean);
   const statusLabel = status === 'ONGOING' ? 'Ongoing' : status === 'FINISHED' ? 'Finished' : null;
   const statusColor = status === 'ONGOING' ? accent : secondary;
@@ -18604,7 +18597,7 @@ function ReelExperienceEntry({
     resolveExperienceContent(block);
   const displayTools = showTools ? tools : [];
 
-  const metaLine = [organization, location, employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : null]
+  const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
 
@@ -18824,7 +18817,7 @@ function ReelStickyVerticalExperience({
 
   const active = entries[displayIndex] ?? entries[0];
   const metaLine = active
-    ? [active.organization, active.location, active.employmentType ? EMPLOYMENT_TYPE_LABELS[active.employmentType] : null]
+    ? [active.organization, active.location, employmentTypeLabel(active.employmentType) || null]
         .filter((part): part is string => Boolean(part))
         .join('  ·  ')
     : '';
@@ -19470,7 +19463,7 @@ function DuotoneLeftPanel({
 }) {
   const { period, title, organization, status, location, employmentType } = resolveExperienceContent(block);
 
-  const metaLine = [organization, location, employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : null]
+  const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
 
@@ -19780,7 +19773,7 @@ function DuotoneRightPanel({
   const displayDescription = showDescription ? description : null;
   const displayTasks = showTasks ? tasks : [];
   const displayTools = showTools ? tools : [];
-  const metaLine = [organization, location, employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : null]
+  const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
   const statusLabel = status === 'ONGOING' ? 'Ongoing' : status === 'FINISHED' ? 'Finished' : null;
@@ -20897,7 +20890,7 @@ function GalleryDetailContent({
 }) {
   const { period, title, organization, description, status, tasks, tools, links, location, employmentType } =
     resolveExperienceContent(block);
-  const metaLine = [organization, location, employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : null]
+  const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
   const repoLink = flags.showProof ? (links[0] ?? null) : null;
@@ -21015,7 +21008,7 @@ function GalleryExperienceCard({
 }) {
   const { period, title, organization, status, tasks, tools, location, employmentType } =
     resolveExperienceContent(block);
-  const metaLine = [organization, location, employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : null]
+  const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
   const mediaUrl = typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
@@ -21866,7 +21859,7 @@ function LoftExperienceModal({
 
   const { period, title, organization, description, status, tasks, tools, links, location, employmentType } =
     resolveExperienceContent(block);
-  const metaLine = [organization, location, employmentType ? EMPLOYMENT_TYPE_LABELS[employmentType] : null]
+  const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
   const combinedMeta = [flags.showPeriod ? period : null, flags.showMeta ? metaLine : null]

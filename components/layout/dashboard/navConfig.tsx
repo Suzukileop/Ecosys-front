@@ -2,6 +2,8 @@ import type { Role } from '@/types/auth';
 import type { ReactNode } from 'react';
 import { isContentCreatorsPath, isMarketplaceCreatorProfilePath, isMarketplaceHubPath, isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
 import {
+  APP_ROLES_WITHOUT_MY_PRODUCTS,
+  APP_ROLES_WITHOUT_MY_SERVICES,
   APP_ROLES_WITHOUT_PRODUCTS_MENU,
   APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU,
   type CreatorAppRole,
@@ -80,6 +82,31 @@ export const dashboardNavItems: DashboardNavItem[] = [
     hiddenForAppRoles: [...APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU],
     activeWhen: (pathname, search = '') =>
       isServiceProvidersCatalogPath(pathname) || isMyServiceNavPath(pathname, search),
+    /*
+     * Explore / My Services used to be a segmented pill pinned to the right of the bar, which put
+     * the two halves of this section as far from its own menu entry as the layout allows — and
+     * only on the routes that already belonged to it, so it appeared and vanished as you moved.
+     * As children they sit under the entry they belong to, are reachable from anywhere, and the
+     * bar keeps one navigation instead of two.
+     *
+     * Explore is ungated so the entry always has somewhere to go; My Services carries the same
+     * gate the old toggle did. When it is the only one left the group collapses back to a plain
+     * link — see `useDashboardNavItems`.
+     */
+    children: [
+      {
+        href: '/marketplace/creators',
+        label: 'Explore',
+        activeWhen: (pathname) => isServiceProvidersCatalogPath(pathname),
+      },
+      {
+        href: '/marketplace/my-services',
+        label: 'My Services',
+        roles: ['ROLE_CREATOR'],
+        hiddenForAppRoles: [...APP_ROLES_WITHOUT_MY_SERVICES],
+        activeWhen: (pathname, search = '') => isMyServiceNavPath(pathname, search),
+      },
+    ],
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
         <path
@@ -96,6 +123,21 @@ export const dashboardNavItems: DashboardNavItem[] = [
     hiddenForAppRoles: [...APP_ROLES_WITHOUT_PRODUCTS_MENU],
     activeWhen: (pathname, search = '') =>
       isMarketplaceHubPath(pathname) || isMyProductNavPath(pathname, search),
+    /* Same move as Providers above, and for the same reasons. */
+    children: [
+      {
+        href: '/marketplace',
+        label: 'Explore',
+        activeWhen: (pathname) => isMarketplaceHubPath(pathname),
+      },
+      {
+        href: '/marketplace/my-products',
+        label: 'My Product',
+        roles: ['ROLE_CREATOR'],
+        hiddenForAppRoles: [...APP_ROLES_WITHOUT_MY_PRODUCTS],
+        activeWhen: (pathname, search = '') => isMyProductNavPath(pathname, search),
+      },
+    ],
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
         <path
@@ -150,11 +192,6 @@ export function isMyProductNavPath(pathname: string, search = ''): boolean {
   );
 }
 
-/** Products section where the header Explore / My Product toggle is shown. */
-export function isProductsHeaderTogglePath(pathname: string, search = ''): boolean {
-  return isMarketplaceHubPath(pathname) || isMyProductNavPath(pathname, search);
-}
-
 export function isMyServiceNavPath(pathname: string, _search = ''): boolean {
   return (
     pathname === '/marketplace/my-services' ||
@@ -162,11 +199,6 @@ export function isMyServiceNavPath(pathname: string, _search = ''): boolean {
     pathname === '/dashboard/services' ||
     pathname.startsWith('/dashboard/services/')
   );
-}
-
-/** Service Provider section where the header Explore / My Services toggle is shown. */
-export function isServiceProviderHeaderTogglePath(pathname: string, search = ''): boolean {
-  return isServiceProvidersCatalogPath(pathname) || isMyServiceNavPath(pathname, search);
 }
 
 export function isServiceProviderNavPath(pathname: string): boolean {

@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
         <script dangerouslySetInnerHTML={{ __html: initThemeScript }} />
       </head>
-      <body className={`${geist.className} font-sans antialiased`}>
+      <body spellCheck={false} className={`${geist.className} font-sans antialiased`}>
         <ChunkLoadRecovery />
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>

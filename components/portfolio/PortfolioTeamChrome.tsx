@@ -201,7 +201,7 @@ function IconButton({
   );
 }
 
-function TeamSocialGlyph({ platform, className }: { platform: string; className?: string }) {
+export function TeamSocialGlyph({ platform, className }: { platform: string; className?: string }) {
   const glyph = className ?? 'h-3.5 w-3.5';
   if (platform === 'EMAIL') {
     return (

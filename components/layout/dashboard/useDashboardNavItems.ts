@@ -52,7 +52,7 @@ export function isNavActive(pathname: string, href: string) {
 
 export type ResolvedNavItem = {
   item: DashboardNavItem;
-  /** Children this account may see; empty for a leaf entry. */
+  /** Children this account may see — empty for a leaf entry *and* for a group left with one. */
   children: DashboardNavChild[];
   /** True when the entry itself, or any of its visible children, matches the route. */
   active: boolean;
@@ -88,21 +88,31 @@ export function useDashboardNavItems(): ResolvedNavItem[] {
       return true;
     })
     .map((item) => {
-      const children = (item.children ?? []).filter(childVisible);
-      const childActive = children.some((child) =>
+      const visibleChildren = (item.children ?? []).filter(childVisible);
+      const childActive = visibleChildren.some((child) =>
         child.activeWhen ? child.activeWhen(pathname, search) : isNavActive(pathname, child.href)
       );
       const active = item.activeWhen
         ? item.activeWhen(pathname, search)
-        : children.length > 0
+        : visibleChildren.length > 0
           ? childActive
           : isNavActive(pathname, item.href);
       const target =
-        children.find((child) =>
+        visibleChildren.find((child) =>
           child.activeWhen ? child.activeWhen(pathname, search) : isNavActive(pathname, child.href)
         )?.href ??
-        children[0]?.href ??
+        visibleChildren[0]?.href ??
         item.href;
+
+      /*
+       * A menu of one is not a menu. Both Providers and Products declare an ungated "Explore"
+       * child plus a role-gated management child, so an account that cannot see the second one
+       * would otherwise get a dropdown that opens onto a single row repeating the entry above it.
+       * Collapsing here rather than in either nav surface keeps the top bar and the mobile sheet
+       * agreeing, which is this hook's whole reason to exist — and `target` is already resolved,
+       * so the collapsed entry still points at the right place.
+       */
+      const children = visibleChildren.length > 1 ? visibleChildren : [];
 
       return { item, children, active, childActive, target, key: `${item.label}-${item.href}` };
     });

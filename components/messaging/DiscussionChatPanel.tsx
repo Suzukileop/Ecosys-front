@@ -1526,15 +1526,15 @@ export function DiscussionChatPanel({
           />
         )}
 
-        <div className="space-y-2 px-3 pt-2 sm:px-4">
+        <div className="space-y-2 px-5 pt-3 sm:px-8">
           {showWsHint && (
-            <p className="rounded-[8px] bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+            <p className="border-l-2 border-[var(--msg-coral)] px-3 py-2 text-xs font-light text-[var(--msg-ink-soft)]">
               Real-time messaging requires an active session. Reload or sign in again.
             </p>
           )}
 
           {readOnlyGuestHistory && (
-            <p className="rounded-[8px] border border-[var(--cw-border)] bg-[var(--cw-surface-soft)] px-3 py-2 text-xs text-[var(--cw-text-secondary)]">
+            <p className="border-l border-[var(--msg-hairline-strong)] px-3 py-2 text-xs font-light text-[var(--msg-ink-soft)]">
               Viewing your temporary session history — only messages from when you joined until you left are shown.
             </p>
           )}
@@ -1557,7 +1557,7 @@ export function DiscussionChatPanel({
               tryMarkAsReadIfAtBottom();
             }
           }}
-          className="relative mb-0 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-[var(--msg-thread-bg,#FAFAFA)] px-3 py-2 text-sm dark:bg-[var(--msg-thread-bg,#111111)] [scrollbar-width:thin] [scrollbar-color:#a3a3a3_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-400 sm:px-4"
+          className="msg-scroll relative mb-0 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-[var(--msg-thread-bg)] px-5 py-2 text-sm sm:px-8"
           role="log"
           aria-live="polite"
         >
@@ -1583,7 +1583,7 @@ export function DiscussionChatPanel({
         </div>
 
         {typingLabel && (
-          <p className="mb-1 px-4 text-[13px] italic text-[var(--cw-text-secondary)]" aria-live="polite">
+          <p className="msg-micro mb-1 px-5 text-[var(--msg-ink-faint)] sm:px-8" aria-live="polite">
             {typingLabel}
           </p>
         )}

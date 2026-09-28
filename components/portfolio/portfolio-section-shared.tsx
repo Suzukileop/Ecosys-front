@@ -9,6 +9,7 @@ import {
   CONTACT_VISIBILITY_OPTIONS,
   type ContactVisibilityLevel,
 } from '@/lib/contact-visibility';
+import { STUDIO_ICON_BUTTON_TONES } from '@/components/portfolio/PortfolioStudioKit';
 
 export const portfolioInlineInputClass =
   'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-[15px] font-semibold text-neutral-900 outline-none transition focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white';
@@ -31,16 +32,9 @@ export function PortfolioSectionIconButton({
   children: ReactNode;
   active?: boolean;
   disabled?: boolean;
-  tone?: 'neutral' | 'confirm' | 'cancel';
+  tone?: 'neutral' | 'confirm' | 'cancel' | 'danger';
 }) {
-  const toneClass =
-    tone === 'confirm'
-      ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300'
-      : tone === 'cancel'
-        ? 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400'
-        : active
-          ? 'border-[#F97316]/40 bg-[#FFF7ED] text-[#EA580C] dark:border-[#F97316]/30 dark:bg-[#F97316]/10 dark:text-[#FB923C]'
-          : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400';
+  const toneClass = STUDIO_ICON_BUTTON_TONES[active && tone === 'neutral' ? 'active' : tone];
 
   return (
     <button
@@ -49,7 +43,7 @@ export function PortfolioSectionIconButton({
       title={label}
       aria-label={label}
       disabled={disabled}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50 ${toneClass}`}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${toneClass}`}
     >
       {children}
     </button>
@@ -88,7 +82,7 @@ export function PortfolioSectionVisibilityMenu({
         <FontAwesomeIcon icon={hidden ? faEyeSlash : faEye} className="h-3.5 w-3.5" fixedWidth />
       </PortfolioSectionIconButton>
       {open ? (
-        <div className="absolute bottom-full right-0 z-20 mb-1.5 min-w-[9.5rem] overflow-hidden rounded-lg border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+        <div className="absolute bottom-full right-0 z-20 mb-1.5 min-w-[9.5rem] overflow-hidden rounded-lg border border-black/[0.08] bg-white py-1 shadow-lg dark:border-white/[0.08] dark:bg-[#141414]">
           {CONTACT_VISIBILITY_OPTIONS.map((option) => (
             <button
               key={option.value}
@@ -97,10 +91,10 @@ export function PortfolioSectionVisibilityMenu({
                 onChange(option.value);
                 setOpen(false);
               }}
-              className={`flex w-full items-center px-3 py-2 text-left text-xs font-medium transition ${
+              className={`flex w-full items-center px-3 py-2 text-left text-[14px] transition-colors ${
                 option.value === value
-                  ? 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white'
-                  : 'text-neutral-700 hover:bg-neutral-50 dark:text-neutral-200 dark:hover:bg-neutral-800'
+                  ? 'font-semibold text-black dark:text-white'
+                  : 'font-normal text-neutral-600 hover:bg-black/[0.03] hover:text-black dark:text-neutral-300 dark:hover:bg-white/[0.04] dark:hover:text-white'
               }`}
             >
               {option.label}
@@ -125,9 +119,9 @@ export function PortfolioBulletRow({
   editControl?: ReactNode;
 }) {
   return (
-    <li className="flex items-start gap-3 py-3">
+    <li className="flex items-start gap-3 border-b border-black/[0.06] py-4 dark:border-white/[0.06]">
       <span
-        className="mt-[0.55rem] h-1.5 w-1.5 shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500"
+        className="mt-[0.6rem] h-1 w-1 shrink-0 rounded-full bg-[#FF5722]"
         aria-hidden
       />
       <div className="min-w-0 flex-1">{editing ? editControl : children}</div>
@@ -247,10 +241,10 @@ export function PortfolioEntryPager({
                 onClick={() => {
                   if (slot !== activeIndex) onSelect(slot);
                 }}
-                className={`inline-flex h-8 min-w-8 items-center justify-center rounded-lg border px-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                className={`inline-flex h-8 min-w-8 items-center justify-center rounded-full border px-2.5 text-[14px] transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
                   selected
-                    ? 'border-[#EA580C] bg-[#FFF7ED] text-[#EA580C] dark:border-[#F97316]/50 dark:bg-[#F97316]/10 dark:text-[#FB923C]'
-                    : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-200'
+                    ? 'border-black bg-black font-semibold text-white dark:border-white dark:bg-white dark:text-black'
+                    : 'border-neutral-300 bg-white font-normal text-neutral-700 hover:border-neutral-900 hover:text-black dark:border-white/25 dark:bg-transparent dark:text-white/80 dark:hover:border-white dark:hover:text-white'
                 }`}
               >
                 {slot + 1}

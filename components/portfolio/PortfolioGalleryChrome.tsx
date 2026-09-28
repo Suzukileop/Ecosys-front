@@ -11,11 +11,16 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { ContentMediaPreview } from '@/components/creator/creator-content-media';
 import { getHttpUrlFieldError, inferProfileMediaType, toAbsoluteHttpUrl } from '@/components/creator/studio/profile-form-schema';
+import { portfolioFieldErrorTextClass } from '@/components/portfolio/portfolio-section-shared';
 import {
-  portfolioFieldErrorTextClass,
-  portfolioInlineInputClass,
-  portfolioInlineInputErrorClass,
-} from '@/components/portfolio/portfolio-section-shared';
+  STUDIO_BARE_INPUT_CLASS,
+  STUDIO_EMPTY_CLASS,
+  STUDIO_ICON_BUTTON_TONES,
+  STUDIO_LABEL_CLASS,
+  STUDIO_SECONDARY_CLASS,
+  STUDIO_VALUE_CLASS,
+  StudioUnderline,
+} from '@/components/portfolio/PortfolioStudioKit';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { uploadContentMedia } from '@/lib/marketplace-api';
@@ -44,8 +49,8 @@ const GALLERY_MEDIA_ASPECT_CLASS = 'aspect-[4/3]';
 const itemActionVisibilityClass =
   'opacity-100 transition-opacity ' +
   '[@media(hover:hover)_and_(pointer:fine)]:opacity-0 ' +
-  '[@media(hover:hover)_and_(pointer:fine)]:group-hover:opacity-100 ' +
-  '[@media(hover:hover)_and_(pointer:fine)]:group-focus-within:opacity-100';
+  '[@media(hover:hover)_and_(pointer:fine)]:group-hover/item:opacity-100 ' +
+  '[@media(hover:hover)_and_(pointer:fine)]:group-focus-within/item:opacity-100';
 
 function itemIsFilled(item: PortfolioGalleryItem): boolean {
   return item.mediaUrl.trim().length > 0;
@@ -104,16 +109,7 @@ function IconButton({
   disabled?: boolean;
   tone?: 'neutral' | 'confirm' | 'cancel' | 'danger';
 }) {
-  const toneClass =
-    tone === 'confirm'
-      ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300'
-      : tone === 'cancel'
-        ? 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400'
-        : tone === 'danger'
-          ? 'border-neutral-200 bg-white text-neutral-500 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-red-500/40 dark:hover:bg-red-500/10 dark:hover:text-red-400'
-          : active
-            ? 'border-[#F97316]/40 bg-[#FFF7ED] text-[#EA580C] dark:border-[#F97316]/30 dark:bg-[#F97316]/10 dark:text-[#FB923C]'
-            : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400';
+  const toneClass = STUDIO_ICON_BUTTON_TONES[active && tone === 'neutral' ? 'active' : tone];
 
   return (
     <button
@@ -122,7 +118,7 @@ function IconButton({
       title={label}
       aria-label={label}
       disabled={disabled}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-900 ${toneClass}`}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${toneClass}`}
     >
       {children}
     </button>
@@ -175,7 +171,7 @@ function GalleryMediaEditor({
         className="hidden"
         onChange={(event) => void onFileChange(event)}
       />
-      <div className={`relative overflow-hidden bg-neutral-100 dark:bg-neutral-800 ${GALLERY_MEDIA_ASPECT_CLASS}`}>
+      <div className={`relative overflow-hidden rounded-lg bg-black/[0.03] dark:bg-white/[0.04] ${GALLERY_MEDIA_ASPECT_CLASS}`}>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -198,112 +194,121 @@ function GalleryMediaEditor({
                 <LoadingSpinner size="sm" />
               ) : (
                 <span
-                  className="inline-flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-neutral-300 bg-white text-[#EA580C] shadow-sm transition group-hover:border-[#EA580C]/50 group-hover:bg-[#FFF7ED] dark:border-neutral-600 dark:bg-neutral-900 dark:text-[#FB923C] dark:group-hover:border-[#FB923C]/50 dark:group-hover:bg-[#F97316]/10"
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-neutral-300 bg-white text-neutral-700 transition-colors duration-200 group-hover:border-[#FF5722] group-hover:text-[#FF5722] dark:border-white/25 dark:bg-transparent dark:text-white/80"
                   aria-hidden
                 >
-                  <FontAwesomeIcon icon={faPlus} className="h-6 w-6" fixedWidth />
+                  <FontAwesomeIcon icon={faPlus} className="h-4 w-4" fixedWidth />
                 </span>
               )}
-              <span className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">
+              <span className={STUDIO_SECONDARY_CLASS}>
                 {uploading ? 'Uploading…' : 'Add from device'}
               </span>
             </span>
           )}
           {hasMedia ? (
-            <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-sm font-semibold text-white opacity-0 transition group-hover:bg-black/45 group-hover:opacity-100">
+            <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-[14px] font-medium text-white opacity-0 transition group-hover:bg-black/45 group-hover:opacity-100">
               {uploading ? 'Uploading…' : 'Replace from device'}
             </span>
           ) : null}
         </button>
       </div>
-      <div className="space-y-2 px-5 pt-3">
-        <div className="space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+      <div className="grid gap-y-8 pt-6">
+        <StudioUnderline>
+          <label className={STUDIO_LABEL_CLASS}>
             Title
-          </p>
-          <input
-            type="text"
-            autoComplete="off"
-            value={draft.title}
-            onChange={(event) =>
-              onChange({
-                ...draft,
-                title: event.target.value,
-              })
-            }
-            placeholder="Add a title"
-            className={`${portfolioInlineInputClass} font-medium`}
-            disabled={disabled || uploading}
-          />
+            <input
+              type="text"
+              autoComplete="off"
+              value={draft.title}
+              onChange={(event) =>
+                onChange({
+                  ...draft,
+                  title: event.target.value,
+                })
+              }
+              placeholder="Add a title"
+              className={`mt-3 ${STUDIO_BARE_INPUT_CLASS} ${STUDIO_VALUE_CLASS}`}
+              disabled={disabled || uploading}
+            />
+          </label>
+        </StudioUnderline>
+        <div>
+          <StudioUnderline>
+            <label className={STUDIO_LABEL_CLASS}>
+              Or paste media URL
+              <input
+                type="text"
+                inputMode="url"
+                autoComplete="url"
+                value={draft.mediaUrl}
+                onChange={(event) => {
+                  const mediaUrl = event.target.value;
+                  onChange({
+                    ...draft,
+                    mediaUrl,
+                    mediaType: mediaUrl.trim() ? inferProfileMediaType(mediaUrl.trim()) : null,
+                  });
+                }}
+                placeholder="https://"
+                aria-invalid={mediaUrlError ? true : undefined}
+                className={`mt-3 ${STUDIO_BARE_INPUT_CLASS} ${STUDIO_VALUE_CLASS} ${
+                  mediaUrlError ? '!text-red-600 dark:!text-red-400' : ''
+                }`}
+                disabled={disabled || uploading}
+              />
+            </label>
+          </StudioUnderline>
+          {mediaUrlError ? <p className={portfolioFieldErrorTextClass}>{mediaUrlError}</p> : null}
+          {hasMedia ? (
+            <button
+              type="button"
+              disabled={disabled || uploading}
+              onClick={() => onChange({ ...draft, mediaUrl: '', mediaType: null })}
+              className="mt-3 text-[13px] font-medium text-neutral-500 transition-colors hover:text-[#FF5722] disabled:opacity-40 dark:text-neutral-400"
+            >
+              Clear media
+            </button>
+          ) : null}
+          {uploadError ? <p className="mt-2 text-[13px] text-red-600 dark:text-red-400">{uploadError}</p> : null}
         </div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-          Or paste media URL
-        </p>
-        <input
-          type="text"
-          inputMode="url"
-          autoComplete="url"
-          value={draft.mediaUrl}
-          onChange={(event) => {
-            const mediaUrl = event.target.value;
-            onChange({
-              ...draft,
-              mediaUrl,
-              mediaType: mediaUrl.trim() ? inferProfileMediaType(mediaUrl.trim()) : null,
-            });
-          }}
-          placeholder="https://"
-          aria-invalid={mediaUrlError ? true : undefined}
-          className={`${mediaUrlError ? portfolioInlineInputErrorClass : portfolioInlineInputClass} font-medium`}
-          disabled={disabled || uploading}
-        />
-        {mediaUrlError ? <p className={portfolioFieldErrorTextClass}>{mediaUrlError}</p> : null}
-        {hasMedia ? (
-          <button
-            type="button"
-            disabled={disabled || uploading}
-            onClick={() => onChange({ ...draft, mediaUrl: '', mediaType: null })}
-            className="text-xs font-semibold text-neutral-500 hover:text-neutral-800 disabled:opacity-50 dark:text-neutral-400 dark:hover:text-white"
-          >
-            Clear media
-          </button>
-        ) : null}
-        {uploadError ? <p className="text-xs text-red-600 dark:text-red-400">{uploadError}</p> : null}
       </div>
     </div>
   );
 }
 
 function GalleryMediaDisplay({
+  title,
   mediaUrl,
   mediaType,
 }: {
+  title: string;
   mediaUrl: string;
   mediaType: PortfolioGalleryItem['mediaType'];
 }) {
   const mediaTypeLabel = formatMediaType(mediaType);
 
   return (
-    <div className={`relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 ${GALLERY_MEDIA_ASPECT_CLASS}`}>
-      {mediaUrl.trim() ? (
-        <ContentMediaPreview
-          locale="en"
-          mediaUrl={mediaUrl.trim()}
-          mediaType="FILE"
-          large
-          fluid
-          compact
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-neutral-400 dark:text-neutral-500">
-          No media
-        </div>
-      )}
-      {mediaTypeLabel ? (
-        <span className="absolute bottom-3 left-3 rounded-md bg-black/55 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
-          {mediaTypeLabel}
-        </span>
-      ) : null}
+    <div>
+      <div className={`relative w-full overflow-hidden rounded-lg bg-black/[0.03] dark:bg-white/[0.04] ${GALLERY_MEDIA_ASPECT_CLASS}`}>
+        {mediaUrl.trim() ? (
+          <ContentMediaPreview
+            locale="en"
+            mediaUrl={mediaUrl.trim()}
+            mediaType="FILE"
+            large
+            fluid
+            compact
+          />
+        ) : (
+          <div className={`flex h-full w-full items-center justify-center ${STUDIO_EMPTY_CLASS}`}>No media</div>
+        )}
+      </div>
+      <div className="flex items-baseline justify-between gap-4 pt-3">
+        <p className={`min-w-0 truncate ${title.trim() ? STUDIO_VALUE_CLASS : STUDIO_EMPTY_CLASS}`}>
+          {title.trim() || 'Untitled'}
+        </p>
+        {mediaTypeLabel ? <span className={`shrink-0 ${STUDIO_SECONDARY_CLASS}`}>{mediaTypeLabel}</span> : null}
+      </div>
     </div>
   );
 }
@@ -505,9 +510,7 @@ export function PortfolioGalleryReadOnly({
           unit="gallery items"
           className="mb-6"
         />
-        <p className="text-center text-sm italic text-neutral-500 dark:text-neutral-400">
-          No gallery media yet. Click Add media to create one.
-        </p>
+        <p className={STUDIO_EMPTY_CLASS}>No gallery media yet. Click Add media to create one.</p>
       </div>
     );
   }
@@ -520,7 +523,7 @@ export function PortfolioGalleryReadOnly({
         unit="gallery items"
         className="mb-4"
       />
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2">
         {visibleEntries.map(({ item, index }) => {
           const draft = drafts[index] ?? toDraft(item);
           const editing = Boolean(canEdit && editingIndex === index);
@@ -535,7 +538,7 @@ export function PortfolioGalleryReadOnly({
             <article
               key={item.id}
               ref={editing ? editingCardRef : undefined}
-              className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] bg-white p-0 shadow-[0_2px_8px_rgba(15,23,42,0.04)] dark:bg-[#121212] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+              className="group/item relative flex h-full flex-col"
             >
               {showConfirmActions ? (
                 <div className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5">
@@ -641,6 +644,7 @@ export function PortfolioGalleryReadOnly({
                   />
                 ) : (
                   <GalleryMediaDisplay
+                    title={item.title}
                     mediaUrl={item.mediaUrl}
                     mediaType={item.mediaType}
                   />

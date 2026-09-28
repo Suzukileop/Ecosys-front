@@ -30,70 +30,52 @@ export function PortfolioLocationReadOnly({
 }) {
   const placeLabel = formatLocationLabel(city, country);
   const hasPlace = Boolean(city.trim() || country.trim());
+  const located = hasCompleteLocation && hasPlace;
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-[1.35rem] bg-neutral-50 px-5 py-5 dark:bg-neutral-900/50 sm:px-6 sm:py-6">
-        <div className="flex items-start gap-4">
-          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[#EA580C] shadow-sm dark:bg-neutral-800 dark:text-[#FB923C]">
-            <FontAwesomeIcon icon={faLocationDot} className="h-5 w-5" fixedWidth />
-          </span>
-          <div className="min-w-0 flex-1">
-            {hasCompleteLocation && hasPlace ? (
-              <>
-                <p className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-white">
-                  {placeLabel}
-                </p>
-                {timezone.trim() ? (
-                  <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                    Timezone · {timezone.trim()}
-                  </p>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <p className="text-base font-semibold text-neutral-900 dark:text-white">
-                  Location not set
-                </p>
-                <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                  Detect your position from this device to fill city, country, and timezone.
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-
-        {onDetectLocation ? (
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={onDetectLocation}
-              disabled={detectingLocation}
-              className="inline-flex items-center gap-2.5 rounded-full bg-[#EA580C] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#C2410C] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {detectingLocation ? (
-                <LoadingSpinner size="sm" />
-              ) : (
-                <FontAwesomeIcon icon={faRotateRight} className="h-3.5 w-3.5" fixedWidth />
-              )}
-              {detectingLocation
-                ? 'Detecting…'
-                : hasCompleteLocation
-                  ? 'Refresh location'
-                  : 'Detect location'}
-            </button>
-            {hasCompleteLocation ? (
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                Updates city, country, and timezone from your device.
-              </p>
-            ) : (
-              <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <div className="flex min-w-0 items-start gap-3">
+        <FontAwesomeIcon
+          icon={faLocationDot}
+          className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${located ? 'text-[#FF5722]' : 'text-neutral-400 dark:text-neutral-600'}`}
+          fixedWidth
+          aria-hidden
+        />
+        <div className="min-w-0">
+          {located ? (
+            <>
+              <p className="truncate text-base font-normal text-black dark:text-neutral-100">{placeLabel}</p>
+              {timezone.trim() ? (
+                <p className="mt-1 text-[12.5px] tracking-wide text-neutral-600 dark:text-neutral-400">{timezone.trim()}</p>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <p className="text-[0.9rem] italic text-neutral-500 dark:text-neutral-400">Location not set</p>
+              <p className="mt-1 text-[11px] text-amber-700/90 dark:text-amber-300/80">
                 Required to show your location on the public portfolio.
               </p>
-            )}
-          </div>
-        ) : null}
+            </>
+          )}
+        </div>
       </div>
+
+      {onDetectLocation ? (
+        <button
+          type="button"
+          onClick={onDetectLocation}
+          disabled={detectingLocation}
+          title="Updates city, country, and timezone from your device."
+          className="inline-flex h-9 shrink-0 items-center gap-2 self-start rounded-lg border border-black/[0.08] px-3.5 text-[0.9rem] font-medium text-neutral-700 transition-colors duration-300 hover:border-[#FF5722] hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/[0.08] dark:text-neutral-300 dark:hover:border-[#FF5722] dark:hover:text-white sm:self-auto"
+        >
+          {detectingLocation ? (
+            <LoadingSpinner size="sm" />
+          ) : (
+            <FontAwesomeIcon icon={faRotateRight} className="h-3 w-3" fixedWidth aria-hidden />
+          )}
+          {detectingLocation ? 'Detecting…' : located ? 'Refresh location' : 'Detect location'}
+        </button>
+      ) : null}
     </div>
   );
 }

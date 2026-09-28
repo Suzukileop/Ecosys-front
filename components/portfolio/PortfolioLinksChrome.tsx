@@ -17,14 +17,22 @@ import {
 } from '@/components/marketplace/creator-profile-social-icons';
 import {
   portfolioFieldErrorTextClass,
-  portfolioInlineInputClass,
-  portfolioInlineInputErrorClass,
 } from '@/components/portfolio/portfolio-section-shared';
 import {
   resolveLinkBrandIconMetrics,
   type LinkBrandIconVisualSize,
 } from '@/components/portfolio/portfolio-nav-tri-zone-social';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import {
+  STUDIO_BARE_INPUT_CLASS,
+  STUDIO_EMPTY_CLASS,
+  STUDIO_ICON_BUTTON_TONES,
+  STUDIO_LABEL_CLASS,
+  STUDIO_ROW_RULE,
+  STUDIO_SECONDARY_CLASS,
+  STUDIO_VALUE_CLASS,
+  StudioUnderline,
+} from '@/components/portfolio/PortfolioStudioKit';
 
 export type PortfolioLinkItem = {
   id: string;
@@ -44,8 +52,8 @@ export type PortfolioLinkDraft = {
 const itemActionVisibilityClass =
   'opacity-100 transition-opacity ' +
   '[@media(hover:hover)_and_(pointer:fine)]:opacity-0 ' +
-  '[@media(hover:hover)_and_(pointer:fine)]:group-hover:opacity-100 ' +
-  '[@media(hover:hover)_and_(pointer:fine)]:group-focus-within:opacity-100';
+  '[@media(hover:hover)_and_(pointer:fine)]:group-hover/item:opacity-100 ' +
+  '[@media(hover:hover)_and_(pointer:fine)]:group-focus-within/item:opacity-100';
 
 function toDraft(link: PortfolioLinkItem): PortfolioLinkDraft {
   return { url: link.url, iconUrl: link.iconUrl ?? null };
@@ -234,16 +242,7 @@ function IconButton({
   disabled?: boolean;
   tone?: 'neutral' | 'confirm' | 'cancel' | 'danger';
 }) {
-  const toneClass =
-    tone === 'confirm'
-      ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300'
-      : tone === 'cancel'
-        ? 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400'
-        : tone === 'danger'
-          ? 'border-neutral-200 bg-white text-neutral-500 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-red-500/40 dark:hover:bg-red-500/10 dark:hover:text-red-400'
-          : active
-            ? 'border-[#F97316]/40 bg-[#FFF7ED] text-[#EA580C] dark:border-[#F97316]/30 dark:bg-[#F97316]/10 dark:text-[#FB923C]'
-            : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400';
+  const toneClass = STUDIO_ICON_BUTTON_TONES[active && tone === 'neutral' ? 'active' : tone];
 
   return (
     <button
@@ -252,7 +251,7 @@ function IconButton({
       title={label}
       aria-label={label}
       disabled={disabled}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-900 ${toneClass}`}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${toneClass}`}
     >
       {children}
     </button>
@@ -273,7 +272,7 @@ function LinkPreview({
 
   if (!trimmed) {
     return (
-      <p className="text-sm italic text-neutral-400 dark:text-neutral-500">No URL yet</p>
+      <p className={STUDIO_EMPTY_CLASS}>No URL yet</p>
     );
   }
 
@@ -281,10 +280,8 @@ function LinkPreview({
     <div className="flex min-w-0 items-center gap-3.5">
       <LinkBrandIcon url={trimmed} platform={platform} iconUrl={iconUrl} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[15px] font-semibold text-neutral-900 dark:text-white sm:text-base">
-          {hostname}
-        </p>
-        <p className="truncate text-sm font-medium text-sky-600 dark:text-sky-400">{trimmed}</p>
+        <p className={`truncate ${STUDIO_VALUE_CLASS}`}>{hostname}</p>
+        <p className={`truncate ${STUDIO_SECONDARY_CLASS}`}>{trimmed}</p>
       </div>
     </div>
   );
@@ -503,17 +500,14 @@ export function PortfolioLinksReadOnly({
 
   if (visibleEntries.length === 0 && !composeAdd) {
     return (
-      <p className="py-10 text-center text-sm italic text-neutral-500 dark:text-neutral-400">
-        No links yet. Click Add link to create one.
-      </p>
+      <p className={`py-10 ${STUDIO_EMPTY_CLASS}`}>No links yet. Click Add link to create one.</p>
     );
   }
 
-  const cardClass =
-    'group relative rounded-[1.15rem] border border-transparent bg-white p-5 transition-colors duration-200 hover:bg-neutral-50 sm:rounded-[1.35rem] sm:p-6 dark:bg-[#0a0a0a] dark:hover:bg-neutral-900/80';
+  const cardClass = `group/item relative py-5 transition-opacity duration-200 ${STUDIO_ROW_RULE}`;
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+    <div className="grid gap-x-10 py-4 sm:grid-cols-2">
       {visibleEntries.map(({ item, index }) => {
         const draft = drafts[index] ?? toDraft(item);
         const editing = Boolean(canEdit && editingIndex === index);
@@ -531,7 +525,7 @@ export function PortfolioLinksReadOnly({
         const body = (
           <>
             {showConfirmActions ? (
-              <div className="absolute right-3 top-3 z-10 inline-flex h-8 items-center gap-1.5">
+              <div className="absolute right-0 top-5 z-10 inline-flex h-8 items-center gap-1.5">
                 <IconButton
                   label={
                     draft.url.trim()
@@ -561,13 +555,13 @@ export function PortfolioLinksReadOnly({
               </div>
             ) : showItemChrome ? (
               <div
-                className={`absolute right-3 top-3 z-10 inline-flex h-8 items-center gap-1.5 ${
+                className={`absolute right-0 top-5 z-10 inline-flex h-8 items-center gap-1.5 ${
                   pendingDeleteIndex === index ? 'opacity-100' : itemActionVisibilityClass
                 }`}
               >
                 {pendingDeleteIndex === index ? (
                   <>
-                    <span className="hidden text-[11px] font-medium text-red-600 sm:inline dark:text-red-400">
+                    <span className="hidden text-[13px] font-medium text-red-600 sm:inline dark:text-red-400">
                       Delete?
                     </span>
                     <IconButton
@@ -628,24 +622,24 @@ export function PortfolioLinksReadOnly({
             ) : null}
 
             <div className="flex items-start gap-3">
-              <div className={`min-w-0 flex-1 space-y-3 ${showItemChrome ? 'pr-12' : ''}`}>
+              <div className={`min-w-0 flex-1 space-y-3 ${showItemChrome || showConfirmActions ? 'pr-20' : ''}`}>
                 {editing ? (
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
-                      URL
-                    </label>
-                    <input
-                      type="text"
-                      inputMode="url"
-                      autoComplete="url"
-                      value={draft.url}
-                      onChange={(event) => updateDraft(index, { url: event.target.value })}
-                      placeholder="https://"
-                      aria-invalid={urlError ? true : undefined}
-                      className={`${urlError ? portfolioInlineInputErrorClass : portfolioInlineInputClass} min-w-0 flex-1 font-medium`}
-                      autoFocus={editingIndex === index}
-                      disabled={fieldSaving}
-                    />
+                  <div className="space-y-2">
+                    <StudioUnderline>
+                      <label className={`${STUDIO_LABEL_CLASS} mb-2.5`}>URL</label>
+                      <input
+                        type="text"
+                        inputMode="url"
+                        autoComplete="url"
+                        value={draft.url}
+                        onChange={(event) => updateDraft(index, { url: event.target.value })}
+                        placeholder="https://"
+                        aria-invalid={urlError ? true : undefined}
+                        className={`${STUDIO_BARE_INPUT_CLASS} pb-3 ${STUDIO_VALUE_CLASS} ${urlError ? '!text-red-600' : ''}`}
+                        autoFocus={editingIndex === index}
+                        disabled={fieldSaving}
+                      />
+                    </StudioUnderline>
                     {urlError ? <p className={portfolioFieldErrorTextClass}>{urlError}</p> : null}
                     {draft.url.trim() ? (
                       <div className="space-y-2 pt-1">
@@ -678,10 +672,10 @@ export function PortfolioLinksReadOnly({
                             )}
                           </button>
                           <div className="min-w-0">
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                              Shown as {displayHostname(draft.url)}
+                            <p className={STUDIO_SECONDARY_CLASS}>
+                              Shown as <span className="text-black dark:text-white">{displayHostname(draft.url)}</span>
                             </p>
-                            <p className="text-[11px] text-neutral-400">
+                            <p className="text-[13px] text-neutral-400">
                               {draft.iconUrl
                                 ? 'Custom icon · click to replace'
                                 : 'Auto-detected · click icon to upload yours'}
@@ -693,7 +687,7 @@ export function PortfolioLinksReadOnly({
                             type="button"
                             disabled={fieldSaving || uploadingIcon}
                             onClick={() => updateDraft(index, { ...draft, iconUrl: null })}
-                            className="text-xs font-medium text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline dark:text-neutral-400 dark:hover:text-neutral-200"
+                            className="text-[13px] font-medium text-neutral-600 underline-offset-4 hover:text-[#FF5722] hover:underline dark:text-neutral-300"
                           >
                             Use auto-detected icon
                           </button>

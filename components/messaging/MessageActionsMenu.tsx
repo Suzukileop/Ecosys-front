@@ -79,12 +79,13 @@ export function MessageActionsMenu({
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, [open]);
 
-  const triggerClass = `flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-200/80 hover:text-neutral-700 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 ${
-    open ? 'bg-neutral-200/80 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200' : ''
+  const triggerClass = `flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors duration-300 ${
+    open ? 'text-[var(--msg-ink)]' : 'text-[var(--msg-ink-faint)] hover:text-[var(--msg-ink)]'
   }`;
 
+  /* Menu rows are type on the panel: the hover wash is the only thing that moves. */
   const menuItemClass =
-    'flex w-full items-center px-3 py-2 text-left text-xs font-medium text-neutral-700 transition hover:bg-neutral-100 disabled:opacity-50 dark:text-neutral-200 dark:hover:bg-neutral-800';
+    'msg-micro flex w-full items-center px-4 py-2.5 text-left text-[var(--msg-ink-soft)] transition-colors duration-200 hover:bg-[var(--msg-wash)] hover:text-[var(--msg-ink)] disabled:opacity-40';
 
   const handleCopy = async () => {
     const text =
@@ -165,7 +166,7 @@ export function MessageActionsMenu({
         <div
           ref={menuRef}
           role="menu"
-          className={`absolute z-30 min-w-[9.5rem] overflow-hidden rounded-xl border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-600 dark:bg-neutral-900 ${
+          className={`absolute z-30 min-w-[10.5rem] overflow-hidden rounded-[var(--cw-radius)] border border-[var(--msg-hairline-strong)] bg-[var(--msg-panel)] py-1.5 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.45)] ${
             openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
           } ${mine ? 'left-0' : 'right-0'}`}
         >

@@ -9,19 +9,17 @@ import type { PortfolioPresenceKind } from '@/components/portfolio/portfolio-pre
  * instead: one viewBox, one stroke weight, round joins, no fills anywhere.
  *
  * `vector-effect: non-scaling-stroke` is what makes the stroke width mean device pixels rather
- * than user units. Without it a 1.75-unit stroke in a 24-unit box rendered at 104px would come out
- * near eight pixels thick — heavier than the glyphs it replaced — and it would change weight every
- * time the panel resized. Opted out of scaling, 1.75 is 1.75px at every size.
- *
- * 1.75 rather than 1: a true single pixel measured correctly but read as *faint* at 104px, closer
- * to disabled than to delicate. This is the same correction the bar's icons needed.
+ * than user units. Without it a 2.25-unit stroke in a 24-unit box rendered at ~48px would come out
+ * near five pixels thick and would change weight every time the panel resized. Opted out of
+ * scaling, 2.25 is 2.25px at every size — a step up from hairline so the marks hold as the primary
+ * colour on the card without reading as filled blobs.
  */
 
 const SVG_PROPS = {
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
-  strokeWidth: 1.75,
+  strokeWidth: 2.25,
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
   vectorEffect: 'non-scaling-stroke',

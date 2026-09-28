@@ -78,19 +78,13 @@ function InboxPreviewText({
 }) {
   const parts = parseInboxPreview(raw);
   const icon = PREVIEW_ICONS[parts.kind];
-  const textClass = unread ? 'font-medium text-[var(--msg-text)]' : 'text-[var(--msg-muted)]';
+  const textClass = unread ? 'font-medium text-[var(--msg-ink)]' : 'text-[var(--msg-ink-faint)]';
 
   return (
-    <p className={`flex min-w-0 flex-1 items-center gap-1.5 truncate text-[13px] ${textClass}`}>
-      {groupLabel ? (
-        <span className="shrink-0 font-medium text-[var(--msg-muted)]">{groupLabel} · </span>
-      ) : null}
+    <p className={`flex min-w-0 flex-1 items-center gap-1.5 truncate text-[14px] ${textClass}`}>
+      {groupLabel ? <span className="shrink-0">{groupLabel} · </span> : null}
       {icon ? (
-        <FontAwesomeIcon
-          icon={icon}
-          className="h-3.5 w-3.5 shrink-0 text-[var(--msg-muted)]"
-          aria-hidden
-        />
+        <FontAwesomeIcon icon={icon} className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
       ) : null}
       <span className="min-w-0 truncate">{parts.label}</span>
     </p>
@@ -129,22 +123,34 @@ export function InboxConversationRow({
   const online = partnerOnline === true;
 
   return (
-    <li className="group/row relative px-3 sm:px-4">
+    <li className="group/row relative">
       <button
         type="button"
         role="option"
         aria-selected={selected}
         onClick={() => onSelect(conversation.id)}
-        className={`flex w-full items-start gap-3 rounded-[10px] px-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/40 sm:px-3.5 ${
-          compact ? 'py-3' : 'min-h-[4.5rem] py-3.5'
+        className={`relative flex w-full items-center gap-4 rounded-lg px-3 text-left transition-colors duration-200 focus-visible:outline-none ${
+          compact ? 'py-3' : 'py-3.5'
         } ${
           selected
-            ? 'bg-neutral-100 dark:bg-neutral-950'
-            : 'hover:bg-neutral-100/80 focus-visible:bg-neutral-100/80 dark:hover:bg-neutral-950/80 dark:focus-visible:bg-neutral-950/80'
+            ? 'bg-[var(--msg-wash)]'
+            : 'hover:bg-[var(--msg-wash)] focus-visible:bg-[var(--msg-wash)]'
         }`}
       >
+        <span
+          aria-hidden
+          className={`absolute inset-y-4 left-0 w-[3px] rounded-full bg-[var(--msg-coral)] transition-opacity duration-200 ${
+            selected ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+
         <div className="relative shrink-0">
-          <div className={isGroup ? 'rounded-full ring-2 ring-neutral-200 dark:ring-neutral-700' : undefined}>
+          <span
+            data-portrait-active={selected ? 'true' : 'false'}
+            className={`msg-portrait block overflow-hidden rounded-full ring-1 ${
+              selected ? 'ring-[var(--msg-hairline-strong)]' : 'ring-[var(--msg-hairline)]'
+            }`}
+          >
             <Avatar
               avatarUrl={
                 isGroup
@@ -152,70 +158,73 @@ export function InboxConversationRow({
                   : conversation.otherUserAvatarUrl
               }
               name={conversation.otherUserName}
-              size={compact ? 'sm' : 'md'}
+              size={compact ? 'md' : 'lg'}
               tone="muted"
             />
-          </div>
-          {showPresenceDot ? (
+          </span>
+          {showPresenceDot && online ? (
             <span
-              className={
-                online
-                  ? 'absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-neutral-950'
-                  : 'absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-neutral-400 dark:border-neutral-950 dark:bg-neutral-500'
-              }
+              className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-[var(--msg-panel)] bg-[var(--msg-online)]"
               title={online ? 'Online' : 'Offline'}
               aria-hidden
             />
           ) : null}
         </div>
+
         <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-baseline justify-between gap-3">
             <span
-              className={`min-w-0 truncate text-sm ${
-                unread || selected
-                  ? 'font-semibold text-[var(--msg-text)]'
-                  : 'font-medium text-[var(--msg-text)]'
+              className={`min-w-0 truncate text-base transition-colors duration-200 ${
+                selected || unread
+                  ? 'font-semibold text-[var(--msg-ink)]'
+                  : 'font-medium text-[var(--msg-ink)]'
               }`}
             >
               {conversation.otherUserName}
             </span>
             <span
-              className={`shrink-0 text-[13px] text-[var(--msg-muted)] ${
-                showMenu ? 'pr-9 group-hover/row:opacity-0' : ''
+              className={`msg-micro shrink-0 text-[var(--msg-ink-faint)] ${
+                showMenu ? 'pr-7 transition-opacity duration-300 group-hover/row:opacity-0' : ''
               }`}
             >
               {formatRelativeTime(conversation.lastMessageAt)}
             </span>
           </div>
-          <div className="mt-0.5 flex items-center justify-between gap-2">
+
+          <div className="mt-1 flex items-center justify-between gap-3">
             {conversation.guestSession ? (
-              <p className="min-w-0 truncate text-[13px] text-[var(--msg-muted)]">
+              <p className="min-w-0 truncate text-[14px] text-[var(--msg-ink-faint)]">
                 Guest · {formatGuestExpiry(conversation.guestExpiresAt)}
               </p>
             ) : typingName ? (
-              <p className="min-w-0 truncate text-[13px] italic text-[var(--msg-muted)]">
+              <p className="min-w-0 truncate text-[14px] italic text-[var(--msg-ink-soft)]">
                 {typingName} is typing…
               </p>
             ) : (
               <div className="flex min-w-0 flex-1 items-center gap-1.5">
                 <InboxPreviewText raw={preview} unread={unread} groupLabel={groupLabel} />
                 {outgoingStatus ? (
-                  <span className={showMenu ? 'group-hover/row:opacity-0' : undefined}>
+                  <span
+                    className={`text-[var(--msg-ink-faint)] ${
+                      showMenu ? 'transition-opacity duration-300 group-hover/row:opacity-0' : ''
+                    }`}
+                  >
                     <InboxMessageStatus status={outgoingStatus} />
                   </span>
                 ) : null}
               </div>
             )}
             {unread ? (
-              <span className="inline-flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-[var(--msg-brand)] px-1.5 text-[10px] font-semibold text-white">
+              <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[var(--msg-coral)] px-1.5 text-[11.5px] font-semibold tabular-nums text-white">
                 {conversation.unreadCount}
               </span>
             ) : null}
           </div>
         </div>
       </button>
+
       {showMenu ? (
-        <div className="absolute right-5 top-3.5 z-10 sm:right-6">
+        <div className="absolute right-2 top-1/2 z-10 -translate-y-1/2 text-[var(--msg-ink-faint)]">
           <InboxConversationMenu
             conversationId={conversation.id}
             otherUserId={conversation.otherUserId}

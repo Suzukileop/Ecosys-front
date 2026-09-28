@@ -6,10 +6,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { PublicContentPostCard } from '@/components/home/PublicContentPostCard';
 import { SearchCreatorRow } from '@/components/search/SearchCreatorRow';
 import { SearchServiceProviderGrid } from '@/components/search/SearchServiceProviderGrid';
-import {
-  GlobalSearchFilterButton,
-  GlobalSearchFilterModal,
-} from '@/components/search/GlobalSearchFilterModal';
+import { SearchServiceProviderRow } from '@/components/search/SearchServiceProviderRow';
+import { GlobalSearchFilterModal } from '@/components/search/GlobalSearchFilterModal';
+
+const RESULT_FRAME_CLASS =
+  'rounded-2xl border border-black/[0.06] bg-white px-6 dark:border-white/[0.08] dark:bg-[#111111] sm:px-8';
 import { GlobalSearchCategoryQuickFilters } from '@/components/search/GlobalSearchCategoryQuickFilters';
 import { SearchProductCard, searchProductGridClassName } from '@/components/search/SearchProductCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
@@ -36,6 +37,7 @@ import {
   type GlobalSearchFilters,
 } from '@/lib/global-search-filters';
 import { detectUserCoordinates, type ViewerCoordinates } from '@/lib/geolocation';
+import { STUDIO_FLOAT_IN_STYLE } from '@/components/portfolio/PortfolioStudioKit';
 
 const EMPTY_DATA: GlobalSearchPageData = {
   users: [],
@@ -54,25 +56,30 @@ const CATEGORY_ORDER: GlobalSearchCategory[] = [
 
 function SearchSectionBox({
   title,
+  count,
   seeMoreHref,
   children,
 }: {
   title: string;
+  count: number;
   seeMoreHref?: string;
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-neutral-50 p-5 dark:border-neutral-800 dark:bg-neutral-900/60">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-neutral-500 dark:text-neutral-400">
-          {title}
-        </p>
+    <section style={STUDIO_FLOAT_IN_STYLE}>
+      <div className="mb-3 flex min-h-8 items-center justify-between gap-4">
+        <h2 className="text-lg font-bold tracking-[-0.01em] text-[#111111] dark:text-neutral-100">
+          {title} · {String(count).padStart(2, '0')}
+        </h2>
         {seeMoreHref ? (
           <Link
             href={seeMoreHref}
-            className="shrink-0 text-sm font-medium text-neutral-600 transition hover:text-neutral-800 dark:text-white dark:hover:text-neutral-200"
+            className="group inline-flex shrink-0 items-center gap-1.5 text-[15px] font-medium text-neutral-600 transition-colors hover:text-[#FF5722] dark:text-neutral-300"
           >
-            See more →
+            See all
+            <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">
+              →
+            </span>
           </Link>
         ) : null}
       </div>
@@ -258,8 +265,8 @@ function GlobalSearchResultsContent() {
 
   if (trimmedQ.length < GLOBAL_SEARCH_MIN_LENGTH) {
     return (
-      <div className="rounded-3xl border border-dashed border-neutral-200 bg-white/80 px-8 py-16 text-center dark:border-neutral-700 dark:bg-neutral-900/80">
-        <p className="text-neutral-600 dark:text-neutral-400">
+      <div className="py-20 text-center">
+        <p className="text-base text-neutral-400 dark:text-neutral-500">
           Use the search bar at the top or press <kbd className="rounded border px-1.5 py-0.5 text-xs">⌘K</kbd> to
           start a search.
         </p>
@@ -268,11 +275,11 @@ function GlobalSearchResultsContent() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div>
-        <div className="flex items-end gap-4 border-b border-neutral-200 dark:border-neutral-800">
+        <div className="flex items-end gap-4 border-b border-black/[0.06] dark:border-white/[0.06]">
           <nav
-            className="flex min-w-0 flex-1 items-stretch gap-2 overflow-x-auto"
+            className="pf-scrollbar-hide flex min-w-0 flex-1 items-stretch gap-6 overflow-x-auto"
             aria-label="Search categories"
           >
             {GLOBAL_SEARCH_TABS.map((item) => {
@@ -283,23 +290,21 @@ function GlobalSearchResultsContent() {
                   key={item}
                   type="button"
                   onClick={() => setTab(item)}
-                  className={`relative shrink-0 px-4 py-3 text-base font-semibold tracking-wide transition ${
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`relative shrink-0 py-3.5 text-base transition-colors duration-200 ${
                     isActive
-                      ? 'text-neutral-900 dark:text-white'
-                      : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+                      ? 'font-semibold text-[#0A0A0A] dark:text-white'
+                      : 'font-medium text-neutral-600 hover:text-[#0A0A0A] dark:text-neutral-400 dark:hover:text-white'
                   }`}
                 >
                   {GLOBAL_SEARCH_TAB_LABELS[item]}
                   {isActive ? (
-                    <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-orange-500" />
+                    <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-[#FF5722]" />
                   ) : null}
                 </button>
               );
             })}
           </nav>
-          <div className="shrink-0 self-center pb-2.5 pr-1">
-            <GlobalSearchFilterButton onClick={() => setFiltersOpen(true)} />
-          </div>
         </div>
         <GlobalSearchCategoryQuickFilters tab={tab} filters={filters} onChange={setFilters} />
       </div>
@@ -321,21 +326,22 @@ function GlobalSearchResultsContent() {
           <LoadingSpinner />
         </div>
       ) : displayedCount === 0 ? (
-        <div className="rounded-3xl border border-dashed border-neutral-200 bg-white px-8 py-16 text-center dark:border-neutral-700 dark:bg-neutral-900">
-          <p className="text-base text-neutral-600 dark:text-neutral-300">
+        <div className="py-20 text-center">
+          <p className="text-base text-neutral-400 dark:text-neutral-500">
             {filtersActive && rawResultCount > 0
               ? 'No results match your filters. Try adjusting or clearing them.'
               : `No results for “${trimmedQ}”. Try different keywords.`}
           </p>
         </div>
       ) : (
-        <div className="space-y-12">
+        <div className="space-y-16">
           {visibleCategories.includes('creators') && filteredData.creators.length > 0 ? (
             <SearchSectionBox
               title={GLOBAL_SEARCH_CATEGORY_LABELS.creators}
+              count={filteredData.creators.length}
               seeMoreHref={tab === 'all' ? buildGlobalSearchPageUrl(trimmedQ, 'creators') : undefined}
             >
-              <div className="space-y-4">
+              <div className={RESULT_FRAME_CLASS}>
                 {filteredData.creators.map((creator) => (
                   <SearchCreatorRow key={creator.userId ?? creator.id} creator={creator} />
                 ))}
@@ -347,17 +353,30 @@ function GlobalSearchResultsContent() {
           filteredData.serviceProviders.length > 0 ? (
             <SearchSectionBox
               title={GLOBAL_SEARCH_CATEGORY_LABELS.serviceProviders}
+              count={filteredData.serviceProviders.length}
               seeMoreHref={
                 tab === 'all' ? buildGlobalSearchPageUrl(trimmedQ, 'serviceProviders') : undefined
               }
             >
-              <SearchServiceProviderGrid creators={filteredData.serviceProviders} />
+              {tab === 'all' ? (
+                <div className={RESULT_FRAME_CLASS}>
+                  {filteredData.serviceProviders.map((creator) => (
+                    <SearchServiceProviderRow
+                      key={creator.id ?? creator.userId ?? creator.fullName}
+                      creator={creator}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <SearchServiceProviderGrid creators={filteredData.serviceProviders} />
+              )}
             </SearchSectionBox>
           ) : null}
 
           {visibleCategories.includes('products') && filteredData.products.length > 0 ? (
             <SearchSectionBox
               title={GLOBAL_SEARCH_CATEGORY_LABELS.products}
+              count={filteredData.products.length}
               seeMoreHref={tab === 'all' ? buildGlobalSearchPageUrl(trimmedQ, 'products') : undefined}
             >
               <div className={searchProductGridClassName}>
@@ -371,6 +390,7 @@ function GlobalSearchResultsContent() {
           {visibleCategories.includes('content') && filteredData.content.length > 0 ? (
             <SearchSectionBox
               title={GLOBAL_SEARCH_CATEGORY_LABELS.content}
+              count={filteredData.content.length}
               seeMoreHref={tab === 'all' ? buildGlobalSearchPageUrl(trimmedQ, 'content') : undefined}
             >
               <div className="snap-y snap-proximity">

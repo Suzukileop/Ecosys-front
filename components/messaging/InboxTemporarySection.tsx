@@ -36,7 +36,7 @@ export function InboxTemporarySection({
 
   return (
     <div className={embedded ? 'shrink-0 px-2 pb-2' : 'min-h-0 flex-1 overflow-y-auto px-2 pb-2'}>
-      <div className="rounded-2xl bg-neutral-50/50 p-2 dark:bg-neutral-900/40">
+      <div className="p-2">
         <p className="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           Temporary access
         </p>
